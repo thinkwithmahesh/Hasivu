@@ -1,0 +1,685 @@
+# HASIVU Platform - CloudWatch Alarms Configuration
+# Comprehensive alerting system for production monitoring
+# Created by DevOps Automation Specialist
+
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'HASIVU Platform - Production CloudWatch Alarms & Alerting'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: production
+    AllowedValues: [dev, staging, production]
+    Description: Environment name
+    
+  AlertingEmail:
+    Type: String
+    Description: Email address for critical alerts
+    Default: ops-alerts@hasivu.com
+    
+  SlackWebhookURL:
+    Type: String
+    Description: Slack webhook URL for alerts
+    NoEcho: true
+    Default: ""
+    
+  LambdaFunctionPrefix:
+    Type: String
+    Default: hasivu-platform
+    Description: Lambda function name prefix
+    
+  DatabaseInstanceId:
+    Type: String
+    Description: RDS Database Instance Identifier
+    Default: hasivu-db
+
+Resources:
+  # ========================================
+  # SNS TOPICS FOR ALERTING
+  # ========================================
+  CriticalAlertsSnsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub "${Environment}-hasivu-critical-alerts"
+      DisplayName: HASIVU Critical Alerts
+      KmsMasterKeyId: alias/aws/sns
+
+  WarningAlertsSnsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub "${Environment}-hasivu-warning-alerts"
+      DisplayName: HASIVU Warning Alerts
+      KmsMasterKeyId: alias/aws/sns
+
+  BusinessAlertsSnsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub "${Environment}-hasivu-business-alerts"
+      DisplayName: HASIVU Business Alerts
+      KmsMasterKeyId: alias/aws/sns
+
+  # EMAIL SUBSCRIPTIONS
+  CriticalAlertsEmailSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref CriticalAlertsSnsTopic
+      Protocol: email
+      Endpoint: !Ref AlertingEmail
+
+  WarningAlertsEmailSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref WarningAlertsSnsTopic
+      Protocol: email
+      Endpoint: !Ref AlertingEmail
+
+  BusinessAlertsEmailSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref BusinessAlertsSnsTopic
+      Protocol: email
+      Endpoint: !Ref AlertingEmail
+
+  # ========================================
+  # LAMBDA FUNCTION ALARMS
+  # ========================================
+  
+  # Payment System Critical Alarms
+  PaymentSystemErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-HASIVU-Payment-System-High-Errors"
+      AlarmDescription: High error rate in payment system functions
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 2
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Period: 300
+      Statistic: Sum
+      Threshold: 10
+      ActionsEnabled: true
+      AlarmActions:
+        - !Ref CriticalAlertsSnsTopic
+      OKActions:
+        - !Ref CriticalAlertsSnsTopic
+      Dimensions:
+        - Name: FunctionName
+          Value: !Sub "${LambdaFunctionPrefix}-payments-create-order"
+      TreatMissingData: notBreaching
+
+  PaymentVerificationErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-HASIVU-Payment-Verification-Errors"
+      AlarmDescription: High error rate in payment verification
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 2
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Period: 300
+      Statistic: Sum
+      Threshold: 5
+      ActionsEnabled: true
+      AlarmActions:
+        - !Ref CriticalAlertsSnsTopic
+      Dimensions:
+        - Name: FunctionName
+          Value: !Sub "${LambdaFunctionPrefix}-payments-verify"
+      TreatMissingData: notBreaching
+
+  PaymentWebhookErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-HASIVU-Payment-Webhook-Errors"
+      AlarmDescription: Payment webhook processing failures
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Period: 300
+      Statistic: Sum
+      Threshold: 3
+      ActionsEnabled: true
+      AlarmActions:
+        - !Ref CriticalAlertsSnsTopic
+      Dimensions:
+        - Name: FunctionName
+          Value: !Sub "${LambdaFunctionPrefix}-payments-webhook"
+      TreatMissingData: notBreaching
+
+  # Lambda Duration Alarms
+  PaymentSystemHighDurationAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-HASIVU-Payment-System-High-Duration"
+      AlarmDescription: Payment system functions taking too long
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 3
+      MetricName: Duration
+      Namespace: AWS/Lambda
+      Period: 300
+      Statistic: Average
+      Threshold: 10000
+      ActionsEnabled: true
+      AlarmActions:
+        - !Ref WarningAlertsSnsTopic
+      Dimensions:
+        - Name: FunctionName
+          Value: !Sub "${LambdaFunctionPrefix}-payments-create-order"
+      TreatMissingData: notBreaching
+
+  # Lambda Throttle Alarms
+  LambdaThrottleAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-HASIVU-Lambda-Throttles"
+      AlarmDescription: Lambda functions being throttled
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      MetricName: Throttles
+      Namespace: AWS/Lambda
+      Period: 300
+      Statistic: Sum
+      Threshold: 0
+      ActionsEnabled: true
+      AlarmActions:
+        - !Ref CriticalAlertsSnsTopic
+      TreatMissingData: notBreaching
+
+  # Authentication System Alarms
+  AuthErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-HASIVU-Auth-High-Errors"
+      AlarmDescription: High error rate in authentication system
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 2
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Period: 300
+      Statistic: Sum
+      Threshold: 15
+      ActionsEnabled: true
+      AlarmActions:
+        - !Ref WarningAlertsSnsTopic
+      Dimensions:
+        - Name: FunctionName
+          Value: !Sub "${LambdaFunctionPrefix}-auth-login"
+      TreatMissingData: notBreaching
+
+  # ========================================
+  # API GATEWAY ALARMS
+  # ========================================
+  ApiGatewayHighErrorRateAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-HASIVU-API-High-Error-Rate"
+      AlarmDescription: API Gateway experiencing high 4XX/5XX error rate
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 2
+      Metrics:
+        - Id: e1
+          Expression: "(m1 + m2) / m3 * 100"
+          Label: "Error Rate (%)"
+        - Id: m1
+          MetricStat:
+            Metric:
+              Namespace: AWS/ApiGateway
+              MetricName: 4XXError
+              Dimensions:
+                - Name: ApiName
+                  Value: !Sub "${Environment}-hasivu-platform"
+            Period: 300
+            Stat: Sum
+          ReturnData: false
+        - Id: m2
+          MetricStat:
+            Metric:
+              Namespace: AWS/ApiGateway
+              MetricName: 5XXError
+              Dimensions:
+                - Name: ApiName
+                  Value: !Sub "${Environment}-hasivu-platform"
+            Period: 300
+            Stat: Sum
+          ReturnData: false
+        - Id: m3
+          MetricStat:
+            Metric:
+              Namespace: AWS/ApiGateway
+              MetricName: Count
+              Dimensions:
+                - Name: ApiName
+                  Value: !Sub "${Environment}-hasivu-platform"
+            Period: 300
+            Stat: Sum
+          ReturnData: false
+      Threshold: 5
+      ActionsEnabled: true
+      AlarmActions:
+        - !Ref CriticalAlertsSnsTopic
+
+  ApiGatewayHighLatencyAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-HASIVU-API-High-Latency"
+      AlarmDescription: API Gateway experiencing high latency
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 3
+      MetricName: Latency
+      Namespace: AWS/ApiGateway
+      Period: 300
+      Statistic: Average
+      Threshold: 5000
+      ActionsEnabled: true
+      AlarmActions:
+        - !Ref WarningAlertsSnsTopic
+      Dimensions:
+        - Name: ApiName
+          Value: !Sub "${Environment}-hasivu-platform"
+      TreatMissingData: notBreaching
+
+  # ========================================
+  # DATABASE ALARMS
+  # ========================================
+  DatabaseHighCPUAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-HASIVU-Database-High-CPU"
+      AlarmDescription: Database CPU utilization is high
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 2
+      MetricName: CPUUtilization
+      Namespace: AWS/RDS
+      Period: 300
+      Statistic: Average
+      Threshold: 80
+      ActionsEnabled: true
+      AlarmActions:
+        - !Ref WarningAlertsSnsTopic
+      Dimensions:
+        - Name: DBInstanceIdentifier
+          Value: !Sub "${Environment}-${DatabaseInstanceId}"
+      TreatMissingData: notBreaching
+
+  DatabaseHighConnectionsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-HASIVU-Database-High-Connections"
+      AlarmDescription: Database has high number of connections
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 2
+      MetricName: DatabaseConnections
+      Namespace: AWS/RDS
+      Period: 300
+      Statistic: Average
+      Threshold: 80
+      ActionsEnabled: true
+      AlarmActions:
+        - !Ref WarningAlertsSnsTopic
+      Dimensions:
+        - Name: DBInstanceIdentifier
+          Value: !Sub "${Environment}-${DatabaseInstanceId}"
+      TreatMissingData: notBreaching
+
+  DatabaseLowFreeStorageAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-HASIVU-Database-Low-Storage"
+      AlarmDescription: Database free storage space is low
+      ComparisonOperator: LessThanThreshold
+      EvaluationPeriods: 1
+      MetricName: FreeStorageSpace
+      Namespace: AWS/RDS
+      Period: 300
+      Statistic: Average
+      Threshold: 2147483648  # 2GB in bytes
+      ActionsEnabled: true
+      AlarmActions:
+        - !Ref CriticalAlertsSnsTopic
+      Dimensions:
+        - Name: DBInstanceIdentifier
+          Value: !Sub "${Environment}-${DatabaseInstanceId}"
+      TreatMissingData: notBreaching
+
+  DatabaseHighReadLatencyAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-HASIVU-Database-High-Read-Latency"
+      AlarmDescription: Database read latency is high
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 2
+      MetricName: ReadLatency
+      Namespace: AWS/RDS
+      Period: 300
+      Statistic: Average
+      Threshold: 0.2
+      ActionsEnabled: true
+      AlarmActions:
+        - !Ref WarningAlertsSnsTopic
+      Dimensions:
+        - Name: DBInstanceIdentifier
+          Value: !Sub "${Environment}-${DatabaseInstanceId}"
+      TreatMissingData: notBreaching
+
+  # ========================================
+  # BUSINESS METRICS ALARMS
+  # ========================================
+  PaymentFailureRateAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-HASIVU-High-Payment-Failure-Rate"
+      AlarmDescription: Payment failure rate is above acceptable threshold
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 2
+      Metrics:
+        - Id: e1
+          Expression: "m2 / (m1 + m2) * 100"
+          Label: "Payment Failure Rate (%)"
+        - Id: m1
+          MetricStat:
+            Metric:
+              Namespace: HASIVU/Business
+              MetricName: PaymentTransactions
+              Dimensions:
+                - Name: Environment
+                  Value: !Ref Environment
+                - Name: Status
+                  Value: "success"
+            Period: 300
+            Stat: Sum
+          ReturnData: false
+        - Id: m2
+          MetricStat:
+            Metric:
+              Namespace: HASIVU/Business
+              MetricName: PaymentTransactions
+              Dimensions:
+                - Name: Environment
+                  Value: !Ref Environment
+                - Name: Status
+                  Value: "failed"
+            Period: 300
+            Stat: Sum
+          ReturnData: false
+      Threshold: 5
+      ActionsEnabled: true
+      AlarmActions:
+        - !Ref BusinessAlertsSnsTopic
+      TreatMissingData: notBreaching
+
+  RFIDVerificationFailureAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-HASIVU-High-RFID-Failure-Rate"
+      AlarmDescription: RFID verification failure rate is high
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 2
+      MetricName: FailedVerifications
+      Namespace: HASIVU/Business
+      Period: 300
+      Statistic: Sum
+      Threshold: 10
+      ActionsEnabled: true
+      AlarmActions:
+        - !Ref BusinessAlertsSnsTopic
+      Dimensions:
+        - Name: Environment
+          Value: !Ref Environment
+      TreatMissingData: notBreaching
+
+  SystemHealthScoreAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-HASIVU-Low-System-Health"
+      AlarmDescription: System health score is below acceptable threshold
+      ComparisonOperator: LessThanThreshold
+      EvaluationPeriods: 2
+      MetricName: SystemHealthScore
+      Namespace: HASIVU/Business
+      Period: 300
+      Statistic: Average
+      Threshold: 85
+      ActionsEnabled: true
+      AlarmActions:
+        - !Ref CriticalAlertsSnsTopic
+      Dimensions:
+        - Name: Environment
+          Value: !Ref Environment
+      TreatMissingData: breaching
+
+  # ========================================
+  # SECURITY ALARMS
+  # ========================================
+  HighFailedLoginAttemptsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-HASIVU-High-Failed-Login-Attempts"
+      AlarmDescription: Unusual number of failed login attempts detected
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      MetricName: FailedLoginAttempts
+      Namespace: HASIVU/Business
+      Period: 300
+      Statistic: Sum
+      Threshold: 50
+      ActionsEnabled: true
+      AlarmActions:
+        - !Ref CriticalAlertsSnsTopic
+      Dimensions:
+        - Name: Environment
+          Value: !Ref Environment
+      TreatMissingData: notBreaching
+
+  SuspiciousActivityAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-HASIVU-Suspicious-Activity"
+      AlarmDescription: Suspicious activity detected in the system
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      MetricName: SuspiciousActivity
+      Namespace: HASIVU/Business
+      Period: 300
+      Statistic: Sum
+      Threshold: 0
+      ActionsEnabled: true
+      AlarmActions:
+        - !Ref CriticalAlertsSnsTopic
+      Dimensions:
+        - Name: Environment
+          Value: !Ref Environment
+      TreatMissingData: notBreaching
+
+  PaymentFraudAttemptAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-HASIVU-Payment-Fraud-Attempt"
+      AlarmDescription: Payment fraud attempt detected
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      MetricName: PaymentFraudAttempts
+      Namespace: HASIVU/Business
+      Period: 60
+      Statistic: Sum
+      Threshold: 0
+      ActionsEnabled: true
+      AlarmActions:
+        - !Ref CriticalAlertsSnsTopic
+      Dimensions:
+        - Name: Environment
+          Value: !Ref Environment
+      TreatMissingData: notBreaching
+
+  # ========================================
+  # COST MONITORING ALARMS
+  # ========================================
+  HighLambdaCostAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-HASIVU-High-Lambda-Costs"
+      AlarmDescription: Lambda costs are above budget threshold
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      MetricName: EstimatedLambdaCost
+      Namespace: HASIVU/Cost
+      Period: 86400
+      Statistic: Sum
+      Threshold: 100  # $100 per day
+      ActionsEnabled: true
+      AlarmActions:
+        - !Ref WarningAlertsSnsTopic
+      Dimensions:
+        - Name: Environment
+          Value: !Ref Environment
+      TreatMissingData: notBreaching
+
+  UnusualCostSpike:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-HASIVU-Unusual-Cost-Spike"
+      AlarmDescription: Unusual spike in overall infrastructure costs
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      Metrics:
+        - Id: e1
+          Expression: "m1 + m2 + m3 + m4"
+          Label: "Total Estimated Daily Cost"
+        - Id: m1
+          MetricStat:
+            Metric:
+              Namespace: HASIVU/Cost
+              MetricName: EstimatedLambdaCost
+              Dimensions:
+                - Name: Environment
+                  Value: !Ref Environment
+            Period: 86400
+            Stat: Sum
+          ReturnData: false
+        - Id: m2
+          MetricStat:
+            Metric:
+              Namespace: HASIVU/Cost
+              MetricName: EstimatedRDSCost
+              Dimensions:
+                - Name: Environment
+                  Value: !Ref Environment
+            Period: 86400
+            Stat: Sum
+          ReturnData: false
+        - Id: m3
+          MetricStat:
+            Metric:
+              Namespace: HASIVU/Cost
+              MetricName: EstimatedAPIGatewayCost
+              Dimensions:
+                - Name: Environment
+                  Value: !Ref Environment
+            Period: 86400
+            Stat: Sum
+          ReturnData: false
+        - Id: m4
+          MetricStat:
+            Metric:
+              Namespace: HASIVU/Cost
+              MetricName: EstimatedS3Cost
+              Dimensions:
+                - Name: Environment
+                  Value: !Ref Environment
+            Period: 86400
+            Stat: Sum
+          ReturnData: false
+      Threshold: 500  # $500 per day
+      ActionsEnabled: true
+      AlarmActions:
+        - !Ref CriticalAlertsSnsTopic
+
+  # ========================================
+  # HEALTH CHECK ALARMS
+  # ========================================
+  HealthCheckFailureAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-HASIVU-Health-Check-Failure"
+      AlarmDescription: Health check endpoint is failing
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 2
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Period: 300
+      Statistic: Sum
+      Threshold: 0
+      ActionsEnabled: true
+      AlarmActions:
+        - !Ref CriticalAlertsSnsTopic
+      Dimensions:
+        - Name: FunctionName
+          Value: !Sub "${LambdaFunctionPrefix}-health"
+      TreatMissingData: breaching
+
+  # ========================================
+  # COMPOSITE ALARMS
+  # ========================================
+  PaymentSystemHealthCompositeAlarm:
+    Type: AWS::CloudWatch::CompositeAlarm
+    Properties:
+      AlarmName: !Sub "${Environment}-HASIVU-Payment-System-Health"
+      AlarmDescription: Overall payment system health status
+      AlarmRule: !Sub |
+        ALARM("${PaymentSystemErrorsAlarm}") OR 
+        ALARM("${PaymentVerificationErrorsAlarm}") OR 
+        ALARM("${PaymentWebhookErrorsAlarm}") OR
+        ALARM("${PaymentFailureRateAlarm}")
+      ActionsEnabled: true
+      AlarmActions:
+        - !Ref CriticalAlertsSnsTopic
+      OKActions:
+        - !Ref CriticalAlertsSnsTopic
+
+  SystemWideHealthCompositeAlarm:
+    Type: AWS::CloudWatch::CompositeAlarm
+    Properties:
+      AlarmName: !Sub "${Environment}-HASIVU-System-Wide-Health"
+      AlarmDescription: Overall system health across all components
+      AlarmRule: !Sub |
+        ALARM("${PaymentSystemHealthCompositeAlarm}") OR
+        ALARM("${DatabaseHighCPUAlarm}") OR
+        ALARM("${DatabaseLowFreeStorageAlarm}") OR
+        ALARM("${ApiGatewayHighErrorRateAlarm}") OR
+        ALARM("${HealthCheckFailureAlarm}") OR
+        ALARM("${SystemHealthScoreAlarm}")
+      ActionsEnabled: true
+      AlarmActions:
+        - !Ref CriticalAlertsSnsTopic
+      OKActions:
+        - !Ref CriticalAlertsSnsTopic
+
+# ========================================
+# OUTPUTS
+# ========================================
+Outputs:
+  CriticalAlertsTopicArn:
+    Description: ARN of the Critical Alerts SNS Topic
+    Value: !Ref CriticalAlertsSnsTopic
+    Export:
+      Name: !Sub "${Environment}-HASIVU-CriticalAlertsTopicArn"
+
+  WarningAlertsTopicArn:
+    Description: ARN of the Warning Alerts SNS Topic
+    Value: !Ref WarningAlertsSnsTopic
+    Export:
+      Name: !Sub "${Environment}-HASIVU-WarningAlertsTopicArn"
+
+  BusinessAlertsTopicArn:
+    Description: ARN of the Business Alerts SNS Topic
+    Value: !Ref BusinessAlertsSnsTopic
+    Export:
+      Name: !Sub "${Environment}-HASIVU-BusinessAlertsTopicArn"
+
+  PaymentSystemHealthAlarmArn:
+    Description: ARN of the Payment System Health Composite Alarm
+    Value: !GetAtt PaymentSystemHealthCompositeAlarm.Arn
+
+  SystemWideHealthAlarmArn:
+    Description: ARN of the System-Wide Health Composite Alarm
+    Value: !GetAtt SystemWideHealthCompositeAlarm.Arn

@@ -1,0 +1,29 @@
+
+🚀 HASIVU Platform Test Server Started
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📊 Server Information:
+   • Environment: development
+   • Port: 3000
+   • URL: http://localhost:3000
+   • API Base: http://localhost:3000/api/v1
+   • Health Check: http://localhost:3000/health
+
+🔧 Available Endpoints:
+   • Authentication: /api/v1/auth/*
+   • Payments: /api/v1/payments/*
+   • RFID: /api/v1/rfid/*
+   • Notifications: /api/v1/notifications/*
+   • Analytics: /api/v1/analytics/*
+
+📖 API Documentation: http://localhost:3000/api/v1/docs
+
+Ready for TestSprite testing! 🧪
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[0mGET /health [32m200[0m 2.724 ms - 140[0m
+[0mGET /health [32m200[0m 0.454 ms - 140[0m
+[0mGET /favicon.ico [33m404[0m 0.650 ms - 85[0m
+[0mGET / [33m404[0m 0.644 ms - 74[0m
+SIGTERM received, shutting down gracefully...
+Server closed

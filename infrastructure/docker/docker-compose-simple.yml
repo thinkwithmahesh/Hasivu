@@ -1,0 +1,229 @@
+# HASIVU Platform - Docker Compose Configuration
+# Local development and testing environment
+# Simplified version for quick start
+
+version: '3.8'
+
+# =====================================================
+# SHARED NETWORKS
+# =====================================================
+
+networks:
+  hasivu-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# =====================================================
+# SHARED VOLUMES
+# =====================================================
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  app_logs:
+    driver: local
+  uploads:
+    driver: local
+
+# =====================================================
+# SERVICES
+# =====================================================
+
+services:
+  # =====================================================
+  # DATABASE SERVICES
+  # =====================================================
+  
+  postgres:
+    image: postgres:15.4-alpine
+    container_name: hasivu-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: hasivu_platform
+      POSTGRES_USER: hasivu_admin
+      POSTGRES_PASSWORD: hasivu_dev_password_2024
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../../database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    networks:
+      hasivu-network:
+        ipv4_address: 172.20.0.10
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hasivu_admin -d hasivu_platform"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: hasivu-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass hasivu_redis_2024
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      hasivu-network:
+        ipv4_address: 172.20.0.11
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+  # =====================================================
+  # APPLICATION SERVICES
+  # =====================================================
+
+  api:
+    build:
+      context: ../../
+      dockerfile: infrastructure/docker/Dockerfile
+      target: development
+      args:
+        NODE_VERSION: 18.19.0
+        ALPINE_VERSION: 3.19
+    container_name: hasivu-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      # Application Configuration
+      NODE_ENV: development
+      PORT: 3000
+      HOST: 0.0.0.0
+      
+      # Database Configuration
+      DATABASE_URL: postgresql://hasivu_admin:hasivu_dev_password_2024@postgres:5432/hasivu_platform
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: hasivu_platform
+      DATABASE_USERNAME: hasivu_admin
+      DATABASE_PASSWORD: hasivu_dev_password_2024
+      DATABASE_SSL: false
+      DATABASE_POOL_MIN: 2
+      DATABASE_POOL_MAX: 10
+      
+      # Redis Configuration
+      REDIS_URL: redis://:hasivu_redis_2024@redis:6379/0
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: hasivu_redis_2024
+      REDIS_DB: 0
+      
+      # JWT Configuration
+      JWT_SECRET: hasivu_jwt_secret_dev_2024_very_long_secure_key
+      JWT_EXPIRES_IN: 24h
+      JWT_REFRESH_EXPIRES_IN: 7d
+      
+      # Security Configuration
+      BCRYPT_ROUNDS: 12
+      RATE_LIMIT_WINDOW: 900000
+      RATE_LIMIT_MAX: 100
+      
+      # File Upload Configuration
+      UPLOAD_PATH: /app/uploads
+      MAX_FILE_SIZE: 10485760
+      ALLOWED_FILE_TYPES: image/jpeg,image/png,image/webp,application/pdf
+      
+      # External API Configuration (Development)
+      RAZORPAY_KEY_ID: rzp_test_dev_key
+      RAZORPAY_KEY_SECRET: rzp_test_dev_secret
+      RAZORPAY_WEBHOOK_SECRET: dev_webhook_secret
+      
+      WHATSAPP_API_URL: https://graph.facebook.com/v18.0
+      WHATSAPP_ACCESS_TOKEN: dev_access_token
+      WHATSAPP_PHONE_NUMBER_ID: dev_phone_number_id
+      WHATSAPP_WEBHOOK_VERIFY_TOKEN: dev_verify_token
+      
+      # Email Configuration
+      SENDGRID_API_KEY: SG.dev_api_key
+      FROM_EMAIL: noreply@hasivu-dev.com
+      
+      # Logging Configuration
+      LOG_LEVEL: debug
+      LOG_FILE: /app/logs/app.log
+      LOG_MAX_SIZE: 10485760
+      LOG_MAX_FILES: 5
+      
+      # Monitoring Configuration
+      ENABLE_METRICS: true
+      METRICS_PORT: 9090
+      HEALTH_CHECK_ENDPOINT: /health
+      
+      # Development Configuration
+      ENABLE_HOT_RELOAD: true
+      ENABLE_DEBUG: true
+      ENABLE_CORS: true
+      CORS_ORIGIN: "*"
+      
+    ports:
+      - "3000:3000"
+      - "9229:9229"  # Debug port
+      - "9090:9090"  # Metrics port
+    volumes:
+      - ../../src:/app/src:delegated
+      - ../../package.json:/app/package.json:ro
+      - ../../tsconfig.json:/app/tsconfig.json:ro
+      - ../../nodemon.json:/app/nodemon.json:ro
+      - app_logs:/app/logs
+      - uploads:/app/uploads
+      - /app/node_modules  # Anonymous volume for node_modules
+    networks:
+      hasivu-network:
+        ipv4_address: 172.20.0.20
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # =====================================================
+  # DEVELOPMENT TOOLS
+  # =====================================================
+
+  adminer:
+    image: adminer:4.8.1
+    container_name: hasivu-adminer
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+      ADMINER_DEFAULT_USERNAME: hasivu_admin
+      ADMINER_DEFAULT_DATABASE: hasivu_platform
+    ports:
+      - "8080:8080"
+    networks:
+      hasivu-network:
+        ipv4_address: 172.20.0.30
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: hasivu-redis-commander
+    restart: unless-stopped
+    depends_on:
+      - redis
+    environment:
+      REDIS_HOSTS: local:redis:6379:0:hasivu_redis_2024
+      HTTP_USER: admin
+      HTTP_PASSWORD: hasivu_admin_2024
+    ports:
+      - "8081:8081"
+    networks:
+      hasivu-network:
+        ipv4_address: 172.20.0.31

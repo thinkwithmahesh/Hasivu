@@ -1,0 +1,658 @@
+# Enhanced CloudWatch Dashboards for HASIVU Platform
+# Comprehensive monitoring dashboards for production environments
+
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'HASIVU Platform - Enhanced Production Monitoring Dashboards'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: production
+    AllowedValues: [dev, staging, production]
+    Description: Environment name for resource identification
+
+  ProjectName:
+    Type: String
+    Default: hasivu-platform
+    Description: Project name for resource naming
+
+Resources:
+  # =====================================================
+  # EXECUTIVE DASHBOARD (C-Level Overview)
+  # =====================================================
+  
+  ExecutiveDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Sub '${ProjectName}-${Environment}-executive-overview'
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 0,
+              "width": 6,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "HASIVU/Business", "SystemHealthScore", "Environment", "${Environment}" ],
+                  [ ".", "UserSatisfactionScore", ".", "." ]
+                ],
+                "period": 300,
+                "stat": "Average",
+                "region": "${AWS::Region}",
+                "title": "System Health & User Satisfaction",
+                "yAxis": {
+                  "left": {
+                    "min": 0,
+                    "max": 100
+                  }
+                },
+                "annotations": {
+                  "horizontal": [
+                    {
+                      "value": 95,
+                      "label": "Target SLA (95%)"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "type": "metric",
+              "x": 6,
+              "y": 0,
+              "width": 6,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "HASIVU/Business", "TotalRevenue", "Environment", "${Environment}" ],
+                  [ ".", "DailyRevenue", ".", "." ],
+                  [ ".", "MonthlyRevenue", ".", "." ]
+                ],
+                "period": 3600,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "Revenue Metrics (₹)",
+                "yAxis": {
+                  "left": {
+                    "min": 0
+                  }
+                }
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12,
+              "y": 0,
+              "width": 6,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "HASIVU/Business", "ActiveUsers", "Environment", "${Environment}" ],
+                  [ ".", "NewUserRegistrations", ".", "." ],
+                  [ ".", "UserRetentionRate", ".", "." ]
+                ],
+                "period": 3600,
+                "stat": "Average",
+                "region": "${AWS::Region}",
+                "title": "User Engagement Metrics"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 18,
+              "y": 0,
+              "width": 6,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "HASIVU/Business", "PaymentSuccessRate", "Environment", "${Environment}" ],
+                  [ ".", "OrderCompletionRate", ".", "." ],
+                  [ ".", "RFIDVerificationRate", ".", "." ]
+                ],
+                "period": 300,
+                "stat": "Average",
+                "region": "${AWS::Region}",
+                "title": "Operational Success Rates (%)",
+                "yAxis": {
+                  "left": {
+                    "min": 90,
+                    "max": 100
+                  }
+                }
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 6,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "HASIVU/Costs", "DailyCost", "Environment", "${Environment}" ],
+                  [ ".", "MonthlyCost", ".", "." ],
+                  [ ".", "CostPerUser", ".", "." ]
+                ],
+                "period": 3600,
+                "stat": "Average",
+                "region": "${AWS::Region}",
+                "title": "Infrastructure Costs ($)"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12,
+              "y": 6,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "HASIVU/Business", "CriticalIncidents", "Environment", "${Environment}" ],
+                  [ ".", "HighSeverityAlerts", ".", "." ],
+                  [ ".", "SystemDowntime", ".", "." ]
+                ],
+                "period": 3600,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "Incident & Alert Summary",
+                "annotations": {
+                  "horizontal": [
+                    {
+                      "value": 0,
+                      "label": "Zero Incidents Target"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+
+  # =====================================================
+  # OPERATIONS DASHBOARD (DevOps Team)
+  # =====================================================
+  
+  OperationsDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Sub '${ProjectName}-${Environment}-operations'
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 0,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "AWS/Lambda", "Duration", "FunctionName", "${ProjectName}-api-${Environment}-login" ],
+                  [ "...", "${ProjectName}-api-${Environment}-register" ],
+                  [ "...", "${ProjectName}-api-${Environment}-createPaymentOrder" ],
+                  [ "...", "${ProjectName}-api-${Environment}-verifyPayment" ],
+                  [ "...", "${ProjectName}-api-${Environment}-healthBasic" ]
+                ],
+                "period": 300,
+                "stat": "Average",
+                "region": "${AWS::Region}",
+                "title": "Lambda Response Times (ms)",
+                "annotations": {
+                  "horizontal": [
+                    {
+                      "value": 1000,
+                      "label": "SLA Threshold"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "type": "metric",
+              "x": 8,
+              "y": 0,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "AWS/Lambda", "Errors", "FunctionName", "${ProjectName}-api-${Environment}-login" ],
+                  [ "...", "${ProjectName}-api-${Environment}-register" ],
+                  [ "...", "${ProjectName}-api-${Environment}-createPaymentOrder" ],
+                  [ "...", "${ProjectName}-api-${Environment}-verifyPayment" ]
+                ],
+                "period": 300,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "Error Counts by Function"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 16,
+              "y": 0,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "AWS/Lambda", "ConcurrentExecutions" ],
+                  [ "AWS/Lambda", "UnreservedConcurrentExecutions" ]
+                ],
+                "period": 300,
+                "stat": "Maximum",
+                "region": "${AWS::Region}",
+                "title": "Lambda Concurrency",
+                "annotations": {
+                  "horizontal": [
+                    {
+                      "value": 900,
+                      "label": "Concurrency Limit Warning"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 6,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "AWS/RDS", "CPUUtilization", "DBInstanceIdentifier", "${Environment}-hasivu-postgres" ],
+                  [ ".", "DatabaseConnections", ".", "." ],
+                  [ ".", "ReadLatency", ".", "." ],
+                  [ ".", "WriteLatency", ".", "." ]
+                ],
+                "period": 300,
+                "stat": "Average",
+                "region": "${AWS::Region}",
+                "title": "Database Performance",
+                "annotations": {
+                  "horizontal": [
+                    {
+                      "value": 80,
+                      "label": "CPU Warning (80%)"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12,
+              "y": 6,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "AWS/ElastiCache", "CPUUtilization", "CacheClusterId", "${Environment}-hasivu-redis-001" ],
+                  [ ".", "CacheHitRate", ".", "." ],
+                  [ ".", "CacheMissRate", ".", "." ],
+                  [ ".", "CurrConnections", ".", "." ]
+                ],
+                "period": 300,
+                "stat": "Average",
+                "region": "${AWS::Region}",
+                "title": "Redis Cache Performance"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 12,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "AWS/ApiGateway", "4XXError", "ApiName", "${Environment}-hasivu-platform-api" ],
+                  [ ".", "5XXError", ".", "." ],
+                  [ ".", "Count", ".", "." ],
+                  [ ".", "Latency", ".", "." ]
+                ],
+                "period": 300,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "API Gateway Metrics"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12,
+              "y": 12,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "HASIVU/Infrastructure", "SystemLoad", "Environment", "${Environment}" ],
+                  [ ".", "MemoryUtilization", ".", "." ],
+                  [ ".", "StorageUtilization", ".", "." ],
+                  [ ".", "NetworkThroughput", ".", "." ]
+                ],
+                "period": 300,
+                "stat": "Average",
+                "region": "${AWS::Region}",
+                "title": "Infrastructure Utilization"
+              }
+            },
+            {
+              "type": "log",
+              "x": 0,
+              "y": 18,
+              "width": 24,
+              "height": 6,
+              "properties": {
+                "query": "SOURCE '/aws/lambda/${ProjectName}-api-${Environment}-login' | SOURCE '/aws/lambda/${ProjectName}-api-${Environment}-register' | SOURCE '/aws/lambda/${ProjectName}-api-${Environment}-createPaymentOrder' | SOURCE '/aws/lambda/${ProjectName}-api-${Environment}-verifyPayment' | fields @timestamp, @message, @requestId | filter @message like /ERROR/ or level = \"ERROR\" | sort @timestamp desc | limit 100",
+                "region": "${AWS::Region}",
+                "title": "Recent Errors & Issues",
+                "view": "table"
+              }
+            }
+          ]
+        }
+
+  # =====================================================
+  # BUSINESS DASHBOARD (Product & Business Teams)
+  # =====================================================
+  
+  BusinessDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Sub '${ProjectName}-${Environment}-business-metrics'
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 0,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "HASIVU/Business", "PaymentTransactions", "Environment", "${Environment}" ],
+                  [ ".", "SuccessfulPayments", ".", "." ],
+                  [ ".", "FailedPayments", ".", "." ],
+                  [ ".", "RefundedPayments", ".", "." ]
+                ],
+                "period": 300,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "Payment Processing Metrics"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 8,
+              "y": 0,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "HASIVU/Business", "OrdersCreated", "Environment", "${Environment}" ],
+                  [ ".", "OrdersCompleted", ".", "." ],
+                  [ ".", "OrdersCancelled", ".", "." ],
+                  [ ".", "AverageOrderValue", ".", "." ]
+                ],
+                "period": 300,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "Order Management Metrics"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 16,
+              "y": 0,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "HASIVU/Business", "RFIDVerifications", "Environment", "${Environment}" ],
+                  [ ".", "SuccessfulVerifications", ".", "." ],
+                  [ ".", "FailedVerifications", ".", "." ],
+                  [ ".", "DeliveryConfirmations", ".", "." ]
+                ],
+                "period": 300,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "RFID & Delivery Metrics"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 6,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "HASIVU/Business", "UserLogins", "Environment", "${Environment}" ],
+                  [ ".", "UserRegistrations", ".", "." ],
+                  [ ".", "ActiveSessions", ".", "." ],
+                  [ ".", "SessionDuration", ".", "." ]
+                ],
+                "period": 300,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "User Engagement & Activity"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12,
+              "y": 6,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "HASIVU/Business", "MenuItemViews", "Environment", "${Environment}" ],
+                  [ ".", "MenuUpdates", ".", "." ],
+                  [ ".", "PopularMenuItems", ".", "." ],
+                  [ ".", "MenuConversionRate", ".", "." ]
+                ],
+                "period": 300,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "Menu Management & Engagement"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 12,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "HASIVU/Business", "RevenuePerUser", "Environment", "${Environment}" ],
+                  [ ".", "CustomerLifetimeValue", ".", "." ],
+                  [ ".", "CustomerRetentionRate", ".", "." ]
+                ],
+                "period": 3600,
+                "stat": "Average",
+                "region": "${AWS::Region}",
+                "title": "Customer Value Metrics"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 8,
+              "y": 12,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "HASIVU/Business", "NotificationsSent", "Environment", "${Environment}" ],
+                  [ ".", "EmailNotifications", ".", "." ],
+                  [ ".", "SMSNotifications", ".", "." ],
+                  [ ".", "PushNotifications", ".", "." ]
+                ],
+                "period": 300,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "Communication & Notifications"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 16,
+              "y": 12,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "HASIVU/Business", "FeatureUsage", "Feature", "Payment", "Environment", "${Environment}" ],
+                  [ "...", "RFID", ".", "." ],
+                  [ "...", "Menu", ".", "." ],
+                  [ "...", "Notifications", ".", "." ]
+                ],
+                "period": 3600,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "Feature Adoption & Usage"
+              }
+            }
+          ]
+        }
+
+  # =====================================================
+  # SECURITY DASHBOARD (Security Team)
+  # =====================================================
+  
+  SecurityDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Sub '${ProjectName}-${Environment}-security-monitoring'
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 0,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "HASIVU/Security", "FailedLoginAttempts", "Environment", "${Environment}" ],
+                  [ ".", "SuspiciousLoginPatterns", ".", "." ],
+                  [ ".", "BruteForceAttempts", ".", "." ],
+                  [ ".", "UnauthorizedAccess", ".", "." ]
+                ],
+                "period": 300,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "Authentication Security Events"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 8,
+              "y": 0,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "HASIVU/Security", "PaymentFraudAttempts", "Environment", "${Environment}" ],
+                  [ ".", "SuspiciousTransactions", ".", "." ],
+                  [ ".", "FraudDetectionTriggers", ".", "." ],
+                  [ ".", "BlockedTransactions", ".", "." ]
+                ],
+                "period": 300,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "Payment Security Events"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 16,
+              "y": 0,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "HASIVU/Security", "APIRateLimitViolations", "Environment", "${Environment}" ],
+                  [ ".", "InvalidTokenAttempts", ".", "." ],
+                  [ ".", "UnauthorizedAPIAccess", ".", "." ],
+                  [ ".", "SecurityPolicyViolations", ".", "." ]
+                ],
+                "period": 300,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "API Security Events"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 6,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "HASIVU/Security", "DataAccessAnomalies", "Environment", "${Environment}" ],
+                  [ ".", "UnusualDataQueries", ".", "." ],
+                  [ ".", "DataExfiltrationAttempts", ".", "." ],
+                  [ ".", "PrivilegeEscalationAttempts", ".", "." ]
+                ],
+                "period": 300,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "Data Security Events"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12,
+              "y": 6,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "AWS/WAF", "BlockedRequests", "WebACL", "${Environment}-hasivu-waf" ],
+                  [ ".", "AllowedRequests", ".", "." ],
+                  [ ".", "CountedRequests", ".", "." ]
+                ],
+                "period": 300,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "WAF Protection Status"
+              }
+            },
+            {
+              "type": "log",
+              "x": 0,
+              "y": 12,
+              "width": 24,
+              "height": 6,
+              "properties": {
+                "query": "SOURCE '/aws/lambda/${ProjectName}-api-${Environment}-login' | SOURCE '/aws/lambda/${ProjectName}-api-${Environment}-createPaymentOrder' | fields @timestamp, @message, @requestId | filter @message like /SECURITY/ or @message like /security/ or @message like /UNAUTHORIZED/ or @message like /SUSPICIOUS/ | sort @timestamp desc | limit 50",
+                "region": "${AWS::Region}",
+                "title": "Security Incidents & Alerts",
+                "view": "table"
+              }
+            }
+          ]
+        }
+
+Outputs:
+  ExecutiveDashboardUrl:
+    Description: URL for Executive Dashboard
+    Value: !Sub 'https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${ProjectName}-${Environment}-executive-overview'
+
+  OperationsDashboardUrl:
+    Description: URL for Operations Dashboard  
+    Value: !Sub 'https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${ProjectName}-${Environment}-operations'
+
+  BusinessDashboardUrl:
+    Description: URL for Business Metrics Dashboard
+    Value: !Sub 'https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${ProjectName}-${Environment}-business-metrics'
+
+  SecurityDashboardUrl:
+    Description: URL for Security Monitoring Dashboard
+    Value: !Sub 'https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${ProjectName}-${Environment}-security-monitoring'

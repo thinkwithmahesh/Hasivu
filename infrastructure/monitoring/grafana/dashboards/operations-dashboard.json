@@ -1,0 +1,1034 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "HASIVU Platform Operations Dashboard - Technical metrics, performance monitoring, and system health for DevOps teams",
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 1,
+  "id": null,
+  "iteration": 1640995200000,
+  "links": [
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": false,
+      "keepTime": false,
+      "tags": ["hasivu"],
+      "targetBlank": true,
+      "title": "Executive Dashboard",
+      "tooltip": "Switch to Executive Dashboard",
+      "type": "link",
+      "url": "/d/hasivu-executive/hasivu-executive-dashboard"
+    },
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": false,
+      "keepTime": false,
+      "tags": ["hasivu"],
+      "targetBlank": true,
+      "title": "Security Dashboard",
+      "tooltip": "Switch to Security Dashboard",
+      "type": "link",
+      "url": "/d/hasivu-security/hasivu-security-dashboard"
+    }
+  ],
+  "panels": [
+    {
+      "datasource": "CloudWatch",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "green",
+                "value": 3
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "8.3.3",
+      "targets": [
+        {
+          "alias": "Healthy Services",
+          "dimensions": {
+            "Environment": "$environment"
+          },
+          "metricName": "ServiceHealth",
+          "namespace": "HASIVU/HealthMonitor",
+          "period": "",
+          "refId": "A",
+          "region": "ap-south-1",
+          "statistics": ["Sum"]
+        }
+      ],
+      "title": "Healthy Services",
+      "type": "stat"
+    },
+    {
+      "datasource": "CloudWatch",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 3
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "8.3.3",
+      "targets": [
+        {
+          "alias": "Critical Issues",
+          "dimensions": {
+            "Environment": "$environment"
+          },
+          "metricName": "CriticalIssues",
+          "namespace": "HASIVU/HealthMonitor",
+          "period": "",
+          "refId": "A",
+          "region": "ap-south-1",
+          "statistics": ["Average"]
+        }
+      ],
+      "title": "Critical Issues",
+      "type": "stat"
+    },
+    {
+      "datasource": "CloudWatch",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 200
+              },
+              {
+                "color": "green",
+                "value": 100
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 0
+      },
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "8.3.3",
+      "targets": [
+        {
+          "alias": "Avg Response Time",
+          "dimensions": {
+            "Environment": "$environment"
+          },
+          "metricName": "AverageResponseTime",
+          "namespace": "HASIVU/Business",
+          "period": "",
+          "refId": "A",
+          "region": "ap-south-1",
+          "statistics": ["Average"]
+        }
+      ],
+      "title": "Avg Response Time",
+      "type": "stat"
+    },
+    {
+      "datasource": "CloudWatch",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 5
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 0
+      },
+      "id": 4,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "8.3.3",
+      "targets": [
+        {
+          "alias": "Error Rate",
+          "dimensions": {
+            "Environment": "$environment"
+          },
+          "metricName": "ErrorRate",
+          "namespace": "HASIVU/Business",
+          "period": "",
+          "refId": "A",
+          "region": "ap-south-1",
+          "statistics": ["Average"]
+        }
+      ],
+      "title": "Error Rate",
+      "type": "stat"
+    },
+    {
+      "datasource": "CloudWatch",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 4
+      },
+      "id": 5,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "alias": "Database",
+          "dimensions": {
+            "Environment": "$environment",
+            "Service": "database"
+          },
+          "metricName": "ServiceResponseTime",
+          "namespace": "HASIVU/HealthMonitor",
+          "period": "",
+          "refId": "A",
+          "region": "ap-south-1",
+          "statistics": ["Average"]
+        },
+        {
+          "alias": "Redis",
+          "dimensions": {
+            "Environment": "$environment",
+            "Service": "redis"
+          },
+          "metricName": "ServiceResponseTime",
+          "namespace": "HASIVU/HealthMonitor",
+          "period": "",
+          "refId": "B",
+          "region": "ap-south-1",
+          "statistics": ["Average"]
+        },
+        {
+          "alias": "Payment Gateway",
+          "dimensions": {
+            "Environment": "$environment",
+            "Service": "payment-gateway"
+          },
+          "metricName": "ServiceResponseTime",
+          "namespace": "HASIVU/HealthMonitor",
+          "period": "",
+          "refId": "C",
+          "region": "ap-south-1",
+          "statistics": ["Average"]
+        }
+      ],
+      "title": "Service Response Times",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "CloudWatch",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 4
+      },
+      "id": 6,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "alias": "Lambda Invocations",
+          "dimensions": {},
+          "metricName": "Invocations",
+          "namespace": "AWS/Lambda",
+          "period": "",
+          "refId": "A",
+          "region": "ap-south-1",
+          "statistics": ["Sum"]
+        },
+        {
+          "alias": "Lambda Errors",
+          "dimensions": {},
+          "metricName": "Errors",
+          "namespace": "AWS/Lambda",
+          "period": "",
+          "refId": "B",
+          "region": "ap-south-1",
+          "statistics": ["Sum"]
+        },
+        {
+          "alias": "Lambda Duration",
+          "dimensions": {},
+          "metricName": "Duration",
+          "namespace": "AWS/Lambda",
+          "period": "",
+          "refId": "C",
+          "region": "ap-south-1",
+          "statistics": ["Average"]
+        }
+      ],
+      "title": "Lambda Metrics",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "CloudWatch",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 12
+      },
+      "id": 7,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "alias": "API Count",
+          "dimensions": {},
+          "metricName": "Count",
+          "namespace": "AWS/ApiGateway",
+          "period": "",
+          "refId": "A",
+          "region": "ap-south-1",
+          "statistics": ["Sum"]
+        },
+        {
+          "alias": "API 4XX Errors",
+          "dimensions": {},
+          "metricName": "4XXError",
+          "namespace": "AWS/ApiGateway",
+          "period": "",
+          "refId": "B",
+          "region": "ap-south-1",
+          "statistics": ["Sum"]
+        },
+        {
+          "alias": "API 5XX Errors",
+          "dimensions": {},
+          "metricName": "5XXError",
+          "namespace": "AWS/ApiGateway",
+          "period": "",
+          "refId": "C",
+          "region": "ap-south-1",
+          "statistics": ["Sum"]
+        },
+        {
+          "alias": "API Latency",
+          "dimensions": {},
+          "metricName": "Latency",
+          "namespace": "AWS/ApiGateway",
+          "period": "",
+          "refId": "D",
+          "region": "ap-south-1",
+          "statistics": ["Average"]
+        }
+      ],
+      "title": "API Gateway Metrics",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "CloudWatch",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 12
+      },
+      "id": 8,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "alias": "CPU Utilization",
+          "dimensions": {
+            "DBInstanceIdentifier": "hasivu-production-db"
+          },
+          "metricName": "CPUUtilization",
+          "namespace": "AWS/RDS",
+          "period": "",
+          "refId": "A",
+          "region": "ap-south-1",
+          "statistics": ["Average"]
+        },
+        {
+          "alias": "Database Connections",
+          "dimensions": {
+            "DBInstanceIdentifier": "hasivu-production-db"
+          },
+          "metricName": "DatabaseConnections",
+          "namespace": "AWS/RDS",
+          "period": "",
+          "refId": "B",
+          "region": "ap-south-1",
+          "statistics": ["Average"]
+        },
+        {
+          "alias": "Read Latency",
+          "dimensions": {
+            "DBInstanceIdentifier": "hasivu-production-db"
+          },
+          "metricName": "ReadLatency",
+          "namespace": "AWS/RDS",
+          "period": "",
+          "refId": "C",
+          "region": "ap-south-1",
+          "statistics": ["Average"]
+        },
+        {
+          "alias": "Write Latency",
+          "dimensions": {
+            "DBInstanceIdentifier": "hasivu-production-db"
+          },
+          "metricName": "WriteLatency",
+          "namespace": "AWS/RDS",
+          "period": "",
+          "refId": "D",
+          "region": "ap-south-1",
+          "statistics": ["Average"]
+        }
+      ],
+      "title": "Database Performance",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "CloudWatch",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 20
+      },
+      "id": 9,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "alias": "Cache Hit Ratio",
+          "dimensions": {
+            "CacheClusterId": "hasivu-redis-cluster"
+          },
+          "metricName": "CacheHitRate",
+          "namespace": "AWS/ElastiCache",
+          "period": "",
+          "refId": "A",
+          "region": "ap-south-1",
+          "statistics": ["Average"]
+        },
+        {
+          "alias": "Cache Miss Ratio",
+          "dimensions": {
+            "CacheClusterId": "hasivu-redis-cluster"
+          },
+          "metricName": "CacheMissRate",
+          "namespace": "AWS/ElastiCache",
+          "period": "",
+          "refId": "B",
+          "region": "ap-south-1",
+          "statistics": ["Average"]
+        },
+        {
+          "alias": "CPU Utilization",
+          "dimensions": {
+            "CacheClusterId": "hasivu-redis-cluster"
+          },
+          "metricName": "CPUUtilization",
+          "namespace": "AWS/ElastiCache",
+          "period": "",
+          "refId": "C",
+          "region": "ap-south-1",
+          "statistics": ["Average"]
+        }
+      ],
+      "title": "Redis Cache Performance",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "CloudWatch",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 20
+      },
+      "id": 10,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "alias": "Active RFID Readers",
+          "dimensions": {
+            "Environment": "$environment"
+          },
+          "metricName": "ActiveRFIDReaders",
+          "namespace": "HASIVU/Business",
+          "period": "",
+          "refId": "A",
+          "region": "ap-south-1",
+          "statistics": ["Average"]
+        },
+        {
+          "alias": "RFID Success Rate",
+          "dimensions": {
+            "Environment": "$environment"
+          },
+          "metricName": "RFIDSuccessRate",
+          "namespace": "HASIVU/Business",
+          "period": "",
+          "refId": "B",
+          "region": "ap-south-1",
+          "statistics": ["Average"]
+        },
+        {
+          "alias": "Fraud Detections",
+          "dimensions": {
+            "Environment": "$environment"
+          },
+          "metricName": "FraudDetections",
+          "namespace": "HASIVU/Business",
+          "period": "",
+          "refId": "C",
+          "region": "ap-south-1",
+          "statistics": ["Sum"]
+        }
+      ],
+      "title": "RFID & Security Metrics",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 27,
+  "style": "dark",
+  "tags": [
+    "hasivu",
+    "operations",
+    "technical",
+    "devops"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": false,
+          "text": "production",
+          "value": "production"
+        },
+        "description": null,
+        "error": null,
+        "hide": 0,
+        "includeAll": false,
+        "label": "Environment",
+        "multi": false,
+        "name": "environment",
+        "options": [
+          {
+            "selected": true,
+            "text": "production",
+            "value": "production"
+          },
+          {
+            "selected": false,
+            "text": "staging",
+            "value": "staging"
+          },
+          {
+            "selected": false,
+            "text": "development",
+            "value": "development"
+          }
+        ],
+        "query": "production,staging,development",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "30s",
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h",
+      "2h",
+      "1d"
+    ]
+  },
+  "timezone": "",
+  "title": "HASIVU Operations Dashboard",
+  "uid": "hasivu-ops",
+  "version": 1
+}

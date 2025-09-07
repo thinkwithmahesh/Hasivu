@@ -1,0 +1,234 @@
+# HASIVU Platform - Prometheus Configuration
+# Enterprise-grade metrics collection and monitoring for HASIVU serverless infrastructure
+# 
+# This configuration sets up Prometheus to collect metrics from:
+# - AWS CloudWatch metrics
+# - Application custom metrics
+# - Infrastructure health metrics
+# - Business metrics
+#
+# @author HASIVU Development Team
+# @version 2.0.0
+# @since 2024
+
+global:
+  scrape_interval: 30s
+  evaluation_interval: 30s
+  external_labels:
+    cluster: 'hasivu-platform'
+    environment: 'production'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+# Load alerting rules
+rule_files:
+  - "alert-rules/*.yml"
+  - "business-rules/*.yml"
+
+# Scrape configurations
+scrape_configs:
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+    scrape_interval: 15s
+    metrics_path: /metrics
+
+  # CloudWatch Exporter for AWS metrics
+  - job_name: 'cloudwatch-exporter'
+    static_configs:
+      - targets: ['cloudwatch-exporter:9106']
+    scrape_interval: 60s
+    scrape_timeout: 55s
+    metrics_path: /metrics
+
+  # Lambda Functions Metrics
+  - job_name: 'lambda-metrics'
+    ec2_sd_configs:
+      - region: ap-south-1
+        port: 9100
+        filters:
+          - name: tag:Type
+            values: ['lambda-exporter']
+    relabel_configs:
+      - source_labels: [__meta_ec2_tag_Name]
+        target_label: instance
+      - source_labels: [__meta_ec2_tag_Environment]
+        target_label: environment
+
+  # API Gateway Metrics
+  - job_name: 'api-gateway-metrics'
+    static_configs:
+      - targets: ['api-gateway-exporter:9090']
+    scrape_interval: 30s
+    metrics_path: /metrics
+    params:
+      region: ['ap-south-1']
+
+  # RDS Database Metrics
+  - job_name: 'rds-exporter'
+    static_configs:
+      - targets: ['rds-exporter:9042']
+    scrape_interval: 60s
+    params:
+      target: ['hasivu-production-db']
+
+  # ElastiCache Redis Metrics
+  - job_name: 'redis-exporter'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+    scrape_interval: 30s
+
+  # Custom Application Metrics
+  - job_name: 'hasivu-application-metrics'
+    static_configs:
+      - targets: ['app-metrics-endpoint:3001']
+    scrape_interval: 15s
+    metrics_path: /metrics
+    scheme: https
+    tls_config:
+      insecure_skip_verify: true
+    basic_auth:
+      username: 'hasivu-metrics'
+      password_file: '/etc/prometheus/metrics-password'
+
+  # Business Metrics from Custom Endpoint
+  - job_name: 'hasivu-business-metrics'
+    static_configs:
+      - targets: ['business-metrics-api:3002']
+    scrape_interval: 60s
+    metrics_path: /business/metrics
+    scheme: https
+    bearer_token_file: '/etc/prometheus/business-metrics-token'
+
+  # Health Check Metrics
+  - job_name: 'health-checks'
+    static_configs:
+      - targets: ['health-monitor:3003']
+    scrape_interval: 30s
+    metrics_path: /health/metrics
+
+  # RFID System Metrics
+  - job_name: 'rfid-system-metrics'
+    static_configs:
+      - targets: ['rfid-metrics:9090']
+    scrape_interval: 45s
+    params:
+      format: ['prometheus']
+
+  # Payment Gateway Metrics
+  - job_name: 'payment-metrics'
+    static_configs:
+      - targets: ['payment-exporter:9091']
+    scrape_interval: 30s
+    basic_auth:
+      username: 'payment-monitor'
+      password_file: '/etc/prometheus/payment-password'
+
+  # Cost Monitoring Metrics
+  - job_name: 'cost-monitoring'
+    static_configs:
+      - targets: ['cost-exporter:9092']
+    scrape_interval: 300s  # 5 minutes for cost data
+    scrape_timeout: 60s
+
+  # Infrastructure Security Metrics
+  - job_name: 'security-metrics'
+    static_configs:
+      - targets: ['security-exporter:9093']
+    scrape_interval: 60s
+    bearer_token_file: '/etc/prometheus/security-token'
+
+  # BlackBox Exporter for External Service Monitoring
+  - job_name: 'blackbox-http'
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+        - https://api.hasivu.com/health
+        - https://admin.hasivu.com/health
+        - https://dashboard.hasivu.com/health
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  # BlackBox Exporter for Database Connectivity
+  - job_name: 'blackbox-tcp'
+    metrics_path: /probe
+    params:
+      module: [tcp_connect]
+    static_configs:
+      - targets:
+        - hasivu-db:5432
+        - hasivu-redis:6379
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  # S3 Metrics
+  - job_name: 's3-metrics'
+    static_configs:
+      - targets: ['s3-exporter:9090']
+    scrape_interval: 300s
+    params:
+      bucket: ['hasivu-production-bucket']
+
+  # SNS/SQS Metrics
+  - job_name: 'messaging-metrics'
+    static_configs:
+      - targets: ['messaging-exporter:9094']
+    scrape_interval: 60s
+
+  # Custom Error Tracking
+  - job_name: 'error-tracking'
+    static_configs:
+      - targets: ['error-tracker:9095']
+    scrape_interval: 30s
+    metrics_path: /errors/metrics
+
+# Remote write configuration for long-term storage
+remote_write:
+  - url: "https://prometheus-remote-storage.hasivu.com/api/v1/write"
+    queue_config:
+      max_samples_per_send: 1000
+      max_shards: 10
+      capacity: 5000
+    write_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'hasivu_.*'
+        action: keep
+
+# Remote read configuration
+remote_read:
+  - url: "https://prometheus-remote-storage.hasivu.com/api/v1/read"
+    read_recent: true
+
+# Storage configuration
+storage:
+  tsdb:
+    retention.time: 30d
+    retention.size: 50GB
+    min-block-duration: 2h
+    max-block-duration: 25h
+
+# ClickHouse integration for high-cardinality metrics
+# Uncomment and configure if using ClickHouse for metrics storage
+# remote_write:
+#   - url: "http://clickhouse:8123/?query=INSERT%20INTO%20prometheus_metrics%20FORMAT%20Prometheus"
+#     headers:
+#       X-ClickHouse-User: prometheus
+#       X-ClickHouse-Key: your-password-here

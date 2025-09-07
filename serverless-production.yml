@@ -1,0 +1,644 @@
+service: hasivu-platform-api
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ${env:AWS_REGION, 'ap-south-1'}
+  stage: ${opt:stage, 'production'}
+  memorySize: 1024
+  timeout: 30
+  logRetentionInDays: 30
+  
+  # Production-ready VPC configuration
+  vpc:
+    securityGroupIds:
+      - ${env:LAMBDA_SECURITY_GROUP_ID}
+    subnetIds:
+      - ${env:LAMBDA_SUBNET_1_ID}
+      - ${env:LAMBDA_SUBNET_2_ID}
+      - ${env:LAMBDA_SUBNET_3_ID}
+  
+  environment:
+    NODE_ENV: production
+    DATABASE_URL: ${ssm:/${self:service}/${self:provider.stage}/database/url~true}
+    REDIS_URL: ${ssm:/${self:service}/${self:provider.stage}/redis/url~true}
+    COGNITO_USER_POOL_ID: ${cf:hasivu-infrastructure-${self:provider.stage}.CognitoUserPoolId}
+    COGNITO_CLIENT_ID: ${cf:hasivu-infrastructure-${self:provider.stage}.CognitoClientId}
+    COGNITO_REGION: ${self:provider.region}
+    
+    # AWS Services Configuration
+    S3_BUCKET_NAME: ${cf:hasivu-infrastructure-${self:provider.stage}.S3BucketName}
+    S3_REGION: ${self:provider.region}
+    
+    # Secrets Manager Configuration
+    RAZORPAY_SECRET_ARN: ${cf:hasivu-infrastructure-${self:provider.stage}.RazorpaySecretArn}
+    WHATSAPP_SECRET_ARN: ${cf:hasivu-infrastructure-${self:provider.stage}.WhatsAppSecretArn}
+    JWT_SECRET_ARN: ${cf:hasivu-infrastructure-${self:provider.stage}.JwtSecretArn}
+    
+    # External Service URLs
+    FRONTEND_URL: ${env:FRONTEND_URL, 'https://app.hasivu.com'}
+    ADMIN_URL: ${env:ADMIN_URL, 'https://admin.hasivu.com'}
+    
+    # Performance and Monitoring
+    X_RAY_TRACING: true
+    POWERTOOLS_SERVICE_NAME: hasivu-platform-api
+    POWERTOOLS_METRICS_NAMESPACE: HASIVU/Platform
+    LOG_LEVEL: ${env:LOG_LEVEL, 'info'}
+    
+    # Application Configuration
+    API_VERSION: v1
+    MAX_FILE_SIZE: 10485760 # 10MB
+    CORS_ALLOWED_ORIGINS: https://app.hasivu.com,https://admin.hasivu.com
+    
+  # Enhanced IAM Permissions
+  iamRoleStatements:
+    # Cognito Identity Provider
+    - Effect: Allow
+      Action:
+        - cognito-idp:AdminInitiateAuth
+        - cognito-idp:AdminCreateUser
+        - cognito-idp:AdminSetUserPassword
+        - cognito-idp:AdminUpdateUserAttributes
+        - cognito-idp:AdminDeleteUser
+        - cognito-idp:AdminListGroupsForUser
+        - cognito-idp:AdminAddUserToGroup
+        - cognito-idp:AdminRemoveUserFromGroup
+        - cognito-idp:ListUsers
+        - cognito-idp:AdminGetUser
+        - cognito-idp:AdminConfirmSignUp
+        - cognito-idp:AdminEnableUser
+        - cognito-idp:AdminDisableUser
+      Resource: !Sub "arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${CognitoUserPool}"
+    
+    # Secrets Manager
+    - Effect: Allow
+      Action:
+        - secretsmanager:GetSecretValue
+        - secretsmanager:DescribeSecret
+      Resource:
+        - ${cf:hasivu-infrastructure-${self:provider.stage}.RazorpaySecretArn}
+        - ${cf:hasivu-infrastructure-${self:provider.stage}.WhatsAppSecretArn}
+        - ${cf:hasivu-infrastructure-${self:provider.stage}.JwtSecretArn}
+    
+    # S3 Operations
+    - Effect: Allow
+      Action:
+        - s3:GetObject
+        - s3:PutObject
+        - s3:DeleteObject
+        - s3:PutObjectAcl
+      Resource: "${cf:hasivu-infrastructure-${self:provider.stage}.S3BucketArn}/*"
+    
+    - Effect: Allow
+      Action:
+        - s3:ListBucket
+      Resource: "${cf:hasivu-infrastructure-${self:provider.stage}.S3BucketArn}"
+    
+    # SES (Email Service)
+    - Effect: Allow
+      Action:
+        - ses:SendEmail
+        - ses:SendRawEmail
+        - ses:SendTemplatedEmail
+      Resource:
+        - !Sub "arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/${DomainName}"
+        - !Sub "arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/*@${DomainName}"
+    
+    # RDS Proxy Access (for PostgreSQL)
+    - Effect: Allow
+      Action:
+        - rds-db:connect
+      Resource: !Sub "arn:aws:rds-db:${AWS::Region}:${AWS::AccountId}:dbuser:${RDSProxy}/hasivu_app_user"
+    
+    # Systems Manager (Parameter Store)
+    - Effect: Allow
+      Action:
+        - ssm:GetParameter
+        - ssm:GetParameters
+        - ssm:GetParametersByPath
+      Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${self:service}/${self:provider.stage}/*"
+    
+    # CloudWatch Logs
+    - Effect: Allow
+      Action:
+        - logs:CreateLogGroup
+        - logs:CreateLogStream
+        - logs:PutLogEvents
+        - logs:DescribeLogGroups
+        - logs:DescribeLogStreams
+      Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*"
+    
+    # X-Ray Tracing
+    - Effect: Allow
+      Action:
+        - xray:PutTraceSegments
+        - xray:PutTelemetryRecords
+      Resource: "*"
+    
+    # CloudWatch Metrics
+    - Effect: Allow
+      Action:
+        - cloudwatch:PutMetricData
+      Resource: "*"
+      Condition:
+        StringEquals:
+          "cloudwatch:namespace": "HASIVU/Platform"
+
+  # Enhanced API Gateway Configuration
+  httpApi:
+    cors:
+      allowedOrigins:
+        - https://app.hasivu.com
+        - https://admin.hasivu.com
+        - https://www.hasivu.com
+      allowedMethods: 
+        - GET
+        - POST
+        - PUT
+        - PATCH
+        - DELETE
+        - OPTIONS
+      allowedHeaders:
+        - Content-Type
+        - Authorization
+        - X-Amz-Date
+        - X-Api-Key
+        - X-Amz-Security-Token
+        - X-Requested-With
+      allowCredentials: true
+      maxAge: 86400
+    
+    # JWT Authorizer for Cognito
+    authorizers:
+      cognitoAuthorizer:
+        type: jwt
+        identitySource: $request.header.Authorization
+        issuerUrl: !Sub "https://cognito-idp.${AWS::Region}.amazonaws.com/${CognitoUserPool}"
+        audience:
+          - !Ref CognitoUserPoolClient
+    
+    # Throttling Configuration
+    throttle:
+      burstLimit: 1000
+      rateLimit: 500
+    
+    # Custom Domain
+    domain:
+      domainName: api.hasivu.com
+      certificateArn: ${env:SSL_CERTIFICATE_ARN}
+      createRoute53Record: true
+      endpointType: regional
+      securityPolicy: tls_1_2
+      apiType: http
+
+plugins:
+  - serverless-plugin-typescript
+  - serverless-offline
+  - serverless-dotenv-plugin
+  - serverless-prune-plugin
+  - serverless-plugin-aws-alerts
+  - serverless-plugin-tracing
+  - serverless-domain-manager
+
+custom:
+  # Plugin configurations
+  prune:
+    automatic: true
+    number: 5
+  
+  serverless-offline:
+    httpPort: 3001
+    lambdaPort: 3002
+    host: 0.0.0.0
+    
+  # X-Ray Tracing
+  tracing:
+    lambda: true
+    apiGateway: true
+    
+  # CloudWatch Alarms
+  alerts:
+    stages:
+      - production
+      - staging
+    topics:
+      alarm: ${cf:hasivu-infrastructure-${self:provider.stage}.AlertingTopicArn}
+    alarms:
+      - functionErrors
+      - functionThrottles
+      - functionDuration
+    
+  # Domain Manager
+  customDomain:
+    domainName: api.hasivu.com
+    stage: ${self:provider.stage}
+    certificateName: '*.hasivu.com'
+    createRoute53Record: true
+    endpointType: regional
+    securityPolicy: tls_1_2
+    apiType: http
+    autoDomain: false
+
+# Package Configuration
+package:
+  exclude:
+    - node_modules/**
+    - src/**/*.test.ts
+    - src/**/*.spec.ts
+    - coverage/**
+    - .git/**
+    - docs/**
+    - migration/**
+    - .nyc_output/**
+    - .serverless/**
+    - .webpack/**
+    - '*.md'
+    - '.env*'
+    - docker-compose.yml
+    - Dockerfile*
+    - infrastructure/**
+    - scripts/**
+    - web/**
+
+functions:
+  # Authentication Functions - Enhanced with proper error handling and monitoring
+  register:
+    handler: src/functions/auth/register.registerHandler
+    events:
+      - httpApi:
+          path: /auth/register
+          method: post
+    environment:
+      FUNCTION_NAME: register
+    reservedConcurrency: 50
+    layers:
+      - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
+      
+  login:
+    handler: src/functions/auth/login.loginHandler
+    events:
+      - httpApi:
+          path: /auth/login
+          method: post
+    environment:
+      FUNCTION_NAME: login
+    reservedConcurrency: 100
+    layers:
+      - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
+      
+  refreshToken:
+    handler: src/functions/auth/refresh.refreshTokenHandler
+    events:
+      - httpApi:
+          path: /auth/refresh
+          method: post
+    environment:
+      FUNCTION_NAME: refresh-token
+    layers:
+      - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
+      
+  getUserProfile:
+    handler: src/functions/auth/profile.getUserProfileHandler
+    events:
+      - httpApi:
+          path: /auth/me
+          method: get
+          authorizer: cognitoAuthorizer
+    environment:
+      FUNCTION_NAME: get-user-profile
+    layers:
+      - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
+      
+  logout:
+    handler: src/functions/auth/logout.logoutHandler
+    events:
+      - httpApi:
+          path: /auth/logout
+          method: post
+          authorizer: cognitoAuthorizer
+    environment:
+      FUNCTION_NAME: logout
+    layers:
+      - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
+      
+  updateProfile:
+    handler: src/functions/auth/update-profile.updateProfileHandler
+    events:
+      - httpApi:
+          path: /auth/profile
+          method: patch
+          authorizer: cognitoAuthorizer
+    environment:
+      FUNCTION_NAME: update-profile
+    layers:
+      - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
+      
+  changePassword:
+    handler: src/functions/auth/change-password.changePasswordHandler
+    events:
+      - httpApi:
+          path: /auth/change-password
+          method: patch
+          authorizer: cognitoAuthorizer
+    environment:
+      FUNCTION_NAME: change-password
+    layers:
+      - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
+
+  # Health Check Functions - Critical for production monitoring
+  healthBasic:
+    handler: src/functions/health/basic.healthBasicHandler
+    events:
+      - httpApi:
+          path: /health
+          method: get
+      - schedule: rate(2 minutes)
+    environment:
+      FUNCTION_NAME: health-basic
+    reservedConcurrency: 10
+    layers:
+      - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
+      
+  healthDetailed:
+    handler: src/functions/health/detailed.healthDetailedHandler
+    events:
+      - httpApi:
+          path: /health/detailed
+          method: get
+          authorizer: cognitoAuthorizer
+    timeout: 60
+    environment:
+      FUNCTION_NAME: health-detailed
+    layers:
+      - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
+      
+  healthReady:
+    handler: src/functions/health/ready.healthReadyHandler
+    events:
+      - httpApi:
+          path: /health/ready
+          method: get
+    environment:
+      FUNCTION_NAME: health-ready
+    layers:
+      - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
+      
+  healthLive:
+    handler: src/functions/health/live.healthLiveHandler
+    events:
+      - httpApi:
+          path: /health/live
+          method: get
+    environment:
+      FUNCTION_NAME: health-live
+    layers:
+      - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
+
+  # User Management Functions
+  getUsers:
+    handler: src/functions/users/getUsers.getUsersHandler
+    events:
+      - httpApi:
+          path: /users
+          method: get
+          authorizer: cognitoAuthorizer
+    environment:
+      FUNCTION_NAME: get-users
+    layers:
+      - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
+      
+  getUserById:
+    handler: src/functions/users/getUserById.getUserByIdHandler
+    events:
+      - httpApi:
+          path: /users/{id}
+          method: get
+          authorizer: cognitoAuthorizer
+    environment:
+      FUNCTION_NAME: get-user-by-id
+    layers:
+      - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
+      
+  updateUser:
+    handler: src/functions/users/updateUser.updateUserHandler
+    events:
+      - httpApi:
+          path: /users/{id}
+          method: put
+          authorizer: cognitoAuthorizer
+    environment:
+      FUNCTION_NAME: update-user
+    layers:
+      - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
+      
+  bulkImportUsers:
+    handler: src/functions/users/bulkImport.bulkImportUsersHandler
+    events:
+      - httpApi:
+          path: /users/bulk-import
+          method: post
+          authorizer: cognitoAuthorizer
+    timeout: 300
+    memorySize: 2048
+    reservedConcurrency: 5
+    environment:
+      FUNCTION_NAME: bulk-import-users
+    layers:
+      - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
+      
+  manageChildren:
+    handler: src/functions/users/manageChildren.manageChildrenHandler
+    events:
+      - httpApi:
+          path: /users/{id}/children
+          method: post
+          authorizer: cognitoAuthorizer
+    environment:
+      FUNCTION_NAME: manage-children
+    layers:
+      - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
+
+  # RFID Functions
+  createRfidCard:
+    handler: src/functions/rfid/create-card.createRfidCardHandler
+    events:
+      - httpApi:
+          path: /rfid/cards
+          method: post
+          authorizer: cognitoAuthorizer
+    environment:
+      FUNCTION_NAME: create-rfid-card
+    layers:
+      - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
+      
+  verifyRfidCard:
+    handler: src/functions/rfid/verify-card.verifyRfidCardHandler
+    events:
+      - httpApi:
+          path: /rfid/verify
+          method: post
+          authorizer: cognitoAuthorizer
+    environment:
+      FUNCTION_NAME: verify-rfid-card
+    layers:
+      - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
+      
+  getRfidCard:
+    handler: src/functions/rfid/get-card.getRfidCardHandler
+    events:
+      - httpApi:
+          path: /rfid/cards/{cardNumber}
+          method: get
+          authorizer: cognitoAuthorizer
+    environment:
+      FUNCTION_NAME: get-rfid-card
+    layers:
+      - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
+
+  # Payment Functions - Critical for business operations
+  createPaymentOrder:
+    handler: src/functions/payment/create-order.createPaymentOrderHandler
+    events:
+      - httpApi:
+          path: /payment/orders
+          method: post
+          authorizer: cognitoAuthorizer
+    environment:
+      FUNCTION_NAME: create-payment-order
+    reservedConcurrency: 100
+    layers:
+      - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
+      
+  verifyPayment:
+    handler: src/functions/payment/verify.verifyPaymentHandler
+    events:
+      - httpApi:
+          path: /payment/verify
+          method: post
+          authorizer: cognitoAuthorizer
+    environment:
+      FUNCTION_NAME: verify-payment
+    reservedConcurrency: 100
+    layers:
+      - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
+      
+  paymentWebhook:
+    handler: src/functions/payment/webhook.paymentWebhookHandler
+    events:
+      - httpApi:
+          path: /payment/webhook
+          method: post
+    environment:
+      FUNCTION_NAME: payment-webhook
+    reservedConcurrency: 50
+    layers:
+      - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
+
+  # Menu Management Functions
+  getMenuItems:
+    handler: src/functions/menu/getMenuItems.getMenuItemsHandler
+    events:
+      - httpApi:
+          path: /menu/items
+          method: get
+    environment:
+      FUNCTION_NAME: get-menu-items
+    layers:
+      - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
+      
+  getMenuItemById:
+    handler: src/functions/menu/getMenuItemById.getMenuItemByIdHandler
+    events:
+      - httpApi:
+          path: /menu/items/{id}
+          method: get
+    environment:
+      FUNCTION_NAME: get-menu-item-by-id
+    layers:
+      - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
+      
+  createMenuItem:
+    handler: src/functions/menu/createMenuItem.createMenuItemHandler
+    events:
+      - httpApi:
+          path: /menu/items
+          method: post
+          authorizer: cognitoAuthorizer
+    environment:
+      FUNCTION_NAME: create-menu-item
+    layers:
+      - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
+      
+  updateMenuItem:
+    handler: src/functions/menu/updateMenuItem.updateMenuItemHandler
+    events:
+      - httpApi:
+          path: /menu/items/{id}
+          method: put
+          authorizer: cognitoAuthorizer
+    environment:
+      FUNCTION_NAME: update-menu-item
+    layers:
+      - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
+      
+  deleteMenuItem:
+    handler: src/functions/menu/deleteMenuItem.deleteMenuItemHandler
+    events:
+      - httpApi:
+          path: /menu/items/{id}
+          method: delete
+          authorizer: cognitoAuthorizer
+    environment:
+      FUNCTION_NAME: delete-menu-item
+    layers:
+      - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
+      
+  searchMenuItems:
+    handler: src/functions/menu/searchMenuItems.searchMenuItemsHandler
+    events:
+      - httpApi:
+          path: /menu/search
+          method: get
+    environment:
+      FUNCTION_NAME: search-menu-items
+    layers:
+      - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
+
+  # Notification Functions
+  sendNotification:
+    handler: src/functions/notification/send.sendNotificationHandler
+    events:
+      - httpApi:
+          path: /notification/send
+          method: post
+          authorizer: cognitoAuthorizer
+    environment:
+      FUNCTION_NAME: send-notification
+    layers:
+      - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
+      
+  getNotifications:
+    handler: src/functions/notification/get-notifications.getNotificationsHandler
+    events:
+      - httpApi:
+          path: /notification
+          method: get
+          authorizer: cognitoAuthorizer
+    environment:
+      FUNCTION_NAME: get-notifications
+    layers:
+      - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
+      
+  whatsappWebhook:
+    handler: src/functions/notification/whatsapp-webhook.whatsappWebhookHandler
+    events:
+      - httpApi:
+          path: /notification/webhooks/whatsapp
+          method: post
+    environment:
+      FUNCTION_NAME: whatsapp-webhook
+    reservedConcurrency: 100
+    layers:
+      - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
+
+# No CloudFormation resources in this file - they're in separate infrastructure templates

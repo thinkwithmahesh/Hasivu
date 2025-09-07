@@ -1,0 +1,653 @@
+# HASIVU Platform - Infrastructure Deployment Pipeline
+# Dedicated workflow for infrastructure provisioning and management
+# Supports Terraform, CloudFormation, and monitoring setup
+
+name: Infrastructure Deployment
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'infrastructure/**'
+      - '.github/workflows/infrastructure-deployment.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'infrastructure/**'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy infrastructure'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+      destroy_resources:
+        description: 'Destroy existing resources (DANGER)'
+        type: boolean
+        default: false
+      plan_only:
+        description: 'Only run Terraform plan (no apply)'
+        type: boolean
+        default: false
+
+env:
+  AWS_REGION: 'ap-south-1'
+  TERRAFORM_VERSION: '1.6.0'
+  CHECKOV_VERSION: '2.5.0'
+
+concurrency:
+  group: infrastructure-${{ github.ref }}-${{ github.event.inputs.environment || 'auto' }}
+  cancel-in-progress: false
+
+jobs:
+  # =====================================================
+  # INFRASTRUCTURE VALIDATION
+  # =====================================================
+  
+  validate-infrastructure:
+    name: Validate Infrastructure Code
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    outputs:
+      terraform-changed: ${{ steps.detect-changes.outputs.terraform }}
+      cloudformation-changed: ${{ steps.detect-changes.outputs.cloudformation }}
+      should-deploy: ${{ steps.determine-action.outputs.should-deploy }}
+      target-env: ${{ steps.determine-action.outputs.environment }}
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Detect Infrastructure Changes
+        id: detect-changes
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "terraform=true" >> $GITHUB_OUTPUT
+            echo "cloudformation=true" >> $GITHUB_OUTPUT
+          else
+            # Check for changes in infrastructure files
+            if git diff --name-only ${{ github.event.before }}..${{ github.sha }} | grep -q 'infrastructure/terraform/'; then
+              echo "terraform=true" >> $GITHUB_OUTPUT
+            else
+              echo "terraform=false" >> $GITHUB_OUTPUT
+            fi
+            
+            if git diff --name-only ${{ github.event.before }}..${{ github.sha }} | grep -q 'infrastructure/cloudformation/'; then
+              echo "cloudformation=true" >> $GITHUB_OUTPUT
+            else
+              echo "cloudformation=false" >> $GITHUB_OUTPUT
+            fi
+          fi
+      
+      - name: Determine Deployment Action
+        id: determine-action
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            ENVIRONMENT="${{ github.event.inputs.environment }}"
+            SHOULD_DEPLOY="true"
+          elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            ENVIRONMENT="production"
+            SHOULD_DEPLOY="true"
+          elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
+            ENVIRONMENT="staging"
+            SHOULD_DEPLOY="true"
+          else
+            ENVIRONMENT="staging"
+            SHOULD_DEPLOY="false"
+          fi
+          
+          echo "environment=$ENVIRONMENT" >> $GITHUB_OUTPUT
+          echo "should-deploy=$SHOULD_DEPLOY" >> $GITHUB_OUTPUT
+          
+          echo "🎯 Target Environment: $ENVIRONMENT"
+          echo "🚀 Should Deploy: $SHOULD_DEPLOY"
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+      
+      - name: Terraform Format Check
+        if: steps.detect-changes.outputs.terraform == 'true'
+        run: |
+          cd infrastructure/terraform
+          terraform fmt -check -recursive
+          echo "✅ Terraform format check passed"
+      
+      - name: Terraform Validation
+        if: steps.detect-changes.outputs.terraform == 'true'
+        run: |
+          cd infrastructure/terraform
+          terraform init -backend=false
+          terraform validate
+          echo "✅ Terraform validation passed"
+      
+      - name: Install Checkov
+        if: steps.detect-changes.outputs.terraform == 'true' || steps.detect-changes.outputs.cloudformation == 'true'
+        run: |
+          pip3 install checkov==${{ env.CHECKOV_VERSION }}
+          echo "✅ Checkov security scanner installed"
+      
+      - name: Security Scan - Terraform
+        if: steps.detect-changes.outputs.terraform == 'true'
+        run: |
+          echo "🔐 Running Terraform security scan..."
+          checkov -d infrastructure/terraform \
+            --framework terraform \
+            --output cli \
+            --compact \
+            --quiet || {
+            echo "⚠️ Security scan found issues (non-blocking)"
+          }
+      
+      - name: Security Scan - CloudFormation
+        if: steps.detect-changes.outputs.cloudformation == 'true'
+        run: |
+          echo "🔐 Running CloudFormation security scan..."
+          checkov -d infrastructure/cloudformation \
+            --framework cloudformation \
+            --output cli \
+            --compact \
+            --quiet || {
+            echo "⚠️ Security scan found issues (non-blocking)"
+          }
+      
+      - name: Validate CloudFormation Templates
+        if: steps.detect-changes.outputs.cloudformation == 'true'
+        run: |
+          echo "📋 Validating CloudFormation templates..."
+          
+          aws configure set default.region ${{ env.AWS_REGION }}
+          
+          for template in infrastructure/cloudformation/*.yml infrastructure/cloudformation/*.yaml; do
+            if [[ -f "$template" ]]; then
+              echo "Validating: $template"
+              aws cloudformation validate-template --template-body "file://$template" || {
+                echo "❌ Validation failed for $template"
+                exit 1
+              }
+            fi
+          done
+          
+          echo "✅ All CloudFormation templates validated"
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ env.AWS_REGION }}
+
+  # =====================================================
+  # TERRAFORM INFRASTRUCTURE MANAGEMENT
+  # =====================================================
+  
+  terraform-plan:
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+    needs: validate-infrastructure
+    if: needs.validate-infrastructure.outputs.terraform-changed == 'true'
+    timeout-minutes: 20
+    
+    outputs:
+      plan-changes: ${{ steps.plan.outputs.changes }}
+      plan-summary: ${{ steps.plan.outputs.summary }}
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+      
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Terraform Init
+        run: |
+          cd infrastructure/terraform
+          terraform init \
+            -backend-config="bucket=hasivu-terraform-state-${{ needs.validate-infrastructure.outputs.target-env }}" \
+            -backend-config="key=infrastructure/terraform.tfstate" \
+            -backend-config="region=${{ env.AWS_REGION }}"
+          echo "✅ Terraform initialized"
+      
+      - name: Terraform Plan
+        id: plan
+        run: |
+          cd infrastructure/terraform
+          
+          # Generate plan
+          terraform plan \
+            -var-file="environments/${{ needs.validate-infrastructure.outputs.target-env }}.tfvars" \
+            -out=tfplan \
+            -detailed-exitcode 2>&1 | tee plan.log
+          
+          PLAN_EXIT_CODE=${PIPESTATUS[0]}
+          
+          # Extract plan summary
+          CHANGES=$(grep -E "(Plan:|No changes)" plan.log | tail -1 || echo "Plan status unknown")
+          echo "changes=$CHANGES" >> $GITHUB_OUTPUT
+          
+          # Create plan summary
+          if [[ $PLAN_EXIT_CODE -eq 0 ]]; then
+            SUMMARY="🟢 No infrastructure changes required"
+          elif [[ $PLAN_EXIT_CODE -eq 2 ]]; then
+            SUMMARY="🟡 Infrastructure changes detected"
+          else
+            SUMMARY="🔴 Terraform plan failed"
+            exit 1
+          fi
+          
+          echo "summary=$SUMMARY" >> $GITHUB_OUTPUT
+          echo "$SUMMARY"
+      
+      - name: Comment PR with Plan
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const planLog = fs.readFileSync('infrastructure/terraform/plan.log', 'utf8');
+            
+            const comment = `## 🏗️ Terraform Plan - ${{ needs.validate-infrastructure.outputs.target-env }}
+            
+            ${{ steps.plan.outputs.summary }}
+            
+            <details>
+            <summary>📋 Full Terraform Plan</summary>
+            
+            \`\`\`hcl
+            ${planLog.slice(0, 32000)} // Truncate if too long
+            \`\`\`
+            
+            </details>
+            
+            **Environment:** ${{ needs.validate-infrastructure.outputs.target-env }}
+            **Changes:** ${{ steps.plan.outputs.changes }}
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+      
+      - name: Upload Plan Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-plan-${{ needs.validate-infrastructure.outputs.target-env }}
+          path: |
+            infrastructure/terraform/tfplan
+            infrastructure/terraform/plan.log
+          retention-days: 7
+
+  terraform-apply:
+    name: Apply Terraform Changes
+    runs-on: ubuntu-latest
+    needs: [validate-infrastructure, terraform-plan]
+    if: |
+      needs.validate-infrastructure.outputs.should-deploy == 'true' &&
+      needs.validate-infrastructure.outputs.terraform-changed == 'true' &&
+      github.event.inputs.plan_only != 'true' &&
+      github.event.inputs.destroy_resources != 'true'
+    timeout-minutes: 30
+    environment:
+      name: ${{ needs.validate-infrastructure.outputs.target-env }}-infrastructure
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+      
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_DEPLOYMENT_ROLE_ARN }}
+          role-session-name: hasivu-terraform-apply
+      
+      - name: Download Plan Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: terraform-plan-${{ needs.validate-infrastructure.outputs.target-env }}
+          path: infrastructure/terraform/
+      
+      - name: Terraform Init
+        run: |
+          cd infrastructure/terraform
+          terraform init \
+            -backend-config="bucket=hasivu-terraform-state-${{ needs.validate-infrastructure.outputs.target-env }}" \
+            -backend-config="key=infrastructure/terraform.tfstate" \
+            -backend-config="region=${{ env.AWS_REGION }}"
+      
+      - name: Terraform Apply
+        run: |
+          cd infrastructure/terraform
+          
+          echo "🚀 Applying Terraform changes for ${{ needs.validate-infrastructure.outputs.target-env }}..."
+          
+          terraform apply \
+            -auto-approve \
+            -input=false \
+            tfplan 2>&1 | tee apply.log
+          
+          echo "✅ Terraform apply completed successfully"
+      
+      - name: Extract Terraform Outputs
+        run: |
+          cd infrastructure/terraform
+          
+          echo "📋 Terraform Outputs:"
+          terraform output -json > outputs.json
+          
+          # Display key outputs
+          echo "🔗 VPC ID: $(terraform output -raw vpc_id || echo 'N/A')"
+          echo "🔗 RDS Endpoint: $(terraform output -raw rds_endpoint || echo 'N/A')"
+          echo "🔗 Redis Endpoint: $(terraform output -raw redis_endpoint || echo 'N/A')"
+      
+      - name: Upload Apply Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-apply-${{ needs.validate-infrastructure.outputs.target-env }}
+          path: |
+            infrastructure/terraform/apply.log
+            infrastructure/terraform/outputs.json
+          retention-days: 30
+
+  # =====================================================
+  # CLOUDFORMATION INFRASTRUCTURE DEPLOYMENT
+  # =====================================================
+  
+  deploy-cloudformation:
+    name: Deploy CloudFormation Stacks
+    runs-on: ubuntu-latest
+    needs: validate-infrastructure
+    if: |
+      needs.validate-infrastructure.outputs.should-deploy == 'true' &&
+      needs.validate-infrastructure.outputs.cloudformation-changed == 'true'
+    timeout-minutes: 45
+    environment:
+      name: ${{ needs.validate-infrastructure.outputs.target-env }}-infrastructure
+    
+    strategy:
+      matrix:
+        stack:
+          - name: infrastructure
+            template: infrastructure/cloudformation/infrastructure.yml
+            priority: 1
+          - name: monitoring
+            template: infrastructure/cloudformation/monitoring.yml
+            priority: 2
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_DEPLOYMENT_ROLE_ARN }}
+          role-session-name: hasivu-cloudformation-deploy
+      
+      - name: Deploy CloudFormation Stack
+        run: |
+          echo "🏗️ Deploying ${{ matrix.stack.name }} stack for ${{ needs.validate-infrastructure.outputs.target-env }}..."
+          
+          STACK_NAME="hasivu-${{ matrix.stack.name }}-${{ needs.validate-infrastructure.outputs.target-env }}"
+          
+          # Deploy stack with proper parameters
+          aws cloudformation deploy \
+            --template-file ${{ matrix.stack.template }} \
+            --stack-name "$STACK_NAME" \
+            --parameter-overrides \
+              EnvironmentName=${{ needs.validate-infrastructure.outputs.target-env }} \
+              ProjectName=HASIVU \
+              DomainName=hasivu.com \
+              NotificationEmail=${{ secrets.NOTIFICATION_EMAIL }} \
+              DatabaseMasterPassword=${{ secrets[format('{0}_DB_PASSWORD', needs.validate-infrastructure.outputs.target-env == 'production' && 'PRODUCTION' || 'STAGING')] }} \
+            --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
+            --no-fail-on-empty-changeset \
+            --tags \
+              Project=HASIVU \
+              Environment=${{ needs.validate-infrastructure.outputs.target-env }} \
+              ManagedBy=GitHub-Actions \
+              StackType=${{ matrix.stack.name }} \
+              DeployedBy=${{ github.actor }}
+          
+          echo "✅ ${{ matrix.stack.name }} stack deployed successfully"
+      
+      - name: Capture Stack Outputs
+        run: |
+          STACK_NAME="hasivu-${{ matrix.stack.name }}-${{ needs.validate-infrastructure.outputs.target-env }}"
+          
+          echo "📋 Capturing outputs for ${{ matrix.stack.name }} stack..."
+          
+          aws cloudformation describe-stacks \
+            --stack-name "$STACK_NAME" \
+            --query 'Stacks[0].Outputs' \
+            --output table
+          
+          # Save outputs to file
+          aws cloudformation describe-stacks \
+            --stack-name "$STACK_NAME" \
+            --query 'Stacks[0].Outputs' \
+            --output json > "${{ matrix.stack.name }}-outputs.json"
+      
+      - name: Upload Stack Outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: cloudformation-outputs-${{ matrix.stack.name }}-${{ needs.validate-infrastructure.outputs.target-env }}
+          path: ${{ matrix.stack.name }}-outputs.json
+          retention-days: 30
+
+  # =====================================================
+  # MONITORING SETUP
+  # =====================================================
+  
+  setup-monitoring:
+    name: Setup Monitoring & Dashboards
+    runs-on: ubuntu-latest
+    needs: [validate-infrastructure, deploy-cloudformation]
+    if: needs.validate-infrastructure.outputs.should-deploy == 'true'
+    timeout-minutes: 15
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Create CloudWatch Dashboard
+        run: |
+          echo "📊 Setting up CloudWatch dashboard for ${{ needs.validate-infrastructure.outputs.target-env }}..."
+          
+          # Replace environment placeholders in dashboard config
+          sed "s/ENVIRONMENT_PLACEHOLDER/${{ needs.validate-infrastructure.outputs.target-env }}/g; s/REGION_PLACEHOLDER/${{ env.AWS_REGION }}/g" \
+            infrastructure/monitoring/cloudwatch-dashboard.json > dashboard-config.json
+          
+          aws cloudwatch put-dashboard \
+            --dashboard-name "HASIVU-Platform-${{ needs.validate-infrastructure.outputs.target-env }}" \
+            --dashboard-body file://dashboard-config.json
+          
+          echo "✅ CloudWatch dashboard created"
+      
+      - name: Setup CloudWatch Alarms
+        run: |
+          echo "🚨 Setting up CloudWatch alarms..."
+          
+          ENV="${{ needs.validate-infrastructure.outputs.target-env }}"
+          SERVICE_NAME="hasivu-platform-api-$ENV"
+          
+          # Lambda Error Rate Alarm
+          aws cloudwatch put-metric-alarm \
+            --alarm-name "$SERVICE_NAME-high-error-rate" \
+            --alarm-description "High error rate for HASIVU Platform Lambda functions" \
+            --metric-name Errors \
+            --namespace AWS/Lambda \
+            --statistic Sum \
+            --period 300 \
+            --threshold 10 \
+            --comparison-operator GreaterThanThreshold \
+            --dimensions Name=FunctionName,Value="$SERVICE_NAME-login" \
+            --evaluation-periods 2 \
+            --alarm-actions arn:aws:sns:${{ env.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:hasivu-alerts-$ENV \
+            --treat-missing-data notBreaching
+          
+          # Lambda Duration Alarm
+          aws cloudwatch put-metric-alarm \
+            --alarm-name "$SERVICE_NAME-high-duration" \
+            --alarm-description "High duration for HASIVU Platform Lambda functions" \
+            --metric-name Duration \
+            --namespace AWS/Lambda \
+            --statistic Average \
+            --period 300 \
+            --threshold 10000 \
+            --comparison-operator GreaterThanThreshold \
+            --dimensions Name=FunctionName,Value="$SERVICE_NAME-login" \
+            --evaluation-periods 2 \
+            --alarm-actions arn:aws:sns:${{ env.AWS_REGION }}:${{ secrets.AWS_ACCOUNT_ID }}:hasivu-alerts-$ENV \
+            --treat-missing-data notBreaching
+          
+          echo "✅ CloudWatch alarms configured"
+
+  # =====================================================
+  # DESTROY INFRASTRUCTURE (DANGER ZONE)
+  # =====================================================
+  
+  destroy-infrastructure:
+    name: Destroy Infrastructure (DANGER)
+    runs-on: ubuntu-latest
+    needs: validate-infrastructure
+    if: github.event.inputs.destroy_resources == 'true' && github.event_name == 'workflow_dispatch'
+    timeout-minutes: 30
+    environment:
+      name: destroy-${{ needs.validate-infrastructure.outputs.target-env }}
+    
+    steps:
+      - name: Manual Approval Required
+        run: |
+          echo "⚠️  DANGER: Infrastructure destruction requested!"
+          echo "Environment: ${{ needs.validate-infrastructure.outputs.target-env }}"
+          echo "This action will delete all infrastructure resources."
+          echo "Proceeding with destruction in 30 seconds..."
+          sleep 30
+      
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_DEPLOYMENT_ROLE_ARN }}
+          role-session-name: hasivu-infrastructure-destroy
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+      
+      - name: Terraform Destroy
+        run: |
+          cd infrastructure/terraform
+          
+          terraform init \
+            -backend-config="bucket=hasivu-terraform-state-${{ needs.validate-infrastructure.outputs.target-env }}" \
+            -backend-config="key=infrastructure/terraform.tfstate" \
+            -backend-config="region=${{ env.AWS_REGION }}"
+          
+          terraform destroy \
+            -var-file="environments/${{ needs.validate-infrastructure.outputs.target-env }}.tfvars" \
+            -auto-approve
+      
+      - name: Destroy CloudFormation Stacks
+        run: |
+          echo "🗑️ Destroying CloudFormation stacks..."
+          
+          # Delete stacks in reverse order of dependencies
+          STACKS=(
+            "hasivu-monitoring-${{ needs.validate-infrastructure.outputs.target-env }}"
+            "hasivu-infrastructure-${{ needs.validate-infrastructure.outputs.target-env }}"
+          )
+          
+          for stack in "${STACKS[@]}"; do
+            echo "Deleting stack: $stack"
+            aws cloudformation delete-stack --stack-name "$stack" || echo "Stack $stack not found or already deleted"
+          done
+
+  # =====================================================
+  # NOTIFICATION AND CLEANUP
+  # =====================================================
+  
+  infrastructure-success:
+    name: Infrastructure Deployment Success
+    runs-on: ubuntu-latest
+    needs: [validate-infrastructure, terraform-apply, deploy-cloudformation, setup-monitoring]
+    if: success() && needs.validate-infrastructure.outputs.should-deploy == 'true'
+    
+    steps:
+      - name: Notify Success
+        uses: 8398a7/action-slack@v3
+        with:
+          status: success
+          text: |
+            🏗️ *HASIVU Infrastructure Deployment Successful!*
+            
+            *Environment:* ${{ needs.validate-infrastructure.outputs.target-env }}
+            *Terraform:* ${{ needs.validate-infrastructure.outputs.terraform-changed == 'true' && '✅ Applied' || '⏭️ Skipped' }}
+            *CloudFormation:* ${{ needs.validate-infrastructure.outputs.cloudformation-changed == 'true' && '✅ Deployed' || '⏭️ Skipped' }}
+            *Monitoring:* ✅ Configured
+            
+            Infrastructure is ready for application deployment.
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  infrastructure-failure:
+    name: Infrastructure Deployment Failure
+    runs-on: ubuntu-latest
+    needs: [validate-infrastructure, terraform-apply, deploy-cloudformation, setup-monitoring]
+    if: failure()
+    
+    steps:
+      - name: Notify Failure
+        uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          text: |
+            🚨 *HASIVU Infrastructure Deployment Failed!*
+            
+            *Environment:* ${{ needs.validate-infrastructure.outputs.target-env || 'unknown' }}
+            *Commit:* ${{ github.sha }}
+            *Author:* ${{ github.actor }}
+            *Run:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>
+            
+            Please check the deployment logs and fix infrastructure issues.
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

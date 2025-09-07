@@ -1,0 +1,1808 @@
+# HASIVU Platform - Enterprise Infrastructure Monitoring & Alerting System
+# Comprehensive monitoring solution for AWS serverless architecture
+# Version: 2.0 | Production-Ready | Enterprise-Scale
+
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Enterprise-grade monitoring and alerting infrastructure for HASIVU platform'
+
+Parameters:
+  Environment:
+    Type: String
+    Description: Environment name (production, staging, development)
+    Default: production
+    AllowedValues: [production, staging, development]
+
+  ApiGatewayId:
+    Type: String
+    Description: API Gateway ID for health checks
+    Default: "your-api-gateway-id"
+
+  DatabaseInstanceId:
+    Type: String
+    Description: RDS Database instance identifier
+    Default: "hasivu-postgres-db"
+
+  RedisClusterId:
+    Type: String
+    Description: ElastiCache Redis cluster identifier
+    Default: "hasivu-redis-cluster"
+
+  AlertEmail:
+    Type: String
+    Description: Email address for critical alerts
+    Default: "alerts@hasivu.com"
+
+  SlackWebhookUrl:
+    Type: String
+    Description: Slack webhook URL for notifications
+    Default: ""
+    NoEcho: true
+
+  PagerDutyServiceKey:
+    Type: String
+    Description: PagerDuty service integration key
+    Default: ""
+    NoEcho: true
+
+Resources:
+  # ============================================================================
+  # EXECUTIVE BUSINESS DASHBOARD
+  # ============================================================================
+  
+  ExecutiveDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Sub "${Environment}-hasivu-executive-dashboard"
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 0,
+              "width": 6,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["HASIVU/Business", "PlatformHealthScore", "Environment", "${Environment}"],
+                  [".", "SystemAvailability", ".", "."],
+                  [".", "UserSatisfactionScore", ".", "."]
+                ],
+                "period": 300,
+                "stat": "Average",
+                "region": "${AWS::Region}",
+                "title": "🎯 Platform Health Overview",
+                "yAxis": {"left": {"min": 0, "max": 100}},
+                "annotations": {
+                  "horizontal": [
+                    {"value": 95, "label": "Target Health (95%)"},
+                    {"value": 90, "label": "Warning Threshold"}
+                  ]
+                }
+              }
+            },
+            {
+              "type": "metric",
+              "x": 6,
+              "y": 0,
+              "width": 6,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["HASIVU/Business", "RevenuePerHour", "Environment", "${Environment}"],
+                  [".", "SuccessfulTransactions", ".", "."],
+                  [".", "AverageOrderValue", ".", "."]
+                ],
+                "period": 3600,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "💰 Revenue & Transaction Metrics",
+                "yAxis": {"left": {"min": 0}}
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12,
+              "y": 0,
+              "width": 6,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["HASIVU/Business", "ActiveUsers", "Environment", "${Environment}"],
+                  [".", "NewRegistrations", ".", "."],
+                  [".", "UserRetentionRate", ".", "."]
+                ],
+                "period": 3600,
+                "stat": "Average",
+                "region": "${AWS::Region}",
+                "title": "👥 User Engagement Metrics",
+                "yAxis": {"left": {"min": 0}}
+              }
+            },
+            {
+              "type": "metric",
+              "x": 18,
+              "y": 0,
+              "width": 6,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/Billing", "EstimatedCharges", "Currency", "USD"],
+                  ["HASIVU/Cost", "DailyCost", "Environment", "${Environment}"],
+                  [".", "CostPerUser", ".", "."]
+                ],
+                "period": 86400,
+                "stat": "Maximum",
+                "region": "${AWS::Region}",
+                "title": "💸 Cost Monitoring",
+                "yAxis": {"left": {"min": 0}}
+              }
+            }
+          ]
+        }
+
+  # ============================================================================
+  # OPERATIONS DASHBOARD - DevOps Team
+  # ============================================================================
+
+  OperationsDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Sub "${Environment}-hasivu-operations-dashboard"
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 0,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["HASIVU/Platform", "APIResponseTime", "Environment", "${Environment}", {"stat": "Average"}],
+                  [".", ".", ".", ".", {"stat": "p95"}],
+                  [".", ".", ".", ".", {"stat": "p99"}]
+                ],
+                "period": 300,
+                "region": "${AWS::Region}",
+                "title": "⚡ API Performance Metrics",
+                "yAxis": {"left": {"min": 0, "max": 5000}},
+                "annotations": {
+                  "horizontal": [
+                    {"value": 1000, "label": "SLA Target (1s)"},
+                    {"value": 2000, "label": "Warning (2s)"},
+                    {"value": 3000, "label": "Critical (3s)"}
+                  ]
+                }
+              }
+            },
+            {
+              "type": "metric",
+              "x": 8,
+              "y": 0,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["HASIVU/Platform", "ErrorRate", "Environment", "${Environment}"],
+                  [".", "TotalRequests", ".", "."],
+                  [".", "SuccessfulRequests", ".", "."]
+                ],
+                "period": 300,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "📊 Request Success/Error Metrics",
+                "yAxis": {"left": {"min": 0}},
+                "annotations": {
+                  "horizontal": [
+                    {"value": 10, "label": "Error Threshold (10/5min)"}
+                  ]
+                }
+              }
+            },
+            {
+              "type": "metric",
+              "x": 16,
+              "y": 0,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/Lambda", "Duration", "FunctionName", "${Environment}-hasivu-platform-health"],
+                  [".", "Errors", ".", "."],
+                  [".", "Throttles", ".", "."],
+                  [".", "ConcurrentExecutions", ".", "."]
+                ],
+                "period": 300,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "🔧 Lambda Health Metrics"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 6,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/RDS", "CPUUtilization", "DBInstanceIdentifier", "${DatabaseInstanceId}"],
+                  [".", "DatabaseConnections", ".", "."],
+                  [".", "ReadLatency", ".", "."],
+                  [".", "WriteLatency", ".", "."],
+                  [".", "FreeableMemory", ".", "."]
+                ],
+                "period": 300,
+                "stat": "Average",
+                "region": "${AWS::Region}",
+                "title": "🗄️ Database Performance",
+                "annotations": {
+                  "horizontal": [
+                    {"value": 80, "label": "CPU Warning (80%)"}
+                  ]
+                }
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12,
+              "y": 6,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/ElastiCache", "CPUUtilization", "CacheClusterId", "${RedisClusterId}"],
+                  [".", "CurrConnections", ".", "."],
+                  [".", "CacheHitRate", ".", "."],
+                  [".", "CacheMissRate", ".", "."]
+                ],
+                "period": 300,
+                "stat": "Average",
+                "region": "${AWS::Region}",
+                "title": "🚀 Redis Cache Performance",
+                "annotations": {
+                  "horizontal": [
+                    {"value": 90, "label": "Target Hit Rate (90%)"}
+                  ]
+                }
+              }
+            }
+          ]
+        }
+
+  # ============================================================================
+  # SECURITY DASHBOARD
+  # ============================================================================
+
+  SecurityDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Sub "${Environment}-hasivu-security-dashboard"
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 0,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["HASIVU/Security", "FailedLogins", "Environment", "${Environment}"],
+                  [".", "SuspiciousActivity", ".", "."],
+                  [".", "SecurityViolations", ".", "."],
+                  [".", "BruteForceAttempts", ".", "."]
+                ],
+                "period": 300,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "🔒 Security Threat Monitoring",
+                "yAxis": {"left": {"min": 0}},
+                "annotations": {
+                  "horizontal": [
+                    {"value": 10, "label": "Security Alert Threshold"}
+                  ]
+                }
+              }
+            },
+            {
+              "type": "metric",
+              "x": 8,
+              "y": 0,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["HASIVU/Payment", "FraudulentTransactions", "Environment", "${Environment}"],
+                  [".", "SuspiciousPayments", ".", "."],
+                  [".", "PaymentFailures", ".", "."],
+                  [".", "UnauthorizedAccess", ".", "."]
+                ],
+                "period": 300,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "💳 Payment Security Monitoring"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 16,
+              "y": 0,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/WAF", "BlockedRequests", "WebACL", "${Environment}-hasivu-waf"],
+                  [".", "AllowedRequests", ".", "."],
+                  ["AWS/ApiGateway", "4XXError", "ApiName", "${Environment}-hasivu-platform-api"],
+                  [".", "5XXError", ".", "."]
+                ],
+                "period": 300,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "🛡️ WAF & API Security"
+              }
+            }
+          ]
+        }
+
+  # ============================================================================
+  # PERFORMANCE MONITORING DASHBOARD
+  # ============================================================================
+
+  PerformanceDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Sub "${Environment}-hasivu-performance-dashboard"
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 0,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/Lambda", "Duration", "FunctionName", "${Environment}-hasivu-platform-auth-login"],
+                  [".", ".", ".", "${Environment}-hasivu-platform-payments-create-order"],
+                  [".", ".", ".", "${Environment}-hasivu-platform-payments-verify"],
+                  [".", ".", ".", "${Environment}-hasivu-platform-rfid-delivery-verification"],
+                  [".", ".", ".", "${Environment}-hasivu-platform-menus-daily"]
+                ],
+                "period": 300,
+                "stat": "Average",
+                "region": "${AWS::Region}",
+                "title": "⚡ Critical Lambda Function Performance",
+                "yAxis": {"left": {"min": 0, "max": 30000}}
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12,
+              "y": 0,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/Lambda", "ColdStart", "FunctionName", "${Environment}-hasivu-platform-auth-login"],
+                  [".", ".", ".", "${Environment}-hasivu-platform-payments-create-order"],
+                  [".", ".", ".", "${Environment}-hasivu-platform-payments-verify"],
+                  [".", ".", ".", "${Environment}-hasivu-platform-rfid-delivery-verification"],
+                  [".", ".", ".", "${Environment}-hasivu-platform-menus-daily"]
+                ],
+                "period": 300,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "🔄 Lambda Cold Start Monitoring"
+              }
+            }
+          ]
+        }
+
+  # ============================================================================
+  # BUSINESS METRICS COLLECTION LAMBDA
+  # ============================================================================
+
+  BusinessMetricsFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${Environment}-hasivu-business-metrics-collector"
+      Runtime: nodejs18.x
+      Handler: index.handler
+      Timeout: 300
+      MemorySize: 512
+      Role: !GetAtt BusinessMetricsRole.Arn
+      Environment:
+        Variables:
+          DATABASE_URL: !Sub "{{resolve:ssm:/hasivu/${Environment}/database-url}}"
+          ENVIRONMENT: !Ref Environment
+      Code:
+        ZipFile: |
+          const AWS = require('aws-sdk');
+          const { Client } = require('pg');
+          const cloudwatch = new AWS.CloudWatch();
+
+          exports.handler = async (event) => {
+              const timestamp = new Date();
+              const client = new Client({
+                  connectionString: process.env.DATABASE_URL
+              });
+
+              try {
+                  await client.connect();
+                  
+                  // Collect business metrics
+                  const metrics = await collectBusinessMetrics(client, timestamp);
+                  
+                  // Publish to CloudWatch
+                  await publishBusinessMetrics(metrics, timestamp);
+                  
+                  return {
+                      statusCode: 200,
+                      body: JSON.stringify({
+                          message: 'Business metrics collected successfully',
+                          metrics: Object.keys(metrics)
+                      })
+                  };
+                  
+              } catch (error) {
+                  console.error('Error collecting business metrics:', error);
+                  throw error;
+              } finally {
+                  await client.end();
+              }
+          };
+
+          async function collectBusinessMetrics(client, timestamp) {
+              const metrics = {};
+              
+              // Revenue metrics
+              const revenueQuery = `
+                  SELECT 
+                      COUNT(*) as total_transactions,
+                      SUM(amount) as total_revenue,
+                      AVG(amount) as avg_order_value,
+                      COUNT(CASE WHEN status = 'completed' THEN 1 END) as successful_transactions
+                  FROM payments 
+                  WHERE created_at >= NOW() - INTERVAL '1 hour'
+              `;
+              
+              const revenueResult = await client.query(revenueQuery);
+              const revenue = revenueResult.rows[0];
+              
+              metrics.revenuePerHour = parseFloat(revenue.total_revenue) || 0;
+              metrics.successfulTransactions = parseInt(revenue.successful_transactions) || 0;
+              metrics.averageOrderValue = parseFloat(revenue.avg_order_value) || 0;
+              metrics.totalTransactions = parseInt(revenue.total_transactions) || 0;
+              
+              // User engagement metrics
+              const userQuery = `
+                  SELECT 
+                      COUNT(DISTINCT user_id) as active_users,
+                      COUNT(CASE WHEN created_at >= NOW() - INTERVAL '1 hour' THEN 1 END) as new_registrations
+                  FROM users 
+                  WHERE last_login >= NOW() - INTERVAL '24 hours'
+              `;
+              
+              const userResult = await client.query(userQuery);
+              const users = userResult.rows[0];
+              
+              metrics.activeUsers = parseInt(users.active_users) || 0;
+              metrics.newRegistrations = parseInt(users.new_registrations) || 0;
+              
+              // Order fulfillment metrics
+              const orderQuery = `
+                  SELECT 
+                      COUNT(*) as total_orders,
+                      COUNT(CASE WHEN status = 'delivered' THEN 1 END) as delivered_orders,
+                      COUNT(CASE WHEN rfid_verified = true THEN 1 END) as rfid_verified_orders
+                  FROM orders 
+                  WHERE created_at >= NOW() - INTERVAL '1 hour'
+              `;
+              
+              const orderResult = await client.query(orderQuery);
+              const orders = orderResult.rows[0];
+              
+              metrics.totalOrders = parseInt(orders.total_orders) || 0;
+              metrics.deliveredOrders = parseInt(orders.delivered_orders) || 0;
+              metrics.rfidVerifiedOrders = parseInt(orders.rfid_verified_orders) || 0;
+              
+              // Calculate derived metrics
+              if (metrics.totalTransactions > 0) {
+                  metrics.transactionSuccessRate = (metrics.successfulTransactions / metrics.totalTransactions) * 100;
+              } else {
+                  metrics.transactionSuccessRate = 100;
+              }
+              
+              if (metrics.totalOrders > 0) {
+                  metrics.orderFulfillmentRate = (metrics.deliveredOrders / metrics.totalOrders) * 100;
+                  metrics.rfidVerificationRate = (metrics.rfidVerifiedOrders / metrics.totalOrders) * 100;
+              } else {
+                  metrics.orderFulfillmentRate = 100;
+                  metrics.rfidVerificationRate = 100;
+              }
+              
+              // Platform health score calculation
+              metrics.platformHealthScore = Math.min(100, 
+                  (metrics.transactionSuccessRate * 0.4) +
+                  (metrics.orderFulfillmentRate * 0.3) +
+                  (metrics.rfidVerificationRate * 0.2) +
+                  (metrics.activeUsers > 0 ? 10 : 0)
+              );
+              
+              return metrics;
+          }
+
+          async function publishBusinessMetrics(metrics, timestamp) {
+              const metricData = [];
+              
+              for (const [metricName, value] of Object.entries(metrics)) {
+                  let unit = 'Count';
+                  if (metricName.includes('Rate') || metricName.includes('Score')) {
+                      unit = 'Percent';
+                  } else if (metricName.includes('revenue') || metricName.includes('Value')) {
+                      unit = 'None'; // Currency values
+                  }
+                  
+                  metricData.push({
+                      MetricName: metricName.charAt(0).toUpperCase() + metricName.slice(1),
+                      Value: value,
+                      Unit: unit,
+                      Timestamp: timestamp,
+                      Dimensions: [
+                          {
+                              Name: 'Environment',
+                              Value: process.env.ENVIRONMENT
+                          }
+                      ]
+                  });
+              }
+              
+              // Split into chunks of 20 (CloudWatch limit)
+              const chunks = [];
+              for (let i = 0; i < metricData.length; i += 20) {
+                  chunks.push(metricData.slice(i, i + 20));
+              }
+              
+              for (const chunk of chunks) {
+                  await cloudwatch.putMetricData({
+                      Namespace: 'HASIVU/Business',
+                      MetricData: chunk
+                  }).promise();
+              }
+          }
+
+  # ============================================================================
+  # SECURITY MONITORING LAMBDA
+  # ============================================================================
+
+  SecurityMonitoringFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${Environment}-hasivu-security-monitor"
+      Runtime: nodejs18.x
+      Handler: index.handler
+      Timeout: 300
+      MemorySize: 512
+      Role: !GetAtt SecurityMonitoringRole.Arn
+      Environment:
+        Variables:
+          DATABASE_URL: !Sub "{{resolve:ssm:/hasivu/${Environment}/database-url}}"
+          ENVIRONMENT: !Ref Environment
+      Code:
+        ZipFile: |
+          const AWS = require('aws-sdk');
+          const { Client } = require('pg');
+          const cloudwatch = new AWS.CloudWatch();
+
+          exports.handler = async (event) => {
+              const timestamp = new Date();
+              const client = new Client({
+                  connectionString: process.env.DATABASE_URL
+              });
+
+              try {
+                  await client.connect();
+                  
+                  // Collect security metrics
+                  const securityMetrics = await collectSecurityMetrics(client, timestamp);
+                  
+                  // Analyze for threats
+                  const threatAnalysis = analyzeThreatPatterns(securityMetrics);
+                  
+                  // Publish to CloudWatch
+                  await publishSecurityMetrics(securityMetrics, threatAnalysis, timestamp);
+                  
+                  // Trigger alerts if necessary
+                  if (threatAnalysis.criticalThreats > 0) {
+                      await triggerSecurityAlert(threatAnalysis);
+                  }
+                  
+                  return {
+                      statusCode: 200,
+                      body: JSON.stringify({
+                          message: 'Security monitoring completed',
+                          threats: threatAnalysis.criticalThreats,
+                          warnings: threatAnalysis.warnings
+                      })
+                  };
+                  
+              } catch (error) {
+                  console.error('Error in security monitoring:', error);
+                  throw error;
+              } finally {
+                  await client.end();
+              }
+          };
+
+          async function collectSecurityMetrics(client, timestamp) {
+              const metrics = {};
+              
+              // Failed login attempts
+              const loginQuery = `
+                  SELECT 
+                      COUNT(*) as failed_logins,
+                      COUNT(DISTINCT ip_address) as unique_ips,
+                      COUNT(CASE WHEN attempts > 5 THEN 1 END) as brute_force_attempts
+                  FROM login_attempts 
+                  WHERE success = false 
+                  AND created_at >= NOW() - INTERVAL '1 hour'
+              `;
+              
+              const loginResult = await client.query(loginQuery);
+              const login = loginResult.rows[0];
+              
+              metrics.failedLogins = parseInt(login.failed_logins) || 0;
+              metrics.uniqueSuspiciousIPs = parseInt(login.unique_ips) || 0;
+              metrics.bruteForceAttempts = parseInt(login.brute_force_attempts) || 0;
+              
+              // Payment fraud detection
+              const paymentQuery = `
+                  SELECT 
+                      COUNT(CASE WHEN status = 'failed' AND failure_reason LIKE '%fraud%' THEN 1 END) as fraudulent_payments,
+                      COUNT(CASE WHEN amount > 10000 THEN 1 END) as high_value_transactions,
+                      COUNT(CASE WHEN created_at >= NOW() - INTERVAL '5 minutes' 
+                              AND user_id IN (
+                                  SELECT user_id FROM payments 
+                                  WHERE created_at >= NOW() - INTERVAL '5 minutes' 
+                                  GROUP BY user_id HAVING COUNT(*) > 5
+                              ) THEN 1 END) as rapid_transactions
+                  FROM payments 
+                  WHERE created_at >= NOW() - INTERVAL '1 hour'
+              `;
+              
+              const paymentResult = await client.query(paymentQuery);
+              const payment = paymentResult.rows[0];
+              
+              metrics.fraudulentTransactions = parseInt(payment.fraudulent_payments) || 0;
+              metrics.highValueTransactions = parseInt(payment.high_value_transactions) || 0;
+              metrics.rapidTransactions = parseInt(payment.rapid_transactions) || 0;
+              
+              // Unauthorized access attempts
+              const accessQuery = `
+                  SELECT 
+                      COUNT(*) as unauthorized_attempts,
+                      COUNT(DISTINCT endpoint) as targeted_endpoints
+                  FROM access_logs 
+                  WHERE status_code IN (401, 403) 
+                  AND created_at >= NOW() - INTERVAL '1 hour'
+              `;
+              
+              const accessResult = await client.query(accessQuery);
+              const access = accessResult.rows[0];
+              
+              metrics.unauthorizedAccess = parseInt(access.unauthorized_attempts) || 0;
+              metrics.targetedEndpoints = parseInt(access.targeted_endpoints) || 0;
+              
+              return metrics;
+          }
+
+          function analyzeThreatPatterns(metrics) {
+              const analysis = {
+                  criticalThreats: 0,
+                  warnings: 0,
+                  threatLevel: 'low',
+                  details: []
+              };
+              
+              // Brute force detection
+              if (metrics.bruteForceAttempts > 10) {
+                  analysis.criticalThreats++;
+                  analysis.details.push('High brute force activity detected');
+              } else if (metrics.bruteForceAttempts > 5) {
+                  analysis.warnings++;
+                  analysis.details.push('Moderate brute force activity');
+              }
+              
+              // Fraud detection
+              if (metrics.fraudulentTransactions > 5) {
+                  analysis.criticalThreats++;
+                  analysis.details.push('High fraud activity detected');
+              }
+              
+              // Rapid transaction pattern
+              if (metrics.rapidTransactions > 20) {
+                  analysis.warnings++;
+                  analysis.details.push('Suspicious rapid transaction pattern');
+              }
+              
+              // Unauthorized access
+              if (metrics.unauthorizedAccess > 50) {
+                  analysis.criticalThreats++;
+                  analysis.details.push('High unauthorized access attempts');
+              } else if (metrics.unauthorizedAccess > 20) {
+                  analysis.warnings++;
+                  analysis.details.push('Elevated unauthorized access attempts');
+              }
+              
+              // Determine overall threat level
+              if (analysis.criticalThreats > 0) {
+                  analysis.threatLevel = 'critical';
+              } else if (analysis.warnings > 2) {
+                  analysis.threatLevel = 'high';
+              } else if (analysis.warnings > 0) {
+                  analysis.threatLevel = 'medium';
+              }
+              
+              return analysis;
+          }
+
+          async function publishSecurityMetrics(metrics, analysis, timestamp) {
+              const metricData = [];
+              
+              // Publish security metrics
+              for (const [metricName, value] of Object.entries(metrics)) {
+                  metricData.push({
+                      MetricName: metricName.charAt(0).toUpperCase() + metricName.slice(1),
+                      Value: value,
+                      Unit: 'Count',
+                      Timestamp: timestamp,
+                      Dimensions: [
+                          {
+                              Name: 'Environment',
+                              Value: process.env.ENVIRONMENT
+                          }
+                      ]
+                  });
+              }
+              
+              // Publish threat analysis metrics
+              metricData.push({
+                  MetricName: 'ThreatLevel',
+                  Value: analysis.threatLevel === 'critical' ? 4 : 
+                         analysis.threatLevel === 'high' ? 3 : 
+                         analysis.threatLevel === 'medium' ? 2 : 1,
+                  Unit: 'None',
+                  Timestamp: timestamp,
+                  Dimensions: [
+                      {
+                          Name: 'Environment',
+                          Value: process.env.ENVIRONMENT
+                      }
+                  ]
+              });
+              
+              await cloudwatch.putMetricData({
+                  Namespace: 'HASIVU/Security',
+                  MetricData: metricData
+              }).promise();
+          }
+
+          async function triggerSecurityAlert(analysis) {
+              const sns = new AWS.SNS();
+              
+              const message = {
+                  alertType: 'SECURITY_THREAT',
+                  severity: analysis.threatLevel,
+                  timestamp: new Date().toISOString(),
+                  threats: analysis.criticalThreats,
+                  warnings: analysis.warnings,
+                  details: analysis.details,
+                  environment: process.env.ENVIRONMENT,
+                  action: 'immediate_review_required'
+              };
+              
+              await sns.publish({
+                  TopicArn: process.env.SECURITY_ALERT_TOPIC,
+                  Message: JSON.stringify(message),
+                  Subject: `SECURITY ALERT: ${analysis.threatLevel.toUpperCase()} threat detected in ${process.env.ENVIRONMENT}`
+              }).promise();
+          }
+
+  # ============================================================================
+  # COMPREHENSIVE ALERTING SYSTEM
+  # ============================================================================
+
+  # Critical System Health Alert
+  CriticalSystemHealthAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-hasivu-system-health-critical"
+      AlarmDescription: "Critical system health degradation detected"
+      MetricName: "PlatformHealthScore"
+      Namespace: "HASIVU/Business"
+      Dimensions:
+        - Name: Environment
+          Value: !Ref Environment
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 80
+      ComparisonOperator: LessThanThreshold
+      AlarmActions:
+        - !Ref CriticalAlertTopic
+        - !Ref PagerDutyAlert
+      OKActions:
+        - !Ref CriticalAlertTopic
+      TreatMissingData: breaching
+
+  # High Error Rate Alert
+  HighErrorRateAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-hasivu-high-error-rate"
+      AlarmDescription: "High error rate detected across platform"
+      MetricName: "ErrorRate"
+      Namespace: "HASIVU/Platform"
+      Dimensions:
+        - Name: Environment
+          Value: !Ref Environment
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 15
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref CriticalAlertTopic
+        - !Ref SlackAlert
+      TreatMissingData: notBreaching
+
+  # Payment System Failure Alert
+  PaymentSystemFailureAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-hasivu-payment-system-failure"
+      AlarmDescription: "Payment system experiencing failures"
+      MetricName: "TransactionSuccessRate"
+      Namespace: "HASIVU/Business"
+      Dimensions:
+        - Name: Environment
+          Value: !Ref Environment
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 3
+      Threshold: 95
+      ComparisonOperator: LessThanThreshold
+      AlarmActions:
+        - !Ref CriticalAlertTopic
+        - !Ref PagerDutyAlert
+      TreatMissingData: breaching
+
+  # Database Performance Alert
+  DatabasePerformanceAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-hasivu-database-performance"
+      AlarmDescription: "Database performance degradation"
+      MetricName: "CPUUtilization"
+      Namespace: "AWS/RDS"
+      Dimensions:
+        - Name: DBInstanceIdentifier
+          Value: !Ref DatabaseInstanceId
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 3
+      Threshold: 85
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref WarningAlertTopic
+        - !Ref SlackAlert
+
+  # Security Threat Alert
+  SecurityThreatAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-hasivu-security-threat"
+      AlarmDescription: "Security threat detected"
+      MetricName: "ThreatLevel"
+      Namespace: "HASIVU/Security"
+      Dimensions:
+        - Name: Environment
+          Value: !Ref Environment
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 3
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      AlarmActions:
+        - !Ref SecurityAlertTopic
+        - !Ref PagerDutyAlert
+      TreatMissingData: notBreaching
+
+  # Lambda Cold Start Alert
+  LambdaColdStartAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-hasivu-lambda-cold-starts"
+      AlarmDescription: "High number of Lambda cold starts"
+      MetricName: "ColdStart"
+      Namespace: "AWS/Lambda"
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 50
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref WarningAlertTopic
+
+  # Cost Anomaly Alert
+  CostAnomalyAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-hasivu-cost-anomaly"
+      AlarmDescription: "Unusual cost spike detected"
+      MetricName: "EstimatedCharges"
+      Namespace: "AWS/Billing"
+      Dimensions:
+        - Name: Currency
+          Value: "USD"
+      Statistic: Maximum
+      Period: 86400
+      EvaluationPeriods: 1
+      Threshold: 1000
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref WarningAlertTopic
+
+  # ============================================================================
+  # ALERT NOTIFICATION INFRASTRUCTURE
+  # ============================================================================
+
+  # Critical Alerts Topic
+  CriticalAlertTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub "${Environment}-hasivu-critical-alerts"
+      DisplayName: "HASIVU Critical Alerts"
+      KmsMasterKeyId: !Ref AlertEncryptionKey
+
+  CriticalAlertEmailSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref CriticalAlertTopic
+      Protocol: email
+      Endpoint: !Ref AlertEmail
+
+  # Warning Alerts Topic
+  WarningAlertTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub "${Environment}-hasivu-warning-alerts"
+      DisplayName: "HASIVU Warning Alerts"
+      KmsMasterKeyId: !Ref AlertEncryptionKey
+
+  WarningAlertEmailSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref WarningAlertTopic
+      Protocol: email
+      Endpoint: !Ref AlertEmail
+
+  # Security Alerts Topic
+  SecurityAlertTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub "${Environment}-hasivu-security-alerts"
+      DisplayName: "HASIVU Security Alerts"
+      KmsMasterKeyId: !Ref AlertEncryptionKey
+
+  SecurityAlertEmailSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref SecurityAlertTopic
+      Protocol: email
+      Endpoint: !Ref AlertEmail
+
+  # Slack Integration Lambda
+  SlackAlert:
+    Type: AWS::Lambda::Function
+    Condition: HasSlackWebhook
+    Properties:
+      FunctionName: !Sub "${Environment}-hasivu-slack-alerts"
+      Runtime: nodejs18.x
+      Handler: index.handler
+      Timeout: 30
+      MemorySize: 256
+      Role: !GetAtt SlackAlertRole.Arn
+      Environment:
+        Variables:
+          SLACK_WEBHOOK_URL: !Ref SlackWebhookUrl
+          ENVIRONMENT: !Ref Environment
+      Code:
+        ZipFile: |
+          const https = require('https');
+          const url = require('url');
+
+          exports.handler = async (event) => {
+              for (const record of event.Records) {
+                  if (record.Sns) {
+                      await sendSlackAlert(record.Sns);
+                  }
+              }
+          };
+
+          async function sendSlackAlert(snsMessage) {
+              const message = JSON.parse(snsMessage.Message);
+              const subject = snsMessage.Subject || 'HASIVU Alert';
+              
+              let color = '#36a64f'; // Good
+              if (subject.includes('CRITICAL') || subject.includes('ERROR')) {
+                  color = '#ff0000'; // Danger
+              } else if (subject.includes('WARNING')) {
+                  color = '#ffaa00'; // Warning
+              }
+              
+              const slackMessage = {
+                  username: 'HASIVU Monitor',
+                  icon_emoji: ':warning:',
+                  attachments: [{
+                      color: color,
+                      title: subject,
+                      text: typeof message === 'string' ? message : JSON.stringify(message, null, 2),
+                      fields: [
+                          {
+                              title: 'Environment',
+                              value: process.env.ENVIRONMENT,
+                              short: true
+                          },
+                          {
+                              title: 'Timestamp',
+                              value: new Date().toISOString(),
+                              short: true
+                          }
+                      ],
+                      footer: 'HASIVU Platform Monitoring',
+                      ts: Math.floor(Date.now() / 1000)
+                  }]
+              };
+              
+              const webhookUrl = new URL(process.env.SLACK_WEBHOOK_URL);
+              const postData = JSON.stringify(slackMessage);
+              
+              const options = {
+                  hostname: webhookUrl.hostname,
+                  path: webhookUrl.pathname,
+                  method: 'POST',
+                  headers: {
+                      'Content-Type': 'application/json',
+                      'Content-Length': Buffer.byteLength(postData)
+                  }
+              };
+              
+              return new Promise((resolve, reject) => {
+                  const req = https.request(options, (res) => {
+                      resolve({ statusCode: res.statusCode });
+                  });
+                  
+                  req.on('error', reject);
+                  req.write(postData);
+                  req.end();
+              });
+          }
+
+  # PagerDuty Integration Lambda
+  PagerDutyAlert:
+    Type: AWS::Lambda::Function
+    Condition: HasPagerDutyKey
+    Properties:
+      FunctionName: !Sub "${Environment}-hasivu-pagerduty-alerts"
+      Runtime: nodejs18.x
+      Handler: index.handler
+      Timeout: 30
+      MemorySize: 256
+      Role: !GetAtt PagerDutyAlertRole.Arn
+      Environment:
+        Variables:
+          PAGERDUTY_SERVICE_KEY: !Ref PagerDutyServiceKey
+          ENVIRONMENT: !Ref Environment
+      Code:
+        ZipFile: |
+          const https = require('https');
+
+          exports.handler = async (event) => {
+              for (const record of event.Records) {
+                  if (record.Sns) {
+                      await sendPagerDutyAlert(record.Sns);
+                  }
+              }
+          };
+
+          async function sendPagerDutyAlert(snsMessage) {
+              const message = JSON.parse(snsMessage.Message);
+              const subject = snsMessage.Subject || 'HASIVU Alert';
+              
+              const pagerDutyEvent = {
+                  service_key: process.env.PAGERDUTY_SERVICE_KEY,
+                  event_type: 'trigger',
+                  description: subject,
+                  details: {
+                      message: typeof message === 'string' ? message : JSON.stringify(message, null, 2),
+                      environment: process.env.ENVIRONMENT,
+                      timestamp: new Date().toISOString(),
+                      source: 'HASIVU Platform Monitoring'
+                  },
+                  contexts: [
+                      {
+                          type: 'link',
+                          href: `https://console.aws.amazon.com/cloudwatch/home?region=${process.env.AWS_REGION}`,
+                          text: 'CloudWatch Console'
+                      }
+                  ]
+              };
+              
+              const postData = JSON.stringify(pagerDutyEvent);
+              
+              const options = {
+                  hostname: 'events.pagerduty.com',
+                  path: '/generic/2010-04-15/create_event.json',
+                  method: 'POST',
+                  headers: {
+                      'Content-Type': 'application/json',
+                      'Content-Length': Buffer.byteLength(postData)
+                  }
+              };
+              
+              return new Promise((resolve, reject) => {
+                  const req = https.request(options, (res) => {
+                      resolve({ statusCode: res.statusCode });
+                  });
+                  
+                  req.on('error', reject);
+                  req.write(postData);
+                  req.end();
+              });
+          }
+
+  # ============================================================================
+  # HEALTH CHECK INFRASTRUCTURE
+  # ============================================================================
+
+  ComprehensiveHealthCheckFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${Environment}-hasivu-comprehensive-health-monitor"
+      Runtime: nodejs18.x
+      Handler: index.handler
+      Timeout: 300
+      MemorySize: 1024
+      Role: !GetAtt HealthCheckRole.Arn
+      Environment:
+        Variables:
+          API_ENDPOINT: !Sub "https://${ApiGatewayId}.execute-api.${AWS::Region}.amazonaws.com/${Environment}"
+          DATABASE_URL: !Sub "{{resolve:ssm:/hasivu/${Environment}/database-url}}"
+          REDIS_ENDPOINT: !Sub "{{resolve:ssm:/hasivu/${Environment}/redis-endpoint}}"
+          ENVIRONMENT: !Ref Environment
+      Code:
+        ZipFile: |
+          const https = require('https');
+          const AWS = require('aws-sdk');
+          const { Client } = require('pg');
+          const redis = require('redis');
+          
+          const cloudwatch = new AWS.CloudWatch();
+          
+          exports.handler = async (event) => {
+              const timestamp = new Date();
+              const healthChecks = [];
+              
+              try {
+                  // Critical endpoint health checks
+                  const endpoints = [
+                      { name: 'health-basic', path: '/health' },
+                      { name: 'auth-health', path: '/auth/health' },
+                      { name: 'payments-health', path: '/payments/health' },
+                      { name: 'menu-health', path: '/menu/health' },
+                      { name: 'rfid-health', path: '/rfid/health' }
+                  ];
+                  
+                  for (const endpoint of endpoints) {
+                      const result = await checkEndpoint(endpoint.path);
+                      healthChecks.push({ ...endpoint, ...result });
+                  }
+                  
+                  // Database connectivity check
+                  const dbHealth = await checkDatabase();
+                  healthChecks.push({ name: 'database', ...dbHealth });
+                  
+                  // Redis connectivity check
+                  const redisHealth = await checkRedis();
+                  healthChecks.push({ name: 'redis', ...redisHealth });
+                  
+                  // External service checks
+                  const externalServices = await checkExternalServices();
+                  healthChecks.push(...externalServices);
+                  
+                  // Calculate overall health score
+                  const healthyCount = healthChecks.filter(check => check.healthy).length;
+                  const healthScore = (healthyCount / healthChecks.length) * 100;
+                  
+                  // Publish comprehensive metrics
+                  await publishHealthMetrics(healthChecks, healthScore, timestamp);
+                  
+                  // Check for circuit breaker triggers
+                  await evaluateCircuitBreakers(healthChecks);
+                  
+                  return {
+                      statusCode: healthScore >= 80 ? 200 : 500,
+                      body: JSON.stringify({
+                          timestamp,
+                          healthScore,
+                          healthChecks,
+                          summary: {
+                              total: healthChecks.length,
+                              healthy: healthyCount,
+                              critical: healthChecks.filter(c => !c.healthy && c.critical).length
+                          }
+                      })
+                  };
+                  
+              } catch (error) {
+                  console.error('Health check system failure:', error);
+                  await publishFailureMetric(error);
+                  throw error;
+              }
+          };
+          
+          async function checkEndpoint(path) {
+              return new Promise((resolve) => {
+                  const startTime = Date.now();
+                  const options = {
+                      hostname: process.env.API_ENDPOINT.replace('https://', '').split('/')[0],
+                      path,
+                      method: 'GET',
+                      timeout: 15000,
+                      headers: {
+                          'User-Agent': 'HASIVU-HealthCheck/1.0'
+                      }
+                  };
+                  
+                  const req = https.request(options, (res) => {
+                      let data = '';
+                      res.on('data', chunk => data += chunk);
+                      res.on('end', () => {
+                          const responseTime = Date.now() - startTime;
+                          resolve({
+                              healthy: res.statusCode === 200,
+                              statusCode: res.statusCode,
+                              responseTime,
+                              critical: path.includes('payment') || path.includes('auth'),
+                              response: data.substring(0, 200)
+                          });
+                      });
+                  });
+                  
+                  req.on('error', (error) => {
+                      resolve({
+                          healthy: false,
+                          error: error.message,
+                          responseTime: Date.now() - startTime,
+                          critical: path.includes('payment') || path.includes('auth')
+                      });
+                  });
+                  
+                  req.on('timeout', () => {
+                      req.destroy();
+                      resolve({
+                          healthy: false,
+                          error: 'Request timeout',
+                          responseTime: Date.now() - startTime,
+                          critical: path.includes('payment') || path.includes('auth')
+                      });
+                  });
+                  
+                  req.end();
+              });
+          }
+          
+          async function checkDatabase() {
+              const client = new Client({
+                  connectionString: process.env.DATABASE_URL
+              });
+              
+              try {
+                  const startTime = Date.now();
+                  await client.connect();
+                  
+                  const result = await client.query('SELECT 1 as health_check');
+                  const responseTime = Date.now() - startTime;
+                  
+                  return {
+                      healthy: result.rows[0].health_check === 1,
+                      responseTime,
+                      critical: true
+                  };
+              } catch (error) {
+                  return {
+                      healthy: false,
+                      error: error.message,
+                      critical: true
+                  };
+              } finally {
+                  await client.end();
+              }
+          }
+          
+          async function checkRedis() {
+              try {
+                  const client = redis.createClient({
+                      url: process.env.REDIS_ENDPOINT
+                  });
+                  
+                  const startTime = Date.now();
+                  await client.connect();
+                  
+                  await client.set('health_check', 'ok', { EX: 10 });
+                  const result = await client.get('health_check');
+                  const responseTime = Date.now() - startTime;
+                  
+                  await client.disconnect();
+                  
+                  return {
+                      healthy: result === 'ok',
+                      responseTime,
+                      critical: false
+                  };
+              } catch (error) {
+                  return {
+                      healthy: false,
+                      error: error.message,
+                      critical: false
+                  };
+              }
+          }
+          
+          async function checkExternalServices() {
+              const services = [];
+              
+              // Razorpay API health check
+              try {
+                  const razorpayHealth = await checkEndpoint('https://api.razorpay.com/v1/payments');
+                  services.push({ 
+                      name: 'razorpay', 
+                      ...razorpayHealth, 
+                      critical: true 
+                  });
+              } catch (error) {
+                  services.push({ 
+                      name: 'razorpay', 
+                      healthy: false, 
+                      error: error.message, 
+                      critical: true 
+                  });
+              }
+              
+              return services;
+          }
+          
+          async function publishHealthMetrics(healthChecks, healthScore, timestamp) {
+              const metricData = [
+                  {
+                      MetricName: 'OverallHealthScore',
+                      Value: healthScore,
+                      Unit: 'Percent',
+                      Timestamp: timestamp,
+                      Dimensions: [
+                          {
+                              Name: 'Environment',
+                              Value: process.env.ENVIRONMENT
+                          }
+                      ]
+                  }
+              ];
+              
+              // Individual service health metrics
+              for (const check of healthChecks) {
+                  metricData.push({
+                      MetricName: 'ServiceHealth',
+                      Value: check.healthy ? 1 : 0,
+                      Unit: 'Count',
+                      Timestamp: timestamp,
+                      Dimensions: [
+                          {
+                              Name: 'Environment',
+                              Value: process.env.ENVIRONMENT
+                          },
+                          {
+                              Name: 'Service',
+                              Value: check.name
+                          }
+                      ]
+                  });
+                  
+                  if (check.responseTime) {
+                      metricData.push({
+                          MetricName: 'ServiceResponseTime',
+                          Value: check.responseTime,
+                          Unit: 'Milliseconds',
+                          Timestamp: timestamp,
+                          Dimensions: [
+                              {
+                                  Name: 'Environment',
+                                  Value: process.env.ENVIRONMENT
+                              },
+                              {
+                                  Name: 'Service',
+                                  Value: check.name
+                              }
+                          ]
+                      });
+                  }
+              }
+              
+              // Publish in chunks
+              const chunks = [];
+              for (let i = 0; i < metricData.length; i += 20) {
+                  chunks.push(metricData.slice(i, i + 20));
+              }
+              
+              for (const chunk of chunks) {
+                  await cloudwatch.putMetricData({
+                      Namespace: 'HASIVU/Platform',
+                      MetricData: chunk
+                  }).promise();
+              }
+          }
+          
+          async function evaluateCircuitBreakers(healthChecks) {
+              const failedCriticalServices = healthChecks.filter(check => 
+                  !check.healthy && check.critical
+              );
+              
+              if (failedCriticalServices.length > 0) {
+                  await cloudwatch.putMetricData({
+                      Namespace: 'HASIVU/Platform',
+                      MetricData: [
+                          {
+                              MetricName: 'CircuitBreakerTrigger',
+                              Value: 1,
+                              Unit: 'Count',
+                              Dimensions: [
+                                  {
+                                      Name: 'Environment',
+                                      Value: process.env.ENVIRONMENT
+                                  }
+                              ]
+                          }
+                      ]
+                  }).promise();
+              }
+          }
+          
+          async function publishFailureMetric(error) {
+              await cloudwatch.putMetricData({
+                  Namespace: 'HASIVU/Platform',
+                  MetricData: [
+                      {
+                          MetricName: 'HealthCheckSystemFailure',
+                          Value: 1,
+                          Unit: 'Count',
+                          Dimensions: [
+                              {
+                                  Name: 'Environment',
+                                  Value: process.env.ENVIRONMENT
+                              }
+                          ]
+                      }
+                  ]
+              }).promise();
+          }
+
+  # ============================================================================
+  # IAM ROLES AND PERMISSIONS
+  # ============================================================================
+
+  BusinessMetricsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: BusinessMetricsPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cloudwatch:PutMetricData
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - ssm:GetParameter
+                  - ssm:GetParameters
+                Resource: 
+                  - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/hasivu/${Environment}/*"
+
+  SecurityMonitoringRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: SecurityMonitoringPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cloudwatch:PutMetricData
+                  - sns:Publish
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - ssm:GetParameter
+                  - ssm:GetParameters
+                Resource: 
+                  - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/hasivu/${Environment}/*"
+
+  HealthCheckRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: HealthCheckPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cloudwatch:PutMetricData
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - ssm:GetParameter
+                  - ssm:GetParameters
+                Resource: 
+                  - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/hasivu/${Environment}/*"
+
+  SlackAlertRole:
+    Type: AWS::IAM::Role
+    Condition: HasSlackWebhook
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  PagerDutyAlertRole:
+    Type: AWS::IAM::Role
+    Condition: HasPagerDutyKey
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  # ============================================================================
+  # SCHEDULED MONITORING TASKS
+  # ============================================================================
+
+  BusinessMetricsSchedule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub "${Environment}-hasivu-business-metrics"
+      Description: "Collects business metrics every 5 minutes"
+      ScheduleExpression: "rate(5 minutes)"
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt BusinessMetricsFunction.Arn
+          Id: "BusinessMetricsTarget"
+
+  SecurityMonitoringSchedule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub "${Environment}-hasivu-security-monitoring"
+      Description: "Monitors security threats every 2 minutes"
+      ScheduleExpression: "rate(2 minutes)"
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt SecurityMonitoringFunction.Arn
+          Id: "SecurityMonitoringTarget"
+
+  HealthCheckSchedule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub "${Environment}-hasivu-comprehensive-health"
+      Description: "Comprehensive health checks every 3 minutes"
+      ScheduleExpression: "rate(3 minutes)"
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt ComprehensiveHealthCheckFunction.Arn
+          Id: "HealthCheckTarget"
+
+  # ============================================================================
+  # EVENT PERMISSIONS
+  # ============================================================================
+
+  BusinessMetricsInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref BusinessMetricsFunction
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt BusinessMetricsSchedule.Arn
+
+  SecurityMonitoringInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref SecurityMonitoringFunction
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt SecurityMonitoringSchedule.Arn
+
+  HealthCheckInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref ComprehensiveHealthCheckFunction
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt HealthCheckSchedule.Arn
+
+  # SNS Subscriptions for Lambda alerts
+  SlackAlertSubscription:
+    Type: AWS::SNS::Subscription
+    Condition: HasSlackWebhook
+    Properties:
+      TopicArn: !Ref WarningAlertTopic
+      Protocol: lambda
+      Endpoint: !GetAtt SlackAlert.Arn
+
+  SlackAlertPermission:
+    Type: AWS::Lambda::Permission
+    Condition: HasSlackWebhook
+    Properties:
+      FunctionName: !Ref SlackAlert
+      Action: lambda:InvokeFunction
+      Principal: sns.amazonaws.com
+      SourceArn: !Ref WarningAlertTopic
+
+  PagerDutyAlertSubscription:
+    Type: AWS::SNS::Subscription
+    Condition: HasPagerDutyKey
+    Properties:
+      TopicArn: !Ref CriticalAlertTopic
+      Protocol: lambda
+      Endpoint: !GetAtt PagerDutyAlert.Arn
+
+  PagerDutyAlertPermission:
+    Type: AWS::Lambda::Permission
+    Condition: HasPagerDutyKey
+    Properties:
+      FunctionName: !Ref PagerDutyAlert
+      Action: lambda:InvokeFunction
+      Principal: sns.amazonaws.com
+      SourceArn: !Ref CriticalAlertTopic
+
+  # ============================================================================
+  # ENCRYPTION AND SECURITY
+  # ============================================================================
+
+  AlertEncryptionKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: "KMS key for encrypting monitoring and alert data"
+      KeyPolicy:
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action: "kms:*"
+            Resource: "*"
+          - Sid: Allow SNS Service
+            Effect: Allow
+            Principal:
+              Service: sns.amazonaws.com
+            Action:
+              - kms:Encrypt
+              - kms:Decrypt
+              - kms:ReEncrypt*
+              - kms:GenerateDataKey*
+              - kms:DescribeKey
+            Resource: "*"
+          - Sid: Allow CloudWatch Service
+            Effect: Allow
+            Principal:
+              Service: cloudwatch.amazonaws.com
+            Action:
+              - kms:Encrypt
+              - kms:Decrypt
+              - kms:ReEncrypt*
+              - kms:GenerateDataKey*
+              - kms:DescribeKey
+            Resource: "*"
+
+  AlertEncryptionKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub "alias/${Environment}-hasivu-monitoring-key"
+      TargetKeyId: !Ref AlertEncryptionKey
+
+Conditions:
+  HasSlackWebhook: !Not [!Equals [!Ref SlackWebhookUrl, ""]]
+  HasPagerDutyKey: !Not [!Equals [!Ref PagerDutyServiceKey, ""]]
+
+Outputs:
+  ExecutiveDashboardURL:
+    Description: URL to the Executive Dashboard
+    Value: !Sub "https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${Environment}-hasivu-executive-dashboard"
+
+  OperationsDashboardURL:
+    Description: URL to the Operations Dashboard
+    Value: !Sub "https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${Environment}-hasivu-operations-dashboard"
+
+  SecurityDashboardURL:
+    Description: URL to the Security Dashboard
+    Value: !Sub "https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${Environment}-hasivu-security-dashboard"
+
+  PerformanceDashboardURL:
+    Description: URL to the Performance Dashboard
+    Value: !Sub "https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${Environment}-hasivu-performance-dashboard"
+
+  CriticalAlertTopicArn:
+    Description: SNS topic for critical alerts
+    Value: !Ref CriticalAlertTopic
+    Export:
+      Name: !Sub "${AWS::StackName}-critical-alerts"
+
+  SecurityAlertTopicArn:
+    Description: SNS topic for security alerts
+    Value: !Ref SecurityAlertTopic
+    Export:
+      Name: !Sub "${AWS::StackName}-security-alerts"
+
+  WarningAlertTopicArn:
+    Description: SNS topic for warning alerts
+    Value: !Ref WarningAlertTopic
+    Export:
+      Name: !Sub "${AWS::StackName}-warning-alerts"
+
+  MonitoringStatus:
+    Description: Enterprise monitoring infrastructure deployment status
+    Value: "DEPLOYED - Enterprise-grade monitoring active with multi-channel alerting"

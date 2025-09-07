@@ -1,0 +1,27 @@
+{
+  "test_server": {
+    "port": 3000,
+    "host": "localhost",
+    "protocol": "http"
+  },
+  "rfid_simulation": {
+    "enabled": false,
+    "scan_delay": 500,
+    "success_rate": 0.95
+  },
+  "performance_thresholds": {
+    "lcp": 2500,
+    "fid": 100,
+    "cls": 0.1,
+    "ttfb": 800,
+    "load_time": 3000
+  },
+  "accessibility": {
+    "level": "AA",
+    "tags": [
+      "wcag2a",
+      "wcag2aa",
+      "wcag21aa"
+    ]
+  }
+}

@@ -1,0 +1,564 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "HASIVU Platform API",
+    "version": "1.0.0",
+    process.env.._SWAGGER_PASSWORD_1: "Smart School Food Delivery System with RFID Verification - Comprehensive serverless API with 23+ Lambda functions",
+    "contact": {
+      "name": "HASIVU Platform Team",
+      "url": "https://hasivu.com"
+    },
+    "license": {
+      "name": "MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.hasivu.com",
+      "description": "Production server"
+    },
+    {
+      "url": "https://staging-api.hasivu.com", 
+      "description": "Staging server"
+    },
+    {
+      "url": "http://localhost:3001",
+      "description": "Development server"
+    }
+  ],
+  "security": [
+    {
+      "CognitoAuth": []
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "CognitoAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "AWS Cognito JWT token authentication"
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "example": "VALIDATION_ERROR"
+              },
+              "message": {
+                "type": "string",
+                "example": "Invalid input data"
+              }
+            }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "timestamp": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "correlationId": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object"
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "timestamp": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "correlationId": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/auth/register": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Register new user",
+        "description": "Register a new user account with AWS Cognito",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 8
+                  },
+                  "firstName": {
+                    "type": "string"
+                  },
+                  "lastName": {
+                    "type": "string"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": ["student", "parent", "teacher", "staff", "school_admin", "admin", "super_admin"]
+                  }
+                },
+                "required": ["email", "password", "firstName", "lastName", "role"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User registered successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "User login",
+        "description": "Authenticate user and return JWT tokens",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                },
+                "required": ["email", "password"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Refresh JWT token",
+        "description": "Refresh expired JWT token using refresh token",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Token refreshed successfully"
+          }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "tags": ["Authentication"],
+        "summary": "Get current user profile",
+        "description": "Retrieve authenticated user's profile information",
+        "responses": {
+          "200": {
+            "description": "User profile retrieved successfully"
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "User logout",
+        "description": "Logout user and invalidate session",
+        "responses": {
+          "200": {
+            "description": "Logout successful"
+          }
+        }
+      }
+    },
+    "/auth/profile": {
+      "patch": {
+        "tags": ["Authentication"],
+        "summary": "Update user profile",
+        "description": "Update authenticated user's profile information",
+        "responses": {
+          "200": {
+            "description": "Profile updated successfully"
+          }
+        }
+      }
+    },
+    "/auth/change-password": {
+      "patch": {
+        "tags": ["Authentication"],
+        "summary": "Change user password",
+        "description": "Change authenticated user's password",
+        "responses": {
+          "200": {
+            "description": "Password changed successfully"
+          }
+        }
+      }
+    },
+    "/users": {
+      "get": {
+        "tags": ["User Management"],
+        "summary": "Get all users",
+        "description": "Retrieve list of users with filtering and pagination",
+        "responses": {
+          "200": {
+            "description": "Users retrieved successfully"
+          }
+        }
+      }
+    },
+    "/users/{id}": {
+      "get": {
+        "tags": ["User Management"],
+        "summary": "Get user by ID",
+        "description": "Retrieve specific user by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User retrieved successfully"
+          }
+        }
+      },
+      "put": {
+        "tags": ["User Management"],
+        "summary": "Update user",
+        "description": "Update user information by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User updated successfully"
+          }
+        }
+      }
+    },
+    "/users/bulk-import": {
+      "post": {
+        "tags": ["User Management"],
+        "summary": "Bulk import users",
+        "description": "Import multiple users from CSV file",
+        "responses": {
+          "200": {
+            "description": "Users imported successfully"
+          }
+        }
+      }
+    },
+    "/users/{id}/children": {
+      "post": {
+        "tags": ["User Management"],
+        "summary": "Manage children relationships",
+        "description": "Add or update parent-child relationships",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Children relationships updated successfully"
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": ["Health Check"],
+        "summary": "Basic health check",
+        "description": "Check if the API is responsive",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "System is healthy"
+          }
+        }
+      }
+    },
+    "/health/detailed": {
+      "get": {
+        "tags": ["Health Check"],
+        "summary": "Detailed health check",
+        "description": "Comprehensive health check including dependencies",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Detailed system health status"
+          }
+        }
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "tags": ["Health Check"],
+        "summary": "Readiness check",
+        "description": "Check if system is ready to receive traffic",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "System is ready"
+          }
+        }
+      }
+    },
+    "/health/live": {
+      "get": {
+        "tags": ["Health Check"],
+        "summary": "Liveness check",
+        "description": "Check if system is alive and responsive",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "System is alive"
+          }
+        }
+      }
+    },
+    "/rfid/cards": {
+      "post": {
+        "tags": ["RFID Management"],
+        "summary": "Create RFID card",
+        "description": "Register new RFID card for user",
+        "responses": {
+          "201": {
+            "description": "RFID card created successfully"
+          }
+        }
+      }
+    },
+    "/rfid/verify": {
+      "post": {
+        "tags": ["RFID Management"],
+        "summary": "Verify RFID card",
+        "description": "Verify RFID card for order delivery",
+        "responses": {
+          "200": {
+            "description": "RFID card verified successfully"
+          }
+        }
+      }
+    },
+    "/rfid/cards/{cardNumber}": {
+      "get": {
+        "tags": ["RFID Management"],
+        "summary": "Get RFID card details",
+        "description": "Retrieve RFID card information by card number",
+        "parameters": [
+          {
+            "name": "cardNumber",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "RFID card details retrieved"
+          }
+        }
+      }
+    },
+    "/payment/orders": {
+      "post": {
+        "tags": ["Payment Processing"],
+        "summary": "Create payment order",
+        "description": "Create new payment order for processing",
+        "responses": {
+          "201": {
+            "description": "Payment order created successfully"
+          }
+        }
+      }
+    },
+    "/payment/verify": {
+      "post": {
+        "tags": ["Payment Processing"],
+        "summary": "Verify payment",
+        "description": "Verify payment transaction status",
+        "responses": {
+          "200": {
+            "description": "Payment verified successfully"
+          }
+        }
+      }
+    },
+    "/payment/webhook": {
+      "post": {
+        "tags": ["Payment Processing"],
+        "summary": "Payment webhook",
+        "description": "Handle payment gateway webhooks",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Webhook processed successfully"
+          }
+        }
+      }
+    },
+    "/notification/send": {
+      "post": {
+        "tags": ["Notifications"],
+        "summary": "Send notification",
+        "description": "Send notification to users via various channels",
+        "responses": {
+          "200": {
+            "description": "Notification sent successfully"
+          }
+        }
+      }
+    },
+    "/notification": {
+      "get": {
+        "tags": ["Notifications"],
+        "summary": "Get notifications",
+        "description": "Retrieve user notifications with pagination",
+        "responses": {
+          "200": {
+            "description": "Notifications retrieved successfully"
+          }
+        }
+      }
+    },
+    "/notification/webhooks/whatsapp": {
+      "post": {
+        "tags": ["Notifications"],
+        "summary": "WhatsApp webhook",
+        "description": "Handle WhatsApp Business API webhooks",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "WhatsApp webhook processed successfully"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Authentication",
+      "description": "User authentication and authorization endpoints"
+    },
+    {
+      "name": "User Management", 
+      "description": "User profile and management operations"
+    },
+    {
+      "name": "Health Check",
+      "description": "System health and monitoring endpoints"
+    },
+    {
+      "name": "RFID Management",
+      "description": "RFID card management and verification"
+    },
+    {
+      "name": "Payment Processing",
+      "description": "Payment orders and transaction processing"
+    },
+    {
+      "name": "Notifications",
+      "description": "Notification delivery and management"
+    }
+  ]
+}

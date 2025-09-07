@@ -1,0 +1,14 @@
+
+# Playwright Test Results
+test-results/
+playwright-report/
+tests/auth/.auth/
+.percy/
+
+# Performance Reports
+.lighthouseci/
+lighthouse-report.html
+
+# Coverage Reports
+.nyc_output/
+coverage/

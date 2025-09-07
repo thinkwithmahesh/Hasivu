@@ -1,0 +1,772 @@
+/**
+ * HASIVU Platform - Subscription Plans Management Lambda Function
+ * Handles: GET /api/v1/payments/subscription-plans, POST /api/v1/payments/subscription-plans, PUT /api/v1/payments/subscription-plans/{planId}, DELETE /api/v1/payments/subscription-plans/{planId}
+ * Implements Story 5.2: Subscription Plan Management with Tiered Pricing and Feature Control
+ * Production-ready with comprehensive plan management, pricing tiers, and feature access control
+ */
+
+import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
+import { PrismaClient } from '@prisma/client';
+import { LoggerService } from '../shared/logger.service';
+import { ValidationService } from '../shared/validation.service';
+import { createSuccessResponse, createErrorResponse, handleError } from '../../shared/response.utils';
+import { authenticateLambda, AuthenticatedUser } from '../../shared/middleware/lambda-auth.middleware';
+import { z } from 'zod';
+
+// Initialize database client with Lambda optimization
+const prisma = new PrismaClient();
+
+// Subscription plan validation schemas aligned with Prisma schema
+const createSubscriptionPlanSchema = z.object({
+  // Basic plan information
+  name: z.string().min(1).max(100),
+  description: z.string().max(500).optional(),
+  planType: z.string().min(1).max(50),
+  
+  // Pricing structure
+  price: z.number().min(0),
+  currency: z.string().length(3).default('INR'),
+  billingCycle: z.string().min(1).max(50),
+  
+  // Plan features
+  mealsPerDay: z.number().positive().default(1),
+  mealsPerWeek: z.number().positive().optional(),
+  mealsPerMonth: z.number().positive().optional(),
+  
+  // Plan benefits (JSON string)
+  benefits: z.string().default('{}'),
+  
+  // Trial configuration
+  trialPeriodDays: z.number().min(0).max(90).default(0),
+  trialPrice: z.number().min(0).default(0),
+  
+  // Availability
+  isActive: z.boolean().default(true),
+  availableFrom: z.string().datetime().optional(),
+  availableTo: z.string().datetime().optional()
+});
+
+const updateSubscriptionPlanSchema = createSubscriptionPlanSchema.partial();
+
+const planComparisonSchema = z.object({
+  planIds: z.array(z.string().uuid()).min(2).max(5),
+  schoolId: z.string().uuid().optional(),
+  includeFeatures: z.boolean().default(true),
+  includePricing: z.boolean().default(true),
+  includeMetrics: z.boolean().default(false)
+});
+
+const planFilterSchema = z.object({
+  planType: z.string().optional(),
+  minPrice: z.number().min(0).optional(),
+  maxPrice: z.number().min(0).optional(),
+  currency: z.string().length(3).optional(),
+  billingCycle: z.string().optional(),
+  isActive: z.boolean().optional(),
+  limit: z.number().min(1).max(100).default(20),
+  offset: z.number().min(0).default(0)
+});
+
+/**
+ * Creates a new subscription plan with comprehensive validation
+ */
+async function createSubscriptionPlan(
+  event: APIGatewayProxyEvent,
+  authenticatedUser: AuthenticatedUser
+): Promise<APIGatewayProxyResult> {
+  const logger = LoggerService.getInstance();
+  
+  try {
+    // Authorization check - only admins can create plans
+    if (!['super_admin', 'admin', 'school_admin'].includes(authenticatedUser.role)) {
+      logger.warn('Unauthorized subscription plan creation attempt', {
+        userId: authenticatedUser.id,
+        userRole: authenticatedUser.role
+      });
+      return createErrorResponse('Insufficient permissions to create subscription plans', 403, 'UNAUTHORIZED');
+    }
+    
+    // Parse and validate request body
+    const requestBody = JSON.parse(event.body || '{}');
+    const validatedData = createSubscriptionPlanSchema.parse(requestBody);
+    
+    // School-specific plan creation for school admins
+    const schoolId = authenticatedUser.schoolId;
+    if (authenticatedUser.role === 'school_admin' && !schoolId) {
+      logger.warn('School admin without school association', {
+        userId: authenticatedUser.id
+      });
+      return createErrorResponse('School admin must be associated with a school', 400, 'INVALID_SCHOOL_ASSOCIATION');
+    }
+    
+    // Check for duplicate plan name within school (if school-specific)
+    if (schoolId) {
+      const existingPlan = await prisma.subscriptionPlan.findFirst({
+        where: {
+          name: validatedData.name,
+          schoolId: schoolId
+        }
+      });
+      
+      if (existingPlan) {
+        logger.warn('Duplicate subscription plan name for school', {
+          planName: validatedData.name,
+          schoolId: schoolId,
+          existingPlanId: existingPlan.id
+        });
+        return createErrorResponse('A subscription plan with this name already exists in your school', 409, 'DUPLICATE_PLAN_NAME');
+      }
+    }
+    
+    // Create the subscription plan
+    const subscriptionPlan = await prisma.subscriptionPlan.create({
+      data: {
+        ...validatedData,
+        schoolId: schoolId || 'default-school-id' // Required field
+      }
+    });
+    
+    // Create audit log
+    await prisma.auditLog.create({
+      data: {
+        entityType: 'SubscriptionPlan',
+        entityId: subscriptionPlan.id,
+        action: 'PLAN_CREATED',
+        changes: JSON.stringify({
+          planName: subscriptionPlan.name,
+          planType: subscriptionPlan.planType,
+          price: subscriptionPlan.price,
+          currency: subscriptionPlan.currency,
+          billingCycle: subscriptionPlan.billingCycle
+        }),
+        userId: authenticatedUser.id,
+        createdById: authenticatedUser.id,
+        metadata: JSON.stringify({
+          timestamp: new Date().toISOString(),
+          schoolId: schoolId
+        })
+      }
+    });
+    
+    logger.info('Subscription plan created successfully', {
+      planId: subscriptionPlan.id,
+      planName: subscriptionPlan.name,
+      schoolId: schoolId,
+      createdBy: authenticatedUser.email
+    });
+    
+    return createSuccessResponse({
+      message: 'Subscription plan created successfully',
+      data: {
+        plan: subscriptionPlan
+      }
+    });
+    
+  } catch (error: any) {
+    logger.error('Failed to create subscription plan', {
+      error: error.message,
+      stack: error.stack,
+      userId: authenticatedUser.id
+    });
+    
+    if (error.name === 'ZodError') {
+      return createErrorResponse('Invalid plan data provided', 400, 'VALIDATION_ERROR');
+    }
+    
+    return handleError(error, 'Failed to create subscription plan');
+  }
+}
+
+/**
+ * Lists subscription plans with filtering and pagination
+ */
+async function listSubscriptionPlans(
+  event: APIGatewayProxyEvent,
+  authenticatedUser: AuthenticatedUser
+): Promise<APIGatewayProxyResult> {
+  const logger = LoggerService.getInstance();
+  
+  try {
+    // Parse query parameters
+    const queryParams = event.queryStringParameters || {};
+    const filters = planFilterSchema.parse(queryParams);
+    
+    // Build where clause based on filters and user permissions
+    const whereClause: any = {
+      isActive: filters.isActive ?? true
+    };
+    
+    // School admins can only see their school's plans
+    if (authenticatedUser.role === 'school_admin' && authenticatedUser.schoolId) {
+      whereClause.schoolId = authenticatedUser.schoolId;
+    }
+    
+    // Apply additional filters
+    if (filters.planType) whereClause.planType = filters.planType;
+    if (filters.currency) whereClause.currency = filters.currency;
+    if (filters.billingCycle) whereClause.billingCycle = filters.billingCycle;
+    
+    // Price range filter
+    if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
+      whereClause.price = {};
+      if (filters.minPrice !== undefined) whereClause.price.gte = filters.minPrice;
+      if (filters.maxPrice !== undefined) whereClause.price.lte = filters.maxPrice;
+    }
+    
+    // Note: Features are stored in benefits JSON field
+    // Feature filtering would require JSON operations
+    
+    // Fetch plans with pagination
+    const [plans, totalCount] = await Promise.all([
+      prisma.subscriptionPlan.findMany({
+        where: whereClause,
+        orderBy: [
+          { price: 'asc' },
+          { createdAt: 'desc' }
+        ],
+        skip: filters.offset,
+        take: filters.limit,
+        include: {
+          school: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          _count: {
+            select: {
+              subscriptions: true
+            }
+          }
+        }
+      }),
+      prisma.subscriptionPlan.count({ where: whereClause })
+    ]);
+    
+    logger.info('Subscription plans retrieved successfully', {
+      userId: authenticatedUser.id,
+      plansCount: plans.length,
+      total: totalCount,
+      filters: filters
+    });
+    
+    return createSuccessResponse({
+      message: 'Subscription plans retrieved successfully',
+      data: {
+        plans: plans,
+        pagination: {
+          total: totalCount,
+          offset: filters.offset,
+          limit: filters.limit,
+          hasMore: (filters.offset + filters.limit) < totalCount
+        }
+      }
+    });
+    
+  } catch (error: any) {
+    logger.error('Failed to retrieve subscription plans', {
+      error: error.message,
+      stack: error.stack,
+      userId: authenticatedUser.id
+    });
+    
+    return handleError(error, 'Failed to retrieve subscription plans');
+  }
+}
+
+/**
+ * Updates an existing subscription plan
+ */
+async function updateSubscriptionPlan(
+  event: APIGatewayProxyEvent,
+  authenticatedUser: AuthenticatedUser
+): Promise<APIGatewayProxyResult> {
+  const logger = LoggerService.getInstance();
+  
+  try {
+    const planId = event.pathParameters?.planId;
+    if (!planId) {
+      return createErrorResponse('Plan ID is required', 400, 'MISSING_PLAN_ID');
+    }
+    
+    // Authorization check
+    if (!['super_admin', 'admin', 'school_admin'].includes(authenticatedUser.role)) {
+      logger.warn('Unauthorized subscription plan update attempt', {
+        userId: authenticatedUser.id,
+        userRole: authenticatedUser.role,
+        planId: planId
+      });
+      return createErrorResponse('Insufficient permissions to update subscription plans', 403, 'UNAUTHORIZED');
+    }
+    
+    // Fetch existing plan
+    const existingPlan = await prisma.subscriptionPlan.findUnique({
+      where: { id: planId },
+      include: {
+        _count: {
+          select: {
+            subscriptions: true
+          }
+        }
+      }
+    });
+    
+    if (!existingPlan) {
+      return createErrorResponse('Subscription plan not found', 404, 'PLAN_NOT_FOUND');
+    }
+    
+    // School admin can only update their school's plans
+    if (authenticatedUser.role === 'school_admin') {
+      if (existingPlan.schoolId !== authenticatedUser.schoolId) {
+        logger.warn('School admin attempting to update plan from different school', {
+          userId: authenticatedUser.id,
+          userSchoolId: authenticatedUser.schoolId,
+          planSchoolId: existingPlan.schoolId,
+          planId: planId
+        });
+        return createErrorResponse('Cannot update plans from other schools', 403, 'UNAUTHORIZED');
+      }
+    }
+    
+    // Parse and validate request body
+    const requestBody = JSON.parse(event.body || '{}');
+    const validatedData = updateSubscriptionPlanSchema.parse(requestBody);
+    
+    // Check if plan has active subscriptions before making major changes
+    if (existingPlan._count.subscriptions > 0) {
+      const restrictedFields = ['price', 'billingCycle', 'currency'];
+      const hasRestrictedChanges = restrictedFields.some(field => 
+        validatedData[field as keyof typeof validatedData] !== undefined && 
+        validatedData[field as keyof typeof validatedData] !== existingPlan[field as keyof typeof existingPlan]
+      );
+      
+      if (hasRestrictedChanges) {
+        logger.warn('Attempted to modify pricing for plan with active subscriptions', {
+          planId: planId,
+          activeSubscriptions: existingPlan._count.subscriptions,
+          userId: authenticatedUser.id
+        });
+        return createErrorResponse(
+          `Cannot modify pricing for plan with ${existingPlan._count.subscriptions} active subscriptions`, 
+          400, 
+          'PLAN_HAS_ACTIVE_SUBSCRIPTIONS'
+        );
+      }
+    }
+    
+    // Update the subscription plan
+    const updatedPlan = await prisma.subscriptionPlan.update({
+      where: { id: planId },
+      data: validatedData,
+      include: {
+        school: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
+      }
+    });
+    
+    // Create audit log
+    await prisma.auditLog.create({
+      data: {
+        entityType: 'SubscriptionPlan',
+        entityId: planId,
+        action: 'PLAN_UPDATED',
+        changes: JSON.stringify({
+          updatedFields: Object.keys(validatedData),
+          previousValues: Object.keys(validatedData).reduce((acc, key) => {
+            acc[key] = existingPlan[key as keyof typeof existingPlan];
+            return acc;
+          }, {} as any),
+          newValues: validatedData
+        }),
+        userId: authenticatedUser.id,
+        createdById: authenticatedUser.id,
+        metadata: JSON.stringify({
+          timestamp: new Date().toISOString(),
+          activeSubscriptions: existingPlan._count.subscriptions
+        })
+      }
+    });
+    
+    logger.info('Subscription plan updated successfully', {
+      planId: planId,
+      planName: updatedPlan.name,
+      updatedBy: authenticatedUser.email,
+      updatedFields: Object.keys(validatedData)
+    });
+    
+    return createSuccessResponse({
+      message: 'Subscription plan updated successfully',
+      data: {
+        plan: updatedPlan
+      }
+    });
+    
+  } catch (error: any) {
+    logger.error('Failed to update subscription plan', {
+      error: error.message,
+      stack: error.stack,
+      userId: authenticatedUser.id
+    });
+    
+    if (error.name === 'ZodError') {
+      return createErrorResponse('Invalid plan data provided', 400, 'VALIDATION_ERROR');
+    }
+    
+    return handleError(error, 'Failed to update subscription plan');
+  }
+}
+
+/**
+ * Deactivates a subscription plan (soft delete)
+ */
+async function deactivateSubscriptionPlan(
+  event: APIGatewayProxyEvent,
+  authenticatedUser: AuthenticatedUser
+): Promise<APIGatewayProxyResult> {
+  const logger = LoggerService.getInstance();
+  
+  try {
+    const planId = event.pathParameters?.planId;
+    if (!planId) {
+      return createErrorResponse('Plan ID is required', 400, 'MISSING_PLAN_ID');
+    }
+    
+    // Authorization check
+    if (!['super_admin', 'admin', 'school_admin'].includes(authenticatedUser.role)) {
+      logger.warn('Unauthorized subscription plan deactivation attempt', {
+        userId: authenticatedUser.id,
+        userRole: authenticatedUser.role,
+        planId: planId
+      });
+      return createErrorResponse('Insufficient permissions to deactivate subscription plans', 403, 'UNAUTHORIZED');
+    }
+    
+    // Fetch existing plan
+    const existingPlan = await prisma.subscriptionPlan.findUnique({
+      where: { id: planId },
+      include: {
+        _count: {
+          select: {
+            subscriptions: {
+              where: {
+                status: {
+                  in: ['active', 'trialing', 'past_due']
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+    
+    if (!existingPlan) {
+      return createErrorResponse('Subscription plan not found', 404, 'PLAN_NOT_FOUND');
+    }
+    
+    // School admin can only deactivate their school's plans
+    if (authenticatedUser.role === 'school_admin') {
+      if (existingPlan.schoolId !== authenticatedUser.schoolId) {
+        logger.warn('School admin attempting to deactivate plan from different school', {
+          userId: authenticatedUser.id,
+          userSchoolId: authenticatedUser.schoolId,
+          planSchoolId: existingPlan.schoolId,
+          planId: planId
+        });
+        return createErrorResponse('Cannot deactivate plans from other schools', 403, 'UNAUTHORIZED');
+      }
+    }
+    
+    // Check for active subscriptions
+    if (existingPlan._count.subscriptions > 0) {
+      logger.warn('Attempted to deactivate plan with active subscriptions', {
+        planId: planId,
+        activeSubscriptions: existingPlan._count.subscriptions,
+        userId: authenticatedUser.id
+      });
+      return createErrorResponse(
+        `Cannot deactivate plan with ${existingPlan._count.subscriptions} active subscriptions`,
+        400,
+        'PLAN_HAS_ACTIVE_SUBSCRIPTIONS'
+      );
+    }
+    
+    // Deactivate the plan
+    const deactivatedPlan = await prisma.subscriptionPlan.update({
+      where: { id: planId },
+      data: {
+        isActive: false
+      }
+    });
+    
+    // Create audit log
+    await prisma.auditLog.create({
+      data: {
+        entityType: 'SubscriptionPlan',
+        entityId: planId,
+        action: 'PLAN_DEACTIVATED',
+        changes: JSON.stringify({
+          previousStatus: 'active',
+          newStatus: 'inactive',
+          reason: 'Manual deactivation'
+        }),
+        userId: authenticatedUser.id,
+        createdById: authenticatedUser.id,
+        metadata: JSON.stringify({
+          timestamp: new Date().toISOString(),
+          deactivatedBy: authenticatedUser.email
+        })
+      }
+    });
+    
+    logger.info('Subscription plan deactivated successfully', {
+      planId: planId,
+      planName: deactivatedPlan.name,
+      deactivatedBy: authenticatedUser.email
+    });
+    
+    return createSuccessResponse({
+      message: 'Subscription plan deactivated successfully',
+      data: {
+        plan: deactivatedPlan
+      }
+    });
+    
+  } catch (error: any) {
+    logger.error('Failed to deactivate subscription plan', {
+      error: error.message,
+      stack: error.stack,
+      userId: authenticatedUser.id
+    });
+    
+    return handleError(error, 'Failed to deactivate subscription plan');
+  }
+}
+
+/**
+ * Compares multiple subscription plans
+ */
+async function compareSubscriptionPlans(
+  event: APIGatewayProxyEvent,
+  authenticatedUser: AuthenticatedUser
+): Promise<APIGatewayProxyResult> {
+  const logger = LoggerService.getInstance();
+  
+  try {
+    const requestBody = JSON.parse(event.body || '{}');
+    const { planIds, schoolId, includeFeatures, includePricing, includeMetrics } = planComparisonSchema.parse(requestBody);
+    
+    // Authorization for school-specific data
+    if (schoolId && authenticatedUser.role === 'school_admin' && authenticatedUser.schoolId !== schoolId) {
+      logger.warn('School admin attempting to access other school data', {
+        userId: authenticatedUser.id,
+        userSchoolId: authenticatedUser.schoolId,
+        requestedSchoolId: schoolId
+      });
+      return createErrorResponse('Cannot access data from other schools', 403, 'UNAUTHORIZED');
+    }
+    
+    // Fetch plans for comparison
+    const plans = await prisma.subscriptionPlan.findMany({
+      where: {
+        id: {
+          in: planIds
+        },
+        isActive: true
+      },
+      include: {
+        school: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        _count: includeMetrics ? {
+          select: {
+            subscriptions: true
+          }
+        } : undefined
+      }
+    });
+    
+    if (plans.length === 0) {
+      return createErrorResponse('No active plans found for comparison', 404, 'NO_PLANS_FOUND');
+    }
+    
+    // Build comparison data
+    const comparison = {
+      plans: plans.map(plan => ({
+        id: plan.id,
+        name: plan.name,
+        description: plan.description,
+        planType: plan.planType,
+        school: plan.school,
+        
+        ...(includePricing && {
+          pricing: {
+            price: plan.price,
+            currency: plan.currency,
+            billingCycle: plan.billingCycle,
+            trialPeriodDays: plan.trialPeriodDays,
+            trialPrice: plan.trialPrice
+          }
+        }),
+        
+        ...(includeFeatures && {
+          benefits: plan.benefits,
+          mealsPerDay: plan.mealsPerDay,
+          mealsPerWeek: plan.mealsPerWeek,
+          mealsPerMonth: plan.mealsPerMonth
+        }),
+        
+        ...(includeMetrics && {
+          metrics: {
+            activeSubscriptions: plan._count?.subscriptions || 0
+          }
+        })
+      })),
+      
+      comparisonMatrix: includeFeatures ? generateFeatureComparisonMatrix(plans) : undefined
+    };
+    
+    logger.info('Subscription plans compared successfully', {
+      userId: authenticatedUser.id,
+      planIds: planIds,
+      plansFound: plans.length
+    });
+    
+    return createSuccessResponse({
+      message: 'Subscription plans compared successfully',
+      data: comparison
+    });
+    
+  } catch (error: any) {
+    logger.error('Failed to compare subscription plans', {
+      error: error.message,
+      stack: error.stack,
+      userId: authenticatedUser.id
+    });
+    
+    if (error.name === 'ZodError') {
+      return createErrorResponse('Invalid comparison parameters', 400, 'VALIDATION_ERROR');
+    }
+    
+    return handleError(error, 'Failed to compare subscription plans');
+  }
+}
+
+/**
+ * Generates a feature comparison matrix for plans
+ */
+function generateFeatureComparisonMatrix(plans: any[]): any {
+  // Get all unique benefit keys across all plans
+  const allBenefits: string[] = [];
+  plans.forEach(plan => {
+    try {
+      const benefits = JSON.parse(plan.benefits || '{}');
+      Object.keys(benefits).forEach(key => {
+        if (!allBenefits.includes(key)) {
+          allBenefits.push(key);
+        }
+      });
+    } catch (e) {
+      // Handle invalid JSON gracefully
+    }
+  });
+  
+  // Create comparison matrix
+  const matrix = allBenefits.map(benefit => ({
+    feature: benefit,
+    availability: plans.reduce((acc, plan) => {
+      try {
+        const benefits = JSON.parse(plan.benefits || '{}');
+        acc[plan.id] = benefits.hasOwnProperty(benefit);
+      } catch (e) {
+        acc[plan.id] = false;
+      }
+      return acc;
+    }, {} as Record<string, boolean>)
+  }));
+  
+  return {
+    features: matrix,
+    summary: {
+      totalFeatures: allBenefits.length,
+      planCoverage: plans.map(plan => {
+        let benefitCount = 0;
+        try {
+          const benefits = JSON.parse(plan.benefits || '{}');
+          benefitCount = Object.keys(benefits).length;
+        } catch (e) {
+          benefitCount = 0;
+        }
+        return {
+          planId: plan.id,
+          planName: plan.name,
+          featureCount: benefitCount,
+          coverage: allBenefits.length > 0 ? ((benefitCount / allBenefits.length * 100).toFixed(1) + '%') : '0%'
+        };
+      })
+    }
+  };
+}
+
+/**
+ * Main Lambda handler with method routing
+ */
+export const subscriptionPlansHandler = async (
+  event: APIGatewayProxyEvent,
+  context: Context
+): Promise<APIGatewayProxyResult> => {
+  const logger = LoggerService.getInstance();
+  const requestId = context.awsRequestId;
+  
+  try {
+    logger.info('Subscription plans request started', { 
+      requestId,
+      method: event.httpMethod,
+      path: event.path
+    });
+    
+    // Authenticate request
+    const authResult = await authenticateLambda(event);
+    
+    // Return authentication error if authentication failed
+    if ('statusCode' in authResult) {
+      return authResult as unknown as APIGatewayProxyResult;
+    }
+    const { user: authenticatedUser } = authResult;
+    
+    // Route based on HTTP method and path
+    const method = event.httpMethod;
+    const pathParams = event.pathParameters;
+    
+    if (method === 'GET' && !pathParams?.planId) {
+      return await listSubscriptionPlans(event, authenticatedUser);
+    } else if (method === 'POST' && event.path.includes('/compare')) {
+      return await compareSubscriptionPlans(event, authenticatedUser);
+    } else if (method === 'POST') {
+      return await createSubscriptionPlan(event, authenticatedUser);
+    } else if (method === 'PUT' && pathParams?.planId) {
+      return await updateSubscriptionPlan(event, authenticatedUser);
+    } else if (method === 'DELETE' && pathParams?.planId) {
+      return await deactivateSubscriptionPlan(event, authenticatedUser);
+    } else {
+      return createErrorResponse('Method not allowed or invalid path', 405, 'METHOD_NOT_ALLOWED');
+    }
+    
+  } catch (error: any) {
+    logger.error('Subscription plans request failed', {
+      requestId,
+      error: error.message,
+      stack: error.stack
+    });
+    
+    return handleError(error, 'Failed to process subscription plans request');
+  } finally {
+    await prisma.$disconnect();
+  }
+};

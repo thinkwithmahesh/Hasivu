@@ -1,0 +1,766 @@
+# Comprehensive Monitoring & Alerting Infrastructure
+# Production-ready monitoring solution for the Hasivu Platform
+
+Resources:
+  # Enhanced CloudWatch Dashboard
+  ProductionMonitoringDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Sub "${Environment}-hasivu-production-monitoring"
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 0,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["HASIVU/Platform", "APIResponseTime", "Environment", "${Environment}", { "stat": "Average" }],
+                  [".", ".", ".", ".", { "stat": "p95" }],
+                  [".", ".", ".", ".", { "stat": "p99" }]
+                ],
+                "period": 300,
+                "stat": "Average",
+                "region": "${AWS::Region}",
+                "title": "API Response Times",
+                "yAxis": {
+                  "left": {
+                    "min": 0,
+                    "max": 5000
+                  }
+                },
+                "annotations": {
+                  "horizontal": [
+                    {
+                      "value": 1000,
+                      "label": "SLA Threshold (1s)"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "type": "metric",
+              "x": 8,
+              "y": 0,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["HASIVU/Platform", "ErrorRate", "Environment", "${Environment}"],
+                  ["HASIVU/Security", "SecurityViolations", ".", "."],
+                  ["HASIVU/Security", "SuspiciousActivity", ".", "."]
+                ],
+                "period": 300,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "Error Rates & Security Events",
+                "yAxis": {
+                  "left": {
+                    "min": 0
+                  }
+                },
+                "annotations": {
+                  "horizontal": [
+                    {
+                      "value": 10,
+                      "label": "Error Threshold"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "type": "metric",
+              "x": 16,
+              "y": 0,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["HASIVU/Platform", "ActiveUsers", "Environment", "${Environment}"],
+                  [".", "TotalRequests", ".", "."],
+                  [".", "SuccessfulRequests", ".", "."]
+                ],
+                "period": 300,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "Platform Usage Metrics",
+                "yAxis": {
+                  "left": {
+                    "min": 0
+                  }
+                }
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 6,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/Lambda", "Duration", "FunctionName", "${Environment}-hasivu-platform-api-login"],
+                  [".", ".", ".", "${Environment}-hasivu-platform-api-register"],
+                  [".", ".", ".", "${Environment}-hasivu-platform-api-createPaymentOrder"],
+                  [".", ".", ".", "${Environment}-hasivu-platform-api-verifyPayment"],
+                  [".", ".", ".", "${Environment}-hasivu-platform-api-getMenuItems"]
+                ],
+                "period": 300,
+                "stat": "Average",
+                "region": "${AWS::Region}",
+                "title": "Lambda Function Performance",
+                "yAxis": {
+                  "left": {
+                    "min": 0,
+                    "max": 30000
+                  }
+                }
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12,
+              "y": 6,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/Lambda", "ConcurrentExecutions", "FunctionName", "${Environment}-hasivu-platform-api-login"],
+                  [".", "Throttles", ".", "."],
+                  [".", "Errors", ".", "."],
+                  [".", "DeadLetterErrors", ".", "."]
+                ],
+                "period": 300,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "Lambda Function Health",
+                "yAxis": {
+                  "left": {
+                    "min": 0
+                  }
+                }
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 12,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/RDS", "CPUUtilization", "DBInstanceIdentifier", "${Environment}-hasivu-postgres"],
+                  [".", "DatabaseConnections", ".", "."],
+                  [".", "ReadLatency", ".", "."],
+                  [".", "WriteLatency", ".", "."]
+                ],
+                "period": 300,
+                "stat": "Average",
+                "region": "${AWS::Region}",
+                "title": "Database Performance",
+                "annotations": {
+                  "horizontal": [
+                    {
+                      "value": 80,
+                      "label": "CPU Warning (80%)"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "type": "metric",
+              "x": 8,
+              "y": 12,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/ElastiCache", "CPUUtilization", "CacheClusterId", "${Environment}-hasivu-redis-001"],
+                  [".", "CurrConnections", ".", "."],
+                  [".", "NetworkBytesIn", ".", "."],
+                  [".", "NetworkBytesOut", ".", "."]
+                ],
+                "period": 300,
+                "stat": "Average",
+                "region": "${AWS::Region}",
+                "title": "Redis Cache Performance",
+                "annotations": {
+                  "horizontal": [
+                    {
+                      "value": 70,
+                      "label": "CPU Warning (70%)"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "type": "metric",
+              "x": 16,
+              "y": 12,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/ApiGateway", "4XXError", "ApiName", "${Environment}-hasivu-platform-api"],
+                  [".", "5XXError", ".", "."],
+                  [".", "Latency", ".", "."],
+                  [".", "Count", ".", "."]
+                ],
+                "period": 300,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "API Gateway Metrics"
+              }
+            },
+            {
+              "type": "log",
+              "x": 0,
+              "y": 18,
+              "width": 24,
+              "height": 6,
+              "properties": {
+                "query": "SOURCE '/aws/lambda/${Environment}-hasivu-platform-api-login'\n| SOURCE '/aws/lambda/${Environment}-hasivu-platform-api-register'\n| SOURCE '/aws/lambda/${Environment}-hasivu-platform-api-createPaymentOrder'\n| fields @timestamp, @message, @requestId\n| filter @message like /ERROR/ or @message like /security/\n| sort @timestamp desc\n| limit 50",
+                "region": "${AWS::Region}",
+                "title": "Recent Errors and Security Events",
+                "view": "table"
+              }
+            }
+          ]
+        }
+
+  # Critical Error Alert
+  CriticalErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-hasivu-critical-errors"
+      AlarmDescription: "Critical error rate threshold exceeded"
+      MetricName: "ErrorRate"
+      Namespace: "HASIVU/Platform"
+      Dimensions:
+        - Name: Environment
+          Value: !Ref Environment
+      Statistic: Sum
+      Period: 300  # 5 minutes
+      EvaluationPeriods: 2
+      Threshold: 10
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref CriticalAlertTopic
+      OKActions:
+        - !Ref CriticalAlertTopic
+      TreatMissingData: notBreaching
+
+  # High Response Time Alert
+  HighResponseTimeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-hasivu-high-response-time"
+      AlarmDescription: "API response time exceeded SLA (1 second)"
+      MetricName: "APIResponseTime"
+      Namespace: "HASIVU/Platform"
+      Dimensions:
+        - Name: Environment
+          Value: !Ref Environment
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 3
+      Threshold: 1000  # 1 second
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref WarningAlertTopic
+      TreatMissingData: notBreaching
+
+  # Database CPU Utilization Alert
+  DatabaseCPUAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-hasivu-database-cpu-high"
+      AlarmDescription: "Database CPU utilization is high"
+      MetricName: "CPUUtilization"
+      Namespace: "AWS/RDS"
+      Dimensions:
+        - Name: DBInstanceIdentifier
+          Value: !Sub "${Environment}-hasivu-postgres"
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 3
+      Threshold: 80
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref WarningAlertTopic
+      TreatMissingData: notBreaching
+
+  # Database Connection Count Alert
+  DatabaseConnectionAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-hasivu-database-connections-high"
+      AlarmDescription: "Database connection count is high"
+      MetricName: "DatabaseConnections"
+      Namespace: "AWS/RDS"
+      Dimensions:
+        - Name: DBInstanceIdentifier
+          Value: !Sub "${Environment}-hasivu-postgres"
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 80
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref WarningAlertTopic
+
+  # Lambda Throttling Alert
+  LambdaThrottleAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-hasivu-lambda-throttles"
+      AlarmDescription: "Lambda functions are being throttled"
+      MetricName: "Throttles"
+      Namespace: "AWS/Lambda"
+      Dimensions:
+        - Name: FunctionName
+          Value: !Sub "${Environment}-hasivu-platform-api-login"
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      AlarmActions:
+        - !Ref CriticalAlertTopic
+
+  # Security Violation Alert
+  SecurityViolationAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-hasivu-security-violations"
+      AlarmDescription: "Security violations detected"
+      MetricName: "SecurityViolations"
+      Namespace: "HASIVU/Security"
+      Dimensions:
+        - Name: Environment
+          Value: !Ref Environment
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 5
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref SecurityAlertTopic
+      TreatMissingData: notBreaching
+
+  # Suspicious Activity Alert
+  SuspiciousActivityAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-hasivu-suspicious-activity"
+      AlarmDescription: "Suspicious activity patterns detected"
+      MetricName: "SuspiciousActivity"
+      Namespace: "HASIVU/Security"
+      Dimensions:
+        - Name: Environment
+          Value: !Ref Environment
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 3
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref SecurityAlertTopic
+
+  # Health Check Failure Alert
+  HealthCheckFailureAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-hasivu-health-check-failure"
+      AlarmDescription: "Health check endpoints are failing"
+      MetricName: "HealthCheckFailures"
+      Namespace: "HASIVU/Platform"
+      Dimensions:
+        - Name: Environment
+          Value: !Ref Environment
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 2
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      AlarmActions:
+        - !Ref CriticalAlertTopic
+
+  # SNS Topics for Different Alert Severities
+  CriticalAlertTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub "${Environment}-hasivu-critical-alerts"
+      DisplayName: "Hasivu Critical Alerts"
+      KmsMasterKeyId: !Ref AlertEncryptionKey
+
+  WarningAlertTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub "${Environment}-hasivu-warning-alerts"
+      DisplayName: "Hasivu Warning Alerts"
+      KmsMasterKeyId: !Ref AlertEncryptionKey
+
+  SecurityAlertTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub "${Environment}-hasivu-security-alerts"
+      DisplayName: "Hasivu Security Alerts"
+      KmsMasterKeyId: !Ref AlertEncryptionKey
+
+  # KMS Key for encrypting SNS messages
+  AlertEncryptionKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: "KMS key for encrypting alert messages"
+      KeyPolicy:
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action: "kms:*"
+            Resource: "*"
+          - Sid: Allow SNS Service
+            Effect: Allow
+            Principal:
+              Service: sns.amazonaws.com
+            Action:
+              - kms:Encrypt
+              - kms:Decrypt
+              - kms:ReEncrypt*
+              - kms:GenerateDataKey*
+              - kms:DescribeKey
+            Resource: "*"
+
+  # Lambda function for health checks
+  HealthCheckFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${Environment}-hasivu-health-monitor"
+      Runtime: nodejs18.x
+      Handler: index.handler
+      Timeout: 30
+      MemorySize: 256
+      Role: !GetAtt HealthCheckRole.Arn
+      Environment:
+        Variables:
+          API_ENDPOINT: !Sub "https://${APIGatewayId}.execute-api.${AWS::Region}.amazonaws.com/${Environment}"
+          EXPECTED_SERVICES: "database,redis,auth,payment"
+      Code:
+        ZipFile: |
+          const https = require('https');
+          const AWS = require('aws-sdk');
+          const cloudwatch = new AWS.CloudWatch();
+          
+          exports.handler = async (event) => {
+              const results = [];
+              const timestamp = new Date();
+              
+              try {
+                  // Check basic health endpoint
+                  const basicHealth = await checkEndpoint('/health/basic');
+                  results.push({ name: 'basic-health', ...basicHealth });
+                  
+                  // Check detailed health endpoint
+                  const detailedHealth = await checkEndpoint('/health/detailed');
+                  results.push({ name: 'detailed-health', ...detailedHealth });
+                  
+                  // Check critical endpoints
+                  const criticalEndpoints = [
+                      '/api/menu',
+                      '/api/auth/health'
+                  ];
+                  
+                  for (const endpoint of criticalEndpoints) {
+                      const result = await checkEndpoint(endpoint);
+                      results.push({ name: endpoint.replace(/\//g, '-'), ...result });
+                  }
+                  
+                  // Calculate overall health score
+                  const healthyCount = results.filter(r => r.healthy).length;
+                  const healthScore = (healthyCount / results.length) * 100;
+                  
+                  // Send metrics to CloudWatch
+                  await publishMetrics(results, healthScore, timestamp);
+                  
+                  // Check if we need to trigger alerts
+                  const failedServices = results.filter(r => !r.healthy);
+                  if (failedServices.length > 0) {
+                      await publishFailureMetric(failedServices.length);
+                  }
+                  
+                  return {
+                      statusCode: healthScore === 100 ? 200 : 500,
+                      body: JSON.stringify({
+                          timestamp,
+                          healthScore,
+                          results,
+                          summary: {
+                              total: results.length,
+                              healthy: healthyCount,
+                              failed: results.length - healthyCount
+                          }
+                      })
+                  };
+                  
+              } catch (error) {
+                  console.error('Health check failed:', error);
+                  
+                  await publishFailureMetric(1);
+                  
+                  return {
+                      statusCode: 500,
+                      body: JSON.stringify({
+                          error: 'Health check system failure',
+                          message: error.message
+                      })
+                  };
+              }
+          };
+          
+          async function checkEndpoint(path) {
+              return new Promise((resolve) => {
+                  const startTime = Date.now();
+                  const options = {
+                      hostname: process.env.API_ENDPOINT.replace('https://', '').split('/')[0],
+                      path,
+                      method: 'GET',
+                      timeout: 10000
+                  };
+                  
+                  const req = https.request(options, (res) => {
+                      let data = '';
+                      res.on('data', chunk => data += chunk);
+                      res.on('end', () => {
+                          const responseTime = Date.now() - startTime;
+                          resolve({
+                              healthy: res.statusCode === 200,
+                              statusCode: res.statusCode,
+                              responseTime,
+                              response: data.substring(0, 200)
+                          });
+                      });
+                  });
+                  
+                  req.on('error', (error) => {
+                      resolve({
+                          healthy: false,
+                          error: error.message,
+                          responseTime: Date.now() - startTime
+                      });
+                  });
+                  
+                  req.on('timeout', () => {
+                      req.destroy();
+                      resolve({
+                          healthy: false,
+                          error: 'Request timeout',
+                          responseTime: Date.now() - startTime
+                      });
+                  });
+                  
+                  req.end();
+              });
+          }
+          
+          async function publishMetrics(results, healthScore, timestamp) {
+              const params = {
+                  Namespace: 'HASIVU/Platform',
+                  MetricData: [
+                      {
+                          MetricName: 'HealthScore',
+                          Value: healthScore,
+                          Unit: 'Percent',
+                          Timestamp: timestamp,
+                          Dimensions: [
+                              {
+                                  Name: 'Environment',
+                                  Value: process.env.AWS_LAMBDA_FUNCTION_NAME.split('-')[0]
+                              }
+                          ]
+                      }
+                  ]
+              };
+              
+              // Add individual service metrics
+              for (const result of results) {
+                  params.MetricData.push({
+                      MetricName: 'ServiceHealth',
+                      Value: result.healthy ? 1 : 0,
+                      Unit: 'Count',
+                      Timestamp: timestamp,
+                      Dimensions: [
+                          {
+                              Name: 'Environment',
+                              Value: process.env.AWS_LAMBDA_FUNCTION_NAME.split('-')[0]
+                          },
+                          {
+                              Name: 'Service',
+                              Value: result.name
+                          }
+                      ]
+                  });
+                  
+                  if (result.responseTime) {
+                      params.MetricData.push({
+                          MetricName: 'APIResponseTime',
+                          Value: result.responseTime,
+                          Unit: 'Milliseconds',
+                          Timestamp: timestamp,
+                          Dimensions: [
+                              {
+                                  Name: 'Environment',
+                                  Value: process.env.AWS_LAMBDA_FUNCTION_NAME.split('-')[0]
+                              },
+                              {
+                                  Name: 'Endpoint',
+                                  Value: result.name
+                              }
+                          ]
+                      });
+                  }
+              }
+              
+              await cloudwatch.putMetricData(params).promise();
+          }
+          
+          async function publishFailureMetric(failureCount) {
+              await cloudwatch.putMetricData({
+                  Namespace: 'HASIVU/Platform',
+                  MetricData: [
+                      {
+                          MetricName: 'HealthCheckFailures',
+                          Value: failureCount,
+                          Unit: 'Count',
+                          Dimensions: [
+                              {
+                                  Name: 'Environment',
+                                  Value: process.env.AWS_LAMBDA_FUNCTION_NAME.split('-')[0]
+                              }
+                          ]
+                      }
+                  ]
+              }).promise();
+          }
+
+  # IAM Role for health check function
+  HealthCheckRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: HealthCheckPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cloudwatch:PutMetricData
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: "*"
+
+  # EventBridge rule for health check scheduling
+  HealthCheckSchedule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub "${Environment}-hasivu-health-check"
+      Description: "Runs health checks every 2 minutes"
+      ScheduleExpression: "rate(2 minutes)"
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt HealthCheckFunction.Arn
+          Id: "HealthCheckTarget"
+
+  # Permission for EventBridge to invoke health check
+  HealthCheckInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref HealthCheckFunction
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt HealthCheckSchedule.Arn
+
+  # Custom metric filter for application errors
+  ApplicationErrorFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${Environment}-hasivu-platform-api-login"
+      FilterPattern: "[timestamp, requestId, level=\"ERROR\", ...]"
+      MetricTransformations:
+        - MetricNamespace: "HASIVU/Platform"
+          MetricName: "ApplicationErrors"
+          MetricValue: "1"
+          DefaultValue: 0
+
+  # Custom metric filter for security events
+  SecurityEventFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${Environment}-hasivu-platform-api-login"
+      FilterPattern: "[timestamp, requestId, level=\"SECURITY\", ...]"
+      MetricTransformations:
+        - MetricNamespace: "HASIVU/Security"
+          MetricName: "SecurityViolations"
+          MetricValue: "1"
+          DefaultValue: 0
+
+Parameters:
+  Environment:
+    Type: String
+    Description: Environment name (production, staging, development)
+    Default: production
+
+  APIGatewayId:
+    Type: String
+    Description: API Gateway ID for health checks
+    Default: "your-api-gateway-id"
+
+Outputs:
+  DashboardURL:
+    Description: CloudWatch Dashboard URL
+    Value: !Sub "https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${Environment}-hasivu-production-monitoring"
+
+  CriticalAlertTopicArn:
+    Description: SNS topic for critical alerts
+    Value: !Ref CriticalAlertTopic
+    Export:
+      Name: !Sub "${AWS::StackName}-critical-alerts"
+
+  WarningAlertTopicArn:
+    Description: SNS topic for warning alerts
+    Value: !Ref WarningAlertTopic
+    Export:
+      Name: !Sub "${AWS::StackName}-warning-alerts"
+
+  SecurityAlertTopicArn:
+    Description: SNS topic for security alerts
+    Value: !Ref SecurityAlertTopic
+    Export:
+      Name: !Sub "${AWS::StackName}-security-alerts"
+
+  HealthCheckFunctionArn:
+    Description: Health check Lambda function ARN
+    Value: !GetAtt HealthCheckFunction.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-health-check-function"

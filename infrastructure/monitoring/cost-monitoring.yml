@@ -1,0 +1,1012 @@
+# Cost Monitoring and Optimization for HASIVU Platform
+# Comprehensive cost tracking, budgets, and optimization alerts
+
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'HASIVU Platform - Cost Monitoring and Optimization System'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: production
+    AllowedValues: [dev, staging, production]
+    Description: Environment name
+
+  ProjectName:
+    Type: String
+    Default: hasivu-platform
+    Description: Project name
+
+  MonthlyBudgetLimit:
+    Type: Number
+    Default: 1000
+    Description: Monthly budget limit in USD
+
+  CostAnomalyThreshold:
+    Type: Number
+    Default: 50
+    Description: Cost anomaly threshold in USD
+
+  CostNotificationEmail:
+    Type: String
+    Description: Email for cost notifications
+    AllowedPattern: '^[^@]+@[^@]+\.[^@]+$'
+
+  AlertingTopicArn:
+    Type: String
+    Description: SNS Topic ARN for cost alerts
+
+Conditions:
+  IsProduction: !Equals [!Ref Environment, production]
+
+Resources:
+  # =====================================================
+  # COST BUDGETS
+  # =====================================================
+
+  # Monthly cost budget
+  MonthlyBudget:
+    Type: AWS::Budgets::Budget
+    Properties:
+      Budget:
+        BudgetName: !Sub '${ProjectName}-${Environment}-monthly-budget'
+        BudgetLimit:
+          Amount: !Ref MonthlyBudgetLimit
+          Unit: USD
+        TimeUnit: MONTHLY
+        BudgetType: COST
+        CostFilters:
+          TagKey:
+            - Project
+            - Environment
+          TagValue:
+            - HASIVU
+            - !Ref Environment
+        PlannedBudgetLimits:
+          # Quarter-based budget planning
+          - BudgetLimit:
+              Amount: !Ref MonthlyBudgetLimit
+              Unit: USD
+            TimePeriod:
+              Start: '2024-01-01_00:00'
+              End: '2024-03-31_23:59'
+          - BudgetLimit:
+              Amount: !Ref MonthlyBudgetLimit
+              Unit: USD
+            TimePeriod:
+              Start: '2024-04-01_00:00'
+              End: '2024-06-30_23:59'
+      NotificationsWithSubscribers:
+        # 60% Budget Alert
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 60
+            ThresholdType: PERCENTAGE
+            NotificationState: ALARM
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref CostNotificationEmail
+            - SubscriptionType: SNS
+              Address: !Ref AlertingTopicArn
+        # 80% Budget Alert
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 80
+            ThresholdType: PERCENTAGE
+            NotificationState: ALARM
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref CostNotificationEmail
+            - SubscriptionType: SNS
+              Address: !Ref AlertingTopicArn
+        # 100% Budget Alert
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 100
+            ThresholdType: PERCENTAGE
+            NotificationState: ALARM
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref CostNotificationEmail
+            - SubscriptionType: SNS
+              Address: !Ref AlertingTopicArn
+        # Forecasted Budget Alert
+        - Notification:
+            NotificationType: FORECASTED
+            ComparisonOperator: GREATER_THAN
+            Threshold: 100
+            ThresholdType: PERCENTAGE
+            NotificationState: ALARM
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref CostNotificationEmail
+
+  # Service-specific budgets
+  LambdaBudget:
+    Type: AWS::Budgets::Budget
+    Properties:
+      Budget:
+        BudgetName: !Sub '${ProjectName}-${Environment}-lambda-budget'
+        BudgetLimit:
+          Amount: !Ref
+            - MultiplyValues
+            - - !Ref MonthlyBudgetLimit
+              - 0.4  # 40% of total budget for Lambda
+        TimeUnit: MONTHLY
+        BudgetType: COST
+        CostFilters:
+          Service:
+            - AWS Lambda
+          TagKey:
+            - Project
+            - Environment
+          TagValue:
+            - HASIVU
+            - !Ref Environment
+      NotificationsWithSubscribers:
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 80
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref CostNotificationEmail
+
+  DatabaseBudget:
+    Type: AWS::Budgets::Budget
+    Properties:
+      Budget:
+        BudgetName: !Sub '${ProjectName}-${Environment}-database-budget'
+        BudgetLimit:
+          Amount: !Ref
+            - MultiplyValues
+            - - !Ref MonthlyBudgetLimit
+              - 0.25  # 25% of total budget for RDS
+        TimeUnit: MONTHLY
+        BudgetType: COST
+        CostFilters:
+          Service:
+            - Amazon Relational Database Service
+          TagKey:
+            - Project
+            - Environment
+          TagValue:
+            - HASIVU
+            - !Ref Environment
+      NotificationsWithSubscribers:
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 80
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref CostNotificationEmail
+
+  # =====================================================
+  # COST ANOMALY DETECTION
+  # =====================================================
+
+  CostAnomalyDetector:
+    Type: AWS::CE::AnomalyDetector
+    Properties:
+      AnomalyDetectorName: !Sub '${ProjectName}-${Environment}-cost-anomaly-detector'
+      MonitorType: DIMENSIONAL
+      MonitorSpecification: |
+        {
+          "Dimension": "SERVICE",
+          "MatchOptions": ["EQUALS"],
+          "Values": ["AWS Lambda", "Amazon API Gateway", "Amazon RDS", "Amazon ElastiCache"]
+        }
+
+  CostAnomalySubscription:
+    Type: AWS::CE::AnomalySubscription
+    Properties:
+      SubscriptionName: !Sub '${ProjectName}-${Environment}-cost-anomaly-subscription'
+      MonitorArnList:
+        - !GetAtt CostAnomalyDetector.AnomalyDetectorArn
+      Subscribers:
+        - Type: EMAIL
+          Address: !Ref CostNotificationEmail
+        - Type: SNS
+          Address: !Ref AlertingTopicArn
+      Threshold: !Ref CostAnomalyThreshold
+      ThresholdExpression: 'ANOMALY_TOTAL_IMPACT_ABSOLUTE'
+
+  # =====================================================
+  # COST OPTIMIZATION DASHBOARD
+  # =====================================================
+
+  CostOptimizationDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Sub '${ProjectName}-${Environment}-cost-optimization'
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 0,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "HASIVU/Costs", "DailyCost", "Environment", "${Environment}" ],
+                  [ ".", "MonthlyCost", ".", "." ],
+                  [ ".", "ProjectedMonthlyCost", ".", "." ]
+                ],
+                "period": 86400,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "Cost Trends ($)",
+                "yAxis": {
+                  "left": {
+                    "min": 0
+                  }
+                },
+                "annotations": {
+                  "horizontal": [
+                    {
+                      "value": ${MonthlyBudgetLimit},
+                      "label": "Monthly Budget Limit"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "type": "metric",
+              "x": 8,
+              "y": 0,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "HASIVU/Costs", "LambdaCost", "Environment", "${Environment}" ],
+                  [ ".", "DatabaseCost", ".", "." ],
+                  [ ".", "StorageCost", ".", "." ],
+                  [ ".", "NetworkCost", ".", "." ]
+                ],
+                "period": 86400,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "Service-Level Costs ($)",
+                "view": "singleValue"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 16,
+              "y": 0,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "HASIVU/Costs", "CostPerUser", "Environment", "${Environment}" ],
+                  [ ".", "CostPerTransaction", ".", "." ],
+                  [ ".", "CostPerOrder", ".", "." ]
+                ],
+                "period": 86400,
+                "stat": "Average",
+                "region": "${AWS::Region}",
+                "title": "Cost Efficiency Metrics ($)"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 6,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "AWS/Lambda", "Duration", { "stat": "Average" } ],
+                  [ ".", "Invocations", { "stat": "Sum" } ]
+                ],
+                "period": 3600,
+                "stat": "Average",
+                "region": "${AWS::Region}",
+                "title": "Lambda Usage Patterns",
+                "yAxis": {
+                  "left": {
+                    "min": 0
+                  }
+                }
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12,
+              "y": 6,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "AWS/RDS", "CPUUtilization", "DBInstanceIdentifier", "${Environment}-hasivu-postgres" ],
+                  [ ".", "DatabaseConnections", ".", "." ]
+                ],
+                "period": 3600,
+                "stat": "Average",
+                "region": "${AWS::Region}",
+                "title": "Database Utilization"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 12,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "HASIVU/Optimization", "UnusedResources", "Environment", "${Environment}" ],
+                  [ ".", "OverProvisionedResources", ".", "." ],
+                  [ ".", "OptimizationOpportunities", ".", "." ]
+                ],
+                "period": 86400,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "Optimization Opportunities"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 8,
+              "y": 12,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "HASIVU/Costs", "CostSavings", "OptimizationType", "RightSizing", "Environment", "${Environment}" ],
+                  [ "...", "UnusedResources", ".", "." ],
+                  [ "...", "ReservedInstances", ".", "." ]
+                ],
+                "period": 86400,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "Cost Savings Achieved ($)"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 16,
+              "y": 12,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "HASIVU/Costs", "BudgetUtilization", "Environment", "${Environment}" ],
+                  [ ".", "ForecastAccuracy", ".", "." ]
+                ],
+                "period": 86400,
+                "stat": "Average",
+                "region": "${AWS::Region}",
+                "title": "Budget Management (%)",
+                "yAxis": {
+                  "left": {
+                    "min": 0,
+                    "max": 100
+                  }
+                }
+              }
+            }
+          ]
+        }
+
+  # =====================================================
+  # COST OPTIMIZATION LAMBDA
+  # =====================================================
+
+  CostOptimizationFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${ProjectName}-${Environment}-cost-optimization'
+      Runtime: python3.9
+      Handler: index.lambda_handler
+      Timeout: 900
+      MemorySize: 1024
+      Role: !GetAtt CostOptimizationRole.Arn
+      Environment:
+        Variables:
+          ENVIRONMENT: !Ref Environment
+          PROJECT_NAME: !Ref ProjectName
+          MONTHLY_BUDGET: !Ref MonthlyBudgetLimit
+          NOTIFICATION_TOPIC: !Ref AlertingTopicArn
+      Code:
+        ZipFile: |
+          import json
+          import boto3
+          import os
+          import logging
+          from datetime import datetime, timedelta
+          from decimal import Decimal
+          
+          logger = logging.getLogger()
+          logger.setLevel(logging.INFO)
+          
+          # Initialize AWS clients
+          ce = boto3.client('ce')  # Cost Explorer
+          cloudwatch = boto3.client('cloudwatch')
+          lambda_client = boto3.client('lambda')
+          rds = boto3.client('rds')
+          sns = boto3.client('sns')
+          
+          def lambda_handler(event, context):
+              try:
+                  environment = os.environ['ENVIRONMENT']
+                  project = os.environ['PROJECT_NAME']
+                  
+                  logger.info(f"Starting cost optimization analysis for {project}-{environment}")
+                  
+                  # Perform cost analysis
+                  cost_analysis = analyze_costs()
+                  
+                  # Identify optimization opportunities
+                  optimizations = identify_optimizations()
+                  
+                  # Generate recommendations
+                  recommendations = generate_recommendations(cost_analysis, optimizations)
+                  
+                  # Send notifications if significant opportunities found
+                  if recommendations.get('potential_savings', 0) > 50:
+                      send_optimization_notification(recommendations)
+                  
+                  # Update CloudWatch metrics
+                  update_cost_metrics(cost_analysis)
+                  
+                  return {
+                      'statusCode': 200,
+                      'body': json.dumps({
+                          'message': 'Cost optimization analysis completed',
+                          'cost_analysis': cost_analysis,
+                          'recommendations': recommendations
+                      }, default=decimal_default)
+                  }
+                  
+              except Exception as e:
+                  logger.error(f"Error in cost optimization: {str(e)}")
+                  return {
+                      'statusCode': 500,
+                      'body': json.dumps(f'Error: {str(e)}')
+                  }
+          
+          def analyze_costs():
+              """Analyze current and historical costs"""
+              try:
+                  end_date = datetime.utcnow().date()
+                  start_date = end_date - timedelta(days=30)
+                  
+                  # Get cost and usage data
+                  response = ce.get_cost_and_usage(
+                      TimePeriod={
+                          'Start': start_date.strftime('%Y-%m-%d'),
+                          'End': end_date.strftime('%Y-%m-%d')
+                      },
+                      Granularity='DAILY',
+                      Metrics=['BlendedCost', 'UsageQuantity'],
+                      GroupBy=[
+                          {
+                              'Type': 'DIMENSION',
+                              'Key': 'SERVICE'
+                          }
+                      ],
+                      Filter={
+                          'Dimensions': {
+                              'Key': 'SERVICE',
+                              'Values': [
+                                  'AWS Lambda',
+                                  'Amazon API Gateway',
+                                  'Amazon Relational Database Service',
+                                  'Amazon ElastiCache',
+                                  'Amazon S3'
+                              ]
+                          }
+                      }
+                  )
+                  
+                  # Process cost data
+                  total_cost = Decimal('0')
+                  service_costs = {}
+                  
+                  for result in response['ResultsByTime']:
+                      for group in result['Groups']:
+                          service = group['Keys'][0]
+                          cost = Decimal(group['Metrics']['BlendedCost']['Amount'])
+                          total_cost += cost
+                          
+                          if service not in service_costs:
+                              service_costs[service] = Decimal('0')
+                          service_costs[service] += cost
+                  
+                  return {
+                      'total_monthly_cost': total_cost,
+                      'service_costs': service_costs,
+                      'cost_trend': analyze_cost_trend(response['ResultsByTime'])
+                  }
+                  
+              except Exception as e:
+                  logger.error(f"Error analyzing costs: {str(e)}")
+                  return {'error': str(e)}
+          
+          def analyze_cost_trend(results):
+              """Analyze cost trend over time"""
+              try:
+                  daily_costs = []
+                  for result in results:
+                      total_daily = Decimal('0')
+                      for group in result['Groups']:
+                          total_daily += Decimal(group['Metrics']['BlendedCost']['Amount'])
+                      daily_costs.append(float(total_daily))
+                  
+                  if len(daily_costs) >= 7:
+                      recent_avg = sum(daily_costs[-7:]) / 7
+                      previous_avg = sum(daily_costs[-14:-7]) / 7 if len(daily_costs) >= 14 else recent_avg
+                      
+                      if recent_avg > previous_avg * 1.1:
+                          return 'increasing'
+                      elif recent_avg < previous_avg * 0.9:
+                          return 'decreasing'
+                      else:
+                          return 'stable'
+                  
+                  return 'insufficient_data'
+                  
+              except Exception as e:
+                  logger.error(f"Error analyzing cost trend: {str(e)}")
+                  return 'unknown'
+          
+          def identify_optimizations():
+              """Identify cost optimization opportunities"""
+              try:
+                  optimizations = []
+                  
+                  # Check Lambda optimization opportunities
+                  lambda_opts = check_lambda_optimizations()
+                  optimizations.extend(lambda_opts)
+                  
+                  # Check RDS optimization opportunities
+                  rds_opts = check_rds_optimizations()
+                  optimizations.extend(rds_opts)
+                  
+                  # Check general AWS optimizations
+                  general_opts = check_general_optimizations()
+                  optimizations.extend(general_opts)
+                  
+                  return optimizations
+                  
+              except Exception as e:
+                  logger.error(f"Error identifying optimizations: {str(e)}")
+                  return []
+          
+          def check_lambda_optimizations():
+              """Check Lambda-specific optimizations"""
+              try:
+                  optimizations = []
+                  
+                  # Get Lambda function metrics
+                  functions = lambda_client.list_functions()['Functions']
+                  
+                  for func in functions:
+                      func_name = func['FunctionName']
+                      if os.environ['PROJECT_NAME'] not in func_name:
+                          continue
+                      
+                      # Check memory utilization
+                      memory_usage = get_lambda_memory_usage(func_name)
+                      if memory_usage and memory_usage < 0.5:  # Less than 50% memory usage
+                          optimizations.append({
+                              'type': 'lambda_memory_rightsizing',
+                              'resource': func_name,
+                              'current_memory': func['MemorySize'],
+                              'recommended_memory': max(128, int(func['MemorySize'] * memory_usage * 1.2)),
+                              'potential_savings': calculate_lambda_memory_savings(func['MemorySize'], memory_usage)
+                          })
+                      
+                      # Check for unused functions
+                      invocations = get_lambda_invocations(func_name)
+                      if invocations == 0:
+                          optimizations.append({
+                              'type': 'unused_lambda_function',
+                              'resource': func_name,
+                              'potential_savings': 10  # Estimated savings
+                          })
+                  
+                  return optimizations
+                  
+              except Exception as e:
+                  logger.error(f"Error checking Lambda optimizations: {str(e)}")
+                  return []
+          
+          def check_rds_optimizations():
+              """Check RDS-specific optimizations"""
+              try:
+                  optimizations = []
+                  
+                  # Get RDS instances
+                  instances = rds.describe_db_instances()['DBInstances']
+                  
+                  for instance in instances:
+                      if os.environ['PROJECT_NAME'] not in instance['DBInstanceIdentifier']:
+                          continue
+                      
+                      # Check CPU utilization
+                      cpu_usage = get_rds_cpu_usage(instance['DBInstanceIdentifier'])
+                      if cpu_usage and cpu_usage < 20:  # Less than 20% CPU usage
+                          optimizations.append({
+                              'type': 'rds_rightsizing',
+                              'resource': instance['DBInstanceIdentifier'],
+                              'current_instance_class': instance['DBInstanceClass'],
+                              'recommended_action': 'Consider downgrading instance size',
+                              'potential_savings': 200  # Estimated monthly savings
+                          })
+                  
+                  return optimizations
+                  
+              except Exception as e:
+                  logger.error(f"Error checking RDS optimizations: {str(e)}")
+                  return []
+          
+          def check_general_optimizations():
+              """Check general AWS optimizations"""
+              try:
+                  optimizations = []
+                  
+                  # Check for unused S3 storage
+                  # Check for unused security groups
+                  # Check for idle load balancers
+                  # etc.
+                  
+                  return optimizations
+                  
+              except Exception as e:
+                  logger.error(f"Error checking general optimizations: {str(e)}")
+                  return []
+          
+          def get_lambda_memory_usage(function_name):
+              """Get average memory usage for a Lambda function"""
+              try:
+                  end_time = datetime.utcnow()
+                  start_time = end_time - timedelta(days=7)
+                  
+                  response = cloudwatch.get_metric_statistics(
+                      Namespace='AWS/Lambda',
+                      MetricName='MemoryUtilization',
+                      Dimensions=[
+                          {
+                              'Name': 'FunctionName',
+                              'Value': function_name
+                          }
+                      ],
+                      StartTime=start_time,
+                      EndTime=end_time,
+                      Period=3600,
+                      Statistics=['Average']
+                  )
+                  
+                  if response['Datapoints']:
+                      avg_usage = sum(dp['Average'] for dp in response['Datapoints']) / len(response['Datapoints'])
+                      return avg_usage / 100  # Convert percentage to ratio
+                  
+                  return None
+                  
+              except Exception as e:
+                  logger.error(f"Error getting Lambda memory usage: {str(e)}")
+                  return None
+          
+          def get_lambda_invocations(function_name):
+              """Get Lambda function invocation count"""
+              try:
+                  end_time = datetime.utcnow()
+                  start_time = end_time - timedelta(days=7)
+                  
+                  response = cloudwatch.get_metric_statistics(
+                      Namespace='AWS/Lambda',
+                      MetricName='Invocations',
+                      Dimensions=[
+                          {
+                              'Name': 'FunctionName',
+                              'Value': function_name
+                          }
+                      ],
+                      StartTime=start_time,
+                      EndTime=end_time,
+                      Period=3600,
+                      Statistics=['Sum']
+                  )
+                  
+                  total_invocations = sum(dp['Sum'] for dp in response['Datapoints'])
+                  return total_invocations
+                  
+              except Exception as e:
+                  logger.error(f"Error getting Lambda invocations: {str(e)}")
+                  return 0
+          
+          def get_rds_cpu_usage(instance_id):
+              """Get RDS CPU utilization"""
+              try:
+                  end_time = datetime.utcnow()
+                  start_time = end_time - timedelta(days=7)
+                  
+                  response = cloudwatch.get_metric_statistics(
+                      Namespace='AWS/RDS',
+                      MetricName='CPUUtilization',
+                      Dimensions=[
+                          {
+                              'Name': 'DBInstanceIdentifier',
+                              'Value': instance_id
+                          }
+                      ],
+                      StartTime=start_time,
+                      EndTime=end_time,
+                      Period=3600,
+                      Statistics=['Average']
+                  )
+                  
+                  if response['Datapoints']:
+                      avg_cpu = sum(dp['Average'] for dp in response['Datapoints']) / len(response['Datapoints'])
+                      return avg_cpu
+                  
+                  return None
+                  
+              except Exception as e:
+                  logger.error(f"Error getting RDS CPU usage: {str(e)}")
+                  return None
+          
+          def calculate_lambda_memory_savings(current_memory, usage_ratio):
+              """Calculate potential Lambda memory savings"""
+              # Simplified calculation - actual savings would depend on invocation patterns
+              recommended_memory = max(128, int(current_memory * usage_ratio * 1.2))
+              memory_reduction = current_memory - recommended_memory
+              
+              # Rough estimate: $0.0000166667 per GB-second
+              # Assume 1000 invocations per day, 2 second average duration
+              monthly_invocations = 1000 * 30
+              avg_duration = 2
+              
+              current_cost = (current_memory / 1024) * avg_duration * monthly_invocations * 0.0000166667
+              new_cost = (recommended_memory / 1024) * avg_duration * monthly_invocations * 0.0000166667
+              
+              return max(0, current_cost - new_cost)
+          
+          def generate_recommendations(cost_analysis, optimizations):
+              """Generate cost optimization recommendations"""
+              try:
+                  total_potential_savings = sum(opt.get('potential_savings', 0) for opt in optimizations)
+                  
+                  recommendations = {
+                      'total_potential_savings': total_potential_savings,
+                      'optimization_count': len(optimizations),
+                      'priority_optimizations': [],
+                      'quick_wins': [],
+                      'long_term_optimizations': []
+                  }
+                  
+                  # Categorize optimizations
+                  for opt in optimizations:
+                      if opt.get('potential_savings', 0) > 100:
+                          recommendations['priority_optimizations'].append(opt)
+                      elif opt['type'] in ['unused_lambda_function', 'unused_resources']:
+                          recommendations['quick_wins'].append(opt)
+                      else:
+                          recommendations['long_term_optimizations'].append(opt)
+                  
+                  return recommendations
+                  
+              except Exception as e:
+                  logger.error(f"Error generating recommendations: {str(e)}")
+                  return {'error': str(e)}
+          
+          def send_optimization_notification(recommendations):
+              """Send cost optimization notification"""
+              try:
+                  message = f"""
+          Cost Optimization Report - {os.environ['PROJECT_NAME']} ({os.environ['ENVIRONMENT']})
+          
+          Total Potential Monthly Savings: ${recommendations['total_potential_savings']:.2f}
+          Optimization Opportunities Found: {recommendations['optimization_count']}
+          
+          Priority Optimizations ({len(recommendations['priority_optimizations'])}):
+          {format_optimizations(recommendations['priority_optimizations'])}
+          
+          Quick Wins ({len(recommendations['quick_wins'])}):
+          {format_optimizations(recommendations['quick_wins'])}
+          
+          Long-term Optimizations ({len(recommendations['long_term_optimizations'])}):
+          {format_optimizations(recommendations['long_term_optimizations'])}
+          
+          Review the full cost optimization dashboard for detailed analysis.
+                  """
+                  
+                  sns.publish(
+                      TopicArn=os.environ['NOTIFICATION_TOPIC'],
+                      Message=message,
+                      Subject=f'Cost Optimization Report - ${recommendations["total_potential_savings"]:.2f} Potential Savings'
+                  )
+                  
+                  logger.info("Cost optimization notification sent")
+                  
+              except Exception as e:
+                  logger.error(f"Error sending optimization notification: {str(e)}")
+          
+          def format_optimizations(optimizations):
+              """Format optimizations for notification"""
+              if not optimizations:
+                  return "None"
+              
+              formatted = []
+              for opt in optimizations[:5]:  # Show top 5
+                  formatted.append(f"- {opt['type']}: {opt.get('resource', 'N/A')} (${opt.get('potential_savings', 0):.2f})")
+              
+              if len(optimizations) > 5:
+                  formatted.append(f"... and {len(optimizations) - 5} more")
+              
+              return '\n'.join(formatted)
+          
+          def update_cost_metrics(cost_analysis):
+              """Update CloudWatch metrics with cost data"""
+              try:
+                  timestamp = datetime.utcnow()
+                  
+                  # Update total cost metric
+                  cloudwatch.put_metric_data(
+                      Namespace='HASIVU/Costs',
+                      MetricData=[
+                          {
+                              'MetricName': 'MonthlyCost',
+                              'Value': float(cost_analysis.get('total_monthly_cost', 0)),
+                              'Unit': 'None',
+                              'Timestamp': timestamp,
+                              'Dimensions': [
+                                  {
+                                      'Name': 'Environment',
+                                      'Value': os.environ['ENVIRONMENT']
+                                  }
+                              ]
+                          }
+                      ]
+                  )
+                  
+                  # Update service-level costs
+                  service_costs = cost_analysis.get('service_costs', {})
+                  for service, cost in service_costs.items():
+                      metric_name = service.replace(' ', '').replace('Amazon', '').replace('AWS', '') + 'Cost'
+                      
+                      cloudwatch.put_metric_data(
+                          Namespace='HASIVU/Costs',
+                          MetricData=[
+                              {
+                                  'MetricName': metric_name,
+                                  'Value': float(cost),
+                                  'Unit': 'None',
+                                  'Timestamp': timestamp,
+                                  'Dimensions': [
+                                      {
+                                          'Name': 'Environment',
+                                          'Value': os.environ['ENVIRONMENT']
+                                      }
+                                  ]
+                              }
+                          ]
+                      )
+                  
+                  logger.info("Cost metrics updated in CloudWatch")
+                  
+              except Exception as e:
+                  logger.error(f"Error updating cost metrics: {str(e)}")
+          
+          def decimal_default(obj):
+              """JSON encoder for Decimal objects"""
+              if isinstance(obj, Decimal):
+                  return float(obj)
+              raise TypeError
+
+  # IAM Role for cost optimization function
+  CostOptimizationRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: CostOptimizationPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ce:GetCostAndUsage
+                  - ce:GetDimensionValues
+                  - ce:GetReservationCoverage
+                  - ce:GetUsageReport
+                  - cloudwatch:GetMetricStatistics
+                  - cloudwatch:PutMetricData
+                  - lambda:ListFunctions
+                  - lambda:GetFunction
+                  - rds:DescribeDBInstances
+                  - sns:Publish
+                Resource: "*"
+
+  # Schedule cost optimization analysis
+  CostOptimizationSchedule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub '${ProjectName}-${Environment}-cost-optimization-schedule'
+      Description: 'Run cost optimization analysis daily'
+      ScheduleExpression: 'cron(0 8 * * ? *)'  # Daily at 8 AM UTC
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt CostOptimizationFunction.Arn
+          Id: CostOptimizationTarget
+
+  # Permission for EventBridge to invoke cost optimization function
+  CostOptimizationPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref CostOptimizationFunction
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt CostOptimizationSchedule.Arn
+
+  # =====================================================
+  # RESERVED INSTANCE RECOMMENDATIONS
+  # =====================================================
+
+  ReservedInstanceBudget:
+    Type: AWS::Budgets::Budget
+    Condition: IsProduction
+    Properties:
+      Budget:
+        BudgetName: !Sub '${ProjectName}-${Environment}-ri-budget'
+        BudgetLimit:
+          Amount: 500  # Reserved Instance budget
+          Unit: USD
+        TimeUnit: MONTHLY
+        BudgetType: RI_COVERAGE
+        CostFilters:
+          Service:
+            - Amazon Relational Database Service
+            - Amazon ElastiCache
+      NotificationsWithSubscribers:
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: LESS_THAN
+            Threshold: 80  # Alert if RI coverage falls below 80%
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref CostNotificationEmail
+
+Outputs:
+  MonthlyBudgetId:
+    Description: ID of the monthly budget
+    Value: !Ref MonthlyBudget
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-MonthlyBudget'
+
+  CostAnomalyDetectorArn:
+    Description: ARN of the cost anomaly detector
+    Value: !GetAtt CostAnomalyDetector.AnomalyDetectorArn
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-CostAnomalyDetector'
+
+  CostOptimizationFunctionArn:
+    Description: ARN of the cost optimization Lambda function
+    Value: !GetAtt CostOptimizationFunction.Arn
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-CostOptimizationFunction'
+
+  CostDashboardUrl:
+    Description: URL for the cost optimization dashboard
+    Value: !Sub 'https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${ProjectName}-${Environment}-cost-optimization'
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-CostDashboardUrl'

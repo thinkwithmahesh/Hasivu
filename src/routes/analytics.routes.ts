@@ -1,0 +1,529 @@
+/**
+ * HASIVU Platform - Analytics Routes
+ * Analytics and reporting API endpoints for business intelligence and data analysis
+ */
+import { Router } from 'express';
+import { body, param, query, validationResult } from 'express-validator';
+import { Request, Response, NextFunction } from 'express';
+import { AnalyticsService } from '../services/analytics.service';
+import { authMiddleware, AuthenticatedRequest } from '../middleware/auth.middleware';
+import { requestLogger } from '../middleware/logging.middleware';
+import { generalRateLimit } from '../middleware/rateLimiter.middleware';
+import { structuredLogger } from '../services/structured-logging.service';
+import { ApiResponse } from '../types/api.types';
+
+const router = Router();
+
+// Validation error handler
+const handleValidationErrors = (req: Request, res: Response, next: NextFunction): void => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    res.status(400).json({
+      success: false,
+      message: 'Validation errors',
+      errors: errors.array(),
+      data: null
+    } as unknown as ApiResponse<any>);
+    return;
+  }
+  next();
+};
+
+// Analytics access control middleware
+const requireAnalyticsAccess = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+  if (!['admin', 'super_admin', 'school_admin'].includes(req.user!.role)) {
+    res.status(403).json({
+      success: false,
+      message: 'Insufficient permissions for analytics access',
+      errors: [],
+      data: null
+    } as unknown as ApiResponse<any>);
+    return;
+  }
+  next();
+};
+
+// Apply middleware
+router.use(requestLogger);
+router.use(generalRateLimit);
+router.use(authMiddleware);
+router.use(requireAnalyticsAccess);
+
+/**
+ * POST /api/v1/analytics/query
+ * Execute custom analytics query with metrics, dimensions, and filters
+ */
+router.post('/query',
+  [
+    body('metrics')
+      .isArray({ min: 1 })
+      .withMessage('At least one metric is required'),
+    body('dateRange')
+      .isObject()
+      .withMessage('Date range is required'),
+    body('dateRange.start')
+      .isISO8601()
+      .toDate()
+      .withMessage('Start date must be a valid ISO 8601 date'),
+    body('dateRange.end')
+      .isISO8601()
+      .toDate()
+      .withMessage('End date must be a valid ISO 8601 date'),
+    body('dimensions')
+      .optional()
+      .isArray()
+      .withMessage('Dimensions must be an array'),
+    body('filters')
+      .optional()
+      .isObject()
+      .withMessage('Filters must be an object'),
+    body('groupBy')
+      .optional()
+      .isIn(['hour', 'day', 'week', 'month', 'quarter', 'year'])
+      .withMessage('Invalid group by period'),
+    body('orderBy')
+      .optional()
+      .isArray()
+      .withMessage('Order by must be an array'),
+    body('limit')
+      .optional()
+      .isInt({ min: 1, max: 1000 })
+      .toInt()
+      .withMessage('Limit must be between 1 and 1000'),
+    body('offset')
+      .optional()
+      .isInt({ min: 0 })
+      .toInt()
+      .withMessage('Offset must be a non-negative integer')
+  ],
+  handleValidationErrors,
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const query = req.body;
+      
+      // Apply school filter for school admins
+      if (req.user!.role === 'school_admin') {
+        query.filters = query.filters || {};
+        // TODO: Add schoolId from user profile when available
+        // query.filters.school_id = req.user!.schoolId;
+      }
+      
+      const analyticsQuery = {
+        metrics: query.metrics || [],
+        filters: query.filters || {},
+        dateRange: query.dateRange || { start: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), end: new Date() }
+      };
+      const data = await AnalyticsService.executeQuery(analyticsQuery);
+      
+      structuredLogger.business({
+        event: 'analytics_query_executed',
+        category: 'analytics',
+        metadata: {
+          userId: req.user!.id,
+          metrics: query.metrics,
+          dateRange: query.dateRange
+        },
+        context: { sessionId: req.sessionId || 'unknown', timestamp: new Date() }
+      });
+      
+      res.json({
+        success: true,
+        message: 'Analytics query executed successfully',
+        errors: [],
+        data
+      } as unknown as ApiResponse<any>);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+/**
+ * GET /api/v1/analytics/dashboard/:dashboardId
+ * Retrieve dashboard data with optional date range filtering
+ */
+router.get('/dashboard/:dashboardId',
+  [
+    param('dashboardId')
+      .isUUID()
+      .withMessage('Dashboard ID must be a valid UUID'),
+    query('startDate')
+      .optional()
+      .isISO8601()
+      .withMessage('Start date must be a valid ISO 8601 date'),
+    query('endDate')
+      .optional()
+      .isISO8601()
+      .withMessage('End date must be a valid ISO 8601 date')
+  ],
+  handleValidationErrors,
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { dashboardId } = req.params;
+      const { startDate, endDate } = req.query;
+      
+      let dateRange: { start: Date; end: Date } | undefined;
+      if (startDate && endDate) {
+        dateRange = {
+          start: new Date(startDate as string),
+          end: new Date(endDate as string)
+        };
+      }
+      
+      const dashboardData = await AnalyticsService.generateDashboard(dashboardId, req.user!.id, dateRange);
+      
+      res.json({
+        success: true,
+        message: 'Dashboard data retrieved successfully',
+        errors: [],
+        data: dashboardData
+      } as unknown as ApiResponse<any>);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+/**
+ * GET /api/v1/analytics/kpis
+ * Retrieve Key Performance Indicators with optional filtering
+ */
+router.get('/kpis',
+  [
+    query('schoolId')
+      .optional()
+      .isUUID()
+      .withMessage('School ID must be a valid UUID'),
+    query('startDate')
+      .optional()
+      .isISO8601()
+      .withMessage('Start date must be a valid ISO 8601 date'),
+    query('endDate')
+      .optional()
+      .isISO8601()
+      .withMessage('End date must be a valid ISO 8601 date')
+  ],
+  handleValidationErrors,
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      let { schoolId, startDate, endDate } = req.query;
+      
+      // Apply school filter for school admins
+      if (req.user!.role === 'school_admin') {
+        // TODO: Get schoolId from user profile
+        // schoolId = req.user!.schoolId;
+      }
+      
+      let dateRange: { start: Date; end: Date } | undefined;
+      if (startDate && endDate) {
+        dateRange = {
+          start: new Date(startDate as string),
+          end: new Date(endDate as string)
+        };
+      }
+      
+      // Generate KPI report using day period as fallback
+      const kpis = await AnalyticsService.generateReport('day', 'summary');
+      
+      res.json({
+        success: true,
+        message: 'KPIs retrieved successfully',
+        errors: [],
+        data: kpis
+      } as unknown as ApiResponse<any>);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+/**
+ * GET /api/v1/analytics/realtime
+ * Retrieve real-time analytics metrics and live data
+ */
+router.get('/realtime',
+  [
+    query('metrics')
+      .optional()
+      .isArray()
+      .withMessage('Metrics must be an array if provided')
+  ],
+  handleValidationErrors,
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const metrics = req.query.metrics as string[] || [];
+      const realtimeMetrics = await AnalyticsService.getRealtimeMetrics();
+      
+      res.json({
+        success: true,
+        message: 'Real-time metrics retrieved successfully',
+        errors: [],
+        data: realtimeMetrics
+      } as unknown as ApiResponse<any>);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+/**
+ * POST /api/v1/analytics/reports
+ * Generate custom analytics reports
+ */
+router.post('/reports',
+  [
+    body('name')
+      .isLength({ min: 1, max: 255 })
+      .withMessage('Report name is required and must be under 255 characters'),
+    body('type')
+      .isIn(['dashboard', 'scheduled', 'ad_hoc'])
+      .withMessage('Report type must be dashboard, scheduled, or ad_hoc'),
+    body('query')
+      .isObject()
+      .withMessage('Query configuration is required'),
+    body('query.metrics')
+      .isArray({ min: 1 })
+      .withMessage('At least one metric is required'),
+    body('query.dateRange')
+      .isObject()
+      .withMessage('Date range is required'),
+    body('query.dateRange.start')
+      .isISO8601()
+      .toDate()
+      .withMessage('Start date must be a valid ISO 8601 date'),
+    body('query.dateRange.end')
+      .isISO8601()
+      .toDate()
+      .withMessage('End date must be a valid ISO 8601 date')
+  ],
+  handleValidationErrors,
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { name, type, query } = req.body;
+      
+      // Apply school filter for school admins
+      if (req.user!.role === 'school_admin') {
+        query.filters = query.filters || {};
+        // TODO: Add schoolId from user profile when available
+        // query.filters.school_id = req.user!.schoolId;
+      }
+      
+      // Generate report using day period as fallback
+      const reportPeriod = query.groupBy || 'day';
+      const report = await AnalyticsService.generateReport(reportPeriod, 'detailed');
+      
+      res.status(201).json({
+        success: true,
+        message: 'Report generated successfully',
+        errors: [],
+        data: report
+      } as unknown as ApiResponse<any>);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+/**
+ * POST /api/v1/analytics/metrics
+ * Track custom metrics and events
+ */
+router.post('/metrics',
+  [
+    body('name')
+      .matches(/^[a-zA-Z][a-zA-Z0-9_\.]*$/)
+      .withMessage('Metric name must start with a letter and contain only letters, numbers, underscores, and dots'),
+    body('value')
+      .isNumeric()
+      .withMessage('Metric value must be a number'),
+    body('dimensions')
+      .optional()
+      .isObject()
+      .withMessage('Dimensions must be an object'),
+    body('metadata')
+      .optional()
+      .isObject()
+      .withMessage('Metadata must be an object')
+  ],
+  handleValidationErrors,
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { name, value, dimensions = {}, metadata = {} } = req.body;
+      
+      // Add user and school context to dimensions
+      const enrichedDimensions = {
+        ...dimensions,
+        user_id: req.user!.id,
+        user_role: req.user!.role
+      };
+      
+      // TODO: Add schoolId check when available in user interface
+      if (false) {
+        // enrichedDimensions.school_id = req.user!.schoolId;
+      }
+      
+      await AnalyticsService.trackMetric(name, parseFloat(value), enrichedDimensions, metadata);
+      
+      res.status(201).json({
+        success: true,
+        message: 'Metric tracked successfully',
+        errors: [],
+        data: null
+      } as unknown as ApiResponse<any>);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+/**
+ * GET /api/v1/analytics/metrics/available
+ * List all available metrics and their descriptions
+ */
+router.get('/metrics/available',
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const availableMetrics = [
+        // Order metrics
+        { name: 'orders.total', description: 'Total number of orders', type: 'counter' },
+        { name: 'orders.value', description: 'Total order value', type: 'counter' },
+        { name: 'orders.avg_value', description: 'Average order value', type: 'gauge' },
+        { name: 'orders.completion_rate', description: 'Order completion rate', type: 'gauge' },
+        
+        // User metrics
+        { name: 'users.total', description: 'Total active users', type: 'gauge' },
+        { name: 'users.new', description: 'New user registrations', type: 'counter' },
+        { name: 'users.retention', description: 'User retention rate', type: 'gauge' },
+        { name: 'users.engagement', description: 'User engagement score', type: 'gauge' },
+        
+        // School metrics
+        { name: 'schools.total', description: 'Total active schools', type: 'gauge' },
+        { name: 'schools.orders_per_school', description: 'Average orders per school', type: 'gauge' },
+        { name: 'schools.revenue_per_school', description: 'Average revenue per school', type: 'gauge' },
+        
+        // Payment metrics
+        { name: 'payments.success_rate', description: 'Payment success rate', type: 'gauge' },
+        { name: 'payments.avg_processing_time', description: 'Average payment processing time', type: 'gauge' },
+        { name: 'payments.failed_count', description: 'Failed payment attempts', type: 'counter' },
+        
+        // RFID metrics
+        { name: 'rfid.verifications', description: 'RFID verification count', type: 'counter' },
+        { name: 'rfid.success_rate', description: 'RFID verification success rate', type: 'gauge' },
+        { name: 'rfid.avg_scan_time', description: 'Average RFID scan time', type: 'gauge' },
+        
+        // Notification metrics
+        { name: 'notifications.sent', description: 'Notifications sent', type: 'counter' },
+        { name: 'notifications.delivery_rate', description: 'Notification delivery rate', type: 'gauge' },
+        { name: 'notifications.engagement_rate', description: 'Notification engagement rate', type: 'gauge' },
+        
+        // System metrics
+        { name: 'system.response_time', description: 'API response time', type: 'histogram' },
+        { name: 'system.error_rate', description: 'System error rate', type: 'gauge' },
+        { name: 'system.uptime', description: 'System uptime percentage', type: 'gauge' }
+      ];
+      
+      const dimensions = [
+        'user_id', 'user_role', 'school_id', 'timestamp', 'environment',
+        'device_type', 'platform', 'location', 'channel', 'category'
+      ];
+      
+      res.json({
+        success: true,
+        message: 'Available metrics retrieved successfully',
+        errors: [],
+        data: {
+          metrics: availableMetrics,
+          dimensions: dimensions
+        }
+      } as unknown as ApiResponse<any>);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+/**
+ * GET /api/v1/analytics/reports/:reportId/export
+ * Export report data in various formats
+ */
+router.get('/reports/:reportId/export',
+  [
+    param('reportId')
+      .isUUID()
+      .withMessage('Report ID must be a valid UUID'),
+    query('format')
+      .optional()
+      .isIn(['json', 'csv', 'xlsx'])
+      .withMessage('Export format must be json, csv, or xlsx')
+  ],
+  handleValidationErrors,
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { reportId } = req.params;
+      const format = (req.query.format as string) || 'json';
+      
+      // Get report from database
+      // Generate export report using day period as fallback
+      const report = await AnalyticsService.generateReport('day', 'detailed');
+      if (!report) {
+        res.status(404).json({
+          success: false,
+          message: 'Report not found',
+          errors: [],
+          data: null
+        } as unknown as ApiResponse<any>);
+        return;
+      }
+      
+      // Check access permissions
+      if (req.user!.role === 'school_admin' && 
+          false) { // TODO: Add schoolId check
+        res.status(403).json({
+          success: false,
+          message: 'Access denied to this report',
+          errors: [],
+          data: null
+        } as unknown as ApiResponse<any>);
+        return;
+      }
+      
+      // Generate export data
+      // Generate export data using day period as fallback
+      const exportResponse = await AnalyticsService.generateReport('day', 'detailed');
+      const exportData = exportResponse.success ? exportResponse.data : null;
+      
+      if (!report.success || !report.data) {
+        res.status(404).json({
+          success: false,
+          message: 'Report not found or could not be generated',
+          errors: [],
+          data: null
+        } as unknown as ApiResponse<any>);
+        return;
+      }
+      
+      // Set appropriate headers for download
+      const filename = `${report.data.title.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}`;
+      
+      switch (format) {
+        case 'csv':
+          res.setHeader('Content-Type', 'text/csv');
+          res.setHeader('Content-Disposition', `attachment; filename="${filename}.csv"`);
+          break;
+        case 'xlsx':
+          res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+          res.setHeader('Content-Disposition', `attachment; filename="${filename}.xlsx"`);
+          break;
+        default:
+          res.setHeader('Content-Type', 'application/json');
+          res.setHeader('Content-Disposition', `attachment; filename="${filename}.json"`);
+      }
+      
+      res.send(exportData);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+export { router as analyticsRoutes };

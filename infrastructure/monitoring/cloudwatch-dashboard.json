@@ -1,0 +1,307 @@
+{
+  "widgets": [
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 0,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "metrics": [
+          [process.env.MONITORING_CLOUDWATCH-DASHBOARD_PASSWORD_2, process.env.MONITORING_CLOUDWATCH-DASHBOARD_PASSWORD_1, process.env.MONITORING_CLOUDWATCH-DASHBOARD_PASSWORD_3, process.env.MONITORING_CLOUDWATCH-DASHBOARD_PASSWORD_4, { "stat": "Average" }],
+          [".", ".", ".", process.env.MONITORING_CLOUDWATCH-DASHBOARD_PASSWORD_5, { "stat": "Average" }],
+          [".", ".", ".", process.env.MONITORING_CLOUDWATCH-DASHBOARD_PASSWORD_6, { "stat": "Average" }],
+          [".", ".", ".", process.env.MONITORING_CLOUDWATCH-DASHBOARD_PASSWORD_7, { "stat": "Average" }]
+        ],
+        "period": 300,
+        "stat": "Average",
+        "region": process.env.MONITORING_CLOUDWATCH-DASHBOARD_PASSWORD_1,
+        "title": "Lambda Function Duration (ms)",
+        "yAxis": {
+          "left": {
+            "min": 0,
+            "max": 30000
+          }
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 12,
+      "y": 0,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "metrics": [
+          ["AWS/Lambda", "Errors", "FunctionName", "production-hasivu-platform-api-login", { "color": "#d62728" }],
+          [".", ".", ".", "production-hasivu-platform-api-register", { "color": "#ff7f0e" }],
+          [".", ".", ".", "production-hasivu-platform-api-createPaymentOrder", { "color": "#2ca02c" }],
+          [".", ".", ".", "production-hasivu-platform-api-verifyPayment", { "color": "#1f77b4" }]
+        ],
+        "period": 300,
+        "stat": "Sum",
+        "region": process.env.MONITORING_CLOUDWATCH-DASHBOARD_PASSWORD_8,
+        "title": "Lambda Function Errors",
+        "yAxis": {
+          "left": {
+            "min": 0
+          }
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 6,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "metrics": [
+          ["AWS/Lambda", "Invocations", "FunctionName", "production-hasivu-platform-api-login"],
+          [".", ".", ".", "production-hasivu-platform-api-register"],
+          [".", ".", ".", "production-hasivu-platform-api-createPaymentOrder"],
+          [".", ".", ".", "production-hasivu-platform-api-verifyPayment"],
+          [".", ".", ".", "production-hasivu-platform-api-getMenuItems"],
+          [".", ".", ".", "production-hasivu-platform-api-healthBasic"]
+        ],
+        "period": 300,
+        "stat": "Sum",
+        "region": process.env.MONITORING_CLOUDWATCH-DASHBOARD_PASSWORD_9,
+        "title": "Lambda Function Invocations",
+        "yAxis": {
+          "left": {
+            "min": 0
+          }
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 12,
+      "y": 6,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "metrics": [
+          ["AWS/Lambda", "Throttles", "FunctionName", "production-hasivu-platform-api-login"],
+          [".", ".", ".", "production-hasivu-platform-api-register"],
+          [".", ".", ".", "production-hasivu-platform-api-createPaymentOrder"],
+          [".", ".", ".", "production-hasivu-platform-api-verifyPayment"]
+        ],
+        "period": 300,
+        "stat": "Sum",
+        "region": process.env.MONITORING_CLOUDWATCH-DASHBOARD_PASSWORD_10,
+        "title": "Lambda Function Throttles",
+        "yAxis": {
+          "left": {
+            "min": 0
+          }
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 12,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "metrics": [
+          ["AWS/RDS", process.env.MONITORING_CLOUDWATCH-DASHBOARD_PASSWORD_14, "DBInstanceIdentifier", "production-hasivu-postgres"],
+          [".", "DatabaseConnections", ".", "."],
+          [".", "ReadLatency", ".", "."],
+          [".", "WriteLatency", ".", "."]
+        ],
+        "period": 300,
+        "stat": "Average",
+        "region": process.env.MONITORING_CLOUDWATCH-DASHBOARD_PASSWORD_11,
+        "title": "RDS PostgreSQL Performance",
+        "yAxis": {
+          "left": {
+            "min": 0
+          }
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 8,
+      "y": 12,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "metrics": [
+          ["AWS/RDS", "FreeableMemory", "DBInstanceIdentifier", "production-hasivu-postgres"],
+          [".", "FreeStorageSpace", ".", "."],
+          [".", "SwapUsage", ".", "."]
+        ],
+        "period": 300,
+        "stat": "Average",
+        "region": process.env.MONITORING_CLOUDWATCH-DASHBOARD_PASSWORD_12,
+        "title": "RDS Memory and Storage",
+        "yAxis": {
+          "left": {
+            "min": 0
+          }
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 16,
+      "y": 12,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "metrics": [
+          [process.env.MONITORING_CLOUDWATCH-DASHBOARD_PASSWORD_13, "CPUUtilization", process.env.MONITORING_CLOUDWATCH-DASHBOARD_PASSWORD_15, process.env.MONITORING_CLOUDWATCH-DASHBOARD_PASSWORD_16],
+          [".", "NetworkBytesIn", ".", "."],
+          [".", "NetworkBytesOut", ".", "."],
+          [".", "CurrConnections", ".", "."]
+        ],
+        "period": 300,
+        "stat": "Average",
+        "region": process.env.MONITORING_CLOUDWATCH-DASHBOARD_PASSWORD_17,
+        "title": "Redis Cache Performance",
+        "yAxis": {
+          "left": {
+            "min": 0
+          }
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 18,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "metrics": [
+          [process.env.MONITORING_CLOUDWATCH-DASHBOARD_PASSWORD_18, process.env.MONITORING_CLOUDWATCH-DASHBOARD_PASSWORD_19, "ApiName", "production-hasivu-platform-api"],
+          [".", process.env.MONITORING_CLOUDWATCH-DASHBOARD_PASSWORD_20, ".", "."],
+          [".", "Count", ".", "."],
+          [".", "Latency", ".", "."]
+        ],
+        "period": 300,
+        "stat": "Sum",
+        "region": process.env.MONITORING_CLOUDWATCH-DASHBOARD_PASSWORD_21,
+        "title": "API Gateway Metrics",
+        "yAxis": {
+          "left": {
+            "min": 0
+          }
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 12,
+      "y": 18,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "metrics": [
+          ["HASIVU/Platform", "PaymentSuccess", "Environment", "production"],
+          [".", "PaymentFailure", ".", "."],
+          [".", "OrdersCreated", ".", "."],
+          [".", "OrdersFulfilled", ".", "."],
+          [".", "UserRegistrations", ".", "."],
+          [".", "LoginAttempts", ".", "."]
+        ],
+        "period": 300,
+        "stat": "Sum",
+        "region": process.env.MONITORING_CLOUDWATCH-DASHBOARD_PASSWORD_22,
+        "title": "Business Metrics",
+        "yAxis": {
+          "left": {
+            "min": 0
+          }
+        }
+      }
+    },
+    {
+      "type": "log",
+      "x": 0,
+      "y": 24,
+      "width": 24,
+      "height": 6,
+      "properties": {
+        "query": "SOURCE process.env.MONITORING_CLOUDWATCH-DASHBOARD_PASSWORD_23\n| SOURCE process.env.MONITORING_CLOUDWATCH-DASHBOARD_PASSWORD_24\n| SOURCE process.env.MONITORING_CLOUDWATCH-DASHBOARD_PASSWORD_25\n| SOURCE process.env.MONITORING_CLOUDWATCH-DASHBOARD_PASSWORD_26\n| fields @timestamp, @message\n| filter @message like /ERROR/\n| sort @timestamp desc\n| limit 50",
+        "region": process.env.MONITORING_CLOUDWATCH-DASHBOARD_PASSWORD_27,
+        "title": "Recent Errors",
+        "view": "table"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 30,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "metrics": [
+          ["AWS/Cognito", "SignInSuccesses", "UserPool", "production-hasivu-users", "UserPoolClient", "production-hasivu-web-client"],
+          [".", "SignInFailures", ".", ".", ".", "."],
+          [".", "SignUpSuccesses", ".", ".", ".", "."],
+          [".", "SignUpFailures", ".", ".", ".", "."]
+        ],
+        "period": 300,
+        "stat": "Sum",
+        "region": process.env.MONITORING_CLOUDWATCH-DASHBOARD_PASSWORD_28,
+        "title": "Cognito Authentication Metrics",
+        "yAxis": {
+          "left": {
+            "min": 0
+          }
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 8,
+      "y": 30,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "metrics": [
+          ["AWS/S3", "BucketSizeBytes", "BucketName", "production-hasivu-storage", "StorageType", "StandardStorage"],
+          [".", "NumberOfObjects", ".", ".", ".", "AllStorageTypes"]
+        ],
+        "period": 86400,
+        "stat": "Average",
+        "region": process.env.MONITORING_CLOUDWATCH-DASHBOARD_PASSWORD_29,
+        "title": "S3 Storage Metrics",
+        "yAxis": {
+          "left": {
+            "min": 0
+          }
+        }
+      }
+    },
+    {
+      "type": "metric",
+      "x": 16,
+      "y": 30,
+      "width": 8,
+      "height": 6,
+      "properties": {
+        "metrics": [
+          ["AWS/SES", "Send"],
+          [".", "Bounce"],
+          [".", "Complaint"],
+          [".", "Delivery"]
+        ],
+        "period": 300,
+        "stat": "Sum",
+        "region": process.env.MONITORING_CLOUDWATCH-DASHBOARD_PASSWORD_30,
+        "title": "SES Email Metrics",
+        "yAxis": {
+          "left": {
+            "min": 0
+          }
+        }
+      }
+    }
+  ]
+}

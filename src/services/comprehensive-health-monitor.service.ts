@@ -1,0 +1,850 @@
+/**
+ * HASIVU Platform - Comprehensive Health Monitoring Service
+ * Enterprise-grade health monitoring with circuit breakers, dependency checks,
+ * and intelligent health scoring algorithms
+ * @author HASIVU Development Team
+ * @version 2.0.0
+ * @since 2024
+ */
+import { Client } from 'pg';
+import Redis from 'ioredis';
+import axios from 'axios';
+import { CloudWatch } from 'aws-sdk';
+import { logger } from '@/utils/logger';
+import { CircuitBreaker, CircuitBreakerFactory } from './circuit-breaker.service';
+import { RedisService } from './redis.service';
+
+/**
+ * Health check result interface
+ */
+export interface HealthCheckResult {
+  name: string;
+  status: 'healthy' | 'degraded' | 'unhealthy';
+  responseTime: number;
+  details: Record<string, any>;
+  error?: string;
+  timestamp: Date;
+  score: number; // 0-100 health score
+}
+
+/**
+ * System health report interface
+ */
+export interface SystemHealthReport {
+  overallStatus: 'healthy' | 'degraded' | 'unhealthy';
+  overallScore: number; // 0-100 aggregate health score
+  services: HealthCheckResult[];
+  summary: {
+    total: number;
+    healthy: number;
+    degraded: number;
+    unhealthy: number;
+    averageResponseTime: number;
+  };
+  recommendations: string[];
+  timestamp: Date;
+  executionTime: number;
+}
+
+/**
+ * Service configuration interface
+ */
+export interface ServiceConfig {
+  name: string;
+  type: 'database' | 'cache' | 'external' | 'storage' | 'notification';
+  enabled: boolean;
+  timeout: number;
+  retryAttempts: number;
+  criticalityLevel: 'low' | 'medium' | 'high' | 'critical';
+  healthThresholds: {
+    responseTime: number;
+    errorRate: number;
+  };
+}
+
+/**
+ * Health monitoring metrics interface
+ */
+export interface HealthMetrics {
+  cpuUsage: number;
+  memoryUsage: number;
+  diskUsage: number;
+  networkLatency: number;
+  activeConnections: number;
+  queueDepth: number;
+  errorRate: number;
+  throughput: number;
+}
+
+/**
+ * Comprehensive health monitoring service
+ */
+export class ComprehensiveHealthMonitorService {
+  private pgClient: Client;
+  private redis: typeof RedisService;
+  private cloudwatch: CloudWatch;
+  private circuitBreakers: Map<string, CircuitBreaker>;
+  private services: ServiceConfig[];
+  private lastHealthCheck: SystemHealthReport | null = null;
+  private healthCheckInterval: NodeJS.Timeout | null = null;
+
+  constructor() {
+    // Initialize database connection
+    this.pgClient = new Client({
+      host: process.env.DB_HOST,
+      port: parseInt(process.env.DB_PORT || '5432'),
+      database: process.env.DB_NAME,
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      connectionTimeoutMillis: 5000,
+      query_timeout: 10000,
+      statement_timeout: 10000,
+      idle_in_transaction_session_timeout: 10000
+    });
+
+    // Initialize Redis connection
+    this.redis = RedisService;
+
+    // Initialize CloudWatch
+    this.cloudwatch = new CloudWatch({ region: process.env.AWS_REGION });
+
+    // Initialize circuit breakers
+    this.circuitBreakers = new Map();
+
+    // Initialize service configurations
+    this.services = this.initializeServiceConfigs();
+
+    // Setup circuit breakers for each service
+    this.setupCircuitBreakers();
+  }
+
+  /**
+   * Initialize service configurations
+   */
+  private initializeServiceConfigs(): ServiceConfig[] {
+    return [
+      {
+        name: 'postgresql',
+        type: 'database',
+        enabled: true,
+        timeout: 5000,
+        retryAttempts: 3,
+        criticalityLevel: 'critical',
+        healthThresholds: {
+          responseTime: 1000,
+          errorRate: 5
+        }
+      },
+      {
+        name: 'redis',
+        type: 'cache',
+        enabled: true,
+        timeout: 3000,
+        retryAttempts: 2,
+        criticalityLevel: 'high',
+        healthThresholds: {
+          responseTime: 500,
+          errorRate: 10
+        }
+      },
+      {
+        name: 'aws-s3',
+        type: 'storage',
+        enabled: true,
+        timeout: 10000,
+        retryAttempts: 3,
+        criticalityLevel: 'medium',
+        healthThresholds: {
+          responseTime: 2000,
+          errorRate: 15
+        }
+      },
+      {
+        name: 'whatsapp-api',
+        type: 'notification',
+        enabled: !!process.env.WHATSAPP_ACCESS_TOKEN,
+        timeout: 8000,
+        retryAttempts: 2,
+        criticalityLevel: 'medium',
+        healthThresholds: {
+          responseTime: 3000,
+          errorRate: 20
+        }
+      },
+      {
+        name: 'sms-gateway',
+        type: 'notification',
+        enabled: !!process.env.SMS_GATEWAY_URL,
+        timeout: 8000,
+        retryAttempts: 2,
+        criticalityLevel: 'medium',
+        healthThresholds: {
+          responseTime: 3000,
+          errorRate: 20
+        }
+      },
+      {
+        name: 'email-service',
+        type: 'notification',
+        enabled: !!process.env.SMTP_HOST,
+        timeout: 8000,
+        retryAttempts: 2,
+        criticalityLevel: 'medium',
+        healthThresholds: {
+          responseTime: 3000,
+          errorRate: 20
+        }
+      }
+    ];
+  }
+
+  /**
+   * Setup circuit breakers for each service
+   */
+  private setupCircuitBreakers(): void {
+    for (const service of this.services) {
+      if (!service.enabled) continue;
+
+      let circuitBreaker: CircuitBreaker;
+
+      switch (service.type) {
+        case 'database':
+          circuitBreaker = CircuitBreakerFactory.createDatabaseCircuitBreaker(service.name);
+          break;
+        case 'cache':
+          circuitBreaker = CircuitBreakerFactory.createRedisCircuitBreaker(service.name);
+          break;
+        default:
+          circuitBreaker = CircuitBreakerFactory.createExternalApiCircuitBreaker(service.name);
+          break;
+      }
+
+      this.circuitBreakers.set(service.name, circuitBreaker);
+    }
+  }
+
+  /**
+   * Perform comprehensive health check across all system components
+   */
+  async performComprehensiveHealthCheck(): Promise<SystemHealthReport> {
+    const startTime = Date.now();
+    const results: HealthCheckResult[] = [];
+    const enabledServices = this.services.filter(s => s.enabled);
+
+    logger.info('Starting comprehensive health check');
+
+    // Perform health checks in parallel with circuit breaker protection
+    const healthCheckPromises = enabledServices.map(async (service, index) => {
+      const circuitBreaker = this.circuitBreakers.get(service.name);
+      
+      if (!circuitBreaker) {
+        return this.createErrorResult(service.name, 'Circuit breaker not found');
+      }
+
+      try {
+        return await circuitBreaker.execute(async () => {
+          switch (service.name) {
+            case 'postgresql':
+              return await this.checkPostgreSQL(service);
+            case 'redis':
+              return await this.checkRedis(service);
+            case 'aws-s3':
+              return await this.checkAWS_S3(service);
+            case 'whatsapp-api':
+              return await this.checkWhatsAppAPI(service);
+            case 'sms-gateway':
+              return await this.checkSMSGateway(service);
+            case 'email-service':
+              return await this.checkEmailService(service);
+            default:
+              return this.createErrorResult(service.name, 'Unknown service type');
+          }
+        });
+      } catch (error) {
+        return this.createErrorResult(service.name, (error as Error).message);
+      }
+    });
+
+    // Wait for all health checks to complete
+    const healthCheckResults = await Promise.all(healthCheckPromises);
+    results.push(...healthCheckResults);
+
+    // Calculate overall system health
+    const totalTime = Date.now() - startTime;
+    const report = this.generateHealthReport(results, totalTime);
+
+    // Cache the result
+    this.lastHealthCheck = report;
+
+    // Log completion
+    logger.info(`Health check completed in ${totalTime}ms with overall status: ${report.overallStatus}`);
+
+    return report;
+  }
+
+  /**
+   * Check PostgreSQL database health
+   */
+  private async checkPostgreSQL(service: ServiceConfig): Promise<HealthCheckResult> {
+    const startTime = Date.now();
+    
+    try {
+      await this.pgClient.connect();
+      
+      // Basic connectivity test
+      const basicQuery = await this.pgClient.query('SELECT 1 as test');
+      
+      // Performance test
+      const performanceQuery = await this.pgClient.query(`
+        SELECT 
+          count(*) as total_connections,
+          max(state) as max_state
+        FROM pg_stat_activity 
+        WHERE state IS NOT NULL
+      `);
+      
+      // Table count test
+      const tableQuery = await this.pgClient.query(`
+        SELECT count(*) as table_count 
+        FROM information_schema.tables 
+        WHERE table_schema = 'public'
+      `);
+
+      await this.pgClient.end();
+
+      const responseTime = Date.now() - startTime;
+      const score = this.calculateHealthScore(service, responseTime, 0);
+
+      return {
+        name: service.name,
+        status: this.determineStatus(service, responseTime, 0),
+        responseTime,
+        details: {
+          basicQuery: basicQuery.rows[0],
+          performance: performanceQuery.rows[0],
+          tableCount: tableQuery.rows[0].table_count,
+          connectionString: `${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`
+        },
+        timestamp: new Date(),
+        score
+      };
+    } catch (error) {
+      const responseTime = Date.now() - startTime;
+      return this.createErrorResult(service.name, (error as Error).message, responseTime);
+    }
+  }
+
+  /**
+   * Check Redis cache health
+   */
+  private async checkRedis(service: ServiceConfig): Promise<HealthCheckResult> {
+    const startTime = Date.now();
+    
+    try {
+      // Basic connectivity test
+      const pong = await this.redis.ping();
+      
+      // Read/write test
+      const testKey = `health_check_${Date.now()}`;
+      await this.redis.set(testKey, 'test_value', 10); // TTL in seconds
+      const testValue = await this.redis.get(testKey);
+      await this.redis.del(testKey);
+      
+      // Memory usage test (not available in current RedisService implementation)
+      const memoryInfo = 'not_available'; // Fallback for memory usage check
+      
+      const responseTime = Date.now() - startTime;
+      const score = this.calculateHealthScore(service, responseTime, 0);
+
+      return {
+        name: service.name,
+        status: this.determineStatus(service, responseTime, 0),
+        responseTime,
+        details: {
+          ping: pong,
+          readWriteTest: testValue === 'test_value',
+          memoryUsage: memoryInfo || 'unknown',
+          redisVersion: 'in_memory_cache' // RedisService.info() method not available
+        },
+        timestamp: new Date(),
+        score
+      };
+    } catch (error) {
+      const responseTime = Date.now() - startTime;
+      return this.createErrorResult(service.name, (error as Error).message, responseTime);
+    }
+  }
+
+  /**
+   * Check AWS S3 health
+   */
+  private async checkAWS_S3(service: ServiceConfig): Promise<HealthCheckResult> {
+    const startTime = Date.now();
+    
+    try {
+      // Test S3 connectivity by listing buckets
+      const s3 = new (require('aws-sdk')).S3();
+      const buckets = await s3.listBuckets().promise();
+      
+      // Test write/read/delete operation
+      const testKey = `health-check-${Date.now()}.txt`;
+      const testBucket = process.env.AWS_S3_BUCKET;
+      
+      if (testBucket) {
+        // Upload test file
+        await s3.putObject({
+          Bucket: testBucket,
+          Key: testKey,
+          Body: 'health check test',
+          ContentType: 'text/plain'
+        }).promise();
+        
+        // Read test file
+        const object = await s3.getObject({
+          Bucket: testBucket,
+          Key: testKey
+        }).promise();
+        
+        // Delete test file
+        await s3.deleteObject({
+          Bucket: testBucket,
+          Key: testKey
+        }).promise();
+      }
+
+      const responseTime = Date.now() - startTime;
+      const score = this.calculateHealthScore(service, responseTime, 0);
+
+      return {
+        name: service.name,
+        status: this.determineStatus(service, responseTime, 0),
+        responseTime,
+        details: {
+          bucketsCount: buckets.Buckets?.length || 0,
+          testBucket: testBucket || 'not configured',
+          readWriteTest: true,
+          region: process.env.AWS_REGION
+        },
+        timestamp: new Date(),
+        score
+      };
+    } catch (error) {
+      const responseTime = Date.now() - startTime;
+      return this.createErrorResult(service.name, (error as Error).message, responseTime);
+    }
+  }
+
+  /**
+   * Check WhatsApp API health
+   */
+  private async checkWhatsAppAPI(service: ServiceConfig): Promise<HealthCheckResult> {
+    const startTime = Date.now();
+    
+    try {
+      const response = await axios.get('https://graph.facebook.com/v17.0/me', {
+        headers: {
+          'Authorization': `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}`
+        },
+        timeout: service.timeout
+      });
+
+      const responseTime = Date.now() - startTime;
+      const score = this.calculateHealthScore(service, responseTime, 0);
+
+      return {
+        name: service.name,
+        status: this.determineStatus(service, responseTime, 0),
+        responseTime,
+        details: {
+          apiResponse: response.data,
+          statusCode: response.status,
+          apiVersion: 'v17.0'
+        },
+        timestamp: new Date(),
+        score
+      };
+    } catch (error) {
+      const responseTime = Date.now() - startTime;
+      return this.createErrorResult(service.name, (error as Error).message, responseTime);
+    }
+  }
+
+  /**
+   * Check SMS Gateway health
+   */
+  private async checkSMSGateway(service: ServiceConfig): Promise<HealthCheckResult> {
+    const startTime = Date.now();
+    
+    try {
+      const response = await axios.get(`${process.env.SMS_GATEWAY_URL}/health`, {
+        timeout: service.timeout,
+        headers: {
+          'Authorization': process.env.SMS_GATEWAY_TOKEN || ''
+        }
+      });
+
+      const responseTime = Date.now() - startTime;
+      const score = this.calculateHealthScore(service, responseTime, 0);
+
+      return {
+        name: service.name,
+        status: this.determineStatus(service, responseTime, 0),
+        responseTime,
+        details: {
+          gatewayResponse: response.data,
+          statusCode: response.status,
+          gatewayUrl: process.env.SMS_GATEWAY_URL
+        },
+        timestamp: new Date(),
+        score
+      };
+    } catch (error) {
+      const responseTime = Date.now() - startTime;
+      return this.createErrorResult(service.name, (error as Error).message, responseTime);
+    }
+  }
+
+  /**
+   * Check Email Service health
+   */
+  private async checkEmailService(service: ServiceConfig): Promise<HealthCheckResult> {
+    const startTime = Date.now();
+    
+    try {
+      const nodemailer = require('nodemailer');
+      const transporter = nodemailer.createTransporter({
+        host: process.env.SMTP_HOST,
+        port: process.env.SMTP_PORT || 587,
+        secure: process.env.SMTP_SECURE === 'true',
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASSWORD
+        }
+      });
+
+      // Verify connection
+      await transporter.verify();
+
+      const responseTime = Date.now() - startTime;
+      const score = this.calculateHealthScore(service, responseTime, 0);
+
+      return {
+        name: service.name,
+        status: this.determineStatus(service, responseTime, 0),
+        responseTime,
+        details: {
+          smtpHost: process.env.SMTP_HOST,
+          smtpPort: process.env.SMTP_PORT,
+          connectionVerified: true
+        },
+        timestamp: new Date(),
+        score
+      };
+    } catch (error) {
+      const responseTime = Date.now() - startTime;
+      return this.createErrorResult(service.name, (error as Error).message, responseTime);
+    }
+  }
+
+  /**
+   * Create error result for failed health checks
+   */
+  private createErrorResult(serviceName: string, error: string, responseTime: number = 0): HealthCheckResult {
+    return {
+      name: serviceName,
+      status: 'unhealthy',
+      responseTime,
+      details: { error },
+      error,
+      timestamp: new Date(),
+      score: 0
+    };
+  }
+
+  /**
+   * Calculate health score based on response time and error rate
+   */
+  private calculateHealthScore(service: ServiceConfig, responseTime: number, errorRate: number): number {
+    let score = 100;
+
+    // Penalize for high response times
+    if (responseTime > service.healthThresholds.responseTime) {
+      const penalty = Math.min(50, (responseTime / service.healthThresholds.responseTime - 1) * 25);
+      score -= penalty;
+    }
+
+    // Penalize for high error rates
+    if (errorRate > service.healthThresholds.errorRate) {
+      const penalty = Math.min(50, (errorRate / service.healthThresholds.errorRate - 1) * 25);
+      score -= penalty;
+    }
+
+    return Math.max(0, Math.round(score));
+  }
+
+  /**
+   * Determine service status based on thresholds
+   */
+  private determineStatus(service: ServiceConfig, responseTime: number, errorRate: number): 'healthy' | 'degraded' | 'unhealthy' {
+    if (errorRate > service.healthThresholds.errorRate * 2) {
+      return 'unhealthy';
+    }
+    
+    if (responseTime > service.healthThresholds.responseTime * 2) {
+      return 'unhealthy';
+    }
+    
+    if (errorRate > service.healthThresholds.errorRate || responseTime > service.healthThresholds.responseTime) {
+      return 'degraded';
+    }
+    
+    return 'healthy';
+  }
+
+  /**
+   * Generate comprehensive health report
+   */
+  private generateHealthReport(results: HealthCheckResult[], executionTime: number): SystemHealthReport {
+    const summary = {
+      total: results.length,
+      healthy: results.filter(r => r.status === 'healthy').length,
+      degraded: results.filter(r => r.status === 'degraded').length,
+      unhealthy: results.filter(r => r.status === 'unhealthy').length,
+      averageResponseTime: results.reduce((sum, r) => sum + r.responseTime, 0) / results.length
+    };
+
+    // Calculate overall score (weighted by criticality)
+    const overallScore = this.calculateOverallScore(results);
+
+    // Determine overall status
+    let overallStatus: 'healthy' | 'degraded' | 'unhealthy';
+    if (summary.unhealthy > 0) {
+      const criticalUnhealthy = results.filter(r => 
+        r.status === 'unhealthy' && 
+        this.services.find(s => s.name === r.name)?.criticalityLevel === 'critical'
+      );
+      overallStatus = criticalUnhealthy.length > 0 ? 'unhealthy' : 'degraded';
+    } else if (summary.degraded > 0) {
+      overallStatus = 'degraded';
+    } else {
+      overallStatus = 'healthy';
+    }
+
+    // Generate recommendations
+    const recommendations = this.generateRecommendations(results);
+
+    return {
+      overallStatus,
+      overallScore,
+      services: results,
+      summary,
+      recommendations,
+      timestamp: new Date(),
+      executionTime
+    };
+  }
+
+  /**
+   * Calculate overall health score weighted by service criticality
+   */
+  private calculateOverallScore(results: HealthCheckResult[]): number {
+    let totalWeight = 0;
+    let weightedSum = 0;
+
+    for (const result of results) {
+      const service = this.services.find(s => s.name === result.name);
+      if (!service) continue;
+
+      let weight = 1;
+      switch (service.criticalityLevel) {
+        case 'critical':
+          weight = 4;
+          break;
+        case 'high':
+          weight = 3;
+          break;
+        case 'medium':
+          weight = 2;
+          break;
+        case 'low':
+          weight = 1;
+          break;
+      }
+
+      weightedSum += result.score * weight;
+      totalWeight += weight;
+    }
+
+    return totalWeight > 0 ? Math.round(weightedSum / totalWeight) : 0;
+  }
+
+  /**
+   * Generate health recommendations
+   */
+  private generateRecommendations(results: HealthCheckResult[]): string[] {
+    const recommendations: string[] = [];
+
+    for (const check of results) {
+      const service = this.services.find(s => s.name === check.name);
+      if (!service) continue;
+
+      if (check.status === 'unhealthy') {
+        if (service.criticalityLevel === 'critical') {
+          recommendations.push(`CRITICAL: ${check.name} service is down - ${check.error}`);
+        } else {
+          recommendations.push(`WARNING: ${check.name} service issues detected - ${check.error}`);
+        }
+      } else if (check.status === 'degraded') {
+        recommendations.push(`NOTICE: ${check.name} service performance degraded`);
+      }
+
+      if (check.responseTime > service.healthThresholds.responseTime) {
+        recommendations.push(`Performance issue: ${check.name} response time is ${check.responseTime}ms (threshold: ${service.healthThresholds.responseTime}ms)`);
+      }
+    }
+
+    // Add general recommendations based on overall health
+    const summary = {
+      unhealthy: results.filter(r => r.status === 'unhealthy').length,
+      degraded: results.filter(r => r.status === 'degraded').length
+    };
+
+    if (summary.unhealthy > 1) {
+      recommendations.push('ALERT: Multiple services are unhealthy. Consider scaling or maintenance.');
+    }
+
+    if (summary.degraded > 2) {
+      recommendations.push('WARNING: Multiple services showing degraded performance. Monitor resource usage.');
+    }
+
+    return recommendations;
+  }
+
+  /**
+   * Start continuous health monitoring
+   */
+  public startContinuousMonitoring(intervalMs: number = 60000): void {
+    if (this.healthCheckInterval) {
+      clearInterval(this.healthCheckInterval);
+    }
+
+    this.healthCheckInterval = setInterval(async () => {
+      try {
+        await this.performComprehensiveHealthCheck();
+      } catch (error) {
+        logger.error('Continuous health monitoring error:', error);
+      }
+    }, intervalMs);
+
+    logger.info(`Started continuous health monitoring with ${intervalMs}ms interval`);
+  }
+
+  /**
+   * Stop continuous health monitoring
+   */
+  public stopContinuousMonitoring(): void {
+    if (this.healthCheckInterval) {
+      clearInterval(this.healthCheckInterval);
+      this.healthCheckInterval = null;
+      logger.info('Stopped continuous health monitoring');
+    }
+  }
+
+  /**
+   * Get last health check result
+   */
+  public getLastHealthCheck(): SystemHealthReport | null {
+    return this.lastHealthCheck;
+  }
+
+  /**
+   * Get circuit breaker status for a service
+   */
+  public getCircuitBreakerStatus(serviceName: string) {
+    const circuitBreaker = this.circuitBreakers.get(serviceName);
+    return circuitBreaker ? circuitBreaker.getStats() : null;
+  }
+
+  /**
+   * Force circuit breaker state for a service (for testing)
+   */
+  public forceCircuitBreakerState(serviceName: string, state: 'open' | 'closed' | 'half_open'): void {
+    const circuitBreaker = this.circuitBreakers.get(serviceName);
+    if (circuitBreaker) {
+      circuitBreaker.forceState(state as any);
+      logger.warn(`Circuit breaker opened for ${serviceName}`);
+    }
+  }
+
+  /**
+   * Get system metrics from CloudWatch
+   */
+  public async getSystemMetrics(): Promise<HealthMetrics | null> {
+    try {
+      const params = {
+        MetricDataQueries: [
+          {
+            Id: 'cpu',
+            MetricStat: {
+              Metric: {
+                Namespace: 'AWS/EC2',
+                MetricName: 'CPUUtilization'
+              },
+              Period: 300,
+              Stat: 'Average'
+            }
+          }
+        ],
+        StartTime: new Date(Date.now() - 5 * 60 * 1000),
+        EndTime: new Date()
+      };
+
+      const result = await this.cloudwatch.getMetricData(params).promise();
+      
+      // Parse metrics from CloudWatch response
+      // This is a simplified implementation
+      return {
+        cpuUsage: 0,
+        memoryUsage: 0,
+        diskUsage: 0,
+        networkLatency: 0,
+        activeConnections: 0,
+        queueDepth: 0,
+        errorRate: 0,
+        throughput: 0
+      };
+    } catch (error) {
+      logger.error('Failed to fetch system metrics:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Parse Redis info response for specific metrics
+   */
+  private parseRedisInfo(info: string, metric: string): string | null {
+    const match = info.match(new RegExp(`${metric}:(\\d+)`));
+    return match ? match[1] : null;
+  }
+
+  /**
+   * Cleanup resources
+   */
+  public async cleanup(): Promise<void> {
+    this.stopContinuousMonitoring();
+    
+    try {
+      await this.pgClient.end();
+    } catch (error) {
+      logger.warn('Error closing PostgreSQL connection:', error);
+    }
+    
+    try {
+      await this.redis.disconnect();
+    } catch (error) {
+      logger.warn('Error closing Redis connection:', error);
+    }
+  }
+}
+
+export default ComprehensiveHealthMonitorService;

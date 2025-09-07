@@ -1,0 +1,185 @@
+/**
+ * HASIVU Platform - Health Check Lambda Function
+ * Standard health check endpoint for load balancers and monitoring
+ * Implements: GET /health/check
+ */
+
+import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
+import { DatabaseService } from '../../services/database.service';
+import { RedisService } from '../../services/redis.service';
+import { LoggerService } from '../../services/logger.service';
+
+// Initialize services
+const logger = LoggerService.getInstance();
+
+// Types and interfaces
+interface HealthCheckResult {
+  status: 'healthy' | 'degraded' | 'unhealthy';
+  timestamp: string;
+  responseTime: number;
+  services: ServiceStatus[];
+  version: string;
+}
+
+interface ServiceStatus {
+  name: string;
+  status: 'healthy' | 'degraded' | 'unhealthy';
+  responseTime: number;
+}
+
+// Common Lambda response helper
+const createResponse = (statusCode: number, body: any, headers: Record<string, string> = {}): APIGatewayProxyResult => ({
+  statusCode,
+  headers: {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
+    'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
+    ...headers
+  },
+  body: JSON.stringify(body)
+});
+
+/**
+ * Health check handler
+ * GET /health/check
+ */
+export const healthCheckHandler = async (
+  event: APIGatewayProxyEvent,
+  context: Context
+): Promise<APIGatewayProxyResult> => {
+  const startTime = Date.now();
+  
+  try {
+    logger.info('Starting health check', {
+      requestId: context.awsRequestId,
+      functionName: context.functionName
+    });
+
+    // Perform health checks in parallel
+    const [databaseCheck, redisCheck] = await Promise.allSettled([
+      checkDatabaseHealth(),
+      checkRedisHealth()
+    ]);
+
+    // Process results
+    const services: ServiceStatus[] = [
+      {
+        name: 'database',
+        status: databaseCheck.status === 'fulfilled' ? databaseCheck.value.status : 'unhealthy',
+        responseTime: databaseCheck.status === 'fulfilled' ? databaseCheck.value.responseTime : 0
+      },
+      {
+        name: 'redis',
+        status: redisCheck.status === 'fulfilled' ? redisCheck.value.status : 'unhealthy',
+        responseTime: redisCheck.status === 'fulfilled' ? redisCheck.value.responseTime : 0
+      }
+    ];
+
+    // Determine overall status
+    const unhealthyServices = services.filter(s => s.status === 'unhealthy');
+    const degradedServices = services.filter(s => s.status === 'degraded');
+    
+    const overallStatus = unhealthyServices.length > 0 ? 'unhealthy' :
+                         degradedServices.length > 0 ? 'degraded' : 'healthy';
+
+    const totalResponseTime = Date.now() - startTime;
+
+    const healthResult: HealthCheckResult = {
+      status: overallStatus,
+      timestamp: new Date().toISOString(),
+      responseTime: totalResponseTime,
+      services,
+      version: process.env.APP_VERSION || '1.0.0'
+    };
+
+    logger.info('Health check completed', {
+      status: overallStatus,
+      responseTime: totalResponseTime,
+      requestId: context.awsRequestId
+    });
+
+    // Return appropriate status code based on health
+    const statusCode = overallStatus === 'healthy' ? 200 : 
+                      overallStatus === 'degraded' ? 200 : 503;
+
+    return createResponse(statusCode, {
+      success: true,
+      data: healthResult,
+      message: `Health check completed - ${overallStatus.toUpperCase()}`
+    });
+
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    logger.error('Health check failed', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      duration,
+      requestId: context.awsRequestId
+    });
+
+    return createResponse(500, {
+      success: false,
+      error: 'Internal server error during health check',
+      requestId: context.awsRequestId
+    });
+  }
+};
+
+/**
+ * Check database health
+ */
+async function checkDatabaseHealth(): Promise<ServiceStatus> {
+  const startTime = Date.now();
+  
+  try {
+    await DatabaseService.client.$queryRaw`SELECT 1`;
+    const responseTime = Date.now() - startTime;
+    
+    return {
+      name: 'database',
+      status: responseTime > 1000 ? 'degraded' : 'healthy',
+      responseTime
+    };
+  } catch (error) {
+    return {
+      name: 'database',
+      status: 'unhealthy',
+      responseTime: Date.now() - startTime
+    };
+  }
+}
+
+/**
+ * Check Redis health
+ */
+async function checkRedisHealth(): Promise<ServiceStatus> {
+  const startTime = Date.now();
+  
+  try {
+    const testKey = `health_check:${Date.now()}`;
+    await RedisService.set(testKey, 'test', 5);
+    const value = await RedisService.get(testKey);
+    
+    const responseTime = Date.now() - startTime;
+    
+    if (value !== 'test') {
+      return {
+        name: 'redis',
+        status: 'unhealthy',
+        responseTime
+      };
+    }
+    
+    return {
+      name: 'redis',
+      status: responseTime > 500 ? 'degraded' : 'healthy',
+      responseTime
+    };
+  } catch (error) {
+    return {
+      name: 'redis',
+      status: 'unhealthy',
+      responseTime: Date.now() - startTime
+    };
+  }
+}

@@ -1,0 +1,121 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|MultiEdit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \process.env..CLAUDE-CODE_SETTINGS_PASSWORD_1 && jq -r '.tool_input.file_path // empty' | while read file; do if [[ \"$file\" =~ \\.(ts|js)$ ]] && [[ -f \"$file\" ]]; then echo \"Formatting $file...\"; npx prettier --write \"$file\" --quiet || true; npx eslint \"$file\" --fix --quiet || true; fi; done",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|MultiEdit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \process.env..CLAUDE-CODE_SETTINGS_PASSWORD_3 && jq -r '.tool_input.file_path // empty' | while read file; do if [[ \"$file\" =~ \\.ts$ ]] && [[ -f \"$file\" ]]; then echo \"Type checking...\"; npm run type-check --silent || true; fi; done",
+            "timeout": 45
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|MultiEdit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \process.env..CLAUDE-CODE_SETTINGS_PASSWORD_4 && jq -r '.tool_input.file_path // empty' | while read file; do if [[ \"$file\" =~ /test/ ]] || [[ \"$file\" =~ \\.test\\.(ts|js)$ ]] || [[ \"$file\" =~ \\.spec\\.(ts|js)$ ]]; then echo \"Running unit tests...\"; npm run test:unit --silent || true; fi; done",
+            "timeout": 60
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|MultiEdit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \process.env..CLAUDE-CODE_SETTINGS_PASSWORD_1 && jq -r '.tool_input.file_path // empty' | while read file; do if [[ \"$file\" =~ /routes/ ]] || [[ \"$file\" =~ /controller/ ]]; then echo \"Updating API documentation...\"; npm run swagger:generate --silent || true; fi; done",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|MultiEdit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && jq -r '.tool_input.file_path // empty' | while read file; do if [[ \"$file\" == *\"schema.prisma\" ]]; then echo \"Regenerating Prisma client...\"; npm run db:generate --silent || true; fi; done",
+            "timeout": 45
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|MultiEdit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && echo \"Running security audit...\" && npm audit --audit-level moderate --quiet || echo 'Security audit completed with warnings'",
+            "timeout": 20
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|MultiEdit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && jq -r '.tool_input.content // .tool_input.new_string // empty' | grep -i process.env..CLAUDE-CODE_SETTINGS_PASSWORD_2 | head -5 && echo 'WARNING: Potential hardcoded secrets detected!' || echo 'No obvious secrets detected'",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && jq -r '.tool_input.command // empty' | if grep -q 'migrate\\|db:'; then echo 'Database operation detected - validating...'; npm run type-check --silent || echo 'Validation complete'; fi",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && echo \"=== Development Session Complete ===\" && git status --porcelain | head -10",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && echo \"=== HASIVU Platform Development Session ===\" && echo \"Recent changes:\" && git log --oneline -5 2>/dev/null || echo 'No git history available'",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && jq -r '.prompt // empty' | if grep -qi 'deploy\\|production\\|live'; then echo 'PRODUCTION OPERATION DETECTED - Exercise caution!'; fi || echo 'Development operation'",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

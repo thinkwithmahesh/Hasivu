@@ -1,0 +1,472 @@
+# HASIVU Platform - Prometheus Alert Rules
+# Comprehensive alerting rules for monitoring HASIVU serverless infrastructure
+#
+# Rules are organized by category:
+# - System Health & Infrastructure
+# - Business Metrics & KPIs
+# - Security & Compliance
+# - Performance & Capacity
+# - Cost Management
+# - RFID & Hardware Systems
+#
+# @author HASIVU Development Team
+# @version 2.0.0
+# @since 2024
+
+groups:
+  # =============================================================================
+  # SYSTEM HEALTH & INFRASTRUCTURE ALERTS
+  # =============================================================================
+  - name: system_health
+    rules:
+      # Overall system health score
+      - alert: SystemHealthCritical
+        expr: hasivu_health_score < 70
+        for: 5m
+        labels:
+          severity: critical
+          category: infrastructure
+          service: system
+        annotations:
+          summary: "System health score critically low"
+          description: "Overall system health score is {{ $value }}%, below critical threshold of 70%"
+          runbook_url: "https://docs.hasivu.com/runbooks/system-health-critical"
+          business_impact: "System instability may affect all user operations"
+
+      # Critical services down
+      - alert: CriticalServiceDown
+        expr: hasivu_service_health{critical="true"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          category: infrastructure
+          service: "{{ $labels.service }}"
+        annotations:
+          summary: "Critical service {{ $labels.service }} is down"
+          description: "Critical service {{ $labels.service }} has been unavailable for more than 2 minutes"
+          runbook_url: "https://docs.hasivu.com/runbooks/service-down"
+          business_impact: "Core functionality unavailable to users"
+
+      # Database connectivity issues
+      - alert: DatabaseDown
+        expr: hasivu_service_health{service="database"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: infrastructure
+          service: database
+        annotations:
+          summary: "Database connectivity failed"
+          description: "Primary database is unreachable for {{ $labels.duration }}"
+          runbook_url: "https://docs.hasivu.com/runbooks/database-down"
+          business_impact: "All data operations suspended, revenue impact immediate"
+
+      # Redis cache issues
+      - alert: RedisCacheDown
+        expr: hasivu_service_health{service="redis"} == 0
+        for: 3m
+        labels:
+          severity: high
+          category: infrastructure
+          service: redis
+        annotations:
+          summary: "Redis cache service unavailable"
+          description: "Redis cache has been down for {{ $labels.duration }}, performance degraded"
+          runbook_url: "https://docs.hasivu.com/runbooks/redis-down"
+          performance_impact: "Significantly slower response times expected"
+
+      # High error rate
+      - alert: HighErrorRate
+        expr: rate(hasivu_errors_total[5m]) > 0.05
+        for: 10m
+        labels:
+          severity: high
+          category: performance
+          service: application
+        annotations:
+          summary: "High application error rate detected"
+          description: "Error rate is {{ $value | humanizePercentage }} over the last 5 minutes"
+          runbook_url: "https://docs.hasivu.com/runbooks/high-error-rate"
+
+  # =============================================================================
+  # BUSINESS METRICS & KPI ALERTS
+  # =============================================================================
+  - name: business_metrics
+    rules:
+      # Payment success rate drops
+      - alert: PaymentSuccessRateLow
+        expr: hasivu_payment_success_rate < 95
+        for: 15m
+        labels:
+          severity: critical
+          category: business
+          service: payment
+        annotations:
+          summary: "Payment success rate below threshold"
+          description: "Payment success rate is {{ $value }}%, below critical threshold of 95%"
+          business_impact: "Revenue loss due to failed transactions"
+          recommendation: "Check payment gateway configuration and network connectivity"
+
+      # Revenue drop alert
+      - alert: RevenueDrop
+        expr: (hasivu_hourly_revenue - hasivu_hourly_revenue offset 1h) / hasivu_hourly_revenue offset 1h < -0.3
+        for: 30m
+        labels:
+          severity: high
+          category: business
+          service: revenue
+        annotations:
+          summary: "Significant revenue drop detected"
+          description: "Hourly revenue dropped by {{ $value | humanizePercentage }} compared to previous hour"
+          business_impact: "Potential revenue loss requiring immediate investigation"
+
+      # Order completion rate issues
+      - alert: OrderCompletionRateLow
+        expr: hasivu_order_completion_rate < 90
+        for: 20m
+        labels:
+          severity: high
+          category: business
+          service: orders
+        annotations:
+          summary: "Order completion rate below target"
+          description: "Order completion rate is {{ $value }}%, below target of 90%"
+          business_impact: "Customer satisfaction and revenue affected"
+
+      # User retention decline
+      - alert: UserRetentionDrop
+        expr: hasivu_user_retention_rate < 75
+        for: 1h
+        labels:
+          severity: medium
+          category: business
+          service: users
+        annotations:
+          summary: "User retention rate declining"
+          description: "User retention rate is {{ $value }}%, below target of 75%"
+          business_impact: "Long-term growth and revenue sustainability at risk"
+
+      # Fraud detection spike
+      - alert: FraudDetectionSpike
+        expr: rate(hasivu_fraud_detections_total[1h]) > 10
+        for: 30m
+        labels:
+          severity: high
+          category: security
+          service: fraud_detection
+        annotations:
+          summary: "Unusual spike in fraud detections"
+          description: "Fraud detections increased to {{ $value }} per hour"
+          security_impact: "Potential security threat or system compromise"
+
+  # =============================================================================
+  # SECURITY & COMPLIANCE ALERTS
+  # =============================================================================
+  - name: security_alerts
+    rules:
+      # Failed login attempts
+      - alert: HighFailedLogins
+        expr: rate(hasivu_failed_logins_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: high
+          category: security
+          service: authentication
+          threat_level: medium
+        annotations:
+          summary: "High rate of failed login attempts"
+          description: "{{ $value }} failed login attempts per minute detected"
+          security_impact: "Potential brute force attack in progress"
+          recommendation: "Review source IPs and consider rate limiting"
+
+      # Suspicious API activity
+      - alert: SuspiciousAPIActivity
+        expr: rate(hasivu_api_requests_total[5m]) > 1000
+        for: 10m
+        labels:
+          severity: medium
+          category: security
+          service: api
+          threat_level: low
+        annotations:
+          summary: "Unusual API request volume"
+          description: "API requests spiked to {{ $value }} per minute"
+          security_impact: "Possible DDoS attack or API abuse"
+
+      # Unauthorized access attempts
+      - alert: UnauthorizedAccess
+        expr: rate(hasivu_unauthorized_access_total[5m]) > 5
+        for: 5m
+        labels:
+          severity: critical
+          category: security
+          service: authorization
+          threat_level: high
+        annotations:
+          summary: "Multiple unauthorized access attempts"
+          description: "{{ $value }} unauthorized access attempts detected"
+          security_impact: "Potential security breach in progress"
+          recommendation: "Immediate investigation and possible account lockdown required"
+
+      # SSL certificate expiry
+      - alert: SSLCertificateExpiring
+        expr: (hasivu_ssl_cert_expiry - time()) / 86400 < 30
+        for: 1h
+        labels:
+          severity: medium
+          category: security
+          service: ssl
+        annotations:
+          summary: "SSL certificate expiring soon"
+          description: "SSL certificate for {{ $labels.domain }} expires in {{ $value }} days"
+          security_impact: "Service will become inaccessible when certificate expires"
+
+  # =============================================================================
+  # PERFORMANCE & CAPACITY ALERTS
+  # =============================================================================
+  - name: performance_monitoring
+    rules:
+      # High response times
+      - alert: HighResponseTime
+        expr: hasivu_response_time_avg > 2000
+        for: 10m
+        labels:
+          severity: high
+          category: performance
+          service: "{{ $labels.service }}"
+        annotations:
+          summary: "High response time detected"
+          description: "Average response time is {{ $value }}ms for service {{ $labels.service }}"
+          performance_impact: "User experience significantly degraded"
+          optimization: "Consider scaling resources or optimizing queries"
+
+      # Lambda function errors
+      - alert: LambdaHighErrorRate
+        expr: rate(aws_lambda_errors_total[5m]) / rate(aws_lambda_invocations_total[5m]) > 0.05
+        for: 15m
+        labels:
+          severity: high
+          category: performance
+          service: lambda
+        annotations:
+          summary: "Lambda function error rate high"
+          description: "Lambda error rate is {{ $value | humanizePercentage }} for function {{ $labels.function_name }}"
+          performance_impact: "Service reliability compromised"
+
+      # Database performance degradation
+      - alert: DatabasePerformanceDegraded
+        expr: hasivu_db_query_time_avg > 1000
+        for: 15m
+        labels:
+          severity: medium
+          category: performance
+          service: database
+        annotations:
+          summary: "Database query performance degraded"
+          description: "Average database query time is {{ $value }}ms"
+          performance_impact: "Application slowdown affecting user experience"
+          optimization: "Review slow queries and consider indexing"
+
+      # Memory usage alerts
+      - alert: HighMemoryUsage
+        expr: hasivu_memory_usage_percent > 85
+        for: 10m
+        labels:
+          severity: high
+          category: capacity
+          service: "{{ $labels.service }}"
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is {{ $value }}% for service {{ $labels.service }}"
+          capacity_impact: "Service may become unstable or crash"
+
+      # API Gateway throttling
+      - alert: APIGatewayThrottling
+        expr: rate(aws_apigateway_throttle_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: medium
+          category: capacity
+          service: api_gateway
+        annotations:
+          summary: "API Gateway throttling detected"
+          description: "{{ $value }} requests per minute are being throttled"
+          capacity_impact: "Users experiencing request rejections"
+
+  # =============================================================================
+  # COST MANAGEMENT ALERTS
+  # =============================================================================
+  - name: cost_monitoring
+    rules:
+      # Budget utilization alerts
+      - alert: BudgetUtilizationHigh
+        expr: hasivu_budget_utilization_percent > 85
+        for: 1h
+        labels:
+          severity: high
+          category: cost
+          service: overall
+        annotations:
+          summary: "Budget utilization high"
+          description: "Monthly budget utilization is {{ $value }}%"
+          business_impact: "Risk of exceeding monthly budget"
+          optimization: "Review cost optimization recommendations"
+
+      # Daily cost spike
+      - alert: DailyCostSpike
+        expr: (hasivu_daily_cost - hasivu_daily_cost offset 1d) / hasivu_daily_cost offset 1d > 0.5
+        for: 2h
+        labels:
+          severity: medium
+          category: cost
+          service: overall
+        annotations:
+          summary: "Unusual daily cost increase"
+          description: "Daily cost increased by {{ $value | humanizePercentage }} compared to yesterday"
+          business_impact: "Unexpected cost increase detected"
+
+      # Service cost anomaly
+      - alert: ServiceCostAnomaly
+        expr: hasivu_service_cost{service="lambda"} > hasivu_monthly_budget * 0.6
+        for: 4h
+        labels:
+          severity: medium
+          category: cost
+          service: "{{ $labels.service }}"
+        annotations:
+          summary: "Service cost anomaly detected"
+          description: "{{ $labels.service }} costs are unusually high: ${{ $value }}"
+          optimization: "Review {{ $labels.service }} usage patterns and optimization opportunities"
+
+  # =============================================================================
+  # RFID & HARDWARE SYSTEMS
+  # =============================================================================
+  - name: rfid_monitoring
+    rules:
+      # RFID reader connectivity
+      - alert: RFIDReaderOffline
+        expr: hasivu_rfid_readers_online / hasivu_rfid_readers_total < 0.8
+        for: 10m
+        labels:
+          severity: high
+          category: hardware
+          service: rfid
+        annotations:
+          summary: "Multiple RFID readers offline"
+          description: "Only {{ $value | humanizePercentage }} of RFID readers are online"
+          business_impact: "Student verification system compromised"
+          troubleshooting: "Check network connectivity and power supply to readers"
+
+      # RFID verification success rate
+      - alert: RFIDVerificationRateLow
+        expr: hasivu_rfid_success_rate < 95
+        for: 15m
+        labels:
+          severity: medium
+          category: hardware
+          service: rfid
+        annotations:
+          summary: "RFID verification success rate low"
+          description: "RFID verification success rate is {{ $value }}%"
+          business_impact: "Student experience degraded, manual verification required"
+
+      # RFID response time issues
+      - alert: RFIDSlowResponse
+        expr: hasivu_rfid_response_time_avg > 3000
+        for: 20m
+        labels:
+          severity: medium
+          category: performance
+          service: rfid
+        annotations:
+          summary: "RFID system response time high"
+          description: "Average RFID verification time is {{ $value }}ms"
+          performance_impact: "Slow verification affecting user experience"
+
+  # =============================================================================
+  # NOTIFICATION SYSTEM ALERTS
+  # =============================================================================
+  - name: notification_system
+    rules:
+      # Message queue backlog
+      - alert: MessageQueueBacklog
+        expr: hasivu_message_queue_size > 1000
+        for: 10m
+        labels:
+          severity: medium
+          category: infrastructure
+          service: messaging
+        annotations:
+          summary: "Message queue backlog detected"
+          description: "Message queue has {{ $value }} pending messages"
+          business_impact: "Delayed notifications to users"
+
+      # WhatsApp API rate limiting
+      - alert: WhatsAppRateLimited
+        expr: rate(hasivu_whatsapp_rate_limit_total[5m]) > 5
+        for: 10m
+        labels:
+          severity: medium
+          category: external
+          service: whatsapp
+        annotations:
+          summary: "WhatsApp API rate limiting detected"
+          description: "{{ $value }} WhatsApp API calls per minute are being rate limited"
+          business_impact: "User notifications delayed"
+
+      # SMS delivery failures
+      - alert: SMSDeliveryFailures
+        expr: rate(hasivu_sms_failures_total[10m]) > 0.1
+        for: 15m
+        labels:
+          severity: medium
+          category: external
+          service: sms
+        annotations:
+          summary: "High SMS delivery failure rate"
+          description: "SMS failure rate is {{ $value | humanizePercentage }}"
+          business_impact: "Critical notifications not reaching users"
+
+  # =============================================================================
+  # EXTERNAL DEPENDENCIES
+  # =============================================================================
+  - name: external_services
+    rules:
+      # Payment gateway connectivity
+      - alert: PaymentGatewayDown
+        expr: hasivu_service_health{service="payment-gateway"} == 0
+        for: 5m
+        labels:
+          severity: critical
+          category: external
+          service: payment_gateway
+        annotations:
+          summary: "Payment gateway unreachable"
+          description: "Payment gateway has been unreachable for {{ $labels.duration }}"
+          business_impact: "All payment processing suspended"
+
+      # External API failures
+      - alert: ExternalAPIFailures
+        expr: rate(hasivu_external_api_failures_total[5m]) > 0.2
+        for: 10m
+        labels:
+          severity: medium
+          category: external
+          service: "{{ $labels.api }}"
+        annotations:
+          summary: "External API failure rate high"
+          description: "{{ $labels.api }} API failure rate is {{ $value | humanizePercentage }}"
+          business_impact: "Dependent features may be unavailable"
+
+      # Third-party service latency
+      - alert: ThirdPartyLatencyHigh
+        expr: hasivu_external_api_latency_avg > 5000
+        for: 15m
+        labels:
+          severity: medium
+          category: external
+          service: "{{ $labels.api }}"
+        annotations:
+          summary: "Third-party service latency high"
+          description: "{{ $labels.api }} average latency is {{ $value }}ms"
+          performance_impact: "Slower user experience due to external dependency"

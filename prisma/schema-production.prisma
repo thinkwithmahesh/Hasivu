@@ -1,0 +1,716 @@
+// HASIVU Platform - Production Prisma Schema
+// PostgreSQL Database Configuration for Production
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =====================================================
+// CORE MODELS FOR AUTHENTICATION
+// =====================================================
+
+model User {
+  id               String    @id @default(uuid())
+  email            String    @unique
+  phone            String?
+  cognitoUserId    String?   @unique @map("cognito_user_id") // For Cognito integration
+  passwordHash     String    @map("password_hash")
+  firstName        String?   @map("first_name")
+  lastName         String?   @map("last_name")
+  role             String    @default("parent") // UserRole: student, parent, teacher, staff, school_admin, admin, super_admin
+  status           String    @default("ACTIVE") // UserStatus: ACTIVE, INACTIVE, SUSPENDED, PENDING
+  schoolId         String?   @map("school_id")
+  parentId         String?   @map("parent_id") // Direct parent-child relationship
+  profilePictureUrl String?  @map("profile_picture_url")
+  preferences      Json      @default("{}")
+  securitySettings Json      @default("{}") @map("security_settings")
+  twoFactorEnabled Boolean   @default(false) @map("two_factor_enabled")
+  emailVerified    Boolean   @default(false) @map("email_verified")
+  phoneVerified    Boolean   @default(false) @map("phone_verified")
+  timezone         String?   
+  language         String    @default("en") // en, hi, kn
+  lastLoginAt      DateTime? @map("last_login_at") 
+  loginAttempts    Int       @default(0) @map("login_attempts")
+  lockedUntil      DateTime? @map("locked_until") 
+  isActive         Boolean   @default(true) @map("is_active")
+  metadata         Json      @default("{}") // Additional role-specific data
+  createdAt        DateTime  @default(now()) @map("created_at") 
+  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at") 
+
+  // Relations
+  school            School?   @relation(fields: [schoolId], references: [id])
+  parent            User?     @relation("ParentChild", fields: [parentId], references: [id])
+  children          User[]    @relation("ParentChild")
+  authSessions      AuthSession[]
+  userRoleAssignments UserRoleAssignment[]
+  parentChildRels   ParentChild[] @relation("ParentUser")
+  childParentRels   ParentChild[] @relation("ChildUser")
+  rfidCards         RFIDCard[] @relation("RFIDCardStudent")
+  deliveryVerifications DeliveryVerification[] @relation("DeliveryVerificationStudent")
+  whatsappMessages  WhatsAppMessage[]
+  auditLogs         AuditLog[]
+  createdAuditLogs  AuditLog[] @relation("AuditLogCreator")
+  orders            Order[]
+  paymentOrders     PaymentOrder[]
+
+  @@index([email])
+  @@index([role])
+  @@index([status])
+  @@index([schoolId])
+  @@index([parentId])
+  @@index([isActive])
+  @@index([cognitoUserId])
+  @@index([createdAt])
+  @@map("users")
+}
+
+model School {
+  id              String    @id @default(uuid())
+  name            String
+  code            String    @unique // Unique enrollment code
+  address         Json      @default("{}")
+  city            String?
+  state           String?
+  postalCode      String?   @map("postal_code")
+  phone           String?
+  email           String?
+  website         String?
+  principalName   String?   @map("principal_name")
+  subscriptionTier String   @default("BASIC") @map("subscription_tier") // BASIC, PREMIUM, ENTERPRISE
+  operatingHours  Json      @default("{}") @map("operating_hours")
+  configuration   Json      @default("{}") // School-specific settings
+  activeVendors   String[]  @default([]) @map("active_vendors")
+  isActive        Boolean   @default(true) @map("is_active")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  // Relations
+  users           User[]
+  menuItems       MenuItem[]
+  menuPlans       MenuPlan[]
+  orders          Order[]
+
+  @@index([code])
+  @@index([isActive])
+  @@index([subscriptionTier])
+  @@index([createdAt])
+  @@map("schools")
+}
+
+model ParentChild {
+  id            String    @id @default(uuid())
+  parentId      String    @map("parent_id")
+  childId       String    @map("child_id")
+  relationship  String    @default("parent") // parent, guardian, etc.
+  isActive      Boolean   @default(true) @map("is_active")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  // Relations
+  parent        User      @relation("ParentUser", fields: [parentId], references: [id], onDelete: Cascade)
+  child         User      @relation("ChildUser", fields: [childId], references: [id], onDelete: Cascade)
+
+  @@unique([parentId, childId])
+  @@index([parentId])
+  @@index([childId])
+  @@map("parent_children")
+}
+
+model Role {
+  id          String   @id @default(uuid()) 
+  name        String   @unique 
+  description String?  
+  permissions Json     @default("[]")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at") 
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") 
+
+  // Relations
+  userRoleAssignments UserRoleAssignment[]
+
+  @@index([name])
+  @@index([isActive])
+  @@map("roles")
+}
+
+model UserRoleAssignment {
+  id        String   @id @default(uuid()) 
+  userId    String   @map("user_id") 
+  roleId    String   @map("role_id") 
+  createdAt DateTime @default(now()) @map("created_at") 
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
+  @@map("user_role_assignments")
+}
+
+model AuditLog {
+  id          String    @id @default(uuid())
+  entityType  String    @map("entity_type") // USER, SCHOOL, ORDER, etc.
+  entityId    String    @map("entity_id")
+  action      String    // CREATE, UPDATE, DELETE, LOGIN, etc.
+  changes     Json      @default("{}") // JSON of what changed
+  userId      String?   @map("user_id") // Who performed the action
+  createdById String    @map("created_by_id") // Administrator who performed action
+  ipAddress   String?   @map("ip_address")
+  userAgent   String?   @map("user_agent")
+  metadata    Json      @default("{}") // Additional context
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  user        User?     @relation(fields: [userId], references: [id])
+  createdBy   User      @relation("AuditLogCreator", fields: [createdById], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([action])
+  @@index([userId])
+  @@index([createdById])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model AuthSession {
+  id          String   @id @default(uuid()) 
+  userId      String   @map("user_id") 
+  sessionId   String   @unique @map("session_id") 
+  isActive    Boolean  @default(true) @map("is_active")
+  ipAddress   String?  @map("ip_address") 
+  userAgent   String?  @map("user_agent") 
+  lastActivity DateTime @default(now()) @map("last_activity") 
+  expiresAt   DateTime @map("expires_at") 
+  createdAt   DateTime @default(now()) @map("created_at") 
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") 
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([sessionId])
+  @@index([isActive])
+  @@index([expiresAt])
+  @@map("auth_sessions")
+}
+
+// =====================================================
+// PAYMENT CORE MODELS 
+// =====================================================
+
+model PaymentOrder {
+  id               String   @id @default(uuid()) 
+  razorpayOrderId  String   @unique @map("razorpay_order_id") 
+  amount           Int      // Amount in paise
+  currency         String   @default("INR") 
+  status           String   @default("created") 
+  userId           String   @map("user_id") 
+  orderId          String?  @map("order_id")   
+  subscriptionId   String?  @map("subscription_id") 
+  metadata         Json     @default("{}")
+  expiresAt        DateTime @map("expires_at") 
+  createdAt        DateTime @default(now()) @map("created_at") 
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at") 
+
+  // Relations
+  user                User                 @relation(fields: [userId], references: [id])
+  order               Order?               @relation(fields: [orderId], references: [id])
+  paymentTransactions PaymentTransaction[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([orderId])
+  @@index([createdAt])
+  @@map("payment_orders")
+}
+
+model PaymentTransaction {
+  id                  String   @id @default(uuid()) 
+  razorpayPaymentId   String   @unique @map("razorpay_payment_id") 
+  paymentOrderId      String   @map("payment_order_id") 
+  amount              Int      // Amount in paise
+  currency            String   @default("INR") 
+  status              String   @default("created") 
+  method              Json     @default("{}") // Payment method details
+  gateway             Json     @default("{}") // Gateway response details
+  fees                Json     @default("{}") // Fee breakdown
+  createdAt           DateTime @default(now()) @map("created_at") 
+  capturedAt          DateTime? @map("captured_at") 
+  refundedAt          DateTime? @map("refunded_at") 
+  updatedAt           DateTime @default(now()) @updatedAt @map("updated_at") 
+
+  // Relations
+  paymentOrder    PaymentOrder     @relation(fields: [paymentOrderId], references: [id])
+  refunds         PaymentRefund[]
+
+  @@index([paymentOrderId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("payment_transactions")
+}
+
+model PaymentRefund {
+  id                String    @id @default(uuid()) 
+  razorpayRefundId  String    @unique @map("razorpay_refund_id") 
+  paymentId         String    @map("payment_id") 
+  amount            Int       // Amount in paise
+  currency          String    @default("INR") 
+  status            String    @default("pending") 
+  reason            String    
+  notes             Json      @default("{}")
+  createdAt         DateTime  @default(now()) @map("created_at") 
+  processedAt       DateTime? @map("processed_at") 
+
+  // Relations
+  payment PaymentTransaction @relation(fields: [paymentId], references: [id])
+
+  @@index([paymentId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("payment_refunds")
+}
+
+// =====================================================
+// PRODUCT CATALOG MODELS - Story 2.1 Implementation
+// =====================================================
+
+model MenuItem {
+  id            String       @id @default(uuid())
+  name          String
+  description   String?
+  category      String       // MenuCategory: BREAKFAST, LUNCH, SNACK, BEVERAGE, DESSERT, SPECIAL
+  price         Decimal      @db.Decimal(10,2)
+  originalPrice Decimal?     @map("original_price") @db.Decimal(10,2) // For discounts
+  currency      String       @default("INR")
+  available     Boolean      @default(true)
+  featured      Boolean      @default(false)
+  imageUrl      String?      @map("image_url")
+  nutritionalInfo Json?      @map("nutritional_info") // JSON object
+  allergens     String[]     @default([]) // Array of allergens
+  tags          String[]     @default([]) // Array of tags
+  preparationTime Int?       @map("preparation_time") // Minutes
+  portionSize   String?      @map("portion_size")
+  calories      Int?
+  schoolId      String?      @map("school_id") // Optional school-specific items
+  vendorId      String?      @map("vendor_id") // Future vendor management
+  sortOrder     Int          @default(0) @map("sort_order")
+  metadata      Json         @default("{}") // Additional flexible data
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @default(now()) @updatedAt @map("updated_at")
+
+  // Relations
+  school        School?      @relation(fields: [schoolId], references: [id])
+  menuItemSlots MenuItemSlot[]
+  orderItems    OrderItem[]
+
+  @@index([category])
+  @@index([available])
+  @@index([featured])
+  @@index([schoolId])
+  @@index([sortOrder])
+  @@index([createdAt])
+  @@index([name])
+  @@map("menu_items")
+}
+
+// =====================================================
+// MENU PLANNING AND SCHEDULING MODELS - Story 2.2
+// =====================================================
+
+model MenuPlan {
+  id           String      @id @default(uuid())
+  schoolId     String      @map("school_id")
+  name         String      // "Week of Jan 15" or "Valentine's Day Menu"
+  description  String?
+  startDate    DateTime    @map("start_date")
+  endDate      DateTime    @map("end_date")
+  isTemplate   Boolean     @default(false) @map("is_template")
+  isRecurring  Boolean     @default(false) @map("is_recurring")
+  status       String      @default("DRAFT") // MenuStatus: DRAFT, PENDING_APPROVAL, APPROVED, PUBLISHED, ACTIVE, ARCHIVED, REJECTED
+  
+  // Approval workflow
+  approvalWorkflow Json     @default("{}") @map("approval_workflow") // JSON
+  approvedBy       String?  @map("approved_by")
+  approvedAt       DateTime? @map("approved_at")
+  
+  // Template-specific fields
+  recurringPattern Json?    @map("recurring_pattern") // JSON for recurring rules
+  templateCategory String?  @map("template_category") // seasonal, standard, special
+  
+  // Metadata
+  metadata     Json        @default("{}")
+  version      Int         @default(1)
+  createdBy    String      @map("created_by")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @default(now()) @updatedAt @map("updated_at")
+
+  // Relations
+  school       School      @relation(fields: [schoolId], references: [id])
+  dailyMenus   DailyMenu[]
+  approvals    MenuApproval[]
+
+  @@index([schoolId])
+  @@index([status])
+  @@index([startDate, endDate])
+  @@index([isTemplate])
+  @@index([createdBy])
+  @@index([createdAt])
+  @@map("menu_plans")
+}
+
+model DailyMenu {
+  id           String        @id @default(uuid())
+  menuPlanId   String        @map("menu_plan_id")
+  date         DateTime      @db.Date
+  dayType      String        @default("WEEKDAY") @map("day_type") // DayType: WEEKDAY, WEEKEND, HOLIDAY, SPECIAL_EVENT
+  
+  // Menu configuration
+  specialEventInfo Json?      @map("special_event_info") // JSON for special events
+  availableQuantity Int?      @map("available_quantity") // Overall daily quantity limit
+  
+  // Status and workflow
+  isActive     Boolean       @default(true) @map("is_active")
+  isPublished  Boolean       @default(false) @map("is_published")
+  publishedAt  DateTime?     @map("published_at")
+  
+  // Metadata
+  notes        String?       // Additional notes for kitchen/staff
+  metadata     Json          @default("{}")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @default(now()) @updatedAt @map("updated_at")
+
+  // Relations
+  menuPlan     MenuPlan      @relation(fields: [menuPlanId], references: [id], onDelete: Cascade)
+  menuItems    MenuItemSlot[]
+  
+  @@unique([menuPlanId, date])
+  @@index([menuPlanId])
+  @@index([date])
+  @@index([dayType])
+  @@index([isActive])
+  @@index([isPublished])
+  @@map("daily_menus")
+}
+
+model MenuItemSlot {
+  id           String        @id @default(uuid())
+  dailyMenuId  String        @map("daily_menu_id")
+  menuItemId   String        @map("menu_item_id")
+  
+  // Scheduling information
+  category     String        // MenuCategory: BREAKFAST, LUNCH, SNACK, BEVERAGE, DESSERT, SPECIAL
+  availableFrom DateTime?    @map("available_from") // Time window start
+  availableTo   DateTime?    @map("available_to")   // Time window end
+  
+  // Quantity and pricing
+  plannedQuantity Int?       @map("planned_quantity")
+  availableQuantity Int?     @map("available_quantity") // Remaining quantity
+  customPrice   Decimal?     @map("custom_price") @db.Decimal(10,2) // Override price
+  
+  // Special configuration
+  isSpecial     Boolean      @default(false) @map("is_special") // Featured/special item
+  isLimited     Boolean      @default(false) @map("is_limited") // Limited quantity
+  maxPerOrder   Int?         @map("max_per_order") // Max quantity per order
+  
+  // Preparation requirements
+  preparationDeadline DateTime? @map("preparation_deadline")
+  kitchenNotes        String?   @map("kitchen_notes")
+  
+  // Display and ordering
+  displayOrder  Int          @default(0) @map("display_order")
+  isVisible     Boolean      @default(true) @map("is_visible")
+  
+  // Metadata
+  metadata      Json         @default("{}")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @default(now()) @updatedAt @map("updated_at")
+
+  // Relations
+  dailyMenu     DailyMenu    @relation(fields: [dailyMenuId], references: [id], onDelete: Cascade)
+  menuItem      MenuItem     @relation(fields: [menuItemId], references: [id])
+
+  @@unique([dailyMenuId, menuItemId, category]) // Prevent duplicates
+  @@index([dailyMenuId])
+  @@index([menuItemId])
+  @@index([category])
+  @@index([isVisible])
+  @@index([displayOrder])
+  @@map("menu_item_slots")
+}
+
+model MenuApproval {
+  id           String       @id @default(uuid())
+  menuPlanId   String       @map("menu_plan_id")
+  approverId   String       @map("approver_id")
+  approvalType String       @map("approval_type") // ApprovalType: NUTRITIONIST_REVIEW, ADMIN_APPROVAL, PRINCIPAL_APPROVAL, KITCHEN_REVIEW, BUDGET_APPROVAL
+  status       String       @default("PENDING") // ApprovalStatus: PENDING, APPROVED, REJECTED, DELEGATED
+  
+  // Approval details
+  comments     String?
+  approvedAt   DateTime?    @map("approved_at")
+  rejectedAt   DateTime?    @map("rejected_at")
+  
+  // Requirements
+  isRequired   Boolean      @default(true) @map("is_required")
+  priority     Int          @default(1) // Higher number = higher priority
+  
+  // Metadata
+  metadata     Json         @default("{}")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @default(now()) @updatedAt @map("updated_at")
+
+  // Relations
+  menuPlan     MenuPlan     @relation(fields: [menuPlanId], references: [id], onDelete: Cascade)
+
+  @@index([menuPlanId])
+  @@index([approverId])
+  @@index([status])
+  @@index([approvalType])
+  @@map("menu_approvals")
+}
+
+// =====================================================
+// ORDER MANAGEMENT MODELS
+// =====================================================
+
+model Order {
+  id          String       @id @default(uuid()) 
+  orderNumber String       @unique @map("order_number") 
+  userId      String       @map("user_id")
+  schoolId    String       @map("school_id")
+  studentId   String?      @map("student_id") // For parent orders
+  status      String       @default("pending") 
+  totalAmount Decimal      @map("total_amount") @db.Decimal(10,2)
+  currency    String       @default("INR")
+  orderType   String       @default("REGULAR") @map("order_type") // REGULAR, BULK, SUBSCRIPTION
+  scheduledFor DateTime?   @map("scheduled_for") // When the order should be fulfilled
+  
+  // Delivery information
+  deliveryMethod String?   @map("delivery_method") // PICKUP, DELIVERY, CAFETERIA
+  deliveryAddress Json?    @map("delivery_address")
+  deliveryInstructions String? @map("delivery_instructions")
+  
+  // Order tracking
+  placedAt     DateTime?   @map("placed_at")
+  confirmedAt  DateTime?   @map("confirmed_at")
+  preparingAt  DateTime?   @map("preparing_at")
+  readyAt      DateTime?   @map("ready_at")
+  deliveredAt  DateTime?   @map("delivered_at")
+  cancelledAt  DateTime?   @map("cancelled_at")
+  cancellationReason String? @map("cancellation_reason")
+  
+  // Metadata
+  notes       String?
+  metadata    Json        @default("{}")
+  createdAt   DateTime    @default(now()) @map("created_at") 
+  updatedAt   DateTime    @default(now()) @updatedAt @map("updated_at") 
+
+  // Relations
+  user         User          @relation(fields: [userId], references: [id])
+  school       School        @relation(fields: [schoolId], references: [id])
+  orderItems   OrderItem[]
+  paymentOrders PaymentOrder[]
+  deliveryVerifications DeliveryVerification[]
+
+  @@index([userId])
+  @@index([schoolId])
+  @@index([status])
+  @@index([orderNumber])
+  @@index([scheduledFor])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+model OrderItem {
+  id         String   @id @default(uuid())
+  orderId    String   @map("order_id")
+  menuItemId String   @map("menu_item_id")
+  quantity   Int
+  unitPrice  Decimal  @map("unit_price") @db.Decimal(10,2)
+  totalPrice Decimal  @map("total_price") @db.Decimal(10,2)
+  
+  // Item customization
+  customizations Json   @default("{}")
+  specialInstructions String? @map("special_instructions")
+  
+  // Status tracking
+  status     String   @default("pending") // pending, confirmed, preparing, ready, served, cancelled
+  
+  // Metadata
+  metadata   Json     @default("{}")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at")
+
+  // Relations
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem  MenuItem @relation(fields: [menuItemId], references: [id])
+
+  @@index([orderId])
+  @@index([menuItemId])
+  @@index([status])
+  @@map("order_items")
+}
+
+// =====================================================
+// NOTIFICATION AND COMMUNICATION MODELS
+// =====================================================
+
+model WhatsAppMessage {
+  id                String    @id @default(uuid()) 
+  userId            String?   @map("user_id") 
+  phone             String    
+  type              String    @default("text")  // text, template, media, interactive
+  status            String    @default("queued")  // queued, sent, delivered, read, failed
+  whatsappMessageId String?   @map("whatsapp_message_id")  // WhatsApp's message ID
+  templateName      String?   @map("template_name") 
+  message           Json?     // Message content and template data
+  metadata          Json      @default("{}")
+  errorMessage      String?   @map("error_message") 
+  sentAt            DateTime? @map("sent_at") 
+  deliveredAt       DateTime? @map("delivered_at") 
+  readAt            DateTime? @map("read_at") 
+  failedAt          DateTime? @map("failed_at") 
+  createdAt         DateTime  @default(now()) @map("created_at") 
+  updatedAt         DateTime  @default(now()) @updatedAt @map("updated_at") 
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([phone])
+  @@index([status])
+  @@index([whatsappMessageId])
+  @@index([createdAt])
+  @@index([templateName])
+  @@map("whatsapp_messages")
+}
+
+model WhatsAppTemplate {
+  id          String   @id @default(uuid()) 
+  name        String   @unique 
+  category    String   // AUTHENTICATION, MARKETING, UTILITY
+  language    String   @default("en") 
+  status      String   @default("pending")  // pending, approved, rejected
+  components  Json     // Template structure
+  variables   String[] @default([]) // Available variables
+  isActive    Boolean  @default(true) @map("is_active")
+  metadata    Json     @default("{}")
+  createdAt   DateTime @default(now()) @map("created_at") 
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") 
+
+  @@index([name])
+  @@index([status])
+  @@index([isActive])
+  @@index([category])
+  @@map("whatsapp_templates")
+}
+
+// =====================================================
+// ANALYTICS MODELS
+// =====================================================
+
+model AnalyticsReport {
+  id          String   @id @default(uuid()) 
+  name        String   
+  type        String   // dashboard, scheduled, ad_hoc
+  metrics     String[] @default([])
+  dimensions  String[] @default([])
+  filters     Json     @default("{}")
+  dateRange   Json     // { start: Date, end: Date }
+  data        Json     @default("[]")
+  generatedAt DateTime @map("generated_at") 
+  generatedBy String   @map("generated_by") 
+  createdAt   DateTime @default(now()) @map("created_at") 
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") 
+
+  @@index([type])
+  @@index([generatedAt])
+  @@index([generatedBy])
+  @@map("analytics_reports")
+}
+
+// =====================================================
+// RFID MODELS FOR DELIVERY VERIFICATION
+// =====================================================
+
+model RFIDCard {
+  id               String    @id @default(uuid()) 
+  cardNumber       String    @unique @map("card_number") 
+  studentId        String    @map("student_id") 
+  schoolId         String    @map("school_id") 
+  isActive         Boolean   @default(true) @map("is_active")
+  issuedAt         DateTime  @default(now()) @map("issued_at") 
+  expiresAt        DateTime? @map("expires_at") 
+  lastUsedAt       DateTime? @map("last_used_at") 
+  deactivatedAt    DateTime? @map("deactivated_at") 
+  deactivationReason String? @map("deactivation_reason") 
+  metadata         Json      @default("{}")
+  createdAt        DateTime  @default(now()) @map("created_at") 
+  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at") 
+
+  // Relations
+  student           User                   @relation("RFIDCardStudent", fields: [studentId], references: [id])
+  deliveryVerifications DeliveryVerification[]
+
+  @@index([cardNumber])
+  @@index([studentId])
+  @@index([isActive])
+  @@index([expiresAt])
+  @@map("rfid_cards")
+}
+
+model RFIDReader {
+  id            String    @id @default(uuid()) 
+  name          String    
+  location      String    
+  schoolId      String    @map("school_id") 
+  ipAddress     String    @map("ip_address") 
+  status        String    @default("offline") 
+  lastHeartbeat DateTime  @default(now()) @map("last_heartbeat") 
+  configuration Json      @default("{}")
+  isActive      Boolean   @default(true) @map("is_active")
+  createdAt     DateTime  @default(now()) @map("created_at") 
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at") 
+
+  // Relations
+  deliveryVerifications DeliveryVerification[]
+
+  @@index([schoolId])
+  @@index([status])
+  @@index([isActive])
+  @@index([ipAddress])
+  @@map("rfid_readers")
+}
+
+model DeliveryVerification {
+  id               String   @id @default(uuid()) 
+  orderId          String?  @map("order_id") 
+  studentId        String   @map("student_id") 
+  cardId           String   @map("card_id") 
+  readerId         String   @map("reader_id") 
+  verifiedAt       DateTime @default(now()) @map("verified_at") 
+  status           String   @default("verified") 
+  verificationData Json     @default("{}") @map("verification_data")
+  createdAt        DateTime @default(now()) @map("created_at") 
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at") 
+
+  // Relations
+  order    Order?     @relation(fields: [orderId], references: [id])
+  card     RFIDCard   @relation(fields: [cardId], references: [id])
+  reader   RFIDReader @relation(fields: [readerId], references: [id])
+  student  User       @relation("DeliveryVerificationStudent", fields: [studentId], references: [id])
+
+  @@index([orderId])
+  @@index([studentId])
+  @@index([cardId])
+  @@index([readerId])
+  @@index([verifiedAt])
+  @@map("delivery_verifications")
+}

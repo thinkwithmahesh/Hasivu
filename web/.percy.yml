@@ -1,0 +1,15 @@
+# Percy Visual Testing Configuration
+version: 2
+discovery:
+  allowed-hostnames:
+    - localhost
+snapshot:
+  widths:
+    - 375
+    - 768 
+    - 1440
+  min-height: 1024
+  percy-css: |
+    .loading-spinner { display: none !important; }
+    .animation { animation-duration: 0ms !important; }
+    * { transition: none !important; }

@@ -1,0 +1,1429 @@
+// HASIVU Platform - Fixed Prisma Schema
+// Production-ready schema with proper relationships and constraints
+// Fixes identified QA issues with Order model and missing foreign keys
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// =====================================================
+// CORE MODELS FOR AUTHENTICATION
+// =====================================================
+
+model User {
+  id               String    @id @default(uuid())
+  email            String    @unique
+  phone            String?
+  cognitoUserId    String?   @unique @map("cognito_user_id")
+  passwordHash     String    @map("password_hash")
+  firstName        String?   @map("first_name")
+  lastName         String?   @map("last_name")
+  role             String    @default("parent") // UserRole: student, parent, teacher, staff, school_admin, admin, super_admin
+  status           String    @default("ACTIVE") // UserStatus: ACTIVE, INACTIVE, SUSPENDED, PENDING
+  schoolId         String?   @map("school_id")
+  parentId         String?   @map("parent_id")
+  grade            String?   // Student grade/class
+  section          String?   // Student section
+  profilePictureUrl String?  @map("profile_picture_url")
+  preferences      String    @default("{}")
+  securitySettings String    @default("{}") @map("security_settings")
+  twoFactorEnabled Boolean   @default(false) @map("two_factor_enabled")
+  emailVerified    Boolean   @default(false) @map("email_verified")
+  phoneVerified    Boolean   @default(false) @map("phone_verified")
+  timezone         String?   
+  language         String    @default("en")
+  lastLoginAt      DateTime? @map("last_login_at") 
+  loginAttempts    Int       @default(0) @map("login_attempts")
+  lockedUntil      DateTime? @map("locked_until") 
+  isActive         Boolean   @default(true) @map("is_active")
+  metadata         String    @default("{}")
+  deviceTokens     String    @default("[]") @map("device_tokens") // JSON array of device tokens
+  createdAt        DateTime  @default(now()) @map("created_at") 
+  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at") 
+
+  // Relations - Fixed with proper constraints
+  school            School?   @relation(fields: [schoolId], references: [id], onDelete: SetNull)
+  parent            User?     @relation("ParentChild", fields: [parentId], references: [id], onDelete: SetNull)
+  children          User[]    @relation("ParentChild")
+  authSessions      AuthSession[]
+  userRoleAssignments UserRoleAssignment[]
+  parentChildRels   ParentChild[] @relation("ParentUser")
+  childParentRels   ParentChild[] @relation("ChildUser")
+  rfidCards         RFIDCard[] @relation("RFIDCardStudent")
+  deliveryVerifications DeliveryVerification[] @relation("DeliveryVerificationStudent")
+  whatsappMessages  WhatsAppMessage[]
+  payments          Payment[] @relation("UserPayments")
+  auditLogs         AuditLog[]
+  createdAuditLogs  AuditLog[] @relation("AuditLogCreator")
+  
+  // Fixed Order relationship
+  orders            Order[] @relation("UserOrders")
+  studentOrders     Order[] @relation("StudentOrders")
+  
+  // Epic 5 Relations - Payment Processing & Billing
+  paymentMethods    PaymentMethod[] @relation("UserPaymentMethods")
+  subscriptions     Subscription[] @relation("UserSubscriptions")
+  studentSubscriptions Subscription[] @relation("StudentSubscriptions")
+  invoices          Invoice[] @relation("UserInvoices")
+  customerBehavior  CustomerPaymentBehavior[]
+
+  // Mobile device and notification relations
+  devices           UserDevice[] @relation("UserDevices")
+  notifications     Notification[] @relation("UserNotifications")
+  
+  // Student-Parent relationships
+  studentParents    StudentParent[] @relation("StudentParentStudent")
+  parentStudents    StudentParent[] @relation("StudentParentParent")
+
+  @@index([email])
+  @@index([role])
+  @@index([status])
+  @@index([schoolId])
+  @@index([parentId])
+  @@index([isActive])
+  @@index([cognitoUserId])
+  @@map("users")
+}
+
+model School {
+  id              String    @id @default(uuid())
+  name            String
+  code            String    @unique
+  address         String    @default("{}")
+  city            String?
+  state           String?
+  postalCode      String?   @map("postal_code")
+  phone           String?
+  email           String?
+  website         String?
+  principalName   String?   @map("principal_name")
+  subscriptionTier String   @default("BASIC") @map("subscription_tier")
+  operatingHours  String    @default("{}") @map("operating_hours")
+  configuration   String    @default("{}")
+  activeVendors   String    @default("[]") @map("active_vendors")
+  isActive        Boolean   @default(true) @map("is_active")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  // Relations
+  users           User[]
+  orders          Order[] @relation("SchoolOrders")
+  menuItems       MenuItem[]
+  menuPlans       MenuPlan[]
+  rfidReaders     RFIDReader[]
+  
+  // Epic 5 Relations - Payment Processing & Billing
+  paymentPlans    PaymentPlan[] @relation("SchoolPaymentPlans")
+  subscriptions   Subscription[] @relation("SchoolSubscriptions")
+  subscriptionPlans SubscriptionPlan[] @relation("SchoolSubscriptionPlans")
+  reconciliations ReconciliationRecord[] @relation("SchoolReconciliations")
+  invoices        Invoice[] @relation("SchoolInvoices")
+  invoiceTemplates InvoiceTemplate[] @relation("SchoolInvoiceTemplates")
+  paymentAnalytics PaymentAnalytics[] @relation("SchoolPaymentAnalytics")
+  paymentFailureAnalytics PaymentFailureAnalytics[]
+  customerBehaviors CustomerPaymentBehavior[]
+  subscriptionAnalytics SubscriptionAnalytics[]
+
+  @@index([code])
+  @@index([isActive])
+  @@map("schools")
+}
+
+model ParentChild {
+  id            String    @id @default(uuid())
+  parentId      String    @map("parent_id")
+  childId       String    @map("child_id")
+  relationship  String    @default("parent")
+  isActive      Boolean   @default(true) @map("is_active")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  // Relations with proper cascade deletes
+  parent        User      @relation("ParentUser", fields: [parentId], references: [id], onDelete: Cascade)
+  child         User      @relation("ChildUser", fields: [childId], references: [id], onDelete: Cascade)
+
+  @@unique([parentId, childId])
+  @@index([parentId])
+  @@index([childId])
+  @@map("parent_children")
+}
+
+model Role {
+  id          String   @id @default(uuid()) 
+  name        String   @unique 
+  description String?  
+  permissions String     @default("[]")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at") 
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") 
+
+  // Relations
+  userRoleAssignments UserRoleAssignment[]
+
+  @@map("roles")
+}
+
+model UserRoleAssignment {
+  id        String   @id @default(uuid()) 
+  userId    String   @map("user_id") 
+  roleId    String   @map("role_id") 
+  createdAt DateTime @default(now()) @map("created_at") 
+
+  // Relations with proper cascade
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@map("user_role_assignments")
+}
+
+model AuditLog {
+  id          String    @id @default(uuid())
+  entityType  String    @map("entity_type")
+  entityId    String    @map("entity_id")
+  action      String    
+  changes     String    @default("{}")
+  userId      String?   @map("user_id")
+  createdById String    @map("created_by_id")
+  ipAddress   String?   @map("ip_address")
+  userAgent   String?   @map("user_agent")
+  metadata    String    @default("{}")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  // Relations with proper nullable handling
+  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdBy   User      @relation("AuditLogCreator", fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([entityType, entityId])
+  @@index([action])
+  @@index([userId])
+  @@index([createdById])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model AuthSession {
+  id          String   @id @default(uuid()) 
+  userId      String   @map("user_id") 
+  sessionId   String   @unique @map("session_id") 
+  isActive    Boolean  @default(true) @map("is_active")
+  ipAddress   String?  @map("ip_address") 
+  userAgent   String?  @map("user_agent") 
+  lastActivity DateTime @default(now()) @map("last_activity") 
+  expiresAt   DateTime @map("expires_at") 
+  createdAt   DateTime @default(now()) @map("created_at") 
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") 
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("auth_sessions")
+}
+
+// =====================================================
+// FIXED ORDER MODEL WITH PROPER RELATIONSHIPS
+// =====================================================
+
+model Order {
+  id              String   @id @default(uuid())
+  orderNumber     String   @unique @map("order_number")
+  
+  // Fixed relationships with proper foreign keys
+  userId          String   @map("user_id")        // Parent/Guardian who placed order
+  studentId       String   @map("student_id")     // Student receiving the meal
+  schoolId        String   @map("school_id")      // School where order is placed
+  
+  // Order details
+  status          String   @default("pending")    // pending, confirmed, preparing, ready, out_for_delivery, delivered, cancelled
+  totalAmount     Float    @map("total_amount")
+  currency        String   @default("INR")
+  orderDate       DateTime @default(now()) @map("order_date")
+  deliveryDate    DateTime @map("delivery_date")
+  deliveredAt     DateTime? @map("delivered_at")
+  
+  // Additional fields for order management
+  specialInstructions String? @map("special_instructions")
+  allergyInfo        String?  @map("allergy_info")
+  paymentStatus      String   @default("pending") @map("payment_status") // pending, paid, failed, refunded
+  
+  // Metadata
+  metadata        String   @default("{}")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at")
+
+  // Fixed Relations with proper constraints
+  user            User       @relation("UserOrders", fields: [userId], references: [id], onDelete: Restrict)
+  student         User       @relation("StudentOrders", fields: [studentId], references: [id], onDelete: Restrict)
+  school          School     @relation("SchoolOrders", fields: [schoolId], references: [id], onDelete: Restrict)
+  payments        Payment[]  @relation("OrderPayments")
+  
+  // Order items and delivery tracking
+  orderItems      OrderItem[]
+  deliveryVerifications DeliveryVerification[]
+  invoiceItems    InvoiceItem[]
+
+  @@index([userId])
+  @@index([studentId])
+  @@index([schoolId])
+  @@index([status])
+  @@index([paymentStatus])
+  @@index([deliveryDate])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+model OrderItem {
+  id            String    @id @default(uuid())
+  orderId       String    @map("order_id")
+  menuItemId    String    @map("menu_item_id")
+  
+  quantity      Int       @default(1)
+  unitPrice     Float     @map("unit_price")
+  totalPrice    Float     @map("total_price")
+  
+  // Customization options
+  customizations String   @default("{}") // JSON for customization options
+  notes         String?   // Special notes for this item
+  
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  // Relations
+  order         Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem      MenuItem  @relation(fields: [menuItemId], references: [id], onDelete: Restrict)
+
+  @@index([orderId])
+  @@index([menuItemId])
+  @@map("order_items")
+}
+
+// =====================================================
+// PAYMENT CORE MODELS WITH FIXED RELATIONSHIPS
+// =====================================================
+
+model PaymentOrder {
+  id               String   @id @default(uuid()) 
+  razorpayOrderId  String   @unique @map("razorpay_order_id") 
+  amount           Int      
+  currency         String   @default("INR") 
+  status           String   @default("created") 
+  userId           String   @map("user_id") 
+  orderId          String?  @map("order_id")   
+  subscriptionId   String?  @map("subscription_id") 
+  metadata         String
+  expiresAt        DateTime @map("expires_at") 
+  createdAt        DateTime @default(now()) @map("created_at") 
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at") 
+
+  // Relations
+  paymentTransactions PaymentTransaction[]
+
+  @@map("payment_orders")
+}
+
+model PaymentTransaction {
+  id                  String   @id @default(uuid()) 
+  razorpayPaymentId   String   @unique @map("razorpay_payment_id") 
+  paymentOrderId      String   @map("payment_order_id") 
+  amount              Int      
+  currency            String   @default("INR") 
+  status              String   @default("created") 
+  method              String     
+  gateway             String     
+  fees                String     
+  createdAt           DateTime @default(now()) @map("created_at") 
+  capturedAt          DateTime? @map("captured_at") 
+  refundedAt          DateTime? @map("refunded_at") 
+  updatedAt           DateTime @default(now()) @updatedAt @map("updated_at") 
+
+  // Relations
+  paymentOrder    PaymentOrder     @relation(fields: [paymentOrderId], references: [id], onDelete: Cascade)
+  refunds         PaymentRefund[]
+
+  @@map("payment_transactions")
+}
+
+model PaymentRefund {
+  id                String    @id @default(uuid()) 
+  razorpayRefundId  String    @unique @map("razorpay_refund_id") 
+  paymentId         String    @map("payment_id") 
+  amount            Int       
+  currency          String    @default("INR") 
+  status            String    @default("pending") 
+  reason            String    
+  notes             String      @default("{}")
+  createdAt         DateTime  @default(now()) @map("created_at") 
+  processedAt       DateTime? @map("processed_at") 
+
+  // Relations
+  payment PaymentTransaction @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@map("payment_refunds")
+}
+
+// =====================================================
+// PRODUCT CATALOG MODELS - Story 2.1 Implementation
+// =====================================================
+
+model MenuItem {
+  id            String       @id @default(uuid())
+  name          String
+  description   String?
+  category      String       
+  price         Decimal
+  originalPrice Decimal?     @map("original_price")
+  currency      String       @default("INR")
+  available     Boolean      @default(true)
+  featured      Boolean      @default(false)
+  imageUrl      String?      @map("image_url")
+  nutritionalInfo String?    @map("nutritional_info")
+  allergens     String       @default("[]")
+  tags          String       @default("[]")
+  preparationTime Int?       @map("preparation_time")
+  portionSize   String?      @map("portion_size")
+  calories      Int?
+  schoolId      String?      @map("school_id")
+  vendorId      String?      @map("vendor_id")
+  sortOrder     Int          @default(0) @map("sort_order")
+  metadata      String       @default("{}")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @default(now()) @updatedAt @map("updated_at")
+
+  // Relations
+  school        School?      @relation(fields: [schoolId], references: [id], onDelete: SetNull)
+  menuItemSlots MenuItemSlot[]
+  orderItems    OrderItem[]
+
+  @@index([category])
+  @@index([available])
+  @@index([featured])
+  @@index([schoolId])
+  @@index([sortOrder])
+  @@index([createdAt])
+  @@map("menu_items")
+}
+
+// =====================================================
+// MENU PLANNING AND SCHEDULING MODELS - Story 2.2
+// =====================================================
+
+model MenuPlan {
+  id           String      @id @default(uuid())
+  schoolId     String      @map("school_id")
+  name         String      
+  description  String?
+  startDate    DateTime    @map("start_date")
+  endDate      DateTime    @map("end_date")
+  isTemplate   Boolean     @default(false) @map("is_template")
+  isRecurring  Boolean     @default(false) @map("is_recurring")
+  status       String      @default("DRAFT")
+  
+  // Approval workflow
+  approvalWorkflow String   @default("{}") @map("approval_workflow")
+  approvedBy       String?  @map("approved_by")
+  approvedAt       DateTime? @map("approved_at")
+  
+  // Template-specific fields
+  recurringPattern String?  @map("recurring_pattern")
+  templateCategory String?  @map("template_category")
+  
+  // Metadata
+  metadata     String      @default("{}")
+  version      Int         @default(1)
+  createdBy    String      @map("created_by")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @default(now()) @updatedAt @map("updated_at")
+
+  // Relations
+  school       School      @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  dailyMenus   DailyMenu[]
+  approvals    MenuApproval[]
+
+  @@index([schoolId])
+  @@index([status])
+  @@index([startDate, endDate])
+  @@index([isTemplate])
+  @@index([createdBy])
+  @@index([createdAt])
+  @@map("menu_plans")
+}
+
+model DailyMenu {
+  id           String        @id @default(uuid())
+  menuPlanId   String        @map("menu_plan_id")
+  date         DateTime      @unique
+  dayType      String        @default("WEEKDAY") @map("day_type")
+  
+  // Menu configuration
+  specialEventInfo String?    @map("special_event_info")
+  availableQuantity Int?      @map("available_quantity")
+  
+  // Status and workflow
+  isActive     Boolean       @default(true) @map("is_active")
+  isPublished  Boolean       @default(false) @map("is_published")
+  publishedAt  DateTime?     @map("published_at")
+  
+  // Metadata
+  notes        String?       
+  metadata     String        @default("{}")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @default(now()) @updatedAt @map("updated_at")
+
+  // Relations
+  menuPlan     MenuPlan      @relation(fields: [menuPlanId], references: [id], onDelete: Cascade)
+  menuItems    MenuItemSlot[]
+  
+  @@index([menuPlanId])
+  @@index([date])
+  @@index([dayType])
+  @@index([isActive])
+  @@index([isPublished])
+  @@map("daily_menus")
+}
+
+model MenuItemSlot {
+  id           String        @id @default(uuid())
+  dailyMenuId  String        @map("daily_menu_id")
+  menuItemId   String        @map("menu_item_id")
+  
+  // Scheduling information
+  category     String        
+  availableFrom DateTime?    @map("available_from")
+  availableTo   DateTime?    @map("available_to")
+  
+  // Quantity and pricing
+  plannedQuantity Int?       @map("planned_quantity")
+  availableQuantity Int?     @map("available_quantity")
+  customPrice   Decimal?     @map("custom_price")
+  
+  // Special configuration
+  isSpecial     Boolean      @default(false) @map("is_special")
+  isLimited     Boolean      @default(false) @map("is_limited")
+  maxPerOrder   Int?         @map("max_per_order")
+  
+  // Preparation requirements
+  preparationDeadline DateTime? @map("preparation_deadline")
+  kitchenNotes        String?   @map("kitchen_notes")
+  
+  // Display and ordering
+  displayOrder  Int          @default(0) @map("display_order")
+  isVisible     Boolean      @default(true) @map("is_visible")
+  
+  // Metadata
+  metadata      String       @default("{}")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @default(now()) @updatedAt @map("updated_at")
+
+  // Relations
+  dailyMenu     DailyMenu    @relation(fields: [dailyMenuId], references: [id], onDelete: Cascade)
+  menuItem      MenuItem     @relation(fields: [menuItemId], references: [id], onDelete: Restrict)
+
+  @@unique([dailyMenuId, menuItemId, category])
+  @@index([dailyMenuId])
+  @@index([menuItemId])
+  @@index([category])
+  @@index([isVisible])
+  @@index([displayOrder])
+  @@map("menu_item_slots")
+}
+
+model MenuApproval {
+  id           String       @id @default(uuid())
+  menuPlanId   String       @map("menu_plan_id")
+  approverId   String       @map("approver_id")
+  approvalType String       @map("approval_type")
+  status       String       @default("PENDING")
+  
+  // Approval details
+  comments     String?
+  approvedAt   DateTime?    @map("approved_at")
+  rejectedAt   DateTime?    @map("rejected_at")
+  
+  // Requirements
+  isRequired   Boolean      @default(true) @map("is_required")
+  priority     Int          @default(1)
+  
+  // Metadata
+  metadata     String       @default("{}")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @default(now()) @updatedAt @map("updated_at")
+
+  // Relations
+  menuPlan     MenuPlan     @relation(fields: [menuPlanId], references: [id], onDelete: Cascade)
+
+  @@index([menuPlanId])
+  @@index([approverId])
+  @@index([status])
+  @@index([approvalType])
+  @@map("menu_approvals")
+}
+
+// =====================================================
+// WHATSAPP INTEGRATION MODELS
+// =====================================================
+
+model WhatsAppMessage {
+  id                String    @id @default(uuid()) 
+  userId            String?   @map("user_id") 
+  phone             String    
+  type              String    @default("text")
+  status            String    @default("queued")
+  whatsappMessageId String?   @map("whatsapp_message_id")
+  templateName      String?   @map("template_name") 
+  message           String?     
+  metadata          String      @default("{}")
+  errorMessage      String?   @map("error_message") 
+  sentAt            DateTime? @map("sent_at") 
+  deliveredAt       DateTime? @map("delivered_at") 
+  readAt            DateTime? @map("read_at") 
+  failedAt          DateTime? @map("failed_at") 
+  createdAt         DateTime  @default(now()) @map("created_at") 
+  updatedAt         DateTime  @default(now()) @updatedAt @map("updated_at") 
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([phone])
+  @@index([status])
+  @@index([whatsappMessageId])
+  @@index([createdAt])
+  @@map("whatsapp_messages")
+}
+
+model WhatsAppTemplate {
+  id          String   @id @default(uuid()) 
+  name        String   @unique 
+  category    String    
+  language    String   @default("en") 
+  status      String   @default("pending")
+  components  String     
+  variables   String     @default("[]")
+  isActive    Boolean  @default(true) @map("is_active")
+  metadata    String     @default("{}")
+  createdAt   DateTime @default(now()) @map("created_at") 
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") 
+
+  @@index([name])
+  @@index([status])
+  @@index([isActive])
+  @@map("whatsapp_templates")
+}
+
+// =====================================================
+// ANALYTICS MODELS
+// =====================================================
+
+model AnalyticsReport {
+  id          String   @id @default(uuid()) 
+  name        String   
+  type        String    
+  metrics     String     @default("[]")
+  dimensions  String     @default("[]")
+  filters     String     @default("{}")
+  dateRange   String     
+  data        String     @default("[]")
+  generatedAt DateTime @map("generated_at") 
+  generatedBy String   @map("generated_by") 
+  createdAt   DateTime @default(now()) @map("created_at") 
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") 
+
+  @@index([type])
+  @@index([generatedAt])
+  @@map("analytics_reports")
+}
+
+// =====================================================
+// RFID MODELS FOR DELIVERY VERIFICATION - FIXED
+// =====================================================
+
+model RFIDCard {
+  id               String    @id @default(uuid()) 
+  cardNumber       String    @unique @map("card_number") 
+  studentId        String    @map("student_id") 
+  schoolId         String    @map("school_id") 
+  isActive         Boolean   @default(true) @map("is_active")
+  issuedAt         DateTime  @default(now()) @map("issued_at") 
+  expiresAt        DateTime? @map("expires_at") 
+  lastUsedAt       DateTime? @map("last_used_at") 
+  deactivatedAt    DateTime? @map("deactivated_at") 
+  deactivationReason String? @map("deactivation_reason") 
+  metadata         String      @default("{}")
+  createdAt        DateTime  @default(now()) @map("created_at") 
+  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at") 
+
+  // Fixed Relations
+  student           User                   @relation("RFIDCardStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  deliveryVerifications DeliveryVerification[]
+
+  @@index([studentId])
+  @@index([schoolId])
+  @@index([isActive])
+  @@map("rfid_cards")
+}
+
+model RFIDReader {
+  id            String    @id @default(uuid()) 
+  name          String    
+  location      String    
+  schoolId      String    @map("school_id") 
+  ipAddress     String    @map("ip_address") 
+  status        String    @default("offline") 
+  lastHeartbeat DateTime  @default(now()) @map("last_heartbeat") 
+  configuration String      @default("{}")
+  isActive      Boolean   @default(true) @map("is_active")
+  createdAt     DateTime  @default(now()) @map("created_at") 
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at") 
+
+  // Fixed Relations
+  school        School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  deliveryVerifications DeliveryVerification[]
+
+  @@index([schoolId])
+  @@index([isActive])
+  @@index([status])
+  @@map("rfid_readers")
+}
+
+model DeliveryVerification {
+  id               String   @id @default(uuid()) 
+  orderId          String?  @map("order_id") 
+  studentId        String   @map("student_id") 
+  cardId           String   @map("card_id") 
+  readerId         String   @map("reader_id") 
+  verifiedAt       DateTime @default(now()) @map("verified_at") 
+  status           String   @default("verified") 
+  location         String?  // Added location field for delivery tracking
+  deliveryPhoto    String?  @map("delivery_photo") // Added for photo verification
+  verificationNotes String? @map("verification_notes") // Added for additional notes
+  verificationData String     @default("{}") @map("verification_data")
+  createdAt        DateTime @default(now()) @map("created_at") 
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at") 
+
+  // Fixed Relations
+  order    Order?     @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  card     RFIDCard   @relation(fields: [cardId], references: [id], onDelete: Restrict)
+  reader   RFIDReader @relation(fields: [readerId], references: [id], onDelete: Restrict)
+  student  User       @relation("DeliveryVerificationStudent", fields: [studentId], references: [id], onDelete: Restrict)
+
+  @@index([orderId])
+  @@index([studentId])
+  @@index([cardId])
+  @@index([readerId])
+  @@index([verifiedAt])
+  @@index([status])
+  @@map("delivery_verifications")
+}
+
+// Continue with remaining Epic 5 models with proper relationships...
+// (Payment processing models, subscription models, etc.)
+
+// =====================================================
+// EPIC 5: PAYMENT PROCESSING & BILLING SYSTEM MODELS
+// =====================================================
+
+model PaymentMethod {
+  id               String   @id @default(uuid())
+  userId           String   @map("user_id")
+  
+  methodType       String   @map("method_type")
+  provider         String   
+  providerMethodId String   @map("provider_method_id")
+  
+  // Card details (masked)
+  cardLast4        String?  @map("card_last4")
+  cardBrand        String?  @map("card_brand")
+  cardNetwork      String?  @map("card_network")
+  cardType         String?  @map("card_type")
+  
+  // UPI details
+  upiHandle        String?  @map("upi_handle")
+  
+  // Wallet details
+  walletProvider   String?  @map("wallet_provider")
+  
+  isDefault        Boolean  @default(false) @map("is_default")
+  isActive         Boolean  @default(true) @map("is_active")
+  
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at")
+  
+  // Relations
+  user             User     @relation("UserPaymentMethods", fields: [userId], references: [id], onDelete: Cascade)
+  payments         Payment[]
+  subscriptions    Subscription[]
+  
+  @@map("payment_methods")
+}
+
+model Payment {
+  id                  String   @id @default(uuid())
+  userId              String   @map("user_id")
+  orderId             String?  @map("order_id")
+  subscriptionId      String?  @map("subscription_id")
+  paymentMethodId     String?  @map("payment_method_id")
+  
+  // Payment details
+  amount              Float
+  currency            String   @default("INR")
+  status              String   
+  paymentType         String   @map("payment_type")
+  
+  // Gateway integration
+  razorpayPaymentId   String?  @map("razorpay_payment_id")
+  razorpayOrderId     String?  @map("razorpay_order_id")
+  gatewayResponse     String   @default("{}") @map("gateway_response")
+  
+  // Payment metadata
+  failureReason       String?  @map("failure_reason")
+  retryCount          Int      @default(0) @map("retry_count")
+  paidAt              DateTime? @map("paid_at")
+  refundedAt          DateTime? @map("refunded_at")
+  
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @default(now()) @updatedAt @map("updated_at")
+  
+  // Fixed Relations
+  user                User            @relation("UserPayments", fields: [userId], references: [id], onDelete: Restrict)
+  order               Order?          @relation("OrderPayments", fields: [orderId], references: [id], onDelete: SetNull)
+  paymentMethod       PaymentMethod?  @relation(fields: [paymentMethodId], references: [id], onDelete: SetNull)
+  paymentRetries      PaymentRetry[]  @relation("PaymentRetries")
+  billingCycles       BillingCycle[]  @relation("BillingCyclePayment")
+  invoices            Invoice[]       @relation("InvoicePayment")
+  
+  @@index([userId])
+  @@index([status])
+  @@index([razorpayPaymentId])
+  @@index([createdAt])
+  @@map("payments")
+}
+
+model PaymentPlan {
+  id                     String   @id @default(uuid())
+  schoolId               String   @map("school_id")
+  
+  name                   String
+  description            String?
+  planType               String   @map("plan_type")
+  
+  // Installment configuration
+  installmentCount       Int?     @map("installment_count")
+  installmentInterval    String?  @map("installment_interval")
+  minPaymentAmount       Float?   @map("min_payment_amount")
+  
+  // Partial payment configuration
+  partialPaymentEnabled  Boolean  @default(false) @map("partial_payment_enabled")
+  minimumPartialAmount   Float?   @map("minimum_partial_amount")
+  
+  isActive               Boolean  @default(true) @map("is_active")
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @default(now()) @updatedAt @map("updated_at")
+  
+  // Relations
+  school                 School   @relation("SchoolPaymentPlans", fields: [schoolId], references: [id], onDelete: Cascade)
+  
+  @@map("payment_plans")
+}
+
+model PaymentRetry {
+  id            String   @id @default(uuid())
+  paymentId     String   @map("payment_id")
+  
+  attemptNumber Int      @map("attempt_number")
+  retryAt       DateTime @map("retry_at")
+  retryReason   String   @map("retry_reason")
+  retryMethod   String?  @map("retry_method")
+  
+  status        String   
+  failureReason String?  @map("failure_reason")
+  
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at")
+  
+  // Relations
+  payment       Payment  @relation("PaymentRetries", fields: [paymentId], references: [id], onDelete: Cascade)
+  
+  @@map("payment_retries")
+}
+
+model ReconciliationRecord {
+  id                   String   @id @default(uuid())
+  schoolId             String   @map("school_id")
+  
+  recordDate           DateTime @map("record_date")
+  recordType           String   @map("record_type")
+  
+  // Financial summary
+  totalPayments        Float    @map("total_payments")
+  totalRefunds         Float    @map("total_refunds")
+  totalFees            Float    @map("total_fees")
+  netSettlement        Float    @map("net_settlement")
+  
+  // Transaction counts
+  paymentCount         Int      @map("payment_count")
+  refundCount          Int      @map("refund_count")
+  failedPaymentCount   Int      @map("failed_payment_count")
+  
+  // Status
+  reconciliationStatus String   @map("reconciliation_status")
+  discrepancyAmount    Float?   @map("discrepancy_amount")
+  discrepancyReason    String?  @map("discrepancy_reason")
+  
+  // Settlement details
+  settlementId         String?  @map("settlement_id")
+  settlementDate       DateTime? @map("settlement_date")
+  settlementAmount     Float?   @map("settlement_amount")
+  
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @default(now()) @updatedAt @map("updated_at")
+  
+  // Relations
+  school               School   @relation("SchoolReconciliations", fields: [schoolId], references: [id], onDelete: Cascade)
+  
+  @@map("reconciliation_records")
+}
+
+model Subscription {
+  id                     String   @id @default(uuid())
+  schoolId               String   @map("school_id")
+  userId                 String   @map("user_id")
+  studentId              String?  @map("student_id")
+  
+  subscriptionPlanId     String   @map("subscription_plan_id")
+  paymentMethodId        String?  @map("payment_method_id")
+  
+  // Subscription details
+  status                 String   
+  startDate              DateTime @map("start_date")
+  endDate                DateTime? @map("end_date")
+  nextBillingDate        DateTime? @map("next_billing_date")
+  
+  // Billing configuration
+  billingCycle           String   @map("billing_cycle")
+  billingAmount          Float    @map("billing_amount")
+  currency               String   @default("INR")
+  
+  // Proration and adjustments
+  prorationEnabled       Boolean  @default(true) @map("proration_enabled")
+  prorationAmount        Float    @default(0) @map("proration_amount")
+  
+  // Grace period and dunning
+  gracePeriodDays        Int      @default(3) @map("grace_period_days")
+  dunningAttempts        Int      @default(0) @map("dunning_attempts")
+  maxDunningAttempts     Int      @default(3) @map("max_dunning_attempts")
+  suspendedAt            DateTime? @map("suspended_at")
+  
+  // Trial period
+  trialPeriodDays        Int      @default(0) @map("trial_period_days")
+  trialEndDate           DateTime? @map("trial_end_date")
+  isTrialActive          Boolean  @default(false) @map("is_trial_active")
+  
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @default(now()) @updatedAt @map("updated_at")
+  
+  // Relations
+  school                 School          @relation("SchoolSubscriptions", fields: [schoolId], references: [id], onDelete: Restrict)
+  user                   User            @relation("UserSubscriptions", fields: [userId], references: [id], onDelete: Restrict)
+  student                User?           @relation("StudentSubscriptions", fields: [studentId], references: [id], onDelete: SetNull)
+  subscriptionPlan       SubscriptionPlan @relation(fields: [subscriptionPlanId], references: [id], onDelete: Restrict)
+  paymentMethod          PaymentMethod?   @relation(fields: [paymentMethodId], references: [id], onDelete: SetNull)
+  billingCycles          BillingCycle[]
+  
+  @@map("subscriptions")
+}
+
+model SubscriptionPlan {
+  id                String   @id @default(uuid())
+  schoolId          String   @map("school_id")
+  
+  name              String
+  description       String?
+  planType          String   @map("plan_type")
+  
+  // Pricing configuration
+  price             Float
+  currency          String   @default("INR")
+  billingCycle      String   @map("billing_cycle")
+  
+  // Plan features
+  mealsPerDay       Int      @default(1) @map("meals_per_day")
+  mealsPerWeek      Int?     @map("meals_per_week")
+  mealsPerMonth     Int?     @map("meals_per_month")
+  
+  // Plan benefits
+  benefits          String   @default("{}")
+  
+  // Availability
+  isActive          Boolean  @default(true) @map("is_active")
+  availableFrom     DateTime? @map("available_from")
+  availableTo       DateTime? @map("available_to")
+  
+  // Trial configuration
+  trialPeriodDays   Int      @default(0) @map("trial_period_days")
+  trialPrice        Float    @default(0) @map("trial_price")
+  
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @default(now()) @updatedAt @map("updated_at")
+  
+  // Relations
+  school            School         @relation("SchoolSubscriptionPlans", fields: [schoolId], references: [id], onDelete: Cascade)
+  subscriptions     Subscription[]
+  
+  @@map("subscription_plans")
+}
+
+model BillingCycle {
+  id              String   @id @default(uuid())
+  subscriptionId  String   @map("subscription_id")
+  
+  cycleNumber     Int      @map("cycle_number")
+  cycleStart      DateTime @map("cycle_start")
+  cycleEnd        DateTime @map("cycle_end")
+  
+  // Billing details
+  billingAmount   Float    @map("billing_amount")
+  prorationAmount Float    @default(0) @map("proration_amount")
+  totalAmount     Float    @map("total_amount")
+  currency        String   @default("INR")
+  
+  // Status tracking
+  status          String   
+  billingDate     DateTime @map("billing_date")
+  dueDate         DateTime @map("due_date")
+  paidDate        DateTime? @map("paid_date")
+  
+  // Payment tracking
+  paymentId       String?  @map("payment_id")
+  
+  // Dunning management
+  dunningAttempts Int      @default(0) @map("dunning_attempts")
+  lastDunningAt   DateTime? @map("last_dunning_at")
+  nextDunningAt   DateTime? @map("next_dunning_at")
+  
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at")
+  
+  // Relations
+  subscription    Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  payment         Payment?     @relation("BillingCyclePayment", fields: [paymentId], references: [id], onDelete: SetNull)
+  
+  @@map("billing_cycles")
+}
+
+model Invoice {
+  id              String   @id @default(uuid())
+  schoolId        String   @map("school_id")
+  userId          String   @map("user_id")
+  
+  // Invoice identification
+  invoiceNumber   String   @unique @map("invoice_number")
+  invoiceDate     DateTime @default(now()) @map("invoice_date")
+  dueDate         DateTime @map("due_date")
+  
+  // Financial details
+  subtotal        Float    
+  taxAmount       Float    @default(0) @map("tax_amount")
+  discountAmount  Float    @default(0) @map("discount_amount")
+  totalAmount     Float    @map("total_amount")
+  currency        String   @default("INR")
+  
+  // Tax compliance
+  gstNumber       String?  @map("gst_number")
+  gstRate         Float    @default(0) @map("gst_rate")
+  hsnCode         String?  @map("hsn_code")
+  placeOfSupply   String?  @map("place_of_supply")
+  
+  // Status
+  status          String   
+  sentDate        DateTime? @map("sent_date")
+  paidDate        DateTime? @map("paid_date")
+  
+  // Payment tracking
+  paymentId       String?  @map("payment_id")
+  
+  // File management
+  pdfUrl          String?  @map("pdf_url")
+  pdfGeneratedAt  DateTime? @map("pdf_generated_at")
+  
+  // Email tracking
+  emailSent       Boolean  @default(false) @map("email_sent")
+  emailSentAt     DateTime? @map("email_sent_at")
+  emailDelivered  Boolean  @default(false) @map("email_delivered")
+  
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at")
+  
+  // Relations
+  school          School         @relation("SchoolInvoices", fields: [schoolId], references: [id], onDelete: Restrict)
+  user            User           @relation("UserInvoices", fields: [userId], references: [id], onDelete: Restrict)
+  payment         Payment?       @relation("InvoicePayment", fields: [paymentId], references: [id], onDelete: SetNull)
+  invoiceItems    InvoiceItem[]
+  emailLogs       InvoiceEmailLog[]
+  
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id          String   @id @default(uuid())
+  invoiceId   String   @map("invoice_id")
+  orderId     String?  @map("order_id")
+  
+  description String
+  quantity    Int      @default(1)
+  unitPrice   Float    @map("unit_price")
+  totalPrice  Float    @map("total_price")
+  
+  // Tax details
+  taxRate     Float    @default(0) @map("tax_rate")
+  taxAmount   Float    @default(0) @map("tax_amount")
+  
+  // Item categorization
+  itemType    String   @map("item_type")
+  itemCode    String?  @map("item_code")
+  hsnCode     String?  @map("hsn_code")
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  
+  // Relations
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  order       Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  
+  @@map("invoice_items")
+}
+
+model InvoiceEmailLog {
+  id                String   @id @default(uuid())
+  invoiceId         String   @map("invoice_id")
+  
+  emailType         String   @map("email_type")
+  recipientEmail    String   @map("recipient_email")
+  
+  // Email status
+  status            String   
+  sentAt            DateTime @map("sent_at")
+  deliveredAt       DateTime? @map("delivered_at")
+  openedAt          DateTime? @map("opened_at")
+  
+  // Error tracking
+  errorMessage      String?  @map("error_message")
+  retryCount        Int      @default(0) @map("retry_count")
+  
+  // Email content
+  subject           String
+  emailProvider     String   @map("email_provider")
+  providerMessageId String?  @map("provider_message_id")
+  
+  createdAt         DateTime @default(now()) @map("created_at")
+  
+  // Relations
+  invoice           Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  
+  @@map("invoice_email_logs")
+}
+
+model InvoiceTemplate {
+  id           String   @id @default(uuid())
+  schoolId     String   @map("school_id")
+  
+  templateName String   @map("template_name")
+  templateType String   @map("template_type")
+  
+  // Branding configuration
+  logoUrl      String?  @map("logo_url")
+  headerColor  String?  @map("header_color")
+  accentColor  String?  @map("accent_color")
+  footerText   String?  @map("footer_text")
+  
+  // Template content
+  htmlTemplate String   @map("html_template")
+  cssStyles    String?  @map("css_styles")
+  
+  // Settings
+  isDefault    Boolean  @default(false) @map("is_default")
+  isActive     Boolean  @default(true) @map("is_active")
+  
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
+  
+  // Relations
+  school       School   @relation("SchoolInvoiceTemplates", fields: [schoolId], references: [id], onDelete: Cascade)
+  
+  @@map("invoice_templates")
+}
+
+model PaymentAnalytics {
+  id                      String   @id @default(uuid())
+  schoolId                String   @map("school_id")
+  
+  reportDate              DateTime @map("report_date")
+  reportType              String   @map("report_type")
+  
+  // Payment metrics
+  totalPayments           Float    @map("total_payments")
+  totalRefunds            Float    @map("total_refunds")
+  netRevenue              Float    @map("net_revenue")
+  averageOrderValue       Float    @map("average_order_value")
+  
+  // Volume metrics
+  paymentCount            Int      @map("payment_count")
+  refundCount             Int      @map("refund_count")
+  uniqueCustomers         Int      @map("unique_customers")
+  newCustomers            Int      @map("new_customers")
+  
+  // Success metrics
+  paymentSuccessRate      Float    @map("payment_success_rate")
+  refundRate              Float    @map("refund_rate")
+  chargebackCount         Int      @map("chargeback_count")
+  
+  // Payment method breakdown
+  cardPayments            Float    @map("card_payments")
+  upiPayments             Float    @map("upi_payments")
+  walletPayments          Float    @map("wallet_payments")
+  bankTransfers           Float    @map("bank_transfers")
+  
+  // Subscription metrics
+  activeSubscriptions     Int      @map("active_subscriptions")
+  newSubscriptions        Int      @map("new_subscriptions")
+  cancelledSubscriptions  Int      @map("cancelled_subscriptions")
+  subscriptionRevenue     Float    @map("subscription_revenue")
+  
+  // Growth metrics
+  revenueGrowthRate       Float?   @map("revenue_growth_rate")
+  customerGrowthRate      Float?   @map("customer_growth_rate")
+  
+  createdAt               DateTime @default(now()) @map("created_at")
+  
+  // Relations
+  school                  School   @relation("SchoolPaymentAnalytics", fields: [schoolId], references: [id], onDelete: Cascade)
+  
+  @@unique([schoolId, reportDate, reportType])
+  @@map("payment_analytics")
+}
+
+model PaymentFailureAnalytics {
+  id                   String   @id @default(uuid())
+  schoolId             String   @map("school_id")
+  
+  reportDate           DateTime @map("report_date")
+  
+  // Failure breakdown
+  totalFailures        Int      @map("total_failures")
+  insufficientFunds    Int      @map("insufficient_funds")
+  cardDeclined         Int      @map("card_declined")
+  networkErrors        Int      @map("network_errors")
+  authenticationFailed Int      @map("authentication_failed")
+  otherFailures        Int      @map("other_failures")
+  
+  // Recovery metrics
+  recoveredPayments    Int      @map("recovered_payments")
+  recoveredAmount      Float    @map("recovered_amount")
+  recoveryRate         Float    @map("recovery_rate")
+  
+  // Failure impact
+  lostRevenue          Float    @map("lost_revenue")
+  affectedCustomers    Int      @map("affected_customers")
+  
+  createdAt            DateTime @default(now()) @map("created_at")
+  
+  // Relations
+  school               School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  
+  @@unique([schoolId, reportDate])
+  @@map("payment_failure_analytics")
+}
+
+model CustomerPaymentBehavior {
+  id                    String   @id @default(uuid())
+  userId                String   @map("user_id")
+  schoolId              String   @map("school_id")
+  
+  // Behavior analysis
+  lastPaymentDate       DateTime? @map("last_payment_date")
+  averageOrderValue     Float    @map("average_order_value")
+  totalOrderValue       Float    @map("total_order_value")
+  orderFrequency        Float    @map("order_frequency")
+  
+  // Payment preferences
+  preferredPaymentMethod String? @map("preferred_payment_method")
+  preferredOrderTime     String? @map("preferred_order_time")
+  preferredOrderDays     String? @map("preferred_order_days")
+  
+  // Risk assessment
+  paymentSuccessRate    Float    @map("payment_success_rate")
+  failureCount          Int      @map("failure_count")
+  chargebackCount       Int      @map("chargeback_count")
+  riskScore             Float    @map("risk_score")
+  
+  // Loyalty metrics
+  customerSince         DateTime @map("customer_since")
+  totalOrders           Int      @map("total_orders")
+  loyaltyTier           String?  @map("loyalty_tier")
+  
+  // Subscription behavior
+  hasActiveSubscription Boolean  @default(false) @map("has_active_subscription")
+  subscriptionValue     Float    @default(0) @map("subscription_value")
+  subscriptionStartDate DateTime? @map("subscription_start_date")
+  
+  lastUpdated           DateTime @default(now()) @map("last_updated")
+  
+  // Relations
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  school                School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, schoolId])
+  @@map("customer_payment_behavior")
+}
+
+model SubscriptionAnalytics {
+  id                    String   @id @default(uuid())
+  schoolId              String?  @map("school_id")
+  
+  reportDate            DateTime @map("report_date")
+  reportType            String   @default("daily") @map("report_type")
+  
+  // Subscription metrics
+  activeSubscriptions   Int      @map("active_subscriptions")
+  newSubscriptions      Int      @map("new_subscriptions")
+  cancelledSubscriptions Int     @map("cancelled_subscriptions")
+  suspendedSubscriptions Int     @map("suspended_subscriptions")
+  trialSubscriptions    Int      @map("trial_subscriptions")
+  
+  // Revenue metrics
+  totalMrr              Float    @map("total_mrr")
+  avgRevenuePerUser     Float    @map("avg_revenue_per_user")
+  churnRate             Float    @map("churn_rate")
+  conversionRate        Float    @map("conversion_rate")
+  lifetimeValue         Float    @map("lifetime_value")
+  
+  // Plan breakdown
+  planBreakdown         String   @default("{}") @map("plan_breakdown")
+  
+  // Cohort analysis
+  cohortAnalysis        String   @default("{}") @map("cohort_analysis")
+  
+  // Additional metrics
+  metadata              String   @default("{}")
+  
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @default(now()) @updatedAt @map("updated_at")
+  
+  // Relations
+  school                School?  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  
+  @@unique([schoolId, reportDate, reportType])
+  @@index([reportDate])
+  @@index([reportType])
+  @@map("subscription_analytics")
+}
+
+// =====================================================
+// MOBILE DEVICE AND NOTIFICATION MODELS
+// =====================================================
+
+model UserDevice {
+  id                String    @id @default(uuid())
+  userId            String    @map("user_id")
+  deviceId          String    @unique @map("device_id")
+  deviceType        String    @map("device_type") // iOS, Android, Web
+  deviceModel       String?   @map("device_model")
+  osVersion         String?   @map("os_version")
+  appVersion        String?   @map("app_version")
+  
+  // Push notification tokens
+  fcmToken          String?   @map("fcm_token")
+  apnsToken         String?   @map("apns_token")
+  
+  // Device status
+  isActive          Boolean   @default(true) @map("is_active")
+  lastSeen          DateTime? @map("last_seen")
+  
+  // Settings
+  notificationsEnabled Boolean @default(true) @map("notifications_enabled")
+  notificationSettings String  @default("{}") @map("notification_settings")
+  metadata            String   @default("{}")
+  
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  // Relations
+  user              User      @relation("UserDevices", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([deviceId])
+  @@map("user_devices")
+}
+
+model Notification {
+  id                String    @id @default(uuid())
+  userId            String?   @map("user_id")
+  
+  // Notification content
+  title             String
+  body              String
+  message           String?   // Backward compatibility alias for body
+  type              String    // order_update, payment_success, delivery, etc.
+  priority          String    @default("normal") // low, normal, high, urgent
+  
+  // Notification metadata
+  data              String    @default("{}") // JSON payload
+  imageUrl          String?   @map("image_url")
+  actionUrl         String?   @map("action_url")
+  
+  // Delivery tracking
+  status            String    @default("pending") // pending, sent, delivered, failed, read
+  sentAt            DateTime? @map("sent_at")
+  deliveredAt       DateTime? @map("delivered_at")
+  readAt            DateTime? @map("read_at")
+  
+  // Channels
+  channels          String    @default("[]") // push, email, sms, whatsapp
+  
+  // Scheduling
+  scheduledFor      DateTime? @map("scheduled_for")
+  
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  // Relations
+  user              User?     @relation("UserNotifications", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([status])
+  @@index([type])
+  @@index([scheduledFor])
+  @@map("notifications")
+}
+
+model StudentParent {
+  id                String    @id @default(uuid())
+  studentId         String    @map("student_id")
+  parentId          String    @map("parent_id")
+  
+  // Relationship details
+  relationship      String    @default("parent") // parent, guardian, emergency_contact
+  isPrimary         Boolean   @default(false) @map("is_primary")
+  canOrder          Boolean   @default(true) @map("can_order")
+  canPickup         Boolean   @default(true) @map("can_pickup")
+  
+  // Emergency contact info
+  emergencyContact  Boolean   @default(false) @map("emergency_contact")
+  contactPriority   Int?      @map("contact_priority")
+  
+  isActive          Boolean   @default(true) @map("is_active")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  // Relations
+  student           User      @relation("StudentParentStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  parent            User      @relation("StudentParentParent", fields: [parentId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, parentId])
+  @@index([studentId])
+  @@index([parentId])
+  @@map("student_parents")
+}

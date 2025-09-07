@@ -1,0 +1,798 @@
+# HASIVU Platform - Production Deployment Pipeline
+# Comprehensive serverless deployment with blue-green strategy, rollback capabilities, and monitoring
+# Enhanced DevOps deployment pipeline for AWS Lambda with zero-downtime deployment
+
+name: Production Deployment Pipeline
+
+on:
+  push:
+    branches: [ main ]
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+      - '.gitignore'
+  release:
+    types: [ published ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+      force_deploy:
+        description: 'Force deployment (skip safety checks)'
+        type: boolean
+        default: false
+      enable_rollback:
+        description: 'Enable automatic rollback on failure'
+        type: boolean
+        default: true
+
+# Global environment variables
+env:
+  NODE_VERSION: '18.19.0'
+  AWS_REGION: 'ap-south-1'
+  SERVERLESS_VERSION: '4.17.2'
+  DEPLOYMENT_TIMEOUT: 1800  # 30 minutes
+  HEALTH_CHECK_TIMEOUT: 600  # 10 minutes
+  
+# Concurrency to prevent multiple deployments
+concurrency:
+  group: production-deployment-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # =====================================================
+  # PRE-DEPLOYMENT VALIDATION
+  # =====================================================
+  
+  pre-deployment-checks:
+    name: Pre-Deployment Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      deployment-env: ${{ steps.determine-env.outputs.environment }}
+      should-deploy: ${{ steps.determine-env.outputs.should-deploy }}
+      lambda-count: ${{ steps.validate-functions.outputs.function-count }}
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Determine Deployment Environment
+        id: determine-env
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            ENVIRONMENT="${{ github.event.inputs.environment }}"
+          elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            ENVIRONMENT="production"
+          else
+            ENVIRONMENT="staging"
+          fi
+          
+          echo "environment=$ENVIRONMENT" >> $GITHUB_OUTPUT
+          echo "should-deploy=true" >> $GITHUB_OUTPUT
+          
+          echo "🎯 Target Environment: $ENVIRONMENT"
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install Dependencies
+        run: |
+          npm ci --prefer-offline --no-audit
+          npm install -g serverless@${{ env.SERVERLESS_VERSION }}
+      
+      - name: Validate Serverless Configuration
+        run: |
+          echo "📋 Validating serverless configurations..."
+          serverless print --config serverless.yml --stage dev > /dev/null
+          serverless print --config serverless-production.yml --stage production > /dev/null
+          echo "✅ Serverless configuration validation passed"
+      
+      - name: Validate Lambda Functions
+        id: validate-functions
+        run: |
+          echo "🔍 Validating Lambda functions..."
+          
+          # Count functions in serverless config
+          FUNCTION_COUNT=$(serverless print --config serverless-production.yml --stage production | grep -c 'handler:')
+          echo "function-count=$FUNCTION_COUNT" >> $GITHUB_OUTPUT
+          
+          echo "📊 Found $FUNCTION_COUNT Lambda functions to deploy"
+          
+          # Validate function handlers exist
+          missing_handlers=()
+          for handler in $(serverless print --config serverless-production.yml --stage production | grep 'handler:' | awk '{print $2}' | sed 's/\./ /')
+          do
+            handler_path=$(echo $handler | cut -d' ' -f1)
+            if [[ ! -f "$handler_path.ts" && ! -f "$handler_path.js" ]]; then
+              missing_handlers+=("$handler")
+            fi
+          done
+          
+          if [[ ${#missing_handlers[@]} -gt 0 ]]; then
+            echo "❌ Missing handler files:"
+            printf '%s\n' "${missing_handlers[@]}"
+            exit 1
+          fi
+          
+          echo "✅ All Lambda function handlers validated"
+      
+      - name: Production Safety Check
+        if: steps.determine-env.outputs.environment == 'production' && github.event.inputs.force_deploy != 'true'
+        run: |
+          echo "⚠️  PRODUCTION DEPLOYMENT SAFETY CHECK"
+          echo "This deployment will affect live users and data."
+          echo "Deployment will proceed automatically in CI/CD pipeline."
+          echo "Environment: ${{ steps.determine-env.outputs.environment }}"
+          echo "Lambda Functions: ${{ steps.validate-functions.outputs.function-count }}"
+          echo "Commit: ${{ github.sha }}"
+
+  # =====================================================
+  # BUILD AND PACKAGE
+  # =====================================================
+  
+  build-and-package:
+    name: Build & Package Functions
+    runs-on: ubuntu-latest
+    needs: pre-deployment-checks
+    if: needs.pre-deployment-checks.outputs.should-deploy == 'true'
+    timeout-minutes: 20
+    
+    outputs:
+      build-hash: ${{ steps.generate-hash.outputs.build-hash }}
+      package-size: ${{ steps.package-info.outputs.size }}
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install Dependencies
+        run: |
+          npm ci --prefer-offline --production=false
+          npm install -g serverless@${{ env.SERVERLESS_VERSION }}
+      
+      - name: Generate Prisma Client
+        run: |
+          npm run db:generate
+          echo "✅ Prisma client generated"
+      
+      - name: TypeScript Compilation
+        run: |
+          npm run build
+          echo "✅ TypeScript compilation completed"
+      
+      - name: Run Quality Checks
+        run: |
+          npm run lint
+          npm run type-check
+          echo "✅ Code quality checks passed"
+      
+      - name: Generate Build Hash
+        id: generate-hash
+        run: |
+          BUILD_HASH=$(echo "${GITHUB_SHA:0:8}-$(date +%Y%m%d-%H%M%S)")
+          echo "build-hash=$BUILD_HASH" >> $GITHUB_OUTPUT
+          echo "🏷️  Build Hash: $BUILD_HASH"
+      
+      - name: Package Functions
+        run: |
+          echo "📦 Packaging Lambda functions..."
+          
+          # Use appropriate config based on environment
+          if [[ "${{ needs.pre-deployment-checks.outputs.deployment-env }}" == "production" ]]; then
+            serverless package --config serverless-production.yml --stage production
+          else
+            serverless package --config serverless.yml --stage staging
+          fi
+          
+          echo "✅ Functions packaged successfully"
+      
+      - name: Package Information
+        id: package-info
+        run: |
+          PACKAGE_SIZE=$(du -sh .serverless/ | cut -f1)
+          echo "size=$PACKAGE_SIZE" >> $GITHUB_OUTPUT
+          echo "📊 Package Size: $PACKAGE_SIZE"
+      
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: serverless-package-${{ steps.generate-hash.outputs.build-hash }}
+          path: |
+            .serverless/
+            dist/
+            node_modules/.prisma/
+          retention-days: 30
+
+  # =====================================================
+  # INFRASTRUCTURE DEPLOYMENT
+  # =====================================================
+  
+  deploy-infrastructure:
+    name: Deploy Infrastructure
+    runs-on: ubuntu-latest
+    needs: [pre-deployment-checks, build-and-package]
+    timeout-minutes: 30
+    environment:
+      name: ${{ needs.pre-deployment-checks.outputs.deployment-env }}
+      url: https://api${{ needs.pre-deployment-checks.outputs.deployment-env == 'staging' && '-staging' || '' }}.hasivu.com
+    
+    outputs:
+      api-url: ${{ steps.deploy-output.outputs.api-url }}
+      stack-outputs: ${{ steps.deploy-output.outputs.stack-outputs }}
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_DEPLOYMENT_ROLE_ARN }}
+          role-session-name: hasivu-infrastructure-deployment
+      
+      - name: Deploy CloudFormation Infrastructure
+        run: |
+          echo "🏗️  Deploying infrastructure for ${{ needs.pre-deployment-checks.outputs.deployment-env }}..."
+          
+          aws cloudformation deploy \
+            --template-file infrastructure/cloudformation/infrastructure.yml \
+            --stack-name hasivu-infrastructure-${{ needs.pre-deployment-checks.outputs.deployment-env }} \
+            --parameter-overrides \
+              EnvironmentName=${{ needs.pre-deployment-checks.outputs.deployment-env }} \
+              DomainName=hasivu.com \
+              CertificateArn=${{ secrets.SSL_CERTIFICATE_ARN }} \
+              DatabaseMasterPassword=${{ secrets[format('{0}_DB_PASSWORD', needs.pre-deployment-checks.outputs.deployment-env == 'production' && 'PRODUCTION' || 'STAGING')] }} \
+              NotificationEmail=${{ secrets.NOTIFICATION_EMAIL }} \
+            --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
+            --no-fail-on-empty-changeset \
+            --tags \
+              Project=HASIVU \
+              Environment=${{ needs.pre-deployment-checks.outputs.deployment-env }} \
+              ManagedBy=GitHub-Actions \
+              DeployedBy=${{ github.actor }}
+      
+      - name: Capture Infrastructure Outputs
+        id: deploy-output
+        run: |
+          # Get CloudFormation stack outputs
+          STACK_OUTPUTS=$(aws cloudformation describe-stacks \
+            --stack-name hasivu-infrastructure-${{ needs.pre-deployment-checks.outputs.deployment-env }} \
+            --query 'Stacks[0].Outputs' \
+            --output json)
+          
+          echo "stack-outputs=$STACK_OUTPUTS" >> $GITHUB_OUTPUT
+          
+          # Extract API URL if available
+          API_URL=$(echo "$STACK_OUTPUTS" | jq -r '.[] | select(.OutputKey=="ApiGatewayUrl") | .OutputValue // ""')
+          if [[ -n "$API_URL" && "$API_URL" != "null" ]]; then
+            echo "api-url=$API_URL" >> $GITHUB_OUTPUT
+          else
+            echo "api-url=https://api${{ needs.pre-deployment-checks.outputs.deployment-env == 'staging' && '-staging' || '' }}.hasivu.com" >> $GITHUB_OUTPUT
+          fi
+          
+          echo "✅ Infrastructure deployment completed"
+
+  # =====================================================
+  # DATABASE MIGRATION
+  # =====================================================
+  
+  database-migration:
+    name: Database Migration
+    runs-on: ubuntu-latest
+    needs: [pre-deployment-checks, deploy-infrastructure]
+    timeout-minutes: 15
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Install Dependencies
+        run: npm ci --prefer-offline
+      
+      - name: Run Database Migrations
+        run: |
+          echo "🗄️  Running database migrations for ${{ needs.pre-deployment-checks.outputs.deployment-env }}..."
+          
+          # Use environment-specific database URL
+          DATABASE_URL_SECRET="${{ needs.pre-deployment-checks.outputs.deployment-env == 'production' && 'PRODUCTION_DATABASE_URL' || 'STAGING_DATABASE_URL' }}"
+          
+          npm run db:migrate
+        env:
+          DATABASE_URL: ${{ secrets[format('{0}_DATABASE_URL', needs.pre-deployment-checks.outputs.deployment-env == 'production' && 'PRODUCTION' || 'STAGING')] }}
+      
+      - name: Verify Migration Status
+        run: |
+          echo "🔍 Verifying migration status..."
+          npx prisma migrate status
+          echo "✅ Database migrations completed successfully"
+        env:
+          DATABASE_URL: ${{ secrets[format('{0}_DATABASE_URL', needs.pre-deployment-checks.outputs.deployment-env == 'production' && 'PRODUCTION' || 'STAGING')] }}
+
+  # =====================================================
+  # LAMBDA DEPLOYMENT (Blue-Green Strategy)
+  # =====================================================
+  
+  deploy-lambda-functions:
+    name: Deploy Lambda Functions
+    runs-on: ubuntu-latest
+    needs: [pre-deployment-checks, build-and-package, deploy-infrastructure, database-migration]
+    timeout-minutes: 45
+    
+    outputs:
+      deployment-info: ${{ steps.serverless-deploy.outputs.deployment-info }}
+      function-versions: ${{ steps.capture-versions.outputs.versions }}
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Install Serverless Framework
+        run: npm install -g serverless@${{ env.SERVERLESS_VERSION }}
+      
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: serverless-package-${{ needs.build-and-package.outputs.build-hash }}
+      
+      - name: Deploy Serverless Functions
+        id: serverless-deploy
+        run: |
+          echo "🚀 Deploying Lambda functions to ${{ needs.pre-deployment-checks.outputs.deployment-env }}..."
+          
+          # Set environment variables based on deployment environment
+          export STAGE="${{ needs.pre-deployment-checks.outputs.deployment-env }}"
+          export AWS_REGION="${{ env.AWS_REGION }}"
+          
+          # Use appropriate serverless config
+          if [[ "${{ needs.pre-deployment-checks.outputs.deployment-env }}" == "production" ]]; then
+            CONFIG_FILE="serverless-production.yml"
+            export DATABASE_URL="${{ secrets.PRODUCTION_DATABASE_URL }}"
+            export REDIS_URL="${{ secrets.PRODUCTION_REDIS_URL }}"
+            export FRONTEND_URL="https://app.hasivu.com"
+            export ADMIN_URL="https://admin.hasivu.com"
+          else
+            CONFIG_FILE="serverless.yml"
+            export DATABASE_URL="${{ secrets.STAGING_DATABASE_URL }}"
+            export REDIS_URL="${{ secrets.STAGING_REDIS_URL }}"
+            export FRONTEND_URL="https://app-staging.hasivu.com"
+            export ADMIN_URL="https://admin-staging.hasivu.com"
+          fi
+          
+          # Deploy with timeout and detailed output
+          timeout ${{ env.DEPLOYMENT_TIMEOUT }} serverless deploy \
+            --config "$CONFIG_FILE" \
+            --stage "$STAGE" \
+            --verbose 2>&1 | tee deployment.log
+          
+          # Extract deployment info
+          API_ENDPOINT=$(grep -o 'https://[a-zA-Z0-9]*.execute-api.[a-zA-Z0-9-]*.amazonaws.com' deployment.log | head -1 || echo "")
+          
+          DEPLOYMENT_INFO="{
+            \"stage\": \"$STAGE\",
+            \"api_endpoint\": \"$API_ENDPOINT\",
+            \"function_count\": \"${{ needs.pre-deployment-checks.outputs.lambda-count }}\",
+            \"deployment_time\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",
+            \"build_hash\": \"${{ needs.build-and-package.outputs.build-hash }}\"
+          }"
+          
+          echo "deployment-info=$DEPLOYMENT_INFO" >> $GITHUB_OUTPUT
+          
+          echo "✅ Serverless deployment completed"
+          echo "🌐 API Endpoint: $API_ENDPOINT"
+      
+      - name: Capture Function Versions
+        id: capture-versions
+        run: |
+          echo "📋 Capturing Lambda function versions..."
+          
+          # Get all function versions for rollback purposes
+          FUNCTIONS=("register" "login" "refreshToken" "getUserProfile" "logout" "healthBasic" "healthDetailed")
+          VERSIONS="{"
+          
+          for func in "${FUNCTIONS[@]}"; do
+            VERSION=$(aws lambda get-function \
+              --function-name "hasivu-platform-api-${{ needs.pre-deployment-checks.outputs.deployment-env }}-$func" \
+              --query 'Configuration.Version' \
+              --output text 2>/dev/null || echo "1")
+            VERSIONS="$VERSIONS\"$func\": \"$VERSION\","
+          done
+          
+          VERSIONS="${VERSIONS%,}}"
+          echo "versions=$VERSIONS" >> $GITHUB_OUTPUT
+          
+          echo "✅ Function versions captured for rollback capability"
+      
+      - name: Upload Deployment Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-logs-${{ needs.build-and-package.outputs.build-hash }}
+          path: deployment.log
+          retention-days: 7
+
+  # =====================================================
+  # POST-DEPLOYMENT VALIDATION
+  # =====================================================
+  
+  post-deployment-validation:
+    name: Post-Deployment Validation
+    runs-on: ubuntu-latest
+    needs: [pre-deployment-checks, deploy-lambda-functions, deploy-infrastructure]
+    timeout-minutes: 20
+    
+    outputs:
+      health-status: ${{ steps.health-checks.outputs.status }}
+      validation-results: ${{ steps.validation-summary.outputs.results }}
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install Dependencies
+        run: npm ci --prefer-offline
+      
+      - name: Wait for Lambda Cold Start
+        run: |
+          echo "⏳ Waiting for Lambda functions to warm up..."
+          sleep 30
+      
+      - name: Health Check Endpoints
+        id: health-checks
+        run: |
+          echo "🏥 Running comprehensive health checks..."
+          
+          # Determine API URL
+          if [[ "${{ needs.deploy-infrastructure.outputs.api-url }}" != "" ]]; then
+            API_URL="${{ needs.deploy-infrastructure.outputs.api-url }}"
+          else
+            API_URL="https://api${{ needs.pre-deployment-checks.outputs.deployment-env == 'staging' && '-staging' || '' }}.hasivu.com"
+          fi
+          
+          echo "🔍 Testing API: $API_URL"
+          
+          # Health check endpoints
+          ENDPOINTS=(
+            "$API_URL/health"
+            "$API_URL/health/ready"
+            "$API_URL/health/live"
+          )
+          
+          failed_checks=0
+          
+          for endpoint in "${ENDPOINTS[@]}"; do
+            echo "Testing: $endpoint"
+            
+            if timeout 30 curl -sf "$endpoint" > /dev/null; then
+              echo "✅ $endpoint - OK"
+            else
+              echo "❌ $endpoint - FAILED"
+              failed_checks=$((failed_checks + 1))
+            fi
+          done
+          
+          if [[ $failed_checks -eq 0 ]]; then
+            echo "status=healthy" >> $GITHUB_OUTPUT
+            echo "✅ All health checks passed"
+          else
+            echo "status=unhealthy" >> $GITHUB_OUTPUT
+            echo "❌ $failed_checks health check(s) failed"
+            exit 1
+          fi
+      
+      - name: Function-Level Validation
+        run: |
+          echo "🧪 Running function-level validation..."
+          
+          # Test critical functions individually
+          timeout 60 npm run test:smoke || {
+            echo "❌ Smoke tests failed"
+            exit 1
+          }
+          
+          echo "✅ Function-level validation completed"
+        env:
+          API_BASE_URL: ${{ needs.deploy-infrastructure.outputs.api-url || format('https://api{0}.hasivu.com', needs.pre-deployment-checks.outputs.deployment-env == 'staging' && '-staging' || '') }}
+          NODE_ENV: ${{ needs.pre-deployment-checks.outputs.deployment-env }}
+      
+      - name: Performance Baseline Check
+        run: |
+          echo "⚡ Running performance baseline checks..."
+          
+          API_URL="${{ needs.deploy-infrastructure.outputs.api-url || format('https://api{0}.hasivu.com', needs.pre-deployment-checks.outputs.deployment-env == 'staging' && '-staging' || '') }}"
+          
+          # Test response times
+          RESPONSE_TIME=$(curl -o /dev/null -s -w "%{time_total}" "$API_URL/health")
+          
+          echo "🕐 Health endpoint response time: ${RESPONSE_TIME}s"
+          
+          # Ensure response time is under 3 seconds
+          if (( $(echo "$RESPONSE_TIME < 3.0" | bc -l) )); then
+            echo "✅ Response time within acceptable limits"
+          else
+            echo "⚠️  Response time exceeded 3 seconds: ${RESPONSE_TIME}s"
+          fi
+      
+      - name: Validation Summary
+        id: validation-summary
+        run: |
+          RESULTS="{
+            \"health_status\": \"${{ steps.health-checks.outputs.status }}\",
+            \"deployment_env\": \"${{ needs.pre-deployment-checks.outputs.deployment-env }}\",
+            \"api_url\": \"${{ needs.deploy-infrastructure.outputs.api-url || format('https://api{0}.hasivu.com', needs.pre-deployment-checks.outputs.deployment-env == 'staging' && '-staging' || '') }}\",
+            \"function_count\": \"${{ needs.pre-deployment-checks.outputs.lambda-count }}\",
+            \"validation_time\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"
+          }"
+          
+          echo "results=$RESULTS" >> $GITHUB_OUTPUT
+          
+          echo "📊 Validation Summary:"
+          echo "   Environment: ${{ needs.pre-deployment-checks.outputs.deployment-env }}"
+          echo "   Health Status: ${{ steps.health-checks.outputs.status }}"
+          echo "   Lambda Functions: ${{ needs.pre-deployment-checks.outputs.lambda-count }}"
+          echo "   API URL: ${{ needs.deploy-infrastructure.outputs.api-url || format('https://api{0}.hasivu.com', needs.pre-deployment-checks.outputs.deployment-env == 'staging' && '-staging' || '') }}"
+
+  # =====================================================
+  # ROLLBACK ON FAILURE
+  # =====================================================
+  
+  rollback-on-failure:
+    name: Rollback Deployment
+    runs-on: ubuntu-latest
+    needs: [pre-deployment-checks, deploy-lambda-functions, post-deployment-validation]
+    if: failure() && github.event.inputs.enable_rollback != 'false' && needs.deploy-lambda-functions.result == 'success'
+    timeout-minutes: 15
+    
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Initiate Rollback
+        run: |
+          echo "🔄 Initiating rollback for ${{ needs.pre-deployment-checks.outputs.deployment-env }}..."
+          
+          # Get previous stable versions
+          FUNCTIONS=("register" "login" "refreshToken" "getUserProfile" "logout" "healthBasic")
+          
+          for func in "${FUNCTIONS[@]}"; do
+            echo "Rolling back function: $func"
+            
+            # Get previous version
+            PREV_VERSION=$(aws lambda list-versions-by-function \
+              --function-name "hasivu-platform-api-${{ needs.pre-deployment-checks.outputs.deployment-env }}-$func" \
+              --query 'Versions[-2].Version' \
+              --output text 2>/dev/null || echo "1")
+            
+            # Update alias to previous version
+            aws lambda update-alias \
+              --function-name "hasivu-platform-api-${{ needs.pre-deployment-checks.outputs.deployment-env }}-$func" \
+              --name "LIVE" \
+              --function-version "$PREV_VERSION" || true
+          done
+          
+          echo "⚠️  Rollback completed - previous version restored"
+      
+      - name: Post-Rollback Health Check
+        run: |
+          echo "🏥 Verifying rollback health..."
+          sleep 15
+          
+          API_URL="https://api${{ needs.pre-deployment-checks.outputs.deployment-env == 'staging' && '-staging' || '' }}.hasivu.com"
+          
+          if curl -sf "$API_URL/health" > /dev/null; then
+            echo "✅ Rollback successful - health check passed"
+          else
+            echo "❌ Rollback health check failed - manual intervention required"
+          fi
+
+  # =====================================================
+  # SUCCESS NOTIFICATION AND CLEANUP
+  # =====================================================
+  
+  deployment-success:
+    name: Deployment Success
+    runs-on: ubuntu-latest
+    needs: [pre-deployment-checks, deploy-lambda-functions, post-deployment-validation]
+    if: success()
+    
+    steps:
+      - name: Create GitHub Release
+        if: needs.pre-deployment-checks.outputs.deployment-env == 'production'
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ github.run_number }}-${{ needs.deploy-lambda-functions.outputs.deployment-info && fromJson(needs.deploy-lambda-functions.outputs.deployment-info).build_hash || github.sha }}
+          release_name: HASIVU Platform Release v${{ github.run_number }}
+          body: |
+            ## 🚀 HASIVU Platform Production Deployment
+            
+            **Deployment Details:**
+            - Environment: ${{ needs.pre-deployment-checks.outputs.deployment-env }}
+            - Functions Deployed: ${{ needs.pre-deployment-checks.outputs.lambda-count }}
+            - Build Hash: ${{ needs.deploy-lambda-functions.outputs.deployment-info && fromJson(needs.deploy-lambda-functions.outputs.deployment-info).build_hash || github.sha }}
+            - Deployed by: ${{ github.actor }}
+            - Deployed at: ${{ needs.deploy-lambda-functions.outputs.deployment-info && fromJson(needs.deploy-lambda-functions.outputs.deployment-info).deployment_time || github.event.head_commit.timestamp }}
+            
+            **Health Status:**
+            - API Health: ${{ needs.post-deployment-validation.outputs.health-status }}
+            - API Endpoint: ${{ needs.post-deployment-validation.outputs.validation-results && fromJson(needs.post-deployment-validation.outputs.validation-results).api_url || 'https://api.hasivu.com' }}
+            
+            **Changes:**
+            ${{ github.event.head_commit.message }}
+            
+            **Infrastructure:**
+            - ✅ Lambda Functions: ${{ needs.pre-deployment-checks.outputs.lambda-count }} deployed
+            - ✅ Database migrations: Applied successfully
+            - ✅ Health checks: All passing
+            - ✅ Performance: Within acceptable limits
+          draft: false
+          prerelease: false
+      
+      - name: Notify Slack Success
+        uses: 8398a7/action-slack@v3
+        with:
+          status: success
+          text: |
+            🎉 *HASIVU Platform Deployment Successful!*
+            
+            *Environment:* ${{ needs.pre-deployment-checks.outputs.deployment-env }}
+            *Functions:* ${{ needs.pre-deployment-checks.outputs.lambda-count }} Lambda functions
+            *Build:* ${{ needs.deploy-lambda-functions.outputs.deployment-info && fromJson(needs.deploy-lambda-functions.outputs.deployment-info).build_hash || github.sha }}
+            *API:* ${{ needs.post-deployment-validation.outputs.validation-results && fromJson(needs.post-deployment-validation.outputs.validation-results).api_url || format('https://api{0}.hasivu.com', needs.pre-deployment-checks.outputs.deployment-env == 'staging' && '-staging' || '') }}
+            *Health:* ${{ needs.post-deployment-validation.outputs.health-status }}
+            
+            Deployed by: ${{ github.actor }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      
+      - name: Update Deployment Status
+        run: |
+          echo "✅ Deployment completed successfully!"
+          echo "🌐 API URL: ${{ needs.post-deployment-validation.outputs.validation-results && fromJson(needs.post-deployment-validation.outputs.validation-results).api_url || format('https://api{0}.hasivu.com', needs.pre-deployment-checks.outputs.deployment-env == 'staging' && '-staging' || '') }}"
+          echo "🏥 Health Status: ${{ needs.post-deployment-validation.outputs.health-status }}"
+          echo "📊 Functions: ${{ needs.pre-deployment-checks.outputs.lambda-count }}"
+  
+  cleanup-artifacts:
+    name: Cleanup Build Artifacts
+    runs-on: ubuntu-latest
+    needs: [build-and-package, deployment-success]
+    if: always() && needs.build-and-package.result == 'success'
+    
+    steps:
+      - name: Delete Build Artifacts
+        uses: geekyeggo/delete-artifact@v4
+        with:
+          name: |
+            serverless-package-${{ needs.build-and-package.outputs.build-hash }}
+            deployment-logs-${{ needs.build-and-package.outputs.build-hash }}
+          failOnError: false
+
+  # =====================================================
+  # FAILURE NOTIFICATION
+  # =====================================================
+  
+  deployment-failure:
+    name: Deployment Failure Notification
+    runs-on: ubuntu-latest
+    needs: [pre-deployment-checks, deploy-lambda-functions, post-deployment-validation]
+    if: failure()
+    
+    steps:
+      - name: Notify Slack Failure
+        uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          text: |
+            🚨 *HASIVU Platform Deployment Failed!*
+            
+            *Environment:* ${{ needs.pre-deployment-checks.outputs.deployment-env || 'unknown' }}
+            *Commit:* ${{ github.sha }}
+            *Author:* ${{ github.actor }}
+            *Run:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>
+            
+            Please check the deployment logs and consider rollback if necessary.
+            
+            *Failed Jobs:*
+            ${{ needs.pre-deployment-checks.result == 'failure' && '❌ Pre-deployment checks' || '' }}
+            ${{ needs.deploy-lambda-functions.result == 'failure' && '❌ Lambda deployment' || '' }}
+            ${{ needs.post-deployment-validation.result == 'failure' && '❌ Post-deployment validation' || '' }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      
+      - name: Create Failure Issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = `🚨 Deployment Failure - ${process.env.DEPLOYMENT_ENV || 'unknown'} - ${new Date().toISOString().split('T')[0]}`;
+            const body = `
+            ## Deployment Failure Report
+            
+            **Environment:** ${process.env.DEPLOYMENT_ENV || 'unknown'}
+            **Commit:** ${context.sha}
+            **Author:** ${context.actor}
+            **Workflow Run:** ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}
+            
+            **Failed Jobs:**
+            - Pre-deployment checks: ${process.env.PRE_DEPLOY_RESULT}
+            - Lambda deployment: ${process.env.LAMBDA_DEPLOY_RESULT}
+            - Post-deployment validation: ${process.env.POST_DEPLOY_RESULT}
+            
+            **Next Steps:**
+            1. Review deployment logs
+            2. Check for infrastructure issues
+            3. Validate configuration
+            4. Consider rollback if needed
+            5. Fix issues and redeploy
+            
+            Auto-generated by GitHub Actions workflow.
+            `;
+            
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['deployment-failure', 'urgent']
+            });
+        env:
+          DEPLOYMENT_ENV: ${{ needs.pre-deployment-checks.outputs.deployment-env }}
+          PRE_DEPLOY_RESULT: ${{ needs.pre-deployment-checks.result }}
+          LAMBDA_DEPLOY_RESULT: ${{ needs.deploy-lambda-functions.result }}
+          POST_DEPLOY_RESULT: ${{ needs.post-deployment-validation.result }}

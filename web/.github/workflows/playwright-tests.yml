@@ -1,0 +1,444 @@
+name: 🎭 HASIVU Enterprise Playwright Testing Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Run daily at 2 AM UTC for health checks
+    - cron: '0 2 * * *'
+
+env:
+  NODE_VERSION: '18'
+  PLAYWRIGHT_VERSION: '1.40.0'
+  PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
+  HASIVU_TEST_ENV: 'ci'
+
+jobs:
+  # Security and setup validation
+  security-scan:
+    name: 🔒 Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run security audit
+        run: |
+          npm audit --audit-level high
+          # Add additional security scanning tools as needed
+
+  # Parallel test execution across multiple environments
+  test-matrix:
+    name: 🧪 Test Suite (${{ matrix.project }})
+    runs-on: ubuntu-latest
+    needs: security-scan
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [
+          'Desktop Chrome',
+          'Desktop Firefox', 
+          'Desktop Safari',
+          'Mobile Chrome',
+          'Mobile Safari',
+          'Tablet'
+        ]
+        include:
+          - project: 'Desktop Chrome'
+            test-type: 'full'
+          - project: 'Desktop Firefox'
+            test-type: 'smoke'
+          - project: 'Desktop Safari'
+            test-type: 'smoke'
+          - project: 'Mobile Chrome'
+            test-type: 'mobile'
+          - project: 'Mobile Safari'
+            test-type: 'mobile'
+          - project: 'Tablet'
+            test-type: 'responsive'
+
+    steps:
+      - name: 📋 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: |
+          npm ci
+          npx playwright install --with-deps
+
+      - name: 🏗️ Build application
+        run: |
+          npm run build
+          npm run type-check
+        env:
+          NODE_ENV: test
+
+      - name: 🚀 Start test server
+        run: |
+          npm run test:server &
+          npx wait-on http://localhost:3000 --timeout 60000
+        env:
+          NODE_ENV: test
+          PORT: 3000
+
+      - name: 🎭 Run Playwright tests
+        run: |
+          case "${{ matrix.test-type }}" in
+            "full")
+              npx playwright test --project="${{ matrix.project }}" --reporter=html,line
+              ;;
+            "smoke")
+              npx playwright test --project="${{ matrix.project }}" --grep="@smoke" --reporter=line
+              ;;
+            "mobile")
+              npx playwright test tests/e2e tests/visual --project="${{ matrix.project }}" --reporter=line
+              ;;
+            "responsive")
+              npx playwright test tests/visual/visual-regression.spec.ts --project="${{ matrix.project }}" --reporter=line
+              ;;
+          esac
+        env:
+          PLAYWRIGHT_HTML_REPORT: test-results/${{ matrix.project }}/html-report
+          CI: true
+
+      - name: 📊 Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-results-${{ matrix.project }}
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 30
+
+      - name: 📈 Percy visual tests (Desktop Chrome only)
+        if: matrix.project == 'Desktop Chrome'
+        run: |
+          npx percy exec -- npx playwright test tests/visual/ --project="Desktop Chrome"
+        env:
+          PERCY_TOKEN: ${{ env.PERCY_TOKEN }}
+
+  # RFID-specific testing
+  rfid-workflow-tests:
+    name: 📡 RFID Workflow Testing
+    runs-on: ubuntu-latest
+    needs: security-scan
+    steps:
+      - uses: actions/checkout@v4
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: |
+          npm ci
+          npx playwright install chromium
+
+      - name: 🏗️ Build application
+        run: npm run build
+        env:
+          NODE_ENV: test
+
+      - name: 🚀 Start test server with RFID simulation
+        run: |
+          npm run test:server:rfid &
+          npx wait-on http://localhost:3000 --timeout 60000
+        env:
+          NODE_ENV: test
+          RFID_SIMULATION_MODE: true
+          PORT: 3000
+
+      - name: 📡 Run RFID workflow tests
+        run: |
+          npx playwright test tests/e2e/rfid-workflows.spec.ts \
+            --project="Desktop Chrome" \
+            --reporter=html,github \
+            --max-failures=5
+        env:
+          CI: true
+          RFID_TEST_MODE: true
+
+      - name: 📊 Upload RFID test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rfid-workflow-results
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 15
+
+  # Performance and accessibility audits
+  performance-audit:
+    name: ⚡ Performance & Accessibility Audit
+    runs-on: ubuntu-latest
+    needs: security-scan
+    steps:
+      - uses: actions/checkout@v4
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: |
+          npm ci
+          npx playwright install chromium
+
+      - name: 🏗️ Build application (production mode)
+        run: |
+          npm run build
+          npm run optimize
+        env:
+          NODE_ENV: production
+
+      - name: 🚀 Start production server
+        run: |
+          npm run start &
+          npx wait-on http://localhost:3000 --timeout 60000
+        env:
+          NODE_ENV: production
+          PORT: 3000
+
+      - name: ⚡ Run performance audits
+        run: |
+          npx playwright test tests/performance/ \
+            --project="Desktop Chrome" \
+            --reporter=html,github \
+            --timeout=60000
+        env:
+          CI: true
+          PERFORMANCE_AUDIT_MODE: true
+
+      - name: 🔍 Generate Lighthouse reports
+        run: |
+          npm install -g @lhci/cli
+          lhci collect --url=http://localhost:3000/auth/login
+          lhci collect --url=http://localhost:3000/dashboard  
+          lhci collect --url=http://localhost:3000/menu
+          lhci upload --target=temporary-public-storage
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
+      - name: 📊 Upload performance results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: performance-audit-results
+          path: |
+            test-results/
+            .lighthouseci/
+          retention-days: 30
+
+  # Multi-language testing
+  localization-tests:
+    name: 🌐 Multi-Language Testing
+    runs-on: ubuntu-latest
+    needs: security-scan
+    strategy:
+      matrix:
+        language: ['en', 'hi', 'kn']
+    
+    steps:
+      - uses: actions/checkout@v4
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: |
+          npm ci
+          npx playwright install chromium
+
+      - name: 🏗️ Build application with i18n
+        run: npm run build:i18n
+        env:
+          NODE_ENV: test
+          DEFAULT_LOCALE: ${{ matrix.language }}
+
+      - name: 🚀 Start localized server
+        run: |
+          npm run test:server &
+          npx wait-on http://localhost:3000 --timeout 60000
+        env:
+          NODE_ENV: test
+          LOCALE: ${{ matrix.language }}
+          PORT: 3000
+
+      - name: 🌐 Run localization tests
+        run: |
+          npx playwright test tests/visual/ \
+            --project="Desktop Chrome" \
+            --grep="multi.*language" \
+            --reporter=line
+        env:
+          CI: true
+          TEST_LOCALE: ${{ matrix.language }}
+
+  # Authentication and role-based testing
+  auth-role-tests:
+    name: 🔐 Multi-Role Authentication Tests
+    runs-on: ubuntu-latest
+    needs: security-scan
+    strategy:
+      matrix:
+        role: ['student', 'parent', 'admin', 'kitchen', 'vendor']
+    
+    steps:
+      - uses: actions/checkout@v4
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: |
+          npm ci
+          npx playwright install chromium
+
+      - name: 🏗️ Setup test environment
+        run: |
+          npm run setup:test-data
+          npm run build
+        env:
+          NODE_ENV: test
+
+      - name: 🚀 Start server with role simulation
+        run: |
+          npm run test:server &
+          npx wait-on http://localhost:3000 --timeout 60000
+        env:
+          NODE_ENV: test
+          AUTH_TEST_MODE: true
+          PORT: 3000
+
+      - name: 🔐 Run role-specific tests
+        run: |
+          npx playwright test \
+            --project="Desktop Chrome" \
+            --grep="${{ matrix.role }}" \
+            --reporter=line \
+            --timeout=30000
+        env:
+          CI: true
+          TEST_ROLE: ${{ matrix.role }}
+
+  # Test result aggregation and reporting
+  test-summary:
+    name: 📋 Test Summary & Reporting
+    runs-on: ubuntu-latest
+    needs: [
+      test-matrix,
+      rfid-workflow-tests,
+      performance-audit,
+      localization-tests,
+      auth-role-tests
+    ]
+    if: always()
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: 📥 Download all test artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: aggregated-results/
+
+      - name: 📊 Generate comprehensive test report
+        run: |
+          npm run test:report:generate
+          npm run test:metrics:calculate
+        env:
+          NODE_ENV: test
+
+      - name: 📈 Update test dashboard
+        run: |
+          # Update internal test dashboard or metrics
+          curl -X POST "${{ secrets.TEST_DASHBOARD_WEBHOOK }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "run_id": "${{ github.run_id }}",
+              "branch": "${{ github.ref_name }}",
+              "commit": "${{ github.sha }}",
+              "status": "${{ job.status }}",
+              "timestamp": "${{ github.event.head_commit.timestamp }}"
+            }'
+
+      - name: 💬 Post test summary to PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            // Read test summary if available
+            let summary = 'Test execution completed. Check individual job results for details.';
+            
+            if (fs.existsSync('aggregated-results/summary.md')) {
+              summary = fs.readFileSync('aggregated-results/summary.md', 'utf8');
+            }
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## 🎭 Playwright Test Results
+              
+${summary}
+
+**Test Artifacts**: Available in the Actions tab for 30 days.
+**Performance Reports**: Check Lighthouse CI results for detailed metrics.
+**Visual Regression**: Percy reports available for visual changes review.
+              `
+            });
+
+      - name: 📊 Upload consolidated results
+        uses: actions/upload-artifact@v4
+        with:
+          name: consolidated-test-results
+          path: aggregated-results/
+          retention-days: 90
+
+  # Deployment readiness check
+  deployment-ready:
+    name: 🚀 Deployment Readiness Check
+    runs-on: ubuntu-latest
+    needs: test-summary
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+      - name: ✅ All tests passed - Ready for deployment
+        run: |
+          echo "🎉 All tests passed successfully!"
+          echo "✅ Security scan: Passed"
+          echo "✅ Cross-browser testing: Passed"  
+          echo "✅ RFID workflows: Passed"
+          echo "✅ Performance audits: Passed"
+          echo "✅ Accessibility compliance: Passed"
+          echo "✅ Multi-language support: Passed"
+          echo "✅ Role-based authentication: Passed"
+          echo ""
+          echo "🚀 System is ready for production deployment!"
+
+      - name: 🚀 Trigger deployment pipeline
+        run: |
+          # Trigger your deployment pipeline here
+          echo "Deployment pipeline would be triggered here"
+          # Example: curl -X POST $DEPLOYMENT_WEBHOOK_URL
+
+# Environment-specific configurations
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true

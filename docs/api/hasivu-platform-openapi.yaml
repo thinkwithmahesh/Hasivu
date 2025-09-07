@@ -1,0 +1,3531 @@
+openapi: 3.0.3
+info:
+  title: HASIVU Platform API
+  description: |
+    Complete API documentation for the HASIVU Platform - A comprehensive school meal delivery system with AWS Lambda-based microservices architecture.
+    
+    ## Features
+    - JWT-based authentication with AWS Cognito integration
+    - Payment processing with Razorpay integration
+    - RFID-based delivery verification
+    - Real-time notifications via WhatsApp
+    - Advanced analytics and reporting
+    - Subscription billing management
+    - AI-powered payment intelligence
+    
+    ## Authentication
+    This API uses JWT tokens for authentication. Include the JWT token in the Authorization header:
+    ```
+    Authorization: Bearer <jwt_token>
+    ```
+    
+    ## Base URL
+    - **Production**: `https://api.hasivu.com`
+    - **Staging**: `https://api-staging.hasivu.com`
+    - **Development**: `https://api-dev.hasivu.com`
+    
+    ## Rate Limiting
+    - **Rate Limit**: 1000 requests per minute per IP
+    - **Burst Limit**: 2000 requests per minute
+    
+    ## Error Handling
+    All errors follow RFC 7807 problem details format with consistent structure.
+  version: 1.0.0
+  contact:
+    name: HASIVU API Support
+    email: api-support@hasivu.com
+    url: https://hasivu.com/support
+  license:
+    name: Proprietary
+    url: https://hasivu.com/terms
+  termsOfService: https://hasivu.com/terms
+
+servers:
+  - url: https://api.hasivu.com
+    description: Production server
+  - url: https://api-staging.hasivu.com
+    description: Staging server
+  - url: https://api-dev.hasivu.com
+    description: Development server
+
+security:
+  - bearerAuth: []
+
+paths:
+  # =====================================================
+  # HEALTH CHECK ENDPOINTS
+  # =====================================================
+  /health:
+    get:
+      tags:
+        - Health
+      summary: System health check
+      description: Check the health status of the API and its dependencies
+      operationId: healthCheck
+      security: []
+      responses:
+        200:
+          description: System is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                status: "healthy"
+                timestamp: "2024-01-15T10:30:00Z"
+                version: "1.0.0"
+                services:
+                  database: "healthy"
+                  cognito: "healthy"
+                  razorpay: "healthy"
+                  s3: "healthy"
+        503:
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  # =====================================================
+  # AUTHENTICATION ENDPOINTS
+  # =====================================================
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: User login
+      description: Authenticate user with email and password using AWS Cognito
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              email: "parent@example.com"
+              password: "SecurePass123!"
+      responses:
+        200:
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+              example:
+                message: "Login successful"
+                user:
+                  id: "550e8400-e29b-41d4-a716-446655440000"
+                  email: "parent@example.com"
+                  firstName: "John"
+                  lastName: "Doe"
+                  role: "parent"
+                  schoolId: "660f9500-f30c-52e5-b827-557766551111"
+                  emailVerified: true
+                tokens:
+                  accessToken: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+                  refreshToken: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+                  idToken: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+                  tokenType: "Bearer"
+                  expiresIn: 3600
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+
+  /auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: User registration
+      description: Register a new user account with email verification
+      operationId: register
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+            example:
+              email: "newparent@example.com"
+              password: "SecurePass123!"
+              firstName: "Jane"
+              lastName: "Smith"
+              schoolId: "660f9500-f30c-52e5-b827-557766551111"
+              role: "parent"
+      responses:
+        201:
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterResponse'
+              example:
+                message: "User registered successfully. Please check your email for verification."
+                userId: "770e8400-e29b-41d4-a716-446655440000"
+                emailSent: true
+        400:
+          $ref: '#/components/responses/BadRequest'
+        409:
+          $ref: '#/components/responses/Conflict'
+
+  /auth/verify-email:
+    post:
+      tags:
+        - Authentication
+      summary: Verify email address
+      description: Verify user email address using verification code
+      operationId: verifyEmail
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyEmailRequest'
+            example:
+              email: "newparent@example.com"
+              verificationCode: "123456"
+      responses:
+        200:
+          description: Email verified successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        404:
+          $ref: '#/components/responses/NotFound'
+
+  /auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh access token
+      description: Get a new access token using refresh token
+      operationId: refreshToken
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+            example:
+              refreshToken: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+      responses:
+        200:
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: User logout
+      description: Logout user and invalidate tokens
+      operationId: logout
+      responses:
+        200:
+          description: Logged out successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  # =====================================================
+  # USER MANAGEMENT ENDPOINTS
+  # =====================================================
+  /users:
+    post:
+      tags:
+        - Users
+      summary: Create new user
+      description: Create a new user account (admin only)
+      operationId: createUser
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        201:
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        403:
+          $ref: '#/components/responses/Forbidden'
+    
+    get:
+      tags:
+        - Users
+      summary: List users
+      description: Get paginated list of users with filtering options
+      operationId: listUsers
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+        - name: role
+          in: query
+          schema:
+            type: string
+            enum: [student, parent, teacher, admin]
+        - name: schoolId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: isActive
+          in: query
+          schema:
+            type: boolean
+      responses:
+        200:
+          description: Users retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserListResponse'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        403:
+          $ref: '#/components/responses/Forbidden'
+
+  /users/{userId}:
+    get:
+      tags:
+        - Users
+      summary: Get user by ID
+      description: Retrieve user details by ID
+      operationId: getUserById
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: User retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        404:
+          $ref: '#/components/responses/NotFound'
+        403:
+          $ref: '#/components/responses/Forbidden'
+
+    put:
+      tags:
+        - Users
+      summary: Update user
+      description: Update user profile information
+      operationId: updateUser
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        200:
+          description: User updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+
+  # =====================================================
+  # PAYMENT PROCESSING ENDPOINTS
+  # =====================================================
+  /payments/orders:
+    post:
+      tags:
+        - Payments
+      summary: Create payment order
+      description: Create a new payment order with Razorpay integration
+      operationId: createPaymentOrder
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePaymentOrderRequest'
+            example:
+              userId: "550e8400-e29b-41d4-a716-446655440000"
+              amount: 250.00
+              currency: "INR"
+              description: "Lunch payment for John Doe"
+              orderId: "880f8500-g30d-63f6-c938-668877662222"
+      responses:
+        201:
+          description: Payment order created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentOrderResponse'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        403:
+          $ref: '#/components/responses/Forbidden'
+
+  /payments/verify:
+    post:
+      tags:
+        - Payments
+      summary: Verify payment
+      description: Verify payment completion and update order status
+      operationId: verifyPayment
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyPaymentRequest'
+      responses:
+        200:
+          description: Payment verified successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentVerificationResponse'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        404:
+          $ref: '#/components/responses/NotFound'
+
+  /payments/webhook:
+    post:
+      tags:
+        - Payments
+      summary: Payment webhook
+      description: Handle Razorpay payment webhooks (internal use)
+      operationId: paymentWebhook
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        200:
+          description: Webhook processed successfully
+        400:
+          $ref: '#/components/responses/BadRequest'
+
+  /payments/refund:
+    post:
+      tags:
+        - Payments
+      summary: Process refund
+      description: Process payment refund
+      operationId: processRefund
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefundRequest'
+      responses:
+        200:
+          description: Refund processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefundResponse'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        404:
+          $ref: '#/components/responses/NotFound'
+
+  /payments/status/{orderId}:
+    get:
+      tags:
+        - Payments
+      summary: Get payment status
+      description: Get current payment status for an order
+      operationId: getPaymentStatus
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Payment status retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentStatusResponse'
+        404:
+          $ref: '#/components/responses/NotFound'
+
+  # =====================================================
+  # ADVANCED PAYMENT FEATURES
+  # =====================================================
+  /payments/methods:
+    get:
+      tags:
+        - Payment Methods
+      summary: List payment methods
+      description: Get user's saved payment methods
+      operationId: listPaymentMethods
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Payment methods retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentMethodListResponse'
+
+    post:
+      tags:
+        - Payment Methods
+      summary: Add payment method
+      description: Add new payment method for user
+      operationId: addPaymentMethod
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddPaymentMethodRequest'
+      responses:
+        201:
+          description: Payment method added successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentMethodResponse'
+
+  /payments/methods/{methodId}:
+    put:
+      tags:
+        - Payment Methods
+      summary: Update payment method
+      description: Update existing payment method
+      operationId: updatePaymentMethod
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: methodId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePaymentMethodRequest'
+      responses:
+        200:
+          description: Payment method updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentMethodResponse'
+
+    delete:
+      tags:
+        - Payment Methods
+      summary: Delete payment method
+      description: Remove payment method
+      operationId: deletePaymentMethod
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: methodId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        204:
+          description: Payment method deleted successfully
+
+  # =====================================================
+  # SUBSCRIPTION MANAGEMENT
+  # =====================================================
+  /subscriptions:
+    get:
+      tags:
+        - Subscriptions
+      summary: List subscriptions
+      description: Get user's subscriptions
+      operationId: listSubscriptions
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, paused, cancelled, expired, suspended]
+        - name: schoolId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Subscriptions retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionListResponse'
+
+    post:
+      tags:
+        - Subscriptions
+      summary: Create subscription
+      description: Create new subscription
+      operationId: createSubscription
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSubscriptionRequest'
+      responses:
+        201:
+          description: Subscription created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionResponse'
+
+  /subscriptions/{id}:
+    get:
+      tags:
+        - Subscriptions
+      summary: Get subscription
+      description: Get subscription details
+      operationId: getSubscription
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Subscription retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionResponse'
+
+    put:
+      tags:
+        - Subscriptions
+      summary: Update subscription
+      description: Update subscription details
+      operationId: updateSubscription
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSubscriptionRequest'
+      responses:
+        200:
+          description: Subscription updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionResponse'
+
+  /subscriptions/{id}/pause:
+    post:
+      tags:
+        - Subscriptions
+      summary: Pause subscription
+      description: Pause active subscription
+      operationId: pauseSubscription
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Subscription paused successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionResponse'
+
+  /subscriptions/{id}/resume:
+    post:
+      tags:
+        - Subscriptions
+      summary: Resume subscription
+      description: Resume paused subscription
+      operationId: resumeSubscription
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Subscription resumed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionResponse'
+
+  /subscriptions/{id}/cancel:
+    post:
+      tags:
+        - Subscriptions
+      summary: Cancel subscription
+      description: Cancel subscription
+      operationId: cancelSubscription
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: Cancellation reason
+      responses:
+        200:
+          description: Subscription cancelled successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionResponse'
+
+  # =====================================================
+  # SUBSCRIPTION PLANS
+  # =====================================================
+  /subscription-plans:
+    get:
+      tags:
+        - Subscription Plans
+      summary: List subscription plans
+      description: Get available subscription plans
+      operationId: listSubscriptionPlans
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: schoolId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: planType
+          in: query
+          schema:
+            type: string
+            enum: [meal_plan, full_service, basic]
+      responses:
+        200:
+          description: Subscription plans retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionPlanListResponse'
+
+    post:
+      tags:
+        - Subscription Plans
+      summary: Create subscription plan
+      description: Create new subscription plan (admin only)
+      operationId: createSubscriptionPlan
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSubscriptionPlanRequest'
+      responses:
+        201:
+          description: Subscription plan created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionPlanResponse'
+
+  /subscription-plans/{id}:
+    get:
+      tags:
+        - Subscription Plans
+      summary: Get subscription plan
+      description: Get subscription plan details
+      operationId: getSubscriptionPlan
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Subscription plan retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionPlanResponse'
+
+  # =====================================================
+  # ORDERS ENDPOINTS
+  # =====================================================
+  /orders:
+    get:
+      tags:
+        - Orders
+      summary: List orders
+      description: Get paginated list of orders
+      operationId: listOrders
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, confirmed, preparing, ready, delivered, cancelled]
+        - name: userId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Orders retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderListResponse'
+
+    post:
+      tags:
+        - Orders
+      summary: Create order
+      description: Create a new meal order
+      operationId: createOrder
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderRequest'
+      responses:
+        201:
+          description: Order created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+
+  /orders/{orderId}:
+    get:
+      tags:
+        - Orders
+      summary: Get order
+      description: Get order details by ID
+      operationId: getOrder
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Order retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+
+    put:
+      tags:
+        - Orders
+      summary: Update order
+      description: Update order details
+      operationId: updateOrder
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateOrderRequest'
+      responses:
+        200:
+          description: Order updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+
+  /orders/history/{userId}:
+    get:
+      tags:
+        - Orders
+      summary: Get order history
+      description: Get user's order history
+      operationId: getOrderHistory
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        200:
+          description: Order history retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderHistoryResponse'
+
+  # =====================================================
+  # MENU MANAGEMENT ENDPOINTS
+  # =====================================================
+  /menus/plans:
+    get:
+      tags:
+        - Menus
+      summary: List menu plans
+      description: Get list of menu plans
+      operationId: listMenuPlans
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: schoolId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [DRAFT, PENDING_APPROVAL, APPROVED, PUBLISHED, ACTIVE, ARCHIVED, REJECTED]
+        - name: isTemplate
+          in: query
+          schema:
+            type: boolean
+      responses:
+        200:
+          description: Menu plans retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MenuPlanListResponse'
+
+    post:
+      tags:
+        - Menus
+      summary: Create menu plan
+      description: Create new menu plan
+      operationId: createMenuPlan
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMenuPlanRequest'
+      responses:
+        201:
+          description: Menu plan created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MenuPlanResponse'
+
+  /menus/plans/{planId}:
+    get:
+      tags:
+        - Menus
+      summary: Get menu plan
+      description: Get menu plan details
+      operationId: getMenuPlan
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: planId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Menu plan retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MenuPlanResponse'
+
+    put:
+      tags:
+        - Menus
+      summary: Update menu plan
+      description: Update menu plan details
+      operationId: updateMenuPlan
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: planId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMenuPlanRequest'
+      responses:
+        200:
+          description: Menu plan updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MenuPlanResponse'
+
+  /menus/approve/{planId}:
+    post:
+      tags:
+        - Menus
+      summary: Approve menu plan
+      description: Approve menu plan for publication
+      operationId: approveMenuPlan
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: planId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                approvalType:
+                  type: string
+                  enum: [NUTRITIONIST_REVIEW, ADMIN_APPROVAL, PRINCIPAL_APPROVAL, KITCHEN_REVIEW, BUDGET_APPROVAL]
+                comments:
+                  type: string
+      responses:
+        200:
+          description: Menu plan approved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MenuPlanResponse'
+
+  /menus/daily:
+    get:
+      tags:
+        - Menus
+      summary: Get daily menu
+      description: Get today's menu for a school
+      operationId: getDailyMenu
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: schoolId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: date
+          in: query
+          schema:
+            type: string
+            format: date
+            description: Date for menu (defaults to today)
+      responses:
+        200:
+          description: Daily menu retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DailyMenuResponse'
+
+  # =====================================================
+  # RFID MANAGEMENT ENDPOINTS
+  # =====================================================
+  /rfid/readers:
+    get:
+      tags:
+        - RFID
+      summary: List RFID readers
+      description: Get list of RFID readers for a school
+      operationId: listRfidReaders
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: schoolId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [online, offline, error]
+      responses:
+        200:
+          description: RFID readers retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RfidReaderListResponse'
+
+    post:
+      tags:
+        - RFID
+      summary: Add RFID reader
+      description: Add new RFID reader
+      operationId: addRfidReader
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddRfidReaderRequest'
+      responses:
+        201:
+          description: RFID reader added successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RfidReaderResponse'
+
+  /rfid/readers/{readerId}:
+    put:
+      tags:
+        - RFID
+      summary: Update RFID reader
+      description: Update RFID reader configuration
+      operationId: updateRfidReader
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: readerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRfidReaderRequest'
+      responses:
+        200:
+          description: RFID reader updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RfidReaderResponse'
+
+  /rfid/readers/{readerId}/test:
+    post:
+      tags:
+        - RFID
+      summary: Test RFID reader
+      description: Test RFID reader connection
+      operationId: testRfidReader
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: readerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: RFID reader test completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RfidTestResponse'
+
+  /rfid/cards:
+    post:
+      tags:
+        - RFID
+      summary: Register RFID card
+      description: Register new RFID card for student
+      operationId: registerRfidCard
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRfidCardRequest'
+      responses:
+        201:
+          description: RFID card registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RfidCardResponse'
+
+  /rfid/cards/{cardId}:
+    put:
+      tags:
+        - RFID
+      summary: Update RFID card
+      description: Update RFID card details
+      operationId: updateRfidCard
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: cardId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRfidCardRequest'
+      responses:
+        200:
+          description: RFID card updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RfidCardResponse'
+
+  /rfid/verify-delivery:
+    post:
+      tags:
+        - RFID
+      summary: Verify delivery
+      description: Verify meal delivery using RFID
+      operationId: verifyDelivery
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyDeliveryRequest'
+      responses:
+        200:
+          description: Delivery verified successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeliveryVerificationResponse'
+
+  /rfid/verify-bulk:
+    post:
+      tags:
+        - RFID
+      summary: Bulk verify deliveries
+      description: Verify multiple deliveries in bulk
+      operationId: bulkVerifyDeliveries
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkVerifyRequest'
+      responses:
+        200:
+          description: Bulk verification completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkVerificationResponse'
+
+  /rfid/tracking/{studentId}:
+    get:
+      tags:
+        - RFID
+      summary: Track student
+      description: Get student's delivery tracking information
+      operationId: trackStudent
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: studentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        200:
+          description: Student tracking information retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentTrackingResponse'
+
+  /rfid/parent/{parentId}/dashboard:
+    get:
+      tags:
+        - RFID
+      summary: Parent dashboard
+      description: Get parent dashboard with children's delivery status
+      operationId: getParentDashboard
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: parentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Parent dashboard retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParentDashboardResponse'
+
+  /rfid/delivery-history:
+    get:
+      tags:
+        - RFID
+      summary: Get delivery history
+      description: Get delivery history for a school or student
+      operationId: getDeliveryHistory
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: schoolId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: studentId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        200:
+          description: Delivery history retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeliveryHistoryResponse'
+
+  # =====================================================
+  # ANALYTICS ENDPOINTS
+  # =====================================================
+  /payments/analytics/dashboard:
+    get:
+      tags:
+        - Analytics
+      summary: Payment analytics dashboard
+      description: Get payment analytics dashboard data
+      operationId: getPaymentAnalyticsDashboard
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: schoolId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        200:
+          description: Payment analytics dashboard retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentAnalyticsResponse'
+
+  /payments/analytics/trends:
+    get:
+      tags:
+        - Analytics
+      summary: Payment trends
+      description: Get payment trends and patterns
+      operationId: getPaymentTrends
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: schoolId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [daily, weekly, monthly]
+            default: daily
+      responses:
+        200:
+          description: Payment trends retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentTrendsResponse'
+
+  /subscription-analytics/dashboard:
+    get:
+      tags:
+        - Analytics
+      summary: Subscription analytics dashboard
+      description: Get subscription analytics dashboard
+      operationId: getSubscriptionAnalyticsDashboard
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: schoolId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Subscription analytics dashboard retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriptionAnalyticsResponse'
+
+  /ml-insights/predictive:
+    get:
+      tags:
+        - Analytics
+      summary: AI predictive insights
+      description: Get AI-powered predictive insights
+      operationId: getPredictiveInsights
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: schoolId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: insight_type
+          in: query
+          schema:
+            type: string
+            enum: [revenue_forecast, churn_prediction, payment_failure_risk]
+      responses:
+        200:
+          description: Predictive insights retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PredictiveInsightsResponse'
+
+  /intelligence/fraud-detection:
+    get:
+      tags:
+        - Analytics
+      summary: Fraud detection
+      description: Get fraud detection insights
+      operationId: getFraudDetection
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: schoolId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Fraud detection insights retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FraudDetectionResponse'
+
+  # =====================================================
+  # INVOICE MANAGEMENT
+  # =====================================================
+  /invoices/generate:
+    post:
+      tags:
+        - Invoices
+      summary: Generate invoice
+      description: Generate invoice for payments
+      operationId: generateInvoice
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateInvoiceRequest'
+      responses:
+        201:
+          description: Invoice generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvoiceResponse'
+
+  /invoice-templates:
+    get:
+      tags:
+        - Invoice Templates
+      summary: List invoice templates
+      description: Get available invoice templates
+      operationId: listInvoiceTemplates
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: schoolId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Invoice templates retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvoiceTemplateListResponse'
+
+    post:
+      tags:
+        - Invoice Templates
+      summary: Create invoice template
+      description: Create new invoice template
+      operationId: createInvoiceTemplate
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInvoiceTemplateRequest'
+      responses:
+        201:
+          description: Invoice template created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvoiceTemplateResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from login endpoint
+
+  schemas:
+    # =====================================================
+    # COMMON SCHEMAS
+    # =====================================================
+    SuccessResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Operation completed successfully"
+        data:
+          type: object
+          nullable: true
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Error message"
+        code:
+          type: string
+          example: "ERROR_CODE"
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+              value:
+                type: string
+        timestamp:
+          type: string
+          format: date-time
+        requestId:
+          type: string
+
+    PaginationMeta:
+      type: object
+      properties:
+        currentPage:
+          type: integer
+          minimum: 1
+        totalPages:
+          type: integer
+          minimum: 0
+        totalCount:
+          type: integer
+          minimum: 0
+        hasNextPage:
+          type: boolean
+        hasPreviousPage:
+          type: boolean
+
+    # =====================================================
+    # HEALTH CHECK SCHEMAS
+    # =====================================================
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        timestamp:
+          type: string
+          format: date-time
+        version:
+          type: string
+        services:
+          type: object
+          properties:
+            database:
+              type: string
+              enum: [healthy, degraded, unhealthy]
+            cognito:
+              type: string
+              enum: [healthy, degraded, unhealthy]
+            razorpay:
+              type: string
+              enum: [healthy, degraded, unhealthy]
+            s3:
+              type: string
+              enum: [healthy, degraded, unhealthy]
+
+    # =====================================================
+    # AUTHENTICATION SCHEMAS
+    # =====================================================
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        password:
+          type: string
+          format: password
+          minLength: 8
+          example: "SecurePass123!"
+
+    LoginResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        user:
+          $ref: '#/components/schemas/UserProfile'
+        tokens:
+          $ref: '#/components/schemas/TokenResponse'
+
+    RegisterRequest:
+      type: object
+      required:
+        - email
+        - password
+        - firstName
+        - lastName
+        - schoolId
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+          minLength: 8
+          pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])'
+        firstName:
+          type: string
+          maxLength: 50
+        lastName:
+          type: string
+          maxLength: 50
+        schoolId:
+          type: string
+          format: uuid
+        role:
+          type: string
+          enum: [student, parent, teacher, admin]
+          default: parent
+
+    RegisterResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        userId:
+          type: string
+          format: uuid
+        emailSent:
+          type: boolean
+
+    VerifyEmailRequest:
+      type: object
+      required:
+        - email
+        - verificationCode
+      properties:
+        email:
+          type: string
+          format: email
+        verificationCode:
+          type: string
+          pattern: '^[0-9]{6}$'
+
+    RefreshTokenRequest:
+      type: object
+      required:
+        - refreshToken
+      properties:
+        refreshToken:
+          type: string
+
+    TokenResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        idToken:
+          type: string
+        tokenType:
+          type: string
+          default: Bearer
+        expiresIn:
+          type: integer
+          description: Token expiration time in seconds
+
+    # =====================================================
+    # USER SCHEMAS
+    # =====================================================
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        lastName:
+          type: string
+        role:
+          type: string
+          enum: [student, parent, teacher, admin]
+        schoolId:
+          type: string
+          format: uuid
+          nullable: true
+        school:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: string
+              format: uuid
+            name:
+              type: string
+        emailVerified:
+          type: boolean
+        lastLoginAt:
+          type: string
+          format: date-time
+          nullable: true
+        isActive:
+          type: boolean
+
+    CreateUserRequest:
+      type: object
+      required:
+        - email
+        - firstName
+        - lastName
+        - role
+      properties:
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+          maxLength: 50
+        lastName:
+          type: string
+          maxLength: 50
+        role:
+          type: string
+          enum: [student, parent, teacher, admin]
+        schoolId:
+          type: string
+          format: uuid
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        firstName:
+          type: string
+          maxLength: 50
+        lastName:
+          type: string
+          maxLength: 50
+        phone:
+          type: string
+          nullable: true
+        preferences:
+          type: object
+          properties:
+            dietary:
+              type: array
+              items:
+                type: string
+                enum: [vegetarian, vegan, gluten-free, nut-free]
+            notifications:
+              type: boolean
+            language:
+              type: string
+              enum: [en, hi, ta, te]
+
+    UserResponse:
+      allOf:
+        - $ref: '#/components/schemas/UserProfile'
+        - type: object
+          properties:
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+
+    UserListResponse:
+      type: object
+      properties:
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserResponse'
+        pagination:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    # =====================================================
+    # PAYMENT SCHEMAS
+    # =====================================================
+    CreatePaymentOrderRequest:
+      type: object
+      required:
+        - userId
+        - amount
+      properties:
+        userId:
+          type: string
+          format: uuid
+        amount:
+          type: number
+          format: double
+          minimum: 1
+          maximum: 50000
+          description: Amount in rupees
+        currency:
+          type: string
+          enum: [INR]
+          default: INR
+        orderId:
+          type: string
+          format: uuid
+          nullable: true
+          description: Associated meal order ID
+        description:
+          type: string
+          maxLength: 500
+          nullable: true
+        metadata:
+          type: object
+          nullable: true
+
+    PaymentOrderResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        razorpayOrderId:
+          type: string
+        amount:
+          type: integer
+          description: Amount in paise
+        currency:
+          type: string
+        status:
+          type: string
+          enum: [created, attempted, paid, failed, cancelled]
+        userId:
+          type: string
+          format: uuid
+        orderId:
+          type: string
+          format: uuid
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        expiresAt:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+        createdAt:
+          type: string
+          format: date-time
+
+    VerifyPaymentRequest:
+      type: object
+      required:
+        - razorpayOrderId
+        - razorpayPaymentId
+        - razorpaySignature
+      properties:
+        razorpayOrderId:
+          type: string
+        razorpayPaymentId:
+          type: string
+        razorpaySignature:
+          type: string
+
+    PaymentVerificationResponse:
+      type: object
+      properties:
+        verified:
+          type: boolean
+        paymentId:
+          type: string
+          format: uuid
+        status:
+          type: string
+        amount:
+          type: integer
+        currency:
+          type: string
+
+    RefundRequest:
+      type: object
+      required:
+        - paymentId
+        - amount
+        - reason
+      properties:
+        paymentId:
+          type: string
+          format: uuid
+        amount:
+          type: number
+          format: double
+          minimum: 0.01
+        reason:
+          type: string
+          maxLength: 500
+
+    RefundResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        razorpayRefundId:
+          type: string
+        amount:
+          type: integer
+          description: Amount in paise
+        currency:
+          type: string
+        status:
+          type: string
+          enum: [pending, processed, failed]
+        reason:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    PaymentStatusResponse:
+      type: object
+      properties:
+        orderId:
+          type: string
+          format: uuid
+        paymentStatus:
+          type: string
+          enum: [pending, processing, completed, failed, cancelled, refunded]
+        amount:
+          type: integer
+        currency:
+          type: string
+        lastUpdated:
+          type: string
+          format: date-time
+
+    # =====================================================
+    # PAYMENT METHOD SCHEMAS
+    # =====================================================
+    AddPaymentMethodRequest:
+      type: object
+      required:
+        - methodType
+        - provider
+      properties:
+        methodType:
+          type: string
+          enum: [card, upi, wallet, bank_account]
+        provider:
+          type: string
+          enum: [razorpay, gpay, phonepe, paytm]
+        upiHandle:
+          type: string
+          nullable: true
+        walletProvider:
+          type: string
+          nullable: true
+        isDefault:
+          type: boolean
+          default: false
+
+    UpdatePaymentMethodRequest:
+      type: object
+      properties:
+        isDefault:
+          type: boolean
+        isActive:
+          type: boolean
+
+    PaymentMethodResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        methodType:
+          type: string
+        provider:
+          type: string
+        cardLast4:
+          type: string
+          nullable: true
+        cardBrand:
+          type: string
+          nullable: true
+        upiHandle:
+          type: string
+          nullable: true
+        walletProvider:
+          type: string
+          nullable: true
+        isDefault:
+          type: boolean
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    PaymentMethodListResponse:
+      type: object
+      properties:
+        paymentMethods:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentMethodResponse'
+
+    # =====================================================
+    # SUBSCRIPTION SCHEMAS
+    # =====================================================
+    CreateSubscriptionRequest:
+      type: object
+      required:
+        - subscriptionPlanId
+        - startDate
+      properties:
+        subscriptionPlanId:
+          type: string
+          format: uuid
+        studentId:
+          type: string
+          format: uuid
+          nullable: true
+        paymentMethodId:
+          type: string
+          format: uuid
+          nullable: true
+        startDate:
+          type: string
+          format: date
+
+    UpdateSubscriptionRequest:
+      type: object
+      properties:
+        paymentMethodId:
+          type: string
+          format: uuid
+          nullable: true
+        billingAmount:
+          type: number
+          format: double
+          minimum: 0
+
+    SubscriptionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        schoolId:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        studentId:
+          type: string
+          format: uuid
+          nullable: true
+        subscriptionPlanId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [active, paused, cancelled, expired, suspended]
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+          nullable: true
+        nextBillingDate:
+          type: string
+          format: date-time
+          nullable: true
+        billingCycle:
+          type: string
+          enum: [daily, weekly, monthly]
+        billingAmount:
+          type: number
+          format: double
+        currency:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    SubscriptionListResponse:
+      type: object
+      properties:
+        subscriptions:
+          type: array
+          items:
+            $ref: '#/components/schemas/SubscriptionResponse'
+
+    CreateSubscriptionPlanRequest:
+      type: object
+      required:
+        - name
+        - planType
+        - price
+        - billingCycle
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        planType:
+          type: string
+          enum: [meal_plan, full_service, basic]
+        price:
+          type: number
+          format: double
+          minimum: 0
+        currency:
+          type: string
+          enum: [INR]
+          default: INR
+        billingCycle:
+          type: string
+          enum: [daily, weekly, monthly]
+        mealsPerDay:
+          type: integer
+          minimum: 1
+          default: 1
+        benefits:
+          type: object
+          nullable: true
+
+    SubscriptionPlanResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        schoolId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        planType:
+          type: string
+        price:
+          type: number
+          format: double
+        currency:
+          type: string
+        billingCycle:
+          type: string
+        mealsPerDay:
+          type: integer
+        benefits:
+          type: object
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    SubscriptionPlanListResponse:
+      type: object
+      properties:
+        subscriptionPlans:
+          type: array
+          items:
+            $ref: '#/components/schemas/SubscriptionPlanResponse'
+
+    # =====================================================
+    # ORDER SCHEMAS
+    # =====================================================
+    CreateOrderRequest:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              menuItemId:
+                type: string
+                format: uuid
+              quantity:
+                type: integer
+                minimum: 1
+              specialInstructions:
+                type: string
+                nullable: true
+        deliveryDate:
+          type: string
+          format: date
+        specialRequests:
+          type: string
+          nullable: true
+
+    UpdateOrderRequest:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [pending, confirmed, preparing, ready, delivered, cancelled]
+        specialRequests:
+          type: string
+          nullable: true
+
+    OrderResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        orderNumber:
+          type: string
+        status:
+          type: string
+        totalAmount:
+          type: number
+          format: double
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              menuItemId:
+                type: string
+                format: uuid
+              menuItem:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  name:
+                    type: string
+                  price:
+                    type: number
+                    format: double
+              quantity:
+                type: integer
+              unitPrice:
+                type: number
+                format: double
+              totalPrice:
+                type: number
+                format: double
+        deliveryDate:
+          type: string
+          format: date
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    OrderListResponse:
+      type: object
+      properties:
+        orders:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderResponse'
+        pagination:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    OrderHistoryResponse:
+      type: object
+      properties:
+        orders:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderResponse'
+        summary:
+          type: object
+          properties:
+            totalOrders:
+              type: integer
+            totalAmount:
+              type: number
+              format: double
+            averageOrderValue:
+              type: number
+              format: double
+        pagination:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    # =====================================================
+    # MENU SCHEMAS
+    # =====================================================
+    CreateMenuPlanRequest:
+      type: object
+      required:
+        - name
+        - startDate
+        - endDate
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        isTemplate:
+          type: boolean
+          default: false
+        isRecurring:
+          type: boolean
+          default: false
+        recurringPattern:
+          type: object
+          nullable: true
+
+    UpdateMenuPlanRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [DRAFT, PENDING_APPROVAL, APPROVED, PUBLISHED, ACTIVE, ARCHIVED, REJECTED]
+
+    MenuPlanResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        schoolId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        isTemplate:
+          type: boolean
+        isRecurring:
+          type: boolean
+        status:
+          type: string
+        approvedBy:
+          type: string
+          format: uuid
+          nullable: true
+        approvedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    MenuPlanListResponse:
+      type: object
+      properties:
+        menuPlans:
+          type: array
+          items:
+            $ref: '#/components/schemas/MenuPlanResponse'
+
+    DailyMenuResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+        dayType:
+          type: string
+          enum: [WEEKDAY, WEEKEND, HOLIDAY, SPECIAL_EVENT]
+        isActive:
+          type: boolean
+        isPublished:
+          type: boolean
+        menuItems:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              menuItem:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  name:
+                    type: string
+                  description:
+                    type: string
+                  category:
+                    type: string
+                  price:
+                    type: number
+                    format: double
+                  imageUrl:
+                    type: string
+                    nullable: true
+              category:
+                type: string
+                enum: [BREAKFAST, LUNCH, SNACK, BEVERAGE, DESSERT, SPECIAL]
+              availableFrom:
+                type: string
+                format: date-time
+                nullable: true
+              availableTo:
+                type: string
+                format: date-time
+                nullable: true
+              availableQuantity:
+                type: integer
+                nullable: true
+
+    # =====================================================
+    # RFID SCHEMAS
+    # =====================================================
+    AddRfidReaderRequest:
+      type: object
+      required:
+        - name
+        - location
+        - schoolId
+        - ipAddress
+      properties:
+        name:
+          type: string
+        location:
+          type: string
+        schoolId:
+          type: string
+          format: uuid
+        ipAddress:
+          type: string
+          format: ipv4
+        configuration:
+          type: object
+          nullable: true
+
+    UpdateRfidReaderRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        location:
+          type: string
+        ipAddress:
+          type: string
+          format: ipv4
+        configuration:
+          type: object
+        isActive:
+          type: boolean
+
+    RfidReaderResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        location:
+          type: string
+        schoolId:
+          type: string
+          format: uuid
+        ipAddress:
+          type: string
+        status:
+          type: string
+          enum: [online, offline, error]
+        lastHeartbeat:
+          type: string
+          format: date-time
+        configuration:
+          type: object
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    RfidReaderListResponse:
+      type: object
+      properties:
+        readers:
+          type: array
+          items:
+            $ref: '#/components/schemas/RfidReaderResponse'
+
+    RfidTestResponse:
+      type: object
+      properties:
+        readerId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [success, failure, timeout]
+        responseTime:
+          type: integer
+          description: Response time in milliseconds
+        errorMessage:
+          type: string
+          nullable: true
+        testedAt:
+          type: string
+          format: date-time
+
+    RegisterRfidCardRequest:
+      type: object
+      required:
+        - cardNumber
+        - studentId
+      properties:
+        cardNumber:
+          type: string
+          pattern: '^[0-9A-Fa-f]{8,16}$'
+        studentId:
+          type: string
+          format: uuid
+
+    UpdateRfidCardRequest:
+      type: object
+      properties:
+        isActive:
+          type: boolean
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    RfidCardResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        cardNumber:
+          type: string
+        studentId:
+          type: string
+          format: uuid
+        schoolId:
+          type: string
+          format: uuid
+        isActive:
+          type: boolean
+        issuedAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+        lastUsedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    VerifyDeliveryRequest:
+      type: object
+      required:
+        - cardNumber
+        - readerId
+      properties:
+        cardNumber:
+          type: string
+        readerId:
+          type: string
+          format: uuid
+        orderId:
+          type: string
+          format: uuid
+          nullable: true
+
+    DeliveryVerificationResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        studentId:
+          type: string
+          format: uuid
+        student:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            name:
+              type: string
+        orderId:
+          type: string
+          format: uuid
+          nullable: true
+        verifiedAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [verified, failed, duplicate]
+        reader:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            name:
+              type: string
+            location:
+              type: string
+
+    BulkVerifyRequest:
+      type: object
+      required:
+        - verifications
+      properties:
+        verifications:
+          type: array
+          items:
+            type: object
+            properties:
+              cardNumber:
+                type: string
+              readerId:
+                type: string
+                format: uuid
+              orderId:
+                type: string
+                format: uuid
+                nullable: true
+
+    BulkVerificationResponse:
+      type: object
+      properties:
+        totalProcessed:
+          type: integer
+        successful:
+          type: integer
+        failed:
+          type: integer
+        results:
+          type: array
+          items:
+            type: object
+            properties:
+              cardNumber:
+                type: string
+              status:
+                type: string
+                enum: [verified, failed, duplicate]
+              verification:
+                $ref: '#/components/schemas/DeliveryVerificationResponse'
+              error:
+                type: string
+                nullable: true
+
+    StudentTrackingResponse:
+      type: object
+      properties:
+        studentId:
+          type: string
+          format: uuid
+        student:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            name:
+              type: string
+        deliveries:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date
+              verifications:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DeliveryVerificationResponse'
+        summary:
+          type: object
+          properties:
+            totalDeliveries:
+              type: integer
+            totalMissed:
+              type: integer
+            attendanceRate:
+              type: number
+              format: double
+
+    ParentDashboardResponse:
+      type: object
+      properties:
+        parentId:
+          type: string
+          format: uuid
+        children:
+          type: array
+          items:
+            type: object
+            properties:
+              studentId:
+                type: string
+                format: uuid
+              name:
+                type: string
+              todaysDelivery:
+                type: object
+                nullable: true
+                properties:
+                  delivered:
+                    type: boolean
+                  deliveryTime:
+                    type: string
+                    format: date-time
+                    nullable: true
+                  location:
+                    type: string
+                    nullable: true
+              weeklyStats:
+                type: object
+                properties:
+                  totalDeliveries:
+                    type: integer
+                  missedDeliveries:
+                    type: integer
+                  attendanceRate:
+                    type: number
+                    format: double
+
+    DeliveryHistoryResponse:
+      type: object
+      properties:
+        deliveries:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeliveryVerificationResponse'
+        summary:
+          type: object
+          properties:
+            totalDeliveries:
+              type: integer
+            uniqueStudents:
+              type: integer
+            deliveryRate:
+              type: number
+              format: double
+        pagination:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    # =====================================================
+    # ANALYTICS SCHEMAS
+    # =====================================================
+    PaymentAnalyticsResponse:
+      type: object
+      properties:
+        reportDate:
+          type: string
+          format: date
+        reportType:
+          type: string
+          enum: [daily, weekly, monthly]
+        totalPayments:
+          type: number
+          format: double
+        totalRefunds:
+          type: number
+          format: double
+        netRevenue:
+          type: number
+          format: double
+        paymentCount:
+          type: integer
+        uniqueCustomers:
+          type: integer
+        paymentSuccessRate:
+          type: number
+          format: double
+        averageOrderValue:
+          type: number
+          format: double
+        paymentMethodBreakdown:
+          type: object
+          properties:
+            cardPayments:
+              type: number
+              format: double
+            upiPayments:
+              type: number
+              format: double
+            walletPayments:
+              type: number
+              format: double
+        trends:
+          type: object
+          properties:
+            revenueGrowthRate:
+              type: number
+              format: double
+              nullable: true
+            customerGrowthRate:
+              type: number
+              format: double
+              nullable: true
+
+    PaymentTrendsResponse:
+      type: object
+      properties:
+        period:
+          type: string
+        trends:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date
+              revenue:
+                type: number
+                format: double
+              paymentCount:
+                type: integer
+              successRate:
+                type: number
+                format: double
+
+    SubscriptionAnalyticsResponse:
+      type: object
+      properties:
+        reportDate:
+          type: string
+          format: date
+        activeSubscriptions:
+          type: integer
+        newSubscriptions:
+          type: integer
+        cancelledSubscriptions:
+          type: integer
+        totalMrr:
+          type: number
+          format: double
+          description: Monthly Recurring Revenue
+        avgRevenuePerUser:
+          type: number
+          format: double
+        churnRate:
+          type: number
+          format: double
+        conversionRate:
+          type: number
+          format: double
+        lifetimeValue:
+          type: number
+          format: double
+        planBreakdown:
+          type: object
+          additionalProperties:
+            type: integer
+
+    PredictiveInsightsResponse:
+      type: object
+      properties:
+        insightType:
+          type: string
+        predictions:
+          type: array
+          items:
+            type: object
+            properties:
+              metric:
+                type: string
+              prediction:
+                type: number
+                format: double
+              confidence:
+                type: number
+                format: double
+              timeframe:
+                type: string
+        recommendations:
+          type: array
+          items:
+            type: object
+            properties:
+              action:
+                type: string
+              impact:
+                type: string
+              priority:
+                type: string
+                enum: [high, medium, low]
+
+    FraudDetectionResponse:
+      type: object
+      properties:
+        riskScore:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+        riskLevel:
+          type: string
+          enum: [low, medium, high, critical]
+        flags:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+              description:
+                type: string
+              severity:
+                type: string
+                enum: [low, medium, high, critical]
+        recommendations:
+          type: array
+          items:
+            type: string
+
+    # =====================================================
+    # INVOICE SCHEMAS
+    # =====================================================
+    GenerateInvoiceRequest:
+      type: object
+      required:
+        - userId
+        - items
+      properties:
+        userId:
+          type: string
+          format: uuid
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              description:
+                type: string
+              quantity:
+                type: integer
+                minimum: 1
+              unitPrice:
+                type: number
+                format: double
+              itemType:
+                type: string
+                enum: [meal, delivery_fee, service_charge]
+        dueDate:
+          type: string
+          format: date
+        templateId:
+          type: string
+          format: uuid
+          nullable: true
+
+    InvoiceResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        invoiceNumber:
+          type: string
+        invoiceDate:
+          type: string
+          format: date
+        dueDate:
+          type: string
+          format: date
+        subtotal:
+          type: number
+          format: double
+        taxAmount:
+          type: number
+          format: double
+        totalAmount:
+          type: number
+          format: double
+        currency:
+          type: string
+        status:
+          type: string
+          enum: [draft, sent, paid, overdue, cancelled]
+        pdfUrl:
+          type: string
+          nullable: true
+        emailSent:
+          type: boolean
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              description:
+                type: string
+              quantity:
+                type: integer
+              unitPrice:
+                type: number
+                format: double
+              totalPrice:
+                type: number
+                format: double
+              itemType:
+                type: string
+
+    CreateInvoiceTemplateRequest:
+      type: object
+      required:
+        - templateName
+        - templateType
+        - htmlTemplate
+      properties:
+        templateName:
+          type: string
+        templateType:
+          type: string
+          enum: [standard, custom, branded]
+        logoUrl:
+          type: string
+          nullable: true
+        headerColor:
+          type: string
+          nullable: true
+        accentColor:
+          type: string
+          nullable: true
+        footerText:
+          type: string
+          nullable: true
+        htmlTemplate:
+          type: string
+        cssStyles:
+          type: string
+          nullable: true
+
+    InvoiceTemplateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        templateName:
+          type: string
+        templateType:
+          type: string
+        logoUrl:
+          type: string
+          nullable: true
+        headerColor:
+          type: string
+          nullable: true
+        accentColor:
+          type: string
+          nullable: true
+        isDefault:
+          type: boolean
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    InvoiceTemplateListResponse:
+      type: object
+      properties:
+        templates:
+          type: array
+          items:
+            $ref: '#/components/schemas/InvoiceTemplateResponse'
+
+  responses:
+    # =====================================================
+    # STANDARD ERROR RESPONSES
+    # =====================================================
+    BadRequest:
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            validation_error:
+              summary: Validation error
+              value:
+                error: "Validation failed"
+                code: "VALIDATION_ERROR"
+                details:
+                  - field: "email"
+                    message: "Please provide a valid email address"
+                    value: "invalid-email"
+                timestamp: "2024-01-15T10:30:00Z"
+                requestId: "req_123456"
+
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            invalid_token:
+              summary: Invalid or expired token
+              value:
+                error: "Invalid or expired token"
+                code: "UNAUTHORIZED"
+                timestamp: "2024-01-15T10:30:00Z"
+                requestId: "req_123456"
+
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            insufficient_permissions:
+              summary: Insufficient permissions
+              value:
+                error: "Insufficient permissions to access this resource"
+                code: "FORBIDDEN"
+                timestamp: "2024-01-15T10:30:00Z"
+                requestId: "req_123456"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            not_found:
+              summary: Resource not found
+              value:
+                error: "Resource not found"
+                code: "NOT_FOUND"
+                timestamp: "2024-01-15T10:30:00Z"
+                requestId: "req_123456"
+
+    Conflict:
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            duplicate_email:
+              summary: Duplicate email
+              value:
+                error: "User with this email already exists"
+                code: "EMAIL_ALREADY_EXISTS"
+                timestamp: "2024-01-15T10:30:00Z"
+                requestId: "req_123456"
+
+    TooManyRequests:
+      description: Too many requests
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            rate_limit:
+              summary: Rate limit exceeded
+              value:
+                error: "Rate limit exceeded. Please try again later."
+                code: "TOO_MANY_REQUESTS"
+                timestamp: "2024-01-15T10:30:00Z"
+                requestId: "req_123456"
+      headers:
+        Retry-After:
+          description: Number of seconds to wait before retrying
+          schema:
+            type: integer
+
+    ServiceUnavailable:
+      description: Service unavailable
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            service_unavailable:
+              summary: Service temporarily unavailable
+              value:
+                error: "Service temporarily unavailable"
+                code: "SERVICE_UNAVAILABLE"
+                timestamp: "2024-01-15T10:30:00Z"
+                requestId: "req_123456"
+
+tags:
+  - name: Health
+    description: System health and monitoring endpoints
+  - name: Authentication
+    description: User authentication and authorization
+  - name: Users
+    description: User management operations
+  - name: Payments
+    description: Payment processing and management
+  - name: Payment Methods
+    description: Saved payment method management
+  - name: Subscriptions
+    description: Subscription management
+  - name: Subscription Plans
+    description: Subscription plan management
+  - name: Orders
+    description: Meal order management
+  - name: Menus
+    description: Menu planning and management
+  - name: RFID
+    description: RFID-based delivery verification
+  - name: Analytics
+    description: Analytics and reporting
+  - name: Invoices
+    description: Invoice generation and management
+  - name: Invoice Templates
+    description: Invoice template management
+
+externalDocs:
+  description: HASIVU Platform Documentation
+  url: https://docs.hasivu.com

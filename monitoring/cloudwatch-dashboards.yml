@@ -1,0 +1,821 @@
+# HASIVU Platform - CloudWatch Dashboards Configuration
+# Comprehensive monitoring dashboards for production deployment
+# Created by DevOps Automation Specialist
+
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'HASIVU Platform - Production CloudWatch Dashboards'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: production
+    AllowedValues: [dev, staging, production]
+    Description: Environment name
+  
+  ApiGatewayId:
+    Type: String
+    Description: API Gateway REST API ID
+  
+  LambdaFunctionPrefix:
+    Type: String
+    Default: hasivu-platform
+    Description: Lambda function name prefix
+
+Resources:
+  # ========================================
+  # MAIN EXECUTIVE DASHBOARD
+  # ========================================
+  ExecutiveDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Sub "${Environment}-HASIVU-Executive-Overview"
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "text",
+              "x": 0,
+              "y": 0,
+              "width": 24,
+              "height": 1,
+              "properties": {
+                "markdown": "# HASIVU Platform - Executive Dashboard\n**Environment:** ${Environment} | **Last Updated:** $(date)"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 1,
+              "width": 6,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["HASIVU/Business", "TotalRevenue", "Environment", "${Environment}", {"stat": "Sum"}],
+                  [".", "PaymentTransactions", ".", ".", {"stat": "Sum"}],
+                  [".", "OrdersCompleted", ".", ".", {"stat": "Sum"}],
+                  [".", "ActiveUsers", ".", ".", {"stat": "Average"}]
+                ],
+                "view": "singleValue",
+                "region": "${AWS::Region}",
+                "title": "Business KPIs (24h)",
+                "period": 86400,
+                "stat": "Sum"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 6,
+              "y": 1,
+              "width": 6,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/Lambda", "Errors", "FunctionName", "${LambdaFunctionPrefix}-payments-create-order"],
+                  [".", ".", ".", "${LambdaFunctionPrefix}-payments-verify"],
+                  [".", ".", ".", "${LambdaFunctionPrefix}-payments-webhook"],
+                  [".", "Duration", "FunctionName", "${LambdaFunctionPrefix}-payments-create-order"],
+                  [".", ".", ".", "${LambdaFunctionPrefix}-payments-verify"]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "Payment System Health",
+                "period": 300,
+                "yAxis": {
+                  "left": {
+                    "min": 0
+                  }
+                }
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12,
+              "y": 1,
+              "width": 6,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["HASIVU/Business", "PaymentTransactions", "Environment", "${Environment}", "Status", "success"],
+                  [".", ".", ".", ".", ".", "failed"],
+                  [".", "RFIDOperations", ".", ".", "Operation", "verification", "Status", "success"],
+                  [".", ".", ".", ".", ".", ".", ".", "failed"]
+                ],
+                "view": "timeSeries",
+                "stacked": true,
+                "region": "${AWS::Region}",
+                "title": "Success vs Failure Rates",
+                "period": 300
+              }
+            },
+            {
+              "type": "metric",
+              "x": 18,
+              "y": 1,
+              "width": 6,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["HASIVU/Business", "SystemHealthScore", "Environment", "${Environment}"],
+                  [".", "UserSatisfactionScore", ".", "."],
+                  [".", "PaymentSuccessRate", ".", "."]
+                ],
+                "view": "singleValue",
+                "region": "${AWS::Region}",
+                "title": "Health Scores (%)",
+                "period": 300,
+                "stat": "Average"
+              }
+            }
+          ]
+        }
+
+  # ========================================
+  # LAMBDA PERFORMANCE DASHBOARD
+  # ========================================
+  LambdaPerformanceDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Sub "${Environment}-HASIVU-Lambda-Performance"
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "text",
+              "x": 0,
+              "y": 0,
+              "width": 24,
+              "height": 1,
+              "properties": {
+                "markdown": "# HASIVU Lambda Performance Dashboard\n**Monitor cold starts, duration, memory usage, and errors across all functions**"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 1,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/Lambda", "Duration", "FunctionName", "${LambdaFunctionPrefix}-health"],
+                  [".", ".", ".", "${LambdaFunctionPrefix}-auth-login"],
+                  [".", ".", ".", "${LambdaFunctionPrefix}-auth-register"],
+                  [".", ".", ".", "${LambdaFunctionPrefix}-payments-create-order"],
+                  [".", ".", ".", "${LambdaFunctionPrefix}-payments-verify"],
+                  [".", ".", ".", "${LambdaFunctionPrefix}-payments-webhook"],
+                  [".", ".", ".", "${LambdaFunctionPrefix}-orders-create"],
+                  [".", ".", ".", "${LambdaFunctionPrefix}-rfid-delivery-verification"]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "Function Duration (ms)",
+                "period": 300,
+                "yAxis": {
+                  "left": {
+                    "min": 0,
+                    "max": 30000
+                  }
+                }
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12,
+              "y": 1,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/Lambda", "Errors", "FunctionName", "${LambdaFunctionPrefix}-health"],
+                  [".", ".", ".", "${LambdaFunctionPrefix}-auth-login"],
+                  [".", ".", ".", "${LambdaFunctionPrefix}-auth-register"],
+                  [".", ".", ".", "${LambdaFunctionPrefix}-payments-create-order"],
+                  [".", ".", ".", "${LambdaFunctionPrefix}-payments-verify"],
+                  [".", ".", ".", "${LambdaFunctionPrefix}-payments-webhook"],
+                  [".", ".", ".", "${LambdaFunctionPrefix}-orders-create"],
+                  [".", ".", ".", "${LambdaFunctionPrefix}-rfid-delivery-verification"]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "Function Errors",
+                "period": 300,
+                "yAxis": {
+                  "left": {
+                    "min": 0
+                  }
+                }
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 7,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/Lambda", "ConcurrentExecutions"],
+                  [".", "UnreservedConcurrentExecutions"]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "Lambda Concurrency",
+                "period": 300,
+                "stat": "Average"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 8,
+              "y": 7,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/Lambda", "Throttles", "FunctionName", "${LambdaFunctionPrefix}-payments-create-order"],
+                  [".", ".", ".", "${LambdaFunctionPrefix}-payments-verify"],
+                  [".", ".", ".", "${LambdaFunctionPrefix}-auth-login"],
+                  [".", ".", ".", "${LambdaFunctionPrefix}-orders-create"]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "Function Throttles",
+                "period": 300
+              }
+            },
+            {
+              "type": "metric",
+              "x": 16,
+              "y": 7,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/Lambda", "PostRuntimeExtensionsDuration", "FunctionName", "${LambdaFunctionPrefix}-payments-create-order"],
+                  ["AWS/Lambda", "Duration", ".", "."],
+                  ["AWS/Lambda", "PostRuntimeExtensionsDuration", ".", "${LambdaFunctionPrefix}-payments-verify"],
+                  ["AWS/Lambda", "Duration", ".", "."]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "Cold Start Analysis",
+                "period": 300
+              }
+            }
+          ]
+        }
+
+  # ========================================
+  # API GATEWAY DASHBOARD
+  # ========================================
+  ApiGatewayDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Sub "${Environment}-HASIVU-API-Gateway"
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "text",
+              "x": 0,
+              "y": 0,
+              "width": 24,
+              "height": 1,
+              "properties": {
+                "markdown": "# HASIVU API Gateway Performance\n**Monitor API response times, error rates, and traffic patterns**"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 1,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/ApiGateway", "Count", "ApiName", "${Environment}-hasivu-platform"],
+                  [".", "4XXError", ".", "."],
+                  [".", "5XXError", ".", "."]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "API Traffic & Errors",
+                "period": 300
+              }
+            },
+            {
+              "type": "metric",
+              "x": 8,
+              "y": 1,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/ApiGateway", "Latency", "ApiName", "${Environment}-hasivu-platform"],
+                  [".", "IntegrationLatency", ".", "."]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "API Latency (ms)",
+                "period": 300,
+                "stat": "Average"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 16,
+              "y": 1,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/ApiGateway", "CacheHitCount", "ApiName", "${Environment}-hasivu-platform"],
+                  [".", "CacheMissCount", ".", "."]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "API Cache Performance",
+                "period": 300
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 7,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/ApiGateway", "Count", "ApiName", "${Environment}-hasivu-platform", "Method", "POST", "Resource", "/auth/login"],
+                  [".", ".", ".", ".", ".", ".", ".", "/auth/register"],
+                  [".", ".", ".", ".", ".", ".", ".", "/payments/orders"],
+                  [".", ".", ".", ".", ".", ".", ".", "/payments/verify"],
+                  [".", ".", ".", ".", ".", ".", ".", "/orders"],
+                  [".", ".", ".", ".", ".", "GET", ".", "/health"],
+                  [".", ".", ".", ".", ".", ".", ".", "/orders"],
+                  [".", ".", ".", ".", ".", ".", ".", "/menus/daily"]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "Top API Endpoints Traffic",
+                "period": 300
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12,
+              "y": 7,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/ApiGateway", "4XXError", "ApiName", "${Environment}-hasivu-platform", "Method", "POST", "Resource", "/auth/login"],
+                  [".", "5XXError", ".", ".", ".", ".", ".", "."],
+                  [".", "4XXError", ".", ".", ".", ".", ".", "/payments/orders"],
+                  [".", "5XXError", ".", ".", ".", ".", ".", "."],
+                  [".", "4XXError", ".", ".", ".", ".", ".", "/orders"],
+                  [".", "5XXError", ".", ".", ".", ".", ".", "."]
+                ],
+                "view": "timeSeries",
+                "stacked": true,
+                "region": "${AWS::Region}",
+                "title": "Endpoint Error Analysis",
+                "period": 300
+              }
+            }
+          ]
+        }
+
+  # ========================================
+  # DATABASE PERFORMANCE DASHBOARD
+  # ========================================
+  DatabaseDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Sub "${Environment}-HASIVU-Database-Performance"
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "text",
+              "x": 0,
+              "y": 0,
+              "width": 24,
+              "height": 1,
+              "properties": {
+                "markdown": "# HASIVU Database Performance Dashboard\n**Monitor RDS, connection pools, query performance, and database health**"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 1,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/RDS", "CPUUtilization", "DBInstanceIdentifier", "${Environment}-hasivu-db"],
+                  [".", "DatabaseConnections", ".", "."],
+                  [".", "ReadLatency", ".", "."],
+                  [".", "WriteLatency", ".", "."]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "RDS Performance Metrics",
+                "period": 300
+              }
+            },
+            {
+              "type": "metric",
+              "x": 8,
+              "y": 1,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/RDS", "ReadIOPS", "DBInstanceIdentifier", "${Environment}-hasivu-db"],
+                  [".", "WriteIOPS", ".", "."],
+                  [".", "ReadThroughput", ".", "."],
+                  [".", "WriteThroughput", ".", "."]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "Database I/O Performance",
+                "period": 300
+              }
+            },
+            {
+              "type": "metric",
+              "x": 16,
+              "y": 1,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/RDS", "FreeableMemory", "DBInstanceIdentifier", "${Environment}-hasivu-db"],
+                  [".", "FreeStorageSpace", ".", "."],
+                  [".", "DatabaseConnections", ".", "."]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "Database Resource Utilization",
+                "period": 300
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 7,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["HASIVU/Database", "QueryDuration", "Environment", "${Environment}", "QueryType", "SELECT"],
+                  [".", ".", ".", ".", ".", "INSERT"],
+                  [".", ".", ".", ".", ".", "UPDATE"],
+                  [".", ".", ".", ".", ".", "DELETE"],
+                  [".", "ConnectionPoolUtilization", ".", "."]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "Application Database Metrics",
+                "period": 300
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12,
+              "y": 7,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["HASIVU/Database", "SlowQueries", "Environment", "${Environment}"],
+                  [".", "DeadlockCount", ".", "."],
+                  [".", "FailedConnections", ".", "."],
+                  [".", "TransactionRollbacks", ".", "."]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "Database Error Metrics",
+                "period": 300
+              }
+            }
+          ]
+        }
+
+  # ========================================
+  # BUSINESS METRICS DASHBOARD
+  # ========================================
+  BusinessMetricsDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Sub "${Environment}-HASIVU-Business-Metrics"
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "text",
+              "x": 0,
+              "y": 0,
+              "width": 24,
+              "height": 1,
+              "properties": {
+                "markdown": "# HASIVU Business Intelligence Dashboard\n**Real-time business KPIs, revenue tracking, and operational metrics**"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 1,
+              "width": 6,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["HASIVU/Business", "TotalRevenue", "Environment", "${Environment}", "Period", "Daily"],
+                  [".", ".", ".", ".", ".", "Weekly"],
+                  [".", ".", ".", ".", ".", "Monthly"]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "Revenue Trends (INR)",
+                "period": 3600,
+                "stat": "Sum"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 6,
+              "y": 1,
+              "width": 6,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["HASIVU/Business", "PaymentTransactions", "Environment", "${Environment}", "Status", "success"],
+                  [".", ".", ".", ".", ".", "failed"],
+                  [".", ".", ".", ".", ".", "pending"]
+                ],
+                "view": "timeSeries",
+                "stacked": true,
+                "region": "${AWS::Region}",
+                "title": "Payment Transaction Status",
+                "period": 300
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12,
+              "y": 1,
+              "width": 6,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["HASIVU/Business", "OrdersCreated", "Environment", "${Environment}"],
+                  [".", "OrdersCompleted", ".", "."],
+                  [".", "OrdersCancelled", ".", "."]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "Order Lifecycle",
+                "period": 300
+              }
+            },
+            {
+              "type": "metric",
+              "x": 18,
+              "y": 1,
+              "width": 6,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["HASIVU/Business", "RFIDOperations", "Environment", "${Environment}", "Operation", "verification", "Status", "success"],
+                  [".", ".", ".", ".", ".", ".", ".", "failed"],
+                  [".", ".", ".", ".", ".", "registration", "Status", "success"],
+                  [".", ".", ".", ".", ".", ".", ".", "failed"]
+                ],
+                "view": "timeSeries",
+                "stacked": true,
+                "region": "${AWS::Region}",
+                "title": "RFID Operations",
+                "period": 300
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 7,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["HASIVU/Business", "UserActivity", "Environment", "${Environment}", "Action", "login"],
+                  [".", ".", ".", ".", ".", "logout"],
+                  [".", ".", ".", ".", ".", "order_created"],
+                  [".", ".", ".", ".", ".", "payment_completed"],
+                  [".", ".", ".", ".", ".", "rfid_verified"]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "User Engagement Patterns",
+                "period": 300
+              }
+            },
+            {
+              "type": "metric",
+              "x": 8,
+              "y": 7,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["HASIVU/Business", "TransactionAmount", "Environment", "${Environment}", "Currency", "INR"],
+                  [".", "SessionDuration", ".", "."]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "Financial & Engagement Metrics",
+                "period": 300
+              }
+            },
+            {
+              "type": "metric",
+              "x": 16,
+              "y": 7,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["HASIVU/Business", "SecurityEvents", "Environment", "${Environment}", "EventType", "failed_login"],
+                  [".", ".", ".", ".", ".", "suspicious_activity"],
+                  [".", ".", ".", ".", ".", "fraud_attempt"],
+                  [".", ".", ".", ".", ".", "unauthorized_access"]
+                ],
+                "view": "timeSeries",
+                "stacked": true,
+                "region": "${AWS::Region}",
+                "title": "Security Events",
+                "period": 300
+              }
+            }
+          ]
+        }
+
+  # ========================================
+  # COST MONITORING DASHBOARD
+  # ========================================
+  CostMonitoringDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Sub "${Environment}-HASIVU-Cost-Optimization"
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "text",
+              "x": 0,
+              "y": 0,
+              "width": 24,
+              "height": 1,
+              "properties": {
+                "markdown": "# HASIVU Cost Optimization Dashboard\n**Monitor AWS costs, Lambda invocations, and resource utilization**"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 1,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/Lambda", "Invocations", "FunctionName", "${LambdaFunctionPrefix}-health"],
+                  [".", ".", ".", "${LambdaFunctionPrefix}-auth-login"],
+                  [".", ".", ".", "${LambdaFunctionPrefix}-payments-create-order"],
+                  [".", ".", ".", "${LambdaFunctionPrefix}-payments-verify"],
+                  [".", ".", ".", "${LambdaFunctionPrefix}-orders-create"]
+                ],
+                "view": "timeSeries",
+                "stacked": true,
+                "region": "${AWS::Region}",
+                "title": "Lambda Invocations (Cost Impact)",
+                "period": 3600
+              }
+            },
+            {
+              "type": "metric",
+              "x": 8,
+              "y": 1,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/Lambda", "Duration", "FunctionName", "${LambdaFunctionPrefix}-payments-create-order"],
+                  [".", ".", ".", "${LambdaFunctionPrefix}-payments-verify"],
+                  [".", ".", ".", "${LambdaFunctionPrefix}-orders-create"]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "Duration (Cost per Execution)",
+                "period": 3600,
+                "stat": "Average"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 16,
+              "y": 1,
+              "width": 8,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/RDS", "CPUUtilization", "DBInstanceIdentifier", "${Environment}-hasivu-db"],
+                  [".", "DatabaseConnections", ".", "."]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "RDS Utilization (Cost Efficiency)",
+                "period": 3600
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 7,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["HASIVU/Cost", "EstimatedLambdaCost", "Environment", "${Environment}"],
+                  [".", "EstimatedRDSCost", ".", "."],
+                  [".", "EstimatedAPIGatewayCost", ".", "."],
+                  [".", "EstimatedS3Cost", ".", "."]
+                ],
+                "view": "timeSeries",
+                "stacked": true,
+                "region": "${AWS::Region}",
+                "title": "Estimated Daily Costs (USD)",
+                "period": 86400
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12,
+              "y": 7,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["HASIVU/Cost", "CostPerTransaction", "Environment", "${Environment}"],
+                  [".", "RevenuePerTransaction", ".", "."]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "Cost vs Revenue Per Transaction",
+                "period": 3600
+              }
+            }
+          ]
+        }
+
+Outputs:
+  ExecutiveDashboardURL:
+    Description: URL for Executive Dashboard
+    Value: !Sub "https://console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${Environment}-HASIVU-Executive-Overview"
+    
+  LambdaPerformanceDashboardURL:
+    Description: URL for Lambda Performance Dashboard
+    Value: !Sub "https://console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${Environment}-HASIVU-Lambda-Performance"
+    
+  ApiGatewayDashboardURL:
+    Description: URL for API Gateway Dashboard
+    Value: !Sub "https://console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${Environment}-HASIVU-API-Gateway"
+    
+  BusinessMetricsDashboardURL:
+    Description: URL for Business Metrics Dashboard
+    Value: !Sub "https://console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${Environment}-HASIVU-Business-Metrics"
+    
+  CostMonitoringDashboardURL:
+    Description: URL for Cost Monitoring Dashboard
+    Value: !Sub "https://console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${Environment}-HASIVU-Cost-Optimization"

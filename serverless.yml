@@ -1,0 +1,1602 @@
+service: hasivu-platform
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ${opt:region, 'ap-south-1'}
+  stage: ${opt:stage, 'dev'}
+  memorySize: 512
+  timeout: 30
+  architecture: arm64
+  
+  environment:
+    NODE_ENV: ${self:provider.stage}
+    DATABASE_URL: ${ssm:/hasivu/${self:provider.stage}/database-url}
+    AWS_COGNITO_USER_POOL_ID: ${ssm:/hasivu/${self:provider.stage}/cognito-user-pool-id}
+    AWS_COGNITO_CLIENT_ID: ${ssm:/hasivu/${self:provider.stage}/cognito-client-id}
+    RAZORPAY_KEY_ID: ${ssm:/hasivu/${self:provider.stage}/razorpay-key-id}
+    RAZORPAY_KEY_SECRET: ${ssm:/hasivu/${self:provider.stage}/razorpay-key-secret}
+    RAZORPAY_WEBHOOK_SECRET: ${ssm:/hasivu/${self:provider.stage}/razorpay-webhook-secret}
+    WHATSAPP_ACCESS_TOKEN: ${ssm:/hasivu/${self:provider.stage}/whatsapp-access-token}
+    FIREBASE_SERVER_KEY: ${ssm:/hasivu/${self:provider.stage}/firebase-server-key~true}
+    PUSH_NOTIFICATION_TOPIC_ARN: ${cf:hasivu-${self:provider.stage}-messaging.PushNotificationTopicArn}
+    S3_BUCKET_NAME: hasivu-${self:provider.stage}-uploads
+    JWT_SECRET: ${ssm:/hasivu/${self:provider.stage}/jwt-secret~true}
+    IDEMPOTENCY_TABLE: payment-webhook-idempotency-${self:provider.stage}
+    DEAD_LETTER_QUEUE_URL: ${cf:hasivu-${self:provider.stage}-queues.DeadLetterQueueUrl}
+    NOTIFICATION_TOPIC_ARN: ${cf:hasivu-${self:provider.stage}-messaging.NotificationTopicArn}
+    RETRY_QUEUE_URL: ${cf:hasivu-${self:provider.stage}-queues.RetryQueueUrl}
+    MAX_RETRY_ATTEMPTS: 3
+    
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - ssm:GetParameter
+            - ssm:GetParameters
+            - secretsmanager:GetSecretValue
+          Resource:
+            - "arn:aws:ssm:${aws:region}:${aws:accountId}:parameter/hasivu/${self:provider.stage}/*"
+            - "arn:aws:secretsmanager:${aws:region}:${aws:accountId}:secret:hasivu/${self:provider.stage}/*"
+        - Effect: Allow
+          Action:
+            - s3:GetObject
+            - s3:PutObject
+            - s3:DeleteObject
+          Resource: "arn:aws:s3:::hasivu-${self:provider.stage}-uploads/*"
+        - Effect: Allow
+          Action:
+            - cognito-idp:AdminCreateUser
+            - cognito-idp:AdminSetUserPassword
+            - cognito-idp:AdminUpdateUserAttributes
+          Resource: "arn:aws:cognito-idp:${aws:region}:${aws:accountId}:userpool/*"
+        - Effect: Allow
+          Action:
+            - ses:SendEmail
+            - ses:SendRawEmail
+          Resource: "*"
+        - Effect: Allow
+          Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+          Resource: "*"
+        - Effect: Allow
+          Action:
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+            - dynamodb:Query
+            - dynamodb:Scan
+          Resource:
+            - "arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/payment-webhook-idempotency-${self:provider.stage}"
+        - Effect: Allow
+          Action:
+            - sqs:SendMessage
+            - sqs:ReceiveMessage
+            - sqs:DeleteMessage
+          Resource:
+            - "arn:aws:sqs:${aws:region}:${aws:accountId}:payment-retry-queue-${self:provider.stage}"
+            - "arn:aws:sqs:${aws:region}:${aws:accountId}:payment-dlq-${self:provider.stage}"
+        - Effect: Allow
+          Action:
+            - sns:Publish
+            - sns:CreatePlatformEndpoint
+            - sns:DeleteEndpoint
+            - sns:GetEndpointAttributes
+            - sns:SetEndpointAttributes
+          Resource:
+            - "arn:aws:sns:${aws:region}:${aws:accountId}:payment-notifications-${self:provider.stage}"
+            - "arn:aws:sns:${aws:region}:${aws:accountId}:push-notifications-${self:provider.stage}"
+            - "arn:aws:sns:${aws:region}:${aws:accountId}:app/*"
+        - Effect: Allow
+          Action:
+            - s3:GetObject
+            - s3:PutObject
+          Resource:
+            - "arn:aws:s3:::hasivu-${self:provider.stage}-ml-models/*"
+            - "arn:aws:s3:::hasivu-${self:provider.stage}-invoice-templates/*"
+            - "arn:aws:s3:::hasivu-${self:provider.stage}-invoices/*"
+            - "arn:aws:s3:::hasivu-${self:provider.stage}-analytics/*"
+        - Effect: Allow
+          Action:
+            - sagemaker:InvokeEndpoint
+          Resource:
+            - "arn:aws:sagemaker:${aws:region}:${aws:accountId}:endpoint/*"
+
+  apiGateway:
+    restApiId: ${ssm:/hasivu/${self:provider.stage}/api-gateway-id, ''}
+    restApiRootResourceId: ${ssm:/hasivu/${self:provider.stage}/api-gateway-root-id, ''}
+    throttle:
+      rateLimit: 1000
+      burstLimit: 2000
+    metrics: true
+    logs:
+      restApi: true
+      level: INFO
+    cors:
+      origin: '*'
+      headers:
+        - Content-Type
+        - X-Amz-Date
+        - Authorization
+        - X-Api-Key
+        - X-Amz-Security-Token
+        - X-Amz-User-Agent
+      allowCredentials: false
+
+  logs:
+    restApi: true
+    level: INFO
+    
+  tracing:
+    lambda: true
+    apiGateway: true
+
+plugins:
+  - serverless-plugin-typescript
+  - serverless-offline
+  - serverless-plugin-warmup
+  - serverless-plugin-split-stacks
+  - serverless-associate-waf
+
+custom:
+  warmup:
+    enabled: true
+    prewarm: true
+    concurrency: 5
+    
+  splitStacks:
+    perFunction: false
+    perType: true
+    
+  associateWaf:
+    name: hasivu-${self:provider.stage}-waf
+    version: V2
+
+functions:
+  # Health Check
+  health:
+    handler: src/functions/health/health-check.healthCheckHandler
+    events:
+      - http:
+          path: /health
+          method: get
+          cors: true
+    warmup:
+      enabled: true
+    environment:
+      FUNCTION_NAME: health
+
+  # Authentication Functions
+  auth-login:
+    handler: src/functions/auth/login.loginHandler
+    events:
+      - http:
+          path: /auth/login
+          method: post
+          cors: true
+    environment:
+      FUNCTION_NAME: auth-login
+
+  auth-register:
+    handler: src/functions/auth/register.registerHandler
+    events:
+      - http:
+          path: /auth/register
+          method: post
+          cors: true
+    environment:
+      FUNCTION_NAME: auth-register
+
+  auth-verify-email:
+    handler: src/functions/auth/verify-email.verifyEmailHandler
+    events:
+      - http:
+          path: /auth/verify-email
+          method: post
+          cors: true
+    environment:
+      FUNCTION_NAME: auth-verify-email
+
+  auth-refresh-token:
+    handler: src/functions/auth/refresh-token.refreshTokenHandler
+    events:
+      - http:
+          path: /auth/refresh
+          method: post
+          cors: true
+    environment:
+      FUNCTION_NAME: auth-refresh-token
+
+  auth-logout:
+    handler: src/functions/auth/logout.logoutHandler
+    events:
+      - http:
+          path: /auth/logout
+          method: post
+          cors: true
+    environment:
+      FUNCTION_NAME: auth-logout
+
+  # User Management Functions - Story 1.3 Core User Management
+  users-list:
+    handler: src/functions/users/getUsers.getUsersHandler
+    events:
+      - http:
+          path: /api/v1/users
+          method: get
+          cors: true
+          authorizer:
+            name: auth
+            type: COGNITO_USER_POOLS
+            arn: ${ssm:/hasivu/${self:provider.stage}/cognito-user-pool-arn}
+    environment:
+      FUNCTION_NAME: users-list
+
+  users-get:
+    handler: src/functions/users/getUserById.getUserByIdHandler
+    events:
+      - http:
+          path: /api/v1/users/{id}
+          method: get
+          cors: true
+          authorizer:
+            name: auth
+            type: COGNITO_USER_POOLS
+            arn: ${ssm:/hasivu/${self:provider.stage}/cognito-user-pool-arn}
+    environment:
+      FUNCTION_NAME: users-get
+
+  users-update:
+    handler: src/functions/users/updateUser.updateUserHandler
+    events:
+      - http:
+          path: /api/v1/users/{id}
+          method: put
+          cors: true
+          authorizer:
+            name: auth
+            type: COGNITO_USER_POOLS
+            arn: ${ssm:/hasivu/${self:provider.stage}/cognito-user-pool-arn}
+    environment:
+      FUNCTION_NAME: users-update
+
+  users-bulk-import:
+    handler: src/functions/users/bulkImport.bulkImportUsersHandler
+    timeout: 60
+    memorySize: 1024
+    events:
+      - http:
+          path: /api/v1/users/bulk-import
+          method: post
+          cors: true
+          authorizer:
+            name: auth
+            type: COGNITO_USER_POOLS
+            arn: ${ssm:/hasivu/${self:provider.stage}/cognito-user-pool-arn}
+    environment:
+      FUNCTION_NAME: users-bulk-import
+
+  users-manage-children:
+    handler: src/functions/users/manageChildren.manageChildrenHandler
+    events:
+      - http:
+          path: /api/v1/users/{id}/children
+          method: post
+          cors: true
+          authorizer:
+            name: auth
+            type: COGNITO_USER_POOLS
+            arn: ${ssm:/hasivu/${self:provider.stage}/cognito-user-pool-arn}
+    environment:
+      FUNCTION_NAME: users-manage-children
+
+  # Payment Functions
+  payments-create-order:
+    handler: src/functions/payments/create-order.createOrderHandler
+    events:
+      - http:
+          path: /payments/orders
+          method: post
+          cors: true
+    environment:
+      FUNCTION_NAME: payments-create-order
+
+  payments-verify:
+    handler: src/functions/payments/verify-payment.verifyPaymentHandler
+    events:
+      - http:
+          path: /payments/verify
+          method: post
+          cors: true
+    environment:
+      FUNCTION_NAME: payments-verify
+
+  payments-webhook:
+    handler: src/functions/payments/webhook.webhookHandler
+    events:
+      - http:
+          path: /payments/webhook
+          method: post
+          cors: true
+    environment:
+      FUNCTION_NAME: payments-webhook
+
+  payments-refund:
+    handler: src/functions/payments/refund.refundHandler
+    events:
+      - http:
+          path: /payments/refund
+          method: post
+          cors: true
+    environment:
+      FUNCTION_NAME: payments-refund
+
+  payments-status:
+    handler: src/functions/payments/payment-status.paymentStatusHandler
+    events:
+      - http:
+          path: /payments/status/{orderId}
+          method: get
+          cors: true
+    environment:
+      FUNCTION_NAME: payments-status
+
+  # Epic 5 Story 5.1: Advanced Payment Features
+  payments-manage-methods:
+    handler: src/functions/payments/manage-payment-methods.managePaymentMethodsHandler
+    events:
+      - http:
+          path: /payments/methods
+          method: get
+          cors: true
+      - http:
+          path: /payments/methods
+          method: post
+          cors: true
+      - http:
+          path: /payments/methods/{methodId}
+          method: put
+          cors: true
+      - http:
+          path: /payments/methods/{methodId}
+          method: delete
+          cors: true
+    environment:
+      FUNCTION_NAME: payments-manage-methods
+
+  payments-advanced:
+    handler: src/functions/payments/advanced-payment.advancedPaymentHandler
+    timeout: 60
+    events:
+      - http:
+          path: /payments/advanced/create
+          method: post
+          cors: true
+      - http:
+          path: /payments/advanced/validate
+          method: post
+          cors: true
+      - http:
+          path: /payments/advanced/installment
+          method: post
+          cors: true
+      - http:
+          path: /payments/advanced/{paymentId}
+          method: get
+          cors: true
+    environment:
+      FUNCTION_NAME: payments-advanced
+
+  payments-retry:
+    handler: src/functions/payments/payment-retry.paymentRetryHandler
+    timeout: 60
+    events:
+      - http:
+          path: /payments/retry
+          method: post
+          cors: true
+      - http:
+          path: /payments/retry/schedule
+          method: post
+          cors: true
+      - http:
+          path: /payments/retry/process-scheduled
+          method: post
+          cors: true
+      - http:
+          path: /payments/retry/{paymentId}
+          method: get
+          cors: true
+      - http:
+          path: /payments/retry/{retryId}
+          method: delete
+          cors: true
+      - schedule:
+          rate: rate(15 minutes)
+          input:
+            action: process-scheduled-retries
+    environment:
+      FUNCTION_NAME: payments-retry
+
+  payments-reconciliation:
+    handler: src/functions/payments/reconciliation.reconciliationHandler
+    timeout: 300
+    memorySize: 1024
+    events:
+      - http:
+          path: /payments/reconciliation/generate
+          method: post
+          cors: true
+      - http:
+          path: /payments/reconciliation/manual-adjustment
+          method: post
+          cors: true
+      - http:
+          path: /payments/reconciliation/auto-reconcile
+          method: post
+          cors: true
+      - http:
+          path: /payments/reconciliation/{recordId}
+          method: get
+          cors: true
+      - http:
+          path: /payments/reconciliation/{recordId}
+          method: put
+          cors: true
+      - http:
+          path: /payments/reconciliation
+          method: get
+          cors: true
+      - schedule:
+          rate: cron(0 2 * * ? *)
+          input:
+            action: auto-reconciliation
+    environment:
+      FUNCTION_NAME: payments-reconciliation
+
+  payments-analytics:
+    handler: src/functions/payments/payment-analytics.paymentAnalyticsHandler
+    timeout: 120
+    memorySize: 1024
+    events:
+      - http:
+          path: /payments/analytics/dashboard
+          method: get
+          cors: true
+      - http:
+          path: /payments/analytics/trends
+          method: get
+          cors: true
+      - http:
+          path: /payments/analytics/failure-analysis
+          method: get
+          cors: true
+      - http:
+          path: /payments/analytics/customer-behavior
+          method: get
+          cors: true
+      - http:
+          path: /payments/analytics/{schoolId}
+          method: get
+          cors: true
+      - http:
+          path: /payments/analytics/generate-report
+          method: post
+          cors: true
+      - http:
+          path: /payments/analytics/update-behavior
+          method: post
+          cors: true
+    environment:
+      FUNCTION_NAME: payments-analytics
+
+  payments-webhook-handler:
+    handler: src/functions/payments/webhook-handler.webhookHandlerLambda
+    timeout: 30
+    events:
+      - http:
+          path: /payments/webhooks/razorpay
+          method: post
+          cors: false
+    environment:
+      FUNCTION_NAME: payments-webhook-handler
+
+  # Epic 5 Story 5.2: Subscription Billing Management
+  subscription-management:
+    handler: src/functions/payments/subscription-management.handler
+    timeout: 60
+    memorySize: 1024
+    events:
+      - http:
+          path: /subscriptions
+          method: post
+          cors: true
+      - http:
+          path: /subscriptions/{id}
+          method: put
+          cors: true
+      - http:
+          path: /subscriptions/{id}/pause
+          method: post
+          cors: true
+      - http:
+          path: /subscriptions/{id}/resume
+          method: post
+          cors: true
+      - http:
+          path: /subscriptions/{id}/cancel
+          method: post
+          cors: true
+      - http:
+          path: /subscriptions/{id}
+          method: get
+          cors: true
+      - http:
+          path: /subscriptions
+          method: get
+          cors: true
+    environment:
+      FUNCTION_NAME: subscription-management
+
+  billing-automation:
+    handler: src/functions/payments/billing-automation.handler
+    timeout: 300
+    memorySize: 1024
+    events:
+      - http:
+          path: /billing/process
+          method: post
+          cors: true
+      - http:
+          path: /billing/process/{id}
+          method: post
+          cors: true
+      - http:
+          path: /billing/status
+          method: get
+          cors: true
+      - schedule:
+          rate: rate(1 hour)
+          enabled: true
+          input:
+            action: automated-billing
+    environment:
+      FUNCTION_NAME: billing-automation
+      MAX_PAYMENT_RETRIES: ${self:provider.environment.MAX_RETRY_ATTEMPTS}
+      PAYMENT_GRACE_PERIOD_DAYS: 7
+
+  subscription-plans:
+    handler: src/functions/payments/subscription-plans.handler
+    timeout: 60
+    memorySize: 512
+    events:
+      - http:
+          path: /subscription-plans
+          method: post
+          cors: true
+      - http:
+          path: /subscription-plans/{id}
+          method: put
+          cors: true
+      - http:
+          path: /subscription-plans/{id}
+          method: get
+          cors: true
+      - http:
+          path: /subscription-plans
+          method: get
+          cors: true
+      - http:
+          path: /subscription-plans/compare
+          method: post
+          cors: true
+      - http:
+          path: /subscription-plans/{id}
+          method: delete
+          cors: true
+      - http:
+          path: /subscription-plans/{id}/analytics
+          method: get
+          cors: true
+      - http:
+          path: /subscription-plans/analytics
+          method: get
+          cors: true
+    environment:
+      FUNCTION_NAME: subscription-plans
+
+  dunning-management:
+    handler: src/functions/payments/dunning-management.handler
+    timeout: 180
+    memorySize: 1024
+    events:
+      - http:
+          path: /dunning/process
+          method: post
+          cors: true
+      - http:
+          path: /payments/{paymentId}/retry
+          method: post
+          cors: true
+      - http:
+          path: /dunning/status
+          method: get
+          cors: true
+      - http:
+          path: /payments/{paymentId}/retry-history
+          method: get
+          cors: true
+      - schedule:
+          rate: rate(6 hours)
+          enabled: true
+          input:
+            action: automated-dunning
+    environment:
+      FUNCTION_NAME: dunning-management
+      MAX_PAYMENT_RETRIES: ${self:provider.environment.MAX_RETRY_ATTEMPTS}
+      PAYMENT_GRACE_PERIOD_DAYS: 7
+      DUNNING_EMAIL_ENABLED: true
+      DUNNING_SMS_ENABLED: false
+
+  subscription-analytics:
+    handler: src/functions/payments/subscription-analytics.handler
+    timeout: 120
+    memorySize: 2048
+    events:
+      - http:
+          path: /subscription-analytics
+          method: get
+          cors: true
+      - http:
+          path: /subscription-analytics/dashboard
+          method: get
+          cors: true
+      - http:
+          path: /subscription-analytics/cohort
+          method: post
+          cors: true
+      - http:
+          path: /subscription-analytics/revenue
+          method: get
+          cors: true
+      - http:
+          path: /subscription-analytics/churn
+          method: get
+          cors: true
+      - http:
+          path: /subscription-analytics/clv
+          method: get
+          cors: true
+    environment:
+      FUNCTION_NAME: subscription-analytics
+
+  # Order Functions
+  orders-create:
+    handler: src/functions/orders/create-order.createOrderHandler
+    events:
+      - http:
+          path: /orders
+          method: post
+          cors: true
+    environment:
+      FUNCTION_NAME: orders-create
+
+  orders-get:
+    handler: src/functions/orders/get-order.getOrderHandler
+    events:
+      - http:
+          path: /orders/{orderId}
+          method: get
+          cors: true
+    environment:
+      FUNCTION_NAME: orders-get
+
+  orders-update:
+    handler: src/functions/orders/update-order.updateOrderHandler
+    events:
+      - http:
+          path: /orders/{orderId}
+          method: put
+          cors: true
+    environment:
+      FUNCTION_NAME: orders-update
+
+  orders-list:
+    handler: src/functions/orders/list-orders.listOrdersHandler
+    events:
+      - http:
+          path: /orders
+          method: get
+          cors: true
+    environment:
+      FUNCTION_NAME: orders-list
+
+  orders-history:
+    handler: src/functions/orders/order-history.orderHistoryHandler
+    events:
+      - http:
+          path: /orders/history/{userId}
+          method: get
+          cors: true
+    environment:
+      FUNCTION_NAME: orders-history
+
+  # Menu Functions
+  menus-create-plan:
+    handler: src/functions/menus/create-plan.createMenuPlanHandler
+    events:
+      - http:
+          path: /menus/plans
+          method: post
+          cors: true
+    environment:
+      FUNCTION_NAME: menus-create-plan
+
+  menus-get-plan:
+    handler: src/functions/menus/get-plan.getMenuPlanHandler
+    events:
+      - http:
+          path: /menus/plans/{planId}
+          method: get
+          cors: true
+    environment:
+      FUNCTION_NAME: menus-get-plan
+
+  menus-update-plan:
+    handler: src/functions/menus/update-plan.updateMenuPlanHandler
+    events:
+      - http:
+          path: /menus/plans/{planId}
+          method: put
+          cors: true
+    environment:
+      FUNCTION_NAME: menus-update-plan
+
+  menus-list-plans:
+    handler: src/functions/menus/list-plans.listMenuPlansHandler
+    events:
+      - http:
+          path: /menus/plans
+          method: get
+          cors: true
+    environment:
+      FUNCTION_NAME: menus-list-plans
+
+  menus-approve:
+    handler: src/functions/menus/approve-menu.approveMenuHandler
+    events:
+      - http:
+          path: /menus/approve/{planId}
+          method: post
+          cors: true
+    environment:
+      FUNCTION_NAME: menus-approve
+
+  menus-daily:
+    handler: src/functions/menus/daily-menu.dailyMenuHandler
+    events:
+      - http:
+          path: /menus/daily
+          method: get
+          cors: true
+    environment:
+      FUNCTION_NAME: menus-daily
+
+  # Epic 5 Story 5.3: Automated Invoice Generation
+  invoice-generator:
+    handler: src/functions/payments/invoice-generator.handler
+    timeout: 180
+    memorySize: 1024
+    events:
+      - http:
+          path: /invoices/generate
+          method: post
+          cors: true
+      - http:
+          path: /invoices/{id}/regenerate
+          method: post
+          cors: true
+      - http:
+          path: /invoices/batch-generate
+          method: post
+          cors: true
+      - schedule:
+          rate: cron(0 1 1 * ? *)
+          enabled: true
+          input:
+            action: generate-monthly-invoices
+    environment:
+      FUNCTION_NAME: invoice-generator
+      PDF_GENERATOR_URL: ${cf:hasivu-${self:provider.stage}-pdf.PdfGeneratorUrl}
+      INVOICE_TEMPLATE_BUCKET: hasivu-${self:provider.stage}-invoice-templates
+
+  pdf-generator:
+    handler: src/functions/payments/pdf-generator.handler
+    timeout: 120
+    memorySize: 1024
+    events:
+      - http:
+          path: /pdf/generate
+          method: post
+          cors: true
+      - http:
+          path: /pdf/invoice/{id}
+          method: get
+          cors: true
+      - http:
+          path: /pdf/bulk-download
+          method: post
+          cors: true
+    environment:
+      FUNCTION_NAME: pdf-generator
+      PDF_TEMPLATES_BUCKET: hasivu-${self:provider.stage}-invoice-templates
+      PDF_OUTPUT_BUCKET: hasivu-${self:provider.stage}-invoices
+
+  invoice-templates:
+    handler: src/functions/payments/invoice-templates.handler
+    timeout: 60
+    memorySize: 512
+    events:
+      - http:
+          path: /invoice-templates
+          method: post
+          cors: true
+      - http:
+          path: /invoice-templates/{id}
+          method: put
+          cors: true
+      - http:
+          path: /invoice-templates/{id}
+          method: get
+          cors: true
+      - http:
+          path: /invoice-templates
+          method: get
+          cors: true
+      - http:
+          path: /invoice-templates/{id}
+          method: delete
+          cors: true
+    environment:
+      FUNCTION_NAME: invoice-templates
+      TEMPLATE_STORAGE_BUCKET: hasivu-${self:provider.stage}-invoice-templates
+
+  invoice-mailer:
+    handler: src/functions/payments/invoice-mailer.handler
+    timeout: 180
+    memorySize: 1024
+    events:
+      - http:
+          path: /invoices/email
+          method: post
+          cors: true
+      - http:
+          path: /invoices/email/batch
+          method: post
+          cors: true
+      - http:
+          path: /invoices/email/schedule
+          method: post
+          cors: true
+      - http:
+          path: /invoices/email/status
+          method: get
+          cors: true
+      - schedule:
+          rate: rate(1 hour)
+          enabled: true
+          input:
+            action: send-scheduled-invoices
+    environment:
+      FUNCTION_NAME: invoice-mailer
+      EMAIL_TEMPLATE_BUCKET: hasivu-${self:provider.stage}-invoice-templates
+      INVOICE_BUCKET: hasivu-${self:provider.stage}-invoices
+
+  invoice-analytics:
+    handler: src/functions/payments/invoice-analytics.handler
+    timeout: 120
+    memorySize: 1024
+    events:
+      - http:
+          path: /invoice-analytics/dashboard
+          method: get
+          cors: true
+      - http:
+          path: /invoice-analytics/payment-status
+          method: get
+          cors: true
+      - http:
+          path: /invoice-analytics/overdue
+          method: get
+          cors: true
+      - http:
+          path: /invoice-analytics/collections
+          method: get
+          cors: true
+      - http:
+          path: /invoice-analytics/generate-report
+          method: post
+          cors: true
+    environment:
+      FUNCTION_NAME: invoice-analytics
+      ANALYTICS_DATA_BUCKET: hasivu-${self:provider.stage}-analytics
+
+  # Epic 5 Story 5.4: AI-Powered Payment Analytics & Reporting
+  ml-payment-insights:
+    handler: src/functions/payments/ml-payment-insights.mlPaymentInsightsHandler
+    timeout: 180
+    memorySize: 2048
+    events:
+      - http:
+          path: /ml-insights/predictive
+          method: get
+          cors: true
+      - http:
+          path: /ml-insights/anomaly
+          method: get
+          cors: true
+      - http:
+          path: /ml-insights/churn
+          method: get
+          cors: true
+      - http:
+          path: /ml-insights/revenue-forecast
+          method: get
+          cors: true
+      - http:
+          path: /ml-insights
+          method: get
+          cors: true
+      - http:
+          path: /ml-insights/train-model
+          method: post
+          cors: true
+      - http:
+          path: /ml-insights/generate-insights
+          method: post
+          cors: true
+    environment:
+      FUNCTION_NAME: ml-payment-insights
+      ML_MODEL_BUCKET: hasivu-${self:provider.stage}-ml-models
+      ML_TRAINING_ENABLED: true
+
+  advanced-payment-intelligence:
+    handler: src/functions/payments/advanced-payment-intelligence.advancedPaymentIntelligenceHandler
+    timeout: 180
+    memorySize: 2048
+    events:
+      - http:
+          path: /intelligence/pattern-recognition
+          method: get
+          cors: true
+      - http:
+          path: /intelligence/fraud-detection
+          method: get
+          cors: true
+      - http:
+          path: /intelligence/optimization
+          method: get
+          cors: true
+      - http:
+          path: /intelligence/behavioral-analysis
+          method: get
+          cors: true
+      - http:
+          path: /intelligence
+          method: get
+          cors: true
+      - http:
+          path: /intelligence/analyze-transaction
+          method: post
+          cors: true
+      - http:
+          path: /intelligence/generate-intelligence-report
+          method: post
+          cors: true
+      - http:
+          path: /intelligence/update-intelligence-models
+          method: post
+          cors: true
+    environment:
+      FUNCTION_NAME: advanced-payment-intelligence
+      FRAUD_DETECTION_THRESHOLD: 0.7
+      PATTERN_RECOGNITION_SENSITIVITY: 0.8
+      INTELLIGENCE_MODEL_VERSION: 2.0
+
+  # RFID Functions
+  rfid-manage-readers:
+    handler: src/functions/rfid/manage-readers.manageRfidReadersHandler
+    events:
+      - http:
+          path: /rfid/readers
+          method: post
+          cors: true
+      - http:
+          path: /rfid/readers/{readerId}
+          method: put
+          cors: true
+      - http:
+          path: /rfid/readers
+          method: get
+          cors: true
+    environment:
+      FUNCTION_NAME: rfid-manage-readers
+
+  rfid-verify-card:
+    handler: src/functions/rfid/verify-card.verifyRfidCardHandler
+    events:
+      - http:
+          path: /rfid/verify
+          method: post
+          cors: true
+    environment:
+      FUNCTION_NAME: rfid-verify-card
+
+  rfid-bulk-import-cards:
+    handler: src/functions/rfid/bulk-import-cards.bulkImportCardsHandler
+    timeout: 60
+    memorySize: 1024
+    events:
+      - http:
+          path: /rfid/cards/bulk-import
+          method: post
+          cors: true
+    environment:
+      FUNCTION_NAME: rfid-bulk-import-cards
+
+  # Mobile Integration Functions - Story 2.4: Parent Mobile Integration
+  mobile-parent-notifications:
+    handler: src/functions/mobile/parent-notifications.parentNotificationsHandler
+    events:
+      - http:
+          path: /api/v1/mobile/notifications/send
+          method: post
+          cors: true
+      - http:
+          path: /api/v1/mobile/notifications/{parentId}
+          method: get
+          cors: true
+      - http:
+          path: /api/v1/mobile/notifications/{notificationId}/read
+          method: put
+          cors: true
+    environment:
+      FUNCTION_NAME: mobile-parent-notifications
+
+  mobile-delivery-tracking:
+    handler: src/functions/mobile/delivery-tracking.deliveryTrackingHandler
+    events:
+      - http:
+          path: /api/v1/mobile/tracking/orders/{orderId}
+          method: get
+          cors: true
+      - http:
+          path: /api/v1/mobile/tracking/student/{studentId}
+          method: get
+          cors: true
+    environment:
+      FUNCTION_NAME: mobile-delivery-tracking
+
+  mobile-device-registration:
+    handler: src/functions/mobile/device-registration.deviceRegistrationHandler
+    events:
+      - http:
+          path: /api/v1/mobile/devices/register
+          method: post
+          cors: true
+      - http:
+          path: /api/v1/mobile/devices/{deviceId}
+          method: put
+          cors: true
+      - http:
+          path: /api/v1/mobile/devices/{deviceId}
+          method: delete
+          cors: true
+      - http:
+          path: /api/v1/mobile/devices
+          method: get
+          cors: true
+    environment:
+      FUNCTION_NAME: mobile-device-registration
+
+  rfid-test-connection:
+    handler: src/functions/rfid/manage-readers.testRfidReaderHandler
+    events:
+      - http:
+          path: /rfid/readers/{readerId}/test
+          method: post
+          cors: true
+    environment:
+      FUNCTION_NAME: rfid-test-connection
+
+  rfid-card-registration:
+    handler: src/functions/rfid/card-registration.cardRegistrationHandler
+    events:
+      - http:
+          path: /rfid/cards
+          method: post
+          cors: true
+      - http:
+          path: /rfid/cards/{cardId}
+          method: put
+          cors: true
+    environment:
+      FUNCTION_NAME: rfid-card-registration
+
+  rfid-delivery-verification:
+    handler: src/functions/rfid/delivery-verification.deliveryVerificationHandler
+    events:
+      - http:
+          path: /rfid/verify-delivery
+          method: post
+          cors: true
+    environment:
+      FUNCTION_NAME: rfid-delivery-verification
+
+  rfid-bulk-verification:
+    handler: src/functions/rfid/bulk-verification.bulkVerificationHandler
+    events:
+      - http:
+          path: /rfid/verify-bulk
+          method: post
+          cors: true
+    environment:
+      FUNCTION_NAME: rfid-bulk-verification
+
+  rfid-mobile-tracking:
+    handler: src/functions/rfid/mobile-tracking.mobileTrackingHandler
+    events:
+      - http:
+          path: /rfid/tracking/{studentId}
+          method: get
+          cors: true
+    environment:
+      FUNCTION_NAME: rfid-mobile-tracking
+
+  rfid-parent-dashboard:
+    handler: src/functions/rfid/parent-dashboard.parentDashboardHandler
+    events:
+      - http:
+          path: /rfid/parent/{parentId}/dashboard
+          method: get
+          cors: true
+    environment:
+      FUNCTION_NAME: rfid-parent-dashboard
+
+  rfid-delivery-history:
+    handler: src/functions/rfid/delivery-history.deliveryHistoryHandler
+    events:
+      - http:
+          path: /rfid/delivery-history
+          method: get
+          cors: true
+    environment:
+      FUNCTION_NAME: rfid-delivery-history
+
+  # System Monitoring Functions
+  monitoring-status:
+    handler: src/functions/health/status.getStatusHandler
+    events:
+      - http:
+          path: /status
+          method: get
+          cors: true
+    environment:
+      FUNCTION_NAME: monitoring-status
+
+  monitoring-dashboard:
+    handler: src/functions/monitoring/dashboard.monitoringDashboardHandler
+    events:
+      - http:
+          path: /monitoring/dashboard
+          method: get
+          cors: true
+    environment:
+      FUNCTION_NAME: monitoring-dashboard
+
+  monitoring-health:
+    handler: src/functions/monitoring/dashboard.serviceHealthHandler
+    events:
+      - http:
+          path: /monitoring/health/{service}
+          method: get
+          cors: true
+    environment:
+      FUNCTION_NAME: monitoring-health
+
+  monitoring-metrics:
+    handler: src/functions/monitoring/dashboard.systemMetricsHandler
+    events:
+      - http:
+          path: /monitoring/metrics
+          method: get
+          cors: true
+    environment:
+      FUNCTION_NAME: monitoring-metrics
+
+  monitoring-performance:
+    handler: src/functions/monitoring/dashboard.performanceMetricsHandler
+    events:
+      - http:
+          path: /monitoring/performance
+          method: get
+          cors: true
+    environment:
+      FUNCTION_NAME: monitoring-performance
+
+  monitoring-business:
+    handler: src/functions/monitoring/dashboard.businessMetricsHandler
+    events:
+      - http:
+          path: /monitoring/business
+          method: get
+          cors: true
+    environment:
+      FUNCTION_NAME: monitoring-business
+
+  monitoring-alerts:
+    handler: src/functions/monitoring/dashboard.alertsHandler
+    events:
+      - http:
+          path: /monitoring/alerts
+          method: get
+          cors: true
+    environment:
+      FUNCTION_NAME: monitoring-alerts
+
+  monitoring-recommendations:
+    handler: src/functions/monitoring/dashboard.recommendationsHandler
+    events:
+      - http:
+          path: /monitoring/recommendations
+          method: get
+          cors: true
+    environment:
+      FUNCTION_NAME: monitoring-recommendations
+
+resources:
+  Resources:
+    # S3 Bucket for uploads
+    S3BucketUploads:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: hasivu-${self:provider.stage}-uploads
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: true
+          BlockPublicPolicy: true
+          IgnorePublicAcls: true
+          RestrictPublicBuckets: true
+        BucketEncryption:
+          ServerSideEncryptionConfiguration:
+            - ServerSideEncryptionByDefault:
+                SSEAlgorithm: AES256
+        VersioningConfiguration:
+          Status: Enabled
+        LifecycleConfiguration:
+          Rules:
+            - Status: Enabled
+              ExpirationInDays: 365
+              NoncurrentVersionExpirationInDays: 30
+
+    # S3 Bucket for ML models
+    S3BucketMLModels:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: hasivu-${self:provider.stage}-ml-models
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: true
+          BlockPublicPolicy: true
+          IgnorePublicAcls: true
+          RestrictPublicBuckets: true
+        BucketEncryption:
+          ServerSideEncryptionConfiguration:
+            - ServerSideEncryptionByDefault:
+                SSEAlgorithm: AES256
+        VersioningConfiguration:
+          Status: Enabled
+        LifecycleConfiguration:
+          Rules:
+            - Status: Enabled
+              ExpirationInDays: 180
+              NoncurrentVersionExpirationInDays: 30
+
+    # S3 Bucket for invoice templates
+    S3BucketInvoiceTemplates:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: hasivu-${self:provider.stage}-invoice-templates
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: true
+          BlockPublicPolicy: true
+          IgnorePublicAcls: true
+          RestrictPublicBuckets: true
+        BucketEncryption:
+          ServerSideEncryptionConfiguration:
+            - ServerSideEncryptionByDefault:
+                SSEAlgorithm: AES256
+        VersioningConfiguration:
+          Status: Enabled
+
+    # S3 Bucket for generated invoices
+    S3BucketInvoices:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: hasivu-${self:provider.stage}-invoices
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: true
+          BlockPublicPolicy: true
+          IgnorePublicAcls: true
+          RestrictPublicBuckets: true
+        BucketEncryption:
+          ServerSideEncryptionConfiguration:
+            - ServerSideEncryptionByDefault:
+                SSEAlgorithm: AES256
+        VersioningConfiguration:
+          Status: Enabled
+        LifecycleConfiguration:
+          Rules:
+            - Status: Enabled
+              ExpirationInDays: 2555  # 7 years for tax compliance
+              NoncurrentVersionExpirationInDays: 90
+
+    # S3 Bucket for analytics data
+    S3BucketAnalytics:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: hasivu-${self:provider.stage}-analytics
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: true
+          BlockPublicPolicy: true
+          IgnorePublicAcls: true
+          RestrictPublicBuckets: true
+        BucketEncryption:
+          ServerSideEncryptionConfiguration:
+            - ServerSideEncryptionByDefault:
+                SSEAlgorithm: AES256
+        VersioningConfiguration:
+          Status: Enabled
+        LifecycleConfiguration:
+          Rules:
+            - Status: Enabled
+              ExpirationInDays: 1095  # 3 years
+              NoncurrentVersionExpirationInDays: 30
+
+    # CloudWatch Log Groups
+    HealthLogGroup:
+      Type: AWS::Logs::LogGroup
+      Properties:
+        LogGroupName: /aws/lambda/hasivu-${self:provider.stage}-health
+        RetentionInDays: 30
+
+    # WAF for API Gateway
+    WebACL:
+      Type: AWS::WAFv2::WebACL
+      Properties:
+        Name: hasivu-${self:provider.stage}-waf
+        Scope: REGIONAL
+        DefaultAction:
+          Allow: {}
+        Rules:
+          - Name: RateLimitRule
+            Priority: 1
+            Statement:
+              RateBasedStatement:
+                Limit: 2000
+                AggregateKeyType: IP
+            Action:
+              Block: {}
+            VisibilityConfig:
+              SampledRequestsEnabled: true
+              CloudWatchMetricsEnabled: true
+              MetricName: RateLimitRule
+          - Name: GeoBlockRule
+            Priority: 2
+            Statement:
+              GeoMatchStatement:
+                CountryCodes: [IN]
+            Action:
+              Allow: {}
+            VisibilityConfig:
+              SampledRequestsEnabled: true
+              CloudWatchMetricsEnabled: true
+              MetricName: GeoBlockRule
+        VisibilityConfig:
+          SampledRequestsEnabled: true
+          CloudWatchMetricsEnabled: true
+          MetricName: hasivu-${self:provider.stage}-waf
+
+    # Epic 5 Payment System Resources
+    
+    # DynamoDB table for webhook idempotency
+    PaymentWebhookIdempotencyTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: payment-webhook-idempotency-${self:provider.stage}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: webhookId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: webhookId
+            KeyType: HASH
+        TimeToLiveSpecification:
+          AttributeName: ttl
+          Enabled: true
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
+
+    # SQS Dead Letter Queue for failed payments
+    PaymentDeadLetterQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: payment-dlq-${self:provider.stage}
+        MessageRetentionPeriod: 1209600 # 14 days
+        VisibilityTimeoutSeconds: 300
+
+    # SQS Retry Queue for payment retries
+    PaymentRetryQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: payment-retry-queue-${self:provider.stage}
+        VisibilityTimeoutSeconds: 60
+        MessageRetentionPeriod: 1209600 # 14 days
+        RedrivePolicy:
+          deadLetterTargetArn: !GetAtt PaymentDeadLetterQueue.Arn
+          maxReceiveCount: 3
+
+    # SNS Topic for payment notifications
+    PaymentNotificationsTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: payment-notifications-${self:provider.stage}
+        DisplayName: Payment Notifications
+        FifoTopic: false
+
+    # SNS Topic for mobile push notifications
+    PushNotificationsTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: push-notifications-${self:provider.stage}
+        DisplayName: Mobile Push Notifications
+        FifoTopic: false
+
+    # CloudWatch Dashboard
+    CloudWatchDashboard:
+      Type: AWS::CloudWatch::Dashboard
+      Properties:
+        DashboardName: hasivu-${self:provider.stage}-metrics
+        DashboardBody: |
+          {
+            "widgets": [
+              {
+                "type": "metric",
+                "properties": {
+                  "metrics": [
+                    [ "AWS/Lambda", "Duration", "FunctionName", "hasivu-${self:provider.stage}-health" ],
+                    [ ".", "Errors", ".", "." ],
+                    [ ".", "Invocations", ".", "." ]
+                  ],
+                  "period": 300,
+                  "stat": "Average",
+                  "region": "${aws:region}",
+                  "title": "Lambda Metrics"
+                }
+              },
+              {
+                "type": "metric",
+                "properties": {
+                  "metrics": [
+                    [ "AWS/ApiGateway", "Count", "ApiName", "hasivu-${self:provider.stage}" ],
+                    [ ".", "Latency", ".", "." ],
+                    [ ".", "4XXError", ".", "." ],
+                    [ ".", "5XXError", ".", "." ]
+                  ],
+                  "period": 300,
+                  "stat": "Sum",
+                  "region": "${aws:region}",
+                  "title": "API Gateway Metrics"
+                }
+              },
+              {
+                "type": "metric",
+                "properties": {
+                  "metrics": [
+                    [ "AWS/Lambda", "Duration", "FunctionName", "hasivu-${self:provider.stage}-payments-advanced" ],
+                    [ ".", "Errors", ".", "." ],
+                    [ ".", "Invocations", ".", "." ],
+                    [ ".", "Duration", "FunctionName", "hasivu-${self:provider.stage}-payments-webhook-handler" ],
+                    [ ".", "Errors", ".", "." ],
+                    [ ".", "Invocations", ".", "." ]
+                  ],
+                  "period": 300,
+                  "stat": "Average",
+                  "region": "${aws:region}",
+                  "title": "Payment System Metrics"
+                }
+              },
+              {
+                "type": "metric",
+                "properties": {
+                  "metrics": [
+                    [ "AWS/SQS", "NumberOfMessagesSent", "QueueName", "payment-retry-queue-${self:provider.stage}" ],
+                    [ ".", "NumberOfMessagesReceived", ".", "." ],
+                    [ ".", "NumberOfMessagesSent", "QueueName", "payment-dlq-${self:provider.stage}" ]
+                  ],
+                  "period": 300,
+                  "stat": "Sum",
+                  "region": "${aws:region}",
+                  "title": "Payment Queue Metrics"
+                }
+              }
+            ]
+          }
+
+  Outputs:
+    ApiGatewayRestApiId:
+      Value: !Ref ApiGatewayRestApi
+      Export:
+        Name: hasivu-${self:provider.stage}-api-gateway-id
+        
+    ApiGatewayRestApiRootResourceId:
+      Value: !GetAtt ApiGatewayRestApi.RootResourceId
+      Export:
+        Name: hasivu-${self:provider.stage}-api-gateway-root-id
+        
+    S3BucketName:
+      Value: !Ref S3BucketUploads
+      Export:
+        Name: hasivu-${self:provider.stage}-s3-bucket-name
+        
+    # Epic 5 Payment System Outputs
+    PaymentIdempotencyTableName:
+      Value: !Ref PaymentWebhookIdempotencyTable
+      Export:
+        Name: hasivu-${self:provider.stage}-payment-idempotency-table
+        
+    PaymentRetryQueueUrl:
+      Value: !Ref PaymentRetryQueue
+      Export:
+        Name: hasivu-${self:provider.stage}-payment-retry-queue-url
+        
+    PaymentDeadLetterQueueUrl:
+      Value: !Ref PaymentDeadLetterQueue
+      Export:
+        Name: hasivu-${self:provider.stage}-payment-dlq-url
+        
+    PaymentNotificationsTopicArn:
+      Value: !Ref PaymentNotificationsTopic
+      Export:
+        Name: hasivu-${self:provider.stage}-payment-notifications-topic
+
+    PushNotificationsTopicArn:
+      Value: !Ref PushNotificationsTopic
+      Export:
+        Name: hasivu-${self:provider.stage}-push-notifications-topic
+        
+    # Epic 5 Story 5.4: ML Models Bucket
+    MLModelsBucketName:
+      Value: !Ref S3BucketMLModels
+      Export:
+        Name: hasivu-${self:provider.stage}-ml-models-bucket-name
+        
+    # Epic 5 Story 5.3: Invoice System Buckets
+    InvoiceTemplatesBucketName:
+      Value: !Ref S3BucketInvoiceTemplates
+      Export:
+        Name: hasivu-${self:provider.stage}-invoice-templates-bucket-name
+        
+    InvoicesBucketName:
+      Value: !Ref S3BucketInvoices
+      Export:
+        Name: hasivu-${self:provider.stage}-invoices-bucket-name
+        
+    AnalyticsBucketName:
+      Value: !Ref S3BucketAnalytics
+      Export:
+        Name: hasivu-${self:provider.stage}-analytics-bucket-name

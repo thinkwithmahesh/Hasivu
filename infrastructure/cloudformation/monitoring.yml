@@ -1,0 +1,541 @@
+# HASIVU Platform - Monitoring and Alerting Infrastructure
+# CloudWatch dashboards, alarms, and SNS notifications for production monitoring
+# Comprehensive monitoring stack for Lambda functions and infrastructure
+
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'HASIVU Platform - Production Monitoring and Alerting Infrastructure'
+
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: production
+    AllowedValues: [dev, staging, production]
+    Description: Environment name for resource naming
+  
+  ProjectName:
+    Type: String
+    Default: hasivu-platform
+    Description: Project name for resource tagging
+  
+  NotificationEmail:
+    Type: String
+    Description: Email address for critical alerts
+    AllowedPattern: '^[^@]+@[^@]+\.[^@]+$'
+  
+  SlackWebhookUrl:
+    Type: String
+    NoEcho: true
+    Description: Slack webhook URL for notifications
+    Default: ''
+  
+  AlertingTopicArn:
+    Type: String
+    Description: SNS Topic ARN for alerts (from main infrastructure)
+
+Conditions:
+  IsProduction: !Equals [!Ref EnvironmentName, production]
+  HasSlackWebhook: !Not [!Equals [!Ref SlackWebhookUrl, '']]
+
+Resources:
+  # =====================================================
+  # CLOUDWATCH DASHBOARD
+  # =====================================================
+  
+  HasivuPlatformDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Sub '${ProjectName}-${EnvironmentName}-overview'
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 0,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "AWS/Lambda", "Invocations", "FunctionName", "${ProjectName}-api-${EnvironmentName}-register" ],
+                  [ "...", "${ProjectName}-api-${EnvironmentName}-login" ],
+                  [ "...", "${ProjectName}-api-${EnvironmentName}-getUserProfile" ],
+                  [ "...", "${ProjectName}-api-${EnvironmentName}-healthBasic" ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "Lambda Function Invocations",
+                "period": 300,
+                "stat": "Sum"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12,
+              "y": 0,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "AWS/Lambda", "Errors", "FunctionName", "${ProjectName}-api-${EnvironmentName}-register" ],
+                  [ "...", "${ProjectName}-api-${EnvironmentName}-login" ],
+                  [ "...", "${ProjectName}-api-${EnvironmentName}-getUserProfile" ],
+                  [ "...", "${ProjectName}-api-${EnvironmentName}-healthBasic" ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "Lambda Function Errors",
+                "period": 300,
+                "stat": "Sum"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 6,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "AWS/Lambda", "Duration", "FunctionName", "${ProjectName}-api-${EnvironmentName}-register" ],
+                  [ "...", "${ProjectName}-api-${EnvironmentName}-login" ],
+                  [ "...", "${ProjectName}-api-${EnvironmentName}-getUserProfile" ],
+                  [ "...", "${ProjectName}-api-${EnvironmentName}-healthBasic" ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "Lambda Function Duration (ms)",
+                "period": 300,
+                "stat": "Average"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12,
+              "y": 6,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  [ "AWS/Lambda", "Throttles", "FunctionName", "${ProjectName}-api-${EnvironmentName}-register" ],
+                  [ "...", "${ProjectName}-api-${EnvironmentName}-login" ],
+                  [ "...", "${ProjectName}-api-${EnvironmentName}-createPaymentOrder" ],
+                  [ "...", "${ProjectName}-api-${EnvironmentName}-verifyPayment" ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "Lambda Function Throttles",
+                "period": 300,
+                "stat": "Sum"
+              }
+            },
+            {
+              "type": "log",
+              "x": 0,
+              "y": 12,
+              "width": 24,
+              "height": 6,
+              "properties": {
+                "query": "SOURCE '/aws/lambda/${ProjectName}-api-${EnvironmentName}-healthBasic'\n| fields @timestamp, @message\n| filter @message like /ERROR/\n| sort @timestamp desc\n| limit 100",
+                "region": "${AWS::Region}",
+                "title": "Recent Errors",
+                "view": "table"
+              }
+            }
+          ]
+        }
+
+  # =====================================================
+  # LAMBDA FUNCTION ALARMS
+  # =====================================================
+  
+  # High Error Rate Alarm
+  LambdaHighErrorRateAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${ProjectName}-${EnvironmentName}-lambda-high-error-rate'
+      AlarmDescription: 'Lambda functions experiencing high error rate'
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: !If [IsProduction, 10, 20]
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref AlertingTopicArn
+      OKActions:
+        - !Ref AlertingTopicArn
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: FunctionName
+          Value: !Sub '${ProjectName}-api-${EnvironmentName}-login'
+  
+  # High Duration Alarm
+  LambdaHighDurationAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${ProjectName}-${EnvironmentName}-lambda-high-duration'
+      AlarmDescription: 'Lambda functions taking too long to execute'
+      MetricName: Duration
+      Namespace: AWS/Lambda
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 3
+      Threshold: !If [IsProduction, 15000, 20000]  # 15s for prod, 20s for others
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref AlertingTopicArn
+      TreatMissingData: notBreaching
+  
+  # Throttling Alarm
+  LambdaThrottleAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${ProjectName}-${EnvironmentName}-lambda-throttles'
+      AlarmDescription: 'Lambda functions being throttled'
+      MetricName: Throttles
+      Namespace: AWS/Lambda
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      AlarmActions:
+        - !Ref AlertingTopicArn
+      TreatMissingData: notBreaching
+  
+  # API Gateway Alarms
+  ApiGateway4XXAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${ProjectName}-${EnvironmentName}-api-4xx-errors'
+      AlarmDescription: 'High rate of 4XX errors from API Gateway'
+      MetricName: 4XXError
+      Namespace: AWS/ApiGateway
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: !If [IsProduction, 25, 50]
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref AlertingTopicArn
+      TreatMissingData: notBreaching
+  
+  ApiGateway5XXAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${ProjectName}-${EnvironmentName}-api-5xx-errors'
+      AlarmDescription: 'High rate of 5XX errors from API Gateway'
+      MetricName: 5XXError
+      Namespace: AWS/ApiGateway
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 5
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref AlertingTopicArn
+      TreatMissingData: notBreaching
+  
+  ApiGatewayLatencyAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${ProjectName}-${EnvironmentName}-api-high-latency'
+      AlarmDescription: 'API Gateway experiencing high latency'
+      MetricName: Latency
+      Namespace: AWS/ApiGateway
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 3
+      Threshold: !If [IsProduction, 5000, 10000]  # 5s for prod, 10s for others
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref AlertingTopicArn
+      TreatMissingData: notBreaching
+
+  # =====================================================
+  # CUSTOM METRICS AND ALARMS
+  # =====================================================
+  
+  # Payment Processing Alarm
+  PaymentErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${ProjectName}-${EnvironmentName}-payment-errors'
+      AlarmDescription: 'High error rate in payment processing functions'
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 3
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref AlertingTopicArn
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: FunctionName
+          Value: !Sub '${ProjectName}-api-${EnvironmentName}-createPaymentOrder'
+  
+  # Authentication System Health
+  AuthSystemHealthAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${ProjectName}-${EnvironmentName}-auth-system-health'
+      AlarmDescription: 'Authentication system experiencing issues'
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 5
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref AlertingTopicArn
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: FunctionName
+          Value: !Sub '${ProjectName}-api-${EnvironmentName}-login'
+
+  # =====================================================
+  # LOG MONITORING
+  # =====================================================
+  
+  # Critical Error Log Filter
+  CriticalErrorLogFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${ProjectName}-api-${EnvironmentName}-healthBasic'
+      FilterPattern: '[timestamp, request_id, level="ERROR", ...]'
+      MetricTransformations:
+        - MetricNamespace: !Sub '${ProjectName}/Errors'
+          MetricName: CriticalErrors
+          MetricValue: '1'
+          DefaultValue: 0
+  
+  CriticalErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${ProjectName}-${EnvironmentName}-critical-errors'
+      AlarmDescription: 'Critical errors detected in application logs'
+      MetricName: CriticalErrors
+      Namespace: !Sub '${ProjectName}/Errors'
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      AlarmActions:
+        - !Ref AlertingTopicArn
+      TreatMissingData: notBreaching
+  
+  # Database Connection Error Filter
+  DatabaseErrorLogFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${ProjectName}-api-${EnvironmentName}-getUserProfile'
+      FilterPattern: '[timestamp, request_id, level, message="*database*error*" || message="*connection*failed*"]'
+      MetricTransformations:
+        - MetricNamespace: !Sub '${ProjectName}/Database'
+          MetricName: ConnectionErrors
+          MetricValue: '1'
+          DefaultValue: 0
+  
+  DatabaseErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${ProjectName}-${EnvironmentName}-database-errors'
+      AlarmDescription: 'Database connection errors detected'
+      MetricName: ConnectionErrors
+      Namespace: !Sub '${ProjectName}/Database'
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 3
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref AlertingTopicArn
+      TreatMissingData: notBreaching
+
+  # =====================================================
+  # SLACK NOTIFICATION LAMBDA (Optional)
+  # =====================================================
+  
+  SlackNotificationFunction:
+    Type: AWS::Lambda::Function
+    Condition: HasSlackWebhook
+    Properties:
+      FunctionName: !Sub '${ProjectName}-${EnvironmentName}-slack-notifications'
+      Runtime: python3.9
+      Handler: index.lambda_handler
+      Timeout: 30
+      MemorySize: 128
+      Role: !GetAtt SlackNotificationRole.Arn
+      Environment:
+        Variables:
+          SLACK_WEBHOOK_URL: !Ref SlackWebhookUrl
+          ENVIRONMENT: !Ref EnvironmentName
+      Code:
+        ZipFile: |
+          import json
+          import urllib3
+          import os
+          
+          http = urllib3.PoolManager()
+          
+          def lambda_handler(event, context):
+              webhook_url = os.environ['SLACK_WEBHOOK_URL']
+              environment = os.environ['ENVIRONMENT']
+              
+              # Parse SNS message
+              message = json.loads(event['Records'][0]['Sns']['Message'])
+              
+              alarm_name = message.get('AlarmName', 'Unknown')
+              new_state = message.get('NewStateValue', 'UNKNOWN')
+              reason = message.get('NewStateReason', 'No reason provided')
+              
+              # Determine color based on state
+              color = {
+                  'ALARM': 'danger',
+                  'OK': 'good',
+                  'INSUFFICIENT_DATA': 'warning'
+              }.get(new_state, '#999999')
+              
+              # Determine emoji based on state
+              emoji = {
+                  'ALARM': '🚨',
+                  'OK': '✅',
+                  'INSUFFICIENT_DATA': '⚠️'
+              }.get(new_state, '❓')
+              
+              slack_message = {
+                  'text': f'{emoji} CloudWatch Alert - {environment.title()}',
+                  'attachments': [{
+                      'color': color,
+                      'fields': [
+                          {
+                              'title': 'Alarm Name',
+                              'value': alarm_name,
+                              'short': True
+                          },
+                          {
+                              'title': 'State',
+                              'value': new_state,
+                              'short': True
+                          },
+                          {
+                              'title': 'Reason',
+                              'value': reason,
+                              'short': False
+                          },
+                          {
+                              'title': 'Environment',
+                              'value': environment,
+                              'short': True
+                          }
+                      ],
+                      'footer': 'HASIVU Platform Monitoring',
+                      'ts': int(message.get('StateChangeTime', '0'))
+                  }]
+              }
+              
+              encoded_msg = json.dumps(slack_message).encode('utf-8')
+              resp = http.request('POST', webhook_url, body=encoded_msg)
+              
+              return {
+                  'statusCode': 200,
+                  'body': json.dumps('Message sent to Slack')
+              }
+  
+  SlackNotificationRole:
+    Type: AWS::IAM::Role
+    Condition: HasSlackWebhook
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+  
+  SlackNotificationSubscription:
+    Type: AWS::SNS::Subscription
+    Condition: HasSlackWebhook
+    Properties:
+      Protocol: lambda
+      TopicArn: !Ref AlertingTopicArn
+      Endpoint: !GetAtt SlackNotificationFunction.Arn
+  
+  SlackNotificationPermission:
+    Type: AWS::Lambda::Permission
+    Condition: HasSlackWebhook
+    Properties:
+      FunctionName: !Ref SlackNotificationFunction
+      Action: lambda:InvokeFunction
+      Principal: sns.amazonaws.com
+      SourceArn: !Ref AlertingTopicArn
+
+  # =====================================================
+  # BUDGET ALERTS (Production Only)
+  # =====================================================
+  
+  CostBudget:
+    Type: AWS::Budgets::Budget
+    Condition: IsProduction
+    Properties:
+      Budget:
+        BudgetName: !Sub '${ProjectName}-${EnvironmentName}-monthly-budget'
+        BudgetLimit:
+          Amount: 1000  # $1000 per month
+          Unit: USD
+        TimeUnit: MONTHLY
+        BudgetType: COST
+        CostFilters:
+          TagKey:
+            - Project
+          TagValue:
+            - HASIVU
+      NotificationsWithSubscribers:
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 80  # Alert at 80% of budget
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref NotificationEmail
+        - Notification:
+            NotificationType: FORECASTED
+            ComparisonOperator: GREATER_THAN
+            Threshold: 100  # Alert if forecasted to exceed budget
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref NotificationEmail
+
+Outputs:
+  DashboardUrl:
+    Description: 'CloudWatch Dashboard URL'
+    Value: !Sub 'https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${ProjectName}-${EnvironmentName}-overview'
+    Export:
+      Name: !Sub '${ProjectName}-${EnvironmentName}-DashboardUrl'
+  
+  SlackNotificationFunctionArn:
+    Condition: HasSlackWebhook
+    Description: 'Slack notification Lambda function ARN'
+    Value: !GetAtt SlackNotificationFunction.Arn
+    Export:
+      Name: !Sub '${ProjectName}-${EnvironmentName}-SlackNotificationFunctionArn'
+  
+  MonitoringStackStatus:
+    Description: 'Monitoring stack deployment status'
+    Value: 'Successfully deployed'
+    Export:
+      Name: !Sub '${ProjectName}-${EnvironmentName}-MonitoringStatus'

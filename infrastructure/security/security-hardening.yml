@@ -1,0 +1,306 @@
+# Security Hardening Infrastructure Configuration
+# Production-ready security configurations for the Hasivu Platform
+
+Resources:
+  # WAF (Web Application Firewall) Configuration
+  WebApplicationFirewall:
+    Type: AWS::WAFv2::WebACL
+    Properties:
+      Name: !Sub "${AWS::StackName}-waf"
+      Scope: REGIONAL
+      DefaultAction:
+        Allow: {}
+      Rules:
+        # Rate limiting rule
+        - Name: RateLimitRule
+          Priority: 1
+          Statement:
+            RateBasedStatement:
+              Limit: 2000
+              AggregateKeyType: IP
+          Action:
+            Block: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: RateLimitRule
+
+        # Geo blocking rule (optional - restrict to specific regions)
+        - Name: GeoBlockingRule
+          Priority: 2
+          Statement:
+            GeoMatchStatement:
+              CountryCodes:
+                - CN  # Block China
+                - RU  # Block Russia
+                - KP  # Block North Korea
+          Action:
+            Block: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: GeoBlockingRule
+
+        # SQL Injection protection
+        - Name: SQLInjectionRule
+          Priority: 3
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesSQLiRuleSet
+          OverrideAction:
+            None: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: SQLInjectionRule
+
+        # XSS protection
+        - Name: XSSRule
+          Priority: 4
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesCommonRuleSet
+          OverrideAction:
+            None: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: XSSRule
+
+        # Known bad inputs rule
+        - Name: KnownBadInputsRule
+          Priority: 5
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesKnownBadInputsRuleSet
+          OverrideAction:
+            None: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: KnownBadInputsRule
+
+      VisibilityConfig:
+        SampledRequestsEnabled: true
+        CloudWatchMetricsEnabled: true
+        MetricName: !Sub "${AWS::StackName}-waf"
+
+  # API Gateway security configuration
+  ApiGatewayDomainName:
+    Type: AWS::ApiGateway::DomainName
+    Properties:
+      DomainName: !Sub "api.${DomainName}"
+      CertificateArn: !Ref SSLCertificate
+      SecurityPolicy: TLS_1_2
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+      MutualTlsAuthentication:
+        TruststoreUri: !Sub "s3://${SecurityBucket}/truststore.pem"
+
+  # SSL Certificate for API Gateway
+  SSLCertificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: !Sub "api.${DomainName}"
+      ValidationMethod: DNS
+      DomainValidationOptions:
+        - DomainName: !Sub "api.${DomainName}"
+          HostedZoneId: !Ref HostedZone
+
+  # Security Group for RDS (restrict database access)
+  DatabaseSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for RDS database
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        # Only allow Lambda functions to connect to database
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref LambdaSecurityGroup
+      SecurityGroupEgress: []
+
+  # Security Group for Lambda functions
+  LambdaSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for Lambda functions
+      VpcId: !Ref VPC
+      SecurityGroupEgress:
+        # HTTPS outbound for API calls
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+        # Database access
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          DestinationSecurityGroupId: !Ref DatabaseSecurityGroup
+        # Redis access
+        - IpProtocol: tcp
+          FromPort: 6379
+          ToPort: 6379
+          DestinationSecurityGroupId: !Ref RedisSecurityGroup
+
+  # Security Group for Redis
+  RedisSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for Redis cache
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        # Only allow Lambda functions to connect to Redis
+        - IpProtocol: tcp
+          FromPort: 6379
+          ToPort: 6379
+          SourceSecurityGroupId: !Ref LambdaSecurityGroup
+      SecurityGroupEgress: []
+
+  # S3 Bucket for security logs and configuration
+  SecurityBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${AWS::StackName}-security-${AWS::AccountId}"
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+            BucketKeyEnabled: true
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteOldVersions
+            Status: Enabled
+            NoncurrentVersionExpirationInDays: 90
+      NotificationConfiguration:
+        CloudWatchConfigurations:
+          - Event: s3:ObjectCreated:*
+            CloudWatchConfiguration:
+              LogGroupName: !Ref SecurityLogGroup
+
+  # CloudWatch Log Group for security events
+  SecurityLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/security/${AWS::StackName}"
+      RetentionInDays: 90
+
+  # CloudTrail for API auditing
+  CloudTrail:
+    Type: AWS::CloudTrail::Trail
+    Properties:
+      TrailName: !Sub "${AWS::StackName}-security-trail"
+      S3BucketName: !Ref SecurityBucket
+      S3KeyPrefix: "cloudtrail-logs"
+      IncludeGlobalServiceEvents: true
+      IsMultiRegionTrail: true
+      EnableLogFileValidation: true
+      EventSelectors:
+        - ReadWriteType: All
+          IncludeManagementEvents: true
+          DataResources:
+            - Type: "AWS::S3::Object"
+              Values:
+                - !Sub "${SecurityBucket}/*"
+
+  # Config Rule for security compliance
+  ConfigRule:
+    Type: AWS::Config::ConfigRule
+    Properties:
+      ConfigRuleName: !Sub "${AWS::StackName}-security-compliance"
+      Source:
+        Owner: AWS
+        SourceIdentifier: S3_BUCKET_PUBLIC_ACCESS_PROHIBITED
+
+  # SNS Topic for security alerts
+  SecurityAlertTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub "${AWS::StackName}-security-alerts"
+      DisplayName: "Hasivu Security Alerts"
+
+  # CloudWatch Alarm for suspicious activity
+  SuspiciousActivityAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${AWS::StackName}-suspicious-activity"
+      AlarmDescription: "Alerts on suspicious activity patterns"
+      MetricName: "SuspiciousActivity"
+      Namespace: "HASIVU/Security"
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 5
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref SecurityAlertTopic
+      TreatMissingData: notBreaching
+
+Parameters:
+  DomainName:
+    Type: String
+    Description: Domain name for the API
+    Default: hasivu.com
+
+  VPC:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC ID for security groups
+
+  HostedZone:
+    Type: AWS::Route53::HostedZone::Id
+    Description: Route53 Hosted Zone ID
+
+Outputs:
+  WAFArn:
+    Description: WAF ARN for API Gateway association
+    Value: !GetAtt WebApplicationFirewall.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-waf-arn"
+
+  SecurityBucketName:
+    Description: S3 bucket for security logs
+    Value: !Ref SecurityBucket
+    Export:
+      Name: !Sub "${AWS::StackName}-security-bucket"
+
+  SecurityLogGroupName:
+    Description: CloudWatch log group for security events
+    Value: !Ref SecurityLogGroup
+    Export:
+      Name: !Sub "${AWS::StackName}-security-logs"
+
+  SecurityAlertTopicArn:
+    Description: SNS topic for security alerts
+    Value: !Ref SecurityAlertTopic
+    Export:
+      Name: !Sub "${AWS::StackName}-security-alerts"
+
+  DatabaseSecurityGroupId:
+    Description: Security group ID for database access
+    Value: !Ref DatabaseSecurityGroup
+    Export:
+      Name: !Sub "${AWS::StackName}-db-sg"
+
+  LambdaSecurityGroupId:
+    Description: Security group ID for Lambda functions
+    Value: !Ref LambdaSecurityGroup
+    Export:
+      Name: !Sub "${AWS::StackName}-lambda-sg"
+
+  RedisSecurityGroupId:
+    Description: Security group ID for Redis access
+    Value: !Ref RedisSecurityGroup
+    Export:
+      Name: !Sub "${AWS::StackName}-redis-sg"

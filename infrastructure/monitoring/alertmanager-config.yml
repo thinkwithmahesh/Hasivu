@@ -1,0 +1,489 @@
+# HASIVU Platform - Alertmanager Configuration
+# Enterprise-grade alerting with intelligent routing, escalation, and multi-channel notifications
+#
+# This configuration provides:
+# - Smart alert routing based on severity and service
+# - Multi-channel notifications (Email, Slack, PagerDuty, SMS)
+# - Alert grouping and throttling to prevent spam
+# - Escalation procedures for unacknowledged alerts
+# - Business hours and maintenance window awareness
+#
+# @author HASIVU Development Team
+# @version 2.0.0
+# @since 2024
+
+global:
+  # SMTP configuration for email notifications
+  smtp_smarthost: 'smtp.gmail.com:587'
+  smtp_from: 'alerts@hasivu.com'
+  smtp_auth_username: 'alerts@hasivu.com'
+  smtp_auth_password: '${SMTP_PASSWORD}'
+  smtp_require_tls: true
+  
+  # Slack API configuration
+  slack_api_url: 'https://hooks.slack.com/services/${SLACK_WEBHOOK_PATH}'
+  
+  # PagerDuty configuration
+  pagerduty_url: 'https://events.pagerduty.com/v2/enqueue'
+
+# Define notification templates
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+# Routing tree for alert distribution
+route:
+  group_by: ['alertname', 'cluster', 'service']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 12h
+  receiver: 'default'
+  
+  routes:
+    # Critical system alerts - immediate escalation
+    - match:
+        severity: critical
+      receiver: 'critical-alerts'
+      group_wait: 10s
+      group_interval: 2m
+      repeat_interval: 30m
+      routes:
+        # Database critical issues
+        - match:
+            service: database
+          receiver: 'database-critical'
+          continue: true
+        
+        # Payment system critical issues
+        - match:
+            service: payment
+          receiver: 'payment-critical'
+          continue: true
+        
+        # Authentication critical issues
+        - match:
+            service: authentication
+          receiver: 'auth-critical'
+          continue: true
+
+    # High priority alerts - rapid response
+    - match:
+        severity: high
+      receiver: 'high-priority-alerts'
+      group_wait: 1m
+      group_interval: 3m
+      repeat_interval: 2h
+
+    # Security alerts - specialized handling
+    - match:
+        category: security
+      receiver: 'security-alerts'
+      group_wait: 30s
+      group_interval: 1m
+      repeat_interval: 1h
+
+    # Business metric alerts
+    - match:
+        category: business
+      receiver: 'business-alerts'
+      group_wait: 2m
+      group_interval: 5m
+      repeat_interval: 4h
+
+    # Performance alerts
+    - match:
+        category: performance
+      receiver: 'performance-alerts'
+      group_wait: 1m
+      group_interval: 5m
+      repeat_interval: 6h
+
+    # Cost alerts
+    - match:
+        category: cost
+      receiver: 'cost-alerts'
+      group_wait: 5m
+      group_interval: 30m
+      repeat_interval: 24h
+
+    # RFID system alerts
+    - match:
+        service: rfid
+      receiver: 'rfid-alerts'
+      group_wait: 1m
+      group_interval: 5m
+      repeat_interval: 2h
+
+    # Development environment alerts (lower priority)
+    - match:
+        environment: development
+      receiver: 'dev-alerts'
+      group_wait: 5m
+      group_interval: 10m
+      repeat_interval: 24h
+
+    # Staging environment alerts
+    - match:
+        environment: staging
+      receiver: 'staging-alerts'
+      group_wait: 2m
+      group_interval: 5m
+      repeat_interval: 6h
+
+# Inhibition rules to suppress redundant alerts
+inhibit_rules:
+  # Suppress warning alerts when critical alerts are firing
+  - source_match:
+      severity: critical
+    target_match:
+      severity: warning
+    equal: ['alertname', 'instance']
+
+  # Suppress individual service alerts when overall system is down
+  - source_match:
+      alertname: SystemDown
+    target_match_re:
+      alertname: '(DatabaseDown|RedisDown|PaymentGatewayDown)'
+
+  # Suppress payment alerts during maintenance
+  - source_match:
+      alertname: MaintenanceMode
+    target_match:
+      service: payment
+
+  # Suppress cost alerts during high traffic periods
+  - source_match:
+      alertname: HighTraffic
+    target_match:
+      category: cost
+
+# Receiver definitions
+receivers:
+  # Default receiver for uncategorized alerts
+  - name: 'default'
+    email_configs:
+      - to: 'devops@hasivu.com'
+        subject: '[HASIVU] Alert: {{ .GroupLabels.alertname }}'
+        body: |
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Severity: {{ .Labels.severity }}
+          Instance: {{ .Labels.instance }}
+          {{ end }}
+
+  # Critical alerts - all channels with immediate escalation
+  - name: 'critical-alerts'
+    email_configs:
+      - to: 'alerts-critical@hasivu.com, cto@hasivu.com, engineering-lead@hasivu.com'
+        subject: '[CRITICAL] HASIVU System Alert'
+        html: |
+          <h2 style="color: #ff0000;">🚨 CRITICAL ALERT 🚨</h2>
+          {{ range .Alerts }}
+          <div style="border: 2px solid #ff0000; padding: 10px; margin: 10px 0;">
+            <h3>{{ .Annotations.summary }}</h3>
+            <p><strong>Description:</strong> {{ .Annotations.description }}</p>
+            <p><strong>Service:</strong> {{ .Labels.service }}</p>
+            <p><strong>Instance:</strong> {{ .Labels.instance }}</p>
+            <p><strong>Time:</strong> {{ .StartsAt }}</p>
+            <p><strong>Dashboard:</strong> <a href="https://monitoring.hasivu.com/d/hasivu-ops">View Dashboard</a></p>
+          </div>
+          {{ end }}
+    
+    slack_configs:
+      - api_url: '${SLACK_WEBHOOK_URL_CRITICAL}'
+        channel: '#alerts-critical'
+        title: '🚨 CRITICAL: {{ .GroupLabels.alertname }}'
+        text: '@channel Critical system alert requires immediate attention'
+        color: 'danger'
+        actions:
+          - type: button
+            text: 'View Dashboard'
+            url: 'https://monitoring.hasivu.com/d/hasivu-ops'
+          - type: button
+            text: 'Acknowledge'
+            url: 'https://alertmanager.hasivu.com/#/silences/new'
+
+    pagerduty_configs:
+      - routing_key: '${PAGERDUTY_INTEGRATION_KEY_CRITICAL}'
+        description: '{{ .GroupLabels.alertname }}: {{ .CommonAnnotations.summary }}'
+        severity: 'critical'
+        details:
+          environment: '{{ .CommonLabels.environment }}'
+          service: '{{ .CommonLabels.service }}'
+          instance: '{{ .CommonLabels.instance }}'
+
+  # Database critical alerts
+  - name: 'database-critical'
+    email_configs:
+      - to: 'dba@hasivu.com, backend-team@hasivu.com'
+        subject: '[CRITICAL] Database Alert - Immediate Action Required'
+        body: |
+          🔴 CRITICAL DATABASE ALERT
+          
+          {{ range .Alerts }}
+          Issue: {{ .Annotations.summary }}
+          Details: {{ .Annotations.description }}
+          Database: {{ .Labels.database }}
+          Instance: {{ .Labels.instance }}
+          Time: {{ .StartsAt }}
+          
+          IMMEDIATE ACTIONS:
+          1. Check database connectivity
+          2. Review recent changes
+          3. Assess backup status
+          4. Consider failover if necessary
+          {{ end }}
+
+    slack_configs:
+      - api_url: '${SLACK_WEBHOOK_URL_DB}'
+        channel: '#database-alerts'
+        title: '🔴 Database Critical Alert'
+        text: '@here Database requires immediate attention'
+        color: 'danger'
+
+  # Payment system critical alerts
+  - name: 'payment-critical'
+    email_configs:
+      - to: 'payments-team@hasivu.com, finance@hasivu.com, cto@hasivu.com'
+        subject: '[CRITICAL] Payment System Alert - Revenue Impact'
+        body: |
+          💳 CRITICAL PAYMENT SYSTEM ALERT
+          
+          {{ range .Alerts }}
+          Issue: {{ .Annotations.summary }}
+          Impact: {{ .Annotations.description }}
+          Gateway: {{ .Labels.gateway }}
+          Error Rate: {{ .Labels.error_rate }}%
+          Time: {{ .StartsAt }}
+          
+          BUSINESS IMPACT:
+          - Revenue collection may be affected
+          - Customer experience degraded
+          - Potential compliance issues
+          
+          ESCALATION PATH:
+          1. Payment team (immediate)
+          2. CTO (15 minutes)
+          3. CEO (30 minutes)
+          {{ end }}
+
+    pagerduty_configs:
+      - routing_key: '${PAGERDUTY_INTEGRATION_KEY_PAYMENT}'
+        description: 'Payment System Critical: {{ .CommonAnnotations.summary }}'
+        severity: 'critical'
+
+  # Authentication critical alerts
+  - name: 'auth-critical'
+    email_configs:
+      - to: 'security@hasivu.com, backend-team@hasivu.com'
+        subject: '[CRITICAL] Authentication System Alert'
+        body: |
+          🔐 CRITICAL AUTHENTICATION ALERT
+          
+          {{ range .Alerts }}
+          Issue: {{ .Annotations.summary }}
+          Details: {{ .Annotations.description }}
+          Service: {{ .Labels.service }}
+          Users Affected: {{ .Labels.affected_users }}
+          Time: {{ .StartsAt }}
+          
+          SECURITY IMPLICATIONS:
+          - User access may be compromised
+          - System security at risk
+          - Compliance requirements affected
+          {{ end }}
+
+  # High priority alerts
+  - name: 'high-priority-alerts'
+    email_configs:
+      - to: 'devops@hasivu.com, on-call@hasivu.com'
+        subject: '[HIGH] HASIVU Alert: {{ .GroupLabels.alertname }}'
+        body: |
+          ⚠️ HIGH PRIORITY ALERT
+          
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Service: {{ .Labels.service }}
+          Severity: {{ .Labels.severity }}
+          Instance: {{ .Labels.instance }}
+          Started: {{ .StartsAt }}
+          
+          Dashboard: https://monitoring.hasivu.com/d/hasivu-ops
+          Runbook: {{ .Annotations.runbook_url }}
+          {{ end }}
+
+    slack_configs:
+      - api_url: '${SLACK_WEBHOOK_URL}'
+        channel: '#alerts-high'
+        title: 'High Priority: {{ .GroupLabels.alertname }}'
+        text: 'High priority alert requires attention within 30 minutes'
+        color: 'warning'
+
+  # Security alerts
+  - name: 'security-alerts'
+    email_configs:
+      - to: 'security@hasivu.com, ciso@hasivu.com'
+        subject: '[SECURITY] HASIVU Security Alert'
+        body: |
+          🛡️ SECURITY ALERT
+          
+          {{ range .Alerts }}
+          Event: {{ .Annotations.summary }}
+          Details: {{ .Annotations.description }}
+          Source IP: {{ .Labels.source_ip }}
+          User: {{ .Labels.user }}
+          Time: {{ .StartsAt }}
+          
+          Threat Level: {{ .Labels.threat_level }}
+          Recommended Action: {{ .Annotations.recommendation }}
+          {{ end }}
+
+    slack_configs:
+      - api_url: '${SLACK_WEBHOOK_URL_SECURITY}'
+        channel: '#security-alerts'
+        title: '🛡️ Security Alert: {{ .GroupLabels.alertname }}'
+        text: 'Security event detected - review required'
+        color: '#ff8c00'
+
+  # Business alerts
+  - name: 'business-alerts'
+    email_configs:
+      - to: 'business-ops@hasivu.com, management@hasivu.com'
+        subject: '[BUSINESS] HASIVU Business Metric Alert'
+        body: |
+          📊 BUSINESS METRIC ALERT
+          
+          {{ range .Alerts }}
+          Metric: {{ .Annotations.summary }}
+          Impact: {{ .Annotations.description }}
+          Current Value: {{ .Labels.current_value }}
+          Threshold: {{ .Labels.threshold }}
+          Time: {{ .StartsAt }}
+          
+          Business Impact: {{ .Annotations.business_impact }}
+          Recommended Action: {{ .Annotations.recommendation }}
+          {{ end }}
+
+    slack_configs:
+      - api_url: '${SLACK_WEBHOOK_URL_BUSINESS}'
+        channel: '#business-alerts'
+        title: '📊 Business Alert: {{ .GroupLabels.alertname }}'
+        color: '#36a64f'
+
+  # Performance alerts
+  - name: 'performance-alerts'
+    email_configs:
+      - to: 'performance-team@hasivu.com, devops@hasivu.com'
+        subject: '[PERFORMANCE] HASIVU Performance Alert'
+        body: |
+          ⚡ PERFORMANCE ALERT
+          
+          {{ range .Alerts }}
+          Issue: {{ .Annotations.summary }}
+          Details: {{ .Annotations.description }}
+          Service: {{ .Labels.service }}
+          Response Time: {{ .Labels.response_time }}ms
+          Threshold: {{ .Labels.threshold }}ms
+          Time: {{ .StartsAt }}
+          
+          Performance Impact: {{ .Annotations.performance_impact }}
+          Optimization Tips: {{ .Annotations.optimization }}
+          {{ end }}
+
+  # Cost alerts
+  - name: 'cost-alerts'
+    email_configs:
+      - to: 'finance@hasivu.com, devops@hasivu.com'
+        subject: '[COST] HASIVU Cost Alert'
+        body: |
+          💰 COST ALERT
+          
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Details: {{ .Annotations.description }}
+          Service: {{ .Labels.service }}
+          Current Cost: ${{ .Labels.current_cost }}
+          Budget: ${{ .Labels.budget }}
+          Utilization: {{ .Labels.utilization }}%
+          Time: {{ .StartsAt }}
+          
+          Cost Optimization: {{ .Annotations.optimization }}
+          {{ end }}
+
+  # RFID system alerts
+  - name: 'rfid-alerts'
+    email_configs:
+      - to: 'rfid-team@hasivu.com, hardware@hasivu.com'
+        subject: '[RFID] HASIVU RFID System Alert'
+        body: |
+          📱 RFID SYSTEM ALERT
+          
+          {{ range .Alerts }}
+          Issue: {{ .Annotations.summary }}
+          Details: {{ .Annotations.description }}
+          Reader ID: {{ .Labels.reader_id }}
+          Location: {{ .Labels.location }}
+          Success Rate: {{ .Labels.success_rate }}%
+          Time: {{ .StartsAt }}
+          
+          Troubleshooting: {{ .Annotations.troubleshooting }}
+          {{ end }}
+
+  # Development environment alerts
+  - name: 'dev-alerts'
+    email_configs:
+      - to: 'dev-team@hasivu.com'
+        subject: '[DEV] Development Environment Alert'
+        body: |
+          🔧 DEVELOPMENT ALERT
+          
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Service: {{ .Labels.service }}
+          Environment: development
+          Time: {{ .StartsAt }}
+          {{ end }}
+
+  # Staging environment alerts
+  - name: 'staging-alerts'
+    email_configs:
+      - to: 'qa-team@hasivu.com, devops@hasivu.com'
+        subject: '[STAGING] Staging Environment Alert'
+        body: |
+          🧪 STAGING ALERT
+          
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Service: {{ .Labels.service }}
+          Environment: staging
+          Time: {{ .StartsAt }}
+          
+          Impact on Testing: {{ .Annotations.testing_impact }}
+          {{ end }}
+
+# Time-based routing (business hours awareness)
+time_intervals:
+  - name: business_hours
+    time_intervals:
+      - times:
+          - start_time: '09:00'
+            end_time: '18:00'
+        weekdays: ['monday:friday']
+        location: 'Asia/Kolkata'
+
+  - name: weekend
+    time_intervals:
+      - times:
+          - start_time: '00:00'
+            end_time: '23:59'
+        weekdays: ['saturday', 'sunday']
+        location: 'Asia/Kolkata'
+
+  - name: maintenance_window
+    time_intervals:
+      - times:
+          - start_time: '02:00'
+            end_time: '04:00'
+        weekdays: ['sunday']
+        location: 'Asia/Kolkata'

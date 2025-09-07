@@ -1,0 +1,16 @@
+{
+  "/page": "app/page.js",
+  "/inventory-management/page": "app/inventory-management/page.js",
+  "/rfid-verification/page": "app/rfid-verification/page.js",
+  "/order-workflow/page": "app/order-workflow/page.js",
+  "/orders/page": "app/orders/page.js",
+  "/menu/page": "app/menu/page.js",
+  "/notifications/page": "app/notifications/page.js",
+  "/kitchen-management/page": "app/kitchen-management/page.js",
+  "/settings/page": "app/settings/page.js",
+  "/analytics/page": "app/analytics/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/auth/login/page": "app/auth/login/page.js",
+  "/dashboard/admin/page": "app/dashboard/admin/page.js",
+  "/kitchen/schedule/page": "app/kitchen/schedule/page.js"
+}

@@ -1,0 +1,397 @@
+/**
+ * HASIVU Platform - Razorpay Utilities
+ * Helper functions and validators for Razorpay integration
+ * Production-ready payment utilities with proper error handling
+ */
+
+import crypto from 'crypto';
+import { logger } from '../shared/utils/logger';
+
+// Types
+interface PaymentData {
+  id: string;
+  amount: number;
+  currency: string;
+  status: string;
+  method?: string;
+  orderId?: string;
+  createdAt: Date;
+}
+
+interface OrderData {
+  id: string;
+  amount: number;
+  currency: string;
+  receipt: string;
+  status: string;
+  createdAt: Date;
+}
+
+interface PaymentAnalytics {
+  totalAmount: number;
+  totalCount: number;
+  refundedAmount: number;
+  refundedCount: number;
+  averageAmount: number;
+  successRate: number;
+  period: {
+    start: Date;
+    end: Date;
+  };
+  byMethod: Record<string, {
+    amount: number;
+    count: number;
+    successRate: number;
+  }>;
+}
+
+/**
+ * Payment method types supported by Razorpay
+ */
+export const PAYMENT_METHODS = {
+  CARD: 'card',
+  NETBANKING: 'netbanking',
+  WALLET: 'wallet',
+  UPI: 'upi',
+  EMI: 'emi',
+  PAYLATER: 'paylater',
+  CARDLESS_EMI: 'cardless_emi',
+  BANK_TRANSFER: 'bank_transfer'
+} as const;
+
+/**
+ * Payment status types
+ */
+export const PAYMENT_STATUS = {
+  CREATED: 'created',
+  AUTHORIZED: 'authorized',
+  CAPTURED: 'captured',
+  REFUNDED: 'refunded',
+  FAILED: 'failed',
+  CANCELLED: 'cancelled'
+} as const;
+
+/**
+ * Supported currencies (INR is primary for Indian operations)
+ */
+export const SUPPORTED_CURRENCIES = ['INR', 'EUR'] as const;
+
+/**
+ * Receipt prefixes
+ */
+export const RECEIPT_PREFIX = {
+  ORDER: 'ORD_',
+  PAYMENT: 'PAY_',
+  REFUND: 'REF_'
+} as const;
+
+/**
+ * Amount limits (in paise for INR, cents for EUR)
+ */
+export const AMOUNT_LIMITS = {
+  INR: { min: 100, max: 1500000000 }, // ₹1 to ₹1.5 Cr
+  EUR: { min: 100, max: 200000000 }  // €1 to €2M
+} as const;
+
+/**
+ * Generate unique receipt number
+ */
+export function generateReceiptNumber(prefix: string = RECEIPT_PREFIX.ORDER): string {
+  try {
+    const timestamp = Date.now().toString();
+    const random = Math.random().toString(36).substr(2, 9);
+    return `${prefix}${timestamp}_${random}`;
+  } catch (error) {
+    logger.error('Failed to generate receipt number:', error);
+    throw new Error('Receipt generation failed');
+  }
+}
+
+/**
+ * Validate currency code
+ */
+export function isValidCurrency(currency: string): currency is typeof SUPPORTED_CURRENCIES[number] {
+  return SUPPORTED_CURRENCIES.includes(currency as any);
+}
+
+/**
+ * Validate payment amount for currency
+ */
+export function validatePaymentAmount(amount: number, currency: string): {
+  valid: boolean;
+  error?: string;
+  normalizedAmount?: number;
+} {
+  try {
+    if (!isValidCurrency(currency)) {
+      return {
+        valid: false,
+        error: `Unsupported currency: ${currency}`
+      };
+    }
+
+    const limits = AMOUNT_LIMITS[currency];
+    if (amount < limits.min) {
+      return {
+        valid: false,
+        error: `Amount too low. Minimum: ${formatAmount(limits.min, currency)}`
+      };
+    }
+
+    if (amount > limits.max) {
+      return {
+        valid: false,
+        error: `Amount too high. Maximum: ${formatAmount(limits.max, currency)}`
+      };
+    }
+
+    return {
+      valid: true,
+      normalizedAmount: Math.round(amount)
+    };
+  } catch (error) {
+    logger.error('Amount validation failed:', error);
+    return {
+      valid: false,
+      error: 'Amount validation error'
+    };
+  }
+}
+
+/**
+ * Generate payment signature for verification
+ */
+export function generatePaymentSignature(
+  orderId: string,
+  paymentId: string,
+  secret: string
+): string {
+  try {
+    const payload = `${orderId}|${paymentId}`;
+    return crypto.createHmac('sha256', secret).update(payload).digest('hex');
+  } catch (error) {
+    logger.error('Payment signature generation failed:', error);
+    throw new Error('Signature generation failed');
+  }
+}
+
+/**
+ * Verify payment signature
+ */
+export function verifyPaymentSignature(
+  orderId: string,
+  paymentId: string,
+  signature: string,
+  secret: string
+): boolean {
+  try {
+    const expectedSignature = generatePaymentSignature(orderId, paymentId, secret);
+    return crypto.timingSafeEqual(
+      Buffer.from(signature, 'hex'),
+      Buffer.from(expectedSignature, 'hex')
+    );
+  } catch (error) {
+    logger.error('Payment signature verification failed:', error);
+    return false;
+  }
+}
+
+/**
+ * Verify webhook signature
+ */
+export function verifyWebhookSignature(
+  payload: string,
+  signature: string,
+  secret: string
+): boolean {
+  try {
+    const expectedSignature = crypto.createHmac('sha256', secret).update(payload).digest('hex');
+    return crypto.timingSafeEqual(
+      Buffer.from(signature, 'hex'),
+      Buffer.from(expectedSignature, 'hex')
+    );
+  } catch (error) {
+    logger.error('Webhook signature verification failed:', error);
+    return false;
+  }
+}
+
+/**
+ * Format amount for display
+ */
+export function formatAmount(amount: number, currency: string): string {
+  try {
+    const value = currency === 'INR' ? amount / 100 : amount / 100;
+    const formatter = new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: currency,
+      minimumFractionDigits: 2
+    });
+    return formatter.format(value);
+  } catch (error) {
+    logger.error('Amount formatting failed:', error);
+    return `${currency} ${amount / 100}`;
+  }
+}
+
+/**
+ * Parse amount from formatted string
+ */
+export function parseAmount(formattedAmount: string, currency: string): number {
+  try {
+    // Remove currency symbols and spaces
+    const cleaned = formattedAmount.replace(/[^\d.,]/g, '');
+    const value = parseFloat(cleaned.replace(',', ''));
+    
+    if (isNaN(value)) {
+      throw new Error('Invalid amount format');
+    }
+
+    // Convert to paise/cents
+    return Math.round(value * 100);
+  } catch (error) {
+    logger.error('Amount parsing failed:', error);
+    throw new Error('Invalid amount format');
+  }
+}
+
+/**
+ * Get payment method display name
+ */
+export function getPaymentMethodName(method: string): string {
+  const methodNames: Record<string, string> = {
+    [PAYMENT_METHODS.CARD]: 'Credit/Debit Card',
+    [PAYMENT_METHODS.NETBANKING]: 'Net Banking',
+    [PAYMENT_METHODS.WALLET]: 'Digital Wallet',
+    [PAYMENT_METHODS.UPI]: 'UPI',
+    [PAYMENT_METHODS.EMI]: 'EMI',
+    [PAYMENT_METHODS.PAYLATER]: 'Pay Later',
+    [PAYMENT_METHODS.CARDLESS_EMI]: 'Cardless EMI',
+    [PAYMENT_METHODS.BANK_TRANSFER]: 'Bank Transfer'
+  };
+
+  return methodNames[method] || method;
+}
+
+/**
+ * Check if payment method supports refunds
+ */
+export function supportsRefund(method: string): boolean {
+  const refundableMethods = [
+    PAYMENT_METHODS.CARD,
+    PAYMENT_METHODS.NETBANKING,
+    PAYMENT_METHODS.WALLET,
+    PAYMENT_METHODS.UPI
+  ];
+  
+  return refundableMethods.includes(method as any);
+}
+
+/**
+ * Calculate payment analytics
+ */
+export function calculatePaymentAnalytics(
+  payments: PaymentData[],
+  startDate: Date,
+  endDate: Date
+): PaymentAnalytics {
+  try {
+    const filteredPayments = payments.filter(
+      payment => payment.createdAt >= startDate && payment.createdAt <= endDate
+    );
+
+    const successfulPayments = filteredPayments.filter(
+      payment => payment.status === PAYMENT_STATUS.CAPTURED
+    );
+
+    const refundedPayments = filteredPayments.filter(
+      payment => payment.status === PAYMENT_STATUS.REFUNDED
+    );
+
+    const totalAmount = successfulPayments.reduce((sum, payment) => sum + payment.amount, 0);
+    const refundedAmount = refundedPayments.reduce((sum, payment) => sum + payment.amount, 0);
+
+    // Group by payment method
+    const byMethod: Record<string, { amount: number; count: number; successRate: number }> = {};
+    
+    Object.values(PAYMENT_METHODS).forEach(method => {
+      const methodPayments = filteredPayments.filter(p => p.method === method);
+      const successfulMethodPayments = methodPayments.filter(p => p.status === PAYMENT_STATUS.CAPTURED);
+      
+      byMethod[method] = {
+        amount: successfulMethodPayments.reduce((sum, p) => sum + p.amount, 0),
+        count: successfulMethodPayments.length,
+        successRate: methodPayments.length > 0 
+          ? (successfulMethodPayments.length / methodPayments.length) * 100 
+          : 0
+      };
+    });
+
+    return {
+      totalAmount,
+      totalCount: successfulPayments.length,
+      refundedAmount,
+      refundedCount: refundedPayments.length,
+      averageAmount: successfulPayments.length > 0 ? totalAmount / successfulPayments.length : 0,
+      successRate: filteredPayments.length > 0 
+        ? (successfulPayments.length / filteredPayments.length) * 100 
+        : 0,
+      period: { start: startDate, end: endDate },
+      byMethod
+    };
+  } catch (error) {
+    logger.error('Payment analytics calculation failed:', error);
+    throw new Error('Analytics calculation failed');
+  }
+}
+
+/**
+ * Validate order data
+ */
+export function validateOrderData(orderData: Partial<OrderData>): {
+  valid: boolean;
+  errors: string[];
+} {
+  const errors: string[] = [];
+
+  if (!orderData.amount || orderData.amount <= 0) {
+    errors.push('Valid amount is required');
+  }
+
+  if (!orderData.currency || !isValidCurrency(orderData.currency)) {
+    errors.push('Valid currency is required');
+  }
+
+  if (!orderData.receipt || orderData.receipt.length < 3) {
+    errors.push('Receipt number is required (minimum 3 characters)');
+  }
+
+  if (orderData.amount && orderData.currency) {
+    const amountValidation = validatePaymentAmount(orderData.amount, orderData.currency);
+    if (!amountValidation.valid) {
+      errors.push(amountValidation.error || 'Invalid amount');
+    }
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors
+  };
+}
+
+/**
+ * Generate test payment data for development
+ */
+export function generateTestPaymentData(): PaymentData {
+  return {
+    id: `pay_${Date.now()}`,
+    amount: Math.floor(Math.random() * 10000) + 100, // Random amount between ₹1-₹100
+    currency: 'INR',
+    status: PAYMENT_STATUS.CAPTURED,
+    method: PAYMENT_METHODS.CARD,
+    orderId: `order_${Date.now()}`,
+    createdAt: new Date()
+  };
+}
+
+export type { PaymentData, OrderData, PaymentAnalytics };

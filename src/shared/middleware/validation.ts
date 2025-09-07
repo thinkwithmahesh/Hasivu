@@ -1,0 +1,767 @@
+/**
+ * HASIVU Platform - Request Validation Middleware
+ * Production-ready request validation middleware for Lambda functions
+ * Comprehensive input validation, sanitization, and error handling
+ */
+
+import { z } from 'zod';
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+// import { LoggerService } from '../logger.service';  // Logger import temporarily unavailable
+const logger = {
+  info: (message: string, data?: any) => console.log(message, data),
+  warn: (message: string, data?: any) => console.warn(message, data),
+  error: (message: string, data?: any) => console.error(message, data),
+  debug: (message: string, data?: any) => console.debug(message, data)
+};
+import { corsMiddleware, securityHeaders } from './auth';
+
+/**
+ * Validation result interface
+ */
+export interface ValidationResult<T = any> {
+  success: boolean;
+  data?: T;
+  errors?: ValidationError[];
+  sanitizedData?: T;
+}
+
+/**
+ * Validation error interface
+ */
+export interface ValidationError {
+  field: string;
+  message: string;
+  code: string;
+  value?: any;
+  path?: string[];
+}
+
+/**
+ * Validation options
+ */
+export interface ValidationOptions {
+  sanitize?: boolean;
+  allowUnknown?: boolean;
+  stripUnknown?: boolean;
+  abortEarly?: boolean;
+  customErrorMessages?: Record<string, string>;
+  skipBodyParsing?: boolean;
+}
+
+/**
+ * Sanitization options
+ */
+export interface SanitizationOptions {
+  trimStrings?: boolean;
+  removeNullUndefined?: boolean;
+  normalizeEmail?: boolean;
+  escapeHtml?: boolean;
+  removeXSS?: boolean;
+}
+
+/**
+ * Request validation context
+ */
+interface ValidationContext {
+  method: string;
+  path: string;
+  headers: Record<string, string | undefined>;
+  queryParams: Record<string, string | undefined> | null;
+  pathParams: Record<string, string | undefined> | null;
+  body: any;
+  sourceIp: string;
+  userAgent?: string;
+}
+
+/**
+ * Common validation schemas
+ */
+export const CommonSchemas = {
+  // Email validation
+  email: z.string()
+    .email('Invalid email format')
+    .max(320, 'Email too long')
+    .toLowerCase()
+    .transform(email => email.trim()),
+
+  // Phone number validation (international format)
+  phone: z.string()
+    .regex(/^\+[1-9]\d{1,14}$/, 'Invalid phone number format. Use international format: +1234567890')
+    .max(15, 'Phone number too long'),
+
+  // Password validation
+  password: z.string()
+    .min(8, 'Password must be at least 8 characters')
+    .max(128, 'Password too long')
+    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/, 
+           'Password must contain uppercase, lowercase, number, and special character'),
+
+  // UUID validation
+  uuid: z.string()
+    .uuid('Invalid UUID format'),
+
+  // MongoDB ObjectId validation
+  objectId: z.string()
+    .regex(/^[0-9a-fA-F]{24}$/, 'Invalid ObjectId format'),
+
+  // Positive integer
+  positiveInt: z.number()
+    .int('Must be an integer')
+    .positive('Must be positive'),
+
+  // Non-negative integer
+  nonNegativeInt: z.number()
+    .int('Must be an integer')
+    .nonnegative('Must be non-negative'),
+
+  // URL validation
+  url: z.string()
+    .url('Invalid URL format')
+    .max(2048, 'URL too long'),
+
+  // Date string validation
+  dateString: z.string()
+    .datetime('Invalid date format. Use ISO 8601 format')
+    .transform(date => new Date(date)),
+
+  // Business name validation
+  businessName: z.string()
+    .min(2, 'Business name must be at least 2 characters')
+    .max(100, 'Business name too long')
+    .trim(),
+
+  // Address validation
+  address: z.object({
+    street: z.string().min(1, 'Street address required').max(200),
+    city: z.string().min(1, 'City required').max(100),
+    state: z.string().min(2, 'State required').max(100),
+    zipCode: z.string().min(3, 'Zip code required').max(20),
+    country: z.string().min(2, 'Country required').max(100),
+  }),
+
+  // Pagination validation
+  pagination: z.object({
+    page: z.number().int().positive().default(1),
+    limit: z.number().int().positive().max(100).default(20),
+    sortBy: z.string().optional(),
+    sortOrder: z.enum(['asc', 'desc']).default('asc'),
+  }).partial(),
+
+  // File upload validation
+  fileUpload: z.object({
+    filename: z.string().min(1).max(255),
+    mimeType: z.string().min(1),
+    size: z.number().positive().max(10 * 1024 * 1024), // 10MB max
+    content: z.string().optional(), // base64 encoded content
+  }),
+
+  // Payment amount validation (in cents)
+  paymentAmount: z.number()
+    .int('Amount must be in cents (integer)')
+    .positive('Amount must be positive')
+    .max(999999999, 'Amount too large'), // ~$10M limit
+
+  // Currency validation (INR is primary for Indian operations)
+  currency: z.enum(['INR', 'EUR', 'GBP', 'CAD', 'AUD']).default('INR'),
+};
+
+/**
+ * Request validation middleware for API Gateway Lambda functions
+ */
+export const validateRequest = <T>(
+  schema: z.ZodSchema<T>,
+  event: APIGatewayProxyEvent,
+  options: ValidationOptions = {}
+): ValidationResult<T> => {
+  const startTime = Date.now();
+  
+  try {
+    const context: ValidationContext = {
+      method: event.httpMethod,
+      path: event.path,
+      headers: event.headers || {},
+      queryParams: event.queryStringParameters,
+      pathParams: event.pathParameters,
+      body: null,
+      sourceIp: event.requestContext.identity.sourceIp,
+      userAgent: event.headers?.['User-Agent']
+    };
+
+    // Parse request body if present and not skipped
+    if (!options.skipBodyParsing && event.body) {
+      try {
+        context.body = JSON.parse(event.body);
+      } catch (parseError) {
+        logger.warn('Failed to parse request body as JSON', {
+          ...context,
+          body: event.body?.substring(0, 100) + '...',
+          parseError: parseError instanceof Error ? parseError.message : 'Unknown error'
+        });
+
+        return {
+          success: false,
+          errors: [{
+            field: 'body',
+            message: 'Invalid JSON format in request body',
+            code: 'INVALID_JSON',
+            value: event.body?.substring(0, 100)
+          }]
+        };
+      }
+    } else {
+      context.body = event.body || null;
+    }
+
+    // Determine data to validate
+    let dataToValidate: any;
+    
+    if (event.httpMethod === 'GET' || event.httpMethod === 'DELETE') {
+      // For GET/DELETE, validate query parameters and path parameters
+      dataToValidate = {
+        ...event.queryStringParameters,
+        ...event.pathParameters
+      };
+    } else {
+      // For POST/PUT/PATCH, validate body with optional query/path params
+      dataToValidate = {
+        ...context.body,
+        ...(event.queryStringParameters || {}),
+        ...(event.pathParameters || {})
+      };
+    }
+
+    // Apply sanitization if requested
+    if (options.sanitize) {
+      dataToValidate = sanitizeData(dataToValidate);
+    }
+
+    // Validate against schema
+    const parseResult = schema.safeParse(dataToValidate);
+
+    const duration = Date.now() - startTime;
+
+    if (parseResult.success) {
+      logger.debug('Request validation successful', {
+        ...context,
+        dataKeys: Object.keys(dataToValidate || {}),
+        duration
+      });
+
+      return {
+        success: true,
+        data: parseResult.data,
+        sanitizedData: options.sanitize ? dataToValidate : undefined
+      };
+    } else {
+      // Format Zod errors
+      const validationErrors = formatZodErrors(parseResult.error, options.customErrorMessages);
+
+      logger.warn('Request validation failed', {
+        ...context,
+        errors: validationErrors,
+        dataKeys: Object.keys(dataToValidate || {}),
+        duration
+      });
+
+      return {
+        success: false,
+        errors: validationErrors
+      };
+    }
+
+  } catch (error) {
+    const duration = Date.now() - startTime;
+
+    logger.error('Request validation error', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      path: event.path,
+      method: event.httpMethod,
+      duration
+    });
+
+    return {
+      success: false,
+      errors: [{
+        field: 'validation',
+        message: 'Internal validation error',
+        code: 'VALIDATION_ERROR'
+      }]
+    };
+  }
+};
+
+/**
+ * Validate request body only
+ */
+export const validateBody = <T>(
+  schema: z.ZodSchema<T>,
+  event: APIGatewayProxyEvent,
+  options: ValidationOptions = {}
+): ValidationResult<T> => {
+  return validateRequest(
+    schema,
+    event,
+    { ...options, skipBodyParsing: false }
+  );
+};
+
+/**
+ * Validate query parameters
+ */
+export const validateQuery = <T>(
+  schema: z.ZodSchema<T>,
+  event: APIGatewayProxyEvent,
+  options: ValidationOptions = {}
+): ValidationResult<T> => {
+  const queryData = event.queryStringParameters || {};
+  
+  try {
+    const parseResult = schema.safeParse(queryData);
+
+    if (parseResult.success) {
+      return {
+        success: true,
+        data: parseResult.data
+      };
+    } else {
+      const validationErrors = formatZodErrors(parseResult.error, options.customErrorMessages);
+      return {
+        success: false,
+        errors: validationErrors
+      };
+    }
+  } catch (error) {
+    return {
+      success: false,
+      errors: [{
+        field: 'query',
+        message: 'Query parameter validation error',
+        code: 'QUERY_VALIDATION_ERROR'
+      }]
+    };
+  }
+};
+
+/**
+ * Validate path parameters
+ */
+export const validatePath = <T>(
+  schema: z.ZodSchema<T>,
+  event: APIGatewayProxyEvent,
+  options: ValidationOptions = {}
+): ValidationResult<T> => {
+  const pathData = event.pathParameters || {};
+  
+  try {
+    const parseResult = schema.safeParse(pathData);
+
+    if (parseResult.success) {
+      return {
+        success: true,
+        data: parseResult.data
+      };
+    } else {
+      const validationErrors = formatZodErrors(parseResult.error, options.customErrorMessages);
+      return {
+        success: false,
+        errors: validationErrors
+      };
+    }
+  } catch (error) {
+    return {
+      success: false,
+      errors: [{
+        field: 'path',
+        message: 'Path parameter validation error',
+        code: 'PATH_VALIDATION_ERROR'
+      }]
+    };
+  }
+};
+
+/**
+ * Format Zod validation errors
+ */
+const formatZodErrors = (error: z.ZodError, customMessages?: Record<string, string>): ValidationError[] => {
+  return error.issues.map(issue => {
+    const fieldPath = issue.path.join('.');
+    const field = fieldPath || 'unknown';
+    
+    // Use custom message if available
+    const message = customMessages?.[field] || issue.message;
+    
+    return {
+      field,
+      message,
+      code: issue.code.toUpperCase(),
+      value: issue.code !== 'invalid_type' ? (issue as any).received : undefined,
+      path: issue.path.map(p => String(p))
+    };
+  });
+};
+
+/**
+ * Sanitize input data
+ */
+const sanitizeData = (data: any, options: SanitizationOptions = {}): any => {
+  const {
+    trimStrings = true,
+    removeNullUndefined = true,
+    normalizeEmail = true,
+    escapeHtml = true,
+    removeXSS = true
+  } = options;
+
+  if (data === null || data === undefined) {
+    return removeNullUndefined ? undefined : data;
+  }
+
+  if (typeof data === 'string') {
+    let sanitized = data;
+    
+    if (trimStrings) {
+      sanitized = sanitized.trim();
+    }
+    
+    if (escapeHtml) {
+      sanitized = escapeHtmlString(sanitized);
+    }
+    
+    if (removeXSS) {
+      sanitized = removeXSSAttempts(sanitized);
+    }
+    
+    return sanitized;
+  }
+
+  if (Array.isArray(data)) {
+    return data.map(item => sanitizeData(item, options)).filter(item => 
+      removeNullUndefined ? item !== null && item !== undefined : true
+    );
+  }
+
+  if (typeof data === 'object') {
+    const sanitized: any = {};
+    
+    for (const [key, value] of Object.entries(data)) {
+      const sanitizedValue = sanitizeData(value, options);
+      
+      if (!removeNullUndefined || (sanitizedValue !== null && sanitizedValue !== undefined)) {
+        sanitized[key] = sanitizedValue;
+      }
+    }
+    
+    return sanitized;
+  }
+
+  return data;
+};
+
+/**
+ * Escape HTML characters to prevent XSS
+ */
+const escapeHtmlString = (str: string): string => {
+  const htmlEscapeMap: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#x27;',
+    '/': '&#x2F;',
+  };
+  
+  return str.replace(/[&<>"'\/]/g, (match) => htmlEscapeMap[match]);
+};
+
+/**
+ * Remove common XSS attack patterns
+ */
+const removeXSSAttempts = (str: string): string => {
+  // Remove script tags
+  str = str.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+  
+  // Remove javascript: protocols
+  str = str.replace(/javascript:/gi, '');
+  
+  // Remove on* event handlers
+  str = str.replace(/\s*on\w+\s*=\s*[^>]*/gi, '');
+  
+  // Remove data: URLs that could contain scripts
+  str = str.replace(/data:\s*text\/html/gi, 'data:text/plain');
+  
+  return str;
+};
+
+/**
+ * Create validation error response
+ */
+export const createValidationErrorResponse = (
+  errors: ValidationError[],
+  statusCode: number = 400
+): APIGatewayProxyResult => {
+  const errorResponse = {
+    error: {
+      message: 'Validation failed',
+      code: 'VALIDATION_ERROR',
+      timestamp: new Date().toISOString(),
+      details: errors
+    }
+  };
+
+  return {
+    statusCode,
+    headers: {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache',
+      ...corsMiddleware(),
+      ...securityHeaders()
+    },
+    body: JSON.stringify(errorResponse)
+  };
+};
+
+/**
+ * Higher-order function to wrap Lambda handlers with validation
+ */
+export const withValidation = <T>(
+  schema: z.ZodSchema<T>,
+  handler: (event: APIGatewayProxyEvent, validatedData: T) => Promise<APIGatewayProxyResult>,
+  options: ValidationOptions = {}
+) => {
+  return async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+    try {
+      // Validate request
+      const validationResult = validateRequest(schema, event, options);
+
+      if (!validationResult.success) {
+        return createValidationErrorResponse(
+          validationResult.errors || [],
+          400
+        );
+      }
+
+      // Execute handler with validated data
+      return await handler(event, validationResult.data!);
+
+    } catch (error) {
+      logger.error('Validation wrapper error', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        path: event.path,
+        method: event.httpMethod
+      });
+
+      return {
+        statusCode: 500,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache',
+          ...corsMiddleware(),
+          ...securityHeaders()
+        },
+        body: JSON.stringify({
+          error: {
+            message: 'Internal server error',
+            code: 'INTERNAL_ERROR',
+            timestamp: new Date().toISOString()
+          }
+        })
+      };
+    }
+  };
+};
+
+/**
+ * Combined authentication and validation wrapper
+ */
+export const withAuthAndValidation = <T>(
+  schema: z.ZodSchema<T>,
+  handler: (event: APIGatewayProxyEvent, validatedData: T, user: any) => Promise<APIGatewayProxyResult>,
+  validationOptions: ValidationOptions = {}
+) => {
+  return async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+    try {
+      // Import auth here to avoid circular dependency
+      const { authenticateJWT } = await import('./auth');
+
+      // Authenticate first
+      const authResult = await authenticateJWT(event);
+      if (!authResult.isAuthenticated || !authResult.user) {
+        return {
+          statusCode: authResult.statusCode || 401,
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache',
+            ...corsMiddleware(),
+            ...securityHeaders()
+          },
+          body: JSON.stringify({
+            error: {
+              message: authResult.error || 'Authentication failed',
+              code: 'AUTH_FAILED',
+              timestamp: new Date().toISOString()
+            }
+          })
+        };
+      }
+
+      // Then validate request
+      const validationResult = validateRequest(schema, event, validationOptions);
+      if (!validationResult.success) {
+        return createValidationErrorResponse(validationResult.errors || []);
+      }
+
+      // Execute handler with both auth and validated data
+      return await handler(event, validationResult.data!, authResult.user);
+
+    } catch (error) {
+      logger.error('Auth and validation wrapper error', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        path: event.path,
+        method: event.httpMethod
+      });
+
+      return {
+        statusCode: 500,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache',
+          ...corsMiddleware(),
+          ...securityHeaders()
+        },
+        body: JSON.stringify({
+          error: {
+            message: 'Internal server error',
+            code: 'INTERNAL_ERROR',
+            timestamp: new Date().toISOString()
+          }
+        })
+      };
+    }
+  };
+};
+
+/**
+ * Validation health check
+ */
+export const validationHealthCheck = (): { status: 'healthy' | 'unhealthy'; details: any } => {
+  try {
+    // Test basic validation
+    const testSchema = z.object({
+      name: z.string(),
+      age: z.number().positive()
+    });
+
+    const testData = { name: 'Test', age: 25 };
+    const result = testSchema.safeParse(testData);
+
+    if (result.success) {
+      return {
+        status: 'healthy',
+        details: {
+          validation: 'working',
+          sanitization: 'configured',
+          commonSchemas: 'available',
+          errorFormatting: 'working'
+        }
+      };
+    } else {
+      return {
+        status: 'unhealthy',
+        details: {
+          validation: 'failed',
+          error: 'Basic validation test failed'
+        }
+      };
+    }
+  } catch (error) {
+    return {
+      status: 'unhealthy',
+      details: {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString()
+      }
+    };
+  }
+};
+
+/**
+ * Predefined validation schemas for common HASIVU operations
+ */
+export const HASIVUSchemas = {
+  // User registration
+  userRegistration: z.object({
+    email: CommonSchemas.email,
+    password: CommonSchemas.password,
+    businessName: CommonSchemas.businessName,
+    phone: CommonSchemas.phone,
+    firstName: z.string().min(1).max(50).trim(),
+    lastName: z.string().min(1).max(50).trim(),
+    acceptTerms: z.boolean().refine(val => val === true, 'Must accept terms and conditions'),
+  }),
+
+  // User login
+  userLogin: z.object({
+    email: CommonSchemas.email,
+    password: z.string().min(1, 'Password required'),
+    rememberMe: z.boolean().optional(),
+  }),
+
+  // Business profile update
+  businessProfile: z.object({
+    businessName: CommonSchemas.businessName,
+    description: z.string().max(500).optional(),
+    phone: CommonSchemas.phone,
+    email: CommonSchemas.email,
+    address: CommonSchemas.address,
+    website: CommonSchemas.url.optional(),
+    category: z.string().min(1).max(100),
+  }),
+
+  // Menu item creation
+  menuItem: z.object({
+    name: z.string().min(1).max(100).trim(),
+    description: z.string().max(500).optional(),
+    price: CommonSchemas.paymentAmount,
+    currency: CommonSchemas.currency,
+    category: z.string().min(1).max(50),
+    available: z.boolean().default(true),
+    preparationTime: z.number().int().positive().max(180).optional(), // minutes
+    tags: z.array(z.string().max(30)).max(10).optional(),
+    allergens: z.array(z.string().max(50)).max(20).optional(),
+  }),
+
+  // Order creation
+  orderCreation: z.object({
+    items: z.array(z.object({
+      menuItemId: CommonSchemas.uuid,
+      quantity: z.number().int().positive().max(99),
+      specialInstructions: z.string().max(200).optional(),
+    })).min(1, 'At least one item required'),
+    customerInfo: z.object({
+      name: z.string().min(1).max(100),
+      phone: CommonSchemas.phone,
+      email: CommonSchemas.email.optional(),
+    }),
+    deliveryAddress: CommonSchemas.address.optional(),
+    notes: z.string().max(300).optional(),
+    scheduledFor: CommonSchemas.dateString.optional(),
+  }),
+
+  // Payment processing
+  paymentProcessing: z.object({
+    orderId: CommonSchemas.uuid,
+    amount: CommonSchemas.paymentAmount,
+    currency: CommonSchemas.currency,
+    paymentMethod: z.enum(['razorpay', 'stripe', 'cash']),
+    metadata: z.record(z.string(), z.any()).optional(),
+  }),
+
+  // Pagination with search
+  paginationWithSearch: CommonSchemas.pagination.extend({
+    search: z.string().max(100).optional(),
+    filters: z.record(z.string(), z.any()).optional(),
+  }),
+};

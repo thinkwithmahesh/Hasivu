@@ -1,0 +1,62 @@
+/**
+ * Login Lambda Function
+ * Replaces: POST /auth/login
+ * Migration from Express route to AWS Lambda with Cognito authentication
+ */
+import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
+import { CognitoService } from '../shared/cognito.service';
+import { DatabaseService } from '../shared/database.service';
+import { logger } from '../../utils/logger';
+import { ValidationService } from '../shared/validation.service';
+
+const cognito = CognitoService;
+const db = DatabaseService;
+const validator = ValidationService.getInstance();
+
+const createResponse = (statusCode: number, body: any): APIGatewayProxyResult => ({
+  statusCode,
+  headers: {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type,Authorization',
+    'Access-Control-Allow-Methods': 'OPTIONS,POST'
+  },
+  body: JSON.stringify(body)
+});
+
+export const loginHandler = async (
+  event: APIGatewayProxyEvent,
+  context: Context
+): Promise<APIGatewayProxyResult> => {
+  try {
+    if (event.httpMethod === 'OPTIONS') {
+      return createResponse(200, { message: 'CORS preflight successful' });
+    }
+
+    if (event.httpMethod !== 'POST') {
+      return createResponse(405, { error: 'METHOD_NOT_ALLOWED' });
+    }
+
+    const body = JSON.parse(event.body || '{}');
+    const { email, password } = body;
+
+    if (!email || !password) {
+      return createResponse(400, { error: 'Email and password are required' });
+    }
+
+    const result = await cognito.authenticate(email, password);
+    
+    return createResponse(200, {
+      message: 'Login successful',
+      token: result.accessToken,
+      refreshToken: result.refreshToken,
+      user: result.user
+    });
+
+  } catch (error) {
+    logger.error('Login error', error);
+    return createResponse(401, { error: 'Invalid credentials' });
+  }
+};
+
+export default loginHandler;

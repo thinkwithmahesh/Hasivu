@@ -1,0 +1,137 @@
+
+> hasivu-web@1.0.0 dev
+> next dev -p 3010
+
+- ready started server on 0.0.0.0:3010, url: http://localhost:3010
+- [35mevent[39m compiled client and server successfully in 126 ms (20 modules)
+- [36mwait[39m compiling...
+- [35mevent[39m compiled client and server successfully in 54 ms (20 modules)
+- warn Your project has `@next/font` installed as a dependency, please use the built-in `next/font` instead. The `@next/font` package will be removed in Next.js 14. You can migrate by running `npx @next/codemod@latest built-in-next-font .`. Read more: https://nextjs.org/docs/messages/built-in-next-font
+(node:95702) [DEP0060] DeprecationWarning: The `util._extend` API is deprecated. Please use Object.assign() instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+- [36mwait[39m compiling /page (client and server)...
+- [31merror[39m ./src/app/page.tsx
+ReactServerComponentsError:
+
+You are attempting to export "metadata" from a component marked with "use client", which is disallowed. Either remove the export, or the "use client" directive. Read more: https://nextjs.org/docs/getting-started/react-essentials#the-use-client-directive
+
+   ,-[[36;1;4m/Users/mahesha/Downloads/hasivu-platform/web/src/app/page.tsx[0m:3:1]
+ [2m3[0m | import React from 'react';
+ [2m4[0m | import StartwellInspiredLandingPage from '@/components/landing/StartwellInspiredLandingPage';
+ [2m5[0m | 
+ [2m6[0m | export const metadata = {
+   : [31;1m             ^^^^^^^^[0m
+ [2m7[0m |   title: 'School Meals Done Right — HASIVU',
+ [2m8[0m |   description: 'Order warm, nutritious school meals delivered to the classroom. Flexible subscriptions you can change, pause, or cancel by midnight.',
+ [2m9[0m |   openGraph: {
+   `----
+
+File path:
+  ./src/app/page.tsx
+- [36mwait[39m compiling...
+- [31merror[39m ./src/app/page.tsx
+ReactServerComponentsError:
+
+You are attempting to export "metadata" from a component marked with "use client", which is disallowed. Either remove the export, or the "use client" directive. Read more: https://nextjs.org/docs/getting-started/react-essentials#the-use-client-directive
+
+   ,-[[36;1;4m/Users/mahesha/Downloads/hasivu-platform/web/src/app/page.tsx[0m:3:1]
+ [2m3[0m | import React from 'react';
+ [2m4[0m | import StartwellInspiredLandingPage from '@/components/landing/StartwellInspiredLandingPage';
+ [2m5[0m | 
+ [2m6[0m | export const metadata = {
+   : [31;1m             ^^^^^^^^[0m
+ [2m7[0m |   title: 'School Meals Done Right — HASIVU',
+ [2m8[0m |   description: 'Order warm, nutritious school meals delivered to the classroom. Flexible subscriptions you can change, pause, or cancel by midnight.',
+ [2m9[0m |   openGraph: {
+   `----
+
+File path:
+  ./src/app/page.tsx
+- [36mwait[39m compiling /_error (client and server)...
+- [31merror[39m ./src/app/page.tsx
+ReactServerComponentsError:
+
+You are attempting to export "metadata" from a component marked with "use client", which is disallowed. Either remove the export, or the "use client" directive. Read more: https://nextjs.org/docs/getting-started/react-essentials#the-use-client-directive
+
+   ,-[[36;1;4m/Users/mahesha/Downloads/hasivu-platform/web/src/app/page.tsx[0m:3:1]
+ [2m3[0m | import React from 'react';
+ [2m4[0m | import StartwellInspiredLandingPage from '@/components/landing/StartwellInspiredLandingPage';
+ [2m5[0m | 
+ [2m6[0m | export const metadata = {
+   : [31;1m             ^^^^^^^^[0m
+ [2m7[0m |   title: 'School Meals Done Right — HASIVU',
+ [2m8[0m |   description: 'Order warm, nutritious school meals delivered to the classroom. Flexible subscriptions you can change, pause, or cancel by midnight.',
+ [2m9[0m |   openGraph: {
+   `----
+
+File path:
+  ./src/app/page.tsx
+- [36mwait[39m compiling...
+- [35mevent[39m compiled client and server successfully in 1048 ms (2729 modules)
+- [33mwarn[39m Fast Refresh had to perform a full reload due to a runtime error.
+redux-persist failed to create sync storage. falling back to noop storage.
+- [36mwait[39m compiling /sprrrint/page (client and server)...
+<w> [webpack.cache.PackFileCacheStrategy] Restoring failed for Compilation/modules|javascript/auto|/Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/loaders/next-flight-client-entry-loader.js?modules=%2FUsers%2Fmahesha%2FDownloads%2Fhasivu-platform%2Fweb%2Fsrc%2Fcontexts%2Fauth-context.tsx&modules=%2FUsers%2Fmahesha%2FDownloads%2Fhasivu-platform%2Fweb%2Fsrc%2Fcomponents%2Fui%2Fsonner.tsx&modules=%2FUsers%2Fmahesha%2FDownloads%2Fhasivu-platform%2Fweb%2Fsrc%2Fcomponents%2Fui%2Fpaper-shaders-background.tsx&modules=%2FUsers%2Fmahesha%2FDownloads%2Fhasivu-platform%2Fweb%2Fsrc%2Fcomponents%2Fproviders%2Ftheme-provider.tsx&modules=%2FUsers%2Fmahesha%2FDownloads%2Fhasivu-platform%2Fweb%2Fsrc%2Fcomponents%2Fproviders%2Fredux-provider.tsx&modules=%2FUsers%2Fmahesha%2FDownloads%2Fhasivu-platform%2Fweb%2Fsrc%2Fcomponents%2Faccessibility%2FAccessibilityProvider.tsx&modules=%2FUsers%2Fmahesha%2FDownloads%2Fhasivu-platform%2Fweb%2Fnode_modules%2Fnext%2Ffont%2Fgoogle%2Ftarget.css%3F%7B%22path%22%3A%22src%2Fapp%2Flayout.tsx%22%2C%22import%22%3A%22Inter%22%2C%22arguments%22%3A%5B%7B%22subsets%22%3A%5B%22latin%22%5D%7D%5D%2C%22variableName%22%3A%22inter%22%7D&modules=%2FUsers%2Fmahesha%2FDownloads%2Fhasivu-platform%2Fweb%2Fsrc%2Fapp%2Fglobals.css&server=false!|app-pages-browser from pack: Error: invalid block type
+- [35mevent[39m compiled client and server successfully in 426 ms (2722 modules)
+redux-persist failed to create sync storage. falling back to noop storage.
+- [36mwait[39m compiling /blend/page (client and server)...
+- [35mevent[39m compiled client and server successfully in 224 ms (2729 modules)
+redux-persist failed to create sync storage. falling back to noop storage.
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: invalid block type
+- [36mwait[39m compiling...
+- [35mevent[39m compiled client and server successfully in 393 ms (2743 modules)
+redux-persist failed to create sync storage. falling back to noop storage.
+- [36mwait[39m compiling...
+<w> [webpack.cache.PackFileCacheStrategy] Restoring pack failed from /Users/mahesha/Downloads/hasivu-platform/web/.next/cache/webpack/client-development.pack.gz: Error: incorrect header check
+- [35mevent[39m compiled client and server successfully in 872 ms (2729 modules)
+- [36mwait[39m compiling...
+- [35mevent[39m compiled client and server successfully in 401 ms (2743 modules)
+- [33mwarn[39m Fast Refresh had to perform a full reload when src/contexts/auth-context.tsx, src/components/providers/redux-provider.tsx, src/components/ui/paper-shaders-background.tsx, src/components/ui/sonner.tsx, src/components/accessibility/AccessibilityProvider.tsx, src/components/providers/theme-provider.tsx, src/app/globals.css changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+redux-persist failed to create sync storage. falling back to noop storage.
+- [36mwait[39m compiling...
+- [35mevent[39m compiled client and server successfully in 795 ms (3313 modules)
+redux-persist failed to create sync storage. falling back to noop storage.
+- [36mwait[39m compiling...
+- [35mevent[39m compiled client and server successfully in 447 ms (3329 modules)
+- [36mwait[39m compiling...
+- [35mevent[39m compiled client and server successfully in 363 ms (3331 modules)
+- [36mwait[39m compiling...
+- [31merror[39m ./src/components/landing/HybridLandingPage.tsx
+Error: 
+  [31mx[0m Unexpected token `div`. Expected jsx identifier
+    ,-[[36;1;4m/Users/mahesha/Downloads/hasivu-platform/web/src/components/landing/HybridLandingPage.tsx[0m:58:1]
+ [2m58[0m |   const linkedinUrl = process.env.NEXT_PUBLIC_SOCIAL_LINKEDIN || 'https://linkedin.com/company/hasivu';
+ [2m59[0m | 
+ [2m60[0m |   return (
+ [2m61[0m |     <div className="min-h-screen bg-white">
+    : [31;1m     ^^^[0m
+ [2m62[0m |       {/* Subtle grid background */}
+ [2m63[0m |       <div aria-hidden className="pointer-events-none fixed inset-0 -z-10">
+ [2m64[0m |         <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(0,0,0,0.035)_1px,transparent_1px),linear-gradient(to_bottom,rgba(0,0,0,0.035)_1px,transparent_1px)] bg-[size:24px_24px]" />
+    `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./src/components/landing/HybridLandingPage.tsx
+./src/app/blend/page.tsx
+- [36mwait[39m compiling...
+- [33mwarn[39m Fast Refresh had to perform a full reload due to a runtime error.
+- [35mevent[39m compiled client and server successfully in 672 ms (3317 modules)
+redux-persist failed to create sync storage. falling back to noop storage.
+- [36mwait[39m compiling...
+- [35mevent[39m compiled client and server successfully in 620 ms (3317 modules)
+- [36mwait[39m compiling...
+- [35mevent[39m compiled client and server successfully in 507 ms (3317 modules)
+- [36mwait[39m compiling...
+- [35mevent[39m compiled client and server successfully in 495 ms (3317 modules)
+- [36mwait[39m compiling...
+- [35mevent[39m compiled client and server successfully in 455 ms (3331 modules)
+redux-persist failed to create sync storage. falling back to noop storage.
+- [36mwait[39m compiling...
+- [35mevent[39m compiled client and server successfully in 643 ms (3317 modules)
+redux-persist failed to create sync storage. falling back to noop storage.
+- [36mwait[39m compiling /auth/login/page (client and server)...
+- [35mevent[39m compiled client and server successfully in 617 ms (3487 modules)
+redux-persist failed to create sync storage. falling back to noop storage.

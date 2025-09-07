@@ -1,0 +1,713 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const delivery_verification_1 = require("../../../../src/functions/rfid/delivery-verification");
+const client_1 = require("@prisma/client");
+jest.mock('@prisma/client', () => ({
+    PrismaClient: jest.fn().mockImplementation(() => ({
+        rFIDCard: {
+            findFirst: jest.fn()
+        },
+        rFIDReader: {
+            findUnique: jest.fn(),
+            update: jest.fn()
+        },
+        order: {
+            findFirst: jest.fn(),
+            update: jest.fn()
+        },
+        deliveryVerification: {
+            create: jest.fn()
+        },
+        orderStatusHistory: {
+            create: jest.fn()
+        },
+        $transaction: jest.fn(),
+        $disconnect: jest.fn()
+    }))
+}));
+jest.mock('../../../../src/shared/middleware/lambda-auth.middleware', () => ({
+    authenticateLambda: jest.fn()
+}));
+jest.mock('../../../../src/shared/response.utils', () => ({
+    createSuccessResponse: jest.fn((data) => ({
+        statusCode: 200,
+        body: JSON.stringify(data)
+    })),
+    createErrorResponse: jest.fn((message, statusCode, errorCode) => ({
+        statusCode,
+        body: JSON.stringify({ error: message, errorCode })
+    })),
+    handleError: jest.fn((error, message) => ({
+        statusCode: 500,
+        body: JSON.stringify({ error: message })
+    }))
+}));
+jest.mock('../../../../src/shared/logger.service', () => ({
+    LoggerService: {
+        getInstance: () => ({
+            info: jest.fn(),
+            warn: jest.fn(),
+            error: jest.fn()
+        })
+    }
+}));
+jest.mock('uuid', () => ({
+    v4: () => 'verification-uuid-1234'
+}));
+const mockPrisma = new client_1.PrismaClient();
+const { authenticateLambda } = require('../../../../src/shared/middleware/lambda-auth.middleware');
+const { createSuccessResponse, createErrorResponse, handleError } = require('../../../../src/shared/response.utils');
+describe('RFID Delivery Verification Lambda Function', () => {
+    const mockContext = {
+        callbackWaitsForEmptyEventLoop: false,
+        functionName: 'rfid-delivery-verification',
+        functionVersion: '1',
+        invokedFunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:rfid-delivery-verification',
+        memoryLimitInMB: '512',
+        awsRequestId: 'verification-request-id',
+        logGroupName: '/aws/lambda/rfid-delivery-verification',
+        logStreamName: '2024/01/01/[1]verification123456',
+        getRemainingTimeInMillis: () => 25000,
+        done: jest.fn(),
+        fail: jest.fn(),
+        succeed: jest.fn()
+    };
+    const mockAuthenticatedUser = {
+        id: 'staff-123',
+        email: 'staff@school.com',
+        role: 'staff',
+        schoolId: 'school-123'
+    };
+    const mockRFIDCard = {
+        id: 'card-123',
+        cardNumber: 'CARD123456789ABC',
+        isActive: true,
+        expiresAt: new Date('2025-12-31T23:59:59Z'),
+        student: {
+            id: 'student-123',
+            firstName: 'John',
+            lastName: 'Doe',
+            grade: '10th',
+            section: 'A',
+            schoolId: 'school-123',
+            parentId: 'parent-123',
+            isActive: true
+        },
+        school: {
+            id: 'school-123',
+            name: 'Test School',
+            isActive: true
+        }
+    };
+    const mockRFIDReader = {
+        id: 'reader-123',
+        name: 'Cafeteria Reader 1',
+        location: JSON.stringify({ venue: 'Main Cafeteria', description: 'Primary serving location' }),
+        schoolId: 'school-123',
+        isActive: true,
+        lastHeartbeat: new Date()
+    };
+    const mockOrder = {
+        id: 'order-123',
+        orderNumber: 'ORD-2024-001',
+        status: 'confirmed',
+        paymentStatus: 'paid',
+        deliveryDate: new Date(),
+        mealPeriod: 'lunch'
+    };
+    const mockDeliveryVerification = {
+        id: 'verification-uuid-1234',
+        orderId: 'order-123',
+        studentId: 'student-123',
+        readerId: 'reader-123',
+        cardId: 'card-123',
+        method: 'rfid',
+        status: 'verified',
+        metadata: JSON.stringify({
+            location: { venue: 'Main Cafeteria' },
+            readerInfo: {}
+        }),
+        verifiedAt: new Date()
+    };
+    const validEvent = {
+        httpMethod: 'POST',
+        body: JSON.stringify({
+            cardId: 'CARD123456789ABC',
+            readerId: 'reader-123',
+            orderId: 'order-123',
+            location: {
+                venue: 'Main Cafeteria',
+                description: 'Primary serving location'
+            },
+            metadata: {
+                signalStrength: 85,
+                readerVersion: '2.1.0'
+            }
+        }),
+        headers: {
+            'authorization': 'Bearer valid-token'
+        },
+        pathParameters: null,
+        queryStringParameters: null,
+        multiValueQueryStringParameters: null,
+        stageVariables: null,
+        requestContext: {},
+        resource: '',
+        path: '',
+        isBase64Encoded: false,
+        multiValueHeaders: {}
+    };
+    beforeEach(() => {
+        jest.clearAllMocks();
+        authenticateLambda.mockResolvedValue(mockAuthenticatedUser);
+        mockPrisma.$transaction.mockImplementation(async (callback) => {
+            const txMock = {
+                deliveryVerification: {
+                    create: jest.fn().mockResolvedValue(mockDeliveryVerification)
+                },
+                order: {
+                    update: jest.fn().mockResolvedValue({ ...mockOrder, status: 'delivered' })
+                },
+                orderStatusHistory: {
+                    create: jest.fn().mockResolvedValue({})
+                },
+                rFIDReader: {
+                    update: jest.fn().mockResolvedValue(mockRFIDReader)
+                }
+            };
+            return await callback(txMock);
+        });
+    });
+    describe('Valid Delivery Verification', () => {
+        beforeEach(() => {
+            mockPrisma.rFIDCard.findFirst.mockResolvedValue(mockRFIDCard);
+            mockPrisma.rFIDReader.findUnique.mockResolvedValue(mockRFIDReader);
+            mockPrisma.order.findFirst.mockResolvedValue(mockOrder);
+        });
+        it('should verify delivery successfully with all components', async () => {
+            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            expect(result.statusCode).toBe(200);
+            expect(authenticateLambda).toHaveBeenCalledWith(validEvent);
+            expect(mockPrisma.rFIDCard.findFirst).toHaveBeenCalledWith({
+                where: {
+                    OR: [
+                        { cardNumber: 'CARD123456789ABC' },
+                        { id: 'CARD123456789ABC' }
+                    ]
+                },
+                include: {
+                    student: {
+                        select: {
+                            id: true,
+                            firstName: true,
+                            lastName: true,
+                            grade: true,
+                            section: true,
+                            schoolId: true,
+                            parentId: true,
+                            isActive: true
+                        }
+                    },
+                    school: {
+                        select: {
+                            id: true,
+                            name: true,
+                            isActive: true
+                        }
+                    }
+                }
+            });
+            expect(mockPrisma.rFIDReader.findUnique).toHaveBeenCalledWith({
+                where: { id: 'reader-123' },
+                select: {
+                    id: true,
+                    name: true,
+                    location: true,
+                    schoolId: true,
+                    isActive: true,
+                    lastHeartbeat: true
+                }
+            });
+            expect(mockPrisma.order.findFirst).toHaveBeenCalledWith({
+                where: {
+                    id: 'order-123',
+                    studentId: 'student-123'
+                }
+            });
+            expect(mockPrisma.$transaction).toHaveBeenCalled();
+            expect(createSuccessResponse).toHaveBeenCalledWith({
+                message: 'Delivery verified for John Doe',
+                data: expect.objectContaining({
+                    success: true,
+                    verificationId: 'verification-uuid-1234',
+                    order: expect.objectContaining({
+                        id: 'order-123',
+                        orderNumber: 'ORD-2024-001',
+                        status: 'delivered'
+                    }),
+                    student: expect.objectContaining({
+                        id: 'student-123',
+                        firstName: 'John',
+                        lastName: 'Doe'
+                    }),
+                    delivery: expect.objectContaining({
+                        verifiedBy: 'Cafeteria Reader 1',
+                        method: 'rfid'
+                    })
+                })
+            });
+        });
+        it('should verify delivery without specific order ID', async () => {
+            const eventWithoutOrderId = {
+                ...validEvent,
+                body: JSON.stringify({
+                    cardId: 'CARD123456789ABC',
+                    readerId: 'reader-123',
+                    location: { venue: 'Main Cafeteria' }
+                })
+            };
+            const todayOrder = { ...mockOrder, id: 'today-order-123' };
+            mockPrisma.order.findFirst.mockResolvedValue(todayOrder);
+            await (0, delivery_verification_1.deliveryVerificationHandler)(eventWithoutOrderId, mockContext);
+            expect(mockPrisma.order.findFirst).toHaveBeenCalledWith({
+                where: {
+                    studentId: 'student-123',
+                    deliveryDate: {
+                        gte: expect.any(Date),
+                        lt: expect.any(Date)
+                    },
+                    status: {
+                        in: ['confirmed', 'preparing', 'ready']
+                    },
+                    paymentStatus: 'paid'
+                },
+                orderBy: {
+                    createdAt: 'asc'
+                }
+            });
+        });
+        it('should handle verification without optional fields', async () => {
+            const minimalEvent = {
+                ...validEvent,
+                body: JSON.stringify({
+                    cardId: 'CARD123456789ABC',
+                    readerId: 'reader-123',
+                    location: {}
+                })
+            };
+            await (0, delivery_verification_1.deliveryVerificationHandler)(minimalEvent, mockContext);
+            expect(createSuccessResponse).toHaveBeenCalledWith({
+                message: 'Delivery verified for John Doe',
+                data: expect.objectContaining({
+                    success: true,
+                    delivery: expect.objectContaining({
+                        location: {}
+                    })
+                })
+            });
+        });
+    });
+    describe('HTTP Method Validation', () => {
+        it('should reject non-POST requests', async () => {
+            const getEvent = { ...validEvent, httpMethod: 'GET' };
+            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(getEvent, mockContext);
+            expect(result.statusCode).toBe(405);
+            expect(createErrorResponse).toHaveBeenCalledWith('Method not allowed', 405, 'METHOD_NOT_ALLOWED');
+        });
+        it('should reject PUT requests', async () => {
+            const putEvent = { ...validEvent, httpMethod: 'PUT' };
+            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(putEvent, mockContext);
+            expect(result.statusCode).toBe(405);
+        });
+    });
+    describe('Authentication and Authorization', () => {
+        beforeEach(() => {
+            mockPrisma.rFIDCard.findFirst.mockResolvedValue(mockRFIDCard);
+        });
+        it('should reject unauthenticated requests', async () => {
+            authenticateLambda.mockRejectedValue(new Error('Invalid token'));
+            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            expect(handleError).toHaveBeenCalledWith(expect.any(Error), 'Failed to verify delivery');
+        });
+        it('should allow super_admin to verify anywhere', async () => {
+            authenticateLambda.mockResolvedValue({
+                ...mockAuthenticatedUser,
+                role: 'super_admin',
+                schoolId: 'different-school'
+            });
+            mockPrisma.rFIDReader.findUnique.mockResolvedValue(mockRFIDReader);
+            mockPrisma.order.findFirst.mockResolvedValue(mockOrder);
+            await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            expect(mockPrisma.$transaction).toHaveBeenCalled();
+        });
+        it('should allow admin to verify anywhere', async () => {
+            authenticateLambda.mockResolvedValue({
+                ...mockAuthenticatedUser,
+                role: 'admin',
+                schoolId: 'different-school'
+            });
+            mockPrisma.rFIDReader.findUnique.mockResolvedValue(mockRFIDReader);
+            mockPrisma.order.findFirst.mockResolvedValue(mockOrder);
+            await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            expect(mockPrisma.$transaction).toHaveBeenCalled();
+        });
+        it('should reject staff from different schools', async () => {
+            authenticateLambda.mockResolvedValue({
+                ...mockAuthenticatedUser,
+                role: 'staff',
+                schoolId: 'different-school-123'
+            });
+            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            expect(createErrorResponse).toHaveBeenCalledWith('Insufficient permissions to perform delivery verification', 403, 'UNAUTHORIZED');
+        });
+        it('should reject students attempting verification', async () => {
+            authenticateLambda.mockResolvedValue({
+                ...mockAuthenticatedUser,
+                role: 'student'
+            });
+            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            expect(createErrorResponse).toHaveBeenCalledWith('Insufficient permissions to perform delivery verification', 403, 'UNAUTHORIZED');
+        });
+    });
+    describe('Input Validation', () => {
+        it('should reject missing request body', async () => {
+            const eventWithoutBody = { ...validEvent, body: null };
+            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(eventWithoutBody, mockContext);
+            expect(createErrorResponse).toHaveBeenCalledWith('Invalid request data', 400, 'VALIDATION_ERROR');
+        });
+        it('should reject invalid JSON body', async () => {
+            const eventWithInvalidJson = { ...validEvent, body: '{ invalid json' };
+            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(eventWithInvalidJson, mockContext);
+            expect(handleError).toHaveBeenCalledWith(expect.any(Error), 'Failed to verify delivery');
+        });
+        it('should reject missing cardId', async () => {
+            const eventMissingCardId = {
+                ...validEvent,
+                body: JSON.stringify({
+                    readerId: 'reader-123',
+                    location: { venue: 'Main Cafeteria' }
+                })
+            };
+            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(eventMissingCardId, mockContext);
+            expect(createErrorResponse).toHaveBeenCalledWith('Invalid request data', 400, 'VALIDATION_ERROR');
+        });
+        it('should reject missing readerId', async () => {
+            const eventMissingReaderId = {
+                ...validEvent,
+                body: JSON.stringify({
+                    cardId: 'CARD123456789ABC',
+                    location: { venue: 'Main Cafeteria' }
+                })
+            };
+            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(eventMissingReaderId, mockContext);
+            expect(createErrorResponse).toHaveBeenCalledWith('Invalid request data', 400, 'VALIDATION_ERROR');
+        });
+        it('should reject missing location', async () => {
+            const eventMissingLocation = {
+                ...validEvent,
+                body: JSON.stringify({
+                    cardId: 'CARD123456789ABC',
+                    readerId: 'reader-123'
+                })
+            };
+            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(eventMissingLocation, mockContext);
+            expect(createErrorResponse).toHaveBeenCalledWith('Invalid request data', 400, 'VALIDATION_ERROR');
+        });
+        it('should reject invalid readerId format', async () => {
+            const eventInvalidReaderId = {
+                ...validEvent,
+                body: JSON.stringify({
+                    cardId: 'CARD123456789ABC',
+                    readerId: 'invalid-uuid',
+                    location: { venue: 'Main Cafeteria' }
+                })
+            };
+            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(eventInvalidReaderId, mockContext);
+            expect(createErrorResponse).toHaveBeenCalledWith('Invalid request data', 400, 'VALIDATION_ERROR');
+        });
+    });
+    describe('RFID Card Validation', () => {
+        beforeEach(() => {
+            mockPrisma.rFIDReader.findUnique.mockResolvedValue(mockRFIDReader);
+            mockPrisma.order.findFirst.mockResolvedValue(mockOrder);
+        });
+        it('should reject non-existent card', async () => {
+            mockPrisma.rFIDCard.findFirst.mockResolvedValue(null);
+            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            expect(handleError).toHaveBeenCalledWith(expect.objectContaining({ message: 'RFID card not found' }), 'Failed to verify delivery');
+        });
+        it('should reject inactive card', async () => {
+            mockPrisma.rFIDCard.findFirst.mockResolvedValue({
+                ...mockRFIDCard,
+                isActive: false
+            });
+            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            expect(handleError).toHaveBeenCalledWith(expect.objectContaining({ message: 'RFID card is inactive' }), 'Failed to verify delivery');
+        });
+        it('should reject expired card', async () => {
+            mockPrisma.rFIDCard.findFirst.mockResolvedValue({
+                ...mockRFIDCard,
+                expiresAt: new Date('2020-01-01T00:00:00Z')
+            });
+            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            expect(handleError).toHaveBeenCalledWith(expect.objectContaining({ message: 'RFID card has expired' }), 'Failed to verify delivery');
+        });
+        it('should reject card with inactive student', async () => {
+            mockPrisma.rFIDCard.findFirst.mockResolvedValue({
+                ...mockRFIDCard,
+                student: {
+                    ...mockRFIDCard.student,
+                    isActive: false
+                }
+            });
+            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            expect(handleError).toHaveBeenCalledWith(expect.objectContaining({ message: 'Student account is inactive' }), 'Failed to verify delivery');
+        });
+        it('should reject card with inactive school', async () => {
+            mockPrisma.rFIDCard.findFirst.mockResolvedValue({
+                ...mockRFIDCard,
+                school: {
+                    ...mockRFIDCard.school,
+                    isActive: false
+                }
+            });
+            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            expect(handleError).toHaveBeenCalledWith(expect.objectContaining({ message: 'School is inactive' }), 'Failed to verify delivery');
+        });
+    });
+    describe('RFID Reader Validation', () => {
+        beforeEach(() => {
+            mockPrisma.rFIDCard.findFirst.mockResolvedValue(mockRFIDCard);
+            mockPrisma.order.findFirst.mockResolvedValue(mockOrder);
+        });
+        it('should reject non-existent reader', async () => {
+            mockPrisma.rFIDReader.findUnique.mockResolvedValue(null);
+            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            expect(handleError).toHaveBeenCalledWith(expect.objectContaining({ message: 'RFID reader not found' }), 'Failed to verify delivery');
+        });
+        it('should reject inactive reader', async () => {
+            mockPrisma.rFIDReader.findUnique.mockResolvedValue({
+                ...mockRFIDReader,
+                isActive: false
+            });
+            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            expect(handleError).toHaveBeenCalledWith(expect.objectContaining({ message: 'RFID reader is inactive' }), 'Failed to verify delivery');
+        });
+        it('should reject reader from different school', async () => {
+            mockPrisma.rFIDReader.findUnique.mockResolvedValue({
+                ...mockRFIDReader,
+                schoolId: 'different-school-123'
+            });
+            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            expect(createErrorResponse).toHaveBeenCalledWith('RFID reader does not belong to student\'s school', 403, 'SCHOOL_MISMATCH');
+        });
+        it('should warn about stale heartbeat but allow verification', async () => {
+            const staleHeartbeat = new Date(Date.now() - 10 * 60 * 1000);
+            mockPrisma.rFIDReader.findUnique.mockResolvedValue({
+                ...mockRFIDReader,
+                lastHeartbeat: staleHeartbeat
+            });
+            await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            expect(mockPrisma.$transaction).toHaveBeenCalled();
+        });
+    });
+    describe('Order Validation', () => {
+        beforeEach(() => {
+            mockPrisma.rFIDCard.findFirst.mockResolvedValue(mockRFIDCard);
+            mockPrisma.rFIDReader.findUnique.mockResolvedValue(mockRFIDReader);
+        });
+        it('should reject non-existent order', async () => {
+            mockPrisma.order.findFirst.mockResolvedValue(null);
+            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            expect(handleError).toHaveBeenCalledWith(expect.objectContaining({ message: 'Order not found or not eligible for delivery' }), 'Failed to verify delivery');
+        });
+        it('should reject order with invalid status', async () => {
+            mockPrisma.order.findFirst.mockResolvedValue({
+                ...mockOrder,
+                status: 'cancelled'
+            });
+            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            expect(handleError).toHaveBeenCalledWith(expect.objectContaining({ message: 'Order cannot be delivered. Current status: cancelled' }), 'Failed to verify delivery');
+        });
+        it('should reject unpaid order', async () => {
+            mockPrisma.order.findFirst.mockResolvedValue({
+                ...mockOrder,
+                paymentStatus: 'pending'
+            });
+            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            expect(handleError).toHaveBeenCalledWith(expect.objectContaining({ message: 'Order payment not confirmed. Payment status: pending' }), 'Failed to verify delivery');
+        });
+        it('should allow delivered order status', async () => {
+            mockPrisma.order.findFirst.mockResolvedValue({
+                ...mockOrder,
+                status: 'ready'
+            });
+            await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            expect(mockPrisma.$transaction).toHaveBeenCalled();
+        });
+    });
+    describe('Database Transaction Handling', () => {
+        beforeEach(() => {
+            mockPrisma.rFIDCard.findFirst.mockResolvedValue(mockRFIDCard);
+            mockPrisma.rFIDReader.findUnique.mockResolvedValue(mockRFIDReader);
+            mockPrisma.order.findFirst.mockResolvedValue(mockOrder);
+        });
+        it('should handle transaction rollback on verification creation failure', async () => {
+            mockPrisma.$transaction.mockRejectedValue(new Error('Verification creation failed'));
+            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            expect(handleError).toHaveBeenCalledWith(expect.any(Error), 'Failed to verify delivery');
+        });
+        it('should handle order status update failure gracefully', async () => {
+            mockPrisma.$transaction.mockImplementation(async (callback) => {
+                const txMock = {
+                    deliveryVerification: {
+                        create: jest.fn().mockResolvedValue(mockDeliveryVerification)
+                    },
+                    order: {
+                        update: jest.fn().mockRejectedValue(new Error('Order update failed'))
+                    },
+                    orderStatusHistory: {
+                        create: jest.fn()
+                    },
+                    rFIDReader: {
+                        update: jest.fn()
+                    }
+                };
+                return await callback(txMock);
+            });
+            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            expect(handleError).toHaveBeenCalledWith(expect.any(Error), 'Failed to verify delivery');
+        });
+        it('should handle reader update failure gracefully', async () => {
+            mockPrisma.$transaction.mockImplementation(async (callback) => {
+                const txMock = {
+                    deliveryVerification: {
+                        create: jest.fn().mockResolvedValue(mockDeliveryVerification)
+                    },
+                    order: {
+                        update: jest.fn().mockResolvedValue({ ...mockOrder, status: 'delivered' })
+                    },
+                    orderStatusHistory: {
+                        create: jest.fn().mockResolvedValue({})
+                    },
+                    rFIDReader: {
+                        update: jest.fn().mockRejectedValue(new Error('Reader update failed'))
+                            .mockResolvedValueOnce(mockRFIDReader)
+                    }
+                };
+                return await callback(txMock);
+            });
+            await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            expect(createSuccessResponse).toHaveBeenCalled();
+        });
+        it('should ensure database disconnection on success', async () => {
+            mockPrisma.rFIDCard.findFirst.mockResolvedValue(mockRFIDCard);
+            mockPrisma.rFIDReader.findUnique.mockResolvedValue(mockRFIDReader);
+            mockPrisma.order.findFirst.mockResolvedValue(mockOrder);
+            await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            expect(mockPrisma.$disconnect).toHaveBeenCalled();
+        });
+        it('should ensure database disconnection on error', async () => {
+            mockPrisma.rFIDCard.findFirst.mockRejectedValue(new Error('Database error'));
+            await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            expect(mockPrisma.$disconnect).toHaveBeenCalled();
+        });
+    });
+    describe('Response Format Validation', () => {
+        beforeEach(() => {
+            mockPrisma.rFIDCard.findFirst.mockResolvedValue(mockRFIDCard);
+            mockPrisma.rFIDReader.findUnique.mockResolvedValue(mockRFIDReader);
+            mockPrisma.order.findFirst.mockResolvedValue(mockOrder);
+        });
+        it('should return properly formatted success response', async () => {
+            await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            expect(createSuccessResponse).toHaveBeenCalledWith({
+                message: 'Delivery verified for John Doe',
+                data: expect.objectContaining({
+                    success: true,
+                    verificationId: 'verification-uuid-1234',
+                    order: expect.objectContaining({
+                        id: 'order-123',
+                        orderNumber: 'ORD-2024-001',
+                        status: 'delivered',
+                        deliveredAt: expect.any(Date)
+                    }),
+                    student: expect.objectContaining({
+                        id: 'student-123',
+                        firstName: 'John',
+                        lastName: 'Doe',
+                        grade: '10th',
+                        section: 'A'
+                    }),
+                    school: expect.objectContaining({
+                        id: 'school-123',
+                        name: 'Test School'
+                    }),
+                    delivery: expect.objectContaining({
+                        verifiedBy: 'Cafeteria Reader 1',
+                        location: expect.any(Object),
+                        timestamp: expect.any(Date),
+                        method: 'rfid'
+                    }),
+                    notifications: expect.objectContaining({
+                        sent: true,
+                        channels: expect.any(Array)
+                    })
+                })
+            });
+        });
+    });
+    describe('Edge Cases', () => {
+        beforeEach(() => {
+            mockPrisma.rFIDCard.findFirst.mockResolvedValue(mockRFIDCard);
+            mockPrisma.rFIDReader.findUnique.mockResolvedValue(mockRFIDReader);
+            mockPrisma.order.findFirst.mockResolvedValue(mockOrder);
+        });
+        it('should handle card without expiration date', async () => {
+            mockPrisma.rFIDCard.findFirst.mockResolvedValue({
+                ...mockRFIDCard,
+                expiresAt: null
+            });
+            await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            expect(createSuccessResponse).toHaveBeenCalled();
+        });
+        it('should handle missing reader heartbeat', async () => {
+            mockPrisma.rFIDReader.findUnique.mockResolvedValue({
+                ...mockRFIDReader,
+                lastHeartbeat: null
+            });
+            await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            expect(createSuccessResponse).toHaveBeenCalled();
+        });
+        it('should handle complex location data', async () => {
+            const complexLocationEvent = {
+                ...validEvent,
+                body: JSON.stringify({
+                    cardId: 'CARD123456789ABC',
+                    readerId: 'reader-123',
+                    location: {
+                        latitude: 12.9716,
+                        longitude: 77.5946,
+                        venue: 'Main Cafeteria',
+                        description: 'Primary serving location with GPS coordinates'
+                    }
+                })
+            };
+            await (0, delivery_verification_1.deliveryVerificationHandler)(complexLocationEvent, mockContext);
+            expect(createSuccessResponse).toHaveBeenCalledWith({
+                message: 'Delivery verified for John Doe',
+                data: expect.objectContaining({
+                    delivery: expect.objectContaining({
+                        location: expect.objectContaining({
+                            latitude: 12.9716,
+                            longitude: 77.5946,
+                            venue: 'Main Cafeteria',
+                            description: 'Primary serving location with GPS coordinates'
+                        })
+                    })
+                })
+            });
+        });
+    });
+});
+//# sourceMappingURL=delivery-verification.test.js.map

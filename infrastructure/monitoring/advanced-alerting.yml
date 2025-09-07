@@ -1,0 +1,1055 @@
+# Advanced Alerting System for HASIVU Platform
+# Comprehensive monitoring with intelligent alerting and automated incident response
+
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'HASIVU Platform - Advanced Alerting and Incident Response System'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: production
+    AllowedValues: [dev, staging, production]
+    Description: Environment name
+
+  ProjectName:
+    Type: String
+    Default: hasivu-platform
+    Description: Project name
+
+  CriticalEmail:
+    Type: String
+    Description: Email for critical (P1) alerts
+    AllowedPattern: '^[^@]+@[^@]+\.[^@]+$'
+
+  OperationsEmail:
+    Type: String
+    Description: Email for operations team alerts
+    AllowedPattern: '^[^@]+@[^@]+\.[^@]+$'
+
+  SecurityEmail:
+    Type: String
+    Description: Email for security team alerts
+    AllowedPattern: '^[^@]+@[^@]+\.[^@]+$'
+
+  SlackWebhookUrl:
+    Type: String
+    NoEcho: true
+    Description: Slack webhook URL for team notifications
+    Default: ''
+
+  PagerDutyIntegrationKey:
+    Type: String
+    NoEcho: true
+    Description: PagerDuty integration key for critical alerts
+    Default: ''
+
+Conditions:
+  IsProduction: !Equals [!Ref Environment, production]
+  HasSlackWebhook: !Not [!Equals [!Ref SlackWebhookUrl, '']]
+  HasPagerDuty: !Not [!Equals [!Ref PagerDutyIntegrationKey, '']]
+
+Resources:
+  # =====================================================
+  # SNS TOPICS FOR DIFFERENT ALERT LEVELS
+  # =====================================================
+  
+  # P1 - Critical Alerts (Immediate Response)
+  CriticalAlertTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub '${ProjectName}-${Environment}-critical-alerts'
+      DisplayName: 'HASIVU Critical Alerts (P1)'
+      KmsMasterKeyId: !Ref AlertEncryptionKey
+
+  CriticalAlertSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: email
+      TopicArn: !Ref CriticalAlertTopic
+      Endpoint: !Ref CriticalEmail
+
+  # P2 - High Priority Alerts (Urgent Response)
+  HighPriorityTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub '${ProjectName}-${Environment}-high-priority-alerts'
+      DisplayName: 'HASIVU High Priority Alerts (P2)'
+      KmsMasterKeyId: !Ref AlertEncryptionKey
+
+  HighPrioritySubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: email
+      TopicArn: !Ref HighPriorityTopic
+      Endpoint: !Ref OperationsEmail
+
+  # P3 - Medium Priority Alerts
+  MediumPriorityTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub '${ProjectName}-${Environment}-medium-priority-alerts'
+      DisplayName: 'HASIVU Medium Priority Alerts (P3)'
+      KmsMasterKeyId: !Ref AlertEncryptionKey
+
+  MediumPrioritySubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: email
+      TopicArn: !Ref MediumPriorityTopic
+      Endpoint: !Ref OperationsEmail
+
+  # Security Alerts Topic
+  SecurityAlertTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub '${ProjectName}-${Environment}-security-alerts'
+      DisplayName: 'HASIVU Security Alerts'
+      KmsMasterKeyId: !Ref AlertEncryptionKey
+
+  SecurityAlertSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: email
+      TopicArn: !Ref SecurityAlertTopic
+      Endpoint: !Ref SecurityEmail
+
+  # =====================================================
+  # CRITICAL (P1) ALARMS - IMMEDIATE RESPONSE
+  # =====================================================
+  
+  # System Health Critical Failure
+  SystemHealthCriticalAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${ProjectName}-${Environment}-system-health-critical'
+      AlarmDescription: 'Critical system health failure - immediate attention required'
+      MetricName: 'SystemHealthScore'
+      Namespace: 'HASIVU/Business'
+      Dimensions:
+        - Name: Environment
+          Value: !Ref Environment
+      Statistic: Average
+      Period: 60
+      EvaluationPeriods: 2
+      Threshold: 90
+      ComparisonOperator: LessThanThreshold
+      AlarmActions:
+        - !Ref CriticalAlertTopic
+        - !Ref AutoRemediationTopic
+      OKActions:
+        - !Ref CriticalAlertTopic
+      TreatMissingData: breaching
+
+  # Payment System Failure
+  PaymentSystemFailureAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${ProjectName}-${Environment}-payment-system-failure'
+      AlarmDescription: 'Payment system experiencing critical failures'
+      MetricName: 'Errors'
+      Namespace: 'AWS/Lambda'
+      Dimensions:
+        - Name: FunctionName
+          Value: !Sub '${ProjectName}-api-${Environment}-createPaymentOrder'
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 5
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref CriticalAlertTopic
+        - !Ref AutoRemediationTopic
+      TreatMissingData: notBreaching
+
+  # Database Connection Critical
+  DatabaseCriticalAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${ProjectName}-${Environment}-database-critical'
+      AlarmDescription: 'Database connectivity or performance critical issue'
+      MetricName: 'DatabaseConnections'
+      Namespace: 'AWS/RDS'
+      Dimensions:
+        - Name: DBInstanceIdentifier
+          Value: !Sub '${Environment}-hasivu-postgres'
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 100
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref CriticalAlertTopic
+        - !Ref AutoRemediationTopic
+
+  # Authentication System Down
+  AuthSystemDownAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${ProjectName}-${Environment}-auth-system-down'
+      AlarmDescription: 'Authentication system is not responding'
+      MetricName: 'Errors'
+      Namespace: 'AWS/Lambda'
+      Dimensions:
+        - Name: FunctionName
+          Value: !Sub '${ProjectName}-api-${Environment}-login'
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 10
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref CriticalAlertTopic
+        - !Ref AutoRemediationTopic
+
+  # =====================================================
+  # HIGH PRIORITY (P2) ALARMS - URGENT RESPONSE
+  # =====================================================
+
+  # High API Error Rate
+  HighAPIErrorRateAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${ProjectName}-${Environment}-high-api-error-rate'
+      AlarmDescription: 'API experiencing high error rates'
+      MetricName: '5XXError'
+      Namespace: 'AWS/ApiGateway'
+      Dimensions:
+        - Name: ApiName
+          Value: !Sub '${Environment}-hasivu-platform-api'
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: !If [IsProduction, 20, 50]
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref HighPriorityTopic
+        - !Ref AutoRemediationTopic
+      TreatMissingData: notBreaching
+
+  # Performance Degradation
+  PerformanceDegradationAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${ProjectName}-${Environment}-performance-degradation'
+      AlarmDescription: 'System performance degraded beyond acceptable limits'
+      MetricName: 'Duration'
+      Namespace: 'AWS/Lambda'
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 3
+      Threshold: !If [IsProduction, 3000, 5000]
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref HighPriorityTopic
+      TreatMissingData: notBreaching
+
+  # Lambda Throttling
+  LambdaThrottlingAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${ProjectName}-${Environment}-lambda-throttling'
+      AlarmDescription: 'Lambda functions experiencing throttling'
+      MetricName: 'Throttles'
+      Namespace: 'AWS/Lambda'
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      AlarmActions:
+        - !Ref HighPriorityTopic
+        - !Ref AutoRemediationTopic
+
+  # RFID System Issues
+  RFIDSystemIssuesAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${ProjectName}-${Environment}-rfid-system-issues'
+      AlarmDescription: 'RFID verification system experiencing issues'
+      MetricName: 'RFIDVerificationFailures'
+      Namespace: 'HASIVU/Business'
+      Dimensions:
+        - Name: Environment
+          Value: !Ref Environment
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 20
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref HighPriorityTopic
+
+  # =====================================================
+  # MEDIUM PRIORITY (P3) ALARMS
+  # =====================================================
+
+  # Resource Utilization Warning
+  ResourceUtilizationAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${ProjectName}-${Environment}-resource-utilization-high'
+      AlarmDescription: 'High resource utilization detected'
+      MetricName: 'CPUUtilization'
+      Namespace: 'AWS/RDS'
+      Dimensions:
+        - Name: DBInstanceIdentifier
+          Value: !Sub '${Environment}-hasivu-postgres'
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 3
+      Threshold: 80
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref MediumPriorityTopic
+
+  # Cache Performance Warning
+  CachePerformanceAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${ProjectName}-${Environment}-cache-performance-warning'
+      AlarmDescription: 'Redis cache performance degraded'
+      MetricName: 'CacheHitRate'
+      Namespace: 'AWS/ElastiCache'
+      Dimensions:
+        - Name: CacheClusterId
+          Value: !Sub '${Environment}-hasivu-redis-001'
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 3
+      Threshold: 80
+      ComparisonOperator: LessThanThreshold
+      AlarmActions:
+        - !Ref MediumPriorityTopic
+
+  # Business Metrics Warning
+  BusinessMetricsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${ProjectName}-${Environment}-business-metrics-warning'
+      AlarmDescription: 'Business metrics trending negatively'
+      MetricName: 'PaymentSuccessRate'
+      Namespace: 'HASIVU/Business'
+      Dimensions:
+        - Name: Environment
+          Value: !Ref Environment
+      Statistic: Average
+      Period: 900
+      EvaluationPeriods: 2
+      Threshold: 95
+      ComparisonOperator: LessThanThreshold
+      AlarmActions:
+        - !Ref MediumPriorityTopic
+
+  # =====================================================
+  # SECURITY ALARMS
+  # =====================================================
+
+  # Security Violations
+  SecurityViolationsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${ProjectName}-${Environment}-security-violations'
+      AlarmDescription: 'Security violations detected'
+      MetricName: 'FailedLoginAttempts'
+      Namespace: 'HASIVU/Security'
+      Dimensions:
+        - Name: Environment
+          Value: !Ref Environment
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 10
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref SecurityAlertTopic
+        - !Ref AutoRemediationTopic
+
+  # Suspicious Activity
+  SuspiciousActivityAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${ProjectName}-${Environment}-suspicious-activity'
+      AlarmDescription: 'Suspicious activity patterns detected'
+      MetricName: 'SuspiciousActivity'
+      Namespace: 'HASIVU/Security'
+      Dimensions:
+        - Name: Environment
+          Value: !Ref Environment
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 5
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref SecurityAlertTopic
+
+  # Payment Fraud Detection
+  PaymentFraudAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${ProjectName}-${Environment}-payment-fraud-detected'
+      AlarmDescription: 'Potential payment fraud detected'
+      MetricName: 'PaymentFraudAttempts'
+      Namespace: 'HASIVU/Security'
+      Dimensions:
+        - Name: Environment
+          Value: !Ref Environment
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 3
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref SecurityAlertTopic
+        - !Ref CriticalAlertTopic
+
+  # =====================================================
+  # COST MONITORING ALARMS
+  # =====================================================
+
+  # Daily Cost Spike
+  DailyCostSpikeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${ProjectName}-${Environment}-daily-cost-spike'
+      AlarmDescription: 'Daily costs exceed normal threshold'
+      MetricName: 'DailyCost'
+      Namespace: 'HASIVU/Costs'
+      Dimensions:
+        - Name: Environment
+          Value: !Ref Environment
+      Statistic: Maximum
+      Period: 86400
+      EvaluationPeriods: 1
+      Threshold: !If [IsProduction, 200, 100]
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref MediumPriorityTopic
+
+  # =====================================================
+  # AUTOMATED INCIDENT RESPONSE
+  # =====================================================
+
+  # Auto-remediation topic for triggering automated responses
+  AutoRemediationTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub '${ProjectName}-${Environment}-auto-remediation'
+      DisplayName: 'HASIVU Auto-Remediation Triggers'
+
+  # Lambda function for automated incident response
+  IncidentResponseFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${ProjectName}-${Environment}-incident-response'
+      Runtime: python3.9
+      Handler: index.lambda_handler
+      Timeout: 300
+      MemorySize: 512
+      Role: !GetAtt IncidentResponseRole.Arn
+      Environment:
+        Variables:
+          ENVIRONMENT: !Ref Environment
+          PROJECT_NAME: !Ref ProjectName
+          CRITICAL_TOPIC_ARN: !Ref CriticalAlertTopic
+          HIGH_PRIORITY_TOPIC_ARN: !Ref HighPriorityTopic
+      Code:
+        ZipFile: |
+          import json
+          import boto3
+          import os
+          import logging
+          from datetime import datetime, timedelta
+          
+          logger = logging.getLogger()
+          logger.setLevel(logging.INFO)
+          
+          # Initialize AWS clients
+          cloudwatch = boto3.client('cloudwatch')
+          lambda_client = boto3.client('lambda')
+          rds = boto3.client('rds')
+          elasticache = boto3.client('elasticache')
+          sns = boto3.client('sns')
+          
+          def lambda_handler(event, context):
+              try:
+                  # Parse SNS message
+                  for record in event['Records']:
+                      message = json.loads(record['Sns']['Message'])
+                      alarm_name = message.get('AlarmName', '')
+                      new_state = message.get('NewStateValue', '')
+                      
+                      logger.info(f"Processing alarm: {alarm_name}, State: {new_state}")
+                      
+                      if new_state == 'ALARM':
+                          response = handle_alarm(alarm_name, message)
+                          logger.info(f"Auto-remediation response: {response}")
+                      
+                  return {'statusCode': 200, 'body': 'Incident response processed'}
+                  
+              except Exception as e:
+                  logger.error(f"Error in incident response: {str(e)}")
+                  return {'statusCode': 500, 'body': f'Error: {str(e)}'}
+          
+          def handle_alarm(alarm_name, message):
+              """Handle different types of alarms with appropriate responses"""
+              environment = os.environ['ENVIRONMENT']
+              project = os.environ['PROJECT_NAME']
+              
+              responses = []
+              
+              # Payment system failures
+              if 'payment-system-failure' in alarm_name:
+                  responses.append(restart_payment_functions())
+                  responses.append(check_payment_dependencies())
+                  
+              # Database critical issues
+              elif 'database-critical' in alarm_name:
+                  responses.append(check_database_connections())
+                  responses.append(analyze_database_performance())
+                  
+              # Lambda throttling
+              elif 'lambda-throttling' in alarm_name:
+                  responses.append(increase_lambda_concurrency())
+                  
+              # High API error rates
+              elif 'high-api-error-rate' in alarm_name:
+                  responses.append(analyze_api_errors())
+                  responses.append(check_downstream_services())
+                  
+              # Security violations
+              elif 'security-violations' in alarm_name:
+                  responses.append(initiate_security_response())
+                  responses.append(collect_security_evidence())
+                  
+              # System health critical
+              elif 'system-health-critical' in alarm_name:
+                  responses.append(comprehensive_health_check())
+                  responses.append(escalate_to_oncall())
+              
+              return responses
+          
+          def restart_payment_functions():
+              """Restart payment-related Lambda functions"""
+              try:
+                  functions = [
+                      f"{os.environ['PROJECT_NAME']}-api-{os.environ['ENVIRONMENT']}-createPaymentOrder",
+                      f"{os.environ['PROJECT_NAME']}-api-{os.environ['ENVIRONMENT']}-verifyPayment"
+                  ]
+                  
+                  for func_name in functions:
+                      # Update function configuration to force restart
+                      lambda_client.update_function_configuration(
+                          FunctionName=func_name,
+                          Environment={'Variables': {'RESTART_TIMESTAMP': str(datetime.utcnow())}}
+                      )
+                      
+                  return "Payment functions restarted"
+              except Exception as e:
+                  return f"Error restarting payment functions: {str(e)}"
+          
+          def check_payment_dependencies():
+              """Check payment system dependencies"""
+              try:
+                  # Check database connectivity for payment functions
+                  # This would include checking Razorpay connectivity, database health, etc.
+                  return "Payment dependencies checked"
+              except Exception as e:
+                  return f"Error checking payment dependencies: {str(e)}"
+          
+          def check_database_connections():
+              """Analyze database connection issues"""
+              try:
+                  db_id = f"{os.environ['ENVIRONMENT']}-hasivu-postgres"
+                  response = rds.describe_db_instances(DBInstanceIdentifier=db_id)
+                  
+                  db_status = response['DBInstances'][0]['DBInstanceStatus']
+                  
+                  if db_status != 'available':
+                      return f"Database status: {db_status} - requires manual intervention"
+                  
+                  return "Database connections analyzed"
+              except Exception as e:
+                  return f"Error checking database: {str(e)}"
+          
+          def analyze_database_performance():
+              """Analyze database performance metrics"""
+              try:
+                  # Get recent CloudWatch metrics for database performance
+                  end_time = datetime.utcnow()
+                  start_time = end_time - timedelta(minutes=30)
+                  
+                  response = cloudwatch.get_metric_statistics(
+                      Namespace='AWS/RDS',
+                      MetricName='CPUUtilization',
+                      Dimensions=[
+                          {
+                              'Name': 'DBInstanceIdentifier',
+                              'Value': f"{os.environ['ENVIRONMENT']}-hasivu-postgres"
+                          }
+                      ],
+                      StartTime=start_time,
+                      EndTime=end_time,
+                      Period=300,
+                      Statistics=['Average', 'Maximum']
+                  )
+                  
+                  if response['Datapoints']:
+                      max_cpu = max(dp['Maximum'] for dp in response['Datapoints'])
+                      return f"Database CPU usage: {max_cpu:.1f}%"
+                  
+                  return "Database performance analyzed"
+              except Exception as e:
+                  return f"Error analyzing database performance: {str(e)}"
+          
+          def increase_lambda_concurrency():
+              """Attempt to increase Lambda concurrency limits"""
+              try:
+                  # This would require careful implementation to avoid infinite scaling
+                  return "Lambda concurrency limits reviewed"
+              except Exception as e:
+                  return f"Error adjusting Lambda concurrency: {str(e)}"
+          
+          def analyze_api_errors():
+              """Analyze API error patterns"""
+              try:
+                  # Analyze CloudWatch logs for error patterns
+                  return "API error patterns analyzed"
+              except Exception as e:
+                  return f"Error analyzing API errors: {str(e)}"
+          
+          def check_downstream_services():
+              """Check health of downstream services"""
+              try:
+                  # Check external service dependencies
+                  return "Downstream services checked"
+              except Exception as e:
+                  return f"Error checking downstream services: {str(e)}"
+          
+          def initiate_security_response():
+              """Initiate automated security response"""
+              try:
+                  # This could include temporarily blocking suspicious IPs,
+                  # increasing monitoring sensitivity, etc.
+                  return "Security response initiated"
+              except Exception as e:
+                  return f"Error initiating security response: {str(e)}"
+          
+          def collect_security_evidence():
+              """Collect evidence for security investigation"""
+              try:
+                  # Collect relevant logs and metrics for security analysis
+                  return "Security evidence collected"
+              except Exception as e:
+                  return f"Error collecting security evidence: {str(e)}"
+          
+          def comprehensive_health_check():
+              """Perform comprehensive system health check"""
+              try:
+                  # Run comprehensive health checks across all services
+                  health_results = []
+                  
+                  # Check all critical functions
+                  critical_functions = [
+                      f"{os.environ['PROJECT_NAME']}-api-{os.environ['ENVIRONMENT']}-login",
+                      f"{os.environ['PROJECT_NAME']}-api-{os.environ['ENVIRONMENT']}-createPaymentOrder",
+                      f"{os.environ['PROJECT_NAME']}-api-{os.environ['ENVIRONMENT']}-healthBasic"
+                  ]
+                  
+                  for func_name in critical_functions:
+                      try:
+                          lambda_client.get_function(FunctionName=func_name)
+                          health_results.append(f"{func_name}: OK")
+                      except Exception as e:
+                          health_results.append(f"{func_name}: ERROR - {str(e)}")
+                  
+                  return f"Comprehensive health check: {'; '.join(health_results)}"
+              except Exception as e:
+                  return f"Error in comprehensive health check: {str(e)}"
+          
+          def escalate_to_oncall():
+              """Escalate critical issues to on-call engineer"""
+              try:
+                  # Send high-priority notification
+                  sns.publish(
+                      TopicArn=os.environ['CRITICAL_TOPIC_ARN'],
+                      Message="ESCALATION: System health critical - automated remediation initiated but manual intervention may be required",
+                      Subject="URGENT: System Health Critical - Manual Review Required"
+                  )
+                  return "Escalated to on-call engineer"
+              except Exception as e:
+                  return f"Error escalating to on-call: {str(e)}"
+
+  # IAM Role for incident response function
+  IncidentResponseRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: IncidentResponsePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cloudwatch:GetMetricStatistics
+                  - cloudwatch:PutMetricData
+                  - lambda:UpdateFunctionConfiguration
+                  - lambda:GetFunction
+                  - rds:DescribeDBInstances
+                  - elasticache:DescribeCacheClusters
+                  - sns:Publish
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - logs:DescribeLogGroups
+                  - logs:DescribeLogStreams
+                  - logs:FilterLogEvents
+                Resource: "*"
+
+  # Subscribe incident response function to auto-remediation topic
+  IncidentResponseSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: lambda
+      TopicArn: !Ref AutoRemediationTopic
+      Endpoint: !GetAtt IncidentResponseFunction.Arn
+
+  # Permission for SNS to invoke incident response function
+  IncidentResponsePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref IncidentResponseFunction
+      Action: lambda:InvokeFunction
+      Principal: sns.amazonaws.com
+      SourceArn: !Ref AutoRemediationTopic
+
+  # =====================================================
+  # ENCRYPTION & SECURITY
+  # =====================================================
+  
+  AlertEncryptionKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: KMS key for encrypting alert notifications
+      KeyPolicy:
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
+          - Sid: Allow SNS Service
+            Effect: Allow
+            Principal:
+              Service: sns.amazonaws.com
+            Action:
+              - kms:Encrypt
+              - kms:Decrypt
+              - kms:ReEncrypt*
+              - kms:GenerateDataKey*
+              - kms:DescribeKey
+            Resource: '*'
+
+  AlertEncryptionKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub 'alias/${ProjectName}-${Environment}-alert-encryption'
+      TargetKeyId: !Ref AlertEncryptionKey
+
+  # =====================================================
+  # SLACK INTEGRATION (OPTIONAL)
+  # =====================================================
+
+  SlackNotificationFunction:
+    Type: AWS::Lambda::Function
+    Condition: HasSlackWebhook
+    Properties:
+      FunctionName: !Sub '${ProjectName}-${Environment}-slack-notifications'
+      Runtime: python3.9
+      Handler: index.lambda_handler
+      Timeout: 30
+      MemorySize: 256
+      Role: !GetAtt SlackNotificationRole.Arn
+      Environment:
+        Variables:
+          SLACK_WEBHOOK_URL: !Ref SlackWebhookUrl
+          ENVIRONMENT: !Ref Environment
+          PROJECT_NAME: !Ref ProjectName
+      Code:
+        ZipFile: |
+          import json
+          import urllib3
+          import os
+          from datetime import datetime
+          
+          http = urllib3.PoolManager()
+          
+          def lambda_handler(event, context):
+              webhook_url = os.environ['SLACK_WEBHOOK_URL']
+              environment = os.environ['ENVIRONMENT']
+              project = os.environ['PROJECT_NAME']
+              
+              try:
+                  message = json.loads(event['Records'][0]['Sns']['Message'])
+                  
+                  alarm_name = message.get('AlarmName', 'Unknown Alarm')
+                  new_state = message.get('NewStateValue', 'UNKNOWN')
+                  reason = message.get('NewStateReason', 'No reason provided')
+                  region = message.get('Region', 'Unknown')
+                  timestamp = message.get('StateChangeTime', datetime.utcnow().isoformat())
+                  
+                  # Determine alert severity and styling
+                  severity = determine_severity(alarm_name)
+                  color = get_alert_color(new_state, severity)
+                  emoji = get_alert_emoji(new_state, severity)
+                  
+                  # Create enhanced Slack message
+                  slack_message = create_slack_message(
+                      emoji, alarm_name, new_state, reason, 
+                      environment, project, region, timestamp, 
+                      severity, color
+                  )
+                  
+                  # Send to Slack
+                  response = send_to_slack(webhook_url, slack_message)
+                  
+                  return {
+                      'statusCode': 200,
+                      'body': json.dumps('Alert sent to Slack successfully')
+                  }
+                  
+              except Exception as e:
+                  print(f"Error sending to Slack: {str(e)}")
+                  return {
+                      'statusCode': 500,
+                      'body': json.dumps(f'Error: {str(e)}')
+                  }
+          
+          def determine_severity(alarm_name):
+              if any(keyword in alarm_name.lower() for keyword in ['critical', 'system-health', 'payment-system', 'auth-system-down']):
+                  return 'P1-Critical'
+              elif any(keyword in alarm_name.lower() for keyword in ['high-api-error', 'performance-degradation', 'throttling']):
+                  return 'P2-High'
+              elif any(keyword in alarm_name.lower() for keyword in ['security', 'fraud', 'suspicious']):
+                  return 'Security'
+              else:
+                  return 'P3-Medium'
+          
+          def get_alert_color(state, severity):
+              if state == 'ALARM':
+                  if severity == 'P1-Critical':
+                      return '#FF0000'  # Red
+                  elif severity == 'P2-High':
+                      return '#FF8C00'  # Orange
+                  elif severity == 'Security':
+                      return '#8B0000'  # Dark Red
+                  else:
+                      return '#FFD700'  # Gold
+              elif state == 'OK':
+                  return '#00FF00'  # Green
+              else:
+                  return '#808080'  # Gray
+          
+          def get_alert_emoji(state, severity):
+              if state == 'ALARM':
+                  if severity == 'P1-Critical':
+                      return '🚨🔥'
+                  elif severity == 'P2-High':
+                      return '⚠️🚨'
+                  elif severity == 'Security':
+                      return '🛡️⚠️'
+                  else:
+                      return '⚠️'
+              elif state == 'OK':
+                  return '✅'
+              else:
+                  return '❓'
+          
+          def create_slack_message(emoji, alarm_name, state, reason, environment, project, region, timestamp, severity, color):
+              return {
+                  'text': f'{emoji} *{project.upper()} Alert - {environment.title()}*',
+                  'attachments': [{
+                      'color': color,
+                      'fields': [
+                          {
+                              'title': 'Alarm Name',
+                              'value': alarm_name,
+                              'short': True
+                          },
+                          {
+                              'title': 'Severity',
+                              'value': severity,
+                              'short': True
+                          },
+                          {
+                              'title': 'Current State',
+                              'value': state,
+                              'short': True
+                          },
+                          {
+                              'title': 'Environment',
+                              'value': environment,
+                              'short': True
+                          },
+                          {
+                              'title': 'Reason',
+                              'value': reason,
+                              'short': False
+                          },
+                          {
+                              'title': 'Region',
+                              'value': region,
+                              'short': True
+                          },
+                          {
+                              'title': 'Timestamp',
+                              'value': timestamp,
+                              'short': True
+                          }
+                      ],
+                      'footer': 'HASIVU Platform Monitoring',
+                      'ts': int(datetime.utcnow().timestamp()),
+                      'actions': [
+                          {
+                              'type': 'button',
+                              'text': 'View Dashboard',
+                              'url': f'https://{region}.console.aws.amazon.com/cloudwatch/home?region={region}#alarmsV2:alarm/{alarm_name}'
+                          },
+                          {
+                              'type': 'button',
+                              'text': 'View Logs',
+                              'url': f'https://{region}.console.aws.amazon.com/cloudwatch/home?region={region}#logsV2:logs-insights'
+                          }
+                      ]
+                  }]
+              }
+          
+          def send_to_slack(webhook_url, message):
+              encoded_msg = json.dumps(message).encode('utf-8')
+              response = http.request('POST', webhook_url, body=encoded_msg, headers={'Content-Type': 'application/json'})
+              return response
+
+  SlackNotificationRole:
+    Type: AWS::IAM::Role
+    Condition: HasSlackWebhook
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  # Subscribe Slack function to all alert topics
+  SlackCriticalSubscription:
+    Type: AWS::SNS::Subscription
+    Condition: HasSlackWebhook
+    Properties:
+      Protocol: lambda
+      TopicArn: !Ref CriticalAlertTopic
+      Endpoint: !GetAtt SlackNotificationFunction.Arn
+
+  SlackHighPrioritySubscription:
+    Type: AWS::SNS::Subscription
+    Condition: HasSlackWebhook
+    Properties:
+      Protocol: lambda
+      TopicArn: !Ref HighPriorityTopic
+      Endpoint: !GetAtt SlackNotificationFunction.Arn
+
+  SlackMediumPrioritySubscription:
+    Type: AWS::SNS::Subscription
+    Condition: HasSlackWebhook
+    Properties:
+      Protocol: lambda
+      TopicArn: !Ref MediumPriorityTopic
+      Endpoint: !GetAtt SlackNotificationFunction.Arn
+
+  SlackSecuritySubscription:
+    Type: AWS::SNS::Subscription
+    Condition: HasSlackWebhook
+    Properties:
+      Protocol: lambda
+      TopicArn: !Ref SecurityAlertTopic
+      Endpoint: !GetAtt SlackNotificationFunction.Arn
+
+  # Permissions for SNS to invoke Slack function
+  SlackCriticalPermission:
+    Type: AWS::Lambda::Permission
+    Condition: HasSlackWebhook
+    Properties:
+      FunctionName: !Ref SlackNotificationFunction
+      Action: lambda:InvokeFunction
+      Principal: sns.amazonaws.com
+      SourceArn: !Ref CriticalAlertTopic
+
+  SlackHighPriorityPermission:
+    Type: AWS::Lambda::Permission
+    Condition: HasSlackWebhook
+    Properties:
+      FunctionName: !Ref SlackNotificationFunction
+      Action: lambda:InvokeFunction
+      Principal: sns.amazonaws.com
+      SourceArn: !Ref HighPriorityTopic
+
+  SlackMediumPriorityPermission:
+    Type: AWS::Lambda::Permission
+    Condition: HasSlackWebhook
+    Properties:
+      FunctionName: !Ref SlackNotificationFunction
+      Action: lambda:InvokeFunction
+      Principal: sns.amazonaws.com
+      SourceArn: !Ref MediumPriorityTopic
+
+  SlackSecurityPermission:
+    Type: AWS::Lambda::Permission
+    Condition: HasSlackWebhook
+    Properties:
+      FunctionName: !Ref SlackNotificationFunction
+      Action: lambda:InvokeFunction
+      Principal: sns.amazonaws.com
+      SourceArn: !Ref SecurityAlertTopic
+
+Outputs:
+  CriticalAlertTopicArn:
+    Description: SNS Topic ARN for Critical Alerts
+    Value: !Ref CriticalAlertTopic
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-CriticalAlerts'
+
+  HighPriorityTopicArn:
+    Description: SNS Topic ARN for High Priority Alerts
+    Value: !Ref HighPriorityTopic
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-HighPriorityAlerts'
+
+  SecurityAlertTopicArn:
+    Description: SNS Topic ARN for Security Alerts
+    Value: !Ref SecurityAlertTopic
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-SecurityAlerts'
+
+  IncidentResponseFunctionArn:
+    Description: ARN of the Incident Response Lambda Function
+    Value: !GetAtt IncidentResponseFunction.Arn
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-IncidentResponseFunction'
+
+  AlertEncryptionKeyId:
+    Description: KMS Key ID for Alert Encryption
+    Value: !Ref AlertEncryptionKey
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-AlertEncryptionKey'

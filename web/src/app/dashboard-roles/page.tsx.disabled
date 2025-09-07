@@ -1,0 +1,268 @@
+"use client"
+
+import React, { useState } from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { 
+  User, UserCheck, Crown, ChefHat, 
+  BookOpen, DollarSign, Calendar, Bell,
+  TrendingUp, Shield, Activity
+} from 'lucide-react';
+
+// Enhanced dashboard components
+import { EnhancedStudentDashboard } from '@/components/dashboard/enhanced-student-dashboard';
+import { EnhancedParentDashboard } from '@/components/dashboard/enhanced-parent-dashboard';
+import { EnhancedAdminDashboard } from '@/components/dashboard/enhanced-admin-dashboard';
+import { EnhancedKitchenDashboard } from '@/components/dashboard/enhanced-kitchen-dashboard';
+
+const DashboardRolesDemo = () => {
+  const [selectedRole, setSelectedRole] = useState<'student' | 'parent' | 'admin' | 'kitchen'>('student');
+
+  // Mock user data for different roles
+  const mockUsers = {
+    student: {
+      id: 'student-001',
+      name: 'Sarah Johnson',
+      class: '8th Grade',
+      section: 'A',
+      rollNumber: 'STU-2024-001',
+      avatar: '/avatars/student-sarah.jpg',
+      rfidCode: 'RFID-789123'
+    },
+    parent: {
+      id: 'parent-001',
+      name: 'Michael Johnson',
+      email: 'michael.johnson@email.com',
+      phone: '+1-555-0123',
+      avatar: '/avatars/parent-michael.jpg',
+      children: [
+        { id: 'child-001', name: 'Sarah Johnson', class: '8th Grade', section: 'A' },
+        { id: 'child-002', name: 'David Johnson', class: '5th Grade', section: 'B' }
+      ]
+    },
+    admin: {
+      id: 'admin-001',
+      name: 'Dr. Patricia Smith',
+      role: 'Principal',
+      email: 'patricia.smith@school.edu',
+      avatar: '/avatars/admin-patricia.jpg',
+      permissions: ['full_access', 'analytics', 'reports', 'user_management']
+    },
+    kitchen: {
+      id: 'kitchen-001', 
+      name: 'Chef Roberto Martinez',
+      role: 'Head Chef',
+      email: 'roberto.martinez@school.edu',
+      avatar: '/avatars/chef-roberto.jpg',
+      shift: 'morning',
+      specializations: ['nutrition', 'allergen_management', 'meal_planning']
+    }
+  };
+
+  const roleFeatures = {
+    student: {
+      icon: User,
+      color: 'bg-blue-500',
+      features: [
+        'Today\'s meal schedule with countdown timers',
+        'Nutrition progress tracking with visual charts', 
+        'RFID pickup code prominently displayed',
+        'Quick meal ordering interface',
+        'Achievement badges and progress bars',
+        'Wallet balance with spending history'
+      ]
+    },
+    parent: {
+      icon: UserCheck,
+      color: 'bg-green-500',
+      features: [
+        'Multiple children management with tabs',
+        'Spending overview with charts and budgets',
+        'Meal approval notifications',
+        'Nutrition reports for all children',
+        'Payment history and wallet top-up',
+        'School communication center'
+      ]
+    },
+    admin: {
+      icon: Crown,
+      color: 'bg-purple-500',
+      features: [
+        'School-wide analytics with interactive charts',
+        'Order management with bulk operations',
+        'Student nutrition compliance reports',
+        'Kitchen operations monitoring',
+        'Financial summaries and reports',
+        'Emergency broadcast system'
+      ]
+    },
+    kitchen: {
+      icon: ChefHat,
+      color: 'bg-orange-500',
+      features: [
+        'Real-time order queue with priority sorting',
+        'Preparation time tracking',
+        'Inventory management with alerts',
+        'Daily meal count summaries',
+        'Special dietary requirement alerts',
+        'Performance metrics and analytics'
+      ]
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+      <div className="mx-auto max-w-7xl">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-bold text-slate-900">
+                HASIVU Platform - Role-Based Dashboards
+              </h1>
+              <p className="text-lg text-slate-600 mt-2">
+                Comprehensive school meal management system with specialized interfaces for each user role
+              </p>
+            </div>
+            <div className="flex items-center space-x-4">
+              <Badge variant="outline" className="px-3 py-1">
+                <Activity className="h-4 w-4 mr-1" />
+                Live Demo
+              </Badge>
+              <Badge variant="secondary" className="px-3 py-1">
+                <Shield className="h-4 w-4 mr-1" />
+                ShadCN Components
+              </Badge>
+            </div>
+          </div>
+        </div>
+
+        {/* Role Selection */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <User className="h-5 w-5 mr-2" />
+              Select User Role
+            </CardTitle>
+            <CardDescription>
+              Choose a role to view the specialized dashboard interface designed for that user type
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {Object.entries(roleFeatures).map(([role, config]) => {
+                const IconComponent = config.icon;
+                const isSelected = selectedRole === role;
+                
+                return (
+                  <Card 
+                    key={role}
+                    className={`cursor-pointer transition-all duration-200 ${
+                      isSelected 
+                        ? 'ring-2 ring-blue-500 bg-blue-50' 
+                        : 'hover:shadow-lg hover:scale-105'
+                    }`}
+                    onClick={() => setSelectedRole(role as any)}
+                  >
+                    <CardContent className="p-6">
+                      <div className="flex items-center space-x-3">
+                        <div className={`${config.color} p-2 rounded-lg text-white`}>
+                          <IconComponent className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold capitalize text-slate-900">
+                            {role}
+                          </h3>
+                          <p className="text-sm text-slate-500">
+                            {mockUsers[role as keyof typeof mockUsers].name}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="mt-4">
+                        <p className="text-xs font-medium text-slate-700 mb-2">Key Features:</p>
+                        <ul className="text-xs text-slate-600 space-y-1">
+                          {config.features.slice(0, 3).map((feature, index) => (
+                            <li key={index} className="flex items-start">
+                              <span className="w-1 h-1 bg-slate-400 rounded-full mt-2 mr-2 flex-shrink-0" />
+                              {feature}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Dashboard Display */}
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center space-x-4">
+              <Avatar className="h-12 w-12">
+                <AvatarImage src={mockUsers[selectedRole].avatar} />
+                <AvatarFallback>
+                  {mockUsers[selectedRole].name.split(' ').map(n => n[0]).join('')}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900">
+                  {mockUsers[selectedRole].name}
+                </h2>
+                <p className="text-slate-600">
+                  {selectedRole === 'student' && `${mockUsers.student.class} - Section ${mockUsers.student.section}`}
+                  {selectedRole === 'parent' && `Parent of ${mockUsers.parent.children.length} children`}
+                  {selectedRole === 'admin' && mockUsers.admin.role}
+                  {selectedRole === 'kitchen' && mockUsers.kitchen.role}
+                </p>
+              </div>
+            </div>
+            
+            <Badge variant="outline" className="px-3 py-1">
+              <Calendar className="h-4 w-4 mr-1" />
+              {new Date().toLocaleDateString()}
+            </Badge>
+          </div>
+
+          {/* Dashboard Content */}
+          <div className="border-t pt-6">
+            {selectedRole === 'student' && (
+              <EnhancedStudentDashboard student={mockUsers.student} />
+            )}
+            {selectedRole === 'parent' && (
+              <EnhancedParentDashboard parentData={mockUsers.parent} />
+            )}
+            {selectedRole === 'admin' && (
+              <EnhancedAdminDashboard adminData={mockUsers.admin} />
+            )}
+            {selectedRole === 'kitchen' && (
+              <EnhancedKitchenDashboard kitchenData={mockUsers.kitchen} />
+            )}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="mt-8 text-center">
+          <p className="text-slate-500 text-sm">
+            HASIVU Platform - Comprehensive School Meal Management System
+          </p>
+          <div className="flex justify-center items-center space-x-4 mt-2">
+            <Badge variant="outline">React 18</Badge>
+            <Badge variant="outline">Next.js 13</Badge>
+            <Badge variant="outline">ShadCN UI</Badge>
+            <Badge variant="outline">TypeScript</Badge>
+            <Badge variant="outline">Tailwind CSS</Badge>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default DashboardRolesDemo;
