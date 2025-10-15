@@ -1,0 +1,38 @@
+/**
+ * Menu Service - Stub Implementation
+ * TODO: Implement full menu management functionality
+ */
+
+import { logger } from '../utils/logger';
+
+export class MenuService {
+  constructor() {
+    logger.info('MenuService initialized (stub)');
+  }
+
+  async getMenuItems(): Promise<any[]> {
+    return [];
+  }
+
+  async createMenuItem(item: any): Promise<any> {
+    logger.info('Menu item created', { item });
+    return { id: 'stub', ...item };
+  }
+
+  async updateMenuItem(id: string, updates: any): Promise<void> {
+    logger.info(`Menu item ${id} updated`, { updates });
+  }
+
+  async deleteMenuItem(id: string): Promise<void> {
+    logger.info(`Menu item ${id} deleted`);
+  }
+
+  async getMenuByCategory(_category: string): Promise<any[]> {
+    return [];
+  }
+}
+
+const menuServiceInstance = new MenuService();
+export const menuService = menuServiceInstance;
+export const _menuService = menuServiceInstance;
+export default menuServiceInstance;

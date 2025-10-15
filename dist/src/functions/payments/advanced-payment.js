@@ -1,13 +1,16 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.advancedPaymentHandler = void 0;
 const client_1 = require("@prisma/client");
-const Razorpay = require('razorpay');
+const razorpay_1 = __importDefault(require("razorpay"));
 const logger_1 = require("../../shared/utils/logger");
 const lambda_auth_middleware_1 = require("../../shared/middleware/lambda-auth.middleware");
 const zod_1 = require("zod");
 const prisma = new client_1.PrismaClient();
-const razorpay = new Razorpay({
+const razorpay = new razorpay_1.default({
     key_id: process.env.RAZORPAY_KEY_ID || '',
     key_secret: process.env.RAZORPAY_KEY_SECRET || ''
 });
@@ -32,7 +35,7 @@ const advancedPaymentSchema = zod_1.z.object({
     conversionRate: zod_1.z.number().positive().optional(),
     originalCurrency: zod_1.z.string().optional(),
     description: zod_1.z.string().optional(),
-    metadata: zod_1.z.record(zod_1.z.string(), zod_1.z.any()).default({}),
+    metadata: zod_1.z.record(zod_1.z.string(), zod_1.z.unknown()).default({}),
     customer: zod_1.z.object({
         id: zod_1.z.string().optional(),
         email: zod_1.z.string().email(),
@@ -55,7 +58,7 @@ function getGatewayConfig(gateway) {
                 key_secret: process.env.RAZORPAY_KEY_SECRET
             },
             supportedMethods: ['card', 'netbanking', 'wallet', 'upi'],
-            supportedCurrencies: ['INR', 'USD']
+            supportedCurrencies: ['INR']
         },
         stripe: {
             gateway: 'stripe',
@@ -64,7 +67,7 @@ function getGatewayConfig(gateway) {
                 secret_key: process.env.STRIPE_SECRET_KEY
             },
             supportedMethods: ['card'],
-            supportedCurrencies: ['USD', 'EUR', 'INR']
+            supportedCurrencies: ['INR', 'EUR']
         },
         payu: {
             gateway: 'payu',
@@ -172,7 +175,7 @@ const advancedPaymentHandler = async (event, context) => {
         if (authenticatedUser.role === 'school_admin' && authenticatedUser.schoolId !== order.schoolId) {
             logger_1.logger.warn('Cross-school payment attempt', {
                 requestId,
-                userId: authenticatedUser.id,
+                userId: authenticatedUser.id || "",
                 userSchoolId: authenticatedUser.schoolId,
                 orderSchoolId: order.schoolId
             });
@@ -201,7 +204,7 @@ const advancedPaymentHandler = async (event, context) => {
             data: {
                 id: gatewayResponse.id || `payment_${Date.now()}`,
                 razorpayOrderId: gatewayResponse.id,
-                userId: authenticatedUser.id,
+                userId: authenticatedUser.id || "",
                 orderId: paymentData.orderId,
                 amount: Math.round(paymentData.amount * 100),
                 currency: paymentData.currency,
@@ -217,7 +220,7 @@ const advancedPaymentHandler = async (event, context) => {
                 expiresAt: new Date(Date.now() + 30 * 60 * 1000)
             }
         });
-        await createPaymentAuditLog(paymentOrder.id, authenticatedUser.id, 'PAYMENT_INITIATED', {
+        await createPaymentAuditLog(paymentOrder.id, authenticatedUser.id || "", 'PAYMENT_INITIATED', {
             orderId: paymentData.orderId,
             amount: paymentData.amount,
             currency: paymentData.currency,
@@ -259,10 +262,10 @@ const advancedPaymentHandler = async (event, context) => {
     catch (error) {
         logger_1.logger.error('Advanced payment processing failed', {
             requestId,
-            error: error.message,
-            stack: error.stack
+            error: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined
         });
-        if (error.name === 'ZodError') {
+        if (error instanceof Error && error.name === 'ZodError') {
             return {
                 statusCode: 400,
                 body: JSON.stringify({ error: 'Invalid payment data', code: 'VALIDATION_ERROR' })
@@ -272,7 +275,7 @@ const advancedPaymentHandler = async (event, context) => {
             statusCode: 500,
             body: JSON.stringify({
                 error: 'Failed to process advanced payment',
-                message: error.message
+                message: error instanceof Error ? error.message : String(error)
             })
         };
     }

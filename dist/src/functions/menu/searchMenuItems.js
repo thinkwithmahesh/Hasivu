@@ -219,8 +219,8 @@ const searchMenuItemsHandler = async (event, context) => {
             searchTerm = validateAndSanitizeSearchTerm(rawSearchTerm);
         }
         catch (error) {
-            logger.warn('Invalid search term', { requestId, error: error.message });
-            return (0, response_utils_1.createErrorResponse)(error.message, 400, 'INVALID_SEARCH_TERM');
+            logger.warn('Invalid search term', { requestId, error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) });
+            return (0, response_utils_1.createErrorResponse)(error instanceof Error ? error.message : String(error), 400, 'INVALID_SEARCH_TERM');
         }
         const page = Math.max(1, parseInt(queryParams.page || '1'));
         const limit = Math.min(50, Math.max(1, parseInt(queryParams.limit || '20')));
@@ -282,7 +282,7 @@ const searchMenuItemsHandler = async (event, context) => {
             getSearchResultCount(filters)
         ]);
         const totalPages = Math.ceil(totalCount / limit);
-        const results = searchResults.rows.map(row => ({
+        const results = searchResults.rows.map((row) => ({
             id: row.id,
             name: row.name,
             description: row.description,
@@ -363,7 +363,7 @@ const searchMenuItemsHandler = async (event, context) => {
         logger.error('Search menu items request failed', {
             requestId,
             searchTerm: event.queryStringParameters?.q || event.queryStringParameters?.search,
-            error: error.message,
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
             duration: `${duration}ms`
         });
         return (0, response_utils_1.handleError)(error, 'Failed to search menu items');

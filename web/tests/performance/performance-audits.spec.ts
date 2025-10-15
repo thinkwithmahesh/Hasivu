@@ -9,9 +9,9 @@ import { MenuPage } from '../pages/menu.page';
  * and performance optimization validation
  */
 
-test.describe('Performance Auditing', () => {
+test.describe(_'Performance Auditing', _() => {
   // Performance thresholds based on requirements
-  const performanceThresholds = {
+  const _performanceThresholds =  {
     lcp: 2500, // Largest Contentful Paint (ms)
     fid: 100,  // First Input Delay (ms) 
     cls: 0.1,  // Cumulative Layout Shift
@@ -21,11 +21,11 @@ test.describe('Performance Auditing', () => {
     memoryUsage: 50 * 1024 * 1024 // 50MB memory limit
   };
 
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(_async ({ page }) => {
     // Enable performance monitoring
-    await page.addInitScript(() => {
+    await page.addInitScript(_() => {
       // Store performance metrics globally
-      (window as any).performanceMetrics = {
+      (window as any)._performanceMetrics =  {
         navigation: [],
         paint: [],
         lcp: [],
@@ -35,21 +35,21 @@ test.describe('Performance Auditing', () => {
 
       // Largest Contentful Paint observer
       if ('PerformanceObserver' in window) {
-        new PerformanceObserver((list) => {
-          const entries = list.getEntries();
-          (window as any).performanceMetrics.lcp = entries;
+        new PerformanceObserver(_(list) => {
+          const _entries =  list.getEntries();
+          (window as any).performanceMetrics._lcp =  entries;
         }).observe({ type: 'largest-contentful-paint', buffered: true });
 
         // First Input Delay observer
-        new PerformanceObserver((list) => {
-          const entries = list.getEntries();
-          (window as any).performanceMetrics.fid = entries;
+        new PerformanceObserver(_(list) => {
+          const _entries =  list.getEntries();
+          (window as any).performanceMetrics._fid =  entries;
         }).observe({ type: 'first-input', buffered: true });
 
         // Cumulative Layout Shift observer
-        new PerformanceObserver((list) => {
-          let clsValue = 0;
-          const entries = list.getEntries();
+        new PerformanceObserver(_(list) => {
+          let _clsValue =  0;
+          const _entries =  list.getEntries();
           for (const entry of entries) {
             if (!(entry as any).hadRecentInput) {
               clsValue += (entry as any).value;
@@ -59,26 +59,26 @@ test.describe('Performance Auditing', () => {
         }).observe({ type: 'layout-shift', buffered: true });
 
         // Navigation timing observer
-        new PerformanceObserver((list) => {
-          (window as any).performanceMetrics.navigation = list.getEntries();
+        new PerformanceObserver(_(list) => {
+          (window as any).performanceMetrics._navigation =  list.getEntries();
         }).observe({ type: 'navigation', buffered: true });
 
         // Paint timing observer
-        new PerformanceObserver((list) => {
-          (window as any).performanceMetrics.paint = list.getEntries();
+        new PerformanceObserver(_(list) => {
+          (window as any).performanceMetrics._paint =  list.getEntries();
         }).observe({ type: 'paint', buffered: true });
       }
     });
   });
 
-  test.describe('Core Web Vitals', () => {
-    test('login page - Core Web Vitals compliance', async ({ page }) => {
-      const loginPage = new LoginPage(page);
+  test.describe(_'Core Web Vitals', _() => {
+    test(_'login page - Core Web Vitals compliance', _async ({ page }) => {
+      const _loginPage =  new LoginPage(page);
       
-      const startTime = Date.now();
+      const _startTime =  Date.now();
       await loginPage.goto();
       await loginPage.waitForPageLoad();
-      const loadTime = Date.now() - startTime;
+      const _loadTime =  Date.now() - startTime;
 
       // Verify load time threshold
       expect(loadTime).toBeLessThan(performanceThresholds.loadTime);
@@ -87,13 +87,12 @@ test.describe('Performance Auditing', () => {
       await page.waitForTimeout(2000);
 
       // Get Core Web Vitals metrics
-      const metrics = await page.evaluate(() => {
-        return (window as any).performanceMetrics;
+      const _metrics =  await page.evaluate(() 
       });
 
       // Largest Contentful Paint
       if (metrics.lcp.length > 0) {
-        const lcpValue = metrics.lcp[metrics.lcp.length - 1].startTime;
+        const _lcpValue =  metrics.lcp[metrics.lcp.length - 1].startTime;
         console.log(`Login Page LCP: ${lcpValue}ms`);
         expect(lcpValue).toBeLessThan(performanceThresholds.lcp);
       }
@@ -104,21 +103,21 @@ test.describe('Performance Auditing', () => {
 
       // Time to First Byte
       if (metrics.navigation.length > 0) {
-        const nav = metrics.navigation[0] as any;
-        const ttfb = nav.responseStart - nav.requestStart;
+        const _nav =  metrics.navigation[0] as any;
+        const _ttfb =  nav.responseStart - nav.requestStart;
         console.log(`Login Page TTFB: ${ttfb}ms`);
         expect(ttfb).toBeLessThan(performanceThresholds.ttfb);
       }
 
       // First Contentful Paint
-      const fcpEntry = metrics.paint.find((entry: any) => entry.name === 'first-contentful-paint');
+      const _fcpEntry =  metrics.paint.find((entry: any) 
       if (fcpEntry) {
         console.log(`Login Page FCP: ${fcpEntry.startTime}ms`);
         expect(fcpEntry.startTime).toBeLessThan(2000); // FCP should be under 2s
       }
     });
 
-    test('dashboard page - performance under load', async ({ page }) => {
+    test(_'dashboard page - performance under load', _async ({ page }) => {
       // Mock authentication
       await page.context().addCookies([{
         name: 'auth_token',
@@ -128,26 +127,20 @@ test.describe('Performance Auditing', () => {
       }]);
 
       // Mock dashboard with substantial data
-      await page.route('**/dashboard/**', async route => {
+      await page.route(_'**/dashboard/**', async _route = > {
         // Simulate processing time
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
+        await new Promise(resolve 
         await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
+          status: 200, contentType: 'application/json', body: JSON.stringify({
             stats: {
-              totalStudents: 1250,
-              dailyOrders: 856,
-              monthlyRevenue: 125000
-            },
-            recentOrders: Array.from({ length: 50 }, (_, i) => ({
+              totalStudents: 1250, dailyOrders: 856, monthlyRevenue: 125000
+            }, recentOrders: Array.from({ length: 50 }, _(_, _i) => ({
               id: `ORD-${1000 + i}`,
               date: new Date(Date.now() - i * 3600000).toISOString(),
               total: Math.random() * 100,
               status: ['completed', 'pending', 'preparing'][i % 3]
             })),
-            notifications: Array.from({ length: 20 }, (_, i) => ({
+            notifications: Array.from({ length: 20 }, _(_, _i) => ({
               id: `notif-${i}`,
               message: `Test notification ${i}`,
               timestamp: new Date(Date.now() - i * 1800000).toISOString()
@@ -156,26 +149,25 @@ test.describe('Performance Auditing', () => {
         });
       });
 
-      const dashboardPage = new DashboardPage(page);
-      const startTime = Date.now();
+      const _dashboardPage =  new DashboardPage(page);
+      const _startTime =  Date.now();
       
       await dashboardPage.goto();
       await dashboardPage.waitForPageLoad();
       
-      const loadTime = Date.now() - startTime;
+      const _loadTime =  Date.now() - startTime;
       expect(loadTime).toBeLessThan(performanceThresholds.loadTime);
 
       // Wait for all widgets to load
       await page.waitForTimeout(3000);
 
       // Measure runtime performance
-      const metrics = await page.evaluate(() => {
-        return (window as any).performanceMetrics;
+      const _metrics =  await page.evaluate(() 
       });
 
       // Check LCP with data-heavy dashboard
       if (metrics.lcp.length > 0) {
-        const lcpValue = metrics.lcp[metrics.lcp.length - 1].startTime;
+        const _lcpValue =  metrics.lcp[metrics.lcp.length - 1].startTime;
         console.log(`Dashboard LCP: ${lcpValue}ms`);
         expect(lcpValue).toBeLessThan(performanceThresholds.lcp * 1.2); // Allow 20% buffer for data-heavy page
       }
@@ -185,7 +177,7 @@ test.describe('Performance Auditing', () => {
       expect(metrics.cls).toBeLessThan(performanceThresholds.cls);
     });
 
-    test('menu page - image loading performance', async ({ page }) => {
+    test(_'menu page - image loading performance', _async ({ page }) => {
       // Mock authentication
       await page.context().addCookies([{
         name: 'auth_token',
@@ -195,15 +187,8 @@ test.describe('Performance Auditing', () => {
       }]);
 
       // Mock menu with images
-      await page.route('**/menu/items', async route => {
-        const items = Array.from({ length: 24 }, (_, i) => ({
-          id: `item-${i}`,
-          name: `Menu Item ${i + 1}`,
-          price: Math.random() * 50 + 10,
-          image: `https://picsum.photos/300/200?random=${i}`, // Random images for testing
-          category: ['main', 'curry', 'snack', 'beverage'][i % 4]
-        }));
-
+      await page.route('**/menu/items', async _route = > {
+        const items 
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -211,8 +196,8 @@ test.describe('Performance Auditing', () => {
         });
       });
 
-      const menuPage = new MenuPage(page);
-      const startTime = Date.now();
+      const _menuPage =  new MenuPage(page);
+      const _startTime =  Date.now();
       
       await menuPage.goto();
       await menuPage.waitForPageLoad();
@@ -220,17 +205,16 @@ test.describe('Performance Auditing', () => {
       // Wait for images to load
       await page.waitForLoadState('networkidle');
       
-      const loadTime = Date.now() - startTime;
+      const _loadTime =  Date.now() - startTime;
       expect(loadTime).toBeLessThan(performanceThresholds.loadTime * 1.5); // Allow extra time for images
 
       // Check Core Web Vitals with image loading
       await page.waitForTimeout(2000);
-      const metrics = await page.evaluate(() => {
-        return (window as any).performanceMetrics;
+      const _metrics =  await page.evaluate(() 
       });
 
       if (metrics.lcp.length > 0) {
-        const lcpValue = metrics.lcp[metrics.lcp.length - 1].startTime;
+        const _lcpValue =  metrics.lcp[metrics.lcp.length - 1].startTime;
         console.log(`Menu with Images LCP: ${lcpValue}ms`);
         // LCP might be higher due to images, but should still be reasonable
         expect(lcpValue).toBeLessThan(performanceThresholds.lcp * 1.5);
@@ -241,23 +225,23 @@ test.describe('Performance Auditing', () => {
     });
   });
 
-  test.describe('Resource Performance', () => {
-    test('bundle size analysis', async ({ page }) => {
-      const loginPage = new LoginPage(page);
+  test.describe(_'Resource Performance', _() => {
+    test(_'bundle size analysis', _async ({ page }) => {
+      const _loginPage =  new LoginPage(page);
       
       // Track network requests
       const resourceSizes: { [key: string]: number } = {};
       
-      page.on('response', async (response) => {
-        const url = response.url();
-        const contentLength = response.headers()['content-length'];
+      page.on(_'response', _async (response) => {
+        const _url =  response.url();
+        const _contentLength =  response.headers()['content-length'];
         
         if (contentLength) {
           resourceSizes[url] = parseInt(contentLength);
         } else if (url.includes('.js') || url.includes('.css')) {
           // Try to get response body size
           try {
-            const body = await response.body();
+            const _body =  await response.body();
             resourceSizes[url] = body.length;
           } catch (error) {
             // Some responses might not be accessible
@@ -272,10 +256,10 @@ test.describe('Performance Auditing', () => {
       await page.waitForLoadState('networkidle');
 
       // Calculate total JS bundle size
-      let totalJSSize = 0;
-      let totalCSSSize = 0;
+      let _totalJSSize =  0;
+      let _totalCSSSize =  0;
       
-      Object.entries(resourceSizes).forEach(([url, size]) => {
+      Object.entries(resourceSizes).forEach(_([url, _size]) => {
         if (url.includes('.js') && !url.includes('node_modules') && size > 1000) {
           totalJSSize += size;
           console.log(`JS Bundle: ${url} - ${(size / 1024).toFixed(2)} KB`);
@@ -294,7 +278,7 @@ test.describe('Performance Auditing', () => {
       expect(totalCSSSize).toBeLessThan(100 * 1024); // 100KB CSS limit
     });
 
-    test('memory usage monitoring', async ({ page }) => {
+    test(_'memory usage monitoring', _async ({ page }) => {
       // Mock authentication
       await page.context().addCookies([{
         name: 'auth_token',
@@ -303,17 +287,12 @@ test.describe('Performance Auditing', () => {
         path: '/'
       }]);
 
-      const dashboardPage = new DashboardPage(page);
+      const _dashboardPage =  new DashboardPage(page);
       await dashboardPage.goto();
       await dashboardPage.waitForPageLoad();
 
       // Measure initial memory usage
-      const initialMemory = await page.evaluate(() => {
-        return (performance as any).memory ? {
-          usedJSHeapSize: (performance as any).memory.usedJSHeapSize,
-          totalJSHeapSize: (performance as any).memory.totalJSHeapSize,
-          jsHeapSizeLimit: (performance as any).memory.jsHeapSizeLimit
-        } : null;
+      const _initialMemory =  await page.evaluate(() 
       });
 
       if (initialMemory) {
@@ -321,15 +300,13 @@ test.describe('Performance Auditing', () => {
         expect(initialMemory.usedJSHeapSize).toBeLessThan(performanceThresholds.memoryUsage);
 
         // Simulate heavy usage
-        await page.evaluate(() => {
+        await page.evaluate(_() => {
           // Trigger some operations that might use memory
           for (let i = 0; i < 1000; i++) {
-            const div = document.createElement('div');
-            div.innerHTML = `Test content ${i}`;
+            const _div =  document.createElement('div');
+            div._innerHTML =  `Test content ${i}`;
             document.body.appendChild(div);
-            if (i % 100 === 0) {
-              // Clean up periodically
-              const elements = document.querySelectorAll('div');
+            if (i % _100 = 
               for (let j = 0; j < 50 && j < elements.length; j++) {
                 elements[j].remove();
               }
@@ -338,15 +315,11 @@ test.describe('Performance Auditing', () => {
         });
 
         // Measure memory after operations
-        const finalMemory = await page.evaluate(() => {
-          return (performance as any).memory ? {
-            usedJSHeapSize: (performance as any).memory.usedJSHeapSize,
-            totalJSHeapSize: (performance as any).memory.totalJSHeapSize
-          } : null;
+        const _finalMemory =  await page.evaluate(() 
         });
 
         if (finalMemory) {
-          const memoryIncrease = finalMemory.usedJSHeapSize - initialMemory.usedJSHeapSize;
+          const _memoryIncrease =  finalMemory.usedJSHeapSize - initialMemory.usedJSHeapSize;
           console.log(`Memory increase after operations: ${(memoryIncrease / 1024 / 1024).toFixed(2)} MB`);
           
           // Memory increase should be reasonable
@@ -355,8 +328,8 @@ test.describe('Performance Auditing', () => {
       }
     });
 
-    test('network resilience and caching', async ({ page }) => {
-      const menuPage = new MenuPage(page);
+    test(_'network resilience and caching', _async ({ page }) => {
+      const _menuPage =  new MenuPage(page);
       
       // Mock authentication
       await page.context().addCookies([{
@@ -367,20 +340,20 @@ test.describe('Performance Auditing', () => {
       }]);
 
       // First load - measure baseline
-      const startTime1 = Date.now();
+      const _startTime1 =  Date.now();
       await menuPage.goto();
       await menuPage.waitForPageLoad();
-      const firstLoadTime = Date.now() - startTime1;
+      const _firstLoadTime =  Date.now() - startTime1;
 
       // Navigate away and back (test caching)
       await page.goto('/dashboard');
       await page.waitForLoadState('networkidle');
 
       // Second load - should be faster due to caching
-      const startTime2 = Date.now();
+      const _startTime2 =  Date.now();
       await menuPage.goto();
       await menuPage.waitForPageLoad();
-      const secondLoadTime = Date.now() - startTime2;
+      const _secondLoadTime =  Date.now() - startTime2;
 
       console.log(`First load: ${firstLoadTime}ms, Second load: ${secondLoadTime}ms`);
       
@@ -388,7 +361,7 @@ test.describe('Performance Auditing', () => {
       expect(secondLoadTime).toBeLessThan(firstLoadTime * 0.7); // At least 30% faster
 
       // Test with slow network
-      const client = await page.context().newCDPSession(page);
+      const _client =  await page.context().newCDPSession(page);
       await client.send('Network.emulateNetworkConditions', {
         offline: false,
         downloadThroughput: 50 * 1024, // 50KB/s
@@ -396,10 +369,10 @@ test.describe('Performance Auditing', () => {
         latency: 500 // 500ms latency
       });
 
-      const startTime3 = Date.now();
+      const _startTime3 =  Date.now();
       await page.reload();
       await menuPage.waitForPageLoad();
-      const slowNetworkTime = Date.now() - startTime3;
+      const _slowNetworkTime =  Date.now() - startTime3;
 
       console.log(`Slow network load: ${slowNetworkTime}ms`);
       
@@ -408,9 +381,9 @@ test.describe('Performance Auditing', () => {
     });
   });
 
-  test.describe('Accessibility Compliance', () => {
-    test('WCAG AA compliance - login page', async ({ page }) => {
-      const loginPage = new LoginPage(page);
+  test.describe(_'Accessibility Compliance', _() => {
+    test(_'WCAG AA compliance - login page', _async ({ page }) => {
+      const _loginPage =  new LoginPage(page);
       await loginPage.goto();
       await loginPage.waitForPageLoad();
 
@@ -420,9 +393,7 @@ test.describe('Performance Auditing', () => {
       });
 
       // Run accessibility audit
-      const accessibilityResults = await page.evaluate(async () => {
-        // @ts-ignore - axe is loaded dynamically
-        const results = await axe.run();
+      const _accessibilityResults =  await page.evaluate(async () 
         return {
           violations: results.violations.map((violation: any) => ({
             id: violation.id,
@@ -438,30 +409,27 @@ test.describe('Performance Auditing', () => {
       console.log(`Accessibility Results:`, accessibilityResults);
 
       // No critical or serious violations allowed
-      const criticalViolations = accessibilityResults.violations.filter(
-        v => v.impact === 'critical' || v.impact === 'serious'
-      );
-      
+      const _criticalViolations =  accessibilityResults.violations.filter(
+        v 
       expect(criticalViolations).toHaveLength(0);
 
       // Should have reasonable number of passing tests
       expect(accessibilityResults.passes).toBeGreaterThan(10);
     });
 
-    test('keyboard navigation compliance', async ({ page }) => {
-      const loginPage = new LoginPage(page);
+    test(_'keyboard navigation compliance', _async ({ page }) => {
+      const _loginPage =  new LoginPage(page);
       await loginPage.goto();
       await loginPage.waitForPageLoad();
 
       // Test tab navigation through all focusable elements
-      const focusableElements = [];
-      let currentTabIndex = 0;
+      const _focusableElements =  [];
+      let _currentTabIndex =  0;
       
       while (currentTabIndex < 20) { // Prevent infinite loop
         await page.keyboard.press('Tab');
         
-        const activeElement = await page.evaluate(() => {
-          const element = document.activeElement;
+        const _activeElement =  await page.evaluate(() 
           return element ? {
             tagName: element.tagName,
             type: (element as HTMLInputElement).type || null,
@@ -484,7 +452,7 @@ test.describe('Performance Auditing', () => {
       }
 
       console.log('Focusable elements found:', focusableElements.length);
-      focusableElements.forEach((el, index) => {
+      focusableElements.forEach(_(el, _index) => {
         console.log(`${index + 1}. ${el.tagName} - ${el.testId || el.text}`);
       });
 
@@ -506,22 +474,19 @@ test.describe('Performance Auditing', () => {
       await page.waitForTimeout(1000);
       
       // Check if form validation or submission occurred
-      const formState = await page.evaluate(() => {
-        const emailInput = document.querySelector('[data-testid="email-input"]') as HTMLInputElement;
-        const passwordInput = document.querySelector('[data-testid="password-input"]') as HTMLInputElement;
-        
+      const _formState =  await page.evaluate(() 
+        const _passwordInput =  document.querySelector('[data-testid
         return {
           emailValue: emailInput?.value,
           passwordValue: passwordInput?.value,
-          formSubmitted: emailInput?.value === 'test@example.com' && passwordInput?.value === 'password123'
-        };
+          formSubmitted: emailInput?._value = 
       });
 
       expect(formState.formSubmitted).toBe(true);
     });
 
-    test('screen reader compatibility', async ({ page }) => {
-      const menuPage = new MenuPage(page);
+    test(_'screen reader compatibility', _async ({ page }) => {
+      const _menuPage =  new MenuPage(page);
       
       // Mock authentication
       await page.context().addCookies([{
@@ -535,9 +500,8 @@ test.describe('Performance Auditing', () => {
       await menuPage.waitForPageLoad();
 
       // Check for proper ARIA labels and landmarks
-      const ariaElements = await page.evaluate(() => {
-        const elements = document.querySelectorAll('[aria-label], [aria-labelledby], [aria-describedby], [role]');
-        return Array.from(elements).map(el => ({
+      const _ariaElements =  await page.evaluate(() 
+        return Array.from(elements).map(_el = > ({
           tagName: el.tagName,
           role: el.getAttribute('role'),
           ariaLabel: el.getAttribute('aria-label'),
@@ -550,21 +514,13 @@ test.describe('Performance Auditing', () => {
       console.log(`ARIA elements found: ${ariaElements.length}`);
 
       // Should have proper landmarks
-      const landmarks = ariaElements.filter(el => 
-        ['main', 'navigation', 'banner', 'contentinfo', 'complementary'].includes(el.role || '')
-      );
+      const _landmarks =  ariaElements.filter(el 
       expect(landmarks.length).toBeGreaterThan(0);
 
       // Interactive elements should have accessible names
-      const interactiveElements = await page.evaluate(() => {
-        const elements = document.querySelectorAll('button, input, select, textarea, a[href]');
-        return Array.from(elements).map(el => {
-          const hasAccessibleName = 
-            el.getAttribute('aria-label') ||
-            el.getAttribute('aria-labelledby') ||
-            (el.textContent && el.textContent.trim().length > 0) ||
-            (el as HTMLInputElement).placeholder;
-            
+      const _interactiveElements =  await page.evaluate(() 
+        return Array.from(elements).map(_el = > {
+          const hasAccessibleName 
           return {
             tagName: el.tagName,
             type: (el as HTMLInputElement).type,
@@ -574,34 +530,31 @@ test.describe('Performance Auditing', () => {
         });
       });
 
-      const elementsWithoutNames = interactiveElements.filter(el => !el.hasAccessibleName);
-      
+      const _elementsWithoutNames =  interactiveElements.filter(el 
       if (elementsWithoutNames.length > 0) {
         console.log('Elements without accessible names:', elementsWithoutNames);
       }
       
       // Most interactive elements should have accessible names
-      const accessibilityRate = (interactiveElements.length - elementsWithoutNames.length) / interactiveElements.length;
+      const _accessibilityRate =  (interactiveElements.length - elementsWithoutNames.length) / interactiveElements.length;
       expect(accessibilityRate).toBeGreaterThan(0.8); // 80% should have accessible names
     });
 
-    test('color contrast compliance', async ({ page }) => {
-      const loginPage = new LoginPage(page);
+    test(_'color contrast compliance', _async ({ page }) => {
+      const _loginPage =  new LoginPage(page);
       await loginPage.goto();
       await loginPage.waitForPageLoad();
 
       // Check color contrast ratios
-      const contrastResults = await page.evaluate(() => {
-        const results: any[] = [];
-        
+      const _contrastResults =  await page.evaluate(() 
         // Get computed styles for text elements
-        const textElements = document.querySelectorAll('p, span, div, button, input, label, a, h1, h2, h3, h4, h5, h6');
+        const _textElements =  document.querySelectorAll('p, span, div, button, input, label, a, h1, h2, h3, h4, h5, h6');
         
-        Array.from(textElements).slice(0, 20).forEach((element) => { // Limit to first 20 for performance
-          const computed = window.getComputedStyle(element);
-          const color = computed.color;
-          const backgroundColor = computed.backgroundColor;
-          const fontSize = computed.fontSize;
+        Array.from(textElements).slice(0, 20).forEach(_(element) => { // Limit to first 20 for performance
+          const _computed =  window.getComputedStyle(element);
+          const _color =  computed.color;
+          const _backgroundColor =  computed.backgroundColor;
+          const _fontSize =  computed.fontSize;
           
           if (color && backgroundColor && element.textContent?.trim()) {
             results.push({
@@ -625,21 +578,17 @@ test.describe('Performance Auditing', () => {
       expect(contrastResults.length).toBeGreaterThan(5);
       
       // Verify no transparent or missing colors
-      const problemElements = contrastResults.filter(result => 
-        result.color === 'rgba(0, 0, 0, 0)' || 
-        result.backgroundColor === 'rgba(0, 0, 0, 0)'
-      );
-      
+      const _problemElements =  contrastResults.filter(result 
       expect(problemElements.length).toBe(0);
     });
   });
 
-  test.describe('Performance Regression Testing', () => {
-    test('performance baseline comparison', async ({ page }) => {
+  test.describe(_'Performance Regression Testing', _() => {
+    test(_'performance baseline comparison', _async ({ page }) => {
       // This test would compare against stored performance baselines
       // In a real implementation, you'd store baseline metrics and compare
       
-      const pages = [
+      const _pages =  [
         { name: 'login', path: '/auth/login' },
         { name: 'dashboard', path: '/dashboard' },
         { name: 'menu', path: '/menu' }
@@ -648,26 +597,24 @@ test.describe('Performance Auditing', () => {
       const performanceResults: { [key: string]: any } = {};
 
       for (const pageInfo of pages) {
-        const startTime = Date.now();
+        const _startTime =  Date.now();
         
         await page.goto(pageInfo.path);
         await page.waitForLoadState('networkidle');
         
-        const loadTime = Date.now() - startTime;
+        const _loadTime =  Date.now() - startTime;
         
         // Wait for metrics collection
         await page.waitForTimeout(2000);
         
-        const metrics = await page.evaluate(() => {
-          return (window as any).performanceMetrics;
+        const _metrics =  await page.evaluate(() 
         });
 
         performanceResults[pageInfo.name] = {
           loadTime,
           lcp: metrics.lcp.length > 0 ? metrics.lcp[metrics.lcp.length - 1].startTime : null,
           cls: metrics.cls,
-          fcp: metrics.paint.find((entry: any) => entry.name === 'first-contentful-paint')?.startTime
-        };
+          fcp: metrics.paint.find((entry: any) => entry._name = 
       }
 
       // Log results for baseline establishment

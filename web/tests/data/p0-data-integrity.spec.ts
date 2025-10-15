@@ -17,9 +17,9 @@ import { test, expect, Page } from '@playwright/test';
  * - Data validation and sanitization
  */
 
-test.describe('P0 Critical Data Integrity Tests @critical @p0 @data', () => {
+test.describe(_'P0 Critical Data Integrity Tests @critical @p0 @data', _() => {
   
-  const testUsers = {
+  const _testUsers =  {
     student: {
       id: 'STU-001',
       email: 'student@hasivu.test',
@@ -47,19 +47,19 @@ test.describe('P0 Critical Data Integrity Tests @critical @p0 @data', () => {
     }
   };
 
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(_async ({ page }) => {
     // Mock authentication API with session tracking
-    await page.route('**/auth/login', async route => {
-      const request = route.request();
-      const postData = JSON.parse(request.postData() || '{}');
+    await page.route('**/auth/login', async _route = > {
+      const request 
+      const _postData =  JSON.parse(request.postData() || '{}');
       
-      const userMap = {
+      const _userMap =  {
         'student@hasivu.test': testUsers.student,
         'parent@hasivu.test': testUsers.parent,
         'admin@hasivu.test': testUsers.admin
       };
       
-      const user = userMap[postData.email];
+      const _user =  userMap[postData.email];
       if (user) {
         await route.fulfill({
           status: 200,
@@ -79,12 +79,11 @@ test.describe('P0 Critical Data Integrity Tests @critical @p0 @data', () => {
     });
 
     // Mock session validation API
-    await page.route('**/auth/validate-session', async route => {
-      const authHeader = route.request().headers()['authorization'];
+    await page.route('**/auth/validate-session', async _route = > {
+      const authHeader 
       if (authHeader && authHeader.includes('jwt_token_')) {
-        const userId = authHeader.split('jwt_token_')[1];
-        const user = Object.values(testUsers).find(u => u.id === userId);
-        
+        const _userId =  authHeader.split('jwt_token_')[1];
+        const _user =  Object.values(testUsers).find(u 
         if (user) {
           await route.fulfill({
             status: 200,
@@ -111,27 +110,22 @@ test.describe('P0 Critical Data Integrity Tests @critical @p0 @data', () => {
     });
   });
 
-  test.describe('Session Management & Authentication State', () => {
+  test.describe(_'Session Management & Authentication State', _() => {
     
-    test('session persistence across page refreshes @p0 @session @persistence', async ({ page }) => {
+    test(_'session persistence across page refreshes @p0 @session @persistence', _async ({ page }) => {
       // Login as student
       await page.goto('/auth/login');
-      await page.locator('[data-testid="role-tab-student"]').click();
-      await page.locator('[data-testid="email-input"]').fill(testUsers.student.email);
-      await page.locator('[data-testid="password-input"]').fill('password123');
-      await page.locator('[data-testid="login-button"]').click();
+      await page.locator('[data-_testid = "role-tab-student"]').click();
+      await page.locator('[data-_testid = "email-input"]').fill(testUsers.student.email);
+      await page.locator('[data-_testid = "password-input"]').fill('password123');
+      await page.locator('[data-_testid = "login-button"]').click();
       
       // Verify login success
-      await expect(page.locator('[data-testid="student-dashboard"]')).toBeVisible();
-      await expect(page.locator('[data-testid="user-name"]')).toContainText(testUsers.student.name);
+      await expect(page.locator('[data-_testid = "student-dashboard"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "user-name"]')).toContainText(testUsers.student.name);
       
       // Store session data for verification
-      const sessionData = await page.evaluate(() => {
-        return {
-          token: localStorage.getItem('auth_token'),
-          user: JSON.parse(localStorage.getItem('user_data') || '{}'),
-          sessionId: sessionStorage.getItem('session_id')
-        };
+      const _sessionData =  await page.evaluate(() 
       });
       
       expect(sessionData.token).toBeTruthy();
@@ -141,24 +135,20 @@ test.describe('P0 Critical Data Integrity Tests @critical @p0 @data', () => {
       await page.reload();
       
       // Verify session restored automatically
-      await expect(page.locator('[data-testid="student-dashboard"]')).toBeVisible();
-      await expect(page.locator('[data-testid="user-name"]')).toContainText(testUsers.student.name);
+      await expect(page.locator('[data-_testid = "student-dashboard"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "user-name"]')).toContainText(testUsers.student.name);
       
       // Verify session data integrity
-      const restoredSessionData = await page.evaluate(() => {
-        return {
-          token: localStorage.getItem('auth_token'),
-          user: JSON.parse(localStorage.getItem('user_data') || '{}')
-        };
+      const _restoredSessionData =  await page.evaluate(() 
       });
       
       expect(restoredSessionData.token).toBe(sessionData.token);
       expect(restoredSessionData.user.id).toBe(sessionData.user.id);
     });
 
-    test('session timeout and automatic logout @p0 @session @timeout', async ({ page }) => {
+    test(_'session timeout and automatic logout @p0 @session @timeout', _async ({ page }) => {
       // Mock short session timeout for testing
-      await page.route('**/auth/validate-session', async route => {
+      await page.route('**/auth/validate-session', async _route = > {
         await route.fulfill({
           status: 401,
           contentType: 'application/json',
@@ -173,57 +163,53 @@ test.describe('P0 Critical Data Integrity Tests @critical @p0 @data', () => {
       
       // Login first
       await page.goto('/auth/login');
-      await page.locator('[data-testid="role-tab-student"]').click();
-      await page.locator('[data-testid="email-input"]').fill(testUsers.student.email);
-      await page.locator('[data-testid="password-input"]').fill('password123');
-      await page.locator('[data-testid="login-button"]').click();
+      await page.locator('[data-_testid = "role-tab-student"]').click();
+      await page.locator('[data-_testid = "email-input"]').fill(testUsers.student.email);
+      await page.locator('[data-_testid = "password-input"]').fill('password123');
+      await page.locator('[data-_testid = "login-button"]').click();
       
-      await expect(page.locator('[data-testid="student-dashboard"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "student-dashboard"]')).toBeVisible();
       
       // Trigger session validation (simulate API call)
       await page.reload();
       
       // Verify automatic logout
-      await expect(page.locator('[data-testid="login-form"]')).toBeVisible();
-      await expect(page.locator('[data-testid="session-expired-message"]')).toBeVisible();
-      await expect(page.locator('[data-testid="session-expired-message"]')).toContainText('Your session has expired');
+      await expect(page.locator('[data-_testid = "login-form"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "session-expired-message"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "session-expired-message"]')).toContainText('Your session has expired');
       
       // Verify session data cleared
-      const sessionData = await page.evaluate(() => {
-        return {
-          token: localStorage.getItem('auth_token'),
-          user: localStorage.getItem('user_data')
-        };
+      const _sessionData =  await page.evaluate(() 
       });
       
       expect(sessionData.token).toBeNull();
       expect(sessionData.user).toBeNull();
     });
 
-    test('cross-tab session coordination @p0 @session @multi-tab', async ({ context, page }) => {
+    test(_'cross-tab session coordination @p0 @session @multi-tab', _async ({ context, _page }) => {
       // Login in first tab
       await page.goto('/auth/login');
-      await page.locator('[data-testid="role-tab-student"]').click();
-      await page.locator('[data-testid="email-input"]').fill(testUsers.student.email);
-      await page.locator('[data-testid="password-input"]').fill('password123');
-      await page.locator('[data-testid="login-button"]').click();
+      await page.locator('[data-_testid = "role-tab-student"]').click();
+      await page.locator('[data-_testid = "email-input"]').fill(testUsers.student.email);
+      await page.locator('[data-_testid = "password-input"]').fill('password123');
+      await page.locator('[data-_testid = "login-button"]').click();
       
-      await expect(page.locator('[data-testid="student-dashboard"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "student-dashboard"]')).toBeVisible();
       
       // Open second tab
-      const secondPage = await context.newPage();
+      const _secondPage =  await context.newPage();
       await secondPage.goto('/dashboard');
       
       // Verify session shared across tabs
-      await expect(secondPage.locator('[data-testid="student-dashboard"]')).toBeVisible();
-      await expect(secondPage.locator('[data-testid="user-name"]')).toContainText(testUsers.student.name);
+      await expect(secondPage.locator('[data-_testid = "student-dashboard"]')).toBeVisible();
+      await expect(secondPage.locator('[data-_testid = "user-name"]')).toContainText(testUsers.student.name);
       
       // Logout from first tab
-      await page.locator('[data-testid="user-menu"]').click();
-      await page.locator('[data-testid="logout-button"]').click();
+      await page.locator('[data-_testid = "user-menu"]').click();
+      await page.locator('[data-_testid = "logout-button"]').click();
       
       // Mock logout API
-      await page.route('**/auth/logout', async route => {
+      await page.route('**/auth/logout', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -235,26 +221,26 @@ test.describe('P0 Critical Data Integrity Tests @critical @p0 @data', () => {
       });
       
       // Verify first tab redirected to login
-      await expect(page.locator('[data-testid="login-form"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "login-form"]')).toBeVisible();
       
       // Verify second tab also logs out (session coordination)
       await secondPage.reload();
-      await expect(secondPage.locator('[data-testid="login-form"]')).toBeVisible();
+      await expect(secondPage.locator('[data-_testid = "login-form"]')).toBeVisible();
     });
 
-    test('role-based access control validation @p0 @rbac @security', async ({ page }) => {
+    test(_'role-based access control validation @p0 @rbac @security', _async ({ page }) => {
       // Login as student
       await page.goto('/auth/login');
-      await page.locator('[data-testid="role-tab-student"]').click();
-      await page.locator('[data-testid="email-input"]').fill(testUsers.student.email);
-      await page.locator('[data-testid="password-input"]').fill('password123');
-      await page.locator('[data-testid="login-button"]').click();
+      await page.locator('[data-_testid = "role-tab-student"]').click();
+      await page.locator('[data-_testid = "email-input"]').fill(testUsers.student.email);
+      await page.locator('[data-_testid = "password-input"]').fill('password123');
+      await page.locator('[data-_testid = "login-button"]').click();
       
-      await expect(page.locator('[data-testid="student-dashboard"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "student-dashboard"]')).toBeVisible();
       
       // Mock role-based API endpoint access
-      await page.route('**/api/admin/users', async route => {
-        const authHeader = route.request().headers()['authorization'];
+      await page.route('**/api/admin/users', async _route = > {
+        const authHeader 
         if (!authHeader || !authHeader.includes('STU-001')) {
           await route.fulfill({
             status: 403,
@@ -269,19 +255,18 @@ test.describe('P0 Critical Data Integrity Tests @critical @p0 @data', () => {
       });
       
       // Attempt to access admin endpoint (should fail)
-      const response = await page.evaluate(async () => {
-        const token = localStorage.getItem('auth_token');
+      const _response =  await page.evaluate(async () 
         return fetch('/api/admin/users', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
-        }).then(r => r.json());
+        }).then(_r = > r.json());
       });
       
       expect(response.error).toBe('INSUFFICIENT_PERMISSIONS');
       
       // Verify student can access allowed endpoints
-      await page.route('**/api/student/menu', async route => {
+      await page.route('**/api/student/menu', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -294,26 +279,26 @@ test.describe('P0 Critical Data Integrity Tests @critical @p0 @data', () => {
       
       // Test allowed endpoint access
       await page.goto('/menu');
-      await expect(page.locator('[data-testid="menu-list"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "menu-list"]')).toBeVisible();
     });
   });
 
-  test.describe('Data Consistency & Concurrent Operations', () => {
+  test.describe(_'Data Consistency & Concurrent Operations', _() => {
     
-    test('concurrent order operations data consistency @p0 @concurrency @orders', async ({ page, context }) => {
+    test(_'concurrent order operations data consistency @p0 @concurrency @orders', _async ({ page, _context }) => {
       // Setup two concurrent sessions for same student
       await page.goto('/auth/login');
-      await page.locator('[data-testid="role-tab-student"]').click();
-      await page.locator('[data-testid="email-input"]').fill(testUsers.student.email);
-      await page.locator('[data-testid="password-input"]').fill('password123');
-      await page.locator('[data-testid="login-button"]').click();
+      await page.locator('[data-_testid = "role-tab-student"]').click();
+      await page.locator('[data-_testid = "email-input"]').fill(testUsers.student.email);
+      await page.locator('[data-_testid = "password-input"]').fill('password123');
+      await page.locator('[data-_testid = "login-button"]').click();
       
-      const secondPage = await context.newPage();
+      const _secondPage =  await context.newPage();
       await secondPage.goto('/dashboard');
       
       // Mock balance endpoint with concurrency handling
-      let balanceUpdateCount = 0;
-      await page.route('**/api/student/balance', async route => {
+      let _balanceUpdateCount =  0;
+      await page.route('**/api/student/balance', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -327,26 +312,11 @@ test.describe('P0 Critical Data Integrity Tests @critical @p0 @data', () => {
       });
       
       // Mock order creation with race condition protection
-      let orderCreationAttempts = 0;
-      await page.route('**/api/orders/create', async route => {
+      let _orderCreationAttempts =  0;
+      await page.route('**/api/orders/create', async _route = > {
         orderCreationAttempts++;
         
-        if (orderCreationAttempts === 1) {
-          // First request succeeds
-          await route.fulfill({
-            status: 200,
-            contentType: 'application/json',
-            body: JSON.stringify({
-              success: true,
-              order: {
-                id: 'ORD-RACE-001',
-                student_id: testUsers.student.id,
-                amount: 45.00,
-                status: 'pending_payment',
-                created_at: new Date().toISOString()
-              }
-            })
-          });
+        if (_orderCreationAttempts = 
         } else {
           // Concurrent request fails with conflict
           await route.fulfill({
@@ -363,9 +333,9 @@ test.describe('P0 Critical Data Integrity Tests @critical @p0 @data', () => {
       });
       
       // Attempt to create order from both tabs simultaneously
-      const [firstResult, secondResult] = await Promise.all([
+      const [firstResult, secondResult] = await Promise.all(_[
         page.evaluate(async () => {
-          const token = localStorage.getItem('auth_token');
+          const _token =  localStorage.getItem('auth_token');
           return fetch('/api/orders/create', {
             method: 'POST',
             headers: {
@@ -375,10 +345,10 @@ test.describe('P0 Critical Data Integrity Tests @critical @p0 @data', () => {
             body: JSON.stringify({
               items: [{ menu_id: 'MENU-001', quantity: 1, price: 45.00 }]
             })
-          }).then(r => r.json());
+          }).then(_r = > r.json());
         }),
-        secondPage.evaluate(async () => {
-          const token = localStorage.getItem('auth_token');
+        secondPage.evaluate(_async () => {
+          const _token =  localStorage.getItem('auth_token');
           return fetch('/api/orders/create', {
             method: 'POST',
             headers: {
@@ -388,36 +358,35 @@ test.describe('P0 Critical Data Integrity Tests @critical @p0 @data', () => {
             body: JSON.stringify({
               items: [{ menu_id: 'MENU-001', quantity: 1, price: 45.00 }]
             })
-          }).then(r => r.json());
+          }).then(_r = > r.json());
         })
       ]);
       
       // Verify only one order succeeded
-      const successfulOrders = [firstResult, secondResult].filter(r => r.success);
-      const failedOrders = [firstResult, secondResult].filter(r => !r.success);
-      
+      const _successfulOrders =  [firstResult, secondResult].filter(r 
+      const _failedOrders =  [firstResult, secondResult].filter(r 
       expect(successfulOrders).toHaveLength(1);
       expect(failedOrders).toHaveLength(1);
       expect(failedOrders[0].error).toBe('CONCURRENT_ORDER_CONFLICT');
     });
 
-    test('parent-child balance synchronization @p0 @sync @balance', async ({ page, context }) => {
+    test(_'parent-child balance synchronization @p0 @sync @balance', _async ({ page, _context }) => {
       // Parent and student contexts
       await page.goto('/auth/login');
-      await page.locator('[data-testid="role-tab-parent"]').click();
-      await page.locator('[data-testid="email-input"]').fill(testUsers.parent.email);
-      await page.locator('[data-testid="password-input"]').fill('password123');
-      await page.locator('[data-testid="login-button"]').click();
+      await page.locator('[data-_testid = "role-tab-parent"]').click();
+      await page.locator('[data-_testid = "email-input"]').fill(testUsers.parent.email);
+      await page.locator('[data-_testid = "password-input"]').fill('password123');
+      await page.locator('[data-_testid = "login-button"]').click();
       
-      const studentPage = await context.newPage();
+      const _studentPage =  await context.newPage();
       await studentPage.goto('/auth/login');
-      await studentPage.locator('[data-testid="role-tab-student"]').click();
-      await studentPage.locator('[data-testid="email-input"]').fill(testUsers.student.email);
-      await studentPage.locator('[data-testid="password-input"]').fill('password123');
-      await studentPage.locator('[data-testid="login-button"]').click();
+      await studentPage.locator('[data-_testid = "role-tab-student"]').click();
+      await studentPage.locator('[data-_testid = "email-input"]').fill(testUsers.student.email);
+      await studentPage.locator('[data-_testid = "password-input"]').fill('password123');
+      await studentPage.locator('[data-_testid = "login-button"]').click();
       
       // Mock balance top-up API with real-time sync
-      await page.route('**/api/parent/topup-child', async route => {
+      await page.route('**/api/parent/topup-child', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -436,7 +405,7 @@ test.describe('P0 Critical Data Integrity Tests @critical @p0 @data', () => {
       });
       
       // Mock WebSocket for real-time balance updates
-      await studentPage.route('**/ws/balance-updates', async route => {
+      await studentPage.route('**/ws/balance-updates', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -452,40 +421,40 @@ test.describe('P0 Critical Data Integrity Tests @critical @p0 @data', () => {
       });
       
       // Parent initiates top-up
-      await page.locator('[data-testid="child-selector"]').selectOption(testUsers.student.id);
-      await page.click('[data-testid="topup-balance-button"]');
-      await page.locator('[data-testid="topup-amount"]').fill('100');
-      await page.click('[data-testid="confirm-topup"]');
+      await page.locator('[data-_testid = "child-selector"]').selectOption(testUsers.student.id);
+      await page.click('[data-_testid = "topup-balance-button"]');
+      await page.locator('[data-_testid = "topup-amount"]').fill('100');
+      await page.click('[data-_testid = "confirm-topup"]');
       
       // Verify parent sees updated balances
-      await expect(page.locator('[data-testid="parent-balance"]')).toContainText('₹400.00');
-      await expect(page.locator('[data-testid="child-balance"]')).toContainText('₹250.00');
+      await expect(page.locator('[data-_testid = "parent-balance"]')).toContainText('₹400.00');
+      await expect(page.locator('[data-_testid = "child-balance"]')).toContainText('₹250.00');
       
       // Verify student receives real-time balance update
-      await expect(studentPage.locator('[data-testid="balance-update-notification"]')).toBeVisible();
-      await expect(studentPage.locator('[data-testid="meal-balance"]')).toContainText('₹250.00');
+      await expect(studentPage.locator('[data-_testid = "balance-update-notification"]')).toBeVisible();
+      await expect(studentPage.locator('[data-_testid = "meal-balance"]')).toContainText('₹250.00');
     });
 
-    test('order status synchronization across roles @p0 @sync @order-status', async ({ page, context }) => {
+    test(_'order status synchronization across roles @p0 @sync @order-status', _async ({ page, _context }) => {
       // Kitchen staff context
       await page.goto('/auth/login');
-      await page.locator('[data-testid="role-tab-kitchen"]').click();
-      await page.locator('[data-testid="email-input"]').fill('kitchen@hasivu.test');
-      await page.locator('[data-testid="password-input"]').fill('password123');
-      await page.locator('[data-testid="login-button"]').click();
+      await page.locator('[data-_testid = "role-tab-kitchen"]').click();
+      await page.locator('[data-_testid = "email-input"]').fill('kitchen@hasivu.test');
+      await page.locator('[data-_testid = "password-input"]').fill('password123');
+      await page.locator('[data-_testid = "login-button"]').click();
       
       // Student context
-      const studentPage = await context.newPage();
+      const _studentPage =  await context.newPage();
       await studentPage.goto('/auth/login');
-      await studentPage.locator('[data-testid="role-tab-student"]').click();
-      await studentPage.locator('[data-testid="email-input"]').fill(testUsers.student.email);
-      await studentPage.locator('[data-testid="password-input"]').fill('password123');
-      await studentPage.locator('[data-testid="login-button"]').click();
+      await studentPage.locator('[data-_testid = "role-tab-student"]').click();
+      await studentPage.locator('[data-_testid = "email-input"]').fill(testUsers.student.email);
+      await studentPage.locator('[data-_testid = "password-input"]').fill('password123');
+      await studentPage.locator('[data-_testid = "login-button"]').click();
       
       // Mock order with real-time status updates
-      const testOrderId = 'ORD-STATUS-SYNC-001';
+      const _testOrderId =  'ORD-STATUS-SYNC-001';
       
-      await page.route('**/api/kitchen/orders/pending', async route => {
+      await page.route('**/api/kitchen/orders/pending', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -504,7 +473,7 @@ test.describe('P0 Critical Data Integrity Tests @critical @p0 @data', () => {
       });
       
       // Kitchen accepts order
-      await page.route(`**/api/kitchen/orders/${testOrderId}/accept`, async route => {
+      await page.route(`**/api/kitchen/orders/${testOrderId}/accept`, async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -521,7 +490,7 @@ test.describe('P0 Critical Data Integrity Tests @critical @p0 @data', () => {
       });
       
       // Mock WebSocket for real-time order updates
-      await studentPage.route('**/ws/order-updates', async route => {
+      await studentPage.route('**/ws/order-updates', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -536,32 +505,32 @@ test.describe('P0 Critical Data Integrity Tests @critical @p0 @data', () => {
       });
       
       // Kitchen accepts order
-      await expect(page.locator('[data-testid="pending-orders"]')).toBeVisible();
-      await page.locator(`[data-testid="accept-order-${testOrderId}"]`).click();
+      await expect(page.locator('[data-_testid = "pending-orders"]')).toBeVisible();
+      await page.locator(`[data-_testid = "accept-order-${testOrderId}"]`).click();
       
       // Verify kitchen sees updated status
-      await expect(page.locator('[data-testid="order-accepted-toast"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "order-accepted-toast"]')).toBeVisible();
       
       // Verify student receives real-time status update
-      await expect(studentPage.locator('[data-testid="order-status-notification"]')).toBeVisible();
-      await expect(studentPage.locator('[data-testid="order-status-notification"]')).toContainText('kitchen_accepted');
+      await expect(studentPage.locator('[data-_testid = "order-status-notification"]')).toBeVisible();
+      await expect(studentPage.locator('[data-_testid = "order-status-notification"]')).toContainText('kitchen_accepted');
     });
   });
 
-  test.describe('State Persistence & Recovery', () => {
+  test.describe(_'State Persistence & Recovery', _() => {
     
-    test('cart state persistence during interruption @p0 @cart @persistence', async ({ page }) => {
+    test(_'cart state persistence during interruption @p0 @cart @persistence', _async ({ page }) => {
       await page.goto('/auth/login');
-      await page.locator('[data-testid="role-tab-student"]').click();
-      await page.locator('[data-testid="email-input"]').fill(testUsers.student.email);
-      await page.locator('[data-testid="password-input"]').fill('password123');
-      await page.locator('[data-testid="login-button"]').click();
+      await page.locator('[data-_testid = "role-tab-student"]').click();
+      await page.locator('[data-_testid = "email-input"]').fill(testUsers.student.email);
+      await page.locator('[data-_testid = "password-input"]').fill('password123');
+      await page.locator('[data-_testid = "login-button"]').click();
       
       // Add items to cart
       await page.goto('/menu');
       
       // Mock menu API
-      await page.route('**/api/menu/today', async route => {
+      await page.route('**/api/menu/today', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -576,16 +545,15 @@ test.describe('P0 Critical Data Integrity Tests @critical @p0 @data', () => {
       });
       
       // Add items to cart
-      await page.locator('[data-testid="add-to-cart-MENU-001"]').click();
-      await page.locator('[data-testid="add-to-cart-MENU-002"]').click();
+      await page.locator('[data-_testid = "add-to-cart-MENU-001"]').click();
+      await page.locator('[data-_testid = "add-to-cart-MENU-002"]').click();
       
       // Verify cart contents
-      await expect(page.locator('[data-testid="cart-items-count"]')).toContainText('2');
-      await expect(page.locator('[data-testid="cart-total"]')).toContainText('₹110.00');
+      await expect(page.locator('[data-_testid = "cart-items-count"]')).toContainText('2');
+      await expect(page.locator('[data-_testid = "cart-total"]')).toContainText('₹110.00');
       
       // Store cart state
-      const cartState = await page.evaluate(() => {
-        return JSON.parse(localStorage.getItem('cart_state') || '{}');
+      const _cartState =  await page.evaluate(() 
       });
       
       expect(cartState.items).toHaveLength(2);
@@ -602,43 +570,42 @@ test.describe('P0 Critical Data Integrity Tests @critical @p0 @data', () => {
       await page.context().setOffline(false);
       
       // Verify cart state restored
-      await expect(page.locator('[data-testid="cart-items-count"]')).toContainText('2');
-      await expect(page.locator('[data-testid="cart-total"]')).toContainText('₹110.00');
+      await expect(page.locator('[data-_testid = "cart-items-count"]')).toContainText('2');
+      await expect(page.locator('[data-_testid = "cart-total"]')).toContainText('₹110.00');
       
       // Verify cart recovery notification
-      await expect(page.locator('[data-testid="cart-restored-notification"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "cart-restored-notification"]')).toBeVisible();
     });
 
-    test('form data recovery after browser crash @p0 @forms @recovery', async ({ page }) => {
+    test(_'form data recovery after browser crash @p0 @forms @recovery', _async ({ page }) => {
       await page.goto('/auth/login');
-      await page.locator('[data-testid="role-tab-admin"]').click();
-      await page.locator('[data-testid="email-input"]').fill(testUsers.admin.email);
-      await page.locator('[data-testid="password-input"]').fill('password123');
-      await page.locator('[data-testid="login-button"]').click();
+      await page.locator('[data-_testid = "role-tab-admin"]').click();
+      await page.locator('[data-_testid = "email-input"]').fill(testUsers.admin.email);
+      await page.locator('[data-_testid = "password-input"]').fill('password123');
+      await page.locator('[data-_testid = "login-button"]').click();
       
       // Navigate to complex form (e.g., menu creation)
       await page.goto('/admin/menu/create');
       
       // Fill complex form
-      await page.locator('[data-testid="menu-name"]').fill('New Special Menu');
-      await page.locator('[data-testid="menu-description"]').fill('A delicious new menu for students');
-      await page.locator('[data-testid="menu-price"]').fill('75.00');
-      await page.locator('[data-testid="preparation-time"]').fill('20');
+      await page.locator('[data-_testid = "menu-name"]').fill('New Special Menu');
+      await page.locator('[data-_testid = "menu-description"]').fill('A delicious new menu for students');
+      await page.locator('[data-_testid = "menu-price"]').fill('75.00');
+      await page.locator('[data-_testid = "preparation-time"]').fill('20');
       
       // Add menu items
-      await page.locator('[data-testid="add-menu-item"]').click();
-      await page.locator('[data-testid="item-name-0"]').fill('Special Rice');
-      await page.locator('[data-testid="item-description-0"]').fill('Aromatic basmati rice');
+      await page.locator('[data-_testid = "add-menu-item"]').click();
+      await page.locator('[data-_testid = "item-name-0"]').fill('Special Rice');
+      await page.locator('[data-_testid = "item-description-0"]').fill('Aromatic basmati rice');
       
-      await page.locator('[data-testid="add-menu-item"]').click();
-      await page.locator('[data-testid="item-name-1"]').fill('Curry');
-      await page.locator('[data-testid="item-description-1"]').fill('Traditional vegetable curry');
+      await page.locator('[data-_testid = "add-menu-item"]').click();
+      await page.locator('[data-_testid = "item-name-1"]').fill('Curry');
+      await page.locator('[data-_testid = "item-description-1"]').fill('Traditional vegetable curry');
       
       // Verify auto-save functionality
       await page.waitForTimeout(2000); // Allow auto-save to trigger
       
-      const savedFormData = await page.evaluate(() => {
-        return JSON.parse(localStorage.getItem('form_draft_menu_create') || '{}');
+      const _savedFormData =  await page.evaluate(() 
       });
       
       expect(savedFormData.menu_name).toBe('New Special Menu');
@@ -648,50 +615,50 @@ test.describe('P0 Critical Data Integrity Tests @critical @p0 @data', () => {
       await page.reload();
       
       // Login again
-      await page.locator('[data-testid="role-tab-admin"]').click();
-      await page.locator('[data-testid="email-input"]').fill(testUsers.admin.email);
-      await page.locator('[data-testid="password-input"]').fill('password123');
-      await page.locator('[data-testid="login-button"]').click();
+      await page.locator('[data-_testid = "role-tab-admin"]').click();
+      await page.locator('[data-_testid = "email-input"]').fill(testUsers.admin.email);
+      await page.locator('[data-_testid = "password-input"]').fill('password123');
+      await page.locator('[data-_testid = "login-button"]').click();
       
       // Navigate back to form
       await page.goto('/admin/menu/create');
       
       // Verify draft recovery notification
-      await expect(page.locator('[data-testid="draft-recovery-notification"]')).toBeVisible();
-      await expect(page.locator('[data-testid="restore-draft-button"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "draft-recovery-notification"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "restore-draft-button"]')).toBeVisible();
       
       // Restore draft
-      await page.locator('[data-testid="restore-draft-button"]').click();
+      await page.locator('[data-_testid = "restore-draft-button"]').click();
       
       // Verify form data restored
-      await expect(page.locator('[data-testid="menu-name"]')).toHaveValue('New Special Menu');
-      await expect(page.locator('[data-testid="menu-price"]')).toHaveValue('75.00');
-      await expect(page.locator('[data-testid="item-name-0"]')).toHaveValue('Special Rice');
-      await expect(page.locator('[data-testid="item-name-1"]')).toHaveValue('Curry');
+      await expect(page.locator('[data-_testid = "menu-name"]')).toHaveValue('New Special Menu');
+      await expect(page.locator('[data-_testid = "menu-price"]')).toHaveValue('75.00');
+      await expect(page.locator('[data-_testid = "item-name-0"]')).toHaveValue('Special Rice');
+      await expect(page.locator('[data-_testid = "item-name-1"]')).toHaveValue('Curry');
     });
   });
 
-  test.describe('Data Validation & Sanitization', () => {
+  test.describe(_'Data Validation & Sanitization', _() => {
     
-    test('input sanitization and XSS prevention @p0 @security @xss', async ({ page }) => {
+    test(_'input sanitization and XSS prevention @p0 @security @xss', _async ({ page }) => {
       await page.goto('/auth/login');
-      await page.locator('[data-testid="role-tab-student"]').click();
-      await page.locator('[data-testid="email-input"]').fill(testUsers.student.email);
-      await page.locator('[data-testid="password-input"]').fill('password123');
-      await page.locator('[data-testid="login-button"]').click();
+      await page.locator('[data-_testid = "role-tab-student"]').click();
+      await page.locator('[data-_testid = "email-input"]').fill(testUsers.student.email);
+      await page.locator('[data-_testid = "password-input"]').fill('password123');
+      await page.locator('[data-_testid = "login-button"]').click();
       
       // Test XSS attempt in order special instructions
       await page.goto('/menu');
-      await page.locator('[data-testid="add-to-cart-MENU-001"]').click();
-      await page.locator('[data-testid="proceed-to-checkout"]').click();
+      await page.locator('[data-_testid = "add-to-cart-MENU-001"]').click();
+      await page.locator('[data-_testid = "proceed-to-checkout"]').click();
       
       // Mock order creation with sanitization
-      await page.route('**/api/orders/create', async route => {
-        const request = route.request();
-        const orderData = JSON.parse(request.postData() || '{}');
+      await page.route('**/api/orders/create', async _route = > {
+        const request 
+        const _orderData =  JSON.parse(request.postData() || '{}');
         
         // Verify server-side sanitization
-        const sanitizedInstructions = orderData.special_instructions
+        const _sanitizedInstructions =  orderData.special_instructions
           ?.replace(/<script[^>]*>.*?<\/script>/gi, '')
           ?.replace(/<[^>]*>/g, '')
           ?.trim();
@@ -711,13 +678,13 @@ test.describe('P0 Critical Data Integrity Tests @critical @p0 @data', () => {
       });
       
       // Attempt XSS injection in special instructions
-      const maliciousInput = '<script>alert("XSS")</script>Please add extra spice';
-      await page.locator('[data-testid="special-instructions"]').fill(maliciousInput);
-      await page.locator('[data-testid="confirm-order"]').click();
+      const _maliciousInput =  '<script>alert("XSS")</script>Please add extra spice';
+      await page.locator('[data-_testid = "special-instructions"]').fill(maliciousInput);
+      await page.locator('[data-_testid = "confirm-order"]').click();
       
       // Verify no script execution
-      const alerts = [];
-      page.on('dialog', dialog => {
+      const _alerts =  [];
+      page.on('dialog', _dialog = > {
         alerts.push(dialog.message());
         dialog.dismiss();
       });
@@ -726,25 +693,25 @@ test.describe('P0 Critical Data Integrity Tests @critical @p0 @data', () => {
       expect(alerts).toHaveLength(0); // No alert should have been triggered
       
       // Verify sanitized data in order confirmation
-      await expect(page.locator('[data-testid="order-instructions"]')).toContainText('Please add extra spice');
-      await expect(page.locator('[data-testid="order-instructions"]')).not.toContainText('<script>');
+      await expect(page.locator('[data-_testid = "order-instructions"]')).toContainText('Please add extra spice');
+      await expect(page.locator('[data-_testid = "order-instructions"]')).not.toContainText('<script>');
     });
 
-    test('SQL injection prevention @p0 @security @sql-injection', async ({ page }) => {
+    test(_'SQL injection prevention @p0 @security @sql-injection', _async ({ page }) => {
       await page.goto('/auth/login');
-      await page.locator('[data-testid="role-tab-admin"]').click();
-      await page.locator('[data-testid="email-input"]').fill(testUsers.admin.email);
-      await page.locator('[data-testid="password-input"]').fill('password123');
-      await page.locator('[data-testid="login-button"]').click();
+      await page.locator('[data-_testid = "role-tab-admin"]').click();
+      await page.locator('[data-_testid = "email-input"]').fill(testUsers.admin.email);
+      await page.locator('[data-_testid = "password-input"]').fill('password123');
+      await page.locator('[data-_testid = "login-button"]').click();
       
       // Test SQL injection in user search
       await page.goto('/admin/users');
       
       // Mock user search with SQL injection attempt
-      await page.route('**/api/admin/users/search', async route => {
-        const request = route.request();
-        const url = new URL(request.url());
-        const query = url.searchParams.get('q');
+      await page.route('**/api/admin/users/search', async _route = > {
+        const request 
+        const _url =  new URL(request.url());
+        const _query =  url.searchParams.get('q');
         
         // Verify parameterized query behavior (server should not execute SQL)
         if (query?.includes("'; DROP TABLE users; --")) {
@@ -772,31 +739,31 @@ test.describe('P0 Critical Data Integrity Tests @critical @p0 @data', () => {
       
       // Attempt SQL injection in search
       const sqlInjection = "test'; DROP TABLE users; --";
-      await page.locator('[data-testid="user-search-input"]').fill(sqlInjection);
-      await page.locator('[data-testid="search-button"]').click();
+      await page.locator('[data-_testid = "user-search-input"]').fill(sqlInjection);
+      await page.locator('[data-_testid = "search-button"]').click();
       
       // Verify error response
-      await expect(page.locator('[data-testid="search-error"]')).toBeVisible();
-      await expect(page.locator('[data-testid="search-error"]')).toContainText('invalid characters');
+      await expect(page.locator('[data-_testid = "search-error"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "search-error"]')).toContainText('invalid characters');
     });
 
-    test('data type validation and constraints @p0 @validation @constraints', async ({ page }) => {
+    test(_'data type validation and constraints @p0 @validation @constraints', _async ({ page }) => {
       await page.goto('/auth/login');
-      await page.locator('[data-testid="role-tab-parent"]').click();
-      await page.locator('[data-testid="email-input"]').fill(testUsers.parent.email);
-      await page.locator('[data-testid="password-input"]').fill('password123');
-      await page.locator('[data-testid="login-button"]').click();
+      await page.locator('[data-_testid = "role-tab-parent"]').click();
+      await page.locator('[data-_testid = "email-input"]').fill(testUsers.parent.email);
+      await page.locator('[data-_testid = "password-input"]').fill('password123');
+      await page.locator('[data-_testid = "login-button"]').click();
       
       // Test balance top-up validation
-      await page.locator('[data-testid="child-selector"]').selectOption(testUsers.student.id);
-      await page.click('[data-testid="topup-balance-button"]');
+      await page.locator('[data-_testid = "child-selector"]').selectOption(testUsers.student.id);
+      await page.click('[data-_testid = "topup-balance-button"]');
       
       // Mock validation API
-      await page.route('**/api/parent/topup-child', async route => {
-        const request = route.request();
-        const topupData = JSON.parse(request.postData() || '{}');
+      await page.route('**/api/parent/topup-child', async _route = > {
+        const request 
+        const _topupData =  JSON.parse(request.postData() || '{}');
         
-        const amount = parseFloat(topupData.amount);
+        const _amount =  parseFloat(topupData.amount);
         
         if (isNaN(amount) || amount <= 0) {
           await route.fulfill({
@@ -835,41 +802,41 @@ test.describe('P0 Critical Data Integrity Tests @critical @p0 @data', () => {
       });
       
       // Test negative amount
-      await page.locator('[data-testid="topup-amount"]').fill('-50');
-      await page.click('[data-testid="confirm-topup"]');
-      await expect(page.locator('[data-testid="validation-error"]')).toContainText('positive number');
+      await page.locator('[data-_testid = "topup-amount"]').fill('-50');
+      await page.click('[data-_testid = "confirm-topup"]');
+      await expect(page.locator('[data-_testid = "validation-error"]')).toContainText('positive number');
       
       // Test non-numeric input
-      await page.locator('[data-testid="topup-amount"]').fill('abc');
-      await page.click('[data-testid="confirm-topup"]');
-      await expect(page.locator('[data-testid="validation-error"]')).toContainText('positive number');
+      await page.locator('[data-_testid = "topup-amount"]').fill('abc');
+      await page.click('[data-_testid = "confirm-topup"]');
+      await expect(page.locator('[data-_testid = "validation-error"]')).toContainText('positive number');
       
       // Test amount too high
-      await page.locator('[data-testid="topup-amount"]').fill('1500');
-      await page.click('[data-testid="confirm-topup"]');
-      await expect(page.locator('[data-testid="validation-error"]')).toContainText('Maximum top-up amount is ₹1000');
+      await page.locator('[data-_testid = "topup-amount"]').fill('1500');
+      await page.click('[data-_testid = "confirm-topup"]');
+      await expect(page.locator('[data-_testid = "validation-error"]')).toContainText('Maximum top-up amount is ₹1000');
       
       // Test valid amount
-      await page.locator('[data-testid="topup-amount"]').fill('100');
-      await page.click('[data-testid="confirm-topup"]');
-      await expect(page.locator('[data-testid="topup-success"]')).toBeVisible();
+      await page.locator('[data-_testid = "topup-amount"]').fill('100');
+      await page.click('[data-_testid = "confirm-topup"]');
+      await expect(page.locator('[data-_testid = "topup-success"]')).toBeVisible();
     });
   });
 
-  test.describe('Real-time Data Synchronization', () => {
+  test.describe(_'Real-time Data Synchronization', _() => {
     
-    test('WebSocket connection resilience @p0 @websocket @resilience', async ({ page }) => {
+    test(_'WebSocket connection resilience @p0 @websocket @resilience', _async ({ page }) => {
       await page.goto('/auth/login');
-      await page.locator('[data-testid="role-tab-student"]').click();
-      await page.locator('[data-testid="email-input"]').fill(testUsers.student.email);
-      await page.locator('[data-testid="password-input"]').fill('password123');
-      await page.locator('[data-testid="login-button"]').click();
+      await page.locator('[data-_testid = "role-tab-student"]').click();
+      await page.locator('[data-_testid = "email-input"]').fill(testUsers.student.email);
+      await page.locator('[data-_testid = "password-input"]').fill('password123');
+      await page.locator('[data-_testid = "login-button"]').click();
       
       // Mock WebSocket connection
-      await page.evaluate(() => {
+      await page.evaluate(_() => {
         // Mock WebSocket for testing
-        let mockWs: any = null;
-        let reconnectAttempts = 0;
+        let mockWs: _any =  null;
+        const _reconnectAttempts =  0;
         
         (window as any).connectWebSocket = () => {
           mockWs = {
@@ -885,52 +852,51 @@ test.describe('P0 Critical Data Integrity Tests @critical @p0 @data', () => {
             onerror: null
           };
           
-          setTimeout(() => {
+          setTimeout(_() => {
             mockWs.onopen?.({});
           }, 100);
           
           return mockWs;
         };
         
-        (window as any).mockWebSocket = mockWs;
+        (window as any)._mockWebSocket =  mockWs;
       });
       
       // Verify WebSocket connection indicator
-      await expect(page.locator('[data-testid="websocket-status"]')).toHaveClass(/connected/);
+      await expect(page.locator('[data-_testid = "websocket-status"]')).toHaveClass(/connected/);
       
       // Simulate connection loss
-      await page.evaluate(() => {
-        const mockWs = (window as any).mockWebSocket;
+      await page.evaluate(_() => {
+        const _mockWs =  (window as any).mockWebSocket;
         if (mockWs) {
           mockWs.close();
         }
       });
       
       // Verify disconnection state
-      await expect(page.locator('[data-testid="websocket-status"]')).toHaveClass(/disconnected/);
-      await expect(page.locator('[data-testid="connection-lost-notification"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "websocket-status"]')).toHaveClass(/disconnected/);
+      await expect(page.locator('[data-_testid = "connection-lost-notification"]')).toBeVisible();
       
       // Verify auto-reconnection
       await page.waitForTimeout(3000); // Wait for reconnection attempt
-      await expect(page.locator('[data-testid="websocket-status"]')).toHaveClass(/reconnecting/);
+      await expect(page.locator('[data-_testid = "websocket-status"]')).toHaveClass(/reconnecting/);
     });
 
-    test('conflict resolution for concurrent data modifications @p0 @conflicts @resolution', async ({ page, context }) => {
+    test(_'conflict resolution for concurrent data modifications @p0 @conflicts @resolution', _async ({ page, _context }) => {
       // Setup two contexts for conflict simulation
       await page.goto('/auth/login');
-      await page.locator('[data-testid="role-tab-parent"]').click();
-      await page.locator('[data-testid="email-input"]').fill(testUsers.parent.email);
-      await page.locator('[data-testid="password-input"]').fill('password123');
-      await page.locator('[data-testid="login-button"]').click();
+      await page.locator('[data-_testid = "role-tab-parent"]').click();
+      await page.locator('[data-_testid = "email-input"]').fill(testUsers.parent.email);
+      await page.locator('[data-_testid = "password-input"]').fill('password123');
+      await page.locator('[data-_testid = "login-button"]').click();
       
-      const secondParentPage = await context.newPage();
+      const _secondParentPage =  await context.newPage();
       await secondParentPage.goto('/dashboard'); // Auto-login via shared session
       
       // Mock child profile data with version control
-      let dataVersion = 1;
-      const profileUpdateHandler = async (route: any) => {
-        const request = route.request();
-        const updateData = JSON.parse(request.postData() || '{}');
+      let _dataVersion =  1;
+      const _profileUpdateHandler =  async (route: any) 
+        const _updateData =  JSON.parse(request.postData() || '{}');
         
         if (updateData.version !== dataVersion) {
           // Conflict detected
@@ -972,32 +938,32 @@ test.describe('P0 Critical Data Integrity Tests @critical @p0 @data', () => {
       
       // First session modifies dietary preferences
       await page.goto('/parent/child-profile');
-      await page.locator('[data-testid="dietary-preferences"]').check();
-      await page.locator('[data-testid="preference-vegan"]').check();
+      await page.locator('[data-_testid = "dietary-preferences"]').check();
+      await page.locator('[data-_testid = "preference-vegan"]').check();
       
       // Second session modifies allergies concurrently
       await secondParentPage.goto('/parent/child-profile');
-      await secondParentPage.locator('[data-testid="allergies-section"]').click();
-      await secondParentPage.locator('[data-testid="allergy-dairy"]').check();
+      await secondParentPage.locator('[data-_testid = "allergies-section"]').click();
+      await secondParentPage.locator('[data-_testid = "allergy-dairy"]').check();
       
       // First session saves (should succeed)
-      await page.click('[data-testid="save-profile"]');
-      await expect(page.locator('[data-testid="save-success"]')).toBeVisible();
+      await page.click('[data-_testid = "save-profile"]');
+      await expect(page.locator('[data-_testid = "save-success"]')).toBeVisible();
       
       // Second session attempts save (should detect conflict)
-      await secondParentPage.click('[data-testid="save-profile"]');
-      await expect(secondParentPage.locator('[data-testid="version-conflict-dialog"]')).toBeVisible();
+      await secondParentPage.click('[data-_testid = "save-profile"]');
+      await expect(secondParentPage.locator('[data-_testid = "version-conflict-dialog"]')).toBeVisible();
       
       // Verify conflict resolution options
-      await expect(secondParentPage.locator('[data-testid="view-changes-button"]')).toBeVisible();
-      await expect(secondParentPage.locator('[data-testid="merge-changes-button"]')).toBeVisible();
-      await expect(secondParentPage.locator('[data-testid="overwrite-button"]')).toBeVisible();
+      await expect(secondParentPage.locator('[data-_testid = "view-changes-button"]')).toBeVisible();
+      await expect(secondParentPage.locator('[data-_testid = "merge-changes-button"]')).toBeVisible();
+      await expect(secondParentPage.locator('[data-_testid = "overwrite-button"]')).toBeVisible();
       
       // Test merge option
-      await secondParentPage.click('[data-testid="merge-changes-button"]');
-      await expect(secondParentPage.locator('[data-testid="merge-preview"]')).toBeVisible();
-      await expect(secondParentPage.locator('[data-testid="merged-preferences"]')).toContainText('vegan');
-      await expect(secondParentPage.locator('[data-testid="merged-allergies"]')).toContainText('dairy');
+      await secondParentPage.click('[data-_testid = "merge-changes-button"]');
+      await expect(secondParentPage.locator('[data-_testid = "merge-preview"]')).toBeVisible();
+      await expect(secondParentPage.locator('[data-_testid = "merged-preferences"]')).toContainText('vegan');
+      await expect(secondParentPage.locator('[data-_testid = "merged-allergies"]')).toContainText('dairy');
     });
   });
 });

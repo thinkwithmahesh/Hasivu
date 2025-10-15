@@ -7,7 +7,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 import { logger } from '@/utils/logger';
 import { createSuccessResponse, createErrorResponse, handleError } from '@/shared/response.utils';
-import { DatabaseService } from '@/services/database.service';
+import { prisma, DatabaseManager } from '@/database/DatabaseManager';
 
 /**
  * Order list response interface
@@ -18,17 +18,16 @@ interface OrderSummary {
   studentId: string;
   student: {
     id: string;
-    firstName: string;
-    lastName: string;
-    grade?: string;
-    section?: string;
+    firstName: string | null;
+    lastName: string | null;
+    grade?: string | null;
+    section?: string | null;
   };
   school: {
     id: string;
     name: string;
   };
   deliveryDate: string;
-  mealPeriod: string;
   status: string;
   paymentStatus: string;
   totalAmount: number;
@@ -57,7 +56,6 @@ interface OrderListResponse {
     schoolId?: string;
     dateFrom?: string;
     dateTo?: string;
-    mealPeriod?: string;
   };
 }
 
@@ -69,194 +67,90 @@ interface OrderFilters {
   paymentStatus?: string;
   studentId?: string;
   schoolId?: string;
-  dateFrom?: string;
-  dateTo?: string;
-  mealPeriod?: string;
+  dateFrom?: Date;
+  dateTo?: Date;
   page?: number;
   limit?: number;
   sortBy?: string;
-  sortOrder?: 'ASC' | 'DESC';
+  sortOrder?: 'asc' | 'desc';
 }
 
 /**
  * Validate user access and get authorized filters
  */
-async function validateUserAccess(userId: string): Promise<{ 
+async function validateUserAccess(userId: string): Promise<{
   userRole: string;
-  schoolId?: string; 
+  schoolId?: string;
   studentIds?: string[];
   isAdmin: boolean;
 }> {
-  const database = DatabaseService.getInstance();
-  
-  // Get user information
-  const userResult = await database.query(`
-    SELECT id, role, schoolId, isActive
-    FROM users 
-    WHERE id = $1 AND isActive = true
-  `, [userId]);
-  
-  const user = userResult.rows[0];
-  
-  if (!user) {
-    throw new Error('User not found or inactive');
-  }
-  
-  // Admin and super admin can see all orders
-  if (['admin', 'super_admin'].includes(user.role)) {
-    return {
-      userRole: user.role,
-      isAdmin: true
-    };
-  }
-  
-  // School admin can see orders for their school
-  if (['school_admin', 'staff', 'kitchen_staff'].includes(user.role)) {
-    return {
-      userRole: user.role,
-      schoolId: user.schoolId,
-      isAdmin: true
-    };
-  }
-  
-  // Parents can see orders for their children
-  if (user.role === 'parent') {
-    const childrenResult = await database.query(`
-      SELECT id FROM users 
-      WHERE parentId = $1 AND isActive = true
-    `, [userId]);
-    
-    const studentIds = childrenResult.rows.map(row => row.id);
-    
-    return {
-      userRole: user.role,
-      studentIds: studentIds,
-      isAdmin: false
-    };
-  }
-  
-  // Students can see their own orders
-  if (user.role === 'student') {
-    return {
-      userRole: user.role,
-      studentIds: [userId],
-      isAdmin: false
-    };
-  }
-  
-  throw new Error('Not authorized to view orders');
-}
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId, isActive: true },
+      select: {
+        id: true,
+        role: true,
+        schoolId: true,
+        isActive: true,
+      },
+    });
 
-/**
- * Build SQL query with filters
- */
-function buildOrderQuery(
-  filters: OrderFilters,
-  userAccess: { userRole: string; schoolId?: string; studentIds?: string[]; isAdmin: boolean; }
-): { query: string; values: any[]; countQuery: string; } {
-  let whereConditions: string[] = [];
-  let queryValues: any[] = [];
-  let paramCounter = 1;
-  
-  // Apply user access restrictions
-  if (!userAccess.isAdmin) {
-    if (userAccess.studentIds && userAccess.studentIds.length > 0) {
-      const studentPlaceholders = userAccess.studentIds.map(() => `$${paramCounter++}`).join(', ');
-      whereConditions.push(`o.studentId IN (${studentPlaceholders})`);
-      queryValues.push(...userAccess.studentIds);
-    } else {
-      // No students accessible - return no results
-      whereConditions.push('1 = 0');
+    if (!user) {
+      throw new Error('User not found or inactive');
     }
-  } else if (userAccess.schoolId) {
-    whereConditions.push(`o.schoolId = $${paramCounter}`);
-    queryValues.push(userAccess.schoolId);
-    paramCounter++;
+
+    // Admin and super admin can see all orders
+    if (['admin', 'super_admin'].includes(user.role)) {
+      return {
+        userRole: user.role,
+        isAdmin: true,
+      };
+    }
+
+    // School admin can see orders for their school
+    if (['school_admin', 'staff', 'kitchen_staff'].includes(user.role)) {
+      return {
+        userRole: user.role,
+        schoolId: user.schoolId || undefined,
+        isAdmin: true,
+      };
+    }
+
+    // Parents can see orders for their children
+    if (user.role === 'parent') {
+      const children = await prisma.user.findMany({
+        where: {
+          parentId: userId,
+          isActive: true,
+        },
+        select: { id: true },
+      });
+
+      return {
+        userRole: user.role,
+        studentIds: children.map(child => child.id),
+        isAdmin: false,
+      };
+    }
+
+    // Students can see their own orders
+    if (user.role === 'student') {
+      return {
+        userRole: user.role,
+        studentIds: [userId],
+        isAdmin: false,
+      };
+    }
+
+    throw new Error('Not authorized to view orders');
+  } catch (error) {
+    logger.error(
+      'Error validating user access',
+      error instanceof Error ? error : new Error(String(error)),
+      { userId }
+    );
+    throw error;
   }
-  
-  // Apply additional filters
-  if (filters.status) {
-    whereConditions.push(`o.status = $${paramCounter}`);
-    queryValues.push(filters.status);
-    paramCounter++;
-  }
-  
-  if (filters.paymentStatus) {
-    whereConditions.push(`o.paymentStatus = $${paramCounter}`);
-    queryValues.push(filters.paymentStatus);
-    paramCounter++;
-  }
-  
-  if (filters.studentId && userAccess.isAdmin) {
-    whereConditions.push(`o.studentId = $${paramCounter}`);
-    queryValues.push(filters.studentId);
-    paramCounter++;
-  }
-  
-  if (filters.schoolId && userAccess.isAdmin) {
-    whereConditions.push(`o.schoolId = $${paramCounter}`);
-    queryValues.push(filters.schoolId);
-    paramCounter++;
-  }
-  
-  if (filters.mealPeriod) {
-    whereConditions.push(`o.mealPeriod = $${paramCounter}`);
-    queryValues.push(filters.mealPeriod);
-    paramCounter++;
-  }
-  
-  if (filters.dateFrom) {
-    whereConditions.push(`o.deliveryDate >= $${paramCounter}`);
-    queryValues.push(filters.dateFrom);
-    paramCounter++;
-  }
-  
-  if (filters.dateTo) {
-    whereConditions.push(`o.deliveryDate <= $${paramCounter}`);
-    queryValues.push(filters.dateTo);
-    paramCounter++;
-  }
-  
-  const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
-  
-  // Build sorting
-  const sortBy = filters.sortBy || 'createdAt';
-  const sortOrder = filters.sortOrder || 'DESC';
-  const validSortFields = ['createdAt', 'updatedAt', 'deliveryDate', 'totalAmount', 'status'];
-  const safeSortBy = validSortFields.includes(sortBy) ? sortBy : 'createdAt';
-  const safeSortOrder = ['ASC', 'DESC'].includes(sortOrder) ? sortOrder : 'DESC';
-  
-  // Base query
-  const baseQuery = `
-    FROM orders o
-    LEFT JOIN users s ON o.studentId = s.id
-    LEFT JOIN schools sc ON o.schoolId = sc.id
-    ${whereClause}
-  `;
-  
-  // Count query
-  const countQuery = `SELECT COUNT(*) as total ${baseQuery}`;
-  
-  // Main query with pagination
-  const limit = Math.min(filters.limit || 50, 100); // Max 100 per page
-  const offset = ((filters.page || 1) - 1) * limit;
-  
-  const query = `
-    SELECT o.id, o.orderNumber, o.studentId, o.schoolId, o.deliveryDate, 
-           o.mealPeriod, o.status, o.paymentStatus, o.totalAmount,
-           o.createdAt, o.updatedAt,
-           s.firstName as student_firstName, s.lastName as student_lastName,
-           s.grade, s.section,
-           sc.name as school_name,
-           (SELECT COUNT(*) FROM order_items WHERE orderId = o.id) as itemCount
-    ${baseQuery}
-    ORDER BY o.${safeSortBy} ${safeSortOrder}
-    LIMIT $${paramCounter} OFFSET $${paramCounter + 1}
-  `;
-  
-  queryValues.push(limit, offset);
-  
-  return { query, values: queryValues, countQuery };
 }
 
 /**
@@ -264,17 +158,26 @@ function buildOrderQuery(
  */
 function parseQueryFilters(queryParams: { [key: string]: string } | null): OrderFilters {
   if (!queryParams) return {};
-  
+
   const filters: OrderFilters = {};
-  
+
   // Status filter
   if (queryParams.status) {
-    const validStatuses = ['pending', 'confirmed', 'preparing', 'ready', 'delivered', 'completed', 'cancelled'];
+    const validStatuses = [
+      'pending',
+      'confirmed',
+      'preparing',
+      'ready',
+      'out_for_delivery',
+      'delivered',
+      'completed',
+      'cancelled',
+    ];
     if (validStatuses.includes(queryParams.status)) {
       filters.status = queryParams.status;
     }
   }
-  
+
   // Payment status filter
   if (queryParams.paymentStatus) {
     const validPaymentStatuses = ['pending', 'paid', 'failed', 'refunded'];
@@ -282,39 +185,31 @@ function parseQueryFilters(queryParams: { [key: string]: string } | null): Order
       filters.paymentStatus = queryParams.paymentStatus;
     }
   }
-  
-  // Meal period filter
-  if (queryParams.mealPeriod) {
-    const validMealPeriods = ['breakfast', 'lunch', 'dinner', 'snack'];
-    if (validMealPeriods.includes(queryParams.mealPeriod)) {
-      filters.mealPeriod = queryParams.mealPeriod;
-    }
-  }
-  
+
   // Date filters
   if (queryParams.dateFrom) {
     const dateFrom = new Date(queryParams.dateFrom);
     if (!isNaN(dateFrom.getTime())) {
-      filters.dateFrom = dateFrom.toISOString().split('T')[0];
+      filters.dateFrom = dateFrom;
     }
   }
-  
+
   if (queryParams.dateTo) {
     const dateTo = new Date(queryParams.dateTo);
     if (!isNaN(dateTo.getTime())) {
-      filters.dateTo = dateTo.toISOString().split('T')[0];
+      filters.dateTo = dateTo;
     }
   }
-  
+
   // ID filters (admin only)
   if (queryParams.studentId) {
     filters.studentId = queryParams.studentId;
   }
-  
+
   if (queryParams.schoolId) {
     filters.schoolId = queryParams.schoolId;
   }
-  
+
   // Pagination
   if (queryParams.page) {
     const page = parseInt(queryParams.page, 10);
@@ -322,23 +217,23 @@ function parseQueryFilters(queryParams: { [key: string]: string } | null): Order
       filters.page = page;
     }
   }
-  
+
   if (queryParams.limit) {
     const limit = parseInt(queryParams.limit, 10);
     if (limit > 0 && limit <= 100) {
       filters.limit = limit;
     }
   }
-  
+
   // Sorting
   if (queryParams.sortBy) {
     filters.sortBy = queryParams.sortBy;
   }
-  
+
   if (queryParams.sortOrder) {
-    filters.sortOrder = queryParams.sortOrder.toUpperCase() as 'ASC' | 'DESC';
+    filters.sortOrder = queryParams.sortOrder.toLowerCase() as 'asc' | 'desc';
   }
-  
+
   return filters;
 }
 
@@ -355,109 +250,192 @@ export const handler = async (
   try {
     // Only allow GET method
     if (event.httpMethod !== 'GET') {
-      return createErrorResponse(
-        'Method not allowed',
-        405,
-        'METHOD_NOT_ALLOWED'
-      );
+      return createErrorResponse('METHOD_NOT_ALLOWED', 'Method not allowed', 405);
     }
 
     // Extract userId from event context (would come from JWT in real implementation)
     const userId = event.requestContext?.authorizer?.userId || event.headers?.['x-user-id'];
     if (!userId) {
-      return createErrorResponse(
-        'User authentication required',
-        401,
-        'AUTHENTICATION_REQUIRED'
-      );
+      return createErrorResponse('AUTHENTICATION_REQUIRED', 'User authentication required', 401);
     }
 
     // Parse query parameters
-    const filters = parseQueryFilters(event.queryStringParameters);
+    const filters = parseQueryFilters(
+      event.queryStringParameters as { [key: string]: string } | null
+    );
     logger.info('Processing get orders request', { userId, filters });
 
     // Validate user access and get restrictions
     const userAccess = await validateUserAccess(userId);
 
-    // Build and execute query
-    const database = DatabaseService.getInstance();
-    const { query, values, countQuery } = buildOrderQuery(filters, userAccess);
+    // Build Prisma where clause
+    const whereClause: any = {};
+
+    // Apply user access restrictions
+    if (!userAccess.isAdmin) {
+      if (userAccess.studentIds && userAccess.studentIds.length > 0) {
+        whereClause.studentId = { in: userAccess.studentIds };
+      } else {
+        // No students accessible - return empty results
+        return createSuccessResponse({
+          data: {
+            orders: [],
+            pagination: {
+              total: 0,
+              page: 1,
+              limit: 50,
+              totalPages: 0,
+              hasNext: false,
+              hasPrev: false,
+            },
+            filters: {},
+          },
+          message: 'No orders found',
+        });
+      }
+    } else if (userAccess.schoolId) {
+      whereClause.schoolId = userAccess.schoolId;
+    }
+
+    // Apply additional filters
+    if (filters.status) {
+      whereClause.status = filters.status;
+    }
+
+    if (filters.paymentStatus) {
+      whereClause.paymentStatus = filters.paymentStatus;
+    }
+
+    if (filters.studentId && userAccess.isAdmin) {
+      whereClause.studentId = filters.studentId;
+    }
+
+    if (filters.schoolId && userAccess.isAdmin) {
+      whereClause.schoolId = filters.schoolId;
+    }
+
+    if (filters.dateFrom || filters.dateTo) {
+      whereClause.deliveryDate = {};
+      if (filters.dateFrom) {
+        whereClause.deliveryDate.gte = filters.dateFrom;
+      }
+      if (filters.dateTo) {
+        whereClause.deliveryDate.lte = filters.dateTo;
+      }
+    }
+
+    // Pagination
+    const page = filters.page || 1;
+    const limit = Math.min(filters.limit || 50, 100); // Max 100 per page
+    const skip = (page - 1) * limit;
+
+    // Sorting
+    const validSortFields = ['createdAt', 'updatedAt', 'deliveryDate', 'totalAmount', 'status'];
+    const sortBy = validSortFields.includes(filters.sortBy || '') ? filters.sortBy : 'createdAt';
+    const sortOrder = filters.sortOrder === 'asc' ? 'asc' : 'desc';
 
     // Get total count
-    const countResult = await database.query(countQuery, values.slice(0, -2)); // Remove limit and offset
-    const total = parseInt(countResult.rows[0].total, 10);
+    const total = await prisma.order.count({
+      where: whereClause,
+    });
 
-    // Get orders
-    const ordersResult = await database.query(query, values);
-    const orders: OrderSummary[] = ordersResult.rows.map(row => ({
-      id: row.id,
-      orderNumber: row.orderNumber,
-      studentId: row.studentId,
+    // Get orders with relations
+    const orders = await prisma.order.findMany({
+      where: whereClause,
+      include: {
+        student: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            grade: true,
+            section: true,
+          },
+        },
+        school: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        orderItems: {
+          select: {
+            id: true,
+          },
+        },
+      },
+      orderBy: {
+        [sortBy!]: sortOrder,
+      },
+      skip,
+      take: limit,
+    });
+
+    // Map to response format
+    const orderSummaries: OrderSummary[] = orders.map(order => ({
+      id: order.id,
+      orderNumber: order.orderNumber,
+      studentId: order.studentId,
       student: {
-        id: row.studentId,
-        firstName: row.student_firstName,
-        lastName: row.student_lastName,
-        grade: row.grade,
-        section: row.section
+        id: order.student.id,
+        firstName: order.student.firstName,
+        lastName: order.student.lastName,
+        grade: order.student.grade,
+        section: order.student.section,
       },
       school: {
-        id: row.schoolId,
-        name: row.school_name
+        id: order.school.id,
+        name: order.school.name,
       },
-      deliveryDate: row.deliveryDate,
-      mealPeriod: row.mealPeriod,
-      status: row.status,
-      paymentStatus: row.paymentStatus,
-      totalAmount: parseFloat(row.totalAmount),
-      itemCount: parseInt(row.itemCount, 10),
-      createdAt: row.createdAt,
-      updatedAt: row.updatedAt
+      deliveryDate: order.deliveryDate.toISOString().split('T')[0],
+      status: order.status,
+      paymentStatus: order.paymentStatus,
+      totalAmount: Number(order.totalAmount),
+      itemCount: order.orderItems.length,
+      createdAt: order.createdAt,
+      updatedAt: order.updatedAt,
     }));
 
     // Calculate pagination
-    const page = filters.page || 1;
-    const limit = filters.limit || 50;
     const totalPages = Math.ceil(total / limit);
 
     const response: OrderListResponse = {
-      orders: orders,
+      orders: orderSummaries,
       pagination: {
-        total: total,
-        page: page,
-        limit: limit,
-        totalPages: totalPages,
+        total,
+        page,
+        limit,
+        totalPages,
         hasNext: page < totalPages,
-        hasPrev: page > 1
+        hasPrev: page > 1,
       },
       filters: {
         status: filters.status,
         paymentStatus: filters.paymentStatus,
         studentId: filters.studentId,
         schoolId: filters.schoolId,
-        dateFrom: filters.dateFrom,
-        dateTo: filters.dateTo,
-        mealPeriod: filters.mealPeriod
-      }
+        dateFrom: filters.dateFrom?.toISOString().split('T')[0],
+        dateTo: filters.dateTo?.toISOString().split('T')[0],
+      },
     };
 
     const duration = Date.now() - startTime;
-    logger.logFunctionEnd("handler", { statusCode: 200, duration });
+    logger.logFunctionEnd('handler', { statusCode: 200, duration });
     logger.info('Orders retrieved successfully', {
-      userId: userId,
+      userId,
       userRole: userAccess.userRole,
-      ordersCount: orders.length,
-      total: total,
-      page: page
+      ordersCount: orderSummaries.length,
+      total,
+      page,
     });
 
     return createSuccessResponse({
       data: response,
-      message: `Retrieved ${orders.length} orders (page ${page} of ${totalPages})`
+      message: `Retrieved ${orderSummaries.length} orders (page ${page} of ${totalPages})`,
     });
-
-  } catch (error) {
+  } catch (error: unknown) {
     const duration = Date.now() - startTime;
-    logger.logFunctionEnd("handler", { statusCode: 500, duration });
+    logger.logFunctionEnd('handler', { statusCode: 500, duration });
     return handleError(error, 'Failed to retrieve orders');
   }
 };

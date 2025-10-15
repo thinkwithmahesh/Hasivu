@@ -5,15 +5,7 @@
  */
 
 import React from 'react';
-import {
-  Box,
-  Typography,
-  CircularProgress,
-  Fade,
-  Container,
-  useTheme,
-  alpha,
-} from '@mui/material';
+import { Box, Typography, CircularProgress, Fade, Container, useTheme, alpha } from '@mui/material';
 import { keyframes } from '@mui/system';
 
 // Custom animations
@@ -81,7 +73,7 @@ export interface LoadingScreenProps {
 
 /**
  * HASIVU Loading Screen Component
- * 
+ *
  * Features:
  * - Beautiful pulsing HASIVU logo animation
  * - Customizable loading messages and progress
@@ -118,8 +110,10 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
   }[size];
 
   // Color configuration
-  const primaryColor = color === 'primary' ? theme.palette.primary.main : theme.palette.secondary.main;
-  const lightColor = color === 'primary' ? theme.palette.primary.light : theme.palette.secondary.light;
+  const primaryColor =
+    color === 'primary' ? theme.palette.primary.main : theme.palette.secondary.main;
+  const lightColor =
+    color === 'primary' ? theme.palette.primary.light : theme.palette.secondary.light;
 
   // HASIVU Logo Component
   const HASIVULogo = () => (
@@ -175,7 +169,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
   );
 
   // Progress Bar Component
-  const ProgressBar = () => (
+  const ProgressBar = () =>
     progress !== undefined && (
       <Box sx={{ width: '100%', maxWidth: 300, mt: 2 }}>
         <Box
@@ -220,8 +214,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
           {Math.round(progress)}%
         </Typography>
       </Box>
-    )
-  );
+    );
 
   // Main loading content
   const LoadingContent = () => (

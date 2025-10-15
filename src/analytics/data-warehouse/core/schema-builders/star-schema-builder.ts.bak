@@ -1,0 +1,534 @@
+/**
+ * HASIVU Platform - Star Schema Builder
+ * Real-world implementation for building and managing star schemas for data warehouses
+ * Provides dimensional modeling with fact and dimension table management
+ */
+
+import { EventEmitter } from 'events';
+import { logger } from '../../../../utils/logger';
+
+export interface StarSchemaConfig {
+  name: string;
+  factTable: string;
+  dimensionTables: string[];
+  tenantId: string;
+  createdAt: Date;
+  version: number;
+}
+
+export interface DimensionTable {
+  name: string;
+  primaryKey: string;
+  attributes: DimensionAttribute[];
+  type: 'type1' | 'type2' | 'type3'; // SCD types
+  hierarchies?: Hierarchy[];
+}
+
+export interface DimensionAttribute {
+  name: string;
+  dataType: 'string' | 'number' | 'date' | 'boolean';
+  nullable: boolean;
+  indexed: boolean;
+  description?: string;
+}
+
+export interface Hierarchy {
+  name: string;
+  levels: string[];
+  rollupRules: Record<string, string>;
+}
+
+export interface FactTable {
+  name: string;
+  measures: Measure[];
+  dimensions: DimensionReference[];
+  granularity: string;
+  partitionStrategy: PartitionStrategy;
+}
+
+export interface Measure {
+  name: string;
+  aggregationType: 'sum' | 'avg' | 'count' | 'min' | 'max' | 'distinct_count';
+  dataType: 'number' | 'decimal' | 'integer';
+  nullable: boolean;
+  description?: string;
+}
+
+export interface DimensionReference {
+  dimensionTable: string;
+  foreignKey: string;
+  relationship: 'one-to-many' | 'many-to-many';
+}
+
+export interface PartitionStrategy {
+  type: 'time_based' | 'hash' | 'range';
+  column: string;
+  interval?: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  buckets?: number;
+}
+
+export interface SchemaDefinition {
+  id: string;
+  name: string;
+  factTable: FactTable;
+  dimensionTables: DimensionTable[];
+  relationships: SchemaRelationship[];
+  metadata: SchemaMetadata;
+  tenantId: string;
+  version: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface SchemaRelationship {
+  fromTable: string;
+  toTable: string;
+  fromColumn: string;
+  toColumn: string;
+  type: 'one-to-one' | 'one-to-many' | 'many-to-many';
+  enforced: boolean;
+}
+
+export interface SchemaMetadata {
+  description: string;
+  owner: string;
+  tags: string[];
+  businessGlossary: Record<string, string>;
+  dataQualityRules: DataQualityRule[];
+}
+
+export interface DataQualityRule {
+  column: string;
+  rule: 'not_null' | 'unique' | 'range' | 'format' | 'referential_integrity';
+  parameters?: Record<string, any>;
+  severity: 'warning' | 'error';
+}
+
+/**
+ * Star Schema Builder - Creates and manages star schemas for analytical data warehouses
+ */
+export class StarSchemaBuilder extends EventEmitter {
+  private readonly schemas = new Map<string, SchemaDefinition>();
+  private readonly dimensionRegistry = new Map<string, DimensionTable>();
+
+  constructor(private readonly config: {
+    maxDimensions?: number;
+    enableSCD?: boolean;
+    defaultPartitionStrategy?: PartitionStrategy;
+    enforceNamingConventions?: boolean;
+  } = {}) {
+    super();
+    logger.info('StarSchemaBuilder initialized', this.config);
+  }
+
+  /**
+   * Create a new star schema with fact and dimension tables
+   */
+  async createSchema(schemaConfig: StarSchemaConfig): Promise<SchemaDefinition> {
+    try {
+      logger.info('Creating star schema', { 
+        name: schemaConfig.name, 
+        factTable: schemaConfig.factTable,
+        dimensionCount: schemaConfig.dimensionTables.length 
+      });
+
+      // Validate schema configuration
+      this.validateSchemaConfig(schemaConfig);
+
+      // Generate unique schema ID
+      const schemaId = this.generateSchemaId(schemaConfig.name, schemaConfig.tenantId);
+
+      // Build fact table definition
+      const factTable = await this.buildFactTable(schemaConfig.factTable, schemaConfig.dimensionTables);
+
+      // Build dimension tables
+      const dimensionTables = await Promise.all(
+        schemaConfig.dimensionTables.map(dimName => this.buildDimensionTable(dimName, schemaConfig.tenantId))
+      );
+
+      // Create relationships between fact and dimensions
+      const relationships = this.createSchemaRelationships(factTable, dimensionTables);
+
+      // Generate metadata
+      const metadata = this.generateSchemaMetadata(schemaConfig);
+
+      const schema: SchemaDefinition = {
+        id: schemaId,
+        name: schemaConfig.name,
+        factTable,
+        dimensionTables,
+        relationships,
+        metadata,
+        tenantId: schemaConfig.tenantId,
+        version: schemaConfig.version,
+        createdAt: schemaConfig.createdAt,
+        updatedAt: new Date()
+      };
+
+      // Store schema
+      this.schemas.set(schemaId, schema);
+
+      // Register dimensions for reuse
+      dimensionTables.forEach(dim => {
+        this.dimensionRegistry.set(`${schemaConfig.tenantId}:${dim.name}`, dim);
+      });
+
+      logger.info('Star schema created successfully', { 
+        schemaId, 
+        factTable: factTable.name,
+        dimensionCount: dimensionTables.length 
+      });
+
+      this.emit('schema:created', schema);
+      return schema;
+
+    } catch (error: unknown) {
+      logger.error('Failed to create star schema', { error, config: schemaConfig });
+      throw error;
+    }
+  }
+
+  /**
+   * Build fact table definition with measures and dimension references
+   */
+  private async buildFactTable(factTableName: string, dimensionNames: string[]): Promise<FactTable> {
+    // Define common measures for business analytics
+    const measures: Measure[] = [
+      {
+        name: 'revenue',
+        aggregationType: 'sum',
+        dataType: 'decimal',
+        nullable: false,
+        description: 'Total revenue amount'
+      },
+      {
+        name: 'quantity',
+        aggregationType: 'sum',
+        dataType: 'integer',
+        nullable: false,
+        description: 'Total quantity'
+      },
+      {
+        name: 'transaction_count',
+        aggregationType: 'count',
+        dataType: 'integer',
+        nullable: false,
+        description: 'Number of transactions'
+      },
+      {
+        name: 'avg_order_value',
+        aggregationType: 'avg',
+        dataType: 'decimal',
+        nullable: true,
+        description: 'Average order value'
+      }
+    ];
+
+    // Create dimension references
+    const dimensions: DimensionReference[] = dimensionNames.map(dimName => ({
+      dimensionTable: dimName,
+      foreignKey: `${dimName}_id`,
+      relationship: 'one-to-many' as const
+    }));
+
+    // Default time-based partitioning
+    const partitionStrategy: PartitionStrategy = this.config.defaultPartitionStrategy || {
+      type: 'time_based',
+      column: 'date_key',
+      interval: 'monthly'
+    };
+
+    return {
+      name: factTableName,
+      measures,
+      dimensions,
+      granularity: 'daily',
+      partitionStrategy
+    };
+  }
+
+  /**
+   * Build dimension table with attributes and hierarchies
+   */
+  private async buildDimensionTable(dimensionName: string, tenantId: string): Promise<DimensionTable> {
+    // Check if dimension already exists for this tenant
+    const existingDim = this.dimensionRegistry.get(`${tenantId}:${dimensionName}`);
+    if (existingDim) {
+      return existingDim;
+    }
+
+    // Build dimension based on common business entities
+    let attributes: DimensionAttribute[] = [];
+    let hierarchies: Hierarchy[] = [];
+
+    switch (dimensionName.toLowerCase()) {
+      case 'time':
+      case 'date':
+        attributes = [
+          { name: 'date_key', dataType: 'number', nullable: false, indexed: true },
+          { name: 'full_date', dataType: 'date', nullable: false, indexed: true },
+          { name: 'year', dataType: 'number', nullable: false, indexed: true },
+          { name: 'quarter', dataType: 'number', nullable: false, indexed: true },
+          { name: 'month', dataType: 'number', nullable: false, indexed: true },
+          { name: 'week', dataType: 'number', nullable: false, indexed: true },
+          { name: 'day', dataType: 'number', nullable: false, indexed: false },
+          { name: 'day_of_week', dataType: 'string', nullable: false, indexed: true },
+          { name: 'is_weekend', dataType: 'boolean', nullable: false, indexed: true },
+          { name: 'is_holiday', dataType: 'boolean', nullable: false, indexed: true }
+        ];
+        hierarchies = [{
+          name: 'calendar_hierarchy',
+          levels: ['year', 'quarter', 'month', 'week', 'day'],
+          rollupRules: {
+            'day': 'week',
+            'week': 'month', 
+            'month': 'quarter',
+            'quarter': 'year'
+          }
+        }];
+        break;
+
+      case 'customer':
+      case 'user':
+        attributes = [
+          { name: 'customer_key', dataType: 'number', nullable: false, indexed: true },
+          { name: 'customer_id', dataType: 'string', nullable: false, indexed: true },
+          { name: 'first_name', dataType: 'string', nullable: false, indexed: false },
+          { name: 'last_name', dataType: 'string', nullable: false, indexed: false },
+          { name: 'email', dataType: 'string', nullable: true, indexed: true },
+          { name: 'phone', dataType: 'string', nullable: true, indexed: false },
+          { name: 'city', dataType: 'string', nullable: true, indexed: true },
+          { name: 'state', dataType: 'string', nullable: true, indexed: true },
+          { name: 'country', dataType: 'string', nullable: true, indexed: true },
+          { name: 'customer_segment', dataType: 'string', nullable: true, indexed: true },
+          { name: 'registration_date', dataType: 'date', nullable: false, indexed: true }
+        ];
+        hierarchies = [{
+          name: 'geographic_hierarchy',
+          levels: ['country', 'state', 'city'],
+          rollupRules: {
+            'city': 'state',
+            'state': 'country'
+          }
+        }];
+        break;
+
+      case 'product':
+      case 'item':
+        attributes = [
+          { name: 'product_key', dataType: 'number', nullable: false, indexed: true },
+          { name: 'product_id', dataType: 'string', nullable: false, indexed: true },
+          { name: 'product_name', dataType: 'string', nullable: false, indexed: false },
+          { name: 'category', dataType: 'string', nullable: false, indexed: true },
+          { name: 'subcategory', dataType: 'string', nullable: true, indexed: true },
+          { name: 'brand', dataType: 'string', nullable: true, indexed: true },
+          { name: 'unit_price', dataType: 'number', nullable: false, indexed: false },
+          { name: 'unit_cost', dataType: 'number', nullable: true, indexed: false },
+          { name: 'is_active', dataType: 'boolean', nullable: false, indexed: true },
+          { name: 'created_date', dataType: 'date', nullable: false, indexed: true }
+        ];
+        hierarchies = [{
+          name: 'product_hierarchy',
+          levels: ['category', 'subcategory', 'brand', 'product_name'],
+          rollupRules: {
+            'product_name': 'brand',
+            'brand': 'subcategory',
+            'subcategory': 'category'
+          }
+        }];
+        break;
+
+      case 'school':
+      case 'organization':
+        attributes = [
+          { name: 'school_key', dataType: 'number', nullable: false, indexed: true },
+          { name: 'school_id', dataType: 'string', nullable: false, indexed: true },
+          { name: 'school_name', dataType: 'string', nullable: false, indexed: false },
+          { name: 'school_type', dataType: 'string', nullable: false, indexed: true },
+          { name: 'district', dataType: 'string', nullable: true, indexed: true },
+          { name: 'city', dataType: 'string', nullable: false, indexed: true },
+          { name: 'state', dataType: 'string', nullable: false, indexed: true },
+          { name: 'enrollment', dataType: 'number', nullable: true, indexed: false },
+          { name: 'grade_levels', dataType: 'string', nullable: true, indexed: true },
+          { name: 'established_date', dataType: 'date', nullable: true, indexed: false }
+        ];
+        hierarchies = [{
+          name: 'administrative_hierarchy',
+          levels: ['state', 'district', 'school_name'],
+          rollupRules: {
+            'school_name': 'district',
+            'district': 'state'
+          }
+        }];
+        break;
+
+      default:
+        // Generic dimension
+        attributes = [
+          { name: `${dimensionName}_key`, dataType: 'number', nullable: false, indexed: true },
+          { name: `${dimensionName}_id`, dataType: 'string', nullable: false, indexed: true },
+          { name: `${dimensionName}_name`, dataType: 'string', nullable: false, indexed: false },
+          { name: 'description', dataType: 'string', nullable: true, indexed: false },
+          { name: 'is_active', dataType: 'boolean', nullable: false, indexed: true },
+          { name: 'created_date', dataType: 'date', nullable: false, indexed: true }
+        ];
+    }
+
+    return {
+      name: dimensionName,
+      primaryKey: `${dimensionName}_key`,
+      attributes,
+      type: this.config.enableSCD ? 'type2' : 'type1',
+      hierarchies
+    };
+  }
+
+  /**
+   * Create relationships between fact table and dimensions
+   */
+  private createSchemaRelationships(factTable: FactTable, dimensions: DimensionTable[]): SchemaRelationship[] {
+    return dimensions.map(dim => ({
+      fromTable: factTable.name,
+      toTable: dim.name,
+      fromColumn: `${dim.name}_key`,
+      toColumn: dim.primaryKey,
+      type: 'one-to-many' as const,
+      enforced: true
+    }));
+  }
+
+  /**
+   * Generate comprehensive metadata for the schema
+   */
+  private generateSchemaMetadata(config: StarSchemaConfig): SchemaMetadata {
+    const dataQualityRules: DataQualityRule[] = [
+      {
+        column: 'date_key',
+        rule: 'not_null',
+        severity: 'error'
+      },
+      {
+        column: 'revenue',
+        rule: 'range',
+        parameters: { min: 0 },
+        severity: 'warning'
+      }
+    ];
+
+    return {
+      description: `Star schema for ${config.name} analytics`,
+      owner: `tenant:${config.tenantId}`,
+      tags: ['star_schema', 'analytics', 'dimensional_model'],
+      businessGlossary: {
+        'revenue': 'Total monetary value of transactions',
+        'customer': 'Individual or organization making purchases',
+        'product': 'Goods or services being sold'
+      },
+      dataQualityRules
+    };
+  }
+
+  /**
+   * Validate schema configuration
+   */
+  private validateSchemaConfig(config: StarSchemaConfig): void {
+    if (!config.name || config.name.trim().length === 0) {
+      throw new Error('Schema name is required');
+    }
+
+    if (!config.factTable || config.factTable.trim().length === 0) {
+      throw new Error('Fact table name is required');
+    }
+
+    if (!config.dimensionTables || config.dimensionTables.length === 0) {
+      throw new Error('At least one dimension table is required');
+    }
+
+    if (this.config.maxDimensions && config.dimensionTables.length > this.config.maxDimensions) {
+      throw new Error(`Maximum ${this.config.maxDimensions} dimensions allowed`);
+    }
+
+    if (!config.tenantId || config.tenantId.trim().length === 0) {
+      throw new Error('Tenant ID is required');
+    }
+
+    // Validate naming conventions if enabled
+    if (this.config.enforceNamingConventions) {
+      this.validateNamingConventions(config);
+    }
+  }
+
+  /**
+   * Validate naming conventions
+   */
+  private validateNamingConventions(config: StarSchemaConfig): void {
+    const namePattern = /^[a-z][a-z0-9_]*[a-z0-9]$/;
+
+    if (!namePattern.test(config.name)) {
+      throw new Error('Schema name must follow snake_case convention');
+    }
+
+    if (!namePattern.test(config.factTable)) {
+      throw new Error('Fact table name must follow snake_case convention');
+    }
+
+    config.dimensionTables.forEach(dimName => {
+      if (!namePattern.test(dimName)) {
+        throw new Error(`Dimension table name '${dimName}' must follow snake_case convention`);
+      }
+    });
+  }
+
+  /**
+   * Generate unique schema ID
+   */
+  private generateSchemaId(schemaName: string, tenantId: string): string {
+    const timestamp = Date.now();
+    const hash = this.simpleHash(`${tenantId}:${schemaName}:${timestamp}`);
+    return `star_schema_${hash}`;
+  }
+
+  /**
+   * Simple hash function
+   */
+  private simpleHash(str: string): string {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    return Math.abs(hash).toString(36);
+  }
+
+  /**
+   * Get schema by ID
+   */
+  getSchema(schemaId: string): SchemaDefinition | undefined {
+    return this.schemas.get(schemaId);
+  }
+
+  /**
+   * Get all schemas for a tenant
+   */
+  getSchemasByTenant(tenantId: string): SchemaDefinition[] {
+    return Array.from(this.schemas.values())
+      .filter(schema => schema.tenantId === tenantId);
+  }
+
+  /**
+   * Get registered dimension tables
+   */
+  getDimensionRegistry(): Map<string, DimensionTable> {
+    return new Map(this.dimensionRegistry);
+  }
+
+  /**
+   * Clear all schemas (for testing)
+   */
+  clearSchemas(): void {
+    this.schemas.clear();
+    this.dimensionRegistry.clear();
+    logger.info('All schemas cleared');
+  }
+}

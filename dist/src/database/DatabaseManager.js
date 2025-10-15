@@ -1,13 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DatabaseManager = void 0;
+exports.prisma = exports.getPrismaClient = exports.DatabaseManager = void 0;
 const client_1 = require("@prisma/client");
 const logger_1 = require("../utils/logger");
 const errors_1 = require("../utils/errors");
 class DatabaseManager {
     static instance;
     prisma;
-    logger = logger_1.Logger.getInstance();
     config;
     startTime;
     metrics;
@@ -20,7 +19,7 @@ class DatabaseManager {
             avgExecutionTime: 0,
             slowQueries: 0,
             errorRate: 0,
-            lastReset: new Date()
+            lastReset: new Date(),
         };
         this.initializePrisma();
     }
@@ -38,26 +37,30 @@ class DatabaseManager {
             this.prisma = new client_1.PrismaClient({
                 datasources: {
                     db: {
-                        url: this.config.url
-                    }
+                        url: this.config.url,
+                    },
                 },
-                log: this.config.enableLogging ? [
-                    { emit: 'event', level: 'query' },
-                    { emit: 'event', level: 'error' },
-                    { emit: 'event', level: 'info' },
-                    { emit: 'event', level: 'warn' }
-                ] : [],
-                errorFormat: 'pretty'
+                log: this.config.enableLogging
+                    ? [
+                        { emit: 'event', level: 'query' },
+                        { emit: 'event', level: 'error' },
+                        { emit: 'event', level: 'info' },
+                        { emit: 'event', level: 'warn' },
+                    ]
+                    : [],
+                errorFormat: 'pretty',
             });
             if (this.config.enableLogging) {
                 this.setupPrismaLogging();
             }
             this.isInitialized = true;
-            this.logger.info('Database manager initialized successfully');
+            logger_1.logger.info('Database manager initialized successfully');
         }
         catch (error) {
-            this.logger.error('Failed to initialize database manager', { error, config: this.config });
-            throw new errors_1.DatabaseError('initialization', 'Failed to initialize database manager', error);
+            logger_1.logger.error('Failed to initialize database manager', error, {
+                config: this.config,
+            });
+            throw new errors_1.DatabaseError('Failed to initialize database manager', 'INITIALIZATION_ERROR');
         }
     }
     setupPrismaLogging() {
@@ -65,44 +68,44 @@ class DatabaseManager {
             const queryTime = parseFloat(e.duration);
             this.updateQueryMetrics(queryTime);
             if (this.config.logLevel === 'query') {
-                this.logger.info('Database query executed', {
+                logger_1.logger.info('Database query executed', {
                     query: e.query,
                     params: e.params,
                     duration: queryTime,
-                    target: e.target
+                    target: e.target,
                 });
             }
             if (queryTime > 1000) {
                 this.metrics.slowQueries++;
-                this.logger.warn('Slow query detected', {
+                logger_1.logger.warn('Slow query detected', {
                     query: e.query,
                     duration: queryTime,
-                    target: e.target
+                    target: e.target,
                 });
             }
         });
         this.prisma.$on('error', (e) => {
             this.metrics.errorRate++;
-            this.logger.error('Database error', {
+            logger_1.logger.error('Database error', undefined, {
                 target: e.target,
                 message: e.message,
-                timestamp: e.timestamp
+                timestamp: e.timestamp,
             });
         });
         this.prisma.$on('info', (e) => {
             if (this.config.logLevel === 'info') {
-                this.logger.info('Database info', {
+                logger_1.logger.info('Database info', {
                     target: e.target,
                     message: e.message,
-                    timestamp: e.timestamp
+                    timestamp: e.timestamp,
                 });
             }
         });
         this.prisma.$on('warn', (e) => {
-            this.logger.warn('Database warning', {
+            logger_1.logger.warn('Database warning', {
                 target: e.target,
                 message: e.message,
-                timestamp: e.timestamp
+                timestamp: e.timestamp,
             });
         });
     }
@@ -115,21 +118,25 @@ class DatabaseManager {
     async connect() {
         try {
             await this.prisma.$connect();
-            this.logger.info('Database connection established');
+            logger_1.logger.info('Database connection established');
         }
         catch (error) {
-            this.logger.error('Failed to connect to database', { error });
-            throw new errors_1.DatabaseError('connection', 'Failed to connect to database', error);
+            logger_1.logger.error('Failed to connect to database', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
+            throw new errors_1.DatabaseError('Failed to connect to database', 'CONNECTION_ERROR');
         }
     }
     async disconnect() {
         try {
             await this.prisma.$disconnect();
-            this.logger.info('Database connection closed');
+            logger_1.logger.info('Database connection closed');
         }
         catch (error) {
-            this.logger.error('Error disconnecting from database', { error });
-            throw new errors_1.DatabaseError('disconnection', 'Failed to disconnect from database', error);
+            logger_1.logger.error('Error disconnecting from database', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
+            throw new errors_1.DatabaseError('Failed to disconnect from database', 'DISCONNECTION_ERROR');
         }
     }
     async healthCheck() {
@@ -141,17 +148,19 @@ class DatabaseManager {
                 activeConnections: 1,
                 maxConnections: this.config.maxConnections || 10,
                 lastHealthCheck: new Date(),
-                uptime: Math.floor(uptime / 1000)
+                uptime: Math.floor(uptime / 1000),
             };
         }
         catch (error) {
-            this.logger.error('Database health check failed', { error });
+            logger_1.logger.error('Database health check failed', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
             return {
                 isConnected: false,
                 activeConnections: 0,
                 maxConnections: this.config.maxConnections || 10,
                 lastHealthCheck: new Date(),
-                uptime: 0
+                uptime: 0,
             };
         }
     }
@@ -161,13 +170,13 @@ class DatabaseManager {
             const result = await this.prisma.$queryRawUnsafe(query, ...params);
             const duration = Date.now() - startTime;
             this.updateQueryMetrics(duration);
-            this.logger.info('Raw query executed', { query, duration, resultCount: result.length });
+            logger_1.logger.info('Raw query executed', { query, duration, resultCount: result.length });
             return result;
         }
         catch (error) {
             this.metrics.errorRate++;
-            this.logger.error('Raw query execution failed', { query, params, error });
-            throw new errors_1.DatabaseError('query', `Raw query execution failed: ${query}`, error);
+            logger_1.logger.error('Raw query execution failed', error, { query, params });
+            throw new errors_1.DatabaseError(`Raw query execution failed: ${query}`, 'QUERY_ERROR');
         }
     }
     async transaction(callback, options) {
@@ -176,36 +185,40 @@ class DatabaseManager {
             const result = await this.prisma.$transaction(callback, {
                 timeout: options?.timeout || this.config.queryTimeout || 5000,
                 isolationLevel: options?.isolationLevel,
-                maxWait: options?.maxWait || 2000
+                maxWait: options?.maxWait || 2000,
             });
             const duration = Date.now() - startTime;
             this.updateQueryMetrics(duration);
-            this.logger.info('Transaction completed successfully', { duration });
+            logger_1.logger.info('Transaction completed successfully', { duration });
             return result;
         }
         catch (error) {
             this.metrics.errorRate++;
-            this.logger.error('Transaction failed', { error, options });
-            throw new errors_1.DatabaseError('transaction', 'Transaction execution failed', error);
+            logger_1.logger.error('Transaction failed', error, { options });
+            throw new errors_1.DatabaseError('Transaction execution failed', 'TRANSACTION_ERROR');
         }
     }
     async reset() {
         try {
             await this.prisma.$executeRaw `TRUNCATE TABLE "User", "Order", "Payment", "Child" CASCADE`;
-            this.logger.info('Database reset completed');
+            logger_1.logger.info('Database reset completed');
         }
         catch (error) {
-            this.logger.error('Database reset failed', { error });
-            throw new errors_1.DatabaseError('reset', 'Database reset failed', error);
+            logger_1.logger.error('Database reset failed', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
+            throw new errors_1.DatabaseError('Database reset failed', 'RESET_ERROR');
         }
     }
     async migrate() {
         try {
-            this.logger.info('Migration check - use "npx prisma migrate deploy" to run migrations');
+            logger_1.logger.info('Migration check - use "npx prisma migrate deploy" to run migrations');
         }
         catch (error) {
-            this.logger.error('Migration check failed', { error });
-            throw new errors_1.DatabaseError('migration', 'Migration failed', error);
+            logger_1.logger.error('Migration check failed', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
+            throw new errors_1.DatabaseError('Migration failed', 'MIGRATION_ERROR');
         }
     }
     getMetrics() {
@@ -217,35 +230,35 @@ class DatabaseManager {
             avgExecutionTime: 0,
             slowQueries: 0,
             errorRate: 0,
-            lastReset: new Date()
+            lastReset: new Date(),
         };
-        this.logger.info('Query metrics reset');
+        logger_1.logger.info('Query metrics reset');
     }
     updateQueryMetrics(duration) {
         const oldTotal = this.metrics.totalQueries;
         const oldAvg = this.metrics.avgExecutionTime;
         this.metrics.totalQueries++;
-        this.metrics.avgExecutionTime = ((oldAvg * oldTotal) + duration) / this.metrics.totalQueries;
+        this.metrics.avgExecutionTime = (oldAvg * oldTotal + duration) / this.metrics.totalQueries;
     }
     async createBackup(backupName) {
         try {
             const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
             const name = backupName || `backup_${timestamp}`;
-            this.logger.info('Database backup created (placeholder)', { backupName: name });
+            logger_1.logger.info('Database backup created (placeholder)', { backupName: name });
             return name;
         }
         catch (error) {
-            this.logger.error('Database backup failed', { error, backupName });
-            throw new errors_1.DatabaseError('backup', 'Database backup failed', error);
+            logger_1.logger.error('Database backup failed', error, { backupName });
+            throw new errors_1.DatabaseError('Database backup failed', 'BACKUP_ERROR');
         }
     }
     async restoreBackup(backupName) {
         try {
-            this.logger.info('Database restore completed (placeholder)', { backupName });
+            logger_1.logger.info('Database restore completed (placeholder)', { backupName });
         }
         catch (error) {
-            this.logger.error('Database restore failed', { error, backupName });
-            throw new errors_1.DatabaseError('restore', 'Database restore failed', error);
+            logger_1.logger.error('Database restore failed', error, { backupName });
+            throw new errors_1.DatabaseError('Database restore failed', 'RESTORE_ERROR');
         }
     }
     getConfig() {
@@ -255,6 +268,33 @@ class DatabaseManager {
     isReady() {
         return this.isInitialized;
     }
+    getPrismaClient() {
+        if (!this.isInitialized) {
+            throw new errors_1.DatabaseError('Database not initialized. Call initialize() first.', 'NOT_INITIALIZED');
+        }
+        return this.prisma;
+    }
 }
 exports.DatabaseManager = DatabaseManager;
+function getPrismaClient() {
+    const dbManager = DatabaseManager.getInstance();
+    return dbManager.getPrismaClient();
+}
+exports.getPrismaClient = getPrismaClient;
+let prismaInstance = null;
+exports.prisma = new Proxy({}, {
+    get(_target, prop) {
+        if (!prismaInstance) {
+            try {
+                prismaInstance = DatabaseManager.getInstance().getPrismaClient();
+            }
+            catch (error) {
+                return () => {
+                    throw new Error('Database not initialized. Call DatabaseManager.getInstance().initialize() first.');
+                };
+            }
+        }
+        return prismaInstance[prop];
+    },
+});
 //# sourceMappingURL=DatabaseManager.js.map

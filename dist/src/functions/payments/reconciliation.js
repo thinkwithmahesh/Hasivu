@@ -2,13 +2,11 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.reconciliationHandler = void 0;
 const logger_service_1 = require("../shared/logger.service");
-const validation_service_1 = require("../shared/validation.service");
 const database_service_1 = require("../shared/database.service");
 const response_utils_1 = require("../shared/response.utils");
 const lambda_auth_middleware_1 = require("../../shared/middleware/lambda-auth.middleware");
 const zod_1 = require("zod");
 const logger = logger_service_1.LoggerService.getInstance();
-const validator = validation_service_1.ValidationService.getInstance();
 const db = database_service_1.LambdaDatabaseService.getInstance();
 const reconciliationRequestSchema = zod_1.z.object({
     schoolId: zod_1.z.string().uuid(),
@@ -64,7 +62,7 @@ async function validateSchoolAccess(schoolId, userId) {
         return { school, user };
     }
     catch (error) {
-        logger.error('School access validation failed', { schoolId, userId, error: error.message });
+        logger.error('School access validation failed', { schoolId, userId, error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) });
         throw error;
     }
 }
@@ -96,7 +94,7 @@ async function getInternalTransactions(schoolId, startDate, endDate) {
         return transactions;
     }
     catch (error) {
-        logger.error('Failed to fetch internal transactions', { schoolId, startDate, endDate, error: error.message });
+        logger.error('Failed to fetch internal transactions', { schoolId, startDate, endDate, error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) });
         throw error;
     }
 }
@@ -107,7 +105,7 @@ async function getGatewayTransactions(gatewayType, startDate, endDate, schoolId)
         return mockGatewayTransactions;
     }
     catch (error) {
-        logger.error('Failed to fetch gateway transactions', { gatewayType, startDate, endDate, error: error.message });
+        logger.error('Failed to fetch gateway transactions', { gatewayType, startDate, endDate, error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) });
         throw error;
     }
 }
@@ -191,7 +189,7 @@ async function performAutomatedReconciliation(internalTransactions, gatewayTrans
         return { matched, discrepancies };
     }
     catch (error) {
-        logger.error('Automated reconciliation failed', { error: error.message });
+        logger.error('Automated reconciliation failed', { error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) });
         throw error;
     }
 }
@@ -201,7 +199,7 @@ async function saveReconciliationResults(reconciliationData, matched, discrepanc
         const totalAmount = matched.reduce((sum, m) => sum + parseFloat(m.internal.amount), 0);
         const reconciledAmount = matched.reduce((sum, m) => sum + parseFloat(m.internal.amount), 0);
         const discrepancyAmount = discrepancies.reduce((sum, d) => sum + Math.abs(d.difference), 0);
-        const reconciliation = await db.prisma.reconciliationRecord.create({
+        await db.prisma.reconciliationRecord.create({
             data: {
                 id: reconciliationId,
                 schoolId: reconciliationData.schoolId,
@@ -243,13 +241,13 @@ async function saveReconciliationResults(reconciliationData, matched, discrepanc
         };
     }
     catch (error) {
-        logger.error('Failed to save reconciliation results', { error: error.message });
+        logger.error('Failed to save reconciliation results', { error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) });
         throw error;
     }
 }
 async function performReconciliation(reconciliationData, userId) {
     try {
-        const { school } = await validateSchoolAccess(reconciliationData.schoolId, userId);
+        await validateSchoolAccess(reconciliationData.schoolId, userId);
         const startDate = new Date(reconciliationData.startDate);
         const endDate = new Date(reconciliationData.endDate);
         if (startDate >= endDate) {
@@ -294,7 +292,7 @@ async function performReconciliation(reconciliationData, userId) {
         return result;
     }
     catch (error) {
-        logger.error('Reconciliation process failed', { reconciliationData, userId, error: error.message });
+        logger.error('Reconciliation process failed', { reconciliationData, userId, error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) });
         throw error;
     }
 }
@@ -332,14 +330,14 @@ async function getReconciliationRecords(schoolId, userId, filters) {
             discrepancies: [],
             totalAmount: record.totalPayments,
             reconciledAmount: record.netSettlement,
-            discrepancyAmount: record.discrepancyAmount,
+            discrepancyAmount: record.discrepancyAmount || 0,
             status: record.reconciliationStatus,
             generatedAt: record.createdAt.toISOString(),
             generatedBy: 'system'
         }));
     }
     catch (error) {
-        logger.error('Failed to get reconciliation records', { schoolId, userId, error: error.message });
+        logger.error('Failed to get reconciliation records', { schoolId, userId, error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) });
         throw error;
     }
 }
@@ -352,7 +350,7 @@ async function processManualReconciliation(manualData, userId) {
         throw new Error('Manual reconciliation not yet implemented - ReconciliationDiscrepancy model needed');
     }
     catch (error) {
-        logger.error('Manual reconciliation failed', { manualData, userId, error: error.message });
+        logger.error('Manual reconciliation failed', { manualData, userId, error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) });
         throw error;
     }
 }
@@ -366,14 +364,14 @@ const reconciliationHandler = async (event, context) => {
         const pathParameters = event.pathParameters || {};
         const queryParameters = event.queryStringParameters || {};
         switch (method) {
-            case 'POST':
+            case 'POST': {
                 const requestBody = (0, response_utils_1.parseRequestBody)(event.body);
                 if (!requestBody) {
                     return (0, response_utils_1.createErrorResponse)(400, 'Invalid request body', undefined, 'INVALID_REQUEST_BODY');
                 }
                 if (requestBody.reconciliationType === 'manual') {
                     const validatedManualData = manualReconciliationSchema.parse(requestBody);
-                    const manualResult = await processManualReconciliation(validatedManualData, authenticatedUser.userId);
+                    const manualResult = await processManualReconciliation(validatedManualData, authenticatedUser.userId || "");
                     const duration1 = Date.now() - startTime;
                     logger.info('Manual reconciliation completed', {
                         requestId,
@@ -387,7 +385,7 @@ const reconciliationHandler = async (event, context) => {
                 }
                 else {
                     const validatedData = reconciliationRequestSchema.parse(requestBody);
-                    const result = await performReconciliation(validatedData, authenticatedUser.userId);
+                    const result = await performReconciliation(validatedData, authenticatedUser.userId || "");
                     const duration2 = Date.now() - startTime;
                     logger.info('Reconciliation completed successfully', {
                         requestId,
@@ -408,14 +406,15 @@ const reconciliationHandler = async (event, context) => {
                         ? `Found ${result.discrepancies.length} discrepancies totaling ₹${result.discrepancyAmount.toFixed(2)}`
                         : 'All transactions reconciled successfully', 201);
                 }
-            case 'GET':
+            }
+            case 'GET': {
                 const schoolId = queryParameters.schoolId;
                 if (!schoolId) {
                     return (0, response_utils_1.createErrorResponse)(400, 'School ID is required', undefined, 'MISSING_SCHOOL_ID');
                 }
                 if (pathParameters.recordId) {
                     const recordId = pathParameters.recordId;
-                    const records = await getReconciliationRecords(schoolId, authenticatedUser.userId);
+                    const records = await getReconciliationRecords(schoolId, authenticatedUser.userId || "");
                     const record = records.find(r => r.reconciliationId === recordId);
                     if (!record) {
                         return (0, response_utils_1.createErrorResponse)(404, 'Reconciliation record not found', undefined, 'RECORD_NOT_FOUND');
@@ -436,7 +435,7 @@ const reconciliationHandler = async (event, context) => {
                         startDate: queryParameters.startDate,
                         endDate: queryParameters.endDate
                     };
-                    const records = await getReconciliationRecords(schoolId, authenticatedUser.userId, filters);
+                    const records = await getReconciliationRecords(schoolId, authenticatedUser.userId || '', filters);
                     const duration4 = Date.now() - startTime;
                     logger.info('Reconciliation records listed', {
                         requestId,
@@ -449,7 +448,8 @@ const reconciliationHandler = async (event, context) => {
                         count: records.length
                     }, 'Reconciliation records retrieved successfully', 200);
                 }
-            case 'PUT':
+            }
+            case 'PUT': {
                 const updateRecordId = pathParameters.recordId;
                 if (!updateRecordId) {
                     return (0, response_utils_1.createErrorResponse)(400, 'Record ID is required', undefined, 'MISSING_RECORD_ID');
@@ -476,6 +476,7 @@ const reconciliationHandler = async (event, context) => {
                         updatedAt: updatedRecord.updatedAt.toISOString()
                     }
                 }, 'Reconciliation record updated successfully', 200);
+            }
             default:
                 return (0, response_utils_1.createErrorResponse)(405, 'Method not allowed', undefined, 'METHOD_NOT_ALLOWED');
         }
@@ -485,7 +486,7 @@ const reconciliationHandler = async (event, context) => {
         logger.error('Reconciliation request failed', {
             requestId,
             duration,
-            error: error.message,
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
             stack: error.stack
         });
         return (0, response_utils_1.handleError)(error, requestId);

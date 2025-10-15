@@ -1,17 +1,33 @@
-"use client"
+'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  LineChart, Line, PieChart, Pie, Cell, Area, AreaChart
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
+  Area,
+  AreaChart,
 } from 'recharts';
-import { 
-  Apple, Utensils, Trophy, Clock, QrCode, Heart,
-  TrendingUp, Calendar, Target, Award
+import {
+  Apple,
+  Utensils,
+  Trophy,
+  Clock,
+  QrCode,
+  Heart,
+  TrendingUp,
+  Target,
+  Award,
 } from 'lucide-react';
 import { cn, formatCurrency, formatDate } from '@/lib/utils';
 import { Student, MealOrder, DailyNutrition, Achievement, WalletBalance } from './types';
@@ -23,11 +39,76 @@ interface StudentDashboardProps {
 
 // Mock data - replace with actual data fetching
 const mockNutritionData: DailyNutrition[] = [
-  { date: '2024-01-08', consumed: { calories: 1850, protein: 65, carbs: 230, fat: 45, fiber: 18, sodium: 1200, sugar: 35 }, goal: { calories: 2000, protein: 70, carbs: 250, fat: 50, fiber: 25 }, percentage: 92 },
-  { date: '2024-01-09', consumed: { calories: 1920, protein: 72, carbs: 245, fat: 48, fiber: 22, sodium: 1100, sugar: 32 }, goal: { calories: 2000, protein: 70, carbs: 250, fat: 50, fiber: 25 }, percentage: 96 },
-  { date: '2024-01-10', consumed: { calories: 1780, protein: 68, carbs: 225, fat: 42, fiber: 20, sodium: 1300, sugar: 38 }, goal: { calories: 2000, protein: 70, carbs: 250, fat: 50, fiber: 25 }, percentage: 89 },
-  { date: '2024-01-11', consumed: { calories: 2020, protein: 75, carbs: 255, fat: 52, fiber: 26, sodium: 1150, sugar: 30 }, goal: { calories: 2000, protein: 70, carbs: 250, fat: 50, fiber: 25 }, percentage: 101 },
-  { date: '2024-01-12', consumed: { calories: 1900, protein: 70, carbs: 240, fat: 46, fiber: 24, sodium: 1250, sugar: 33 }, goal: { calories: 2000, protein: 70, carbs: 250, fat: 50, fiber: 25 }, percentage: 95 },
+  {
+    date: '2024-01-08',
+    consumed: {
+      calories: 1850,
+      protein: 65,
+      carbs: 230,
+      fat: 45,
+      fiber: 18,
+      sodium: 1200,
+      sugar: 35,
+    },
+    goal: { calories: 2000, protein: 70, carbs: 250, fat: 50, fiber: 25 },
+    percentage: 92,
+  },
+  {
+    date: '2024-01-09',
+    consumed: {
+      calories: 1920,
+      protein: 72,
+      carbs: 245,
+      fat: 48,
+      fiber: 22,
+      sodium: 1100,
+      sugar: 32,
+    },
+    goal: { calories: 2000, protein: 70, carbs: 250, fat: 50, fiber: 25 },
+    percentage: 96,
+  },
+  {
+    date: '2024-01-10',
+    consumed: {
+      calories: 1780,
+      protein: 68,
+      carbs: 225,
+      fat: 42,
+      fiber: 20,
+      sodium: 1300,
+      sugar: 38,
+    },
+    goal: { calories: 2000, protein: 70, carbs: 250, fat: 50, fiber: 25 },
+    percentage: 89,
+  },
+  {
+    date: '2024-01-11',
+    consumed: {
+      calories: 2020,
+      protein: 75,
+      carbs: 255,
+      fat: 52,
+      fiber: 26,
+      sodium: 1150,
+      sugar: 30,
+    },
+    goal: { calories: 2000, protein: 70, carbs: 250, fat: 50, fiber: 25 },
+    percentage: 101,
+  },
+  {
+    date: '2024-01-12',
+    consumed: {
+      calories: 1900,
+      protein: 70,
+      carbs: 240,
+      fat: 46,
+      fiber: 24,
+      sodium: 1250,
+      sugar: 33,
+    },
+    goal: { calories: 2000, protein: 70, carbs: 250, fat: 50, fiber: 25 },
+    percentage: 95,
+  },
 ];
 
 const mockRecentOrders: MealOrder[] = [
@@ -37,12 +118,28 @@ const mockRecentOrders: MealOrder[] = [
     studentName: 'Current Student',
     mealType: 'lunch',
     items: [
-      { id: '1', name: 'Vegetable Biryani', category: 'main', price: 45, quantity: 1, nutritionalInfo: { calories: 420, protein: 12, carbs: 65, fat: 15, fiber: 6, sodium: 650, sugar: 8 }, isVegetarian: true }
+      {
+        id: '1',
+        name: 'Vegetable Biryani',
+        category: 'main',
+        price: 45,
+        quantity: 1,
+        nutritionalInfo: {
+          calories: 420,
+          protein: 12,
+          carbs: 65,
+          fat: 15,
+          fiber: 6,
+          sodium: 650,
+          sugar: 8,
+        },
+        isVegetarian: true,
+      },
     ],
     status: 'ready',
     orderDate: '2024-01-12',
     totalAmount: 45,
-    priority: 'medium'
+    priority: 'medium',
   },
   {
     id: '2',
@@ -50,14 +147,30 @@ const mockRecentOrders: MealOrder[] = [
     studentName: 'Current Student',
     mealType: 'breakfast',
     items: [
-      { id: '2', name: 'Healthy Breakfast Bowl', category: 'main', price: 35, quantity: 1, nutritionalInfo: { calories: 320, protein: 15, carbs: 45, fat: 10, fiber: 8, sodium: 400, sugar: 12 }, isVegetarian: true }
+      {
+        id: '2',
+        name: 'Healthy Breakfast Bowl',
+        category: 'main',
+        price: 35,
+        quantity: 1,
+        nutritionalInfo: {
+          calories: 320,
+          protein: 15,
+          carbs: 45,
+          fat: 10,
+          fiber: 8,
+          sodium: 400,
+          sugar: 12,
+        },
+        isVegetarian: true,
+      },
     ],
     status: 'completed',
     orderDate: '2024-01-12',
     pickupTime: '08:30',
     totalAmount: 35,
-    priority: 'medium'
-  }
+    priority: 'medium',
+  },
 ];
 
 const mockAchievements: Achievement[] = [
@@ -87,20 +200,20 @@ const mockAchievements: Achievement[] = [
     progress: 12,
     maxProgress: 15,
     category: 'consistency',
-  }
+  },
 ];
 
 const mockFavoriteMeals = [
   { name: 'Vegetable Biryani', orders: 12, rating: 4.8, image: '/images/biryani.jpg' },
   { name: 'Healthy Bowl', orders: 8, rating: 4.6, image: '/images/bowl.jpg' },
-  { name: 'Fruit Salad', orders: 6, rating: 4.9, image: '/images/fruit.jpg' }
+  { name: 'Fruit Salad', orders: 6, rating: 4.9, image: '/images/fruit.jpg' },
 ];
 
 const mockWalletBalance: WalletBalance = {
   studentId: 'student-1',
   balance: 450,
   lastUpdated: '2024-01-12',
-  lowBalanceThreshold: 100
+  lowBalanceThreshold: 100,
 };
 
 const COLORS = {
@@ -110,7 +223,7 @@ const COLORS = {
   success: '#4CAF50',
   warning: '#FFC107',
   error: '#F44336',
-  info: '#2196F3'
+  info: '#2196F3',
 };
 
 export function StudentDashboard({ student, className }: StudentDashboardProps) {
@@ -135,18 +248,20 @@ export function StudentDashboard({ student, className }: StudentDashboardProps) 
     date: formatDate(new Date(day.date), 'short'),
     calories: day.consumed.calories,
     protein: day.consumed.protein,
-    target: day.goal.calories
+    target: day.goal.calories,
   }));
 
-  const nutritionBreakdown = todayNutrition ? [
-    { name: 'Protein', value: todayNutrition.consumed.protein, color: COLORS.primary },
-    { name: 'Carbs', value: todayNutrition.consumed.carbs, color: COLORS.info },
-    { name: 'Fat', value: todayNutrition.consumed.fat, color: COLORS.warning },
-  ] : [];
+  const nutritionBreakdown = todayNutrition
+    ? [
+        { name: 'Protein', value: todayNutrition.consumed.protein, color: COLORS.primary },
+        { name: 'Carbs', value: todayNutrition.consumed.carbs, color: COLORS.info },
+        { name: 'Fat', value: todayNutrition.consumed.fat, color: COLORS.warning },
+      ]
+    : [];
 
   if (isLoading) {
     return (
-      <div className={cn("space-y-6", className)}>
+      <div className={cn('space-y-6', className)}>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <Card key={i}>
@@ -173,13 +288,16 @@ export function StudentDashboard({ student, className }: StudentDashboardProps) 
   }
 
   return (
-    <div className={cn("space-y-6", className)}>
+    <div className={cn('space-y-6', className)}>
       {/* Welcome Header */}
       <div className="bg-gradient-to-r from-primary-500 to-primary-600 rounded-lg p-6 text-white">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">Welcome back, {student.name}!</h1>
-            <p className="text-primary-100 mt-1">Class {student.class}{student.section} • Roll #{student.rollNumber}</p>
+            <p className="text-primary-100 mt-1">
+              Class {student.class}
+              {student.section} • Roll #{student.rollNumber}
+            </p>
           </div>
           <div className="text-right">
             <p className="text-sm text-primary-100">Today's Nutrition Goal</p>
@@ -193,18 +311,16 @@ export function StudentDashboard({ student, className }: StudentDashboardProps) 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Wallet Balance</CardTitle>
-            <div className="h-4 w-4 text-muted-foreground">
-              💳
-            </div>
+            <div className="h-4 w-4 text-muted-foreground">💳</div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-success-600">
               {formatCurrency(mockWalletBalance.balance)}
             </div>
             <p className="text-xs text-muted-foreground">
-              {mockWalletBalance.balance < mockWalletBalance.lowBalanceThreshold 
-                ? "Consider adding funds" 
-                : "Balance is healthy"}
+              {mockWalletBalance.balance < mockWalletBalance.lowBalanceThreshold
+                ? 'Consider adding funds'
+                : 'Balance is healthy'}
             </p>
           </CardContent>
         </Card>
@@ -215,13 +331,8 @@ export function StudentDashboard({ student, className }: StudentDashboardProps) 
             <Apple className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {todayNutrition?.consumed.calories || 0}
-            </div>
-            <Progress 
-              value={todayNutrition?.percentage || 0} 
-              className="mt-2"
-            />
+            <div className="text-2xl font-bold">{todayNutrition?.consumed.calories || 0}</div>
+            <Progress value={todayNutrition?.percentage || 0} className="mt-2" />
             <p className="text-xs text-muted-foreground mt-1">
               Goal: {todayNutrition?.goal.calories || 0} cal
             </p>
@@ -238,9 +349,9 @@ export function StudentDashboard({ student, className }: StudentDashboardProps) 
               {mockRecentOrders.filter(order => order.status !== 'completed').length}
             </div>
             <p className="text-xs text-muted-foreground">
-              {mockRecentOrders.find(order => order.status === 'ready') 
-                ? "Order ready for pickup!" 
-                : "No pending orders"}
+              {mockRecentOrders.find(order => order.status === 'ready')
+                ? 'Order ready for pickup!'
+                : 'No pending orders'}
             </p>
           </CardContent>
         </Card>
@@ -279,9 +390,7 @@ export function StudentDashboard({ student, className }: StudentDashboardProps) 
                   <TrendingUp className="h-5 w-5" />
                   Weekly Nutrition Progress
                 </CardTitle>
-                <CardDescription>
-                  Your daily calorie intake vs goals
-                </CardDescription>
+                <CardDescription>Your daily calorie intake vs goals</CardDescription>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
@@ -290,18 +399,18 @@ export function StudentDashboard({ student, className }: StudentDashboardProps) 
                     <XAxis dataKey="date" />
                     <YAxis />
                     <Tooltip />
-                    <Area 
-                      type="monotone" 
-                      dataKey="calories" 
-                      stroke={COLORS.primary} 
-                      fill={COLORS.primary} 
+                    <Area
+                      type="monotone"
+                      dataKey="calories"
+                      stroke={COLORS.primary}
+                      fill={COLORS.primary}
                       fillOpacity={0.6}
                       name="Consumed Calories"
                     />
-                    <Line 
-                      type="monotone" 
-                      dataKey="target" 
-                      stroke={COLORS.warning} 
+                    <Line
+                      type="monotone"
+                      dataKey="target"
+                      stroke={COLORS.warning}
                       strokeDasharray="5 5"
                       name="Target Calories"
                     />
@@ -317,9 +426,7 @@ export function StudentDashboard({ student, className }: StudentDashboardProps) 
                   <Target className="h-5 w-5" />
                   Today's Nutrition
                 </CardTitle>
-                <CardDescription>
-                  Macronutrient breakdown
-                </CardDescription>
+                <CardDescription>Macronutrient breakdown</CardDescription>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
@@ -341,7 +448,7 @@ export function StudentDashboard({ student, className }: StudentDashboardProps) 
                     <Tooltip />
                   </PieChart>
                 </ResponsiveContainer>
-                
+
                 {todayNutrition && (
                   <div className="grid grid-cols-3 gap-4 mt-4 text-center">
                     <div>
@@ -349,8 +456,10 @@ export function StudentDashboard({ student, className }: StudentDashboardProps) 
                       <p className="text-2xl font-bold text-primary-600">
                         {todayNutrition.consumed.protein}g
                       </p>
-                      <Progress 
-                        value={(todayNutrition.consumed.protein / todayNutrition.goal.protein) * 100} 
+                      <Progress
+                        value={
+                          (todayNutrition.consumed.protein / todayNutrition.goal.protein) * 100
+                        }
                         className="mt-1"
                       />
                     </div>
@@ -359,8 +468,8 @@ export function StudentDashboard({ student, className }: StudentDashboardProps) 
                       <p className="text-2xl font-bold text-info-600">
                         {todayNutrition.consumed.carbs}g
                       </p>
-                      <Progress 
-                        value={(todayNutrition.consumed.carbs / todayNutrition.goal.carbs) * 100} 
+                      <Progress
+                        value={(todayNutrition.consumed.carbs / todayNutrition.goal.carbs) * 100}
                         className="mt-1"
                       />
                     </div>
@@ -369,8 +478,8 @@ export function StudentDashboard({ student, className }: StudentDashboardProps) 
                       <p className="text-2xl font-bold text-warning-600">
                         {todayNutrition.consumed.fat}g
                       </p>
-                      <Progress 
-                        value={(todayNutrition.consumed.fat / todayNutrition.goal.fat) * 100} 
+                      <Progress
+                        value={(todayNutrition.consumed.fat / todayNutrition.goal.fat) * 100}
                         className="mt-1"
                       />
                     </div>
@@ -390,16 +499,21 @@ export function StudentDashboard({ student, className }: StudentDashboardProps) 
                 <CardDescription>Your meal order history</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {mockRecentOrders.map((order) => (
-                  <div key={order.id} className="flex items-center justify-between p-4 border rounded-lg">
+                {mockRecentOrders.map(order => (
+                  <div
+                    key={order.id}
+                    className="flex items-center justify-between p-4 border rounded-lg"
+                  >
                     <div className="flex items-center space-x-3">
-                      <div className={cn(
-                        "w-3 h-3 rounded-full",
-                        order.status === 'ready' && "bg-success-500",
-                        order.status === 'preparing' && "bg-warning-500",
-                        order.status === 'completed' && "bg-gray-400",
-                        order.status === 'pending' && "bg-info-500"
-                      )} />
+                      <div
+                        className={cn(
+                          'w-3 h-3 rounded-full',
+                          order.status === 'ready' && 'bg-success-500',
+                          order.status === 'preparing' && 'bg-warning-500',
+                          order.status === 'completed' && 'bg-gray-400',
+                          order.status === 'pending' && 'bg-info-500'
+                        )}
+                      />
                       <div>
                         <p className="font-medium">{order.items[0]?.name}</p>
                         <p className="text-sm text-muted-foreground">
@@ -409,13 +523,15 @@ export function StudentDashboard({ student, className }: StudentDashboardProps) 
                     </div>
                     <div className="text-right">
                       <p className="font-medium">{formatCurrency(order.totalAmount)}</p>
-                      <p className={cn(
-                        "text-xs capitalize",
-                        order.status === 'ready' && "text-success-600",
-                        order.status === 'preparing' && "text-warning-600",
-                        order.status === 'completed' && "text-gray-500",
-                        order.status === 'pending' && "text-info-600"
-                      )}>
+                      <p
+                        className={cn(
+                          'text-xs capitalize',
+                          order.status === 'ready' && 'text-success-600',
+                          order.status === 'preparing' && 'text-warning-600',
+                          order.status === 'completed' && 'text-gray-500',
+                          order.status === 'pending' && 'text-info-600'
+                        )}
+                      >
                         {order.status}
                       </p>
                     </div>
@@ -431,7 +547,7 @@ export function StudentDashboard({ student, className }: StudentDashboardProps) 
                 <CardDescription>Most ordered meals</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {mockFavoriteMeals.map((meal, index) => (
+                {mockFavoriteMeals.map((meal, _index) => (
                   <div key={meal.name} className="flex items-center space-x-3">
                     <div className="flex-shrink-0 w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
                       <span className="text-lg">🍽️</span>
@@ -456,16 +572,18 @@ export function StudentDashboard({ student, className }: StudentDashboardProps) 
 
         <TabsContent value="achievements" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {mockAchievements.map((achievement) => (
+            {mockAchievements.map(achievement => (
               <Card key={achievement.id}>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
-                    <Award className={cn(
-                      "h-8 w-8",
-                      achievement.progress >= achievement.maxProgress 
-                        ? "text-warning-500" 
-                        : "text-muted-foreground"
-                    )} />
+                    <Award
+                      className={cn(
+                        'h-8 w-8',
+                        achievement.progress >= achievement.maxProgress
+                          ? 'text-warning-500'
+                          : 'text-muted-foreground'
+                      )}
+                    />
                     <div className="text-right">
                       <p className="text-sm font-medium">
                         {achievement.progress}/{achievement.maxProgress}
@@ -478,17 +596,13 @@ export function StudentDashboard({ student, className }: StudentDashboardProps) 
                 </CardHeader>
                 <CardContent>
                   <h3 className="font-semibold mb-2">{achievement.title}</h3>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    {achievement.description}
-                  </p>
-                  <Progress 
+                  <p className="text-sm text-muted-foreground mb-3">{achievement.description}</p>
+                  <Progress
                     value={(achievement.progress / achievement.maxProgress) * 100}
                     className="mb-2"
                   />
                   {achievement.progress >= achievement.maxProgress && (
-                    <p className="text-xs text-success-600 font-medium">
-                      🎉 Achievement Unlocked!
-                    </p>
+                    <p className="text-xs text-success-600 font-medium">🎉 Achievement Unlocked!</p>
                   )}
                 </CardContent>
               </Card>
@@ -504,18 +618,14 @@ export function StudentDashboard({ student, className }: StudentDashboardProps) 
                   <QrCode className="h-6 w-6" />
                   RFID Pickup Code
                 </CardTitle>
-                <CardDescription>
-                  Show this code to collect your order
-                </CardDescription>
+                <CardDescription>Show this code to collect your order</CardDescription>
               </CardHeader>
               <CardContent className="text-center space-y-6">
                 <div className="bg-gray-100 rounded-lg p-8">
                   <div className="text-4xl font-mono font-bold text-primary-600 tracking-wider">
                     {student.rfidCode || generateRFIDCode()}
                   </div>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Valid for today only
-                  </p>
+                  <p className="text-sm text-muted-foreground mt-2">Valid for today only</p>
                 </div>
 
                 <div className="space-y-2">

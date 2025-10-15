@@ -56,7 +56,7 @@ class SecurityService {
         }
         catch (error) {
             logger_1.logger.error('Failed to initialize security service', error);
-            return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+            return { success: false, error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error' };
         }
     }
     async cleanup() {
@@ -68,7 +68,7 @@ class SecurityService {
         }
         catch (error) {
             logger_1.logger.error('Failed to cleanup security service', error);
-            return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+            return { success: false, error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error' };
         }
     }
     async scanForVulnerabilities(target) {
@@ -99,7 +99,7 @@ class SecurityService {
         }
         catch (error) {
             logger_1.logger.error('Vulnerability scan failed', error);
-            return { success: false, data: { error: error instanceof Error ? error.message : 'Scan failed' } };
+            return { success: false, data: { error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Scan failed' } };
         }
     }
     async checkRateLimit(key, identifier) {
@@ -121,7 +121,7 @@ class SecurityService {
         }
         catch (error) {
             logger_1.logger.error('Rate limit check failed', error);
-            return { success: false, data: { error: error instanceof Error ? error.message : 'Rate limit check failed' } };
+            return { success: false, data: { error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Rate limit check failed' } };
         }
     }
     async validateCSRF(token, sessionId) {
@@ -156,7 +156,7 @@ class SecurityService {
         }
         catch (error) {
             logger_1.logger.error('Data encryption failed', error);
-            return { success: false, data: { error: error instanceof Error ? error.message : 'Encryption failed' } };
+            return { success: false, data: { error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Encryption failed' } };
         }
     }
     async decryptData(encryptedData, iv, authTag) {
@@ -169,7 +169,7 @@ class SecurityService {
         }
         catch (error) {
             logger_1.logger.error('Data decryption failed', error);
-            return { success: false, data: { error: error instanceof Error ? error.message : 'Decryption failed' } };
+            return { success: false, data: { error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Decryption failed' } };
         }
     }
     async generateToken(type = 'access') {
@@ -189,7 +189,7 @@ class SecurityService {
         }
         catch (error) {
             logger_1.logger.error('Token generation failed', error);
-            return { success: false, data: { error: error instanceof Error ? error.message : 'Token generation failed' } };
+            return { success: false, data: { error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Token generation failed' } };
         }
     }
     async validateToken(token, type = 'access') {
@@ -226,7 +226,7 @@ class SecurityService {
         }
         catch (error) {
             logger_1.logger.error('Security audit failed', error);
-            return { success: false, data: { error: error instanceof Error ? error.message : 'Audit failed' } };
+            return { success: false, data: { error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Audit failed' } };
         }
     }
     setupRateLimiters() {
@@ -290,7 +290,7 @@ class SecurityService {
             logger_1.logger.error('Failed to retrieve security logs', error);
             return {
                 success: false,
-                error: error instanceof Error ? error.message : 'Failed to retrieve logs'
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Failed to retrieve logs'
             };
         }
     }
@@ -310,7 +310,7 @@ class SecurityService {
             logger_1.logger.error('Failed to modify security settings', error);
             return {
                 success: false,
-                error: error instanceof Error ? error.message : 'Failed to modify security settings'
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Failed to modify security settings'
             };
         }
     }
@@ -341,7 +341,7 @@ class SecurityService {
         catch (error) {
             return {
                 success: false,
-                error: error instanceof Error ? error.message : 'Environment security validation failed'
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Environment security validation failed'
             };
         }
     }
@@ -373,7 +373,7 @@ class SecurityService {
         catch (error) {
             return {
                 success: false,
-                error: error instanceof Error ? error.message : 'Security test coverage retrieval failed'
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Security test coverage retrieval failed'
             };
         }
     }
@@ -425,7 +425,7 @@ class SecurityService {
         catch (error) {
             return {
                 success: false,
-                error: error instanceof Error ? error.message : 'Security baseline validation failed'
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Security baseline validation failed'
             };
         }
     }

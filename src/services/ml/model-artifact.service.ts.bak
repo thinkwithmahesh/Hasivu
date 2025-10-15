@@ -1,0 +1,155 @@
+/**
+ * HASIVU MODEL ARTIFACT SERVICE
+ * Minimal stub for compilation
+ */
+
+export interface ModelArtifactMetadata {
+  id: string;
+  modelId: string;
+  version: string;
+  checksum: string;
+  fileSize: number;
+  storagePath: string;
+  storageBackend: string;
+  compressionType?: string;
+  encryptionEnabled: boolean;
+  createdAt: Date;
+  createdBy: string;
+  tags: string[];
+  metrics: any;
+  config: any;
+  isActive: boolean;
+  downloadCount: number;
+  lastAccessedAt?: Date;
+}
+
+export interface ModelConfig {
+  modelType: string;
+  architecture: string;
+  hyperparameters: Record<string, any>;
+  features: string[];
+  targetColumn: string;
+  validationSplit: number;
+  batchSize: number;
+  epochs?: number;
+  learningRate?: number;
+  regularization?: {
+    l1?: number;
+    l2?: number;
+    dropout?: number;
+  };
+  optimizer?: string;
+  lossFunction?: string;
+  earlyStoppingPatience?: number;
+  crossValidationFolds?: number;
+}
+
+export interface ModelMetrics {
+  accuracy?: number;
+  precision?: number;
+  recall?: number;
+  f1Score?: number;
+  mse?: number;
+  mae?: number;
+  r2Score?: number;
+  auc?: number;
+  confusionMatrix?: number[][];
+  featureImportance?: Record<string, number>;
+  customMetrics?: Record<string, number>;
+}
+
+export enum ExportFormat {
+  TENSORFLOW_SAVED_MODEL = 'tensorflow_saved_model',
+  TENSORFLOW_LITE = 'tensorflow_lite',
+  ONNX = 'onnx',
+  TENSORFLOWJS = 'tensorflowjs',
+  PICKLE = 'pickle',
+  JOBLIB = 'joblib'
+}
+
+export enum DeploymentTarget {
+  PRODUCTION = 'production',
+  STAGING = 'staging',
+  DEVELOPMENT = 'development',
+  EDGE_DEVICE = 'edge',
+  MOBILE = 'mobile',
+  WEB_BROWSER = 'browser'
+}
+
+export class ModelArtifactService {
+  private static instance: ModelArtifactService;
+
+  private constructor() {
+    // Stub constructor
+  }
+
+  public static getInstance(): ModelArtifactService {
+    if (!ModelArtifactService.instance) {
+      ModelArtifactService.instance = new ModelArtifactService();
+    }
+    return ModelArtifactService.instance;
+  }
+
+  async saveModel(
+    modelId: string,
+    model: any,
+    config: ModelConfig,
+    metrics: ModelMetrics,
+    options: any = {}
+  ): Promise<string> {
+    // Stub implementation
+    return `/models/${modelId}/latest`;
+  }
+
+  async loadModel(
+    modelId: string,
+    version?: string,
+    target?: DeploymentTarget
+  ): Promise<any> {
+    // Stub implementation
+    return null;
+  }
+
+  async getModelPath(modelId: string, version?: string): Promise<string | null> {
+    // Stub implementation
+    return `/models/${modelId}/${version || 'latest'}`;
+  }
+
+  async listModelVersions(modelId: string): Promise<ModelArtifactMetadata[]> {
+    // Stub implementation
+    return [];
+  }
+
+  async exportModel(
+    modelId: string,
+    version: string,
+    format: ExportFormat,
+    target: DeploymentTarget,
+    options: Record<string, any> = {}
+  ): Promise<string> {
+    // Stub implementation
+    return `/exports/${modelId}/${version}/${format}`;
+  }
+
+  async deleteModel(modelId: string, version?: string): Promise<void> {
+    // Stub implementation
+  }
+
+  async getArtifactStats(modelId?: string): Promise<Record<string, any>> {
+    // Stub implementation
+    return {
+      artifacts: {
+        total: 0,
+        unique_models: 0,
+        total_size_bytes: 0,
+        avg_size_bytes: 0,
+        total_downloads: 0
+      },
+      storage: {},
+      cache: {
+        cached_models: 0,
+        cached_metadata: 0
+      }
+    };
+  }
+}

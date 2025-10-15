@@ -63,7 +63,7 @@ const detailedHealthHandler = async (event, context) => {
     catch (error) {
         const duration = Date.now() - startTime;
         logger.error('Detailed health check failed', {
-            error: error instanceof Error ? error.message : 'Unknown error',
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error',
             duration,
             requestId: context.awsRequestId
         });
@@ -92,7 +92,7 @@ async function performDetailedDatabaseCheck() {
             name: 'connection',
             status: 'failed',
             responseTime: 0,
-            error: error instanceof Error ? error.message : 'Connection failed'
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Connection failed'
         });
     }
     try {
@@ -111,7 +111,7 @@ async function performDetailedDatabaseCheck() {
             name: 'performance',
             status: 'failed',
             responseTime: 0,
-            error: error instanceof Error ? error.message : 'Performance test failed'
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Performance test failed'
         });
     }
     const failedTests = tests.filter(t => t.status === 'failed');
@@ -160,7 +160,7 @@ async function performDetailedRedisCheck() {
             name: 'connection',
             status: 'failed',
             responseTime: 0,
-            error: error instanceof Error ? error.message : 'Connection failed'
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Connection failed'
         });
     }
     try {
@@ -181,7 +181,7 @@ async function performDetailedRedisCheck() {
             name: 'performance',
             status: 'failed',
             responseTime: 0,
-            error: error instanceof Error ? error.message : 'Performance test failed'
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Performance test failed'
         });
     }
     const failedTests = tests.filter(t => t.status === 'failed');
@@ -206,12 +206,12 @@ function createFailedServiceHealth(serviceName, error) {
         name: serviceName,
         status: 'unhealthy',
         responseTime: 0,
-        details: { error: error instanceof Error ? error.message : 'Service check failed' },
+        details: { error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Service check failed' },
         tests: [{
                 name: 'initialization',
                 status: 'failed',
                 responseTime: 0,
-                error: error instanceof Error ? error.message : 'Unknown error'
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error'
             }]
     };
 }

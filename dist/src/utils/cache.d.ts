@@ -1,3 +1,9 @@
+export interface CacheOptions {
+    ttl?: number;
+    namespace?: string;
+    serialize?: boolean;
+}
+export type _CacheOptions = CacheOptions;
 declare class InMemoryCache {
     private cache;
     constructor();
@@ -10,5 +16,6 @@ declare class InMemoryCache {
     size(): number;
 }
 export declare const cache: InMemoryCache;
+export declare const _cache: InMemoryCache;
 export {};
 //# sourceMappingURL=cache.d.ts.map

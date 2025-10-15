@@ -1,185 +1,117 @@
 /**
- * User Registration Lambda Function
- * Handles user registration with AWS Cognito and database storage
+ * Register Function
+ * Lambda function for user registration
  */
-import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
-import { CognitoServiceClass } from '../../services/cognito.service';
-import { DatabaseService } from '../../services/database.service';
-import { logger as Logger } from '../../utils/logger';
-import { ValidationService } from '../../services/validation.service';
 
-// Initialize services
-const cognito = CognitoServiceClass.getInstance();
-const db = DatabaseService.getInstance();
-const logger = Logger;
-const validator = ValidationService.getInstance();
+import { APIGatewayProxyResult, APIGatewayProxyEvent } from 'aws-lambda';
+import { authService } from '../../services/auth.service';
+import { createSuccessResponse, createErrorResponse } from '../shared/response.utils';
+import { validateCSRFToken, requiresCSRFProtection } from '../shared/csrf.utils';
 
-// Common Lambda response helper
-const createResponse = (statusCode: number, body: any, headers: Record<string, string> = {}): APIGatewayProxyResult => ({
-  statusCode,
-  headers: {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
-    'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
-    ...headers
-  },
-  body: JSON.stringify(body)
-});
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  passwordConfirm: string;
+  firstName: string;
+  lastName: string;
+  role?: string;
+  schoolId?: string;
+}
 
-// Error handling helper
-const handleError = (error: any, context: Context): APIGatewayProxyResult => {
-  logger.error('Registration Lambda function error', error, { requestId: context.awsRequestId });
-  
-  if (error.name === 'ValidationError') {
-    return createResponse(400, { error: error.message, details: error.details });
-  }
-  
-  if (error.isCognitoError) {
-    const statusCode = error.statusCode || 400;
-    return createResponse(statusCode, { 
-      error: error.message || 'Registration failed',
-      code: error.code 
-    });
-  }
-  
-  return createResponse(500, { error: 'Internal server error' });
-};
-
-/**
- * User Registration Lambda Function Handler
- * Handles user registration with AWS Cognito and database storage
- */
-export const registerHandler = async (
+export const handler = async (
   event: APIGatewayProxyEvent,
-  context: Context
+  _context: any
 ): Promise<APIGatewayProxyResult> => {
-  const startTime = Date.now();
-  
   try {
-    logger.logFunctionStart('registerHandler', { requestId: context.awsRequestId });
+    // Validate CSRF token for POST requests
+    if (requiresCSRFProtection(event.httpMethod)) {
+      const csrfValidation = validateCSRFToken(event);
+      if (!csrfValidation.isValid) {
+        return csrfValidation.error;
+      }
+    }
 
-    // Parse request body
-    const body = JSON.parse(event.body || '{}');
-    
-    logger.info('Processing registration request', { 
+    const body: RegisterRequest = JSON.parse(event.body || '{}');
+
+    // Validate input
+    if (!body.email || !body.password || !body.firstName || !body.lastName) {
+      return createErrorResponse(
+        'VALIDATION_ERROR',
+        'Email, password, first name, and last name are required',
+        400
+      );
+    }
+
+    // Check password confirmation
+    if (body.password !== body.passwordConfirm) {
+      return createErrorResponse('VALIDATION_ERROR', 'Passwords do not match', 400);
+    }
+
+    // Validate password strength
+    if (body.password.length < 8) {
+      return createErrorResponse(
+        'VALIDATION_ERROR',
+        'Password must be at least 8 characters long',
+        400
+      );
+    }
+
+    // Register user
+    const registerResult = await authService.register({
       email: body.email,
+      password: body.password,
+      firstName: body.firstName,
+      lastName: body.lastName,
       role: body.role,
       schoolId: body.schoolId,
-      requestId: context.awsRequestId 
     });
 
-    // Validate input data
-    const validationResult = await validator.validateRegistration(body);
-    if (!validationResult.isValid) {
-      return createResponse(400, { 
-        error: 'Validation failed',
-        details: validationResult.errors
-      });
+    if (!registerResult.success) {
+      return createErrorResponse(
+        'REGISTRATION_FAILED',
+        registerResult.error || 'Registration failed',
+        400
+      );
     }
-    const { email, password, firstName, lastName, phone, schoolId, role } = validationResult.sanitizedValue;
 
-    // Validate school exists and is active
-    const school = await db.school.findUnique({
-      where: { id: schoolId },
-      select: { id: true, name: true, isActive: true }
+    // Generate tokens by authenticating the newly registered user
+    const authResult = await authService.authenticate({
+      email: body.email,
+      password: body.password,
     });
 
-    if (!school) {
-      return createResponse(400, { 
-        error: 'Validation failed',
-        details: [{ field: 'schoolId', message: 'School not found' }]
-      });
+    if (!authResult.success) {
+      return createErrorResponse(
+        'REGISTRATION_FAILED',
+        'Registration succeeded but token generation failed',
+        500
+      );
     }
 
-    if (!school.isActive) {
-      return createResponse(400, { 
-        error: 'Validation failed',
-        details: [{ field: 'schoolId', message: 'School is not accepting registrations' }]
-      });
-    }
-
-    // Check if user already exists
-    const existingUser = await db.user.findUnique({
-      where: { email },
-      select: { id: true, email: true }
-    });
-
-    if (existingUser) {
-      return createResponse(409, { 
-        error: 'User already exists',
-        details: [{ field: 'email', message: 'A user with this email already exists' }]
-      });
-    }
-
-    // Create user in Cognito User Pool
-    const cognitoResult = await cognito.signUp({
-      email,
-      password,
-      firstName,
-      lastName,
-      phoneNumber: phone
-    });
-
-    // Store additional user data in database
-    const user = await db.user.create({
-      data: {
-        email,
-        firstName,
-        lastName,
-        phone,
-        role,
-        schoolId,
-        cognitoUserId: cognitoResult.userSub,
-        passwordHash: 'cognito-managed', // Password managed by Cognito
-        isActive: true
+    // Return success response (exclude password hash)
+    return createSuccessResponse(
+      {
+        user: {
+          id: registerResult.user.id,
+          email: registerResult.user.email,
+          firstName: registerResult.user.firstName || '',
+          lastName: registerResult.user.lastName || '',
+          role: registerResult.user.role,
+        },
+        tokens: authResult.tokens,
       },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        role: true,
-        schoolId: true,
-        isActive: true,
-        createdAt: true
-      }
-    });
-
-    // If the role is 'student', create a student profile
-    if (role === 'student') {
-      await db.studentProfile.create({
-        data: {
-          userId: user.id,
-          studentId: `STU-${Date.now()}-${user.id.slice(-4)}`,
-          name: `${firstName} ${lastName}`,
-          schoolId
-        }
-      });
-    }
-
-    const duration = Date.now() - startTime;
-    logger.logFunctionEnd('register', { statusCode: 201, duration });
-    logger.info('User registration successful', { 
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-      duration 
-    });
-
-    return createResponse(201, {
-      message: 'Registration successful',
-      user: {
-        ...user,
-        school: {
-          id: school.id,
-          name: school.name
-        }
-      },
-      requiresConfirmation: !cognitoResult.isConfirmed
-    });
-
+      201
+    );
   } catch (error) {
-    return handleError(error, context);
+    return createErrorResponse(
+      'REGISTRATION_FAILED',
+      error instanceof Error ? error.message : 'Registration failed',
+      500
+    );
   }
 };
+
+// Export handler as registerHandler for tests
+export const registerHandler = handler;
+
+export default handler;

@@ -9,7 +9,7 @@ on:
     # Run health checks every 15 minutes
     - cron: '*/15 * * * *'
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
     paths:
       - 'infrastructure/monitoring/**'
       - '.github/workflows/monitoring-alerts.yml'
@@ -58,23 +58,23 @@ jobs:
   # =====================================================
   # HEALTH CHECK MONITORING
   # =====================================================
-  
+
   health-check-monitoring:
     name: API Health Monitoring
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    
+
     strategy:
       matrix:
         environment: [staging, production]
         exclude:
           - environment: ${{ github.event.inputs.environment == 'staging' && 'production' || (github.event.inputs.environment == 'production' && 'staging' || 'none') }}
-    
+
     outputs:
       staging-health: ${{ steps.health-staging.outputs.status }}
       production-health: ${{ steps.health-production.outputs.status }}
       alert-required: ${{ steps.determine-alert.outputs.required }}
-    
+
     steps:
       - name: Determine API Base URL
         id: api-url
@@ -86,14 +86,14 @@ jobs:
             echo "url=https://api-staging.hasivu.com" >> $GITHUB_OUTPUT
             echo "env_name=Staging" >> $GITHUB_OUTPUT
           fi
-      
+
       - name: Basic Health Check
         id: basic-health
         run: |
           echo "🏥 Running basic health check for ${{ steps.api-url.outputs.env_name }}..."
-          
+
           START_TIME=$(date +%s.%N)
-          
+
           if curl -sf --max-time ${{ env.HEALTH_CHECK_TIMEOUT }} "${{ steps.api-url.outputs.url }}/health" > /dev/null; then
             END_TIME=$(date +%s.%N)
             RESPONSE_TIME=$(echo "$END_TIME - $START_TIME" | bc)
@@ -107,21 +107,21 @@ jobs:
             echo "response_time=timeout" >> $GITHUB_OUTPUT
             echo "❌ Basic health check failed"
           fi
-      
+
       - name: Detailed Health Check
         id: detailed-health
         run: |
           echo "🔍 Running detailed health checks..."
-          
+
           ENDPOINTS=(
             "${{ steps.api-url.outputs.url }}/health"
             "${{ steps.api-url.outputs.url }}/health/ready"
             "${{ steps.api-url.outputs.url }}/health/live"
           )
-          
+
           failed_checks=0
           total_checks=${#ENDPOINTS[@]}
-          
+
           for endpoint in "${ENDPOINTS[@]}"; do
             echo "Testing: $endpoint"
             
@@ -132,12 +132,12 @@ jobs:
               failed_checks=$((failed_checks + 1))
             fi
           done
-          
+
           success_rate=$(echo "scale=2; ($total_checks - $failed_checks) * 100 / $total_checks" | bc)
-          
+
           echo "success_rate=$success_rate" >> $GITHUB_OUTPUT
           echo "failed_checks=$failed_checks" >> $GITHUB_OUTPUT
-          
+
           if [[ $failed_checks -eq 0 ]]; then
             echo "detailed_status=healthy" >> $GITHUB_OUTPUT
             echo "✅ All detailed health checks passed"
@@ -145,17 +145,17 @@ jobs:
             echo "detailed_status=degraded" >> $GITHUB_OUTPUT
             echo "⚠️ $failed_checks out of $total_checks health checks failed"
           fi
-      
+
       - name: Performance Check
         id: performance
         if: github.event.inputs.check_type == 'performance' || github.event.inputs.check_type == 'all' || github.event.inputs.check_type == ''
         run: |
           echo "⚡ Running performance checks..."
-          
+
           # Measure multiple requests to get average
           total_time=0
           request_count=5
-          
+
           for i in $(seq 1 $request_count); do
             START_TIME=$(date +%s.%N)
             
@@ -169,12 +169,12 @@ jobs:
             
             sleep 1
           done
-          
+
           avg_time=$(echo "scale=3; $total_time / $request_count" | bc)
           avg_time_ms=$(echo "$avg_time * 1000" | bc | cut -d. -f1)
-          
+
           echo "avg_response_time_ms=$avg_time_ms" >> $GITHUB_OUTPUT
-          
+
           if [[ $avg_time_ms -lt ${{ env.PERFORMANCE_THRESHOLD_MS }} ]]; then
             echo "performance_status=good" >> $GITHUB_OUTPUT
             echo "✅ Performance check passed: ${avg_time_ms}ms average"
@@ -182,7 +182,7 @@ jobs:
             echo "performance_status=slow" >> $GITHUB_OUTPUT
             echo "⚠️ Performance degraded: ${avg_time_ms}ms average (threshold: ${{ env.PERFORMANCE_THRESHOLD_MS }}ms)"
           fi
-      
+
       - name: Set Environment Health Status
         id: set-env-health
         run: |
@@ -191,7 +191,7 @@ jobs:
           else
             echo "::set-output name=staging-health::${{ steps.basic-health.outputs.status }}"
           fi
-      
+
       - name: Store Health Check Results
         uses: actions/upload-artifact@v4
         with:
@@ -204,21 +204,21 @@ jobs:
   # =====================================================
   # CLOUDWATCH METRICS MONITORING
   # =====================================================
-  
+
   cloudwatch-monitoring:
     name: CloudWatch Metrics Analysis
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    
+
     strategy:
       matrix:
         environment: [staging, production]
-    
+
     outputs:
       lambda-errors: ${{ steps.lambda-metrics.outputs.error-count }}
       api-gateway-errors: ${{ steps.api-metrics.outputs.error-count }}
       database-connections: ${{ steps.db-metrics.outputs.connection-count }}
-    
+
     steps:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -226,20 +226,20 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
-      
+
       - name: Check Lambda Function Metrics
         id: lambda-metrics
         run: |
           echo "📊 Checking Lambda function metrics for ${{ matrix.environment }}..."
-          
+
           SERVICE_NAME="hasivu-platform-api-${{ matrix.environment }}"
           END_TIME=$(date -u +%Y-%m-%dT%H:%M:%S)
           START_TIME=$(date -u -d '15 minutes ago' +%Y-%m-%dT%H:%M:%S)
-          
+
           # Get error count for critical functions
           FUNCTIONS=("login" "register" "createPaymentOrder" "verifyPayment")
           total_errors=0
-          
+
           for func in "${FUNCTIONS[@]}"; do
             ERROR_COUNT=$(aws cloudwatch get-metric-statistics \
               --namespace AWS/Lambda \
@@ -257,18 +257,18 @@ jobs:
               echo "🔍 $func: $ERROR_COUNT errors"
             fi
           done
-          
+
           echo "error-count=$total_errors" >> $GITHUB_OUTPUT
           echo "📊 Total Lambda errors in last 15 minutes: $total_errors"
-      
+
       - name: Check API Gateway Metrics
         id: api-metrics
         run: |
           echo "🌐 Checking API Gateway metrics for ${{ matrix.environment }}..."
-          
+
           END_TIME=$(date -u +%Y-%m-%dT%H:%M:%S)
           START_TIME=$(date -u -d '15 minutes ago' +%Y-%m-%dT%H:%M:%S)
-          
+
           # Get 4xx and 5xx error counts
           ERROR_4XX=$(aws cloudwatch get-metric-statistics \
             --namespace AWS/ApiGatewayV2 \
@@ -279,7 +279,7 @@ jobs:
             --statistics Sum \
             --query 'Datapoints[0].Sum' \
             --output text 2>/dev/null || echo "0")
-          
+
           ERROR_5XX=$(aws cloudwatch get-metric-statistics \
             --namespace AWS/ApiGatewayV2 \
             --metric-name 5XXError \
@@ -289,29 +289,29 @@ jobs:
             --statistics Sum \
             --query 'Datapoints[0].Sum' \
             --output text 2>/dev/null || echo "0")
-          
+
           total_api_errors=0
-          
+
           if [[ "$ERROR_4XX" != "None" && "$ERROR_4XX" != "null" ]]; then
             total_api_errors=$((total_api_errors + ${ERROR_4XX%.*}))
           fi
-          
+
           if [[ "$ERROR_5XX" != "None" && "$ERROR_5XX" != "null" ]]; then
             total_api_errors=$((total_api_errors + ${ERROR_5XX%.*}))
           fi
-          
+
           echo "error-count=$total_api_errors" >> $GITHUB_OUTPUT
           echo "📊 Total API Gateway errors in last 15 minutes: $total_api_errors"
-      
+
       - name: Check Database Metrics
         id: db-metrics
         run: |
           echo "🗄️ Checking RDS metrics for ${{ matrix.environment }}..."
-          
+
           DB_INSTANCE_ID="hasivu-db-${{ matrix.environment }}"
           END_TIME=$(date -u +%Y-%m-%dT%H:%M:%S)
           START_TIME=$(date -u -d '15 minutes ago' +%Y-%m-%dT%H:%M:%S)
-          
+
           # Get database connection count
           DB_CONNECTIONS=$(aws cloudwatch get-metric-statistics \
             --namespace AWS/RDS \
@@ -323,7 +323,7 @@ jobs:
             --statistics Average \
             --query 'Datapoints[0].Average' \
             --output text 2>/dev/null || echo "0")
-          
+
           if [[ "$DB_CONNECTIONS" != "None" && "$DB_CONNECTIONS" != "null" ]]; then
             echo "connection-count=${DB_CONNECTIONS%.*}" >> $GITHUB_OUTPUT
             echo "📊 Average database connections: ${DB_CONNECTIONS%.*}"
@@ -335,20 +335,20 @@ jobs:
   # =====================================================
   # SECURITY MONITORING
   # =====================================================
-  
+
   security-monitoring:
     name: Security Monitoring
     runs-on: ubuntu-latest
     if: github.event.inputs.check_type == 'security' || github.event.inputs.check_type == 'all' || github.event_name == 'schedule'
     timeout-minutes: 10
-    
+
     strategy:
       matrix:
         environment: [staging, production]
-    
+
     outputs:
       security-alerts: ${{ steps.security-check.outputs.alert-count }}
-    
+
     steps:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -356,20 +356,20 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
-      
+
       - name: Check Security Groups
         id: security-check
         run: |
           echo "🔒 Checking security configurations for ${{ matrix.environment }}..."
-          
+
           alert_count=0
-          
+
           # Check for security groups with overly permissive rules
           SG_IDS=$(aws ec2 describe-security-groups \
             --filters "Name=tag:Environment,Values=${{ matrix.environment }}" "Name=tag:Project,Values=HASIVU" \
             --query 'SecurityGroups[].GroupId' \
             --output text)
-          
+
           for sg_id in $SG_IDS; do
             # Check for 0.0.0.0/0 inbound rules
             OPEN_RULES=$(aws ec2 describe-security-groups \
@@ -382,23 +382,23 @@ jobs:
               alert_count=$((alert_count + 1))
             fi
           done
-          
+
           echo "alert-count=$alert_count" >> $GITHUB_OUTPUT
           echo "🔒 Security alerts found: $alert_count"
-      
+
       - name: Check SSL Certificate Status
         run: |
           echo "🔐 Checking SSL certificate status..."
-          
+
           if [[ "${{ matrix.environment }}" == "production" ]]; then
             DOMAIN="api.hasivu.com"
           else
             DOMAIN="api-staging.hasivu.com"
           fi
-          
+
           # Check certificate expiry
           CERT_INFO=$(echo | openssl s_client -servername "$DOMAIN" -connect "$DOMAIN:443" 2>/dev/null | openssl x509 -noout -dates 2>/dev/null || echo "")
-          
+
           if [[ -n "$CERT_INFO" ]]; then
             EXPIRY_DATE=$(echo "$CERT_INFO" | grep "notAfter" | cut -d= -f2)
             EXPIRY_TIMESTAMP=$(date -d "$EXPIRY_DATE" +%s 2>/dev/null || echo "0")
@@ -417,14 +417,14 @@ jobs:
   # =====================================================
   # ALERT MANAGEMENT
   # =====================================================
-  
+
   alert-management:
     name: Alert Management
     runs-on: ubuntu-latest
     needs: [health-check-monitoring, cloudwatch-monitoring, security-monitoring]
     if: always()
     timeout-minutes: 5
-    
+
     steps:
       - name: Determine Alert Level
         id: alert-level
@@ -435,31 +435,31 @@ jobs:
           lambda_errors="${{ needs.cloudwatch-monitoring.outputs.lambda-errors }}"
           api_errors="${{ needs.cloudwatch-monitoring.outputs.api-gateway-errors }}"
           security_alerts="${{ needs.security-monitoring.outputs.security-alerts }}"
-          
+
           alert_level="none"
           critical_issues=()
           warning_issues=()
-          
+
           # Check for critical issues
           if [[ "$production_health" == "unhealthy" ]]; then
             alert_level="critical"
             critical_issues+=("Production API unhealthy")
           fi
-          
+
           if [[ "${lambda_errors:-0}" -gt 10 ]]; then
             if [[ "$alert_level" != "critical" ]]; then
               alert_level="high"
             fi
             critical_issues+=("High Lambda error rate: $lambda_errors")
           fi
-          
+
           if [[ "${api_errors:-0}" -gt 20 ]]; then
             if [[ "$alert_level" != "critical" ]]; then
               alert_level="high"
             fi
             critical_issues+=("High API error rate: $api_errors")
           fi
-          
+
           # Check for warning issues
           if [[ "$staging_health" == "unhealthy" ]]; then
             if [[ "$alert_level" == "none" ]]; then
@@ -467,18 +467,18 @@ jobs:
             fi
             warning_issues+=("Staging API unhealthy")
           fi
-          
+
           if [[ "${security_alerts:-0}" -gt 0 ]]; then
             if [[ "$alert_level" == "none" ]]; then
               alert_level="warning"
             fi
             warning_issues+=("Security configuration issues: $security_alerts")
           fi
-          
+
           echo "level=$alert_level" >> $GITHUB_OUTPUT
           echo "critical_count=${#critical_issues[@]}" >> $GITHUB_OUTPUT
           echo "warning_count=${#warning_issues[@]}" >> $GITHUB_OUTPUT
-          
+
           # Create alert summary
           ALERT_SUMMARY="Alert Level: $alert_level"
           if [[ ${#critical_issues[@]} -gt 0 ]]; then
@@ -487,11 +487,11 @@ jobs:
           if [[ ${#warning_issues[@]} -gt 0 ]]; then
             ALERT_SUMMARY="$ALERT_SUMMARY\nWarning Issues: $(IFS=', '; echo "${warning_issues[*]}")"
           fi
-          
+
           echo "summary<<EOF" >> $GITHUB_OUTPUT
           echo "$ALERT_SUMMARY" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-      
+
       - name: Send Critical Alert
         if: steps.alert-level.outputs.level == 'critical'
         uses: 8398a7/action-slack@v3
@@ -499,19 +499,19 @@ jobs:
           status: failure
           text: |
             🚨 *CRITICAL ALERT - HASIVU Platform*
-            
+
             ${{ steps.alert-level.outputs.summary }}
-            
+
             *Immediate Action Required*
             - Check production API status
             - Review Lambda function logs
             - Verify database connectivity
             - Consider activating incident response
-            
+
             <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Monitoring Details>
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-      
+
       - name: Send High Priority Alert
         if: steps.alert-level.outputs.level == 'high'
         uses: 8398a7/action-slack@v3
@@ -519,19 +519,19 @@ jobs:
           status: warning
           text: |
             ⚠️ *HIGH PRIORITY ALERT - HASIVU Platform*
-            
+
             ${{ steps.alert-level.outputs.summary }}
-            
+
             *Action Recommended*
             - Monitor system closely
             - Review recent deployments
             - Check application logs
             - Prepare for potential intervention
-            
+
             <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Monitoring Details>
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-      
+
       - name: Send Warning Alert
         if: steps.alert-level.outputs.level == 'warning' && github.event.inputs.alert_level != 'low'
         uses: 8398a7/action-slack@v3
@@ -539,23 +539,23 @@ jobs:
           status: warning
           text: |
             ⚡ *Warning - HASIVU Platform*
-            
+
             ${{ steps.alert-level.outputs.summary }}
-            
+
             *Monitoring Notice*
             - Review system status when convenient
             - Address issues during next maintenance window
             - No immediate action required
-            
+
             <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-      
+
       - name: Update Monitoring Dashboard
         if: always()
         run: |
           echo "📊 Updating monitoring status..."
-          
+
           # Create monitoring status summary
           cat << EOF > monitoring-status.json
           {
@@ -569,9 +569,9 @@ jobs:
             "run_id": "${{ github.run_id }}"
           }
           EOF
-          
+
           echo "✅ Monitoring status updated"
-      
+
       - name: Store Monitoring Results
         uses: actions/upload-artifact@v4
         with:
@@ -582,54 +582,54 @@ jobs:
   # =====================================================
   # DAILY MONITORING REPORT
   # =====================================================
-  
+
   daily-report:
     name: Daily Monitoring Report
     runs-on: ubuntu-latest
     needs: [health-check-monitoring, cloudwatch-monitoring, security-monitoring, alert-management]
     if: github.event_name == 'schedule' && github.event.schedule == '0 9 * * *'
-    
+
     steps:
       - name: Generate Daily Report
         run: |
           echo "📋 Generating daily monitoring report..."
-          
+
           cat << EOF > daily-report.md
           # HASIVU Platform Daily Monitoring Report
-          
+
           **Date:** $(date -u +%Y-%m-%d)
           **Generated:** $(date -u +%Y-%m-%dT%H:%M:%SZ)
-          
+
           ## System Health Status
-          
+
           ### Production Environment
           - **API Health:** ${{ needs.health-check-monitoring.outputs.production-health }}
           - **Lambda Errors:** ${{ needs.cloudwatch-monitoring.outputs.lambda-errors }}
           - **API Gateway Errors:** ${{ needs.cloudwatch-monitoring.outputs.api-gateway-errors }}
-          
+
           ### Staging Environment
           - **API Health:** ${{ needs.health-check-monitoring.outputs.staging-health }}
-          
+
           ## Security Status
           - **Security Alerts:** ${{ needs.security-monitoring.outputs.security-alerts }}
-          
+
           ## Alert Summary
           - **Alert Level:** ${{ needs.alert-management.outputs.alert-level }}
           - **Critical Issues:** ${{ needs.alert-management.outputs.critical-count }}
           - **Warning Issues:** ${{ needs.alert-management.outputs.warning-count }}
-          
+
           ## Recommendations
           - Regular monitoring checks are functioning properly
           - Review any critical or warning alerts immediately
           - Monitor trends in error rates and response times
           - Ensure SSL certificates are up to date
-          
+
           ---
           *Report generated by GitHub Actions monitoring pipeline*
           EOF
-          
+
           echo "✅ Daily report generated"
-      
+
       - name: Send Daily Report
         uses: 8398a7/action-slack@v3
         with:

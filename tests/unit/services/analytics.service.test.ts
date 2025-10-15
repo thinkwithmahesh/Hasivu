@@ -190,7 +190,7 @@ describe('AnalyticsService', () => {
     });
 
     it('should generate proper cache keys for queries', async () => {
-      const mockResults = [];
+      const mockResults: any[] = [];
       jest.spyOn(AnalyticsService as any, 'performAggregation').mockResolvedValueOnce(mockResults);
 
       await AnalyticsService.executeQuery(validQuery);
@@ -295,7 +295,7 @@ describe('AnalyticsService', () => {
       await AnalyticsService.generateDashboard(dashboardId, userId);
 
       // Verify that calculateKPIs was called with a date range (30 days ago to now)
-      expect(AnalyticsService['calculateKPIs']).toHaveBeenCalledWith(
+      expect((AnalyticsService as any)['calculateKPIs']).toHaveBeenCalledWith(
         expect.objectContaining({
           start: expect.any(Date),
           end: expect.any(Date)

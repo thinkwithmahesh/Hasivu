@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React from 'react';
 import Link from 'next/link';
@@ -14,9 +14,7 @@ import {
   CreditCard,
   BookOpen,
   BarChart3,
-  Shield,
   Clock,
-  Bell,
 } from 'lucide-react';
 import {
   NavigationMenu as NavigationMenuRoot,
@@ -58,7 +56,7 @@ const getNavigationItems = (userRole: User['role']): NavigationItem[] => {
         children: [
           {
             id: 'menu',
-            label: 'Today\'s Menu',
+            label: "Today's Menu",
             href: '/meals/menu',
             roles: ['student'],
           },
@@ -283,7 +281,7 @@ export function NavigationMenu({ user, className }: NavigationMenuProps) {
   return (
     <NavigationMenuRoot className={className}>
       <NavigationMenuList>
-        {navigationItems.map((item) => {
+        {navigationItems.map(item => {
           const Icon = item.icon;
           const hasChildren = item.children && item.children.length > 0;
           const active = isActive(item.href);
@@ -292,10 +290,12 @@ export function NavigationMenu({ user, className }: NavigationMenuProps) {
             <NavigationMenuItem key={item.id}>
               {hasChildren ? (
                 <>
-                  <NavigationMenuTrigger className={cn(
-                    navigationMenuTriggerStyle(),
-                    active && "bg-accent text-accent-foreground"
-                  )}>
+                  <NavigationMenuTrigger
+                    className={cn(
+                      navigationMenuTriggerStyle(),
+                      active && 'bg-accent text-accent-foreground'
+                    )}
+                  >
                     <div className="flex items-center gap-2">
                       {Icon && <Icon className="h-4 w-4" />}
                       <span>{item.label}</span>
@@ -303,18 +303,16 @@ export function NavigationMenu({ user, className }: NavigationMenuProps) {
                   </NavigationMenuTrigger>
                   <NavigationMenuContent>
                     <div className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
-                      {item.children?.map((child) => (
+                      {item.children?.map(child => (
                         <NavigationMenuLink key={child.id} asChild>
                           <Link
                             href={child.href}
                             className={cn(
-                              "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
-                              isActive(child.href) && "bg-accent text-accent-foreground"
+                              'block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground',
+                              isActive(child.href) && 'bg-accent text-accent-foreground'
                             )}
                           >
-                            <div className="text-sm font-medium leading-none">
-                              {child.label}
-                            </div>
+                            <div className="text-sm font-medium leading-none">{child.label}</div>
                             <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
                               {getItemDescription(child.id)}
                             </p>
@@ -330,7 +328,7 @@ export function NavigationMenu({ user, className }: NavigationMenuProps) {
                     href={item.href}
                     className={cn(
                       navigationMenuTriggerStyle(),
-                      active && "bg-accent text-accent-foreground"
+                      active && 'bg-accent text-accent-foreground'
                     )}
                   >
                     <div className="flex items-center gap-2">
@@ -352,21 +350,21 @@ export function NavigationMenu({ user, className }: NavigationMenuProps) {
 function getItemDescription(itemId: string): string {
   const descriptions: Record<string, string> = {
     menu: "View today's available meals and nutritional information",
-    order: "Place orders for lunch and snacks",
-    history: "Review past meal orders and payments",
+    order: 'Place orders for lunch and snacks',
+    history: 'Review past meal orders and payments',
     meals: "Manage your child's meal orders and preferences",
-    schedule: "View meal timing and lunch break schedules",
-    reports: "Access detailed reports and analytics",
-    students: "Manage student accounts and information",
-    parents: "Manage parent accounts and family links",
-    staff: "Manage staff accounts and permissions",
-    pending: "View and process pending meal orders",
-    preparing: "Track orders currently being prepared",
-    ready: "Manage orders ready for pickup",
-    inventory: "Track ingredients and stock levels",
-    orders: "View and manage all meal orders",
-    analytics: "System analytics and performance metrics",
+    schedule: 'View meal timing and lunch break schedules',
+    reports: 'Access detailed reports and analytics',
+    students: 'Manage student accounts and information',
+    parents: 'Manage parent accounts and family links',
+    staff: 'Manage staff accounts and permissions',
+    pending: 'View and process pending meal orders',
+    preparing: 'Track orders currently being prepared',
+    ready: 'Manage orders ready for pickup',
+    inventory: 'Track ingredients and stock levels',
+    orders: 'View and manage all meal orders',
+    analytics: 'System analytics and performance metrics',
   };
-  
-  return descriptions[itemId] || "";
+
+  return descriptions[itemId] || '';
 }

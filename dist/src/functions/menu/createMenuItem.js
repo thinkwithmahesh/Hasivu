@@ -102,7 +102,7 @@ const handler = async (event, context) => {
     }
     catch (error) {
         const duration = Date.now() - startTime;
-        logger_1.logger.error('createMenuItemHandler failed', { requestId: context.awsRequestId, statusCode: 500, duration, error: error.message });
+        logger_1.logger.error('createMenuItemHandler failed', { requestId: context.awsRequestId, statusCode: 500, duration, error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) });
         return (0, response_utils_1.handleError)(error, 'Failed to create menu item');
     }
 };

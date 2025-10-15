@@ -1,0 +1,501 @@
+// Nutritional Compliance Service - HASIVU Platform
+// Priority 5: Advanced Testing & Quality Assurance
+
+export interface NutritionalInfo {
+  calories: number;
+  protein: number;
+  carbohydrates: number;
+  fat: number;
+  fiber?: number;
+  sodium?: number;
+  sugar?: number;
+  vitamins?: {
+    [key: string]: number; // Vitamin content in mg or IU
+  };
+  minerals?: {
+    [key: string]: number; // Mineral content in mg
+  };
+}
+
+export interface AllergenInfo {
+  allergens: string[];
+  crossContaminationRisk: 'LOW' | 'MEDIUM' | 'HIGH';
+  safetyNotes: string[];
+}
+
+export interface DietaryCompliance {
+  vegetarian: boolean;
+  vegan: boolean;
+  jain: boolean;
+  glutenFree: boolean;
+  dairyFree: boolean;
+  nutFree: boolean;
+}
+
+export interface GovernmentCompliance {
+  indianStandards: {
+    compliant: boolean;
+    violations: string[];
+    recommendations: string[];
+  };
+  whoGuidelines: {
+    compliant: boolean;
+    violations: string[];
+    recommendations: string[];
+  };
+}
+
+export interface NutritionalAnalysis {
+  menuItemId: string;
+  totalCalories: number;
+  macronutrients: {
+    protein: number;
+    carbohydrates: number;
+    fat: number;
+  };
+  micronutrients: {
+    vitamins: { [key: string]: number };
+    minerals: { [key: string]: number };
+  };
+  allergens: AllergenInfo;
+  dietaryCompliance: DietaryCompliance;
+  governmentCompliance: GovernmentCompliance;
+  nutritionScore: number; // 0-100 score based on nutritional value
+  healthRating: 'EXCELLENT' | 'GOOD' | 'AVERAGE' | 'POOR';
+  recommendations: string[];
+  warnings: string[];
+  analysisTimestamp: Date;
+}
+
+export interface StudentNutritionalProfile {
+  studentId: string;
+  age: number;
+  weight?: number;
+  height?: number;
+  allergens: string[];
+  dietaryRestrictions: string[];
+  healthConditions: string[];
+  nutritionalNeeds: {
+    dailyCalories: number;
+    protein: number;
+    carbohydrates: number;
+    fat: number;
+  };
+}
+
+export interface MenuItem {
+  id: string;
+  name: string;
+  ingredients: Array<{
+    name: string;
+    quantity?: string;
+    nutritionalValue: NutritionalInfo;
+  }>;
+  available?: boolean;
+  stock?: number;
+}
+
+export interface BatchAnalysisResult {
+  results: NutritionalAnalysis[];
+  totalProcessed: number;
+  errors: Array<{
+    menuItemId: string;
+    error: string;
+  }>;
+  processingTime: number;
+}
+
+export class NutritionalComplianceService {
+  private indianNutritionalStandards: Map<string, any>;
+  private whoGuidelines: Map<string, any>;
+  private allergenDatabase: Map<string, string[]>;
+
+  constructor() {
+    // Initialize nutritional standards and databases
+    this.indianNutritionalStandards = new Map([
+      ['maxSodium', 2000], // mg per day
+      ['maxSugar', 50], // g per day
+      ['minProtein', 0.8], // g per kg body weight
+      ['maxSaturatedFat', 20], // g per day
+    ]);
+
+    this.whoGuidelines = new Map([
+      ['maxSodium', 2000], // mg per day
+      ['maxFreeSugar', 50], // g per day
+      ['minFruit', 400], // g per day
+      ['maxProcessedMeat', 50], // g per day
+    ]);
+
+    this.allergenDatabase = new Map([
+      ['wheat', ['gluten', 'wheat', 'flour', 'wheat protein']],
+      ['milk', ['lactose', 'casein', 'whey', 'milk', 'dairy']],
+      ['eggs', ['albumin', 'lecithin', 'egg']],
+      ['peanuts', ['arachis oil', 'groundnut', 'peanut']],
+      ['tree nuts', ['almond', 'cashew', 'walnut', 'pistachio']],
+      ['soy', ['soybean', 'lecithin', 'tofu']],
+      ['fish', ['anchovy', 'salmon', 'tuna']],
+      ['shellfish', ['shrimp', 'crab', 'lobster']],
+    ]);
+  }
+
+  async analyzeNutritionalContent(menuItem: MenuItem): Promise<NutritionalAnalysis> {
+    // Calculate total nutritional content
+    const totalNutrition = this.calculateTotalNutrition(menuItem);
+    
+    // Analyze allergens
+    const allergenInfo = await this.analyzeAllergens(menuItem);
+    
+    // Check dietary compliance
+    const dietaryCompliance = this.checkDietaryCompliance(menuItem);
+    
+    // Check government compliance
+    const governmentCompliance = await this.checkGovernmentCompliance(totalNutrition);
+    
+    // Calculate nutrition score
+    const nutritionScore = this.calculateNutritionScore(totalNutrition);
+    
+    // Generate recommendations and warnings
+    const { recommendations, warnings } = this.generateRecommendationsAndWarnings(
+      totalNutrition,
+      allergenInfo,
+      governmentCompliance
+    );
+
+    return {
+      menuItemId: menuItem.id,
+      totalCalories: totalNutrition.calories,
+      macronutrients: {
+        protein: totalNutrition.protein,
+        carbohydrates: totalNutrition.carbohydrates,
+        fat: totalNutrition.fat,
+      },
+      micronutrients: {
+        vitamins: totalNutrition.vitamins || {},
+        minerals: totalNutrition.minerals || {},
+      },
+      allergens: allergenInfo,
+      dietaryCompliance,
+      governmentCompliance,
+      nutritionScore,
+      healthRating: this.getHealthRating(nutritionScore),
+      recommendations,
+      warnings,
+      analysisTimestamp: new Date(),
+    };
+  }
+
+  async batchNutritionalAnalysis(menuItems: MenuItem[]): Promise<BatchAnalysisResult> {
+    const startTime = Date.now();
+    const results: NutritionalAnalysis[] = [];
+    const errors: Array<{ menuItemId: string; error: string }> = [];
+
+    for (const item of menuItems) {
+      try {
+        const analysis = await this.analyzeNutritionalContent(item);
+        results.push(analysis);
+      } catch (error: unknown) {
+        errors.push({
+          menuItemId: item.id,
+          error: error instanceof Error ? (error instanceof Error ? error.message : String(error)) : 'Unknown error',
+        });
+      }
+    }
+
+    const endTime = Date.now();
+    const processingTime = Math.max(1, endTime - startTime); // Ensure minimum 1ms processing time
+    return {
+      results,
+      totalProcessed: menuItems.length,
+      errors,
+      processingTime,
+    };
+  }
+
+  async analyzeStudentSafety(
+    menuItem: MenuItem,
+    studentProfile: StudentNutritionalProfile
+  ): Promise<{
+    safe: boolean;
+    risks: string[];
+    alternatives: string[];
+    modifications: string[];
+  }> {
+    const analysis = await this.analyzeNutritionalContent(menuItem);
+    const risks: string[] = [];
+    const alternatives: string[] = [];
+    const modifications: string[] = [];
+
+    // Check allergen safety
+    for (const allergen of analysis.allergens.allergens) {
+      if (studentProfile.allergens.includes(allergen)) {
+        risks.push(`Contains ${allergen} - student is allergic`);
+        alternatives.push(`Suggest ${allergen}-free alternative`);
+      }
+    }
+
+    // Check dietary restriction compliance
+    if (studentProfile.dietaryRestrictions.includes('vegetarian') && !analysis.dietaryCompliance.vegetarian) {
+      risks.push('Contains non-vegetarian ingredients');
+      modifications.push('Remove non-vegetarian ingredients');
+    }
+
+    if (studentProfile.dietaryRestrictions.includes('vegan') && !analysis.dietaryCompliance.vegan) {
+      risks.push('Contains non-vegan ingredients');
+      modifications.push('Replace with vegan alternatives');
+    }
+
+    // Check health conditions
+    for (const condition of studentProfile.healthConditions) {
+      if (condition === 'diabetes' && analysis.totalCalories > studentProfile.nutritionalNeeds.dailyCalories * 0.4) {
+        risks.push('High caloric content may not be suitable for diabetic students');
+        modifications.push('Reduce portion size or suggest lower-calorie alternative');
+      }
+    }
+
+    return {
+      safe: risks.length === 0,
+      risks,
+      alternatives,
+      modifications,
+    };
+  }
+
+  async getPersonalizedRecommendations(
+    studentProfile: StudentNutritionalProfile,
+    availableMenu: MenuItem[]
+  ): Promise<{
+    recommended: string[];
+    avoid: string[];
+    modifications: Map<string, string[]>;
+  }> {
+    const recommended: string[] = [];
+    const avoid: string[] = [];
+    const modifications = new Map<string, string[]>();
+
+    for (const item of availableMenu) {
+      const safety = await this.analyzeStudentSafety(item, studentProfile);
+      
+      if (safety.safe) {
+        recommended.push(item.id);
+      } else {
+        avoid.push(item.id);
+        if (safety.modifications.length > 0) {
+          modifications.set(item.id, safety.modifications);
+        }
+      }
+    }
+
+    return { recommended, avoid, modifications };
+  }
+
+  private calculateTotalNutrition(menuItem: MenuItem): NutritionalInfo {
+    let totalCalories = 0;
+    let totalProtein = 0;
+    let totalCarbs = 0;
+    let totalFat = 0;
+    let totalFiber = 0;
+    let totalSodium = 0;
+    let totalSugar = 0;
+    const vitamins: { [key: string]: number } = {};
+    const minerals: { [key: string]: number } = {};
+
+    for (const ingredient of menuItem.ingredients) {
+      totalCalories += ingredient.nutritionalValue.calories || 0;
+      totalProtein += ingredient.nutritionalValue.protein || 0;
+      totalCarbs += ingredient.nutritionalValue.carbohydrates || 0;
+      totalFat += ingredient.nutritionalValue.fat || 0;
+      totalFiber += ingredient.nutritionalValue.fiber || 0;
+      totalSodium += ingredient.nutritionalValue.sodium || 0;
+      totalSugar += ingredient.nutritionalValue.sugar || 0;
+
+      // Aggregate vitamins
+      if (ingredient.nutritionalValue.vitamins) {
+        for (const [vitamin, amount] of Object.entries(ingredient.nutritionalValue.vitamins)) {
+          vitamins[vitamin] = (vitamins[vitamin] || 0) + amount;
+        }
+      }
+
+      // Aggregate minerals
+      if (ingredient.nutritionalValue.minerals) {
+        for (const [mineral, amount] of Object.entries(ingredient.nutritionalValue.minerals)) {
+          minerals[mineral] = (minerals[mineral] || 0) + amount;
+        }
+      }
+    }
+
+    return {
+      calories: totalCalories,
+      protein: totalProtein,
+      carbohydrates: totalCarbs,
+      fat: totalFat,
+      fiber: totalFiber,
+      sodium: totalSodium,
+      sugar: totalSugar,
+      vitamins,
+      minerals,
+    };
+  }
+
+  private async analyzeAllergens(menuItem: MenuItem): Promise<AllergenInfo> {
+    const allergens: Set<string> = new Set();
+    let riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' = 'LOW';
+    const safetyNotes: string[] = [];
+
+    for (const ingredient of menuItem.ingredients) {
+      const ingredientName = ingredient.name.toLowerCase();
+      
+      // Check against allergen database
+      for (const [allergen, triggers] of this.allergenDatabase.entries()) {
+        if (triggers.some(trigger => ingredientName.includes(trigger))) {
+          allergens.add(allergen.toUpperCase());
+        }
+      }
+    }
+
+    // Determine risk level based on number of allergens
+    if (allergens.size > 3) {
+      riskLevel = 'HIGH';
+      safetyNotes.push('Multiple allergens present - high risk for sensitive individuals');
+    } else if (allergens.size > 1) {
+      riskLevel = 'MEDIUM';
+      safetyNotes.push('Multiple allergens present - moderate risk');
+    } else if (allergens.size === 1) {
+      safetyNotes.push('Single allergen present - low risk with proper precautions');
+    }
+
+    return {
+      allergens: Array.from(allergens),
+      crossContaminationRisk: riskLevel,
+      safetyNotes,
+    };
+  }
+
+  private checkDietaryCompliance(menuItem: MenuItem): DietaryCompliance {
+    const nonVegIngredients = ['chicken', 'mutton', 'fish', 'egg', 'meat'];
+    const nonVeganIngredients = [...nonVegIngredients, 'milk', 'cheese', 'butter', 'ghee', 'honey', 'paneer'];
+    const glutenIngredients = ['wheat', 'barley', 'rye', 'oats'];
+    const dairyIngredients = ['milk', 'cheese', 'butter', 'cream', 'yogurt', 'paneer'];
+    const nutIngredients = ['peanut', 'almond', 'cashew', 'walnut'];
+
+    const ingredients = menuItem.ingredients.map(i => i.name.toLowerCase());
+
+    return {
+      vegetarian: !ingredients.some(ing => nonVegIngredients.some(nv => ing.includes(nv))),
+      vegan: !ingredients.some(ing => nonVeganIngredients.some(nv => ing.includes(nv))),
+      jain: !ingredients.some(ing => 
+        [...nonVeganIngredients, 'onion', 'garlic', 'potato', 'carrot', 'radish'].some(j => ing.includes(j))
+      ),
+      glutenFree: !ingredients.some(ing => glutenIngredients.some(g => ing.includes(g))),
+      dairyFree: !ingredients.some(ing => dairyIngredients.some(d => ing.includes(d))),
+      nutFree: !ingredients.some(ing => nutIngredients.some(n => ing.includes(n))),
+    };
+  }
+
+  private async checkGovernmentCompliance(nutrition: NutritionalInfo): Promise<GovernmentCompliance> {
+    const indianViolations: string[] = [];
+    const indianRecommendations: string[] = [];
+    const whoViolations: string[] = [];
+    const whoRecommendations: string[] = [];
+
+    // Check Indian standards
+    if ((nutrition.sodium || 0) > (this.indianNutritionalStandards.get('maxSodium') / 3)) { // Per meal
+      indianViolations.push('Sodium content exceeds recommended daily limit per meal');
+      indianRecommendations.push('Reduce salt and processed ingredients');
+    }
+
+    if ((nutrition.sugar || 0) > (this.indianNutritionalStandards.get('maxSugar') / 3)) { // Per meal
+      indianViolations.push('Sugar content is too high per meal');
+      indianRecommendations.push('Reduce added sugars and sweet components');
+    }
+
+    // Check WHO guidelines
+    if ((nutrition.sodium || 0) > (this.whoGuidelines.get('maxSodium') / 3)) { // Per meal
+      whoViolations.push('Sodium exceeds WHO recommended daily intake per meal');
+      whoRecommendations.push('Use herbs and spices instead of salt for flavoring');
+    }
+
+    return {
+      indianStandards: {
+        compliant: indianViolations.length === 0,
+        violations: indianViolations,
+        recommendations: indianRecommendations,
+      },
+      whoGuidelines: {
+        compliant: whoViolations.length === 0,
+        violations: whoViolations,
+        recommendations: whoRecommendations,
+      },
+    };
+  }
+
+  private calculateNutritionScore(nutrition: NutritionalInfo): number {
+    let score = 50; // Base score
+
+    // Protein content (positive factor)
+    if (nutrition.protein >= 20) score += 15;
+    else if (nutrition.protein >= 10) score += 10;
+    else if (nutrition.protein >= 5) score += 5;
+
+    // Fiber content (positive factor)
+    if ((nutrition.fiber || 0) >= 5) score += 10;
+    else if ((nutrition.fiber || 0) >= 3) score += 5;
+
+    // Vitamin and mineral content (positive factor)
+    const vitaminCount = Object.keys(nutrition.vitamins || {}).length;
+    const mineralCount = Object.keys(nutrition.minerals || {}).length;
+    score += Math.min(vitaminCount * 2, 10);
+    score += Math.min(mineralCount * 2, 10);
+
+    // Negative factors
+    if ((nutrition.sodium || 0) > 800) score -= 15;
+    if ((nutrition.sugar || 0) > 20) score -= 10;
+    if (nutrition.fat > 30) score -= 10;
+
+    // Cap score between 0 and 100
+    return Math.max(0, Math.min(100, score));
+  }
+
+  private getHealthRating(score: number): 'EXCELLENT' | 'GOOD' | 'AVERAGE' | 'POOR' {
+    if (score >= 80) return 'EXCELLENT';
+    if (score >= 65) return 'GOOD';
+    if (score >= 50) return 'AVERAGE';
+    return 'POOR';
+  }
+
+  private generateRecommendationsAndWarnings(
+    nutrition: NutritionalInfo,
+    allergens: AllergenInfo,
+    compliance: GovernmentCompliance
+  ): { recommendations: string[]; warnings: string[] } {
+    const recommendations: string[] = [];
+    const warnings: string[] = [];
+
+    // Nutritional recommendations
+    if (nutrition.protein < 10) {
+      recommendations.push('Consider adding protein-rich ingredients like lentils or paneer');
+    }
+    if ((nutrition.fiber || 0) < 3) {
+      recommendations.push('Add more fiber through vegetables and whole grains');
+    }
+
+    // Allergen warnings
+    if (allergens.crossContaminationRisk === 'HIGH') {
+      warnings.push('High risk of cross-contamination - use dedicated preparation areas');
+    }
+    if (allergens.allergens.length > 0) {
+      warnings.push(`Contains allergens: ${allergens.allergens.join(', ')}`);
+    }
+
+    // Compliance warnings
+    if (!compliance.indianStandards.compliant) {
+      warnings.push('Does not meet Indian nutritional standards');
+      recommendations.push(...compliance.indianStandards.recommendations);
+    }
+    if (!compliance.whoGuidelines.compliant) {
+      warnings.push('Does not meet WHO dietary guidelines');
+      recommendations.push(...compliance.whoGuidelines.recommendations);
+    }
+
+    return { recommendations, warnings };
+  }
+}

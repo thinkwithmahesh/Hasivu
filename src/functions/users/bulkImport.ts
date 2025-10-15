@@ -5,18 +5,20 @@
  */
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 import { UserService, CreateUserRequest } from '../../services/user.service';
-import { LoggerService } from '../shared/logger.service';
+import { logger } from '../../utils/logger';
 import { ValidationService } from '../shared/validation.service';
 import { handleError, createSuccessResponse } from '../shared/response.utils';
 import Joi from 'joi';
 
 // CSV import request schema
 const bulkImportSchema = Joi.object({
-  csvData: Joi.string().required().max(10 * 1024 * 1024), // 10MB max
+  csvData: Joi.string()
+    .required()
+    .max(10 * 1024 * 1024), // 10MB max
   schoolId: Joi.string().uuid().optional(),
   previewMode: Joi.boolean().optional().default(false),
   skipDuplicates: Joi.boolean().optional().default(true),
-  updateExisting: Joi.boolean().optional().default(false)
+  updateExisting: Joi.boolean().optional().default(false),
 });
 
 // Expected CSV structure
@@ -31,14 +33,14 @@ interface CSVUserData {
 /**
  * Bulk Import Users Lambda Handler
  * POST /api/v1/users/bulk-import
- * 
+ *
  * Request Body:
  * - csvData: CSV string with user data
  * - schoolId?: Target school ID (required for admin, auto-set for school_admin)
  * - previewMode?: Return validation results without creating users
  * - skipDuplicates?: Skip users with existing emails
  * - updateExisting?: Update existing users instead of skipping
- * 
+ *
  * CSV Format:
  * firstName,lastName,email,role,parentEmail(optional)
  */
@@ -46,30 +48,29 @@ export const bulkImportUsersHandler = async (
   event: APIGatewayProxyEvent,
   context: Context
 ): Promise<APIGatewayProxyResult> => {
-  const logger = LoggerService.getInstance();
   const requestId = context.awsRequestId;
 
   try {
     logger.info('Bulk import users request started', {
       requestId,
-      userAgent: event.headers['User-Agent']
+      userAgent: event.headers['User-Agent'],
     });
 
     // Extract user context from authorizer
     const userContext = event.requestContext.authorizer;
     if (!userContext?.userId) {
       logger.warn('Unauthorized bulk import attempt', { requestId });
-      return handleError(new Error('Unauthorized'), undefined, 401, requestId);
+      return handleError(new Error('Unauthorized'));
     }
 
     // Get requesting user for permission checks
     const requestingUser = await UserService.getUserById(userContext.userId);
     if (!requestingUser) {
-      logger.error('Requesting user not found', {
+      logger.error('Requesting user not found', new Error('User not found'), {
         requestId,
-        userId: userContext.userId
+        userId: userContext.userId,
       });
-      return handleError(new Error('Requesting user not found'), undefined, 404, requestId);
+      return handleError(new Error('Requesting user not found'));
     }
 
     // Check bulk import permissions
@@ -77,9 +78,9 @@ export const bulkImportUsersHandler = async (
       logger.warn('Bulk import permission denied', {
         requestId,
         userId: userContext.userId,
-        role: requestingUser.role
+        role: requestingUser.role,
       });
-      return handleError(new Error('Insufficient permissions for bulk import'), undefined, 403, requestId);
+      return handleError(new Error('Insufficient permissions for bulk import'));
     }
 
     // Parse request body
@@ -90,15 +91,15 @@ export const bulkImportUsersHandler = async (
       skipDuplicates?: boolean;
       updateExisting?: boolean;
     };
-    
+
     try {
       importData = JSON.parse(event.body || '{}');
     } catch (parseError) {
       logger.warn('Invalid JSON in request body', {
         requestId,
-        error: (parseError as Error).message
+        error: (parseError as Error).message,
       });
-      return handleError(new Error('Invalid JSON in request body'), undefined, 400, requestId);
+      return handleError(new Error('Invalid JSON in request body'));
     }
 
     // Validate input data
@@ -106,42 +107,42 @@ export const bulkImportUsersHandler = async (
     if (!validation.isValid) {
       logger.warn('Invalid bulk import data', {
         requestId,
-        errors: validation.errors
+        errors: validation.errors,
       });
-      return handleError(new Error(`Validation failed: ${validation.errors?.join(', ')}`), undefined, 400, requestId);
+      return handleError(new Error(`Validation failed: ${validation.errors?.join(', ')}`));
     }
 
     // Determine school ID based on permissions
     let targetSchoolId = importData.schoolId;
     if (requestingUser.role === 'school_admin') {
       // School admins can only import to their own school
-      targetSchoolId = requestingUser.schoolId;
+      targetSchoolId = requestingUser.schoolId ?? undefined;
     } else if (!targetSchoolId) {
-      return handleError(new Error('School ID is required for admin users'), undefined, 400, requestId);
+      return handleError(new Error('School ID is required for admin users'));
     }
 
     // Validate CSV data size
     const csvSizeBytes = Buffer.byteLength(importData.csvData, 'utf8');
     const maxSizeMB = 10;
     if (csvSizeBytes > maxSizeMB * 1024 * 1024) {
-      return handleError(new Error(`CSV data too large. Maximum size: ${maxSizeMB}MB`), undefined, 400, requestId);
+      return handleError(new Error(`CSV data too large. Maximum size: ${maxSizeMB}MB`));
     }
 
     logger.info('Processing CSV data', {
       requestId,
       csvSizeBytes,
       schoolId: targetSchoolId,
-      previewMode: importData.previewMode || false
+      previewMode: importData.previewMode || false,
     });
 
     // Parse CSV data
-    const parseResult = await parseCSVData(importData.csvData, targetSchoolId);
-    
+    const parseResult = await parseCSVData(importData.csvData, targetSchoolId!);
+
     if (parseResult.errors.length > 0) {
       logger.warn('CSV parsing errors detected', {
         requestId,
         errorCount: parseResult.errors.length,
-        errors: parseResult.errors.slice(0, 10) // Log first 10 errors
+        errors: parseResult.errors.slice(0, 10), // Log first 10 errors
       });
     }
 
@@ -150,7 +151,7 @@ export const bulkImportUsersHandler = async (
       logger.info('Bulk import preview completed', {
         requestId,
         validUsersCount: parseResult.validUsers.length,
-        errorCount: parseResult.errors.length
+        errorCount: parseResult.errors.length,
       });
 
       return createSuccessResponse({
@@ -158,61 +159,54 @@ export const bulkImportUsersHandler = async (
         summary: {
           totalRows: parseResult.validUsers.length + parseResult.errors.length,
           validUsers: parseResult.validUsers.length,
-          errors: parseResult.errors.length
+          errors: parseResult.errors.length,
         },
         validUsers: parseResult.validUsers,
-        errors: parseResult.errors
-      }, 'Preview processed successfully', 200, requestId);
+        errors: parseResult.errors,
+      });
     }
 
     // Actual import mode
     if (parseResult.validUsers.length === 0) {
-      return handleError(new Error('No valid users found in CSV data'), undefined, 400, requestId);
+      return handleError(new Error('No valid users found in CSV data'));
     }
 
     // Perform bulk import
-    const importResult = await UserService.bulkImportUsers(
-      importData.csvData,
-      userContext.userId,
-      targetSchoolId
-    );
+    const importResult = await UserService.bulkImportUsers(parseResult.validUsers);
 
     logger.info('Bulk import completed', {
       requestId,
-      successCount: importResult.successCount,
-      errorCount: importResult.errorCount,
-      totalUsers: importResult.users.length
+      successCount: importResult.success.length,
+      errorCount: importResult.failed.length,
+      totalUsers: importResult.success.length,
     });
 
     return createSuccessResponse({
       previewMode: false,
       summary: {
-        totalProcessed: importResult.successCount + importResult.errorCount,
-        successful: importResult.successCount,
-        errors: importResult.errorCount,
-        duplicates: 0 // Not supported in current interface
+        totalProcessed: importResult.success.length + importResult.failed.length,
+        successful: importResult.success.length,
+        errors: importResult.failed.length,
+        duplicates: 0, // Not supported in current interface
       },
       results: {
-        successful: importResult.users.map(user => ({
+        successful: importResult.success.map((user: any) => ({
           id: user.id,
           email: user.email,
           firstName: user.firstName,
           lastName: user.lastName,
-          role: user.role
+          role: user.role,
         })),
-        errors: importResult.errors,
-        duplicates: [] // Not supported in current interface
+        errors: importResult.failed,
+        duplicates: [], // Not supported in current interface
       },
-      csvErrors: parseResult.errors
-    }, 'Bulk import completed successfully', 200, requestId);
-
-  } catch (error) {
-    logger.error('Bulk import request failed', {
-      requestId,
-      error: (error as Error).message,
-      stack: (error as Error).stack
+      csvErrors: parseResult.errors,
     });
-    return handleError(error as Error, undefined, 500, requestId);
+  } catch (error) {
+    logger.error('Bulk import request failed', error as Error, {
+      requestId,
+    });
+    return handleError(error as Error);
   }
 };
 
@@ -239,7 +233,7 @@ async function parseCSVData(
     const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
     const requiredHeaders = ['firstname', 'lastname', 'email', 'role'];
     const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
-    
+
     if (missingHeaders.length > 0) {
       throw new Error(`Missing required CSV headers: ${missingHeaders.join(', ')}`);
     }
@@ -253,11 +247,11 @@ async function parseCSVData(
       if (!line) continue; // Skip empty lines
 
       const values = line.split(',').map(v => v.trim());
-      
+
       if (values.length !== headers.length) {
         errors.push({
           row: i + 1,
-          error: `Column count mismatch. Expected ${headers.length}, got ${values.length}`
+          error: `Column count mismatch. Expected ${headers.length}, got ${values.length}`,
         });
         continue;
       }
@@ -267,7 +261,7 @@ async function parseCSVData(
           firstName: values[headers.indexOf('firstname')],
           lastName: values[headers.indexOf('lastname')],
           email: values[headers.indexOf('email')].toLowerCase(),
-          role: values[headers.indexOf('role')].toLowerCase()
+          role: values[headers.indexOf('role')].toLowerCase(),
         };
 
         if (parentEmailIndex >= 0 && values[parentEmailIndex]) {
@@ -279,7 +273,7 @@ async function parseCSVData(
           errors.push({
             row: i + 1,
             email: userData.email,
-            error: 'Missing required fields (firstName, lastName, email, role)'
+            error: 'Missing required fields (firstName, lastName, email, role)',
           });
           continue;
         }
@@ -290,7 +284,7 @@ async function parseCSVData(
           errors.push({
             row: i + 1,
             email: userData.email,
-            error: 'Invalid email format'
+            error: 'Invalid email format',
           });
           continue;
         }
@@ -300,7 +294,7 @@ async function parseCSVData(
           errors.push({
             row: i + 1,
             email: userData.email,
-            error: `Invalid role: ${userData.role}. Valid roles: ${validRoles.join(', ')}`
+            error: `Invalid role: ${userData.role}. Valid roles: ${validRoles.join(', ')}`,
           });
           continue;
         }
@@ -310,34 +304,23 @@ async function parseCSVData(
           firstName: userData.firstName,
           lastName: userData.lastName,
           email: userData.email,
+          password: `temp${Math.random().toString(36).substring(2)}`, // Temporary password
           role: userData.role as any,
           schoolId,
-          isActive: true,
-          metadata: {
-            importedAt: new Date().toISOString(),
-            csvRow: i + 1
-          }
         };
 
-        // Handle parent relationship if specified
-        if (userData.parentEmail) {
-          createUserRequest.metadata.parentEmail = userData.parentEmail;
-        }
-
         validUsers.push(createUserRequest);
-
       } catch (rowError) {
         errors.push({
           row: i + 1,
-          error: `Processing error: ${(rowError as Error).message}`
+          error: `Processing error: ${(rowError as Error).message}`,
         });
       }
     }
-
   } catch (parseError) {
     errors.push({
       row: 0,
-      error: `CSV parsing error: ${(parseError as Error).message}`
+      error: `CSV parsing error: ${(parseError as Error).message}`,
     });
   }
 

@@ -12,51 +12,63 @@ export interface ServiceInitializationStatus {
 }
 export interface ServiceConfiguration {
     name: string;
-    initializeFunction: () => Promise<void>;
-    healthCheckFunction?: () => Promise<boolean>;
+    order: number;
+    required: boolean;
+    timeout: number;
+    retryEnabled: boolean;
+    maxRetries: number;
+    retryDelay: number;
+    healthCheckEnabled: boolean;
+    healthCheckInterval: number;
+    gracefulDegradationEnabled: boolean;
     dependencies?: string[];
-    timeout?: number;
-    retryAttempts?: number;
-    critical?: boolean;
-    gracefulDegradation?: boolean;
-    circuitBreaker?: boolean;
-}
-export declare const SERVICE_INITIALIZATION_ORDER: ServiceConfiguration[];
-export declare class ServiceInitializationService {
-    private static instance;
-    private initializationStatuses;
-    private isInitialized;
-    private startTime;
-    private endTime;
-    private totalDuration;
-    private constructor();
-    static getInstance(): ServiceInitializationService;
-    initializeServices(): Promise<void>;
-    private initializeService;
-    private initializeServiceWithRetry;
-    private checkDependencies;
-    private setupCircuitBreaker;
-    private setupGracefulDegradation;
-    private setupDegradedMode;
-    private validateCriticalServices;
-    private startHealthMonitoring;
-    getInitializationStatus(): Map<string, ServiceInitializationStatus>;
-    getFailedServices(): string[];
-    getReadyServices(): string[];
-    getDegradedServices(): string[];
-    isAllServicesInitialized(): boolean;
-    getInitializationSummary(): {
-        total: number;
-        ready: number;
-        failed: number;
-        degraded: number;
-        duration: number;
-        success: boolean;
+    circuitBreakerEnabled?: boolean;
+    circuitBreakerConfig?: {
+        threshold: number;
+        timeout: number;
+        resetTimeout: number;
     };
-    restartFailedServices(): Promise<void>;
-    shutdown(): Promise<void>;
-    private delay;
 }
-export declare const serviceInitializationService: ServiceInitializationService;
-export default serviceInitializationService;
+export declare class ServiceInitializationManager {
+    private static instance;
+    private readonly serviceStatuses;
+    private readonly retryService;
+    private isInitialized;
+    private readonly startupStart;
+    private constructor();
+    static getInstance(): ServiceInitializationManager;
+    initializeAllServices(customConfigs?: Record<string, Partial<ServiceConfiguration>>): Promise<void>;
+    private initializeService;
+    private initializeDatabaseService;
+    private initializeRedisService;
+    private initializeAuthService;
+    private initializePerformanceService;
+    private initializeCostMonitoringService;
+    private initializeBusinessMetricsService;
+    private performHealthCheck;
+    private startHealthMonitoring;
+    private validateDependencies;
+    private executeWithTimeout;
+    private updateServiceStatus;
+    private mergeConfigurations;
+    getServiceStatuses(): Map<string, ServiceInitializationStatus>;
+    getServiceStatus(serviceName: string): ServiceInitializationStatus | undefined;
+    getReadyServices(): ServiceInitializationStatus[];
+    getFailedServices(): ServiceInitializationStatus[];
+    getDegradedServices(): ServiceInitializationStatus[];
+    isAllServicesInitialized(): boolean;
+    isCriticalServicesReady(): boolean;
+    getSystemHealth(): {
+        status: 'healthy' | 'degraded' | 'unhealthy';
+        readyServices: number;
+        failedServices: number;
+        degradedServices: number;
+        totalServices: number;
+        uptime: number;
+    };
+    restartService(serviceName: string): Promise<void>;
+    shutdown(): Promise<void>;
+}
+declare const _default: ServiceInitializationManager;
+export default _default;
 //# sourceMappingURL=service-initialization.service.d.ts.map

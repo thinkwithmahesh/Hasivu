@@ -5,7 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deviceRegistrationHandler = void 0;
 const client_1 = require("@prisma/client");
-const logger_service_1 = require("../shared/logger.service");
+const logger_1 = require("../../utils/logger");
 const response_utils_1 = require("../shared/response.utils");
 const lambda_auth_middleware_1 = require("../../shared/middleware/lambda-auth.middleware");
 const joi_1 = __importDefault(require("joi"));
@@ -25,9 +25,15 @@ const deviceRegistrationSchema = joi_1.default.object({
         orderUpdates: joi_1.default.boolean().optional().default(true),
         paymentReminders: joi_1.default.boolean().optional().default(true),
         weeklyReports: joi_1.default.boolean().optional().default(true),
-        quietHoursStart: joi_1.default.string().pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
-        quietHoursEnd: joi_1.default.string().pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/).optional()
-    }).optional().default({})
+        quietHoursStart: joi_1.default.string()
+            .pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
+            .optional(),
+        quietHoursEnd: joi_1.default.string()
+            .pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
+            .optional(),
+    })
+        .optional()
+        .default({}),
 });
 const deviceUpdateSchema = joi_1.default.object({
     deviceToken: joi_1.default.string().min(10).max(500).optional(),
@@ -43,9 +49,13 @@ const deviceUpdateSchema = joi_1.default.object({
         orderUpdates: joi_1.default.boolean().optional(),
         paymentReminders: joi_1.default.boolean().optional(),
         weeklyReports: joi_1.default.boolean().optional(),
-        quietHoursStart: joi_1.default.string().pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
-        quietHoursEnd: joi_1.default.string().pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/).optional()
-    }).optional()
+        quietHoursStart: joi_1.default.string()
+            .pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
+            .optional(),
+        quietHoursEnd: joi_1.default.string()
+            .pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
+            .optional(),
+    }).optional(),
 });
 function generateDeviceId(userId, deviceToken) {
     const hash = crypto_1.default.createHash('sha256');
@@ -55,7 +65,7 @@ function generateDeviceId(userId, deviceToken) {
 async function registerMobileDevice(userId, deviceData) {
     const deviceId = generateDeviceId(userId, deviceData.deviceToken);
     const existingDevice = await prisma.userDevice.findUnique({
-        where: { id: deviceId }
+        where: { id: deviceId },
     });
     const now = new Date();
     if (existingDevice) {
@@ -74,9 +84,9 @@ async function registerMobileDevice(userId, deviceData) {
                     registrationMethod: 'api_update',
                     deviceName: deviceData.deviceName || null,
                     timezone: deviceData.timezone || null,
-                    language: deviceData.language || null
-                })
-            }
+                    language: deviceData.language || null,
+                }),
+            },
         });
         return updatedDevice;
     }
@@ -100,16 +110,16 @@ async function registerMobileDevice(userId, deviceData) {
                     initialVersion: deviceData.appVersion || 'unknown',
                     deviceName: deviceData.deviceName || null,
                     timezone: deviceData.timezone || null,
-                    language: deviceData.language || null
-                })
-            }
+                    language: deviceData.language || null,
+                }),
+            },
         });
         return newDevice;
     }
 }
 async function updateMobileDevice(deviceId, userId, updateData) {
     const existingDevice = await prisma.userDevice.findUnique({
-        where: { id: deviceId, userId }
+        where: { id: deviceId, userId },
     });
     if (!existingDevice) {
         throw new Error('Device not found or access denied');
@@ -140,9 +150,9 @@ async function updateMobileDevice(deviceId, userId, updateData) {
             metadata: JSON.stringify({
                 ...JSON.parse(existingDevice.metadata || '{}'),
                 lastUpdate: new Date().toISOString(),
-                updateMethod: 'api_update'
-            })
-        }
+                updateMethod: 'api_update',
+            }),
+        },
     });
     return updatedDevice;
 }
@@ -150,20 +160,20 @@ async function getDeviceNotificationStats(deviceId) {
     const sentCount = await prisma.notification.count({
         where: {
             data: { contains: deviceId },
-            status: 'sent'
-        }
+            status: 'sent',
+        },
     });
     const deliveredCount = await prisma.notification.count({
         where: {
             data: { contains: deviceId },
-            status: 'delivered'
-        }
+            status: 'delivered',
+        },
     });
     const failedCount = await prisma.notification.count({
         where: {
             data: { contains: deviceId },
-            status: 'failed'
-        }
+            status: 'failed',
+        },
     });
     let totalSent = sentCount;
     let totalDelivered = deliveredCount;
@@ -171,11 +181,11 @@ async function getDeviceNotificationStats(deviceId) {
     const lastNotification = await prisma.notification.findFirst({
         where: {
             data: {
-                contains: deviceId
-            }
+                contains: deviceId,
+            },
         },
         orderBy: { createdAt: 'desc' },
-        select: { createdAt: true }
+        select: { createdAt: true },
     });
     const deliveryRate = totalSent > 0 ? (totalDelivered / totalSent) * 100 : 0;
     return {
@@ -183,7 +193,7 @@ async function getDeviceNotificationStats(deviceId) {
         totalDelivered,
         totalFailed,
         lastNotificationAt: lastNotification?.createdAt,
-        deliveryRate: Math.round(deliveryRate * 100) / 100
+        deliveryRate: Math.round(deliveryRate * 100) / 100,
     };
 }
 async function formatDeviceResponse(device) {
@@ -209,12 +219,12 @@ async function formatDeviceResponse(device) {
         lastSeenAt: device.lastSeenAt,
         registeredAt: device.registeredAt,
         notificationSettings,
-        notificationStats
+        notificationStats,
     };
 }
 async function deactivateMobileDevice(deviceId, userId) {
     const device = await prisma.userDevice.findUnique({
-        where: { id: deviceId, userId }
+        where: { id: deviceId, userId },
     });
     if (!device) {
         throw new Error('Device not found or access denied');
@@ -226,9 +236,9 @@ async function deactivateMobileDevice(deviceId, userId) {
             metadata: JSON.stringify({
                 ...JSON.parse(device.metadata || '{}'),
                 deactivatedAt: new Date().toISOString(),
-                deactivationMethod: 'api_delete'
-            })
-        }
+                deactivationMethod: 'api_delete',
+            }),
+        },
     });
 }
 async function createDeviceAuditLog(deviceId, action, userId, details) {
@@ -242,21 +252,20 @@ async function createDeviceAuditLog(deviceId, action, userId, details) {
             createdById: userId,
             metadata: JSON.stringify({
                 action: `MOBILE_DEVICE_${action}`,
-                timestamp: new Date().toISOString()
-            })
-        }
+                timestamp: new Date().toISOString(),
+            }),
+        },
     });
 }
 const deviceRegistrationHandler = async (event, context) => {
-    const logger = logger_service_1.LoggerService.getInstance();
     const requestId = context.awsRequestId;
     const httpMethod = event.httpMethod;
     try {
-        logger.info('Mobile device registration request started', { requestId, httpMethod });
+        logger_1.logger.info('Mobile device registration request started', { requestId, httpMethod });
         const authResult = await (0, lambda_auth_middleware_1.authenticateLambda)(event);
         if (!authResult.success || !authResult.user) {
-            logger.warn('Authentication failed', { requestId, error: authResult.error });
-            return (0, response_utils_1.createErrorResponse)(401, 'Authentication failed');
+            logger_1.logger.warn('Authentication failed', { requestId, error: authResult.error });
+            return (0, response_utils_1.createErrorResponse)('AUTHENTICATION_FAILED', 'Authentication failed', 401);
         }
         const authenticatedUser = authResult.user;
         switch (httpMethod) {
@@ -269,17 +278,15 @@ const deviceRegistrationHandler = async (event, context) => {
             case 'GET':
                 return await handleGetDevices(event, requestId, authenticatedUser);
             default:
-                return (0, response_utils_1.createErrorResponse)(405, 'Method not allowed');
+                return (0, response_utils_1.createErrorResponse)('METHOD_NOT_ALLOWED', 'Method not allowed', 405);
         }
     }
     catch (error) {
-        logger.error('Mobile device registration failed', {
+        logger_1.logger.error('Mobile device registration failed', error instanceof Error ? error : new Error(String(error)), {
             requestId,
             httpMethod,
-            error: error.message,
-            stack: error.stack
         });
-        return (0, response_utils_1.handleError)(error, 'Failed to process device registration request');
+        return (0, response_utils_1.handleError)(error instanceof Error ? error : new Error(String(error)));
     }
     finally {
         await prisma.$disconnect();
@@ -287,94 +294,90 @@ const deviceRegistrationHandler = async (event, context) => {
 };
 exports.deviceRegistrationHandler = deviceRegistrationHandler;
 async function handleDeviceRegistration(event, requestId, authenticatedUser) {
-    const logger = logger_service_1.LoggerService.getInstance();
     const requestBody = JSON.parse(event.body || '{}');
     const { error, value: deviceData } = deviceRegistrationSchema.validate(requestBody);
     if (error) {
-        logger.warn('Invalid device registration data', { requestId, error: error.details });
-        return (0, response_utils_1.createErrorResponse)(400, 'Invalid request data', error.details);
+        logger_1.logger.warn('Invalid device registration data', { requestId, error: error.details });
+        return (0, response_utils_1.createErrorResponse)('INVALID_REQUEST', 'Invalid request data', 400, error.details);
     }
     const device = await registerMobileDevice(authenticatedUser.id, deviceData);
     await createDeviceAuditLog(device.id, 'REGISTER', authenticatedUser.id, {
         deviceType: device.deviceType,
         deviceModel: device.deviceModel,
-        appVersion: device.appVersion
+        appVersion: device.appVersion,
     });
     const deviceResponse = await formatDeviceResponse(device);
-    logger.info('Mobile device registered successfully', {
+    logger_1.logger.info('Mobile device registered successfully', {
         requestId,
         deviceId: device.id,
         deviceType: device.deviceType,
-        userId: authenticatedUser.id
+        userId: authenticatedUser.id,
     });
     return (0, response_utils_1.createSuccessResponse)({
         message: 'Mobile device registered successfully',
-        data: deviceResponse
+        data: deviceResponse,
     });
 }
 async function handleDeviceUpdate(event, requestId, authenticatedUser) {
-    const logger = logger_service_1.LoggerService.getInstance();
     const deviceId = event.pathParameters?.deviceId;
     if (!deviceId) {
-        return (0, response_utils_1.createErrorResponse)(400, 'Device ID is required');
+        return (0, response_utils_1.createErrorResponse)('INVALID_PARAMETERS', 'Device ID is required', 400);
     }
     const requestBody = JSON.parse(event.body || '{}');
     const { error, value: updateData } = deviceUpdateSchema.validate(requestBody);
     if (error) {
-        logger.warn('Invalid device update data', { requestId, error: error.details });
-        return (0, response_utils_1.createErrorResponse)(400, 'Invalid request data', error.details);
+        logger_1.logger.warn('Invalid device update data', { requestId, error: error.details });
+        return (0, response_utils_1.createErrorResponse)('INVALID_REQUEST', 'Invalid request data', 400, error.details);
     }
     const device = await updateMobileDevice(deviceId, authenticatedUser.id, updateData);
     await createDeviceAuditLog(deviceId, 'UPDATE', authenticatedUser.id, updateData);
     const deviceResponse = await formatDeviceResponse(device);
-    logger.info('Mobile device updated successfully', {
+    logger_1.logger.info('Mobile device updated successfully', {
         requestId,
         deviceId,
-        userId: authenticatedUser.id
+        userId: authenticatedUser.id,
     });
     return (0, response_utils_1.createSuccessResponse)({
         message: 'Mobile device updated successfully',
-        data: deviceResponse
+        data: deviceResponse,
     });
 }
 async function handleDeviceDeactivation(event, requestId, authenticatedUser) {
-    const logger = logger_service_1.LoggerService.getInstance();
     const deviceId = event.pathParameters?.deviceId;
     if (!deviceId) {
-        return (0, response_utils_1.createErrorResponse)(400, 'Device ID is required');
+        return (0, response_utils_1.createErrorResponse)('INVALID_PARAMETERS', 'Device ID is required', 400);
     }
     await deactivateMobileDevice(deviceId, authenticatedUser.id);
     await createDeviceAuditLog(deviceId, 'DEACTIVATE', authenticatedUser.id, {
         reason: 'user_requested',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
     });
-    logger.info('Mobile device deactivated successfully', {
+    logger_1.logger.info('Mobile device deactivated successfully', {
         requestId,
         deviceId,
-        userId: authenticatedUser.id
+        userId: authenticatedUser.id,
     });
     return (0, response_utils_1.createSuccessResponse)({
-        message: 'Mobile device deactivated successfully'
+        message: 'Mobile device deactivated successfully',
     });
 }
 async function handleGetDevices(event, requestId, authenticatedUser) {
-    const logger = logger_service_1.LoggerService.getInstance();
     const devices = await prisma.userDevice.findMany({
         where: {
             userId: authenticatedUser.id,
-            isActive: true
+            isActive: true,
         },
-        orderBy: { lastSeen: 'desc' }
+        orderBy: { lastSeen: 'desc' },
     });
     const deviceResponses = await Promise.all(devices.map(device => formatDeviceResponse(device)));
-    logger.info('User devices retrieved successfully', {
+    logger_1.logger.info('User devices retrieved successfully', {
         requestId,
         deviceCount: devices.length,
-        userId: authenticatedUser.id
+        userId: authenticatedUser.id,
     });
     return (0, response_utils_1.createSuccessResponse)({
         message: 'Mobile devices retrieved successfully',
-        data: deviceResponses
+        data: deviceResponses,
     });
 }
 //# sourceMappingURL=device-registration.js.map

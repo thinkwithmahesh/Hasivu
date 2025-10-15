@@ -17,8 +17,8 @@ async function getRfidCardDetails(cardNumber) {
                     lastName: true,
                     email: true,
                     role: true,
-                    isActive: true
-                }
+                    isActive: true,
+                },
             },
             deliveryVerifications: {
                 orderBy: { verifiedAt: 'desc' },
@@ -28,12 +28,12 @@ async function getRfidCardDetails(cardNumber) {
                         select: {
                             id: true,
                             name: true,
-                            location: true
-                        }
-                    }
-                }
-            }
-        }
+                            location: true,
+                        },
+                    },
+                },
+            },
+        },
     });
     if (!card) {
         throw new Error('RFID card not found');
@@ -45,36 +45,34 @@ async function getUsageStatistics(cardId) {
     const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
     const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const totalVerifications = await prisma.deliveryVerification.count({
-        where: { cardId }
+        where: { cardId },
     });
     const verificationsThisMonth = await prisma.deliveryVerification.count({
         where: {
             cardId,
-            verifiedAt: { gte: oneMonthAgo }
-        }
+            verifiedAt: { gte: oneMonthAgo },
+        },
     });
     const verificationsThisWeek = await prisma.deliveryVerification.count({
         where: {
             cardId,
-            verifiedAt: { gte: oneWeekAgo }
-        }
+            verifiedAt: { gte: oneWeekAgo },
+        },
     });
     const lastVerification = await prisma.deliveryVerification.findFirst({
         where: { cardId },
         orderBy: { verifiedAt: 'desc' },
-        select: { verifiedAt: true }
+        select: { verifiedAt: true },
     });
     const firstVerification = await prisma.deliveryVerification.findFirst({
         where: { cardId },
         orderBy: { verifiedAt: 'asc' },
-        select: { verifiedAt: true }
+        select: { verifiedAt: true },
     });
     const daysSinceFirstUse = firstVerification?.verifiedAt
         ? Math.floor((now.getTime() - firstVerification.verifiedAt.getTime()) / (1000 * 60 * 60 * 24))
         : null;
-    const averageVerificationsPerDay = daysSinceFirstUse && daysSinceFirstUse > 0
-        ? totalVerifications / daysSinceFirstUse
-        : 0;
+    const averageVerificationsPerDay = daysSinceFirstUse && daysSinceFirstUse > 0 ? totalVerifications / daysSinceFirstUse : 0;
     return {
         totalVerifications,
         verificationsThisMonth,
@@ -82,7 +80,7 @@ async function getUsageStatistics(cardId) {
         lastVerification: lastVerification?.verifiedAt || null,
         firstVerification: firstVerification?.verifiedAt || null,
         daysSinceFirstUse,
-        averageVerificationsPerDay: Math.round(averageVerificationsPerDay * 100) / 100
+        averageVerificationsPerDay: Math.round(averageVerificationsPerDay * 100) / 100,
     };
 }
 function canViewCard(requestingUser, card) {
@@ -128,15 +126,15 @@ async function createAccessAuditLog(cardId, userId, cardNumber) {
             changes: JSON.stringify({
                 cardNumber,
                 accessedBy: userId,
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
             }),
             userId,
             createdById: userId,
             metadata: JSON.stringify({
                 action: 'RFID_CARD_ACCESSED',
-                timestamp: new Date().toISOString()
-            })
-        }
+                timestamp: new Date().toISOString(),
+            }),
+        },
     });
 }
 const getRfidCardHandler = async (event, context) => {
@@ -148,11 +146,11 @@ const getRfidCardHandler = async (event, context) => {
         const cardNumber = event.pathParameters?.cardNumber;
         if (!cardNumber) {
             logger.warn('Missing card number parameter', { requestId });
-            return (0, response_utils_1.createErrorResponse)(400, 'Card number is required');
+            return (0, response_utils_1.createErrorResponse)('VALIDATION_ERROR', 'Card number is required', 400);
         }
         if (!/^RFID-[A-Z0-9-]+$/.test(cardNumber)) {
             logger.warn('Invalid card number format', { requestId, cardNumber });
-            return (0, response_utils_1.createErrorResponse)(400, 'Invalid card number format');
+            return (0, response_utils_1.createErrorResponse)('VALIDATION_ERROR', 'Invalid card number format', 400);
         }
         const card = await getRfidCardDetails(cardNumber);
         if (!canViewCard(authenticatedUser.user, card)) {
@@ -160,9 +158,9 @@ const getRfidCardHandler = async (event, context) => {
                 requestId,
                 userId: authenticatedUser.user?.id,
                 cardNumber,
-                userRole: authenticatedUser.user?.role
+                userRole: authenticatedUser.user?.role,
             });
-            return (0, response_utils_1.createErrorResponse)(403, 'Insufficient permissions to view this RFID card');
+            return (0, response_utils_1.createErrorResponse)('FORBIDDEN', 'Insufficient permissions to view this RFID card', 403);
         }
         const statistics = await getUsageStatistics(card.id);
         let metadata = {};
@@ -188,7 +186,7 @@ const getRfidCardHandler = async (event, context) => {
                 status: verification.status,
                 location: verification.location,
                 orderId: verification.orderId,
-                reader: verification.reader
+                reader: verification.reader,
             };
         });
         const cardStatus = determineCardStatus(card);
@@ -208,26 +206,24 @@ const getRfidCardHandler = async (event, context) => {
             student: card.student,
             school: card.school,
             statistics,
-            recentVerifications
+            recentVerifications,
         };
-        await createAccessAuditLog(card.id, authenticatedUser.id, cardNumber);
+        await createAccessAuditLog(card.id, authenticatedUser.userId, cardNumber);
         logger.info('RFID card retrieved successfully', {
             requestId,
             cardId: card.id,
             cardNumber,
             accessedBy: authenticatedUser.email,
-            cardStatus
+            cardStatus,
         });
         return (0, response_utils_1.createSuccessResponse)({
             message: 'RFID card retrieved successfully',
-            data: response
+            data: response,
         });
     }
     catch (error) {
-        logger.error('Failed to retrieve RFID card', {
+        logger.error('Failed to retrieve RFID card', error instanceof Error ? error : new Error(String(error)), {
             requestId,
-            error: error.message,
-            stack: error.stack
         });
         return (0, response_utils_1.handleError)(error, 'Failed to retrieve RFID card');
     }

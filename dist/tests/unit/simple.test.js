@@ -1,3 +1,4 @@
+"use strict";
 describe('Test Infrastructure Validation', () => {
     test('should run basic test successfully', () => {
         expect(1 + 1).toBe(2);

@@ -1,7 +1,6 @@
 ![AI Agency Framework Cover](https://ppl-ai-code-interpreter-files.s3.amazonaws.com/web/direct-files/3fc80c6f0123aa4e91e0579837f9ce03/494485cd-0f6b-47d5-a37f-5aa1dd51b3fa/e3e49cdc.png)
 
-
-# AI Agency Framework + Admin Console 
+# AI Agency Framework + Admin Console
 
 ### Comprehensive Research Report (2025)
 
@@ -9,18 +8,17 @@
 
 ![Table of Contents](https://ppl-ai-code-interpreter-files.s3.amazonaws.com/web/direct-files/3fc80c6f0123aa4e91e0579837f9ce03/6b4df675-e7f0-4093-9500-d99a121a2dce/64a2672b.png)
 
-
 ## Table of Contents
 
-1. Executive Summaries  
-2. Market Research & Validation  
-3. Market Opportunity & Sizing  
-4. User Personas & JTBD  
-5. Competitive Analysis  
-6. Technical Architecture & Feasibility  
-7. Business Model & GTM Strategy  
-8. Industry Ecosystem, Partnerships, & Compliance  
-9. Risk Assessment & Feasibility  
+1. Executive Summaries
+2. Market Research & Validation
+3. Market Opportunity & Sizing
+4. User Personas & JTBD
+5. Competitive Analysis
+6. Technical Architecture & Feasibility
+7. Business Model & GTM Strategy
+8. Industry Ecosystem, Partnerships, & Compliance
+9. Risk Assessment & Feasibility
 10. Appendix, References, Image Table
 
 ---
@@ -41,29 +39,35 @@
 
 _This section synthesizes the findings from each area of the research process. See individual sections for drill-down._
 
-## Market: 
+## Market:
+
 - TAM: $14.3B, SAM: $2.2B, SOM Early: $4M, SOM Mature: $18M.
 - Fastest growth in SME segment (39.9% CAGR).
 - Clear support for unified platform + human-in-the-loop.
 
-## Users: 
+## Users:
+
 - Primary persona: Individual developer drowning in tool context-switching (7 hours/day lost).
 - Agency leads and enterprise innovators as parallel segments.
 - Urgent need for integration, context unification, and quality control.
 
-## Competitive: 
+## Competitive:
+
 - Competing products (AutoGen, CrewAI, LangGraph...) are strong but none offer a truly unified developer interface plus HITL.
 - SMB pricing gap, enterprise feature gaps, and fragmented workflow coverage are biggest opportunities.
 
-## Technical: 
+## Technical:
+
 - MCP architecture enables a unique orchestration layer.
 - Token cost and integration complexity are top technical risks; resolved with caching, phased rollout, and LLM-provider redundancy.
 
-## GTM & Business: 
+## GTM & Business:
+
 - Tiered SaaS/subscription with usage overage, starting freemium.
 - GTM combines product-led, AI-powered automation, partner co-selling, and developer community growth.
 
-## Risk: 
+## Risk:
+
 - Top risks: vendor lock-in, explosive AI costs, agent downtime, data/IP compliance.
 - Mitigation: multi-provider, phased deployments, human-in-the-loop, built-in compliance.
 
@@ -74,17 +78,20 @@ _This section synthesizes the findings from each area of the research process. S
 # 2. Market Research & Validation
 
 ## Research Objective
+
 **Primary Goal:** To validate key assumptions about the AI Agency Framework and Admin Console's market fit, user value, and technical feasibility before significant development begins.
 
-**Key Decisions this Research will Inform:**  
-- Should we proceed with the current MVP scope?  
-- Which core features resonate most with our target users?  
+**Key Decisions this Research will Inform:**
+
+- Should we proceed with the current MVP scope?
+- Which core features resonate most with our target users?
 - Are our technical assumptions and architecture viable for a production system?
 
 **Success Criteria:**  
 This research will be successful if it provides clear, data-backed answers to the primary questions, allowing us to confidently adjust the project roadmap or proceed with the current plan.
 
 ## Background Context
+
 The "AI Agency Framework + Admin Console" aims to solve the problem of fragmented AI development by providing a unified platform. It leverages technologies like the BMAD Method, Claude Code, Archon, Playwright, and n8n to offer a structured, end-to-end development workflow.
 
 ## Research Questions
@@ -125,24 +132,29 @@ The "AI Agency Framework + Admin Console" aims to solve the problem of fragmente
 ## Expected Deliverables
 
 ### Executive Summary
+
 - Key findings and insights from the research.
 - A clear "Go/No-Go" recommendation for the current MVP plan.
 - Top 3 risks and proposed mitigation strategies.
 
 ### Detailed Analysis
+
 - A detailed report on user pain points and needs.
 - A prioritized list of MVP features based on user feedback.
 - An assessment of the project's technical and business viability.
 
 ### Supporting Materials
+
 - Interview transcripts and notes.
 - Competitive feature comparison table.
 - A revised list of core assumptions.
 
 ## Success Criteria
+
 The research will be successful if it provides the necessary insights to either validate our current plan or make informed, strategic adjustments to the MVP scope and technical approach.
 
 ## Timeline and Priority
+
 **Priority:** High. This is a critical first step for the project.
 
 ---
@@ -187,11 +199,11 @@ The AI agent framework market presents an exceptional opportunity, with the Tota
 
 ## Market Sizing Analysis: TAM-SAM-SOM
 
-| Segment     | Market Size | Model                    | Growth Rate | Willingness to Pay |
-|-------------|-------------|--------------------------|-------------|--------------------|
-| Enterprise  | $10.0B      | 200,000 × $50,000        | 42.0% CAGR  | $50,000            |
-| SME         | $1.6B       | 330,000 × $5,000         | 39.9% CAGR  | $5,000             |
-| Developers  | $2.7B       | 1.3M × $2,000            | 37.8% CAGR  | $2,000             |
+| Segment    | Market Size | Model             | Growth Rate | Willingness to Pay |
+| ---------- | ----------- | ----------------- | ----------- | ------------------ |
+| Enterprise | $10.0B      | 200,000 × $50,000 | 42.0% CAGR  | $50,000            |
+| SME        | $1.6B       | 330,000 × $5,000  | 39.9% CAGR  | $5,000             |
+| Developers | $2.7B       | 1.3M × $2,000     | 37.8% CAGR  | $2,000             |
 
 - **TAM:** $14.3B (Total Addressable)
 - **SAM:** $2.2B (Serviceable, 35% geo, 44% adoption rate)
@@ -208,11 +220,12 @@ The AI agent framework market presents an exceptional opportunity, with the Tota
 - **Adoption Barriers:** Low (fast decisions)
 - **Competition:** Underserved
 
-**SME Advantages:**  
-- 91% see revenue boost from AI adoption  
-- 78% view AI as game-changing for their business  
-- Fast decision cycles (1-3 months)  
-- Lower competition from established players  
+**SME Advantages:**
+
+- 91% see revenue boost from AI adoption
+- 78% view AI as game-changing for their business
+- Fast decision cycles (1-3 months)
+- Lower competition from established players
 - Scalable revenue with higher conversion potential
 
 ---
@@ -223,10 +236,11 @@ The AI agent framework market presents an exceptional opportunity, with the Tota
 - **Phase 2:** 50 enterprise customers at $50K avg = $2.5M ARR
 - **Phase 3:** APAC expansion, 2,000+ customers = $15M+ ARR
 
-**Channels:**  
-- Product-led growth  
-- Developer community  
-- Partnerships with SME-focused consultants  
+**Channels:**
+
+- Product-led growth
+- Developer community
+- Partnerships with SME-focused consultants
 - Tiered pricing: Freemium → $99-499/month tiers
 
 ---
@@ -277,10 +291,11 @@ Secondary: Agency Team Lead
 - Collaborate/team: 2.7/5
 - Maintain flow: 2.3/5 (biggest opportunity)
 
-**Pain Point Rankings:**  
-1. Context switching (7h/day)  
-2. Quality inconsistency  
-3. Integration complexity  
+**Pain Point Rankings:**
+
+1. Context switching (7h/day)
+2. Quality inconsistency
+3. Integration complexity
 4. Lack of oversight
 
 ---
@@ -294,12 +309,12 @@ Secondary: Agency Team Lead
 
 ## SWOT/Feature Table
 
-| Competitor  | Strength              | Weakness                | Target     | Price Model          |
-|-------------|-----------------------|-------------------------|------------|----------------------|
-| AutoGen     | Customization, Open   | Usability, Enterprise   | Research   | Free, infra-cost     |
-| CrewAI      | Team, Docs, REL       | Pricing, Enterprise     | SMB teams  | $99-1000+/mo         |
-| LangGraph   | Technical, LangChain  | Complexity              | Devs       | Free + $39+/mo       |
-| Vertex AI   | Cloud, Scale          | Lock-in, Features       | Enterprise | Usage                |
+| Competitor | Strength             | Weakness              | Target     | Price Model      |
+| ---------- | -------------------- | --------------------- | ---------- | ---------------- |
+| AutoGen    | Customization, Open  | Usability, Enterprise | Research   | Free, infra-cost |
+| CrewAI     | Team, Docs, REL      | Pricing, Enterprise   | SMB teams  | $99-1000+/mo     |
+| LangGraph  | Technical, LangChain | Complexity            | Devs       | Free + $39+/mo   |
+| Vertex AI  | Cloud, Scale         | Lock-in, Features     | Enterprise | Usage            |
 
 ---
 
@@ -317,13 +332,13 @@ Secondary: Agency Team Lead
 
 ## Build-vs-Buy Table
 
-| Component  | Strategy      | Notes                       |
-|------------|--------------|-----------------------------|
-| Claude+MCP | BUILD_WITH    | Unique, central to product  |
-| BMAD       | BUILD_WITH    | Proven, open, extensible    |
-| Archon     | BUILD_ON      | Orchestration, add security |
-| n8n        | BUILD_WITH    | 400+ integrations           |
-| TestSprite | EVALUATE      | 90% effort reduction claim  |
+| Component  | Strategy   | Notes                       |
+| ---------- | ---------- | --------------------------- |
+| Claude+MCP | BUILD_WITH | Unique, central to product  |
+| BMAD       | BUILD_WITH | Proven, open, extensible    |
+| Archon     | BUILD_ON   | Orchestration, add security |
+| n8n        | BUILD_WITH | 400+ integrations           |
+| TestSprite | EVALUATE   | 90% effort reduction claim  |
 
 ---
 
@@ -358,37 +373,38 @@ Secondary: Agency Team Lead
 - **Market risk:** Focused MVP, early feedback, pivot path
 
 ---
+
 Market Sizing Table (TAM-SAM-SOM)
 text
-| Segment     | Market Size | Model                    | Growth Rate | Willingness to Pay |
+| Segment | Market Size | Model | Growth Rate | Willingness to Pay |
 |-------------|-------------|--------------------------|-------------|--------------------|
-| Enterprise  | $10.0B      | 200,000 × $50,000        | 42.0% CAGR  | $50,000            |
-| SME         | $1.6B       | 330,000 × $5,000         | 39.9% CAGR  | $5,000             |
-| Developers  | $2.7B       | 1.3M × $2,000            | 37.8% CAGR  | $2,000             |
+| Enterprise | $10.0B | 200,000 × $50,000 | 42.0% CAGR | $50,000 |
+| SME | $1.6B | 330,000 × $5,000 | 39.9% CAGR | $5,000 |
+| Developers | $2.7B | 1.3M × $2,000 | 37.8% CAGR | $2,000 |
 Competitor SWOT & Feature Comparison
 text
-| Competitor  | Strength              | Weakness                | Target     | Price Model          |
+| Competitor | Strength | Weakness | Target | Price Model |
 |-------------|-----------------------|-------------------------|------------|----------------------|
-| AutoGen     | Customization, Open   | Usability, Enterprise   | Research   | Free, infra-cost     |
-| CrewAI      | Team, Docs, REL       | Pricing, Enterprise     | SMB teams  | $99-1000+/mo         |
-| LangGraph   | Technical, LangChain  | Complexity              | Devs       | Free + $39+/mo       |
-| Vertex AI   | Cloud, Scale          | Lock-in, Features       | Enterprise | Usage                |
+| AutoGen | Customization, Open | Usability, Enterprise | Research | Free, infra-cost |
+| CrewAI | Team, Docs, REL | Pricing, Enterprise | SMB teams | $99-1000+/mo |
+| LangGraph | Technical, LangChain | Complexity | Devs | Free + $39+/mo |
+| Vertex AI | Cloud, Scale | Lock-in, Features | Enterprise | Usage |
 Build-vs-Buy Decision
 text
-| Component  | Strategy      | Notes                       |
+| Component | Strategy | Notes |
 |------------|--------------|-----------------------------|
-| Claude+MCP | BUILD_WITH    | Unique, central to product  |
-| BMAD       | BUILD_WITH    | Proven, open, extensible    |
-| Archon     | BUILD_ON      | Orchestration, add security |
-| n8n        | BUILD_WITH    | 400+ integrations           |
-| TestSprite | EVALUATE      | 90% effort reduction claim  |
+| Claude+MCP | BUILD_WITH | Unique, central to product |
+| BMAD | BUILD_WITH | Proven, open, extensible |
+| Archon | BUILD_ON | Orchestration, add security |
+| n8n | BUILD_WITH | 400+ integrations |
+| TestSprite | EVALUATE | 90% effort reduction claim |
 Persona Feature/Impact Table
 text
-| Persona            | Key Pain Point                 | Impact          | Willingness to Pay |
+| Persona | Key Pain Point | Impact | Willingness to Pay |
 |--------------------|-------------------------------|-----------------|--------------------|
-| Individual Dev     | Context switching (7h/day)    | Extreme         | $200/mo            |
-| Agency Team Lead   | Team tool misalignment        | High            | $500/mo/team       |
-| Enterprise Lead    | Governance/compliance gaps    | High            | $2,000/mo/team     |
+| Individual Dev | Context switching (7h/day) | Extreme | $200/mo |
+| Agency Team Lead | Team tool misalignment | High | $500/mo/team |
+| Enterprise Lead | Governance/compliance gaps | High | $2,000/mo/team |
 Extracted Chart and Image URLs
 You can insert these in Markdown (as `:
 
@@ -409,6 +425,5 @@ Quote Banner:
 ``
 
 Section Divider:
+
 # [END]
-
-

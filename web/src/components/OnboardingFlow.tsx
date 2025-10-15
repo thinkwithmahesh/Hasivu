@@ -1,10 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  ArrowRight, ArrowLeft, Building, Users, CreditCard, 
-  Radio, Settings, Shield, 
-  Clock, CheckCircle, Loader2,
-  Download, Eye, Star, Sparkles
+import {
+  ArrowRight,
+  ArrowLeft,
+  Building,
+  Users,
+  CreditCard,
+  Radio,
+  Settings,
+  Shield,
+  Clock,
+  CheckCircle,
+  Loader2,
+  Download,
+  Eye,
+  Star,
+  Sparkles,
 } from 'lucide-react';
 import { hasivuApiService } from '../services/hasivu-api.service';
 import { toast } from 'react-hot-toast';
@@ -57,9 +68,9 @@ interface RFIDSetup {
   distributionMethod: 'bulk' | 'individual' | 'gradual';
 }
 
-const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> = ({ 
-  onComplete, 
-  onSkip 
+const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> = ({
+  onComplete,
+  onSkip,
 }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -74,32 +85,32 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
     website: '',
     studentCount: 0,
     lunchProgram: true,
-    currentSystem: 'manual'
+    currentSystem: 'manual',
   });
-  
+
   const [userSetup, setUserSetup] = useState<UserSetup>({
     firstName: '',
     lastName: '',
     role: 'admin',
     email: '',
     phone: '',
-    department: ''
+    department: '',
   });
-  
+
   const [paymentConfig, setPaymentConfig] = useState<PaymentConfig>({
     acceptPayments: true,
     paymentMethods: ['card', 'parent_account'],
     minimumBalance: 5,
     autoReload: false,
-    reloadAmount: 25
+    reloadAmount: 25,
   });
-  
+
   const [rfidSetup, setRFIDSetup] = useState<RFIDSetup>({
     enableRFID: true,
     readerCount: 3,
     cardQuantity: 0,
     locations: [],
-    distributionMethod: 'gradual'
+    distributionMethod: 'gradual',
   });
 
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
@@ -109,10 +120,10 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
     {
       id: 'welcome',
       title: 'Welcome to HASIVU',
-      description: 'Let\'s get your school set up with our AI-powered food delivery system',
+      description: "Let's get your school set up with our AI-powered food delivery system",
       icon: Sparkles,
       required: true,
-      estimatedTime: '2 min'
+      estimatedTime: '2 min',
     },
     {
       id: 'school_info',
@@ -120,7 +131,7 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
       description: 'Tell us about your school and current setup',
       icon: Building,
       required: true,
-      estimatedTime: '5 min'
+      estimatedTime: '5 min',
     },
     {
       id: 'user_setup',
@@ -128,7 +139,7 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
       description: 'Set up your administrator account and permissions',
       icon: Users,
       required: true,
-      estimatedTime: '3 min'
+      estimatedTime: '3 min',
     },
     {
       id: 'payment_config',
@@ -136,7 +147,7 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
       description: 'Configure payment methods and account settings',
       icon: CreditCard,
       required: true,
-      estimatedTime: '4 min'
+      estimatedTime: '4 min',
     },
     {
       id: 'rfid_setup',
@@ -144,7 +155,7 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
       description: 'Configure RFID cards and reader locations',
       icon: Radio,
       required: true,
-      estimatedTime: '6 min'
+      estimatedTime: '6 min',
     },
     {
       id: 'integration',
@@ -152,7 +163,7 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
       description: 'Connect with existing systems and import data',
       icon: Settings,
       required: false,
-      estimatedTime: '8 min'
+      estimatedTime: '8 min',
     },
     {
       id: 'security',
@@ -160,7 +171,7 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
       description: 'Set up security policies and compliance settings',
       icon: Shield,
       required: true,
-      estimatedTime: '5 min'
+      estimatedTime: '5 min',
     },
     {
       id: 'completion',
@@ -168,21 +179,24 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
       description: 'Your HASIVU system is ready to go!',
       icon: CheckCircle,
       required: true,
-      estimatedTime: '2 min'
-    }
+      estimatedTime: '2 min',
+    },
   ];
 
   // Auto-save progress
   useEffect(() => {
     const saveProgress = () => {
-      localStorage.setItem('hasivu_onboarding_progress', JSON.stringify({
-        currentStep,
-        schoolInfo,
-        userSetup,
-        paymentConfig,
-        rfidSetup,
-        completedSteps: Array.from(completedSteps)
-      }));
+      localStorage.setItem(
+        'hasivu_onboarding_progress',
+        JSON.stringify({
+          currentStep,
+          schoolInfo,
+          userSetup,
+          paymentConfig,
+          rfidSetup,
+          completedSteps: Array.from(completedSteps),
+        })
+      );
     };
 
     const timer = setTimeout(saveProgress, 1000);
@@ -202,7 +216,7 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
         setRFIDSetup(progress.rfidSetup || rfidSetup);
         setCompletedSteps(new Set(progress.completedSteps || []));
       } catch (error) {
-        console.error('Failed to load onboarding progress:', error);
+        // Error handled silently
       }
     }
   }, []);
@@ -215,19 +229,21 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
         if (!schoolInfo.name.trim()) newErrors.schoolName = 'School name is required';
         if (!schoolInfo.email.trim()) newErrors.schoolEmail = 'School email is required';
         if (!schoolInfo.phone.trim()) newErrors.schoolPhone = 'School phone is required';
-        if (schoolInfo.studentCount <= 0) newErrors.studentCount = 'Student count must be greater than 0';
+        if (schoolInfo.studentCount <= 0)
+          newErrors.studentCount = 'Student count must be greater than 0';
         break;
-        
+
       case 'user_setup':
         if (!userSetup.firstName.trim()) newErrors.firstName = 'First name is required';
         if (!userSetup.lastName.trim()) newErrors.lastName = 'Last name is required';
         if (!userSetup.email.trim()) newErrors.userEmail = 'Email is required';
         break;
-        
+
       case 'rfid_setup':
         if (rfidSetup.enableRFID) {
           if (rfidSetup.readerCount <= 0) newErrors.readerCount = 'At least 1 reader required';
-          if (rfidSetup.locations.length === 0) newErrors.locations = 'At least 1 location required';
+          if (rfidSetup.locations.length === 0)
+            newErrors.locations = 'At least 1 location required';
         }
         break;
     }
@@ -240,20 +256,19 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
     if (!validateStep(currentStep)) return;
 
     setIsLoading(true);
-    
+
     try {
       // Save current step data to backend
       await saveStepData(currentStep);
-      
+
       setCompletedSteps(prev => new Set([...prev, currentStep]));
-      
+
       if (currentStep < steps.length - 1) {
         setCurrentStep(currentStep + 1);
       } else {
         await completeOnboarding();
       }
     } catch (error) {
-      console.error('Failed to save step:', error);
       toast.error('Failed to save progress. Please try again.');
     } finally {
       setIsLoading(false);
@@ -268,7 +283,7 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
 
   const saveStepData = async (stepIndex: number) => {
     const stepId = steps[stepIndex].id;
-    
+
     switch (stepId) {
       case 'school_info':
         await hasivuApiService.updateSchoolInfo(schoolInfo);
@@ -291,14 +306,13 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
         schoolInfo,
         userSetup,
         paymentConfig,
-        rfidSetup
+        rfidSetup,
       });
-      
+
       localStorage.removeItem('hasivu_onboarding_progress');
       toast.success('Onboarding completed successfully!');
       onComplete();
     } catch (error) {
-      console.error('Failed to complete onboarding:', error);
       toast.error('Failed to complete setup. Please try again.');
     }
   };
@@ -324,8 +338,8 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
         </div>
         <h2 className="text-3xl font-bold text-gray-900">Welcome to HASIVU!</h2>
         <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-          We're excited to help you transform your school's food service with our AI-powered delivery platform. 
-          This quick setup will get you running in under 30 minutes.
+          We're excited to help you transform your school's food service with our AI-powered
+          delivery platform. This quick setup will get you running in under 30 minutes.
         </p>
       </div>
 
@@ -335,13 +349,13 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
           <h3 className="font-semibold text-gray-900 mb-2">99.7% Fraud Prevention</h3>
           <p className="text-sm text-gray-600">Advanced AI protects every transaction</p>
         </div>
-        
+
         <div className="bg-green-50 rounded-lg p-6 text-center">
           <Radio className="w-8 h-8 text-green-600 mx-auto mb-3" />
           <h3 className="font-semibold text-gray-900 mb-2">RFID Verification</h3>
           <p className="text-sm text-gray-600">Instant student identification and delivery</p>
         </div>
-        
+
         <div className="bg-purple-50 rounded-lg p-6 text-center">
           <Clock className="w-8 h-8 text-purple-600 mx-auto mb-3" />
           <h3 className="font-semibold text-gray-900 mb-2">8-Minute Average</h3>
@@ -354,7 +368,9 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
           <Star className="w-5 h-5 text-yellow-600" />
           <div className="text-left">
             <p className="font-medium text-gray-900">30-Day Free Trial</p>
-            <p className="text-sm text-gray-600">Full access to all features, no commitment required</p>
+            <p className="text-sm text-gray-600">
+              Full access to all features, no commitment required
+            </p>
           </div>
         </div>
       </div>
@@ -379,7 +395,7 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
           <input
             type="text"
             value={schoolInfo.name}
-            onChange={(e) => setSchoolInfo(prev => ({ ...prev, name: e.target.value }))}
+            onChange={e => setSchoolInfo(prev => ({ ...prev, name: e.target.value }))}
             className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
               errors.schoolName ? 'border-red-500' : 'border-gray-300'
             }`}
@@ -393,13 +409,17 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
           <input
             type="number"
             value={schoolInfo.studentCount || ''}
-            onChange={(e) => setSchoolInfo(prev => ({ ...prev, studentCount: parseInt(e.target.value) || 0 }))}
+            onChange={e =>
+              setSchoolInfo(prev => ({ ...prev, studentCount: parseInt(e.target.value) || 0 }))
+            }
             className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
               errors.studentCount ? 'border-red-500' : 'border-gray-300'
             }`}
             placeholder="1200"
           />
-          {errors.studentCount && <p className="text-sm text-red-600 mt-1">{errors.studentCount}</p>}
+          {errors.studentCount && (
+            <p className="text-sm text-red-600 mt-1">{errors.studentCount}</p>
+          )}
         </div>
 
         <div className="md:col-span-2">
@@ -407,7 +427,7 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
           <input
             type="text"
             value={schoolInfo.address}
-            onChange={(e) => setSchoolInfo(prev => ({ ...prev, address: e.target.value }))}
+            onChange={e => setSchoolInfo(prev => ({ ...prev, address: e.target.value }))}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="123 Education Street"
           />
@@ -418,7 +438,7 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
           <input
             type="text"
             value={schoolInfo.city}
-            onChange={(e) => setSchoolInfo(prev => ({ ...prev, city: e.target.value }))}
+            onChange={e => setSchoolInfo(prev => ({ ...prev, city: e.target.value }))}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="Springfield"
           />
@@ -428,7 +448,7 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
           <label className="block text-sm font-medium text-gray-700 mb-2">State</label>
           <select
             value={schoolInfo.state}
-            onChange={(e) => setSchoolInfo(prev => ({ ...prev, state: e.target.value }))}
+            onChange={e => setSchoolInfo(prev => ({ ...prev, state: e.target.value }))}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             <option value="">Select State</option>
@@ -445,7 +465,7 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
           <input
             type="tel"
             value={schoolInfo.phone}
-            onChange={(e) => setSchoolInfo(prev => ({ ...prev, phone: e.target.value }))}
+            onChange={e => setSchoolInfo(prev => ({ ...prev, phone: e.target.value }))}
             className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
               errors.schoolPhone ? 'border-red-500' : 'border-gray-300'
             }`}
@@ -459,7 +479,7 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
           <input
             type="email"
             value={schoolInfo.email}
-            onChange={(e) => setSchoolInfo(prev => ({ ...prev, email: e.target.value }))}
+            onChange={e => setSchoolInfo(prev => ({ ...prev, email: e.target.value }))}
             className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
               errors.schoolEmail ? 'border-red-500' : 'border-gray-300'
             }`}
@@ -472,7 +492,7 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
           <label className="block text-sm font-medium text-gray-700 mb-2">Current System</label>
           <select
             value={schoolInfo.currentSystem}
-            onChange={(e) => setSchoolInfo(prev => ({ ...prev, currentSystem: e.target.value }))}
+            onChange={e => setSchoolInfo(prev => ({ ...prev, currentSystem: e.target.value }))}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             <option value="manual">Manual/Cash Only</option>
@@ -487,7 +507,7 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
             <input
               type="checkbox"
               checked={schoolInfo.lunchProgram}
-              onChange={(e) => setSchoolInfo(prev => ({ ...prev, lunchProgram: e.target.checked }))}
+              onChange={e => setSchoolInfo(prev => ({ ...prev, lunchProgram: e.target.checked }))}
               className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
             />
             <span className="text-sm text-gray-700">Free/Reduced Lunch Program</span>
@@ -509,8 +529,8 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
         </div>
         <h2 className="text-3xl font-bold text-gray-900">Setup Complete!</h2>
         <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-          Congratulations! Your HASIVU system is now configured and ready to revolutionize 
-          your school's food service delivery.
+          Congratulations! Your HASIVU system is now configured and ready to revolutionize your
+          school's food service delivery.
         </p>
       </div>
 
@@ -521,23 +541,29 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
             <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
             <div>
               <p className="font-medium text-gray-900">RFID Cards Ordered</p>
-              <p className="text-sm text-gray-600">Your RFID cards will arrive within 3-5 business days</p>
+              <p className="text-sm text-gray-600">
+                Your RFID cards will arrive within 3-5 business days
+              </p>
             </div>
           </div>
-          
+
           <div className="flex items-start space-x-3">
             <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
             <div>
               <p className="font-medium text-gray-900">Training Session Scheduled</p>
-              <p className="text-sm text-gray-600">Our team will contact you to schedule staff training</p>
+              <p className="text-sm text-gray-600">
+                Our team will contact you to schedule staff training
+              </p>
             </div>
           </div>
-          
+
           <div className="flex items-start space-x-3">
             <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
             <div>
               <p className="font-medium text-gray-900">Dashboard Access Ready</p>
-              <p className="text-sm text-gray-600">Start exploring your admin dashboard immediately</p>
+              <p className="text-sm text-gray-600">
+                Start exploring your admin dashboard immediately
+              </p>
             </div>
           </div>
         </div>
@@ -548,7 +574,7 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
           <Eye className="w-5 h-5" />
           <span>View Dashboard</span>
         </button>
-        
+
         <button className="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center space-x-2">
           <Download className="w-5 h-5" />
           <span>Download Guide</span>
@@ -569,7 +595,7 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
                 Step {currentStep + 1} of {steps.length}
               </span>
             </div>
-            
+
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-500">
                 {steps[currentStep].estimatedTime} remaining
@@ -584,7 +610,7 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
               )}
             </div>
           </div>
-          
+
           {/* Progress Bar */}
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div
@@ -601,7 +627,7 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
           {steps[currentStep].id === 'welcome' && renderWelcomeStep()}
           {steps[currentStep].id === 'school_info' && renderSchoolInfoStep()}
           {steps[currentStep].id === 'completion' && renderCompletionStep()}
-          
+
           {/* Add other step renderers as needed */}
         </AnimatePresence>
 
@@ -618,14 +644,11 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
 
           <div className="flex items-center space-x-4">
             {!steps[currentStep].required && currentStep > 0 && (
-              <button
-                onClick={skipStep}
-                className="px-6 py-3 text-gray-600 hover:text-gray-800"
-              >
+              <button onClick={skipStep} className="px-6 py-3 text-gray-600 hover:text-gray-800">
                 Skip for now
               </button>
             )}
-            
+
             <button
               onClick={nextStep}
               disabled={isLoading}
@@ -635,9 +658,7 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <>
-                  <span>
-                    {currentStep === steps.length - 1 ? 'Get Started' : 'Continue'}
-                  </span>
+                  <span>{currentStep === steps.length - 1 ? 'Get Started' : 'Continue'}</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}

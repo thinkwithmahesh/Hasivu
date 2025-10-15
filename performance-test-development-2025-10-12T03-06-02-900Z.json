@@ -1,0 +1,223 @@
+{
+  "api": [
+    {
+      "endpoint": "/health",
+      "method": "GET",
+      "startTime": 238.60675,
+      "endTime": 5643.715667,
+      "totalRequests": 10,
+      "successfulRequests": 0,
+      "failedRequests": 10,
+      "averageResponseTime": null,
+      "p95ResponseTime": 0,
+      "p99ResponseTime": 0,
+      "minResponseTime": null,
+      "maxResponseTime": null,
+      "requestsPerSecond": 1.8501014787228938,
+      "errorRate": 100,
+      "concurrentConnections": 10,
+      "statusCodes": {
+        "500": 10
+      }
+    },
+    {
+      "endpoint": "/auth/login",
+      "method": "POST",
+      "startTime": 5643.892292,
+      "endTime": 11447.375417,
+      "totalRequests": 30,
+      "successfulRequests": 0,
+      "failedRequests": 30,
+      "averageResponseTime": null,
+      "p95ResponseTime": 0,
+      "p99ResponseTime": 0,
+      "minResponseTime": null,
+      "maxResponseTime": null,
+      "requestsPerSecond": 5.169309422261826,
+      "errorRate": 100,
+      "concurrentConnections": 10,
+      "statusCodes": {
+        "500": 30
+      }
+    },
+    {
+      "endpoint": "/orders",
+      "method": "GET",
+      "startTime": 11447.508458,
+      "endTime": 17330.862333,
+      "totalRequests": 50,
+      "successfulRequests": 0,
+      "failedRequests": 50,
+      "averageResponseTime": null,
+      "p95ResponseTime": 0,
+      "p99ResponseTime": 0,
+      "minResponseTime": null,
+      "maxResponseTime": null,
+      "requestsPerSecond": 8.49855389669213,
+      "errorRate": 100,
+      "concurrentConnections": 10,
+      "statusCodes": {
+        "500": 50
+      }
+    },
+    {
+      "endpoint": "/orders",
+      "method": "POST",
+      "startTime": 17330.993833,
+      "endTime": 23034.260417,
+      "totalRequests": 20,
+      "successfulRequests": 0,
+      "failedRequests": 20,
+      "averageResponseTime": null,
+      "p95ResponseTime": 0,
+      "p99ResponseTime": 0,
+      "minResponseTime": null,
+      "maxResponseTime": null,
+      "requestsPerSecond": 3.506762257283956,
+      "errorRate": 100,
+      "concurrentConnections": 10,
+      "statusCodes": {
+        "500": 20
+      }
+    },
+    {
+      "endpoint": "/payments/verify",
+      "method": "POST",
+      "startTime": 23034.382,
+      "endTime": 28888.178667,
+      "totalRequests": 40,
+      "successfulRequests": 0,
+      "failedRequests": 40,
+      "averageResponseTime": null,
+      "p95ResponseTime": 0,
+      "p99ResponseTime": 0,
+      "minResponseTime": null,
+      "maxResponseTime": null,
+      "requestsPerSecond": 6.833172089063956,
+      "errorRate": 100,
+      "concurrentConnections": 10,
+      "statusCodes": {
+        "500": 40
+      }
+    },
+    {
+      "endpoint": "/rfid/verify-delivery",
+      "method": "POST",
+      "startTime": 28888.368708,
+      "endTime": 34692.473792,
+      "totalRequests": 30,
+      "successfulRequests": 0,
+      "failedRequests": 30,
+      "averageResponseTime": null,
+      "p95ResponseTime": 0,
+      "p99ResponseTime": 0,
+      "minResponseTime": null,
+      "maxResponseTime": null,
+      "requestsPerSecond": 5.16875548699146,
+      "errorRate": 100,
+      "concurrentConnections": 10,
+      "statusCodes": {
+        "500": 30
+      }
+    },
+    {
+      "endpoint": "/users/profile",
+      "method": "GET",
+      "startTime": 34692.615292,
+      "endTime": 40395.387875,
+      "totalRequests": 20,
+      "successfulRequests": 0,
+      "failedRequests": 20,
+      "averageResponseTime": null,
+      "p95ResponseTime": 0,
+      "p99ResponseTime": 0,
+      "minResponseTime": null,
+      "maxResponseTime": null,
+      "requestsPerSecond": 3.5070660295344984,
+      "errorRate": 100,
+      "concurrentConnections": 10,
+      "statusCodes": {
+        "500": 20
+      }
+    },
+    {
+      "endpoint": "/menus/daily",
+      "method": "GET",
+      "startTime": 40395.52525,
+      "endTime": 46249.749542,
+      "totalRequests": 40,
+      "successfulRequests": 0,
+      "failedRequests": 40,
+      "averageResponseTime": null,
+      "p95ResponseTime": 0,
+      "p99ResponseTime": 0,
+      "minResponseTime": null,
+      "maxResponseTime": null,
+      "requestsPerSecond": 6.8326729562892545,
+      "errorRate": 100,
+      "concurrentConnections": 10,
+      "statusCodes": {
+        "500": 40
+      }
+    }
+  ],
+  "webSocket": {
+    "startTime": 238.782208,
+    "endTime": 5644.250875,
+    "totalRequests": 10,
+    "successfulRequests": 0,
+    "failedRequests": 10,
+    "averageResponseTime": null,
+    "p95ResponseTime": 0,
+    "p99ResponseTime": 0,
+    "minResponseTime": null,
+    "maxResponseTime": null,
+    "requestsPerSecond": 0,
+    "errorRate": 100,
+    "concurrentConnections": 0,
+    "messagesExchanged": 0,
+    "averageLatency": null,
+    "connectionEstablishmentTime": null,
+    "reconnections": 0
+  },
+  "redis": {
+    "startTime": 238.879417,
+    "endTime": 312.094125,
+    "totalRequests": 1100,
+    "successfulRequests": 1100,
+    "failedRequests": 0,
+    "averageResponseTime": 0.3577166599999987,
+    "p95ResponseTime": 0.4496249999999691,
+    "p99ResponseTime": 0.5545410000000288,
+    "minResponseTime": 0.27841699999999037,
+    "maxResponseTime": 0.5545410000000288,
+    "requestsPerSecond": 15024.303586650916,
+    "errorRate": 0,
+    "concurrentConnections": 10,
+    "cacheHitRatio": 100,
+    "averageGetTime": 0.3577166599999987,
+    "averageSetTime": 0.0720491779999997,
+    "keyspaceSize": 1000,
+    "memoryUsage": 2323840
+  },
+  "rfid": {
+    "startTime": 239.1665,
+    "endTime": 260.937333,
+    "totalRequests": 550,
+    "successfulRequests": 0,
+    "failedRequests": 550,
+    "averageResponseTime": null,
+    "p95ResponseTime": 0,
+    "p99ResponseTime": 0,
+    "minResponseTime": null,
+    "maxResponseTime": null,
+    "requestsPerSecond": 25263.158281541168,
+    "errorRate": 100,
+    "concurrentConnections": 10,
+    "verificationsPerSecond": 0,
+    "bulkVerificationTime": 12.003708999999986,
+    "cardRegistrations": 0,
+    "readerConnections": 5
+  },
+  "summary": {}
+}

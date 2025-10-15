@@ -5,7 +5,7 @@
  */
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 import { UserService, UpdateUserRequest } from '../../services/user.service';
-import { LoggerService } from '../shared/logger.service';
+import { logger } from '../../utils/logger';
 import { ValidationService } from '../shared/validation.service';
 import { handleError, createSuccessResponse } from '../shared/response.utils';
 import Joi from 'joi';
@@ -15,23 +15,24 @@ const updateUserSchema = Joi.object({
   firstName: Joi.string().trim().min(1).max(50).optional(),
   lastName: Joi.string().trim().min(1).max(50).optional(),
   email: Joi.string().email().lowercase().optional(),
-  role: Joi.string().valid('student', 'parent', 'teacher', 'staff', 'school_admin', 'admin', 'super_admin').optional(),
+  role: Joi.string()
+    .valid('student', 'parent', 'teacher', 'staff', 'school_admin', 'admin', 'super_admin')
+    .optional(),
   schoolId: Joi.string().uuid().optional(),
-  parentId: Joi.string().uuid().optional().allow(null),
+  phoneNumber: Joi.string().optional(),
   isActive: Joi.boolean().optional(),
-  metadata: Joi.object().optional()
 });
 
 /**
  * Update User Lambda Handler
  * PUT /api/v1/users/{id}
- * 
+ *
  * Path Parameters:
  * - id: User UUID
- * 
+ *
  * Request Body:
  * - firstName?: string
- * - lastName?: string  
+ * - lastName?: string
  * - email?: string
  * - role?: UserRole
  * - schoolId?: string
@@ -43,28 +44,27 @@ export const updateUserHandler = async (
   event: APIGatewayProxyEvent,
   context: Context
 ): Promise<APIGatewayProxyResult> => {
-  const logger = LoggerService.getInstance();
   const requestId = context.awsRequestId;
 
   try {
     logger.info('Update user request started', {
       requestId,
       pathParameters: event.pathParameters,
-      userAgent: event.headers['User-Agent']
+      userAgent: event.headers['User-Agent'],
     });
 
     // Extract user context from authorizer
     const userContext = event.requestContext.authorizer;
     if (!userContext?.userId) {
       logger.warn('Unauthorized access attempt', { requestId });
-      return handleError(new Error('Unauthorized'), undefined, 401, requestId);
+      return handleError(new Error('Unauthorized'));
     }
 
     // Validate user ID parameter
     const userId = event.pathParameters?.id;
     if (!userId) {
       logger.warn('Missing user ID parameter', { requestId });
-      return handleError(new Error('User ID is required'), undefined, 400, requestId);
+      return handleError(new Error('User ID is required'));
     }
 
     // Parse request body
@@ -75,19 +75,19 @@ export const updateUserHandler = async (
       logger.warn('Invalid JSON in request body', {
         requestId,
         body: event.body,
-        error: (parseError as Error).message
+        error: (parseError as Error).message,
       });
-      return handleError(new Error('Invalid JSON in request body'), undefined, 400, requestId);
+      return handleError(new Error('Invalid JSON in request body'));
     }
 
     // Get requesting user for permission checks
     const requestingUser = await UserService.getUserById(userContext.userId);
     if (!requestingUser) {
-      logger.error('Requesting user not found', {
+      logger.error('Requesting user not found', new Error('User not found'), {
         requestId,
-        userId: userContext.userId
+        userId: userContext.userId,
       });
-      return handleError(new Error('Requesting user not found'), undefined, 404, requestId);
+      return handleError(new Error('Requesting user not found'));
     }
 
     // Get target user
@@ -96,9 +96,9 @@ export const updateUserHandler = async (
       logger.warn('Target user not found', {
         requestId,
         targetUserId: userId,
-        requestingUserId: userContext.userId
+        requestingUserId: userContext.userId,
       });
-      return handleError(new Error('User not found'), undefined, 404, requestId);
+      return handleError(new Error('User not found'));
     }
 
     // Check update permissions
@@ -110,9 +110,9 @@ export const updateUserHandler = async (
         requestingUserRole: requestingUser.role,
         targetUserId: userId,
         targetUserRole: targetUser.role,
-        reason: canEdit.reason
+        reason: canEdit.reason,
       });
-      return handleError(new Error(canEdit.reason || 'Access denied'), undefined, 403, requestId);
+      return handleError(new Error(canEdit.reason || 'Access denied'));
     }
 
     // Filter update data based on permissions
@@ -128,9 +128,9 @@ export const updateUserHandler = async (
       logger.warn('Invalid update data', {
         requestId,
         errors: validation.errors,
-        updateData: filteredUpdateData
+        updateData: filteredUpdateData,
       });
-      return handleError(new Error(`Validation failed: ${validation.errors?.join(', ')}`), undefined, 400, requestId);
+      return handleError(new Error(`Validation failed: ${validation.errors?.join(', ')}`));
     }
 
     // Additional business rule validations
@@ -142,48 +142,31 @@ export const updateUserHandler = async (
           requestingUserId: userContext.userId,
           requestingUserRole: requestingUser.role,
           currentSchoolId: targetUser.schoolId,
-          newSchoolId: filteredUpdateData.schoolId
+          newSchoolId: filteredUpdateData.schoolId,
         });
-        return handleError(new Error('Only administrators can change school associations'), undefined, 403, requestId);
+        return handleError(new Error('Only administrators can change school associations'));
       }
     }
 
-    // Handle parent-child relationship changes
-    if (filteredUpdateData.parentId !== undefined && filteredUpdateData.parentId !== targetUser.parentId) {
-      if (filteredUpdateData.parentId) {
-        // Validate new parent exists and is appropriate
-        const newParent = await UserService.getUserById(filteredUpdateData.parentId);
-        if (!newParent) {
-          return handleError(new Error('New parent user not found'), undefined, 400, requestId);
-        }
-
-        if (!['parent', 'teacher', 'staff', 'school_admin'].includes(newParent.role)) {
-          return handleError(new Error('Invalid parent role'), undefined, 400, requestId);
-        }
-
-        // Check school compatibility
-        if (targetUser.schoolId && newParent.schoolId !== targetUser.schoolId) {
-          return handleError(new Error('Parent and child must be from the same school'), undefined, 400, requestId);
-        }
-      }
-    }
+    // Note: Parent-child relationships should be managed through the manageChildren endpoint
+    // This endpoint only handles basic user profile updates
 
     logger.info('Updating user with filtered data', {
       requestId,
       targetUserId: userId,
       requestingUserId: userContext.userId,
-      updateFields: Object.keys(filteredUpdateData)
+      updateFields: Object.keys(filteredUpdateData),
     });
 
     // Update user
-    const updatedUser = await UserService.updateUser(userId, filteredUpdateData, userContext.userId);
+    const updatedUser = await UserService.updateUser(userId, filteredUpdateData);
 
     // Log successful operation
     logger.info('Update user request completed', {
       requestId,
       targetUserId: userId,
       requestingUserId: userContext.userId,
-      updatedFields: Object.keys(filteredUpdateData)
+      updatedFields: Object.keys(filteredUpdateData),
     });
 
     // Return updated user data
@@ -194,26 +177,23 @@ export const updateUserHandler = async (
         firstName: updatedUser.firstName,
         lastName: updatedUser.lastName,
         role: updatedUser.role,
-        schoolId: updatedUser.schoolId,
+        schoolId: updatedUser.schoolId ?? undefined,
         school: null, // School relation not loaded
-        parentId: updatedUser.parentId,
+        parentId: updatedUser.parentId ?? undefined,
         parent: null, // Parent relation not loaded
         children: [], // Children relation not loaded
         isActive: updatedUser.isActive,
         createdAt: updatedUser.createdAt,
         updatedAt: updatedUser.updatedAt,
-        metadata: updatedUser.metadata || {}
+        metadata: updatedUser.metadata || {},
       },
-      updatedFields: Object.keys(filteredUpdateData)
-    }, 'User updated successfully', 200, requestId);
-
-  } catch (error) {
-    logger.error('Update user request failed', {
-      requestId,
-      error: (error as Error).message,
-      stack: (error as Error).stack
+      updatedFields: Object.keys(filteredUpdateData),
     });
-    return handleError(error as Error, undefined, 500, requestId);
+  } catch (error) {
+    logger.error('Update user request failed', error as Error, {
+      requestId,
+    });
+    return handleError(error as Error);
   }
 };
 
@@ -252,7 +232,9 @@ async function checkUpdatePermissions(
   // Users can update their own profile (limited fields)
   if (requestingUser.id === targetUser.id) {
     const restrictedFields = ['role', 'schoolId', 'isActive'];
-    const hasRestrictedFields = restrictedFields.some(field => updateData[field as keyof UpdateUserRequest] !== undefined);
+    const hasRestrictedFields = restrictedFields.some(
+      field => updateData[field as keyof UpdateUserRequest] !== undefined
+    );
     if (hasRestrictedFields) {
       return { allowed: false, reason: 'Cannot update restricted fields' };
     }
@@ -262,7 +244,9 @@ async function checkUpdatePermissions(
   // Parents can update their children's profiles (limited fields)
   if (requestingUser.role === 'parent' && targetUser.parentId === requestingUser.id) {
     const allowedFields = ['firstName', 'lastName', 'metadata'];
-    const hasDisallowedFields = Object.keys(updateData).some(field => !allowedFields.includes(field));
+    const hasDisallowedFields = Object.keys(updateData).some(
+      field => !allowedFields.includes(field)
+    );
     if (hasDisallowedFields) {
       return { allowed: false, reason: 'Parents can only update basic profile information' };
     }
@@ -288,8 +272,7 @@ function filterUpdateDataByPermissions(
   }
 
   // School admin can update most fields except role for their school users
-  if (requestingUser.role === 'school_admin' &&
-      requestingUser.schoolId === targetUser.schoolId) {
+  if (requestingUser.role === 'school_admin' && requestingUser.schoolId === targetUser.schoolId) {
     // School admins cannot change roles or school associations
     delete filteredData.role;
     delete filteredData.schoolId;

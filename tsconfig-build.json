@@ -1,0 +1,24 @@
+{
+  "extends": "./tsconfig.json",
+  "exclude": [
+    "node_modules",
+    "dist",
+    "coverage",
+    "build",
+    ".next",
+    "scripts/run-performance-tests.ts",
+    "scripts/business-continuity-dashboard.ts",
+    "scripts/disaster-recovery-validator.ts",
+    "scripts/incident-response-orchestrator.ts",
+    "scripts/production-deployment-validation.ts",
+    "scripts/production-readiness-orchestrator.ts",
+    "scripts/system-health-monitor.ts",
+    "tests/load/production-load-test.ts",
+    "tests/integration/production-integration.test.ts",
+    "web/**/*",
+    "mobile/**/*",
+    "**/*.js",
+    "src/__tests__/**/*",
+    "tests/**/*"
+  ]
+}

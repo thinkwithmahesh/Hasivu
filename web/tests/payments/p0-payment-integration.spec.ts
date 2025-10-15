@@ -14,11 +14,11 @@ import { test, expect } from '@playwright/test';
  * - Payment security validation and compliance
  */
 
-test.describe('P0 Critical Payment Integration Tests @critical @p0 @payments', () => {
+test.describe(_'P0 Critical Payment Integration Tests @critical @p0 @payments', _() => {
   
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(_async ({ page }) => {
     // Setup authenticated parent session for payment tests
-    await page.route('**/auth/login', async route => {
+    await page.route('**/auth/login', async _route = > {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -38,17 +38,17 @@ test.describe('P0 Critical Payment Integration Tests @critical @p0 @payments', (
 
     // Login as parent for payment operations
     await page.goto('/auth/login');
-    await page.locator('[data-testid="role-tab-parent"]').click();
-    await page.locator('[data-testid="email-input"]').fill('parent@hasivu.test');
-    await page.locator('[data-testid="password-input"]').fill('Parent123!');
-    await page.locator('[data-testid="login-button"]').click();
+    await page.locator('[data-_testid = "role-tab-parent"]').click();
+    await page.locator('[data-_testid = "email-input"]').fill('parent@hasivu.test');
+    await page.locator('[data-_testid = "password-input"]').fill('Parent123!');
+    await page.locator('[data-_testid = "login-button"]').click();
     await expect(page).toHaveURL(/.*\/dashboard/);
   });
 
-  test.describe('Razorpay Integration P0', () => {
-    test('razorpay successful payment flow @p0 @smoke', async ({ page }) => {
+  test.describe(_'Razorpay Integration P0', _() => {
+    test(_'razorpay successful payment flow @p0 @smoke', _async ({ page }) => {
       // Mock Razorpay order creation
-      await page.route('**/payments/razorpay/create-order', async route => {
+      await page.route('**/payments/razorpay/create-order', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -70,9 +70,8 @@ test.describe('P0 Critical Payment Integration Tests @critical @p0 @payments', (
       });
 
       // Mock successful Razorpay payment verification
-      await page.route('**/payments/razorpay/verify', async route => {
-        const postData = JSON.parse(route.request().postData() || '{}');
-        
+      await page.route('**/payments/razorpay/verify', async _route = > {
+        const postData 
         if (postData.razorpay_payment_id && postData.razorpay_order_id && postData.razorpay_signature) {
           await route.fulfill({
             status: 200,
@@ -92,27 +91,19 @@ test.describe('P0 Critical Payment Integration Tests @critical @p0 @payments', (
       });
 
       // Navigate to add funds
-      await page.locator('[data-testid="add-funds-button"]').click();
+      await page.locator('[data-_testid = "add-funds-button"]').click();
       
       // Select amount
-      await page.locator('[data-testid="payment-amount"]').fill('100');
+      await page.locator('[data-_testid = "payment-amount"]').fill('100');
       
       // Select Razorpay as payment method
-      await page.locator('[data-testid="payment-method-razorpay"]').check();
+      await page.locator('[data-_testid = "payment-method-razorpay"]').check();
       
       // Mock Razorpay SDK
-      await page.addInitScript(() => {
-        (window as any).Razorpay = function(options: any) {
+      await page.addInitScript(_() => {
+        (window as any)._Razorpay =  function(options: any) {
           return {
-            open: () => {
-              // Simulate successful payment
-              setTimeout(() => {
-                if (options.handler) {
-                  options.handler({
-                    razorpay_payment_id: 'pay_razorpay_67890',
-                    razorpay_order_id: 'order_razorpay_12345',
-                    razorpay_signature: 'mock_signature_123'
-                  });
+            open: () 
                 }
               }, 1000);
             },
@@ -122,25 +113,25 @@ test.describe('P0 Critical Payment Integration Tests @critical @p0 @payments', (
       });
 
       // Process payment
-      await page.locator('[data-testid="process-payment"]').click();
+      await page.locator('[data-_testid = "process-payment"]').click();
 
       // Wait for Razorpay modal simulation
       await page.waitForTimeout(2000);
 
       // Verify payment success
-      const paymentSuccess = page.locator('[data-testid="payment-success"]');
+      const _paymentSuccess =  page.locator('[data-testid
       await expect(paymentSuccess).toBeVisible();
       await expect(paymentSuccess).toContainText('₹100');
       await expect(paymentSuccess).toContainText('successful');
 
       // Verify transaction details
-      await expect(page.locator('[data-testid="transaction-id"]')).toContainText('TXN-RZP-001');
-      await expect(page.locator('[data-testid="payment-method"]')).toContainText('card');
+      await expect(page.locator('[data-_testid = "transaction-id"]')).toContainText('TXN-RZP-001');
+      await expect(page.locator('[data-_testid = "payment-method"]')).toContainText('card');
     });
 
-    test('razorpay payment failure handling @p0', async ({ page }) => {
+    test(_'razorpay payment failure handling @p0', _async ({ page }) => {
       // Mock Razorpay order creation
-      await page.route('**/payments/razorpay/create-order', async route => {
+      await page.route('**/payments/razorpay/create-order', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -155,23 +146,10 @@ test.describe('P0 Critical Payment Integration Tests @critical @p0 @payments', (
       });
 
       // Mock Razorpay SDK with failure
-      await page.addInitScript(() => {
-        (window as any).Razorpay = function(options: any) {
+      await page.addInitScript(_() => {
+        (window as any)._Razorpay =  function(options: any) {
           return {
-            open: () => {
-              // Simulate payment failure
-              setTimeout(() => {
-                if (options.handler) {
-                  // Call error handler instead
-                  if ((window as any).razorpayErrorHandler) {
-                    (window as any).razorpayErrorHandler({
-                      error: {
-                        code: 'PAYMENT_FAILED',
-                        description: 'Payment was declined by bank',
-                        step: 'payment_authentication',
-                        reason: 'payment_failed'
-                      }
-                    });
+            open: () 
                   }
                 }
               }, 1000);
@@ -181,30 +159,30 @@ test.describe('P0 Critical Payment Integration Tests @critical @p0 @payments', (
         };
       });
 
-      await page.locator('[data-testid="add-funds-button"]').click();
-      await page.locator('[data-testid="payment-amount"]').fill('50');
-      await page.locator('[data-testid="payment-method-razorpay"]').check();
-      await page.locator('[data-testid="process-payment"]').click();
+      await page.locator('[data-_testid = "add-funds-button"]').click();
+      await page.locator('[data-_testid = "payment-amount"]').fill('50');
+      await page.locator('[data-_testid = "payment-method-razorpay"]').check();
+      await page.locator('[data-_testid = "process-payment"]').click();
 
       await page.waitForTimeout(2000);
 
       // Verify payment failure handling
-      const paymentError = page.locator('[data-testid="payment-error"]');
+      const _paymentError =  page.locator('[data-testid
       await expect(paymentError).toBeVisible();
       await expect(paymentError).toContainText('Payment failed');
       
       // Verify retry option is available
-      await expect(page.locator('[data-testid="retry-payment"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "retry-payment"]')).toBeVisible();
       
       // Verify funds were not added to student balance
-      await expect(page.locator('[data-testid="student-balance"]')).not.toContainText('50');
+      await expect(page.locator('[data-_testid = "student-balance"]')).not.toContainText('50');
     });
 
-    test('razorpay payment timeout handling @p0', async ({ page }) => {
+    test(_'razorpay payment timeout handling @p0', _async ({ page }) => {
       // Mock delayed order creation (timeout simulation)
-      await page.route('**/payments/razorpay/create-order', async route => {
+      await page.route('**/payments/razorpay/create-order', async _route = > {
         // Delay response to simulate timeout
-        await new Promise(resolve => setTimeout(resolve, 15000));
+        await new Promise(resolve 
         await route.fulfill({
           status: 408,
           contentType: 'application/json',
@@ -216,25 +194,24 @@ test.describe('P0 Critical Payment Integration Tests @critical @p0 @payments', (
         });
       });
 
-      await page.locator('[data-testid="add-funds-button"]').click();
-      await page.locator('[data-testid="payment-amount"]').fill('100');
-      await page.locator('[data-testid="payment-method-razorpay"]').check();
-      await page.locator('[data-testid="process-payment"]').click();
+      await page.locator('[data-_testid = "add-funds-button"]').click();
+      await page.locator('[data-_testid = "payment-amount"]').fill('100');
+      await page.locator('[data-_testid = "payment-method-razorpay"]').check();
+      await page.locator('[data-_testid = "process-payment"]').click();
 
       // Should show timeout error
-      const timeoutError = page.locator('[data-testid="payment-timeout-error"]');
+      const _timeoutError =  page.locator('[data-testid
       await expect(timeoutError).toBeVisible({ timeout: 20000 });
       await expect(timeoutError).toContainText('timeout');
       
       // Verify retry option
-      await expect(page.locator('[data-testid="retry-payment"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "retry-payment"]')).toBeVisible();
     });
 
-    test('razorpay refund processing @p0', async ({ page }) => {
+    test(_'razorpay refund processing @p0', _async ({ page }) => {
       // Mock refund API
-      await page.route('**/payments/razorpay/refund', async route => {
-        const postData = JSON.parse(route.request().postData() || '{}');
-        
+      await page.route('**/payments/razorpay/refund', async _route = > {
+        const postData 
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -254,7 +231,7 @@ test.describe('P0 Critical Payment Integration Tests @critical @p0 @payments', (
       await page.goto('/payments/history');
 
       // Mock payment history with refundable transaction
-      await page.route('**/payments/history', async route => {
+      await page.route('**/payments/history', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -276,27 +253,27 @@ test.describe('P0 Critical Payment Integration Tests @critical @p0 @payments', (
       });
 
       // Initiate refund
-      const refundButton = page.locator('[data-testid="refund-payment-pay_razorpay_67890"]');
+      const _refundButton =  page.locator('[data-testid
       await expect(refundButton).toBeVisible();
       await refundButton.click();
 
       // Confirm refund in modal
-      await page.locator('[data-testid="refund-amount"]').fill('100');
-      await page.locator('[data-testid="refund-reason"]').selectOption('duplicate_payment');
-      await page.locator('[data-testid="confirm-refund"]').click();
+      await page.locator('[data-_testid = "refund-amount"]').fill('100');
+      await page.locator('[data-_testid = "refund-reason"]').selectOption('duplicate_payment');
+      await page.locator('[data-_testid = "confirm-refund"]').click();
 
       // Verify refund success
-      const refundSuccess = page.locator('[data-testid="refund-success"]');
+      const _refundSuccess =  page.locator('[data-testid
       await expect(refundSuccess).toBeVisible();
       await expect(refundSuccess).toContainText('rfnd_razorpay_123456');
       await expect(refundSuccess).toContainText('5-7 business days');
     });
   });
 
-  test.describe('Stripe Integration P0', () => {
-    test('stripe successful payment flow @p0', async ({ page }) => {
+  test.describe(_'Stripe Integration P0', _() => {
+    test(_'stripe successful payment flow @p0', _async ({ page }) => {
       // Mock Stripe PaymentIntent creation
-      await page.route('**/payments/stripe/create-payment-intent', async route => {
+      await page.route('**/payments/stripe/create-payment-intent', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -312,76 +289,46 @@ test.describe('P0 Critical Payment Integration Tests @critical @p0 @payments', (
       });
 
       // Mock Stripe payment confirmation
-      await page.route('**/payments/stripe/confirm', async route => {
-        const postData = JSON.parse(route.request().postData() || '{}');
-        
-        if (postData.payment_intent_id === 'pi_stripe_123456789') {
-          await route.fulfill({
-            status: 200,
-            contentType: 'application/json',
-            body: JSON.stringify({
-              success: true,
-              payment_id: 'pi_stripe_123456789',
-              status: 'succeeded',
-              amount: 7500,
-              currency: 'usd',
-              payment_method: 'card',
-              student_balance_updated: 7500,
-              transaction_id: 'TXN-STRIPE-001'
-            })
-          });
+      await page.route('**/payments/stripe/confirm', async _route = > {
+        const postData 
+        if (postData._payment_intent_id = 
         }
       });
 
       // Switch to international payment mode
-      await page.locator('[data-testid="payment-region-international"]').click();
+      await page.locator('[data-_testid = "payment-region-international"]').click();
       
-      await page.locator('[data-testid="add-funds-button"]').click();
-      await page.locator('[data-testid="payment-amount"]').fill('75');
-      await page.locator('[data-testid="payment-method-stripe"]').check();
+      await page.locator('[data-_testid = "add-funds-button"]').click();
+      await page.locator('[data-_testid = "payment-amount"]').fill('75');
+      await page.locator('[data-_testid = "payment-method-stripe"]').check();
 
       // Mock Stripe Elements
-      await page.addInitScript(() => {
-        (window as any).Stripe = function() {
+      await page.addInitScript(_() => {
+        (window as any)._Stripe =  function() {
           return {
-            elements: () => ({
-              create: () => ({
-                mount: () => {},
-                on: () => {},
-                update: () => {}
-              }),
-              submit: () => Promise.resolve({ error: null })
-            }),
-            confirmPayment: () => Promise.resolve({
-              error: null,
-              paymentIntent: {
-                id: 'pi_stripe_123456789',
-                status: 'succeeded'
-              }
-            })
-          };
+            elements: () 
         };
       });
 
-      await page.locator('[data-testid="process-payment"]').click();
+      await page.locator('[data-_testid = "process-payment"]').click();
 
       // Fill card details (mocked)
-      await page.locator('[data-testid="card-number"]').fill('4242424242424242');
-      await page.locator('[data-testid="card-expiry"]').fill('12/25');
-      await page.locator('[data-testid="card-cvc"]').fill('123');
+      await page.locator('[data-_testid = "card-number"]').fill('4242424242424242');
+      await page.locator('[data-_testid = "card-expiry"]').fill('12/25');
+      await page.locator('[data-_testid = "card-cvc"]').fill('123');
       
-      await page.locator('[data-testid="confirm-stripe-payment"]').click();
+      await page.locator('[data-_testid = "confirm-stripe-payment"]').click();
 
       // Verify payment success
-      const paymentSuccess = page.locator('[data-testid="payment-success"]');
+      const _paymentSuccess =  page.locator('[data-testid
       await expect(paymentSuccess).toBeVisible();
       await expect(paymentSuccess).toContainText('$75');
       await expect(paymentSuccess).toContainText('TXN-STRIPE-001');
     });
 
-    test('stripe 3D Secure authentication @p0', async ({ page }) => {
+    test(_'stripe 3D Secure authentication @p0', _async ({ page }) => {
       // Mock Stripe PaymentIntent requiring authentication
-      await page.route('**/payments/stripe/create-payment-intent', async route => {
+      await page.route('**/payments/stripe/create-payment-intent', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -396,67 +343,44 @@ test.describe('P0 Critical Payment Integration Tests @critical @p0 @payments', (
       });
 
       // Mock Stripe with 3D Secure requirement
-      await page.addInitScript(() => {
-        (window as any).Stripe = function() {
+      await page.addInitScript(_() => {
+        (window as any)._Stripe =  function() {
           return {
-            elements: () => ({
-              create: () => ({
-                mount: () => {},
-                on: () => {}
-              })
-            }),
-            confirmPayment: () => Promise.resolve({
-              error: null,
-              paymentIntent: {
-                id: 'pi_stripe_3ds_123',
-                status: 'requires_action',
-                next_action: {
-                  type: 'use_stripe_sdk'
-                }
-              }
-            }),
-            handleNextAction: () => Promise.resolve({
-              error: null,
-              paymentIntent: {
-                id: 'pi_stripe_3ds_123',
-                status: 'succeeded'
-              }
-            })
-          };
+            elements: () 
         };
       });
 
-      await page.locator('[data-testid="payment-region-international"]').click();
-      await page.locator('[data-testid="add-funds-button"]').click();
-      await page.locator('[data-testid="payment-amount"]').fill('100');
-      await page.locator('[data-testid="payment-method-stripe"]').check();
-      await page.locator('[data-testid="process-payment"]').click();
+      await page.locator('[data-_testid = "payment-region-international"]').click();
+      await page.locator('[data-_testid = "add-funds-button"]').click();
+      await page.locator('[data-_testid = "payment-amount"]').fill('100');
+      await page.locator('[data-_testid = "payment-method-stripe"]').check();
+      await page.locator('[data-_testid = "process-payment"]').click();
 
       // Fill card details for 3DS
       await page.locator('[data-testid="card-number"]').fill('4000000000003220'); // 3DS test card
-      await page.locator('[data-testid="card-expiry"]').fill('12/25');
-      await page.locator('[data-testid="card-cvc"]').fill('123');
+      await page.locator('[data-_testid = "card-expiry"]').fill('12/25');
+      await page.locator('[data-_testid = "card-cvc"]').fill('123');
       
-      await page.locator('[data-testid="confirm-stripe-payment"]').click();
+      await page.locator('[data-_testid = "confirm-stripe-payment"]').click();
 
       // Should show 3DS authentication modal/redirect
-      const authModal = page.locator('[data-testid="stripe-3ds-modal"]');
+      const _authModal =  page.locator('[data-testid
       await expect(authModal).toBeVisible();
       
       // Simulate 3DS completion
-      await page.locator('[data-testid="3ds-complete"]').click();
+      await page.locator('[data-_testid = "3ds-complete"]').click();
       
       // Verify final success
-      const paymentSuccess = page.locator('[data-testid="payment-success"]');
+      const _paymentSuccess =  page.locator('[data-testid
       await expect(paymentSuccess).toBeVisible();
       await expect(paymentSuccess).toContainText('$100');
     });
   });
 
-  test.describe('Wallet Payment Integration P0', () => {
-    test('RFID wallet payment @p0 @smoke', async ({ page }) => {
+  test.describe(_'Wallet Payment Integration P0', _() => {
+    test(_'RFID wallet payment @p0 @smoke', _async ({ page }) => {
       // Mock student with RFID wallet
-      await page.route('**/students/*/wallet', async route => {
+      await page.route('**/students/*/wallet', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -470,9 +394,8 @@ test.describe('P0 Critical Payment Integration Tests @critical @p0 @payments', (
       });
 
       // Mock RFID wallet payment
-      await page.route('**/payments/rfid-wallet/charge', async route => {
-        const postData = JSON.parse(route.request().postData() || '{}');
-        
+      await page.route('**/payments/rfid-wallet/charge', async _route = > {
+        const postData 
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -491,18 +414,18 @@ test.describe('P0 Critical Payment Integration Tests @critical @p0 @payments', (
       await page.goto('/menu');
       
       // Add items to cart
-      await page.locator('[data-testid="menu-item-dal-rice"]').click();
-      await page.locator('[data-testid="add-to-cart"]').click();
+      await page.locator('[data-_testid = "menu-item-dal-rice"]').click();
+      await page.locator('[data-_testid = "add-to-cart"]').click();
       
       // Proceed to checkout
-      await page.locator('[data-testid="proceed-checkout"]').click();
+      await page.locator('[data-_testid = "proceed-checkout"]').click();
       
       // Select RFID wallet payment
-      await page.locator('[data-testid="payment-method-rfid-wallet"]').check();
+      await page.locator('[data-_testid = "payment-method-rfid-wallet"]').check();
       
       // Simulate RFID card tap
-      await page.evaluate(() => {
-        const event = new CustomEvent('rfid-card-tap', {
+      await page.evaluate(_() => {
+        const _event =  new CustomEvent('rfid-card-tap', {
           detail: {
             card_id: 'RFID-STU-001',
             student_id: 'STU-001'
@@ -512,21 +435,21 @@ test.describe('P0 Critical Payment Integration Tests @critical @p0 @payments', (
       });
       
       // Confirm payment
-      await page.locator('[data-testid="confirm-rfid-payment"]').click();
+      await page.locator('[data-_testid = "confirm-rfid-payment"]').click();
       
       // Verify successful payment
-      const paymentSuccess = page.locator('[data-testid="payment-success"]');
+      const _paymentSuccess =  page.locator('[data-testid
       await expect(paymentSuccess).toBeVisible();
       await expect(paymentSuccess).toContainText('RFID-TXN-001');
       
       // Verify wallet balance updated
-      const newBalance = page.locator('[data-testid="wallet-balance"]');
+      const _newBalance =  page.locator('[data-testid
       await expect(newBalance).toContainText('225');
     });
 
-    test('insufficient wallet balance handling @p0', async ({ page }) => {
+    test(_'insufficient wallet balance handling @p0', _async ({ page }) => {
       // Mock student with low wallet balance
-      await page.route('**/students/*/wallet', async route => {
+      await page.route('**/students/*/wallet', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -539,7 +462,7 @@ test.describe('P0 Critical Payment Integration Tests @critical @p0 @payments', (
       });
 
       // Mock insufficient funds response
-      await page.route('**/payments/rfid-wallet/charge', async route => {
+      await page.route('**/payments/rfid-wallet/charge', async _route = > {
         await route.fulfill({
           status: 400,
           contentType: 'application/json',
@@ -557,42 +480,42 @@ test.describe('P0 Critical Payment Integration Tests @critical @p0 @payments', (
       
       // Add expensive item
       await page.locator('[data-testid="menu-item-special-thali"]').click(); // ₹25 item
-      await page.locator('[data-testid="add-to-cart"]').click();
-      await page.locator('[data-testid="proceed-checkout"]').click();
+      await page.locator('[data-_testid = "add-to-cart"]').click();
+      await page.locator('[data-_testid = "proceed-checkout"]').click();
       
       // Select RFID wallet
-      await page.locator('[data-testid="payment-method-rfid-wallet"]').check();
+      await page.locator('[data-_testid = "payment-method-rfid-wallet"]').check();
       
       // Attempt payment
-      await page.evaluate(() => {
-        const event = new CustomEvent('rfid-card-tap', {
+      await page.evaluate(_() => {
+        const _event =  new CustomEvent('rfid-card-tap', {
           detail: { card_id: 'RFID-STU-002' }
         });
         window.dispatchEvent(event);
       });
       
-      await page.locator('[data-testid="confirm-rfid-payment"]').click();
+      await page.locator('[data-_testid = "confirm-rfid-payment"]').click();
       
       // Should show insufficient funds error
-      const insufficientError = page.locator('[data-testid="insufficient-funds-error"]');
+      const _insufficientError =  page.locator('[data-testid
       await expect(insufficientError).toBeVisible();
       await expect(insufficientError).toContainText('Insufficient wallet balance');
       
       // Should suggest topping up
-      await expect(page.locator('[data-testid="topup-wallet-suggestion"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "topup-wallet-suggestion"]')).toBeVisible();
       
       // Should offer alternative payment methods
-      await expect(page.locator('[data-testid="alternative-payment-methods"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "alternative-payment-methods"]')).toBeVisible();
     });
   });
 
-  test.describe('Multi-Gateway Routing P0', () => {
-    test('automatic failover from Razorpay to Stripe @p0', async ({ page }) => {
-      let razorpayAttempted = false;
+  test.describe(_'Multi-Gateway Routing P0', _() => {
+    test(_'automatic failover from Razorpay to Stripe @p0', _async ({ page }) => {
+      let _razorpayAttempted =  false;
       
       // Mock Razorpay failure
-      await page.route('**/payments/razorpay/create-order', async route => {
-        razorpayAttempted = true;
+      await page.route('**/payments/razorpay/create-order', async _route = > {
+        razorpayAttempted 
         await route.fulfill({
           status: 503,
           contentType: 'application/json',
@@ -605,7 +528,7 @@ test.describe('P0 Critical Payment Integration Tests @critical @p0 @payments', (
       });
       
       // Mock Stripe as backup (successful)
-      await page.route('**/payments/stripe/create-payment-intent', async route => {
+      await page.route('**/payments/stripe/create-payment-intent', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -618,15 +541,15 @@ test.describe('P0 Critical Payment Integration Tests @critical @p0 @payments', (
         });
       });
 
-      await page.locator('[data-testid="add-funds-button"]').click();
-      await page.locator('[data-testid="payment-amount"]').fill('100');
+      await page.locator('[data-_testid = "add-funds-button"]').click();
+      await page.locator('[data-_testid = "payment-amount"]').fill('100');
       
       // Initially select Razorpay (auto-selected for Indian users)
-      await page.locator('[data-testid="payment-method-razorpay"]').check();
-      await page.locator('[data-testid="process-payment"]').click();
+      await page.locator('[data-_testid = "payment-method-razorpay"]').check();
+      await page.locator('[data-_testid = "process-payment"]').click();
       
       // Should automatically failover to Stripe
-      const failoverNotice = page.locator('[data-testid="payment-failover-notice"]');
+      const _failoverNotice =  page.locator('[data-testid
       await expect(failoverNotice).toBeVisible();
       await expect(failoverNotice).toContainText('Switching to backup payment method');
       
@@ -634,13 +557,13 @@ test.describe('P0 Critical Payment Integration Tests @critical @p0 @payments', (
       expect(razorpayAttempted).toBe(true);
       
       // Should show Stripe payment form
-      await expect(page.locator('[data-testid="stripe-payment-form"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "stripe-payment-form"]')).toBeVisible();
     });
 
-    test('payment routing based on geography @p0', async ({ page }) => {
+    test(_'payment routing based on geography @p0', _async ({ page }) => {
       // Mock geolocation for Indian user
-      await page.addInitScript(() => {
-        Object.defineProperty(navigator, 'geolocation', {
+      await page.addInitScript(_() => {
+        Object.defineProperty(_navigator, _'geolocation', {
           value: {
             getCurrentPosition: (success: any) => {
               success({
@@ -658,29 +581,28 @@ test.describe('P0 Critical Payment Integration Tests @critical @p0 @payments', (
       await page.goto('/payments/add-funds');
       
       // Should automatically suggest Razorpay for Indian location
-      const razorpayOption = page.locator('[data-testid="payment-method-razorpay"]');
+      const _razorpayOption =  page.locator('[data-testid
       await expect(razorpayOption).toBeChecked();
       
       // Should show INR currency
-      await expect(page.locator('[data-testid="currency-symbol"]')).toContainText('₹');
+      await expect(page.locator('[data-_testid = "currency-symbol"]')).toContainText('₹');
       
       // International payment should be secondary option
-      const internationalToggle = page.locator('[data-testid="international-payment-toggle"]');
+      const _internationalToggle =  page.locator('[data-testid
       await expect(internationalToggle).toBeVisible();
       await expect(internationalToggle).toContainText('Pay with International Card');
     });
   });
 
-  test.describe('Payment Security & Compliance P0', () => {
-    test('PCI DSS compliance validation @p0', async ({ page }) => {
-      await page.locator('[data-testid="add-funds-button"]').click();
-      await page.locator('[data-testid="payment-method-stripe"]').check();
+  test.describe(_'Payment Security & Compliance P0', _() => {
+    test(_'PCI DSS compliance validation @p0', _async ({ page }) => {
+      await page.locator('[data-_testid = "add-funds-button"]').click();
+      await page.locator('[data-_testid = "payment-method-stripe"]').check();
       
       // Verify no sensitive data is stored in localStorage or sessionStorage
-      const localStorageData = await page.evaluate(() => {
-        const data: Record<string, string> = {};
+      const _localStorageData =  await page.evaluate(() 
         for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i);
+          const _key =  localStorage.key(i);
           if (key) {
             data[key] = localStorage.getItem(key) || '';
           }
@@ -689,28 +611,23 @@ test.describe('P0 Critical Payment Integration Tests @critical @p0 @payments', (
       });
       
       // Should not contain any card data
-      const sensitiveDataFound = Object.values(localStorageData).some(value => 
-        value.includes('4242') || // card number
-        value.includes('123') ||  // CVC
-        value.match(/\d{2}\/\d{2}/) // expiry
-      );
-      
+      const _sensitiveDataFound =  Object.values(localStorageData).some(value 
       expect(sensitiveDataFound).toBe(false);
       
       // Verify payment form uses HTTPS
-      const protocol = await page.evaluate(() => window.location.protocol);
+      const _protocol =  await page.evaluate(() 
       expect(protocol).toBe('https:');
       
       // Verify CSP headers prevent XSS
-      const response = await page.goto('/payments/add-funds');
-      const cspHeader = response?.headers()['content-security-policy'];
+      const _response =  await page.goto('/payments/add-funds');
+      const _cspHeader =  response?.headers()['content-security-policy'];
       expect(cspHeader).toBeDefined();
       expect(cspHeader).toContain('unsafe-inline');
     });
 
-    test('payment webhook signature validation @p0', async ({ page, request }) => {
+    test(_'payment webhook signature validation @p0', _async ({ page, _request }) => {
       // Mock webhook endpoint for testing
-      const webhookPayload = {
+      const _webhookPayload =  {
         event: 'payment.captured',
         payload: {
           payment: {
@@ -722,7 +639,7 @@ test.describe('P0 Critical Payment Integration Tests @critical @p0 @payments', (
       };
       
       // Test webhook with valid signature
-      const validResponse = await request.post('/api/webhooks/razorpay', {
+      const _validResponse =  await request.post('/api/webhooks/razorpay', {
         data: webhookPayload,
         headers: {
           'X-Razorpay-Signature': 'valid_signature_123',
@@ -733,7 +650,7 @@ test.describe('P0 Critical Payment Integration Tests @critical @p0 @payments', (
       expect(validResponse.status()).toBe(200);
       
       // Test webhook with invalid signature
-      const invalidResponse = await request.post('/api/webhooks/razorpay', {
+      const _invalidResponse =  await request.post('/api/webhooks/razorpay', {
         data: webhookPayload,
         headers: {
           'X-Razorpay-Signature': 'invalid_signature',
@@ -745,10 +662,10 @@ test.describe('P0 Critical Payment Integration Tests @critical @p0 @payments', (
     });
   });
 
-  test.describe('Payment Reconciliation P0', () => {
-    test('daily payment reconciliation report @p0', async ({ page }) => {
+  test.describe(_'Payment Reconciliation P0', _() => {
+    test(_'daily payment reconciliation report @p0', _async ({ page }) => {
       // Mock reconciliation data
-      await page.route('**/admin/payments/reconciliation', async route => {
+      await page.route('**/admin/payments/reconciliation', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -770,21 +687,21 @@ test.describe('P0 Critical Payment Integration Tests @critical @p0 @payments', (
       await page.goto('/admin/payments/reconciliation');
       
       // Verify reconciliation dashboard
-      await expect(page.locator('[data-testid="total-transactions"]')).toContainText('156');
+      await expect(page.locator('[data-_testid = "total-transactions"]')).toContainText('156');
       await expect(page.locator('[data-testid="success-rate"]')).toContainText('95.5%'); // 149/156
       
       // Verify gateway breakdown
-      await expect(page.locator('[data-testid="razorpay-total"]')).toContainText('₹897.50');
-      await expect(page.locator('[data-testid="stripe-total"]')).toContainText('$456');
+      await expect(page.locator('[data-_testid = "razorpay-total"]')).toContainText('₹897.50');
+      await expect(page.locator('[data-_testid = "stripe-total"]')).toContainText('$456');
       
       // Verify no discrepancies
-      await expect(page.locator('[data-testid="discrepancies-count"]')).toContainText('0');
-      await expect(page.locator('[data-testid="reconciliation-status"]')).toContainText('completed');
+      await expect(page.locator('[data-_testid = "discrepancies-count"]')).toContainText('0');
+      await expect(page.locator('[data-_testid = "reconciliation-status"]')).toContainText('completed');
     });
 
-    test('handle payment discrepancies @p0', async ({ page }) => {
+    test(_'handle payment discrepancies @p0', _async ({ page }) => {
       // Mock reconciliation with discrepancies
-      await page.route('**/admin/payments/reconciliation', async route => {
+      await page.route('**/admin/payments/reconciliation', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -808,20 +725,20 @@ test.describe('P0 Critical Payment Integration Tests @critical @p0 @payments', (
       await page.goto('/admin/payments/reconciliation');
       
       // Should highlight discrepancies
-      const discrepancyAlert = page.locator('[data-testid="discrepancy-alert"]');
+      const _discrepancyAlert =  page.locator('[data-testid
       await expect(discrepancyAlert).toBeVisible();
       await expect(discrepancyAlert).toContainText('1 discrepancy found');
       
       // View discrepancy details
-      await page.locator('[data-testid="view-discrepancies"]').click();
+      await page.locator('[data-_testid = "view-discrepancies"]').click();
       
-      const discrepancyDetails = page.locator('[data-testid="discrepancy-TXN-DISC-001"]');
+      const _discrepancyDetails =  page.locator('[data-testid
       await expect(discrepancyDetails).toContainText('amount_mismatch');
       await expect(discrepancyDetails).toContainText('Expected: ₹100');
       await expect(discrepancyDetails).toContainText('Actual: ₹95');
       
       // Should provide resolution options
-      await expect(page.locator('[data-testid="resolve-discrepancy-TXN-DISC-001"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "resolve-discrepancy-TXN-DISC-001"]')).toBeVisible();
     });
   });
 });

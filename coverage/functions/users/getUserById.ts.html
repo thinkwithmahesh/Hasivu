@@ -25,14 +25,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/76</span>
+                <span class='fraction'>0/75</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/61</span>
+                <span class='fraction'>0/65</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/76</span>
+                <span class='fraction'>0/75</span>
             </div>
         
             
@@ -333,10 +333,7 @@
 <a name='L268'></a><a href='#L268'>268</a>
 <a name='L269'></a><a href='#L269'>269</a>
 <a name='L270'></a><a href='#L270'>270</a>
-<a name='L271'></a><a href='#L271'>271</a>
-<a name='L272'></a><a href='#L272'>272</a>
-<a name='L273'></a><a href='#L273'>273</a>
-<a name='L274'></a><a href='#L274'>274</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L271'></a><a href='#L271'>271</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -360,7 +357,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -478,8 +474,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -616,7 +610,7 @@
  */
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 import { UserService } from '../../services/user.service';
-import { LoggerService } from '../shared/logger.service';
+import { logger } from '../../utils/logger';
 import { handleError, createSuccessResponse } from '../shared/response.utils';
 &nbsp;
 /**
@@ -633,7 +627,6 @@ export const getUserByIdHandler = <span class="cstat-no" title="statement not co
   event: APIGatewayProxyEvent,
   context: Context
 ): Promise&lt;APIGatewayProxyResult&gt; =&gt; {
-  const logger = <span class="cstat-no" title="statement not covered" >LoggerService.getInstance();</span>
   const requestId = <span class="cstat-no" title="statement not covered" >context.awsRequestId;</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >  try {</span>
@@ -647,14 +640,14 @@ export const getUserByIdHandler = <span class="cstat-no" title="statement not co
     const userContext = <span class="cstat-no" title="statement not covered" >event.requestContext.authorizer;</span>
 <span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!userContext?.userId) {</span>
 <span class="cstat-no" title="statement not covered" >      logger.warn('Unauthorized access attempt', { requestId });</span>
-<span class="cstat-no" title="statement not covered" >      return handleError(new Error('Unauthorized'), undefined, 401, requestId);</span>
+<span class="cstat-no" title="statement not covered" >      return handleError(new Error('Unauthorized'));</span>
     }
 &nbsp;
     // Validate user ID parameter
     const userId = <span class="cstat-no" title="statement not covered" >event.pathParameters?.id;</span>
 <span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!userId) {</span>
 <span class="cstat-no" title="statement not covered" >      logger.warn('Missing user ID parameter', { requestId });</span>
-<span class="cstat-no" title="statement not covered" >      return handleError(new Error('User ID is required'), undefined, 400, requestId);</span>
+<span class="cstat-no" title="statement not covered" >      return handleError(new Error('User ID is required'));</span>
     }
 &nbsp;
     // Parse query parameters
@@ -664,11 +657,11 @@ export const getUserByIdHandler = <span class="cstat-no" title="statement not co
     // Get requesting user for permission checks
     const requestingUser = <span class="cstat-no" title="statement not covered" >await UserService.getUserById(userContext.userId);</span>
 <span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!requestingUser) {</span>
-<span class="cstat-no" title="statement not covered" >      logger.error('Requesting user not found', {</span>
+<span class="cstat-no" title="statement not covered" >      logger.error('Requesting user not found', new Error('User not found'), {</span>
         requestId,
         userId: userContext.userId
       });
-<span class="cstat-no" title="statement not covered" >      return handleError(new Error('Requesting user not found'), undefined, 404, requestId);</span>
+<span class="cstat-no" title="statement not covered" >      return handleError(new Error('Requesting user not found'));</span>
     }
 &nbsp;
     // Get target user
@@ -679,7 +672,7 @@ export const getUserByIdHandler = <span class="cstat-no" title="statement not co
         targetUserId: userId,
         requestingUserId: userContext.userId
       });
-<span class="cstat-no" title="statement not covered" >      return handleError(new Error('User not found'), undefined, 404, requestId);</span>
+<span class="cstat-no" title="statement not covered" >      return handleError(new Error('User not found'));</span>
     }
 &nbsp;
     // Check permissions
@@ -692,7 +685,7 @@ export const getUserByIdHandler = <span class="cstat-no" title="statement not co
         targetUserId: userId,
         targetUserRole: targetUser.role
       });
-<span class="cstat-no" title="statement not covered" >      return handleError(new Error('Access denied'), undefined, 403, requestId);</span>
+<span class="cstat-no" title="statement not covered" >      return handleError(new Error('Access denied'));</span>
     }
 &nbsp;
     // Get user audit logs if requesting own profile or admin
@@ -704,7 +697,7 @@ export const getUserByIdHandler = <span class="cstat-no" title="statement not co
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (canViewAuditLogs) {</span>
 <span class="cstat-no" title="statement not covered" >      try {</span>
-<span class="cstat-no" title="statement not covered" >        auditLogs = await UserService.getUserAuditLogs(userId, 10);</span>
+<span class="cstat-no" title="statement not covered" >        auditLogs = await UserService.getUserAuditLogs(userId);</span>
       } catch (auditError) {
 <span class="cstat-no" title="statement not covered" >        logger.warn('Failed to fetch audit logs', {</span>
           requestId,
@@ -729,9 +722,9 @@ export const getUserByIdHandler = <span class="cstat-no" title="statement not co
       firstName: targetUser.firstName,
       lastName: targetUser.lastName,
       role: targetUser.role,
-      schoolId: targetUser.schoolId,
+      schoolId: targetUser.schoolId ?? undefined,
       school: null, // School relation not loaded
-      parentId: targetUser.parentId,
+      parentId: targetUser.parentId ?? undefined,
       parent: null, // Parent relation not loaded
       children: [], // Children relation not loaded
       isActive: targetUser.isActive,
@@ -747,15 +740,13 @@ export const getUserByIdHandler = <span class="cstat-no" title="statement not co
     };
 &nbsp;
     // Return response
-<span class="cstat-no" title="statement not covered" >    return createSuccessResponse(responseData, 'User retrieved successfully', 200, requestId);</span>
+<span class="cstat-no" title="statement not covered" >    return createSuccessResponse(responseData);</span>
 &nbsp;
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    logger.error('Get user by ID request failed', {</span>
-      requestId,
-      error: (error as Error).message,
-      stack: (error as Error).stack
+<span class="cstat-no" title="statement not covered" >    logger.error('Get user by ID request failed', error as Error, {</span>
+      requestId
     });
-<span class="cstat-no" title="statement not covered" >    return handleError(error as Error, undefined, 500, requestId);</span>
+<span class="cstat-no" title="statement not covered" >    return handleError(error as Error);</span>
   }
 };
 &nbsp;
@@ -889,7 +880,7 @@ export default getUserByIdHandler;</pre></td></tr></table></pre>
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-09-03T01:56:53.571Z
+                at 2025-10-06T16:03:48.029Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

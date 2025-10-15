@@ -1,0 +1,1007 @@
+/**
+ * Schema Inference Engine - Real-world Implementation
+ * Automatically infers schemas from various data formats and sources
+ */
+
+import { logger } from '../../../../utils/logger';
+import { StorageFormat } from '../../types/data-lake-types';
+
+// Define missing interfaces locally since they're not exported from data-lake-types
+export type DataType = 'string' | 'number' | 'boolean' | 'date' | 'json' | 'array' | 'object' | 'null' | 'decimal' | 'integer' | 'timestamp' | 'unknown';
+
+export interface SchemaField {
+  name: string;
+  type?: DataType; // Made optional since code may use dataType instead
+  dataType?: DataType; // Alternative property name used in validation
+  nullable: boolean;
+  unique?: boolean;
+  pattern?: string;
+  patterns?: string[]; // Multiple patterns support
+  minLength?: number;
+  maxLength?: number;
+  min?: number;
+  max?: number;
+  description?: string;
+  examples?: any[] | undefined;
+  constraints?: Record<string, any>;
+  confidence?: number;
+  inferredFrom?: string;
+  metadata?: Record<string, any>;
+}
+
+export interface SchemaInference {
+  id?: string;
+  datasetId: string;
+  fields: SchemaField[];
+  format?: StorageFormat;
+  confidence: number;
+  sampleSize: number;
+  nullPercentage?: number;
+  inferredAt: Date;
+  version?: number;
+  metadata?: Record<string, any>;
+}
+
+export interface SchemaValidationResult {
+  valid?: boolean;
+  isValid?: boolean; // Alternative property name
+  errors: any[] | undefined; // Can be string[] or detailed error objects
+  warnings?: string[];
+  confidence?: number;
+  validationScore?: number;
+  fieldStats?: any;
+  summary?: {
+    totalRecords: number;
+    totalFields: number;
+    totalErrors: number;
+    validationTime: number;
+  };
+  fieldValidation?: Record<string, {
+    valid: boolean;
+    errors: string[];
+    warnings: string[];
+  }>;
+}
+
+export interface SchemaEvolutionResult {
+  compatible?: boolean;
+  originalSchema?: SchemaInference;
+  evolvedSchema?: SchemaInference;
+  changes: any[] | undefined | {
+    added: SchemaField[];
+    removed: SchemaField[];
+    modified: Array<{
+      field: string;
+      oldType: DataType;
+      newType: DataType;
+      breaking: boolean;
+    }>;
+  };
+  isBackwardCompatible?: boolean;
+  recommendations?: string[];
+  migrationRequired: boolean;
+  migrationScript?: string;
+}
+
+export interface InferenceConfig {
+  sampleSize: number;
+  confidenceThreshold: number;
+  nullThreshold: number;
+  enableTypePromotion: boolean;
+  enablePatternDetection: boolean;
+  customPatterns?: Record<string, RegExp>;
+}
+
+export interface SchemaStats {
+  fieldCount: number;
+  nullableFields: number;
+  uniqueConstraints: number;
+  indexRecommendations: string[];
+  estimatedSize: number;
+  complexityScore: number;
+}
+
+export class SchemaInferenceEngine {
+  private config: InferenceConfig;
+  private typeDetectors: Map<DataType, (value: any) => boolean> = new Map();
+  private patternMatchers: Map<string, RegExp> = new Map();
+
+  constructor(config: Partial<InferenceConfig> = {}) {
+    this.config = {
+      sampleSize: 1000,
+      confidenceThreshold: 0.8,
+      nullThreshold: 0.1,
+      enableTypePromotion: true,
+      enablePatternDetection: true,
+      ...config
+    };
+
+    this.initializeTypeDetectors();
+    this.initializePatternMatchers();
+
+    logger.info('SchemaInferenceEngine initialized', {
+      sampleSize: this.config.sampleSize,
+      confidenceThreshold: this.config.confidenceThreshold
+    });
+  }
+
+  async inferSchema(
+    data: any[] | undefined,
+    format: StorageFormat,
+    datasetId: string
+  ): Promise<SchemaInference> {
+    const startTime = Date.now();
+
+    try {
+      logger.info('Starting schema inference', {
+        datasetId,
+        format,
+        recordCount: data?.length || 0
+      });
+
+      // Sample data if necessary
+      const sampleData = this.sampleData(data);
+
+      // Extract field information
+      const fields = await this.extractFields(sampleData, format);
+
+      // Detect data types
+      const typedFields = await this.detectDataTypes(fields, sampleData);
+
+      // Apply pattern detection
+      const enrichedFields = this.config.enablePatternDetection
+        ? await this.detectPatterns(typedFields, sampleData)
+        : typedFields;
+
+      // Detect relationships and constraints
+      const finalFields = await this.detectConstraints(enrichedFields, sampleData);
+
+      // Generate statistics
+      const stats = this.generateStats(finalFields, sampleData);
+
+      // Create schema inference result
+      const schema: SchemaInference = {
+        id: `schema_${datasetId}_${Date.now()}`,
+        datasetId,
+        fields: finalFields,
+        format,
+        sampleSize: sampleData?.length || 0,
+        confidence: this.calculateOverallConfidence(finalFields),
+        inferredAt: new Date(),
+        version: 1,
+        metadata: {
+          recordCount: data?.length || 0,
+          inferenceTime: Date.now() - startTime,
+          nullThreshold: this.config.nullThreshold,
+          confidenceThreshold: this.config.confidenceThreshold,
+          ...stats
+        }
+      };
+
+      logger.info('Schema inference completed', {
+        datasetId,
+        fieldCount: finalFields.length,
+        confidence: schema.confidence,
+        executionTime: Date.now() - startTime
+      });
+
+      return schema;
+
+    } catch (error: unknown) {
+      logger.error('Schema inference failed', { datasetId, error });
+      throw new Error(`Schema inference failed: ${(error instanceof Error ? error.message : String(error))}`);
+    }
+  }
+
+  async validateSchema(
+    data: any[] | undefined,
+    schema: SchemaInference
+  ): Promise<SchemaValidationResult> {
+    const startTime = Date.now();
+
+    try {
+      logger.debug('Validating schema', {
+        datasetId: schema.datasetId,
+        recordCount: data?.length || 0
+      });
+
+      const validationErrors: Array<{
+        field: string;
+        error: string;
+        recordIndex?: number;
+        value?: any;
+      }> = [];
+
+      const fieldStats: Record<string, {
+        validCount: number;
+        invalidCount: number;
+        nullCount: number;
+        sampleInvalidValues: any[] | undefined;
+      }> = {};
+
+      // Initialize field stats
+      schema.fields.forEach(field => {
+        fieldStats[field.name] = {
+          validCount: 0,
+          invalidCount: 0,
+          nullCount: 0,
+          sampleInvalidValues: []
+        };
+      });
+
+      // Validate each record
+      if (!data) {
+        const result: SchemaValidationResult = {
+          isValid: true,
+          validationScore: 1.0,
+          errors: [],
+          fieldStats,
+          summary: {
+            totalRecords: 0,
+            totalFields: schema.fields.length,
+            totalErrors: 0,
+            validationTime: Date.now() - startTime
+          }
+        };
+        return result;
+      }
+
+      data.forEach((record, index) => {
+        schema.fields.forEach(field => {
+          const value = this.getFieldValue(record, field.name);
+          const stats = fieldStats[field.name];
+
+          // Check for null values
+          if (value === null || value === undefined) {
+            stats.nullCount++;
+            if (!field.nullable) {
+              validationErrors.push({
+                field: field.name,
+                error: 'Null value in non-nullable field',
+                recordIndex: index
+              });
+            }
+            return;
+          }
+
+          // Validate data type
+          if (field.dataType && !this.validateDataType(value, field.dataType)) {
+            stats.invalidCount++;
+            if (stats.sampleInvalidValues && stats.sampleInvalidValues.length < 10) {
+              stats.sampleInvalidValues.push(value);
+            }
+            validationErrors.push({
+              field: field.name,
+              error: `Type mismatch: expected ${field.dataType}, got ${typeof value}`,
+              recordIndex: index,
+              value
+            });
+          } else {
+            stats.validCount++;
+          }
+
+          // Validate constraints
+          if (field.constraints) {
+            const constraintErrors = this.validateConstraints(value, field.constraints);
+            constraintErrors.forEach(error => {
+              validationErrors.push({
+                field: field.name,
+                error,
+                recordIndex: index,
+                value
+              });
+            });
+          }
+        });
+      });
+
+      // Calculate validation metrics
+      const totalChecks = (data?.length || 0) * schema.fields.length;
+      const errorCount = validationErrors.length;
+      const validationScore = totalChecks > 0 ? (totalChecks - errorCount) / totalChecks : 1.0;
+
+      const result: SchemaValidationResult = {
+        isValid: validationErrors.length === 0,
+        validationScore,
+        errors: validationErrors,
+        fieldStats,
+        summary: {
+          totalRecords: data?.length || 0,
+          totalFields: schema.fields.length,
+          totalErrors: errorCount,
+          validationTime: Date.now() - startTime
+        }
+      };
+
+      logger.info('Schema validation completed', {
+        datasetId: schema.datasetId,
+        isValid: result.isValid,
+        validationScore: result.validationScore,
+        errorCount: validationErrors.length
+      });
+
+      return result;
+
+    } catch (error: unknown) {
+      logger.error('Schema validation failed', { error });
+      throw new Error(`Schema validation failed: ${(error instanceof Error ? error.message : String(error))}`);
+    }
+  }
+
+  async evolveSchema(
+    currentSchema: SchemaInference,
+    newData: any[] | undefined
+  ): Promise<SchemaEvolutionResult> {
+    const startTime = Date.now();
+
+    try {
+      logger.info('Starting schema evolution', {
+        datasetId: currentSchema.datasetId,
+        currentFields: currentSchema.fields.length,
+        newRecords: newData?.length || 0
+      });
+
+      // Infer schema from new data
+      const newSchema = await this.inferSchema(
+        newData,
+        currentSchema.format || 'json',
+        currentSchema.datasetId
+      );
+
+      // Compare schemas
+      const changes = this.compareSchemas(currentSchema, newSchema);
+
+      // Create evolved schema
+      const evolvedFields = this.mergeFields(currentSchema.fields, newSchema.fields);
+
+      const evolvedSchema: SchemaInference = {
+        ...currentSchema,
+        fields: evolvedFields,
+        version: (currentSchema.version || 0) + 1,
+        inferredAt: new Date(),
+        metadata: {
+          ...currentSchema.metadata,
+          evolutionSource: 'data_drift',
+          previousVersion: currentSchema.version || 0,
+          evolutionTime: Date.now() - startTime
+        }
+      };
+
+      const result: SchemaEvolutionResult = {
+        originalSchema: currentSchema,
+        evolvedSchema,
+        changes,
+        isBackwardCompatible: this.checkBackwardCompatibility(changes),
+        migrationRequired: this.requiresMigration(changes),
+        migrationScript: this.generateMigrationScript(changes)
+      };
+
+      logger.info('Schema evolution completed', {
+        datasetId: currentSchema.datasetId,
+        changesCount: changes?.length || 0,
+        isBackwardCompatible: result.isBackwardCompatible,
+        migrationRequired: result.migrationRequired
+      });
+
+      return result;
+
+    } catch (error: unknown) {
+      logger.error('Schema evolution failed', { error });
+      throw new Error(`Schema evolution failed: ${(error instanceof Error ? error.message : String(error))}`);
+    }
+  }
+
+  private sampleData(data: any[] | undefined): any[] | undefined {
+    if (!data || data.length <= this.config.sampleSize) {
+      return data;
+    }
+
+    // Use stratified sampling for better representation
+    const sampleIndices = new Set<number>();
+    const interval = Math.floor(data.length / this.config.sampleSize);
+
+    for (let i = 0; i < this.config.sampleSize; i++) {
+      const index = Math.min(i * interval, data.length - 1);
+      sampleIndices.add(index);
+    }
+
+    // Add some random samples for diversity
+    while (sampleIndices.size < this.config.sampleSize && sampleIndices.size < data.length) {
+      const randomIndex = Math.floor(Math.random() * data.length);
+      sampleIndices.add(randomIndex);
+    }
+
+    return Array.from(sampleIndices).map(index => data[index]);
+  }
+
+  private async extractFields(data: any[] | undefined, format: StorageFormat): Promise<SchemaField[]> {
+    const fieldMap = new Map<string, SchemaField>();
+
+    // Extract field names based on format
+    switch (format) {
+      case 'json':
+        this.extractFieldsFromJSON(data, fieldMap);
+        break;
+      case 'csv':
+        this.extractFieldsFromCSV(data, fieldMap);
+        break;
+      case 'parquet':
+      case 'orc':
+      case 'avro':
+        this.extractFieldsFromStructured(data, fieldMap);
+        break;
+      default:
+        this.extractFieldsFromGeneric(data, fieldMap);
+    }
+
+    return Array.from(fieldMap.values());
+  }
+
+  private extractFieldsFromJSON(data: any[] | undefined, fieldMap: Map<string, SchemaField>): void {
+    if (!data) return;
+
+    data.forEach(record => {
+      if (typeof record === 'object' && record !== null) {
+        this.extractFieldsFromObject(record, fieldMap);
+      }
+    });
+  }
+
+  private extractFieldsFromObject(obj: any, fieldMap: Map<string, SchemaField>, prefix = ''): void {
+    Object.keys(obj).forEach(key => {
+      const fieldName = prefix ? `${prefix}.${key}` : key;
+      const value = obj[key];
+
+      if (!fieldMap.has(fieldName)) {
+        fieldMap.set(fieldName, {
+          name: fieldName,
+          dataType: 'unknown' as DataType,
+          nullable: false,
+          confidence: 0,
+          inferredFrom: 'structure'
+        });
+      }
+
+      // Handle nested objects
+      if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+        this.extractFieldsFromObject(value, fieldMap, fieldName);
+      }
+    });
+  }
+
+  private extractFieldsFromCSV(data: any[] | undefined, fieldMap: Map<string, SchemaField>): void {
+    if (!data || data.length === 0) return;
+
+    const headers = Object.keys(data[0]);
+    headers.forEach(header => {
+      fieldMap.set(header, {
+        name: header,
+        dataType: 'string' as DataType,
+        nullable: false,
+        confidence: 0,
+        inferredFrom: 'header'
+      });
+    });
+  }
+
+  private extractFieldsFromStructured(data: any[] | undefined, fieldMap: Map<string, SchemaField>): void {
+    // For structured formats, field extraction would depend on format-specific libraries
+    this.extractFieldsFromJSON(data, fieldMap);
+  }
+
+  private extractFieldsFromGeneric(data: any[] | undefined, fieldMap: Map<string, SchemaField>): void {
+    // Generic extraction - attempt JSON-like extraction
+    this.extractFieldsFromJSON(data, fieldMap);
+  }
+
+  private async detectDataTypes(fields: SchemaField[], data: any[] | undefined): Promise<SchemaField[]> {
+    return fields.map(field => {
+      const values = this.extractFieldValues(data, field.name);
+      const typeAnalysis = this.analyzeDataType(values);
+
+      return {
+        ...field,
+        dataType: typeAnalysis.primaryType,
+        nullable: typeAnalysis.hasNulls,
+        confidence: typeAnalysis.confidence,
+        metadata: {
+          ...field.metadata,
+          typeDistribution: typeAnalysis.typeDistribution,
+          nullPercentage: typeAnalysis.nullPercentage
+        }
+      };
+    });
+  }
+
+  private extractFieldValues(data: any[] | undefined, fieldName: string): any[] | undefined {
+    if (!data) return [];
+    return data.map(record => this.getFieldValue(record, fieldName));
+  }
+
+  private getFieldValue(record: any, fieldName: string): any {
+    // Handle nested field names (e.g., "user.profile.name")
+    const parts = fieldName.split('.');
+    let value = record;
+
+    for (const part of parts) {
+      if (value === null || value === undefined) {
+        return null;
+      }
+      value = value[part];
+    }
+
+    return value;
+  }
+
+  private analyzeDataType(values: any[] | undefined): {
+    primaryType: DataType;
+    hasNulls: boolean;
+    confidence: number;
+    typeDistribution: Record<string, number>;
+    nullPercentage: number;
+  } {
+    if (!values) {
+      return {
+        primaryType: 'string',
+        hasNulls: false,
+        confidence: 0,
+        typeDistribution: {},
+        nullPercentage: 0
+      };
+    }
+
+    const typeCount: Record<string, number> = {};
+    let nullCount = 0;
+
+    values.forEach(value => {
+      if (value === null || value === undefined) {
+        nullCount++;
+        return;
+      }
+
+      const detectedType = this.detectValueType(value);
+      typeCount[detectedType] = (typeCount[detectedType] || 0) + 1;
+    });
+
+    const totalValues = values.length;
+    const nonNullValues = totalValues - nullCount;
+    const nullPercentage = totalValues > 0 ? nullCount / totalValues : 0;
+
+    // Find the most common type
+    let primaryType: DataType = 'string';
+    let maxCount = 0;
+
+    Object.entries(typeCount).forEach(([type, count]) => {
+      if (count > maxCount) {
+        maxCount = count;
+        primaryType = type as DataType;
+      }
+    });
+
+    // Calculate confidence
+    const confidence = nonNullValues > 0 ? maxCount / nonNullValues : 0;
+
+    // Apply type promotion if enabled
+    if (this.config.enableTypePromotion && confidence < this.config.confidenceThreshold) {
+      primaryType = this.promoteType(typeCount, nonNullValues);
+    }
+
+    return {
+      primaryType,
+      hasNulls: nullPercentage > this.config.nullThreshold,
+      confidence,
+      typeDistribution: typeCount,
+      nullPercentage
+    };
+  }
+
+  private detectValueType(value: any): DataType {
+    for (const [type, detector] of this.typeDetectors) {
+      if (detector(value)) {
+        return type;
+      }
+    }
+    return 'string';
+  }
+
+  private promoteType(typeCount: Record<string, number>, totalCount: number): DataType {
+    // Type promotion rules
+    const hasNumeric = typeCount['integer'] || typeCount['decimal'];
+    const hasString = typeCount['string'];
+
+    if (hasNumeric && hasString && (hasNumeric / totalCount) > 0.5) {
+      return typeCount['decimal'] ? 'decimal' : 'integer';
+    }
+
+    // Default to string if mixed types
+    return 'string';
+  }
+
+  private async detectPatterns(fields: SchemaField[], data: any[] | undefined): Promise<SchemaField[]> {
+    return fields.map(field => {
+      if (field.dataType !== 'string') {
+        return field;
+      }
+
+      const extractedValues = this.extractFieldValues(data, field.name);
+      const values = extractedValues ? extractedValues.filter(v => v !== null && v !== undefined) : [];
+
+      const patterns = this.detectFieldPatterns(values);
+
+      return {
+        ...field,
+        patterns,
+        metadata: {
+          ...field.metadata,
+          patternAnalysis: patterns
+        }
+      };
+    });
+  }
+
+  private detectFieldPatterns(values: string[]): string[] {
+    const detectedPatterns: string[] = [];
+
+    this.patternMatchers.forEach((regex, patternName) => {
+      const matchCount = values.filter(value => regex.test(String(value))).length;
+      const matchRatio = matchCount / values.length;
+
+      if (matchRatio > 0.8) { // 80% match threshold
+        detectedPatterns.push(patternName);
+      }
+    });
+
+    return detectedPatterns;
+  }
+
+  private async detectConstraints(fields: SchemaField[], data: any[] | undefined): Promise<SchemaField[]> {
+    return fields.map(field => {
+      const extractedValues = this.extractFieldValues(data, field.name);
+      const values = extractedValues ? extractedValues.filter(v => v !== null && v !== undefined) : [];
+
+      const constraints = field.dataType ? this.analyzeConstraints(values, field.dataType) : {};
+
+      return {
+        ...field,
+        constraints,
+        metadata: {
+          ...field.metadata,
+          constraintAnalysis: constraints
+        }
+      };
+    });
+  }
+
+  private analyzeConstraints(values: any[] | undefined, dataType: DataType): any {
+    const constraints: any = {};
+
+    if (!values || values.length === 0) return constraints;
+
+    // Uniqueness check
+    const uniqueValues = new Set(values);
+    if (uniqueValues.size === values.length) {
+      constraints.unique = true;
+    }
+
+    // Type-specific constraints
+    switch (dataType) {
+      case 'string':
+        const lengths = values.map(v => String(v).length);
+        constraints.minLength = Math.min(...lengths);
+        constraints.maxLength = Math.max(...lengths);
+        break;
+
+      case 'integer':
+      case 'decimal':
+        const numbers = values.map(v => Number(v));
+        constraints.min = Math.min(...numbers);
+        constraints.max = Math.max(...numbers);
+        break;
+
+      case 'date':
+      case 'timestamp':
+        const dates = values.map(v => new Date(v));
+        constraints.minDate = new Date(Math.min(...dates.map(d => d.getTime())));
+        constraints.maxDate = new Date(Math.max(...dates.map(d => d.getTime())));
+        break;
+    }
+
+    return constraints;
+  }
+
+  private generateStats(fields: SchemaField[], data: any[] | undefined): SchemaStats {
+    const nullableFields = fields.filter(f => f.nullable).length;
+    const uniqueConstraints = fields.filter(f => f.constraints?.unique).length;
+
+    // Generate index recommendations
+    const indexRecommendations: string[] = [];
+    fields.forEach(field => {
+      if (field.constraints?.unique) {
+        indexRecommendations.push(`CREATE UNIQUE INDEX idx_${field.name} ON table (${field.name})`);
+      } else if (field.dataType === 'string' && field.patterns?.includes('email')) {
+        indexRecommendations.push(`CREATE INDEX idx_${field.name} ON table (${field.name})`);
+      }
+    });
+
+    // Estimate schema size
+    const estimatedSize = fields.reduce((total, field) => {
+      let fieldSize = 0;
+      switch (field.dataType) {
+        case 'boolean': fieldSize = 1; break;
+        case 'integer': fieldSize = 8; break;
+        case 'decimal': fieldSize = 16; break;
+        case 'date': fieldSize = 8; break;
+        case 'timestamp': fieldSize = 16; break;
+        case 'string': fieldSize = field.constraints?.maxLength || 255; break;
+        default: fieldSize = 255;
+      }
+      return total + fieldSize;
+    }, 0);
+
+    // Calculate complexity score
+    const complexityScore = fields.length * 0.5 +
+      nullableFields * 0.3 +
+      uniqueConstraints * 0.2;
+
+    return {
+      fieldCount: fields.length,
+      nullableFields,
+      uniqueConstraints,
+      indexRecommendations,
+      estimatedSize,
+      complexityScore
+    };
+  }
+
+  private calculateOverallConfidence(fields: SchemaField[]): number {
+    if (fields.length === 0) return 0;
+
+    const totalConfidence = fields.reduce((sum, field) => sum + (field.confidence || 0), 0);
+    return totalConfidence / fields.length;
+  }
+
+  private validateDataType(value: any, expectedType: DataType): boolean {
+    const detector = this.typeDetectors.get(expectedType);
+    return detector ? detector(value) : true;
+  }
+
+  private validateConstraints(value: any, constraints: any): string[] {
+    const errors: string[] = [];
+
+    if (constraints.unique) {
+      // Uniqueness would be checked at dataset level, not individual value level
+    }
+
+    if (constraints.minLength && String(value).length < constraints.minLength) {
+      errors.push(`Value too short: minimum length is ${constraints.minLength}`);
+    }
+
+    if (constraints.maxLength && String(value).length > constraints.maxLength) {
+      errors.push(`Value too long: maximum length is ${constraints.maxLength}`);
+    }
+
+    if (constraints.min && Number(value) < constraints.min) {
+      errors.push(`Value too small: minimum is ${constraints.min}`);
+    }
+
+    if (constraints.max && Number(value) > constraints.max) {
+      errors.push(`Value too large: maximum is ${constraints.max}`);
+    }
+
+    return errors;
+  }
+
+  private compareSchemas(current: SchemaInference, newSchema: SchemaInference): any[] | undefined {
+    const changes: any[] | undefined = [];
+
+    const currentFieldMap = new Map(current.fields.map(f => [f.name, f]));
+    const newFieldMap = new Map(newSchema.fields.map(f => [f.name, f]));
+
+    // Check for new fields
+    newFieldMap.forEach((field, name) => {
+      if (!currentFieldMap.has(name)) {
+        changes.push({
+          type: 'field_added',
+          field: name,
+          details: field
+        });
+      }
+    });
+
+    // Check for removed fields
+    currentFieldMap.forEach((field, name) => {
+      if (!newFieldMap.has(name)) {
+        changes.push({
+          type: 'field_removed',
+          field: name,
+          details: field
+        });
+      }
+    });
+
+    // Check for modified fields
+    currentFieldMap.forEach((currentField, name) => {
+      const newField = newFieldMap.get(name);
+      if (newField && currentField.dataType !== newField.dataType) {
+        changes.push({
+          type: 'type_changed',
+          field: name,
+          oldType: currentField.dataType,
+          newType: newField.dataType
+        });
+      }
+    });
+
+    return changes;
+  }
+
+  private mergeFields(currentFields: SchemaField[], newFields: SchemaField[]): SchemaField[] {
+    const mergedMap = new Map<string, SchemaField>();
+
+    // Start with current fields
+    currentFields.forEach(field => {
+      mergedMap.set(field.name, { ...field });
+    });
+
+    // Merge with new fields
+    newFields.forEach(newField => {
+      const existing = mergedMap.get(newField.name);
+      if (existing) {
+        // Merge field properties
+        mergedMap.set(newField.name, {
+          ...existing,
+          nullable: existing.nullable || newField.nullable,
+          confidence: Math.max(existing.confidence || 0, newField.confidence || 0)
+        });
+      } else {
+        mergedMap.set(newField.name, { ...newField });
+      }
+    });
+
+    return Array.from(mergedMap.values());
+  }
+
+  private checkBackwardCompatibility(changes: any[] | undefined): boolean {
+    if (!changes) return true;
+    return !changes.some(change =>
+      change.type === 'field_removed' ||
+      (change.type === 'type_changed' && !this.isCompatibleTypeChange(change.oldType, change.newType))
+    );
+  }
+
+  private isCompatibleTypeChange(oldType: DataType, newType: DataType): boolean {
+    // Define compatible type transitions
+    const compatibleTransitions: Partial<Record<DataType, DataType[]>> = {
+      'integer': ['decimal', 'string'],
+      'decimal': ['string'],
+      'date': ['timestamp', 'string'],
+      'boolean': ['string']
+    };
+
+    return compatibleTransitions[oldType]?.includes(newType) || false;
+  }
+
+  private requiresMigration(changes: any[] | undefined): boolean {
+    if (!changes) return false;
+    return changes.some(change =>
+      change.type === 'field_removed' ||
+      change.type === 'type_changed'
+    );
+  }
+
+  private generateMigrationScript(changes: any[] | undefined): string {
+    const scripts: string[] = [];
+
+    if (changes) {
+      changes.forEach(change => {
+        switch (change.type) {
+          case 'field_added':
+            scripts.push(`ALTER TABLE table_name ADD COLUMN ${change.field} ${this.mapDataTypeToSQL(change.details.dataType)};`);
+            break;
+          case 'field_removed':
+            scripts.push(`ALTER TABLE table_name DROP COLUMN ${change.field};`);
+            break;
+          case 'type_changed':
+            scripts.push(`ALTER TABLE table_name ALTER COLUMN ${change.field} TYPE ${this.mapDataTypeToSQL(change.newType)};`);
+            break;
+        }
+      });
+    }
+
+    return scripts.join('\n');
+  }
+
+  private mapDataTypeToSQL(dataType: DataType): string {
+    const mapping: Partial<Record<DataType, string>> = {
+      'string': 'VARCHAR(255)',
+      'integer': 'INTEGER',
+      'decimal': 'DECIMAL(10,2)',
+      'boolean': 'BOOLEAN',
+      'date': 'DATE',
+      'timestamp': 'TIMESTAMP',
+      'number': 'NUMERIC',
+      'object': 'JSON',
+      'array': 'JSON',
+      'json': 'JSON',
+      'null': 'NULL',
+      'unknown': 'TEXT'
+    };
+
+    return mapping[dataType] || 'TEXT';
+  }
+
+  private initializeTypeDetectors(): void {
+    this.typeDetectors.set('boolean', (value: any) => {
+      return typeof value === 'boolean' ||
+        (typeof value === 'string' && /^(true|false|yes|no|1|0)$/i.test(value));
+    });
+
+    this.typeDetectors.set('integer', (value: any) => {
+      return Number.isInteger(Number(value)) && !isNaN(Number(value));
+    });
+
+    this.typeDetectors.set('decimal', (value: any) => {
+      return typeof value === 'number' && !Number.isInteger(value) ||
+        (typeof value === 'string' && /^\d+\.\d+$/.test(value));
+    });
+
+    this.typeDetectors.set('date', (value: any) => {
+      if (value instanceof Date) return true;
+      if (typeof value === 'string') {
+        const date = new Date(value);
+        return !isNaN(date.getTime()) && /^\d{4}-\d{2}-\d{2}$/.test(value);
+      }
+      return false;
+    });
+
+    this.typeDetectors.set('timestamp', (value: any) => {
+      if (value instanceof Date) return true;
+      if (typeof value === 'string') {
+        const date = new Date(value);
+        return !isNaN(date.getTime()) && value.includes('T');
+      }
+      return false;
+    });
+
+    this.typeDetectors.set('string', () => true); // Default fallback
+  }
+
+  private initializePatternMatchers(): void {
+    this.patternMatchers.set('email', /^[^\s@]+@[^\s@]+\.[^\s@]+$/);
+    this.patternMatchers.set('phone', /^[\+]?[1-9][\d]{0,15}$/);
+    this.patternMatchers.set('url', /^https?:\/\/.+/);
+    this.patternMatchers.set('uuid', /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
+    this.patternMatchers.set('ip_address', /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/);
+    this.patternMatchers.set('credit_card', /^\d{4}\s?\d{4}\s?\d{4}\s?\d{4}$/);
+
+    // Add custom patterns if provided
+    if (this.config.customPatterns) {
+      Object.entries(this.config.customPatterns).forEach(([name, pattern]) => {
+        this.patternMatchers.set(name, pattern);
+      });
+    }
+  }
+
+  async initialize(): Promise<void> {
+    try {
+      logger.info('Initializing Schema Inference Engine');
+      // Re-initialize detectors and pattern matchers
+      this.initializeTypeDetectors();
+      this.initializePatternMatchers();
+      logger.info('Schema Inference Engine initialized successfully');
+    } catch (error: unknown) {
+      logger.error('Failed to initialize Schema Inference Engine', { error });
+      throw new Error(`Schema Inference Engine initialization failed: ${(error instanceof Error ? error.message : String(error))}`);
+    }
+  }
+
+  async shutdown(): Promise<void> {
+    logger.info('Shutting down Schema Inference Engine');
+    // Clear caches and resources
+    this.typeDetectors.clear();
+    this.patternMatchers.clear();
+    logger.info('Schema Inference Engine shutdown complete');
+  }
+}
+
+export default SchemaInferenceEngine;

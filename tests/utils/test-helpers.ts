@@ -1,6 +1,11 @@
 /**
  * Test Helpers and Utilities
  * Comprehensive testing utilities for HASIVU platform
+ *
+ * ESLint fixes applied:
+ * - Replaced 'any' types with proper TypeScript types (Record<string, unknown>, specific interfaces)
+ * - Added eslint-disable-next-line no-console for intentional console logging in test helpers
+ * - Fixed Express Request/Response mock typing issues
  */
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
@@ -9,7 +14,7 @@ import bcrypt from 'bcryptjs';
 // Test data factories
 export const TestDataFactory = {
   user: {
-    student: (overrides: any = {}) => ({
+    student: (overrides: Record<string, unknown> = {}) => ({
       id: '123e4567-e89b-12d3-a456-426614174000',
       email: 'student@test.com',
       name: 'Test Student',
@@ -31,7 +36,7 @@ export const TestDataFactory = {
       ...overrides
     }),
     
-    parent: (overrides: any = {}) => ({
+    parent: (overrides: Record<string, unknown> = {}) => ({
       id: '123e4567-e89b-12d3-a456-426614174002',
       email: 'parent@test.com',
       name: 'Test Parent',
@@ -46,7 +51,7 @@ export const TestDataFactory = {
       ...overrides
     }),
     
-    admin: (overrides: any = {}) => ({
+    admin: (overrides: Record<string, unknown> = {}) => ({
       id: '123e4567-e89b-12d3-a456-426614174003',
       email: 'admin@test.com',
       name: 'Test Admin',
@@ -61,7 +66,7 @@ export const TestDataFactory = {
     })
   },
 
-  menuItem: (overrides: any = {}) => ({
+  menuItem: (overrides: Record<string, unknown> = {}) => ({
     id: '123e4567-e89b-12d3-a456-426614174004',
     name: 'Test Menu Item',
     description: 'Delicious test meal',
@@ -96,7 +101,7 @@ export const TestDataFactory = {
     ...overrides
   }),
 
-  order: (overrides: any = {}) => ({
+  order: (overrides: Record<string, unknown> = {}) => ({
     id: '123e4567-e89b-12d3-a456-426614174005',
     userId: '123e4567-e89b-12d3-a456-426614174000',
     parentId: '123e4567-e89b-12d3-a456-426614174002',
@@ -128,7 +133,7 @@ export const TestDataFactory = {
     ...overrides
   }),
 
-  rfidCard: (overrides: any = {}) => ({
+  rfidCard: (overrides: Record<string, unknown> = {}) => ({
     id: '123e4567-e89b-12d3-a456-426614174006',
     cardId: 'RFID_TEST_001',
     studentId: '123e4567-e89b-12d3-a456-426614174000',
@@ -141,7 +146,7 @@ export const TestDataFactory = {
     ...overrides
   }),
 
-  paymentOrder: (overrides: any = {}) => ({
+  paymentOrder: (overrides: Record<string, unknown> = {}) => ({
     id: '123e4567-e89b-12d3-a456-426614174007',
     orderId: '123e4567-e89b-12d3-a456-426614174005',
     amount: 150.00,
@@ -163,7 +168,7 @@ export const TestDataFactory = {
     ...overrides
   }),
 
-  subscription: (overrides: any = {}) => ({
+  subscription: (overrides: Record<string, unknown> = {}) => ({
     id: '123e4567-e89b-12d3-a456-426614174008',
     userId: '123e4567-e89b-12d3-a456-426614174002',
     planId: 'monthly_basic',
@@ -177,7 +182,7 @@ export const TestDataFactory = {
     ...overrides
   }),
 
-  notification: (overrides: any = {}) => ({
+  notification: (overrides: Record<string, unknown> = {}) => ({
     id: '123e4567-e89b-12d3-a456-426614174009',
     userId: '123e4567-e89b-12d3-a456-426614174000',
     type: 'order_delivered',
@@ -195,7 +200,7 @@ export const TestDataFactory = {
     ...overrides
   }),
 
-  orderItem: (overrides: any = {}) => ({
+  orderItem: (overrides: Record<string, unknown> = {}) => ({
     id: '123e4567-e89b-12d3-a456-426614174010',
     orderId: '123e4567-e89b-12d3-a456-426614174005',
     menuItemId: '123e4567-e89b-12d3-a456-426614174004',
@@ -216,7 +221,7 @@ export const TestDataFactory = {
     ...overrides
   }),
 
-  menuPlan: (overrides: any = {}) => ({
+  menuPlan: (overrides: Record<string, unknown> = {}) => ({
     id: '123e4567-e89b-12d3-a456-426614174011',
     name: 'Weekly Nutritious Plan',
     description: 'Balanced weekly menu plan with variety',
@@ -240,7 +245,7 @@ export const TestDataFactory = {
 
 // Authentication helpers
 export const AuthTestHelper = {
-  generateValidToken: (payload: any = {}) => {
+  generateValidToken: (payload: Record<string, unknown> = {}) => {
     const defaultPayload = {
       userId: '123e4567-e89b-12d3-a456-426614174000',
       email: 'test@example.com',
@@ -255,7 +260,7 @@ export const AuthTestHelper = {
     );
   },
 
-  generateExpiredToken: (payload: any = {}) => {
+  generateExpiredToken: (payload: Record<string, unknown> = {}) => {
     const defaultPayload = {
       userId: '123e4567-e89b-12d3-a456-426614174000',
       email: 'test@example.com',
@@ -283,7 +288,7 @@ export const AuthTestHelper = {
 
 // Mock request/response helpers
 export const MockRequestResponse = {
-  createMockRequest: (overrides: any = {}): Partial<Request> => ({
+  createMockRequest: (overrides: Record<string, unknown> = {}): Partial<Request> & { user?: unknown } => ({
     body: {},
     params: {},
     query: {},
@@ -295,7 +300,23 @@ export const MockRequestResponse = {
     ...overrides
   }),
 
-  createMockResponse: (): Partial<Response> => {
+  createMockResponse: (): Partial<Response> & {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    status: jest.MockedFunction<any>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    json: jest.MockedFunction<any>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    send: jest.MockedFunction<any>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    cookie: jest.MockedFunction<any>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    clearCookie: jest.MockedFunction<any>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    header: jest.MockedFunction<any>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    end: jest.MockedFunction<any>;
+  } => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const res: any = {};
     res.status = jest.fn().mockReturnValue(res);
     res.json = jest.fn().mockReturnValue(res);
@@ -312,36 +333,43 @@ export const MockRequestResponse = {
 export const DatabaseTestHelper = {
   setupTestDatabase: async () => {
     // Setup test database connection and structure
+    // eslint-disable-next-line no-console
     console.log('Setting up test database...');
   },
 
   seedTestData: async () => {
     // Implementation would depend on your database setup
+    // eslint-disable-next-line no-console
     console.log('Seeding test data...');
   },
 
   seedBaseTestData: async () => {
     // Seed base test data needed for all tests
+    // eslint-disable-next-line no-console
     console.log('Seeding base test data...');
   },
 
   clearTestData: async () => {
     // Clear test-specific data while preserving base data
+    // eslint-disable-next-line no-console
     console.log('Clearing test data...');
   },
 
   resetSequences: async () => {
     // Reset auto-increment sequences if needed
+    // eslint-disable-next-line no-console
     console.log('Resetting database sequences...');
   },
 
   clearAllTables: async () => {
     // Clear all test data
+    // eslint-disable-next-line no-console
     console.log('Clearing all test tables...');
   },
 
   teardownTestDatabase: async () => {
     // Cleanup test database and close connections
+    // eslint-disable-next-line no-console
     console.log('Tearing down test database...');
   }
 };
@@ -372,7 +400,7 @@ export const TimeTestHelper = {
 
 // API testing helpers
 export const ApiTestHelper = {
-  expectErrorResponse: (response: any, expectedError?: string) => {
+  expectErrorResponse: (response: { status: number; body: { success: boolean; error: string } }, expectedError?: string) => {
     expect(response.status).toBeGreaterThanOrEqual(400);
     expect(response.body).toHaveProperty('success', false);
     expect(response.body).toHaveProperty('error');
@@ -381,7 +409,7 @@ export const ApiTestHelper = {
     }
   },
 
-  expectValidationError: (response: any, field?: string) => {
+  expectValidationError: (response: { status: number; body: { success: boolean; error: string } }, field?: string) => {
     expect(response.status).toBe(400);
     expect(response.body).toHaveProperty('success', false);
     expect(response.body).toHaveProperty('error');
@@ -390,25 +418,25 @@ export const ApiTestHelper = {
     }
   },
 
-  expectUnauthorizedError: (response: any) => {
+  expectUnauthorizedError: (response: { status: number; body: { success: boolean; error: string } }) => {
     expect(response.status).toBe(401);
     expect(response.body).toHaveProperty('success', false);
     expect(response.body.error).toContain('Unauthorized');
   },
 
-  expectForbiddenError: (response: any) => {
+  expectForbiddenError: (response: { status: number; body: { success: boolean; error: string } }) => {
     expect(response.status).toBe(403);
     expect(response.body).toHaveProperty('success', false);
     expect(response.body.error).toContain('Forbidden');
   },
 
-  expectNotFoundError: (response: any) => {
+  expectNotFoundError: (response: { status: number; body: { success: boolean; error: string } }) => {
     expect(response.status).toBe(404);
     expect(response.body).toHaveProperty('success', false);
     expect(response.body.error).toContain('Not found');
   },
 
-  expectSuccessResponse: (response: any, expectedData?: any) => {
+  expectSuccessResponse: (response: { status: number; body: { success: boolean; data?: unknown } }, expectedData?: unknown) => {
     expect(response.status).toBeLessThan(400);
     expect(response.body).toHaveProperty('success', true);
     if (expectedData) {
@@ -419,7 +447,7 @@ export const ApiTestHelper = {
 
 // Performance testing helpers
 export const PerformanceTestHelper = {
-  measureExecutionTime: async (fn: () => Promise<any>): Promise<{ result: any; duration: number }> => {
+  measureExecutionTime: async (fn: () => Promise<unknown>): Promise<{ result: unknown; duration: number }> => {
     const start = Date.now();
     const result = await fn();
     const duration = Date.now() - start;
@@ -434,7 +462,7 @@ export const PerformanceTestHelper = {
     await new Promise(resolve => setTimeout(resolve, ms));
   },
 
-  generateLoadTestData: (count: number, factory: () => any): any[] => {
+  generateLoadTestData: (count: number, factory: () => unknown): unknown[] => {
     return Array.from({ length: count }, factory);
   }
 };

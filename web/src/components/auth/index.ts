@@ -6,16 +6,16 @@
  */
 
 // Main Authentication Forms
-export { LoginForm } from './LoginForm'
-export { EnhancedSchoolLoginForm } from './EnhancedSchoolLoginForm'
-export { RegisterForm } from './RegisterForm'
-export { MultiStepRegistrationForm } from './MultiStepRegistrationForm'
-export { ForgotPasswordForm, ResetPasswordForm } from './ForgotPasswordForm'
-export { EnhancedPasswordRecoveryForm } from './EnhancedPasswordRecoveryForm'
-export { EmailVerificationForm } from './EmailVerificationForm'
-export { MfaForm, BackupCodeForm } from './MfaForm'
-export { MultiFactorAuthForm } from './MultiFactorAuthForm'
-export { ProfileManagementForm } from './ProfileManagementForm'
+export { LoginForm } from './LoginForm';
+export { EnhancedSchoolLoginForm } from './EnhancedSchoolLoginForm';
+export { RegisterForm } from './RegisterForm';
+export { MultiStepRegistrationForm } from './MultiStepRegistrationForm';
+export { ForgotPasswordForm, ResetPasswordForm } from './ForgotPasswordForm';
+export { EnhancedPasswordRecoveryForm } from './EnhancedPasswordRecoveryForm';
+export { EmailVerificationForm } from './EmailVerificationForm';
+export { MfaForm, BackupCodeForm } from './MfaForm';
+export { MultiFactorAuthForm } from './MultiFactorAuthForm';
+export { ProfileManagementForm } from './ProfileManagementForm';
 
 // Social Authentication
 // export { SocialLoginButtons } from './SocialLoginButtons'

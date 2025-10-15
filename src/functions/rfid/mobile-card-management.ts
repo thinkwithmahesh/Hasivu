@@ -1,6 +1,6 @@
 /**
  * Mobile RFID Card Management Lambda Function
- * 
+ *
  * Implements Story 2.4: Parent Mobile Integration - RFID Card Status and Issue Reporting
  */
 
@@ -87,13 +87,16 @@ const issueReportSchema = z.object({
   issueType: z.enum(['lost', 'damaged', 'not_working', 'other']),
   description: z.string().min(10).max(500),
   requestReplacement: z.boolean(),
-  additionalInfo: z.record(z.string(), z.any()).optional()
+  additionalInfo: z.record(z.string(), z.any()).optional(),
 });
 
 /**
  * Validate parent access to student RFID information
  */
-async function validateParentAccessForRfid(studentId: string, parentUserId: string): Promise<{ success: boolean; error?: string }> {
+async function validateParentAccessForRfid(
+  studentId: string,
+  parentUserId: string
+): Promise<{ success: boolean; error?: string }> {
   try {
     // Get student information
     const student = await prisma.user.findUnique({
@@ -102,10 +105,10 @@ async function validateParentAccessForRfid(studentId: string, parentUserId: stri
         school: true,
         studentParents: {
           include: {
-            parent: true
-          }
-        }
-      }
+            parent: true,
+          },
+        },
+      },
     });
 
     if (!student) {
@@ -123,13 +126,13 @@ async function validateParentAccessForRfid(studentId: string, parentUserId: stri
     // Verify parent relationship
     const parentRelationship = await prisma.studentParent.findFirst({
       where: {
-        studentId: studentId,
+        studentId,
         parentId: parentUserId,
-        isActive: true
+        isActive: true,
       },
       include: {
-        parent: true
-      }
+        parent: true,
+      },
     });
 
     if (!parentRelationship) {
@@ -141,8 +144,11 @@ async function validateParentAccessForRfid(studentId: string, parentUserId: stri
     }
 
     return { success: true };
-  } catch (error) {
-    logger.error('Error validating parent access for RFID:', error);
+  } catch (error: unknown) {
+    logger.error(
+      'Error validating parent access for RFID',
+      error instanceof Error ? error : new Error(String(error))
+    );
     return { success: false, error: 'Validation failed' };
   }
 }
@@ -153,20 +159,20 @@ async function validateParentAccessForRfid(studentId: string, parentUserId: stri
 async function getRfidCardInfo(studentId: string): Promise<any> {
   const card = await prisma.rFIDCard.findFirst({
     where: {
-      studentId: studentId,
-      isActive: true
+      studentId,
+      isActive: true,
     },
     include: {
       student: {
         include: {
-          school: true
-        }
+          school: true,
+        },
       },
       deliveryVerifications: {
         orderBy: { createdAt: 'desc' },
-        take: 10
-      }
-    }
+        take: 10,
+      },
+    },
   });
 
   if (!card) {
@@ -182,15 +188,15 @@ async function getRfidCardInfo(studentId: string): Promise<any> {
 async function getUsageStatistics(cardId: string): Promise<UsageStatistics> {
   // Get total verification attempts
   const totalScans = await prisma.deliveryVerification.count({
-    where: { cardId }
+    where: { cardId },
   });
 
   // Get successful deliveries
   const successfulDeliveries = await prisma.deliveryVerification.count({
     where: {
       cardId,
-      status: 'success'
-    }
+      status: 'success',
+    },
   });
 
   // Get last scan location
@@ -199,9 +205,9 @@ async function getUsageStatistics(cardId: string): Promise<UsageStatistics> {
     select: {
       createdAt: true,
       location: true,
-      status: true
+      status: true,
     },
-    orderBy: { createdAt: 'desc' }
+    orderBy: { createdAt: 'desc' },
   });
 
   // Get recent activity
@@ -214,14 +220,14 @@ async function getUsageStatistics(cardId: string): Promise<UsageStatistics> {
       status: true,
     },
     orderBy: { createdAt: 'desc' },
-    take: 10
+    take: 10,
   });
 
   const recentActivity: RecentActivity[] = recentVerifications.map(verification => ({
     id: verification.id,
     timestamp: verification.createdAt,
-    location: verification.location,
-    status: verification.status as 'success' | 'failed'
+    location: verification.location || '',
+    status: verification.status as 'success' | 'failed',
   }));
 
   return {
@@ -229,7 +235,7 @@ async function getUsageStatistics(cardId: string): Promise<UsageStatistics> {
     successfulDeliveries,
     lastScanDate: lastScan?.createdAt || undefined,
     lastScanLocation: lastScan?.location || undefined,
-    recentActivity
+    recentActivity,
   };
 }
 
@@ -239,7 +245,7 @@ async function getUsageStatistics(cardId: string): Promise<UsageStatistics> {
 async function getIssueReports(cardId: string): Promise<IssueReport[]> {
   // Note: RFIDIssueReport model may not exist - returning empty array for now
   return [];
-  
+
   /* Commented out until RFIDIssueReport model is available
   const issues = await prisma.rfidIssueReport.findMany({
     where: { cardId },
@@ -276,10 +282,10 @@ async function getIssueReports(cardId: string): Promise<IssueReport[]> {
  * Get replacement information for card
  */
 async function getReplacementInfo(cardId: string): Promise<ReplacementInfo | undefined> {
-  // Note: rFIDCardReplacement model may not exist - returning undefined for now
+  // Note: rfidCardReplacement model may not exist - returning undefined for now
   return undefined;
-  
-  /* Commented out until rFIDCardReplacement model is available
+
+  /* Commented out until rfidCardReplacement model is available
   const replacement = await prisma.rFIDCardReplacement.findFirst({
     where: { originalCardId: cardId },
     select: {
@@ -322,10 +328,7 @@ async function getReplacementInfo(cardId: string): Promise<ReplacementInfo | und
 /**
  * Create issue report
  */
-async function createIssueReport(
-  request: RfidIssueReportRequest,
-  parentId: string
-): Promise<any> {
+async function createIssueReport(request: RfidIssueReportRequest, parentId: string): Promise<any> {
   const card = await getRfidCardInfo(request.studentId);
   if (!card) {
     throw new Error('RFID card not found for student');
@@ -333,7 +336,7 @@ async function createIssueReport(
 
   // Create issue report - Note: RFIDIssueReport model may not exist
   throw new Error('Issue report creation not available - RFIDIssueReport model missing');
-  
+
   /* Commented out until RFIDIssueReport model is available
   const issueReport = await prisma.rfidIssueReport.create({
     data: {
@@ -404,31 +407,36 @@ async function createIssueReport(
 /**
  * Get RFID card status - Main handler
  */
-export async function getRfidCardStatus(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
+export async function getRfidCardStatus(
+  event: APIGatewayProxyEvent
+): Promise<APIGatewayProxyResult> {
   try {
     // Authenticate user
     const authResult = await authenticateJWT(event);
     if (!authResult.success) {
-      return createErrorResponse(401, authResult.error!);
+      return createErrorResponse('UNAUTHORIZED', authResult.error || 'Authentication failed', 401);
     }
 
-    const parentId = (authResult.user as any)?.id!
+    const parentId = (authResult.user as any)?.id;
+    if (!parentId) {
+      return createErrorResponse('UNAUTHORIZED', 'User ID not found in authentication', 401);
+    }
     const studentId = event.pathParameters?.studentId;
 
     if (!studentId) {
-      return createErrorResponse(400, 'Student ID is required');
+      return createErrorResponse('VALIDATION_ERROR', 'Student ID is required', 400);
     }
 
     // Validate parent access
     const accessValidation = await validateParentAccessForRfid(studentId, parentId);
     if (!accessValidation.success) {
-      return createErrorResponse(403, accessValidation.error!);
+      return createErrorResponse('FORBIDDEN', accessValidation.error!, 403);
     }
 
     // Get RFID card information
     const card = await getRfidCardInfo(studentId);
     if (!card) {
-      return createErrorResponse(404, 'RFID card not found for student');
+      return createErrorResponse('NOT_FOUND', 'RFID card not found for student', 404);
     }
 
     // Get usage statistics
@@ -453,18 +461,21 @@ export async function getRfidCardStatus(event: APIGatewayProxyEvent): Promise<AP
         grade: card.student.grade,
         school: {
           id: card.student.school.id,
-          name: card.student.school.name
-        }
+          name: card.student.school.name,
+        },
       },
       usageStats,
       issueReports,
-      replacementInfo
+      replacementInfo,
     };
 
     return createSuccessResponse(cardInfo);
-  } catch (error) {
-    logger.error('Error getting RFID card status:', error);
-    return handleError(error);
+  } catch (error: unknown) {
+    logger.error(
+      'Error getting RFID card status',
+      error instanceof Error ? error : new Error(String(error))
+    );
+    return handleError(error as Error);
   }
 }
 
@@ -476,25 +487,32 @@ export async function reportRfidIssue(event: APIGatewayProxyEvent): Promise<APIG
     // Authenticate user
     const authResult = await authenticateJWT(event);
     if (!authResult.success) {
-      return createErrorResponse(401, authResult.error!);
+      return createErrorResponse('UNAUTHORIZED', authResult.error!, 401);
     }
 
-    const parentId = (authResult.user as any)?.id!
+    const parentId = (authResult.user as any)?.id!;
 
     // Parse and validate request body
     const requestBody = JSON.parse(event.body || '{}');
     const validatedRequest = issueReportSchema.parse(requestBody);
 
     // Validate parent access
-    const accessValidation = await validateParentAccessForRfid(validatedRequest.studentId, parentId);
+    const accessValidation = await validateParentAccessForRfid(
+      validatedRequest.studentId,
+      parentId
+    );
     if (!accessValidation.success) {
-      return createErrorResponse(403, accessValidation.error!);
+      return createErrorResponse('FORBIDDEN', accessValidation.error!, 403);
     }
 
     // Validate issue type
     const validIssueTypes = ['lost', 'damaged', 'not_working', 'other'];
     if (!validIssueTypes.includes(validatedRequest.issueType)) {
-      return createErrorResponse(400, `Invalid issue type. Must be one of: ${validIssueTypes.join(', ')}`);
+      return createErrorResponse(
+        'VALIDATION_ERROR',
+        `Invalid issue type. Must be one of: ${validIssueTypes.join(', ')}`,
+        400
+      );
     }
 
     // Create issue report
@@ -504,44 +522,53 @@ export async function reportRfidIssue(event: APIGatewayProxyEvent): Promise<APIG
       message: 'Issue report created successfully',
       trackingId: `RFID-${result.issueReport.id.substring(0, 8).toUpperCase()}`,
       issueReport: result.issueReport,
-      replacementRequest: result.replacementRequest
+      replacementRequest: result.replacementRequest,
     });
-  } catch (error) {
+  } catch (error: unknown) {
     if (error instanceof z.ZodError) {
-      return createErrorResponse(400, 'Invalid request data: ' + error.issues.map(e => e.message).join(', '));
+      return createErrorResponse(
+        'VALIDATION_ERROR',
+        `Invalid request data: ${error.issues.map(e => e.message).join(', ')}`,
+        400
+      );
     }
-    logger.error('Error reporting RFID issue:', error);
-    return handleError(error);
+    logger.error(
+      'Error reporting RFID issue',
+      error instanceof Error ? error : new Error(String(error))
+    );
+    return handleError(error as Error);
   }
 }
 
 /**
  * Get issue report status - Handler
  */
-export async function getIssueReportStatus(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
+export async function getIssueReportStatus(
+  event: APIGatewayProxyEvent
+): Promise<APIGatewayProxyResult> {
   try {
     // Authenticate user
     const authResult = await authenticateJWT(event);
     if (!authResult.success) {
-      return createErrorResponse(401, authResult.error!);
+      return createErrorResponse('UNAUTHORIZED', authResult.error!, 401);
     }
 
-    const parentId = (authResult.user as any)?.id!
+    const parentId = (authResult.user as any)?.id!;
     const reportId = event.pathParameters?.reportId;
 
     if (!reportId) {
-      return createErrorResponse(400, 'Report ID is required');
+      return createErrorResponse('VALIDATION_ERROR', 'Report ID is required', 400);
     }
 
     // Get issue report
     // Note: RFIDIssueReport model may not exist - returning error for now
-    return createErrorResponse(404, 'Issue report functionality not available');
-    
+    return createErrorResponse('NOT_FOUND', 'Issue report functionality not available', 404);
+
     /* Commented out until RFIDIssueReport model is available
     const issueReport = await prisma.rfidIssueReport.findUnique({
       where: { id: reportId },
       include: {
-        card: {
+        rfidCards: {
           include: {
             student: {
               include: {
@@ -556,12 +583,12 @@ export async function getIssueReportStatus(event: APIGatewayProxyEvent): Promise
     });
 
     if (!issueReport) {
-      return createErrorResponse(404, 'Issue report not found');
+      return createErrorResponse('NOT_FOUND', 'Issue report not found', 404);
     }
 
     // Verify parent has access to this report
     if (issueReport.card.student.studentParents.length === 0) {
-      return createErrorResponse(403, 'Access denied');
+      return createErrorResponse('FORBIDDEN', 'Access denied', 403);
     }
 
     return createSuccessResponse({
@@ -579,14 +606,20 @@ export async function getIssueReportStatus(event: APIGatewayProxyEvent): Promise
       }
     });
     */
-  } catch (error) {
-    logger.error('Error getting issue report status:', error);
-    return handleError(error);
+  } catch (error: unknown) {
+    logger.error(
+      'Error getting issue report status',
+      error instanceof Error ? error : new Error(String(error))
+    );
+    return handleError(error instanceof Error ? error : new Error(String(error)));
   }
 }
 
 // Export handler for serverless framework
-export const handler = async (event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> => {
+export const handler = async (
+  event: APIGatewayProxyEvent,
+  context: Context
+): Promise<APIGatewayProxyResult> => {
   const { httpMethod, path } = event;
 
   try {
@@ -598,11 +631,14 @@ export const handler = async (event: APIGatewayProxyEvent, context: Context): Pr
       case 'GET:/rfid/issues/{reportId}':
         return await getIssueReportStatus(event);
       default:
-        return createErrorResponse(404, 'Endpoint not found');
+        return createErrorResponse('NOT_FOUND', 'Endpoint not found', 404);
     }
-  } catch (error) {
-    logger.error('Mobile RFID card management handler error:', error);
-    return handleError(error);
+  } catch (error: unknown) {
+    logger.error(
+      'Mobile RFID card management handler error:',
+      error instanceof Error ? error : new Error(String(error))
+    );
+    return handleError(error instanceof Error ? error : new Error(String(error)));
   } finally {
     await prisma.$disconnect();
   }

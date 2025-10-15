@@ -12,8 +12,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import type { RFIDInterfaceProps, RFIDPickupInfo } from './types';
-import { formatCurrency, formatTime, generatePickupCode } from './utils';
+import type { RFIDInterfaceProps } from './types';
+import { formatCurrency, generatePickupCode } from './utils';
 
 const RFIDInterface: React.FC<RFIDInterfaceProps> = ({
   studentInfo,
@@ -96,7 +96,9 @@ const RFIDInterface: React.FC<RFIDInterfaceProps> = ({
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">Grade & Section:</span>
-                <span className="font-medium">{studentInfo.grade}-{studentInfo.section}</span>
+                <span className="font-medium">
+                  {studentInfo.grade}-{studentInfo.section}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">Roll Number:</span>
@@ -127,9 +129,7 @@ const RFIDInterface: React.FC<RFIDInterfaceProps> = ({
               {pickupCode && (
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">Pickup Code:</span>
-                  <span className="font-mono font-bold text-lg text-blue-600">
-                    {pickupCode}
-                  </span>
+                  <span className="font-mono font-bold text-lg text-blue-600">{pickupCode}</span>
                 </div>
               )}
             </div>
@@ -154,12 +154,14 @@ const RFIDInterface: React.FC<RFIDInterfaceProps> = ({
         <CardContent className="space-y-6">
           {/* Scan Result Display */}
           {scanResult && (
-            <Alert 
+            <Alert
               variant={scanResult.status === 'error' ? 'destructive' : 'default'}
               className={
-                scanResult.status === 'success' ? 'border-green-200 bg-green-50' :
-                scanResult.status === 'warning' ? 'border-yellow-200 bg-yellow-50' :
-                'border-red-200 bg-red-50'
+                scanResult.status === 'success'
+                  ? 'border-green-200 bg-green-50'
+                  : scanResult.status === 'warning'
+                    ? 'border-yellow-200 bg-yellow-50'
+                    : 'border-red-200 bg-red-50'
               }
             >
               {scanResult.status === 'success' && <CheckCircle className="h-4 w-4" />}
@@ -190,15 +192,12 @@ const RFIDInterface: React.FC<RFIDInterfaceProps> = ({
                     type="text"
                     placeholder="Enter RFID card number"
                     value={manualCardId}
-                    onChange={(e) => setManualCardId(e.target.value.toUpperCase())}
+                    onChange={e => setManualCardId(e.target.value.toUpperCase())}
                     onKeyPress={handleKeyPress}
                     maxLength={16}
                     className="font-mono"
                   />
-                  <Button 
-                    onClick={handleManualScan}
-                    disabled={isScanning || !manualCardId.trim()}
-                  >
+                  <Button onClick={handleManualScan} disabled={isScanning || !manualCardId.trim()}>
                     Scan
                   </Button>
                 </div>
@@ -215,9 +214,7 @@ const RFIDInterface: React.FC<RFIDInterfaceProps> = ({
                   <QrCode className="h-4 w-4" />
                   <span>Show QR Code</span>
                 </Button>
-                <p className="text-xs text-gray-500 mt-1">
-                  Show this to the meal counter staff
-                </p>
+                <p className="text-xs text-gray-500 mt-1">Show this to the meal counter staff</p>
               </div>
             </div>
           </div>
@@ -239,28 +236,34 @@ const RFIDInterface: React.FC<RFIDInterfaceProps> = ({
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {pendingOrders.map((order) => (
+            {pendingOrders.map(order => (
               <div key={order.orderId} className="border rounded-lg p-4">
                 <div className="flex justify-between items-start mb-3">
                   <div>
-                    <h4 className="font-semibold">Order #{order.orderId.slice(-6).toUpperCase()}</h4>
+                    <h4 className="font-semibold">
+                      Order #{order.orderId.slice(-6).toUpperCase()}
+                    </h4>
                     <p className="text-sm text-gray-600">
                       Placed on {new Date(order.date).toLocaleDateString()}
                     </p>
                   </div>
                   <div className="text-right">
                     <div className="text-lg font-semibold">{formatCurrency(order.total)}</div>
-                    <Badge 
+                    <Badge
                       variant="secondary"
                       className={`text-xs ${
-                        order.status === 'ready' ? 'bg-green-100 text-green-700' :
-                        order.status === 'preparing' ? 'bg-yellow-100 text-yellow-700' :
-                        'bg-blue-100 text-blue-700'
+                        order.status === 'ready'
+                          ? 'bg-green-100 text-green-700'
+                          : order.status === 'preparing'
+                            ? 'bg-yellow-100 text-yellow-700'
+                            : 'bg-blue-100 text-blue-700'
                       }`}
                     >
-                      {order.status === 'ready' ? '✅ Ready' :
-                       order.status === 'preparing' ? '👨‍🍳 Preparing' :
-                       '🔄 Confirmed'}
+                      {order.status === 'ready'
+                        ? '✅ Ready'
+                        : order.status === 'preparing'
+                          ? '👨‍🍳 Preparing'
+                          : '🔄 Confirmed'}
                     </Badge>
                   </div>
                 </div>
@@ -269,7 +272,9 @@ const RFIDInterface: React.FC<RFIDInterfaceProps> = ({
                 <div className="space-y-2">
                   {order.items.slice(0, 3).map((item, index) => (
                     <div key={index} className="flex justify-between text-sm">
-                      <span>{item.quantity}x {item.mealItem.name}</span>
+                      <span>
+                        {item.quantity}x {item.mealItem.name}
+                      </span>
                       <span>{formatCurrency(item.mealItem.price * item.quantity)}</span>
                     </div>
                   ))}
@@ -287,7 +292,7 @@ const RFIDInterface: React.FC<RFIDInterfaceProps> = ({
                     <div className="text-sm">
                       <p className="font-medium text-blue-800">Pickup Instructions:</p>
                       <p className="text-blue-700">
-                        Visit the meal counter with your RFID card or show pickup code: 
+                        Visit the meal counter with your RFID card or show pickup code:
                         <span className="font-mono font-bold ml-1">{pickupCode}</span>
                       </p>
                     </div>
@@ -349,11 +354,9 @@ const RFIDInterface: React.FC<RFIDInterfaceProps> = ({
                 </div>
               </AlertDescription>
             </Alert>
-            
+
             <div className="mt-4 text-center">
-              <Button variant="outline">
-                Contact Support for RFID Setup
-              </Button>
+              <Button variant="outline">Contact Support for RFID Setup</Button>
             </div>
           </CardContent>
         </Card>

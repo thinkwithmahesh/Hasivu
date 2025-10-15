@@ -6,7 +6,7 @@ name: Production Security Deployment
 
 on:
   push:
-    branches: 
+    branches:
       - main
     paths:
       - 'infrastructure/security/**'
@@ -48,11 +48,11 @@ jobs:
     name: Security Validation & Compliance Check
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    
+
     outputs:
       security-score: ${{ steps.security-check.outputs.score }}
       validation-passed: ${{ steps.security-check.outputs.passed }}
-    
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -81,10 +81,10 @@ jobs:
         id: security-check
         run: |
           echo "🔒 Running comprehensive security analysis..."
-          
+
           # Make script executable
           chmod +x scripts/production-security-hardening.js
-          
+
           # Run security analysis
           if node scripts/production-security-hardening.js ${{ env.DEPLOYMENT_ENVIRONMENT }}; then
             echo "passed=true" >> $GITHUB_OUTPUT
@@ -103,7 +103,7 @@ jobs:
           echo "- **Environment**: ${{ env.DEPLOYMENT_ENVIRONMENT }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Security Score**: ${{ steps.security-check.outputs.score }}/100" >> $GITHUB_STEP_SUMMARY
           echo "- **Validation Status**: ${{ steps.security-check.outputs.passed == 'true' && '✅ Passed' || '❌ Failed' }}" >> $GITHUB_STEP_SUMMARY
-          
+
           # Upload security report as artifact if exists
           if [ -f security-report-*.json ]; then
             echo "- **Report**: Available in workflow artifacts" >> $GITHUB_STEP_SUMMARY
@@ -124,11 +124,11 @@ jobs:
     needs: security-validation
     if: ${{ needs.security-validation.outputs.validation-passed == 'true' && (github.event.inputs.deployment_type == 'security-only' || github.event.inputs.deployment_type == 'full') }}
     timeout-minutes: 30
-    
+
     outputs:
       deployment-status: ${{ steps.deploy.outputs.status }}
       infrastructure-outputs: ${{ steps.deploy.outputs.outputs }}
-    
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -143,20 +143,20 @@ jobs:
       - name: Validate CloudFormation Templates
         run: |
           echo "🔍 Validating CloudFormation templates..."
-          
+
           # Validate security hardening template
           aws cloudformation validate-template \
             --template-body file://infrastructure/security/security-hardening.yml
-          
+
           echo "✅ Security infrastructure template validation passed"
 
       - name: Deploy Security Infrastructure
         id: deploy
         run: |
           echo "🚀 Deploying security infrastructure..."
-          
+
           STACK_NAME="${{ env.DEPLOYMENT_ENVIRONMENT }}-hasivu-security"
-          
+
           # Check if stack exists
           if aws cloudformation describe-stacks --stack-name $STACK_NAME >/dev/null 2>&1; then
             echo "Updating existing stack: $STACK_NAME"
@@ -165,7 +165,7 @@ jobs:
             echo "Creating new stack: $STACK_NAME"
             OPERATION="create-stack"
           fi
-          
+
           # Deploy stack
           aws cloudformation $OPERATION \
             --stack-name $STACK_NAME \
@@ -177,11 +177,11 @@ jobs:
                   Key=Project,Value=hasivu-platform \
                   Key=Component,Value=security \
                   Key=ManagedBy,Value=github-actions
-          
+
           # Wait for deployment completion
           echo "⏳ Waiting for stack deployment to complete..."
           aws cloudformation wait stack-${OPERATION%-stack}-complete --stack-name $STACK_NAME
-          
+
           if [ $? -eq 0 ]; then
             echo "status=success" >> $GITHUB_OUTPUT
             echo "✅ Security infrastructure deployed successfully"
@@ -199,18 +199,18 @@ jobs:
         if: steps.deploy.outputs.status == 'success'
         run: |
           echo "🛡️ Configuring WAF integration with API Gateway..."
-          
+
           # Get WAF ARN from stack outputs
           WAF_ARN=$(aws cloudformation describe-stacks \
             --stack-name ${{ env.DEPLOYMENT_ENVIRONMENT }}-hasivu-security \
             --query 'Stacks[0].Outputs[?OutputKey==`WAFArn`].OutputValue' \
             --output text)
-          
+
           # Get API Gateway ID (this would be from main platform stack)
           API_GATEWAY_ID=$(aws apigateway get-rest-apis \
             --query 'items[?name==`${{ env.DEPLOYMENT_ENVIRONMENT }}-hasivu-platform-api`].id' \
             --output text)
-          
+
           if [ ! -z "$API_GATEWAY_ID" ] && [ ! -z "$WAF_ARN" ]; then
             echo "Associating WAF $WAF_ARN with API Gateway $API_GATEWAY_ID"
             
@@ -231,7 +231,7 @@ jobs:
           echo "- **Stack Name**: ${{ env.DEPLOYMENT_ENVIRONMENT }}-hasivu-security" >> $GITHUB_STEP_SUMMARY
           echo "- **Status**: ${{ steps.deploy.outputs.status == 'success' && '✅ Deployed' || '❌ Failed' }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Region**: ${{ env.AWS_REGION }}" >> $GITHUB_STEP_SUMMARY
-          
+
           if [ "${{ steps.deploy.outputs.status }}" == "success" ]; then
             echo "- **Components**: WAF, Security Groups, CloudTrail, Config Rules" >> $GITHUB_STEP_SUMMARY
             echo "- **Monitoring**: Security event logging and alerting enabled" >> $GITHUB_STEP_SUMMARY
@@ -244,10 +244,10 @@ jobs:
     needs: security-validation
     if: ${{ needs.security-validation.outputs.validation-passed == 'true' && (github.event.inputs.deployment_type == 'backup-only' || github.event.inputs.deployment_type == 'full') }}
     timeout-minutes: 25
-    
+
     outputs:
       backup-status: ${{ steps.deploy.outputs.status }}
-    
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -271,10 +271,10 @@ jobs:
       - name: Validate Backup Configuration
         run: |
           echo "🔍 Validating backup infrastructure..."
-          
+
           # Make script executable
           chmod +x scripts/backup-recovery-manager.js
-          
+
           # Validate backup configuration
           if node scripts/backup-recovery-manager.js ${{ env.DEPLOYMENT_ENVIRONMENT }} test; then
             echo "✅ Backup validation passed"
@@ -286,13 +286,13 @@ jobs:
         id: deploy
         run: |
           echo "🚀 Deploying backup infrastructure..."
-          
+
           STACK_NAME="${{ env.DEPLOYMENT_ENVIRONMENT }}-hasivu-backup"
-          
+
           # Validate template
           aws cloudformation validate-template \
             --template-body file://infrastructure/backup/automated-backup-strategy.yml
-          
+
           # Check if stack exists
           if aws cloudformation describe-stacks --stack-name $STACK_NAME >/dev/null 2>&1; then
             echo "Updating existing stack: $STACK_NAME"
@@ -301,7 +301,7 @@ jobs:
             echo "Creating new stack: $STACK_NAME"
             OPERATION="create-stack"
           fi
-          
+
           # Deploy stack
           aws cloudformation $OPERATION \
             --stack-name $STACK_NAME \
@@ -312,11 +312,11 @@ jobs:
                   Key=Project,Value=hasivu-platform \
                   Key=Component,Value=backup \
                   Key=ManagedBy,Value=github-actions
-          
+
           # Wait for deployment completion
           echo "⏳ Waiting for backup infrastructure deployment..."
           aws cloudformation wait stack-${OPERATION%-stack}-complete --stack-name $STACK_NAME
-          
+
           if [ $? -eq 0 ]; then
             echo "status=success" >> $GITHUB_OUTPUT
             echo "✅ Backup infrastructure deployed successfully"
@@ -330,10 +330,10 @@ jobs:
         if: steps.deploy.outputs.status == 'success'
         run: |
           echo "🧪 Testing backup configuration..."
-          
+
           # Wait a bit for Lambda functions to be ready
           sleep 30
-          
+
           # Run comprehensive backup test
           if node scripts/backup-recovery-manager.js ${{ env.DEPLOYMENT_ENVIRONMENT }} test; then
             echo "✅ Backup testing passed"
@@ -366,11 +366,11 @@ jobs:
     needs: [security-validation, deploy-security-infrastructure]
     if: ${{ needs.security-validation.outputs.validation-passed == 'true' && (github.event.inputs.deployment_type == 'monitoring-only' || github.event.inputs.deployment_type == 'full') }}
     timeout-minutes: 25
-    
+
     outputs:
       monitoring-status: ${{ steps.deploy.outputs.status }}
       dashboard-urls: ${{ steps.deploy.outputs.dashboards }}
-    
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -395,23 +395,23 @@ jobs:
         id: deploy
         run: |
           echo "🚀 Deploying monitoring infrastructure..."
-          
+
           STACK_NAME="${{ env.DEPLOYMENT_ENVIRONMENT }}-hasivu-monitoring"
-          
+
           # Get API Gateway ID for health checks
           API_GATEWAY_ID=$(aws apigateway get-rest-apis \
             --query 'items[?name==`${{ env.DEPLOYMENT_ENVIRONMENT }}-hasivu-platform-api`].id' \
             --output text)
-          
+
           if [ -z "$API_GATEWAY_ID" ]; then
             API_GATEWAY_ID="placeholder-api-gateway-id"
             echo "⚠️ API Gateway ID not found, using placeholder"
           fi
-          
+
           # Validate template
           aws cloudformation validate-template \
             --template-body file://infrastructure/monitoring/comprehensive-monitoring.yml
-          
+
           # Check if stack exists
           if aws cloudformation describe-stacks --stack-name $STACK_NAME >/dev/null 2>&1; then
             echo "Updating existing stack: $STACK_NAME"
@@ -420,7 +420,7 @@ jobs:
             echo "Creating new stack: $STACK_NAME"
             OPERATION="create-stack"
           fi
-          
+
           # Deploy stack
           aws cloudformation $OPERATION \
             --stack-name $STACK_NAME \
@@ -432,11 +432,11 @@ jobs:
                   Key=Project,Value=hasivu-platform \
                   Key=Component,Value=monitoring \
                   Key=ManagedBy,Value=github-actions
-          
+
           # Wait for deployment completion
           echo "⏳ Waiting for monitoring infrastructure deployment..."
           aws cloudformation wait stack-${OPERATION%-stack}-complete --stack-name $STACK_NAME
-          
+
           if [ $? -eq 0 ]; then
             echo "status=success" >> $GITHUB_OUTPUT
             echo "✅ Monitoring infrastructure deployed successfully"
@@ -458,10 +458,10 @@ jobs:
         if: steps.deploy.outputs.status == 'success'
         run: |
           echo "📊 Setting up comprehensive monitoring..."
-          
+
           # Make script executable
           chmod +x scripts/monitoring-alerting-setup.js
-          
+
           # Run monitoring setup
           if node scripts/monitoring-alerting-setup.js ${{ env.DEPLOYMENT_ENVIRONMENT }}; then
             echo "✅ Monitoring setup completed successfully"
@@ -475,19 +475,19 @@ jobs:
           ALERT_EMAIL: ${{ secrets.ALERT_EMAIL || 'alerts@hasivu.com' }}
         run: |
           echo "📧 Configuring alert subscriptions..."
-          
+
           # Subscribe to critical alerts
           aws sns subscribe \
             --topic-arn arn:aws:sns:${{ env.AWS_REGION }}:${{ env.ACCOUNT_ID }}:${{ env.DEPLOYMENT_ENVIRONMENT }}-hasivu-critical-alerts \
             --protocol email \
             --notification-endpoint $ALERT_EMAIL || echo "Critical alert subscription may already exist"
-          
+
           # Subscribe to security alerts
           aws sns subscribe \
             --topic-arn arn:aws:sns:${{ env.AWS_REGION }}:${{ env.ACCOUNT_ID }}:${{ env.DEPLOYMENT_ENVIRONMENT }}-hasivu-security-alerts \
             --protocol email \
             --notification-endpoint $ALERT_EMAIL || echo "Security alert subscription may already exist"
-          
+
           echo "✅ Alert subscriptions configured"
 
       - name: Monitoring Infrastructure Summary
@@ -496,7 +496,7 @@ jobs:
           echo "## 📊 Monitoring Infrastructure Deployment" >> $GITHUB_STEP_SUMMARY
           echo "- **Stack Name**: ${{ env.DEPLOYMENT_ENVIRONMENT }}-hasivu-monitoring" >> $GITHUB_STEP_SUMMARY
           echo "- **Status**: ${{ steps.deploy.outputs.status == 'success' && '✅ Deployed' || '❌ Failed' }}" >> $GITHUB_STEP_SUMMARY
-          
+
           if [ "${{ steps.deploy.outputs.status }}" == "success" ]; then
             echo "- **Components**: CloudWatch Alarms, SNS Topics, Dashboards, Health Checks" >> $GITHUB_STEP_SUMMARY
             echo "- **Dashboards**: Operations, Performance, Security, Business Metrics" >> $GITHUB_STEP_SUMMARY
@@ -519,10 +519,16 @@ jobs:
   production-readiness-verification:
     name: Production Readiness Verification
     runs-on: ubuntu-latest
-    needs: [security-validation, deploy-security-infrastructure, deploy-backup-infrastructure, deploy-monitoring-infrastructure]
+    needs:
+      [
+        security-validation,
+        deploy-security-infrastructure,
+        deploy-backup-infrastructure,
+        deploy-monitoring-infrastructure,
+      ]
     if: always() && needs.security-validation.outputs.validation-passed == 'true'
     timeout-minutes: 15
-    
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -547,24 +553,24 @@ jobs:
         id: health-check
         run: |
           echo "🩺 Running comprehensive system health check..."
-          
+
           # Check all deployed stacks
           STACKS_TO_CHECK=""
-          
+
           if [ "${{ github.event.inputs.deployment_type }}" == "security-only" ] || [ "${{ github.event.inputs.deployment_type }}" == "full" ]; then
             STACKS_TO_CHECK="$STACKS_TO_CHECK ${{ env.DEPLOYMENT_ENVIRONMENT }}-hasivu-security"
           fi
-          
+
           if [ "${{ github.event.inputs.deployment_type }}" == "backup-only" ] || [ "${{ github.event.inputs.deployment_type }}" == "full" ]; then
             STACKS_TO_CHECK="$STACKS_TO_CHECK ${{ env.DEPLOYMENT_ENVIRONMENT }}-hasivu-backup"
           fi
-          
+
           if [ "${{ github.event.inputs.deployment_type }}" == "monitoring-only" ] || [ "${{ github.event.inputs.deployment_type }}" == "full" ]; then
             STACKS_TO_CHECK="$STACKS_TO_CHECK ${{ env.DEPLOYMENT_ENVIRONMENT }}-hasivu-monitoring"
           fi
-          
+
           HEALTH_STATUS="healthy"
-          
+
           for stack in $STACKS_TO_CHECK; do
             echo "Checking stack: $stack"
             
@@ -575,9 +581,9 @@ jobs:
               HEALTH_STATUS="unhealthy"
             fi
           done
-          
+
           echo "health-status=$HEALTH_STATUS" >> $GITHUB_OUTPUT
-          
+
           if [ "$HEALTH_STATUS" == "healthy" ]; then
             echo "✅ All infrastructure components are healthy"
           else
@@ -589,10 +595,10 @@ jobs:
         if: steps.health-check.outputs.health-status == 'healthy'
         run: |
           echo "🔒 Running security compliance check..."
-          
+
           # Make script executable
           chmod +x scripts/production-security-hardening.js
-          
+
           # Run security compliance check
           if node scripts/production-security-hardening.js ${{ env.DEPLOYMENT_ENVIRONMENT }}; then
             echo "✅ Security compliance check passed"
@@ -604,10 +610,10 @@ jobs:
         if: steps.health-check.outputs.health-status == 'healthy' && (github.event.inputs.deployment_type == 'backup-only' || github.event.inputs.deployment_type == 'full')
         run: |
           echo "💾 Verifying backup systems..."
-          
+
           # Make script executable
           chmod +x scripts/backup-recovery-manager.js
-          
+
           # Test backup systems
           if node scripts/backup-recovery-manager.js ${{ env.DEPLOYMENT_ENVIRONMENT }} test; then
             echo "✅ Backup systems verification passed"
@@ -619,17 +625,17 @@ jobs:
         if: always()
         run: |
           echo "📝 Generating deployment report..."
-          
+
           cat << EOF > deployment-summary.md
           # 🚀 Production Security Deployment Summary
-          
+
           **Environment**: ${{ env.DEPLOYMENT_ENVIRONMENT }}
           **Deployment Type**: ${{ env.DEPLOYMENT_TYPE }}
           **Timestamp**: $(date -u)
           **Region**: ${{ env.AWS_REGION }}
-          
+
           ## Deployment Status
-          
+
           | Component | Status |
           |-----------|---------|
           | Security Validation | ${{ needs.security-validation.outputs.validation-passed == 'true' && '✅ Passed' || '❌ Failed' }} |
@@ -637,7 +643,7 @@ jobs:
           | Backup Infrastructure | ${{ needs.deploy-backup-infrastructure.outputs.backup-status == 'success' && '✅ Deployed' || (needs.deploy-backup-infrastructure.result == 'skipped' && '⏭️ Skipped' || '❌ Failed') }} |
           | Monitoring Infrastructure | ${{ needs.deploy-monitoring-infrastructure.outputs.monitoring-status == 'success' && '✅ Deployed' || (needs.deploy-monitoring-infrastructure.result == 'skipped' && '⏭️ Skipped' || '❌ Failed') }} |
           | System Health | ${{ steps.health-check.outputs.health-status == 'healthy' && '✅ Healthy' || '❌ Unhealthy' }} |
-          
+
           ## Security Features Deployed
           - 🛡️ Web Application Firewall (WAF) with SQL injection and XSS protection
           - 🔒 Enhanced security groups with least-privilege access
@@ -645,7 +651,7 @@ jobs:
           - 🚨 Real-time security violation alerts
           - 🔐 Database encryption at rest and in transit
           - 🌐 HTTPS enforcement with modern TLS policies
-          
+
           ## Backup Strategy Implemented
           - 💾 Automated daily database backups (30-day retention)
           - 📸 Weekly manual snapshots (90-day retention)
@@ -653,7 +659,7 @@ jobs:
           - 🧪 Automated backup validation and integrity checks
           - 📖 Comprehensive disaster recovery runbooks
           - ⏰ Point-in-time recovery capabilities
-          
+
           ## Monitoring & Alerting
           - 📊 Real-time performance dashboards
           - 🚨 Multi-tier alerting (Critical/Warning/Security)
@@ -661,14 +667,14 @@ jobs:
           - 📈 Business metrics tracking
           - 🔍 Log analysis and anomaly detection
           - 💰 Cost monitoring and budget alerts
-          
+
           ## Next Steps
           1. Configure alert email subscriptions in SNS topics
           2. Review and test disaster recovery procedures
           3. Schedule regular security audits and compliance reviews
           4. Monitor system performance and adjust thresholds as needed
           5. Train operations team on new monitoring dashboards
-          
+
           EOF
 
       - name: Final Deployment Summary
@@ -690,9 +696,16 @@ jobs:
   notify-deployment-completion:
     name: Notify Deployment Completion
     runs-on: ubuntu-latest
-    needs: [security-validation, deploy-security-infrastructure, deploy-backup-infrastructure, deploy-monitoring-infrastructure, production-readiness-verification]
+    needs:
+      [
+        security-validation,
+        deploy-security-infrastructure,
+        deploy-backup-infrastructure,
+        deploy-monitoring-infrastructure,
+        production-readiness-verification,
+      ]
     if: always()
-    
+
     steps:
       - name: Determine Overall Status
         id: status
@@ -716,7 +729,7 @@ jobs:
           echo "🔗 View deployment details: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           echo "📊 Environment: ${{ env.DEPLOYMENT_ENVIRONMENT }}"
           echo "🏗️ Deployment Type: ${{ env.DEPLOYMENT_TYPE }}"
-          
+
           # In a real implementation, this would send notifications via:
           # - Slack webhook
           # - Email via SES

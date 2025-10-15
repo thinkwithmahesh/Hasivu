@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import React, { ReactElement, useMemo } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import React, { ReactElement, useMemo as _useMemo } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 
 export interface AnimatedListProps {
   className?: string;
@@ -17,7 +17,7 @@ export const AnimatedList = React.memo<AnimatedListProps>(
 
     React.useEffect(() => {
       const interval = setInterval(() => {
-        setMessages((prev) => {
+        setMessages(prev => {
           const newMessages = [...prev];
           if (newMessages.length < childrenArray.length) {
             newMessages.push(childrenArray[newMessages.length] as ReactElement);
@@ -49,4 +49,4 @@ export const AnimatedList = React.memo<AnimatedListProps>(
   }
 );
 
-AnimatedList.displayName = "AnimatedList";
+AnimatedList.displayName = 'AnimatedList';

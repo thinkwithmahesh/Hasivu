@@ -1,9 +1,17 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Bell, X, AlertTriangle, Info, CheckCircle, 
-  Shield, Radio, CreditCard, Activity,
-  ChevronRight, Trash2
+import {
+  Bell,
+  X,
+  AlertTriangle,
+  Info,
+  CheckCircle,
+  Shield,
+  Radio,
+  CreditCard,
+  Activity,
+  ChevronRight,
+  Trash2,
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -48,14 +56,14 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
   schoolId,
   onNotificationClick,
   maxVisible = 5,
-  enableWebSocket = true
+  enableWebSocket = true,
 }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [showAll, setShowAll] = useState(false);
-  
+
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -65,7 +73,7 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
   // Initialize notifications and WebSocket connection
   useEffect(() => {
     loadNotifications();
-    
+
     if (enableWebSocket) {
       connectWebSocket();
     }
@@ -88,7 +96,6 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
       const mockNotifications = generateMockNotifications();
       setNotifications(mockNotifications);
     } catch (error) {
-      console.error('Failed to load notifications:', error);
       toast.error('Failed to load notifications');
     }
   };
@@ -104,10 +111,9 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
       const ws = new WebSocket(`${wsUrl}?userId=${userId}&schoolId=${schoolId}`);
 
       ws.onopen = () => {
-        console.log('WebSocket connected');
         setIsConnected(true);
         reconnectAttempts.current = 0;
-        
+
         // Start heartbeat
         heartbeatIntervalRef.current = setInterval(() => {
           if (ws.readyState === WebSocket.OPEN) {
@@ -116,19 +122,17 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
         }, 30000);
       };
 
-      ws.onmessage = (event) => {
+      ws.onmessage = event => {
         try {
           const message: WebSocketMessage = JSON.parse(event.data);
           handleWebSocketMessage(message);
         } catch (error) {
-          console.error('Failed to parse WebSocket message:', error);
         }
       };
 
-      ws.onclose = (event) => {
-        console.log('WebSocket disconnected:', event.code, event.reason);
+      ws.onclose = event => {
         setIsConnected(false);
-        
+
         if (heartbeatIntervalRef.current) {
           clearInterval(heartbeatIntervalRef.current);
         }
@@ -137,22 +141,21 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
         if (event.code !== 1000 && reconnectAttempts.current < maxReconnectAttempts) {
           const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 30000);
           reconnectAttempts.current++;
-          
+
           reconnectTimeoutRef.current = setTimeout(() => {
-            console.log(`Attempting to reconnect (${reconnectAttempts.current}/${maxReconnectAttempts})`);
+              `Attempting to reconnect (${reconnectAttempts.current}/${maxReconnectAttempts})`
+            );
             connectWebSocket();
           }, delay);
         }
       };
 
-      ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
+      ws.onerror = error => {
         setIsConnected(false);
       };
 
       wsRef.current = ws;
     } catch (error) {
-      console.error('Failed to connect WebSocket:', error);
       setIsConnected(false);
     }
   }, [userId, schoolId]);
@@ -161,7 +164,7 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current);
     }
-    
+
     if (heartbeatIntervalRef.current) {
       clearInterval(heartbeatIntervalRef.current);
     }
@@ -170,7 +173,7 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
       wsRef.current.close(1000, 'Component unmounting');
       wsRef.current = null;
     }
-    
+
     setIsConnected(false);
   }, []);
 
@@ -182,25 +185,24 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
           showToastForNotification(message.notification);
         }
         break;
-        
+
       case 'notification_update':
         if (message.notification) {
           updateNotification(message.notification);
         }
         break;
-        
+
       case 'notification_delete':
         if (message.notificationId) {
           removeNotification(message.notificationId);
         }
         break;
-        
+
       case 'heartbeat':
         // Heartbeat received, connection is healthy
         break;
-        
+
       default:
-        console.log('Unknown WebSocket message type:', message.type);
     }
   };
 
@@ -209,7 +211,7 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
       // Check if notification already exists
       const exists = prev.find(n => n.id === notification.id);
       if (exists) return prev;
-      
+
       // Add to beginning of array and limit total
       const updated = [notification, ...prev];
       return updated.slice(0, 100); // Keep max 100 notifications
@@ -217,8 +219,8 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
   };
 
   const updateNotification = (updatedNotification: Notification) => {
-    setNotifications(prev => 
-      prev.map(n => n.id === updatedNotification.id ? updatedNotification : n)
+    setNotifications(prev =>
+      prev.map(n => (n.id === updatedNotification.id ? updatedNotification : n))
     );
   };
 
@@ -250,29 +252,19 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
   const markAsRead = async (notificationId: string) => {
     try {
       // Update locally first for immediate feedback
-      setNotifications(prev => 
-        prev.map(n => 
-          n.id === notificationId ? { ...n, read: true } : n
-        )
-      );
+      setNotifications(prev => prev.map(n => (n.id === notificationId ? { ...n, read: true } : n)));
 
       // Send to backend (would be actual API call in real implementation)
-      console.log('Marking notification as read:', notificationId);
     } catch (error) {
-      console.error('Failed to mark notification as read:', error);
     }
   };
 
   const markAllAsRead = async () => {
     try {
-      setNotifications(prev => 
-        prev.map(n => ({ ...n, read: true }))
-      );
-      
-      console.log('Marking all notifications as read');
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+
       toast.success('All notifications marked as read');
     } catch (error) {
-      console.error('Failed to mark all notifications as read:', error);
       toast.error('Failed to mark notifications as read');
     }
   };
@@ -280,9 +272,7 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
   const deleteNotification = async (notificationId: string) => {
     try {
       removeNotification(notificationId);
-      console.log('Deleting notification:', notificationId);
     } catch (error) {
-      console.error('Failed to delete notification:', error);
     }
   };
 
@@ -293,12 +283,13 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
         id: '1',
         type: 'security',
         title: 'Fraud Attempt Blocked',
-        message: 'Suspicious payment activity detected and automatically blocked for student ID 1234',
+        message:
+          'Suspicious payment activity detected and automatically blocked for student ID 1234',
         timestamp: new Date(now.getTime() - 5 * 60 * 1000).toISOString(),
         read: false,
         priority: 'high',
         actionUrl: '/security/fraud-alerts',
-        actionLabel: 'View Details'
+        actionLabel: 'View Details',
       },
       {
         id: '2',
@@ -309,16 +300,16 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
         read: false,
         priority: 'medium',
         actionUrl: '/rfid/readers',
-        actionLabel: 'Check Status'
+        actionLabel: 'Check Status',
       },
       {
         id: '3',
         type: 'success',
         title: 'Daily Revenue Target Met',
-        message: 'Congratulations! Today\'s revenue target of $2,500 has been achieved.',
+        message: "Congratulations! Today's revenue target of $2,500 has been achieved.",
         timestamp: new Date(now.getTime() - 2 * 60 * 60 * 1000).toISOString(),
         read: true,
-        priority: 'low'
+        priority: 'low',
       },
       {
         id: '4',
@@ -329,7 +320,7 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
         read: false,
         priority: 'medium',
         actionUrl: '/payments/low-balance',
-        actionLabel: 'View Students'
+        actionLabel: 'View Students',
       },
       {
         id: '5',
@@ -338,34 +329,46 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
         message: 'Scheduled maintenance will occur tomorrow from 2:00 AM to 4:00 AM EST.',
         timestamp: new Date(now.getTime() - 8 * 60 * 60 * 1000).toISOString(),
         read: true,
-        priority: 'low'
-      }
+        priority: 'low',
+      },
     ];
 
     return notifications;
   };
 
   const getNotificationIcon = (type: Notification['type']) => {
-    const iconProps = { className: "w-5 h-5" };
-    
+    const iconProps = { className: 'w-5 h-5' };
+
     switch (type) {
-      case 'success': return <CheckCircle {...iconProps} className="w-5 h-5 text-green-600" />;
-      case 'warning': return <AlertTriangle {...iconProps} className="w-5 h-5 text-yellow-600" />;
-      case 'error': return <AlertTriangle {...iconProps} className="w-5 h-5 text-red-600" />;
-      case 'security': return <Shield {...iconProps} className="w-5 h-5 text-purple-600" />;
-      case 'rfid': return <Radio {...iconProps} className="w-5 h-5 text-blue-600" />;
-      case 'payment': return <CreditCard {...iconProps} className="w-5 h-5 text-green-600" />;
-      case 'system': return <Activity {...iconProps} className="w-5 h-5 text-gray-600" />;
-      default: return <Info {...iconProps} className="w-5 h-5 text-blue-600" />;
+      case 'success':
+        return <CheckCircle {...iconProps} className="w-5 h-5 text-green-600" />;
+      case 'warning':
+        return <AlertTriangle {...iconProps} className="w-5 h-5 text-yellow-600" />;
+      case 'error':
+        return <AlertTriangle {...iconProps} className="w-5 h-5 text-red-600" />;
+      case 'security':
+        return <Shield {...iconProps} className="w-5 h-5 text-purple-600" />;
+      case 'rfid':
+        return <Radio {...iconProps} className="w-5 h-5 text-blue-600" />;
+      case 'payment':
+        return <CreditCard {...iconProps} className="w-5 h-5 text-green-600" />;
+      case 'system':
+        return <Activity {...iconProps} className="w-5 h-5 text-gray-600" />;
+      default:
+        return <Info {...iconProps} className="w-5 h-5 text-blue-600" />;
     }
   };
 
   const getPriorityColor = (priority: Notification['priority']) => {
     switch (priority) {
-      case 'urgent': return 'border-l-red-500 bg-red-50';
-      case 'high': return 'border-l-orange-500 bg-orange-50';
-      case 'medium': return 'border-l-yellow-500 bg-yellow-50';
-      default: return 'border-l-blue-500 bg-blue-50';
+      case 'urgent':
+        return 'border-l-red-500 bg-red-50';
+      case 'high':
+        return 'border-l-orange-500 bg-orange-50';
+      case 'medium':
+        return 'border-l-yellow-500 bg-yellow-50';
+      default:
+        return 'border-l-blue-500 bg-blue-50';
     }
   };
 
@@ -373,11 +376,11 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
     const now = new Date();
     const time = new Date(timestamp);
     const diff = now.getTime() - time.getTime();
-    
+
     const minutes = Math.floor(diff / 60000);
     const hours = Math.floor(diff / 3600000);
     const days = Math.floor(diff / 86400000);
-    
+
     if (minutes < 1) return 'Just now';
     if (minutes < 60) return `${minutes}m ago`;
     if (hours < 24) return `${hours}h ago`;
@@ -428,7 +431,7 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
                     </span>
                   )}
                 </div>
-                
+
                 <div className="flex items-center space-x-2">
                   {unreadCount > 0 && (
                     <button
@@ -438,7 +441,7 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
                       Mark all read
                     </button>
                   )}
-                  
+
                   <button
                     onClick={() => setIsOpen(false)}
                     className="text-gray-400 hover:text-gray-600"
@@ -450,15 +453,21 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
 
               {/* Connection Status */}
               {enableWebSocket && (
-                <div className={`px-4 py-2 text-xs border-b border-gray-200 ${
-                  isConnected ? 'bg-green-50 text-green-800' : 'bg-yellow-50 text-yellow-800'
-                }`}>
+                <div
+                  className={`px-4 py-2 text-xs border-b border-gray-200 ${
+                    isConnected ? 'bg-green-50 text-green-800' : 'bg-yellow-50 text-yellow-800'
+                  }`}
+                >
                   <div className="flex items-center space-x-2">
-                    <div className={`w-2 h-2 rounded-full ${
-                      isConnected ? 'bg-green-500' : 'bg-yellow-500'
-                    }`} />
+                    <div
+                      className={`w-2 h-2 rounded-full ${
+                        isConnected ? 'bg-green-500' : 'bg-yellow-500'
+                      }`}
+                    />
                     <span>
-                      {isConnected ? 'Real-time updates active' : 'Connecting to real-time updates...'}
+                      {isConnected
+                        ? 'Real-time updates active'
+                        : 'Connecting to real-time updates...'}
                     </span>
                   </div>
                 </div>
@@ -473,7 +482,7 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
                   </div>
                 ) : (
                   <div className="divide-y divide-gray-200">
-                    {visibleNotifications.map((notification) => (
+                    {visibleNotifications.map(notification => (
                       <motion.div
                         key={notification.id}
                         initial={{ opacity: 0, x: 20 }}
@@ -497,15 +506,17 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
                           <div className="flex-shrink-0 mt-1">
                             {getNotificationIcon(notification.type)}
                           </div>
-                          
+
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between mb-1">
-                              <p className={`text-sm font-medium ${
-                                notification.read ? 'text-gray-700' : 'text-gray-900'
-                              }`}>
+                              <p
+                                className={`text-sm font-medium ${
+                                  notification.read ? 'text-gray-700' : 'text-gray-900'
+                                }`}
+                              >
                                 {notification.title}
                               </p>
-                              
+
                               <div className="flex items-center space-x-1">
                                 <span className="text-xs text-gray-500">
                                   {formatTimeAgo(notification.timestamp)}
@@ -515,11 +526,11 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
                                 )}
                               </div>
                             </div>
-                            
+
                             <p className="text-sm text-gray-600 line-clamp-2">
                               {notification.message}
                             </p>
-                            
+
                             {notification.actionLabel && (
                               <div className="mt-2 flex items-center text-xs text-blue-600 hover:text-blue-800">
                                 <span>{notification.actionLabel}</span>
@@ -527,10 +538,10 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
                               </div>
                             )}
                           </div>
-                          
+
                           <div className="flex-shrink-0">
                             <button
-                              onClick={(e) => {
+                              onClick={e => {
                                 e.stopPropagation();
                                 deleteNotification(notification.id);
                               }}
@@ -563,12 +574,7 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
       </div>
 
       {/* Click outside to close */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 z-40"
-          onClick={() => setIsOpen(false)}
-        />
-      )}
+      {isOpen && <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />}
     </>
   );
 };

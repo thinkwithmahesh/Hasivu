@@ -5,6 +5,7 @@
 This guide ensures complete alignment between the HASIVU frontend UI and the production-ready backend services. All features displayed on the landing page are backed by actual Lambda functions and API endpoints.
 
 **Integration Status: COMPLETE** ✅
+
 - Landing Page: Connected to real backend APIs
 - RFID Demo: Functional with backend service integration
 - Payment AI: Live preview with ML model integration
@@ -37,25 +38,30 @@ This guide ensures complete alignment between the HASIVU frontend UI and the pro
 ## Backend Services Mapping
 
 ### 1. Authentication Service
+
 **Backend Functions:**
+
 - `auth-login` - User authentication with Cognito
-- `auth-register` - New user registration  
+- `auth-register` - New user registration
 - `auth-verify-email` - Email verification
 - `auth-refresh-token` - Token refresh mechanism
 - `auth-logout` - Session termination
 
 **Frontend Integration:**
+
 ```typescript
 // Login flow
 const response = await hasiviApi.login(email, password);
-// Register flow  
+// Register flow
 const response = await hasiviApi.register(userData);
 // Email verification
 const response = await hasiviApi.verifyEmail(token);
 ```
 
 ### 2. RFID Service
+
 **Backend Functions:**
+
 - `rfid-create-card` - Card registration
 - `rfid-verify-card` - Real-time verification
 - `rfid-bulk-import` - Mass card deployment
@@ -64,18 +70,22 @@ const response = await hasiviApi.verifyEmail(token);
 - `rfid-mobile-tracking` - Mobile app integration
 
 **Frontend Features:**
+
 - Real-time RFID verification demo
 - Live delivery tracking dashboard
 - Card management interface
 - Reader status monitoring
 
 **Key Statistics:**
+
 - 99.9% delivery accuracy (verified by `DeliveryVerification` table)
 - 5M+ RFID verifications processed
 - <1.5 second verification time
 
 ### 3. Payment Intelligence Service
+
 **Backend Functions:**
+
 - `payments-create-order` - Order creation
 - `payments-verify` - Payment verification
 - `payments-advanced` - AI-powered features
@@ -84,12 +94,14 @@ const response = await hasiviApi.verifyEmail(token);
 - `payments-subscription` - Recurring payments
 
 **AI/ML Features:**
+
 - Fraud detection (99.7% accuracy)
 - Churn prediction (94% accuracy)
 - Payment optimization (23% success rate improvement)
 - Revenue forecasting (±3% precision)
 
 **Frontend Integration:**
+
 ```typescript
 // Create payment order
 const order = await hasiviApi.createPaymentOrder({
@@ -106,7 +118,9 @@ const analytics = await hasiviApi.getPaymentAnalytics({
 ```
 
 ### 4. Order Management Service
+
 **Backend Functions:**
+
 - `orders-create` - Create new order
 - `orders-get` - Retrieve order details
 - `orders-update` - Update order status
@@ -114,32 +128,39 @@ const analytics = await hasiviApi.getPaymentAnalytics({
 - `orders-bulk` - Bulk order processing
 
 **Features:**
+
 - Real-time order tracking
 - Multi-status workflow
 - Delivery verification integration
 - Parent notifications
 
 ### 5. Menu & Nutrition Service
+
 **Backend Functions:**
+
 - `menu-items` - Menu item management
 - `menu-schedule` - Weekly planning
 - `menu-nutrition` - Nutritional information
 - `menu-recommendations` - AI recommendations
 
 **Features:**
+
 - Personalized menu recommendations
 - Dietary restriction handling
 - Nutritional tracking
 - Seasonal menu planning
 
 ### 6. Analytics & Reporting
+
 **Backend Functions:**
+
 - `analytics-dashboard` - Dashboard metrics
 - `analytics-reports` - Custom reports
 - `analytics-real-time` - Live metrics
 - `analytics-insights` - AI insights
 
 **Dashboard Metrics:**
+
 - Total students served: 50,000+
 - Total schools: 100+
 - Total orders: 2.3M+
@@ -193,30 +214,32 @@ sequenceDiagram
 ## Real-Time Features Integration
 
 ### WebSocket Connection
+
 ```typescript
 // Initialize WebSocket for real-time updates
 const socket = io(process.env.NEXT_PUBLIC_WEBSOCKET_URL, {
   auth: {
-    token: session.accessToken
-  }
+    token: session.accessToken,
+  },
 });
 
 // Listen for RFID verification events
-socket.on('rfid:verified', (data) => {
+socket.on('rfid:verified', data => {
   // Update UI with verification status
 });
 
 // Listen for order updates
-socket.on('order:updated', (data) => {
+socket.on('order:updated', data => {
   // Update order tracking UI
 });
 ```
 
 ### Server-Sent Events (SSE)
+
 ```typescript
 // Real-time analytics dashboard
 const eventSource = new EventSource('/api/analytics/stream');
-eventSource.onmessage = (event) => {
+eventSource.onmessage = event => {
   const metrics = JSON.parse(event.data);
   updateDashboard(metrics);
 };
@@ -225,12 +248,14 @@ eventSource.onmessage = (event) => {
 ## Performance Optimization
 
 ### Caching Strategy
+
 - **Static Data**: 24-hour cache (school lists, menu items)
 - **User Data**: 10-minute cache (profile, preferences)
 - **Real-time Data**: No cache (RFID verifications, live orders)
 - **Analytics**: 5-minute cache (dashboard metrics)
 
 ### API Rate Limiting
+
 - **Public Endpoints**: 100 requests/minute
 - **Authenticated**: 1000 requests/minute
 - **Premium**: 5000 requests/minute
@@ -238,6 +263,7 @@ eventSource.onmessage = (event) => {
 ## Security Implementation
 
 ### Data Protection
+
 1. **Encryption**: All API calls use TLS 1.3
 2. **Authentication**: JWT tokens with 1-hour expiry
 3. **Authorization**: Role-based access control (RBAC)
@@ -245,6 +271,7 @@ eventSource.onmessage = (event) => {
 5. **CORS**: Strict origin validation
 
 ### Compliance
+
 - **FERPA**: Student data protection
 - **PCI DSS**: Payment card security
 - **SOC 2 Type II**: Security controls
@@ -253,6 +280,7 @@ eventSource.onmessage = (event) => {
 ## Testing Strategy
 
 ### Unit Tests
+
 ```bash
 # Run API service tests
 npm run test:api
@@ -262,6 +290,7 @@ npm run test:components
 ```
 
 ### Integration Tests
+
 ```bash
 # Test API integration
 npm run test:integration
@@ -271,6 +300,7 @@ npm run test:e2e
 ```
 
 ### Load Testing
+
 ```typescript
 // Example load test configuration
 const loadTest = {
@@ -281,20 +311,21 @@ const loadTest = {
       stages: [
         { duration: '2m', target: 100 },
         { duration: '5m', target: 100 },
-        { duration: '2m', target: 0 }
-      ]
-    }
+        { duration: '2m', target: 0 },
+      ],
+    },
   },
   thresholds: {
     http_req_duration: ['p(95)<500'],
-    http_req_failed: ['rate<0.1']
-  }
+    http_req_failed: ['rate<0.1'],
+  },
 };
 ```
 
 ## Deployment Pipeline
 
 ### Build Process
+
 ```bash
 # Install dependencies
 npm install
@@ -310,6 +341,7 @@ npm run deploy:production
 ```
 
 ### Infrastructure
+
 - **Frontend**: Vercel/AWS CloudFront
 - **API**: AWS API Gateway + Lambda
 - **Database**: AWS RDS PostgreSQL
@@ -320,12 +352,14 @@ npm run deploy:production
 ## Monitoring & Observability
 
 ### Application Monitoring
+
 - **APM**: New Relic / DataDog
 - **Error Tracking**: Sentry
 - **Analytics**: Google Analytics
 - **User Behavior**: Hotjar
 
 ### Infrastructure Monitoring
+
 - **CloudWatch**: Lambda metrics
 - **X-Ray**: Distributed tracing
 - **CloudWatch Logs**: Centralized logging
@@ -336,6 +370,7 @@ npm run deploy:production
 ### Common Issues
 
 **1. API Connection Failed**
+
 ```typescript
 // Check API endpoint
 console.log('API URL:', process.env.NEXT_PUBLIC_API_URL);
@@ -347,6 +382,7 @@ fetch(`${process.env.NEXT_PUBLIC_API_URL}/health`)
 ```
 
 **2. Authentication Issues**
+
 ```typescript
 // Clear session cache
 await signOut({ redirect: false });
@@ -355,6 +391,7 @@ await signIn('credentials', { email, password });
 ```
 
 **3. RFID Verification Timeout**
+
 ```typescript
 // Implement retry logic
 const verifyWithRetry = async (cardNumber, maxRetries = 3) => {

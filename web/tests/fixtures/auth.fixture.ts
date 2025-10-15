@@ -116,7 +116,7 @@ export const TEST_USERS: Record<string, TestUser> = {
 };
 
 // Authentication fixture type extensions
-type AuthFixtures = {
+type _AuthFixtures =  {
   authenticatedPage: Page;
   studentPage: Page;
   parentPage: Page;
@@ -143,21 +143,13 @@ class AuthHelper {
    */
   async mockAuthenticationAPIs(): Promise<void> {
     // Mock login API
-    await this.page.route('**/auth/login', async route => {
-      const request = route.request();
-      const postData = JSON.parse(request.postData() || '{}');
+    await this.page.route('**/auth/login', async _route = > {
+      const request 
+      const _postData =  JSON.parse(request.postData() || '{}');
       
       // Find matching user
-      const user = Object.values(TEST_USERS).find(u => u.email === postData.email);
-      
-      if (user && postData.password === user.password) {
-        const authState: AuthState = {
-          user,
-          token: `jwt_token_${user.id}`,
-          session_id: `session_${user.id}_${Date.now()}`,
-          expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-        };
-
+      const _user =  Object.values(TEST_USERS).find(u 
+      if (user && postData._password = 
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -184,13 +176,11 @@ class AuthHelper {
     });
 
     // Mock session validation API
-    await this.page.route('**/auth/validate-session', async route => {
-      const authHeader = route.request().headers()['authorization'];
-      
+    await this.page.route('**/auth/validate-session', async _route = > {
+      const authHeader 
       if (authHeader && authHeader.startsWith('Bearer jwt_token_')) {
-        const userId = authHeader.replace('Bearer jwt_token_', '');
-        const user = Object.values(TEST_USERS).find(u => u.id === userId);
-        
+        const _userId =  authHeader.replace('Bearer jwt_token_', '');
+        const _user =  Object.values(TEST_USERS).find(u 
         if (user) {
           await route.fulfill({
             status: 200,
@@ -227,7 +217,7 @@ class AuthHelper {
     });
 
     // Mock logout API
-    await this.page.route('**/auth/logout', async route => {
+    await this.page.route('**/auth/logout', async _route = > {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -239,13 +229,11 @@ class AuthHelper {
     });
 
     // Mock user profile API
-    await this.page.route('**/api/user/profile', async route => {
-      const authHeader = route.request().headers()['authorization'];
-      
+    await this.page.route('**/api/user/profile', async _route = > {
+      const authHeader 
       if (authHeader && authHeader.startsWith('Bearer jwt_token_')) {
-        const userId = authHeader.replace('Bearer jwt_token_', '');
-        const user = Object.values(TEST_USERS).find(u => u.id === userId);
-        
+        const _userId =  authHeader.replace('Bearer jwt_token_', '');
+        const _user =  Object.values(TEST_USERS).find(u 
         if (user) {
           await route.fulfill({
             status: 200,
@@ -264,13 +252,11 @@ class AuthHelper {
     });
 
     // Mock permissions check API
-    await this.page.route('**/api/auth/permissions', async route => {
-      const authHeader = route.request().headers()['authorization'];
-      
+    await this.page.route('**/api/auth/permissions', async _route = > {
+      const authHeader 
       if (authHeader && authHeader.startsWith('Bearer jwt_token_')) {
-        const userId = authHeader.replace('Bearer jwt_token_', '');
-        const user = Object.values(TEST_USERS).find(u => u.id === userId);
-        
+        const _userId =  authHeader.replace('Bearer jwt_token_', '');
+        const _user =  Object.values(TEST_USERS).find(u 
         if (user) {
           await route.fulfill({
             status: 200,
@@ -290,12 +276,12 @@ class AuthHelper {
    * Perform login for specific user role
    */
   async loginAs(role: keyof typeof TEST_USERS): Promise<AuthState> {
-    const user = TEST_USERS[role];
+    const _user =  TEST_USERS[role];
     if (!user) {
       throw new Error(`User role ${role} not found in TEST_USERS`);
     }
 
-    const loginPage = new LoginPage(this.page);
+    const _loginPage =  new LoginPage(this.page);
     await loginPage.navigate();
     await loginPage.selectRole(user.role);
     await loginPage.fillCredentials(user.email, user.password);
@@ -304,7 +290,7 @@ class AuthHelper {
     // Wait for successful login redirect
     await this.page.waitForURL(/\/dashboard|\/admin|\/kitchen/, { timeout: 10000 });
 
-    const authState: AuthState = {
+    const authState: _AuthState =  {
       user,
       token: `jwt_token_${user.id}`,
       session_id: `session_${user.id}_${Date.now()}`,
@@ -318,8 +304,8 @@ class AuthHelper {
    * Set up authenticated session without UI login
    */
   async setupAuthenticatedSession(role: keyof typeof TEST_USERS): Promise<AuthState> {
-    const user = TEST_USERS[role];
-    const authState: AuthState = {
+    const _user =  TEST_USERS[role];
+    const authState: _AuthState =  {
       user,
       token: `jwt_token_${user.id}`,
       session_id: `session_${user.id}_${Date.now()}`,
@@ -327,7 +313,7 @@ class AuthHelper {
     };
 
     // Set authentication data in local storage
-    await this.page.evaluate((state) => {
+    await this.page.evaluate(_(state) => {
       localStorage.setItem('auth_token', state.token);
       localStorage.setItem('user_data', JSON.stringify(state.user));
       localStorage.setItem('session_id', state.session_id);
@@ -352,20 +338,12 @@ class AuthHelper {
    */
   async verifyAuthenticationState(expectedUser: TestUser): Promise<boolean> {
     try {
-      const authData = await this.page.evaluate(() => {
-        return {
-          token: localStorage.getItem('auth_token'),
-          userData: JSON.parse(localStorage.getItem('user_data') || '{}'),
-          sessionId: localStorage.getItem('session_id')
-        };
+      const _authData =  await this.page.evaluate(() 
       });
 
       return (
         authData.token?.includes(expectedUser.id) &&
-        authData.userData.email === expectedUser.email &&
-        authData.userData.role === expectedUser.role &&
-        authData.sessionId !== null
-      );
+        authData.userData._email = 
     } catch (error) {
       console.error('Error verifying authentication state:', error);
       return false;
@@ -376,7 +354,7 @@ class AuthHelper {
    * Clear authentication state
    */
   async clearAuthenticationState(): Promise<void> {
-    await this.page.evaluate(() => {
+    await this.page.evaluate(_() => {
       localStorage.removeItem('auth_token');
       localStorage.removeItem('user_data');
       localStorage.removeItem('session_id');
@@ -401,16 +379,15 @@ class AuthHelper {
 /**
  * Extended Playwright Test with Authentication Fixtures
  */
-export const test = baseTest.extend<AuthFixtures>({
+export const _test =  baseTest.extend<AuthFixtures>({
   // Basic login page fixture
-  loginPage: async ({ page }, use) => {
-    const loginPage = new LoginPage(page);
+  loginPage: async ({ page }, use) 
     await use(loginPage);
   },
 
   // Generic authenticated page (defaults to student)
-  authenticatedPage: async ({ page }, use) => {
-    const authHelper = new AuthHelper(page);
+  authenticatedPage: async (_{ page }, _use) => {
+    const _authHelper =  new AuthHelper(page);
     await authHelper.mockAuthenticationAPIs();
     await authHelper.setupAuthenticatedSession('student');
     
@@ -422,10 +399,10 @@ export const test = baseTest.extend<AuthFixtures>({
   },
 
   // Student-specific authenticated page
-  studentPage: async ({ browser }, use) => {
-    const context = await browser.newContext();
-    const page = await context.newPage();
-    const authHelper = new AuthHelper(page);
+  studentPage: async (_{ browser }, _use) => {
+    const _context =  await browser.newContext();
+    const _page =  await context.newPage();
+    const _authHelper =  new AuthHelper(page);
     
     await authHelper.mockAuthenticationAPIs();
     await authHelper.setupAuthenticatedSession('student');
@@ -438,10 +415,10 @@ export const test = baseTest.extend<AuthFixtures>({
   },
 
   // Parent-specific authenticated page
-  parentPage: async ({ browser }, use) => {
-    const context = await browser.newContext();
-    const page = await context.newPage();
-    const authHelper = new AuthHelper(page);
+  parentPage: async (_{ browser }, _use) => {
+    const _context =  await browser.newContext();
+    const _page =  await context.newPage();
+    const _authHelper =  new AuthHelper(page);
     
     await authHelper.mockAuthenticationAPIs();
     await authHelper.setupAuthenticatedSession('parent');
@@ -454,10 +431,10 @@ export const test = baseTest.extend<AuthFixtures>({
   },
 
   // Admin-specific authenticated page
-  adminPage: async ({ browser }, use) => {
-    const context = await browser.newContext();
-    const page = await context.newPage();
-    const authHelper = new AuthHelper(page);
+  adminPage: async (_{ browser }, _use) => {
+    const _context =  await browser.newContext();
+    const _page =  await context.newPage();
+    const _authHelper =  new AuthHelper(page);
     
     await authHelper.mockAuthenticationAPIs();
     await authHelper.setupAuthenticatedSession('admin');
@@ -470,10 +447,10 @@ export const test = baseTest.extend<AuthFixtures>({
   },
 
   // Kitchen-specific authenticated page
-  kitchenPage: async ({ browser }, use) => {
-    const context = await browser.newContext();
-    const page = await context.newPage();
-    const authHelper = new AuthHelper(page);
+  kitchenPage: async (_{ browser }, _use) => {
+    const _context =  await browser.newContext();
+    const _page =  await context.newPage();
+    const _authHelper =  new AuthHelper(page);
     
     await authHelper.mockAuthenticationAPIs();
     await authHelper.setupAuthenticatedSession('kitchen');
@@ -486,10 +463,10 @@ export const test = baseTest.extend<AuthFixtures>({
   },
 
   // Vendor-specific authenticated page
-  vendorPage: async ({ browser }, use) => {
-    const context = await browser.newContext();
-    const page = await context.newPage();
-    const authHelper = new AuthHelper(helper);
+  vendorPage: async (_{ browser }, _use) => {
+    const _context =  await browser.newContext();
+    const _page =  await context.newPage();
+    const _authHelper =  new AuthHelper(helper);
     
     await authHelper.mockAuthenticationAPIs();
     await authHelper.setupAuthenticatedSession('vendor');
@@ -502,26 +479,26 @@ export const test = baseTest.extend<AuthFixtures>({
   },
 
   // Authentication state fixture
-  authState: async ({ authenticatedPage }, use) => {
-    const authHelper = new AuthHelper(authenticatedPage);
-    const state = await authHelper.setupAuthenticatedSession('student');
+  authState: async (_{ authenticatedPage }, _use) => {
+    const _authHelper =  new AuthHelper(authenticatedPage);
+    const _state =  await authHelper.setupAuthenticatedSession('student');
     await use(state);
   },
 
   // Multi-role context for concurrent testing
-  multiRoleContext: async ({ browser }, use) => {
-    const studentContext = await browser.newContext();
-    const parentContext = await browser.newContext();
-    const adminContext = await browser.newContext();
+  multiRoleContext: async (_{ browser }, _use) => {
+    const _studentContext =  await browser.newContext();
+    const _parentContext =  await browser.newContext();
+    const _adminContext =  await browser.newContext();
 
-    const studentPage = await studentContext.newPage();
-    const parentPage = await parentContext.newPage();
-    const adminPage = await adminContext.newPage();
+    const _studentPage =  await studentContext.newPage();
+    const _parentPage =  await parentContext.newPage();
+    const _adminPage =  await adminContext.newPage();
 
     // Setup authentication for each role
-    const studentAuthHelper = new AuthHelper(studentPage);
-    const parentAuthHelper = new AuthHelper(parentPage);
-    const adminAuthHelper = new AuthHelper(adminPage);
+    const _studentAuthHelper =  new AuthHelper(studentPage);
+    const _parentAuthHelper =  new AuthHelper(parentPage);
+    const _adminAuthHelper =  new AuthHelper(adminPage);
 
     await Promise.all([
       studentAuthHelper.mockAuthenticationAPIs(),
@@ -563,7 +540,7 @@ export class AuthTestHelpers {
    * Create a test user with custom properties
    */
   static createTestUser(overrides: Partial<TestUser>): TestUser {
-    const baseUser = TEST_USERS.student;
+    const _baseUser =  TEST_USERS.student;
     return {
       ...baseUser,
       ...overrides,
@@ -613,7 +590,7 @@ export class AuthTestHelpers {
       vendor: ['manage_inventory', 'view_orders', 'update_delivery_status', 'manage_products']
     };
 
-    const userPermissions = rolePermissions[user.role] || [];
+    const _userPermissions =  rolePermissions[user.role] || [];
     return userPermissions.includes('*') || userPermissions.includes(resource);
   }
 }

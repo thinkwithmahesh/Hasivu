@@ -4,22 +4,33 @@
  * Implements real-time performance monitoring with analytics integration
  */
 
-import { getCLS, getFCP, getFID, getLCP, getTTFB, onCLS, onFCP, onFID, onLCP, onTTFB } from 'web-vitals';
+import {
+  getCLS,
+  getFCP,
+  getFID,
+  getLCP,
+  getTTFB,
+  onCLS,
+  onFCP,
+  onFID,
+  onLCP,
+  onTTFB,
+} from 'web-vitals';
 
 // Performance thresholds (based on Core Web Vitals recommendations)
 export const PERFORMANCE_THRESHOLDS = {
   // Core Web Vitals
   LCP: { good: 2500, needs_improvement: 4000 }, // Largest Contentful Paint (ms)
-  FID: { good: 100, needs_improvement: 300 },   // First Input Delay (ms) 
-  CLS: { good: 0.1, needs_improvement: 0.25 },  // Cumulative Layout Shift
-  
+  FID: { good: 100, needs_improvement: 300 }, // First Input Delay (ms)
+  CLS: { good: 0.1, needs_improvement: 0.25 }, // Cumulative Layout Shift
+
   // Additional metrics
   FCP: { good: 1800, needs_improvement: 3000 }, // First Contentful Paint (ms)
   TTFB: { good: 800, needs_improvement: 1800 }, // Time to First Byte (ms)
-  
+
   // Custom metrics
   TTI: { good: 3800, needs_improvement: 7300 }, // Time to Interactive (ms)
-  TBT: { good: 200, needs_improvement: 600 },   // Total Blocking Time (ms)
+  TBT: { good: 200, needs_improvement: 600 }, // Total Blocking Time (ms)
 } as const;
 
 // Performance metric types
@@ -66,10 +77,15 @@ export interface PerformanceReport {
 // Device type detection
 function getDeviceType(): 'mobile' | 'tablet' | 'desktop' {
   if (typeof window === 'undefined') return 'desktop';
-  
-  const userAgent = navigator.userAgent;
+
+  const { userAgent } = navigator;
   if (/tablet|ipad|playbook|silk/i.test(userAgent)) return 'tablet';
-  if (/mobile|iphone|ipod|android|blackberry|opera|mini|windows\sce|palm|smartphone|iemobile/i.test(userAgent)) return 'mobile';
+  if (
+    /mobile|iphone|ipod|android|blackberry|opera|mini|windows\sce|palm|smartphone|iemobile/i.test(
+      userAgent
+    )
+  )
+    return 'mobile';
   return 'desktop';
 }
 
@@ -77,7 +93,7 @@ function getDeviceType(): 'mobile' | 'tablet' | 'desktop' {
 function getPerformanceRating(name: string, value: number): 'good' | 'needs-improvement' | 'poor' {
   const thresholds = PERFORMANCE_THRESHOLDS[name as keyof typeof PERFORMANCE_THRESHOLDS];
   if (!thresholds) return 'good';
-  
+
   if (value <= thresholds.good) return 'good';
   if (value <= thresholds.needs_improvement) return 'needs-improvement';
   return 'poor';
@@ -109,7 +125,7 @@ class PerformanceReporter {
     this.reportingEndpoint = config?.endpoint || '/api/v1/performance';
     this.batchSize = config?.batchSize || 10;
     this.reportingInterval = config?.interval || 30000;
-    
+
     this.setupReporting();
     this.setupBeforeUnloadReporting();
   }
@@ -124,14 +140,14 @@ class PerformanceReporter {
       sessionId: this.sessionId,
       userId: this.userId,
     };
-    
+
     this.metrics.push(fullMetric);
-    
+
     // Report immediately for critical metrics
     if (metric.rating === 'poor') {
       this.reportMetrics([fullMetric]);
     }
-    
+
     // Batch reporting
     if (this.metrics.length >= this.batchSize) {
       this.reportBatch();
@@ -154,7 +170,7 @@ class PerformanceReporter {
         this.reportBatch(true); // Use sendBeacon for reliability
       }
     });
-    
+
     // Use Page Visibility API for better reliability
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'hidden' && this.metrics.length > 0) {
@@ -167,7 +183,7 @@ class PerformanceReporter {
   private reportBatch(useBeacon: boolean = false) {
     const metricsToReport = [...this.metrics];
     this.metrics = [];
-    
+
     this.reportMetrics(metricsToReport, useBeacon);
   }
 
@@ -191,7 +207,7 @@ class PerformanceReporter {
       };
 
       const payload = JSON.stringify(report);
-      
+
       if (useBeacon && navigator.sendBeacon) {
         // Use sendBeacon for reliability during page unload
         navigator.sendBeacon(this.reportingEndpoint, payload);
@@ -205,13 +221,12 @@ class PerformanceReporter {
           body: payload,
           keepalive: true,
         }).catch(error => {
-          console.warn('[Performance] Failed to report metrics:', error);
           // Store in localStorage for retry
           this.storeForRetry(metrics);
         });
       }
     } catch (error) {
-      console.warn('[Performance] Failed to prepare metrics report:', error);
+      // Error handled silently
     }
   }
 
@@ -221,12 +236,12 @@ class PerformanceReporter {
       const stored = localStorage.getItem('hasivu_performance_retry') || '[]';
       const retryMetrics = JSON.parse(stored);
       retryMetrics.push(...metrics);
-      
+
       // Limit stored metrics to prevent storage bloat
       const limited = retryMetrics.slice(-100);
       localStorage.setItem('hasivu_performance_retry', JSON.stringify(limited));
     } catch (error) {
-      console.warn('[Performance] Failed to store metrics for retry:', error);
+      // Error handled silently
     }
   }
 
@@ -242,7 +257,7 @@ class PerformanceReporter {
         }
       }
     } catch (error) {
-      console.warn('[Performance] Failed to retry metrics:', error);
+      // Error handled silently
     }
   }
 
@@ -251,7 +266,7 @@ class PerformanceReporter {
     if (this.reportingTimer) {
       clearInterval(this.reportingTimer);
     }
-    
+
     // Report any remaining metrics
     if (this.metrics.length > 0) {
       this.reportBatch(true);
@@ -271,7 +286,7 @@ export function initPerformanceMonitoring(config?: {
   enableCustomMetrics?: boolean;
 }) {
   if (typeof window === 'undefined') return;
-  
+
   // Initialize reporter
   performanceReporter = new PerformanceReporter({
     endpoint: config?.endpoint,
@@ -281,7 +296,7 @@ export function initPerformanceMonitoring(config?: {
   });
 
   // Core Web Vitals monitoring
-  onCLS((metric) => {
+  onCLS(metric => {
     performanceReporter.addMetric({
       name: 'CLS',
       value: metric.value,
@@ -292,7 +307,7 @@ export function initPerformanceMonitoring(config?: {
     });
   });
 
-  onFID((metric) => {
+  onFID(metric => {
     performanceReporter.addMetric({
       name: 'FID',
       value: metric.value,
@@ -303,7 +318,7 @@ export function initPerformanceMonitoring(config?: {
     });
   });
 
-  onLCP((metric) => {
+  onLCP(metric => {
     performanceReporter.addMetric({
       name: 'LCP',
       value: metric.value,
@@ -314,7 +329,7 @@ export function initPerformanceMonitoring(config?: {
     });
   });
 
-  onFCP((metric) => {
+  onFCP(metric => {
     performanceReporter.addMetric({
       name: 'FCP',
       value: metric.value,
@@ -325,7 +340,7 @@ export function initPerformanceMonitoring(config?: {
     });
   });
 
-  onTTFB((metric) => {
+  onTTFB(metric => {
     performanceReporter.addMetric({
       name: 'TTFB',
       value: metric.value,
@@ -345,20 +360,18 @@ export function initPerformanceMonitoring(config?: {
   setTimeout(() => {
     performanceReporter.retryFailedMetrics();
   }, 1000);
-
-  console.log('[Performance] Monitoring initialized');
 }
 
 // Custom performance metrics
 function initCustomMetrics() {
   // Time to Interactive (TTI) approximation
   let ttiObserver: PerformanceObserver;
-  
+
   if ('PerformanceObserver' in window) {
-    ttiObserver = new PerformanceObserver((list) => {
+    ttiObserver = new PerformanceObserver(list => {
       const entries = list.getEntries();
       const lastEntry = entries[entries.length - 1];
-      
+
       if (lastEntry && lastEntry.entryType === 'navigation') {
         const tti = (lastEntry as PerformanceNavigationTiming).loadEventEnd;
         if (tti > 0) {
@@ -370,11 +383,11 @@ function initCustomMetrics() {
         }
       }
     });
-    
+
     try {
       ttiObserver.observe({ entryTypes: ['navigation'] });
     } catch (error) {
-      console.warn('[Performance] TTI observer failed:', error);
+      // Error handled silently
     }
   }
 
@@ -387,7 +400,7 @@ function trackCustomBusinessMetrics() {
   // Menu load time
   const trackMenuLoadTime = () => {
     const startTime = performance.now();
-    
+
     // This would be called when menu data is loaded
     window.addEventListener('hasivu:menu-loaded', () => {
       const loadTime = performance.now() - startTime;
@@ -403,17 +416,18 @@ function trackCustomBusinessMetrics() {
   const trackOrderCompletion = () => {
     window.addEventListener('hasivu:order-started', () => {
       const startTime = performance.now();
-      
+
       const completionHandler = () => {
         const completionTime = performance.now() - startTime;
         performanceReporter.addMetric({
           name: 'ORDER_COMPLETION_TIME',
           value: completionTime,
-          rating: completionTime < 30000 ? 'good' : completionTime < 60000 ? 'needs-improvement' : 'poor',
+          rating:
+            completionTime < 30000 ? 'good' : completionTime < 60000 ? 'needs-improvement' : 'poor',
         });
         window.removeEventListener('hasivu:order-completed', completionHandler);
       };
-      
+
       window.addEventListener('hasivu:order-completed', completionHandler);
     });
   };
@@ -423,9 +437,12 @@ function trackCustomBusinessMetrics() {
 }
 
 // Manual metric tracking
-export function trackCustomMetric(name: string, value: number, thresholds?: { good: number; needs_improvement: number }) {
+export function trackCustomMetric(
+  name: string,
+  value: number,
+  thresholds?: { good: number; needs_improvement: number }
+) {
   if (!performanceReporter) {
-    console.warn('[Performance] Reporter not initialized');
     return;
   }
 
@@ -460,7 +477,6 @@ export const PerformanceUtils = {
         const measure = performance.getEntriesByName(name, 'measure')[0];
         return measure ? measure.duration : 0;
       } catch (error) {
-        console.warn('[Performance] Measure failed:', error);
         return 0;
       }
     }
@@ -470,8 +486,10 @@ export const PerformanceUtils = {
   // Get current performance metrics
   getCurrentMetrics: () => {
     if ('performance' in window) {
-      const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
-      
+      const navigation = performance.getEntriesByType(
+        'navigation'
+      )[0] as PerformanceNavigationTiming;
+
       return {
         domContentLoaded: navigation.domContentLoadedEventEnd - navigation.fetchStart,
         loadComplete: navigation.loadEventEnd - navigation.fetchStart,
@@ -489,7 +507,7 @@ export const PerformanceUtils = {
     if (!currentMetrics) return {};
 
     const violations: Record<string, { actual: number; budget: number; violation: number }> = {};
-    
+
     Object.entries(budgets).forEach(([metric, budget]) => {
       const actual = currentMetrics[metric as keyof typeof currentMetrics];
       if (actual && actual > budget) {
@@ -508,11 +526,11 @@ export const PerformanceUtils = {
 // Resource loading performance
 export function trackResourcePerformance() {
   if ('PerformanceObserver' in window) {
-    const observer = new PerformanceObserver((list) => {
-      list.getEntries().forEach((entry) => {
+    const observer = new PerformanceObserver(list => {
+      list.getEntries().forEach(entry => {
         if (entry.entryType === 'resource') {
           const resource = entry as PerformanceResourceTiming;
-          
+
           // Track slow resources
           if (resource.duration > 1000) {
             performanceReporter?.addMetric({
@@ -528,7 +546,7 @@ export function trackResourcePerformance() {
     try {
       observer.observe({ entryTypes: ['resource'] });
     } catch (error) {
-      console.warn('[Performance] Resource observer failed:', error);
+      // Error handled silently
     }
   }
 }
@@ -543,28 +561,17 @@ export function cleanupPerformanceMonitoring() {
 // Performance debugging (development only)
 export function debugPerformance() {
   if (process.env.NODE_ENV !== 'development') return;
-  
-  console.group('🚀 Performance Debug Info');
-  
+
   // Core Web Vitals
-  getCLS(console.log.bind(console, 'CLS:'));
-  getFCP(console.log.bind(console, 'FCP:'));
-  getFID(console.log.bind(console, 'FID:'));
-  getLCP(console.log.bind(console, 'LCP:'));
-  getTTFB(console.log.bind(console, 'TTFB:'));
-  
+
   // Current metrics
   const currentMetrics = PerformanceUtils.getCurrentMetrics();
   if (currentMetrics) {
-    console.table(currentMetrics);
   }
-  
+
   // Resource performance
   const resources = performance.getEntriesByType('resource') as PerformanceResourceTiming[];
   const slowResources = resources.filter(r => r.duration > 500);
   if (slowResources.length > 0) {
-    console.warn('Slow resources (>500ms):', slowResources);
   }
-  
-  console.groupEnd();
 }

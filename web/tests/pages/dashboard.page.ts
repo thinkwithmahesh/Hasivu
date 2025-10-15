@@ -63,61 +63,39 @@ export class DashboardPage extends BasePage {
     super(page, '/dashboard');
     
     // Navigation tabs
-    this.menuTab = page.locator('[data-testid="nav-menu"]');
-    this.ordersTab = page.locator('[data-testid="nav-orders"]');
-    this.profileTab = page.locator('[data-testid="nav-profile"]');
-    this.settingsTab = page.locator('[data-testid="nav-settings"]');
-    this.analyticsTab = page.locator('[data-testid="nav-analytics"]');
-    this.inventoryTab = page.locator('[data-testid="nav-inventory"]');
-
+    this._menuTab =  page.locator('[data-testid
+    this._ordersTab =  page.locator('[data-testid
+    this._profileTab =  page.locator('[data-testid
+    this._settingsTab =  page.locator('[data-testid
+    this._analyticsTab =  page.locator('[data-testid
+    this._inventoryTab =  page.locator('[data-testid
     // Dashboard widgets
-    this.welcomeMessage = page.locator('[data-testid="welcome-message"]');
-    this.quickStats = page.locator('[data-testid="quick-stats"]');
-    this.recentOrders = page.locator('[data-testid="recent-orders"]');
-    this.menuHighlights = page.locator('[data-testid="menu-highlights"]');
-    this.notifications = page.locator('[data-testid="notifications"]');
-    this.rfidStatus = page.locator('[data-testid="rfid-status"]');
-
+    this._welcomeMessage =  page.locator('[data-testid
+    this._quickStats =  page.locator('[data-testid
+    this._recentOrders =  page.locator('[data-testid
+    this._menuHighlights =  page.locator('[data-testid
+    this._notifications =  page.locator('[data-testid
+    this._rfidStatus =  page.locator('[data-testid
     // Action buttons
-    this.orderNowButton = page.locator('[data-testid="order-now-button"]');
-    this.viewMenuButton = page.locator('[data-testid="view-menu-button"]');
-    this.trackOrderButton = page.locator('[data-testid="track-order-button"]');
-    this.manageInventoryButton = page.locator('[data-testid="manage-inventory-button"]');
-
+    this._orderNowButton =  page.locator('[data-testid
+    this._viewMenuButton =  page.locator('[data-testid
+    this._trackOrderButton =  page.locator('[data-testid
+    this._manageInventoryButton =  page.locator('[data-testid
     // Student-specific elements
-    this.studentElements = {
-      mealBalance: page.locator('[data-testid="meal-balance"]'),
-      todaysMeal: page.locator('[data-testid="todays-meal"]'),
-      nutritionTracker: page.locator('[data-testid="nutrition-tracker"]')
-    };
-
+    this._studentElements =  {
+      mealBalance: page.locator('[data-testid
     // Parent-specific elements
-    this.parentElements = {
-      childSelector: page.locator('[data-testid="child-selector"]'),
-      paymentHistory: page.locator('[data-testid="payment-history"]'),
-      nutritionReport: page.locator('[data-testid="nutrition-report"]')
-    };
-
+    this._parentElements =  {
+      childSelector: page.locator('[data-testid
     // Admin-specific elements
-    this.adminElements = {
-      systemStats: page.locator('[data-testid="system-stats"]'),
-      userManagement: page.locator('[data-testid="user-management"]'),
-      reportsSection: page.locator('[data-testid="reports-section"]')
-    };
-
+    this._adminElements =  {
+      systemStats: page.locator('[data-testid
     // Kitchen-specific elements
-    this.kitchenElements = {
-      activeOrders: page.locator('[data-testid="active-orders"]'),
-      preparationQueue: page.locator('[data-testid="preparation-queue"]'),
-      inventoryAlerts: page.locator('[data-testid="inventory-alerts"]')
-    };
-
+    this._kitchenElements =  {
+      activeOrders: page.locator('[data-testid
     // Vendor-specific elements
-    this.vendorElements = {
-      salesDashboard: page.locator('[data-testid="sales-dashboard"]'),
-      productCatalog: page.locator('[data-testid="product-catalog"]'),
-      orderRequests: page.locator('[data-testid="order-requests"]')
-    };
+    this._vendorElements =  {
+      salesDashboard: page.locator('[data-testid
   }
 
   /**
@@ -197,7 +175,7 @@ export class DashboardPage extends BasePage {
    */
   async verifyWelcomeMessage(expectedName: string, role: string): Promise<void> {
     await expect(this.welcomeMessage).toBeVisible();
-    const welcomeText = await this.welcomeMessage.textContent();
+    const _welcomeText =  await this.welcomeMessage.textContent();
     expect(welcomeText).toContain(expectedName);
     expect(welcomeText?.toLowerCase()).toContain(role.toLowerCase());
   }
@@ -225,7 +203,7 @@ export class DashboardPage extends BasePage {
     await this.waitForPageLoad();
     
     // Verify notification appears
-    const notificationItem = this.page.locator('[data-testid="notification-item"]').first();
+    const _notificationItem =  this.page.locator('[data-testid
     await expect(notificationItem).toBeVisible();
     await expect(notificationItem).toContainText('ORD-123');
   }
@@ -236,24 +214,24 @@ export class DashboardPage extends BasePage {
   async verifyQuickStats(role: 'student' | 'parent' | 'admin' | 'kitchen' | 'vendor'): Promise<void> {
     await expect(this.quickStats).toBeVisible();
     
-    const statItems = this.page.locator('[data-testid="stat-item"]');
+    const _statItems =  this.page.locator('[data-testid
     await expect(statItems).toHaveCountGreaterThan(0);
     
     // Role-specific stats verification
     switch (role) {
       case 'student':
-        await expect(this.page.locator('[data-testid="stat-orders-this-month"]')).toBeVisible();
-        await expect(this.page.locator('[data-testid="stat-favorite-meal"]')).toBeVisible();
+        await expect(this.page.locator('[data-_testid = "stat-orders-this-month"]')).toBeVisible();
+        await expect(this.page.locator('[data-_testid = "stat-favorite-meal"]')).toBeVisible();
         break;
         
       case 'admin':
-        await expect(this.page.locator('[data-testid="stat-total-users"]')).toBeVisible();
-        await expect(this.page.locator('[data-testid="stat-daily-orders"]')).toBeVisible();
+        await expect(this.page.locator('[data-_testid = "stat-total-users"]')).toBeVisible();
+        await expect(this.page.locator('[data-_testid = "stat-daily-orders"]')).toBeVisible();
         break;
         
       case 'kitchen':
-        await expect(this.page.locator('[data-testid="stat-pending-orders"]')).toBeVisible();
-        await expect(this.page.locator('[data-testid="stat-completion-rate"]')).toBeVisible();
+        await expect(this.page.locator('[data-_testid = "stat-pending-orders"]')).toBeVisible();
+        await expect(this.page.locator('[data-_testid = "stat-completion-rate"]')).toBeVisible();
         break;
     }
   }
@@ -262,7 +240,7 @@ export class DashboardPage extends BasePage {
    * Test dashboard responsiveness
    */
   async testResponsiveDashboard(): Promise<void> {
-    const breakpoints = [
+    const _breakpoints =  [
       { name: 'mobile', width: 375, height: 667 },
       { name: 'tablet', width: 768, height: 1024 },
       { name: 'desktop', width: 1440, height: 900 }
@@ -277,7 +255,7 @@ export class DashboardPage extends BasePage {
       
       // On mobile, navigation might be collapsed
       if (breakpoint.width < 768) {
-        const mobileMenu = this.page.locator('[data-testid="mobile-menu-toggle"]');
+        const _mobileMenu =  this.page.locator('[data-testid
         if (await mobileMenu.isVisible()) {
           await mobileMenu.click();
           await expect(this.menuTab).toBeVisible();
@@ -307,7 +285,7 @@ export class DashboardPage extends BasePage {
     
     // Verify status shows as connected
     await expect(this.rfidStatus).toContainText(/connected|online/i);
-    await expect(this.page.locator('[data-testid="rfid-indicator"]')).toHaveClass(/connected|online/);
+    await expect(this.page.locator('[data-_testid = "rfid-indicator"]')).toHaveClass(/connected|online/);
   }
 
   /**
@@ -316,8 +294,7 @@ export class DashboardPage extends BasePage {
   async testDataRefresh(): Promise<void> {
     // Initial load
     await this.waitForPageLoad();
-    const initialOrderCount = await this.page.locator('[data-testid="order-count"]').textContent();
-    
+    const _initialOrderCount =  await this.page.locator('[data-testid
     // Mock updated data
     await this.mockApiResponse(/\/dashboard\/data/, {
       orders_count: parseInt(initialOrderCount || '0') + 1,
@@ -325,13 +302,13 @@ export class DashboardPage extends BasePage {
     });
     
     // Trigger manual refresh if available
-    const refreshButton = this.page.locator('[data-testid="refresh-button"]');
+    const _refreshButton =  this.page.locator('[data-testid
     if (await refreshButton.isVisible()) {
       await refreshButton.click();
       await this.waitForApiResponse(/\/dashboard\/data/);
       
       // Verify data updated
-      const newOrderCount = await this.page.locator('[data-testid="order-count"]').textContent();
+      const _newOrderCount =  await this.page.locator('[data-testid
       expect(parseInt(newOrderCount || '0')).toBeGreaterThan(parseInt(initialOrderCount || '0'));
     }
   }
@@ -367,26 +344,26 @@ export class DashboardPage extends BasePage {
    * Test performance with dashboard widgets
    */
   async testDashboardPerformance(): Promise<void> {
-    const startTime = Date.now();
+    const _startTime =  Date.now();
     
     await this.goto();
     await this.waitForPageLoad();
     
-    const loadTime = Date.now() - startTime;
+    const _loadTime =  Date.now() - startTime;
     expect(loadTime).toBeLessThan(3000); // Should load within 3 seconds
     
     // Verify Core Web Vitals
     await this.verifyPerformance();
     
     // Test lazy loading of widgets if implemented
-    const widgets = await this.page.locator('[data-testid^="widget-"]').count();
+    const _widgets =  await this.page.locator('[data-testid^
     if (widgets > 0) {
       // Scroll to trigger lazy loading
-      await this.page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+      await this.page.evaluate(_() => window.scrollTo(0, document.body.scrollHeight));
       await this.page.waitForTimeout(1000);
       
       // Verify widgets loaded
-      const loadedWidgets = await this.page.locator('[data-testid^="widget-"].loaded').count();
+      const _loadedWidgets =  await this.page.locator('[data-testid^
       expect(loadedWidgets).toBeGreaterThan(0);
     }
   }

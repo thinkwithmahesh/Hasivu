@@ -1,0 +1,139 @@
+/**
+ * HASIVU Platform - Cache Service
+ * Minimal stub for compilation
+ */
+
+export interface CacheOptions {
+  ttl?: number;
+  compress?: boolean;
+  invalidationTags?: string[];
+  priority?: 'low' | 'medium' | 'high';
+  warmup?: boolean;
+  serialize?: boolean;
+}
+
+export interface CacheStats {
+  hits: number;
+  misses: number;
+  sets: number;
+  deletes: number;
+  evictions: number;
+  hitRate: number;
+  memoryUsage: number;
+  keyCount: number;
+  avgGetTime: number;
+  avgSetTime: number;
+}
+
+export interface CacheHealth {
+  status: 'healthy' | 'warning' | 'error';
+  redisStatus: 'connected' | 'disconnected' | 'error';
+  memoryStatus: 'healthy' | 'warning' | 'critical';
+  performanceStatus: 'optimal' | 'degraded' | 'poor';
+  stats: CacheStats;
+  errors: Array<{
+    type: string;
+    message: string;
+    timestamp: Date;
+  }>;
+}
+
+class CacheService {
+  async get<T>(_key: string, _options: _CacheOptions =  {}): Promise<T | null> {
+    // Stub implementation
+    return null;
+  }
+
+  async set<T>(
+    _key: string,
+    _value: T,
+    _options: _CacheOptions =  {}
+  ): Promise<boolean> {
+    // Stub implementation
+    return true;
+  }
+
+  async delete(_key: string): Promise<boolean> {
+    // Stub implementation
+    return true;
+  }
+
+  async invalidatePattern(_pattern: string): Promise<number> {
+    // Stub implementation
+    return 0;
+  }
+
+  async invalidateByTag(_tag: string): Promise<number> {
+    // Stub implementation
+    return 0;
+  }
+
+  async getOrSet<T>(_key: string, fetchFn: () => Promise<T>,
+    _options: _CacheOptions =  {}
+  ): Promise<T> {
+    // Stub implementation - just fetch from source
+    return await fetchFn();
+  }
+
+  async mget<T>(_keys: string[]): Promise<Map<string, T>> {
+    // Stub implementation
+    return new Map();
+  }
+
+  async mset(_entries: Map<string, any>, _options: _CacheOptions =  {}): Promise<boolean> {
+    // Stub implementation
+    return true;
+  }
+
+  async getHealth(): Promise<CacheHealth> {
+    // Stub implementation
+    return {
+      status: 'healthy',
+      redisStatus: 'connected',
+      memoryStatus: 'healthy',
+      performanceStatus: 'optimal',
+      stats: {
+        hits: 0,
+        misses: 0,
+        sets: 0,
+        deletes: 0,
+        evictions: 0,
+        hitRate: 0,
+        memoryUsage: 0,
+        keyCount: 0,
+        avgGetTime: 0,
+        avgSetTime: 0
+      },
+      errors: []
+    };
+  }
+
+  getStats(): CacheStats {
+    // Stub implementation
+    return {
+      hits: 0,
+      misses: 0,
+      sets: 0,
+      deletes: 0,
+      evictions: 0,
+      hitRate: 0,
+      memoryUsage: 0,
+      keyCount: 0,
+      avgGetTime: 0,
+      avgSetTime: 0
+    };
+  }
+
+  async clear(): Promise<boolean> {
+    // Stub implementation
+    return true;
+  }
+
+  async cleanup(): Promise<void> {
+    // Stub implementation
+  }
+}
+
+export const _cacheService =  new CacheService();
+export { CacheService };
+export default cacheService;

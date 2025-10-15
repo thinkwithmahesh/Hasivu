@@ -64,14 +64,16 @@ describe('RFIDVerificationSystem', () => {
 
   it('renders the main RFID verification interface', () => {
     render(<RFIDVerificationSystem />);
-    
+
     expect(screen.getByText('RFID Verification System')).toBeInTheDocument();
-    expect(screen.getByText('Real-time meal delivery verification and monitoring')).toBeInTheDocument();
+    expect(
+      screen.getByText('Real-time meal delivery verification and monitoring')
+    ).toBeInTheDocument();
   });
 
   it('displays system statistics', () => {
     render(<RFIDVerificationSystem />);
-    
+
     expect(screen.getByText('1247')).toBeInTheDocument(); // Total scans
     expect(screen.getByText('99.7%')).toBeInTheDocument(); // Success rate
     expect(screen.getByText('0.3s')).toBeInTheDocument(); // Avg scan time
@@ -79,7 +81,7 @@ describe('RFIDVerificationSystem', () => {
 
   it('shows device status information', () => {
     render(<RFIDVerificationSystem />);
-    
+
     expect(screen.getByText('Cafeteria Main Counter')).toBeInTheDocument();
     expect(screen.getByText('South Wing Counter')).toBeInTheDocument();
     expect(screen.getByText('Sports Complex Counter')).toBeInTheDocument();
@@ -87,7 +89,7 @@ describe('RFIDVerificationSystem', () => {
 
   it('displays transaction history', () => {
     render(<RFIDVerificationSystem />);
-    
+
     expect(screen.getByText('Recent Transactions')).toBeInTheDocument();
     expect(screen.getByText('Priya Sharma')).toBeInTheDocument();
     expect(screen.getByText('Arjun Sharma')).toBeInTheDocument();
@@ -96,7 +98,7 @@ describe('RFIDVerificationSystem', () => {
 
   it('shows real-time monitor with scanner animation', () => {
     render(<RFIDVerificationSystem />);
-    
+
     expect(screen.getByText('Real-Time RFID Monitor')).toBeInTheDocument();
     expect(screen.getByText('Ready to Scan')).toBeInTheDocument();
     expect(screen.getByText('Place RFID card near scanner')).toBeInTheDocument();
@@ -104,10 +106,10 @@ describe('RFIDVerificationSystem', () => {
 
   it('handles test scan button click', async () => {
     render(<RFIDVerificationSystem />);
-    
+
     const testScanButton = screen.getByText('Test Scan');
     fireEvent.click(testScanButton);
-    
+
     // The button should be disabled during scanning
     await waitFor(() => {
       expect(testScanButton).toBeDisabled();
@@ -116,14 +118,14 @@ describe('RFIDVerificationSystem', () => {
 
   it('displays online device count', () => {
     render(<RFIDVerificationSystem />);
-    
+
     // Should show 2/3 devices online based on mock data
     expect(screen.getByText('2/3 Online')).toBeInTheDocument();
   });
 
   it('shows device battery levels and signal strength', () => {
     render(<RFIDVerificationSystem />);
-    
+
     expect(screen.getByText('85%')).toBeInTheDocument(); // Battery level
     expect(screen.getByText('95%')).toBeInTheDocument(); // Signal strength
     expect(screen.getByText('67%')).toBeInTheDocument(); // Another device battery
@@ -131,37 +133,37 @@ describe('RFIDVerificationSystem', () => {
 
   it('displays firmware versions', () => {
     render(<RFIDVerificationSystem />);
-    
+
     expect(screen.getByText('v2.1.3')).toBeInTheDocument();
     expect(screen.getByText('v2.0.8')).toBeInTheDocument();
   });
 
   it('shows transaction status badges', () => {
     render(<RFIDVerificationSystem />);
-    
+
     const badges = screen.getAllByTestId('badge');
     expect(badges.length).toBeGreaterThan(0);
   });
 
   it('displays nutrition scores in transactions', () => {
     render(<RFIDVerificationSystem />);
-    
+
     expect(screen.getByText('Score: 88%')).toBeInTheDocument();
     expect(screen.getByText('Score: 85%')).toBeInTheDocument();
   });
 
   it('shows photo button for transactions with photos', () => {
     render(<RFIDVerificationSystem />);
-    
+
     expect(screen.getByText('Photo')).toBeInTheDocument();
   });
 
   it('handles take photo button', () => {
     render(<RFIDVerificationSystem />);
-    
+
     const takePhotoButton = screen.getByText('Take Photo');
     expect(takePhotoButton).toBeInTheDocument();
-    
+
     fireEvent.click(takePhotoButton);
     // Photo functionality would be implemented with actual camera integration
   });

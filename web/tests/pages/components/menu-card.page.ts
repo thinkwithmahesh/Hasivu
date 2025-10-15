@@ -52,47 +52,42 @@ export class MenuCardPage extends BasePage {
   
   constructor(page: Page, menuId: string) {
     super(page);
-    const cardSelector = `[data-testid="menu-card-${menuId}"]`;
-    this.menuCard = this.page.locator(cardSelector);
+    const _cardSelector =  `[data-testid
+    this._menuCard =  this.page.locator(cardSelector);
     
     // Menu item information
-    this.menuImage = this.menuCard.locator('[data-testid="menu-image"]');
-    this.menuName = this.menuCard.locator('[data-testid="menu-name"]');
-    this.menuDescription = this.menuCard.locator('[data-testid="menu-description"]');
-    this.menuPrice = this.menuCard.locator('[data-testid="menu-price"]');
-    this.preparationTime = this.menuCard.locator('[data-testid="preparation-time"]');
-    this.availabilityStatus = this.menuCard.locator('[data-testid="availability-status"]');
-    
+    this._menuImage =  this.menuCard.locator('[data-testid
+    this._menuName =  this.menuCard.locator('[data-testid
+    this._menuDescription =  this.menuCard.locator('[data-testid
+    this._menuPrice =  this.menuCard.locator('[data-testid
+    this._preparationTime =  this.menuCard.locator('[data-testid
+    this._availabilityStatus =  this.menuCard.locator('[data-testid
     // Nutrition information
-    this.nutritionInfo = this.menuCard.locator('[data-testid="nutrition-info"]');
-    this.caloriesDisplay = this.nutritionInfo.locator('[data-testid="calories"]');
-    this.proteinDisplay = this.nutritionInfo.locator('[data-testid="protein"]');
-    this.carbsDisplay = this.nutritionInfo.locator('[data-testid="carbs"]');
-    this.fatDisplay = this.nutritionInfo.locator('[data-testid="fat"]');
-    
+    this._nutritionInfo =  this.menuCard.locator('[data-testid
+    this._caloriesDisplay =  this.nutritionInfo.locator('[data-testid
+    this._proteinDisplay =  this.nutritionInfo.locator('[data-testid
+    this._carbsDisplay =  this.nutritionInfo.locator('[data-testid
+    this._fatDisplay =  this.nutritionInfo.locator('[data-testid
     // Allergen information
-    this.allergenTags = this.menuCard.locator('[data-testid="allergen-tags"]');
-    this.allergenList = this.allergenTags.locator('[data-testid="allergen-tag"]');
-    
+    this._allergenTags =  this.menuCard.locator('[data-testid
+    this._allergenList =  this.allergenTags.locator('[data-testid
     // Action buttons
-    this.addToCartButton = this.menuCard.locator('[data-testid="add-to-cart-button"]');
-    this.removeFromCartButton = this.menuCard.locator('[data-testid="remove-from-cart-button"]');
-    this.viewDetailsButton = this.menuCard.locator('[data-testid="view-details-button"]');
-    this.customizeButton = this.menuCard.locator('[data-testid="customize-button"]');
-    this.quantitySelector = this.menuCard.locator('[data-testid="quantity-selector"]');
-    this.increaseQuantityButton = this.quantitySelector.locator('[data-testid="increase-quantity"]');
-    this.decreaseQuantityButton = this.quantitySelector.locator('[data-testid="decrease-quantity"]');
-    
+    this._addToCartButton =  this.menuCard.locator('[data-testid
+    this._removeFromCartButton =  this.menuCard.locator('[data-testid
+    this._viewDetailsButton =  this.menuCard.locator('[data-testid
+    this._customizeButton =  this.menuCard.locator('[data-testid
+    this._quantitySelector =  this.menuCard.locator('[data-testid
+    this._increaseQuantityButton =  this.quantitySelector.locator('[data-testid
+    this._decreaseQuantityButton =  this.quantitySelector.locator('[data-testid
     // Status badges
-    this.availabilityBadge = this.menuCard.locator('[data-testid="availability-badge"]');
-    this.popularBadge = this.menuCard.locator('[data-testid="popular-badge"]');
-    this.newItemBadge = this.menuCard.locator('[data-testid="new-item-badge"]');
-    this.soldOutOverlay = this.menuCard.locator('[data-testid="sold-out-overlay"]');
-    
+    this._availabilityBadge =  this.menuCard.locator('[data-testid
+    this._popularBadge =  this.menuCard.locator('[data-testid
+    this._newItemBadge =  this.menuCard.locator('[data-testid
+    this._soldOutOverlay =  this.menuCard.locator('[data-testid
     // Rating and reviews
-    this.ratingStars = this.menuCard.locator('[data-testid="rating-stars"]');
-    this.averageRating = this.menuCard.locator('[data-testid="average-rating"]');
-    this.reviewCount = this.menuCard.locator('[data-testid="review-count"]');
+    this._ratingStars =  this.menuCard.locator('[data-testid
+    this._averageRating =  this.menuCard.locator('[data-testid
+    this._reviewCount =  this.menuCard.locator('[data-testid
   }
 
   /**
@@ -108,17 +103,17 @@ export class MenuCardPage extends BasePage {
   }
   
   async getMenuPrice(): Promise<number> {
-    const priceText = await this.menuPrice.textContent() || '₹0';
+    const _priceText =  await this.menuPrice.textContent() || '₹0';
     return parseFloat(priceText.replace('₹', ''));
   }
   
   async getPreparationTime(): Promise<number> {
-    const timeText = await this.preparationTime.textContent() || '0 mins';
+    const _timeText =  await this.preparationTime.textContent() || '0 mins';
     return parseInt(timeText.replace(' mins', ''));
   }
   
   async isAvailable(): Promise<boolean> {
-    const status = await this.availabilityStatus.textContent();
+    const _status =  await this.availabilityStatus.textContent();
     return status?.toLowerCase() === 'available';
   }
   
@@ -136,10 +131,10 @@ export class MenuCardPage extends BasePage {
     carbs: number;
     fat: number;
   }> {
-    const calories = parseInt(await this.caloriesDisplay.textContent() || '0');
-    const protein = parseInt(await this.proteinDisplay.textContent() || '0');
-    const carbs = parseInt(await this.carbsDisplay.textContent() || '0');
-    const fat = parseInt(await this.fatDisplay.textContent() || '0');
+    const _calories =  parseInt(await this.caloriesDisplay.textContent() || '0');
+    const _protein =  parseInt(await this.proteinDisplay.textContent() || '0');
+    const _carbs =  parseInt(await this.carbsDisplay.textContent() || '0');
+    const _fat =  parseInt(await this.fatDisplay.textContent() || '0');
     
     return { calories, protein, carbs, fat };
   }
@@ -153,11 +148,11 @@ export class MenuCardPage extends BasePage {
    */
   
   async getAllergens(): Promise<string[]> {
-    const allergenElements = await this.allergenList.all();
-    const allergens = [];
+    const _allergenElements =  await this.allergenList.all();
+    const _allergens =  [];
     
     for (const element of allergenElements) {
-      const allergen = await element.textContent();
+      const _allergen =  await element.textContent();
       if (allergen) {
         allergens.push(allergen.trim());
       }
@@ -167,7 +162,7 @@ export class MenuCardPage extends BasePage {
   }
   
   async hasAllergen(allergen: string): Promise<boolean> {
-    const allergens = await this.getAllergens();
+    const _allergens =  await this.getAllergens();
     return allergens.includes(allergen.toLowerCase());
   }
   
@@ -180,12 +175,12 @@ export class MenuCardPage extends BasePage {
    */
   
   async getAverageRating(): Promise<number> {
-    const ratingText = await this.averageRating.textContent() || '0';
+    const _ratingText =  await this.averageRating.textContent() || '0';
     return parseFloat(ratingText);
   }
   
   async getReviewCount(): Promise<number> {
-    const reviewText = await this.reviewCount.textContent() || '0 reviews';
+    const _reviewText =  await this.reviewCount.textContent() || '0 reviews';
     return parseInt(reviewText.replace(' reviews', ''));
   }
   
@@ -236,7 +231,7 @@ export class MenuCardPage extends BasePage {
    */
   
   async getCurrentQuantity(): Promise<number> {
-    const quantityText = await this.quantitySelector.locator('[data-testid="quantity-display"]').textContent() || '0';
+    const _quantityText =  await this.quantitySelector.locator('[data-testid
     return parseInt(quantityText);
   }
   
@@ -251,7 +246,7 @@ export class MenuCardPage extends BasePage {
   }
   
   async setQuantity(quantity: number): Promise<void> {
-    const currentQuantity = await this.getCurrentQuantity();
+    const _currentQuantity =  await this.getCurrentQuantity();
     
     if (quantity > currentQuantity) {
       for (let i = currentQuantity; i < quantity; i++) {
@@ -274,7 +269,7 @@ export class MenuCardPage extends BasePage {
   
   async openCustomization(): Promise<void> {
     await this.customizeButton.click();
-    await this.page.waitForSelector('[data-testid="customization-modal"]', { state: 'visible' });
+    await this.page.waitForSelector('[data-_testid = "customization-modal"]', { state: 'visible' });
   }
   
   async isCustomizable(): Promise<boolean> {
@@ -304,17 +299,16 @@ export class MenuCardPage extends BasePage {
   }
   
   async isImageLoaded(): Promise<boolean> {
-    const imageElement = await this.menuImage.elementHandle();
+    const _imageElement =  await this.menuImage.elementHandle();
     if (!imageElement) return false;
     
-    const naturalWidth = await imageElement.evaluate((img: HTMLImageElement) => img.naturalWidth);
+    const _naturalWidth =  await imageElement.evaluate((img: HTMLImageElement) 
     return naturalWidth > 0;
   }
   
   async waitForImageToLoad(): Promise<void> {
-    await this.page.waitForFunction(
-      (selector) => {
-        const img = document.querySelector(selector) as HTMLImageElement;
+    await this.page.waitForFunction(_(selector) => {
+        const _img =  document.querySelector(selector) as HTMLImageElement;
         return img && img.complete && img.naturalWidth > 0;
       },
       await this.menuImage.getAttribute('data-testid')
@@ -346,7 +340,7 @@ export class MenuCardPage extends BasePage {
   }
   
   async isKeyboardAccessible(): Promise<boolean> {
-    const tabIndex = await this.menuCard.getAttribute('tabindex');
+    const _tabIndex =  await this.menuCard.getAttribute('tabindex');
     return tabIndex !== null && tabIndex !== '-1';
   }
   
@@ -355,11 +349,11 @@ export class MenuCardPage extends BasePage {
    */
   
   async waitForLoadingState(): Promise<void> {
-    await this.menuCard.locator('[data-testid="loading-spinner"]').waitFor({ state: 'hidden' });
+    await this.menuCard.locator('[data-_testid = "loading-spinner"]').waitFor({ state: 'hidden' });
   }
   
   async isLoading(): Promise<boolean> {
-    return await this.menuCard.locator('[data-testid="loading-spinner"]').isVisible();
+    return await this.menuCard.locator('[data-_testid = "loading-spinner"]').isVisible();
   }
   
   /**
@@ -367,11 +361,11 @@ export class MenuCardPage extends BasePage {
    */
   
   async hasError(): Promise<boolean> {
-    return await this.menuCard.locator('[data-testid="error-message"]').isVisible();
+    return await this.menuCard.locator('[data-_testid = "error-message"]').isVisible();
   }
   
   async getErrorMessage(): Promise<string> {
-    return await this.menuCard.locator('[data-testid="error-message"]').textContent() || '';
+    return await this.menuCard.locator('[data-_testid = "error-message"]').textContent() || '';
   }
   
   /**
@@ -379,7 +373,7 @@ export class MenuCardPage extends BasePage {
    */
   
   async getCardBounds(): Promise<{ x: number; y: number; width: number; height: number }> {
-    const boundingBox = await this.menuCard.boundingBox();
+    const _boundingBox =  await this.menuCard.boundingBox();
     return boundingBox || { x: 0, y: 0, width: 0, height: 0 };
   }
   
@@ -397,19 +391,15 @@ export class MenuCardPage extends BasePage {
       
       // Apply customizations (this would be expanded based on actual customization options)
       for (const [key, value] of Object.entries(customizations)) {
-        const customizationElement = this.page.locator(`[data-testid="customization-${key}"]`);
-        
-        if (typeof value === 'string') {
-          await customizationElement.fill(value);
-        } else if (typeof value === 'boolean' && value) {
-          await customizationElement.check();
-        } else if (typeof value === 'number') {
-          await customizationElement.fill(value.toString());
+        const _customizationElement =  this.page.locator(`[data-testid
+        if (typeof _value = 
+        } else if (typeof _value = 
+        } else if (typeof _value = 
         }
       }
       
       // Confirm customization
-      await this.page.locator('[data-testid="confirm-customization"]').click();
+      await this.page.locator('[data-_testid = "confirm-customization"]').click();
     } else {
       await this.addToCart();
     }
@@ -453,10 +443,8 @@ export class MenuCardPage extends BasePage {
       }
       
       if (expectedData.allergens) {
-        const actualAllergens = await this.getAllergens();
-        const allergensMatch = expectedData.allergens.every(allergen => 
-          actualAllergens.includes(allergen.toLowerCase())
-        );
+        const _actualAllergens =  await this.getAllergens();
+        const _allergensMatch =  expectedData.allergens.every(allergen 
         if (!allergensMatch) return false;
       }
       

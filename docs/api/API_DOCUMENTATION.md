@@ -28,11 +28,11 @@ The HASIVU Platform API provides a comprehensive suite of endpoints for managing
 
 ### Base URLs
 
-| Environment | Base URL |
-|-------------|----------|
-| Production  | `https://api.hasivu.com` |
+| Environment | Base URL                         |
+| ----------- | -------------------------------- |
+| Production  | `https://api.hasivu.com`         |
 | Staging     | `https://api-staging.hasivu.com` |
-| Development | `https://api-dev.hasivu.com` |
+| Development | `https://api-dev.hasivu.com`     |
 
 ## Authentication
 
@@ -60,8 +60,8 @@ const loginResponse = await fetch('https://api.hasivu.com/auth/login', {
   },
   body: JSON.stringify({
     email: 'user@example.com',
-    password: process.env.API_API_DOCUMENTATION_PASSWORD_1
-  })
+    password: process.env.API_API_DOCUMENTATION_PASSWORD_1,
+  }),
 });
 
 const { tokens, user } = await loginResponse.json();
@@ -69,9 +69,9 @@ const { tokens, user } = await loginResponse.json();
 // 2. Use access token for API calls
 const apiResponse = await fetch('https://api.hasivu.com/users/me', {
   headers: {
-    'Authorization': `Bearer ${tokens.accessToken}`,
-    'Content-Type': 'application/json'
-  }
+    Authorization: `Bearer ${tokens.accessToken}`,
+    'Content-Type': 'application/json',
+  },
 });
 
 // 3. Refresh token when needed
@@ -81,8 +81,8 @@ const refreshResponse = await fetch('https://api.hasivu.com/auth/refresh', {
     'Content-Type': 'application/json',
   },
   body: JSON.stringify({
-    refreshToken: tokens.refreshToken
-  })
+    refreshToken: tokens.refreshToken,
+  }),
 });
 ```
 
@@ -91,6 +91,7 @@ const refreshResponse = await fetch('https://api.hasivu.com/auth/refresh', {
 ### Core Endpoints (93+ total endpoints)
 
 #### Authentication (8 endpoints)
+
 - `POST /auth/login` - User login
 - `POST /auth/register` - User registration
 - `POST /auth/verify-email` - Email verification
@@ -101,6 +102,7 @@ const refreshResponse = await fetch('https://api.hasivu.com/auth/refresh', {
 - `GET /auth/me` - Get current user profile
 
 #### User Management (6 endpoints)
+
 - `GET /users` - List users
 - `POST /users` - Create user
 - `GET /users/{userId}` - Get user details
@@ -111,6 +113,7 @@ const refreshResponse = await fetch('https://api.hasivu.com/auth/refresh', {
 #### Payment Processing (27 endpoints)
 
 **Core Payment (5 endpoints)**
+
 - `POST /payments/orders` - Create payment order
 - `POST /payments/verify` - Verify payment
 - `POST /payments/webhook` - Payment webhook
@@ -118,18 +121,21 @@ const refreshResponse = await fetch('https://api.hasivu.com/auth/refresh', {
 - `GET /payments/status/{orderId}` - Get payment status
 
 **Advanced Payment Features (4 endpoints)**
+
 - `GET /payments/methods` - List payment methods
 - `POST /payments/methods` - Add payment method
 - `PUT /payments/methods/{methodId}` - Update payment method
 - `DELETE /payments/methods/{methodId}` - Delete payment method
 
 **Advanced Payment Processing (4 endpoints)**
+
 - `POST /payments/advanced/create` - Advanced payment creation
 - `POST /payments/advanced/validate` - Payment validation
 - `POST /payments/advanced/installment` - Installment payments
 - `GET /payments/advanced/{paymentId}` - Get advanced payment details
 
 **Payment Retry & Recovery (5 endpoints)**
+
 - `POST /payments/retry` - Retry failed payment
 - `POST /payments/retry/schedule` - Schedule payment retry
 - `POST /payments/retry/process-scheduled` - Process scheduled retries
@@ -137,6 +143,7 @@ const refreshResponse = await fetch('https://api.hasivu.com/auth/refresh', {
 - `DELETE /payments/retry/{retryId}` - Cancel retry
 
 **Reconciliation (6 endpoints)**
+
 - `POST /payments/reconciliation/generate` - Generate reconciliation
 - `POST /payments/reconciliation/manual-adjustment` - Manual adjustment
 - `POST /payments/reconciliation/auto-reconcile` - Auto reconciliation
@@ -145,15 +152,18 @@ const refreshResponse = await fetch('https://api.hasivu.com/auth/refresh', {
 - `GET /payments/reconciliation` - List reconciliations
 
 **Webhook Handler (1 endpoint)**
+
 - `POST /payments/webhooks/razorpay` - Razorpay webhook handler
 
 **Analytics (2 endpoints)**
+
 - `GET /payments/analytics/dashboard` - Payment analytics dashboard
 - `GET /payments/analytics/trends` - Payment trends analysis
 
 #### Subscription Management (20+ endpoints)
 
 **Subscriptions (7 endpoints)**
+
 - `GET /subscriptions` - List subscriptions
 - `POST /subscriptions` - Create subscription
 - `GET /subscriptions/{id}` - Get subscription details
@@ -163,6 +173,7 @@ const refreshResponse = await fetch('https://api.hasivu.com/auth/refresh', {
 - `POST /subscriptions/{id}/cancel` - Cancel subscription
 
 **Subscription Plans (8 endpoints)**
+
 - `GET /subscription-plans` - List subscription plans
 - `POST /subscription-plans` - Create subscription plan
 - `GET /subscription-plans/{id}` - Get plan details
@@ -173,17 +184,20 @@ const refreshResponse = await fetch('https://api.hasivu.com/auth/refresh', {
 - `GET /subscription-plans/analytics` - All plans analytics
 
 **Billing Automation (3 endpoints)**
+
 - `POST /billing/process` - Process billing
 - `POST /billing/process/{id}` - Process specific billing
 - `GET /billing/status` - Get billing status
 
 **Dunning Management (4 endpoints)**
+
 - `POST /dunning/process` - Process dunning
 - `POST /payments/{paymentId}/retry` - Retry payment
 - `GET /dunning/status` - Get dunning status
 - `GET /payments/{paymentId}/retry-history` - Get retry history
 
 **Subscription Analytics (6 endpoints)**
+
 - `GET /subscription-analytics` - Subscription analytics
 - `GET /subscription-analytics/dashboard` - Analytics dashboard
 - `POST /subscription-analytics/cohort` - Cohort analysis
@@ -192,6 +206,7 @@ const refreshResponse = await fetch('https://api.hasivu.com/auth/refresh', {
 - `GET /subscription-analytics/clv` - Customer lifetime value
 
 #### RFID Management (8 endpoints)
+
 - `GET /rfid/readers` - List RFID readers
 - `POST /rfid/readers` - Add RFID reader
 - `PUT /rfid/readers/{readerId}` - Update RFID reader
@@ -202,6 +217,7 @@ const refreshResponse = await fetch('https://api.hasivu.com/auth/refresh', {
 - `POST /rfid/verify-bulk` - Bulk verify deliveries
 
 #### Menu Management (12 endpoints)
+
 - `GET /menus/plans` - List menu plans
 - `POST /menus/plans` - Create menu plan
 - `GET /menus/plans/{planId}` - Get menu plan
@@ -216,6 +232,7 @@ const refreshResponse = await fetch('https://api.hasivu.com/auth/refresh', {
 - `POST /menus/items/bulk-update` - Bulk update menu items
 
 #### Order Processing (8 endpoints)
+
 - `GET /orders` - List orders
 - `POST /orders` - Create order
 - `GET /orders/{orderId}` - Get order details
@@ -226,6 +243,7 @@ const refreshResponse = await fetch('https://api.hasivu.com/auth/refresh', {
 - `POST /orders/{orderId}/deliver` - Mark as delivered
 
 #### Analytics (6 endpoints)
+
 - `GET /analytics/dashboard` - Main analytics dashboard
 - `GET /analytics/payments` - Payment analytics
 - `GET /analytics/orders` - Order analytics
@@ -234,6 +252,7 @@ const refreshResponse = await fetch('https://api.hasivu.com/auth/refresh', {
 - `POST /analytics/generate-report` - Generate custom report
 
 #### Health Monitoring (8 endpoints)
+
 - `GET /health` - Basic health check
 - `GET /health/detailed` - Detailed health status
 - `GET /health/database` - Database health
@@ -244,6 +263,7 @@ const refreshResponse = await fetch('https://api.hasivu.com/auth/refresh', {
 - `GET /health/version` - API version info
 
 #### Notification System (6 endpoints)
+
 - `GET /notifications` - List notifications
 - `POST /notifications` - Send notification
 - `GET /notifications/{id}` - Get notification details
@@ -254,17 +274,20 @@ const refreshResponse = await fetch('https://api.hasivu.com/auth/refresh', {
 #### Invoice System (12+ endpoints)
 
 **Invoice Generation (4 endpoints)**
+
 - `POST /invoices/generate` - Generate invoice
 - `POST /invoices/{id}/regenerate` - Regenerate invoice
 - `POST /invoices/batch-generate` - Batch generate invoices
 - `GET /invoices/{id}` - Get invoice details
 
 **PDF Generation (3 endpoints)**
+
 - `POST /pdf/generate` - Generate PDF
 - `GET /pdf/invoice/{id}` - Get invoice PDF
 - `POST /pdf/bulk-download` - Bulk download PDFs
 
 **Invoice Templates (5 endpoints)**
+
 - `GET /invoice-templates` - List templates
 - `POST /invoice-templates` - Create template
 - `GET /invoice-templates/{id}` - Get template
@@ -272,12 +295,14 @@ const refreshResponse = await fetch('https://api.hasivu.com/auth/refresh', {
 - `DELETE /invoice-templates/{id}` - Delete template
 
 **Invoice Mailer (4 endpoints)**
+
 - `POST /invoices/email` - Send invoice email
 - `POST /invoices/email/batch` - Batch send emails
 - `POST /invoices/email/schedule` - Schedule email sending
 - `GET /invoices/email/status` - Get email status
 
 **Invoice Analytics (5 endpoints)**
+
 - `GET /invoice-analytics/dashboard` - Invoice dashboard
 - `GET /invoice-analytics/payment-status` - Payment status analytics
 - `GET /invoice-analytics/overdue` - Overdue invoice analytics
@@ -287,6 +312,7 @@ const refreshResponse = await fetch('https://api.hasivu.com/auth/refresh', {
 #### AI-Powered Analytics (8+ endpoints)
 
 **ML Payment Insights (7 endpoints)**
+
 - `GET /ml-insights/predictive` - Predictive analytics
 - `GET /ml-insights/anomaly` - Anomaly detection
 - `GET /ml-insights/churn` - Churn prediction
@@ -296,6 +322,7 @@ const refreshResponse = await fetch('https://api.hasivu.com/auth/refresh', {
 - `POST /ml-insights/generate-insights` - Generate new insights
 
 **Advanced Payment Intelligence (8 endpoints)**
+
 - `GET /intelligence/pattern-recognition` - Pattern recognition
 - `GET /intelligence/fraud-detection` - Fraud detection
 - `GET /intelligence/optimization` - Payment optimization
@@ -329,34 +356,34 @@ The API uses standard HTTP status codes and provides detailed error responses in
 
 ### Common HTTP Status Codes
 
-| Status Code | Description | When Used |
-|-------------|-------------|-----------|
-| 200 | OK | Successful GET, PUT requests |
-| 201 | Created | Successful POST requests |
-| 204 | No Content | Successful DELETE requests |
-| 400 | Bad Request | Invalid request data |
-| 401 | Unauthorized | Invalid or missing authentication |
-| 403 | Forbidden | Insufficient permissions |
-| 404 | Not Found | Resource doesn't exist |
-| 409 | Conflict | Resource already exists |
-| 429 | Too Many Requests | Rate limit exceeded |
-| 500 | Internal Server Error | Server-side error |
-| 503 | Service Unavailable | Service temporarily down |
+| Status Code | Description           | When Used                         |
+| ----------- | --------------------- | --------------------------------- |
+| 200         | OK                    | Successful GET, PUT requests      |
+| 201         | Created               | Successful POST requests          |
+| 204         | No Content            | Successful DELETE requests        |
+| 400         | Bad Request           | Invalid request data              |
+| 401         | Unauthorized          | Invalid or missing authentication |
+| 403         | Forbidden             | Insufficient permissions          |
+| 404         | Not Found             | Resource doesn't exist            |
+| 409         | Conflict              | Resource already exists           |
+| 429         | Too Many Requests     | Rate limit exceeded               |
+| 500         | Internal Server Error | Server-side error                 |
+| 503         | Service Unavailable   | Service temporarily down          |
 
 ### Error Codes
 
-| Error Code | Description |
-|------------|-------------|
-| `VALIDATION_ERROR` | Request validation failed |
-| `UNAUTHORIZED` | Authentication required |
-| `FORBIDDEN` | Access denied |
-| `NOT_FOUND` | Resource not found |
-| `EMAIL_ALREADY_EXISTS` | Email already registered |
-| `USER_NOT_FOUND` | User account not found |
-| `PAYMENT_FAILED` | Payment processing failed |
-| `INSUFFICIENT_FUNDS` | Insufficient account balance |
-| `RATE_LIMIT_EXCEEDED` | Too many requests |
-| `SERVICE_UNAVAILABLE` | Service temporarily unavailable |
+| Error Code             | Description                     |
+| ---------------------- | ------------------------------- |
+| `VALIDATION_ERROR`     | Request validation failed       |
+| `UNAUTHORIZED`         | Authentication required         |
+| `FORBIDDEN`            | Access denied                   |
+| `NOT_FOUND`            | Resource not found              |
+| `EMAIL_ALREADY_EXISTS` | Email already registered        |
+| `USER_NOT_FOUND`       | User account not found          |
+| `PAYMENT_FAILED`       | Payment processing failed       |
+| `INSUFFICIENT_FUNDS`   | Insufficient account balance    |
+| `RATE_LIMIT_EXCEEDED`  | Too many requests               |
+| `SERVICE_UNAVAILABLE`  | Service temporarily unavailable |
 
 ## Rate Limiting
 
@@ -526,7 +553,7 @@ const OrderHistory = ({ userId }) => {
 
   const api = new HasivuAPI({
     baseURL: 'https://api.hasivu.com',
-    token: localStorage.getItem('hasivu_token')
+    token: localStorage.getItem('hasivu_token'),
   });
 
   useEffect(() => {
@@ -538,7 +565,7 @@ const OrderHistory = ({ userId }) => {
       setLoading(true);
       const response = await api.orders.getHistory(userId, {
         page: 1,
-        limit: 20
+        limit: 20,
       });
       setOrders(response.orders);
     } catch (err) {
@@ -575,15 +602,15 @@ The API supports webhooks for real-time event notifications.
 
 ### Webhook Events
 
-| Event | Description | Payload |
-|-------|-------------|---------|
-| `payment.success` | Payment completed successfully | Payment object |
-| `payment.failed` | Payment failed | Payment object with error |
-| `order.created` | New order created | Order object |
-| `order.completed` | Order delivered | Order object |
-| `subscription.created` | New subscription | Subscription object |
-| `subscription.cancelled` | Subscription cancelled | Subscription object |
-| `delivery.verified` | RFID delivery verified | Verification object |
+| Event                    | Description                    | Payload                   |
+| ------------------------ | ------------------------------ | ------------------------- |
+| `payment.success`        | Payment completed successfully | Payment object            |
+| `payment.failed`         | Payment failed                 | Payment object with error |
+| `order.created`          | New order created              | Order object              |
+| `order.completed`        | Order delivered                | Order object              |
+| `subscription.created`   | New subscription               | Subscription object       |
+| `subscription.cancelled` | Subscription cancelled         | Subscription object       |
+| `delivery.verified`      | RFID delivery verified         | Verification object       |
 
 ### Webhook Configuration
 
@@ -592,7 +619,7 @@ The API supports webhooks for real-time event notifications.
 const webhookConfig = {
   url: 'https://yoursite.com/webhooks/hasivu',
   events: ['payment.success', 'order.completed'],
-  secret: 'your-webhook-secret'
+  secret: 'your-webhook-secret',
 };
 
 await api.webhooks.create(webhookConfig);
@@ -608,24 +635,21 @@ const validateWebhook = (payload, signature, secret) => {
   const hmac = crypto.createHmac('sha256', secret);
   hmac.update(payload);
   const digest = hmac.digest('hex');
-  
-  return crypto.timingSafeEqual(
-    Buffer.from(signature),
-    Buffer.from(digest)
-  );
+
+  return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(digest));
 };
 
 // Express.js webhook handler
 app.post('/webhooks/hasivu', (req, res) => {
   const signature = req.headers['x-hasivu-signature'];
   const payload = JSON.stringify(req.body);
-  
+
   if (!validateWebhook(payload, signature, process.env.WEBHOOK_SECRET)) {
     return res.status(401).send('Unauthorized');
   }
-  
+
   const event = req.body;
-  
+
   switch (event.type) {
     case 'payment.success':
       handlePaymentSuccess(event.data);
@@ -636,7 +660,7 @@ app.post('/webhooks/hasivu', (req, res) => {
     default:
       console.log(`Unhandled event type: ${event.type}`);
   }
-  
+
   res.status(200).send('OK');
 });
 ```
@@ -650,7 +674,7 @@ Use the development environment for testing:
 ```javascript
 const api = new HasivuAPI({
   baseURL: 'https://api-dev.hasivu.com',
-  apiKey: 'test_api_key'
+  apiKey: 'test_api_key',
 });
 ```
 
@@ -662,7 +686,7 @@ Test data is available in the development environment:
 // Test user credentials
 const testUser = {
   email: 'test@hasivu.com',
-  password: process.env.API_API_DOCUMENTATION_PASSWORD_24
+  password: process.env.API_API_DOCUMENTATION_PASSWORD_24,
 };
 
 // Test school ID
@@ -670,9 +694,9 @@ const testSchoolId = process.env.API_API_DOCUMENTATION_PASSWORD_25;
 
 // Test payment amounts (use specific amounts for different responses)
 const testAmounts = {
-  success: 100.00,    // Will succeed
-  failure: 200.00,    // Will fail
-  pending: 300.00     // Will remain pending
+  success: 100.0, // Will succeed
+  failure: 200.0, // Will fail
+  pending: 300.0, // Will remain pending
 };
 ```
 
@@ -699,32 +723,34 @@ const testPaymentFlow = async () => {
     // 1. Login
     const user = await api.auth.login({
       email: 'test@hasivu.com',
-      password: process.env.API_API_DOCUMENTATION_PASSWORD_26
+      password: process.env.API_API_DOCUMENTATION_PASSWORD_26,
     });
-    
+
     // 2. Create order
     const order = await api.orders.create({
       items: [
-        { menuItemId: process.env.API_API_DOCUMENTATION_PASSWORD_27, quantity: 1 }
-      ]
+        {
+          menuItemId: process.env.API_API_DOCUMENTATION_PASSWORD_27,
+          quantity: 1,
+        },
+      ],
     });
-    
+
     // 3. Create payment
     const payment = await api.payments.createOrder({
       userId: user.id,
       orderId: order.id,
-      amount: order.totalAmount
+      amount: order.totalAmount,
     });
-    
+
     // 4. Simulate payment success
     const verification = await api.payments.verify({
       razorpayOrderId: payment.razorpayOrderId,
       razorpayPaymentId: process.env.API_API_DOCUMENTATION_PASSWORD_28,
-      razorpaySignature: process.env.API_API_DOCUMENTATION_PASSWORD_29
+      razorpaySignature: process.env.API_API_DOCUMENTATION_PASSWORD_29,
     });
-    
+
     console.log('Payment flow completed:', verification);
-    
   } catch (error) {
     console.error('Payment flow failed:', error);
   }
@@ -737,41 +763,43 @@ const testPaymentFlow = async () => {
 // Jest test example
 describe('HASIVU API Integration', () => {
   let api;
-  
+
   beforeAll(() => {
     api = new HasivuAPI({
       baseURL: process.env.HASIVU_API_URL,
-      apiKey: process.env.HASIVU_API_KEY
+      apiKey: process.env.HASIVU_API_KEY,
     });
   });
-  
+
   test('should authenticate user', async () => {
     const user = await api.auth.login({
       email: 'test@hasivu.com',
-      password: process.env.API_API_DOCUMENTATION_PASSWORD_30
+      password: process.env.API_API_DOCUMENTATION_PASSWORD_30,
     });
-    
+
     expect(user).toHaveProperty('id');
     expect(user).toHaveProperty('email');
     expect(user.email).toBe('test@hasivu.com');
   });
-  
+
   test('should create payment order', async () => {
     const order = await api.payments.createOrder({
       userId: process.env.API_API_DOCUMENTATION_PASSWORD_31,
-      amount: 250.00,
-      currency: 'INR'
+      amount: 250.0,
+      currency: 'INR',
     });
-    
+
     expect(order).toHaveProperty('id');
     expect(order).toHaveProperty('razorpayOrderId');
     expect(order.amount).toBe(25000); // Amount in paise
   });
-  
+
   test('should handle validation errors', async () => {
-    await expect(api.payments.createOrder({
-      // Missing required fields
-    })).rejects.toThrow('Validation failed');
+    await expect(
+      api.payments.createOrder({
+        // Missing required fields
+      })
+    ).rejects.toThrow('Validation failed');
   });
 });
 ```
@@ -790,6 +818,7 @@ For API support and questions:
 ## Changelog
 
 ### Version 1.0.0 (Latest)
+
 - Initial API release
 - Complete authentication system
 - Payment processing with Razorpay
@@ -799,6 +828,7 @@ For API support and questions:
 - AI-powered insights
 
 ### Upcoming Features
+
 - GraphQL API support
 - Real-time WebSocket notifications
 - Advanced fraud detection

@@ -2,9 +2,9 @@ import { test, expect } from '@playwright/test';
 
 // E2E tests for Inventory actions: reorder and mark delivered
 
-test.describe('Inventory Actions', () => {
-  test('should reorder low-stock item and mark PO delivered', async ({ page }) => {
-    const corsHeaders = {
+test.describe(_'Inventory Actions', _() => {
+  test(_'should reorder low-stock item and mark PO delivered', _async ({ page }) => {
+    const _corsHeaders =  {
       'access-control-allow-origin': '*',
       'access-control-allow-headers': '*',
       'access-control-allow-methods': 'GET,POST,PATCH,PUT,DELETE,OPTIONS',
@@ -12,10 +12,9 @@ test.describe('Inventory Actions', () => {
     } as const;
 
     // Mock GET inventory items with a low_stock item
-    await page.route('**/inventory/items**', async route => {
-      const method = route.request().method();
-      if (method === 'OPTIONS') {
-        await route.fulfill({ status: 200, headers: corsHeaders, body: '' });
+    await page.route('**/inventory/items**', async _route = > {
+      const method 
+      if (_method = 
         return;
       }
       await route.fulfill({
@@ -33,10 +32,9 @@ test.describe('Inventory Actions', () => {
     });
 
     // Mock GET purchase orders initially empty
-    await page.route('**/inventory/purchase-orders**', async route => {
-      const method = route.request().method();
-      if (method === 'OPTIONS') {
-        await route.fulfill({ status: 200, headers: corsHeaders, body: '' });
+    await page.route('**/inventory/purchase-orders**', async _route = > {
+      const method 
+      if (_method = 
         return;
       }
       await route.fulfill({
@@ -47,13 +45,12 @@ test.describe('Inventory Actions', () => {
     });
 
     // Mock POST create purchase order
-    await page.route('**/inventory/purchase-orders', async route => {
-      const method = route.request().method();
-      if (method === 'OPTIONS') {
-        await route.fulfill({ status: 200, headers: corsHeaders, body: '' });
+    await page.route('**/inventory/purchase-orders', async _route = > {
+      const method 
+      if (_method = 
         return;
       }
-      const body = JSON.parse(route.request().postData() || '{}');
+      const _body =  JSON.parse(route.request().postData() || '{}');
       await route.fulfill({
         status: 200,
         headers: corsHeaders,
@@ -62,14 +59,13 @@ test.describe('Inventory Actions', () => {
     });
 
     // After reorder, mock POs to include the new one with status 'sent'
-    let poDelivered = false;
-    await page.route('**/inventory/purchase-orders**', async route => {
-      const method = route.request().method();
-      if (method === 'OPTIONS') {
-        await route.fulfill({ status: 200, headers: corsHeaders, body: '' });
+    let _poDelivered =  false;
+    await page.route('**/inventory/purchase-orders**', async _route = > {
+      const method 
+      if (_method = 
         return;
       }
-      const poData = poDelivered
+      const _poData =  poDelivered
         ? [{ id: 'PO-NEW', orderNumber: 'PO-NEW-001', status: 'delivered', supplier: { id: 'SUP-1', name: 'Veg Supplier' }, items: [{ itemId: 'INV-LOW', itemName: 'Tomatoes', quantity: 10, unitPrice: 30, totalPrice: 300 }], orderDate: new Date().toISOString(), expectedDelivery: new Date().toISOString(), totalAmount: 300, createdBy: 'Test' }]
         : [{ id: 'PO-NEW', orderNumber: 'PO-NEW-001', status: 'sent', supplier: { id: 'SUP-1', name: 'Veg Supplier' }, items: [{ itemId: 'INV-LOW', itemName: 'Tomatoes', quantity: 10, unitPrice: 30, totalPrice: 300 }], orderDate: new Date().toISOString(), expectedDelivery: new Date().toISOString(), totalAmount: 300, createdBy: 'Test' }];
       await route.fulfill({
@@ -80,21 +76,19 @@ test.describe('Inventory Actions', () => {
     });
 
     // Mock PATCH mark delivered
-    await page.route('**/inventory/purchase-orders/PO-NEW/status', async route => {
-      const method = route.request().method();
-      if (method === 'OPTIONS') {
-        await route.fulfill({ status: 200, headers: corsHeaders, body: '' });
+    await page.route('**/inventory/purchase-orders/PO-NEW/status', async _route = > {
+      const method 
+      if (_method = 
         return;
       }
-      poDelivered = true;
+      _poDelivered =  true;
       await route.fulfill({ status: 200, headers: corsHeaders, body: JSON.stringify({ data: { id: 'PO-NEW', status: 'delivered' }, success: true }) });
     });
 
     // Mock PATCH stock add
-    await page.route('**/inventory/items/INV-LOW/stock', async route => {
-      const method = route.request().method();
-      if (method === 'OPTIONS') {
-        await route.fulfill({ status: 200, headers: corsHeaders, body: '' });
+    await page.route('**/inventory/items/INV-LOW/stock', async _route = > {
+      const method 
+      if (_method = 
         return;
       }
       await route.fulfill({ status: 200, headers: corsHeaders, body: JSON.stringify({ data: { id: 'INV-LOW', quantity: 10 }, success: true }) });
@@ -106,7 +100,7 @@ test.describe('Inventory Actions', () => {
     // Reorder flow: wait for items to render then click reorder on low stock item
     await expect(page.getByTestId('inventory-item').first()).toBeVisible({ timeout: 15000 });
     await expect(page.getByText('Tomatoes')).toBeVisible();
-    const reorderBtn = page.getByTestId('reorder-button-INV-LOW');
+    const _reorderBtn =  page.getByTestId('reorder-button-INV-LOW');
     await expect(reorderBtn).toBeVisible({ timeout: 10000 });
     await reorderBtn.click();
 
@@ -116,7 +110,7 @@ test.describe('Inventory Actions', () => {
     await page.getByTestId('reorder-submit').click();
 
     // Switch to orders tab implicitly happens after success; wait for mark delivered button
-    const markBtn = page.getByTestId('mark-delivered-button-PO-NEW');
+    const _markBtn =  page.getByTestId('mark-delivered-button-PO-NEW');
     await expect(markBtn).toBeVisible({ timeout: 10000 });
     await markBtn.click();
 

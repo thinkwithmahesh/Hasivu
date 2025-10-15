@@ -1,5 +1,5 @@
 /**
- * HASIVU Platform - Create RFID Card Lambda Function  
+ * HASIVU Platform - Create RFID Card Lambda Function
  * Handles: POST /api/v1/rfid/cards
  * Implements Story 2.1: RFID Card Management - Secure Card Creation
  * Production-ready with comprehensive validation and error handling
@@ -9,7 +9,10 @@ import { PrismaClient } from '@prisma/client';
 import { logger } from '../../shared/utils/logger';
 // import { ValidationService } from '../shared/validation.service'; // Not available
 // import { createSuccessResponse, createErrorResponse, handleError } from '../shared/response.utils'; // Not available
-import { authenticateLambda, AuthenticatedUser } from '../../shared/middleware/lambda-auth.middleware';
+import {
+  authenticateLambda,
+  AuthenticatedUser,
+} from '../../shared/middleware/lambda-auth.middleware';
 // import * as Joi from 'joi'; // Would require Joi dependency
 import { v4 as uuidv4 } from 'uuid';
 import * as crypto from 'crypto';
@@ -47,8 +50,8 @@ interface RFIDCardResponse {
   metadata: Record<string, any>;
   student: {
     id: string;
-    firstName: string;
-    lastName: string;
+    firstName: string | null;
+    lastName: string | null;
     email: string;
     role: string;
   };
@@ -72,18 +75,22 @@ function generateCardNumber(schoolCode: string): string {
 /**
  * Validate student exists and belongs to school
  */
-async function validateStudent(studentId: string, requestingUser: AuthenticatedUser, schoolId?: string): Promise<any> {
+async function validateStudent(
+  studentId: string,
+  requestingUser: AuthenticatedUser,
+  schoolId?: string
+): Promise<any> {
   const student = await prisma.user.findUnique({
     where: { id: studentId },
     include: {
       school: {
-        select: { id: true, name: true, code: true }
+        select: { id: true, name: true, code: true },
       },
       rfidCards: {
         where: { isActive: true },
-        select: { id: true, cardNumber: true }
-      }
-    }
+        select: { id: true, cardNumber: true },
+      },
+    },
   });
 
   if (!student) {
@@ -130,22 +137,22 @@ async function validateStudent(studentId: string, requestingUser: AuthenticatedU
  */
 function canCreateCardForStudent(requestingUser: AuthenticatedUser, student: any): boolean {
   const userRole = requestingUser.role;
-  
+
   // Super admin and admin can create cards for any student
   if (['super_admin', 'admin'].includes(userRole)) {
     return true;
   }
-  
+
   // School admin can create cards for students in their school
   if (userRole === 'school_admin' && requestingUser.schoolId === student.schoolId) {
     return true;
   }
-  
-  // Staff can create cards for students in their school  
+
+  // Staff can create cards for students in their school
   if (userRole === 'staff' && requestingUser.schoolId === student.schoolId) {
     return true;
   }
-  
+
   return false;
 }
 
@@ -168,9 +175,9 @@ async function createAuditLog(
       createdById: userId,
       metadata: JSON.stringify({
         timestamp: new Date().toISOString(),
-        action: 'RFID_CARD_CREATED'
-      })
-    }
+        action: 'RFID_CARD_CREATED',
+      }),
+    },
   });
 }
 
@@ -183,49 +190,49 @@ export const createRfidCardHandler = async (
   context: Context
 ): Promise<APIGatewayProxyResult> => {
   const requestId = context.awsRequestId;
-  
+
   try {
     logger.info('RFID card creation request started', { requestId });
-    
+
     // Authenticate request
-    const authenticatedUser = await authenticateLambda(event);
-    
+    const authenticatedUser = await authenticateLambda(event as any);
+
     // Parse and validate request body
     const requestBody = JSON.parse(event.body || '{}');
-    
+
     // Manual validation (Joi not available)
     if (!requestBody.studentId) {
       logger.warn('Invalid request data: missing studentId', { requestId });
       return {
         statusCode: 400,
-        body: JSON.stringify({ error: 'studentId is required' })
+        body: JSON.stringify({ error: 'studentId is required' }),
       };
     }
-    
+
     const { studentId, schoolId, expiresAt, metadata, cardType } = requestBody as CreateCardRequest;
-    
+
     // Validate student and permissions
     const student = await validateStudent(studentId, authenticatedUser.user!, schoolId);
     const targetSchoolId = schoolId || student.schoolId;
-    
+
     // Generate unique card number
     const cardNumber = generateCardNumber(student.school.code);
-    
+
     // Ensure card number is unique (very unlikely collision, but safety first)
     const existingCard = await prisma.rFIDCard.findUnique({
-      where: { cardNumber }
+      where: { cardNumber },
     });
-    
+
     if (existingCard) {
       // Retry with new number (extremely rare case)
       const retryCardNumber = generateCardNumber(student.school.code);
-      logger.warn('Card number collision detected, retrying', { 
-        requestId, 
+      logger.warn('Card number collision detected, retrying', {
+        requestId,
         originalNumber: cardNumber,
-        retryNumber: retryCardNumber 
+        retryNumber: retryCardNumber,
       });
     }
-    
+
     // Create RFID card
     const rfidCard = await prisma.rFIDCard.create({
       data: {
@@ -235,7 +242,7 @@ export const createRfidCardHandler = async (
         isActive: true,
         issuedAt: new Date(),
         expiresAt: expiresAt || null,
-        metadata: JSON.stringify(metadata || {})
+        metadata: JSON.stringify(metadata || {}),
       },
       include: {
         student: {
@@ -244,27 +251,22 @@ export const createRfidCardHandler = async (
             firstName: true,
             lastName: true,
             email: true,
-            role: true
-          }
-        }
-      }
+            role: true,
+          },
+        },
+      },
     });
-    
+
     // Create audit log
-    await createAuditLog(
-      rfidCard.id,
-      authenticatedUser.id,
-      'CREATE',
-      {
-        cardNumber: rfidCard.cardNumber,
-        studentId,
-        schoolId: targetSchoolId,
-        cardType,
-        createdBy: authenticatedUser.email,
-        timestamp: new Date().toISOString()
-      }
-    );
-    
+    await createAuditLog(rfidCard.id, authenticatedUser.user!.id, 'CREATE', {
+      cardNumber: rfidCard.cardNumber,
+      studentId,
+      schoolId: targetSchoolId,
+      cardType,
+      createdBy: authenticatedUser.email,
+      timestamp: new Date().toISOString(),
+    });
+
     // Format response
     const response: RFIDCardResponse = {
       id: rfidCard.id,
@@ -279,39 +281,37 @@ export const createRfidCardHandler = async (
       school: {
         id: student.school.id,
         name: student.school.name,
-        code: student.school.code
-      }
+        code: student.school.code,
+      },
     };
-    
+
     logger.info('RFID card created successfully', {
       requestId,
       cardId: rfidCard.id,
       cardNumber: rfidCard.cardNumber,
       studentId,
-      createdBy: authenticatedUser.email
+      createdBy: authenticatedUser.email,
     });
-    
+
     return {
       statusCode: 200,
       body: JSON.stringify({
         message: 'RFID card created successfully',
-        data: response
-      })
+        data: response,
+      }),
     };
-    
   } catch (error: any) {
-    logger.error('RFID card creation failed', {
+    logger.error('RFID card creation failed', error, {
       requestId,
-      error: error.message,
-      stack: error.stack
+      stack: error.stack,
     });
-    
+
     return {
       statusCode: 500,
       body: JSON.stringify({
         error: 'Failed to create RFID card',
-        message: error.message
-      })
+        message: error instanceof Error ? error.message : String(error),
+      }),
     };
   } finally {
     await prisma.$disconnect();

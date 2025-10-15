@@ -1,9 +1,12 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createOrderHandler = void 0;
 const client_1 = require("@prisma/client");
+const razorpay_1 = __importDefault(require("razorpay"));
 const zod_1 = require("zod");
-const Razorpay = require('razorpay');
 const lambda_auth_middleware_1 = require("../../shared/middleware/lambda-auth.middleware");
 const logger_1 = require("../../shared/utils/logger");
 const response_utils_1 = require("../../shared/response.utils");
@@ -33,7 +36,7 @@ async function checkStudentParentRelation(studentId, parentId, prisma) {
         return false;
     }
 }
-const razorpay = new Razorpay({
+const razorpay = new razorpay_1.default({
     key_id: process.env.RAZORPAY_KEY_ID,
     key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
@@ -42,7 +45,7 @@ const createPaymentOrderSchema = zod_1.z.object({
         .positive('Amount must be greater than 0')
         .max(1000000, 'Amount exceeds maximum allowed limit (₹10,00,000)')
         .multipleOf(0.01, 'Amount can have maximum 2 decimal places'),
-    currency: zod_1.z.enum(['INR', 'USD']).default('INR'),
+    currency: zod_1.z.enum(['INR']).default('INR'),
     orderId: zod_1.z.string().uuid('Invalid order ID format').optional(),
     subscriptionId: zod_1.z.string().uuid('Invalid subscription ID format').optional(),
     metadata: zod_1.z.record(zod_1.z.string(), zod_1.z.any()).optional(),
@@ -66,8 +69,8 @@ function validatePaymentOrderRequest(request, user) {
         if (request.amount > 1000000) {
             return { valid: false, error: 'Amount exceeds maximum allowed limit (₹10,00,000)' };
         }
-        if (request.currency && !['INR', 'USD'].includes(request.currency)) {
-            return { valid: false, error: 'Invalid currency. Only INR and USD are supported' };
+        if (request.currency && !['INR'].includes(request.currency)) {
+            return { valid: false, error: 'Invalid currency. Only INR is supported' };
         }
         if (!request.orderId && !request.subscriptionId) {
             return { valid: false, error: 'Either orderId or subscriptionId must be provided' };
@@ -87,7 +90,9 @@ function validatePaymentOrderRequest(request, user) {
         logger_1.logger.error('Payment order validation error:', { error, request, userId: user.id });
         return {
             valid: false,
-            error: error.issues ? error.issues.map((i) => i.message).join(', ') : 'Invalid request format'
+            error: error && typeof error === 'object' && 'issues' in error && Array.isArray(error.issues)
+                ? error.issues.map(i => i.message).join(', ')
+                : 'Invalid request format'
         };
     }
 }
@@ -236,7 +241,7 @@ async function createRazorpayOrder(amount, currency, referenceId, metadata, desc
             orderOptions: { ...orderOptions, notes: 'redacted' },
             metadata: { amount, currency, referenceId }
         });
-        throw new Error(`Payment gateway error: ${error.message || 'Failed to create order'}`);
+        throw new Error(`Payment gateway error: ${error instanceof Error ? error.message : String(error) || 'Failed to create order'}`);
     }
 }
 async function handleOrderPayment(requestBody, user, prisma) {
@@ -290,13 +295,13 @@ async function handleSubscriptionPayment(requestBody, user, prisma) {
     }
     const subscription = subscriptionValidation.subscription;
     const amountInPaise = Math.round(requestBody.amount * 100);
-    const currency = requestBody.currency || subscription.plan.currency || 'INR';
+    const currency = requestBody.currency || subscription.subscriptionPlan.currency || 'INR';
     const razorpayOrder = await createRazorpayOrder(amountInPaise, currency, subscriptionId, {
         subscriptionId,
         userId: user.id,
-        planId: subscription.plan.id,
+        planId: subscription.subscriptionPlan.id,
         ...requestBody.metadata
-    }, requestBody.description || `Payment for ${subscription.plan.name} subscription`, requestBody.notes);
+    }, requestBody.description || `Payment for ${subscription.subscriptionPlan.name} subscription`, requestBody.notes);
     const paymentOrder = await prisma.$transaction(async (tx) => {
         const createdOrder = await tx.paymentOrder.create({
             data: {
@@ -346,6 +351,9 @@ const createOrderHandler = async (event, context) => {
             return authResult;
         }
         const { user } = authResult;
+        if (!user) {
+            return (0, response_utils_1.createErrorResponse)('Authentication failed - user not found', 401, 'AUTHENTICATION_ERROR');
+        }
         logger_1.logger.info('User authenticated for payment order creation', {
             userId: user.id,
             userRole: user.role,
@@ -395,9 +403,13 @@ const createOrderHandler = async (event, context) => {
             createdAt: paymentOrder.createdAt.toISOString(),
             expiresAt: paymentOrder.expiresAt.toISOString(),
             keyId: process.env.RAZORPAY_KEY_ID,
-            user: paymentOrder.user
+            user: {
+                id: user.id,
+                name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
+                email: user.email
+            }
         };
-        if (result.order) {
+        if ('order' in result && result.order) {
             response.order = {
                 id: result.order.id,
                 title: result.order.title,
@@ -425,8 +437,8 @@ const createOrderHandler = async (event, context) => {
     catch (error) {
         const duration = Date.now() - startTime;
         logger_1.logger.error('Payment order creation failed', {
-            error: error.message,
-            stack: error.stack,
+            error: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined,
             requestId: context.awsRequestId,
             duration: `${duration}ms`,
             event: {

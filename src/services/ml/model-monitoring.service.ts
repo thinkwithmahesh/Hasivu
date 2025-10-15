@@ -1,0 +1,132 @@
+/**
+ * HASIVU MODEL MONITORING SERVICE
+ * Minimal stub for compilation
+ */
+
+import type { PredictionValue, MetricValue } from '../../types/ml.types';
+
+export interface ModelMonitoringConfig {
+  modelId: string;
+  driftThreshold: number;
+  performanceThreshold: number;
+  alertChannels: string[];
+  retrainingTriggers: {
+    accuracyDrop: number;
+    driftMagnitude: number;
+    predictionVolume: number;
+  };
+  complianceRequirements: string[];
+}
+
+export interface ModelHealthMetrics {
+  accuracy: number;
+  latency: number;
+  throughput: number;
+  driftScore: number;
+  lastUpdated: Date;
+}
+
+export interface DriftDetectionResult {
+  modelId: string;
+  driftDetected: boolean;
+  driftMagnitude: number;
+  affectedFeatures: string[];
+  timestamp: Date;
+  confidence: number;
+}
+
+export interface RetrainingPipeline {
+  pipelineId: string;
+  modelId: string;
+  status: 'pending' | 'running' | 'completed' | 'failed';
+  triggerReason: string;
+  startTime: Date;
+  endTime?: Date;
+  metrics: MetricValue;
+}
+
+export interface ComplianceReport {
+  modelId: string;
+  compliant: boolean;
+  regulations: string[];
+  lastAudit: Date;
+  issues: string[];
+}
+
+export class ModelMonitoringService {
+  private static _instance: ModelMonitoringService;
+  private monitoringConfigs: Map<string, ModelMonitoringConfig> = new Map();
+
+  private constructor() {
+    // Stub constructor
+  }
+
+  public static getInstance(): ModelMonitoringService {
+    if (!ModelMonitoringService._instance) {
+      ModelMonitoringService._instance = new ModelMonitoringService();
+    }
+    return ModelMonitoringService._instance;
+  }
+
+  async initialize(): Promise<void> {
+    // Stub implementation
+  }
+
+  async configureMonitoring(modelId: string, config: ModelMonitoringConfig): Promise<void> {
+    // Stub implementation
+    this.monitoringConfigs.set(modelId, config);
+  }
+
+  async getModelHealth(_modelId: string): Promise<ModelHealthMetrics> {
+    // Stub implementation
+    return {
+      accuracy: 0.85,
+      latency: 150,
+      throughput: 100,
+      driftScore: 0.1,
+      lastUpdated: new Date(),
+    };
+  }
+
+  async detectDrift(modelId: string, _data?: unknown[]): Promise<DriftDetectionResult> {
+    // Stub implementation
+    return {
+      modelId,
+      driftDetected: false,
+      driftMagnitude: 0.05,
+      affectedFeatures: [],
+      timestamp: new Date(),
+      confidence: 0.95,
+    };
+  }
+
+  async logPrediction(
+    _modelId: string,
+    _prediction: PredictionValue,
+    _actual?: PredictionValue
+  ): Promise<void> {
+    // Stub implementation
+  }
+
+  async triggerRetraining(modelId: string, _reason: string): Promise<string> {
+    // Stub implementation
+    const pipelineId = `retrain_${modelId}_${Date.now()}`;
+    return pipelineId;
+  }
+
+  async getRetrainingStatus(_pipelineId: string): Promise<RetrainingPipeline | null> {
+    // Stub implementation
+    return null;
+  }
+
+  async generateComplianceReport(modelId: string): Promise<ComplianceReport> {
+    // Stub implementation
+    return {
+      modelId,
+      compliant: true,
+      regulations: ['GDPR', 'HIPAA'],
+      lastAudit: new Date(),
+      issues: [],
+    };
+  }
+}

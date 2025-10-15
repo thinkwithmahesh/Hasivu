@@ -57,22 +57,22 @@ const testData = {
         student_id: 'STU-12345',
         class: '10th Grade',
         school: 'HASIVU Test School',
-        meal_balance: 150.00,
+        meal_balance: 150.0,
         dietary_preferences: ['vegetarian'],
-        allergies: ['nuts']
-      }
+        allergies: ['nuts'],
+      },
     },
     parent: {
-      email: 'parent@hasivu.test', 
+      email: 'parent@hasivu.test',
       password: 'Parent123!',
       profile: {
         id: 'PAR-001',
         name: 'Test Parent',
         children: [
           { id: 'STU-001', name: 'Child One', class: '8th Grade' },
-          { id: 'STU-002', name: 'Child Two', class: '6th Grade' }
-        ]
-      }
+          { id: 'STU-002', name: 'Child Two', class: '6th Grade' },
+        ],
+      },
     },
     admin: {
       email: 'admin@hasivu.test',
@@ -81,8 +81,8 @@ const testData = {
         id: 'ADM-001',
         name: 'Test Admin',
         permissions: ['user_management', 'system_config', 'reports', 'analytics'],
-        school_id: 'SCH-001'
-      }
+        school_id: 'SCH-001',
+      },
     },
     kitchen: {
       email: 'kitchen@hasivu.test',
@@ -92,8 +92,8 @@ const testData = {
         name: 'Test Kitchen Staff',
         kitchen_id: 'KIT-MAIN',
         shift: 'morning',
-        permissions: ['order_management', 'inventory_update']
-      }
+        permissions: ['order_management', 'inventory_update'],
+      },
     },
     vendor: {
       email: 'vendor@hasivu.test',
@@ -103,16 +103,16 @@ const testData = {
         name: 'Test Vendor',
         company: 'HASIVU Food Supplies',
         vendor_id: 'VEN-FOOD-001',
-        categories: ['vegetables', 'grains', 'dairy']
-      }
-    }
+        categories: ['vegetables', 'grains', 'dairy'],
+      },
+    },
   },
   menu: {
     items: [
       {
         id: 'item-1',
         name: 'Dal Rice',
-        price: 25.00,
+        price: 25.0,
         category: 'main',
         image: '/images/dal-rice.jpg',
         description: 'Traditional dal with steamed rice',
@@ -120,15 +120,15 @@ const testData = {
           calories: 320,
           protein: 12,
           carbs: 58,
-          fat: 4
+          fat: 4,
         },
         allergens: ['gluten'],
-        dietary: ['vegetarian', 'vegan']
+        dietary: ['vegetarian', 'vegan'],
       },
       {
-        id: 'item-2', 
+        id: 'item-2',
         name: 'Sambar',
-        price: 15.00,
+        price: 15.0,
         category: 'curry',
         image: '/images/sambar.jpg',
         description: 'South Indian lentil curry with vegetables',
@@ -136,15 +136,15 @@ const testData = {
           calories: 120,
           protein: 6,
           carbs: 18,
-          fat: 3
+          fat: 3,
         },
         allergens: [],
-        dietary: ['vegetarian', 'vegan', 'gluten-free']
+        dietary: ['vegetarian', 'vegan', 'gluten-free'],
       },
       {
         id: 'item-3',
         name: 'Curd Rice',
-        price: 20.00, 
+        price: 20.0,
         category: 'main',
         image: '/images/curd-rice.jpg',
         description: 'Comfort food with rice and fresh curd',
@@ -152,28 +152,28 @@ const testData = {
           calories: 280,
           protein: 8,
           carbs: 45,
-          fat: 7
+          fat: 7,
         },
         allergens: ['dairy'],
-        dietary: ['vegetarian', 'gluten-free']
+        dietary: ['vegetarian', 'gluten-free'],
       },
       {
         id: 'item-4',
         name: 'Idli',
-        price: 18.00,
-        category: 'snack', 
+        price: 18.0,
+        category: 'snack',
         image: '/images/idli.jpg',
         description: 'Steamed rice cakes - healthy breakfast option',
         nutritional_info: {
           calories: 150,
           protein: 4,
           carbs: 30,
-          fat: 1
+          fat: 1,
         },
         allergens: [],
-        dietary: ['vegetarian', 'vegan', 'gluten-free']
-      }
-    ]
+        dietary: ['vegetarian', 'vegan', 'gluten-free'],
+      },
+    ],
   },
   rfid: {
     readers: [
@@ -181,14 +181,14 @@ const testData = {
         id: 'READER-001',
         location: 'Cafeteria Entry',
         status: 'active',
-        signal_strength: 'strong'
+        signal_strength: 'strong',
       },
       {
-        id: 'READER-002', 
+        id: 'READER-002',
         location: 'Kitchen Counter',
         status: 'active',
-        signal_strength: 'strong'
-      }
+        signal_strength: 'strong',
+      },
     ],
     student_cards: [
       {
@@ -199,17 +199,17 @@ const testData = {
             id: 'preset-1',
             name: 'Daily Lunch',
             items: [
-              { name: 'Dal Rice', quantity: 1, price: 25.00 },
-              { name: 'Sambar', quantity: 1, price: 15.00 },
-              { name: 'Curd', quantity: 1, price: 10.00 }
+              { name: 'Dal Rice', quantity: 1, price: 25.0 },
+              { name: 'Sambar', quantity: 1, price: 15.0 },
+              { name: 'Curd', quantity: 1, price: 10.0 },
             ],
-            total: 50.00,
-            is_default: true
-          }
-        ]
-      }
-    ]
-  }
+            total: 50.0,
+            is_default: true,
+          },
+        ],
+      },
+    ],
+  },
 };
 
 // Write test data to file
@@ -232,24 +232,24 @@ const testEnvConfig = {
   test_server: {
     port: 3000,
     host: 'localhost',
-    protocol: 'http'
+    protocol: 'http',
   },
   rfid_simulation: {
     enabled: process.env.RFID_SIMULATION_MODE === 'true',
     scan_delay: 500,
-    success_rate: 0.95
+    success_rate: 0.95,
   },
   performance_thresholds: {
     lcp: 2500,
-    fid: 100, 
+    fid: 100,
     cls: 0.1,
     ttfb: 800,
-    load_time: 3000
+    load_time: 3000,
   },
   accessibility: {
     level: 'AA',
-    tags: ['wcag2a', 'wcag2aa', 'wcag21aa']
-  }
+    tags: ['wcag2a', 'wcag2aa', 'wcag21aa'],
+  },
 };
 
 const testEnvPath = path.join(__dirname, '..', 'tests', 'test-env.json');
@@ -260,7 +260,7 @@ console.log('✅ Created test environment configuration');
 const percyConfig = {
   version: 2,
   discovery: {
-    allowedHostnames: ['localhost']
+    allowedHostnames: ['localhost'],
   },
   snapshot: {
     widths: [375, 768, 1440],
@@ -268,12 +268,14 @@ const percyConfig = {
     percyCSS: `
       .loading-spinner { display: none !important; }
       .animation { animation-duration: 0ms !important; }
-    `
-  }
+    `,
+  },
 };
 
 const percyConfigPath = path.join(__dirname, '..', '.percy.yml');
-fs.writeFileSync(percyConfigPath, `# Percy Visual Testing Configuration
+fs.writeFileSync(
+  percyConfigPath,
+  `# Percy Visual Testing Configuration
 version: 2
 discovery:
   allowed-hostnames:
@@ -288,7 +290,8 @@ snapshot:
     .loading-spinner { display: none !important; }
     .animation { animation-duration: 0ms !important; }
     * { transition: none !important; }
-`);
+`
+);
 console.log('✅ Created Percy configuration');
 
 // Create .gitignore entries for test files
@@ -311,9 +314,9 @@ const testIgnores = [
   '.lighthouseci/',
   'lighthouse-report.html',
   '',
-  '# Coverage Reports', 
+  '# Coverage Reports',
   '.nyc_output/',
-  'coverage/'
+  'coverage/',
 ].join('\n');
 
 if (!gitignoreContent.includes('# Playwright Test Results')) {

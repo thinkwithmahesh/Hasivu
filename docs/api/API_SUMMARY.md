@@ -6,25 +6,26 @@ The HASIVU Platform API is a comprehensive school meal delivery system with **93
 
 ### 🔢 Endpoint Count Breakdown
 
-| Category | Endpoints | Description |
-|----------|-----------|-------------|
-| **Authentication** | 8 | Login, registration, token management |
-| **User Management** | 6 | User CRUD operations, profiles |
-| **Payment Processing** | 27 | Core payments, advanced features, analytics |
-| **RFID Management** | 8 | RFID readers, card registration, delivery verification |
-| **Menu Management** | 12 | Menu plans, daily menus, approvals |
-| **Order Processing** | 8 | Order creation, tracking, history |
-| **Analytics** | 6 | Dashboard, trends, insights |
-| **Health Monitoring** | 8 | System health, diagnostics |
-| **Notification System** | 6 | Notifications, templates |
-| **Invoice Management** | 12+ | Invoice generation, templates, analytics |
-| **AI-Powered Features** | 8+ | ML insights, fraud detection |
+| Category                | Endpoints | Description                                            |
+| ----------------------- | --------- | ------------------------------------------------------ |
+| **Authentication**      | 8         | Login, registration, token management                  |
+| **User Management**     | 6         | User CRUD operations, profiles                         |
+| **Payment Processing**  | 27        | Core payments, advanced features, analytics            |
+| **RFID Management**     | 8         | RFID readers, card registration, delivery verification |
+| **Menu Management**     | 12        | Menu plans, daily menus, approvals                     |
+| **Order Processing**    | 8         | Order creation, tracking, history                      |
+| **Analytics**           | 6         | Dashboard, trends, insights                            |
+| **Health Monitoring**   | 8         | System health, diagnostics                             |
+| **Notification System** | 6         | Notifications, templates                               |
+| **Invoice Management**  | 12+       | Invoice generation, templates, analytics               |
+| **AI-Powered Features** | 8+        | ML insights, fraud detection                           |
 
 **Total: 93+ Endpoints**
 
 ## 🏗️ Architecture Highlights
 
 ### Serverless Infrastructure
+
 - **AWS Lambda Functions**: Scalable, event-driven execution
 - **API Gateway**: Managed API with rate limiting and monitoring
 - **Cognito Integration**: Secure JWT-based authentication
@@ -34,6 +35,7 @@ The HASIVU Platform API is a comprehensive school meal delivery system with **93
 - **CloudWatch**: Comprehensive monitoring and logging
 
 ### Security Features
+
 - JWT authentication with automatic token refresh
 - Role-based access control (RBAC)
 - Input validation and sanitization
@@ -43,6 +45,7 @@ The HASIVU Platform API is a comprehensive school meal delivery system with **93
 - Webhook signature validation
 
 ### Performance Optimizations
+
 - ARM64 architecture for better price-performance
 - Connection pooling and caching
 - Parallel request processing
@@ -53,6 +56,7 @@ The HASIVU Platform API is a comprehensive school meal delivery system with **93
 ## 💳 Payment Processing Excellence
 
 ### Razorpay Integration
+
 - **25+ Payment Endpoints** covering all payment scenarios
 - Support for Cards, UPI, Wallets, Net Banking
 - Advanced features: Installments, Subscriptions, Refunds
@@ -60,6 +64,7 @@ The HASIVU Platform API is a comprehensive school meal delivery system with **93
 - Comprehensive webhook handling
 
 ### Advanced Payment Features
+
 - **Smart Retry Logic**: Automatic payment retry with exponential backoff
 - **Reconciliation System**: Daily/weekly/monthly reconciliation
 - **Fraud Detection**: AI-powered risk assessment
@@ -67,6 +72,7 @@ The HASIVU Platform API is a comprehensive school meal delivery system with **93
 - **Dunning Management**: Automated collection processes
 
 ### Subscription Billing
+
 - Flexible billing cycles (daily, weekly, monthly)
 - Trial periods and grace periods
 - Automatic invoice generation
@@ -76,6 +82,7 @@ The HASIVU Platform API is a comprehensive school meal delivery system with **93
 ## 🏫 School Management Features
 
 ### Multi-Tenant Architecture
+
 - Complete school isolation
 - Custom branding per school
 - Flexible subscription plans
@@ -83,6 +90,7 @@ The HASIVU Platform API is a comprehensive school meal delivery system with **93
 - Performance analytics per school
 
 ### Menu Management System
+
 - **Menu Planning**: Template-based planning with approval workflows
 - **Daily Menus**: Category-based item organization (Breakfast, Lunch, Snacks)
 - **Nutritional Information**: Comprehensive nutrition tracking
@@ -90,6 +98,7 @@ The HASIVU Platform API is a comprehensive school meal delivery system with **93
 - **Inventory Integration**: Quantity tracking and availability management
 
 ### RFID Delivery System
+
 - **Real-time Verification**: Instant delivery confirmation via RFID
 - **Parent Dashboards**: Live tracking of children's meal deliveries
 - **Bulk Verification**: Efficient processing of multiple deliveries
@@ -99,6 +108,7 @@ The HASIVU Platform API is a comprehensive school meal delivery system with **93
 ## 🤖 AI-Powered Intelligence
 
 ### Machine Learning Insights
+
 - **Revenue Forecasting**: Predictive revenue models
 - **Churn Prediction**: Early identification of at-risk subscriptions
 - **Anomaly Detection**: Unusual payment pattern identification
@@ -106,6 +116,7 @@ The HASIVU Platform API is a comprehensive school meal delivery system with **93
 - **Demand Forecasting**: Menu item popularity prediction
 
 ### Fraud Detection System
+
 - Real-time transaction scoring
 - Pattern recognition algorithms
 - Risk threshold management
@@ -115,6 +126,7 @@ The HASIVU Platform API is a comprehensive school meal delivery system with **93
 ## 📈 Analytics & Reporting
 
 ### Comprehensive Analytics Dashboard
+
 - **Payment Analytics**: Revenue, success rates, method breakdowns
 - **Subscription Metrics**: MRR, churn, LTV, cohort analysis
 - **Operational Analytics**: Delivery rates, menu performance
@@ -122,6 +134,7 @@ The HASIVU Platform API is a comprehensive school meal delivery system with **93
 - **School Performance**: Comparative analytics across schools
 
 ### Custom Reporting
+
 - **Automated Reports**: Scheduled generation and delivery
 - **Interactive Dashboards**: Real-time data visualization
 - **Export Capabilities**: PDF, Excel, CSV formats
@@ -131,6 +144,7 @@ The HASIVU Platform API is a comprehensive school meal delivery system with **93
 ## 🔧 Developer Experience
 
 ### Official SDKs
+
 - **JavaScript/TypeScript**: Full-featured SDK with React components
 - **Python**: Async/sync support with Django integration
 - **Node.js**: Express middleware and webhook handlers
@@ -138,6 +152,7 @@ The HASIVU Platform API is a comprehensive school meal delivery system with **93
 - **Java**: Spring Boot compatibility (Beta)
 
 ### Integration Tools
+
 - **OpenAPI 3.0 Specification**: Complete API documentation
 - **Postman Collection**: Ready-to-use API testing collection
 - **Interactive Documentation**: Swagger UI with live testing
@@ -145,6 +160,7 @@ The HASIVU Platform API is a comprehensive school meal delivery system with **93
 - **Client Libraries**: Pre-built integrations for popular frameworks
 
 ### Development Features
+
 - **Auto-token Refresh**: Seamless authentication handling
 - **Request Retry Logic**: Automatic retry with exponential backoff
 - **Error Handling**: Comprehensive error types and codes
@@ -154,9 +170,10 @@ The HASIVU Platform API is a comprehensive school meal delivery system with **93
 ## 📋 API Endpoint Details
 
 ### Authentication Endpoints (8)
+
 ```
 POST   /auth/login              - User login
-POST   /auth/register           - User registration  
+POST   /auth/register           - User registration
 POST   /auth/verify-email       - Email verification
 POST   /auth/refresh            - Token refresh
 POST   /auth/logout             - User logout
@@ -166,6 +183,7 @@ GET    /auth/me                 - Current user profile
 ```
 
 ### Payment Processing (27)
+
 ```
 # Core Payments (5)
 POST   /payments/orders         - Create payment order
@@ -208,6 +226,7 @@ POST   /payments/analytics/generate-report      - Generate analytics report
 ```
 
 ### Subscription Management (20+)
+
 ```
 # Subscriptions (7)
 GET    /subscriptions           - List subscriptions
@@ -232,6 +251,7 @@ GET    /subscription-plans/analytics      - All plans analytics
 ```
 
 ### RFID Management (8)
+
 ```
 GET    /rfid/readers            - List RFID readers
 POST   /rfid/readers            - Add RFID reader
@@ -248,6 +268,7 @@ POST   /rfid/verify-bulk        - Bulk verify deliveries
 ## 🚀 Getting Started
 
 ### 1. Authentication
+
 ```bash
 curl -X POST https://api.hasivu.com/auth/login \
   -H "Content-Type: application/json" \
@@ -255,6 +276,7 @@ curl -X POST https://api.hasivu.com/auth/login \
 ```
 
 ### 2. Create Payment Order
+
 ```bash
 curl -X POST https://api.hasivu.com/payments/orders \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
@@ -263,6 +285,7 @@ curl -X POST https://api.hasivu.com/payments/orders \
 ```
 
 ### 3. Verify Delivery
+
 ```bash
 curl -X POST https://api.hasivu.com/rfid/verify-delivery \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
@@ -273,17 +296,20 @@ curl -X POST https://api.hasivu.com/rfid/verify-delivery \
 ## 📚 Documentation Resources
 
 ### Interactive Documentation
+
 - **OpenAPI Specification**: `/docs/api/hasivu-platform-openapi.yaml`
 - **API Documentation**: `/docs/api/API_DOCUMENTATION.md`
 - **Client SDK Guide**: `/docs/api/CLIENT_SDK_GUIDE.md`
 - **Postman Collection**: `/docs/api/POSTMAN_COLLECTION.json`
 
 ### Live Documentation
+
 - **Swagger UI**: https://api.hasivu.com/docs
 - **Redoc**: https://api.hasivu.com/redoc
 - **API Explorer**: https://docs.hasivu.com/api-explorer
 
 ### Testing Tools
+
 - **Postman Collection**: Import and test all endpoints
 - **Environment Files**: Pre-configured test environments
 - **SDK Examples**: Working code samples
@@ -292,16 +318,17 @@ curl -X POST https://api.hasivu.com/rfid/verify-delivery \
 ## 🔗 Integration Examples
 
 ### React Integration
+
 ```tsx
 import { HasivuAPI, useAuth } from '@hasivu/react-components';
 
 const PaymentComponent = () => {
   const { user, api } = useAuth();
-  
+
   const createPayment = async () => {
     const payment = await api.payments.createOrder({
       userId: user.id,
-      amount: 250.00
+      amount: 250.0,
     });
     // Handle payment...
   };
@@ -309,6 +336,7 @@ const PaymentComponent = () => {
 ```
 
 ### Python Integration
+
 ```python
 from hasivu_api import HasivuAPI
 
@@ -318,22 +346,24 @@ payment = api.payments.create_order(user.id, 250.00)
 ```
 
 ### Node.js Integration
+
 ```javascript
 const { HasivuAPI } = require('@hasivu/node-sdk');
 
 const api = new HasivuAPI({
-  baseURL: 'https://api.hasivu.com'
+  baseURL: 'https://api.hasivu.com',
 });
 
 const payment = await api.payments.createOrder({
   userId: 'user-id',
-  amount: 250.00
+  amount: 250.0,
 });
 ```
 
 ## 📊 Performance & Reliability
 
 ### SLA Commitments
+
 - **Uptime**: 99.9% availability
 - **Response Time**: <200ms average for API calls
 - **Rate Limits**: 1000 req/min per IP, 2000 burst
@@ -341,6 +371,7 @@ const payment = await api.payments.createOrder({
 - **Backup**: Real-time replication with point-in-time recovery
 
 ### Monitoring & Alerts
+
 - **Health Endpoints**: Real-time system status
 - **CloudWatch Integration**: Comprehensive metrics
 - **Error Tracking**: Automatic error detection and alerting
@@ -350,6 +381,7 @@ const payment = await api.payments.createOrder({
 ## 🎯 Use Cases
 
 ### School Administrators
+
 - Manage school profiles and configurations
 - Monitor payment and delivery analytics
 - Configure menu plans and pricing
@@ -357,6 +389,7 @@ const payment = await api.payments.createOrder({
 - Generate financial reports
 
 ### Parents
+
 - Track children's meal deliveries in real-time
 - Manage payment methods and subscriptions
 - View order history and spending patterns
@@ -364,6 +397,7 @@ const payment = await api.payments.createOrder({
 - Access invoices and receipts
 
 ### Kitchen Staff
+
 - View daily menu requirements
 - Track delivery verifications
 - Manage inventory levels
@@ -371,6 +405,7 @@ const payment = await api.payments.createOrder({
 - Generate kitchen reports
 
 ### Developers
+
 - Integrate payment processing
 - Build custom dashboards
 - Create mobile applications
@@ -386,6 +421,7 @@ The HASIVU Platform API provides everything needed to build comprehensive school
 **Start building today with our comprehensive API documentation and interactive tools!**
 
 ### Quick Links
+
 - 📖 [Full API Documentation](./API_DOCUMENTATION.md)
 - 🔧 [Client SDK Guide](./CLIENT_SDK_GUIDE.md)
 - 📮 [Postman Collection](./POSTMAN_COLLECTION.json)

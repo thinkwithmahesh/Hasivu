@@ -1,0 +1,915 @@
+# HASIVU Platform - Production Kubernetes Deployment
+# Enterprise-grade Kubernetes configuration for 10,000+ concurrent users
+# Version: 1.0 | Production-Ready | 99.9% Uptime Target
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: hasivu-production
+  labels:
+    name: hasivu-production
+    environment: production
+    project: hasivu-platform
+
+---
+# ConfigMap for Production Environment Variables
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hasivu-config
+  namespace: hasivu-production
+  labels:
+    app: hasivu-platform
+    environment: production
+data:
+  NODE_ENV: 'production'
+  PORT: '3000'
+  LOG_LEVEL: 'info'
+  METRICS_ENABLED: 'true'
+  TRACING_ENABLED: 'true'
+  HEALTH_CHECK_PATH: '/health'
+  GRACEFUL_SHUTDOWN_TIMEOUT: '30000'
+  MAX_REQUEST_SIZE: '50mb'
+  RATE_LIMIT_WINDOW: '900000'
+  RATE_LIMIT_MAX: '1000'
+  SESSION_TIMEOUT: '3600000'
+  JWT_EXPIRY: '1800'
+  CACHE_TTL: '300'
+  DB_POOL_MIN: '10'
+  DB_POOL_MAX: '100'
+  DB_TIMEOUT: '30000'
+  REDIS_POOL_SIZE: '50'
+  REDIS_TIMEOUT: '5000'
+  FILE_UPLOAD_MAX_SIZE: '10485760'
+  CORS_ORIGIN: 'https://hasivu.com,https://www.hasivu.com'
+  SECURITY_HEADERS_ENABLED: 'true'
+  CSP_ENABLED: 'true'
+  HELMET_ENABLED: 'true'
+
+---
+# Secret for Production Credentials
+apiVersion: v1
+kind: Secret
+metadata:
+  name: hasivu-secrets
+  namespace: hasivu-production
+  labels:
+    app: hasivu-platform
+    environment: production
+type: Opaque
+stringData:
+  DATABASE_URL: 'postgresql://hasivu_user:secure_password@hasivu-postgres:5432/hasivu_production'
+  REDIS_URL: 'redis://hasivu-redis:6379'
+  JWT_SECRET: 'production-jwt-secret-key-change-in-deployment'
+  ENCRYPTION_KEY: 'production-encryption-key-32-chars'
+  SESSION_SECRET: 'production-session-secret-key'
+  RAZORPAY_KEY_ID: 'rzp_live_key_id'
+  RAZORPAY_KEY_SECRET: 'rzp_live_key_secret'
+  FIREBASE_PRIVATE_KEY: 'firebase-private-key-json'
+  AWS_ACCESS_KEY_ID: 'aws-access-key'
+  AWS_SECRET_ACCESS_KEY: 'aws-secret-key'
+  SENDGRID_API_KEY: 'sendgrid-api-key'
+  WEBHOOK_SECRET: 'webhook-validation-secret'
+  MONITORING_API_KEY: 'monitoring-service-key'
+
+---
+# PersistentVolumeClaim for File Storage
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: hasivu-storage
+  namespace: hasivu-production
+  labels:
+    app: hasivu-platform
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 100Gi
+  storageClassName: fast-ssd
+
+---
+# PostgreSQL Database Deployment
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: hasivu-postgres
+  namespace: hasivu-production
+  labels:
+    app: hasivu-postgres
+    component: database
+spec:
+  serviceName: hasivu-postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hasivu-postgres
+  template:
+    metadata:
+      labels:
+        app: hasivu-postgres
+        component: database
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15.4-alpine
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            - name: POSTGRES_DB
+              value: 'hasivu_production'
+            - name: POSTGRES_USER
+              value: 'hasivu_user'
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: hasivu-secrets
+                  key: DATABASE_PASSWORD
+            - name: PGDATA
+              value: '/var/lib/postgresql/data/pgdata'
+          resources:
+            requests:
+              memory: '2Gi'
+              cpu: '1000m'
+            limits:
+              memory: '4Gi'
+              cpu: '2000m'
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+            - name: postgres-config
+              mountPath: /etc/postgresql/postgresql.conf
+              subPath: postgresql.conf
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - hasivu_user
+                - -d
+                - hasivu_production
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - hasivu_user
+                - -d
+                - hasivu_production
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+      volumes:
+        - name: postgres-config
+          configMap:
+            name: postgres-config
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-data
+      spec:
+        accessModes: ['ReadWriteOnce']
+        storageClassName: fast-ssd
+        resources:
+          requests:
+            storage: 200Gi
+
+---
+# PostgreSQL Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: hasivu-postgres
+  namespace: hasivu-production
+  labels:
+    app: hasivu-postgres
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5432
+      targetPort: 5432
+      name: postgres
+  selector:
+    app: hasivu-postgres
+
+---
+# Redis Cache Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hasivu-redis
+  namespace: hasivu-production
+  labels:
+    app: hasivu-redis
+    component: cache
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: hasivu-redis
+  template:
+    metadata:
+      labels:
+        app: hasivu-redis
+        component: cache
+    spec:
+      containers:
+        - name: redis
+          image: redis:7.2-alpine
+          command:
+            - redis-server
+            - /usr/local/etc/redis/redis.conf
+          ports:
+            - containerPort: 6379
+              name: redis
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: hasivu-secrets
+                  key: REDIS_PASSWORD
+          resources:
+            requests:
+              memory: '1Gi'
+              cpu: '500m'
+            limits:
+              memory: '2Gi'
+              cpu: '1000m'
+          volumeMounts:
+            - name: redis-config
+              mountPath: /usr/local/etc/redis
+            - name: redis-data
+              mountPath: /data
+          livenessProbe:
+            tcpSocket:
+              port: 6379
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command:
+                - redis-cli
+                - ping
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - name: redis-config
+          configMap:
+            name: redis-config
+        - name: redis-data
+          emptyDir: {}
+
+---
+# Redis Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: hasivu-redis
+  namespace: hasivu-production
+  labels:
+    app: hasivu-redis
+spec:
+  type: ClusterIP
+  ports:
+    - port: 6379
+      targetPort: 6379
+      name: redis
+  selector:
+    app: hasivu-redis
+
+---
+# HASIVU Platform Main Application Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hasivu-platform
+  namespace: hasivu-production
+  labels:
+    app: hasivu-platform
+    component: backend
+    version: v1.0.0
+spec:
+  replicas: 6
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 2
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: hasivu-platform
+      component: backend
+  template:
+    metadata:
+      labels:
+        app: hasivu-platform
+        component: backend
+        version: v1.0.0
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '3000'
+        prometheus.io/path: '/metrics'
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: hasivu-app
+          image: hasivu/platform:v1.0.0
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+              name: http
+              protocol: TCP
+            - containerPort: 9464
+              name: metrics
+              protocol: TCP
+          env:
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: hasivu-config
+                  key: NODE_ENV
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: hasivu-config
+                  key: PORT
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: hasivu-secrets
+                  key: DATABASE_URL
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: hasivu-secrets
+                  key: REDIS_URL
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: hasivu-secrets
+                  key: JWT_SECRET
+            - name: RAZORPAY_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: hasivu-secrets
+                  key: RAZORPAY_KEY_ID
+            - name: RAZORPAY_KEY_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: hasivu-secrets
+                  key: RAZORPAY_KEY_SECRET
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+          resources:
+            requests:
+              memory: '1Gi'
+              cpu: '500m'
+              ephemeral-storage: '1Gi'
+            limits:
+              memory: '2Gi'
+              cpu: '1000m'
+              ephemeral-storage: '2Gi'
+          volumeMounts:
+            - name: app-storage
+              mountPath: /app/uploads
+            - name: logs
+              mountPath: /app/logs
+            - name: tmp
+              mountPath: /tmp
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            runAsGroup: 1001
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 3000
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+            successThreshold: 1
+          startupProbe:
+            httpGet:
+              path: /health/startup
+              port: 3000
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 30
+            successThreshold: 1
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - 'sleep 10 && kill -SIGTERM 1'
+        - name: istio-proxy
+          image: istio/proxyv2:1.19.0
+          args:
+            - proxy
+            - sidecar
+            - --domain
+            - $(POD_NAMESPACE).svc.cluster.local
+            - --serviceCluster
+            - hasivu-platform.$(POD_NAMESPACE)
+            - --proxyLogLevel=warning
+            - --proxyComponentLogLevel=misc:error
+            - --log_output_level=default:info
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: INSTANCE_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: SERVICE_ACCOUNT
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.serviceAccountName
+            - name: ISTIO_META_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: ISTIO_META_CONFIG_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          resources:
+            requests:
+              cpu: '100m'
+              memory: '128Mi'
+            limits:
+              cpu: '200m'
+              memory: '256Mi'
+          securityContext:
+            runAsUser: 1337
+            runAsGroup: 1337
+      volumes:
+        - name: app-storage
+          persistentVolumeClaim:
+            claimName: hasivu-storage
+        - name: logs
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+      serviceAccountName: hasivu-service-account
+      imagePullSecrets:
+        - name: hasivu-registry-secret
+      nodeSelector:
+        node-type: compute-optimized
+      tolerations:
+        - key: 'node-type'
+          operator: 'Equal'
+          value: 'compute-optimized'
+          effect: 'NoSchedule'
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: hasivu-platform
+                topologyKey: kubernetes.io/hostname
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: node-type
+                    operator: In
+                    values:
+                      - compute-optimized
+                      - general-purpose
+
+---
+# Service for HASIVU Platform
+apiVersion: v1
+kind: Service
+metadata:
+  name: hasivu-platform
+  namespace: hasivu-production
+  labels:
+    app: hasivu-platform
+    component: backend
+  annotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/port: '3000'
+    prometheus.io/path: '/metrics'
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 3000
+      protocol: TCP
+      name: http
+    - port: 9464
+      targetPort: 9464
+      protocol: TCP
+      name: metrics
+  selector:
+    app: hasivu-platform
+    component: backend
+
+---
+# Horizontal Pod Autoscaler
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: hasivu-platform-hpa
+  namespace: hasivu-production
+  labels:
+    app: hasivu-platform
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: hasivu-platform
+  minReplicas: 6
+  maxReplicas: 50
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+    - type: Pods
+      pods:
+        metric:
+          name: requests_per_second
+        target:
+          type: AverageValue
+          averageValue: '100'
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 60
+        - type: Pods
+          value: 5
+          periodSeconds: 60
+      selectPolicy: Max
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 10
+          periodSeconds: 60
+      selectPolicy: Min
+
+---
+# Pod Disruption Budget
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: hasivu-platform-pdb
+  namespace: hasivu-production
+  labels:
+    app: hasivu-platform
+spec:
+  minAvailable: 4
+  selector:
+    matchLabels:
+      app: hasivu-platform
+      component: backend
+
+---
+# Service Account
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: hasivu-service-account
+  namespace: hasivu-production
+  labels:
+    app: hasivu-platform
+automountServiceAccountToken: true
+
+---
+# Role for Service Account
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: hasivu-platform-role
+  namespace: hasivu-production
+rules:
+  - apiGroups: ['']
+    resources: ['pods', 'configmaps', 'secrets']
+    verbs: ['get', 'list', 'watch']
+  - apiGroups: ['apps']
+    resources: ['deployments', 'replicasets']
+    verbs: ['get', 'list', 'watch']
+  - apiGroups: ['metrics.k8s.io']
+    resources: ['pods', 'nodes']
+    verbs: ['get', 'list']
+
+---
+# RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: hasivu-platform-rolebinding
+  namespace: hasivu-production
+subjects:
+  - kind: ServiceAccount
+    name: hasivu-service-account
+    namespace: hasivu-production
+roleRef:
+  kind: Role
+  name: hasivu-platform-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# Network Policy for Security
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: hasivu-network-policy
+  namespace: hasivu-production
+  labels:
+    app: hasivu-platform
+spec:
+  podSelector:
+    matchLabels:
+      app: hasivu-platform
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: istio-system
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+        - podSelector:
+            matchLabels:
+              app: hasivu-platform
+      ports:
+        - protocol: TCP
+          port: 3000
+        - protocol: TCP
+          port: 9464
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 3000
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: hasivu-postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+    - to:
+        - podSelector:
+            matchLabels:
+              app: hasivu-redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    - to: []
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+        - protocol: UDP
+          port: 53
+
+---
+# Ingress for External Access
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hasivu-platform-ingress
+  namespace: hasivu-production
+  labels:
+    app: hasivu-platform
+  annotations:
+    kubernetes.io/ingress.class: 'nginx'
+    nginx.ingress.kubernetes.io/ssl-redirect: 'true'
+    nginx.ingress.kubernetes.io/force-ssl-redirect: 'true'
+    nginx.ingress.kubernetes.io/proxy-body-size: '50m'
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: '600'
+    nginx.ingress.kubernetes.io/proxy-send-timeout: '600'
+    nginx.ingress.kubernetes.io/proxy-read-timeout: '600'
+    nginx.ingress.kubernetes.io/proxy-buffer-size: '16k'
+    nginx.ingress.kubernetes.io/rate-limit: '1000'
+    nginx.ingress.kubernetes.io/rate-limit-window: '1m'
+    nginx.ingress.kubernetes.io/enable-cors: 'true'
+    nginx.ingress.kubernetes.io/cors-allow-origin: 'https://hasivu.com,https://www.hasivu.com'
+    nginx.ingress.kubernetes.io/cors-allow-methods: 'GET, POST, PUT, DELETE, OPTIONS'
+    nginx.ingress.kubernetes.io/cors-allow-headers: 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization'
+    cert-manager.io/cluster-issuer: 'letsencrypt-prod'
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      add_header X-Frame-Options "SAMEORIGIN" always;
+      add_header X-Content-Type-Options "nosniff" always;
+      add_header X-XSS-Protection "1; mode=block" always;
+      add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+      add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+spec:
+  tls:
+    - hosts:
+        - api.hasivu.com
+        - api-prod.hasivu.com
+      secretName: hasivu-api-tls
+  rules:
+    - host: api.hasivu.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: hasivu-platform
+                port:
+                  number: 80
+    - host: api-prod.hasivu.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: hasivu-platform
+                port:
+                  number: 80
+
+---
+# ServiceMonitor for Prometheus
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: hasivu-platform-monitor
+  namespace: hasivu-production
+  labels:
+    app: hasivu-platform
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: hasivu-platform
+  endpoints:
+    - port: metrics
+      interval: 30s
+      path: /metrics
+      scheme: http
+      honorLabels: true
+    - port: http
+      interval: 30s
+      path: /health/metrics
+      scheme: http
+      honorLabels: true
+  namespaceSelector:
+    matchNames:
+      - hasivu-production
+
+---
+# PrometheusRule for Custom Alerts
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: hasivu-platform-alerts
+  namespace: hasivu-production
+  labels:
+    app: hasivu-platform
+    prometheus: kube-prometheus
+    role: alert-rules
+spec:
+  groups:
+    - name: hasivu.platform.rules
+      interval: 30s
+      rules:
+        - alert: HASIVUHighErrorRate
+          expr: |
+            (
+              rate(http_requests_total{job="hasivu-platform",code=~"5.."}[5m]) /
+              rate(http_requests_total{job="hasivu-platform"}[5m])
+            ) * 100 > 5
+          for: 5m
+          labels:
+            severity: critical
+            service: hasivu-platform
+          annotations:
+            summary: 'HASIVU Platform high error rate'
+            description: 'HASIVU Platform error rate is {{ $value }}% for more than 5 minutes'
+
+        - alert: HASIVUHighLatency
+          expr: |
+            histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job="hasivu-platform"}[5m])) > 2
+          for: 10m
+          labels:
+            severity: warning
+            service: hasivu-platform
+          annotations:
+            summary: 'HASIVU Platform high latency'
+            description: 'HASIVU Platform 95th percentile latency is {{ $value }}s for more than 10 minutes'
+
+        - alert: HASIVUDatabaseDown
+          expr: |
+            up{job="hasivu-postgres"} == 0
+          for: 1m
+          labels:
+            severity: critical
+            service: hasivu-database
+          annotations:
+            summary: 'HASIVU Database is down'
+            description: 'HASIVU PostgreSQL database has been down for more than 1 minute'
+
+        - alert: HASIVURedisDown
+          expr: |
+            up{job="hasivu-redis"} == 0
+          for: 2m
+          labels:
+            severity: warning
+            service: hasivu-cache
+          annotations:
+            summary: 'HASIVU Redis cache is down'
+            description: 'HASIVU Redis cache has been down for more than 2 minutes'
+
+        - alert: HASIVUPodCrashLooping
+          expr: |
+            rate(kube_pod_container_status_restarts_total{namespace="hasivu-production",pod=~"hasivu-platform-.*"}[5m]) > 0
+          for: 5m
+          labels:
+            severity: critical
+            service: hasivu-platform
+          annotations:
+            summary: 'HASIVU Pod is crash looping'
+            description: 'Pod {{ $labels.pod }} is crash looping with restart rate {{ $value }}'
+
+        - alert: HASIVUHighMemoryUsage
+          expr: |
+            container_memory_usage_bytes{namespace="hasivu-production",pod=~"hasivu-platform-.*"} / 
+            container_spec_memory_limit_bytes{namespace="hasivu-production",pod=~"hasivu-platform-.*"} > 0.9
+          for: 10m
+          labels:
+            severity: warning
+            service: hasivu-platform
+          annotations:
+            summary: 'HASIVU High memory usage'
+            description: 'Pod {{ $labels.pod }} memory usage is {{ $value | humanizePercentage }}'
+
+        - alert: HASIVULowReplicas
+          expr: |
+            kube_deployment_status_replicas_available{deployment="hasivu-platform",namespace="hasivu-production"} < 4
+          for: 5m
+          labels:
+            severity: warning
+            service: hasivu-platform
+          annotations:
+            summary: 'HASIVU Low number of available replicas'
+            description: 'Only {{ $value }} replicas are available for HASIVU Platform deployment'

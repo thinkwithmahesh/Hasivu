@@ -5,6 +5,7 @@
 The HASIVU Platform is a comprehensive school food service management system with RFID-based delivery verification. It's built as a production-ready platform using Node.js with TypeScript, Express.js, PostgreSQL (via Prisma), Redis, and deployed on AWS infrastructure.
 
 ### Key Features
+
 - **RFID Delivery Verification**: Real-time delivery confirmation using RFID technology
 - **Payment Processing**: Razorpay integration with subscription billing
 - **Multi-channel Notifications**: WhatsApp, email, and push notifications
@@ -12,6 +13,7 @@ The HASIVU Platform is a comprehensive school food service management system wit
 - **Comprehensive Analytics**: Dashboards for all stakeholders
 
 ### Technology Stack
+
 - **Backend**: Node.js 18.19+, TypeScript, Express.js
 - **Database**: PostgreSQL with Prisma ORM
 - **Cache**: Redis
@@ -51,6 +53,7 @@ hasivu-platform/
 ## Development Guide
 
 ### Prerequisites
+
 - Node.js 18.19.0+
 - PostgreSQL 15+
 - Redis 7+
@@ -58,6 +61,7 @@ hasivu-platform/
 - AWS CLI 2.0+
 
 ### Quick Start
+
 ```bash
 # Install dependencies
 npm install
@@ -80,6 +84,7 @@ npm run dev
 ```
 
 ### Development Commands
+
 ```bash
 # Development server with hot reload
 npm run dev
@@ -110,6 +115,7 @@ npm run db:studio        # Open database GUI
 ## Deployment Guide
 
 ### Production Deployment
+
 ```bash
 # Deploy using deployment script
 ./scripts/deploy.sh --environment production
@@ -119,6 +125,7 @@ npm run db:studio        # Open database GUI
 ```
 
 ### Environment Configuration
+
 - **Development**: Local Docker setup
 - **Staging**: AWS staging environment
 - **Production**: AWS production environment
@@ -126,6 +133,7 @@ npm run db:studio        # Open database GUI
 ## Testing
 
 The platform includes comprehensive testing at multiple levels:
+
 - **Unit Tests**: Component-level testing
 - **Integration Tests**: Service integration testing
 - **End-to-End Tests**: Full system workflow testing
@@ -133,6 +141,7 @@ The platform includes comprehensive testing at multiple levels:
 - **Smoke Tests**: Basic functionality verification
 
 ### Running Tests
+
 ```bash
 # Run all tests
 npm run test
@@ -157,6 +166,7 @@ The platform integrates with the BMad Method, an AI agent framework for software
 - **Templates**: Standard document templates
 
 ### Available BMad Agents
+
 - `analyst`: Requirements analysis
 - `architect`: System architecture design
 - `dev`: Software development
@@ -167,6 +177,7 @@ The platform integrates with the BMad Method, an AI agent framework for software
 - `ux-expert`: User experience design
 
 ### Running BMad Agents
+
 ```bash
 # Check BMad installation status
 bmad-method status
@@ -202,10 +213,12 @@ The `scripts/` directory contains various automation tools:
 The platform exposes a REST API with the following key endpoints:
 
 ### Authentication
+
 - `POST /auth/login`: User authentication
 - `POST /auth/register`: User registration
 
 ### Core Services
+
 - `GET /orders`: List orders
 - `POST /orders`: Create order
 - `GET /menus`: List available menus
@@ -215,12 +228,14 @@ The platform exposes a REST API with the following key endpoints:
 - `POST /rfid/scan`: Process RFID scan
 
 ### WebSocket Events
+
 - `order:updated`: Order status updates
 - `delivery:confirmed`: Delivery confirmation
 
 ## Infrastructure
 
 The platform is designed for deployment on AWS with the following components:
+
 - **ECS Fargate**: Container orchestration
 - **RDS PostgreSQL**: Primary database
 - **ElastiCache Redis**: Caching layer
@@ -243,6 +258,7 @@ Follow the code review guidelines and ensure all tests pass before submission.
 ## Security
 
 The platform implements multiple security measures:
+
 - JWT-based authentication
 - Role-based access control
 - Input validation and sanitization

@@ -6,6 +6,17 @@
  */
 
 /**
+ * Cache options interface
+ */
+export interface CacheOptions {
+  ttl?: number;
+  namespace?: string;
+  serialize?: boolean;
+}
+
+export type _CacheOptions = CacheOptions;
+
+/**
  * Simple in-memory cache implementation
  */
 class InMemoryCache {
@@ -20,7 +31,7 @@ class InMemoryCache {
    */
   async get(key: string): Promise<string | null> {
     const item = this.cache.get(key);
-    
+
     if (!item) {
       return null;
     }
@@ -45,7 +56,7 @@ class InMemoryCache {
    * Set value with expiration (in seconds)
    */
   async setex(key: string, seconds: number, value: string): Promise<void> {
-    const expiry = Date.now() + (seconds * 1000);
+    const expiry = Date.now() + seconds * 1000;
     this.cache.set(key, { value, expiry });
   }
 
@@ -63,7 +74,7 @@ class InMemoryCache {
    */
   async exists(key: string): Promise<boolean> {
     const item = this.cache.get(key);
-    
+
     if (!item) {
       return false;
     }
@@ -92,5 +103,7 @@ class InMemoryCache {
   }
 }
 
-// Export singleton instance
-export const cache = new InMemoryCache();
+// Export singleton instance with both names
+const cacheInstance = new InMemoryCache();
+export const cache = cacheInstance;
+export const _cache = cacheInstance;

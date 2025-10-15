@@ -1,33 +1,41 @@
 import { APIGatewayProxyEvent } from 'aws-lambda';
-export interface AuthenticatedUser {
-    id: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-    role: string;
-    schoolId?: string;
-    permissions: string[];
-    sessionId: string;
+export interface AuthenticatedEvent {
+    headers: {
+        authorization?: string;
+        [key: string]: string | undefined;
+    };
+    requestContext?: {
+        authorizer?: {
+            userId?: string;
+            email?: string;
+            role?: string;
+        };
+    };
+    userId?: string;
+    userEmail?: string;
+    userRole?: string;
 }
-export interface AuthenticationResult {
+export interface AuthMiddlewareResult {
     success: boolean;
     userId?: string;
-    user?: AuthenticatedUser;
-    error?: string;
-    schoolId?: string;
     id?: string;
     email?: string;
-    firstName?: string;
-    lastName?: string;
     role?: string;
-    permissions?: string[];
-    sessionId?: string;
+    user?: AuthenticatedUser;
+    error?: {
+        code: string;
+        message: string;
+    };
 }
-export interface AuthMiddlewareOptions {
-    roles?: string[];
-    permissions?: string[];
-    schoolRequired?: boolean;
-    optional?: boolean;
+export declare function authenticateRequest(event: any): Promise<AuthMiddlewareResult>;
+export declare function requireAuth(event: APIGatewayProxyEvent): Promise<AuthMiddlewareResult>;
+export declare function requireRole(allowedRoles: string[]): (event: APIGatewayProxyEvent) => Promise<AuthMiddlewareResult>;
+export declare const authenticateLambda: typeof authenticateRequest;
+export interface AuthenticatedUser {
+    id: string;
+    userId: string;
+    email: string;
+    role: string;
+    schoolId?: string;
 }
-export declare function authenticateLambda(event: APIGatewayProxyEvent, options?: AuthMiddlewareOptions): Promise<AuthenticationResult>;
 //# sourceMappingURL=lambda-auth.middleware.d.ts.map

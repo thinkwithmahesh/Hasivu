@@ -1,26 +1,26 @@
-"use client"
+'use client';
 
-import * as React from "react"
-import { Loader2, Github } from "lucide-react"
+import * as React from 'react';
+import { Loader2, Github } from 'lucide-react';
 
-import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
-import { cn } from "@/lib/utils"
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
 
 interface SocialLoginButtonsProps {
-  onSocialLogin: (provider: "google" | "facebook" | "github" | "apple") => Promise<void>
-  isLoading?: boolean
-  disabled?: boolean
-  providers?: ("google" | "facebook" | "github" | "apple")[]
-  orientation?: "horizontal" | "vertical"
-  showSeparator?: boolean
-  separatorText?: string
-  className?: string
+  onSocialLogin: (provider: 'google' | 'facebook' | 'github' | 'apple') => Promise<void>;
+  isLoading?: boolean;
+  disabled?: boolean;
+  providers?: ('google' | 'facebook' | 'github' | 'apple')[];
+  orientation?: 'horizontal' | 'vertical';
+  showSeparator?: boolean;
+  separatorText?: string;
+  className?: string;
 }
 
 const providerConfig = {
   google: {
-    name: "Google",
+    name: 'Google',
     icon: (
       <svg className="h-4 w-4" viewBox="0 0 24 24">
         <path
@@ -41,82 +41,82 @@ const providerConfig = {
         />
       </svg>
     ),
-    bgColor: "bg-white",
-    textColor: "text-gray-700",
-    borderColor: "border-gray-300",
-    hoverColor: "hover:bg-gray-50",
+    bgColor: 'bg-white',
+    textColor: 'text-gray-700',
+    borderColor: 'border-gray-300',
+    hoverColor: 'hover:bg-gray-50',
   },
   facebook: {
-    name: "Facebook",
+    name: 'Facebook',
     icon: (
       <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
         <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
       </svg>
     ),
-    bgColor: "bg-[#1877F2]",
-    textColor: "text-white",
-    borderColor: "border-[#1877F2]",
-    hoverColor: "hover:bg-[#166FE5]",
+    bgColor: 'bg-[#1877F2]',
+    textColor: 'text-white',
+    borderColor: 'border-[#1877F2]',
+    hoverColor: 'hover:bg-[#166FE5]',
   },
   github: {
-    name: "GitHub",
+    name: 'GitHub',
     icon: <Github className="h-4 w-4" />,
-    bgColor: "bg-gray-900",
-    textColor: "text-white",
-    borderColor: "border-gray-900",
-    hoverColor: "hover:bg-gray-800",
+    bgColor: 'bg-gray-900',
+    textColor: 'text-white',
+    borderColor: 'border-gray-900',
+    hoverColor: 'hover:bg-gray-800',
   },
   apple: {
-    name: "Apple",
+    name: 'Apple',
     icon: (
       <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
         <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
       </svg>
     ),
-    bgColor: "bg-black",
-    textColor: "text-white",
-    borderColor: "border-black",
-    hoverColor: "hover:bg-gray-900",
+    bgColor: 'bg-black',
+    textColor: 'text-white',
+    borderColor: 'border-black',
+    hoverColor: 'hover:bg-gray-900',
   },
-}
+};
 
 export function SocialLoginButtons({
   onSocialLogin,
   isLoading = false,
   disabled = false,
-  providers = ["google", "facebook"],
-  orientation = "horizontal",
+  providers = ['google', 'facebook'],
+  orientation = 'horizontal',
   showSeparator = true,
-  separatorText = "Or continue with",
-  className
+  separatorText = 'Or continue with',
+  className,
 }: SocialLoginButtonsProps) {
-  const [loadingProvider, setLoadingProvider] = React.useState<string | null>(null)
+  const [loadingProvider, setLoadingProvider] = React.useState<string | null>(null);
 
   const handleSocialLogin = async (provider: keyof typeof providerConfig) => {
-    if (disabled || isLoading) return
-    
-    setLoadingProvider(provider)
-    try {
-      await onSocialLogin(provider)
-    } catch (error) {
-      console.error(`${provider} login error:`, error)
-    } finally {
-      setLoadingProvider(null)
-    }
-  }
+    if (disabled || isLoading) return;
 
-  const gridCols = orientation === "horizontal" 
-    ? providers.length === 1 
-      ? "grid-cols-1" 
-      : providers.length === 2 
-        ? "grid-cols-2" 
-        : providers.length === 3 
-          ? "grid-cols-3" 
-          : "grid-cols-4"
-    : "grid-cols-1"
+    setLoadingProvider(provider);
+    try {
+      await onSocialLogin(provider);
+    } catch (error) {
+    } finally {
+      setLoadingProvider(null);
+    }
+  };
+
+  const gridCols =
+    orientation === 'horizontal'
+      ? providers.length === 1
+        ? 'grid-cols-1'
+        : providers.length === 2
+          ? 'grid-cols-2'
+          : providers.length === 3
+            ? 'grid-cols-3'
+            : 'grid-cols-4'
+      : 'grid-cols-1';
 
   return (
-    <div className={cn("space-y-4", className)}>
+    <div className={cn('space-y-4', className)}>
       {showSeparator && (
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
@@ -128,11 +128,11 @@ export function SocialLoginButtons({
         </div>
       )}
 
-      <div className={cn("grid gap-3", gridCols)}>
-        {providers.map((provider) => {
-          const config = providerConfig[provider]
-          const isProviderLoading = loadingProvider === provider
-          
+      <div className={cn('grid gap-3', gridCols)}>
+        {providers.map(provider => {
+          const config = providerConfig[provider];
+          const isProviderLoading = loadingProvider === provider;
+
           return (
             <Button
               key={provider}
@@ -140,12 +140,12 @@ export function SocialLoginButtons({
               onClick={() => handleSocialLogin(provider)}
               disabled={disabled || isLoading || isProviderLoading}
               className={cn(
-                "relative",
+                'relative',
                 config.bgColor,
                 config.textColor,
                 config.borderColor,
                 config.hoverColor,
-                "transition-colors duration-200"
+                'transition-colors duration-200'
               )}
               size="lg"
             >
@@ -154,19 +154,18 @@ export function SocialLoginButtons({
               ) : (
                 <span className="mr-2">{config.icon}</span>
               )}
-              {orientation === "vertical" || providers.length === 1 
+              {orientation === 'vertical' || providers.length === 1
                 ? `Continue with ${config.name}`
-                : config.name
-              }
+                : config.name}
             </Button>
-          )
+          );
         })}
       </div>
 
       {/* Privacy notice for social logins */}
       <div className="text-center">
         <p className="text-xs text-gray-500">
-          By continuing, you agree to our{" "}
+          By continuing, you agree to our{' '}
           <a
             href="/legal/terms"
             className="text-primary-600 hover:text-primary-500 underline"
@@ -174,8 +173,8 @@ export function SocialLoginButtons({
             rel="noopener noreferrer"
           >
             Terms
-          </a>{" "}
-          and{" "}
+          </a>{' '}
+          and{' '}
           <a
             href="/legal/privacy"
             className="text-primary-600 hover:text-primary-500 underline"
@@ -187,18 +186,18 @@ export function SocialLoginButtons({
         </p>
       </div>
     </div>
-  )
+  );
 }
 
 // Individual Social Login Button Component
 interface SocialLoginButtonProps {
-  provider: keyof typeof providerConfig
-  onClick: () => Promise<void>
-  isLoading?: boolean
-  disabled?: boolean
-  fullWidth?: boolean
-  size?: "sm" | "default" | "lg"
-  className?: string
+  provider: keyof typeof providerConfig;
+  onClick: () => Promise<void>;
+  isLoading?: boolean;
+  disabled?: boolean;
+  fullWidth?: boolean;
+  size?: 'sm' | 'default' | 'lg';
+  className?: string;
 }
 
 export function SocialLoginButton({
@@ -207,10 +206,10 @@ export function SocialLoginButton({
   isLoading = false,
   disabled = false,
   fullWidth = false,
-  size = "default",
-  className
+  size = 'default',
+  className,
 }: SocialLoginButtonProps) {
-  const config = providerConfig[provider]
+  const config = providerConfig[provider];
 
   return (
     <Button
@@ -219,13 +218,13 @@ export function SocialLoginButton({
       disabled={disabled || isLoading}
       size={size}
       className={cn(
-        "relative",
+        'relative',
         config.bgColor,
         config.textColor,
         config.borderColor,
         config.hoverColor,
-        "transition-colors duration-200",
-        fullWidth && "w-full",
+        'transition-colors duration-200',
+        fullWidth && 'w-full',
         className
       )}
     >
@@ -236,32 +235,32 @@ export function SocialLoginButton({
       )}
       Continue with {config.name}
     </Button>
-  )
+  );
 }
 
 // Social Login Grid Component for more complex layouts
 interface SocialLoginGridProps {
-  onSocialLogin: (provider: keyof typeof providerConfig) => Promise<void>
-  isLoading?: boolean
-  disabled?: boolean
-  providers?: (keyof typeof providerConfig)[]
-  columns?: 1 | 2 | 3 | 4
-  showLabels?: boolean
-  className?: string
+  onSocialLogin: (provider: keyof typeof providerConfig) => Promise<void>;
+  isLoading?: boolean;
+  disabled?: boolean;
+  providers?: (keyof typeof providerConfig)[];
+  columns?: 1 | 2 | 3 | 4;
+  showLabels?: boolean;
+  className?: string;
 }
 
 export function SocialLoginGrid({
   onSocialLogin,
   isLoading = false,
   disabled = false,
-  providers = ["google", "facebook"],
+  providers = ['google', 'facebook'],
   columns = 2,
-  showLabels = true,
-  className
+  showLabels: _showLabels = true,
+  className,
 }: SocialLoginGridProps) {
   return (
     <div className={cn(`grid grid-cols-${columns} gap-3`, className)}>
-      {providers.map((provider) => (
+      {providers.map(provider => (
         <SocialLoginButton
           key={provider}
           provider={provider}
@@ -272,5 +271,5 @@ export function SocialLoginGrid({
         />
       ))}
     </div>
-  )
+  );
 }

@@ -127,11 +127,11 @@ class JWTService {
         }
         catch (error) {
             logger_1.logger.error('Failed to generate token pair', {
-                error: error.message,
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
                 userId: options.userId,
                 role: options.role
             });
-            throw new JWTServiceError(`Token generation failed: ${error.message}`, 'TOKEN_GENERATION_FAILED', error);
+            throw new JWTServiceError(`Token generation failed: ${error instanceof Error ? error.message : String(error)}`, 'TOKEN_GENERATION_FAILED', error);
         }
     }
     async refreshAccessToken(refreshToken) {
@@ -163,10 +163,10 @@ class JWTService {
                 throw error;
             }
             logger_1.logger.error('Failed to refresh access token', {
-                error: error.message,
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
                 refreshTokenLength: refreshToken?.length
             });
-            throw new JWTServiceError(`Token refresh failed: ${error.message}`, 'TOKEN_REFRESH_FAILED', error);
+            throw new JWTServiceError(`Token refresh failed: ${error instanceof Error ? error.message : String(error)}`, 'TOKEN_REFRESH_FAILED', error);
         }
     }
     extractTokenFromEvent(event) {
@@ -208,7 +208,7 @@ class JWTService {
         }
         catch (error) {
             logger_1.logger.error('Error extracting JWT token from event', {
-                error: error.message,
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
                 hasHeaders: !!event.headers
             });
             return null;
@@ -246,7 +246,7 @@ class JWTService {
         catch (error) {
             logger_1.logger.warn('Failed to parse cookies safely', {
                 cookieHeader: cookieHeader.substring(0, 100),
-                error: error.message
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
             });
         }
         return cookies;
@@ -326,10 +326,10 @@ class JWTService {
                 errorMessage = 'Token has expired';
             }
             else if (error instanceof jsonwebtoken_1.default.JsonWebTokenError) {
-                errorMessage = `Token validation error: ${error.message}`;
+                errorMessage = `Token validation error: ${error instanceof Error ? error.message : String(error)}`;
             }
             else if (error instanceof Error) {
-                errorMessage = error.message === 'Token verification timeout'
+                errorMessage = String(error) === 'Token verification timeout'
                     ? 'Token verification timeout - possible ReDoS attempt'
                     : `Unexpected token error: ${error.message}`;
             }
@@ -361,9 +361,11 @@ class JWTService {
             return 'Invalid email format in token';
         }
         const validRoles = ['admin', 'teacher', 'student', 'parent', 'staff', 'user'];
-        if (!validRoles.includes(payload.role)) {
+        const normalizedRole = payload.role.toLowerCase();
+        if (!validRoles.includes(normalizedRole)) {
             return `Invalid role: ${payload.role}`;
         }
+        payload.role = normalizedRole;
         if (!/^[a-zA-Z0-9_-]{10,}$/.test(payload.sessionId)) {
             return 'Invalid session ID format';
         }
@@ -439,7 +441,7 @@ class JWTService {
         }
         catch (error) {
             logger_1.logger.warn('Failed to decode token', {
-                error: error.message,
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
                 tokenLength: token?.length
             });
             return null;
@@ -476,7 +478,7 @@ class JWTService {
                     blacklistedTokens: 0,
                     activeRefreshTokens: 0
                 },
-                error: error.message
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
             };
         }
     }

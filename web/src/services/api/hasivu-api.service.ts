@@ -5,7 +5,7 @@
  */
 
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
-import { getSession, signIn, signOut } from 'next-auth/react';
+import { getSession, signIn as _signIn, signOut } from 'next-auth/react';
 
 // API Configuration
 const API_CONFIG = {
@@ -22,7 +22,7 @@ const API_CONFIG = {
       REFRESH: '/auth/refresh',
       LOGOUT: '/auth/logout',
       FORGOT_PASSWORD: '/auth/forgot-password',
-      RESET_PASSWORD: '/auth/reset-password'
+      RESET_PASSWORD: '/auth/reset-password',
     },
     // User Management
     USERS: {
@@ -33,7 +33,7 @@ const API_CONFIG = {
       BULK_IMPORT: '/api/v1/users/bulk-import',
       MANAGE_CHILDREN: '/api/v1/users/:id/children',
       PROFILE: '/api/v1/users/profile',
-      PREFERENCES: '/api/v1/users/:id/preferences'
+      PREFERENCES: '/api/v1/users/:id/preferences',
     },
     // Payment System
     PAYMENTS: {
@@ -47,7 +47,7 @@ const API_CONFIG = {
       RETRY: '/payments/retry/:paymentId',
       SUBSCRIPTION: '/payments/subscription',
       INVOICE: '/payments/invoice/:paymentId',
-      ANALYTICS: '/payments/analytics'
+      ANALYTICS: '/payments/analytics',
     },
     // RFID System
     RFID: {
@@ -58,7 +58,7 @@ const API_CONFIG = {
       DELIVERY_VERIFICATION: '/rfid/delivery-verification',
       MANAGE_READERS: '/rfid/readers',
       MOBILE_TRACKING: '/rfid/mobile-tracking',
-      CARD_ANALYTICS: '/rfid/analytics'
+      CARD_ANALYTICS: '/rfid/analytics',
     },
     // Order Management
     ORDERS: {
@@ -69,7 +69,7 @@ const API_CONFIG = {
       LIST: '/orders',
       TRACK: '/orders/:orderId/track',
       HISTORY: '/orders/history',
-      BULK_CREATE: '/orders/bulk'
+      BULK_CREATE: '/orders/bulk',
     },
     // Menu System
     MENU: {
@@ -80,7 +80,7 @@ const API_CONFIG = {
       PLANNING: '/menu/planning',
       NUTRITION: '/menu/nutrition/:itemId',
       RECOMMENDATIONS: '/menu/recommendations',
-      SEARCH: '/menu/search'
+      SEARCH: '/menu/search',
     },
     // Analytics & Reporting
     ANALYTICS: {
@@ -89,7 +89,7 @@ const API_CONFIG = {
       METRICS: '/analytics/metrics',
       EXPORT: '/analytics/export',
       REAL_TIME: '/analytics/real-time',
-      INSIGHTS: '/analytics/insights'
+      INSIGHTS: '/analytics/insights',
     },
     // School Management
     SCHOOLS: {
@@ -98,7 +98,7 @@ const API_CONFIG = {
       UPDATE: '/schools/:schoolId',
       STATISTICS: '/schools/:schoolId/stats',
       SETTINGS: '/schools/:schoolId/settings',
-      STAFF: '/schools/:schoolId/staff'
+      STAFF: '/schools/:schoolId/staff',
     },
     // Notifications
     NOTIFICATIONS: {
@@ -107,9 +107,9 @@ const API_CONFIG = {
       MARK_READ: '/notifications/:id/read',
       PREFERENCES: '/notifications/preferences',
       SUBSCRIBE: '/notifications/subscribe',
-      UNSUBSCRIBE: '/notifications/unsubscribe'
-    }
-  }
+      UNSUBSCRIBE: '/notifications/unsubscribe',
+    },
+  },
 };
 
 // Type Definitions
@@ -159,8 +159,8 @@ class HASIVUApiClient {
       headers: {
         'Content-Type': 'application/json',
         'X-API-Version': 'v1',
-        'X-Client-Type': 'web'
-      }
+        'X-Client-Type': 'web',
+      },
     });
 
     this.setupInterceptors();
@@ -171,25 +171,25 @@ class HASIVUApiClient {
     this.client.interceptors.request.use(
       async (config: InternalAxiosRequestConfig) => {
         const session = await getSession();
-        
+
         if (session?.accessToken) {
           config.headers.Authorization = `Bearer ${session.accessToken}`;
         }
 
         // Add request ID for tracking
         config.headers['X-Request-ID'] = this.generateRequestId();
-        
+
         // Add timestamp
         config.headers['X-Request-Timestamp'] = new Date().toISOString();
 
         return config;
       },
-      (error) => Promise.reject(error)
+      error => Promise.reject(error)
     );
 
     // Response interceptor for error handling and token refresh
     this.client.interceptors.response.use(
-      (response) => response,
+      response => response,
       async (error: AxiosError) => {
         const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
@@ -225,7 +225,7 @@ class HASIVUApiClient {
     }
 
     this.refreshPromise = this.performTokenRefresh();
-    
+
     try {
       const tokens = await this.refreshPromise;
       this.refreshPromise = null;
@@ -238,28 +238,25 @@ class HASIVUApiClient {
 
   private async performTokenRefresh(): Promise<AuthTokens> {
     const session = await getSession();
-    
+
     if (!session?.refreshToken) {
       throw new Error('No refresh token available');
     }
 
-    const response = await this.client.post(
-      API_CONFIG.ENDPOINTS.AUTH.REFRESH,
-      { refreshToken: session.refreshToken }
-    );
+    const response = await this.client.post(API_CONFIG.ENDPOINTS.AUTH.REFRESH, {
+      refreshToken: session.refreshToken,
+    });
 
     return response.data;
   }
 
   private handleApiError(error: AxiosError): Error {
     const errorResponse = error.response?.data as ApiResponse;
-    
-    const errorMessage = errorResponse?.error?.message || 
-                        error.message || 
-                        'An unexpected error occurred';
-    
-    const errorCode = errorResponse?.error?.code || 
-                     `HTTP_${error.response?.status || 'UNKNOWN'}`;
+
+    const errorMessage =
+      errorResponse?.error?.message || error.message || 'An unexpected error occurred';
+
+    const errorCode = errorResponse?.error?.code || `HTTP_${error.response?.status || 'UNKNOWN'}`;
 
     const enhancedError = new Error(errorMessage) as Error & {
       code: string;
@@ -278,7 +275,7 @@ class HASIVUApiClient {
   async login(email: string, password: string): Promise<ApiResponse<UserSession>> {
     const response = await this.client.post(API_CONFIG.ENDPOINTS.AUTH.LOGIN, {
       email,
-      password
+      password,
     });
     return response.data;
   }
@@ -303,7 +300,7 @@ class HASIVUApiClient {
     const response = await this.client.post(API_CONFIG.ENDPOINTS.RFID.VERIFY_CARD, {
       cardNumber,
       readerId,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
     return response.data;
   }
@@ -355,14 +352,14 @@ class HASIVUApiClient {
 
   async searchMenu(query: string): Promise<ApiResponse<any>> {
     const response = await this.client.get(API_CONFIG.ENDPOINTS.MENU.SEARCH, {
-      params: { q: query }
+      params: { q: query },
     });
     return response.data;
   }
 
   async getMenuRecommendations(userId?: string): Promise<ApiResponse<any>> {
     const response = await this.client.get(API_CONFIG.ENDPOINTS.MENU.RECOMMENDATIONS, {
-      params: { userId }
+      params: { userId },
     });
     return response.data;
   }
@@ -396,6 +393,73 @@ class HASIVUApiClient {
     return response.data;
   }
 
+  // Onboarding Methods
+  async updateSchoolInfo(schoolData: any): Promise<ApiResponse<any>> {
+    const response = await this.client.put(
+      API_CONFIG.ENDPOINTS.SCHOOLS.UPDATE.replace(':schoolId', schoolData.schoolId || 'current'),
+      {
+        ...schoolData,
+        step: 'school_info',
+      }
+    );
+    return response.data;
+  }
+
+  async updateUserProfile(userData: any): Promise<ApiResponse<any>> {
+    const url = API_CONFIG.ENDPOINTS.USERS.UPDATE.replace(':id', userData.userId || 'current');
+    const response = await this.client.put(url, {
+      ...userData,
+      step: 'admin_setup',
+    });
+    return response.data;
+  }
+
+  async configureStakeholders(stakeholderData: any): Promise<ApiResponse<any>> {
+    const response = await this.client.post('/onboarding/stakeholders', {
+      ...stakeholderData,
+      step: 'stakeholder_setup',
+    });
+    return response.data;
+  }
+
+  async updateSchoolBranding(brandingData: any): Promise<ApiResponse<any>> {
+    const response = await this.client.put(
+      API_CONFIG.ENDPOINTS.SCHOOLS.SETTINGS.replace(
+        ':schoolId',
+        brandingData.schoolId || 'current'
+      ),
+      {
+        ...brandingData,
+        step: 'branding',
+      }
+    );
+    return response.data;
+  }
+
+  async updateSchoolConfiguration(configData: any): Promise<ApiResponse<any>> {
+    const response = await this.client.put(
+      API_CONFIG.ENDPOINTS.SCHOOLS.SETTINGS.replace(':schoolId', configData.schoolId || 'current'),
+      {
+        ...configData,
+        step: 'configuration',
+      }
+    );
+    return response.data;
+  }
+
+  async configureRFIDSystem(rfidData: any): Promise<ApiResponse<any>> {
+    const response = await this.client.post(API_CONFIG.ENDPOINTS.RFID.BULK_IMPORT, {
+      ...rfidData,
+      step: 'rfid_setup',
+    });
+    return response.data;
+  }
+
+  async completeOnboarding(onboardingData: any): Promise<ApiResponse<any>> {
+    const response = await this.client.post('/onboarding/complete', onboardingData);
+    return response.data;
+  }
+
   // Demo Booking Methods (for landing page)
   async bookDemo(demoData: {
     name: string;
@@ -423,16 +487,18 @@ class HASIVUApiClient {
   }
 
   // Public Statistics (for landing page)
-  async getPublicStatistics(): Promise<ApiResponse<{
-    totalStudents: number;
-    totalSchools: number;
-    totalOrders: number;
-    fraudDetectionRate: number;
-    deliveryAccuracy: number;
-    averageCostReduction: number;
-    systemUptime: number;
-    rfidVerifications: number;
-  }>> {
+  async getPublicStatistics(): Promise<
+    ApiResponse<{
+      totalStudents: number;
+      totalSchools: number;
+      totalOrders: number;
+      fraudDetectionRate: number;
+      deliveryAccuracy: number;
+      averageCostReduction: number;
+      systemUptime: number;
+      rfidVerifications: number;
+    }>
+  > {
     const response = await this.client.get('/public/statistics');
     return response.data;
   }
@@ -446,6 +512,3 @@ class HASIVUApiClient {
 
 // Export singleton instance
 export const hasiviApi = new HASIVUApiClient();
-
-// Export types
-export type { ApiResponse, AuthTokens, UserSession };

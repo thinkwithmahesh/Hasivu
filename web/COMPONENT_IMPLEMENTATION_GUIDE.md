@@ -67,20 +67,20 @@ const MealSearchCommand = () => {
       </button>
 
       {/* Command Dialog */}
-      <CommandDialog 
-        open={open} 
+      <CommandDialog
+        open={open}
         onOpenChange={setOpen}
         showVoiceSearch={true}
         onVoiceSearch={handleVoiceSearch}
       >
-        <CommandInput 
+        <CommandInput
           placeholder="Search meals, check nutrition, quick actions..."
           value={searchQuery}
           onValueChange={setSearchQuery}
           showVoiceSearch={true}
           onVoiceSearch={handleVoiceSearch}
         />
-        
+
         <CommandList>
           <CommandEmpty>
             <div className="text-center py-6">
@@ -94,7 +94,7 @@ const MealSearchCommand = () => {
 
           {/* Today's Specials */}
           <CommandGroup heading="Today's Specials">
-            <CommandItem 
+            <CommandItem
               value="butter chicken rice"
               nutritionBadge="high-protein"
               onSelect={() => {
@@ -108,8 +108,8 @@ const MealSearchCommand = () => {
                 <div className="text-xs text-slate-500">₹120 • 25 min • ⭐ 4.8</div>
               </div>
             </CommandItem>
-            
-            <CommandItem 
+
+            <CommandItem
               value="paneer tikka"
               nutritionBadge="vegetarian"
             >
@@ -127,7 +127,7 @@ const MealSearchCommand = () => {
               <Clock className="mr-2 h-4 w-4" />
               Repeat Last Order
             </CommandItem>
-            
+
             <CommandItem shortcut="⌘F">
               <Star className="mr-2 h-4 w-4" />
               View Favorites
@@ -159,55 +159,55 @@ export default MealSearchCommand
 
 ```typescript
 interface SearchContext {
-  timeOfDay: 'breakfast' | 'lunch' | 'dinner' | 'snack'
+  timeOfDay: 'breakfast' | 'lunch' | 'dinner' | 'snack';
   userPreferences: {
-    dietaryRestrictions: string[]
-    allergens: string[]
-    favoriteCategories: string[]
-  }
+    dietaryRestrictions: string[];
+    allergens: string[];
+    favoriteCategories: string[];
+  };
   recentOrders: Array<{
-    id: string
-    name: string
-    timestamp: Date
-  }>
+    id: string;
+    name: string;
+    timestamp: Date;
+  }>;
 }
 
 const useContextualSearch = (context: SearchContext) => {
   const getSmartSuggestions = () => {
-    const { timeOfDay, userPreferences, recentOrders } = context
-    
+    const { timeOfDay, userPreferences, recentOrders } = context;
+
     // Algorithm for time-based suggestions
     const timeBasedSuggestions = {
       breakfast: ['Poha', 'Upma', 'Bread Omelette', 'Fruit Bowl'],
       lunch: ['Dal Rice', 'Chole Bhature', 'Biryani', 'Thali'],
       dinner: ['Roti Sabzi', 'Fried Rice', 'Pasta', 'Soup'],
-      snack: ['Samosa', 'Sandwich', 'Fruit Juice', 'Cookies']
-    }
+      snack: ['Samosa', 'Sandwich', 'Fruit Juice', 'Cookies'],
+    };
 
-    return timeBasedSuggestions[timeOfDay] || []
-  }
+    return timeBasedSuggestions[timeOfDay] || [];
+  };
 
   const filterByPreferences = (meals: any[]) => {
     return meals.filter(meal => {
       // Filter based on dietary restrictions
       const matchesDiet = userPreferences.dietaryRestrictions.every(
         restriction => meal.dietaryTags.includes(restriction)
-      )
-      
+      );
+
       // Filter out allergens
-      const hasAllergens = userPreferences.allergens.some(
-        allergen => meal.allergens.includes(allergen)
-      )
-      
-      return matchesDiet && !hasAllergens
-    })
-  }
+      const hasAllergens = userPreferences.allergens.some(allergen =>
+        meal.allergens.includes(allergen)
+      );
+
+      return matchesDiet && !hasAllergens;
+    });
+  };
 
   return {
     getSmartSuggestions,
-    filterByPreferences
-  }
-}
+    filterByPreferences,
+  };
+};
 ```
 
 ## 2. Mobile Meal Order Drawer
@@ -224,10 +224,10 @@ const MealCard = ({ meal }: { meal: MealItem }) => {
   const handleAddToCart = (meal: MealItem, customizations: any) => {
     // Add to cart logic
     console.log('Adding to cart:', meal, customizations)
-    
+
     // Show success feedback
     toast.success(`${meal.name} added to cart!`)
-    
+
     // Optional: Navigate to cart or show quick checkout
   }
 
@@ -341,7 +341,7 @@ const AdvancedMealDrawer = ({ meal }: { meal: MealItem }) => {
           calculatedNutrition: calculateNutrition(),
           timestamp: new Date()
         }
-        
+
         addToCart(cartItem)
       }}
     />
@@ -357,15 +357,15 @@ const AdvancedMealDrawer = ({ meal }: { meal: MealItem }) => {
 import React from 'react'
 import { NutritionTooltip, type NutritionData } from '@/components/ui/advanced-tooltip'
 
-const MealNutritionBadge = ({ 
-  nutritionData, 
-  showDetailed = false 
-}: { 
+const MealNutritionBadge = ({
+  nutritionData,
+  showDetailed = false
+}: {
   nutritionData: NutritionData
-  showDetailed?: boolean 
+  showDetailed?: boolean
 }) => {
   return (
-    <NutritionTooltip 
+    <NutritionTooltip
       nutritionData={nutritionData}
       showOnHover={!showDetailed}
       showOnClick={showDetailed}
@@ -383,17 +383,17 @@ const MealNutritionBadge = ({
 const EnhancedMealCard = ({ meal }: { meal: MealItem }) => (
   <div className="meal-card">
     {/* ... other card content */}
-    
+
     <div className="flex items-center space-x-2">
       {/* Nutrition tooltip */}
-      <MealNutritionBadge 
+      <MealNutritionBadge
         nutritionData={meal.nutrition}
         showDetailed={true} // Mobile will show modal
       />
-      
+
       {/* Allergen tooltip */}
       {meal.allergens.length > 0 && (
-        <AllergenTooltip 
+        <AllergenTooltip
           allergens={meal.allergens.map(allergen => ({
             allergen,
             severity: 'moderate' as const,
@@ -419,7 +419,7 @@ const FormWithTooltips = () => (
     <div className="space-y-2">
       <div className="flex items-center space-x-2">
         <label className="text-sm font-medium">Dietary Restrictions</label>
-        <QuickTooltip 
+        <QuickTooltip
           content="Select any dietary preferences or restrictions. This helps us recommend suitable meals and filter out items you cannot eat."
           side="right"
         >
@@ -428,7 +428,7 @@ const FormWithTooltips = () => (
           </button>
         </QuickTooltip>
       </div>
-      
+
       {/* Form input */}
       <select className="w-full rounded-md border border-slate-300 px-3 py-2">
         <option value="">Select dietary preferences...</option>
@@ -473,7 +473,7 @@ const MealCardWithActions = ({ meal }: { meal: MealItem }) => {
   return (
     <div className="meal-card relative">
       {/* Card content */}
-      
+
       {/* Quick actions menu */}
       <MealQuickActions
         mealId={meal.id}
@@ -511,10 +511,10 @@ const ParentDashboardHeader = () => {
   const handleProfileSwitch = (profileId: string) => {
     const profile = childProfiles.find(p => p.id === profileId)
     setCurrentProfile(profile)
-    
+
     // Update global state/context
     setActiveChild(profile)
-    
+
     // Analytics tracking
     analytics.track('Profile Switched', { profileId, parentId: user.id })
   }
@@ -574,7 +574,7 @@ const StudentDashboard = () => {
           <div className="text-4xl mb-4">😞</div>
           <h2 className="text-xl font-semibold mb-2">Oops! Something went wrong</h2>
           <p className="text-slate-600 mb-4">We couldn't load your dashboard</p>
-          <button 
+          <button
             onClick={() => window.location.reload()}
             className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700"
           >
@@ -616,7 +616,7 @@ const OrderTrackingPage = ({ orderId }: { orderId: string }) => {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-8">Order Tracking</h1>
-      
+
       <div className="max-w-2xl mx-auto">
         {orderStatus && (
           <OrderStatusLoading
@@ -624,7 +624,7 @@ const OrderTrackingPage = ({ orderId }: { orderId: string }) => {
             estimatedTime={orderStatus.estimatedTime}
           />
         )}
-        
+
         {/* Additional order details */}
         <div className="mt-8 rounded-lg border p-6">
           <h3 className="font-semibold mb-4">Order Details</h3>
@@ -658,7 +658,7 @@ type OrderFormData = z.infer<typeof orderSchema>
 const MultiStepOrderForm = ({ meal }: { meal: MealItem }) => {
   const [currentStep, setCurrentStep] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  
+
   const form = useForm<OrderFormData>({
     resolver: zodResolver(orderSchema),
     defaultValues: {
@@ -680,7 +680,7 @@ const MultiStepOrderForm = ({ meal }: { meal: MealItem }) => {
   const nextStep = async () => {
     const fieldsToValidate = steps[currentStep].fields
     const isValid = await form.trigger(fieldsToValidate as any)
-    
+
     if (isValid) {
       setCurrentStep(prev => Math.min(prev + 1, steps.length - 1))
     }
@@ -767,7 +767,7 @@ const MultiStepOrderForm = ({ meal }: { meal: MealItem }) => {
           >
             Previous
           </button>
-          
+
           {currentStep < steps.length - 1 ? (
             <button
               type="button"
@@ -808,9 +808,9 @@ const MultiStepOrderForm = ({ meal }: { meal: MealItem }) => {
 const ResponsiveMealGrid = ({ meals }: { meals: MealItem[] }) => (
   <div className="
     grid gap-4
-    grid-cols-1 
-    sm:grid-cols-2 
-    lg:grid-cols-3 
+    grid-cols-1
+    sm:grid-cols-2
+    lg:grid-cols-3
     xl:grid-cols-4
     2xl:grid-cols-5
   ">
@@ -823,8 +823,8 @@ const ResponsiveMealGrid = ({ meals }: { meals: MealItem[] }) => (
 // Mobile navigation with bottom tabs
 const MobileNavigation = () => (
   <nav className="
-    fixed bottom-0 left-0 right-0 
-    bg-white border-t border-slate-200 
+    fixed bottom-0 left-0 right-0
+    bg-white border-t border-slate-200
     safe-area-pb
     md:hidden
   ">
@@ -839,7 +839,7 @@ const MobileNavigation = () => (
 // Adaptive layout based on screen size
 const AdaptiveDashboard = () => {
   const [isMobile] = useMediaQuery('(max-width: 768px)')
-  
+
   return (
     <div className={cn(
       "container mx-auto px-4 py-6",
@@ -878,7 +878,7 @@ const TouchFriendlyButton = ({ children, ...props }) => (
 // Swipe gestures for mobile
 const SwipeableCard = ({ children, onSwipeLeft, onSwipeRight }) => {
   const [dragX, setDragX] = useState(0)
-  
+
   return (
     <motion.div
       drag="x"
@@ -904,7 +904,7 @@ const SwipeableCard = ({ children, onSwipeLeft, onSwipeRight }) => {
 ```typescript
 // Proper ARIA labels and roles
 const AccessibleMealCard = ({ meal }: { meal: MealItem }) => (
-  <article 
+  <article
     className="meal-card"
     aria-labelledby={`meal-${meal.id}-title`}
     aria-describedby={`meal-${meal.id}-description`}
@@ -912,14 +912,14 @@ const AccessibleMealCard = ({ meal }: { meal: MealItem }) => (
     <h3 id={`meal-${meal.id}-title`} className="sr-only">
       {meal.name} - ₹{meal.price}
     </h3>
-    
+
     <div id={`meal-${meal.id}-description`} className="sr-only">
-      {meal.description}. 
-      Preparation time: {meal.preparationTime} minutes. 
+      {meal.description}.
+      Preparation time: {meal.preparationTime} minutes.
       Rating: {meal.rating} out of 5 stars.
       {meal.allergens.length > 0 && ` Contains allergens: ${meal.allergens.join(', ')}.`}
     </div>
-    
+
     <button
       aria-label={`Add ${meal.name} to cart for ₹${meal.price}`}
       className="add-to-cart-button"
@@ -930,9 +930,9 @@ const AccessibleMealCard = ({ meal }: { meal: MealItem }) => (
 )
 
 // Live regions for dynamic updates
-const LiveRegion = ({ children, type = 'polite' }: { 
+const LiveRegion = ({ children, type = 'polite' }: {
   children: React.ReactNode
-  type?: 'polite' | 'assertive' 
+  type?: 'polite' | 'assertive'
 }) => (
   <div
     aria-live={type}
@@ -956,53 +956,55 @@ const OrderStatusUpdate = ({ status }) => (
 ```typescript
 // Focus management for modals
 const useModal = () => {
-  const [isOpen, setIsOpen] = useState(false)
-  const previousFocus = useRef<HTMLElement>()
-  
+  const [isOpen, setIsOpen] = useState(false);
+  const previousFocus = useRef<HTMLElement>();
+
   const openModal = () => {
-    previousFocus.current = document.activeElement as HTMLElement
-    setIsOpen(true)
-  }
-  
+    previousFocus.current = document.activeElement as HTMLElement;
+    setIsOpen(true);
+  };
+
   const closeModal = () => {
-    setIsOpen(false)
-    previousFocus.current?.focus()
-  }
-  
+    setIsOpen(false);
+    previousFocus.current?.focus();
+  };
+
   // Trap focus within modal
   const trapFocus = (event: KeyboardEvent) => {
-    if (!isOpen) return
-    
-    const modal = document.querySelector('[role="dialog"]')
+    if (!isOpen) return;
+
+    const modal = document.querySelector('[role="dialog"]');
     const focusableElements = modal?.querySelectorAll(
       'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-    )
-    
-    if (!focusableElements) return
-    
-    const firstElement = focusableElements[0] as HTMLElement
-    const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement
-    
+    );
+
+    if (!focusableElements) return;
+
+    const firstElement = focusableElements[0] as HTMLElement;
+    const lastElement = focusableElements[
+      focusableElements.length - 1
+    ] as HTMLElement;
+
     if (event.key === 'Tab') {
       if (event.shiftKey && document.activeElement === firstElement) {
-        event.preventDefault()
-        lastElement.focus()
+        event.preventDefault();
+        lastElement.focus();
       } else if (!event.shiftKey && document.activeElement === lastElement) {
-        event.preventDefault()
-        firstElement.focus()
+        event.preventDefault();
+        firstElement.focus();
       }
     }
-  }
-  
+  };
+
   useEffect(() => {
     if (isOpen) {
-      document.addEventListener('keydown', trapFocus)
-      return () => document.removeEventListener('keydown', trapFocus)
+      document.addEventListener('keydown', trapFocus);
+      return () => document.removeEventListener('keydown', trapFocus);
     }
-  }, [isOpen])
-  
-  return { isOpen, openModal, closeModal }
-}
+  }, [isOpen]);
+
+  return { isOpen, openModal, closeModal };
+};
 ```
 
 This implementation guide provides practical, production-ready examples of how to use the advanced ShadCN components designed for the HASIVU platform. Each example includes proper TypeScript typing, accessibility considerations, and mobile-first responsive design patterns.

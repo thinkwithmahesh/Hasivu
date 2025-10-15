@@ -1,24 +1,34 @@
-"use client"
+'use client';
 
-import * as React from "react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { 
-  User, Phone, Upload, Shield, Bell, Utensils, CreditCard,
-  Camera, Check, X, AlertTriangle, Save, Eye, EyeOff,
-  Clock, Smartphone, Mail, Heart, Zap
-} from "lucide-react"
-
-import { Button } from "@/components/ui/button"
+import * as React from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+  User,
+  Phone,
+  Upload,
+  Shield,
+  Bell,
+  Utensils,
+  CreditCard,
+  Camera,
+  Check,
+  X,
+  AlertTriangle,
+  Save,
+  _Eye,
+  _EyeOff,
+  Clock,
+  Smartphone,
+  Mail,
+  _Heart,
+  _Zap,
+} from 'lucide-react';
+
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Form,
   FormControl,
@@ -27,63 +37,78 @@ import {
   FormLabel,
   FormMessage,
   FormDescription,
-} from "@/components/ui/form"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Textarea } from "@/components/ui/textarea"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+} from '@/components/ui/form';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 import {
   profileManagementSchema,
   rfidLinkingSchema,
-  profilePreferencesSchema,
+  _profilePreferencesSchema,
   type ProfileManagementData,
   type RfidLinkingData,
-  type ProfilePreferencesData,
+  type _ProfilePreferencesData,
   DIETARY_RESTRICTIONS,
-  COMMON_ALLERGENS
-} from "./schemas"
+  COMMON_ALLERGENS,
+} from './schemas';
 
 interface ProfileManagementFormProps {
   // Data handlers
-  onUpdateProfile: (data: ProfileManagementData) => Promise<void>
-  onLinkRfidCard?: (data: RfidLinkingData) => Promise<void>
-  onUploadAvatar?: (file: File) => Promise<string>
-  onValidateRfidCard?: (cardNumber: string) => Promise<boolean>
-  
+  onUpdateProfile: (data: ProfileManagementData) => Promise<void>;
+  onLinkRfidCard?: (data: RfidLinkingData) => Promise<void>;
+  onUploadAvatar?: (file: File) => Promise<string>;
+  onValidateRfidCard?: (cardNumber: string) => Promise<boolean>;
+
   // Initial data
-  initialData?: Partial<ProfileManagementData>
-  userRole?: "student" | "parent" | "teacher" | "admin" | "kitchen"
-  linkedCards?: Array<{ id: string; number: string; status: "active" | "inactive" }>
-  
+  initialData?: Partial<ProfileManagementData>;
+  userRole?: 'student' | 'parent' | 'teacher' | 'admin' | 'kitchen';
+  linkedCards?: Array<{ id: string; number: string; status: 'active' | 'inactive' }>;
+
   // State
-  isLoading?: boolean
-  error?: string | null
-  success?: string | null
-  className?: string
+  isLoading?: boolean;
+  error?: string | null;
+  success?: string | null;
+  className?: string;
 }
 
 const SPICE_LEVELS = [
-  { value: "mild", label: "Mild", icon: "🟢" },
-  { value: "medium", label: "Medium", icon: "🟡" },
-  { value: "spicy", label: "Spicy", icon: "🔴" }
-]
+  { value: 'mild', label: 'Mild', icon: '🟢' },
+  { value: 'medium', label: 'Medium', icon: '🟡' },
+  { value: 'spicy', label: 'Spicy', icon: '🔴' },
+];
 
 const CUISINE_OPTIONS = [
-  "Italian", "Chinese", "Indian", "Mexican", "Thai", "Japanese",
-  "Mediterranean", "American", "French", "Korean", "Middle Eastern"
-]
+  'Italian',
+  'Chinese',
+  'Indian',
+  'Mexican',
+  'Thai',
+  'Japanese',
+  'Mediterranean',
+  'American',
+  'French',
+  'Korean',
+  'Middle Eastern',
+];
 
 const SESSION_TIMEOUT_OPTIONS = [
-  { value: "15", label: "15 minutes" },
-  { value: "30", label: "30 minutes" },
-  { value: "60", label: "1 hour" },
-  { value: "120", label: "2 hours" }
-]
+  { value: '15', label: '15 minutes' },
+  { value: '30', label: '30 minutes' },
+  { value: '60', label: '1 hour' },
+  { value: '120', label: '2 hours' },
+];
 
 export function ProfileManagementForm({
   onUpdateProfile,
@@ -91,123 +116,126 @@ export function ProfileManagementForm({
   onUploadAvatar,
   onValidateRfidCard,
   initialData,
-  userRole = "student",
+  _userRole = 'student',
   linkedCards = [],
   isLoading = false,
   error,
   success,
-  className
+  className,
 }: ProfileManagementFormProps) {
-  const [activeTab, setActiveTab] = React.useState("personal")
+  const [activeTab, setActiveTab] = React.useState('personal');
   const [avatarPreview, setAvatarPreview] = React.useState<string | null>(
     initialData?.personalInfo?.avatar || null
-  )
+  );
   const [rfidValidationStatus, setRfidValidationStatus] = React.useState<{
-    [key: string]: boolean | null
-  }>({})
+    [key: string]: boolean | null;
+  }>({});
 
   // Main profile form
   const profileForm = useForm<ProfileManagementData>({
     resolver: zodResolver(profileManagementSchema),
     defaultValues: {
       personalInfo: {
-        firstName: initialData?.personalInfo?.firstName || "",
-        lastName: initialData?.personalInfo?.lastName || "",
-        phone: initialData?.personalInfo?.phone || "",
-        avatar: initialData?.personalInfo?.avatar || ""
+        firstName: initialData?.personalInfo?.firstName || '',
+        lastName: initialData?.personalInfo?.lastName || '',
+        phone: initialData?.personalInfo?.phone || '',
+        avatar: initialData?.personalInfo?.avatar || '',
       },
       preferences: {
         dietaryRestrictions: initialData?.preferences?.dietaryRestrictions || [],
         allergens: initialData?.preferences?.allergens || [],
-        customDietaryNotes: initialData?.preferences?.customDietaryNotes || "",
+        customDietaryNotes: initialData?.preferences?.customDietaryNotes || '',
         mealPreferences: {
-          spiceLevel: initialData?.preferences?.mealPreferences?.spiceLevel || "medium",
+          spiceLevel: initialData?.preferences?.mealPreferences?.spiceLevel || 'medium',
           preferredCuisine: initialData?.preferences?.mealPreferences?.preferredCuisine || [],
-          dislikedFoods: initialData?.preferences?.mealPreferences?.dislikedFoods || []
+          dislikedFoods: initialData?.preferences?.mealPreferences?.dislikedFoods || [],
         },
         notificationPreferences: {
           mealReminders: initialData?.preferences?.notificationPreferences?.mealReminders ?? true,
-          orderConfirmations: initialData?.preferences?.notificationPreferences?.orderConfirmations ?? true,
-          promotionalEmails: initialData?.preferences?.notificationPreferences?.promotionalEmails ?? false,
-          smsNotifications: initialData?.preferences?.notificationPreferences?.smsNotifications ?? true
-        }
+          orderConfirmations:
+            initialData?.preferences?.notificationPreferences?.orderConfirmations ?? true,
+          promotionalEmails:
+            initialData?.preferences?.notificationPreferences?.promotionalEmails ?? false,
+          smsNotifications:
+            initialData?.preferences?.notificationPreferences?.smsNotifications ?? true,
+        },
       },
       securitySettings: {
         twoFactorEnabled: initialData?.securitySettings?.twoFactorEnabled ?? false,
         loginNotifications: initialData?.securitySettings?.loginNotifications ?? true,
-        sessionTimeout: initialData?.securitySettings?.sessionTimeout || "30"
-      }
-    }
-  })
+        sessionTimeout: initialData?.securitySettings?.sessionTimeout || '30',
+      },
+    },
+  });
 
   // RFID card linking form
   const rfidForm = useForm<RfidLinkingData>({
     resolver: zodResolver(rfidLinkingSchema),
     defaultValues: {
-      cardNumber: "",
-      confirmCardNumber: "",
-      securityPin: ""
-    }
-  })
+      cardNumber: '',
+      confirmCardNumber: '',
+      securityPin: '',
+    },
+  });
 
-  const watchedRfidCard = rfidForm.watch("cardNumber")
+  const watchedRfidCard = rfidForm.watch('cardNumber');
 
   // RFID card validation
   React.useEffect(() => {
     const validateCard = async () => {
       if (watchedRfidCard && watchedRfidCard.length === 8 && onValidateRfidCard) {
         try {
-          const isValid = await onValidateRfidCard(watchedRfidCard)
-          setRfidValidationStatus(prev => ({ ...prev, [watchedRfidCard]: isValid }))
+          const isValid = await onValidateRfidCard(watchedRfidCard);
+          setRfidValidationStatus(prev => ({ ...prev, [watchedRfidCard]: isValid }));
         } catch (error) {
-          setRfidValidationStatus(prev => ({ ...prev, [watchedRfidCard]: false }))
+          setRfidValidationStatus(prev => ({ ...prev, [watchedRfidCard]: false }));
         }
       }
-    }
+    };
 
-    const debounceTimer = setTimeout(validateCard, 500)
-    return () => clearTimeout(debounceTimer)
-  }, [watchedRfidCard, onValidateRfidCard])
+    const debounceTimer = setTimeout(validateCard, 500);
+    return () => clearTimeout(debounceTimer);
+  }, [watchedRfidCard, onValidateRfidCard]);
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
+    const file = event.target.files?.[0];
     if (file && onUploadAvatar) {
       try {
-        const avatarUrl = await onUploadAvatar(file)
-        setAvatarPreview(avatarUrl)
-        profileForm.setValue("personalInfo.avatar", avatarUrl)
+        const avatarUrl = await onUploadAvatar(file);
+        setAvatarPreview(avatarUrl);
+        profileForm.setValue('personalInfo.avatar', avatarUrl);
       } catch (error) {
-        console.error("Avatar upload error:", error)
+        // Error handled silently
       }
     } else if (file) {
       // Local preview
-      const reader = new FileReader()
+      const reader = new FileReader();
       reader.onloadend = () => {
-        setAvatarPreview(reader.result as string)
-        profileForm.setValue("personalInfo.avatar", reader.result as string)
-      }
-      reader.readAsDataURL(file)
+        setAvatarPreview(reader.result as string);
+        profileForm.setValue('personalInfo.avatar', reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
-  }
+  };
 
   const handleProfileSubmit = async (data: ProfileManagementData) => {
     try {
-      await onUpdateProfile(data)
+      await onUpdateProfile(data);
     } catch (error) {
-      console.error("Profile update error:", error)
+      // Error handled silently
     }
-  }
+  };
 
   const handleRfidSubmit = async (data: RfidLinkingData) => {
     if (onLinkRfidCard) {
       try {
-        await onLinkRfidCard(data)
-        rfidForm.reset()
+        await onLinkRfidCard(data);
+        rfidForm.reset();
       } catch (error) {
-        console.error("RFID linking error:", error)
+        // Error handled silently
       }
     }
-  }
+  };
 
   const renderPersonalInfoTab = () => (
     <div className="space-y-6">
@@ -219,12 +247,12 @@ export function ProfileManagementForm({
             <Camera className="h-8 w-8 text-gray-400" />
           </AvatarFallback>
         </Avatar>
-        
+
         <div className="flex flex-col items-center space-y-2">
           <label className="cursor-pointer">
             <span className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
               <Upload className="h-4 w-4 mr-2" />
-              {avatarPreview ? "Change Photo" : "Upload Photo"}
+              {avatarPreview ? 'Change Photo' : 'Upload Photo'}
             </span>
             <input
               type="file"
@@ -295,7 +323,7 @@ export function ProfileManagementForm({
         )}
       />
     </div>
-  )
+  );
 
   const renderDietaryPreferencesTab = () => (
     <div className="space-y-6">
@@ -306,20 +334,18 @@ export function ProfileManagementForm({
         render={({ field }) => (
           <FormItem>
             <FormLabel>Dietary Restrictions</FormLabel>
-            <FormDescription>
-              Select all that apply to your dietary needs
-            </FormDescription>
+            <FormDescription>Select all that apply to your dietary needs</FormDescription>
             <div className="grid grid-cols-2 gap-3">
-              {DIETARY_RESTRICTIONS.map((restriction) => (
+              {DIETARY_RESTRICTIONS.map(restriction => (
                 <div key={restriction} className="flex items-center space-x-2">
                   <Checkbox
                     id={`restriction-${restriction}`}
                     checked={field.value?.includes(restriction)}
-                    onCheckedChange={(checked) => {
+                    onCheckedChange={checked => {
                       const updatedRestrictions = checked
                         ? [...(field.value || []), restriction]
-                        : field.value?.filter((r) => r !== restriction) || []
-                      field.onChange(updatedRestrictions)
+                        : field.value?.filter(r => r !== restriction) || [];
+                      field.onChange(updatedRestrictions);
                     }}
                     disabled={isLoading}
                   />
@@ -347,20 +373,18 @@ export function ProfileManagementForm({
               <AlertTriangle className="h-4 w-4 text-red-500" />
               Allergens & Food Sensitivities
             </FormLabel>
-            <FormDescription>
-              Critical: Please select all allergens for safety
-            </FormDescription>
+            <FormDescription>Critical: Please select all allergens for safety</FormDescription>
             <div className="grid grid-cols-2 gap-3">
-              {COMMON_ALLERGENS.map((allergen) => (
+              {COMMON_ALLERGENS.map(allergen => (
                 <div key={allergen} className="flex items-center space-x-2">
                   <Checkbox
                     id={`allergen-${allergen}`}
                     checked={field.value?.includes(allergen)}
-                    onCheckedChange={(checked) => {
+                    onCheckedChange={checked => {
                       const updatedAllergens = checked
                         ? [...(field.value || []), allergen]
-                        : field.value?.filter((a) => a !== allergen) || []
-                      field.onChange(updatedAllergens)
+                        : field.value?.filter(a => a !== allergen) || [];
+                      field.onChange(updatedAllergens);
                     }}
                     disabled={isLoading}
                   />
@@ -394,9 +418,7 @@ export function ProfileManagementForm({
                 disabled={isLoading}
               />
             </FormControl>
-            <FormDescription>
-              {field.value?.length || 0}/500 characters
-            </FormDescription>
+            <FormDescription>{field.value?.length || 0}/500 characters</FormDescription>
             <FormMessage />
           </FormItem>
         )}
@@ -405,7 +427,7 @@ export function ProfileManagementForm({
       {/* Meal Preferences */}
       <div className="space-y-4">
         <h4 className="font-medium text-gray-900">Meal Preferences</h4>
-        
+
         <FormField
           control={profileForm.control}
           name="preferences.mealPreferences.spiceLevel"
@@ -414,13 +436,13 @@ export function ProfileManagementForm({
               <FormLabel>Spice Level Preference</FormLabel>
               <FormControl>
                 <div className="grid grid-cols-3 gap-3">
-                  {SPICE_LEVELS.map((level) => (
+                  {SPICE_LEVELS.map(level => (
                     <label
                       key={level.value}
                       className={`flex items-center justify-center space-x-2 p-3 border rounded-lg cursor-pointer transition-colors ${
                         field.value === level.value
-                          ? "border-primary-500 bg-primary-50"
-                          : "border-gray-200 hover:border-gray-300"
+                          ? 'border-primary-500 bg-primary-50'
+                          : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >
                       <input
@@ -450,23 +472,20 @@ export function ProfileManagementForm({
               <FormLabel>Preferred Cuisines</FormLabel>
               <FormDescription>Select your favorite types of cuisine</FormDescription>
               <div className="grid grid-cols-2 gap-2">
-                {CUISINE_OPTIONS.map((cuisine) => (
+                {CUISINE_OPTIONS.map(cuisine => (
                   <div key={cuisine} className="flex items-center space-x-2">
                     <Checkbox
                       id={`cuisine-${cuisine}`}
                       checked={field.value?.includes(cuisine)}
-                      onCheckedChange={(checked) => {
+                      onCheckedChange={checked => {
                         const updatedCuisines = checked
                           ? [...(field.value || []), cuisine]
-                          : field.value?.filter((c) => c !== cuisine) || []
-                        field.onChange(updatedCuisines)
+                          : field.value?.filter(c => c !== cuisine) || [];
+                        field.onChange(updatedCuisines);
                       }}
                       disabled={isLoading}
                     />
-                    <Label
-                      htmlFor={`cuisine-${cuisine}`}
-                      className="text-sm font-normal"
-                    >
+                    <Label htmlFor={`cuisine-${cuisine}`} className="text-sm font-normal">
                       {cuisine}
                     </Label>
                   </div>
@@ -478,7 +497,7 @@ export function ProfileManagementForm({
         />
       </div>
     </div>
-  )
+  );
 
   const renderRfidCardTab = () => (
     <div className="space-y-6">
@@ -489,8 +508,8 @@ export function ProfileManagementForm({
             <CreditCard className="h-4 w-4" />
             Linked RFID Cards
           </h4>
-          
-          {linkedCards.map((card) => (
+
+          {linkedCards.map(card => (
             <div
               key={card.id}
               className="flex items-center justify-between p-3 border rounded-lg bg-gray-50"
@@ -499,17 +518,15 @@ export function ProfileManagementForm({
                 <CreditCard className="h-5 w-5 text-gray-400" />
                 <div>
                   <p className="font-medium">Card ****{card.number.slice(-4)}</p>
-                  <p className="text-sm text-gray-500">
-                    Full number: {card.number}
-                  </p>
+                  <p className="text-sm text-gray-500">Full number: {card.number}</p>
                 </div>
               </div>
-              <Badge variant={card.status === "active" ? "default" : "secondary"}>
+              <Badge variant={card.status === 'active' ? 'default' : 'secondary'}>
                 {card.status}
               </Badge>
             </div>
           ))}
-          
+
           <Separator className="my-4" />
         </div>
       )}
@@ -517,7 +534,7 @@ export function ProfileManagementForm({
       {/* Link New Card */}
       <div className="space-y-4">
         <h4 className="font-medium text-gray-900">Link New RFID Card</h4>
-        
+
         <Form {...rfidForm}>
           <form onSubmit={rfidForm.handleSubmit(handleRfidSubmit)} className="space-y-4">
             <FormField
@@ -534,13 +551,17 @@ export function ProfileManagementForm({
                         placeholder="A1B2C3D4"
                         className="pl-10 pr-10 font-mono uppercase"
                         maxLength={8}
-                        onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                        onChange={e => field.onChange(e.target.value.toUpperCase())}
                         disabled={isLoading}
                       />
                       {watchedRfidCard && rfidValidationStatus[watchedRfidCard] !== null && (
-                        <div className={`absolute right-3 top-1/2 transform -translate-y-1/2 ${
-                          rfidValidationStatus[watchedRfidCard] ? "text-green-500" : "text-red-500"
-                        }`}>
+                        <div
+                          className={`absolute right-3 top-1/2 transform -translate-y-1/2 ${
+                            rfidValidationStatus[watchedRfidCard]
+                              ? 'text-green-500'
+                              : 'text-red-500'
+                          }`}
+                        >
                           {rfidValidationStatus[watchedRfidCard] ? (
                             <Check className="h-4 w-4" />
                           ) : (
@@ -575,7 +596,7 @@ export function ProfileManagementForm({
                       placeholder="A1B2C3D4"
                       className="font-mono uppercase"
                       maxLength={8}
-                      onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                      onChange={e => field.onChange(e.target.value.toUpperCase())}
                       disabled={isLoading}
                     />
                   </FormControl>
@@ -628,12 +649,12 @@ export function ProfileManagementForm({
       <Alert>
         <Shield className="h-4 w-4" />
         <AlertDescription>
-          Your RFID card allows quick meal purchases without entering payment details. 
-          Keep your card secure and report lost cards immediately.
+          Your RFID card allows quick meal purchases without entering payment details. Keep your
+          card secure and report lost cards immediately.
         </AlertDescription>
       </Alert>
     </div>
-  )
+  );
 
   const renderNotificationTab = () => (
     <div className="space-y-6">
@@ -698,9 +719,7 @@ export function ProfileManagementForm({
                     <Smartphone className="h-4 w-4" />
                     SMS Notifications
                   </FormLabel>
-                  <FormDescription>
-                    Receive important updates via text message
-                  </FormDescription>
+                  <FormDescription>Receive important updates via text message</FormDescription>
                 </div>
                 <FormControl>
                   <Checkbox
@@ -755,9 +774,7 @@ export function ProfileManagementForm({
             <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
               <div className="space-y-0.5">
                 <FormLabel className="text-base">Two-Factor Authentication</FormLabel>
-                <FormDescription>
-                  Add an extra layer of security to your account
-                </FormDescription>
+                <FormDescription>Add an extra layer of security to your account</FormDescription>
               </div>
               <FormControl>
                 <Checkbox
@@ -777,9 +794,7 @@ export function ProfileManagementForm({
             <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
               <div className="space-y-0.5">
                 <FormLabel className="text-base">Login Notifications</FormLabel>
-                <FormDescription>
-                  Get notified when someone signs into your account
-                </FormDescription>
+                <FormDescription>Get notified when someone signs into your account</FormDescription>
               </div>
               <FormControl>
                 <Checkbox
@@ -801,14 +816,18 @@ export function ProfileManagementForm({
                 <Clock className="h-4 w-4" />
                 Session Timeout
               </FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
+              <Select
+                onValueChange={field.onChange}
+                defaultValue={field.value}
+                disabled={isLoading}
+              >
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select timeout duration" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {SESSION_TIMEOUT_OPTIONS.map((option) => (
+                  {SESSION_TIMEOUT_OPTIONS.map(option => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
                     </SelectItem>
@@ -824,7 +843,7 @@ export function ProfileManagementForm({
         />
       </div>
     </div>
-  )
+  );
 
   return (
     <Card className={className}>
@@ -890,11 +909,7 @@ export function ProfileManagementForm({
             </Tabs>
 
             <div className="flex justify-end space-x-3 mt-6 pt-6 border-t">
-              <Button
-                type="submit"
-                disabled={isLoading}
-                className="min-w-[120px]"
-              >
+              <Button type="submit" disabled={isLoading} className="min-w-[120px]">
                 {isLoading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -912,5 +927,5 @@ export function ProfileManagementForm({
         </Form>
       </CardContent>
     </Card>
-  )
+  );
 }

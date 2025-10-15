@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React from 'react';
 import Link from 'next/link';
@@ -34,14 +34,14 @@ export function MainHeader({
   notifications,
   cartItems = [],
   schoolStatus,
-  onMenuClick,
+  onMenuClick: _onMenuClick,
   onLogout,
   className,
 }: MainHeaderProps) {
   const unreadNotifications = notifications.filter(n => !n.read).length;
   const urgentNotifications = notifications.filter(n => n.urgent && !n.read).length;
   const cartItemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-  
+
   const showCart = ['student', 'parent'].includes(user.role);
   const showEmergencyBanner = schoolStatus.emergencyMode;
 
@@ -58,12 +58,14 @@ export function MainHeader({
           </div>
         </div>
       )}
-      
+
       {/* Main Header */}
-      <header className={cn(
-        "sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
-        className
-      )}>
+      <header
+        className={cn(
+          'sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60',
+          className
+        )}
+      >
         <div className="container mx-auto px-4">
           <div className="flex h-16 items-center justify-between">
             {/* Left Section - Logo & Navigation */}
@@ -77,11 +79,7 @@ export function MainHeader({
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="left" className="w-80 p-0">
-                  <MobileMenu 
-                    user={user} 
-                    schoolStatus={schoolStatus}
-                    onItemClick={() => {}}
-                  />
+                  <MobileMenu user={user} schoolStatus={schoolStatus} onItemClick={() => {}} />
                 </SheetContent>
               </Sheet>
 
@@ -122,12 +120,14 @@ export function MainHeader({
               {/* Meal Service Status */}
               {showCart && (
                 <div className="hidden sm:block">
-                  <div className={cn(
-                    "px-2 py-1 rounded-full text-xs font-medium",
-                    schoolStatus.mealServiceActive
-                      ? "bg-success-100 text-success-700"
-                      : "bg-gray-100 text-gray-600"
-                  )}>
+                  <div
+                    className={cn(
+                      'px-2 py-1 rounded-full text-xs font-medium',
+                      schoolStatus.mealServiceActive
+                        ? 'bg-success-100 text-success-700'
+                        : 'bg-gray-100 text-gray-600'
+                    )}
+                  >
                     {schoolStatus.mealServiceActive ? 'Ordering Open' : 'Ordering Closed'}
                   </div>
                 </div>
@@ -139,12 +139,14 @@ export function MainHeader({
                   <Button variant="ghost" size="icon" className="relative">
                     <Bell className="h-5 w-5" />
                     {unreadNotifications > 0 && (
-                      <span className={cn(
-                        "absolute -top-1 -right-1 h-5 w-5 rounded-full text-xs font-medium flex items-center justify-center",
-                        urgentNotifications > 0
-                          ? "bg-error-500 text-white animate-pulse"
-                          : "bg-primary-500 text-white"
-                      )}>
+                      <span
+                        className={cn(
+                          'absolute -top-1 -right-1 h-5 w-5 rounded-full text-xs font-medium flex items-center justify-center',
+                          urgentNotifications > 0
+                            ? 'bg-error-500 text-white animate-pulse'
+                            : 'bg-primary-500 text-white'
+                        )}
+                      >
                         {unreadNotifications > 9 ? '9+' : unreadNotifications}
                       </span>
                     )}
@@ -155,33 +157,33 @@ export function MainHeader({
                   <DropdownMenuLabel className="flex items-center justify-between">
                     Notifications
                     {unreadNotifications > 0 && (
-                      <span className="text-xs text-gray-500">
-                        {unreadNotifications} unread
-                      </span>
+                      <span className="text-xs text-gray-500">{unreadNotifications} unread</span>
                     )}
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <div className="max-h-96 overflow-y-auto">
                     {notifications.length === 0 ? (
-                      <div className="p-4 text-center text-gray-500 text-sm">
-                        No notifications
-                      </div>
+                      <div className="p-4 text-center text-gray-500 text-sm">No notifications</div>
                     ) : (
-                      notifications.slice(0, 5).map((notification) => (
-                        <DropdownMenuItem key={notification.id} className="flex-col items-start p-3">
+                      notifications.slice(0, 5).map(notification => (
+                        <DropdownMenuItem
+                          key={notification.id}
+                          className="flex-col items-start p-3"
+                        >
                           <div className="flex items-start gap-2 w-full">
-                            <div className={cn(
-                              "h-2 w-2 rounded-full mt-2 flex-shrink-0",
-                              {
+                            <div
+                              className={cn('h-2 w-2 rounded-full mt-2 flex-shrink-0', {
                                 'bg-info-500': notification.type === 'info',
                                 'bg-warning-500': notification.type === 'warning',
                                 'bg-error-500': notification.type === 'error',
                                 'bg-success-500': notification.type === 'success',
-                              }
-                            )} />
+                              })}
+                            />
                             <div className="flex-1">
                               <div className="font-medium text-sm">{notification.title}</div>
-                              <div className="text-xs text-gray-600 mt-1">{notification.message}</div>
+                              <div className="text-xs text-gray-600 mt-1">
+                                {notification.message}
+                              </div>
                               <div className="text-xs text-gray-400 mt-1">
                                 {notification.timestamp.toLocaleTimeString()}
                               </div>
@@ -227,11 +229,15 @@ export function MainHeader({
                           Your cart is empty
                         </div>
                       ) : (
-                        cartItems.map((item) => (
+                        cartItems.map(item => (
                           <DropdownMenuItem key={item.id} className="flex-col items-start p-3">
                             <div className="flex items-center gap-3 w-full">
                               {item.image && (
-                                <img src={item.image} alt={item.name} className="h-10 w-10 rounded object-cover" />
+                                <img
+                                  src={item.image}
+                                  alt={item.name}
+                                  className="h-10 w-10 rounded object-cover"
+                                />
                               )}
                               <div className="flex-1">
                                 <div className="font-medium text-sm">{item.name}</div>
@@ -279,16 +285,18 @@ export function MainHeader({
                       <p className="text-sm font-medium leading-none">{user.name}</p>
                       <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className={cn(
-                          "inline-flex items-center px-2 py-1 rounded-full text-xs font-medium",
-                          {
-                            'bg-blue-100 text-blue-700': user.role === 'student',
-                            'bg-green-100 text-green-700': user.role === 'parent',
-                            'bg-purple-100 text-purple-700': user.role === 'admin',
-                            'bg-orange-100 text-orange-700': user.role === 'kitchen',
-                            'bg-gray-100 text-gray-700': user.role === 'teacher',
-                          }
-                        )}>
+                        <span
+                          className={cn(
+                            'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium',
+                            {
+                              'bg-blue-100 text-blue-700': user.role === 'student',
+                              'bg-green-100 text-green-700': user.role === 'parent',
+                              'bg-purple-100 text-purple-700': user.role === 'admin',
+                              'bg-orange-100 text-orange-700': user.role === 'kitchen',
+                              'bg-gray-100 text-gray-700': user.role === 'teacher',
+                            }
+                          )}
+                        >
                           {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
                         </span>
                         {user.grade && (
@@ -313,7 +321,7 @@ export function MainHeader({
                     <Link href="/help">Help & Support</Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     onClick={onLogout}
                     className="text-error-600 focus:text-error-600"
                   >

@@ -9,9 +9,9 @@ const validateDistrictAdmin = (data) => {
         firstName: { type: 'string', required: true, minLength: 2, maxLength: 50 },
         lastName: { type: 'string', required: true, minLength: 2, maxLength: 50 },
         districtId: { type: 'uuid', required: true },
-        permissions: { type: 'array', required: false }
+        permissions: { type: 'array', required: false },
     };
-    return validationService.validateObject(data, schema);
+    return validation_service_1.ValidationService.validateObject(data, schema);
 };
 exports.validateDistrictAdmin = validateDistrictAdmin;
 const validateSchoolAssignment = (data) => {
@@ -19,9 +19,9 @@ const validateSchoolAssignment = (data) => {
         schoolId: { type: 'uuid', required: true },
         adminId: { type: 'uuid', required: true },
         role: { type: 'string', required: true, enum: ['admin', 'manager', 'viewer'] },
-        permissions: { type: 'array', required: false }
+        permissions: { type: 'array', required: false },
     };
-    return validationService.validateObject(data, schema);
+    return validation_service_1.ValidationService.validateObject(data, schema);
 };
 exports.validateSchoolAssignment = validateSchoolAssignment;
 const validateMenuItem = (data) => {
@@ -31,9 +31,9 @@ const validateMenuItem = (data) => {
         price: { type: 'number', required: true, min: 0 },
         category: { type: 'string', required: true },
         isAvailable: { type: 'boolean', required: false },
-        schoolId: { type: 'uuid', required: true }
+        schoolId: { type: 'uuid', required: true },
     };
-    return validationService.validateObject(data, schema);
+    return validation_service_1.ValidationService.validateObject(data, schema);
 };
 exports.validateMenuItem = validateMenuItem;
 const validateOrder = (data) => {
@@ -42,9 +42,9 @@ const validateOrder = (data) => {
         items: { type: 'array', required: true },
         totalAmount: { type: 'number', required: true, min: 0 },
         deliveryTime: { type: 'date', required: false },
-        paymentMethod: { type: 'string', required: true, enum: ['card', 'wallet', 'cash'] }
+        paymentMethod: { type: 'string', required: true, enum: ['card', 'wallet', 'cash'] },
     };
-    return validationService.validateObject(data, schema);
+    return validation_service_1.ValidationService.validateObject(data, schema);
 };
 exports.validateOrder = validateOrder;
 const validateTenantData = (data) => {
@@ -53,9 +53,9 @@ const validateTenantData = (data) => {
         domain: { type: 'string', required: true, minLength: 3, maxLength: 50 },
         description: { type: 'string', required: false, maxLength: 500 },
         settings: { type: 'object', required: false },
-        isActive: { type: 'boolean', required: false }
+        isActive: { type: 'boolean', required: false },
     };
-    return validationService.validateObject(data, schema);
+    return validation_service_1.ValidationService.validateObject(data, schema);
 };
 exports.validateTenantData = validateTenantData;
 //# sourceMappingURL=validation.js.map

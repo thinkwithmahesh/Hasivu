@@ -16,6 +16,7 @@
 6. **Repeat Cycle**
 
 **Task Management Rules:**
+
 - Update all actions to Archon
 - Move tasks from "todo" → "doing" → "review" (not directly to complete)
 - Maintain task descriptions and add implementation notes

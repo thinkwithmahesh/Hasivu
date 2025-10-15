@@ -6,7 +6,7 @@ module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   setupFilesAfterEnv: ['<rootDir>/setup.ts'],
-  moduleNameMapping: {
+  moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/../src/$1'
   },
   testTimeout: 30000,

@@ -3,19 +3,18 @@ import { test, expect } from '@playwright/test';
 // E2E for Admin Staff Scheduling page
 // Mocks staff and schedules APIs and verifies dialog opens
 
-test.describe('Admin Staff Scheduling', () => {
-  test('should load and open create schedule dialog', async ({ page }) => {
-    const corsHeaders = {
+test.describe(_'Admin Staff Scheduling', _() => {
+  test(_'should load and open create schedule dialog', _async ({ page }) => {
+    const _corsHeaders =  {
       'access-control-allow-origin': '*',
       'access-control-allow-headers': '*',
       'access-control-allow-methods': 'GET,POST,PATCH,PUT,DELETE,OPTIONS',
       'content-type': 'application/json',
     } as const;
 
-    await page.route('**/staff/members**', async route => {
-      const method = route.request().method();
-      if (method === 'OPTIONS') {
-        await route.fulfill({ status: 200, headers: corsHeaders, body: '' });
+    await page.route('**/staff/members**', async _route = > {
+      const method 
+      if (_method = 
         return;
       }
       await route.fulfill({
@@ -33,10 +32,9 @@ test.describe('Admin Staff Scheduling', () => {
       });
     });
 
-    await page.route('**/staff/schedules**', async route => {
-      const method = route.request().method();
-      if (method === 'OPTIONS') {
-        await route.fulfill({ status: 200, headers: corsHeaders, body: '' });
+    await page.route('**/staff/schedules**', async _route = > {
+      const method 
+      if (_method = 
         return;
       }
       await route.fulfill({
@@ -57,7 +55,7 @@ test.describe('Admin Staff Scheduling', () => {
     await page.goto('/admin/schedule');
 
     await expect(page.getByTestId('staff-scheduling')).toBeVisible();
-    const addBtn = page.getByTestId('create-schedule-button');
+    const _addBtn =  page.getByTestId('create-schedule-button');
     await expect(addBtn).toBeVisible({ timeout: 10000 });
     await addBtn.click();
     await expect(page.getByRole('heading', { name: 'Create Schedule' })).toBeVisible();

@@ -4,13 +4,20 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Filter, SortAsc, Heart, ShoppingCart, Smartphone } from 'lucide-react';
+import {
+  Search,
+  Filter as _Filter,
+  SortAsc as _SortAsc,
+  Heart,
+  ShoppingCart,
+  Smartphone,
+} from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
+import { Button as _Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert as _Alert, AlertDescription as _AlertDescription } from '@/components/ui/alert';
 import {
   Select,
   SelectContent,
@@ -18,14 +25,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 
 // Import our custom components
 import MealCard from './MealCard';
@@ -42,17 +41,13 @@ import type {
   DeliverySlot,
   OrderSummary as OrderSummaryType,
   MealOrderForm,
-  MealOrderingContext,
   SchoolMealConfig,
 } from './types';
 import {
   formatCurrency,
   isMealSuitableForStudent,
-  canOrderMeal,
   getMealRecommendations,
   calculateOrderSummary,
-  getAvailableDeliverySlots,
-  getMealCategoryInfo,
 } from './utils';
 
 // Import constants
@@ -67,7 +62,7 @@ interface MealOrderingInterfaceProps {
 
 const MealOrderingInterface: React.FC<MealOrderingInterfaceProps> = ({
   studentInfo,
-  schoolConfig,
+  schoolConfig: _schoolConfig,
   onOrderPlaced,
   onRFIDScan,
 }) => {
@@ -84,8 +79,8 @@ const MealOrderingInterface: React.FC<MealOrderingInterfaceProps> = ({
   // Mock data - in real app, this would come from API
   const [meals, setMeals] = useState<MealItem[]>([]);
   const [categories, setCategories] = useState<MenuCategory[]>([]);
-  const [deliverySlots, setDeliverySlots] = useState<DeliverySlot[]>([]);
-  const [pendingOrders, setPendingOrders] = useState<any[]>([]);
+  const [_deliverySlots, setDeliverySlots] = useState<DeliverySlot[]>([]);
+  const [pendingOrders, _setPendingOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Initialize with mock data
@@ -290,10 +285,11 @@ const MealOrderingInterface: React.FC<MealOrderingInterfaceProps> = ({
 
     // Filter by search query
     if (searchQuery) {
-      filtered = filtered.filter(meal =>
-        meal.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        meal.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        meal.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+      filtered = filtered.filter(
+        meal =>
+          meal.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          meal.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          meal.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
       );
     }
 
@@ -344,33 +340,36 @@ const MealOrderingInterface: React.FC<MealOrderingInterfaceProps> = ({
   }, [cart, selectedDeliverySlot, studentInfo]);
 
   // Cart management
-  const addToCart = useCallback((meal: MealItem, quantity: number) => {
-    setCart(prev => {
-      const existingItem = prev.find(item => item.mealItem.id === meal.id);
-      if (existingItem) {
-        return prev.map(item =>
-          item.mealItem.id === meal.id
-            ? { ...item, quantity: Math.min(item.quantity + quantity, meal.maxQuantityPerStudent) }
-            : item
-        );
-      } else {
-        return [...prev, {
-          mealItem: meal,
-          quantity: Math.min(quantity, meal.maxQuantityPerStudent),
-          selectedDeliveryTime: selectedDeliverySlot?.startTime || '',
-        }];
-      }
-    });
-  }, [selectedDeliverySlot]);
+  const addToCart = useCallback(
+    (meal: MealItem, quantity: number) => {
+      setCart(prev => {
+        const existingItem = prev.find(item => item.mealItem.id === meal.id);
+        if (existingItem) {
+          return prev.map(item =>
+            item.mealItem.id === meal.id
+              ? {
+                  ...item,
+                  quantity: Math.min(item.quantity + quantity, meal.maxQuantityPerStudent),
+                }
+              : item
+          );
+        } else {
+          return [
+            ...prev,
+            {
+              mealItem: meal,
+              quantity: Math.min(quantity, meal.maxQuantityPerStudent),
+              selectedDeliveryTime: selectedDeliverySlot?.startTime || '',
+            },
+          ];
+        }
+      });
+    },
+    [selectedDeliverySlot]
+  );
 
   const updateCartQuantity = useCallback((mealId: string, quantity: number) => {
-    setCart(prev =>
-      prev.map(item =>
-        item.mealItem.id === mealId
-          ? { ...item, quantity }
-          : item
-      )
-    );
+    setCart(prev => prev.map(item => (item.mealItem.id === mealId ? { ...item, quantity } : item)));
   }, []);
 
   const removeFromCart = useCallback((mealId: string) => {
@@ -396,7 +395,6 @@ const MealOrderingInterface: React.FC<MealOrderingInterfaceProps> = ({
       clearCart();
       setActiveTab('rfid'); // Switch to RFID tab after order
     } catch (error) {
-      console.error('Failed to place order:', error);
     } finally {
       setIsPlacingOrder(false);
     }
@@ -405,12 +403,11 @@ const MealOrderingInterface: React.FC<MealOrderingInterfaceProps> = ({
   // View meal details
   const handleViewMealDetails = useCallback((meal: MealItem) => {
     // This could open a detailed modal or navigate to a detail page
-    console.log('View details for meal:', meal.name);
   }, []);
 
   // Get cart item count and total
   const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
-  const cartTotal = cart.reduce((sum, item) => sum + (item.mealItem.price * item.quantity), 0);
+  const cartTotal = cart.reduce((sum, item) => sum + item.mealItem.price * item.quantity, 0);
 
   if (loading) {
     return (
@@ -425,14 +422,12 @@ const MealOrderingInterface: React.FC<MealOrderingInterfaceProps> = ({
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">
-            HASIVU Meal Ordering
-          </h1>
+          <h1 className="text-3xl font-bold text-gray-900">HASIVU Meal Ordering</h1>
           <p className="text-gray-600">
             Welcome, {studentInfo.name} | Grade {studentInfo.grade}-{studentInfo.section}
           </p>
         </div>
-        
+
         {/* Wallet Balance */}
         <div className="flex items-center space-x-4">
           <Card className="p-4">
@@ -485,12 +480,12 @@ const MealOrderingInterface: React.FC<MealOrderingInterfaceProps> = ({
                   <Input
                     placeholder="Search meals, ingredients, or tags..."
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={e => setSearchQuery(e.target.value)}
                     className="pl-10"
                   />
                 </div>
 
-                {/* Dietary Filter */}
+                {/* Dietary Filter as _Filter */}
                 <Select value={filterDietary} onValueChange={setFilterDietary}>
                   <SelectTrigger className="w-48">
                     <SelectValue placeholder="Dietary preference" />
@@ -499,7 +494,9 @@ const MealOrderingInterface: React.FC<MealOrderingInterfaceProps> = ({
                     <SelectItem value="all">All Diets</SelectItem>
                     <SelectItem value={DIETARY_PREFERENCES.VEGETARIAN}>Vegetarian</SelectItem>
                     <SelectItem value={DIETARY_PREFERENCES.VEGAN}>Vegan</SelectItem>
-                    <SelectItem value={DIETARY_PREFERENCES.NON_VEGETARIAN}>Non-Vegetarian</SelectItem>
+                    <SelectItem value={DIETARY_PREFERENCES.NON_VEGETARIAN}>
+                      Non-Vegetarian
+                    </SelectItem>
                     <SelectItem value={DIETARY_PREFERENCES.JAIN}>Jain</SelectItem>
                   </SelectContent>
                 </Select>
@@ -539,7 +536,7 @@ const MealOrderingInterface: React.FC<MealOrderingInterfaceProps> = ({
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {recommendedMeals.map((meal) => (
+                  {recommendedMeals.map(meal => (
                     <MealCard
                       key={meal.id}
                       meal={meal}
@@ -557,7 +554,7 @@ const MealOrderingInterface: React.FC<MealOrderingInterfaceProps> = ({
 
           {/* Meal Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredMeals.map((meal) => (
+            {filteredMeals.map(meal => (
               <MealCard
                 key={meal.id}
                 meal={meal}

@@ -3,17 +3,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.handler = void 0;
 const client_dynamodb_1 = require("@aws-sdk/client-dynamodb");
 const client_translate_1 = require("@aws-sdk/client-translate");
-const logger_1 = require("../../shared/utils/logger");
-const response_utils_1 = require("../shared/response.utils");
-const logger = logger_1.LoggerService.getInstance();
+const logger_1 = require("../../utils/logger");
+const response_utils_1 = require("../../shared/response.utils");
 const dynamoClient = new client_dynamodb_1.DynamoDBClient({});
 const translateClient = new client_translate_1.TranslateClient({});
 const handler = async (event, context) => {
     const startTime = Date.now();
     const method = event.httpMethod;
     const path = event.path;
-    logger.info('Function started: culturalAdapter', { requestId: context.awsRequestId });
-    console.log(`Cultural Adapter - ${method} ${path}`);
+    logger_1.logger.info('Function started: culturalAdapter', { requestId: context.awsRequestId });
     try {
         if (method === 'POST' && path.includes('/adapt')) {
             return await adaptContent(event, context);
@@ -28,11 +26,11 @@ const handler = async (event, context) => {
             return await batchAdaptContent(event, context);
         }
         else {
-            return (0, response_utils_1.createErrorResponse)(404, 'Endpoint not found', undefined, undefined, context.awsRequestId);
+            return (0, response_utils_1.createErrorResponse)('NOT_FOUND', 'Endpoint not found', 404);
         }
     }
     catch (error) {
-        return (0, response_utils_1.handleError)(error, undefined, 500, context.awsRequestId);
+        return (0, response_utils_1.handleError)(error);
     }
 };
 exports.handler = handler;
@@ -42,13 +40,13 @@ async function adaptContent(event, context) {
         const adaptationRequest = JSON.parse(event.body || '{}');
         const requestId = `adapt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         if (!adaptationRequest.content?.text || !adaptationRequest.context) {
-            return (0, response_utils_1.createErrorResponse)(400, 'Content and context are required', undefined, undefined, context.awsRequestId);
+            return (0, response_utils_1.createErrorResponse)('VALIDATION_ERROR', 'Content and context are required', 400);
         }
         const cacheKey = generateCacheKey(adaptationRequest);
         const cachedResult = await getCachedAdaptation(cacheKey);
         if (cachedResult) {
-            logger.info('Returning cached adaptation result', { requestId, cacheKey });
-            return (0, response_utils_1.createSuccessResponse)(cachedResult, 'Cached adaptation result', 200, context.awsRequestId);
+            logger_1.logger.info('Returning cached adaptation result', { requestId, cacheKey });
+            return (0, response_utils_1.createSuccessResponse)(cachedResult, 200);
         }
         const culturalRules = await getCulturalRulesForContext(adaptationRequest.context);
         const festivalContext = await getFestivalContextForDate(adaptationRequest.context.timing.date, adaptationRequest.context.religion);
@@ -70,21 +68,24 @@ async function adaptContent(event, context) {
                     templateId: adaptationRequest.content.metadata.templateId,
                     version: `${adaptationRequest.content.metadata.version}_culturally_adapted`,
                     adaptationLevel: adaptationRequest.adaptationLevel,
-                    processingTime: Date.now() - startTime
-                }
+                    processingTime: Date.now() - startTime,
+                },
             },
             confidenceScore,
             suggestedReviews,
-            cacheKey
+            cacheKey,
         };
         await cacheAdaptationResult(cacheKey, result);
-        console.log(`Caching adaptation result: ${result.requestId}`);
         const duration = Date.now() - startTime;
-        logger.info('Function completed: culturalAdapter', { statusCode: 200, duration, requestId: context.awsRequestId });
-        return (0, response_utils_1.createSuccessResponse)(result, 'Content adapted successfully', 200, context.awsRequestId);
+        logger_1.logger.info('Function completed: culturalAdapter', {
+            statusCode: 200,
+            duration,
+            requestId: context.awsRequestId,
+        });
+        return (0, response_utils_1.createSuccessResponse)(result, 200);
     }
     catch (error) {
-        return (0, response_utils_1.handleError)(error, undefined, 500, context.awsRequestId);
+        return (0, response_utils_1.handleError)(error);
     }
 }
 async function getCulturalRules(event, context) {
@@ -92,7 +93,7 @@ async function getCulturalRules(event, context) {
         const culture = event.queryStringParameters?.culture;
         const religion = event.queryStringParameters?.religion;
         if (!culture) {
-            return (0, response_utils_1.createErrorResponse)(400, 'Culture parameter is required', undefined, undefined, context.awsRequestId);
+            return (0, response_utils_1.createErrorResponse)('VALIDATION_ERROR', 'Culture parameter is required', 400);
         }
         const rules = await getCulturalRulesForContext({
             culture,
@@ -100,7 +101,7 @@ async function getCulturalRules(event, context) {
             language: 'en',
             region: 'global',
             schoolType: 'public',
-            timing: { date: new Date(), localTime: '12:00' }
+            timing: { date: new Date(), localTime: '12:00' },
         });
         return (0, response_utils_1.createSuccessResponse)({
             culture,
@@ -111,12 +112,12 @@ async function getCulturalRules(event, context) {
                 rule: rule.rule,
                 severity: rule.severity,
                 category: rule.category,
-                description: rule.description
-            }))
-        }, 'Cultural rules retrieved successfully', 200, context.awsRequestId);
+                description: rule.description,
+            })),
+        }, 200);
     }
     catch (error) {
-        return (0, response_utils_1.handleError)(error, undefined, 500, context.awsRequestId);
+        return (0, response_utils_1.handleError)(error);
     }
 }
 async function getFestivalContext(event, context) {
@@ -125,10 +126,10 @@ async function getFestivalContext(event, context) {
         const religion = event.queryStringParameters?.religion;
         const date = dateParam ? new Date(dateParam) : new Date();
         const festivalContext = await getFestivalContextForDate(date, religion);
-        return (0, response_utils_1.createSuccessResponse)(festivalContext, 'Festival context retrieved successfully', 200, context.awsRequestId);
+        return (0, response_utils_1.createSuccessResponse)(festivalContext, 200);
     }
     catch (error) {
-        return (0, response_utils_1.handleError)(error, undefined, 500, context.awsRequestId);
+        return (0, response_utils_1.handleError)(error);
     }
 }
 async function batchAdaptContent(event, context) {
@@ -136,10 +137,10 @@ async function batchAdaptContent(event, context) {
         const body = JSON.parse(event.body || '{}');
         const requests = body.requests || [];
         if (!Array.isArray(requests) || requests.length === 0) {
-            return (0, response_utils_1.createErrorResponse)(400, 'Requests array is required', undefined, undefined, context.awsRequestId);
+            return (0, response_utils_1.createErrorResponse)('VALIDATION_ERROR', 'Requests array is required', 400);
         }
         if (requests.length > 50) {
-            return (0, response_utils_1.createErrorResponse)(400, 'Maximum 50 requests per batch', undefined, undefined, context.awsRequestId);
+            return (0, response_utils_1.createErrorResponse)('VALIDATION_ERROR', 'Maximum 50 requests per batch', 400);
         }
         const batchId = `batch_${Date.now()}`;
         const results = [];
@@ -156,10 +157,12 @@ async function batchAdaptContent(event, context) {
                     return JSON.parse(result.body);
                 }
                 catch (error) {
-                    logger.error('Batch adaptation error:', error);
+                    logger_1.logger.error('Batch adaptation error', error instanceof Error ? error : undefined, {
+                        errorMessage: error instanceof Error ? error.message : String(error),
+                    });
                     return {
                         error: 'Adaptation failed',
-                        details: error instanceof Error ? error.message : 'Unknown error'
+                        details: error instanceof Error ? error.message : 'Unknown error',
                     };
                 }
             });
@@ -171,11 +174,11 @@ async function batchAdaptContent(event, context) {
             totalRequests: requests.length,
             successfulAdaptations: results.filter(r => !r.error).length,
             failedAdaptations: results.filter(r => r.error).length,
-            results
-        }, 'Batch adaptation completed', 200, context.awsRequestId);
+            results,
+        }, 200);
     }
     catch (error) {
-        return (0, response_utils_1.handleError)(error, undefined, 500, context.awsRequestId);
+        return (0, response_utils_1.handleError)(error);
     }
 }
 function generateCacheKey(request) {
@@ -189,8 +192,8 @@ async function getCachedAdaptation(cacheKey) {
         const result = await dynamoClient.send(new client_dynamodb_1.GetItemCommand({
             TableName: process.env.CULTURAL_CACHE_TABLE || 'CulturalAdaptationCache',
             Key: {
-                cacheKey: { S: cacheKey }
-            }
+                cacheKey: { S: cacheKey },
+            },
         }));
         if (result.Item) {
             return JSON.parse(result.Item.adaptationResult.S || '{}');
@@ -198,7 +201,7 @@ async function getCachedAdaptation(cacheKey) {
         return null;
     }
     catch (error) {
-        logger.warn('Cache retrieval failed:', error);
+        logger_1.logger.warn('Cache retrieval failed:', error);
         return null;
     }
 }
@@ -210,12 +213,12 @@ async function cacheAdaptationResult(cacheKey, result) {
                 cacheKey: { S: cacheKey },
                 adaptationResult: { S: JSON.stringify(result) },
                 ttl: { N: Math.floor(Date.now() / 1000 + 86400).toString() },
-                createdAt: { S: new Date().toISOString() }
-            }
+                createdAt: { S: new Date().toISOString() },
+            },
         }));
     }
     catch (error) {
-        logger.warn('Cache storage failed:', error);
+        logger_1.logger.warn('Cache storage failed:', error);
     }
 }
 async function getCulturalRulesForContext(context) {
@@ -228,7 +231,7 @@ async function getCulturalRulesForContext(context) {
             rule: 'Ensure all food content is halal-compliant',
             severity: 'critical',
             category: 'content',
-            description: 'All food items must comply with Islamic dietary laws'
+            description: 'All food items must comply with Islamic dietary laws',
         });
     }
     if (context.religion === 'hindu') {
@@ -239,7 +242,7 @@ async function getCulturalRulesForContext(context) {
             rule: 'Prefer vegetarian options and avoid beef content',
             severity: 'important',
             category: 'content',
-            description: 'Respect Hindu dietary preferences and restrictions'
+            description: 'Respect Hindu dietary preferences and restrictions',
         });
     }
     if (context.culture === 'eastern') {
@@ -249,7 +252,7 @@ async function getCulturalRulesForContext(context) {
             rule: 'Use formal language and honorifics',
             severity: 'important',
             category: 'tone',
-            description: 'Eastern cultures often prefer formal communication styles'
+            description: 'Eastern cultures often prefer formal communication styles',
         });
     }
     return rules;
@@ -270,13 +273,12 @@ async function getFestivalContextForDate(date, religion) {
                 duringDays: 3,
                 afterDays: 7,
                 timing: 'acknowledge',
-                restrictions: ['avoid_scheduling_during_christmas_day']
-            }
+                restrictions: ['avoid_scheduling_during_christmas_day'],
+            },
         });
     }
     const currentFestivals = festivals.filter(f => Math.abs(f.date.getTime() - date.getTime()) < 86400000);
-    const upcomingFestivals = festivals.filter(f => f.date.getTime() > date.getTime() &&
-        f.date.getTime() - date.getTime() < 7 * 86400000);
+    const upcomingFestivals = festivals.filter(f => f.date.getTime() > date.getTime() && f.date.getTime() - date.getTime() < 7 * 86400000);
     const recommendations = [];
     if (currentFestivals.length > 0) {
         recommendations.push('Consider acknowledging current festivals in communications');
@@ -287,7 +289,7 @@ async function getFestivalContextForDate(date, religion) {
     return {
         currentFestivals,
         upcomingFestivals,
-        communicationRecommendations: recommendations
+        communicationRecommendations: recommendations,
     };
 }
 async function performCulturalAdaptation(content, context, rules, festivalContext, level) {
@@ -296,12 +298,14 @@ async function performCulturalAdaptation(content, context, rules, festivalContex
     for (const rule of rules.filter(r => r.category === 'content' || r.category === 'tone')) {
         if (rule.severity === 'critical' || level !== 'basic') {
             if (rule.id === 'formal_communication') {
-                adaptedText = adaptedText.replace(/\bhi\b/gi, 'Dear Parent/Guardian')
+                adaptedText = adaptedText
+                    .replace(/\bhi\b/gi, 'Dear Parent/Guardian')
                     .replace(/\bthanks\b/gi, 'Thank you for your attention');
                 adaptations.push('Applied formal communication style');
             }
             if (rule.id === 'halal_food_only') {
-                adaptedText = adaptedText.replace(/pork/gi, 'halal protein')
+                adaptedText = adaptedText
+                    .replace(/pork/gi, 'halal protein')
                     .replace(/bacon/gi, 'halal alternative');
                 adaptations.push('Adapted content for halal compliance');
             }
@@ -329,7 +333,7 @@ async function applyReligiousAdaptations(content, context, rules) {
     return {
         text: adaptedText,
         culturalAdaptations: content.culturalAdaptations,
-        religiousAdaptations
+        religiousAdaptations,
     };
 }
 async function applyTimingAdaptations(content, context, festivalContext) {
@@ -341,7 +345,7 @@ async function applyTimingAdaptations(content, context, festivalContext) {
     }
     return {
         ...content,
-        timingAdaptations
+        timingAdaptations,
     };
 }
 function calculateConfidenceScore(request, rules, festivalContext) {

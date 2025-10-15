@@ -11,11 +11,14 @@ module.exports = (path, options) => {
     const mappedPaths = pathsToModuleNameMapper(compilerOptions.paths, {
       prefix: '<rootDir>/',
     });
-    
+
     for (const [pattern, replacement] of Object.entries(mappedPaths)) {
       const regex = new RegExp(pattern.replace('(.*)\\$', '(.*)'));
       if (regex.test(path)) {
-        const resolvedPath = path.replace(regex, replacement[0].replace('<rootDir>', options.rootDir));
+        const resolvedPath = path.replace(
+          regex,
+          replacement[0].replace('<rootDir>', options.rootDir)
+        );
         try {
           return options.defaultResolver(resolvedPath, options);
         } catch (e) {
@@ -24,7 +27,7 @@ module.exports = (path, options) => {
       }
     }
   }
-  
+
   // Fallback to default resolver
   return options.defaultResolver(path, options);
 };

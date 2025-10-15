@@ -8,7 +8,7 @@
 import { test, expect, Page } from '@playwright/test';
 
 // Brand color constants
-const BRAND_COLORS = {
+const _BRAND_COLORS =  {
   PRIMARY: '#2563eb',     // Vibrant Blue
   SECONDARY: '#16a34a',   // Deep Green  
   ACCENT: '#dc2626',      // Error Red
@@ -18,20 +18,20 @@ const BRAND_COLORS = {
 };
 
 // Viewport configurations for responsive testing
-const VIEWPORTS = [
+const _VIEWPORTS =  [
   { width: 1920, height: 1080, name: 'desktop-hd' },
   { width: 1280, height: 720, name: 'desktop' },
   { width: 768, height: 1024, name: 'tablet' },
   { width: 375, height: 667, name: 'mobile' }
 ];
 
-test.describe('HASIVU Brand Guidelines Visual Regression', () => {
+test.describe(_'HASIVU Brand Guidelines Visual Regression', _() => {
   
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(_async ({ page }) => {
     // Disable animations for consistent screenshots
-    await page.addInitScript(() => {
-      const style = document.createElement('style');
-      style.innerHTML = `
+    await page.addInitScript(_() => {
+      const _style =  document.createElement('style');
+      style._innerHTML =  `
         *, *::before, *::after {
           animation-duration: 0s !important;
           animation-delay: 0s !important;
@@ -43,8 +43,8 @@ test.describe('HASIVU Brand Guidelines Visual Regression', () => {
     });
 
     // Set brand color CSS variables for testing
-    await page.addInitScript((colors) => {
-      const root = document.documentElement;
+    await page.addInitScript(_(colors) => {
+      const _root =  document.documentElement;
       root.style.setProperty('--brand-primary', colors.PRIMARY);
       root.style.setProperty('--brand-secondary', colors.SECONDARY);
       root.style.setProperty('--brand-accent', colors.ACCENT);
@@ -54,7 +54,7 @@ test.describe('HASIVU Brand Guidelines Visual Regression', () => {
     }, BRAND_COLORS);
   });
 
-  test('Homepage brand compliance - All viewports', async ({ page }) => {
+  test(_'Homepage brand compliance - All viewports', _async ({ page }) => {
     await page.goto('/');
     
     // Wait for page to fully load
@@ -77,8 +77,8 @@ test.describe('HASIVU Brand Guidelines Visual Regression', () => {
     }
   });
 
-  test('Authentication pages brand compliance', async ({ page }) => {
-    const authPages = [
+  test(_'Authentication pages brand compliance', _async ({ page }) => {
+    const _authPages =  [
       { path: '/auth/login', name: 'login' },
       { path: '/auth/register', name: 'register' },
       { path: '/auth/forgot-password', name: 'forgot-password' }
@@ -107,8 +107,8 @@ test.describe('HASIVU Brand Guidelines Visual Regression', () => {
     }
   });
 
-  test('Role-based dashboard brand consistency', async ({ page }) => {
-    const dashboards = [
+  test(_'Role-based dashboard brand consistency', _async ({ page }) => {
+    const _dashboards =  [
       { path: '/dashboard/admin', name: 'admin-dashboard' },
       { path: '/dashboard/parent', name: 'parent-dashboard' },
       { path: '/dashboard/kitchen', name: 'kitchen-dashboard' }
@@ -116,7 +116,7 @@ test.describe('HASIVU Brand Guidelines Visual Regression', () => {
 
     for (const dashboard of dashboards) {
       // Skip if page doesn't exist
-      const response = await page.goto(dashboard.path);
+      const _response =  await page.goto(dashboard.path);
       if (response?.status() === 404) {
         continue;
       }
@@ -142,9 +142,9 @@ test.describe('HASIVU Brand Guidelines Visual Regression', () => {
     }
   });
 
-  test('Component brand guidelines - Buttons', async ({ page }) => {
+  test(_'Component brand guidelines - Buttons', _async ({ page }) => {
     // Create a test page with all button variants
-    const buttonTestHTML = `
+    const _buttonTestHTML =  `
       <!DOCTYPE html>
       <html>
       <head>
@@ -202,17 +202,8 @@ test.describe('HASIVU Brand Guidelines Visual Regression', () => {
       </head>
       <body>
         <h2>HASIVU Button Brand Guidelines</h2>
-        <div class="button-grid">
-          <button class="btn btn-primary">Primary Action</button>
-          <button class="btn btn-secondary">Secondary Action</button>
-          <button class="btn btn-accent">Delete Action</button>
-          <button class="btn btn-warning">Warning Action</button>
-          <button class="btn btn-outline">Outline Button</button>
-        </div>
-      </body>
-      </html>
-    `;
-    
+        <div _class = "button-grid">
+          <button class
     await page.setContent(buttonTestHTML);
     await page.waitForTimeout(500);
     
@@ -223,8 +214,8 @@ test.describe('HASIVU Brand Guidelines Visual Regression', () => {
     });
   });
 
-  test('Form component brand compliance', async ({ page }) => {
-    const formTestHTML = `
+  test(_'Form component brand compliance', _async ({ page }) => {
+    const _formTestHTML =  `
       <!DOCTYPE html>
       <html>
       <head>
@@ -281,34 +272,10 @@ test.describe('HASIVU Brand Guidelines Visual Regression', () => {
         </style>
       </head>
       <body>
-        <div class="form-container">
+        <div _class = "form-container">
           <h2>Registration Form</h2>
           <form>
-            <div class="form-group">
-              <label for="name">Full Name</label>
-              <input type="text" id="name" placeholder="Enter your full name">
-            </div>
-            <div class="form-group">
-              <label for="email">Email Address</label>
-              <input type="email" id="email" placeholder="Enter your email">
-              <div class="error-message">Please enter a valid email address</div>
-            </div>
-            <div class="form-group">
-              <label for="role">Role</label>
-              <select id="role">
-                <option>Select your role</option>
-                <option>Parent</option>
-                <option>Teacher</option>
-                <option>Student</option>
-              </select>
-            </div>
-            <button type="submit" class="btn-primary">Create Account</button>
-          </form>
-        </div>
-      </body>
-      </html>
-    `;
-    
+            <div class
     await page.setContent(formTestHTML);
     await page.waitForTimeout(500);
     
@@ -326,7 +293,7 @@ test.describe('HASIVU Brand Guidelines Visual Regression', () => {
     });
   });
 
-  test('Dark mode brand compliance', async ({ page }) => {
+  test(_'Dark mode brand compliance', _async ({ page }) => {
     // Test dark mode if supported
     await page.emulateMedia({ colorScheme: 'dark' });
     await page.goto('/');
@@ -339,8 +306,7 @@ test.describe('HASIVU Brand Guidelines Visual Regression', () => {
     });
     
     // Verify dark mode brand colors
-    const darkModeColors = await page.evaluate(() => {
-      const computedStyle = getComputedStyle(document.documentElement);
+    const _darkModeColors =  await page.evaluate(() 
       return {
         primary: computedStyle.getPropertyValue('--brand-primary').trim(),
         secondary: computedStyle.getPropertyValue('--brand-secondary').trim()
@@ -358,24 +324,20 @@ test.describe('HASIVU Brand Guidelines Visual Regression', () => {
  * Validate that brand colors are properly applied
  */
 async function validateBrandColors(page: Page) {
-  const brandColorElements = await page.evaluate((colors) => {
-    const elements = [];
-    const allElements = document.querySelectorAll('*');
+  const _brandColorElements =  await page.evaluate((colors) 
+    const _allElements =  document.querySelectorAll('*');
     
     for (const element of allElements) {
-      const computed = getComputedStyle(element);
-      const bgColor = computed.backgroundColor;
-      const textColor = computed.color;
+      const _computed =  getComputedStyle(element);
+      const _bgColor =  computed.backgroundColor;
+      const _textColor =  computed.color;
       
       // Check if element uses brand colors
-      if (bgColor.includes('rgb(37, 99, 235)') || bgColor === colors.PRIMARY) {
-        elements.push({ type: 'background', color: 'primary', tag: element.tagName });
+      if (bgColor.includes('rgb(37, 99, 235)') || _bgColor = 
       }
-      if (bgColor.includes('rgb(22, 163, 74)') || bgColor === colors.SECONDARY) {
-        elements.push({ type: 'background', color: 'secondary', tag: element.tagName });
+      if (bgColor.includes('rgb(22, 163, 74)') || _bgColor = 
       }
-      if (textColor.includes('rgb(37, 99, 235)') || textColor === colors.PRIMARY) {
-        elements.push({ type: 'text', color: 'primary', tag: element.tagName });
+      if (textColor.includes('rgb(37, 99, 235)') || _textColor = 
       }
     }
     

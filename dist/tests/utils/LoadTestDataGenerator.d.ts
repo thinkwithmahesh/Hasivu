@@ -65,7 +65,14 @@ export declare class LoadTestDataGenerator {
     generateOrder(users?: LoadTestUser[]): LoadTestOrder;
     generatePaymentOrders(count: number, orders?: LoadTestOrder[]): LoadTestPaymentOrder[];
     generatePaymentOrder(orders?: LoadTestOrder[]): LoadTestPaymentOrder;
-    generateConcurrentUserScenarios(userCount: number): any[];
+    generateConcurrentUserScenarios(userCount: number): {
+        userId: string;
+        actions: string[];
+        timing: {
+            startDelay: number;
+            actionInterval: number;
+        };
+    }[];
     generateUserActionSequence(): string[];
     getPerformanceThresholds(): {
         PAYMENT_PROCESSING_MS: number;

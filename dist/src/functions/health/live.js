@@ -110,7 +110,7 @@ const livenessCheckHandler = async (event, context) => {
     catch (error) {
         logger.error('Liveness check failed', {
             requestId,
-            error: error.message,
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
             stack: error.stack
         });
         return createResponse(200, {
@@ -118,7 +118,7 @@ const livenessCheckHandler = async (event, context) => {
             data: {
                 alive: false,
                 timestamp: new Date().toISOString(),
-                error: error.message
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
             },
             message: 'Liveness check failed but service is responding'
         });

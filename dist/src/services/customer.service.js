@@ -1,13 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CustomerService = void 0;
-const database_service_1 = require("../shared/database.service");
+const database_service_1 = require("./database.service");
 const logger_1 = require("../utils/logger");
 const errors_1 = require("../utils/errors");
 class CustomerService {
     static instance;
     db = database_service_1.DatabaseService.getInstance();
-    logger = logger_1.Logger.getInstance();
+    logger = logger_1.logger;
     constructor() { }
     static getInstance() {
         if (!CustomerService.instance) {
@@ -17,25 +17,25 @@ class CustomerService {
     }
     async getCustomerProfile(userId) {
         try {
-            const user = await this.db.getPrismaClient().user.findUnique({
+            const user = await this.db.client.user.findUnique({
                 where: { id: userId },
                 include: {
                     children: {
                         include: {
                             school: true,
-                            rfidCards: true
-                        }
+                            rfidCards: true,
+                        },
                     },
                     subscriptions: {
                         where: { status: 'ACTIVE' },
                         orderBy: { createdAt: 'desc' },
-                        take: 1
+                        take: 1,
                     },
                     paymentMethods: {
                         where: { isActive: true },
-                        orderBy: { isDefault: 'desc' }
-                    }
-                }
+                        orderBy: { isDefault: 'desc' },
+                    },
+                },
             });
             if (!user) {
                 return null;
@@ -43,56 +43,56 @@ class CustomerService {
             return this.mapToCustomerProfile(user);
         }
         catch (error) {
-            this.logger.error('Error fetching customer profile', { userId, error });
+            this.logger.error('Error fetching customer profile', error instanceof Error ? error : undefined, { userId });
             throw error;
         }
     }
     async updateCustomerPreferences(userId, preferences) {
         try {
-            const user = await this.db.getPrismaClient().user.findUnique({
-                where: { id: userId }
+            const user = await this.db.client.user.findUnique({
+                where: { id: userId },
             });
             if (!user) {
                 throw new errors_1.NotFoundError('Customer', userId);
             }
-            const updatedUser = await this.db.getPrismaClient().user.update({
+            const updatedUser = await this.db.client.user.update({
                 where: { id: userId },
                 data: {
                     preferences: {
                         ...(user.preferences || {}),
-                        ...preferences
+                        ...preferences,
                     },
-                    updatedAt: new Date()
+                    updatedAt: new Date(),
                 },
                 include: {
                     children: {
                         include: {
                             school: true,
-                            rfidCards: true
-                        }
+                            rfidCards: true,
+                        },
                     },
                     subscriptions: {
                         where: { status: 'ACTIVE' },
                         orderBy: { createdAt: 'desc' },
-                        take: 1
+                        take: 1,
                     },
                     paymentMethods: {
                         where: { isActive: true },
-                        orderBy: { isDefault: 'desc' }
-                    }
-                }
+                        orderBy: { isDefault: 'desc' },
+                    },
+                },
             });
             return this.mapToCustomerProfile(updatedUser);
         }
         catch (error) {
-            this.logger.error('Error updating customer preferences', { userId, preferences, error });
+            this.logger.error('Error updating customer preferences', error instanceof Error ? error : undefined, { userId, preferences });
             throw error;
         }
     }
     async addChild(userId, childData) {
         try {
-            const customer = await this.db.getPrismaClient().user.findUnique({
-                where: { id: userId }
+            const customer = await this.db.client.user.findUnique({
+                where: { id: userId },
             });
             if (!customer) {
                 throw new errors_1.NotFoundError('Customer', userId);
@@ -100,7 +100,7 @@ class CustomerService {
             if (customer.role !== 'parent') {
                 throw new errors_1.BusinessLogicError('Only parent users can add children', 'role_restriction');
             }
-            const child = await this.db.getPrismaClient().user.create({
+            const child = await this.db.client.user.create({
                 data: {
                     email: `child_${Date.now()}@${childData.schoolId}.edu`,
                     firstName: childData.name,
@@ -111,42 +111,43 @@ class CustomerService {
                     passwordHash: 'temp_hash',
                     preferences: JSON.stringify({
                         dietary: childData.dietary,
-                        allergens: childData.allergens
-                    })
+                        allergens: childData.allergens,
+                    }),
                 },
                 include: {
                     school: true,
-                    rfidCards: true
-                }
+                    rfidCards: true,
+                },
             });
             return this.mapToChildProfile(child);
         }
         catch (error) {
-            this.logger.error('Error adding child to customer', { userId, childData, error });
+            this.logger.error('Error adding child to customer', error instanceof Error ? error : undefined, { userId, childData });
             throw error;
         }
     }
     async getCustomerMetrics(userId) {
         try {
-            const orders = await this.db.getPrismaClient().order.findMany({
+            const orders = await this.db.client.order.findMany({
                 where: { userId },
                 include: {
                     orderItems: {
                         include: {
-                            menuItem: true
-                        }
-                    }
-                }
+                            menuItem: true,
+                        },
+                    },
+                },
             });
             const totalOrders = orders.length;
             const totalSpent = orders.reduce((sum, order) => sum + order.totalAmount, 0);
             const averageOrderValue = totalOrders > 0 ? totalSpent / totalOrders : 0;
             const lastOrder = orders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
             const itemFrequency = {};
-            orders.forEach(order => {
-                order.orderItems.forEach(item => {
+            orders.forEach((order) => {
+                order.orderItems.forEach((item) => {
                     if (item.menuItem) {
-                        itemFrequency[item.menuItem.name] = (itemFrequency[item.menuItem.name] || 0) + item.quantity;
+                        itemFrequency[item.menuItem.name] =
+                            (itemFrequency[item.menuItem.name] || 0) + item.quantity;
                     }
                 });
             });
@@ -159,11 +160,11 @@ class CustomerService {
                 totalSpent,
                 averageOrderValue,
                 lastOrderDate: lastOrder?.createdAt,
-                favoriteItems
+                favoriteItems,
             };
         }
         catch (error) {
-            this.logger.error('Error fetching customer metrics', { userId, error });
+            this.logger.error('Error fetching customer metrics', error instanceof Error ? error : undefined, { userId });
             throw error;
         }
     }
@@ -173,79 +174,81 @@ class CustomerService {
                 ...(filters.role && { role: filters.role }),
                 ...(filters.schoolId && {
                     children: {
-                        some: { schoolId: filters.schoolId }
-                    }
+                        some: { schoolId: filters.schoolId },
+                    },
                 }),
                 ...(filters.registrationDateFrom && {
-                    createdAt: { gte: filters.registrationDateFrom }
+                    createdAt: { gte: filters.registrationDateFrom },
                 }),
                 ...(filters.registrationDateTo && {
-                    createdAt: { lte: filters.registrationDateTo }
+                    createdAt: { lte: filters.registrationDateTo },
                 }),
                 ...(filters.hasActiveSubscription && {
                     subscriptions: {
-                        some: { status: 'ACTIVE' }
-                    }
+                        some: { status: 'ACTIVE' },
+                    },
                 }),
                 ...(filters.hasChildren && {
                     children: {
-                        some: {}
-                    }
-                })
+                        some: {},
+                    },
+                }),
             };
             const [users, total] = await Promise.all([
-                this.db.getPrismaClient().user.findMany({
+                this.db.client.user.findMany({
                     where: whereClause,
                     include: {
                         children: {
                             include: {
                                 school: true,
-                                rfidCards: true
-                            }
+                                rfidCards: true,
+                            },
                         },
                         subscriptions: {
                             where: { status: 'ACTIVE' },
                             orderBy: { createdAt: 'desc' },
-                            take: 1
+                            take: 1,
                         },
                         paymentMethods: {
                             where: { isActive: true },
-                            orderBy: { isDefault: 'desc' }
-                        }
+                            orderBy: { isDefault: 'desc' },
+                        },
                     },
                     skip: offset,
                     take: limit,
-                    orderBy: { createdAt: 'desc' }
+                    orderBy: { createdAt: 'desc' },
                 }),
-                this.db.getPrismaClient().user.count({ where: whereClause })
+                this.db.client.user.count({ where: whereClause }),
             ]);
-            const customers = users.map(user => this.mapToCustomerProfile(user));
+            const customers = users.map((user) => this.mapToCustomerProfile(user));
             return { customers, total };
         }
         catch (error) {
-            this.logger.error('Error searching customers', { filters, error });
+            this.logger.error('Error searching customers', error instanceof Error ? error : undefined, {
+                filters,
+            });
             throw error;
         }
     }
     async deactivateCustomer(userId, reason) {
         try {
-            await this.db.getPrismaClient().$transaction(async (tx) => {
+            await this.db.client.$transaction(async (tx) => {
                 await tx.user.update({
                     where: { id: userId },
                     data: {
                         isActive: false,
-                        updatedAt: new Date()
-                    }
+                        updatedAt: new Date(),
+                    },
                 });
                 await tx.subscription.updateMany({
                     where: {
                         userId,
-                        status: 'ACTIVE'
+                        status: 'ACTIVE',
                     },
                     data: {
                         status: 'CANCELLED',
-                        updatedAt: new Date()
-                    }
+                        updatedAt: new Date(),
+                    },
                 });
                 await tx.auditLog.create({
                     data: {
@@ -254,14 +257,17 @@ class CustomerService {
                         entityId: userId,
                         action: 'CUSTOMER_DEACTIVATED',
                         metadata: JSON.stringify({ reason }),
-                        createdById: userId
-                    }
+                        createdById: userId,
+                    },
                 });
             });
             this.logger.info('Customer account deactivated', { userId, reason });
         }
         catch (error) {
-            this.logger.error('Error deactivating customer', { userId, reason, error });
+            this.logger.error('Error deactivating customer', error instanceof Error ? error : undefined, {
+                userId,
+                reason,
+            });
             throw error;
         }
     }
@@ -274,27 +280,29 @@ class CustomerService {
                 dietary: user.preferences?.dietary || [],
                 allergens: user.preferences?.allergens || [],
                 notifications: user.preferences?.notifications ?? true,
-                language: user.preferences?.language || 'en'
+                language: user.preferences?.language || 'en',
             },
             subscription: {
                 plan: activeSubscription?.plan || 'basic',
                 status: activeSubscription?.status?.toLowerCase() || 'cancelled',
-                renewalDate: activeSubscription?.renewalDate
+                renewalDate: activeSubscription?.renewalDate,
             },
             paymentMethods: user.paymentMethods?.map((pm) => ({
                 id: pm.id,
                 type: pm.type,
                 last4: pm.last4,
                 isDefault: pm.isDefault,
-                isActive: pm.isActive
+                isActive: pm.isActive,
             })) || [],
             children: user.children?.map((child) => this.mapToChildProfile(child)) || [],
             createdAt: user.createdAt,
-            updatedAt: user.updatedAt
+            updatedAt: user.updatedAt,
         };
     }
     mapToChildProfile(child) {
-        const preferences = typeof child.preferences === 'string' ? JSON.parse(child.preferences) : child.preferences || {};
+        const preferences = typeof child.preferences === 'string'
+            ? JSON.parse(child.preferences)
+            : child.preferences || {};
         return {
             id: child.id,
             name: child.firstName || child.name,
@@ -302,7 +310,7 @@ class CustomerService {
             grade: child.grade,
             dietary: preferences.dietary || [],
             allergens: preferences.allergens || [],
-            rfidCardId: child.rfidCards?.[0]?.id
+            rfidCardId: child.rfidCards?.[0]?.id,
         };
     }
 }

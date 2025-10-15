@@ -5,9 +5,11 @@ This directory contains a comprehensive set of authentication components specifi
 ## Components Overview
 
 ### 🔐 Enhanced School Login Form
+
 **File:** `EnhancedSchoolLoginForm.tsx`
 
 Advanced login form with school-specific features:
+
 - **School Email Validation**: Enforces @hasivu.edu email format
 - **Automatic Role Detection**: Identifies user role from email patterns
 - **Visual Role Indicators**: Shows detected role with appropriate icons and colors
@@ -16,139 +18,162 @@ Advanced login form with school-specific features:
 - **Responsive Design**: Mobile-optimized interface
 
 **Usage:**
+
 ```tsx
-import { EnhancedSchoolLoginForm } from '@/components/auth'
+import { EnhancedSchoolLoginForm } from '@/components/auth';
 
 <EnhancedSchoolLoginForm
   onSubmit={handleLogin}
   onSocialLogin={handleSocialLogin}
   showRememberMe={true}
   showSocialLogin={true}
-/>
+/>;
 ```
 
 ### 📝 Multi-Step Registration Form
+
 **File:** `MultiStepRegistrationForm.tsx`
 
 Progressive registration process with validation at each step:
 
 **Step 1: Personal Information**
+
 - Basic details (name, email, role)
 - Real-time role detection from email
 - Role-specific form adaptation
 
-**Step 2: School Information** 
+**Step 2: School Information**
+
 - School ID validation with real-time API checking
 - Class/grade information for students
 - Parent-student linking for guardians
 - Department and employee ID for staff
 
 **Step 3: Security Setup**
+
 - Strong password requirements with complexity validation
 - Profile picture upload
 - Emergency contact information
 - Terms and privacy policy acceptance
 
 **Features:**
+
 - Progress indicator with step navigation
 - Form state preservation across steps
 - Real-time validation feedback
 - Accessible form structure
 
 **Usage:**
+
 ```tsx
-import { MultiStepRegistrationForm } from '@/components/auth'
+import { MultiStepRegistrationForm } from '@/components/auth';
 
 <MultiStepRegistrationForm
   onSubmit={handleRegistration}
   onValidateSchoolId={validateSchoolId}
   onValidateParentLink={validateParentLink}
-/>
+/>;
 ```
 
 ### 🔄 Enhanced Password Recovery
+
 **File:** `EnhancedPasswordRecoveryForm.tsx`
 
 Multiple recovery methods tailored for school environment:
 
 **Email Recovery**
+
 - School domain validation (@hasivu.edu)
 - Role-aware recovery process
 - Automatic role detection and appropriate messaging
 
 **Security Questions**
+
 - Pre-defined question bank
 - Case-insensitive answer matching
 - Student-specific security questions
 
 **Parent Verification**
+
 - SMS verification to registered parent phone
 - Student account recovery through parent authentication
 - Multi-step verification process
 
 **Features:**
+
 - Tabbed interface for different recovery methods
 - Real-time email validation and role detection
 - SMS integration for parent verification
 - Comprehensive help and support links
 
 ### 🛡️ Multi-Factor Authentication
+
 **File:** `MultiFactorAuthForm.tsx`
 
 Comprehensive MFA system with multiple authentication methods:
 
 **Verification Mode**
+
 - SMS code verification with timer and resend functionality
 - Authenticator app code input
 - Emergency recovery code system
 - Multiple method switching
 
 **Setup Mode**
+
 - SMS setup with phone verification
 - Authenticator app setup with QR code generation
 - Recovery code generation and secure display
 - Method preference configuration
 
 **Emergency Mode**
+
 - Recovery code validation
 - Alternative verification methods
 - Account recovery assistance
 
 **Features:**
+
 - Dynamic QR code generation for authenticator apps
 - Secure recovery code management
 - Timer-based code resend functionality
 - Comprehensive error handling and user guidance
 
 ### ⚙️ Profile Management Form
+
 **File:** `ProfileManagementForm.tsx`
 
 Comprehensive profile and preference management:
 
 **Personal Information**
+
 - Avatar upload with preview
 - Contact information management
 - Profile data validation
 
 **Dietary Preferences**
+
 - Comprehensive dietary restriction selection
 - Allergen management with safety warnings
 - Custom dietary notes
 - Meal preference configuration (spice level, cuisine preferences)
 
 **RFID Card Management**
+
 - Multiple card linking support
 - Real-time card validation
 - Security PIN setup
 - Card status management (active/inactive)
 
 **Notification & Security Settings**
+
 - Granular notification preferences
 - Two-factor authentication toggle
 - Session timeout configuration
 - Login notification settings
 
 **Features:**
+
 - Tabbed interface for organized sections
 - Real-time RFID card validation
 - Comprehensive dietary management
@@ -157,32 +182,38 @@ Comprehensive profile and preference management:
 ## Validation Schemas
 
 ### Enhanced Schema System
+
 **File:** `schemas.ts`
 
 The validation system has been completely enhanced for school-specific requirements:
 
 **School Email Validation**
+
 - Enforces @hasivu.edu domain
 - Role pattern detection
 - Email format validation
 
 **Multi-Step Registration Schemas**
+
 - `registrationStep1Schema`: Basic information validation
 - `registrationStep2Schema`: School information and linking
 - `registrationStep3Schema`: Security and contact information
 
 **Enhanced Security Schemas**
+
 - Strong password requirements with complexity rules
 - Security questions validation
 - Parent verification schemas
 - MFA setup and verification schemas
 
 **Profile Management Schemas**
+
 - Dietary restrictions and allergen validation
 - RFID card format validation with security PIN
 - Notification preference validation
 
 **Utility Functions**
+
 - `detectRoleFromEmail()`: Automatic role detection
 - `validateSchoolEmail()`: Email domain validation
 - Constants for dietary restrictions and allergens
@@ -190,20 +221,24 @@ The validation system has been completely enhanced for school-specific requireme
 ## Key Features
 
 ### 🎯 Role Detection
+
 Automatic user role identification based on email patterns:
+
 - `student.{id}@hasivu.edu` → Student role
-- `parent.{name}@hasivu.edu` → Parent role  
+- `parent.{name}@hasivu.edu` → Parent role
 - `admin.{name}@hasivu.edu` → Administrator role
 - `kitchen.{name}@hasivu.edu` → Kitchen staff role
 - `teacher.{name}@hasivu.edu` → Teacher role
 
 ### 🏫 School Integration
+
 - School ID validation (HSV######)
 - Parent-student account linking
 - Department and employee ID management
 - Emergency contact requirements
 
 ### 🔒 Security Features
+
 - Multi-factor authentication with multiple methods
 - Strong password requirements
 - Security question system
@@ -211,18 +246,21 @@ Automatic user role identification based on email patterns:
 - Session timeout configuration
 
 ### 🍽️ Dietary Management
+
 - Comprehensive dietary restriction tracking
 - Allergen management with safety warnings
 - Meal preference configuration
 - Custom dietary notes
 
 ### 💳 RFID Integration
+
 - RFID card linking and validation
 - Security PIN setup
 - Multiple card management
 - Card status tracking
 
 ### 📱 Mobile Optimization
+
 - Responsive design for all screen sizes
 - Touch-friendly interfaces
 - Mobile-specific input types
@@ -233,6 +271,7 @@ Automatic user role identification based on email patterns:
 **File:** `auth-forms-demo.tsx`
 
 A comprehensive demo page showcasing all authentication components:
+
 - Interactive demonstrations of all forms
 - Real-time validation examples
 - Sample data and scenarios
@@ -270,28 +309,34 @@ A comprehensive demo page showcasing all authentication components:
 ## Integration Guidelines
 
 ### API Integration
+
 All components are designed to work with async handlers:
+
 ```tsx
-const handleLogin = async (data) => {
+const handleLogin = async data => {
   try {
-    const response = await authAPI.login(data)
+    const response = await authAPI.login(data);
     // Handle success
   } catch (error) {
     // Handle error
   }
-}
+};
 ```
 
 ### State Management
-Components use controlled state patterns and can integrate with global state management:
-```tsx
-import { useAuthStore } from '@/store/auth'
 
-const { login, isLoading, error } = useAuthStore()
+Components use controlled state patterns and can integrate with global state management:
+
+```tsx
+import { useAuthStore } from '@/store/auth';
+
+const { login, isLoading, error } = useAuthStore();
 ```
 
 ### Error Handling
+
 Consistent error handling across all components:
+
 ```tsx
 <AuthComponent
   onSubmit={handleSubmit}
@@ -304,7 +349,9 @@ Consistent error handling across all components:
 ## Customization
 
 ### Theme Integration
+
 Components use CSS custom properties that can be customized:
+
 ```css
 :root {
   --primary-600: #your-color;
@@ -313,9 +360,11 @@ Components use CSS custom properties that can be customized:
 ```
 
 ### Component Extension
+
 All components accept `className` props for custom styling:
+
 ```tsx
-<EnhancedSchoolLoginForm 
+<EnhancedSchoolLoginForm
   className="custom-login-form"
   // ... other props
 />
@@ -335,6 +384,7 @@ All components accept `className` props for custom styling:
 ## Support
 
 For questions or issues with these components:
+
 - Review the demo page for usage examples
 - Check the component documentation in each file
 - Contact the development team

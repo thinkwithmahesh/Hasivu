@@ -21,21 +21,22 @@ export const paymentAnalyticsDashboardHandler = async (
     logger.info('Payment analytics dashboard request received', {
       requestId: context.awsRequestId,
       headers: event.headers,
-      queryStringParameters: event.queryStringParameters
+      queryStringParameters: event.queryStringParameters,
     });
 
     // Extract query parameters
     const queryParams = event.queryStringParameters || {};
-    const period = (queryParams.period as 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly') || 'monthly';
-    const schoolId = queryParams.schoolId;
+    const period =
+      (queryParams.period as 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly') || 'monthly';
+    const { schoolId } = queryParams;
 
     // Validate period parameter
     const validPeriods = ['daily', 'weekly', 'monthly', 'quarterly', 'yearly'];
     if (!validPeriods.includes(period)) {
       return createErrorResponse(
+        'INVALID_PERIOD',
         `Invalid period. Valid periods: ${validPeriods.join(', ')}`,
-        400,
-        'INVALID_PERIOD'
+        400
       );
     }
 
@@ -49,7 +50,7 @@ export const paymentAnalyticsDashboardHandler = async (
       requestId: context.awsRequestId,
       period,
       schoolId: schoolId || 'all',
-      metricsCount: Object.keys(dashboardData.trends).length
+      metricsCount: Object.keys(dashboardData.trends).length,
     });
 
     return createSuccessResponse({
@@ -59,17 +60,21 @@ export const paymentAnalyticsDashboardHandler = async (
           period,
           schoolId: schoolId || 'all',
           generatedAt: new Date().toISOString(),
-          requestId: context.awsRequestId
-        }
+          requestId: context.awsRequestId,
+        },
       },
-      message: 'Payment analytics dashboard data retrieved successfully'
+      message: 'Payment analytics dashboard data retrieved successfully',
     });
-
-  } catch (error) {
-    logger.error('Error in payment analytics dashboard handler', error, {
-      requestId: context.awsRequestId,
-      event: JSON.stringify(event)
-    });
+  } catch (error: unknown) {
+    logger.error(
+      'Error in payment analytics dashboard handler',
+      error instanceof Error ? error : undefined,
+      {
+        errorMessage: error instanceof Error ? error.message : String(error),
+        requestId: context.awsRequestId,
+        event: JSON.stringify(event),
+      }
+    );
 
     return handleError(error);
   }

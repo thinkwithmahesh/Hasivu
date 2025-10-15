@@ -14,59 +14,53 @@ const ComplianceCheckRequestSchema = zod_1.z.object({
     entityType: zod_1.z.enum(['school', 'meal_plan', 'menu_item', 'student_profile']),
     complianceFrameworks: zod_1.z.array(zod_1.z.string()).min(1),
     reportLevel: zod_1.z.enum(['summary', 'detailed', 'audit']).default('summary'),
-    userContext: zod_1.z.object({
-        ageGroups: zod_1.z.array(zod_1.z.object({
+    userContext: zod_1.z
+        .object({
+        ageGroups: zod_1.z
+            .array(zod_1.z.object({
             min: zod_1.z.number().min(0).max(18),
-            max: zod_1.z.number().min(0).max(18)
-        })).optional(),
+            max: zod_1.z.number().min(0).max(18),
+        }))
+            .optional(),
         regions: zod_1.z.array(zod_1.z.string()).optional(),
-        institutions: zod_1.z.array(zod_1.z.string()).optional()
-    }).optional(),
+        institutions: zod_1.z.array(zod_1.z.string()).optional(),
+    })
+        .optional(),
     includeRecommendations: zod_1.z.boolean().default(true),
-    includeAIInsights: zod_1.z.boolean().default(true)
+    includeAIInsights: zod_1.z.boolean().default(true),
 });
 async function loadComplianceFrameworks(frameworkIds) {
-    try {
-        const frameworks = [];
-        for (const frameworkId of frameworkIds) {
+    const frameworks = [];
+    for (const frameworkId of frameworkIds) {
+        try {
+            const result = await dynamoDbClient.send(new lib_dynamodb_1.GetCommand({
+                TableName: process.env.COMPLIANCE_FRAMEWORKS_TABLE_NAME || 'ComplianceFrameworks',
+                Key: { frameworkId },
+            }));
+            if (result.Item) {
+                frameworks.push(result.Item);
+                continue;
+            }
             try {
-                const result = await dynamoDbClient.send(new lib_dynamodb_1.GetCommand({
-                    TableName: process.env.COMPLIANCE_FRAMEWORKS_TABLE_NAME || 'ComplianceFrameworks',
-                    Key: { frameworkId }
+                const s3Response = await s3Client.send(new client_s3_1.GetObjectCommand({
+                    Bucket: process.env.COMPLIANCE_BUCKET_NAME || 'hasivu-compliance',
+                    Key: `frameworks/${frameworkId}.json`,
                 }));
-                if (result.Item) {
-                    frameworks.push(result.Item);
-                    console.log(`Loaded framework from DynamoDB: ${frameworkId}`);
-                    continue;
-                }
-                try {
-                    const s3Response = await s3Client.send(new client_s3_1.GetObjectCommand({
-                        Bucket: process.env.COMPLIANCE_BUCKET_NAME || 'hasivu-compliance',
-                        Key: `frameworks/${frameworkId}.json`
-                    }));
-                    if (s3Response.Body) {
-                        const frameworkData = JSON.parse(await s3Response.Body.transformToString());
-                        frameworks.push(frameworkData);
-                        console.log(`Loaded framework from S3: ${frameworkId}`);
-                    }
-                }
-                catch (s3Error) {
-                    console.warn(`Framework ${frameworkId} not found in S3:`, s3Error);
+                if (s3Response.Body) {
+                    const frameworkData = JSON.parse(await s3Response.Body.transformToString());
+                    frameworks.push(frameworkData);
                 }
             }
-            catch (error) {
-                console.error(`Error loading framework ${frameworkId}:`, error);
+            catch (s3Error) {
             }
         }
-        if (frameworks.length === 0) {
-            frameworks.push(createDefaultUSDAFramework());
+        catch (error) {
         }
-        return frameworks;
     }
-    catch (error) {
-        console.error('Error loading compliance frameworks:', error);
-        throw error;
+    if (frameworks.length === 0) {
+        frameworks.push(createDefaultUSDAFramework());
     }
+    return frameworks;
 }
 function createDefaultUSDAFramework() {
     return {
@@ -89,11 +83,11 @@ function createDefaultUSDAFramework() {
                 severity: 'critical',
                 measurementCriteria: [
                     { metric: 'daily_calories', threshold: 550, operator: '>=', unit: 'kcal' },
-                    { metric: 'daily_calories', threshold: 650, operator: '<=', unit: 'kcal' }
+                    { metric: 'daily_calories', threshold: 650, operator: '<=', unit: 'kcal' },
                 ],
                 applicableContexts: ['K-5'],
                 evidenceRequired: ['meal_nutritional_analysis', 'serving_size_verification'],
-                penaltyDescription: 'Loss of federal funding eligibility'
+                penaltyDescription: 'Loss of federal funding eligibility',
             },
             {
                 requirementId: 'usda_calories_6_12',
@@ -103,10 +97,10 @@ function createDefaultUSDAFramework() {
                 severity: 'critical',
                 measurementCriteria: [
                     { metric: 'daily_calories', threshold: 600, operator: '>=', unit: 'kcal' },
-                    { metric: 'daily_calories', threshold: 700, operator: '<=', unit: 'kcal' }
+                    { metric: 'daily_calories', threshold: 700, operator: '<=', unit: 'kcal' },
                 ],
                 applicableContexts: ['6-8', '9-12'],
-                evidenceRequired: ['meal_nutritional_analysis', 'serving_size_verification']
+                evidenceRequired: ['meal_nutritional_analysis', 'serving_size_verification'],
             },
             {
                 requirementId: 'usda_sodium_limit',
@@ -115,10 +109,10 @@ function createDefaultUSDAFramework() {
                 category: 'sodium',
                 severity: 'high',
                 measurementCriteria: [
-                    { metric: 'meal_sodium', threshold: 1230, operator: '<=', unit: 'mg' }
+                    { metric: 'meal_sodium', threshold: 1230, operator: '<=', unit: 'mg' },
                 ],
                 applicableContexts: ['all_grades'],
-                evidenceRequired: ['ingredient_sodium_analysis']
+                evidenceRequired: ['ingredient_sodium_analysis'],
             },
             {
                 requirementId: 'usda_whole_grains',
@@ -127,46 +121,40 @@ function createDefaultUSDAFramework() {
                 category: 'food_groups',
                 severity: 'medium',
                 measurementCriteria: [
-                    { metric: 'whole_grain_percentage', threshold: 50, operator: '>=', unit: 'percent' }
+                    { metric: 'whole_grain_percentage', threshold: 50, operator: '>=', unit: 'percent' },
                 ],
                 applicableContexts: ['all_grades'],
-                evidenceRequired: ['ingredient_verification', 'supplier_certification']
-            }
-        ]
+                evidenceRequired: ['ingredient_verification', 'supplier_certification'],
+            },
+        ],
     };
 }
 async function fetchEntityData(entityId, entityType) {
-    try {
-        let tableName;
-        switch (entityType) {
-            case 'school':
-                tableName = process.env.SCHOOLS_TABLE_NAME || 'Schools';
-                break;
-            case 'meal_plan':
-                tableName = process.env.MEAL_PLANS_TABLE_NAME || 'MealPlans';
-                break;
-            case 'menu_item':
-                tableName = process.env.MENU_ITEMS_TABLE_NAME || 'MenuItems';
-                break;
-            case 'student_profile':
-                tableName = process.env.STUDENT_PROFILES_TABLE_NAME || 'StudentProfiles';
-                break;
-            default:
-                throw new Error(`Unknown entity type: ${entityType}`);
-        }
-        const result = await dynamoDbClient.send(new lib_dynamodb_1.GetCommand({
-            TableName: tableName,
-            Key: { [`${entityType}Id`]: entityId }
-        }));
-        if (!result.Item) {
-            throw new Error(`Entity not found: ${entityId}`);
-        }
-        return result.Item;
+    let tableName;
+    switch (entityType) {
+        case 'school':
+            tableName = process.env.SCHOOLS_TABLE_NAME || 'Schools';
+            break;
+        case 'meal_plan':
+            tableName = process.env.MEAL_PLANS_TABLE_NAME || 'MealPlans';
+            break;
+        case 'menu_item':
+            tableName = process.env.MENU_ITEMS_TABLE_NAME || 'MenuItems';
+            break;
+        case 'student_profile':
+            tableName = process.env.STUDENT_PROFILES_TABLE_NAME || 'StudentProfiles';
+            break;
+        default:
+            throw new Error(`Unknown entity type: ${entityType}`);
     }
-    catch (error) {
-        console.error(`Error fetching entity ${entityId}:`, error);
-        throw error;
+    const result = await dynamoDbClient.send(new lib_dynamodb_1.GetCommand({
+        TableName: tableName,
+        Key: { [`${entityType}Id`]: entityId },
+    }));
+    if (!result.Item) {
+        throw new Error(`Entity not found: ${entityId}`);
     }
+    return result.Item;
 }
 async function generateAIInsights(checkResult, frameworks) {
     try {
@@ -178,10 +166,14 @@ Violations: ${checkResult.violations.length}
 Critical Violations: ${checkResult.overallCompliance.criticalViolations}
 
 Framework Results:
-${checkResult.frameworkResults.map(fr => `- ${fr.frameworkName}: ${fr.complianceScore}% (${fr.status})`).join('\n')}
+${checkResult.frameworkResults
+            .map(fr => `- ${fr.frameworkName}: ${fr.complianceScore}% (${fr.status})`)
+            .join('\n')}
 
 Violations:
-${checkResult.violations.map(v => `- ${v.severity.toUpperCase()}: ${v.description} (${v.actualValue} vs ${v.expectedValue})`).join('\n')}
+${checkResult.violations
+            .map(v => `- ${v.severity.toUpperCase()}: ${v.description} (${v.actualValue} vs ${v.expectedValue})`)
+            .join('\n')}
 
 Please provide:
 1. Certification eligibility assessment
@@ -197,35 +189,35 @@ Format as structured JSON with specific, actionable insights.`;
             body: JSON.stringify({
                 anthropic_version: 'bedrock-2023-05-31',
                 max_tokens: 2000,
-                messages: [{
+                messages: [
+                    {
                         role: 'user',
-                        content: prompt
-                    }]
-            })
+                        content: prompt,
+                    },
+                ],
+            }),
         });
         const response = await bedrockClient.send(command);
         const responseBody = JSON.parse(new TextDecoder().decode(response.body));
-        console.log(`AI compliance insights generated for ${checkResult.checkId}`);
         return JSON.parse(responseBody.content[0].text);
     }
     catch (error) {
-        console.error('Error generating AI insights:', error);
         return {
             certificationStatus: {
                 eligible: checkResult.overallCompliance.criticalViolations === 0,
                 requirements: ['Manual review required due to AI analysis failure'],
-                timeline: '30_days'
+                timeline: '30_days',
             },
             actionPlan: {
                 immediate: ['Review compliance violations manually'],
                 shortTerm: ['Implement corrective measures'],
-                longTerm: ['Establish monitoring procedures']
+                longTerm: ['Establish monitoring procedures'],
             },
             impact: {
                 risk: checkResult.overallCompliance.criticalViolations > 0 ? 'high' : 'medium',
                 consequences: ['Potential regulatory action'],
-                benefits: ['Improved compliance posture']
-            }
+                benefits: ['Improved compliance posture'],
+            },
         };
     }
 }
@@ -240,8 +232,11 @@ function generateRecommendations(violations) {
     }, {});
     Object.entries(violationsByCategory).forEach(([category, categoryViolations]) => {
         const criticalCount = categoryViolations.filter(v => v.severity === 'critical').length;
-        const priority = criticalCount > 0 ? 'critical' :
-            categoryViolations.filter(v => v.severity === 'high').length > 0 ? 'high' : 'medium';
+        const priority = criticalCount > 0
+            ? 'critical'
+            : categoryViolations.filter(v => v.severity === 'high').length > 0
+                ? 'high'
+                : 'medium';
         recommendations.push({
             recommendationId: `rec_nutritional_${Date.now()}_${category}`,
             priority: priority,
@@ -254,14 +249,16 @@ function generateRecommendations(violations) {
                 `Audit current ${category} practices`,
                 `Develop ${category} improvement plan`,
                 `Implement changes with monitoring`,
-                `Verify compliance through testing`
+                `Verify compliance through testing`,
             ],
             timeline: criticalCount > 0 ? '30_days' : '90_days',
             resources: ['nutrition consultant', 'compliance training', 'monitoring tools'],
-            successMetrics: [`${category} compliance rate >95%`, 'zero critical violations']
+            successMetrics: [`${category} compliance rate >95%`, 'zero critical violations'],
         });
     });
-    violations.filter(v => v.severity === 'critical').forEach(violation => {
+    violations
+        .filter(v => v.severity === 'critical')
+        .forEach(violation => {
         recommendations.push({
             recommendationId: `rec_${violation.violationId}`,
             priority: 'critical',
@@ -273,7 +270,7 @@ function generateRecommendations(violations) {
             implementationSteps: violation.remediation,
             timeline: violation.timeline,
             resources: ['immediate intervention', 'expert consultation'],
-            successMetrics: ['violation eliminated', 'compliance restored']
+            successMetrics: ['violation eliminated', 'compliance restored'],
         });
     });
     return recommendations;
@@ -319,7 +316,7 @@ function performComplianceCheck(entityData, requirement, checkId) {
                 deviation,
                 deviationPercent,
                 metric: criteria.metric,
-                reason: passed ? 'compliant' : 'threshold_exceeded'
+                reason: passed ? 'compliant' : 'threshold_exceeded',
             };
         });
         const allPassed = results.every(r => r.passed);
@@ -328,7 +325,7 @@ function performComplianceCheck(entityData, requirement, checkId) {
             return {
                 status: 'pass',
                 actualValue: results[0]?.actualValue,
-                deviation: 0
+                deviation: 0,
             };
         }
         const failedResult = results.find(r => !r.passed);
@@ -343,23 +340,27 @@ function performComplianceCheck(entityData, requirement, checkId) {
                 actualValue: failedResult.actualValue || 0,
                 expectedValue: failedResult.expectedValue || 0,
                 deviation: failedResult.deviation || 0,
-                impact: requirement.severity === 'critical' ? 'Regulatory non-compliance risk' : 'Performance concern',
+                impact: requirement.severity === 'critical'
+                    ? 'Regulatory non-compliance risk'
+                    : 'Performance concern',
                 affectedEntities: [entityData.id || 'unknown'],
-                remediation: [`Adjust ${requirement.name} to meet requirements`, 'Implement monitoring procedures'],
+                remediation: [
+                    `Adjust ${requirement.name} to meet requirements`,
+                    'Implement monitoring procedures',
+                ],
                 timeline: requirement.severity === 'critical' ? '7_days' : '30_days',
-                estimatedCost: requirement.severity === 'critical' ? 5000 : 2000
+                estimatedCost: requirement.severity === 'critical' ? 5000 : 2000,
             };
             return {
                 status: criticalFailed ? 'fail' : 'warning',
                 violation,
                 actualValue: failedResult.actualValue,
-                deviation: failedResult.deviationPercent
+                deviation: failedResult.deviationPercent,
             };
         }
         return { status: 'warning' };
     }
     catch (error) {
-        console.error(`Error performing compliance check for ${requirement.requirementId}:`, error);
         return { status: 'not_applicable' };
     }
 }
@@ -387,7 +388,7 @@ function extractMetrics(entityData, requirement) {
             metrics.serving_size_dairy = entityData.servingSizes.dairy || 0;
         }
         if (entityData.demographicInfo) {
-            const age = entityData.demographicInfo.age;
+            const { age } = entityData.demographicInfo;
             if (age) {
                 const ageMultiplier = age < 6 ? 0.8 : age < 12 ? 1.0 : 1.2;
                 Object.keys(metrics).forEach(key => {
@@ -400,7 +401,6 @@ function extractMetrics(entityData, requirement) {
         return metrics;
     }
     catch (error) {
-        console.error('Error extracting metrics:', error);
         return {};
     }
 }
@@ -411,10 +411,12 @@ function calculateComplianceScore(frameworkResults) {
     const totalScore = frameworkResults.reduce((sum, result) => sum + result.complianceScore, 0);
     const averageScore = totalScore / frameworkResults.length;
     const criticalViolations = frameworkResults.reduce((sum, result) => {
-        return sum + result.requirementResults.filter(rr => rr.status === 'fail' && rr.name.toLowerCase().includes('critical')).length;
+        return (sum +
+            result.requirementResults.filter(rr => rr.status === 'fail' && rr.name.toLowerCase().includes('critical')).length);
     }, 0);
     const totalViolations = frameworkResults.reduce((sum, result) => {
-        return sum + result.requirementResults.filter(rr => rr.status === 'fail' || rr.status === 'warning').length;
+        return (sum +
+            result.requirementResults.filter(rr => rr.status === 'fail' || rr.status === 'warning').length);
     }, 0);
     let status;
     if (criticalViolations > 0) {
@@ -433,26 +435,18 @@ function calculateComplianceScore(frameworkResults) {
         score: Math.round(averageScore * 100) / 100,
         status,
         criticalViolations,
-        totalViolations
+        totalViolations,
     };
 }
 async function storeComplianceResults(results) {
-    try {
-        await dynamoDbClient.send(new lib_dynamodb_1.PutCommand({
-            TableName: process.env.COMPLIANCE_RESULTS_TABLE_NAME || 'ComplianceCheckResults',
-            Item: {
-                checkId: results.checkId,
-                ...results,
-                createdAt: new Date().toISOString(),
-                ttl: Math.floor(Date.now() / 1000) + (365 * 24 * 60 * 60)
-            }
-        }));
-        console.log(`Stored compliance check results: ${results.checkId}`);
-    }
-    catch (error) {
-        console.error('Error storing compliance results:', error);
-        throw error;
-    }
+    await dynamoDbClient.send(new lib_dynamodb_1.PutCommand({
+        TableName: process.env.COMPLIANCE_RESULTS_TABLE_NAME || 'ComplianceCheckResults',
+        Item: {
+            ...results,
+            createdAt: new Date().toISOString(),
+            ttl: Math.floor(Date.now() / 1000) + 365 * 24 * 60 * 60,
+        },
+    }));
 }
 function generateReportSummary(results) {
     return `Compliance Check Summary:
@@ -464,25 +458,23 @@ function generateReportSummary(results) {
 • Check Completed: ${results.timestamp}`;
 }
 const handler = async (event) => {
-    console.log('Nutrition Compliance Checker - Event received:', JSON.stringify(event, null, 2));
     try {
         const body = event.body ? JSON.parse(event.body) : {};
         const validatedData = ComplianceCheckRequestSchema.parse(body);
         const checkId = `comp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        console.log(`Starting compliance check: ${checkId}`);
         const frameworks = await loadComplianceFrameworks(validatedData.complianceFrameworks);
         if (frameworks.length === 0) {
             return {
                 statusCode: 404,
                 headers: {
                     'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*'
+                    'Access-Control-Allow-Origin': '*',
                 },
                 body: JSON.stringify({
                     success: false,
                     error: 'No compliance frameworks found',
-                    checkId
-                })
+                    checkId,
+                }),
             };
         }
         const entityData = await fetchEntityData(validatedData.entityId, validatedData.entityType);
@@ -513,7 +505,7 @@ const handler = async (event) => {
                     requirementResults.push({
                         requirementId: requirement.requirementId,
                         name: requirement.name,
-                        status: 'not_applicable'
+                        status: 'not_applicable',
                     });
                     continue;
                 }
@@ -529,7 +521,7 @@ const handler = async (event) => {
                     actualValue: checkResult.actualValue,
                     expectedValue: requirement.measurementCriteria[0]?.threshold,
                     deviation: checkResult.deviation,
-                    evidence: requirement.evidenceRequired
+                    evidence: requirement.evidenceRequired,
                 });
                 if (checkResult.status !== 'not_applicable') {
                     totalRequirements++;
@@ -550,13 +542,15 @@ const handler = async (event) => {
                 status: frameworkStatus,
                 requirementResults,
                 lastChecked: new Date().toISOString(),
-                validUntil: new Date(Date.now() + (90 * 24 * 60 * 60 * 1000)).toISOString()
+                validUntil: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
             });
         }
         const overallCompliance = calculateComplianceScore(frameworkResults);
-        const recommendations = validatedData.includeRecommendations ?
-            generateRecommendations(violations) : [];
-        const entityResults = [{
+        const recommendations = validatedData.includeRecommendations
+            ? generateRecommendations(violations)
+            : [];
+        const entityResults = [
+            {
                 entityId: validatedData.entityId,
                 entityType: validatedData.entityType,
                 complianceData: {
@@ -564,25 +558,26 @@ const handler = async (event) => {
                     servingSizes: entityData.servingSizes || {},
                     ingredients: entityData.ingredients || [],
                     allergens: entityData.allergens || [],
-                    demographicData: entityData.demographicInfo || {}
+                    demographicData: entityData.demographicInfo || {},
                 },
                 measurementResults: Object.entries(extractMetrics(entityData, frameworks[0].requirements[0])).map(([metric, value]) => ({
                     metric,
                     value,
                     unit: 'various',
-                    status: 'within_range'
+                    status: 'within_range',
                 })),
                 conditions: {
                     specialDietaryRequirements: entityData.specialDietaryRequirements || [],
                     healthConditions: entityData.healthConditions || [],
-                    culturalRestrictions: entityData.culturalRestrictions || []
+                    culturalRestrictions: entityData.culturalRestrictions || [],
                 },
                 validity: {
                     dataFreshness: new Date().toISOString(),
                     lastVerified: new Date().toISOString(),
-                    confidenceLevel: 0.95
-                }
-            }];
+                    confidenceLevel: 0.95,
+                },
+            },
+        ];
         const results = {
             checkId,
             timestamp: new Date().toISOString(),
@@ -596,20 +591,20 @@ const handler = async (event) => {
             aiInsights: {
                 certificationStatus: { eligible: false, requirements: [], timeline: '' },
                 actionPlan: { immediate: [], shortTerm: [], longTerm: [] },
-                impact: { risk: 'medium', consequences: [], benefits: [] }
+                impact: { risk: 'medium', consequences: [], benefits: [] },
             },
             metadata: {
                 processingTime: Date.now() - startTime,
                 dataQuality: 0.9,
-                confidenceScore: 0.85
-            }
+                confidenceScore: 0.85,
+            },
         };
-        if (validatedData.includeAIInsights && (violations.length > 0 || overallCompliance.score < 90)) {
+        if (validatedData.includeAIInsights &&
+            (violations.length > 0 || overallCompliance.score < 90)) {
             try {
                 results.aiInsights = await generateAIInsights(results, frameworks);
             }
             catch (error) {
-                console.warn('AI insights generation failed:', error);
             }
         }
         await storeComplianceResults(results);
@@ -620,13 +615,13 @@ const handler = async (event) => {
                 overallCompliance: results.overallCompliance,
                 criticalViolations: violations.filter(v => v.severity === 'critical'),
                 topRecommendations: recommendations.filter(r => r.priority === 'critical').slice(0, 3),
-                summary: generateReportSummary(results)
+                summary: generateReportSummary(results),
             };
         }
         else if (validatedData.reportLevel === 'detailed') {
             responseData = {
                 ...results,
-                summary: generateReportSummary(results)
+                summary: generateReportSummary(results),
             };
         }
         else {
@@ -636,16 +631,16 @@ const handler = async (event) => {
                     frameworks: frameworks.map(f => ({ id: f.frameworkId, version: f.version })),
                     checkParameters: validatedData,
                     dataQuality: results.metadata.dataQuality,
-                    processingMetrics: results.metadata
+                    processingMetrics: results.metadata,
                 },
-                summary: generateReportSummary(results)
+                summary: generateReportSummary(results),
             };
         }
         return {
             statusCode: 200,
             headers: {
                 'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
+                'Access-Control-Allow-Origin': '*',
             },
             body: JSON.stringify({
                 success: true,
@@ -654,38 +649,37 @@ const handler = async (event) => {
                     checkId: results.checkId,
                     timestamp: results.timestamp,
                     processingTime: results.metadata.processingTime,
-                    frameworksChecked: frameworkResults.length
-                }
-            })
+                    frameworksChecked: frameworkResults.length,
+                },
+            }),
         };
     }
     catch (error) {
-        console.error('Error in nutrition compliance checker:', error);
         if (error instanceof zod_1.z.ZodError) {
             return {
                 statusCode: 400,
                 headers: {
                     'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*'
+                    'Access-Control-Allow-Origin': '*',
                 },
                 body: JSON.stringify({
                     success: false,
                     error: 'Invalid request data',
-                    details: error.issues
-                })
+                    details: error.issues,
+                }),
             };
         }
         return {
             statusCode: 500,
             headers: {
                 'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
+                'Access-Control-Allow-Origin': '*',
             },
             body: JSON.stringify({
                 success: false,
                 error: 'Internal server error',
-                message: error instanceof Error ? error.message : 'Unknown error'
-            })
+                message: error instanceof Error ? error.message : 'Unknown error',
+            }),
         };
     }
 };

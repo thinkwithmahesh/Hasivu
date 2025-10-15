@@ -1,9 +1,13 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.GracefulDegradationService = exports.DegradationStrategy = exports.ServiceStatus = void 0;
 const logger_1 = require("@/utils/logger");
 const circuit_breaker_service_1 = require("@/services/circuit-breaker.service");
 const redis_service_1 = require("@/services/redis.service");
+const axios_1 = __importDefault(require("axios"));
 var ServiceStatus;
 (function (ServiceStatus) {
     ServiceStatus["HEALTHY"] = "healthy";
@@ -174,7 +178,7 @@ class GracefulDegradationService {
                 case 'external-api':
                     isHealthy = await this.checkExternalApiHealth(config.fallbackEndpoint);
                     break;
-                default:
+                default: {
                     const circuitBreaker = circuit_breaker_service_1.CircuitBreakerRegistry.get(serviceName);
                     if (circuitBreaker) {
                         const stats = circuitBreaker.getStats();
@@ -183,6 +187,7 @@ class GracefulDegradationService {
                     else {
                         isHealthy = true;
                     }
+                }
             }
             responseTime = Date.now() - startTime;
             this.updateHealthStatus(serviceName, isHealthy, responseTime);
@@ -213,8 +218,7 @@ class GracefulDegradationService {
         if (!endpoint)
             return true;
         try {
-            const axios = require('axios');
-            const response = await axios.get(endpoint, { timeout: 5000 });
+            const response = await axios_1.default.get(endpoint, { timeout: 5000 });
             return response.status >= 200 && response.status < 300;
         }
         catch (error) {

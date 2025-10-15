@@ -62,14 +62,10 @@ export default function App(): JSX.Element {
         });
 
         // Initialize services
-        await Promise.all([
-          AuthService.initialize(),
-          NotificationService.initialize(),
-        ]);
+        await Promise.all([AuthService.initialize(), NotificationService.initialize()]);
 
         // Simulate minimum loading time for better UX
         await new Promise(resolve => setTimeout(resolve, 2000));
-
       } catch (error) {
         console.error('App initialization error:', error);
       } finally {
@@ -98,8 +94,8 @@ export default function App(): JSX.Element {
         <PersistGate loading={<LoadingScreen message="Loading..." />} persistor={persistor}>
           <PaperProvider theme={theme}>
             <SafeAreaProvider onLayout={onLayoutRootView}>
-              <StatusBar 
-                barStyle="light-content" 
+              <StatusBar
+                barStyle="light-content"
                 backgroundColor={theme.colors.primary}
                 translucent={false}
               />

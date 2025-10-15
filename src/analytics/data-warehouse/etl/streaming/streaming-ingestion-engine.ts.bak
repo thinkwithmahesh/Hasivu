@@ -1,0 +1,289 @@
+/**
+ * Streaming Data Ingestion Engine
+ * 
+ * Real-time data ingestion with Apache Kafka integration
+ * Handles high-throughput streaming data processing
+ * 
+ * @author HASIVU Development Team
+ * @version 1.0.0
+ */
+
+import { EventEmitter } from 'events';
+import { logger } from '../../../../shared/utils/logger';
+
+export interface StreamingConfig {
+  enabled: boolean;
+  kafkaBrokers?: string[];
+  topicPrefix?: string;
+  consumerGroupId?: string;
+  batchSize?: number;
+  flushInterval?: number;
+  retryAttempts?: number;
+  compressionType?: 'gzip' | 'snappy' | 'lz4' | 'zstd';
+  maxMemoryUsage?: number;
+}
+
+export interface StreamingMessage {
+  key: string;
+  value: any;
+  topic: string;
+  partition: number;
+  offset: number;
+  timestamp: Date;
+  headers?: Record<string, string>;
+}
+
+export class StreamingIngestionEngine extends EventEmitter {
+  private isInitialized = false;
+  private isRunning = false;
+  private consumers = new Map<string, any>();
+  private producers = new Map<string, any>();
+  private messageBuffer = new Map<string, StreamingMessage[]>();
+  private flushTimers = new Map<string, NodeJS.Timeout>();
+  
+  constructor(private readonly config: StreamingConfig) {
+    super();
+    logger.info('StreamingIngestionEngine initialized', { 
+      enabled: config.enabled,
+      batchSize: config.batchSize || 1000 
+    });
+  }
+  
+  async initialize(): Promise<void> {
+    if (this.isInitialized || !this.config.enabled) {
+      return;
+    }
+    
+    try {
+      logger.info('Initializing Streaming Ingestion Engine...');
+      
+      // Initialize Kafka connections (mock for now)
+      await this.initializeKafkaConnections();
+      
+      this.isInitialized = true;
+      logger.info('Streaming Ingestion Engine initialized successfully');
+      
+    } catch (error: unknown) {
+      logger.error('Failed to initialize Streaming Ingestion Engine', { error });
+      throw error;
+    }
+  }
+  
+  async shutdown(): Promise<void> {
+    if (!this.isInitialized) return;
+    
+    try {
+      logger.info('Shutting down Streaming Ingestion Engine...');
+      
+      // Stop all consumers and producers
+      for (const [topic, consumer] of this.consumers) {
+        await this.stopConsumer(topic);
+      }
+      
+      for (const [topic, producer] of this.producers) {
+        await this.stopProducer(topic);
+      }
+      
+      // Clear all timers
+      for (const timer of this.flushTimers.values()) {
+        clearTimeout(timer);
+      }
+      
+      this.isInitialized = false;
+      this.isRunning = false;
+      
+      logger.info('Streaming Ingestion Engine shut down successfully');
+      
+    } catch (error: unknown) {
+      logger.error('Error shutting down Streaming Ingestion Engine', { error });
+      throw error;
+    }
+  }
+  
+  async startConsumer(topic: string, handler: (message: StreamingMessage) => Promise<void>): Promise<void> {
+    if (!this.isInitialized) {
+      throw new Error('StreamingIngestionEngine not initialized');
+    }
+    
+    logger.info('Starting consumer for topic', { topic });
+    
+    // Mock consumer implementation
+    const consumer = {
+      topic,
+      handler,
+      isRunning: true,
+      messageCount: 0
+    };
+    
+    this.consumers.set(topic, consumer);
+    
+    // Setup buffer flushing
+    this.setupBufferFlushing(topic);
+    
+    logger.info('Consumer started successfully', { topic });
+  }
+  
+  async stopConsumer(topic: string): Promise<void> {
+    const consumer = this.consumers.get(topic);
+    if (!consumer) return;
+    
+    logger.info('Stopping consumer for topic', { topic });
+    
+    consumer.isRunning = false;
+    this.consumers.delete(topic);
+    
+    // Clear flush timer
+    const timer = this.flushTimers.get(topic);
+    if (timer) {
+      clearTimeout(timer);
+      this.flushTimers.delete(topic);
+    }
+    
+    // Flush remaining messages
+    await this.flushBuffer(topic);
+    
+    logger.info('Consumer stopped successfully', { topic });
+  }
+  
+  async produceMessage(topic: string, message: any, key?: string): Promise<void> {
+    if (!this.isInitialized) {
+      throw new Error('StreamingIngestionEngine not initialized');
+    }
+    
+    const producer = this.getOrCreateProducer(topic);
+    
+    // Mock message production
+    const streamingMessage: StreamingMessage = {
+      key: key || Date.now().toString(),
+      value: message,
+      topic,
+      partition: 0,
+      offset: producer.messageCount++,
+      timestamp: new Date(),
+      headers: {}
+    };
+    
+    // Add to buffer
+    this.addToBuffer(topic, streamingMessage);
+    
+    logger.debug('Message produced to topic', { topic, key });
+  }
+  
+  async getConsumerStats(topic: string): Promise<any> {
+    const consumer = this.consumers.get(topic);
+    if (!consumer) {
+      return null;
+    }
+    
+    return {
+      topic,
+      isRunning: consumer.isRunning,
+      messageCount: consumer.messageCount,
+      bufferSize: this.messageBuffer.get(topic)?.length || 0,
+      lastProcessedAt: new Date()
+    };
+  }
+  
+  async getProducerStats(topic: string): Promise<any> {
+    const producer = this.producers.get(topic);
+    if (!producer) {
+      return null;
+    }
+    
+    return {
+      topic,
+      messageCount: producer.messageCount,
+      isHealthy: true,
+      lastProducedAt: new Date()
+    };
+  }
+  
+  private async initializeKafkaConnections(): Promise<void> {
+    // Mock Kafka initialization
+    logger.info('Kafka connections initialized (mock)');
+  }
+  
+  private getOrCreateProducer(topic: string): any {
+    let producer = this.producers.get(topic);
+    if (!producer) {
+      producer = {
+        topic,
+        messageCount: 0,
+        isHealthy: true
+      };
+      this.producers.set(topic, producer);
+    }
+    return producer;
+  }
+  
+  private addToBuffer(topic: string, message: StreamingMessage): void {
+    let buffer = this.messageBuffer.get(topic);
+    if (!buffer) {
+      buffer = [];
+      this.messageBuffer.set(topic, buffer);
+    }
+    
+    buffer.push(message);
+    
+    // Auto-flush if buffer is full
+    if (buffer.length >= (this.config.batchSize || 1000)) {
+      this.flushBuffer(topic);
+    }
+  }
+  
+  private setupBufferFlushing(topic: string): void {
+    const flushInterval = this.config.flushInterval || 5000; // 5 seconds
+    
+    const timer = setInterval(async () => {
+      await this.flushBuffer(topic);
+    }, flushInterval);
+    
+    this.flushTimers.set(topic, timer);
+  }
+  
+  private async flushBuffer(topic: string): Promise<void> {
+    const buffer = this.messageBuffer.get(topic);
+    if (!buffer || buffer.length === 0) return;
+    
+    const consumer = this.consumers.get(topic);
+    if (!consumer || !consumer.handler) return;
+    
+    const messages = buffer.splice(0);
+    
+    try {
+      for (const message of messages) {
+        await consumer.handler(message);
+        consumer.messageCount++;
+      }
+      
+      logger.debug('Buffer flushed for topic', { topic, messageCount: messages.length });
+      
+    } catch (error: unknown) {
+      logger.error('Error flushing buffer for topic', { topic, error });
+      // Re-add failed messages to buffer for retry
+      buffer.unshift(...messages);
+    }
+  }
+  
+  private async stopProducer(topic: string): Promise<void> {
+    const producer = this.producers.get(topic);
+    if (!producer) return;
+    
+    logger.info('Stopping producer for topic', { topic });
+    this.producers.delete(topic);
+  }
+  
+  async registerPipeline(pipeline: any): Promise<void> {
+    logger.info('Registering pipeline with streaming engine', { pipelineId: pipeline.id });
+    // Implementation for pipeline registration
+  }
+  
+  async getHealthStatus(): Promise<any> {
+    return {
+      status: 'healthy',
+      isRunning: this.isInitialized,
+      activeConsumers: this.consumers.size,
+      activeProducers: this.producers.size
+    };
+  }
+}

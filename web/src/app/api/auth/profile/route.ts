@@ -1,0 +1,107 @@
+import { NextRequest, NextResponse } from 'next/server';
+
+const _LAMBDA_AUTH_PROFILE_URL =
+  process.env.LAMBDA_AUTH_PROFILE_URL ||
+  'https://your-lambda-endpoint.execute-api.region.amazonaws.com/dev/auth/profile';
+
+export async function GET(request: NextRequest) {
+  try {
+    // Get auth token from httpOnly cookie
+    const _authToken = request.cookies.get('auth-token')?.value;
+
+    if (!authToken) {
+      return NextResponse.json(
+        { success: false, error: 'No authentication token found' },
+        { status: 401 }
+      );
+    }
+
+    // Forward request to Lambda function
+    const _lambdaResponse = await fetch(LAMBDA_AUTH_PROFILE_URL, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${authToken}`,
+        'User-Agent': request.headers.get('user-agent') || '',
+        'X-Forwarded-For': request.headers.get('x-forwarded-for') || '',
+      },
+    });
+
+    const _lambdaData = await lambdaResponse.json();
+
+    // Handle Lambda response and transform to expected frontend format
+    if (lambdaResponse.ok) {
+      // Transform Lambda response to frontend expected format
+      const _frontendResponse = {
+        success: true,
+        user: lambdaData.user,
+      };
+
+      return NextResponse.json(frontendResponse);
+    } else {
+      // Handle Lambda errors
+      return NextResponse.json(
+        {
+          success: false,
+          error: lambdaData.error || 'Failed to get profile',
+        },
+        { status: lambdaResponse.status }
+      );
+    }
+  } catch (error) {
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  try {
+    // Get auth token from httpOnly cookie
+    const _authToken = request.cookies.get('auth-token')?.value;
+
+    if (!authToken) {
+      return NextResponse.json(
+        { success: false, error: 'No authentication token found' },
+        { status: 401 }
+      );
+    }
+
+    const _body = await request.json();
+
+    // Forward request to Lambda function
+    const _lambdaResponse = await fetch(LAMBDA_AUTH_PROFILE_URL, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${authToken}`,
+        'User-Agent': request.headers.get('user-agent') || '',
+        'X-Forwarded-For': request.headers.get('x-forwarded-for') || '',
+      },
+      body: JSON.stringify(body),
+    });
+
+    const _lambdaData = await lambdaResponse.json();
+
+    // Handle Lambda response and transform to expected frontend format
+    if (lambdaResponse.ok) {
+      // Transform Lambda response to frontend expected format
+      const _frontendResponse = {
+        success: true,
+        user: lambdaData.user,
+        message: lambdaData.message || 'Profile updated successfully',
+      };
+
+      return NextResponse.json(frontendResponse);
+    } else {
+      // Handle Lambda errors
+      return NextResponse.json(
+        {
+          success: false,
+          error: lambdaData.error || 'Failed to update profile',
+        },
+        { status: lambdaResponse.status }
+      );
+    }
+  } catch (error) {
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
+  }
+}

@@ -1,35 +1,31 @@
-"use client";
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Play, 
-  Shield, 
-  Zap, 
-  CheckCircle, 
-  Star, 
-  ArrowRight, 
-  Calendar,
-  Users,
-  TrendingUp,
-  Lock,
-  Award,
-  Smartphone,
-  Loader2
-} from 'lucide-react';
+import { Play, Shield, CheckCircle, Star, Calendar, Users, Award, Loader2 } from 'lucide-react';
 
 // API Service
-import { hasiviApi, ApiResponse } from '@/services/api/hasivu-api.service';
+import { hasiviApi } from '@/services/api/hasivu-api.service';
 
 // UI Components
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { toast } from 'react-hot-toast';
 
 // Types
@@ -75,7 +71,7 @@ const HASIVULandingPageProd: React.FC = () => {
   const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
   const [isSubmittingDemo, setIsSubmittingDemo] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(true);
-  
+
   const [demoForm, setDemoForm] = useState<DemoFormData>({
     name: '',
     email: '',
@@ -83,7 +79,7 @@ const HASIVULandingPageProd: React.FC = () => {
     schoolName: '',
     role: 'administrator',
     studentCount: 100,
-    message: ''
+    message: '',
   });
 
   // Fetch Real Data on Mount
@@ -119,7 +115,7 @@ const HASIVULandingPageProd: React.FC = () => {
           deliveryAccuracy: 99.9,
           averageCostReduction: 47,
           systemUptime: 99.95,
-          rfidVerifications: 5000000
+          rfidVerifications: 5000000,
         });
       }
 
@@ -132,41 +128,43 @@ const HASIVULandingPageProd: React.FC = () => {
         setTestimonials([
           {
             id: '1',
-            quote: "HASIVU eliminated our payment fraud entirely. 180 vulnerabilities fixed means we finally sleep well at night.",
-            author: "Dr. Sarah Chen",
-            title: "IT Director",
-            school: "Springfield Unified School District",
+            quote:
+              'HASIVU eliminated our payment fraud entirely. 180 vulnerabilities fixed means we finally sleep well at night.',
+            author: 'Dr. Sarah Chen',
+            title: 'IT Director',
+            school: 'Springfield Unified School District',
             students: 12000,
-            avatar: "/testimonials/sarah-chen.jpg",
+            avatar: '/testimonials/sarah-chen.jpg',
             rating: 5,
-            verified: true
+            verified: true,
           },
           {
             id: '2',
-            quote: "Parents can see their child get their meal in real-time. The RFID system has eliminated every delivery dispute.",
-            author: "Marcus Rodriguez",
-            title: "Food Service Director", 
-            school: "Lincoln Elementary",
+            quote:
+              'Parents can see their child get their meal in real-time. The RFID system has eliminated every delivery dispute.',
+            author: 'Marcus Rodriguez',
+            title: 'Food Service Director',
+            school: 'Lincoln Elementary',
             students: 3400,
-            avatar: "/testimonials/marcus-rodriguez.jpg",
+            avatar: '/testimonials/marcus-rodriguez.jpg',
             rating: 5,
-            verified: true
+            verified: true,
           },
           {
             id: '3',
-            quote: "67% faster meal pickups and zero manual errors. Our staff actually enjoys their job now.",
-            author: "Jennifer Park",
-            title: "Cafeteria Manager",
-            school: "Oak Valley Schools", 
+            quote:
+              '67% faster meal pickups and zero manual errors. Our staff actually enjoys their job now.',
+            author: 'Jennifer Park',
+            title: 'Cafeteria Manager',
+            school: 'Oak Valley Schools',
             students: 8500,
-            avatar: "/testimonials/jennifer-park.jpg",
+            avatar: '/testimonials/jennifer-park.jpg',
             rating: 5,
-            verified: true
-          }
+            verified: true,
+          },
         ]);
       }
     } catch (error) {
-      console.error('Error fetching public data:', error);
       // Use fallback data
       setStatistics({
         totalStudents: 50000,
@@ -176,7 +174,7 @@ const HASIVULandingPageProd: React.FC = () => {
         deliveryAccuracy: 99.9,
         averageCostReduction: 47,
         systemUptime: 99.95,
-        rfidVerifications: 5000000
+        rfidVerifications: 5000000,
       });
     } finally {
       setIsLoadingData(false);
@@ -189,9 +187,9 @@ const HASIVULandingPageProd: React.FC = () => {
 
     try {
       const response = await hasiviApi.bookDemo(demoForm);
-      
+
       if (response.success) {
-        toast.success('Demo booked successfully! We\'ll contact you within 24 hours.');
+        toast.success("Demo booked successfully! We'll contact you within 24 hours.");
         setIsDemoModalOpen(false);
         // Reset form
         setDemoForm({
@@ -201,13 +199,12 @@ const HASIVULandingPageProd: React.FC = () => {
           schoolName: '',
           role: 'administrator',
           studentCount: 100,
-          message: ''
+          message: '',
         });
       } else {
         toast.error(response.error?.message || 'Failed to book demo. Please try again.');
       }
     } catch (error) {
-      console.error('Demo booking error:', error);
       toast.error('Failed to book demo. Please contact us directly at sales@hasivu.com');
     } finally {
       setIsSubmittingDemo(false);
@@ -218,7 +215,7 @@ const HASIVULandingPageProd: React.FC = () => {
     const { name, value } = e.target;
     setDemoForm(prev => ({
       ...prev,
-      [name]: name === 'studentCount' ? parseInt(value) || 0 : value
+      [name]: name === 'studentCount' ? parseInt(value) || 0 : value,
     }));
   };
 
@@ -239,11 +236,10 @@ const HASIVULandingPageProd: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
-      
       {/* HERO SECTION */}
       <section className="relative min-h-screen flex items-center justify-center px-4 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 opacity-50" />
-        
+
         <div className="max-w-7xl mx-auto text-center z-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -256,13 +252,12 @@ const HASIVULandingPageProd: React.FC = () => {
                 The World's First AI-Powered RFID School Food Platform
               </span>
             </h1>
-            
+
             <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-4xl mx-auto">
               {statistics && (
                 <>
-                  {statistics.fraudDetectionRate.toFixed(1)}% fraud detection • 
-                  Real-time delivery verification • 
-                  {statistics.averageCostReduction}% cost reduction guaranteed
+                  {statistics.fraudDetectionRate.toFixed(1)}% fraud detection • Real-time delivery
+                  verification •{statistics.averageCostReduction}% cost reduction guaranteed
                 </>
               )}
             </p>
@@ -275,17 +270,17 @@ const HASIVULandingPageProd: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 0.8 }}
           >
-            <Button 
-              size="lg" 
+            <Button
+              size="lg"
               className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-8 py-4 text-lg shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
               onClick={() => setIsDemoModalOpen(true)}
             >
               <Calendar className="mr-2 h-5 w-5" />
               Book Demo - See It Live
             </Button>
-            
-            <Button 
-              variant="outline" 
+
+            <Button
+              variant="outline"
               size="lg"
               className="border-2 border-gray-300 hover:border-green-600 px-8 py-4 text-lg transition-all"
               onClick={() => setIsVideoPlaying(true)}
@@ -339,12 +334,13 @@ const HASIVULandingPageProd: React.FC = () => {
                     "{testimonials[selectedTestimonial].quote}"
                   </p>
                   <div className="flex items-center justify-center">
-                    <img 
+                    <img
                       src={testimonials[selectedTestimonial].avatar}
                       alt={testimonials[selectedTestimonial].author}
                       className="w-12 h-12 rounded-full mr-3"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${testimonials[selectedTestimonial].author}`;
+                      onError={e => {
+                        (e.target as HTMLImageElement).src =
+                          `https://ui-avatars.com/api/?name=${testimonials[selectedTestimonial].author}`;
                       }}
                     />
                     <div className="text-left">
@@ -355,7 +351,8 @@ const HASIVULandingPageProd: React.FC = () => {
                         )}
                       </div>
                       <div className="text-sm text-gray-600">
-                        {testimonials[selectedTestimonial].title}, {testimonials[selectedTestimonial].school}
+                        {testimonials[selectedTestimonial].title},{' '}
+                        {testimonials[selectedTestimonial].school}
                       </div>
                     </div>
                   </div>
@@ -380,33 +377,31 @@ const HASIVULandingPageProd: React.FC = () => {
               <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
                 Real Results, Real Impact
               </h2>
-              <p className="text-xl text-gray-600">
-                Live statistics from our production platform
-              </p>
+              <p className="text-xl text-gray-600">Live statistics from our production platform</p>
             </motion.div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
               {[
-                { 
-                  stat: `${statistics.fraudDetectionRate.toFixed(1)}%`, 
-                  label: "Fraud Detection", 
-                  subtext: "AI-powered security" 
+                {
+                  stat: `${statistics.fraudDetectionRate.toFixed(1)}%`,
+                  label: 'Fraud Detection',
+                  subtext: 'AI-powered security',
                 },
-                { 
-                  stat: `${statistics.averageCostReduction}%`, 
-                  label: "Cost Reduction", 
-                  subtext: "Guaranteed savings" 
+                {
+                  stat: `${statistics.averageCostReduction}%`,
+                  label: 'Cost Reduction',
+                  subtext: 'Guaranteed savings',
                 },
-                { 
-                  stat: `${statistics.deliveryAccuracy.toFixed(1)}%`, 
-                  label: "Delivery Accuracy", 
-                  subtext: "RFID verified" 
+                {
+                  stat: `${statistics.deliveryAccuracy.toFixed(1)}%`,
+                  label: 'Delivery Accuracy',
+                  subtext: 'RFID verified',
                 },
-                { 
-                  stat: formatNumber(statistics.totalSchools), 
-                  label: "Schools Live", 
-                  subtext: "And growing" 
-                }
+                {
+                  stat: formatNumber(statistics.totalSchools),
+                  label: 'Schools Live',
+                  subtext: 'And growing',
+                },
               ].map((item, i) => (
                 <motion.div
                   key={i}
@@ -441,7 +436,7 @@ const HASIVULandingPageProd: React.FC = () => {
               See HASIVU in action with a tailored demo for your school
             </DialogDescription>
           </DialogHeader>
-          
+
           <form onSubmit={handleDemoSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -454,7 +449,7 @@ const HASIVULandingPageProd: React.FC = () => {
                   placeholder="John Doe"
                 />
               </div>
-              
+
               <div>
                 <label className="text-sm font-medium">Email *</label>
                 <Input
@@ -480,12 +475,12 @@ const HASIVULandingPageProd: React.FC = () => {
                   placeholder="+1 (555) 123-4567"
                 />
               </div>
-              
+
               <div>
                 <label className="text-sm font-medium">Role *</label>
-                <Select 
-                  value={demoForm.role} 
-                  onValueChange={(value) => setDemoForm(prev => ({ ...prev, role: value }))}
+                <Select
+                  value={demoForm.role}
+                  onValueChange={value => setDemoForm(prev => ({ ...prev, role: value }))}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -554,7 +549,7 @@ const HASIVULandingPageProd: React.FC = () => {
                   </>
                 )}
               </Button>
-              
+
               <Button
                 type="button"
                 variant="outline"
@@ -583,7 +578,7 @@ const HASIVULandingPageProd: React.FC = () => {
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.8, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
+              onClick={e => e.stopPropagation()}
             >
               <iframe
                 className="w-full h-full rounded-lg"

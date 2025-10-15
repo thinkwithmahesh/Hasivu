@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -6,29 +6,43 @@ import {
   CheckCircle,
   Clock,
   AlertTriangle,
-  Calendar,
-  User,
   Plus,
-  Edit2,
   Trash2,
-  Filter,
   Search,
-  ChevronRight,
   Target,
   Loader2,
   CheckSquare,
-  Square,
-  XCircle
+  XCircle,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription as _CardDescription,
+  CardHeader as _CardHeader,
+  CardTitle as _CardTitle,
+} from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 
 // API hooks
@@ -76,11 +90,7 @@ const TaskPriorityBadge = ({ priority }: { priority: Task['priority'] }) => {
     }
   };
 
-  return (
-    <Badge className={`${getPriorityStyles()} border capitalize`}>
-      {priority}
-    </Badge>
-  );
+  return <Badge className={`${getPriorityStyles()} border capitalize`}>{priority}</Badge>;
 };
 
 const TaskStatusBadge = ({ status }: { status: Task['status'] }) => {
@@ -120,17 +130,20 @@ const TaskStatusBadge = ({ status }: { status: Task['status'] }) => {
   );
 };
 
-const TaskCard = ({ 
-  task, 
-  onUpdate, 
-  onDelete 
-}: { 
-  task: Task; 
+const TaskCard = ({
+  task,
+  onUpdate,
+  onDelete,
+}: {
+  task: Task;
   onUpdate: (taskId: string, status: Task['status']) => void;
   onDelete: (taskId: string) => void;
 }) => {
   const isOverdue = task.status !== 'completed' && new Date(task.dueDate) < new Date();
-  const hoursLeft = Math.max(0, Math.floor((new Date(task.dueDate).getTime() - new Date().getTime()) / (1000 * 60 * 60)));
+  const hoursLeft = Math.max(
+    0,
+    Math.floor((new Date(task.dueDate).getTime() - new Date().getTime()) / (1000 * 60 * 60))
+  );
 
   return (
     <motion.div
@@ -140,7 +153,7 @@ const TaskCard = ({
       exit={{ opacity: 0, y: -20 }}
       className="mb-3"
     >
-      <Card 
+      <Card
         className={`hover:shadow-md transition-all ${
           isOverdue ? 'border-red-300 bg-red-50/50' : ''
         }`}
@@ -181,9 +194,7 @@ const TaskCard = ({
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
             <div>
               <p className="text-gray-500">Assigned to</p>
-              <p className="font-medium">
-                {task.assignedStaff?.name || 'Unassigned'}
-              </p>
+              <p className="font-medium">{task.assignedStaff?.name || 'Unassigned'}</p>
             </div>
             <div>
               <p className="text-gray-500">Due Date</p>
@@ -219,11 +230,7 @@ const TaskCard = ({
                 <Clock className="w-4 h-4 text-blue-500" />
                 <span className="text-sm text-gray-600">In Progress</span>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onUpdate(task.id, 'completed')}
-              >
+              <Button variant="outline" size="sm" onClick={() => onUpdate(task.id, 'completed')}>
                 Mark Complete
               </Button>
             </div>
@@ -247,10 +254,10 @@ const TaskCard = ({
   );
 };
 
-const CreateTaskDialog = ({ 
-  onCreateTask, 
-  staffMembers 
-}: { 
+const CreateTaskDialog = ({
+  onCreateTask,
+  staffMembers,
+}: {
   onCreateTask: (task: Partial<Task>) => void;
   staffMembers: any[];
 }) => {
@@ -263,7 +270,7 @@ const CreateTaskDialog = ({
     assignedTo: '',
     dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     estimatedHours: 1,
-    tags: []
+    tags: [],
   });
 
   const handleSubmit = () => {
@@ -278,7 +285,7 @@ const CreateTaskDialog = ({
         assignedTo: '',
         dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         estimatedHours: 1,
-        tags: []
+        tags: [],
       });
     }
   };
@@ -294,9 +301,7 @@ const CreateTaskDialog = ({
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Create New Task</DialogTitle>
-          <DialogDescription>
-            Add a new task for your staff members
-          </DialogDescription>
+          <DialogDescription>Add a new task for your staff members</DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="space-y-2">
@@ -305,18 +310,18 @@ const CreateTaskDialog = ({
               id="title"
               placeholder="Enter task title"
               value={taskData.title}
-              onChange={(e) => setTaskData({ ...taskData, title: e.target.value })}
+              onChange={e => setTaskData({ ...taskData, title: e.target.value })}
               data-testid="task-title-input"
             />
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
               placeholder="Enter task description"
               value={taskData.description}
-              onChange={(e) => setTaskData({ ...taskData, description: e.target.value })}
+              onChange={e => setTaskData({ ...taskData, description: e.target.value })}
               data-testid="task-description-input"
             />
           </div>
@@ -326,7 +331,7 @@ const CreateTaskDialog = ({
               <Label htmlFor="priority">Priority</Label>
               <Select
                 value={taskData.priority}
-                onValueChange={(value: Task['priority']) => 
+                onValueChange={(value: Task['priority']) =>
                   setTaskData({ ...taskData, priority: value })
                 }
               >
@@ -346,7 +351,7 @@ const CreateTaskDialog = ({
               <Label htmlFor="category">Category</Label>
               <Select
                 value={taskData.category}
-                onValueChange={(value) => setTaskData({ ...taskData, category: value })}
+                onValueChange={value => setTaskData({ ...taskData, category: value })}
               >
                 <SelectTrigger id="category" data-testid="task-category-select">
                   <SelectValue />
@@ -368,13 +373,13 @@ const CreateTaskDialog = ({
               <Label htmlFor="assignedTo">Assign To</Label>
               <Select
                 value={taskData.assignedTo}
-                onValueChange={(value) => setTaskData({ ...taskData, assignedTo: value })}
+                onValueChange={value => setTaskData({ ...taskData, assignedTo: value })}
               >
                 <SelectTrigger id="assignedTo" data-testid="task-assignee-select">
                   <SelectValue placeholder="Select staff" />
                 </SelectTrigger>
                 <SelectContent>
-                  {staffMembers.map((staff) => (
+                  {staffMembers.map(staff => (
                     <SelectItem key={staff.id} value={staff.id}>
                       {staff.name} - {staff.role}
                     </SelectItem>
@@ -389,7 +394,7 @@ const CreateTaskDialog = ({
                 id="dueDate"
                 type="date"
                 value={taskData.dueDate}
-                onChange={(e) => setTaskData({ ...taskData, dueDate: e.target.value })}
+                onChange={e => setTaskData({ ...taskData, dueDate: e.target.value })}
                 data-testid="task-due-date-input"
               />
             </div>
@@ -403,7 +408,9 @@ const CreateTaskDialog = ({
               min="0.5"
               step="0.5"
               value={taskData.estimatedHours}
-              onChange={(e) => setTaskData({ ...taskData, estimatedHours: parseFloat(e.target.value) })}
+              onChange={e =>
+                setTaskData({ ...taskData, estimatedHours: parseFloat(e.target.value) })
+              }
               data-testid="task-hours-input"
             />
           </div>
@@ -428,21 +435,22 @@ export default function StaffTasksManagement() {
   const [filterPriority, setFilterPriority] = useState<Task['priority'] | 'all'>('all');
 
   // Fetch data from backend
-  const { data: tasksData, loading: tasksLoading, error: tasksError, refetch: refetchTasks } = useStaffTasks();
+  const {
+    data: tasksData,
+    loading: tasksLoading,
+    error: tasksError,
+    refetch: refetchTasks,
+  } = useStaffTasks();
   const { data: staffData, loading: staffLoading } = useStaffMembers();
-  const { 
-    createTask, 
-    updateTaskStatus, 
-    loading: mutationLoading 
-  } = useStaffMutations();
+  const { createTask, updateTaskStatus, loading: _mutationLoading } = useStaffMutations();
 
   // WebSocket for real-time updates
   const { isConnected } = useWebSocket({
-    onMessage: (event: string, data: any) => {
+    onMessage: (event: string, _data: any) => {
       if (event === 'task.updated' || event === 'task.created' || event === 'task.deleted') {
         refetchTasks();
       }
-    }
+    },
   });
 
   // Process tasks data
@@ -454,11 +462,12 @@ export default function StaffTasksManagement() {
   // Filter tasks
   const filteredTasks = useMemo(() => {
     return tasks.filter(task => {
-      const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           task.description.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch =
+        task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        task.description.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = filterStatus === 'all' || task.status === filterStatus;
       const matchesPriority = filterPriority === 'all' || task.priority === filterPriority;
-      
+
       return matchesSearch && matchesStatus && matchesPriority;
     });
   }, [tasks, searchTerm, filterStatus, filterPriority]);
@@ -469,9 +478,9 @@ export default function StaffTasksManagement() {
       pending: filteredTasks.filter(t => t.status === 'pending'),
       in_progress: filteredTasks.filter(t => t.status === 'in_progress'),
       completed: filteredTasks.filter(t => t.status === 'completed'),
-      overdue: filteredTasks.filter(t => 
-        t.status !== 'completed' && new Date(t.dueDate) < new Date()
-      )
+      overdue: filteredTasks.filter(
+        t => t.status !== 'completed' && new Date(t.dueDate) < new Date()
+      ),
     };
   }, [filteredTasks]);
 
@@ -479,8 +488,8 @@ export default function StaffTasksManagement() {
   const metrics = useMemo(() => {
     const total = tasks.length;
     const completed = tasks.filter(t => t.status === 'completed').length;
-    const overdue = tasks.filter(t => 
-      t.status !== 'completed' && new Date(t.dueDate) < new Date()
+    const overdue = tasks.filter(
+      t => t.status !== 'completed' && new Date(t.dueDate) < new Date()
     ).length;
     const urgent = tasks.filter(t => t.priority === 'urgent' && t.status !== 'completed').length;
 
@@ -489,7 +498,7 @@ export default function StaffTasksManagement() {
       completed,
       completionRate: total > 0 ? Math.round((completed / total) * 100) : 0,
       overdue,
-      urgent
+      urgent,
     };
   }, [tasks]);
 
@@ -497,15 +506,15 @@ export default function StaffTasksManagement() {
     try {
       await createTask(taskData);
       toast({
-        title: "Task Created",
-        description: "The task has been created successfully.",
+        title: 'Task Created',
+        description: 'The task has been created successfully.',
       });
       refetchTasks();
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to create task. Please try again.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to create task. Please try again.',
+        variant: 'destructive',
       });
     }
   };
@@ -514,24 +523,24 @@ export default function StaffTasksManagement() {
     try {
       await updateTaskStatus(taskId, status);
       toast({
-        title: "Task Updated",
+        title: 'Task Updated',
         description: `Task status changed to ${status}.`,
       });
       refetchTasks();
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to update task status.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to update task status.',
+        variant: 'destructive',
       });
     }
   };
 
-  const handleDeleteTask = async (taskId: string) => {
+  const handleDeleteTask = async (_taskId: string) => {
     // Implement delete functionality
     toast({
-      title: "Task Deleted",
-      description: "The task has been deleted.",
+      title: 'Task Deleted',
+      description: 'The task has been deleted.',
     });
     refetchTasks();
   };
@@ -564,10 +573,7 @@ export default function StaffTasksManagement() {
           <h2 className="text-2xl font-bold text-gray-900">Staff Tasks</h2>
           <p className="text-gray-600">Manage and track staff tasks and assignments</p>
         </div>
-        <CreateTaskDialog 
-          onCreateTask={handleCreateTask} 
-          staffMembers={staffData || []}
-        />
+        <CreateTaskDialog onCreateTask={handleCreateTask} staffMembers={staffData || []} />
       </div>
 
       {/* Metrics Cards */}
@@ -631,13 +637,13 @@ export default function StaffTasksManagement() {
                 <Input
                   placeholder="Search tasks..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={e => setSearchTerm(e.target.value)}
                   className="pl-10"
                   data-testid="search-tasks-input"
                 />
               </div>
             </div>
-            
+
             <Select value={filterStatus} onValueChange={(value: any) => setFilterStatus(value)}>
               <SelectTrigger className="w-[180px]" data-testid="filter-status-select">
                 <SelectValue placeholder="Filter by status" />

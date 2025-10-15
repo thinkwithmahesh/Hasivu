@@ -14,7 +14,7 @@ export const numberUtils = {
 
 export const stringUtils = {
   truncate: (str: string, length: number): string => {
-    return str.length > length ? str.substring(0, length) + '...' : str;
+    return str.length > length ? `${str.substring(0, length)}...` : str;
   },
   capitalize: (str: string): string => {
     return str.charAt(0).toUpperCase() + str.slice(1);

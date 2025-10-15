@@ -29,7 +29,7 @@ describe('MenuItemService', () => {
             description: 'Classic pizza with tomato and mozzarella',
             category: menuItem_service_1.MenuCategory.LUNCH,
             price: 12.99,
-            currency: 'USD',
+            currency: 'INR',
             schoolId: 'school-123'
         };
         it('should create menu item successfully', async () => {
@@ -479,7 +479,7 @@ describe('MenuItemService', () => {
                 name: 'Pizza',
                 category: menuItem_service_1.MenuCategory.LUNCH,
                 price: 12.99,
-                currency: 'USD',
+                currency: 'INR',
                 schoolId: 'school-123'
             };
             const mockMenuItem = { id: 'item-123', ...validInput, schoolId: 'school-123' };

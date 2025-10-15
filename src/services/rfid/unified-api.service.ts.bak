@@ -1,0 +1,804 @@
+/**
+ * HASIVU Platform - Unified RFID API Service
+ * Common interface for all RFID operations with vendor abstraction
+ * Story 2.2: Hardware Integration Layer
+ */
+import { EventEmitter } from 'events';
+import { RFIDService } from '../rfid.service';
+import { rfidHardwareService, RFIDVendor, RFIDScanResult, RFIDReaderConfig, RFIDReaderStatus } from './hardware-abstraction.service';
+import { NotificationService } from '../notification.service';
+import { DatabaseService } from '../database.service';
+import { logger } from '../../utils/logger';
+import { cache } from '../../utils/cache';
+import { v4 as uuidv4 } from 'uuid';
+
+/**
+ * Unified scan request interface
+ */
+export interface UnifiedScanRequest {
+  readerId?: string; // If not provided, scan all readers
+  timeout?: number; // Scan timeout in milliseconds
+  requireOrder?: boolean; // Whether an order must exist for verification
+  schoolId?: string; // Filter by school
+  location?: {
+    latitude?: number;
+    longitude?: number;
+    description?: string;
+  };
+  metadata?: Record<string, any>;
+}
+
+/**
+ * Unified scan response interface
+ */
+export interface UnifiedScanResponse {
+  success: boolean;
+  verification?: {
+    id: string;
+    cardId: string;
+    studentName: string;
+    orderInfo?: {
+      id: string;
+      orderNumber: string;
+      status: string;
+    };
+    school: {
+      id: string;
+      name: string;
+    };
+    timestamp: Date;
+    location: any;
+    readerInfo: {
+      id: string;
+      name: string;
+      vendor: RFIDVendor;
+    };
+  };
+  error?: {
+    code: string;
+    message: string;
+    details?: any;
+  };
+  scanResults?: RFIDScanResult[];
+  readerStatuses?: RFIDReaderStatus[];
+}
+
+/**
+ * Reader discovery result interface
+ */
+export interface ReaderDiscoveryResult {
+  readerId: string;
+  ipAddress: string;
+  vendor: RFIDVendor;
+  model: string;
+  isOnline: boolean;
+  capabilities: string[];
+  metadata?: Record<string, any>;
+}
+
+/**
+ * Bulk card operation interface
+ */
+export interface BulkCardOperation {
+  operation: 'register' | 'activate' | 'deactivate' | 'update';
+  cards: Array<{
+    cardNumber: string;
+    studentId?: string;
+    schoolId?: string;
+    metadata?: Record<string, any>;
+  }>;
+  schoolId: string;
+  batchId?: string;
+}
+
+/**
+ * Bulk operation result interface
+ */
+export interface BulkOperationResult {
+  batchId: string;
+  totalCards: number;
+  successful: number;
+  failed: number;
+  results: Array<{
+    cardNumber: string;
+    success: boolean;
+    error?: string;
+    cardId?: string;
+  }>;
+  metadata: {
+    startTime: Date;
+    endTime: Date;
+    duration: number;
+  };
+}
+
+/**
+ * Real-time event interface
+ */
+export interface RFIDEvent {
+  type: 'scan' | 'verification' | 'reader_status' | 'error';
+  data: any;
+  timestamp: Date;
+  source: {
+    readerId: string;
+    vendor: RFIDVendor;
+    location?: string;
+  };
+}
+
+/**
+ * Analytics query interface
+ */
+export interface RFIDAnalyticsQuery {
+  startDate: Date;
+  endDate: Date;
+  schoolId?: string;
+  readerId?: string;
+  studentId?: string;
+  groupBy?: 'hour' | 'day' | 'week' | 'month';
+  metrics?: string[];
+}
+
+/**
+ * Analytics result interface
+ */
+export interface RFIDAnalyticsResult {
+  totalScans: number;
+  successfulVerifications: number;
+  failedVerifications: number;
+  uniqueStudents: number;
+  averageResponseTime: number;
+  peakUsageTime: string;
+  readerPerformance: Array<{
+    readerId: string;
+    scanCount: number;
+    successRate: number;
+    averageResponseTime: number;
+  }>;
+  timeSeriesData: Array<{
+    timestamp: Date;
+    scanCount: number;
+    successCount: number;
+    failureCount: number;
+  }>;
+}
+
+/**
+ * Unified RFID API Service
+ * Central orchestrator for all RFID operations
+ */
+export class UnifiedRFIDAPIService extends EventEmitter {
+  private static instance: UnifiedRFIDAPIService;
+  private isInitialized: boolean = false;
+  private eventHistory: RFIDEvent[] = [];
+  private maxEventHistory: number = 1000;
+
+  private constructor() {
+    super();
+    this.setupEventListeners();
+  }
+
+  public static getInstance(): UnifiedRFIDAPIService {
+    if (!UnifiedRFIDAPIService.instance) {
+      UnifiedRFIDAPIService.instance = new UnifiedRFIDAPIService();
+    }
+    return UnifiedRFIDAPIService.instance;
+  }
+
+  /**
+   * Initialize the unified RFID system
+   */
+  async initialize(): Promise<boolean> {
+    try {
+      logger.info('Initializing Unified RFID API Service');
+
+      // Load reader configurations from database
+      const readers = await DatabaseService.client.rFIDReader.findMany({
+        where: { isActive: true },
+        select: {
+          id: true,
+          name: true,
+          location: true,
+          ipAddress: true,
+          configuration: true,
+          schoolId: true
+        }
+      });
+
+      // Add readers to hardware abstraction layer
+      for (const reader of readers) {
+        const config = this.parseReaderConfiguration(reader);
+        await rfidHardwareService.addReader(config);
+      }
+
+      // Connect to all readers
+      const connectionResult = await rfidHardwareService.connectAllReaders();
+
+      logger.info('RFID readers connection completed', {
+        connected: connectionResult.connected.length,
+        failed: connectionResult.failed.length
+      });
+
+      this.isInitialized = true;
+      this.emit('initialized', {
+        totalReaders: readers.length,
+        connectedReaders: connectionResult.connected.length
+      });
+
+      return true;
+
+    } catch (error: unknown) {
+      logger.error('Failed to initialize Unified RFID API Service', error);
+      return false;
+    }
+  }
+
+  /**
+   * Unified scan operation
+   */
+  async scan(request: UnifiedScanRequest): Promise<UnifiedScanResponse> {
+    try {
+      if (!this.isInitialized) {
+        throw new Error('RFID service not initialized');
+      }
+
+      const startTime = Date.now();
+
+      // Validate school context if provided
+      if (request.schoolId) {
+        const school = await DatabaseService.client.school.findUnique({
+          where: { id: request.schoolId }
+        });
+        if (!school) {
+          throw new Error('School not found');
+        }
+      }
+
+      let scanResults: RFIDScanResult[];
+
+      if (request.readerId) {
+        // Scan specific reader
+        const result = await rfidHardwareService.scanReader(request.readerId, request.timeout);
+        scanResults = [result];
+      } else {
+        // Scan all readers
+        scanResults = await rfidHardwareService.scanAllReaders(request.timeout || 3000);
+      }
+
+      // Find successful scans
+      const successfulScans = scanResults.filter(result => result.success && result.cardId);
+
+      if (successfulScans.length === 0) {
+        return {
+          success: false,
+          error: {
+            code: 'NO_CARDS_DETECTED',
+            message: 'No RFID cards detected'
+          },
+          scanResults,
+          readerStatuses: await rfidHardwareService.getAllReaderStatus()
+        };
+      }
+
+      // Process the first successful scan
+      const scanResult = successfulScans[0];
+
+      // Attempt delivery verification
+      const verification = await this.performDeliveryVerification(scanResult, request);
+
+      const duration = Date.now() - startTime;
+
+      // Emit real-time event
+      this.emitRFIDEvent({
+        type: 'verification',
+        data: verification,
+        timestamp: new Date(),
+        source: {
+          readerId: scanResult.readerId,
+          vendor: scanResult.metadata?.vendor || RFIDVendor.GENERIC,
+          location: request.location?.description
+        }
+      });
+
+      // Cache result for quick access
+      await cache.setex(
+        `rfid:last_scan:${scanResult.readerId}`,
+        300, // 5 minutes
+        JSON.stringify({
+          cardId: scanResult.cardId,
+          timestamp: scanResult.timestamp,
+          verification: verification?.success
+        })
+      );
+
+      logger.info('Unified RFID scan completed', {
+        cardId: scanResult.cardId,
+        readerId: scanResult.readerId,
+        verificationSuccess: verification?.success,
+        duration
+      });
+
+      return {
+        success: true,
+        verification,
+        scanResults,
+        readerStatuses: await rfidHardwareService.getAllReaderStatus()
+      };
+
+    } catch (error: unknown) {
+      logger.error('Unified RFID scan failed', error, { request });
+
+      // Emit error event
+      this.emitRFIDEvent({
+        type: 'error',
+        data: { error: error instanceof Error ? (error instanceof Error ? error.message : String(error)) : 'Unknown error', request },
+        timestamp: new Date(),
+        source: {
+          readerId: request.readerId || 'unknown',
+          vendor: RFIDVendor.GENERIC
+        }
+      });
+
+      return {
+        success: false,
+        error: {
+          code: 'SCAN_ERROR',
+          message: error instanceof Error ? (error instanceof Error ? error.message : String(error)) : 'Unknown scan error',
+          details: error
+        }
+      };
+    }
+  }
+
+  /**
+   * Perform delivery verification with enhanced business logic
+   */
+  private async performDeliveryVerification(
+    scanResult: RFIDScanResult,
+    request: UnifiedScanRequest
+  ): Promise<any> {
+    try {
+      // Use the existing RFID service for verification
+      const verificationResult = await RFIDService.verifyDelivery({
+        cardNumber: scanResult.cardId,
+        readerId: scanResult.readerId,
+        signalStrength: scanResult.signalStrength,
+        location: request.location?.description || 'Unknown',
+        timestamp: scanResult.timestamp,
+        metadata: {
+          ...scanResult.metadata,
+          ...request.metadata
+        }
+      });
+
+      if (verificationResult.success && verificationResult.data) {
+        const data = verificationResult.data;
+
+        // Send real-time notification to parents
+        await this.sendDeliveryNotification(data);
+
+        return {
+          success: true,
+          id: data.verificationId,
+          cardId: scanResult.cardId,
+          studentName: data.studentName,
+          orderInfo: data.orderInfo,
+          school: {
+            id: data.schoolId,
+            name: 'School Name' // TODO: Get from database
+          },
+          timestamp: data.timestamp,
+          location: data.location,
+          readerInfo: {
+            id: data.readerInfo.id,
+            name: data.readerInfo.name,
+            vendor: scanResult.metadata?.vendor || RFIDVendor.GENERIC
+          }
+        };
+      }
+
+      return {
+        success: false,
+        error: verificationResult.error
+      };
+
+    } catch (error: unknown) {
+      logger.error('Delivery verification failed', error, { scanResult });
+      return {
+        success: false,
+        error: {
+          code: 'VERIFICATION_ERROR',
+          message: error instanceof Error ? (error instanceof Error ? error.message : String(error)) : 'Verification failed'
+        }
+      };
+    }
+  }
+
+  /**
+   * Discover RFID readers on the network
+   */
+  async discoverReaders(
+    networkRange?: string,
+    timeout: number = 30000
+  ): Promise<ReaderDiscoveryResult[]> {
+    try {
+      logger.info('Starting RFID reader discovery', { networkRange, timeout });
+
+      const discovered: ReaderDiscoveryResult[] = [];
+
+      // Common RFID reader ports and endpoints
+      const commonPorts = [80, 8080, 443, 9090, 14150]; // LLRP port 14150
+      const commonEndpoints = [
+        '/status',
+        '/api/v1/status',
+        '/cloud/status',
+        '/reader/status'
+      ];
+
+      // Scan network range (simplified implementation)
+      const baseIP = networkRange || '192.168.1';
+      const scanPromises: Promise<void>[] = [];
+
+      for (let i = 1; i <= 254; i++) {
+        const ipAddress = `${baseIP}.${i}`;
+
+        scanPromises.push(this.scanIPForReaders(ipAddress, commonPorts, commonEndpoints));
+      }
+
+      // Wait for all scans to complete or timeout
+      await Promise.race([
+        Promise.allSettled(scanPromises),
+        new Promise(resolve => setTimeout(resolve, timeout))
+      ]);
+
+      logger.info('RFID reader discovery completed', {
+        discovered: discovered.length
+      });
+
+      return discovered;
+
+    } catch (error: unknown) {
+      logger.error('Reader discovery failed', error);
+      return [];
+    }
+  }
+
+  /**
+   * Bulk card operations
+   */
+  async bulkCardOperation(operation: BulkCardOperation): Promise<BulkOperationResult> {
+    const startTime = Date.now();
+    const batchId = operation.batchId || uuidv4();
+
+    try {
+      logger.info('Starting bulk card operation', {
+        batchId,
+        operation: operation.operation,
+        cardCount: operation.cards.length
+      });
+
+      const results: Array<{
+        cardNumber: string;
+        success: boolean;
+        error?: string;
+        cardId?: string;
+      }> = [];
+
+      for (const cardData of operation.cards) {
+        try {
+          let result: any;
+
+          switch (operation.operation) {
+            case 'register':
+              result = await RFIDService.registerCard({
+                cardNumber: cardData.cardNumber,
+                studentId: cardData.studentId!,
+                schoolId: operation.schoolId,
+                cardType: 'student',
+                metadata: cardData.metadata
+              });
+              break;
+
+            case 'activate':
+            case 'deactivate':
+              // Implementation would depend on card lifecycle service
+              result = { success: true, data: { id: 'temp' } };
+              break;
+
+            case 'update':
+              // Implementation for card updates
+              result = { success: true, data: { id: 'temp' } };
+              break;
+
+            default:
+              throw new Error(`Unsupported operation: ${operation.operation}`);
+          }
+
+          results.push({
+            cardNumber: cardData.cardNumber,
+            success: result.success,
+            cardId: result.data?.id,
+            error: result.error?.message
+          });
+
+        } catch (error: unknown) {
+          results.push({
+            cardNumber: cardData.cardNumber,
+            success: false,
+            error: error instanceof Error ? (error instanceof Error ? error.message : String(error)) : 'Unknown error'
+          });
+        }
+      }
+
+      const endTime = Date.now();
+      const successful = results.filter(r => r.success).length;
+      const failed = results.length - successful;
+
+      const bulkResult: BulkOperationResult = {
+        batchId,
+        totalCards: operation.cards.length,
+        successful,
+        failed,
+        results,
+        metadata: {
+          startTime: new Date(startTime),
+          endTime: new Date(endTime),
+          duration: endTime - startTime
+        }
+      };
+
+      logger.info('Bulk card operation completed', {
+        batchId,
+        totalCards: operation.cards.length,
+        successful,
+        failed,
+        duration: endTime - startTime
+      });
+
+      return bulkResult;
+
+    } catch (error: unknown) {
+      logger.error('Bulk card operation failed', error, { batchId, operation });
+      throw error;
+    }
+  }
+
+  /**
+   * Get real-time analytics
+   */
+  async getAnalytics(query: RFIDAnalyticsQuery): Promise<RFIDAnalyticsResult> {
+    try {
+      // Use existing RFID service analytics
+      const analyticsResult = await RFIDService.getCardAnalytics({
+        startDate: query.startDate,
+        endDate: query.endDate,
+        schoolId: query.schoolId
+      });
+
+      if (!analyticsResult.success || !analyticsResult.data) {
+        throw new Error('Failed to fetch analytics data');
+      }
+
+      const data = analyticsResult.data;
+
+      // Enhanced analytics calculation
+      const readerPerformance = await this.calculateReaderPerformance(query);
+      const timeSeriesData = await this.generateTimeSeriesData(query);
+
+      return {
+        totalScans: data.totalVerifications || 0,
+        successfulVerifications: data.totalVerifications || 0,
+        failedVerifications: 0, // TODO: Implement failed verification tracking
+        uniqueStudents: data.uniqueCards || 0,
+        averageResponseTime: 250, // TODO: Calculate from actual data
+        peakUsageTime: '12:00-13:00', // TODO: Calculate from time series
+        readerPerformance,
+        timeSeriesData
+      };
+
+    } catch (error: unknown) {
+      logger.error('Failed to get RFID analytics', error, { query });
+      throw error;
+    }
+  }
+
+  /**
+   * Get system health status
+   */
+  async getSystemHealth(): Promise<{
+    overall: 'healthy' | 'degraded' | 'critical';
+    readers: RFIDReaderStatus[];
+    metrics: {
+      totalReaders: number;
+      onlineReaders: number;
+      averageResponseTime: number;
+      errorRate: number;
+    };
+  }> {
+    try {
+      const readerStatuses = await rfidHardwareService.getAllReaderStatus();
+      const onlineReaders = readerStatuses.filter(status => status.isOnline);
+
+      const metrics = {
+        totalReaders: readerStatuses.length,
+        onlineReaders: onlineReaders.length,
+        averageResponseTime: 200, // TODO: Calculate from actual metrics
+        errorRate: 0.05 // TODO: Calculate from error logs
+      };
+
+      let overall: 'healthy' | 'degraded' | 'critical' = 'healthy';
+
+      if (metrics.onlineReaders === 0) {
+        overall = 'critical';
+      } else if (metrics.onlineReaders < metrics.totalReaders * 0.8) {
+        overall = 'degraded';
+      }
+
+      return {
+        overall,
+        readers: readerStatuses,
+        metrics
+      };
+
+    } catch (error: unknown) {
+      logger.error('Failed to get system health', error);
+      return {
+        overall: 'critical',
+        readers: [],
+        metrics: {
+          totalReaders: 0,
+          onlineReaders: 0,
+          averageResponseTime: 0,
+          errorRate: 1.0
+        }
+      };
+    }
+  }
+
+  /**
+   * Setup event listeners for real-time monitoring
+   */
+  private setupEventListeners(): void {
+    this.on('scan', (event: RFIDEvent) => {
+      this.addToEventHistory(event);
+    });
+
+    this.on('verification', (event: RFIDEvent) => {
+      this.addToEventHistory(event);
+    });
+
+    this.on('error', (event: RFIDEvent) => {
+      this.addToEventHistory(event);
+      logger.error('RFID event error', event.data);
+    });
+  }
+
+  /**
+   * Emit RFID event
+   */
+  private emitRFIDEvent(event: RFIDEvent): void {
+    this.emit(event.type, event);
+  }
+
+  /**
+   * Add event to history
+   */
+  private addToEventHistory(event: RFIDEvent): void {
+    this.eventHistory.push(event);
+
+    // Keep only recent events
+    if (this.eventHistory.length > this.maxEventHistory) {
+      this.eventHistory = this.eventHistory.slice(-this.maxEventHistory);
+    }
+  }
+
+  /**
+   * Parse reader configuration from database
+   */
+  private parseReaderConfiguration(reader: any): RFIDReaderConfig {
+    const config = JSON.parse(reader.configuration || '{}');
+
+    return {
+      id: reader.id,
+      vendor: config.vendor || RFIDVendor.GENERIC,
+      model: config.model || 'Unknown',
+      ipAddress: reader.ipAddress,
+      port: config.port || 80,
+      connectionTimeout: config.connectionTimeout || 5000,
+      readTimeout: config.readTimeout || 3000,
+      powerLevel: config.powerLevel,
+      frequency: config.frequency,
+      username: config.username,
+      password: config.password,
+      apiKey: config.apiKey,
+      metadata: {
+        name: reader.name,
+        location: reader.location,
+        schoolId: reader.schoolId
+      }
+    };
+  }
+
+  /**
+   * Send delivery notification to parents
+   */
+  private async sendDeliveryNotification(verificationData: any): Promise<void> {
+    try {
+      // Use notification service to send real-time notifications
+      await NotificationService.sendNotification({
+        templateId: 'delivery_verification',
+        recipientId: verificationData.studentId, // This would be the parent ID in reality
+        recipientType: 'student',
+        channels: ['push', 'in_app'],
+        variables: {
+          studentName: verificationData.studentName,
+          verificationId: verificationData.verificationId
+        },
+        priority: 'high'
+      });
+
+      logger.info('Delivery notification sent', {
+        verificationId: verificationData.verificationId,
+        studentId: verificationData.studentId
+      });
+
+    } catch (error: unknown) {
+      logger.error('Failed to send delivery notification', error, { verificationData });
+    }
+  }
+
+  /**
+   * Scan IP address for RFID readers
+   */
+  private async scanIPForReaders(
+    ipAddress: string,
+    ports: number[],
+    endpoints: string[]
+  ): Promise<void> {
+    // Implementation would scan the IP address for RFID readers
+    // This is a placeholder for the actual network scanning logic
+  }
+
+  /**
+   * Calculate reader performance metrics
+   */
+  private async calculateReaderPerformance(query: RFIDAnalyticsQuery): Promise<Array<{
+    readerId: string;
+    scanCount: number;
+    successRate: number;
+    averageResponseTime: number;
+  }>> {
+    // Implementation would calculate performance metrics for each reader
+    return [];
+  }
+
+  /**
+   * Generate time series data for analytics
+   */
+  private async generateTimeSeriesData(query: RFIDAnalyticsQuery): Promise<Array<{
+    timestamp: Date;
+    scanCount: number;
+    successCount: number;
+    failureCount: number;
+  }>> {
+    // Implementation would generate time series analytics data
+    return [];
+  }
+
+  /**
+   * Get recent events
+   */
+  getRecentEvents(limit: number = 50): RFIDEvent[] {
+    return this.eventHistory.slice(-limit);
+  }
+
+  /**
+   * Clear event history
+   */
+  clearEventHistory(): void {
+    this.eventHistory = [];
+  }
+}
+
+// Export singleton instance
+export const unifiedRFIDService = UnifiedRFIDAPIService.getInstance();

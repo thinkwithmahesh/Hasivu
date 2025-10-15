@@ -53,7 +53,7 @@
   * {
     @apply border-border;
   }
-  
+
   body {
     @apply bg-background text-foreground;
   }
@@ -61,10 +61,13 @@
 
 /* Enhanced Animations */
 @keyframes caret-blink {
-  0%,70%,100% {
+  0%,
+  70%,
+  100% {
     opacity: 1;
   }
-  20%,50% {
+  20%,
+  50% {
     opacity: 0;
   }
 }
@@ -88,7 +91,8 @@
 }
 
 @keyframes float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0px);
   }
   50% {
@@ -97,7 +101,8 @@
 }
 
 @keyframes pulse-slow {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -106,7 +111,8 @@
 }
 
 @keyframes gradient-x {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateX(0%);
   }
   50% {
@@ -188,15 +194,21 @@ html {
 
 /* Professional Shadows */
 .shadow-soft {
-  box-shadow: 0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04);
+  box-shadow:
+    0 2px 15px -3px rgba(0, 0, 0, 0.07),
+    0 10px 20px -2px rgba(0, 0, 0, 0.04);
 }
 
 .shadow-medium {
-  box-shadow: 0 4px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow:
+    0 4px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
 .shadow-large {
-  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.02);
+  box-shadow:
+    0 10px 40px -10px rgba(0, 0, 0, 0.1),
+    0 2px 4px rgba(0, 0, 0, 0.02);
 }
 
 .shadow-3xl {
@@ -211,10 +223,28 @@ html {
   -webkit-text-fill-color: transparent;
 }
 
-/* Focus Styles */
+/* Enhanced Focus Styles for Accessibility */
 .focus-visible:focus-visible {
   outline: 2px solid #10b981;
   outline-offset: 2px;
+}
+
+/* High contrast focus for better visibility */
+*:focus-visible {
+  outline: 2px solid #10b981;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Ensure focus is visible on interactive elements */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+a:focus-visible {
+  outline: 2px solid #10b981;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2);
 }
 
 /* Selection */
@@ -231,5 +261,58 @@ html {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  :root {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
+    --primary: 0 0% 100%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 0 0% 10%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 0 0% 10%;
+    --muted-foreground: 0 0% 70%;
+    --accent: 0 0% 10%;
+    --accent-foreground: 0 0% 100%;
+    --border: 0 0% 50%;
+    --input: 0 0% 20%;
+    --ring: 0 0% 100%;
+  }
+
+  /* Ensure borders are visible in high contrast */
+  * {
+    border-color: currentColor !important;
+  }
+
+  /* Enhance focus visibility */
+  *:focus-visible {
+    outline: 3px solid white !important;
+    outline-offset: 2px !important;
+  }
+}
+
+/* Color Scheme Preference Support */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 84% 4.9%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 94.1%;
   }
 }

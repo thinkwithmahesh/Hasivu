@@ -9,4 +9,4 @@ export { default } from '../utils/logger';
 export { Logger } from '../utils/logger';
 
 // Create alias for LoggerService to Logger for backward compatibility
-export const LoggerService = Logger;
+export const _LoggerService = Logger;

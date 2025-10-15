@@ -1,0 +1,154 @@
+/**
+ * HASIVU Platform - Audit Service
+ * Minimal stub for compilation
+ */
+
+export interface AuditLogEntry {
+  id?: string;
+  action: string;
+  userId: string;
+  targetUserId?: string;
+  resource?: string;
+  resourceId?: string;
+  metadata?: Record<string, any>;
+  ipAddress?: string;
+  userAgent?: string;
+  sessionId?: string;
+  timestamp?: Date;
+  severity?: 'low' | 'medium' | 'high' | 'critical';
+  category?: 'authentication' | 'authorization' | 'data' | 'system' | 'security';
+  compliance?: string[];
+  outcome?: 'success' | 'failure' | 'partial';
+  risk_score?: number;
+}
+
+export interface AuditQuery {
+  userId?: string;
+  action?: string;
+  resource?: string;
+  dateFrom?: Date;
+  dateTo?: Date;
+  severity?: string[];
+  category?: string[];
+  outcome?: string[];
+  limit?: number;
+  offset?: number;
+  sortBy?: 'timestamp' | 'severity' | 'action';
+  sortOrder?: 'asc' | 'desc';
+}
+
+export interface AuditSummary {
+  totalEvents: number;
+  timeRange: {
+    from: Date;
+    to: Date;
+  };
+  categoryCounts: Record<string, number>;
+  severityCounts: Record<string, number>;
+  userActivity: Array<{
+    userId: string;
+    userName: string;
+    eventCount: number;
+    lastActivity: Date;
+    riskScore: number;
+  }>;
+  topActions: Array<{
+    action: string;
+    count: number;
+    successRate: number;
+  }>;
+  securityEvents: {
+    total: number;
+    critical: number;
+    recent: AuditLogEntry[];
+  };
+  complianceMetrics: {
+    gdprEvents: number;
+    coppaEvents: number;
+    pciEvents: number;
+    dataAccessEvents: number;
+    dataModificationEvents: number;
+  };
+}
+
+class AuditService {
+  async log(entry: AuditLogEntry): Promise<void> {
+    // Stub implementation
+    // eslint-disable-next-line no-console
+    console.log('Audit log:', entry);
+  }
+
+  async query(_query: AuditQuery): Promise<{
+    entries: AuditLogEntry[];
+    total: number;
+    hasMore: boolean;
+  }> {
+    // Stub implementation
+    return {
+      entries: [],
+      total: 0,
+      hasMore: false
+    };
+  }
+
+  async getSummary(
+    dateFrom: Date,
+    dateTo: Date,
+    _userId?: string
+  ): Promise<AuditSummary> {
+    // Stub implementation
+    return {
+      totalEvents: 0,
+      timeRange: { from: dateFrom, to: dateTo },
+      categoryCounts: {},
+      severityCounts: {},
+      userActivity: [],
+      topActions: [],
+      securityEvents: {
+        total: 0,
+        critical: 0,
+        recent: []
+      },
+      complianceMetrics: {
+        gdprEvents: 0,
+        coppaEvents: 0,
+        pciEvents: 0,
+        dataAccessEvents: 0,
+        dataModificationEvents: 0
+      }
+    };
+  }
+
+  async exportLogs(
+    _query: AuditQuery,
+    _format: 'json' | 'csv' | 'xml' = 'json'
+  ): Promise<string> {
+    // Stub implementation
+    return '[]';
+  }
+
+  async cleanupOldLogs(): Promise<{
+    deleted: number;
+    retainedCritical: number;
+    retainedHigh: number;
+    retainedMedium: number;
+    retainedLow: number;
+  }> {
+    // Stub implementation
+    return {
+      deleted: 0,
+      retainedCritical: 0,
+      retainedHigh: 0,
+      retainedMedium: 0,
+      retainedLow: 0
+    };
+  }
+
+  async cleanup(): Promise<void> {
+    // Stub implementation
+  }
+}
+
+export const _auditService =  new AuditService();
+export { AuditService };
+export default auditService;

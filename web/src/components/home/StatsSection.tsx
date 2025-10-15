@@ -5,13 +5,7 @@
  */
 
 import React from 'react';
-import {
-  Box,
-  Typography,
-  Container,
-  Grid,
-  alpha,
-} from '@mui/material';
+import { Box, Typography, Container, Grid, alpha } from '@mui/material';
 
 /**
  * Stat Item Interface
@@ -91,7 +85,7 @@ const StatItem: React.FC<{ stat: StatItem }> = ({ stat }) => {
         {stat.suffix && (
           <Box
             component="span"
-            sx={{ 
+            sx={{
               fontSize: '0.7em',
               verticalAlign: 'top',
               ml: 0.5,
@@ -101,7 +95,7 @@ const StatItem: React.FC<{ stat: StatItem }> = ({ stat }) => {
           </Box>
         )}
       </Typography>
-      
+
       <Typography
         variant="subtitle1"
         sx={{
@@ -122,8 +116,8 @@ const StatItem: React.FC<{ stat: StatItem }> = ({ stat }) => {
  * Statistics Section Component
  */
 export const StatsSection: React.FC<StatsSectionProps> = ({
-  title = "Platform Impact",
-  subtitle = "Numbers that showcase our commitment to improving school food delivery experiences.",
+  title = 'Platform Impact',
+  subtitle = 'Numbers that showcase our commitment to improving school food delivery experiences.',
   stats = defaultStats,
   variant = 'default',
 }) => {
@@ -171,7 +165,7 @@ export const StatsSection: React.FC<StatsSectionProps> = ({
           >
             {title}
           </Typography>
-          
+
           <Typography
             variant="h6"
             sx={{
@@ -200,7 +194,7 @@ export const StatsSection: React.FC<StatsSectionProps> = ({
                   transition: 'all 0.3s ease-in-out',
                   '&:hover': {
                     transform: 'translateY(-4px)',
-                    boxShadow: (theme) => `0 8px 24px ${alpha(theme.palette.primary.main, 0.1)}`,
+                    boxShadow: theme => `0 8px 24px ${alpha(theme.palette.primary.main, 0.1)}`,
                     borderColor: alpha('#4CAF50', 0.3),
                   },
                 }}
@@ -220,9 +214,10 @@ export const StatsSection: React.FC<StatsSectionProps> = ({
               fontStyle: 'italic',
             }}
           >
-            * Statistics updated as of {new Date().toLocaleDateString('en-US', { 
-              month: 'long', 
-              year: 'numeric' 
+            * Statistics updated as of{' '}
+            {new Date().toLocaleDateString('en-US', {
+              month: 'long',
+              year: 'numeric',
             })}
           </Typography>
         </Box>

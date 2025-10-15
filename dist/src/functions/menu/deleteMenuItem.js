@@ -71,7 +71,7 @@ const deleteMenuItemHandler = async (event, context) => {
         if (!canDeleteMenuItem(authenticatedUser)) {
             logger.warn('Insufficient permissions for menu item deletion', {
                 requestId,
-                userId: authenticatedUser.id,
+                userId: authenticatedUser.id || "",
                 role: authenticatedUser.role
             });
             return (0, response_utils_1.createErrorResponse)('Insufficient permissions to delete menu items', 403, 'UNAUTHORIZED');
@@ -86,7 +86,7 @@ const deleteMenuItemHandler = async (event, context) => {
             validationService.validateUUID(menuItemId, 'Menu item ID');
         }
         catch (error) {
-            logger.warn('Invalid menu item ID format', { requestId, menuItemId, error: error.message });
+            logger.warn('Invalid menu item ID format', { requestId, menuItemId, error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) });
             return (0, response_utils_1.createErrorResponse)('Invalid menu item ID format', 400, 'VALIDATION_ERROR');
         }
         const queryParams = event.queryStringParameters || {};
@@ -111,7 +111,7 @@ const deleteMenuItemHandler = async (event, context) => {
         if (authenticatedUser.role === 'school_admin' && authenticatedUser.schoolId !== existingMenuItem.schoolId) {
             logger.warn('Cross-school menu item deletion attempt', {
                 requestId,
-                userId: authenticatedUser.id,
+                userId: authenticatedUser.id || "",
                 userSchoolId: authenticatedUser.schoolId,
                 menuItemSchoolId: existingMenuItem.schoolId
             });
@@ -144,7 +144,7 @@ const deleteMenuItemHandler = async (event, context) => {
                 schoolId: existingMenuItem.schoolId
             });
         }
-        await createAuditLog(menuItemId, authenticatedUser.id, isHardDelete ? 'HARD_DELETE' : 'SOFT_DELETE', isHardDelete);
+        await createAuditLog(menuItemId, authenticatedUser.id || "", isHardDelete ? 'HARD_DELETE' : 'SOFT_DELETE', isHardDelete);
         logger.info('Menu item deletion completed successfully', {
             requestId,
             menuItemId,
@@ -164,7 +164,7 @@ const deleteMenuItemHandler = async (event, context) => {
     catch (error) {
         logger.error('Menu item deletion failed', {
             requestId,
-            error: error.message,
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
             stack: error.stack
         });
         return (0, response_utils_1.handleError)(error, 'Failed to delete menu item');

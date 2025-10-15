@@ -88,7 +88,7 @@ exports.CommonSchemas = {
         .int('Amount must be in cents (integer)')
         .positive('Amount must be positive')
         .max(999999999, 'Amount too large'),
-    currency: zod_1.z.enum(['USD', 'EUR', 'GBP', 'INR', 'CAD', 'AUD']).default('USD'),
+    currency: zod_1.z.enum(['INR', 'EUR', 'GBP', 'CAD', 'AUD']).default('INR'),
 };
 const validateRequest = (schema, event, options = {}) => {
     const startTime = Date.now();
@@ -175,7 +175,7 @@ const validateRequest = (schema, event, options = {}) => {
     catch (error) {
         const duration = Date.now() - startTime;
         logger.error('Request validation error', {
-            error: error instanceof Error ? error.message : 'Unknown error',
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error',
             stack: error instanceof Error ? error.stack : undefined,
             path: event.path,
             method: event.httpMethod,
@@ -289,7 +289,7 @@ const sanitizeData = (data, options = {}) => {
         return sanitized;
     }
     if (Array.isArray(data)) {
-        return data.map(item => sanitizeData(item, options)).filter(item => removeNullUndefined ? item !== null && item !== undefined : true);
+        return data.map((item) => sanitizeData(item, options)).filter(item => removeNullUndefined ? item !== null && item !== undefined : true);
     }
     if (typeof data === 'object') {
         const sanitized = {};
@@ -312,7 +312,7 @@ const escapeHtmlString = (str) => {
         "'": '&#x27;',
         '/': '&#x2F;',
     };
-    return str.replace(/[&<>"'\/]/g, (match) => htmlEscapeMap[match]);
+    return str.replace(/[&<>"'/]/g, (match) => htmlEscapeMap[match]);
 };
 const removeXSSAttempts = (str) => {
     str = str.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
@@ -353,7 +353,7 @@ const withValidation = (schema, handler, options = {}) => {
         }
         catch (error) {
             logger.error('Validation wrapper error', {
-                error: error instanceof Error ? error.message : 'Unknown error',
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error',
                 stack: error instanceof Error ? error.stack : undefined,
                 path: event.path,
                 method: event.httpMethod
@@ -409,7 +409,7 @@ const withAuthAndValidation = (schema, handler, validationOptions = {}) => {
         }
         catch (error) {
             logger.error('Auth and validation wrapper error', {
-                error: error instanceof Error ? error.message : 'Unknown error',
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error',
                 stack: error instanceof Error ? error.stack : undefined,
                 path: event.path,
                 method: event.httpMethod
@@ -467,7 +467,7 @@ const validationHealthCheck = () => {
         return {
             status: 'unhealthy',
             details: {
-                error: error instanceof Error ? error.message : 'Unknown error',
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error',
                 timestamp: new Date().toISOString()
             }
         };

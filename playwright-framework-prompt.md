@@ -1,10 +1,13 @@
 # Advanced Playwright Automation Framework Generation Prompt
 
 ## OBJECTIVE
+
 Generate a production-grade, enterprise-level Playwright testing framework for a modern React-based food ordering platform with complex UI animations, multi-role authentication, and payment processing capabilities.
 
 ## PRIORITY MATRIX
+
 ### P0 - Critical (Must pass for deployment)
+
 - Authentication flows for all 5 roles
 - Payment processing (Razorpay integration)
 - Order lifecycle (create → pay → fulfill)
@@ -12,6 +15,7 @@ Generate a production-grade, enterprise-level Playwright testing framework for a
 - Core accessibility (WCAG AA)
 
 ### P1 - High (Block release if >2 fail)
+
 - Shader/animation rendering
 - Responsive breakpoints (320px-4K)
 - Visual regression (±5% threshold)
@@ -19,6 +23,7 @@ Generate a production-grade, enterprise-level Playwright testing framework for a
 - Session management
 
 ### P2 - Medium (Track but don't block)
+
 - Micro-interactions
 - Performance metrics
 - Cross-browser compatibility
@@ -27,6 +32,7 @@ Generate a production-grade, enterprise-level Playwright testing framework for a
 ## COMPREHENSIVE TEST REQUIREMENTS
 
 ### A. VISUAL & ANIMATION FRAMEWORK
+
 ```typescript
 interface ShaderTestConfig {
   backgrounds: {
@@ -56,6 +62,7 @@ interface ShaderTestConfig {
 ```
 
 **Test Requirements:**
+
 - Validate ALL shader configurations across light/dark themes
 - Test animation sequences: entrance → interaction → exit
 - Capture performance metrics during complex animations
@@ -66,6 +73,7 @@ interface ShaderTestConfig {
 ### B. FUNCTIONAL WORKFLOW TESTING
 
 #### Authentication Matrix
+
 ```typescript
 type UserRole = 'parent' | 'student' | 'staff' | 'admin' | 'superAdmin';
 type AuthScenario = {
@@ -79,42 +87,45 @@ type AuthScenario = {
 ```
 
 **Test Scenarios:**
+
 1. **Happy Path**: Login → Navigate → Perform Actions → Logout
-2. **Edge Cases**: 
+2. **Edge Cases**:
    - Concurrent sessions
    - Token expiry during transaction
    - Role elevation/demotion
    - Account switching
    - OAuth fallback
-3. **Security**: 
+3. **Security**:
    - CSRF protection
    - XSS prevention
    - SQL injection attempts
    - Rate limiting
 
 #### Order Lifecycle Testing
+
 ```typescript
 interface OrderTestFlow {
   creation: {
-    validations: ['inventory', 'pricing', 'schedule'],
-    constraints: ['minOrder', 'maxItems', 'cutoffTime']
-  },
+    validations: ['inventory', 'pricing', 'schedule'];
+    constraints: ['minOrder', 'maxItems', 'cutoffTime'];
+  };
   payment: {
-    providers: ['razorpay', 'stripe', 'wallet'],
-    scenarios: ['success', 'failure', 'timeout', 'partial'],
-    webhooks: ['confirmation', 'refund', 'dispute']
-  },
+    providers: ['razorpay', 'stripe', 'wallet'];
+    scenarios: ['success', 'failure', 'timeout', 'partial'];
+    webhooks: ['confirmation', 'refund', 'dispute'];
+  };
   fulfillment: {
-    states: ['pending', 'preparing', 'ready', 'delivered', 'cancelled'],
-    notifications: ['email', 'sms', 'push', 'inApp'],
-    tracking: ['realtime', 'historical']
-  }
+    states: ['pending', 'preparing', 'ready', 'delivered', 'cancelled'];
+    notifications: ['email', 'sms', 'push', 'inApp'];
+    tracking: ['realtime', 'historical'];
+  };
 }
 ```
 
 ### C. ADVANCED QA FRAMEWORK
 
 #### Accessibility Testing
+
 - **WCAG 2.1 AA Compliance**
   - Color contrast ratios (4.5:1 normal, 3:1 large)
   - Keyboard navigation (tab order, focus management)
@@ -123,27 +134,29 @@ interface OrderTestFlow {
   - Form error handling and announcements
 
 #### Visual Regression Strategy
+
 ```typescript
 interface VisualRegressionConfig {
   baseline: {
-    creation: 'onMergeToMain',
-    storage: 'aws-s3-bucket',
-    retention: '30-days'
-  },
+    creation: 'onMergeToMain';
+    storage: 'aws-s3-bucket';
+    retention: '30-days';
+  };
   comparison: {
-    threshold: 5, // percentage
-    ignoreRegions: ['.dynamic-timestamp', '.user-avatar'],
-    animations: 'disabled' | 'paused',
-    fonts: 'waitForLoad'
-  },
+    threshold: 5; // percentage
+    ignoreRegions: ['.dynamic-timestamp', '.user-avatar'];
+    animations: 'disabled' | 'paused';
+    fonts: 'waitForLoad';
+  };
   reporting: {
-    format: 'html' | 'json' | 'slack',
-    artifacts: ['diff', 'baseline', 'actual']
-  }
+    format: 'html' | 'json' | 'slack';
+    artifacts: ['diff', 'baseline', 'actual'];
+  };
 }
 ```
 
 #### Performance Benchmarks
+
 - **Core Web Vitals**
   - LCP: <2.5s
   - FID: <100ms
@@ -158,6 +171,7 @@ interface VisualRegressionConfig {
 ### D. TEST ARCHITECTURE
 
 #### Directory Structure
+
 ```
 /tests
 ├── /e2e
@@ -206,6 +220,7 @@ interface VisualRegressionConfig {
 ```
 
 #### Code Standards
+
 ```typescript
 // Example Test Structure
 import { test, expect } from '@playwright/test';
@@ -226,7 +241,7 @@ test.describe('Order Creation Flow', () => {
     const testData = {
       items: ['item1', 'item2'],
       quantity: [2, 1],
-      deliveryDate: '2024-01-15'
+      deliveryDate: '2024-01-15',
     };
 
     // Act
@@ -238,11 +253,11 @@ test.describe('Order Creation Flow', () => {
     // Assert
     await expect(orderPage.orderSummary).toBeVisible();
     await expect(orderPage.totalAmount).toContainText('₹450');
-    
+
     // Payment flow
     const paymentFrame = await orderPage.initiatePayment();
     await paymentFrame.completeRazorpayFlow();
-    
+
     // Verify order confirmation
     await expect(page).toHaveURL(/\/order\/confirmation/);
     await expect(orderPage.confirmationNumber).toMatch(/ORD-\d{10}/);
@@ -260,24 +275,26 @@ test.describe('Order Creation Flow', () => {
 ### E. AUTOMATION INFRASTRUCTURE
 
 #### Network Mocking Strategy
+
 ```typescript
 interface NetworkMockConfig {
   scenarios: {
-    success: { status: 200, delay: 0 },
-    slowNetwork: { status: 200, delay: 3000 },
-    timeout: { status: 408, delay: 30000 },
-    serverError: { status: 500, body: ErrorResponse },
-    rateLimited: { status: 429, headers: { 'Retry-After': '60' } }
-  },
+    success: { status: 200; delay: 0 };
+    slowNetwork: { status: 200; delay: 3000 };
+    timeout: { status: 408; delay: 30000 };
+    serverError: { status: 500; body: ErrorResponse };
+    rateLimited: { status: 429; headers: { 'Retry-After': '60' } };
+  };
   intercepts: {
-    api: '**\/api\/**',
-    cdn: '**\/cdn\/**',
-    thirdParty: ['razorpay.com', 'analytics.google.com']
-  }
+    api: '**\/api\/**';
+    cdn: '**\/cdn\/**';
+    thirdParty: ['razorpay.com', 'analytics.google.com'];
+  };
 }
 ```
 
 #### CI/CD Integration
+
 ```yaml
 # .github/workflows/playwright.yml
 name: Playwright Tests
@@ -310,6 +327,7 @@ jobs:
 ```
 
 #### Environment Configuration
+
 ```typescript
 // playwright.config.ts
 export default defineConfig({
@@ -322,7 +340,7 @@ export default defineConfig({
     ['html', { open: 'never' }],
     ['json', { outputFile: 'test-results.json' }],
     ['junit', { outputFile: 'junit.xml' }],
-    ['slack', { webhookUrl: process.env.SLACK_WEBHOOK }]
+    ['slack', { webhookUrl: process.env.SLACK_WEBHOOK }],
   ],
   use: {
     baseURL: process.env.BASE_URL || 'http://localhost:3000',
@@ -354,20 +372,20 @@ export default defineConfig({
 ```typescript
 interface ErrorRecoveryStrategy {
   network: {
-    retryCount: 3,
-    retryDelay: [1000, 2000, 4000],
-    fallbackBehavior: 'gracefulDegradation'
-  },
+    retryCount: 3;
+    retryDelay: [1000, 2000, 4000];
+    fallbackBehavior: 'gracefulDegradation';
+  };
   element: {
-    waitStrategies: ['visible', 'attached', 'stable'],
-    timeout: 30000,
-    polling: 100
-  },
+    waitStrategies: ['visible', 'attached', 'stable'];
+    timeout: 30000;
+    polling: 100;
+  };
   data: {
-    validation: 'schema-based',
-    sanitization: 'automatic',
-    recovery: 'lastKnownGood'
-  }
+    validation: 'schema-based';
+    sanitization: 'automatic';
+    recovery: 'lastKnownGood';
+  };
 }
 ```
 
@@ -376,24 +394,24 @@ interface ErrorRecoveryStrategy {
 ```typescript
 interface TestMetrics {
   execution: {
-    totalTests: number,
-    passed: number,
-    failed: number,
-    skipped: number,
-    flaky: number,
-    duration: number
-  },
+    totalTests: number;
+    passed: number;
+    failed: number;
+    skipped: number;
+    flaky: number;
+    duration: number;
+  };
   coverage: {
-    features: percentage,
-    code: percentage,
-    api: percentage,
-    ui: percentage
-  },
+    features: percentage;
+    code: percentage;
+    api: percentage;
+    ui: percentage;
+  };
   trends: {
-    failureRate: number[],
-    executionTime: number[],
-    flakyTests: string[]
-  }
+    failureRate: number[];
+    executionTime: number[];
+    flakyTests: string[];
+  };
 }
 ```
 

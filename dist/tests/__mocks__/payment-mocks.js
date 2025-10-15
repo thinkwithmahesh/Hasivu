@@ -18,7 +18,7 @@ exports.mockGatewayErrors = exports.createMockGatewayHealthCheck = exports.mockP
 exports.cleanupMockTimers = exports.setupMockTimers = exports.mockDateUtils = exports.cleanupTestEnvironment = exports.setupTestEnvironment = exports.mockEnvVars = exports.setupDatabaseMocks = exports.setupPaymentMocks = exports.resetAllMocks = void 0;
 const Currency = {
     INR: 'INR',
-    USD: 'USD'
+    EUR: 'EUR'
 };
 const PaymentGateway = {
     RAZORPAY: 'razorpay',
@@ -54,7 +54,7 @@ const GATEWAYS = {
 };
 const CURRENCIES = {
     INR: 'INR',
-    USD: 'USD'
+    EUR: 'EUR'
 };
 const createMockUser = (overrides = {}) => ({
     id: 'user-test-123',
@@ -771,7 +771,7 @@ exports.mockWebhookPayloads = {
 };
 const createMockAPIGatewayEvent = (method, path, body, pathParameters, headers) => ({
     httpMethod: method,
-    path: path,
+    path,
     body: body ? JSON.stringify(body) : null,
     pathParameters: pathParameters || {},
     headers: {
@@ -788,7 +788,7 @@ const createMockAPIGatewayEvent = (method, path, body, pathParameters, headers) 
             sourceIp: '127.0.0.1'
         },
         httpMethod: method,
-        path: path,
+        path,
         stage: 'test',
         requestTime: '01/Jan/2024:00:00:00 +0000',
         requestTimeEpoch: 1704067200

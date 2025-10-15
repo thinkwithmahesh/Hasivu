@@ -1,0 +1,63 @@
+/**
+ * Connector stub for data warehouse integration
+ */
+import { logger } from '../../../../shared/utils/logger';
+import { SystemConnector, ConnectionConfig, SyncResult, HealthStatus } from '../../types/integration-types';
+
+export class Connector implements SystemConnector {
+  id = 'connector';
+  name = 'Connector';
+  type = 'hasivu_system' as const;
+  status: 'connected' | 'disconnected' | 'error' = 'connected';
+  config: ConnectionConfig;
+  health = { status: 'healthy' as const, checks: [], lastUpdated: new Date() };
+
+  constructor(config: ConnectionConfig) {
+    this.config = config;
+  }
+
+  async connect(): Promise<boolean> {
+    return true;
+  }
+
+  async disconnect(): Promise<void> {}
+
+  async sync(): Promise<SyncResult> {
+    const startTime = new Date();
+    return {
+      integrationId: this.id,
+      startTime,
+      endTime: new Date(),
+      status: 'success',
+      recordsProcessed: 10,
+      recordsSuccess: 10,
+      recordsFailed: 0,
+      errors: [],
+      metrics: {
+        duration: 100,
+        throughput: 100,
+        dataVolume: 1024,
+        networkLatency: 10,
+        errorRate: 0
+      }
+    };
+  }
+
+  async healthCheck(): Promise<void> {}
+
+  async initialize(): Promise<void> {
+    // Initialize the authentication connector
+    logger.info('Initializing Authentication Connector');
+  }
+
+  async getHealthStatus(): Promise<HealthStatus> {
+    await this.healthCheck();
+    return this.health;
+  }
+
+  async isConnected(): Promise<boolean> {
+    return this.status === 'connected';
+  }
+}
+
+export default Connector;

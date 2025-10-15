@@ -26,6 +26,10 @@ router.use(logging_middleware_1.requestLogger);
 router.use(rateLimiter_middleware_1.generalRateLimit);
 router.get('/metrics', auth_middleware_1.authMiddleware, async (req, res, next) => {
     try {
+        if (!req.user) {
+            res.status(401).json({ error: 'User not authenticated' });
+            return;
+        }
         const metrics = await performance_service_1.performanceService.getCurrentMetrics();
         res.json({
             success: true,
@@ -49,6 +53,10 @@ router.get('/dashboard', auth_middleware_1.authMiddleware, [
         .withMessage('Invalid metric type')
 ], handleValidationErrors, async (req, res, next) => {
     try {
+        if (!req.user) {
+            res.status(401).json({ error: 'User not authenticated' });
+            return;
+        }
         const dashboard = await performance_service_1.performanceService.getDashboardData({
             schoolId: req.user.id,
             timeRange: req.query.timeRange || '24h',
@@ -85,6 +93,10 @@ router.get('/history', auth_middleware_1.authMiddleware, [
         .withMessage('Metrics must be a comma-separated list')
 ], handleValidationErrors, async (req, res, next) => {
     try {
+        if (!req.user) {
+            res.status(401).json({ error: 'User not authenticated' });
+            return;
+        }
         const history = await performance_service_1.performanceService.getHistoricalData({
             startDate: new Date(req.query.startDate),
             endDate: new Date(req.query.endDate),
@@ -112,6 +124,10 @@ router.get('/alerts', auth_middleware_1.authMiddleware, [
         .withMessage('Severity must be low, medium, high, or critical')
 ], handleValidationErrors, async (req, res, next) => {
     try {
+        if (!req.user) {
+            res.status(401).json({ error: 'User not authenticated' });
+            return;
+        }
         const alerts = await performance_service_1.performanceService.getAlerts({
             schoolId: req.user.id,
             status: req.query.status,
@@ -140,6 +156,10 @@ router.get('/bottlenecks', auth_middleware_1.authMiddleware, [
         .withMessage('Component must be database, api, cache, or external')
 ], handleValidationErrors, async (req, res, next) => {
     try {
+        if (!req.user) {
+            res.status(401).json({ error: 'User not authenticated' });
+            return;
+        }
         const bottlenecks = await performance_service_1.performanceService.identifyBottlenecks({
             threshold: Number(req.query.threshold) || 80,
             timeWindow: req.query.timeWindow || '1h'
@@ -168,6 +188,10 @@ router.post('/record', auth_middleware_1.authMiddleware, [
         .withMessage('Tags should be key-value pairs')
 ], handleValidationErrors, async (req, res, next) => {
     try {
+        if (!req.user) {
+            res.status(401).json({ error: 'User not authenticated' });
+            return;
+        }
         await performance_service_1.performanceService.recordMetric({
             name: req.query.metric,
             value: Number(req.query.value),
@@ -194,6 +218,10 @@ router.get('/optimization-suggestions', auth_middleware_1.authMiddleware, [
         .withMessage('Priority must be low, medium, or high')
 ], handleValidationErrors, async (req, res, next) => {
     try {
+        if (!req.user) {
+            res.status(401).json({ error: 'User not authenticated' });
+            return;
+        }
         const suggestions = await performance_service_1.performanceService.getOptimizationSuggestions({
             schoolId: req.user.id,
             category: req.query.category,
@@ -212,6 +240,10 @@ router.get('/optimization-suggestions', auth_middleware_1.authMiddleware, [
 });
 router.get('/health', auth_middleware_1.authMiddleware, async (req, res, next) => {
     try {
+        if (!req.user) {
+            res.status(401).json({ error: 'User not authenticated' });
+            return;
+        }
         const health = await performance_service_1.performanceService.getSystemHealth(req.user.id);
         res.json({
             success: true,

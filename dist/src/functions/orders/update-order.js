@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.handler = void 0;
 const logger_1 = require("@/utils/logger");
 const response_utils_1 = require("@/shared/response.utils");
-const database_service_1 = require("@/services/database.service");
+const database_service_1 = require("@/shared/database.service");
 async function validateOrderAccess(orderId, userId) {
     const database = database_service_1.DatabaseService.getInstance();
     const result = await database.query(`
@@ -77,7 +77,7 @@ async function validateOrderItemUpdates(orderItems, schoolId, deliveryDate, meal
             }
             validatedItems.push({
                 id: item.id,
-                action: 'remove'
+                action: 'remove',
             });
             continue;
         }
@@ -97,7 +97,9 @@ async function validateOrderItemUpdates(orderItems, schoolId, deliveryDate, meal
         if (!menuItem) {
             throw new Error(`Menu item not found: ${item.menuItemId}`);
         }
-        const deliveryDayName = deliveryDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+        const deliveryDayName = deliveryDate
+            .toLocaleDateString('en-US', { weekday: 'long' })
+            .toLowerCase();
         if (menuItem.availableDays && !menuItem.availableDays.includes(deliveryDayName)) {
             throw new Error(`${menuItem.name} is not available on ${deliveryDayName}`);
         }
@@ -114,7 +116,7 @@ async function validateOrderItemUpdates(orderItems, schoolId, deliveryDate, meal
       `, [item.id]);
             if (currentItemResult.rows.length > 0) {
                 const currentTotal = parseFloat(currentItemResult.rows[0].totalPrice);
-                totalAmountChange += (itemTotal - currentTotal);
+                totalAmountChange += itemTotal - currentTotal;
             }
             else {
                 totalAmountChange += itemTotal;
@@ -129,7 +131,7 @@ async function validateOrderItemUpdates(orderItems, schoolId, deliveryDate, meal
             totalPrice: itemTotal,
             specialInstructions: item.specialInstructions,
             customizations: item.customizations,
-            action: item.action
+            action: item.action,
         });
     }
     return { validatedItems, totalAmountChange };
@@ -139,26 +141,26 @@ const handler = async (event, context) => {
     logger_1.logger.logFunctionStart('updateOrderHandler', { event, context });
     try {
         if (event.httpMethod !== 'PUT') {
-            return (0, response_utils_1.createErrorResponse)('Method not allowed', 405, 'METHOD_NOT_ALLOWED');
+            return (0, response_utils_1.createErrorResponse)('METHOD_NOT_ALLOWED', 'Method not allowed', 405);
         }
         const orderId = event.pathParameters?.orderId;
         if (!orderId) {
-            return (0, response_utils_1.createErrorResponse)('Missing orderId in path parameters', 400, 'MISSING_ORDER_ID');
+            return (0, response_utils_1.createErrorResponse)('MISSING_ORDER_ID', 'Missing orderId in path parameters', 400);
         }
         const body = JSON.parse(event.body || '{}');
         logger_1.logger.info('Processing update order request', { orderId, body });
         const userId = event.requestContext?.authorizer?.userId || event.headers?.['x-user-id'];
         if (!userId) {
-            return (0, response_utils_1.createErrorResponse)('User authentication required', 401, 'AUTHENTICATION_REQUIRED');
+            return (0, response_utils_1.createErrorResponse)('AUTHENTICATION_REQUIRED', 'User authentication required', 401);
         }
         const order = await validateOrderAccess(orderId, userId);
         const database = database_service_1.DatabaseService.getInstance();
         const updatedFields = [];
         let totalAmountChange = 0;
-        let itemsChanged = {
+        const itemsChanged = {
             added: 0,
             updated: 0,
-            removed: 0
+            removed: 0,
         };
         await database.query('BEGIN');
         try {
@@ -199,7 +201,9 @@ const handler = async (event, context) => {
                 updatedFields.push('contactPhone');
             }
             if (body.orderItems && body.orderItems.length > 0) {
-                const deliveryDate = body.deliveryDate ? new Date(body.deliveryDate) : new Date(order.deliveryDate);
+                const deliveryDate = body.deliveryDate
+                    ? new Date(body.deliveryDate)
+                    : new Date(order.deliveryDate);
                 const mealPeriod = body.mealPeriod || order.mealPeriod;
                 const { validatedItems, totalAmountChange: amountChange } = await validateOrderItemUpdates(body.orderItems, order.schoolId, deliveryDate, mealPeriod);
                 totalAmountChange = amountChange;
@@ -228,7 +232,7 @@ const handler = async (event, context) => {
                             item.unitPrice,
                             item.totalPrice,
                             item.specialInstructions,
-                            JSON.stringify(item.customizations || {})
+                            JSON.stringify(item.customizations || {}),
                         ]);
                         itemsChanged.added++;
                     }
@@ -243,7 +247,7 @@ const handler = async (event, context) => {
                             item.totalPrice,
                             item.specialInstructions,
                             JSON.stringify(item.customizations || {}),
-                            item.id
+                            item.id,
                         ]);
                         itemsChanged.updated++;
                     }
@@ -273,23 +277,23 @@ const handler = async (event, context) => {
                 status: updatedOrder.status,
                 paymentStatus: updatedOrder.paymentStatus,
                 totalAmount: parseFloat(updatedOrder.totalAmount),
-                itemsChanged: itemsChanged,
-                updatedFields: updatedFields,
-                updatedAt: updatedOrder.updatedAt
+                itemsChanged,
+                updatedFields,
+                updatedAt: updatedOrder.updatedAt,
             };
             const duration = Date.now() - startTime;
-            logger_1.logger.logFunctionEnd("handler", { statusCode: 200, duration });
+            logger_1.logger.logFunctionEnd('handler', { statusCode: 200, duration });
             logger_1.logger.info('Order updated successfully', {
-                orderId: orderId,
-                updatedFields: updatedFields,
-                itemsChanged: itemsChanged,
-                totalAmountChange: totalAmountChange
+                orderId,
+                updatedFields,
+                itemsChanged,
+                totalAmountChange,
             });
             return (0, response_utils_1.createSuccessResponse)({
                 data: {
-                    order: response
+                    order: response,
                 },
-                message: `Order updated successfully. Fields changed: ${updatedFields.join(', ')}`
+                message: `Order updated successfully. Fields changed: ${updatedFields.join(', ')}`,
             });
         }
         catch (transactionError) {
@@ -299,7 +303,7 @@ const handler = async (event, context) => {
     }
     catch (error) {
         const duration = Date.now() - startTime;
-        logger_1.logger.logFunctionEnd("handler", { statusCode: 500, duration });
+        logger_1.logger.logFunctionEnd('handler', { statusCode: 500, duration });
         return (0, response_utils_1.handleError)(error, 'Failed to update order');
     }
 };

@@ -3,14 +3,13 @@
  * Handles communication with the backend Express server
  */
 
-import { 
-  EnhancedLoginFormData, 
+import {
+  EnhancedLoginFormData,
   RegistrationFormData,
   ForgotPasswordFormData,
-  ProfileManagementFormData 
+  ProfileManagementFormData,
 } from '@/components/auth/schemas';
 
-// API configuration
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 // Response types
@@ -60,22 +59,63 @@ interface User {
 class APIClient {
   private baseURL: string;
   private accessToken: string | null = null;
+  private csrfToken: string | null = null;
 
   constructor(baseURL: string = API_BASE_URL) {
     this.baseURL = baseURL;
-    
-    // Load token from localStorage on client-side
+    // Load token from cookies on client-side
     if (typeof window !== 'undefined') {
-      this.accessToken = localStorage.getItem('accessToken');
+      this.accessToken = this.getCookie('accessToken');
+      this.csrfToken = this.getCookie('csrfToken') || this.generateCSRFToken();
+      this.setCookie('csrfToken', this.csrfToken, {
+        maxAge: 24 * 3600, // 24 hours
+        httpOnly: false,
+        secure: true,
+        sameSite: 'strict',
+      });
     }
   }
 
-  private async request<T>(
-    endpoint: string, 
-    options: RequestInit = {}
-  ): Promise<APIResponse<T>> {
+  // Generate CSRF token
+  private generateCSRFToken(): string {
+    return Math.random().toString(36).substring(2) + Date.now().toString(36);
+  }
+
+  // Helper method to get cookie value
+  private getCookie(name: string): string | null {
+    if (typeof document === 'undefined') return null;
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) {
+      return parts.pop()?.split(';').shift() || null;
+    }
+    return null;
+  }
+
+  // Helper method to set httpOnly cookie (server-side only)
+  private setCookie(
+    name: string,
+    value: string,
+    options: {
+      maxAge?: number;
+      httpOnly?: boolean;
+      secure?: boolean;
+      sameSite?: 'strict' | 'lax' | 'none';
+    } = {}
+  ): void {
+    // Note: httpOnly cookies can only be set server-side
+    // For client-side, we'll use regular cookies with httpOnly=false
+    if (typeof document !== 'undefined') {
+      let cookieString = `${name}=${value}`;
+      if (options.maxAge) cookieString += `; max-age=${options.maxAge}`;
+      if (options.secure !== false) cookieString += '; secure';
+      if (options.sameSite) cookieString += `; samesite=${options.sameSite}`;
+      document.cookie = cookieString;
+    }
+  }
+
+  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<APIResponse<T>> {
     const url = `${this.baseURL}${endpoint}`;
-    
     const config: RequestInit = {
       ...options,
       headers: {
@@ -88,13 +128,25 @@ class APIClient {
     if (this.accessToken) {
       config.headers = {
         ...config.headers,
-        'Authorization': `Bearer ${this.accessToken}`,
+        Authorization: `Bearer ${this.accessToken}`,
+      };
+    }
+
+    // Add CSRF token for auth endpoints
+    if (
+      this.csrfToken &&
+      endpoint.startsWith('/auth/') &&
+      (options.method === 'POST' || options.method === 'PUT' || options.method === 'PATCH')
+    ) {
+      config.headers = {
+        ...config.headers,
+        'X-CSRF-Token': this.csrfToken,
       };
     }
 
     try {
       const response = await fetch(url, config);
-      
+
       // Handle non-JSON responses
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
@@ -122,7 +174,6 @@ class APIClient {
         ...data,
       };
     } catch (error) {
-      console.error('API Request failed:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Network error',
@@ -131,18 +182,26 @@ class APIClient {
   }
 
   // Token management
-  setToken(token: string) {
+  setToken(token: string): void {
     this.accessToken = token;
     if (typeof window !== 'undefined') {
-      localStorage.setItem('accessToken', token);
+      // Set access token as regular cookie (httpOnly would need server-side)
+      this.setCookie('accessToken', token, {
+        maxAge: 15 * 60, // 15 minutes
+        httpOnly: false, // Can't set httpOnly from client-side
+        secure: true,
+        sameSite: 'strict',
+      });
     }
   }
 
-  clearToken() {
+  clearToken(): void {
     this.accessToken = null;
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
+      // Clear cookies by setting them to expire
+      this.setCookie('accessToken', '', { maxAge: 0 });
+      this.setCookie('refreshToken', '', { maxAge: 0 });
+      this.setCookie('csrfToken', '', { maxAge: 0 });
     }
   }
 
@@ -155,10 +214,15 @@ class APIClient {
 
     if (response.success && response.data?.tokens?.accessToken) {
       this.setToken(response.data.tokens.accessToken);
-      
-      // Store refresh token
+
+      // Store refresh token in cookie
       if (typeof window !== 'undefined' && response.data.tokens.refreshToken) {
-        localStorage.setItem('refreshToken', response.data.tokens.refreshToken);
+        this.setCookie('refreshToken', response.data.tokens.refreshToken, {
+          maxAge: 7 * 24 * 3600, // 7 days
+          httpOnly: false,
+          secure: true,
+          sameSite: 'strict',
+        });
       }
     }
 
@@ -201,7 +265,9 @@ class APIClient {
     return this.request<{ user: User; sessionId: string }>('/auth/me');
   }
 
-  async updateProfile(data: Partial<ProfileManagementFormData>): Promise<APIResponse<{ user: User }>> {
+  async updateProfile(
+    data: Partial<ProfileManagementFormData>
+  ): Promise<APIResponse<{ user: User }>> {
     return this.request<{ user: User }>('/auth/profile', {
       method: 'PATCH',
       body: JSON.stringify(data),
@@ -219,15 +285,16 @@ class APIClient {
     });
   }
 
-  async checkAuthStatus(): Promise<APIResponse<{ authenticated: boolean; userId?: string; sessionId?: string }>> {
-    return this.request<{ authenticated: boolean; userId?: string; sessionId?: string }>('/auth/status');
+  async checkAuthStatus(): Promise<
+    APIResponse<{ authenticated: boolean; userId?: string; sessionId?: string }>
+  > {
+    return this.request<{ authenticated: boolean; userId?: string; sessionId?: string }>(
+      '/auth/status'
+    );
   }
 
   async refreshToken(): Promise<AuthResponse> {
-    const refreshToken = typeof window !== 'undefined' 
-      ? localStorage.getItem('refreshToken') 
-      : null;
-
+    const refreshToken = typeof window !== 'undefined' ? this.getCookie('refreshToken') : null;
     if (!refreshToken) {
       return { success: false, message: 'No refresh token available' };
     }
@@ -237,8 +304,8 @@ class APIClient {
       body: JSON.stringify({ refreshToken }),
     });
 
-    if (response.success && response.data?.accessToken) {
-      this.setToken(response.data.accessToken);
+    if (response.success && response.data?.tokens?.accessToken) {
+      this.setToken(response.data.tokens.accessToken);
     }
 
     return response as AuthResponse;
@@ -329,9 +396,11 @@ const apiClient = new APIClient();
 
 // Automatic token refresh on 401 errors
 const originalRequest = apiClient['request'];
-apiClient['request'] = async function(endpoint, options = {}) {
-  const response = await originalRequest.call(this, endpoint, options);
-  
+apiClient['request'] = async function <T>(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<APIResponse<T>> {
+  const response = (await originalRequest.call(this, endpoint, options)) as APIResponse<T>;
   // If we get 401 and have a refresh token, try to refresh
   if (!response.success && response.error?.includes('401') && typeof window !== 'undefined') {
     const refreshToken = localStorage.getItem('refreshToken');
@@ -339,11 +408,11 @@ apiClient['request'] = async function(endpoint, options = {}) {
       const refreshResponse = await this.refreshToken();
       if (refreshResponse.success) {
         // Retry the original request with new token
-        return originalRequest.call(this, endpoint, options);
+        return originalRequest.call(this, endpoint, options) as Promise<APIResponse<T>>;
       }
     }
   }
-  
+
   return response;
 };
 

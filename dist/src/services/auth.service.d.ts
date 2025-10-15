@@ -15,6 +15,8 @@ export interface AuthResult {
     user: {
         id: string;
         email: string;
+        firstName: string | null;
+        lastName: string | null;
         role: string;
         permissions: string[];
         schoolId?: string;
@@ -68,13 +70,16 @@ export interface PasswordValidationResult {
     };
 }
 export declare class AuthService {
+    private static instance;
     private jwtSecret;
     private jwtRefreshSecret;
     private passwordRequirements;
     private sessionTimeout;
     private maxFailedAttempts;
     private lockoutDuration;
+    private redis;
     constructor();
+    static getInstance(): AuthService;
     validateConfiguration(): {
         isValid: boolean;
         missingConfigs: string[];
@@ -255,6 +260,48 @@ export declare class AuthService {
         success: boolean;
         error?: string;
         isSecure?: boolean;
+    }>;
+    changePassword(userId: string, currentPassword: string, newPassword: string): Promise<{
+        success: boolean;
+        message?: string;
+        error?: string;
+    }>;
+    forgotPassword(email: string): Promise<{
+        success: boolean;
+        message?: string;
+        error?: string;
+    }>;
+    register(userData: {
+        email: string;
+        password: string;
+        firstName?: string;
+        lastName?: string;
+        phone?: string;
+        role?: string;
+        schoolId?: string;
+    }): Promise<{
+        success: boolean;
+        user?: any;
+        error?: string;
+    }>;
+    updateProfile(userId: string, profileData: {
+        firstName?: string;
+        lastName?: string;
+        phone?: string;
+        language?: string;
+        timezone?: string;
+    }): Promise<{
+        success: boolean;
+        user?: any;
+        error?: string;
+    }>;
+    refreshAccessToken(refreshToken: string): Promise<{
+        success: boolean;
+        tokens?: {
+            accessToken: string;
+            refreshToken: string;
+        };
+        error?: string;
     }>;
     validateConfigurationForTesting(): Promise<{
         success: boolean;

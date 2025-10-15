@@ -6,7 +6,7 @@ Resources:
   ProductionMonitoringDashboard:
     Type: AWS::CloudWatch::Dashboard
     Properties:
-      DashboardName: !Sub "${Environment}-hasivu-production-monitoring"
+      DashboardName: !Sub '${Environment}-hasivu-production-monitoring'
       DashboardBody: !Sub |
         {
           "widgets": [
@@ -239,15 +239,15 @@ Resources:
   CriticalErrorAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: !Sub "${Environment}-hasivu-critical-errors"
-      AlarmDescription: "Critical error rate threshold exceeded"
-      MetricName: "ErrorRate"
-      Namespace: "HASIVU/Platform"
+      AlarmName: !Sub '${Environment}-hasivu-critical-errors'
+      AlarmDescription: 'Critical error rate threshold exceeded'
+      MetricName: 'ErrorRate'
+      Namespace: 'HASIVU/Platform'
       Dimensions:
         - Name: Environment
           Value: !Ref Environment
       Statistic: Sum
-      Period: 300  # 5 minutes
+      Period: 300 # 5 minutes
       EvaluationPeriods: 2
       Threshold: 10
       ComparisonOperator: GreaterThanThreshold
@@ -261,17 +261,17 @@ Resources:
   HighResponseTimeAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: !Sub "${Environment}-hasivu-high-response-time"
-      AlarmDescription: "API response time exceeded SLA (1 second)"
-      MetricName: "APIResponseTime"
-      Namespace: "HASIVU/Platform"
+      AlarmName: !Sub '${Environment}-hasivu-high-response-time'
+      AlarmDescription: 'API response time exceeded SLA (1 second)'
+      MetricName: 'APIResponseTime'
+      Namespace: 'HASIVU/Platform'
       Dimensions:
         - Name: Environment
           Value: !Ref Environment
       Statistic: Average
       Period: 300
       EvaluationPeriods: 3
-      Threshold: 1000  # 1 second
+      Threshold: 1000 # 1 second
       ComparisonOperator: GreaterThanThreshold
       AlarmActions:
         - !Ref WarningAlertTopic
@@ -281,13 +281,13 @@ Resources:
   DatabaseCPUAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: !Sub "${Environment}-hasivu-database-cpu-high"
-      AlarmDescription: "Database CPU utilization is high"
-      MetricName: "CPUUtilization"
-      Namespace: "AWS/RDS"
+      AlarmName: !Sub '${Environment}-hasivu-database-cpu-high'
+      AlarmDescription: 'Database CPU utilization is high'
+      MetricName: 'CPUUtilization'
+      Namespace: 'AWS/RDS'
       Dimensions:
         - Name: DBInstanceIdentifier
-          Value: !Sub "${Environment}-hasivu-postgres"
+          Value: !Sub '${Environment}-hasivu-postgres'
       Statistic: Average
       Period: 300
       EvaluationPeriods: 3
@@ -301,13 +301,13 @@ Resources:
   DatabaseConnectionAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: !Sub "${Environment}-hasivu-database-connections-high"
-      AlarmDescription: "Database connection count is high"
-      MetricName: "DatabaseConnections"
-      Namespace: "AWS/RDS"
+      AlarmName: !Sub '${Environment}-hasivu-database-connections-high'
+      AlarmDescription: 'Database connection count is high'
+      MetricName: 'DatabaseConnections'
+      Namespace: 'AWS/RDS'
       Dimensions:
         - Name: DBInstanceIdentifier
-          Value: !Sub "${Environment}-hasivu-postgres"
+          Value: !Sub '${Environment}-hasivu-postgres'
       Statistic: Average
       Period: 300
       EvaluationPeriods: 2
@@ -320,13 +320,13 @@ Resources:
   LambdaThrottleAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: !Sub "${Environment}-hasivu-lambda-throttles"
-      AlarmDescription: "Lambda functions are being throttled"
-      MetricName: "Throttles"
-      Namespace: "AWS/Lambda"
+      AlarmName: !Sub '${Environment}-hasivu-lambda-throttles'
+      AlarmDescription: 'Lambda functions are being throttled'
+      MetricName: 'Throttles'
+      Namespace: 'AWS/Lambda'
       Dimensions:
         - Name: FunctionName
-          Value: !Sub "${Environment}-hasivu-platform-api-login"
+          Value: !Sub '${Environment}-hasivu-platform-api-login'
       Statistic: Sum
       Period: 300
       EvaluationPeriods: 1
@@ -339,10 +339,10 @@ Resources:
   SecurityViolationAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: !Sub "${Environment}-hasivu-security-violations"
-      AlarmDescription: "Security violations detected"
-      MetricName: "SecurityViolations"
-      Namespace: "HASIVU/Security"
+      AlarmName: !Sub '${Environment}-hasivu-security-violations'
+      AlarmDescription: 'Security violations detected'
+      MetricName: 'SecurityViolations'
+      Namespace: 'HASIVU/Security'
       Dimensions:
         - Name: Environment
           Value: !Ref Environment
@@ -359,10 +359,10 @@ Resources:
   SuspiciousActivityAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: !Sub "${Environment}-hasivu-suspicious-activity"
-      AlarmDescription: "Suspicious activity patterns detected"
-      MetricName: "SuspiciousActivity"
-      Namespace: "HASIVU/Security"
+      AlarmName: !Sub '${Environment}-hasivu-suspicious-activity'
+      AlarmDescription: 'Suspicious activity patterns detected'
+      MetricName: 'SuspiciousActivity'
+      Namespace: 'HASIVU/Security'
       Dimensions:
         - Name: Environment
           Value: !Ref Environment
@@ -378,10 +378,10 @@ Resources:
   HealthCheckFailureAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: !Sub "${Environment}-hasivu-health-check-failure"
-      AlarmDescription: "Health check endpoints are failing"
-      MetricName: "HealthCheckFailures"
-      Namespace: "HASIVU/Platform"
+      AlarmName: !Sub '${Environment}-hasivu-health-check-failure'
+      AlarmDescription: 'Health check endpoints are failing'
+      MetricName: 'HealthCheckFailures'
+      Namespace: 'HASIVU/Platform'
       Dimensions:
         - Name: Environment
           Value: !Ref Environment
@@ -397,37 +397,37 @@ Resources:
   CriticalAlertTopic:
     Type: AWS::SNS::Topic
     Properties:
-      TopicName: !Sub "${Environment}-hasivu-critical-alerts"
-      DisplayName: "Hasivu Critical Alerts"
+      TopicName: !Sub '${Environment}-hasivu-critical-alerts'
+      DisplayName: 'Hasivu Critical Alerts'
       KmsMasterKeyId: !Ref AlertEncryptionKey
 
   WarningAlertTopic:
     Type: AWS::SNS::Topic
     Properties:
-      TopicName: !Sub "${Environment}-hasivu-warning-alerts"
-      DisplayName: "Hasivu Warning Alerts"
+      TopicName: !Sub '${Environment}-hasivu-warning-alerts'
+      DisplayName: 'Hasivu Warning Alerts'
       KmsMasterKeyId: !Ref AlertEncryptionKey
 
   SecurityAlertTopic:
     Type: AWS::SNS::Topic
     Properties:
-      TopicName: !Sub "${Environment}-hasivu-security-alerts"
-      DisplayName: "Hasivu Security Alerts"
+      TopicName: !Sub '${Environment}-hasivu-security-alerts'
+      DisplayName: 'Hasivu Security Alerts'
       KmsMasterKeyId: !Ref AlertEncryptionKey
 
   # KMS Key for encrypting SNS messages
   AlertEncryptionKey:
     Type: AWS::KMS::Key
     Properties:
-      Description: "KMS key for encrypting alert messages"
+      Description: 'KMS key for encrypting alert messages'
       KeyPolicy:
         Statement:
           - Sid: Enable IAM User Permissions
             Effect: Allow
             Principal:
-              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
-            Action: "kms:*"
-            Resource: "*"
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
           - Sid: Allow SNS Service
             Effect: Allow
             Principal:
@@ -438,13 +438,13 @@ Resources:
               - kms:ReEncrypt*
               - kms:GenerateDataKey*
               - kms:DescribeKey
-            Resource: "*"
+            Resource: '*'
 
   # Lambda function for health checks
   HealthCheckFunction:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Sub "${Environment}-hasivu-health-monitor"
+      FunctionName: !Sub '${Environment}-hasivu-health-monitor'
       Runtime: nodejs18.x
       Handler: index.handler
       Timeout: 30
@@ -452,14 +452,14 @@ Resources:
       Role: !GetAtt HealthCheckRole.Arn
       Environment:
         Variables:
-          API_ENDPOINT: !Sub "https://${APIGatewayId}.execute-api.${AWS::Region}.amazonaws.com/${Environment}"
-          EXPECTED_SERVICES: "database,redis,auth,payment"
+          API_ENDPOINT: !Sub 'https://${APIGatewayId}.execute-api.${AWS::Region}.amazonaws.com/${Environment}'
+          EXPECTED_SERVICES: 'database,redis,auth,payment'
       Code:
         ZipFile: |
           const https = require('https');
           const AWS = require('aws-sdk');
           const cloudwatch = new AWS.CloudWatch();
-          
+
           exports.handler = async (event) => {
               const results = [];
               const timestamp = new Date();
@@ -525,7 +525,7 @@ Resources:
                   };
               }
           };
-          
+
           async function checkEndpoint(path) {
               return new Promise((resolve) => {
                   const startTime = Date.now();
@@ -570,7 +570,7 @@ Resources:
                   req.end();
               });
           }
-          
+
           async function publishMetrics(results, healthScore, timestamp) {
               const params = {
                   Namespace: 'HASIVU/Platform',
@@ -631,7 +631,7 @@ Resources:
               
               await cloudwatch.putMetricData(params).promise();
           }
-          
+
           async function publishFailureMetric(failureCount) {
               await cloudwatch.putMetricData({
                   Namespace: 'HASIVU/Platform',
@@ -672,25 +672,25 @@ Resources:
               - Effect: Allow
                 Action:
                   - cloudwatch:PutMetricData
-                Resource: "*"
+                Resource: '*'
               - Effect: Allow
                 Action:
                   - logs:CreateLogGroup
                   - logs:CreateLogStream
                   - logs:PutLogEvents
-                Resource: "*"
+                Resource: '*'
 
   # EventBridge rule for health check scheduling
   HealthCheckSchedule:
     Type: AWS::Events::Rule
     Properties:
-      Name: !Sub "${Environment}-hasivu-health-check"
-      Description: "Runs health checks every 2 minutes"
-      ScheduleExpression: "rate(2 minutes)"
+      Name: !Sub '${Environment}-hasivu-health-check'
+      Description: 'Runs health checks every 2 minutes'
+      ScheduleExpression: 'rate(2 minutes)'
       State: ENABLED
       Targets:
         - Arn: !GetAtt HealthCheckFunction.Arn
-          Id: "HealthCheckTarget"
+          Id: 'HealthCheckTarget'
 
   # Permission for EventBridge to invoke health check
   HealthCheckInvokePermission:
@@ -705,24 +705,24 @@ Resources:
   ApplicationErrorFilter:
     Type: AWS::Logs::MetricFilter
     Properties:
-      LogGroupName: !Sub "/aws/lambda/${Environment}-hasivu-platform-api-login"
-      FilterPattern: "[timestamp, requestId, level=\"ERROR\", ...]"
+      LogGroupName: !Sub '/aws/lambda/${Environment}-hasivu-platform-api-login'
+      FilterPattern: '[timestamp, requestId, level="ERROR", ...]'
       MetricTransformations:
-        - MetricNamespace: "HASIVU/Platform"
-          MetricName: "ApplicationErrors"
-          MetricValue: "1"
+        - MetricNamespace: 'HASIVU/Platform'
+          MetricName: 'ApplicationErrors'
+          MetricValue: '1'
           DefaultValue: 0
 
   # Custom metric filter for security events
   SecurityEventFilter:
     Type: AWS::Logs::MetricFilter
     Properties:
-      LogGroupName: !Sub "/aws/lambda/${Environment}-hasivu-platform-api-login"
-      FilterPattern: "[timestamp, requestId, level=\"SECURITY\", ...]"
+      LogGroupName: !Sub '/aws/lambda/${Environment}-hasivu-platform-api-login'
+      FilterPattern: '[timestamp, requestId, level="SECURITY", ...]'
       MetricTransformations:
-        - MetricNamespace: "HASIVU/Security"
-          MetricName: "SecurityViolations"
-          MetricValue: "1"
+        - MetricNamespace: 'HASIVU/Security'
+          MetricName: 'SecurityViolations'
+          MetricValue: '1'
           DefaultValue: 0
 
 Parameters:
@@ -734,33 +734,33 @@ Parameters:
   APIGatewayId:
     Type: String
     Description: API Gateway ID for health checks
-    Default: "your-api-gateway-id"
+    Default: 'your-api-gateway-id'
 
 Outputs:
   DashboardURL:
     Description: CloudWatch Dashboard URL
-    Value: !Sub "https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${Environment}-hasivu-production-monitoring"
+    Value: !Sub 'https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${Environment}-hasivu-production-monitoring'
 
   CriticalAlertTopicArn:
     Description: SNS topic for critical alerts
     Value: !Ref CriticalAlertTopic
     Export:
-      Name: !Sub "${AWS::StackName}-critical-alerts"
+      Name: !Sub '${AWS::StackName}-critical-alerts'
 
   WarningAlertTopicArn:
     Description: SNS topic for warning alerts
     Value: !Ref WarningAlertTopic
     Export:
-      Name: !Sub "${AWS::StackName}-warning-alerts"
+      Name: !Sub '${AWS::StackName}-warning-alerts'
 
   SecurityAlertTopicArn:
     Description: SNS topic for security alerts
     Value: !Ref SecurityAlertTopic
     Export:
-      Name: !Sub "${AWS::StackName}-security-alerts"
+      Name: !Sub '${AWS::StackName}-security-alerts'
 
   HealthCheckFunctionArn:
     Description: Health check Lambda function ARN
     Value: !GetAtt HealthCheckFunction.Arn
     Export:
-      Name: !Sub "${AWS::StackName}-health-check-function"
+      Name: !Sub '${AWS::StackName}-health-check-function'

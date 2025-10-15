@@ -1,0 +1,44 @@
+/**
+ * Nutrition Service - Stub Implementation
+ * TODO: Implement full nutrition analysis functionality
+ */
+
+import { logger } from '../utils/logger';
+
+export class NutritionService {
+  constructor() {
+    logger.info('NutritionService initialized (stub)');
+  }
+
+  async getNutritionInfo(itemId: string): Promise<any> {
+    return {
+      itemId,
+      calories: 0,
+      protein: 0,
+      carbs: 0,
+      fat: 0,
+      timestamp: new Date()
+    };
+  }
+
+  async calculateMealNutrition(items: any[] | undefined | undefined): Promise<any> {
+    return {
+      totalCalories: 0,
+      totalProtein: 0,
+      totalCarbs: 0,
+      totalFat: 0,
+      items: items?.length || 0
+    };
+  }
+
+  async getDietaryRestrictions(_userId: string): Promise<any[]> {
+    return [];
+  }
+
+  async validateDietaryCompliance(_itemId: string, _userId: string): Promise<boolean> {
+    return true;
+  }
+}
+
+export const _nutritionService =  new NutritionService();
+export default nutritionService;

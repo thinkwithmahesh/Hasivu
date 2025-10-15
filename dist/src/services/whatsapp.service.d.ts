@@ -134,7 +134,7 @@ export interface WhatsAppMessage {
     readAt?: Date;
     errorMessage?: string;
     retryCount: number;
-    businessData?: Record<string, any>;
+    businessData?: Record<string, unknown>;
     context?: {
         messageId?: string;
         from?: string;
@@ -254,7 +254,7 @@ export declare class WhatsAppService {
         context?: {
             messageId: string;
         };
-        businessData?: Record<string, any>;
+        businessData?: Record<string, unknown>;
     }): Promise<WhatsAppMessage>;
     sendTextMessage(to: string, text: string, options?: {
         previewUrl?: boolean;

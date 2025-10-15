@@ -37,30 +37,30 @@ class PerformanceBenchmarkReporter {
             api: {
                 responseTime: { good: 200, fair: 500, poor: 1000 },
                 errorRate: { good: 0.1, fair: 1, poor: 5 },
-                throughput: { good: 1000, fair: 500, poor: 100 }
+                throughput: { good: 1000, fair: 500, poor: 100 },
             },
             database: {
                 queryTime: { good: 50, fair: 100, poor: 500 },
                 connectionPool: { good: 70, fair: 85, poor: 95 },
-                indexEfficiency: { good: 90, fair: 70, poor: 50 }
+                indexEfficiency: { good: 90, fair: 70, poor: 50 },
             },
             lambda: {
                 coldStart: { good: 1000, fair: 3000, poor: 5000 },
                 duration: { good: 1000, fair: 5000, poor: 10000 },
-                memoryEfficiency: { good: 70, fair: 50, poor: 30 }
+                memoryEfficiency: { good: 70, fair: 50, poor: 30 },
             },
             websocket: {
                 latency: { good: 50, fair: 100, poor: 300 },
-                connectionSuccess: { good: 99, fair: 95, poor: 90 }
+                connectionSuccess: { good: 99, fair: 95, poor: 90 },
             },
             redis: {
                 hitRatio: { good: 95, fair: 80, poor: 60 },
-                responseTime: { good: 5, fair: 20, poor: 50 }
+                responseTime: { good: 5, fair: 20, poor: 50 },
             },
             rfid: {
                 verificationsPerSecond: { good: 500, fair: 200, poor: 50 },
-                responseTime: { good: 100, fair: 300, poor: 1000 }
-            }
+                responseTime: { good: 100, fair: 300, poor: 1000 },
+            },
         };
     }
     async generateBenchmarkReport(testResultsPath) {
@@ -88,15 +88,15 @@ class PerformanceBenchmarkReporter {
     }
     async loadTestResults(testResultsPath) {
         let results = {
-            api: {},
+            api: [],
             database: {},
             lambda: {},
             websocket: {},
             redis: {},
-            rfid: {}
+            rfid: {},
         };
         try {
-            if (testResultsPath && await this.fileExists(testResultsPath)) {
+            if (testResultsPath && (await this.fileExists(testResultsPath))) {
                 const realTimeResults = JSON.parse(await fs.readFile(testResultsPath, 'utf-8'));
                 results.api = realTimeResults.api || {};
                 results.websocket = realTimeResults.webSocket || {};
@@ -119,7 +119,7 @@ class PerformanceBenchmarkReporter {
             return results;
         }
         catch (error) {
-            console.warn('Could not load all test results, using available data:', error.message);
+            console.warn('Could not load all test results, using available data:', error instanceof Error ? error.message : String(error));
             return results;
         }
     }
@@ -134,7 +134,7 @@ class PerformanceBenchmarkReporter {
                     errorRate: 0.1,
                     requestsPerSecond: 1250,
                     successfulRequests: 9995,
-                    totalRequests: 10000
+                    totalRequests: 10000,
                 },
                 {
                     endpoint: '/auth/login',
@@ -144,7 +144,7 @@ class PerformanceBenchmarkReporter {
                     errorRate: 0.5,
                     requestsPerSecond: 567,
                     successfulRequests: 2985,
-                    totalRequests: 3000
+                    totalRequests: 3000,
                 },
                 {
                     endpoint: '/orders',
@@ -154,7 +154,7 @@ class PerformanceBenchmarkReporter {
                     errorRate: 0.2,
                     requestsPerSecond: 890,
                     successfulRequests: 4989,
-                    totalRequests: 5000
+                    totalRequests: 5000,
                 },
                 {
                     endpoint: '/payments/verify',
@@ -164,8 +164,8 @@ class PerformanceBenchmarkReporter {
                     errorRate: 0.3,
                     requestsPerSecond: 678,
                     successfulRequests: 3988,
-                    totalRequests: 4000
-                }
+                    totalRequests: 4000,
+                },
             ],
             database: {
                 status: 'healthy',
@@ -174,25 +174,25 @@ class PerformanceBenchmarkReporter {
                     slowQueries: 3,
                     connectionPoolUsage: 68,
                     indexEfficiency: 87,
-                    queriesPerSecond: 2340
+                    queriesPerSecond: 2340,
                 },
                 connections: {
                     active: 7,
                     idle: 3,
                     total: 10,
-                    maxConnections: 20
+                    maxConnections: 20,
                 },
                 indexAnalysis: {
                     missingIndexes: [
                         {
                             table: 'orders',
                             columns: ['userId', 'createdAt'],
-                            impact: 'medium'
-                        }
+                            impact: 'medium',
+                        },
                     ],
                     redundantIndexes: [],
-                    indexUsageStats: []
-                }
+                    indexUsageStats: [],
+                },
             },
             lambda: {
                 summary: {
@@ -200,7 +200,7 @@ class PerformanceBenchmarkReporter {
                     avgColdStartDuration: 1245,
                     avgExecutionDuration: 267,
                     criticalIssues: 2,
-                    avgMemoryEfficiency: 73
+                    avgMemoryEfficiency: 73,
                 },
                 functions: [
                     {
@@ -209,31 +209,31 @@ class PerformanceBenchmarkReporter {
                             coldStart: { avgDuration: 2100, impact: 'high' },
                             duration: { average: 189, p95: 345 },
                             memory: { efficiency: 82 },
-                            errors: { rate: 0.1 }
-                        }
-                    }
-                ]
+                            errors: { rate: 0.1 },
+                        },
+                    },
+                ],
             },
             websocket: {
                 successfulRequests: 95,
                 totalRequests: 100,
                 averageLatency: 67,
                 messagesExchanged: 1000,
-                errorRate: 5
+                errorRate: 5,
             },
             redis: {
                 cacheHitRatio: 89,
                 averageGetTime: 3.2,
                 averageSetTime: 4.1,
                 requestsPerSecond: 5670,
-                errorRate: 0.1
+                errorRate: 0.1,
             },
             rfid: {
                 verificationsPerSecond: 234,
                 averageResponseTime: 145,
                 errorRate: 0.8,
-                bulkVerificationTime: 567
-            }
+                bulkVerificationTime: 567,
+            },
         };
     }
     initializeReport(testResults) {
@@ -243,7 +243,7 @@ class PerformanceBenchmarkReporter {
                 environment: process.env.NODE_ENV || 'development',
                 version: '1.0.0',
                 testDuration: 300,
-                concurrentUsers: 100
+                concurrentUsers: 100,
             },
             summary: {
                 overallScore: 0,
@@ -251,7 +251,7 @@ class PerformanceBenchmarkReporter {
                 readinessLevel: 0,
                 criticalIssues: 0,
                 warnings: 0,
-                recommendations: 0
+                recommendations: 0,
             },
             scores: [],
             detailed: {
@@ -260,16 +260,16 @@ class PerformanceBenchmarkReporter {
                 lambda: testResults.lambda,
                 websocket: testResults.websocket,
                 redis: testResults.redis,
-                rfid: testResults.rfid
+                rfid: testResults.rfid,
             },
             optimization: {
                 immediate: [],
-                roadmap: []
+                roadmap: [],
             },
             monitoring: {
                 alerts: [],
-                dashboards: []
-            }
+                dashboards: [],
+            },
         };
     }
     async analyzeAPIPerformance(apiResults) {
@@ -282,7 +282,7 @@ class PerformanceBenchmarkReporter {
             p95ResponseTime: apiResults.reduce((sum, api) => sum + api.p95ResponseTime, 0) / apiResults.length,
             avgErrorRate: apiResults.reduce((sum, api) => sum + api.errorRate, 0) / apiResults.length,
             totalThroughput: apiResults.reduce((sum, api) => sum + api.requestsPerSecond, 0),
-            endpointsAnalyzed: apiResults.length
+            endpointsAnalyzed: apiResults.length,
         };
         const issues = [];
         const recommendations = [];
@@ -306,7 +306,7 @@ class PerformanceBenchmarkReporter {
             status: this.getStatusFromScore(score),
             metrics,
             issues,
-            recommendations
+            recommendations,
         });
     }
     async analyzeDatabasePerformance(dbResults) {
@@ -321,7 +321,7 @@ class PerformanceBenchmarkReporter {
             connectionPoolUsage: perf.connectionPoolUsage || 0,
             indexEfficiency: perf.indexEfficiency || 0,
             queriesPerSecond: perf.queriesPerSecond || 0,
-            missingIndexes: dbResults.indexAnalysis?.missingIndexes?.length || 0
+            missingIndexes: dbResults.indexAnalysis?.missingIndexes?.length || 0,
         };
         const issues = [];
         const recommendations = [];
@@ -349,7 +349,7 @@ class PerformanceBenchmarkReporter {
             status: this.getStatusFromScore(score),
             metrics,
             issues,
-            recommendations
+            recommendations,
         });
     }
     async analyzeLambdaPerformance(lambdaResults) {
@@ -357,14 +357,14 @@ class PerformanceBenchmarkReporter {
             this.report.scores.push(this.createEmptyScore('Lambda Performance'));
             return;
         }
-        const summary = lambdaResults.summary;
+        const { summary } = lambdaResults;
         const metrics = {
             totalFunctions: summary.totalFunctions || 0,
             avgColdStartDuration: summary.avgColdStartDuration || 0,
             avgExecutionDuration: summary.avgExecutionDuration || 0,
             avgMemoryEfficiency: summary.avgMemoryEfficiency || 0,
             criticalIssues: summary.criticalIssues || 0,
-            highImpactColdStarts: summary.highImpactColdStarts || 0
+            highImpactColdStarts: summary.highImpactColdStarts || 0,
         };
         const issues = [];
         const recommendations = [];
@@ -392,7 +392,7 @@ class PerformanceBenchmarkReporter {
             status: this.getStatusFromScore(score),
             metrics,
             issues,
-            recommendations
+            recommendations,
         });
     }
     async analyzeWebSocketPerformance(wsResults) {
@@ -404,7 +404,7 @@ class PerformanceBenchmarkReporter {
             connectionSuccessRate: (wsResults.successfulRequests / wsResults.totalRequests) * 100,
             averageLatency: wsResults.averageLatency || 0,
             messagesExchanged: wsResults.messagesExchanged || 0,
-            errorRate: wsResults.errorRate || 0
+            errorRate: wsResults.errorRate || 0,
         };
         const issues = [];
         const recommendations = [];
@@ -424,7 +424,7 @@ class PerformanceBenchmarkReporter {
             status: this.getStatusFromScore(score),
             metrics,
             issues,
-            recommendations
+            recommendations,
         });
     }
     async analyzeRedisPerformance(redisResults) {
@@ -437,7 +437,7 @@ class PerformanceBenchmarkReporter {
             averageGetTime: redisResults.averageGetTime || 0,
             averageSetTime: redisResults.averageSetTime || 0,
             requestsPerSecond: redisResults.requestsPerSecond || 0,
-            errorRate: redisResults.errorRate || 0
+            errorRate: redisResults.errorRate || 0,
         };
         const issues = [];
         const recommendations = [];
@@ -457,7 +457,7 @@ class PerformanceBenchmarkReporter {
             status: this.getStatusFromScore(score),
             metrics,
             issues,
-            recommendations
+            recommendations,
         });
     }
     async analyzeRFIDPerformance(rfidResults) {
@@ -469,7 +469,7 @@ class PerformanceBenchmarkReporter {
             verificationsPerSecond: rfidResults.verificationsPerSecond || 0,
             averageResponseTime: rfidResults.averageResponseTime || 0,
             errorRate: rfidResults.errorRate || 0,
-            bulkVerificationTime: rfidResults.bulkVerificationTime || 0
+            bulkVerificationTime: rfidResults.bulkVerificationTime || 0,
         };
         const issues = [];
         const recommendations = [];
@@ -489,7 +489,7 @@ class PerformanceBenchmarkReporter {
             status: this.getStatusFromScore(score),
             metrics,
             issues,
-            recommendations
+            recommendations,
         });
     }
     calculateCategoryScore(category, metrics) {
@@ -554,7 +554,7 @@ class PerformanceBenchmarkReporter {
             status: 'poor',
             metrics: {},
             issues: ['No performance data available'],
-            recommendations: ['Run performance tests to collect metrics']
+            recommendations: ['Run performance tests to collect metrics'],
         };
     }
     calculateOverallScore() {
@@ -567,10 +567,10 @@ class PerformanceBenchmarkReporter {
         const weights = {
             'API Performance': 0.25,
             'Database Performance': 0.25,
-            'Lambda Performance': 0.20,
+            'Lambda Performance': 0.2,
             'Redis Performance': 0.15,
-            'WebSocket Performance': 0.10,
-            'RFID Performance': 0.05
+            'WebSocket Performance': 0.1,
+            'RFID Performance': 0.05,
         };
         let weightedSum = 0;
         let totalWeight = 0;
@@ -583,12 +583,13 @@ class PerformanceBenchmarkReporter {
         this.report.summary.overallGrade = this.getGradeFromScore(this.report.summary.overallScore);
         this.report.summary.readinessLevel = this.calculateReadinessLevel();
         this.report.summary.criticalIssues = this.report.scores.reduce((sum, s) => sum + s.issues.filter(issue => issue.includes('High') || issue.includes('Critical')).length, 0);
-        this.report.summary.warnings = this.report.scores.reduce((sum, s) => sum + s.issues.filter(issue => !issue.includes('High') && !issue.includes('Critical')).length, 0);
+        this.report.summary.warnings = this.report.scores.reduce((sum, s) => sum +
+            s.issues.filter(issue => !issue.includes('High') && !issue.includes('Critical')).length, 0);
         this.report.summary.recommendations = this.report.scores.reduce((sum, s) => sum + s.recommendations.length, 0);
     }
     calculateReadinessLevel() {
-        const overallScore = this.report.summary.overallScore;
-        const criticalIssues = this.report.summary.criticalIssues;
+        const { overallScore } = this.report.summary;
+        const { criticalIssues } = this.report.summary;
         let readiness = overallScore;
         readiness -= criticalIssues * 10;
         if (overallScore < 70)
@@ -606,7 +607,7 @@ class PerformanceBenchmarkReporter {
             issue,
             solution: score.recommendations[0] || 'Investigate and resolve',
             impact: 'High - Direct impact on user experience',
-            effort: 'Medium - Requires immediate attention'
+            effort: 'Medium - Requires immediate attention',
         })));
         this.report.optimization.immediate = criticalIssues;
         this.report.optimization.roadmap = [
@@ -616,18 +617,14 @@ class PerformanceBenchmarkReporter {
                 objectives: [
                     'Resolve all critical performance issues',
                     'Optimize slowest API endpoints',
-                    'Fix database performance bottlenecks'
+                    'Fix database performance bottlenecks',
                 ],
                 deliverables: [
                     'All critical issues resolved',
                     'API response times under 200ms',
-                    'Database query times under 50ms'
+                    'Database query times under 50ms',
                 ],
-                successMetrics: [
-                    'Overall score > 85',
-                    'Zero critical issues',
-                    'Error rate < 1%'
-                ]
+                successMetrics: ['Overall score > 85', 'Zero critical issues', 'Error rate < 1%'],
             },
             {
                 phase: 'Phase 2: Infrastructure Optimization (4-8 weeks)',
@@ -635,18 +632,18 @@ class PerformanceBenchmarkReporter {
                 objectives: [
                     'Optimize Lambda cold starts',
                     'Improve caching strategies',
-                    'Scale RFID verification capacity'
+                    'Scale RFID verification capacity',
                 ],
                 deliverables: [
                     'Provisioned concurrency for critical functions',
                     'Cache hit ratio > 95%',
-                    'RFID verification capacity > 500/s'
+                    'RFID verification capacity > 500/s',
                 ],
                 successMetrics: [
                     'Cold start time < 1s',
                     'Cache performance optimized',
-                    'RFID system scalability validated'
-                ]
+                    'RFID system scalability validated',
+                ],
             },
             {
                 phase: 'Phase 3: Advanced Monitoring (8-12 weeks)',
@@ -654,19 +651,19 @@ class PerformanceBenchmarkReporter {
                 objectives: [
                     'Implement advanced monitoring',
                     'Set up predictive alerting',
-                    'Establish performance baselines'
+                    'Establish performance baselines',
                 ],
                 deliverables: [
                     'Comprehensive monitoring dashboard',
                     'Automated alerting system',
-                    'Performance regression detection'
+                    'Performance regression detection',
                 ],
                 successMetrics: [
                     'Real-time performance visibility',
                     'Proactive issue detection',
-                    'Performance trend analysis'
-                ]
-            }
+                    'Performance trend analysis',
+                ],
+            },
         ];
     }
     generateMonitoringRecommendations() {
@@ -675,32 +672,32 @@ class PerformanceBenchmarkReporter {
                 metric: 'API Response Time (P95)',
                 threshold: 500,
                 condition: 'greater_than',
-                action: 'Investigate slow endpoints and optimize queries'
+                action: 'Investigate slow endpoints and optimize queries',
             },
             {
                 metric: 'Database Connection Pool Usage',
                 threshold: 85,
                 condition: 'greater_than',
-                action: 'Scale database connections or optimize usage'
+                action: 'Scale database connections or optimize usage',
             },
             {
                 metric: 'Lambda Cold Start Duration',
                 threshold: 3000,
                 condition: 'greater_than',
-                action: 'Enable provisioned concurrency for affected functions'
+                action: 'Enable provisioned concurrency for affected functions',
             },
             {
                 metric: 'Redis Cache Hit Ratio',
                 threshold: 90,
                 condition: 'less_than',
-                action: 'Review cache strategy and data access patterns'
+                action: 'Review cache strategy and data access patterns',
             },
             {
                 metric: 'Error Rate',
                 threshold: 1,
                 condition: 'greater_than',
-                action: 'Investigate error sources and implement fixes'
-            }
+                action: 'Investigate error sources and implement fixes',
+            },
         ];
         this.report.monitoring.dashboards = [
             {
@@ -709,9 +706,9 @@ class PerformanceBenchmarkReporter {
                     'Overall Performance Score',
                     'API Response Times',
                     'Error Rates',
-                    'User Experience Metrics'
+                    'User Experience Metrics',
                 ],
-                audience: 'Executives and Product Managers'
+                audience: 'Executives and Product Managers',
             },
             {
                 name: 'Technical Performance Dashboard',
@@ -719,9 +716,9 @@ class PerformanceBenchmarkReporter {
                     'Database Performance',
                     'Lambda Metrics',
                     'Cache Performance',
-                    'Infrastructure Health'
+                    'Infrastructure Health',
                 ],
-                audience: 'DevOps and Engineering Teams'
+                audience: 'DevOps and Engineering Teams',
             },
             {
                 name: 'Business Metrics Dashboard',
@@ -729,10 +726,10 @@ class PerformanceBenchmarkReporter {
                     'Transaction Success Rate',
                     'RFID Verification Performance',
                     'Payment Processing Times',
-                    'System Availability'
+                    'System Availability',
                 ],
-                audience: 'Operations and Business Teams'
-            }
+                audience: 'Operations and Business Teams',
+            },
         ];
     }
     getGradeFromScore(score) {
@@ -790,7 +787,13 @@ class PerformanceBenchmarkReporter {
         report += `**Warnings**: ${this.report.summary.warnings}\n\n`;
         report += `## Performance Categories\n\n`;
         for (const score of this.report.scores) {
-            const emoji = score.status === 'excellent' ? '🟢' : score.status === 'good' ? '🔵' : score.status === 'fair' ? '🟡' : '🔴';
+            const emoji = score.status === 'excellent'
+                ? '🟢'
+                : score.status === 'good'
+                    ? '🔵'
+                    : score.status === 'fair'
+                        ? '🟡'
+                        : '🔴';
             report += `### ${emoji} ${score.category} - ${score.score}/100 (${score.grade})\n\n`;
             if (Object.keys(score.metrics).length > 0) {
                 report += `**Key Metrics**:\n`;
@@ -879,7 +882,13 @@ class PerformanceBenchmarkReporter {
         console.log(`📝 TOTAL RECOMMENDATIONS: ${this.report.summary.recommendations}`);
         console.log('\n📋 CATEGORY BREAKDOWN:');
         for (const score of this.report.scores) {
-            const status = score.status === 'excellent' ? '🟢' : score.status === 'good' ? '🔵' : score.status === 'fair' ? '🟡' : '🔴';
+            const status = score.status === 'excellent'
+                ? '🟢'
+                : score.status === 'good'
+                    ? '🔵'
+                    : score.status === 'fair'
+                        ? '🟡'
+                        : '🔴';
             console.log(`   ${status} ${score.category}: ${score.score}/100 (${score.grade})`);
         }
         if (this.report.optimization.immediate.length > 0) {

@@ -1,0 +1,59 @@
+{
+  "auditDate": "2025-09-12T17:59:30.126Z",
+  "totalViolations": 6,
+  "criticalViolations": 0,
+  "violations": [
+    {
+      "page": "Homepage",
+      "type": "Audit Error",
+      "severity": "ERROR",
+      "issue": "Failed to audit page: page.waitForTimeout is not a function"
+    },
+    {
+      "page": "Login",
+      "type": "Audit Error",
+      "severity": "ERROR",
+      "issue": "Failed to audit page: page.waitForTimeout is not a function"
+    },
+    {
+      "page": "Menu",
+      "type": "Audit Error",
+      "severity": "ERROR",
+      "issue": "Failed to audit page: page.waitForTimeout is not a function"
+    },
+    {
+      "page": "Dashboard",
+      "type": "Audit Error",
+      "severity": "ERROR",
+      "issue": "Failed to audit page: page.waitForTimeout is not a function"
+    },
+    {
+      "page": "Profile",
+      "type": "Audit Error",
+      "severity": "ERROR",
+      "issue": "Failed to audit page: page.waitForTimeout is not a function"
+    },
+    {
+      "page": "Settings",
+      "type": "Audit Error",
+      "severity": "ERROR",
+      "issue": "Failed to audit page: page.waitForTimeout is not a function"
+    }
+  ],
+  "summary": {
+    "byType": {
+      "Audit Error": 6
+    },
+    "byPage": {
+      "Homepage": 1,
+      "Login": 1,
+      "Menu": 1,
+      "Dashboard": 1,
+      "Profile": 1,
+      "Settings": 1
+    },
+    "bySeverity": {
+      "ERROR": 6
+    }
+  }
+}

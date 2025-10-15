@@ -59,16 +59,16 @@ async function main() {
         const results = {
             timestamp: new Date().toISOString(),
             metrics,
-            recommendations
+            recommendations,
         };
         const resultsPath = `${resultsDir}/database-performance-${timestamp}.json`;
         await fs.writeFile(resultsPath, JSON.stringify(results, null, 2));
         console.log(`\n📄 Results saved: ${resultsPath}`);
         console.log('✅ Database performance analysis completed!');
-        if (metrics.status === 'unhealthy') {
+        if (metrics.status === 'critical') {
             process.exit(2);
         }
-        else if (metrics.status === 'degraded') {
+        else if (metrics.status === 'warning') {
             process.exit(1);
         }
         else {

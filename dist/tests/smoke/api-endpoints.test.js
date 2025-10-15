@@ -113,7 +113,7 @@ describe('API Smoke Tests', () => {
                     expect(data).toBeDefined();
                 }
                 catch (error) {
-                    console.warn(`⚠️ Endpoint ${endpoint} not available:`, error.message);
+                    console.warn(`⚠️ Endpoint ${endpoint} not available:`, error instanceof Error ? error.message : String(error));
                 }
             }
         }, smokeTestConfig.timeout * 2);

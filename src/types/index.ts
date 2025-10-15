@@ -3,6 +3,56 @@
  * Central exports for all TypeScript types and interfaces
  */
 
+// Nutrition Types
+export interface NutritionalInfo {
+  calories: number;
+  protein: number;
+  carbohydrates: number;
+  fat: number;
+  fiber?: number;
+  sugar?: number;
+  sodium?: number;
+  vitamins?: {
+    A?: number;
+    C?: number;
+    D?: number;
+    K?: number;
+    B1?: number;
+    B6?: number;
+    B12?: number;
+    folate?: number;
+    B3?: number;
+  };
+  minerals?: {
+    iron?: number;
+    calcium?: number;
+    magnesium?: number;
+    zinc?: number;
+  };
+  omega3?: number;
+  antioxidants?: string;
+  saturatedFat?: number;
+  transFat?: number;
+  glycemicIndex?: number;
+}
+
+export type {
+  AllergenInfo,
+  DietaryRestriction,
+  ComplianceRule,
+  ComplianceResult,
+  StudentDietaryProfile,
+  MenuItemCompliance,
+  NutritionScore,
+  PersonalizedRecommendations,
+  MenuImprovements,
+  SafetyAssessment,
+  BatchAnalysisResult,
+  Ingredient,
+  MenuItem as NutritionMenuItem,
+  NutritionalAnalysis,
+} from './nutrition';
+
 // Error Types
 export type {
   AppError,
@@ -14,40 +64,38 @@ export type {
   BusinessLogicError,
   ExternalServiceError,
   DatabaseError,
-  RateLimitError
+  RateLimitError,
 } from '../utils/errors';
 
-export {
-  isOperationalError,
-  getErrorMessage,
-  createErrorResponse
-} from '../utils/errors';
+export { isOperationalError, getErrorMessage, createErrorResponse } from '../utils/errors';
 
 // Customer Service Types
-export type {
-  CustomerProfile,
-  ChildProfile,
-  PaymentMethodInfo,
-  CustomerMetrics,
-  CustomerSearchFilters
-} from '../services/customer.service';
+// Note: customer.service not yet implemented
+// export type {
+//   CustomerProfile,
+//   ChildProfile,
+//   PaymentMethodInfo,
+//   CustomerMetrics,
+//   CustomerSearchFilters
+// } from '../services/customer.service';
 
 // Payment Gateway Types
-export type {
-  PaymentMethod,
-  PaymentRequest,
-  PaymentResponse,
-  RefundRequest,
-  RefundResponse,
-  WebhookPayload
-} from '../services/paymentGateway.service';
+// Note: paymentGateway.service not yet implemented
+// export type {
+//   PaymentMethod,
+//   PaymentRequest,
+//   PaymentResponse,
+//   RefundRequest,
+//   RefundResponse,
+//   WebhookPayload
+// } from '../services/paymentGateway.service';
 
 // Database Manager Types
 export type {
   DatabaseConfig,
   ConnectionStatus,
   QueryMetrics,
-  TransactionOptions
+  TransactionOptions,
 } from '../database/DatabaseManager';
 
 // Common Utility Types
@@ -134,14 +182,14 @@ export interface SchoolSettings {
   maxOrdersPerDay: number;
 }
 
-// Menu & Food Types
+// Menu & Food Types - Basic menu item for orders
 export interface MenuItem {
   id: string;
   name: string;
   description: string;
   category: 'breakfast' | 'lunch' | 'snack' | 'dinner';
   price: number;
-  nutritionInfo: NutritionInfo;
+  nutritionInfo: NutritionalInfo;
   allergens: string[];
   dietaryTags: string[];
   imageUrl?: string;
@@ -149,18 +197,6 @@ export interface MenuItem {
   schoolId: string;
   createdAt: Date;
   updatedAt: Date;
-}
-
-export interface NutritionInfo {
-  calories: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-  fiber: number;
-  sugar: number;
-  sodium: number;
-  vitamins?: Record<string, number>;
-  minerals?: Record<string, number>;
 }
 
 export interface DailyMenu {
@@ -221,28 +257,17 @@ export interface OrderItem {
   specialRequests?: string;
 }
 
-export type OrderStatus = 
-  | 'draft' 
-  | 'confirmed' 
-  | 'preparing' 
-  | 'ready' 
-  | 'delivered' 
-  | 'cancelled';
+export type OrderStatus = 'draft' | 'confirmed' | 'preparing' | 'ready' | 'delivered' | 'cancelled';
 
-export type PaymentStatus = 
-  | 'pending' 
-  | 'processing' 
-  | 'completed' 
-  | 'failed' 
-  | 'refunded' 
+export type PaymentStatus =
+  | 'pending'
+  | 'processing'
+  | 'completed'
+  | 'failed'
+  | 'refunded'
   | 'partially_refunded';
 
-export type DeliveryStatus = 
-  | 'scheduled' 
-  | 'in_transit' 
-  | 'delivered' 
-  | 'failed' 
-  | 'returned';
+export type DeliveryStatus = 'scheduled' | 'in_transit' | 'delivered' | 'failed' | 'returned';
 
 // Delivery & RFID Types
 export interface DeliveryAttempt {
@@ -307,7 +332,7 @@ export interface Notification {
   createdAt: Date;
 }
 
-export type NotificationType = 
+export type NotificationType =
   | 'order_confirmation'
   | 'order_update'
   | 'payment_success'
@@ -336,7 +361,7 @@ export interface AnalyticsReport {
   status: 'generating' | 'completed' | 'failed';
 }
 
-export type ReportType = 
+export type ReportType =
   | 'sales_summary'
   | 'menu_popularity'
   | 'user_engagement'
@@ -411,7 +436,16 @@ export interface ValidationRule {
 export interface FormField {
   name: string;
   label: string;
-  type: 'text' | 'email' | 'password' | 'number' | 'select' | 'checkbox' | 'radio' | 'textarea' | 'file';
+  type:
+    | 'text'
+    | 'email'
+    | 'password'
+    | 'number'
+    | 'select'
+    | 'checkbox'
+    | 'radio'
+    | 'textarea'
+    | 'file';
   placeholder?: string;
   options?: { label: string; value: any }[];
   validation: ValidationRule[];
@@ -465,8 +499,38 @@ export type DeepPartial<T> = {
 
 // Common constant types
 export const USER_ROLES = ['PARENT', 'STUDENT', 'TEACHER', 'ADMIN', 'SCHOOL_ADMIN'] as const;
-export const ORDER_STATUSES = ['draft', 'confirmed', 'preparing', 'ready', 'delivered', 'cancelled'] as const;
-export const PAYMENT_STATUSES = ['pending', 'processing', 'completed', 'failed', 'refunded', 'partially_refunded'] as const;
-export const DELIVERY_STATUSES = ['scheduled', 'in_transit', 'delivered', 'failed', 'returned'] as const;
-export const NOTIFICATION_TYPES = ['order_confirmation', 'order_update', 'payment_success', 'payment_failed', 'delivery_update', 'menu_update', 'school_announcement', 'promotion', 'system_alert'] as const;
+export const ORDER_STATUSES = [
+  'draft',
+  'confirmed',
+  'preparing',
+  'ready',
+  'delivered',
+  'cancelled',
+] as const;
+export const PAYMENT_STATUSES = [
+  'pending',
+  'processing',
+  'completed',
+  'failed',
+  'refunded',
+  'partially_refunded',
+] as const;
+export const DELIVERY_STATUSES = [
+  'scheduled',
+  'in_transit',
+  'delivered',
+  'failed',
+  'returned',
+] as const;
+export const NOTIFICATION_TYPES = [
+  'order_confirmation',
+  'order_update',
+  'payment_success',
+  'payment_failed',
+  'delivery_update',
+  'menu_update',
+  'school_announcement',
+  'promotion',
+  'system_alert',
+] as const;
 export const NOTIFICATION_CHANNELS = ['email', 'sms', 'push', 'in_app'] as const;

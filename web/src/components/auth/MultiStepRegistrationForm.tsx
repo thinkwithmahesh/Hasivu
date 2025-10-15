@@ -1,24 +1,32 @@
-"use client"
+'use client';
 
-import * as React from "react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { 
-  User, Mail, School, Phone, Lock, Eye, EyeOff, 
-  ChevronRight, ChevronLeft, Check, Upload, AlertCircle,
-  Users, GraduationCap, Shield, ChefHat, UserCheck
-} from "lucide-react"
-
-import { Button } from "@/components/ui/button"
+import * as React from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+  User,
+  Mail,
+  School,
+  Phone,
+  Lock,
+  Eye,
+  EyeOff,
+  ChevronRight,
+  ChevronLeft,
+  Check,
+  Upload,
+  AlertCircle,
+  Users,
+  GraduationCap,
+  Shield,
+  ChefHat,
+  UserCheck,
+} from 'lucide-react';
+
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Form,
   FormControl,
@@ -26,12 +34,10 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
-import { Progress } from "@/components/ui/progress"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+} from '@/components/ui/form';
+import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 import {
   registrationStep1Schema,
@@ -40,162 +46,169 @@ import {
   type RegistrationStep1Data,
   type RegistrationStep2Data,
   type RegistrationStep3Data,
-  detectRoleFromEmail
-} from "./schemas"
+  detectRoleFromEmail,
+} from './schemas';
 
 interface MultiStepRegistrationFormProps {
-  onSubmit: (data: RegistrationStep1Data & RegistrationStep2Data & RegistrationStep3Data) => Promise<void>
-  onValidateSchoolId?: (schoolId: string) => Promise<boolean>
-  onValidateParentLink?: (email: string, studentId: string) => Promise<boolean>
-  isLoading?: boolean
-  error?: string | null
-  className?: string
+  onSubmit: (
+    data: RegistrationStep1Data & RegistrationStep2Data & RegistrationStep3Data
+  ) => Promise<void>;
+  onValidateSchoolId?: (schoolId: string) => Promise<boolean>;
+  onValidateParentLink?: (email: string, studentId: string) => Promise<boolean>;
+  isLoading?: boolean;
+  error?: string | null;
+  className?: string;
 }
 
 const STEPS = [
-  { id: 1, title: "Personal Information", description: "Basic details and role" },
-  { id: 2, title: "School Information", description: "Validation and linking" },
-  { id: 3, title: "Security Setup", description: "Password and contacts" }
-]
+  { id: 1, title: 'Personal Information', description: 'Basic details and role' },
+  { id: 2, title: 'School Information', description: 'Validation and linking' },
+  { id: 3, title: 'Security Setup', description: 'Password and contacts' },
+];
 
 const ROLE_OPTIONS = [
-  { value: "student", label: "Student", icon: GraduationCap, description: "Access meal ordering" },
-  { value: "parent", label: "Parent/Guardian", icon: Users, description: "Manage children's accounts" },
-  { value: "teacher", label: "Teacher", icon: School, description: "Educational staff" },
-  { value: "admin", label: "Administrator", icon: Shield, description: "System administration" },
-  { value: "kitchen", label: "Kitchen Staff", icon: ChefHat, description: "Meal preparation" }
-]
+  { value: 'student', label: 'Student', icon: GraduationCap, description: 'Access meal ordering' },
+  {
+    value: 'parent',
+    label: 'Parent/Guardian',
+    icon: Users,
+    description: "Manage children's accounts",
+  },
+  { value: 'teacher', label: 'Teacher', icon: School, description: 'Educational staff' },
+  { value: 'admin', label: 'Administrator', icon: Shield, description: 'System administration' },
+  { value: 'kitchen', label: 'Kitchen Staff', icon: ChefHat, description: 'Meal preparation' },
+];
 
 export function MultiStepRegistrationForm({
   onSubmit,
   onValidateSchoolId,
-  onValidateParentLink,
+  _onValidateParentLink,
   isLoading = false,
   error,
-  className
+  className,
 }: MultiStepRegistrationFormProps) {
-  const [currentStep, setCurrentStep] = React.useState(1)
-  const [showPassword, setShowPassword] = React.useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false)
-  const [profileImage, setProfileImage] = React.useState<string | null>(null)
-  const [schoolIdValid, setSchoolIdValid] = React.useState<boolean | null>(null)
-  const [formData, setFormData] = React.useState<any>({})
+  const [currentStep, setCurrentStep] = React.useState(1);
+  const [showPassword, setShowPassword] = React.useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
+  const [profileImage, setProfileImage] = React.useState<string | null>(null);
+  const [schoolIdValid, setSchoolIdValid] = React.useState<boolean | null>(null);
+  const [formData, setFormData] = React.useState<any>({});
 
   // Step forms
   const step1Form = useForm<RegistrationStep1Data>({
     resolver: zodResolver(registrationStep1Schema),
     defaultValues: {
-      email: "",
-      firstName: "",
-      lastName: "",
-      role: "student"
-    }
-  })
+      email: '',
+      firstName: '',
+      lastName: '',
+      role: 'student',
+    },
+  });
 
   const step2Form = useForm<RegistrationStep2Data>({
     resolver: zodResolver(registrationStep2Schema),
     defaultValues: {
-      schoolId: "",
-      classGrade: "",
-      parentStudentLink: "",
-      department: "",
-      employeeId: ""
-    }
-  })
+      schoolId: '',
+      classGrade: '',
+      parentStudentLink: '',
+      department: '',
+      employeeId: '',
+    },
+  });
 
   const step3Form = useForm<RegistrationStep3Data>({
     resolver: zodResolver(registrationStep3Schema),
     defaultValues: {
-      password: "",
-      confirmPassword: "",
-      phone: "",
+      password: '',
+      confirmPassword: '',
+      phone: '',
       emergencyContact: {
-        name: "",
-        phone: "",
-        relationship: ""
+        name: '',
+        phone: '',
+        relationship: '',
       },
       termsAccepted: false,
-      privacyAccepted: false
-    }
-  })
+      privacyAccepted: false,
+    },
+  });
 
-  const currentForm = currentStep === 1 ? step1Form : currentStep === 2 ? step2Form : step3Form
-  const progress = (currentStep / STEPS.length) * 100
+  const currentForm = currentStep === 1 ? step1Form : currentStep === 2 ? step2Form : step3Form;
+  const progress = (currentStep / STEPS.length) * 100;
 
   // Watch form values
-  const watchedEmail = step1Form.watch("email")
-  const watchedRole = step1Form.watch("role")
-  const watchedSchoolId = step2Form.watch("schoolId")
+  const watchedEmail = step1Form.watch('email');
+  const watchedRole = step1Form.watch('role');
+  const watchedSchoolId = step2Form.watch('schoolId');
 
   // Role detection
   React.useEffect(() => {
-    if (watchedEmail && watchedEmail.includes("@hasivu.edu")) {
-      const detectedRole = detectRoleFromEmail(watchedEmail)
+    if (watchedEmail && watchedEmail.includes('@hasivu.edu')) {
+      const detectedRole = detectRoleFromEmail(watchedEmail);
       if (detectedRole) {
-        step1Form.setValue("role", detectedRole as any)
+        step1Form.setValue('role', detectedRole as any);
       }
     }
-  }, [watchedEmail, step1Form])
+  }, [watchedEmail, step1Form]);
 
   // School ID validation
   React.useEffect(() => {
     const validateSchoolId = async () => {
       if (watchedSchoolId && watchedSchoolId.length === 9 && onValidateSchoolId) {
         try {
-          const isValid = await onValidateSchoolId(watchedSchoolId)
-          setSchoolIdValid(isValid)
+          const isValid = await onValidateSchoolId(watchedSchoolId);
+          setSchoolIdValid(isValid);
         } catch (error) {
-          setSchoolIdValid(false)
+          setSchoolIdValid(false);
         }
       } else {
-        setSchoolIdValid(null)
+        setSchoolIdValid(null);
       }
-    }
+    };
 
-    const debounceTimer = setTimeout(validateSchoolId, 500)
-    return () => clearTimeout(debounceTimer)
-  }, [watchedSchoolId, onValidateSchoolId])
+    const debounceTimer = setTimeout(validateSchoolId, 500);
+    return () => clearTimeout(debounceTimer);
+  }, [watchedSchoolId, onValidateSchoolId]);
 
   const handleNext = async () => {
-    const isValid = await currentForm.trigger()
+    const isValid = await currentForm.trigger();
     if (isValid) {
-      const currentData = currentForm.getValues()
-      setFormData(prev => ({ ...prev, ...currentData }))
-      
+      const currentData = currentForm.getValues();
+      setFormData(prev => ({ ...prev, ...currentData }));
+
       if (currentStep < STEPS.length) {
-        setCurrentStep(prev => prev + 1)
+        setCurrentStep(prev => prev + 1);
       }
     }
-  }
+  };
 
   const handlePrevious = () => {
     if (currentStep > 1) {
-      setCurrentStep(prev => prev - 1)
+      setCurrentStep(prev => prev - 1);
     }
-  }
+  };
 
   const handleFinalSubmit = async () => {
-    const isValid = await step3Form.trigger()
+    const isValid = await step3Form.trigger();
     if (isValid) {
       const finalData = {
         ...formData,
         ...step3Form.getValues(),
-        profileImage
-      }
-      await onSubmit(finalData)
+        profileImage,
+      };
+      await onSubmit(finalData);
     }
-  }
+  };
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
+    const file = event.target.files?.[0];
     if (file) {
-      const reader = new FileReader()
+      const reader = new FileReader();
       reader.onloadend = () => {
-        setProfileImage(reader.result as string)
-      }
-      reader.readAsDataURL(file)
+        setProfileImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
-  }
+  };
 
   const renderStep1 = () => (
     <div className="space-y-4">
@@ -269,15 +282,15 @@ export function MultiStepRegistrationForm({
                 <FormLabel>Role</FormLabel>
                 <FormControl>
                   <div className="grid grid-cols-1 gap-3">
-                    {ROLE_OPTIONS.map((option) => {
-                      const IconComponent = option.icon
+                    {ROLE_OPTIONS.map(option => {
+                      const IconComponent = option.icon;
                       return (
                         <label
                           key={option.value}
                           className={`flex items-center space-x-3 p-3 border rounded-lg cursor-pointer transition-colors ${
                             field.value === option.value
-                              ? "border-primary-500 bg-primary-50"
-                              : "border-gray-200 hover:border-gray-300"
+                              ? 'border-primary-500 bg-primary-50'
+                              : 'border-gray-200 hover:border-gray-300'
                           }`}
                         >
                           <input
@@ -296,7 +309,7 @@ export function MultiStepRegistrationForm({
                             <Check className="h-4 w-4 text-primary-600" />
                           )}
                         </label>
-                      )
+                      );
                     })}
                   </div>
                 </FormControl>
@@ -307,7 +320,7 @@ export function MultiStepRegistrationForm({
         </form>
       </Form>
     </div>
-  )
+  );
 
   const renderStep2 = () => (
     <div className="space-y-4">
@@ -334,9 +347,11 @@ export function MultiStepRegistrationForm({
                       maxLength={9}
                     />
                     {schoolIdValid !== null && (
-                      <div className={`absolute right-3 top-1/2 transform -translate-y-1/2 ${
-                        schoolIdValid ? "text-green-500" : "text-red-500"
-                      }`}>
+                      <div
+                        className={`absolute right-3 top-1/2 transform -translate-y-1/2 ${
+                          schoolIdValid ? 'text-green-500' : 'text-red-500'
+                        }`}
+                      >
                         {schoolIdValid ? (
                           <Check className="h-4 w-4" />
                         ) : (
@@ -348,13 +363,15 @@ export function MultiStepRegistrationForm({
                 </FormControl>
                 <FormMessage />
                 {schoolIdValid === false && (
-                  <p className="text-sm text-red-600">School ID not found. Please contact administration.</p>
+                  <p className="text-sm text-red-600">
+                    School ID not found. Please contact administration.
+                  </p>
                 )}
               </FormItem>
             )}
           />
 
-          {watchedRole === "student" && (
+          {watchedRole === 'student' && (
             <FormField
               control={step2Form.control}
               name="classGrade"
@@ -370,7 +387,7 @@ export function MultiStepRegistrationForm({
             />
           )}
 
-          {watchedRole === "parent" && (
+          {watchedRole === 'parent' && (
             <FormField
               control={step2Form.control}
               name="parentStudentLink"
@@ -389,7 +406,7 @@ export function MultiStepRegistrationForm({
             />
           )}
 
-          {(watchedRole === "teacher" || watchedRole === "admin") && (
+          {(watchedRole === 'teacher' || watchedRole === 'admin') && (
             <>
               <FormField
                 control={step2Form.control}
@@ -404,7 +421,7 @@ export function MultiStepRegistrationForm({
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={step2Form.control}
                 name="employeeId"
@@ -423,7 +440,7 @@ export function MultiStepRegistrationForm({
         </form>
       </Form>
     </div>
-  )
+  );
 
   const renderStep3 = () => (
     <div className="space-y-4">
@@ -448,7 +465,7 @@ export function MultiStepRegistrationForm({
               </Avatar>
               <label className="cursor-pointer">
                 <span className="text-sm text-primary-600 hover:text-primary-500">
-                  {profileImage ? "Change Photo" : "Upload Photo"}
+                  {profileImage ? 'Change Photo' : 'Upload Photo'}
                 </span>
                 <input
                   type="file"
@@ -472,7 +489,7 @@ export function MultiStepRegistrationForm({
                       <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                       <Input
                         {...field}
-                        type={showPassword ? "text" : "password"}
+                        type={showPassword ? 'text' : 'password'}
                         placeholder="Create secure password"
                         className="pl-10 pr-10"
                       />
@@ -481,7 +498,11 @@ export function MultiStepRegistrationForm({
                         onClick={() => setShowPassword(!showPassword)}
                         className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                       >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
                       </button>
                     </div>
                   </FormControl>
@@ -504,7 +525,7 @@ export function MultiStepRegistrationForm({
                       <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                       <Input
                         {...field}
-                        type={showConfirmPassword ? "text" : "password"}
+                        type={showConfirmPassword ? 'text' : 'password'}
                         placeholder="Confirm your password"
                         className="pl-10 pr-10"
                       />
@@ -513,7 +534,11 @@ export function MultiStepRegistrationForm({
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                         className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                       >
-                        {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        {showConfirmPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
                       </button>
                     </div>
                   </FormControl>
@@ -548,7 +573,7 @@ export function MultiStepRegistrationForm({
           {/* Emergency Contact */}
           <div className="space-y-3">
             <Label className="text-sm font-medium text-gray-700">Emergency Contact</Label>
-            
+
             <FormField
               control={step3Form.control}
               name="emergencyContact.name"
@@ -608,7 +633,7 @@ export function MultiStepRegistrationForm({
                   </FormControl>
                   <div className="space-y-1 leading-none">
                     <Label className="text-sm text-gray-600">
-                      I accept the{" "}
+                      I accept the{' '}
                       <a href="/terms" className="text-primary-600 hover:underline">
                         Terms and Conditions
                       </a>
@@ -634,7 +659,7 @@ export function MultiStepRegistrationForm({
                   </FormControl>
                   <div className="space-y-1 leading-none">
                     <Label className="text-sm text-gray-600">
-                      I accept the{" "}
+                      I accept the{' '}
                       <a href="/privacy" className="text-primary-600 hover:underline">
                         Privacy Policy
                       </a>
@@ -648,24 +673,25 @@ export function MultiStepRegistrationForm({
         </form>
       </Form>
     </div>
-  )
+  );
 
   return (
     <Card className={className}>
       <CardHeader>
-        <CardTitle className="text-2xl font-bold text-center">
-          Join HASIVU Platform
-        </CardTitle>
+        <CardTitle className="text-2xl font-bold text-center">Join HASIVU Platform</CardTitle>
         <CardDescription className="text-center">
           Step {currentStep} of {STEPS.length}: {STEPS[currentStep - 1].title}
         </CardDescription>
-        
+
         {/* Progress Bar */}
         <div className="mt-4">
           <Progress value={progress} className="h-2" />
           <div className="flex justify-between mt-2 text-xs text-gray-500">
             {STEPS.map((step, index) => (
-              <span key={step.id} className={`${index + 1 <= currentStep ? "text-primary-600 font-medium" : ""}`}>
+              <span
+                key={step.id}
+                className={`${index + 1 <= currentStep ? 'text-primary-600 font-medium' : ''}`}
+              >
                 {step.title}
               </span>
             ))}
@@ -697,20 +723,12 @@ export function MultiStepRegistrationForm({
           </Button>
 
           {currentStep < STEPS.length ? (
-            <Button
-              type="button"
-              onClick={handleNext}
-              disabled={isLoading}
-            >
+            <Button type="button" onClick={handleNext} disabled={isLoading}>
               Next
               <ChevronRight className="w-4 h-4 ml-2" />
             </Button>
           ) : (
-            <Button
-              type="button"
-              onClick={handleFinalSubmit}
-              disabled={isLoading}
-            >
+            <Button type="button" onClick={handleFinalSubmit} disabled={isLoading}>
               {isLoading ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -727,5 +745,5 @@ export function MultiStepRegistrationForm({
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

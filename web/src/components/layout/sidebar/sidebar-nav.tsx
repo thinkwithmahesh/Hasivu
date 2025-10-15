@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, { useState } from 'react';
 import Link from 'next/link';
@@ -16,7 +16,7 @@ import {
   Clock,
   FileText,
   ShoppingBag,
-  AlertTriangle,
+  AlertTriangle as _AlertTriangle,
   Shield,
   CreditCard,
   Zap,
@@ -332,7 +332,7 @@ const getKitchenNavItems = (): NavigationItem[] => [
 export function SidebarNav({ user, collapsed = false, onToggle, className }: SidebarNavProps) {
   const pathname = usePathname();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
-  
+
   const navItems = user.role === 'admin' ? getAdminNavItems() : getKitchenNavItems();
 
   const isActive = (href: string) => {
@@ -346,54 +346,54 @@ export function SidebarNav({ user, collapsed = false, onToggle, className }: Sid
     if (collapsed) {
       onToggle?.(false); // Auto-expand sidebar when clicking on item with children
     }
-    setExpandedItems(prev => 
-      prev.includes(itemId) 
-        ? prev.filter(id => id !== itemId)
-        : [...prev, itemId]
+    setExpandedItems(prev =>
+      prev.includes(itemId) ? prev.filter(id => id !== itemId) : [...prev, itemId]
     );
   };
 
   return (
-    <div className={cn(
-      "flex flex-col h-full bg-white border-r transition-all duration-300",
-      collapsed ? "w-16" : "w-64",
-      className
-    )}>
+    <div
+      className={cn(
+        'flex flex-col h-full bg-white border-r transition-all duration-300',
+        collapsed ? 'w-16' : 'w-64',
+        className
+      )}
+    >
       {/* Sidebar Header */}
-      <div className={cn(
-        "flex items-center justify-between p-4 border-b",
-        collapsed && "justify-center"
-      )}>
+      <div
+        className={cn(
+          'flex items-center justify-between p-4 border-b',
+          collapsed && 'justify-center'
+        )}
+      >
         {!collapsed && (
           <div className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-md bg-primary-500 flex items-center justify-center">
               <span className="text-white font-bold text-lg">H</span>
             </div>
             <div>
-              <div className="font-semibold text-primary-600">{user.role === 'admin' ? 'Admin' : 'Kitchen'}</div>
+              <div className="font-semibold text-primary-600">
+                {user.role === 'admin' ? 'Admin' : 'Kitchen'}
+              </div>
               <div className="text-xs text-gray-500">Control Panel</div>
             </div>
           </div>
         )}
-        
+
         <Button
           variant="ghost"
           size="icon"
           onClick={() => onToggle?.(!collapsed)}
           className="h-8 w-8"
         >
-          {collapsed ? (
-            <ChevronRight className="h-4 w-4" />
-          ) : (
-            <ChevronLeft className="h-4 w-4" />
-          )}
+          {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
         </Button>
       </div>
 
       {/* Navigation Items */}
       <nav className="flex-1 overflow-y-auto py-4">
         <div className="space-y-1 px-3">
-          {navItems.map((item) => {
+          {navItems.map(item => {
             const Icon = item.icon;
             const hasChildren = item.children && item.children.length > 0;
             const active = isActive(item.href);
@@ -406,16 +406,18 @@ export function SidebarNav({ user, collapsed = false, onToggle, className }: Sid
                     <Button
                       variant="ghost"
                       className={cn(
-                        "w-full justify-start h-auto p-2 text-left font-normal",
-                        active && "bg-primary-50 text-primary-700",
-                        collapsed && "justify-center"
+                        'w-full justify-start h-auto p-2 text-left font-normal',
+                        active && 'bg-primary-50 text-primary-700',
+                        collapsed && 'justify-center'
                       )}
                       onClick={() => toggleExpanded(item.id)}
                     >
-                      <div className={cn(
-                        "flex items-center gap-3 w-full",
-                        collapsed && "justify-center"
-                      )}>
+                      <div
+                        className={cn(
+                          'flex items-center gap-3 w-full',
+                          collapsed && 'justify-center'
+                        )}
+                      >
                         <div className="relative">
                           {Icon && <Icon className="h-5 w-5" />}
                           {item.badge && item.badge > 0 && !collapsed && (
@@ -427,26 +429,28 @@ export function SidebarNav({ user, collapsed = false, onToggle, className }: Sid
                         {!collapsed && (
                           <>
                             <span className="flex-1">{item.label}</span>
-                            <ChevronRight className={cn(
-                              "h-4 w-4 transition-transform",
-                              expanded && "rotate-90"
-                            )} />
+                            <ChevronRight
+                              className={cn(
+                                'h-4 w-4 transition-transform',
+                                expanded && 'rotate-90'
+                              )}
+                            />
                           </>
                         )}
                       </div>
                     </Button>
-                    
+
                     {expanded && !collapsed && (
                       <div className="ml-8 mt-1 space-y-1">
-                        {item.children?.map((child) => (
+                        {item.children?.map(child => (
                           <Link
                             key={child.id}
                             href={child.href}
                             className={cn(
-                              "flex items-center justify-between px-3 py-2 text-sm rounded-md transition-colors",
+                              'flex items-center justify-between px-3 py-2 text-sm rounded-md transition-colors',
                               isActive(child.href)
-                                ? "bg-primary-100 text-primary-700 font-medium"
-                                : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                                ? 'bg-primary-100 text-primary-700 font-medium'
+                                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                             )}
                           >
                             <span>{child.label}</span>
@@ -464,11 +468,11 @@ export function SidebarNav({ user, collapsed = false, onToggle, className }: Sid
                   <Link
                     href={item.href}
                     className={cn(
-                      "flex items-center gap-3 px-2 py-2 rounded-md transition-colors",
+                      'flex items-center gap-3 px-2 py-2 rounded-md transition-colors',
                       active
-                        ? "bg-primary-50 text-primary-700 font-medium"
-                        : "text-gray-700 hover:bg-gray-100 hover:text-gray-900",
-                      collapsed && "justify-center"
+                        ? 'bg-primary-50 text-primary-700 font-medium'
+                        : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900',
+                      collapsed && 'justify-center'
                     )}
                   >
                     <div className="relative">
@@ -479,9 +483,7 @@ export function SidebarNav({ user, collapsed = false, onToggle, className }: Sid
                         </span>
                       )}
                     </div>
-                    {!collapsed && (
-                      <span className="flex-1">{item.label}</span>
-                    )}
+                    {!collapsed && <span className="flex-1">{item.label}</span>}
                   </Link>
                 )}
               </div>
@@ -494,10 +496,12 @@ export function SidebarNav({ user, collapsed = false, onToggle, className }: Sid
       {!collapsed && (
         <div className="p-4 border-t">
           <div className="flex items-center gap-3">
-            <div className={cn(
-              "h-8 w-8 rounded-full flex items-center justify-center text-white text-sm font-medium",
-              user.role === 'admin' ? "bg-purple-500" : "bg-orange-500"
-            )}>
+            <div
+              className={cn(
+                'h-8 w-8 rounded-full flex items-center justify-center text-white text-sm font-medium',
+                user.role === 'admin' ? 'bg-purple-500' : 'bg-orange-500'
+              )}
+            >
               {user.role === 'admin' ? 'A' : 'K'}
             </div>
             <div className="flex-1">

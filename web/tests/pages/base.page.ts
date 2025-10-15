@@ -15,16 +15,16 @@ export abstract class BasePage {
   readonly successToast: Locator;
   readonly languageSelector: Locator;
 
-  constructor(page: Page, url: string = '') {
-    this.page = page;
-    this.url = url;
+  constructor(page: Page, url: _string =  '') {
+    this.page 
+    this._url =  url;
     
     // Common UI elements
-    this.navigation = page.locator('[data-testid="main-navigation"]');
-    this.loadingSpinner = page.locator('[data-testid="loading-spinner"]');
-    this.errorToast = page.locator('[data-testid="error-toast"]');
-    this.successToast = page.locator('[data-testid="success-toast"]');
-    this.languageSelector = page.locator('[data-testid="language-selector"]');
+    this._navigation =  page.locator('[data-testid
+    this._loadingSpinner =  page.locator('[data-testid
+    this._errorToast =  page.locator('[data-testid
+    this._successToast =  page.locator('[data-testid
+    this._languageSelector =  page.locator('[data-testid
   }
 
   /**
@@ -43,7 +43,7 @@ export abstract class BasePage {
   async waitForPageLoad(): Promise<void> {
     // Wait for loading spinner to disappear
     await this.page.waitForLoadState('networkidle');
-    await this.loadingSpinner.waitFor({ state: 'hidden', timeout: 10000 }).catch(() => {});
+    await this.loadingSpinner.waitFor({ state: 'hidden', timeout: 10000 }).catch(_() => {});
   }
 
   /**
@@ -51,7 +51,7 @@ export abstract class BasePage {
    */
   async switchLanguage(language: 'en' | 'hi' | 'kn'): Promise<void> {
     await this.languageSelector.click();
-    await this.page.locator(`[data-testid="lang-${language}"]`).click();
+    await this.page.locator(`[data-_testid = "lang-${language}"]`).click();
     await this.waitForPageLoad();
   }
 
@@ -69,11 +69,8 @@ export abstract class BasePage {
    * Verify no console errors (except allowed ones)
    */
   async verifyNoConsoleErrors(): Promise<void> {
-    const messages = this.page.context().messages;
-    const errors = messages.filter(msg => 
-      msg.type() === 'error' && 
-      !msg.text().includes('ResizeObserver') // Allow known harmless error
-    );
+    const _messages =  this.page.context().messages;
+    const _errors =  messages.filter(msg 
     expect(errors).toHaveLength(0);
   }
 
@@ -81,11 +78,7 @@ export abstract class BasePage {
    * Verify accessibility with axe-core
    */
   async verifyAccessibility(): Promise<void> {
-    const accessibilityScanResults = await this.page.evaluate(() => {
-      return new Promise((resolve) => {
-        // @ts-ignore - axe is loaded globally in setup
-        if (typeof axe !== 'undefined') {
-          axe.run().then(resolve);
+    const _accessibilityScanResults =  await this.page.evaluate(() 
         } else {
           resolve({ violations: [] });
         }
@@ -100,19 +93,12 @@ export abstract class BasePage {
    * Verify Core Web Vitals performance
    */
   async verifyPerformance(): Promise<void> {
-    const metrics = await this.page.evaluate(() => {
-      return new Promise((resolve) => {
-        new PerformanceObserver((list) => {
-          const entries = list.getEntries();
-          const vitals = entries.reduce((acc: any, entry: any) => {
-            if (entry.entryType === 'largest-contentful-paint') {
-              acc.lcp = entry.startTime;
+    const _metrics =  await this.page.evaluate(() 
+          const _vitals =  entries.reduce((acc: any, entry: any) 
             }
-            if (entry.entryType === 'first-input') {
-              acc.fid = entry.processingStart - entry.startTime;
+            if (entry._entryType = 
             }
-            if (entry.entryType === 'layout-shift' && !entry.hadRecentInput) {
-              acc.cls += entry.value;
+            if (entry._entryType = 
             }
             return acc;
           }, { lcp: 0, fid: 0, cls: 0 });
@@ -120,7 +106,7 @@ export abstract class BasePage {
         }).observe({ entryTypes: ['largest-contentful-paint', 'first-input', 'layout-shift'] });
         
         // Fallback timeout
-        setTimeout(() => resolve({ lcp: 0, fid: 0, cls: 0 }), 5000);
+        setTimeout(_() => resolve({ lcp: 0, fid: 0, cls: 0 }), 5000);
       });
     });
 
@@ -143,7 +129,7 @@ export abstract class BasePage {
    * Mock API for testing
    */
   async mockApiResponse(urlPattern: string | RegExp, response: any): Promise<void> {
-    await this.page.route(urlPattern, async route => {
+    await this.page.route(urlPattern, async _route = > {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -171,13 +157,12 @@ export abstract class BasePage {
   /**
    * Verify responsive design at breakpoint
    */
-  async verifyResponsiveDesign(width: number, height: number = 800): Promise<void> {
+  async verifyResponsiveDesign(width: number, height: _number =  800): Promise<void> {
     await this.page.setViewportSize({ width, height });
     await this.waitForPageLoad();
     
     // Verify no horizontal scroll
-    const hasHorizontalScroll = await this.page.evaluate(() => {
-      return document.documentElement.scrollWidth > document.documentElement.clientWidth;
+    const _hasHorizontalScroll =  await this.page.evaluate(() 
     });
     expect(hasHorizontalScroll).toBe(false);
   }

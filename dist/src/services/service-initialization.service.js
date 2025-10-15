@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.serviceInitializationService = exports.ServiceInitializationService = exports.SERVICE_INITIALIZATION_ORDER = void 0;
+exports.ServiceInitializationManager = void 0;
 const logger_1 = require("@/utils/logger");
 const graceful_degradation_service_1 = require("@/services/graceful-degradation.service");
 const health_monitor_service_1 = require("@/services/health-monitor.service");
@@ -10,6 +10,7 @@ const redis_service_1 = require("@/services/redis.service");
 const auth_service_1 = require("@/services/auth.service");
 const performance_service_1 = require("@/services/performance.service");
 const cost_monitoring_service_1 = require("@/services/cost-monitoring.service");
+const retry_service_1 = require("@/services/retry.service");
 const business_metrics_dashboard_service_1 = require("@/services/business-metrics-dashboard.service");
 const gracefulDegradationService = new graceful_degradation_service_1.GracefulDegradationService();
 const healthMonitorService = new health_monitor_service_1.HealthMonitorService(health_monitor_service_1.HealthMonitorService.createDefaultConfig());
@@ -20,564 +21,511 @@ const DefaultDegradationConfigs = {
     PERFORMANCE: graceful_degradation_service_1.GracefulDegradationService.createDefaultConfig('Performance'),
     DEFAULT: graceful_degradation_service_1.GracefulDegradationService.createDefaultConfig('Default')
 };
-exports.SERVICE_INITIALIZATION_ORDER = [
-    {
-        name: 'Logger',
-        initializeFunction: async () => {
-            logger_1.logger.info('Logger service ready');
-        },
-        healthCheckFunction: async () => true,
-        timeout: 5000,
-        critical: true,
-        gracefulDegradation: false
-    },
-    {
+const defaultServiceConfigs = {
+    database: {
         name: 'Database',
-        initializeFunction: async () => {
+        order: 1,
+        required: true,
+        timeout: 30000,
+        retryEnabled: true,
+        maxRetries: 3,
+        retryDelay: 2000,
+        healthCheckEnabled: true,
+        healthCheckInterval: 30000,
+        gracefulDegradationEnabled: true,
+        circuitBreakerEnabled: true,
+        circuitBreakerConfig: {
+            threshold: 5,
+            timeout: 10000,
+            resetTimeout: 60000
+        }
+    },
+    redis: {
+        name: 'Redis',
+        order: 2,
+        required: false,
+        timeout: 10000,
+        retryEnabled: true,
+        maxRetries: 2,
+        retryDelay: 1000,
+        healthCheckEnabled: true,
+        healthCheckInterval: 15000,
+        gracefulDegradationEnabled: true,
+        circuitBreakerEnabled: true,
+        circuitBreakerConfig: {
+            threshold: 3,
+            timeout: 5000,
+            resetTimeout: 30000
+        }
+    },
+    auth: {
+        name: 'Auth',
+        order: 3,
+        required: true,
+        timeout: 15000,
+        retryEnabled: true,
+        maxRetries: 2,
+        retryDelay: 1500,
+        healthCheckEnabled: true,
+        healthCheckInterval: 20000,
+        gracefulDegradationEnabled: true,
+        dependencies: ['database'],
+        circuitBreakerEnabled: false
+    },
+    performance: {
+        name: 'Performance',
+        order: 4,
+        required: false,
+        timeout: 5000,
+        retryEnabled: false,
+        maxRetries: 0,
+        retryDelay: 0,
+        healthCheckEnabled: true,
+        healthCheckInterval: 60000,
+        gracefulDegradationEnabled: true,
+        circuitBreakerEnabled: false
+    },
+    costMonitoring: {
+        name: 'Cost Monitoring',
+        order: 5,
+        required: false,
+        timeout: 5000,
+        retryEnabled: false,
+        maxRetries: 0,
+        retryDelay: 0,
+        healthCheckEnabled: true,
+        healthCheckInterval: 300000,
+        gracefulDegradationEnabled: true,
+        circuitBreakerEnabled: false
+    },
+    businessMetrics: {
+        name: 'Business Metrics',
+        order: 6,
+        required: false,
+        timeout: 8000,
+        retryEnabled: true,
+        maxRetries: 1,
+        retryDelay: 2000,
+        healthCheckEnabled: true,
+        healthCheckInterval: 120000,
+        gracefulDegradationEnabled: true,
+        dependencies: ['database'],
+        circuitBreakerEnabled: false
+    }
+};
+class ServiceInitializationManager {
+    static instance = null;
+    serviceStatuses = new Map();
+    retryService = new retry_service_1.RetryService();
+    isInitialized = false;
+    startupStart;
+    constructor() {
+        this.startupStart = Date.now();
+        logger_1.logger.info('Service Initialization Manager created');
+    }
+    static getInstance() {
+        if (!ServiceInitializationManager.instance) {
+            ServiceInitializationManager.instance = new ServiceInitializationManager();
+        }
+        return ServiceInitializationManager.instance;
+    }
+    async initializeAllServices(customConfigs) {
+        try {
+            logger_1.logger.info('Starting service initialization sequence...');
+            const configs = this.mergeConfigurations(customConfigs);
+            const sortedServices = Object.entries(configs).sort(([, a], [, b]) => a.order - b.order);
+            for (const [serviceName, config] of sortedServices) {
+                await this.initializeService(serviceName, config);
+            }
+            await this.startHealthMonitoring();
+            this.isInitialized = true;
+            const totalDuration = Date.now() - this.startupStart;
+            logger_1.logger.info('Service initialization completed successfully', {
+                totalDuration,
+                services: Array.from(this.serviceStatuses.keys()),
+                readyServices: this.getReadyServices().length,
+                failedServices: this.getFailedServices().length
+            });
+        }
+        catch (error) {
+            logger_1.logger.error('Service initialization failed', {
+                error: error instanceof Error ? error.message : 'Unknown error',
+                duration: Date.now() - this.startupStart
+            });
+            throw error;
+        }
+    }
+    async initializeService(serviceName, config) {
+        const status = {
+            name: config.name,
+            status: 'pending',
+            dependencies: config.dependencies,
+            retryCount: 0
+        };
+        this.serviceStatuses.set(serviceName, status);
+        try {
+            logger_1.logger.info(`Initializing service: ${config.name}`, { order: config.order });
+            if (config.dependencies) {
+                await this.validateDependencies(config.dependencies);
+            }
+            status.status = 'initializing';
+            status.startTime = Date.now();
+            this.updateServiceStatus(serviceName, status);
+            if (config.circuitBreakerEnabled && config.circuitBreakerConfig) {
+                circuit_breaker_service_1.CircuitBreakerRegistry.createCircuitBreaker(serviceName, config.circuitBreakerConfig.threshold, config.circuitBreakerConfig.timeout, config.circuitBreakerConfig.resetTimeout);
+            }
+            const initializeWithRetry = async () => {
+                switch (serviceName) {
+                    case 'database':
+                        await this.initializeDatabaseService();
+                        break;
+                    case 'redis':
+                        await this.initializeRedisService();
+                        break;
+                    case 'auth':
+                        await this.initializeAuthService();
+                        break;
+                    case 'performance':
+                        await this.initializePerformanceService();
+                        break;
+                    case 'costMonitoring':
+                        await this.initializeCostMonitoringService();
+                        break;
+                    case 'businessMetrics':
+                        await this.initializeBusinessMetricsService();
+                        break;
+                    default:
+                        throw new Error(`Unknown service: ${serviceName}`);
+                }
+            };
+            if (config.retryEnabled && config.maxRetries > 0) {
+                await this.retryService.execute(initializeWithRetry, config.maxRetries, config.retryDelay, {
+                    onRetry: (attempt) => {
+                        status.retryCount = attempt;
+                        logger_1.logger.warn(`Retrying ${config.name} initialization (attempt ${attempt})`);
+                        this.updateServiceStatus(serviceName, status);
+                    }
+                });
+            }
+            else {
+                await this.executeWithTimeout(initializeWithRetry, config.timeout);
+            }
+            let healthCheckPassed = true;
+            if (config.healthCheckEnabled) {
+                healthCheckPassed = await this.performHealthCheck(serviceName);
+            }
+            status.status = healthCheckPassed ? 'ready' : 'degraded';
+            status.endTime = Date.now();
+            status.duration = status.endTime - (status.startTime || 0);
+            status.healthCheck = healthCheckPassed;
+            this.updateServiceStatus(serviceName, status);
+            logger_1.logger.info(`Service ${config.name} initialized successfully`, {
+                duration: status.duration,
+                healthCheck: healthCheckPassed
+            });
+            if (config.gracefulDegradationEnabled) {
+                const degradationConfig = DefaultDegradationConfigs[serviceName.toUpperCase()] || DefaultDegradationConfigs.DEFAULT;
+                gracefulDegradationService.registerService(serviceName, degradationConfig);
+            }
+        }
+        catch (error) {
+            status.status = 'failed';
+            status.error = error instanceof Error ? error : new Error(String(error));
+            status.endTime = Date.now();
+            status.duration = status.endTime - (status.startTime || 0);
+            this.updateServiceStatus(serviceName, status);
+            logger_1.logger.error(`Failed to initialize service: ${config.name}`, {
+                error: error instanceof Error ? error.message : 'Unknown error',
+                duration: status.duration,
+                retryCount: status.retryCount
+            });
+            if (config.required) {
+                throw new Error(`Required service ${config.name} failed to initialize: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            }
+            if (config.gracefulDegradationEnabled) {
+                logger_1.logger.info(`Enabling graceful degradation for failed service: ${config.name}`);
+                gracefulDegradationService.setServiceUnavailable(serviceName);
+            }
+        }
+    }
+    async initializeDatabaseService() {
+        try {
             if (typeof database_service_1.DatabaseService.initialize === 'function') {
                 await database_service_1.DatabaseService.initialize();
             }
             else {
                 logger_1.logger.info('Database service initialize method not found, skipping');
             }
-        },
-        healthCheckFunction: async () => {
-            if (typeof database_service_1.DatabaseService.healthCheck === 'function') {
-                return await database_service_1.DatabaseService.healthCheck();
-            }
-            else {
-                logger_1.logger.debug('Database service healthCheck method not found, returning true');
-                return true;
-            }
-        },
-        dependencies: ['Logger'],
-        timeout: 30000,
-        retryAttempts: 3,
-        critical: true,
-        gracefulDegradation: true,
-        circuitBreaker: true
-    },
-    {
-        name: 'Redis',
-        initializeFunction: async () => {
+        }
+        catch (error) {
+            throw new Error(`Database initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+    }
+    async initializeRedisService() {
+        try {
             if (typeof redis_service_1.RedisService.initialize === 'function') {
                 await redis_service_1.RedisService.initialize();
             }
             else {
                 logger_1.logger.info('Redis service initialize method not found, skipping');
             }
-        },
-        healthCheckFunction: async () => {
-            if (typeof redis_service_1.RedisService.healthCheck === 'function') {
-                return await redis_service_1.RedisService.healthCheck();
-            }
-            else {
-                logger_1.logger.debug('Redis service healthCheck method not found, returning true');
-                return true;
-            }
-        },
-        dependencies: ['Logger'],
-        timeout: 15000,
-        retryAttempts: 3,
-        critical: false,
-        gracefulDegradation: true,
-        circuitBreaker: true
-    },
-    {
-        name: 'Authentication',
-        initializeFunction: async () => {
+        }
+        catch (error) {
+            throw new Error(`Redis initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+    }
+    async initializeAuthService() {
+        try {
             if (typeof auth_service_1.AuthService.initialize === 'function') {
                 await auth_service_1.AuthService.initialize();
             }
             else {
                 logger_1.logger.info('Auth service initialize method not found, skipping');
             }
-        },
-        healthCheckFunction: async () => {
-            if (typeof auth_service_1.AuthService.healthCheck === 'function') {
-                return await auth_service_1.AuthService.healthCheck();
-            }
-            else {
-                logger_1.logger.debug('Auth service healthCheck method not found, returning true');
-                return true;
-            }
-        },
-        dependencies: ['Database', 'Redis'],
-        timeout: 20000,
-        retryAttempts: 2,
-        critical: true,
-        gracefulDegradation: true,
-        circuitBreaker: true
-    },
-    {
-        name: 'PerformanceMonitoring',
-        initializeFunction: async () => {
+        }
+        catch (error) {
+            throw new Error(`Auth service initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+    }
+    async initializePerformanceService() {
+        try {
             if (typeof performance_service_1.PerformanceService.initialize === 'function') {
                 await performance_service_1.PerformanceService.initialize();
             }
             else {
                 logger_1.logger.info('Performance service initialize method not found, skipping');
             }
-        },
-        healthCheckFunction: async () => {
-            if (typeof performance_service_1.PerformanceService.healthCheck === 'function') {
-                return await performance_service_1.PerformanceService.healthCheck();
-            }
-            else {
-                logger_1.logger.debug('Performance service healthCheck method not found, returning true');
-                return true;
-            }
-        },
-        dependencies: ['Database', 'Redis'],
-        timeout: 10000,
-        retryAttempts: 2,
-        critical: false,
-        gracefulDegradation: true
-    },
-    {
-        name: 'CostMonitoring',
-        initializeFunction: async () => {
+        }
+        catch (error) {
+            throw new Error(`Performance service initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+    }
+    async initializeCostMonitoringService() {
+        try {
             if (typeof cost_monitoring_service_1.CostMonitoringService.initialize === 'function') {
                 await cost_monitoring_service_1.CostMonitoringService.initialize();
             }
             else {
                 logger_1.logger.info('Cost monitoring service initialize method not found, skipping');
             }
-        },
-        healthCheckFunction: async () => {
-            if (typeof cost_monitoring_service_1.CostMonitoringService.healthCheck === 'function') {
-                return await cost_monitoring_service_1.CostMonitoringService.healthCheck();
-            }
-            else {
-                logger_1.logger.debug('Cost monitoring service healthCheck method not found, returning true');
-                return true;
-            }
-        },
-        dependencies: ['Database'],
-        timeout: 15000,
-        retryAttempts: 2,
-        critical: false,
-        gracefulDegradation: true
-    },
-    {
-        name: 'BusinessMetrics',
-        initializeFunction: async () => {
+        }
+        catch (error) {
+            throw new Error(`Cost monitoring service initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+    }
+    async initializeBusinessMetricsService() {
+        try {
             if (typeof business_metrics_dashboard_service_1.BusinessMetricsDashboardService.initialize === 'function') {
                 await business_metrics_dashboard_service_1.BusinessMetricsDashboardService.initialize();
             }
             else {
                 logger_1.logger.info('Business metrics service initialize method not found, skipping');
             }
-        },
-        healthCheckFunction: async () => {
-            if (typeof business_metrics_dashboard_service_1.BusinessMetricsDashboardService.healthCheck === 'function') {
-                return await business_metrics_dashboard_service_1.BusinessMetricsDashboardService.healthCheck();
-            }
-            else {
-                logger_1.logger.debug('Business metrics service healthCheck method not found, returning true');
-                return true;
-            }
-        },
-        dependencies: ['Database', 'Authentication'],
-        timeout: 20000,
-        retryAttempts: 2,
-        critical: false,
-        gracefulDegradation: true
-    },
-    {
-        name: 'HealthMonitoring',
-        initializeFunction: async () => {
-            if (typeof healthMonitorService.start === 'function') {
-                healthMonitorService.start();
-                logger_1.logger.info('Health monitoring service started successfully');
-            }
-            else {
-                logger_1.logger.info('Health monitoring service start method not found, skipping');
-            }
-        },
-        healthCheckFunction: async () => {
-            if (typeof healthMonitorService.forceHealthCheck === 'function') {
-                const result = await healthMonitorService.forceHealthCheck();
-                return result.overallStatus === 'healthy';
-            }
-            else {
-                logger_1.logger.debug('Health monitoring service forceHealthCheck method not found, returning true');
-                return true;
-            }
-        },
-        dependencies: ['Database', 'Redis', 'Authentication'],
-        timeout: 10000,
-        retryAttempts: 2,
-        critical: false,
-        gracefulDegradation: false
-    },
-    {
-        name: 'GracefulDegradation',
-        initializeFunction: async () => {
-            if (typeof gracefulDegradationService.initialize === 'function') {
-                const configs = Object.values(DefaultDegradationConfigs);
-                await gracefulDegradationService.initialize(configs);
-                logger_1.logger.info('Graceful degradation service initialized successfully');
-            }
-            else {
-                logger_1.logger.info('Graceful degradation service initialize method not found, skipping');
-            }
-        },
-        healthCheckFunction: async () => {
-            if (typeof gracefulDegradationService.healthCheck === 'function') {
-                return await gracefulDegradationService.healthCheck();
-            }
-            else {
-                logger_1.logger.debug('Graceful degradation service healthCheck method not found, using fallback check');
-                return typeof gracefulDegradationService.isServiceAvailable === 'function';
-            }
-        },
-        dependencies: ['HealthMonitoring'],
-        timeout: 5000,
-        critical: false,
-        gracefulDegradation: false
-    }
-];
-class ServiceInitializationService {
-    static instance;
-    initializationStatuses = new Map();
-    isInitialized = false;
-    startTime = 0;
-    endTime = 0;
-    totalDuration = 0;
-    constructor() { }
-    static getInstance() {
-        if (!ServiceInitializationService.instance) {
-            ServiceInitializationService.instance = new ServiceInitializationService();
-        }
-        return ServiceInitializationService.instance;
-    }
-    async initializeServices() {
-        if (this.isInitialized) {
-            logger_1.logger.info('Services already initialized');
-            return;
-        }
-        this.startTime = Date.now();
-        logger_1.logger.info('Starting HASIVU Platform service initialization');
-        const services = exports.SERVICE_INITIALIZATION_ORDER;
-        const errors = [];
-        try {
-            for (const service of services) {
-                await this.initializeService(service);
-            }
-            await this.validateCriticalServices();
-            await this.startHealthMonitoring();
-            this.endTime = Date.now();
-            this.totalDuration = this.endTime - this.startTime;
-            this.isInitialized = true;
-            logger_1.logger.info('Service initialization completed successfully', {
-                duration: this.totalDuration,
-                servicesInitialized: services.length,
-                timestamp: new Date(this.endTime).toISOString()
-            });
         }
         catch (error) {
-            this.endTime = Date.now();
-            this.totalDuration = this.endTime - this.startTime;
-            logger_1.logger.error('Service initialization failed', {
-                error: error instanceof Error ? error.message : 'Unknown error',
-                duration: this.totalDuration,
-                failedServices: this.getFailedServices(),
-                timestamp: new Date(this.endTime).toISOString()
-            });
-            throw error;
+            throw new Error(`Business metrics service initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
     }
-    async initializeService(serviceConfig) {
-        const status = {
-            name: serviceConfig.name,
-            status: 'pending',
-            dependencies: serviceConfig.dependencies,
-            retryCount: 0
-        };
-        this.initializationStatuses.set(serviceConfig.name, status);
+    async performHealthCheck(serviceName) {
         try {
-            if (serviceConfig.dependencies) {
-                const missingDeps = this.checkDependencies(serviceConfig.dependencies);
-                if (missingDeps.length > 0) {
-                    status.status = 'failed';
-                    status.error = new Error(`Missing dependencies: ${missingDeps.join(', ')}`);
-                    throw status.error;
-                }
+            switch (serviceName) {
+                case 'database':
+                    if (typeof database_service_1.DatabaseService.healthCheck === 'function') {
+                        return await database_service_1.DatabaseService.healthCheck();
+                    }
+                    else {
+                        logger_1.logger.debug('Database service healthCheck method not found, returning true');
+                        return true;
+                    }
+                case 'redis':
+                    if (typeof redis_service_1.RedisService.healthCheck === 'function') {
+                        return await redis_service_1.RedisService.healthCheck();
+                    }
+                    else {
+                        logger_1.logger.debug('Redis service healthCheck method not found, returning true');
+                        return true;
+                    }
+                case 'auth':
+                    if (typeof auth_service_1.AuthService.healthCheck === 'function') {
+                        return await auth_service_1.AuthService.healthCheck();
+                    }
+                    else {
+                        logger_1.logger.debug('Auth service healthCheck method not found, returning true');
+                        return true;
+                    }
+                case 'performance':
+                    if (typeof performance_service_1.PerformanceService.healthCheck === 'function') {
+                        return await performance_service_1.PerformanceService.healthCheck();
+                    }
+                    else {
+                        logger_1.logger.debug('Performance service healthCheck method not found, returning true');
+                        return true;
+                    }
+                case 'costMonitoring':
+                    if (typeof cost_monitoring_service_1.CostMonitoringService.healthCheck === 'function') {
+                        return await cost_monitoring_service_1.CostMonitoringService.healthCheck();
+                    }
+                    else {
+                        logger_1.logger.debug('Cost monitoring service healthCheck method not found, returning true');
+                        return true;
+                    }
+                case 'businessMetrics':
+                    if (typeof business_metrics_dashboard_service_1.BusinessMetricsDashboardService.healthCheck === 'function') {
+                        return await business_metrics_dashboard_service_1.BusinessMetricsDashboardService.healthCheck();
+                    }
+                    else {
+                        logger_1.logger.debug('Business metrics service healthCheck method not found, returning true');
+                        return true;
+                    }
+                default:
+                    logger_1.logger.debug(`Unknown service for health check: ${serviceName}, returning true`);
+                    return true;
             }
-            await this.initializeServiceWithRetry(serviceConfig, status);
-            if (serviceConfig.healthCheckFunction) {
-                const isHealthy = await serviceConfig.healthCheckFunction();
-                status.healthCheck = isHealthy;
-                if (!isHealthy && serviceConfig.critical) {
-                    throw new Error(`Health check failed for critical service: ${serviceConfig.name}`);
-                }
-            }
-            if (serviceConfig.circuitBreaker) {
-                await this.setupCircuitBreaker(serviceConfig);
-            }
-            if (serviceConfig.gracefulDegradation) {
-                await this.setupGracefulDegradation(serviceConfig);
-            }
-            status.status = 'ready';
-            status.endTime = Date.now();
-            status.duration = status.endTime - (status.startTime || this.startTime);
-            logger_1.logger.info(`Service '${serviceConfig.name}' initialized successfully`, {
-                duration: status.duration,
-                retryCount: status.retryCount,
-                healthCheck: status.healthCheck
-            });
         }
         catch (error) {
-            status.status = 'failed';
-            status.error = error;
-            status.endTime = Date.now();
-            status.duration = status.endTime - (status.startTime || this.startTime);
-            logger_1.logger.error(`Service '${serviceConfig.name}' initialization failed`, {
-                error: status.error.message,
-                duration: status.duration,
-                retryCount: status.retryCount,
-                critical: serviceConfig.critical
-            });
-            if (serviceConfig.critical) {
-                throw new Error(`Critical service '${serviceConfig.name}' failed to initialize: ${status.error.message}`);
-            }
-            if (serviceConfig.gracefulDegradation) {
-                await this.setupDegradedMode(serviceConfig, status);
-            }
-        }
-    }
-    async initializeServiceWithRetry(serviceConfig, status) {
-        const maxRetries = serviceConfig.retryAttempts || 1;
-        const timeout = serviceConfig.timeout || 30000;
-        status.status = 'initializing';
-        status.startTime = Date.now();
-        for (let attempt = 1; attempt <= maxRetries; attempt++) {
-            try {
-                logger_1.logger.debug(`Initializing service '${serviceConfig.name}' (attempt ${attempt}/${maxRetries})`);
-                const timeoutPromise = new Promise((_, reject) => {
-                    setTimeout(() => {
-                        reject(new Error(`Service initialization timeout after ${timeout}ms`));
-                    }, timeout);
-                });
-                await Promise.race([
-                    serviceConfig.initializeFunction(),
-                    timeoutPromise
-                ]);
-                break;
-            }
-            catch (error) {
-                status.retryCount = attempt;
-                if (attempt === maxRetries) {
-                    throw error;
-                }
-                const delay = Math.min(1000 * Math.pow(2, attempt - 1), 10000);
-                logger_1.logger.warn(`Service '${serviceConfig.name}' initialization attempt ${attempt} failed, retrying in ${delay}ms`, {
-                    error: error instanceof Error ? error.message : 'Unknown error'
-                });
-                await this.delay(delay);
-            }
-        }
-    }
-    checkDependencies(dependencies) {
-        const missingDeps = [];
-        for (const dep of dependencies) {
-            const depStatus = this.initializationStatuses.get(dep);
-            if (!depStatus || depStatus.status !== 'ready') {
-                missingDeps.push(dep);
-            }
-        }
-        return missingDeps;
-    }
-    async setupCircuitBreaker(serviceConfig) {
-        try {
-            const circuitBreaker = circuit_breaker_service_1.CircuitBreakerRegistry.getOrCreate(`service-${serviceConfig.name.toLowerCase()}`, {
-                name: `service-${serviceConfig.name.toLowerCase()}`,
-                failureThreshold: 3,
-                recoveryTimeout: 30000,
-                requestTimeout: serviceConfig.timeout || 30000,
-                resetTimeout: 60000,
-                monitoringWindow: 60000,
-                volumeThreshold: 5,
-                errorThresholdPercentage: 50
-            });
-            logger_1.logger.debug(`Circuit breaker setup for service '${serviceConfig.name}'`);
-        }
-        catch (error) {
-            logger_1.logger.warn(`Failed to setup circuit breaker for service '${serviceConfig.name}'`, {
+            logger_1.logger.warn(`Health check failed for ${serviceName}`, {
                 error: error instanceof Error ? error.message : 'Unknown error'
             });
+            return false;
         }
-    }
-    async setupGracefulDegradation(serviceConfig) {
-        try {
-            const degradationConfig = DefaultDegradationConfigs[serviceConfig.name.toUpperCase()] ||
-                DefaultDegradationConfigs.DEFAULT;
-            if (typeof gracefulDegradationService.registerService === 'function') {
-                await gracefulDegradationService.registerService(serviceConfig.name, degradationConfig);
-            }
-            else {
-                logger_1.logger.debug(`Graceful degradation registered for service '${serviceConfig.name}' (fallback)`);
-            }
-            logger_1.logger.debug(`Graceful degradation setup for service '${serviceConfig.name}'`);
-        }
-        catch (error) {
-            logger_1.logger.warn(`Failed to setup graceful degradation for service '${serviceConfig.name}'`, {
-                error: error instanceof Error ? error.message : 'Unknown error'
-            });
-        }
-    }
-    async setupDegradedMode(serviceConfig, status) {
-        try {
-            status.status = 'degraded';
-            status.degradationLevel = 'partial';
-            if (typeof gracefulDegradationService.handleServiceFailure === 'function') {
-                await gracefulDegradationService.handleServiceFailure(serviceConfig.name, status.error || new Error('Service initialization failed'));
-            }
-            else {
-                logger_1.logger.debug(`Service failure handled for '${serviceConfig.name}' (fallback)`, {
-                    error: status.error?.message
-                });
-            }
-            logger_1.logger.info(`Service '${serviceConfig.name}' running in degraded mode`, {
-                degradationLevel: status.degradationLevel,
-                error: status.error?.message
-            });
-        }
-        catch (error) {
-            logger_1.logger.error(`Failed to setup degraded mode for service '${serviceConfig.name}'`, {
-                error: error instanceof Error ? error.message : 'Unknown error'
-            });
-        }
-    }
-    async validateCriticalServices() {
-        const criticalServices = exports.SERVICE_INITIALIZATION_ORDER.filter(s => s.critical);
-        const failedCriticalServices = [];
-        for (const service of criticalServices) {
-            const status = this.initializationStatuses.get(service.name);
-            if (!status || status.status !== 'ready') {
-                failedCriticalServices.push(service.name);
-            }
-        }
-        if (failedCriticalServices.length > 0) {
-            throw new Error(`Critical services failed to initialize: ${failedCriticalServices.join(', ')}`);
-        }
-        logger_1.logger.info('All critical services validated successfully');
     }
     async startHealthMonitoring() {
         try {
-            const readyServices = Array.from(this.initializationStatuses.entries())
-                .filter(([_, status]) => status.status === 'ready' || status.status === 'degraded')
-                .map(([name, _]) => name);
-            for (const serviceName of readyServices) {
-                const serviceConfig = exports.SERVICE_INITIALIZATION_ORDER.find(s => s.name === serviceName);
-                if (serviceConfig?.healthCheckFunction) {
-                    if (typeof healthMonitorService.registerService === 'function') {
-                        await healthMonitorService.registerService(serviceName, {
-                            healthCheck: serviceConfig.healthCheckFunction,
-                            interval: 30000,
-                            timeout: 10000,
-                            retries: 2
-                        });
-                    }
-                    else {
-                        logger_1.logger.debug(`Health monitoring registered for service '${serviceName}' (fallback)`);
-                    }
+            healthMonitorService.addHealthCheck('gracefulDegradation', async () => {
+                if (typeof gracefulDegradationService.healthCheck === 'function') {
+                    return await gracefulDegradationService.healthCheck();
                 }
+                else {
+                    logger_1.logger.debug('Graceful degradation service healthCheck method not found, using fallback check');
+                    return typeof gracefulDegradationService.isServiceAvailable === 'function';
+                }
+            });
+            for (const [serviceName] of this.serviceStatuses) {
+                healthMonitorService.addHealthCheck(serviceName, async () => {
+                    return await this.performHealthCheck(serviceName);
+                });
             }
+            healthMonitorService.startMonitoring();
             logger_1.logger.info('Health monitoring started for all services');
         }
         catch (error) {
-            logger_1.logger.warn('Failed to start health monitoring', {
+            logger_1.logger.error('Failed to start health monitoring', {
                 error: error instanceof Error ? error.message : 'Unknown error'
             });
         }
     }
-    getInitializationStatus() {
-        return new Map(this.initializationStatuses);
+    async validateDependencies(dependencies) {
+        for (const dependency of dependencies) {
+            const status = this.serviceStatuses.get(dependency);
+            if (!status || status.status !== 'ready') {
+                throw new Error(`Dependency ${dependency} is not ready`);
+            }
+        }
     }
-    getFailedServices() {
-        return Array.from(this.initializationStatuses.entries())
-            .filter(([_, status]) => status.status === 'failed')
-            .map(([name, _]) => name);
+    async executeWithTimeout(fn, timeout) {
+        return new Promise((resolve, reject) => {
+            const timer = setTimeout(() => {
+                reject(new Error(`Operation timed out after ${timeout}ms`));
+            }, timeout);
+            fn()
+                .then(resolve)
+                .catch(reject)
+                .finally(() => clearTimeout(timer));
+        });
+    }
+    updateServiceStatus(serviceName, status) {
+        const updateData = {
+            ...status,
+            lastUpdated: Date.now()
+        };
+        this.serviceStatuses.set(serviceName, status);
+        logger_1.logger.debug(`Service status updated: ${serviceName}`, updateData);
+    }
+    mergeConfigurations(customConfigs) {
+        const configs = { ...defaultServiceConfigs };
+        if (customConfigs) {
+            for (const [serviceName, customConfig] of Object.entries(customConfigs)) {
+                if (configs[serviceName]) {
+                    configs[serviceName] = { ...configs[serviceName], ...customConfig };
+                }
+            }
+        }
+        return configs;
+    }
+    getServiceStatuses() {
+        return new Map(this.serviceStatuses);
+    }
+    getServiceStatus(serviceName) {
+        return this.serviceStatuses.get(serviceName);
     }
     getReadyServices() {
-        return Array.from(this.initializationStatuses.entries())
-            .filter(([_, status]) => status.status === 'ready')
-            .map(([name, _]) => name);
+        return Array.from(this.serviceStatuses.values()).filter(status => status.status === 'ready');
+    }
+    getFailedServices() {
+        return Array.from(this.serviceStatuses.values()).filter(status => status.status === 'failed');
     }
     getDegradedServices() {
-        return Array.from(this.initializationStatuses.entries())
-            .filter(([_, status]) => status.status === 'degraded')
-            .map(([name, _]) => name);
+        return Array.from(this.serviceStatuses.values()).filter(status => status.status === 'degraded');
     }
     isAllServicesInitialized() {
         return this.isInitialized;
     }
-    getInitializationSummary() {
-        const statuses = Array.from(this.initializationStatuses.values());
+    isCriticalServicesReady() {
+        const criticalServices = ['database', 'auth'];
+        return criticalServices.every(serviceName => {
+            const status = this.serviceStatuses.get(serviceName);
+            return status && status.status === 'ready';
+        });
+    }
+    getSystemHealth() {
+        const statuses = Array.from(this.serviceStatuses.values());
+        const readyCount = statuses.filter(s => s.status === 'ready').length;
+        const failedCount = statuses.filter(s => s.status === 'failed').length;
+        const degradedCount = statuses.filter(s => s.status === 'degraded').length;
+        const totalCount = statuses.length;
+        let status;
+        if (failedCount === 0 && degradedCount === 0) {
+            status = 'healthy';
+        }
+        else if (this.isCriticalServicesReady()) {
+            status = 'degraded';
+        }
+        else {
+            status = 'unhealthy';
+        }
         return {
-            total: statuses.length,
-            ready: statuses.filter(s => s.status === 'ready').length,
-            failed: statuses.filter(s => s.status === 'failed').length,
-            degraded: statuses.filter(s => s.status === 'degraded').length,
-            duration: this.totalDuration,
-            success: this.isInitialized
+            status,
+            readyServices: readyCount,
+            failedServices: failedCount,
+            degradedServices: degradedCount,
+            totalServices: totalCount,
+            uptime: Date.now() - this.startupStart
         };
     }
-    async restartFailedServices() {
-        const failedServices = this.getFailedServices();
-        if (failedServices.length === 0) {
-            logger_1.logger.info('No failed services to restart');
-            return;
+    async restartService(serviceName) {
+        const config = defaultServiceConfigs[serviceName];
+        if (!config) {
+            throw new Error(`Unknown service: ${serviceName}`);
         }
-        logger_1.logger.info(`Restarting ${failedServices.length} failed services`, {
-            services: failedServices
-        });
-        for (const serviceName of failedServices) {
-            const serviceConfig = exports.SERVICE_INITIALIZATION_ORDER.find(s => s.name === serviceName);
-            if (serviceConfig) {
-                try {
-                    await this.initializeService(serviceConfig);
-                    logger_1.logger.info(`Service '${serviceName}' restarted successfully`);
-                }
-                catch (error) {
-                    logger_1.logger.error(`Failed to restart service '${serviceName}'`, {
-                        error: error instanceof Error ? error.message : 'Unknown error'
-                    });
-                }
-            }
-        }
+        logger_1.logger.info(`Restarting service: ${config.name}`);
+        await this.initializeService(serviceName, config);
     }
     async shutdown() {
-        logger_1.logger.info('Starting graceful service shutdown');
-        const readyServices = this.getReadyServices().reverse();
-        for (const serviceName of readyServices) {
-            try {
-                const serviceConfig = exports.SERVICE_INITIALIZATION_ORDER.find(s => s.name === serviceName);
-                if (serviceConfig) {
-                    logger_1.logger.debug(`Shutting down service '${serviceName}'`);
-                    const status = this.initializationStatuses.get(serviceName);
-                    if (status) {
-                        status.status = 'pending';
-                    }
-                }
-            }
-            catch (error) {
-                logger_1.logger.error(`Error shutting down service '${serviceName}'`, {
-                    error: error instanceof Error ? error.message : 'Unknown error'
-                });
-            }
+        logger_1.logger.info('Starting graceful shutdown of all services...');
+        try {
+            healthMonitorService.stopMonitoring();
+            this.serviceStatuses.clear();
+            this.isInitialized = false;
+            logger_1.logger.info('Graceful shutdown completed');
         }
-        this.isInitialized = false;
-        this.initializationStatuses.clear();
-        logger_1.logger.info('Service shutdown completed');
-    }
-    delay(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
+        catch (error) {
+            logger_1.logger.error('Error during graceful shutdown', {
+                error: error instanceof Error ? error.message : 'Unknown error'
+            });
+            throw error;
+        }
     }
 }
-exports.ServiceInitializationService = ServiceInitializationService;
-exports.serviceInitializationService = ServiceInitializationService.getInstance();
-exports.default = exports.serviceInitializationService;
+exports.ServiceInitializationManager = ServiceInitializationManager;
+exports.default = ServiceInitializationManager.getInstance();
 //# sourceMappingURL=service-initialization.service.js.map

@@ -10,9 +10,7 @@
         "PWA manifest has JSON syntax errors",
         "Build contains TypeScript syntax errors - requires fixing corrupted files"
       ],
-      "recommendations": [
-        "Remove corrupted backup files and fix syntax errors in TypeScript files"
-      ]
+      "recommendations": ["Remove corrupted backup files and fix syntax errors in TypeScript files"]
     },
     "performance": {
       "status": "pass",
@@ -30,17 +28,13 @@
     "cross_browser": {
       "status": "pass",
       "score": 75,
-      "issues": [
-        "TypeScript compilation target not specified"
-      ],
+      "issues": ["TypeScript compilation target not specified"],
       "recommendations": []
     },
     "security": {
       "status": "pass",
       "score": 85,
-      "issues": [
-        "Missing environment variables template"
-      ],
+      "issues": ["Missing environment variables template"],
       "recommendations": []
     },
     "accessibility": {
@@ -58,11 +52,7 @@
     "documentation": {
       "status": "warning",
       "score": 40,
-      "issues": [
-        "Missing README.md",
-        "Missing component documentation",
-        "Missing environment variables documentation"
-      ],
+      "issues": ["Missing README.md", "Missing component documentation", "Missing environment variables documentation"],
       "recommendations": [
         "Create troubleshooting guide",
         "Create comprehensive deployment documentation",

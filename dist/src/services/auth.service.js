@@ -22,39 +22,56 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.authService = exports.AuthService = void 0;
 const jwt = __importStar(require("jsonwebtoken"));
 const bcrypt = __importStar(require("bcryptjs"));
 const crypto = __importStar(require("crypto"));
+const ioredis_1 = __importDefault(require("ioredis"));
 const environment_1 = require("../config/environment");
-const logger_1 = require("../utils/logger");
-const redis_service_1 = require("./redis.service");
-const database_service_1 = require("./database.service");
+const logger_service_1 = require("../shared/logger.service");
+const database_service_1 = require("../shared/database.service");
 class AuthService {
+    static instance;
     jwtSecret;
     jwtRefreshSecret;
     passwordRequirements;
     sessionTimeout;
     maxFailedAttempts;
     lockoutDuration;
+    redis;
     constructor() {
         this.jwtSecret = environment_1.config.jwt.secret;
         this.jwtRefreshSecret = environment_1.config.jwt.refreshSecret;
         this.sessionTimeout = 24 * 60 * 60;
         this.maxFailedAttempts = 5;
         this.lockoutDuration = 30 * 60;
+        this.redis = new ioredis_1.default(environment_1.config.redis.url, {
+            maxRetriesPerRequest: 3,
+            lazyConnect: true,
+            keepAlive: 30000,
+            family: 4,
+        });
         this.passwordRequirements = {
             minLength: 8,
             requireUppercase: true,
             requireLowercase: true,
             requireNumbers: true,
-            requireSymbols: true
+            requireSymbols: true,
         };
         const validation = this.validateConfiguration();
         if (!validation.isValid) {
             throw new Error(`Auth service configuration invalid: ${validation.missingConfigs.join(', ')}`);
         }
+    }
+    static getInstance() {
+        if (!AuthService.instance) {
+            AuthService.instance = new AuthService();
+        }
+        return AuthService.instance;
     }
     validateConfiguration() {
         const missingConfigs = [];
@@ -69,7 +86,7 @@ class AuthService {
         return {
             isValid,
             missingConfigs,
-            securityIssues
+            securityIssues,
         };
     }
     getRolePermissions(role) {
@@ -81,7 +98,7 @@ class AuthService {
             admin: ['read', 'write', 'delete', 'manage_users', 'manage_settings'],
             parent: ['read', 'write', 'order_food', 'view_reports'],
             student: ['read', 'view_orders'],
-            school: ['read', 'write', 'manage_menus', 'view_analytics']
+            school: ['read', 'write', 'manage_menus', 'view_analytics'],
         };
         return rolePermissions[role] || rolePermissions['STUDENT'];
     }
@@ -94,19 +111,26 @@ class AuthService {
             return await bcrypt.hash(password, saltRounds);
         }
         catch (error) {
-            logger_1.logger.error('Password hashing failed:', error);
+            logger_service_1.logger.error('Password hashing failed:', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
             throw new Error('Password hashing failed');
         }
     }
     async verifyPassword(password, hashedPassword) {
         try {
-            if (!password || !hashedPassword || password.trim().length === 0 || hashedPassword.trim().length === 0) {
+            if (!password ||
+                !hashedPassword ||
+                password.trim().length === 0 ||
+                hashedPassword.trim().length === 0) {
                 return false;
             }
             return await bcrypt.compare(password, hashedPassword);
         }
         catch (error) {
-            logger_1.logger.error('Password verification failed:', error);
+            logger_service_1.logger.error('Password verification failed:', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
             return false;
         }
     }
@@ -132,7 +156,7 @@ class AuthService {
         const score = this.calculatePasswordScore(password);
         return {
             valid: isValid,
-            isValid: isValid,
+            isValid,
             message: isValid ? 'Password is strong' : errors.join(', '),
             score,
             requirements: {
@@ -140,8 +164,8 @@ class AuthService {
                 uppercase: /[A-Z]/.test(password),
                 lowercase: /[a-z]/.test(password),
                 numbers: /\d/.test(password),
-                symbols: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)
-            }
+                symbols: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password),
+            },
         };
     }
     calculatePasswordScore(password) {
@@ -168,10 +192,10 @@ class AuthService {
             iat: Math.floor(Date.now() / 1000),
             exp: Math.floor(Date.now() / 1000) + (typeof expiresIn === 'string' ? 3600 : expiresIn),
             iss: 'hasivu-platform',
-            aud: 'hasivu-users'
+            aud: 'hasivu-users',
         };
         return jwt.sign(tokenPayload, secret || this.jwtSecret, {
-            algorithm: 'HS256'
+            algorithm: 'HS256',
         });
     }
     async verifyToken(token, expectedType) {
@@ -181,14 +205,16 @@ class AuthService {
             if (expectedType && decoded.tokenType !== expectedType) {
                 throw new Error(`Invalid token type. Expected ${expectedType}, got ${decoded.tokenType}`);
             }
-            const isBlacklisted = await redis_service_1.RedisService.get(`blacklist:${token}`);
+            const isBlacklisted = await this.redis.get(`blacklist:${token}`);
             if (isBlacklisted) {
                 throw new Error('Token has been blacklisted');
             }
             return decoded;
         }
         catch (error) {
-            logger_1.logger.error('Token verification failed:', error);
+            logger_service_1.logger.error('Token verification failed:', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
             throw new Error('Invalid or expired token');
         }
     }
@@ -201,39 +227,45 @@ class AuthService {
                 userId,
                 createdAt: new Date().toISOString(),
                 lastActivity: new Date().toISOString(),
-                ...metadata
+                ...metadata,
             };
-            await redis_service_1.RedisService.setex(`session:${sessionId}`, this.sessionTimeout, JSON.stringify(sessionData));
+            await this.redis.setex(`session:${sessionId}`, this.sessionTimeout, JSON.stringify(sessionData));
         }
         catch (error) {
-            logger_1.logger.error('Session creation failed:', error);
+            logger_service_1.logger.error('Session creation failed:', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
             throw new Error('Session creation failed');
         }
     }
     async updateSessionActivity(sessionId, metadata = {}) {
         try {
             const sessionKey = `session:${sessionId}`;
-            const existingSession = await redis_service_1.RedisService.get(sessionKey);
+            const existingSession = await this.redis.get(sessionKey);
             if (existingSession) {
                 const sessionData = JSON.parse(existingSession);
                 const updatedSession = {
                     ...sessionData,
                     lastActivity: new Date().toISOString(),
-                    ...metadata
+                    ...metadata,
                 };
-                await redis_service_1.RedisService.setex(sessionKey, this.sessionTimeout, JSON.stringify(updatedSession));
+                await this.redis.setex(sessionKey, this.sessionTimeout, JSON.stringify(updatedSession));
             }
         }
         catch (error) {
-            logger_1.logger.error('Session update failed:', error);
+            logger_service_1.logger.error('Session update failed:', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
         }
     }
     async revokeSession(sessionId) {
         try {
-            await redis_service_1.RedisService.del(`session:${sessionId}`);
+            await this.redis.del(`session:${sessionId}`);
         }
         catch (error) {
-            logger_1.logger.error('Session revocation failed:', error);
+            logger_service_1.logger.error('Session revocation failed:', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
         }
     }
     async blacklistToken(token) {
@@ -242,19 +274,21 @@ class AuthService {
             if (decoded && decoded.exp) {
                 const ttl = decoded.exp - Math.floor(Date.now() / 1000);
                 if (ttl > 0) {
-                    await redis_service_1.RedisService.setex(`blacklist:${token}`, ttl, 'true');
+                    await this.redis.setex(`blacklist:${token}`, ttl, 'true');
                 }
             }
         }
         catch (error) {
-            logger_1.logger.error('Token blacklisting failed:', error);
+            logger_service_1.logger.error('Token blacklisting failed:', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
         }
     }
     async authenticate(credentials) {
         try {
             const { email, password, rememberMe = false, userAgent, ipAddress } = credentials;
             const lockoutKey = `lockout:${email}`;
-            const lockoutInfo = await redis_service_1.RedisService.get(lockoutKey);
+            const lockoutInfo = await this.redis.get(lockoutKey);
             if (lockoutInfo) {
                 throw new Error('Account temporarily locked due to too many failed attempts');
             }
@@ -266,8 +300,10 @@ class AuthService {
                     passwordHash: true,
                     role: true,
                     isActive: true,
-                    schoolId: true
-                }
+                    schoolId: true,
+                    firstName: true,
+                    lastName: true,
+                },
             });
             if (!user) {
                 await this.recordFailedAttempt(email);
@@ -281,7 +317,7 @@ class AuthService {
                 await this.recordFailedAttempt(email);
                 throw new Error('Invalid credentials');
             }
-            await redis_service_1.RedisService.del(`attempts:${email}`);
+            await this.redis.del(`attempts:${email}`);
             const sessionId = this.generateSessionId();
             const permissions = this.getRolePermissions(user.role);
             const accessTokenPayload = {
@@ -291,7 +327,7 @@ class AuthService {
                 sessionId,
                 tokenType: 'access',
                 permissions,
-                schoolId: user.schoolId
+                schoolId: user.schoolId,
             };
             const refreshTokenPayload = {
                 userId: user.id,
@@ -300,43 +336,55 @@ class AuthService {
                 sessionId,
                 tokenType: 'refresh',
                 permissions,
-                schoolId: user.schoolId
+                schoolId: user.schoolId,
             };
             const accessToken = await this.generateToken(accessTokenPayload, rememberMe ? '30d' : '1h');
             const refreshToken = await this.generateToken(refreshTokenPayload, rememberMe ? '90d' : '7d', this.jwtRefreshSecret);
             await this.createSession(user.id, sessionId, {
                 userAgent,
                 ipAddress,
-                rememberMe
+                rememberMe,
             });
-            logger_1.logger.info('User authenticated successfully', { userId: user.id, email });
+            logger_service_1.logger.info('User authenticated successfully', { userId: user.id, email });
             return {
                 success: true,
                 user: {
                     id: user.id,
                     email: user.email,
+                    firstName: user.firstName,
+                    lastName: user.lastName,
                     role: user.role,
                     permissions,
-                    schoolId: user.schoolId
+                    schoolId: user.schoolId || undefined,
                 },
                 tokens: {
                     accessToken,
                     refreshToken,
-                    expiresIn: rememberMe ? 30 * 24 * 3600 : 3600
+                    expiresIn: rememberMe ? 30 * 24 * 3600 : 3600,
                 },
                 sessionId,
-                schoolId: user.schoolId
+                schoolId: user.schoolId || undefined,
             };
         }
         catch (error) {
-            logger_1.logger.error('Authentication failed:', error);
+            logger_service_1.logger.error('Authentication failed:', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
             return {
                 success: false,
-                error: error.message || 'Authentication failed',
-                user: { id: '', email: '', role: '', permissions: [], schoolId: undefined },
+                error: error instanceof Error ? error.message : String(error) || 'Authentication failed',
+                user: {
+                    id: '',
+                    email: '',
+                    firstName: null,
+                    lastName: null,
+                    role: '',
+                    permissions: [],
+                    schoolId: undefined,
+                },
                 tokens: { accessToken: '', refreshToken: '', expiresIn: 0 },
                 sessionId: '',
-                schoolId: undefined
+                schoolId: undefined,
             };
         }
     }
@@ -351,7 +399,7 @@ class AuthService {
                     return {
                         success: false,
                         error: 'HTTPS required for secure connection',
-                        headers: { 'Strict-Transport-Security': 'max-age=31536000' }
+                        headers: { 'Strict-Transport-Security': 'max-age=31536000' },
                     };
                 }
                 email = emailOrRequest.body.email;
@@ -370,7 +418,7 @@ class AuthService {
                 email,
                 password: pwd,
                 userAgent: 'API',
-                ipAddress: '0.0.0.0'
+                ipAddress: '0.0.0.0',
             });
             return {
                 success: true,
@@ -378,34 +426,38 @@ class AuthService {
                 user: {
                     id: authResult.user.id,
                     email: authResult.user.email,
-                    role: authResult.user.role
+                    role: authResult.user.role,
                 },
                 headers,
-                cookies
+                cookies,
             };
         }
         catch (error) {
-            logger_1.logger.error('Login failed:', error);
+            logger_service_1.logger.error('Login failed:', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
             return {
                 success: false,
-                message: error.message || 'Login failed'
+                message: error.message || 'Login failed',
             };
         }
     }
     async recordFailedAttempt(email) {
         try {
             const attemptsKey = `attempts:${email}`;
-            const attempts = await redis_service_1.RedisService.get(attemptsKey);
+            const attempts = await this.redis.get(attemptsKey);
             const currentAttempts = attempts ? parseInt(attempts) : 0;
             const newAttempts = currentAttempts + 1;
-            await redis_service_1.RedisService.setex(attemptsKey, this.lockoutDuration, newAttempts.toString());
+            await this.redis.setex(attemptsKey, this.lockoutDuration, newAttempts.toString());
             if (newAttempts >= this.maxFailedAttempts) {
-                await redis_service_1.RedisService.setex(`lockout:${email}`, this.lockoutDuration, 'true');
-                logger_1.logger.warn('Account locked due to too many failed attempts', { email });
+                await this.redis.setex(`lockout:${email}`, this.lockoutDuration, 'true');
+                logger_service_1.logger.warn('Account locked due to too many failed attempts', { email });
             }
         }
         catch (error) {
-            logger_1.logger.error('Failed to record login attempt:', error);
+            logger_service_1.logger.error('Failed to record login attempt:', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
         }
     }
     async logout(sessionId, token) {
@@ -416,15 +468,19 @@ class AuthService {
             }
         }
         catch (error) {
-            logger_1.logger.error('Logout failed:', error);
+            logger_service_1.logger.error('Logout failed:', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
         }
     }
     async logoutAll(userId) {
         try {
-            logger_1.logger.info('Logging out all sessions for user', { userId });
+            logger_service_1.logger.info('Logging out all sessions for user', { userId });
         }
         catch (error) {
-            logger_1.logger.error('Logout all failed:', error);
+            logger_service_1.logger.error('Logout all failed:', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
         }
     }
     async refreshToken(refreshToken) {
@@ -436,21 +492,25 @@ class AuthService {
                 role: decoded.role,
                 sessionId: decoded.sessionId,
                 tokenType: 'access',
-                permissions: decoded.permissions
+                permissions: decoded.permissions,
             }, '1h');
             return { accessToken: newAccessToken };
         }
         catch (error) {
-            logger_1.logger.error('Token refresh failed:', error);
+            logger_service_1.logger.error('Token refresh failed:', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
             throw error;
         }
     }
     async cleanupSessions() {
         try {
-            logger_1.logger.info('Session cleanup completed');
+            logger_service_1.logger.info('Session cleanup completed');
         }
         catch (error) {
-            logger_1.logger.error('Session cleanup failed:', error);
+            logger_service_1.logger.error('Session cleanup failed:', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
         }
     }
     async createUser(userData) {
@@ -464,12 +524,14 @@ class AuthService {
                 email: userData.email,
                 name: userData.name || 'Test User',
                 password: hashedPassword || '$2b$12$defaulthashedpassword',
-                createdAt: new Date()
+                createdAt: new Date(),
             };
             return user;
         }
         catch (error) {
-            logger_1.logger.error('Failed to create user', error);
+            logger_service_1.logger.error('Failed to create user', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
             throw error;
         }
     }
@@ -479,11 +541,13 @@ class AuthService {
     async encryptPersonalData(data) {
         try {
             return {
-                sensitive: Buffer.from(JSON.stringify(data)).toString('base64')
+                sensitive: Buffer.from(JSON.stringify(data)).toString('base64'),
             };
         }
         catch (error) {
-            logger_1.logger.error('Failed to encrypt personal data', error);
+            logger_service_1.logger.error('Failed to encrypt personal data', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
             throw error;
         }
     }
@@ -493,22 +557,25 @@ class AuthService {
             return JSON.parse(jsonData);
         }
         catch (error) {
-            logger_1.logger.error('Failed to decrypt personal data', error);
+            logger_service_1.logger.error('Failed to decrypt personal data', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
             throw error;
         }
     }
     async initialize() {
         try {
-            await redis_service_1.RedisService.connect();
             await database_service_1.DatabaseService.getInstance().connect();
-            logger_1.logger.info('Authentication service initialized successfully');
+            logger_service_1.logger.info('Authentication service initialized successfully');
             return { success: true, message: 'Auth service initialized' };
         }
         catch (error) {
-            logger_1.logger.error('Failed to initialize auth service', error);
+            logger_service_1.logger.error('Failed to initialize auth service', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
             return {
                 success: false,
-                message: error instanceof Error ? error.message : 'Initialization failed'
+                message: error instanceof Error ? error.message : 'Initialization failed',
             };
         }
     }
@@ -519,14 +586,14 @@ class AuthService {
                 if (payload.role !== 'admin') {
                     return {
                         success: false,
-                        error: 'Insufficient privileges: admin required'
+                        error: 'Insufficient privileges: admin required',
                     };
                 }
             }
             catch (parseError) {
                 return {
                     success: false,
-                    error: 'Invalid token format'
+                    error: 'Invalid token format',
                 };
             }
             const whereClause = {};
@@ -547,17 +614,17 @@ class AuthService {
                     updatedAt: true,
                 },
                 orderBy: {
-                    createdAt: 'desc'
-                }
+                    createdAt: 'desc',
+                },
             });
-            logger_1.logger.info(`Retrieved ${users.length} users`, { filters });
+            logger_service_1.logger.info(`Retrieved ${users.length} users`, { filters });
             return { success: true, data: users };
         }
         catch (error) {
-            logger_1.logger.error('Failed to get all users', { error, filters });
+            logger_service_1.logger.error('Failed to get all users', undefined, { error, filters });
             return {
                 success: false,
-                error: error instanceof Error ? error.message : 'Failed to get users'
+                error: error instanceof Error ? error.message : 'Failed to get users',
             };
         }
     }
@@ -568,27 +635,27 @@ class AuthService {
                 if (payload.role !== 'admin') {
                     return {
                         success: false,
-                        error: 'Insufficient privileges: admin required'
+                        error: 'Insufficient privileges: admin required',
                     };
                 }
             }
             catch (parseError) {
                 return {
                     success: false,
-                    error: 'Invalid token format'
+                    error: 'Invalid token format',
                 };
             }
-            logger_1.logger.info('Deleting user', { userId });
+            logger_service_1.logger.info('Deleting user', { userId });
             return {
                 success: true,
-                data: { userId, status: 'deleted' }
+                data: { userId, status: 'deleted' },
             };
         }
         catch (error) {
-            logger_1.logger.error('Failed to delete user', { error, userId });
+            logger_service_1.logger.error('Failed to delete user', undefined, { error, userId });
             return {
                 success: false,
-                error: error instanceof Error ? error.message : 'Failed to delete user'
+                error: error instanceof Error ? error.message : 'Failed to delete user',
             };
         }
     }
@@ -599,27 +666,27 @@ class AuthService {
                 if (payload.role !== 'admin') {
                     return {
                         success: false,
-                        error: 'Insufficient privileges: admin required'
+                        error: 'Insufficient privileges: admin required',
                     };
                 }
             }
             catch (parseError) {
                 return {
                     success: false,
-                    error: 'Invalid token format'
+                    error: 'Invalid token format',
                 };
             }
-            logger_1.logger.info('Modifying user role', { userId, newRole });
+            logger_service_1.logger.info('Modifying user role', { userId, newRole });
             return {
                 success: true,
-                data: { userId, previousRole: 'user', newRole, updatedAt: new Date() }
+                data: { userId, previousRole: 'user', newRole, updatedAt: new Date() },
             };
         }
         catch (error) {
-            logger_1.logger.error('Failed to modify user role', { error, userId, newRole });
+            logger_service_1.logger.error('Failed to modify user role', undefined, { error, userId, newRole });
             return {
                 success: false,
-                error: error instanceof Error ? error.message : 'Failed to modify role'
+                error: error instanceof Error ? error.message : 'Failed to modify role',
             };
         }
     }
@@ -630,32 +697,35 @@ class AuthService {
                 if (payload.role !== 'school_admin') {
                     return {
                         success: false,
-                        error: 'School admin required: insufficient privileges'
+                        error: 'School admin required: insufficient privileges',
                     };
                 }
             }
             catch (parseError) {
                 return {
                     success: false,
-                    error: 'Invalid token format'
+                    error: 'Invalid token format',
                 };
             }
-            logger_1.logger.info('Managing school users', { schoolId: schoolId || 'default', action: action || 'view' });
+            logger_service_1.logger.info('Managing school users', {
+                schoolId: schoolId || 'default',
+                action: action || 'view',
+            });
             return {
                 success: true,
                 data: {
                     schoolId,
                     action,
                     usersAffected: 5,
-                    status: 'completed'
-                }
+                    status: 'completed',
+                },
             };
         }
         catch (error) {
-            logger_1.logger.error('Failed to manage school users', { error, schoolId, action });
+            logger_service_1.logger.error('Failed to manage school users', undefined, { error, schoolId, action });
             return {
                 success: false,
-                error: error instanceof Error ? error.message : 'Failed to manage school users'
+                error: error instanceof Error ? error.message : 'Failed to manage school users',
             };
         }
     }
@@ -666,17 +736,17 @@ class AuthService {
                 if (payload.role !== 'school_admin') {
                     return {
                         success: false,
-                        error: 'School admin required: insufficient privileges'
+                        error: 'School admin required: insufficient privileges',
                     };
                 }
             }
             catch (parseError) {
                 return {
                     success: false,
-                    error: 'Invalid token format'
+                    error: 'Invalid token format',
                 };
             }
-            logger_1.logger.info('Viewing school analytics', { schoolId: schoolId || 'default' });
+            logger_service_1.logger.info('Viewing school analytics', { schoolId: schoolId || 'default' });
             return {
                 success: true,
                 data: {
@@ -686,15 +756,15 @@ class AuthService {
                     studentCount: 200,
                     teacherCount: 15,
                     parentCount: 35,
-                    registrationTrend: '+12% this month'
-                }
+                    registrationTrend: '+12% this month',
+                },
             };
         }
         catch (error) {
-            logger_1.logger.error('Failed to view school analytics', { error, schoolId });
+            logger_service_1.logger.error('Failed to view school analytics', undefined, { error, schoolId });
             return {
                 success: false,
-                error: error instanceof Error ? error.message : 'Failed to view analytics'
+                error: error instanceof Error ? error.message : 'Failed to view analytics',
             };
         }
     }
@@ -705,43 +775,46 @@ class AuthService {
                 if (payload.role !== 'school_admin') {
                     return {
                         success: false,
-                        error: 'School admin required: insufficient privileges'
+                        error: 'School admin required: insufficient privileges',
                     };
                 }
             }
             catch (parseError) {
                 return {
                     success: false,
-                    error: 'Invalid token format'
+                    error: 'Invalid token format',
                 };
             }
-            logger_1.logger.info('Configuring school settings', { schoolId: schoolId || 'default', settings: settings || {} });
+            logger_service_1.logger.info('Configuring school settings', {
+                schoolId: schoolId || 'default',
+                settings: settings || {},
+            });
             return {
                 success: true,
                 data: {
                     schoolId,
                     settings,
                     updatedAt: new Date(),
-                    status: 'configured'
-                }
+                    status: 'configured',
+                },
             };
         }
         catch (error) {
-            logger_1.logger.error('Failed to configure school settings', { error, schoolId });
+            logger_service_1.logger.error('Failed to configure school settings', undefined, { error, schoolId });
             return {
                 success: false,
-                error: error instanceof Error ? error.message : 'Failed to configure settings'
+                error: error instanceof Error ? error.message : 'Failed to configure settings',
             };
         }
     }
     async validateToken(token) {
         try {
-            logger_1.logger.info('Validating token', { tokenProvided: !!token });
+            logger_service_1.logger.info('Validating token', { tokenProvided: !!token });
             if (!token || token.length < 10) {
                 return {
                     success: false,
                     valid: false,
-                    error: 'Invalid token format'
+                    error: 'Invalid token format',
                 };
             }
             try {
@@ -751,7 +824,7 @@ class AuthService {
                     return {
                         success: false,
                         valid: false,
-                        error: 'Token expired'
+                        error: 'Token expired',
                     };
                 }
             }
@@ -759,52 +832,58 @@ class AuthService {
             }
             return {
                 success: true,
-                valid: true
+                valid: true,
             };
         }
         catch (error) {
-            logger_1.logger.error('Token validation failed', error);
+            logger_service_1.logger.error('Token validation failed', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
             return {
                 success: false,
                 valid: false,
-                error: error instanceof Error ? error.message : 'Token validation failed'
+                error: error instanceof Error ? error.message : 'Token validation failed',
             };
         }
     }
     async createUserResource(userId, resourceData) {
         try {
-            logger_1.logger.info('Creating user resource', { userId, resourceData });
+            logger_service_1.logger.info('Creating user resource', { userId, resourceData });
             return {
                 success: true,
                 data: {
                     id: `resource-${Date.now()}`,
                     userId,
                     ...resourceData,
-                    createdAt: new Date()
-                }
+                    createdAt: new Date(),
+                },
             };
         }
         catch (error) {
-            logger_1.logger.error('Failed to create user resource', error);
+            logger_service_1.logger.error('Failed to create user resource', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
             return {
                 success: false,
-                error: error instanceof Error ? error.message : 'Failed to create resource'
+                error: error instanceof Error ? error.message : 'Failed to create resource',
             };
         }
     }
     async getUserResource(resourceId, token) {
         try {
-            logger_1.logger.info('Getting user resource', { resourceId, tokenProvided: !!token });
+            logger_service_1.logger.info('Getting user resource', { resourceId, tokenProvided: !!token });
             try {
                 const payload = JSON.parse(atob(token.split('.')[1] || '{}'));
                 const tokenUserId = payload.userId;
-                const resourceUserId = resourceId.includes('user-1') ? 'user-1' :
-                    resourceId.includes('user-2') ? 'user-2' :
-                        'unknown-user';
+                const resourceUserId = resourceId.includes('user-1')
+                    ? 'user-1'
+                    : resourceId.includes('user-2')
+                        ? 'user-2'
+                        : 'unknown-user';
                 if (tokenUserId !== resourceUserId && payload.role !== 'admin') {
                     return {
                         success: false,
-                        error: 'Unauthorized: access denied'
+                        error: 'Unauthorized: access denied',
                     };
                 }
                 return {
@@ -814,22 +893,24 @@ class AuthService {
                         userId: resourceUserId,
                         type: 'document',
                         content: 'mock resource content',
-                        createdAt: new Date()
-                    }
+                        createdAt: new Date(),
+                    },
                 };
             }
             catch (parseError) {
                 return {
                     success: false,
-                    error: 'Invalid token format'
+                    error: 'Invalid token format',
                 };
             }
         }
         catch (error) {
-            logger_1.logger.error('Failed to get user resource', error);
+            logger_service_1.logger.error('Failed to get user resource', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
             return {
                 success: false,
-                error: error instanceof Error ? error.message : 'Failed to get resource'
+                error: error instanceof Error ? error.message : 'Failed to get resource',
             };
         }
     }
@@ -842,12 +923,12 @@ class AuthService {
                     userId = payload.userId || 'test-user';
                 }
                 catch (parseError) {
-                    logger_1.logger.warn('Token parse failed, using test user', parseError);
+                    logger_service_1.logger.warn('Token parse failed, using test user', parseError);
                 }
             }
-            logger_1.logger.info('Uploading file', { userId, fileName: fileData?.filename });
-            let originalFilename = fileData?.filename || 'unknown.txt';
-            let sanitizedFilename = originalFilename
+            logger_service_1.logger.info('Uploading file', { userId, fileName: fileData?.filename });
+            const originalFilename = fileData?.filename || 'unknown.txt';
+            const sanitizedFilename = originalFilename
                 .replace(/\.\./g, '')
                 .replace(/[<>:"/\\|?*]/g, '_')
                 .replace(/\.(php|exe|sh|bat|cmd|scr|pif|com)$/i, '.txt');
@@ -881,61 +962,70 @@ class AuthService {
                 fileId,
                 filename: sanitizedFilename,
                 sanitizedContent,
-                mimeType
+                mimeType,
             };
         }
         catch (error) {
-            logger_1.logger.error('Failed to upload file', error);
+            logger_service_1.logger.error('Failed to upload file', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
             return {
                 success: false,
-                error: error instanceof Error ? error.message : 'Failed to upload file'
+                error: error instanceof Error ? error.message : 'Failed to upload file',
             };
         }
     }
     async downloadFile(fileId, token) {
         try {
-            logger_1.logger.info('Downloading file', { fileId, tokenProvided: !!token });
+            logger_service_1.logger.info('Downloading file', { fileId, tokenProvided: !!token });
             try {
                 const payload = JSON.parse(atob(token.split('.')[1] || '{}'));
-                const userId = payload.userId;
-                const fileOwner = fileId.includes('user-1') ? 'user-1' :
-                    fileId.includes('user-2') ? 'user-2' : 'user-1';
+                const { userId } = payload;
+                const fileOwner = fileId.includes('user-1')
+                    ? 'user-1'
+                    : fileId.includes('user-2')
+                        ? 'user-2'
+                        : 'user-1';
                 if (userId !== fileOwner && payload.role !== 'admin') {
                     return {
                         success: false,
-                        error: 'Unauthorized: access denied'
+                        error: 'Unauthorized: access denied',
                     };
                 }
                 return {
                     success: true,
-                    content: 'sensitive content'
+                    content: 'sensitive content',
                 };
             }
             catch (parseError) {
                 return {
                     success: false,
-                    error: 'Invalid token format'
+                    error: 'Invalid token format',
                 };
             }
         }
         catch (error) {
-            logger_1.logger.error('Failed to download file', error);
+            logger_service_1.logger.error('Failed to download file', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
             return {
                 success: false,
-                error: error instanceof Error ? error.message : 'Failed to download file'
+                error: error instanceof Error ? error.message : 'Failed to download file',
             };
         }
     }
     async cleanup() {
         try {
-            logger_1.logger.info('Authentication service cleaned up successfully');
+            logger_service_1.logger.info('Authentication service cleaned up successfully');
             return { success: true, message: 'Auth service cleaned up' };
         }
         catch (error) {
-            logger_1.logger.error('Failed to cleanup auth service', error);
+            logger_service_1.logger.error('Failed to cleanup auth service', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
             return {
                 success: false,
-                message: error instanceof Error ? error.message : 'Cleanup failed'
+                message: error instanceof Error ? error.message : 'Cleanup failed',
             };
         }
     }
@@ -956,8 +1046,8 @@ class AuthService {
                     phone: true,
                     language: true,
                     status: true,
-                    createdAt: true
-                }
+                    createdAt: true,
+                },
             });
             if (!user) {
                 return { success: false, error: 'User not found' };
@@ -968,49 +1058,48 @@ class AuthService {
             }
             return {
                 success: true,
-                data: user
+                data: user,
             };
         }
         catch (error) {
-            logger_1.logger.error('Failed to get user profile', error);
+            logger_service_1.logger.error('Failed to get user profile', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
             return {
                 success: false,
-                error: error instanceof Error ? error.message : 'Profile retrieval failed'
+                error: error instanceof Error ? error.message : 'Profile retrieval failed',
             };
         }
     }
     async followRedirect(url) {
         try {
             const urlObj = new URL(url);
-            const blockedPatterns = [
-                /127\.0\.0\.1/,
-                /localhost/i,
-                /evil\.com/i,
-                /malicious\.com/i
-            ];
+            const blockedPatterns = [/127\.0\.0\.1/, /localhost/i, /evil\.com/i, /malicious\.com/i];
             const isDangerous = blockedPatterns.some(pattern => pattern.test(url));
             if (isDangerous) {
                 return {
                     success: false,
-                    error: 'Unsafe redirect blocked - potential SSRF attempt'
+                    error: 'Unsafe redirect blocked - potential SSRF attempt',
                 };
             }
-            logger_1.logger.info('Following redirect', { url });
+            logger_service_1.logger.info('Following redirect', { url });
             return {
                 success: true,
                 finalUrl: url,
                 data: {
                     redirectUrl: url,
                     status: 'followed',
-                    timestamp: new Date().toISOString()
-                }
+                    timestamp: new Date().toISOString(),
+                },
             };
         }
         catch (error) {
-            logger_1.logger.error('Failed to follow redirect', error);
+            logger_service_1.logger.error('Failed to follow redirect', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
             return {
                 success: false,
-                error: error instanceof Error ? error.message : 'Redirect failed'
+                error: error instanceof Error ? error.message : 'Redirect failed',
             };
         }
     }
@@ -1020,87 +1109,95 @@ class AuthService {
             if (!supportedVersions.includes(version)) {
                 return {
                     success: false,
-                    error: `Unsupported API version: ${version}`
+                    error: `Unsupported API version: ${version}`,
                 };
             }
-            logger_1.logger.info('Calling API version', { version });
+            logger_service_1.logger.info('Calling API version', { version });
             return {
                 success: true,
                 data: {
                     version,
                     endpoints: ['auth', 'users', 'payments'],
-                    status: 'available'
-                }
+                    status: 'available',
+                },
             };
         }
         catch (error) {
-            logger_1.logger.error('Failed to call API version', error);
+            logger_service_1.logger.error('Failed to call API version', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
             return {
                 success: false,
-                error: error instanceof Error ? error.message : 'API version call failed'
+                error: error instanceof Error ? error.message : 'API version call failed',
             };
         }
     }
     async createSessionForTesting(userId, metadata) {
         try {
             const sessionId = crypto.randomUUID();
-            const expiresAt = new Date(Date.now() + (24 * 60 * 60 * 1000));
-            logger_1.logger.info('Creating session', { userId, sessionId });
+            const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+            logger_service_1.logger.info('Creating session', { userId, sessionId });
             return {
                 sessionId,
-                expiresAt
+                expiresAt,
             };
         }
         catch (error) {
-            logger_1.logger.error('Failed to create session', error);
+            logger_service_1.logger.error('Failed to create session', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
             throw error;
         }
     }
     async validateSession(sessionId) {
         try {
-            logger_1.logger.info('Validating session', { sessionId });
+            logger_service_1.logger.info('Validating session', { sessionId });
             if (!sessionId || sessionId.length < 10) {
                 return {
                     success: true,
                     valid: false,
-                    error: 'Invalid session ID format'
+                    error: 'Invalid session ID format',
                 };
             }
             const isValid = !sessionId.includes('expired') && !sessionId.includes('invalid');
             return {
                 success: true,
                 valid: isValid,
-                userId: isValid ? 'test-user-' + sessionId.substring(0, 8) : undefined
+                userId: isValid ? `test-user-${sessionId.substring(0, 8)}` : undefined,
             };
         }
         catch (error) {
-            logger_1.logger.error('Failed to validate session', error);
+            logger_service_1.logger.error('Failed to validate session', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
             return {
                 success: false,
-                error: error instanceof Error ? error.message : 'Session validation failed'
+                error: error instanceof Error ? error.message : 'Session validation failed',
             };
         }
     }
     async getCORSHeaders() {
         try {
-            logger_1.logger.info('Getting CORS headers');
+            logger_service_1.logger.info('Getting CORS headers');
             const corsHeaders = {
                 'Access-Control-Allow-Origin': process.env.ALLOWED_ORIGINS || 'https://hasivu.com',
                 'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
                 'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
                 'Access-Control-Allow-Credentials': 'true',
-                'Access-Control-Max-Age': '86400'
+                'Access-Control-Max-Age': '86400',
             };
             return {
                 success: true,
-                data: { headers: corsHeaders }
+                data: { headers: corsHeaders },
             };
         }
         catch (error) {
-            logger_1.logger.error('Failed to get CORS headers', error);
+            logger_service_1.logger.error('Failed to get CORS headers', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
             return {
                 success: false,
-                error: error instanceof Error ? error.message : 'CORS headers retrieval failed'
+                error: error instanceof Error ? error.message : 'CORS headers retrieval failed',
             };
         }
     }
@@ -1108,40 +1205,45 @@ class AuthService {
         try {
             const db = database_service_1.DatabaseService.getInstance();
             return await db.user.findUnique({
-                where: { id: userId }
+                where: { id: userId },
             });
         }
         catch (error) {
-            logger_1.logger.error('Failed to get user by ID', error);
+            logger_service_1.logger.error('Failed to get user by ID', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
             return null;
         }
     }
     async findUserByQuery(query) {
         try {
-            if (typeof query === 'object' || (typeof query === 'string' && (query.includes('$') || query.includes('where')))) {
-                logger_1.logger.warn('Blocked suspicious query', { query });
+            if (typeof query === 'object' ||
+                (typeof query === 'string' && (query.includes('$') || query.includes('where')))) {
+                logger_service_1.logger.warn('Blocked suspicious query', { query });
                 return null;
             }
             const db = database_service_1.DatabaseService.getInstance();
             return await db.user.findMany({
                 where: {
                     OR: [
-                        { email: { contains: query, mode: 'insensitive' } },
-                        { firstName: { contains: query, mode: 'insensitive' } },
-                        { lastName: { contains: query, mode: 'insensitive' } }
-                    ]
+                        { email: { contains: query } },
+                        { firstName: { contains: query } },
+                        { lastName: { contains: query } },
+                    ],
                 },
-                take: 10
+                take: 10,
             });
         }
         catch (error) {
-            logger_1.logger.error('Failed to find users by query', error);
+            logger_service_1.logger.error('Failed to find users by query', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
             return [];
         }
     }
     async uploadUserDocument(userId, file) {
         try {
-            let filename = typeof file === 'string' ? file : (file?.filename || 'uploaded_document.pdf');
+            let filename = typeof file === 'string' ? file : file?.filename || 'uploaded_document.pdf';
             filename = filename.replace(/[;|&`$]/g, '').replace(/\b(rm|wget|curl|sh|bash)\b/gi, '');
             const fileId = `file_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
             return {
@@ -1152,15 +1254,17 @@ class AuthService {
                     fileId,
                     fileName: filename,
                     fileSize: typeof file === 'object' ? file.size || 1024 : 1024,
-                    uploadedAt: new Date().toISOString()
-                }
+                    uploadedAt: new Date().toISOString(),
+                },
             };
         }
         catch (error) {
-            logger_1.logger.error('Failed to upload user document', error);
+            logger_service_1.logger.error('Failed to upload user document', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
             return {
                 success: false,
-                error: error instanceof Error ? error.message : 'File upload failed'
+                error: error instanceof Error ? error.message : 'File upload failed',
             };
         }
     }
@@ -1173,19 +1277,21 @@ class AuthService {
                 type: 'application/pdf',
                 metadata: {
                     uploadedAt: new Date().toISOString(),
-                    userId: 'test-user'
-                }
+                    userId: 'test-user',
+                },
             };
             return {
                 success: true,
-                data: fileContent
+                data: fileContent,
             };
         }
         catch (error) {
-            logger_1.logger.error('Failed to read file', error);
+            logger_service_1.logger.error('Failed to read file', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
             return {
                 success: false,
-                error: error instanceof Error ? error.message : 'File read failed'
+                error: error instanceof Error ? error.message : 'File read failed',
             };
         }
     }
@@ -1194,35 +1300,36 @@ class AuthService {
             const db = database_service_1.DatabaseService.getInstance();
             return await db.user.findMany({
                 where: {
-                    OR: [
-                        { firstName: { contains: name, mode: 'insensitive' } },
-                        { lastName: { contains: name, mode: 'insensitive' } }
-                    ]
+                    OR: [{ firstName: { contains: name } }, { lastName: { contains: name } }],
                 },
-                take: 20
+                take: 20,
             });
         }
         catch (error) {
-            logger_1.logger.error('Failed to search users by name', error);
+            logger_service_1.logger.error('Failed to search users by name', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
             return [];
         }
     }
     async getCSPHeaders() {
         try {
             const cspHeaders = {
-                'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:; frame-ancestors 'none';"
+                'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:; frame-ancestors 'none';",
             };
             return {
                 success: true,
                 headers: cspHeaders,
-                data: { headers: cspHeaders }
+                data: { headers: cspHeaders },
             };
         }
         catch (error) {
-            logger_1.logger.error('Failed to get CSP headers', error);
+            logger_service_1.logger.error('Failed to get CSP headers', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
             return {
                 success: false,
-                error: error instanceof Error ? error.message : 'CSP headers retrieval failed'
+                error: error instanceof Error ? error.message : 'CSP headers retrieval failed',
             };
         }
     }
@@ -1233,19 +1340,21 @@ class AuthService {
                 'X-Content-Type-Options': 'nosniff',
                 'X-XSS-Protection': '1; mode=block',
                 'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
-                'Referrer-Policy': 'strict-origin-when-cross-origin'
+                'Referrer-Policy': 'strict-origin-when-cross-origin',
             };
             return {
                 success: true,
                 headers: securityHeaders,
-                data: { headers: securityHeaders }
+                data: { headers: securityHeaders },
             };
         }
         catch (error) {
-            logger_1.logger.error('Failed to get security headers', error);
+            logger_service_1.logger.error('Failed to get security headers', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
             return {
                 success: false,
-                error: error instanceof Error ? error.message : 'Security headers retrieval failed'
+                error: error instanceof Error ? error.message : 'Security headers retrieval failed',
             };
         }
     }
@@ -1256,25 +1365,27 @@ class AuthService {
                 version: '1.0.0',
                 environment: environment_1.config.server.nodeEnv,
                 timestamp: new Date().toISOString(),
-                uptime: process.uptime()
+                uptime: process.uptime(),
             };
             const responseHeaders = {
                 'X-Powered-By': 'HASIVU-Platform',
                 'X-Version': '1.0.0',
-                'X-Environment': environment_1.config.server.nodeEnv
+                'X-Environment': environment_1.config.server?.nodeEnv,
             };
             return {
                 success: true,
                 response: serverResponse,
                 headers: responseHeaders,
-                data: { response: serverResponse }
+                data: { response: serverResponse, environment: environment_1.config.server?.nodeEnv },
             };
         }
         catch (error) {
-            logger_1.logger.error('Failed to get server response', error);
+            logger_service_1.logger.error('Failed to get server response', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
             return {
                 success: false,
-                error: error instanceof Error ? error.message : 'Server response retrieval failed'
+                error: error instanceof Error ? error.message : 'Server response retrieval failed',
             };
         }
     }
@@ -1285,20 +1396,185 @@ class AuthService {
                 return {
                     success: false,
                     error: 'Insecure configuration detected',
-                    isSecure: false
+                    isSecure: false,
                 };
             }
             return {
                 success: true,
-                isSecure: true
+                isSecure: true,
             };
         }
         catch (error) {
-            logger_1.logger.error('Configuration error test failed', error);
+            logger_service_1.logger.error('Configuration error test failed', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
             return {
                 success: false,
-                error: error instanceof Error ? error.message : 'Configuration test failed'
+                error: error instanceof Error ? error.message : 'Configuration test failed',
             };
+        }
+    }
+    async changePassword(userId, currentPassword, newPassword) {
+        try {
+            const user = await database_service_1.DatabaseService.client.user.findUnique({
+                where: { id: userId },
+                select: { id: true, passwordHash: true },
+            });
+            if (!user) {
+                return { success: false, error: 'User not found' };
+            }
+            const isCurrentPasswordValid = await this.verifyPassword(currentPassword, user.passwordHash);
+            if (!isCurrentPasswordValid) {
+                return { success: false, error: 'Current password is incorrect' };
+            }
+            const passwordValidation = this.validatePassword(newPassword);
+            if (!passwordValidation.valid) {
+                return { success: false, error: passwordValidation.message };
+            }
+            const newPasswordHash = await this.hashPassword(newPassword);
+            await database_service_1.DatabaseService.client.user.update({
+                where: { id: userId },
+                data: { passwordHash: newPasswordHash },
+            });
+            await this.logoutAll(userId);
+            return { success: true, message: 'Password changed successfully' };
+        }
+        catch (error) {
+            logger_service_1.logger.error('Password change failed', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
+            return { success: false, error: 'Failed to change password' };
+        }
+    }
+    async forgotPassword(email) {
+        try {
+            const user = await database_service_1.DatabaseService.client.user.findUnique({
+                where: { email: email.toLowerCase() },
+                select: { id: true, email: true, firstName: true },
+            });
+            if (!user) {
+                return {
+                    success: true,
+                    message: 'If an account with this email exists, a password reset link has been sent',
+                };
+            }
+            const resetToken = crypto.randomBytes(32).toString('hex');
+            const resetTokenExpiry = new Date(Date.now() + 30 * 60 * 1000);
+            await this.redis.setex(`password_reset:${resetToken}`, 30 * 60, JSON.stringify({
+                userId: user.id,
+                email: user.email,
+            }));
+            logger_service_1.logger.info('Password reset email would be sent', { email: user.email, token: resetToken });
+            return { success: true, message: 'Password reset link sent to your email' };
+        }
+        catch (error) {
+            logger_service_1.logger.error('Forgot password failed', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
+            return { success: false, error: 'Failed to initiate password reset' };
+        }
+    }
+    async register(userData) {
+        try {
+            const passwordValidation = this.validatePassword(userData.password);
+            if (!passwordValidation.valid) {
+                return { success: false, error: passwordValidation.message };
+            }
+            const existingUser = await database_service_1.DatabaseService.client.user.findUnique({
+                where: { email: userData.email.toLowerCase() },
+            });
+            if (existingUser) {
+                return { success: false, error: 'User with this email already exists' };
+            }
+            const passwordHash = await this.hashPassword(userData.password);
+            const user = await database_service_1.DatabaseService.client.user.create({
+                data: {
+                    email: userData.email.toLowerCase(),
+                    passwordHash,
+                    firstName: userData.firstName,
+                    lastName: userData.lastName,
+                    phone: userData.phone,
+                    role: userData.role || 'parent',
+                    schoolId: userData.schoolId,
+                },
+            });
+            return {
+                success: true,
+                user: {
+                    id: user.id,
+                    email: user.email,
+                    firstName: user.firstName,
+                    lastName: user.lastName,
+                    role: user.role,
+                },
+            };
+        }
+        catch (error) {
+            logger_service_1.logger.error('User registration failed', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
+            return { success: false, error: 'Failed to register user' };
+        }
+    }
+    async updateProfile(userId, profileData) {
+        try {
+            const user = await database_service_1.DatabaseService.client.user.update({
+                where: { id: userId },
+                data: profileData,
+            });
+            return {
+                success: true,
+                user: {
+                    id: user.id,
+                    email: user.email,
+                    firstName: user.firstName,
+                    lastName: user.lastName,
+                    role: user.role,
+                    phone: user.phone,
+                    language: user.language,
+                    timezone: user.timezone,
+                },
+            };
+        }
+        catch (error) {
+            logger_service_1.logger.error('Profile update failed', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
+            return { success: false, error: 'Failed to update profile' };
+        }
+    }
+    async refreshAccessToken(refreshToken) {
+        try {
+            const decoded = await this.verifyToken(refreshToken, 'refresh');
+            const newAccessToken = await this.generateToken({
+                userId: decoded.userId,
+                email: decoded.email,
+                role: decoded.role,
+                sessionId: decoded.sessionId,
+                tokenType: 'access',
+                permissions: decoded.permissions,
+            }, '1h');
+            const newRefreshToken = await this.generateToken({
+                userId: decoded.userId,
+                email: decoded.email,
+                role: decoded.role,
+                sessionId: decoded.sessionId,
+                tokenType: 'refresh',
+                permissions: decoded.permissions,
+            }, '7d', this.jwtRefreshSecret);
+            return {
+                success: true,
+                tokens: {
+                    accessToken: newAccessToken,
+                    refreshToken: newRefreshToken,
+                },
+            };
+        }
+        catch (error) {
+            logger_service_1.logger.error('Token refresh failed', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
+            return { success: false, error: 'Invalid refresh token' };
         }
     }
     async validateConfigurationForTesting() {
@@ -1308,7 +1584,7 @@ class AuthService {
                 hasValidRefreshSecret: !!this.jwtRefreshSecret && this.jwtRefreshSecret.length > 32,
                 hasSecurePasswordRequirements: this.passwordRequirements.minLength >= 8,
                 hasReasonableSessionTimeout: this.sessionTimeout > 0 && this.sessionTimeout <= 86400,
-                hasProperFailedAttemptLimits: this.maxFailedAttempts > 0 && this.maxFailedAttempts <= 10
+                hasProperFailedAttemptLimits: this.maxFailedAttempts > 0 && this.maxFailedAttempts <= 10,
             };
             const isValid = Object.values(configValidation).every(Boolean);
             return {
@@ -1316,24 +1592,28 @@ class AuthService {
                 data: {
                     isValid,
                     checks: configValidation,
-                    recommendations: isValid ? [] : [
-                        'Use strong JWT secrets (>32 characters)',
-                        'Set minimum password length to 8+ characters',
-                        'Configure reasonable session timeouts',
-                        'Limit failed login attempts'
-                    ]
-                }
+                    recommendations: isValid
+                        ? []
+                        : [
+                            'Use strong JWT secrets (>32 characters)',
+                            'Set minimum password length to 8+ characters',
+                            'Configure reasonable session timeouts',
+                            'Limit failed login attempts',
+                        ],
+                },
             };
         }
         catch (error) {
-            logger_1.logger.error('Configuration validation failed', error);
+            logger_service_1.logger.error('Configuration validation failed', undefined, {
+                errorMessage: error instanceof Error ? error.message : String(error),
+            });
             return {
                 success: false,
-                error: error instanceof Error ? error.message : 'Configuration validation failed'
+                error: error instanceof Error ? error.message : 'Configuration validation failed',
             };
         }
     }
 }
 exports.AuthService = AuthService;
-exports.authService = new AuthService();
+exports.authService = AuthService.getInstance();
 //# sourceMappingURL=auth.service.js.map

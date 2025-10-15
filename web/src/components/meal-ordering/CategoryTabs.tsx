@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Clock, AlertTriangle, CheckCircle, Users } from 'lucide-react';
 import { MEAL_TYPES } from '@/utils/constants';
-import type { CategoryTabsProps, MenuCategory } from './types';
+import type { CategoryTabsProps, MenuCategory as _MenuCategory } from './types';
 import { getMealCategoryInfo } from './utils';
 import { cn } from '@/lib/utils';
 
@@ -50,14 +50,16 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
       <Tabs value={activeCategory} onValueChange={onCategoryChange} className="w-full">
         {/* Mobile-first responsive tabs */}
         <div className="overflow-x-auto scrollbar-hide">
-          <TabsList className={cn(
-            'inline-flex h-auto p-1 bg-gray-50 border border-gray-200 rounded-xl',
-            'min-w-full lg:grid lg:grid-cols-4 gap-1'
-          )}>
-            {sortedCategories.map((category) => {
+          <TabsList
+            className={cn(
+              'inline-flex h-auto p-1 bg-gray-50 border border-gray-200 rounded-xl',
+              'min-w-full lg:grid lg:grid-cols-4 gap-1'
+            )}
+          >
+            {sortedCategories.map(category => {
               const categoryInfo = getMealCategoryInfo(category.mealType);
               const isActive = activeCategory === category.id;
-              
+
               return (
                 <TabsTrigger
                   key={category.id}
@@ -77,9 +79,9 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
                 >
                   {/* Icon and label */}
                   <div className="flex flex-col sm:flex-row items-center gap-2">
-                    <span 
-                      className="text-2xl sm:text-3xl transition-transform duration-200 hover:scale-110" 
-                      role="img" 
+                    <span
+                      className="text-2xl sm:text-3xl transition-transform duration-200 hover:scale-110"
+                      role="img"
                       aria-label={category.name}
                     >
                       {categoryInfo.icon}
@@ -98,17 +100,24 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
                   <div className="flex flex-wrap gap-1 justify-center mt-1">
                     {/* Special dietary indicators */}
                     {category.dietaryFilters && category.dietaryFilters.length > 0 && (
-                      <Badge variant="outline" className="text-xs px-1.5 py-0.5 bg-green-50 border-green-200 text-green-700">
-                        {category.dietaryFilters.length === 1 
-                          ? category.dietaryFilters[0] 
+                      <Badge
+                        variant="outline"
+                        className="text-xs px-1.5 py-0.5 bg-green-50 border-green-200 text-green-700"
+                      >
+                        {category.dietaryFilters.length === 1
+                          ? category.dietaryFilters[0]
                           : `${category.dietaryFilters.length} diets`}
                       </Badge>
                     )}
 
                     {/* Grade restrictions */}
                     {category.gradeFilters && category.gradeFilters.length > 0 && (
-                      <Badge variant="outline" className="text-xs px-1.5 py-0.5 bg-blue-50 border-blue-200 text-blue-700">
-                        Grade {Math.min(...category.gradeFilters)}-{Math.max(...category.gradeFilters)}
+                      <Badge
+                        variant="outline"
+                        className="text-xs px-1.5 py-0.5 bg-blue-50 border-blue-200 text-blue-700"
+                      >
+                        Grade {Math.min(...category.gradeFilters)}-
+                        {Math.max(...category.gradeFilters)}
                       </Badge>
                     )}
 
@@ -128,7 +137,7 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
 
       {/* Enhanced Category Description Panel */}
       {activeCategory && (
-        <div 
+        <div
           id={`category-panel-${activeCategory}`}
           role="tabpanel"
           aria-labelledby={`category-tab-${activeCategory}`}
@@ -137,9 +146,9 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
           {(() => {
             const activecat = sortedCategories.find(cat => cat.id === activeCategory);
             if (!activecat) return null;
-            
+
             const categoryInfo = getMealCategoryInfo(activecat.mealType);
-            
+
             return (
               <div className="space-y-4">
                 {/* Header */}
@@ -150,15 +159,11 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
                     </span>
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-bold text-xl text-gray-900 mb-1">
-                      {categoryInfo.label}
-                    </h3>
-                    <p className="text-gray-700 text-sm leading-relaxed">
-                      {activecat.description}
-                    </p>
+                    <h3 className="font-bold text-xl text-gray-900 mb-1">{categoryInfo.label}</h3>
+                    <p className="text-gray-700 text-sm leading-relaxed">{activecat.description}</p>
                   </div>
                 </div>
-                  
+
                 {/* Enhanced timing and feature information */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {/* Timing Information */}
@@ -169,9 +174,9 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
                       [MEAL_TYPES.DINNER]: { time: '6:00 PM - 8:00 PM', lastOrder: '7:30 PM' },
                       [MEAL_TYPES.SNACKS]: { time: '3:00 PM - 5:00 PM', lastOrder: '4:30 PM' },
                     };
-                    
+
                     const timing = timingInfo[activecat.mealType];
-                    
+
                     return timing ? (
                       <div className="bg-white rounded-lg p-4 shadow-sm">
                         <div className="flex items-center mb-2">
@@ -210,18 +215,20 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
                           Available for all grades
                         </div>
                       )}
-                      
+
                       {/* Dietary compatibility indicator */}
-                      {activecat.dietaryFilters && student.dietaryPreferences.length > 0 && (
+                      {activecat.dietaryFilters &&
+                        student.dietaryPreferences.length > 0 &&
                         (() => {
                           const compatibleDiets = activecat.dietaryFilters.filter(diet =>
                             student.dietaryPreferences.includes(diet)
                           );
-                          
+
                           return compatibleDiets.length > 0 ? (
                             <div className="flex items-center text-xs text-green-700">
                               <CheckCircle className="h-3 w-3 mr-1.5" />
-                              {compatibleDiets.length} compatible diet{compatibleDiets.length > 1 ? 's' : ''}
+                              {compatibleDiets.length} compatible diet
+                              {compatibleDiets.length > 1 ? 's' : ''}
                             </div>
                           ) : (
                             <div className="flex items-center text-xs text-gray-600">
@@ -229,8 +236,7 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
                               Check individual meals for dietary compatibility
                             </div>
                           );
-                        })()
-                      )}
+                        })()}
                     </div>
                   </div>
 
@@ -241,7 +247,6 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
                       <span className="font-semibold text-sm text-gray-900">Features</span>
                     </div>
                     <div className="space-y-1">
-
                       {/* Special features based on meal type */}
                       {activecat.mealType === MEAL_TYPES.BREAKFAST && (
                         <div className="text-xs text-gray-700 flex items-center">
@@ -249,21 +254,21 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
                           Perfect energy boost to start your day
                         </div>
                       )}
-                      
+
                       {activecat.mealType === MEAL_TYPES.LUNCH && (
                         <div className="text-xs text-gray-700 flex items-center">
                           <span className="mr-2">💪</span>
                           Complete nutrition for active learning
                         </div>
                       )}
-                      
+
                       {activecat.mealType === MEAL_TYPES.SNACKS && (
                         <div className="text-xs text-gray-700 flex items-center">
                           <span className="mr-2">⚡</span>
                           Quick bites between classes
                         </div>
                       )}
-                      
+
                       {activecat.mealType === MEAL_TYPES.DINNER && (
                         <div className="text-xs text-gray-700 flex items-center">
                           <span className="mr-2">😴</span>
@@ -281,8 +286,10 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
                     <Alert className="border-amber-200 bg-amber-50">
                       <AlertTriangle className="h-4 w-4 text-amber-600" />
                       <AlertDescription className="text-amber-800">
-                        <span className="font-semibold">Allergy Alert:</span> Remember to check allergen information for items in this category.
-                        Your profile shows allergies to: <span className="font-medium">{student.allergies.join(', ')}</span>.
+                        <span className="font-semibold">Allergy Alert:</span> Remember to check
+                        allergen information for items in this category. Your profile shows
+                        allergies to:{' '}
+                        <span className="font-medium">{student.allergies.join(', ')}</span>.
                       </AlertDescription>
                     </Alert>
                   )}
@@ -292,8 +299,8 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
                     <Alert className="border-orange-200 bg-orange-50">
                       <AlertTriangle className="h-4 w-4 text-orange-600" />
                       <AlertDescription className="text-orange-800">
-                        <span className="font-semibold">Low Balance:</span> Your wallet balance is low (₹{student.walletBalance}). 
-                        Consider topping up for lunch orders.
+                        <span className="font-semibold">Low Balance:</span> Your wallet balance is
+                        low (₹{student.walletBalance}). Consider topping up for lunch orders.
                       </AlertDescription>
                     </Alert>
                   )}
@@ -303,7 +310,8 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
                     <Alert className="border-blue-200 bg-blue-50">
                       <Users className="h-4 w-4 text-blue-600" />
                       <AlertDescription className="text-blue-800">
-                        <span className="font-semibold">Parent Approval Required:</span> Orders will be sent to your parent for approval before processing.
+                        <span className="font-semibold">Parent Approval Required:</span> Orders will
+                        be sent to your parent for approval before processing.
                       </AlertDescription>
                     </Alert>
                   )}
@@ -313,7 +321,8 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
                     <Alert className="border-purple-200 bg-purple-50">
                       <CheckCircle className="h-4 w-4 text-purple-600" />
                       <AlertDescription className="text-purple-800">
-                        <span className="font-semibold">Grade {student.grade} Special Care:</span> All your orders automatically require parent approval for your safety.
+                        <span className="font-semibold">Grade {student.grade} Special Care:</span>{' '}
+                        All your orders automatically require parent approval for your safety.
                       </AlertDescription>
                     </Alert>
                   )}

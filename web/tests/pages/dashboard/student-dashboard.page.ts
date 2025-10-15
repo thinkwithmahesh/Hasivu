@@ -85,76 +85,65 @@ export class StudentDashboardPage extends BasePage {
   constructor(page: Page) {
     super(page);
     
-    this.dashboard = this.page.locator('[data-testid="student-dashboard"]');
-    
+    this._dashboard =  this.page.locator('[data-testid
     // Header and navigation
-    this.welcomeMessage = this.dashboard.locator('[data-testid="welcome-message"]');
-    this.studentName = this.dashboard.locator('[data-testid="student-name"]');
-    this.studentClass = this.dashboard.locator('[data-testid="student-class"]');
-    this.profilePicture = this.dashboard.locator('[data-testid="profile-picture"]');
-    this.navigationMenu = this.dashboard.locator('[data-testid="navigation-menu"]');
-    
+    this._welcomeMessage =  this.dashboard.locator('[data-testid
+    this._studentName =  this.dashboard.locator('[data-testid
+    this._studentClass =  this.dashboard.locator('[data-testid
+    this._profilePicture =  this.dashboard.locator('[data-testid
+    this._navigationMenu =  this.dashboard.locator('[data-testid
     // Balance section
-    this.balanceSection = this.dashboard.locator('[data-testid="balance-section"]');
-    this.mealBalance = this.balanceSection.locator('[data-testid="meal-balance"]');
-    this.walletBalance = this.balanceSection.locator('[data-testid="wallet-balance"]');
-    this.topUpButton = this.balanceSection.locator('[data-testid="top-up-button"]');
-    this.balanceHistory = this.balanceSection.locator('[data-testid="balance-history"]');
-    this.lowBalanceAlert = this.balanceSection.locator('[data-testid="low-balance-alert"]');
-    
+    this._balanceSection =  this.dashboard.locator('[data-testid
+    this._mealBalance =  this.balanceSection.locator('[data-testid
+    this._walletBalance =  this.balanceSection.locator('[data-testid
+    this._topUpButton =  this.balanceSection.locator('[data-testid
+    this._balanceHistory =  this.balanceSection.locator('[data-testid
+    this._lowBalanceAlert =  this.balanceSection.locator('[data-testid
     // Quick actions
-    this.quickActionsSection = this.dashboard.locator('[data-testid="quick-actions"]');
-    this.orderMealButton = this.quickActionsSection.locator('[data-testid="order-meal-button"]');
-    this.viewMenuButton = this.quickActionsSection.locator('[data-testid="view-menu-button"]');
-    this.trackOrderButton = this.quickActionsSection.locator('[data-testid="track-order-button"]');
-    this.viewHistoryButton = this.quickActionsSection.locator('[data-testid="view-history-button"]');
-    
+    this._quickActionsSection =  this.dashboard.locator('[data-testid
+    this._orderMealButton =  this.quickActionsSection.locator('[data-testid
+    this._viewMenuButton =  this.quickActionsSection.locator('[data-testid
+    this._trackOrderButton =  this.quickActionsSection.locator('[data-testid
+    this._viewHistoryButton =  this.quickActionsSection.locator('[data-testid
     // Today's menu
-    this.todayMenuSection = this.dashboard.locator('[data-testid="today-menu-section"]');
-    this.menuPreviewCards = this.todayMenuSection.locator('[data-testid="menu-preview-card"]');
-    this.menuCarousel = this.todayMenuSection.locator('[data-testid="menu-carousel"]');
-    this.nextMenuButton = this.menuCarousel.locator('[data-testid="next-menu-button"]');
-    this.prevMenuButton = this.menuCarousel.locator('[data-testid="prev-menu-button"]');
-    
+    this._todayMenuSection =  this.dashboard.locator('[data-testid
+    this._menuPreviewCards =  this.todayMenuSection.locator('[data-testid
+    this._menuCarousel =  this.todayMenuSection.locator('[data-testid
+    this._nextMenuButton =  this.menuCarousel.locator('[data-testid
+    this._prevMenuButton =  this.menuCarousel.locator('[data-testid
     // Active orders
-    this.activeOrdersSection = this.dashboard.locator('[data-testid="active-orders-section"]');
-    this.activeOrdersList = this.activeOrdersSection.locator('[data-testid="active-orders-list"]');
-    this.noActiveOrdersMessage = this.activeOrdersSection.locator('[data-testid="no-active-orders"]');
-    
+    this._activeOrdersSection =  this.dashboard.locator('[data-testid
+    this._activeOrdersList =  this.activeOrdersSection.locator('[data-testid
+    this._noActiveOrdersMessage =  this.activeOrdersSection.locator('[data-testid
     // Notifications
-    this.notificationsSection = this.dashboard.locator('[data-testid="notifications-section"]');
-    this.notificationsList = this.notificationsSection.locator('[data-testid="notifications-list"]');
-    this.unreadNotificationsCount = this.notificationsSection.locator('[data-testid="unread-count"]');
-    this.markAllReadButton = this.notificationsSection.locator('[data-testid="mark-all-read"]');
-    this.clearAllButton = this.notificationsSection.locator('[data-testid="clear-all"]');
-    
+    this._notificationsSection =  this.dashboard.locator('[data-testid
+    this._notificationsList =  this.notificationsSection.locator('[data-testid
+    this._unreadNotificationsCount =  this.notificationsSection.locator('[data-testid
+    this._markAllReadButton =  this.notificationsSection.locator('[data-testid
+    this._clearAllButton =  this.notificationsSection.locator('[data-testid
     // Recent activity
-    this.recentActivitySection = this.dashboard.locator('[data-testid="recent-activity-section"]');
-    this.activityTimeline = this.recentActivitySection.locator('[data-testid="activity-timeline"]');
-    this.activityItems = this.activityTimeline.locator('[data-testid="activity-item"]');
-    
+    this._recentActivitySection =  this.dashboard.locator('[data-testid
+    this._activityTimeline =  this.recentActivitySection.locator('[data-testid
+    this._activityItems =  this.activityTimeline.locator('[data-testid
     // Preferences
-    this.preferencesSection = this.dashboard.locator('[data-testid="preferences-section"]');
-    this.dietaryPreferences = this.preferencesSection.locator('[data-testid="dietary-preferences"]');
-    this.allergenInfo = this.preferencesSection.locator('[data-testid="allergen-info"]');
-    this.preferencesButton = this.preferencesSection.locator('[data-testid="edit-preferences-button"]');
-    
+    this._preferencesSection =  this.dashboard.locator('[data-testid
+    this._dietaryPreferences =  this.preferencesSection.locator('[data-testid
+    this._allergenInfo =  this.preferencesSection.locator('[data-testid
+    this._preferencesButton =  this.preferencesSection.locator('[data-testid
     // Statistics
-    this.statsSection = this.dashboard.locator('[data-testid="stats-section"]');
-    this.monthlySpending = this.statsSection.locator('[data-testid="monthly-spending"]');
-    this.favoriteMeals = this.statsSection.locator('[data-testid="favorite-meals"]');
-    this.orderFrequency = this.statsSection.locator('[data-testid="order-frequency"]');
-    
+    this._statsSection =  this.dashboard.locator('[data-testid
+    this._monthlySpending =  this.statsSection.locator('[data-testid
+    this._favoriteMeals =  this.statsSection.locator('[data-testid
+    this._orderFrequency =  this.statsSection.locator('[data-testid
     // RFID card
-    this.rfidSection = this.dashboard.locator('[data-testid="rfid-section"]');
-    this.rfidCardNumber = this.rfidSection.locator('[data-testid="rfid-card-number"]');
-    this.rfidStatus = this.rfidSection.locator('[data-testid="rfid-status"]');
-    this.reportCardButton = this.rfidSection.locator('[data-testid="report-card-button"]');
-    
+    this._rfidSection =  this.dashboard.locator('[data-testid
+    this._rfidCardNumber =  this.rfidSection.locator('[data-testid
+    this._rfidStatus =  this.rfidSection.locator('[data-testid
+    this._reportCardButton =  this.rfidSection.locator('[data-testid
     // Parent communication
-    this.parentSection = this.dashboard.locator('[data-testid="parent-section"]');
-    this.parentMessages = this.parentSection.locator('[data-testid="parent-messages"]');
-    this.parentNotifications = this.parentSection.locator('[data-testid="parent-notifications"]');
+    this._parentSection =  this.dashboard.locator('[data-testid
+    this._parentMessages =  this.parentSection.locator('[data-testid
+    this._parentNotifications =  this.parentSection.locator('[data-testid
   }
 
   /**
@@ -197,12 +186,12 @@ export class StudentDashboardPage extends BasePage {
    */
   
   async getMealBalance(): Promise<number> {
-    const balanceText = await this.mealBalance.textContent() || '₹0';
+    const _balanceText =  await this.mealBalance.textContent() || '₹0';
     return parseFloat(balanceText.replace('₹', ''));
   }
   
   async getWalletBalance(): Promise<number> {
-    const balanceText = await this.walletBalance.textContent() || '₹0';
+    const _balanceText =  await this.walletBalance.textContent() || '₹0';
     return parseFloat(balanceText.replace('₹', ''));
   }
   
@@ -265,18 +254,18 @@ export class StudentDashboardPage extends BasePage {
    */
   
   async getMenuPreviewCount(): Promise<number> {
-    const previewCards = await this.menuPreviewCards.all();
+    const _previewCards =  await this.menuPreviewCards.all();
     return previewCards.length;
   }
   
   async getMenuPreviewItem(index: number): MenuCardPage {
-    const menuCard = await this.menuPreviewCards.nth(index);
-    const menuId = await menuCard.getAttribute('data-menu-id') || '';
+    const _menuCard =  await this.menuPreviewCards.nth(index);
+    const _menuId =  await menuCard.getAttribute('data-menu-id') || '';
     return new MenuCardPage(this.page, menuId);
   }
   
   async navigateMenuCarousel(direction: 'next' | 'prev'): Promise<void> {
-    const button = direction === 'next' ? this.nextMenuButton : this.prevMenuButton;
+    const _button =  direction 
     await button.click();
     await this.page.waitForTimeout(500); // Wait for carousel animation
   }
@@ -286,7 +275,7 @@ export class StudentDashboardPage extends BasePage {
   }
   
   async canNavigateMenuCarousel(direction: 'next' | 'prev'): Promise<boolean> {
-    const button = direction === 'next' ? this.nextMenuButton : this.prevMenuButton;
+    const _button =  direction 
     return await button.isEnabled();
   }
   
@@ -302,7 +291,7 @@ export class StudentDashboardPage extends BasePage {
   async getActiveOrdersCount(): Promise<number> {
     if (!await this.hasActiveOrders()) return 0;
     
-    const orderItems = await this.activeOrdersList.locator('[data-testid="active-order-item"]').all();
+    const _orderItems =  await this.activeOrdersList.locator('[data-testid
     return orderItems.length;
   }
   
@@ -311,7 +300,7 @@ export class StudentDashboardPage extends BasePage {
   }
   
   async clickActiveOrder(orderId: string): Promise<void> {
-    const orderItem = this.activeOrdersList.locator(`[data-testid="active-order-${orderId}"]`);
+    const _orderItem =  this.activeOrdersList.locator(`[data-testid
     await orderItem.click();
     await this.waitForLoadingToComplete();
   }
@@ -325,7 +314,7 @@ export class StudentDashboardPage extends BasePage {
    */
   
   async getUnreadNotificationsCount(): Promise<number> {
-    const countText = await this.unreadNotificationsCount.textContent() || '0';
+    const _countText =  await this.unreadNotificationsCount.textContent() || '0';
     return parseInt(countText);
   }
   
@@ -334,7 +323,7 @@ export class StudentDashboardPage extends BasePage {
   }
   
   async getNotificationsCount(): Promise<number> {
-    const notifications = await this.notificationsList.locator('[data-testid="notification-item"]').all();
+    const _notifications =  await this.notificationsList.locator('[data-testid
     return notifications.length;
   }
   
@@ -344,13 +333,11 @@ export class StudentDashboardPage extends BasePage {
     timestamp: string;
     read: boolean;
   }> {
-    const notification = this.notificationsList.locator('[data-testid="notification-item"]').nth(index);
-    
-    const title = await notification.locator('[data-testid="notification-title"]').textContent() || '';
-    const message = await notification.locator('[data-testid="notification-message"]').textContent() || '';
-    const timestamp = await notification.locator('[data-testid="notification-timestamp"]').textContent() || '';
-    const isRead = !(await notification.locator('[data-testid="unread-indicator"]').isVisible());
-    
+    const _notification =  this.notificationsList.locator('[data-testid
+    const _title =  await notification.locator('[data-testid
+    const _message =  await notification.locator('[data-testid
+    const _timestamp =  await notification.locator('[data-testid
+    const _isRead =  !(await notification.locator('[data-testid
     return { title, message, timestamp, read: isRead };
   }
   
@@ -362,11 +349,11 @@ export class StudentDashboardPage extends BasePage {
   async clearAllNotifications(): Promise<void> {
     await this.clearAllButton.click();
     // Wait for confirmation dialog
-    await this.page.waitForSelector('[data-testid="clear-notifications-confirmation"]', { state: 'visible' });
+    await this.page.waitForSelector('[data-_testid = "clear-notifications-confirmation"]', { state: 'visible' });
   }
   
   async clickNotification(index: number): Promise<void> {
-    const notification = this.notificationsList.locator('[data-testid="notification-item"]').nth(index);
+    const _notification =  this.notificationsList.locator('[data-testid
     await notification.click();
     await this.waitForLoadingToComplete();
   }
@@ -376,7 +363,7 @@ export class StudentDashboardPage extends BasePage {
    */
   
   async getRecentActivityCount(): Promise<number> {
-    const activities = await this.activityItems.all();
+    const _activities =  await this.activityItems.all();
     return activities.length;
   }
   
@@ -386,18 +373,17 @@ export class StudentDashboardPage extends BasePage {
     timestamp: string;
     amount?: number;
   }> {
-    const activity = this.activityItems.nth(index);
+    const _activity =  this.activityItems.nth(index);
     
-    const type = await activity.getAttribute('data-activity-type') || '';
-    const description = await activity.locator('[data-testid="activity-description"]').textContent() || '';
-    const timestamp = await activity.locator('[data-testid="activity-timestamp"]').textContent() || '';
-    
-    const amountElement = activity.locator('[data-testid="activity-amount"]');
+    const _type =  await activity.getAttribute('data-activity-type') || '';
+    const _description =  await activity.locator('[data-testid
+    const _timestamp =  await activity.locator('[data-testid
+    const _amountElement =  activity.locator('[data-testid
     let amount: number | undefined;
     
     if (await amountElement.isVisible()) {
-      const amountText = await amountElement.textContent() || '₹0';
-      amount = parseFloat(amountText.replace('₹', ''));
+      const _amountText =  await amountElement.textContent() || '₹0';
+      _amount =  parseFloat(amountText.replace('₹', ''));
     }
     
     return { type, description, timestamp, amount };
@@ -412,11 +398,10 @@ export class StudentDashboardPage extends BasePage {
    */
   
   async getDietaryPreferences(): Promise<string[]> {
-    const preferences = [];
-    const preferenceElements = await this.dietaryPreferences.locator('[data-testid="preference-tag"]').all();
-    
+    const _preferences =  [];
+    const _preferenceElements =  await this.dietaryPreferences.locator('[data-testid
     for (const element of preferenceElements) {
-      const preference = await element.textContent();
+      const _preference =  await element.textContent();
       if (preference) {
         preferences.push(preference.trim());
       }
@@ -426,11 +411,10 @@ export class StudentDashboardPage extends BasePage {
   }
   
   async getAllergenInfo(): Promise<string[]> {
-    const allergens = [];
-    const allergenElements = await this.allergenInfo.locator('[data-testid="allergen-tag"]').all();
-    
+    const _allergens =  [];
+    const _allergenElements =  await this.allergenInfo.locator('[data-testid
     for (const element of allergenElements) {
-      const allergen = await element.textContent();
+      const _allergen =  await element.textContent();
       if (allergen) {
         allergens.push(allergen.trim());
       }
@@ -453,16 +437,15 @@ export class StudentDashboardPage extends BasePage {
    */
   
   async getMonthlySpending(): Promise<number> {
-    const spendingText = await this.monthlySpending.textContent() || '₹0';
+    const _spendingText =  await this.monthlySpending.textContent() || '₹0';
     return parseFloat(spendingText.replace('₹', ''));
   }
   
   async getFavoriteMeals(): Promise<string[]> {
-    const meals = [];
-    const mealElements = await this.favoriteMeals.locator('[data-testid="favorite-meal"]').all();
-    
+    const _meals =  [];
+    const _mealElements =  await this.favoriteMeals.locator('[data-testid
     for (const element of mealElements) {
-      const meal = await element.textContent();
+      const _meal =  await element.textContent();
       if (meal) {
         meals.push(meal.trim());
       }
@@ -492,13 +475,13 @@ export class StudentDashboardPage extends BasePage {
   }
   
   async isRFIDCardActive(): Promise<boolean> {
-    const status = await this.getRFIDStatus();
+    const _status =  await this.getRFIDStatus();
     return status.toLowerCase() === 'active';
   }
   
   async reportLostCard(): Promise<void> {
     await this.reportCardButton.click();
-    await this.page.waitForSelector('[data-testid="report-card-dialog"]', { state: 'visible' });
+    await this.page.waitForSelector('[data-_testid = "report-card-dialog"]', { state: 'visible' });
   }
   
   async isRFIDSectionVisible(): Promise<boolean> {
@@ -516,7 +499,7 @@ export class StudentDashboardPage extends BasePage {
   async getParentMessagesCount(): Promise<number> {
     if (!await this.hasParentMessages()) return 0;
     
-    const messages = await this.parentMessages.locator('[data-testid="parent-message"]').all();
+    const _messages =  await this.parentMessages.locator('[data-testid
     return messages.length;
   }
   
@@ -560,12 +543,12 @@ export class StudentDashboardPage extends BasePage {
    */
   
   async isMobileLayout(): Promise<boolean> {
-    const classList = await this.dashboard.getAttribute('class') || '';
+    const _classList =  await this.dashboard.getAttribute('class') || '';
     return classList.includes('mobile-layout') || classList.includes('responsive-mobile');
   }
   
   async openMobileMenu(): Promise<void> {
-    const mobileMenuButton = this.dashboard.locator('[data-testid="mobile-menu-button"]');
+    const _mobileMenuButton =  this.dashboard.locator('[data-testid
     if (await mobileMenuButton.isVisible()) {
       await mobileMenuButton.click();
     }
@@ -576,15 +559,15 @@ export class StudentDashboardPage extends BasePage {
    */
   
   async hasLoadingError(): Promise<boolean> {
-    return await this.dashboard.locator('[data-testid="dashboard-error"]').isVisible();
+    return await this.dashboard.locator('[data-_testid = "dashboard-error"]').isVisible();
   }
   
   async getLoadingErrorMessage(): Promise<string> {
-    return await this.dashboard.locator('[data-testid="error-message"]').textContent() || '';
+    return await this.dashboard.locator('[data-_testid = "error-message"]').textContent() || '';
   }
   
   async retryLoading(): Promise<void> {
-    const retryButton = this.dashboard.locator('[data-testid="retry-button"]');
+    const _retryButton =  this.dashboard.locator('[data-testid
     if (await retryButton.isVisible()) {
       await retryButton.click();
       await this.waitForDashboardToLoad();
@@ -604,22 +587,22 @@ export class StudentDashboardPage extends BasePage {
     
     switch (section) {
       case 'balance':
-        targetSection = this.balanceSection;
+        _targetSection =  this.balanceSection;
         break;
       case 'menu':
-        targetSection = this.todayMenuSection;
+        _targetSection =  this.todayMenuSection;
         break;
       case 'orders':
-        targetSection = this.activeOrdersSection;
+        _targetSection =  this.activeOrdersSection;
         break;
       case 'notifications':
-        targetSection = this.notificationsSection;
+        _targetSection =  this.notificationsSection;
         break;
       case 'activity':
-        targetSection = this.recentActivitySection;
+        _targetSection =  this.recentActivitySection;
         break;
       case 'stats':
-        targetSection = this.statsSection;
+        _targetSection =  this.statsSection;
         break;
       default:
         return;

@@ -1,17 +1,32 @@
-"use client"
+'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  LineChart, Line, PieChart, Pie, Cell, Area, AreaChart
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Area,
+  AreaChart,
 } from 'recharts';
-import { 
-  Wallet, Users, Bell, TrendingUp, Calendar, CreditCard,
-  Apple, AlertTriangle, CheckCircle, Clock, User
+import {
+  Wallet,
+  Users,
+  Bell,
+  TrendingUp,
+  CreditCard,
+  Apple,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  User,
 } from 'lucide-react';
 import { cn, formatCurrency, formatDate } from '@/lib/utils';
 import { Student, MealOrder, PaymentHistory, WalletBalance, SpendingAnalytics } from './types';
@@ -30,13 +45,29 @@ const mockChildrenOrders: Record<string, MealOrder[]> = {
       studentName: 'Arjun Sharma',
       mealType: 'lunch',
       items: [
-        { id: '1', name: 'Vegetable Biryani', category: 'main', price: 45, quantity: 1, nutritionalInfo: { calories: 420, protein: 12, carbs: 65, fat: 15, fiber: 6, sodium: 650, sugar: 8 }, isVegetarian: true }
+        {
+          id: '1',
+          name: 'Vegetable Biryani',
+          category: 'main',
+          price: 45,
+          quantity: 1,
+          nutritionalInfo: {
+            calories: 420,
+            protein: 12,
+            carbs: 65,
+            fat: 15,
+            fiber: 6,
+            sodium: 650,
+            sugar: 8,
+          },
+          isVegetarian: true,
+        },
       ],
       status: 'preparing',
       orderDate: '2024-01-12',
       totalAmount: 45,
-      priority: 'medium'
-    }
+      priority: 'medium',
+    },
   ],
   'child-2': [
     {
@@ -45,14 +76,30 @@ const mockChildrenOrders: Record<string, MealOrder[]> = {
       studentName: 'Priya Sharma',
       mealType: 'lunch',
       items: [
-        { id: '2', name: 'Dal Rice Bowl', category: 'main', price: 40, quantity: 1, nutritionalInfo: { calories: 380, protein: 14, carbs: 60, fat: 12, fiber: 8, sodium: 580, sugar: 5 }, isVegetarian: true }
+        {
+          id: '2',
+          name: 'Dal Rice Bowl',
+          category: 'main',
+          price: 40,
+          quantity: 1,
+          nutritionalInfo: {
+            calories: 380,
+            protein: 14,
+            carbs: 60,
+            fat: 12,
+            fiber: 8,
+            sodium: 580,
+            sugar: 5,
+          },
+          isVegetarian: true,
+        },
       ],
       status: 'ready',
       orderDate: '2024-01-12',
       totalAmount: 40,
-      priority: 'medium'
-    }
-  ]
+      priority: 'medium',
+    },
+  ],
 };
 
 const mockPaymentHistory: PaymentHistory[] = [
@@ -63,7 +110,7 @@ const mockPaymentHistory: PaymentHistory[] = [
     type: 'credit',
     description: 'Wallet top-up',
     date: '2024-01-10',
-    status: 'completed'
+    status: 'completed',
   },
   {
     id: '2',
@@ -73,7 +120,7 @@ const mockPaymentHistory: PaymentHistory[] = [
     description: 'Lunch order',
     date: '2024-01-12',
     status: 'completed',
-    orderId: '1'
+    orderId: '1',
   },
   {
     id: '3',
@@ -82,8 +129,8 @@ const mockPaymentHistory: PaymentHistory[] = [
     type: 'credit',
     description: 'Wallet top-up',
     date: '2024-01-08',
-    status: 'completed'
-  }
+    status: 'completed',
+  },
 ];
 
 const mockWalletBalances: Record<string, WalletBalance> = {
@@ -91,14 +138,14 @@ const mockWalletBalances: Record<string, WalletBalance> = {
     studentId: 'child-1',
     balance: 455,
     lastUpdated: '2024-01-12',
-    lowBalanceThreshold: 100
+    lowBalanceThreshold: 100,
   },
   'child-2': {
     studentId: 'child-2',
     balance: 85,
     lastUpdated: '2024-01-12',
-    lowBalanceThreshold: 100
-  }
+    lowBalanceThreshold: 100,
+  },
 };
 
 const mockSpendingAnalytics: SpendingAnalytics = {
@@ -117,26 +164,26 @@ const mockSpendingAnalytics: SpendingAnalytics = {
   averagePerDay: 118.5,
   trends: {
     direction: 'up',
-    percentage: 12
-  }
+    percentage: 12,
+  },
 };
 
 const mockNotifications = [
   {
     id: '1',
     type: 'order_ready',
-    message: 'Priya\'s lunch order is ready for pickup',
+    message: "Priya's lunch order is ready for pickup",
     studentId: 'child-2',
     timestamp: '2024-01-12T12:30:00Z',
-    read: false
+    read: false,
   },
   {
     id: '2',
     type: 'low_balance',
-    message: 'Priya\'s wallet balance is low (₹85)',
+    message: "Priya's wallet balance is low (₹85)",
     studentId: 'child-2',
     timestamp: '2024-01-12T08:00:00Z',
-    read: false
+    read: false,
   },
   {
     id: '3',
@@ -144,8 +191,8 @@ const mockNotifications = [
     message: 'Arjun placed a lunch order',
     studentId: 'child-1',
     timestamp: '2024-01-12T11:00:00Z',
-    read: true
-  }
+    read: true,
+  },
 ];
 
 const COLORS = {
@@ -155,7 +202,7 @@ const COLORS = {
   success: '#4CAF50',
   warning: '#FFC107',
   error: '#F44336',
-  info: '#2196F3'
+  info: '#2196F3',
 };
 
 const mockChildren: Student[] = [
@@ -165,7 +212,7 @@ const mockChildren: Student[] = [
     class: '8',
     section: 'A',
     rollNumber: '15',
-    avatar: '/avatars/arjun.jpg'
+    avatar: '/avatars/arjun.jpg',
   },
   {
     id: 'child-2',
@@ -173,14 +220,13 @@ const mockChildren: Student[] = [
     class: '5',
     section: 'B',
     rollNumber: '22',
-    avatar: '/avatars/priya.jpg'
-  }
+    avatar: '/avatars/priya.jpg',
+  },
 ];
 
 export function ParentDashboard({ children = mockChildren, className }: ParentDashboardProps) {
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedChild, setSelectedChild] = useState<string>('all');
-  const [unreadNotifications, setUnreadNotifications] = useState(mockNotifications.filter(n => !n.read).length);
+  const unreadNotifications = mockNotifications.filter(n => !n.read).length;
 
   useEffect(() => {
     // Simulate data loading
@@ -191,14 +237,17 @@ export function ParentDashboard({ children = mockChildren, className }: ParentDa
     return () => clearTimeout(timer);
   }, []);
 
-  const totalBalance = Object.values(mockWalletBalances).reduce((sum, wallet) => sum + wallet.balance, 0);
-  const lowBalanceChildren = Object.entries(mockWalletBalances).filter(([_, wallet]) => 
-    wallet.balance < wallet.lowBalanceThreshold
+  const totalBalance = Object.values(mockWalletBalances).reduce(
+    (sum, wallet) => sum + wallet.balance,
+    0
+  );
+  const lowBalanceChildren = Object.entries(mockWalletBalances).filter(
+    ([_, wallet]) => wallet.balance < wallet.lowBalanceThreshold
   );
 
-  const allActiveOrders = Object.values(mockChildrenOrders).flat().filter(order => 
-    order.status !== 'completed' && order.status !== 'cancelled'
-  );
+  const allActiveOrders = Object.values(mockChildrenOrders)
+    .flat()
+    .filter(order => order.status !== 'completed' && order.status !== 'cancelled');
 
   const spendingChartData = mockSpendingAnalytics.data.map(item => ({
     date: formatDate(new Date(item.date), 'short'),
@@ -208,21 +257,27 @@ export function ParentDashboard({ children = mockChildren, className }: ParentDa
   const nutritionSummary = children.map(child => {
     const orders = mockChildrenOrders[child.id] || [];
     const todayOrders = orders.filter(order => order.orderDate === '2024-01-12');
-    const totalCalories = todayOrders.reduce((sum, order) => 
-      sum + order.items.reduce((itemSum, item) => 
-        itemSum + (item.nutritionalInfo.calories * item.quantity), 0), 0);
-    
+    const totalCalories = todayOrders.reduce(
+      (sum, order) =>
+        sum +
+        order.items.reduce(
+          (itemSum, item) => itemSum + item.nutritionalInfo.calories * item.quantity,
+          0
+        ),
+      0
+    );
+
     return {
       name: child.name,
       calories: totalCalories,
       target: 1800, // Mock target for children
-      percentage: Math.min((totalCalories / 1800) * 100, 100)
+      percentage: Math.min((totalCalories / 1800) * 100, 100),
     };
   });
 
   if (isLoading) {
     return (
-      <div className={cn("space-y-6", className)}>
+      <div className={cn('space-y-6', className)}>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <Card key={i}>
@@ -241,7 +296,7 @@ export function ParentDashboard({ children = mockChildren, className }: ParentDa
   }
 
   return (
-    <div className={cn("space-y-6", className)}>
+    <div className={cn('space-y-6', className)}>
       {/* Header */}
       <div className="bg-gradient-to-r from-primary-500 to-primary-600 rounded-lg p-6 text-white">
         <div className="flex items-center justify-between">
@@ -275,9 +330,7 @@ export function ParentDashboard({ children = mockChildren, className }: ParentDa
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{children.length}</div>
-            <p className="text-xs text-muted-foreground">
-              All children active
-            </p>
+            <p className="text-xs text-muted-foreground">All children active</p>
           </CardContent>
         </Card>
 
@@ -303,10 +356,14 @@ export function ParentDashboard({ children = mockChildren, className }: ParentDa
             <div className="text-2xl font-bold">
               {formatCurrency(mockSpendingAnalytics.totalSpent)}
             </div>
-            <p className={cn(
-              "text-xs",
-              mockSpendingAnalytics.trends.direction === 'up' ? "text-error-600" : "text-success-600"
-            )}>
+            <p
+              className={cn(
+                'text-xs',
+                mockSpendingAnalytics.trends.direction === 'up'
+                  ? 'text-error-600'
+                  : 'text-success-600'
+              )}
+            >
               {mockSpendingAnalytics.trends.direction === 'up' ? '+' : '-'}
               {mockSpendingAnalytics.trends.percentage}% from last week
             </p>
@@ -319,13 +376,11 @@ export function ParentDashboard({ children = mockChildren, className }: ParentDa
             <Bell className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-warning-600">
-              {unreadNotifications}
-            </div>
+            <div className="text-2xl font-bold text-warning-600">{unreadNotifications}</div>
             <p className="text-xs text-muted-foreground">
-              {lowBalanceChildren.length > 0 
+              {lowBalanceChildren.length > 0
                 ? `${lowBalanceChildren.length} low balance alerts`
-                : "All balances healthy"}
+                : 'All balances healthy'}
             </p>
           </CardContent>
         </Card>
@@ -346,9 +401,7 @@ export function ParentDashboard({ children = mockChildren, className }: ParentDa
                 const child = children.find(c => c.id === childId);
                 return (
                   <div key={childId} className="flex items-center justify-between">
-                    <p className="text-warning-700">
-                      {child?.name}'s balance is low
-                    </p>
+                    <p className="text-warning-700">{child?.name}'s balance is low</p>
                     <p className="font-semibold text-warning-800">
                       {formatCurrency(wallet.balance)}
                     </p>
@@ -379,13 +432,16 @@ export function ParentDashboard({ children = mockChildren, className }: ParentDa
                 <CardDescription>Wallet balances and activity</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {children.map((child) => {
+                {children.map(child => {
                   const wallet = mockWalletBalances[child.id];
                   const orders = mockChildrenOrders[child.id] || [];
                   const activeOrder = orders.find(o => o.status !== 'completed');
-                  
+
                   return (
-                    <div key={child.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div
+                      key={child.id}
+                      className="flex items-center justify-between p-4 border rounded-lg"
+                    >
                       <div className="flex items-center space-x-3">
                         <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center">
                           <User className="h-6 w-6 text-primary-600" />
@@ -393,29 +449,34 @@ export function ParentDashboard({ children = mockChildren, className }: ParentDa
                         <div>
                           <p className="font-medium">{child.name}</p>
                           <p className="text-sm text-muted-foreground">
-                            Class {child.class}{child.section} • Roll #{child.rollNumber}
+                            Class {child.class}
+                            {child.section} • Roll #{child.rollNumber}
                           </p>
                         </div>
                       </div>
                       <div className="text-right space-y-1">
                         <div className="flex items-center gap-2">
                           <Wallet className="h-4 w-4 text-muted-foreground" />
-                          <span className={cn(
-                            "font-semibold",
-                            wallet && wallet.balance < wallet.lowBalanceThreshold 
-                              ? "text-error-600" 
-                              : "text-success-600"
-                          )}>
+                          <span
+                            className={cn(
+                              'font-semibold',
+                              wallet && wallet.balance < wallet.lowBalanceThreshold
+                                ? 'text-error-600'
+                                : 'text-success-600'
+                            )}
+                          >
                             {wallet ? formatCurrency(wallet.balance) : formatCurrency(0)}
                           </span>
                         </div>
                         {activeOrder && (
-                          <p className={cn(
-                            "text-xs capitalize",
-                            activeOrder.status === 'ready' && "text-success-600",
-                            activeOrder.status === 'preparing' && "text-warning-600",
-                            activeOrder.status === 'pending' && "text-info-600"
-                          )}>
+                          <p
+                            className={cn(
+                              'text-xs capitalize',
+                              activeOrder.status === 'ready' && 'text-success-600',
+                              activeOrder.status === 'preparing' && 'text-warning-600',
+                              activeOrder.status === 'pending' && 'text-info-600'
+                            )}
+                          >
                             {activeOrder.mealType} {activeOrder.status}
                           </p>
                         )}
@@ -441,10 +502,10 @@ export function ParentDashboard({ children = mockChildren, className }: ParentDa
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
                     <YAxis />
-                    <Tooltip 
+                    <Tooltip
                       formatter={(value, name) => [
                         name === 'calories' ? `${value} cal` : `${value} cal`,
-                        name === 'calories' ? 'Consumed' : 'Target'
+                        name === 'calories' ? 'Consumed' : 'Target',
                       ]}
                     />
                     <Bar dataKey="calories" fill={COLORS.primary} name="calories" />
@@ -469,12 +530,12 @@ export function ParentDashboard({ children = mockChildren, className }: ParentDa
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="date" />
                     <YAxis />
-                    <Tooltip formatter={(value) => [formatCurrency(Number(value)), 'Amount Spent']} />
-                    <Area 
-                      type="monotone" 
-                      dataKey="amount" 
-                      stroke={COLORS.primary} 
-                      fill={COLORS.primary} 
+                    <Tooltip formatter={value => [formatCurrency(Number(value)), 'Amount Spent']} />
+                    <Area
+                      type="monotone"
+                      dataKey="amount"
+                      stroke={COLORS.primary}
+                      fill={COLORS.primary}
                       fillOpacity={0.6}
                     />
                   </AreaChart>
@@ -502,21 +563,23 @@ export function ParentDashboard({ children = mockChildren, className }: ParentDa
                     <p className="text-sm text-muted-foreground">Daily Average</p>
                   </div>
                 </div>
-                
+
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm">Trend vs Last Week</span>
-                    <span className={cn(
-                      "text-sm font-medium",
-                      mockSpendingAnalytics.trends.direction === 'up' 
-                        ? "text-error-600" 
-                        : "text-success-600"
-                    )}>
+                    <span
+                      className={cn(
+                        'text-sm font-medium',
+                        mockSpendingAnalytics.trends.direction === 'up'
+                          ? 'text-error-600'
+                          : 'text-success-600'
+                      )}
+                    >
                       {mockSpendingAnalytics.trends.direction === 'up' ? '+' : '-'}
                       {mockSpendingAnalytics.trends.percentage}%
                     </span>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-sm">Lunch Orders</span>
@@ -524,7 +587,7 @@ export function ParentDashboard({ children = mockChildren, className }: ParentDa
                     </div>
                     <Progress value={85} className="h-2" />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-sm">Snacks</span>
@@ -547,19 +610,24 @@ export function ParentDashboard({ children = mockChildren, className }: ParentDa
             <CardContent>
               <div className="space-y-4">
                 {Object.entries(mockChildrenOrders).map(([childId, orders]) => {
-                  const child = children.find(c => c.id === childId);
-                  return orders.map((order) => (
-                    <div key={order.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  const _child = children.find(c => c.id === childId);
+                  return orders.map(order => (
+                    <div
+                      key={order.id}
+                      className="flex items-center justify-between p-4 border rounded-lg"
+                    >
                       <div className="flex items-center space-x-3">
-                        <div className={cn(
-                          "w-3 h-3 rounded-full",
-                          order.status === 'ready' && "bg-success-500",
-                          order.status === 'preparing' && "bg-warning-500",
-                          order.status === 'completed' && "bg-gray-400",
-                          order.status === 'pending' && "bg-info-500"
-                        )} />
+                        <div
+                          className={cn(
+                            'w-3 h-3 rounded-full',
+                            order.status === 'ready' && 'bg-success-500',
+                            order.status === 'preparing' && 'bg-warning-500',
+                            order.status === 'completed' && 'bg-gray-400',
+                            order.status === 'pending' && 'bg-info-500'
+                          )}
+                        />
                         <div>
-                          <p className="font-medium">{child?.name}</p>
+                          <p className="font-medium">{_child?.name}</p>
                           <p className="text-sm text-muted-foreground">
                             {order.items[0]?.name} • {order.mealType}
                           </p>
@@ -570,13 +638,15 @@ export function ParentDashboard({ children = mockChildren, className }: ParentDa
                       </div>
                       <div className="text-right">
                         <p className="font-medium">{formatCurrency(order.totalAmount)}</p>
-                        <p className={cn(
-                          "text-xs capitalize",
-                          order.status === 'ready' && "text-success-600",
-                          order.status === 'preparing' && "text-warning-600",
-                          order.status === 'completed' && "text-gray-500",
-                          order.status === 'pending' && "text-info-600"
-                        )}>
+                        <p
+                          className={cn(
+                            'text-xs capitalize',
+                            order.status === 'ready' && 'text-success-600',
+                            order.status === 'preparing' && 'text-warning-600',
+                            order.status === 'completed' && 'text-gray-500',
+                            order.status === 'pending' && 'text-info-600'
+                          )}
+                        >
                           {order.status}
                         </p>
                       </div>
@@ -599,37 +669,43 @@ export function ParentDashboard({ children = mockChildren, className }: ParentDa
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {mockPaymentHistory.map((payment) => {
+                {mockPaymentHistory.map(payment => {
                   const child = children.find(c => c.id === payment.studentId);
                   return (
-                    <div key={payment.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div
+                      key={payment.id}
+                      className="flex items-center justify-between p-4 border rounded-lg"
+                    >
                       <div className="flex items-center space-x-3">
-                        <div className={cn(
-                          "w-8 h-8 rounded-full flex items-center justify-center",
-                          payment.type === 'credit' ? "bg-success-100" : "bg-error-100"
-                        )}>
+                        <div
+                          className={cn(
+                            'w-8 h-8 rounded-full flex items-center justify-center',
+                            payment.type === 'credit' ? 'bg-success-100' : 'bg-error-100'
+                          )}
+                        >
                           {payment.type === 'credit' ? (
-                            <TrendingUp className={cn("h-4 w-4 text-success-600")} />
+                            <TrendingUp className={cn('h-4 w-4 text-success-600')} />
                           ) : (
-                            <CreditCard className={cn("h-4 w-4 text-error-600")} />
+                            <CreditCard className={cn('h-4 w-4 text-error-600')} />
                           )}
                         </div>
                         <div>
                           <p className="font-medium">{child?.name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {payment.description}
-                          </p>
+                          <p className="text-sm text-muted-foreground">{payment.description}</p>
                           <p className="text-xs text-muted-foreground">
                             {formatDate(new Date(payment.date))}
                           </p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className={cn(
-                          "font-semibold",
-                          payment.type === 'credit' ? "text-success-600" : "text-error-600"
-                        )}>
-                          {payment.type === 'credit' ? '+' : '-'}{formatCurrency(payment.amount)}
+                        <p
+                          className={cn(
+                            'font-semibold',
+                            payment.type === 'credit' ? 'text-success-600' : 'text-error-600'
+                          )}
+                        >
+                          {payment.type === 'credit' ? '+' : '-'}
+                          {formatCurrency(payment.amount)}
                         </p>
                         <div className="flex items-center gap-1">
                           <CheckCircle className="h-3 w-3 text-success-500" />
@@ -657,28 +733,42 @@ export function ParentDashboard({ children = mockChildren, className }: ParentDa
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {mockNotifications.map((notification) => {
-                  const child = children.find(c => c.id === notification.studentId);
+                {mockNotifications.map(notification => {
                   return (
-                    <div key={notification.id} className={cn(
-                      "flex items-start justify-between p-4 border rounded-lg",
-                      !notification.read && "bg-blue-50 border-blue-200"
-                    )}>
+                    <div
+                      key={notification.id}
+                      className={cn(
+                        'flex items-start justify-between p-4 border rounded-lg',
+                        !notification.read && 'bg-blue-50 border-blue-200'
+                      )}
+                    >
                       <div className="flex items-start space-x-3">
-                        <div className={cn(
-                          "w-8 h-8 rounded-full flex items-center justify-center mt-1",
-                          notification.type === 'order_ready' && "bg-success-100",
-                          notification.type === 'low_balance' && "bg-warning-100",
-                          notification.type === 'order_placed' && "bg-info-100"
-                        )}>
-                          {notification.type === 'order_ready' && <CheckCircle className="h-4 w-4 text-success-600" />}
-                          {notification.type === 'low_balance' && <AlertTriangle className="h-4 w-4 text-warning-600" />}
-                          {notification.type === 'order_placed' && <Clock className="h-4 w-4 text-info-600" />}
+                        <div
+                          className={cn(
+                            'w-8 h-8 rounded-full flex items-center justify-center mt-1',
+                            notification.type === 'order_ready' && 'bg-success-100',
+                            notification.type === 'low_balance' && 'bg-warning-100',
+                            notification.type === 'order_placed' && 'bg-info-100'
+                          )}
+                        >
+                          {notification.type === 'order_ready' && (
+                            <CheckCircle className="h-4 w-4 text-success-600" />
+                          )}
+                          {notification.type === 'low_balance' && (
+                            <AlertTriangle className="h-4 w-4 text-warning-600" />
+                          )}
+                          {notification.type === 'order_placed' && (
+                            <Clock className="h-4 w-4 text-info-600" />
+                          )}
                         </div>
                         <div>
                           <p className="font-medium">{notification.message}</p>
                           <p className="text-xs text-muted-foreground">
-                            {formatDate(new Date(notification.timestamp), 'short')} at {new Date(notification.timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                            {formatDate(new Date(notification.timestamp), 'short')} at{' '}
+                            {new Date(notification.timestamp).toLocaleTimeString('en-IN', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
                           </p>
                         </div>
                       </div>

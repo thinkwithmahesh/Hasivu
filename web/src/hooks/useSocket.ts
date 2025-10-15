@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { wsManager } from '@/services/api';
@@ -22,7 +22,8 @@ export function useWebSocket(options?: UseWebSocketOptions) {
 
   useEffect(() => {
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') || undefined : undefined;
+      const token =
+        typeof window !== 'undefined' ? localStorage.getItem('authToken') || undefined : undefined;
       wsManager.connect(token);
     } catch (e) {
       // no-op

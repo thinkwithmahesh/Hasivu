@@ -1,6 +1,6 @@
 /**
  * HASIVU Platform - Accessibility Unit Tests
- * 
+ *
  * Comprehensive Jest-based accessibility testing for React components
  * Features:
  * - jest-axe integration for component accessibility testing
@@ -29,16 +29,13 @@ const TestComponent: React.FC<{ children?: React.ReactNode }> = ({ children }) =
 
   return (
     <div>
-      <button 
+      <button
         onClick={() => announceMessage('Test announcement')}
         aria-label="Make test announcement"
       >
         Announce
       </button>
-      <button 
-        onClick={() => setFontSize('large')}
-        aria-label="Increase font size"
-      >
+      <button onClick={() => setFontSize('large')} aria-label="Increase font size">
         Large Font
       </button>
       <div data-testid="font-size" aria-live="polite">
@@ -55,22 +52,13 @@ const TestForm: React.FC = () => {
     <form>
       <fieldset>
         <legend>User Information</legend>
-        
+
         <label htmlFor="name">Name (required)</label>
-        <input 
-          id="name" 
-          type="text" 
-          required 
-          aria-describedby="name-help"
-        />
+        <input id="name" type="text" required aria-describedby="name-help" />
         <div id="name-help">Enter your full name</div>
 
         <label htmlFor="email">Email</label>
-        <input 
-          id="email" 
-          type="email" 
-          aria-describedby="email-error"
-        />
+        <input id="email" type="email" aria-describedby="email-error" />
         <div id="email-error" role="alert" style={{ display: 'none' }}>
           Please enter a valid email
         </div>
@@ -98,16 +86,28 @@ const TestNavigation: React.FC = () => {
   return (
     <nav aria-label="Main navigation">
       <ul>
-        <li><a href="/" aria-current="page">Home</a></li>
-        <li><a href="/menu">Menu</a></li>
-        <li><a href="/dashboard">Dashboard</a></li>
+        <li>
+          <a href="/" aria-current="page">
+            Home
+          </a>
+        </li>
+        <li>
+          <a href="/menu">Menu</a>
+        </li>
+        <li>
+          <a href="/dashboard">Dashboard</a>
+        </li>
         <li>
           <button aria-expanded="false" aria-haspopup="true">
             More
           </button>
           <ul style={{ display: 'none' }}>
-            <li><a href="/profile">Profile</a></li>
-            <li><a href="/settings">Settings</a></li>
+            <li>
+              <a href="/profile">Profile</a>
+            </li>
+            <li>
+              <a href="/settings">Settings</a>
+            </li>
           </ul>
         </li>
       </ul>
@@ -120,16 +120,18 @@ const TestModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen,
   if (!isOpen) return null;
 
   return (
-    <div 
-      role="dialog" 
-      aria-modal="true" 
+    <div
+      role="dialog"
+      aria-modal="true"
       aria-labelledby="modal-title"
       aria-describedby="modal-description"
     >
       <div>
         <h2 id="modal-title">Modal Title</h2>
         <p id="modal-description">This is a test modal for accessibility testing.</p>
-        <button onClick={onClose} aria-label="Close modal">×</button>
+        <button onClick={onClose} aria-label="Close modal">
+          ×
+        </button>
         <button autoFocus>First Button</button>
         <button>Second Button</button>
       </div>
@@ -139,11 +141,7 @@ const TestModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen,
 
 // Utility function to render with accessibility provider
 const renderWithA11yProvider = (component: React.ReactElement) => {
-  return render(
-    <AccessibilityProvider>
-      {component}
-    </AccessibilityProvider>
-  );
+  return render(<AccessibilityProvider>{component}</AccessibilityProvider>);
 };
 
 describe('HASIVU Platform Accessibility Tests', () => {
@@ -157,7 +155,7 @@ describe('HASIVU Platform Accessibility Tests', () => {
 
     test('announces messages to screen readers', async () => {
       renderWithA11yProvider(<TestComponent />);
-      
+
       const announceButton = screen.getByLabelText('Make test announcement');
       fireEvent.click(announceButton);
 
@@ -171,7 +169,7 @@ describe('HASIVU Platform Accessibility Tests', () => {
     test('handles font size changes with announcements', async () => {
       const user = userEvent.setup();
       renderWithA11yProvider(<TestComponent />);
-      
+
       const fontButton = screen.getByLabelText('Increase font size');
       await user.click(fontButton);
 
@@ -184,13 +182,13 @@ describe('HASIVU Platform Accessibility Tests', () => {
     test('supports keyboard shortcuts', async () => {
       const user = userEvent.setup();
       renderWithA11yProvider(<TestComponent />);
-      
+
       // Test Alt+M shortcut for main content
       await user.keyboard('{Alt>}m{/Alt}');
-      
+
       // Test Alt++ for font size increase
       await user.keyboard('{Alt>}={/Alt}');
-      
+
       await waitFor(() => {
         const fontDisplay = screen.getByTestId('font-size');
         expect(fontDisplay).toHaveTextContent('medium');
@@ -214,7 +212,7 @@ describe('HASIVU Platform Accessibility Tests', () => {
       });
 
       renderWithA11yProvider(<TestComponent />);
-      
+
       // The component should render without errors
       expect(screen.getByLabelText('Make test announcement')).toBeInTheDocument();
     });
@@ -230,17 +228,17 @@ describe('HASIVU Platform Accessibility Tests', () => {
 
     test('all form inputs have proper labels', () => {
       render(<TestForm />);
-      
+
       const nameInput = screen.getByLabelText(/name/i);
       expect(nameInput).toHaveAttribute('id', 'name');
-      
+
       const emailInput = screen.getByLabelText(/email/i);
       expect(emailInput).toHaveAttribute('id', 'email');
     });
 
     test('required fields are properly marked', () => {
       render(<TestForm />);
-      
+
       const nameInput = screen.getByLabelText(/name.*required/i);
       expect(nameInput).toHaveAttribute('required');
       expect(nameInput).toBeRequired();
@@ -248,20 +246,20 @@ describe('HASIVU Platform Accessibility Tests', () => {
 
     test('form has proper fieldset and legend structure', () => {
       render(<TestForm />);
-      
+
       const mainFieldset = screen.getByRole('group', { name: /user information/i });
       expect(mainFieldset).toBeInTheDocument();
-      
+
       const preferencesFieldset = screen.getByRole('group', { name: /preferences/i });
       expect(preferencesFieldset).toBeInTheDocument();
     });
 
     test('radio buttons are grouped properly', () => {
       render(<TestForm />);
-      
+
       const themeRadios = screen.getAllByRole('radio');
       expect(themeRadios).toHaveLength(2);
-      
+
       themeRadios.forEach(radio => {
         expect(radio).toHaveAttribute('name', 'theme');
       });
@@ -269,10 +267,10 @@ describe('HASIVU Platform Accessibility Tests', () => {
 
     test('error messages have proper ARIA attributes', () => {
       render(<TestForm />);
-      
+
       const emailError = screen.getByRole('alert');
       expect(emailError).toHaveAttribute('id', 'email-error');
-      
+
       const emailInput = screen.getByLabelText(/email/i);
       expect(emailInput).toHaveAttribute('aria-describedby', 'email-error');
     });
@@ -288,21 +286,21 @@ describe('HASIVU Platform Accessibility Tests', () => {
 
     test('navigation has proper ARIA labels', () => {
       render(<TestNavigation />);
-      
+
       const nav = screen.getByRole('navigation', { name: /main navigation/i });
       expect(nav).toBeInTheDocument();
     });
 
     test('current page is properly indicated', () => {
       render(<TestNavigation />);
-      
+
       const homeLink = screen.getByRole('link', { name: /home/i });
       expect(homeLink).toHaveAttribute('aria-current', 'page');
     });
 
     test('dropdown menus have proper ARIA attributes', () => {
       render(<TestNavigation />);
-      
+
       const dropdownButton = screen.getByRole('button', { name: /more/i });
       expect(dropdownButton).toHaveAttribute('aria-expanded', 'false');
       expect(dropdownButton).toHaveAttribute('aria-haspopup', 'true');
@@ -311,11 +309,11 @@ describe('HASIVU Platform Accessibility Tests', () => {
     test('all navigation links are keyboard accessible', async () => {
       const user = userEvent.setup();
       render(<TestNavigation />);
-      
+
       const homeLink = screen.getByRole('link', { name: /home/i });
       await user.tab();
       expect(homeLink).toHaveFocus();
-      
+
       await user.tab();
       const menuLink = screen.getByRole('link', { name: /menu/i });
       expect(menuLink).toHaveFocus();
@@ -338,7 +336,7 @@ describe('HASIVU Platform Accessibility Tests', () => {
     test('modal has proper ARIA attributes', () => {
       const mockClose = jest.fn();
       render(<TestModal isOpen={true} onClose={mockClose} />);
-      
+
       const modal = screen.getByRole('dialog');
       expect(modal).toHaveAttribute('aria-modal', 'true');
       expect(modal).toHaveAttribute('aria-labelledby', 'modal-title');
@@ -348,7 +346,7 @@ describe('HASIVU Platform Accessibility Tests', () => {
     test('modal focuses first focusable element', () => {
       const mockClose = jest.fn();
       render(<TestModal isOpen={true} onClose={mockClose} />);
-      
+
       const firstButton = screen.getByRole('button', { name: /first button/i });
       expect(firstButton).toHaveFocus();
     });
@@ -357,20 +355,20 @@ describe('HASIVU Platform Accessibility Tests', () => {
       const user = userEvent.setup();
       const mockClose = jest.fn();
       render(<TestModal isOpen={true} onClose={mockClose} />);
-      
+
       const firstButton = screen.getByRole('button', { name: /first button/i });
       const secondButton = screen.getByRole('button', { name: /second button/i });
       const closeButton = screen.getByLabelText('Close modal');
-      
+
       // Tab through modal elements
       expect(firstButton).toHaveFocus();
-      
+
       await user.tab();
       expect(secondButton).toHaveFocus();
-      
+
       await user.tab();
       expect(closeButton).toHaveFocus();
-      
+
       // Tab should cycle back to first button
       await user.tab();
       expect(firstButton).toHaveFocus();
@@ -380,7 +378,7 @@ describe('HASIVU Platform Accessibility Tests', () => {
       const user = userEvent.setup();
       const mockClose = jest.fn();
       render(<TestModal isOpen={true} onClose={mockClose} />);
-      
+
       await user.keyboard('{Escape}');
       expect(mockClose).toHaveBeenCalledTimes(1);
     });
@@ -390,21 +388,21 @@ describe('HASIVU Platform Accessibility Tests', () => {
   describe('Keyboard Navigation', () => {
     test('skip links are properly implemented', async () => {
       const user = userEvent.setup();
-      
+
       renderWithA11yProvider(
         <div>
           <TestComponent />
           <main id="main-content">Main content</main>
         </div>
       );
-      
+
       // Tab to first element to reveal skip links
       await user.tab();
-      
+
       const skipLink = screen.getByRole('link', { name: /skip to main content/i });
       if (skipLink) {
         await user.click(skipLink);
-        
+
         const mainContent = screen.getByRole('main');
         expect(mainContent).toHaveFocus();
       }
@@ -413,14 +411,14 @@ describe('HASIVU Platform Accessibility Tests', () => {
     test('tab order is logical', async () => {
       const user = userEvent.setup();
       render(<TestForm />);
-      
+
       // Tab through form elements
       await user.tab();
       expect(screen.getByLabelText(/name/i)).toHaveFocus();
-      
+
       await user.tab();
       expect(screen.getByLabelText(/email/i)).toHaveFocus();
-      
+
       await user.tab();
       expect(screen.getByDisplayValue('light')).toHaveFocus();
     });
@@ -428,12 +426,12 @@ describe('HASIVU Platform Accessibility Tests', () => {
     test('focus indicators are visible', async () => {
       const user = userEvent.setup();
       render(<TestForm />);
-      
+
       const nameInput = screen.getByLabelText(/name/i);
       await user.click(nameInput);
-      
+
       expect(nameInput).toHaveFocus();
-      
+
       // Check if focus styles are applied (this would be a visual test in real scenarios)
       expect(nameInput).toHaveAttribute('id', 'name');
     });
@@ -450,11 +448,11 @@ describe('HASIVU Platform Accessibility Tests', () => {
           <h2>Another Section</h2>
         </div>
       );
-      
+
       const h1 = screen.getByRole('heading', { level: 1 });
       const h2s = screen.getAllByRole('heading', { level: 2 });
       const h3 = screen.getByRole('heading', { level: 3 });
-      
+
       expect(h1).toBeInTheDocument();
       expect(h2s).toHaveLength(2);
       expect(h3).toBeInTheDocument();
@@ -468,23 +466,23 @@ describe('HASIVU Platform Accessibility Tests', () => {
           <img src="avatar.jpg" alt="User profile picture" />
         </div>
       );
-      
+
       const logoImg = screen.getByAltText('HASIVU Platform Logo');
       expect(logoImg).toBeInTheDocument();
-      
+
       const decorativeImg = screen.getByRole('presentation');
       expect(decorativeImg).toHaveAttribute('alt', '');
-      
+
       const avatarImg = screen.getByAltText('User profile picture');
       expect(avatarImg).toBeInTheDocument();
     });
 
     test('live regions announce dynamic content', async () => {
       renderWithA11yProvider(<TestComponent />);
-      
+
       const announceButton = screen.getByLabelText('Make test announcement');
       fireEvent.click(announceButton);
-      
+
       // Check that live region exists and will announce content
       await waitFor(() => {
         const liveRegions = screen.getAllByRole('status');
@@ -512,7 +510,7 @@ describe('HASIVU Platform Accessibility Tests', () => {
       });
 
       renderWithA11yProvider(<TestComponent />);
-      
+
       // Component should render without errors
       expect(screen.getByLabelText('Make test announcement')).toBeInTheDocument();
     });
@@ -534,7 +532,7 @@ describe('HASIVU Platform Accessibility Tests', () => {
       });
 
       renderWithA11yProvider(<TestComponent />);
-      
+
       // Component should render without errors
       expect(screen.getByLabelText('Make test announcement')).toBeInTheDocument();
     });
@@ -550,7 +548,7 @@ describe('HASIVU Platform Accessibility Tests', () => {
           <TestNavigation />
         </div>
       );
-      
+
       // Run comprehensive axe check
       const results = await axe(container, {
         rules: {
@@ -560,7 +558,7 @@ describe('HASIVU Platform Accessibility Tests', () => {
           'focus-visible': { enabled: true },
         },
       });
-      
+
       expect(results).toHaveNoViolations();
     });
   });

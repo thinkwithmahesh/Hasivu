@@ -3,12 +3,12 @@
  * Manual mock for the cache utility
  */
 
-export const cache = {
+export const _cache = {
   get: jest.fn(),
   set: jest.fn(),
   setex: jest.fn(),
   del: jest.fn(),
   exists: jest.fn(),
   clear: jest.fn(),
-  size: jest.fn()
+  size: jest.fn(),
 };

@@ -30,13 +30,13 @@ async function checkDatabaseHealth() {
         };
     }
     catch (error) {
-        logger.error('Database health check failed', { error: error.message });
+        logger.error('Database health check failed', { error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) });
         return {
             name: 'database',
             status: 'unhealthy',
             responseTime: Date.now() - startTime,
             details: {
-                error: error.message,
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
                 type: 'PostgreSQL'
             },
             lastChecked: new Date().toISOString()
@@ -78,13 +78,13 @@ async function checkRedisHealth() {
         };
     }
     catch (error) {
-        logger.error('Redis health check failed', { error: error.message });
+        logger.error('Redis health check failed', { error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) });
         return {
             name: 'redis',
             status: 'unhealthy',
             responseTime: Date.now() - startTime,
             details: {
-                error: error.message,
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
                 type: 'Redis'
             },
             lastChecked: new Date().toISOString()
@@ -114,13 +114,13 @@ async function checkExternalServicesHealth() {
         });
     }
     catch (error) {
-        logger.error('WhatsApp health check failed', { error: error.message });
+        logger.error('WhatsApp health check failed', { error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) });
         externalServices.push({
             name: 'whatsapp_business_api',
             status: 'unhealthy',
             responseTime: 0,
             details: {
-                error: error.message
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
             },
             lastChecked: new Date().toISOString()
         });
@@ -145,13 +145,13 @@ async function checkExternalServicesHealth() {
         });
     }
     catch (error) {
-        logger.error('Payment gateway health check failed', { error: error.message });
+        logger.error('Payment gateway health check failed', { error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) });
         externalServices.push({
             name: 'payment_gateways',
             status: 'unhealthy',
             responseTime: 0,
             details: {
-                error: error.message
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
             },
             lastChecked: new Date().toISOString()
         });
@@ -235,7 +235,7 @@ const systemHealthCheckHandler = async (event, context) => {
         const duration = Date.now() - startTime;
         logger.error('System health check failed', {
             requestId,
-            error: error.message,
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
             duration: `${duration}ms`
         });
         return (0, response_utils_1.handleError)(error, 'System health check failed');

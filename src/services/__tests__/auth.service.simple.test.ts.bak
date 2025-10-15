@@ -1,0 +1,209 @@
+/**
+ * HASIVU Platform - AuthService Simple Tests
+ * Basic test coverage for authentication service
+ */
+
+import { AuthService } from '../auth.service';
+
+// Mock the external dependencies at module level
+jest.mock('bcryptjs', () => ({
+  hash: jest.fn().mockResolvedValue('hashed-password'),
+  compare: jest.fn().mockResolvedValue(true)
+}));
+
+jest.mock('jsonwebtoken', () => ({
+  sign: jest.fn().mockReturnValue('mock-jwt-token'),
+  verify: jest.fn().mockReturnValue({ userId: 'test-user', role: 'PARENT' }),
+  decode: jest.fn().mockReturnValue({ exp: Math.floor(Date.now() / 1000) + 3600 })
+}));
+
+jest.mock('crypto', () => ({
+  randomBytes: jest.fn().mockReturnValue(Buffer.from('test-session-id-1234567890123456'))
+}));
+
+jest.mock('../redis.service', () => ({
+  RedisService: {
+    get: jest.fn().mockResolvedValue(null),
+    set: jest.fn().mockResolvedValue('OK'),
+    setex: jest.fn().mockResolvedValue('OK'),
+    del: jest.fn().mockResolvedValue(1)
+  }
+}));
+
+jest.mock('../database.service', () => ({
+  DatabaseService: {
+    client: {
+      user: {
+        findUnique: jest.fn(),
+        create: jest.fn(),
+        update: jest.fn(),
+        delete: jest.fn()
+      }
+    }
+  }
+}));
+
+jest.mock('../../utils/logger', () => ({
+  logger: {
+    info: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+    debug: jest.fn()
+  }
+}));
+
+// Mock environment config
+jest.mock('../../config/environment', () => ({
+  config: {
+    jwt: {
+      secret: 'test-jwt-secret-key-12345',
+      refreshSecret: 'test-refresh-secret-key-12345'
+    }
+  }
+}));
+
+describe('AuthService - Simple Tests', () => {
+  let authService: AuthService;
+
+  beforeEach(() => {
+    authService = new AuthService();
+  });
+
+  describe('Basic Functionality', () => {
+    it('should create AuthService instance', () => {
+      expect(authService).toBeInstanceOf(AuthService);
+    });
+
+    it('should validate configuration', () => {
+      const validation = authService.validateConfiguration();
+      expect(validation.isValid).toBe(true);
+      expect(validation.missingConfigs).toHaveLength(0);
+    });
+
+    it('should hash password', async () => {
+      const password = 'TestPassword123!';
+      const result = await authService.hashPassword(password);
+      expect(result).toBe('hashed-password');
+    });
+
+    it('should verify password', async () => {
+      const password = 'TestPassword123!';
+      const hash = 'hashed-password';
+      const result = await authService.verifyPassword(password, hash);
+      expect(result).toBe(true);
+    });
+
+    it('should validate strong password', () => {
+      const password = 'StrongPassword123!';
+      const result = authService.validatePassword(password);
+      expect(result.valid).toBe(true);
+      expect(result.score).toBeGreaterThan(0);
+    });
+
+    it('should validate weak password', () => {
+      const password = 'weak';
+      const result = authService.validatePassword(password);
+      expect(result.valid).toBe(false);
+      expect(result.message).toContain('at least 8 characters');
+    });
+
+    it('should handle empty password validation', () => {
+      const result = authService.validatePassword('');
+      expect(result.valid).toBe(false);
+    });
+
+    it('should update session activity without throwing', async () => {
+      await expect(authService.updateSessionActivity('test-session')).resolves.not.toThrow();
+    });
+
+    it('should revoke session without throwing', async () => {
+      await expect(authService.revokeSession('test-session')).resolves.not.toThrow();
+    });
+
+    it('should blacklist token without throwing', async () => {
+      await expect(authService.blacklistToken('test-token')).resolves.not.toThrow();
+    });
+  });
+
+  describe('Password Requirements', () => {
+    it('should enforce minimum length', () => {
+      const shortPassword = '1234567'; // 7 chars
+      const result = authService.validatePassword(shortPassword);
+      expect(result.valid).toBe(false);
+      expect(result.requirements?.length).toBe(false);
+    });
+
+    it('should require uppercase letters', () => {
+      const password = 'lowercase123!';
+      const result = authService.validatePassword(password);
+      expect(result.valid).toBe(false);
+      expect(result.requirements?.uppercase).toBe(false);
+    });
+
+    it('should require lowercase letters', () => {
+      const password = 'UPPERCASE123!';
+      const result = authService.validatePassword(password);
+      expect(result.valid).toBe(false);
+      expect(result.requirements?.lowercase).toBe(false);
+    });
+
+    it('should require numbers', () => {
+      const password = 'NoNumbers!';
+      const result = authService.validatePassword(password);
+      expect(result.valid).toBe(false);
+      expect(result.requirements?.numbers).toBe(false);
+    });
+
+    it('should require symbols', () => {
+      const password = 'NoSymbols123';
+      const result = authService.validatePassword(password);
+      expect(result.valid).toBe(false);
+      expect(result.requirements?.symbols).toBe(false);
+    });
+  });
+
+  describe('Token Verification', () => {
+    it('should verify valid token', async () => {
+      const token = 'valid-token';
+      const result = await authService.verifyToken(token);
+      expect(result.userId).toBe('test-user');
+      expect(result.role).toBe('PARENT');
+    });
+
+    it('should handle token verification errors', async () => {
+      const jwt = require('jsonwebtoken');
+      jwt.verify.mockImplementationOnce(() => {
+        throw new Error('Invalid token');
+      });
+
+      await expect(authService.verifyToken('invalid-token')).rejects.toThrow('Invalid or expired token');
+    });
+  });
+
+  describe('Error Handling', () => {
+    it('should handle password hashing errors', async () => {
+      const bcrypt = require('bcryptjs');
+      bcrypt.hash.mockRejectedValueOnce(new Error('Hashing failed'));
+
+      await expect(authService.hashPassword('password')).rejects.toThrow('Password hashing failed');
+    });
+
+    it('should handle password verification errors', async () => {
+      const bcrypt = require('bcryptjs');
+      bcrypt.compare.mockRejectedValueOnce(new Error('Compare failed'));
+
+      const result = await authService.verifyPassword('password', 'hash');
+      expect(result).toBe(false);
+    });
+
+    it('should reject empty passwords', async () => {
+      await expect(authService.hashPassword('')).rejects.toThrow('Password cannot be empty');
+      await expect(authService.hashPassword('   ')).rejects.toThrow('Password cannot be empty');
+    });
+
+    it('should return false for empty password verification inputs', async () => {
+      expect(await authService.verifyPassword('', 'hash')).toBe(false);
+      expect(await authService.verifyPassword('password', '')).toBe(false);
+    });
+  });
+});

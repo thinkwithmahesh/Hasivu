@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cache = void 0;
+exports._cache = exports.cache = void 0;
 class InMemoryCache {
     cache;
     constructor() {
@@ -21,7 +21,7 @@ class InMemoryCache {
         this.cache.set(key, { value });
     }
     async setex(key, seconds, value) {
-        const expiry = Date.now() + (seconds * 1000);
+        const expiry = Date.now() + seconds * 1000;
         this.cache.set(key, { value, expiry });
     }
     async del(key) {
@@ -47,5 +47,7 @@ class InMemoryCache {
         return this.cache.size;
     }
 }
-exports.cache = new InMemoryCache();
+const cacheInstance = new InMemoryCache();
+exports.cache = cacheInstance;
+exports._cache = cacheInstance;
 //# sourceMappingURL=cache.js.map

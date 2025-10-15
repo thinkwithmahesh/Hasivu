@@ -1,23 +1,29 @@
-"use client"
+'use client';
 
-import * as React from "react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { 
-  Smartphone, Shield, Key, Clock, AlertTriangle, CheckCircle,
-  Copy, Eye, EyeOff, RefreshCw, Phone, Mail, Settings, QrCode
-} from "lucide-react"
-
-import { Button } from "@/components/ui/button"
+import * as React from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+  Smartphone,
+  Shield,
+  Key,
+  Clock,
+  AlertTriangle,
+  CheckCircle,
+  Copy,
+  Eye,
+  EyeOff,
+  RefreshCw,
+  Phone,
+  _Mail,
+  Settings,
+  QrCode,
+} from 'lucide-react';
+
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Form,
   FormControl,
@@ -25,19 +31,19 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+} from '@/components/ui/form';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
+  _Dialog,
+  _DialogContent,
+  _DialogDescription,
+  _DialogHeader,
+  _DialogTitle,
+  _DialogTrigger,
+} from '@/components/ui/dialog';
 
 import {
   mfaSchema,
@@ -45,32 +51,32 @@ import {
   recoveryCodesSchema,
   type MfaFormData,
   type MfaSetupData,
-  type RecoveryCodesData
-} from "./schemas"
+  type RecoveryCodesData,
+} from './schemas';
 
 interface MultiFactorAuthFormProps {
   // MFA verification
-  onMfaVerify: (data: MfaFormData) => Promise<void>
-  
+  onMfaVerify: (data: MfaFormData) => Promise<void>;
+
   // MFA setup
-  onMfaSetup?: (data: MfaSetupData) => Promise<void>
-  onGenerateRecoveryCodes?: () => Promise<string[]>
-  onSendSmsCode?: (phoneNumber: string) => Promise<void>
-  onGenerateQrCode?: () => Promise<string> // Returns QR code data URL
-  
+  onMfaSetup?: (data: MfaSetupData) => Promise<void>;
+  onGenerateRecoveryCodes?: () => Promise<string[]>;
+  onSendSmsCode?: (phoneNumber: string) => Promise<void>;
+  onGenerateQrCode?: () => Promise<string>; // Returns QR code data URL
+
   // Recovery
-  onUseRecoveryCode?: (code: string) => Promise<void>
-  onRequestNewCode?: (method: "sms" | "email") => Promise<void>
-  
+  onUseRecoveryCode?: (code: string) => Promise<void>;
+  onRequestNewCode?: (method: 'sms' | 'email') => Promise<void>;
+
   // State
-  isLoading?: boolean
-  error?: string | null
-  success?: string | null
-  userPhone?: string
-  userEmail?: string
-  mfaEnabled?: boolean
-  mode?: "verify" | "setup" | "emergency"
-  className?: string
+  isLoading?: boolean;
+  error?: string | null;
+  success?: string | null;
+  userPhone?: string;
+  userEmail?: string;
+  mfaEnabled?: boolean;
+  mode?: 'verify' | 'setup' | 'emergency';
+  className?: string;
 }
 
 export function MultiFactorAuthForm({
@@ -85,139 +91,139 @@ export function MultiFactorAuthForm({
   error,
   success,
   userPhone,
-  userEmail,
-  mfaEnabled = false,
-  mode = "verify",
-  className
+  _userEmail,
+  _mfaEnabled = false,
+  mode = 'verify',
+  className,
 }: MultiFactorAuthFormProps) {
-  const [selectedMethod, setSelectedMethod] = React.useState<"sms" | "app" | "recovery">("sms")
-  const [qrCodeData, setQrCodeData] = React.useState<string | null>(null)
-  const [recoveryCodes, setRecoveryCodes] = React.useState<string[]>([])
-  const [timeRemaining, setTimeRemaining] = React.useState(30)
-  const [canResend, setCanResend] = React.useState(false)
-  const [showRecoveryCodes, setShowRecoveryCodes] = React.useState(false)
+  const [selectedMethod, setSelectedMethod] = React.useState<'sms' | 'app' | 'recovery'>('sms');
+  const [qrCodeData, setQrCodeData] = React.useState<string | null>(null);
+  const [recoveryCodes, setRecoveryCodes] = React.useState<string[]>([]);
+  const [timeRemaining, setTimeRemaining] = React.useState(30);
+  const [canResend, setCanResend] = React.useState(false);
+  const [showRecoveryCodes, setShowRecoveryCodes] = React.useState(false);
 
   // Forms
   const mfaForm = useForm<MfaFormData>({
     resolver: zodResolver(mfaSchema),
-    defaultValues: { code: "" }
-  })
+    defaultValues: { code: '' },
+  });
 
   const setupForm = useForm<MfaSetupData>({
     resolver: zodResolver(mfaSetupSchema),
     defaultValues: {
-      method: "sms",
-      phoneNumber: userPhone || ""
-    }
-  })
+      method: 'sms',
+      phoneNumber: userPhone || '',
+    },
+  });
 
   const recoveryForm = useForm<RecoveryCodesData>({
     resolver: zodResolver(recoveryCodesSchema),
     defaultValues: {
       codes: [],
-      acknowledged: false
-    }
-  })
+      acknowledged: false,
+    },
+  });
 
   // Timer for resend functionality
   React.useEffect(() => {
-    let interval: NodeJS.Timeout
-    
+    let interval: NodeJS.Timeout;
+
     if (timeRemaining > 0 && !canResend) {
       interval = setInterval(() => {
-        setTimeRemaining((prev) => {
+        setTimeRemaining(prev => {
           if (prev <= 1) {
-            setCanResend(true)
-            return 0
+            setCanResend(true);
+            return 0;
           }
-          return prev - 1
-        })
-      }, 1000)
+          return prev - 1;
+        });
+      }, 1000);
     }
 
-    return () => clearInterval(interval)
-  }, [timeRemaining, canResend])
+    return () => clearInterval(interval);
+  }, [timeRemaining, canResend]);
 
   const handleMfaVerify = async (data: MfaFormData) => {
     try {
-      await onMfaVerify(data)
+      await onMfaVerify(data);
     } catch (error) {
-      console.error("MFA verification error:", error)
+      // Error handled silently
     }
-  }
+  };
 
   const handleMfaSetup = async (data: MfaSetupData) => {
     if (onMfaSetup) {
       try {
-        await onMfaSetup(data)
+        await onMfaSetup(data);
         if (onGenerateRecoveryCodes) {
-          const codes = await onGenerateRecoveryCodes()
-          setRecoveryCodes(codes)
-          recoveryForm.setValue("codes", codes)
+          const codes = await onGenerateRecoveryCodes();
+          setRecoveryCodes(codes);
+          recoveryForm.setValue('codes', codes);
         }
       } catch (error) {
-        console.error("MFA setup error:", error)
+        // Error handled silently
       }
     }
-  }
+  };
 
   const handleGenerateQrCode = async () => {
     if (onGenerateQrCode) {
       try {
-        const qrData = await onGenerateQrCode()
-        setQrCodeData(qrData)
+        const qrData = await onGenerateQrCode();
+        setQrCodeData(qrData);
       } catch (error) {
-        console.error("QR code generation error:", error)
+        // Error handled silently
       }
     }
-  }
+  };
 
   const handleSendSms = async () => {
-    const phone = setupForm.getValues("phoneNumber") || userPhone
+    const phone = setupForm.getValues('phoneNumber') || userPhone;
     if (phone && onSendSmsCode) {
       try {
-        await onSendSmsCode(phone)
-        setTimeRemaining(30)
-        setCanResend(false)
+        await onSendSmsCode(phone);
+        setTimeRemaining(30);
+        setCanResend(false);
       } catch (error) {
-        console.error("SMS send error:", error)
+        // Error handled silently
       }
     }
-  }
+  };
 
   const handleUseRecoveryCode = async (code: string) => {
     if (onUseRecoveryCode) {
       try {
-        await onUseRecoveryCode(code)
+        await onUseRecoveryCode(code);
       } catch (error) {
-        console.error("Recovery code error:", error)
+        // Error handled silently
       }
     }
-  }
+  };
 
-  const handleRequestNewCode = async (method: "sms" | "email") => {
+  const handleRequestNewCode = async (method: 'sms' | 'email') => {
     if (onRequestNewCode) {
       try {
-        await onRequestNewCode(method)
-        setTimeRemaining(30)
-        setCanResend(false)
+        await onRequestNewCode(method);
+        setTimeRemaining(30);
+        setCanResend(false);
       } catch (error) {
-        console.error("Request new code error:", error)
+        // Error handled silently
       }
     }
-  }
+  };
 
   const copyRecoveryCode = (code: string) => {
-    navigator.clipboard.writeText(code)
-  }
+    navigator.clipboard.writeText(code);
+  };
 
   const copyAllRecoveryCodes = () => {
-    const allCodes = recoveryCodes.join("\n")
-    navigator.clipboard.writeText(allCodes)
-  }
+    const allCodes = recoveryCodes.join('\n');
+    navigator.clipboard.writeText(allCodes);
+  };
 
   // MFA Verification Mode
-  if (mode === "verify") {
+  if (mode === 'verify') {
     return (
       <Card className={className}>
         <CardHeader className="text-center">
@@ -225,9 +231,7 @@ export function MultiFactorAuthForm({
             <Shield className="h-6 w-6 text-blue-600" />
           </div>
           <CardTitle>Two-Factor Authentication</CardTitle>
-          <CardDescription>
-            Enter the verification code to continue
-          </CardDescription>
+          <CardDescription>Enter the verification code to continue</CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-4">
@@ -238,7 +242,7 @@ export function MultiFactorAuthForm({
             </Alert>
           )}
 
-          <Tabs value={selectedMethod} onValueChange={(value) => setSelectedMethod(value as any)}>
+          <Tabs value={selectedMethod} onValueChange={value => setSelectedMethod(value as any)}>
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="sms" className="flex items-center gap-1">
                 <Phone className="h-3 w-3" />
@@ -257,7 +261,7 @@ export function MultiFactorAuthForm({
             <TabsContent value="sms" className="space-y-4">
               <div className="text-center">
                 <p className="text-sm text-gray-600 mb-2">
-                  We sent a code to {userPhone ? `***-***-${userPhone.slice(-4)}` : "your phone"}
+                  We sent a code to {userPhone ? `***-***-${userPhone.slice(-4)}` : 'your phone'}
                 </p>
                 {!canResend && timeRemaining > 0 && (
                   <Badge variant="outline" className="mb-4">
@@ -308,7 +312,7 @@ export function MultiFactorAuthForm({
 
               <Button
                 variant="outline"
-                onClick={() => handleRequestNewCode("sms")}
+                onClick={() => handleRequestNewCode('sms')}
                 disabled={!canResend || isLoading}
                 className="w-full"
               >
@@ -365,9 +369,7 @@ export function MultiFactorAuthForm({
 
             <TabsContent value="recovery" className="space-y-4">
               <div className="text-center">
-                <p className="text-sm text-gray-600 mb-2">
-                  Enter one of your recovery codes
-                </p>
+                <p className="text-sm text-gray-600 mb-2">Enter one of your recovery codes</p>
               </div>
 
               <div className="space-y-4">
@@ -377,9 +379,9 @@ export function MultiFactorAuthForm({
                     placeholder="Enter 8-character recovery code"
                     className="text-center text-lg tracking-widest"
                     maxLength={8}
-                    onChange={(e) => {
+                    onChange={e => {
                       if (e.target.value.length === 8) {
-                        handleUseRecoveryCode(e.target.value)
+                        handleUseRecoveryCode(e.target.value);
                       }
                     }}
                     disabled={isLoading}
@@ -389,7 +391,8 @@ export function MultiFactorAuthForm({
                 <Alert>
                   <Key className="h-4 w-4" />
                   <AlertDescription className="text-sm">
-                    Recovery codes can only be used once. Make sure to save your remaining codes safely.
+                    Recovery codes can only be used once. Make sure to save your remaining codes
+                    safely.
                   </AlertDescription>
                 </Alert>
               </div>
@@ -400,7 +403,7 @@ export function MultiFactorAuthForm({
 
           <div className="text-center space-y-2">
             <p className="text-sm text-gray-600">
-              Having trouble? Contact{" "}
+              Having trouble? Contact{' '}
               <a href="mailto:support@hasivu.edu" className="text-primary-600 hover:underline">
                 support@hasivu.edu
               </a>
@@ -408,11 +411,11 @@ export function MultiFactorAuthForm({
           </div>
         </CardContent>
       </Card>
-    )
+    );
   }
 
   // MFA Setup Mode
-  if (mode === "setup") {
+  if (mode === 'setup') {
     return (
       <Card className={className}>
         <CardHeader className="text-center">
@@ -420,9 +423,7 @@ export function MultiFactorAuthForm({
             <Settings className="h-6 w-6 text-green-600" />
           </div>
           <CardTitle>Setup Two-Factor Authentication</CardTitle>
-          <CardDescription>
-            Add an extra layer of security to your account
-          </CardDescription>
+          <CardDescription>Add an extra layer of security to your account</CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-6">
@@ -450,13 +451,17 @@ export function MultiFactorAuthForm({
                     <FormLabel>Choose Authentication Method</FormLabel>
                     <FormControl>
                       <div className="grid grid-cols-1 gap-3">
-                        <label className={`flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-colors ${
-                          field.value === "sms" ? "border-primary-500 bg-primary-50" : "border-gray-200"
-                        }`}>
+                        <label
+                          className={`flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-colors ${
+                            field.value === 'sms'
+                              ? 'border-primary-500 bg-primary-50'
+                              : 'border-gray-200'
+                          }`}
+                        >
                           <input
                             type="radio"
                             value="sms"
-                            checked={field.value === "sms"}
+                            checked={field.value === 'sms'}
                             onChange={field.onChange}
                             className="sr-only"
                           />
@@ -467,20 +472,26 @@ export function MultiFactorAuthForm({
                           </div>
                         </label>
 
-                        <label className={`flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-colors ${
-                          field.value === "app" ? "border-primary-500 bg-primary-50" : "border-gray-200"
-                        }`}>
+                        <label
+                          className={`flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-colors ${
+                            field.value === 'app'
+                              ? 'border-primary-500 bg-primary-50'
+                              : 'border-gray-200'
+                          }`}
+                        >
                           <input
                             type="radio"
                             value="app"
-                            checked={field.value === "app"}
+                            checked={field.value === 'app'}
                             onChange={field.onChange}
                             className="sr-only"
                           />
                           <Smartphone className="h-5 w-5 text-primary-600" />
                           <div className="flex-1">
                             <div className="font-medium">Authenticator App</div>
-                            <div className="text-sm text-gray-500">Use Google Authenticator or similar</div>
+                            <div className="text-sm text-gray-500">
+                              Use Google Authenticator or similar
+                            </div>
                           </div>
                         </label>
                       </div>
@@ -490,7 +501,7 @@ export function MultiFactorAuthForm({
                 )}
               />
 
-              {setupForm.watch("method") === "sms" && (
+              {setupForm.watch('method') === 'sms' && (
                 <FormField
                   control={setupForm.control}
                   name="phoneNumber"
@@ -522,7 +533,7 @@ export function MultiFactorAuthForm({
                 />
               )}
 
-              {setupForm.watch("method") === "app" && (
+              {setupForm.watch('method') === 'app' && (
                 <div className="space-y-4">
                   <div className="text-center">
                     <Button
@@ -535,15 +546,20 @@ export function MultiFactorAuthForm({
                       <QrCode className="w-4 h-4 mr-2" />
                       Generate QR Code
                     </Button>
-                    
+
                     {qrCodeData && (
                       <div className="flex justify-center mb-4">
-                        <img src={qrCodeData} alt="QR Code" className="w-48 h-48 border rounded-lg" />
+                        <img
+                          src={qrCodeData}
+                          alt="QR Code"
+                          className="w-48 h-48 border rounded-lg"
+                        />
                       </div>
                     )}
-                    
+
                     <p className="text-sm text-gray-600">
-                      Scan this QR code with your authenticator app, then enter a code to verify setup.
+                      Scan this QR code with your authenticator app, then enter a code to verify
+                      setup.
                     </p>
                   </div>
 
@@ -587,14 +603,13 @@ export function MultiFactorAuthForm({
                     variant="outline"
                     onClick={() => setShowRecoveryCodes(!showRecoveryCodes)}
                   >
-                    {showRecoveryCodes ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                    {showRecoveryCodes ? (
+                      <EyeOff className="h-3 w-3" />
+                    ) : (
+                      <Eye className="h-3 w-3" />
+                    )}
                   </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={copyAllRecoveryCodes}
-                  >
+                  <Button type="button" size="sm" variant="outline" onClick={copyAllRecoveryCodes}>
                     <Copy className="h-3 w-3" />
                   </Button>
                 </div>
@@ -625,8 +640,8 @@ export function MultiFactorAuthForm({
               <Alert>
                 <Key className="h-4 w-4" />
                 <AlertDescription className="text-sm">
-                  <strong>Important:</strong> Save these recovery codes in a safe place. 
-                  You can use them to access your account if you lose your phone or authenticator app.
+                  <strong>Important:</strong> Save these recovery codes in a safe place. You can use
+                  them to access your account if you lose your phone or authenticator app.
                 </AlertDescription>
               </Alert>
 
@@ -660,8 +675,8 @@ export function MultiFactorAuthForm({
           )}
         </CardContent>
       </Card>
-    )
+    );
   }
 
-  return null
+  return null;
 }

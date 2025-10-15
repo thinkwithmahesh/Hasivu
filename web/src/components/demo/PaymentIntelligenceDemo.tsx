@@ -1,27 +1,23 @@
-"use client";
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  Shield, 
-  TrendingUp, 
-  Brain, 
+import {
+  Shield,
+  TrendingUp,
+  Brain,
   CreditCard,
   AlertTriangle,
   CheckCircle,
-  XCircle,
   Activity,
   DollarSign,
-  PieChart,
-  BarChart3,
   Users,
   Zap,
   RefreshCw,
-  Lock
 } from 'lucide-react';
-import { hasiviApi } from '@/services/api/hasivu-api.service';
+import { hasiviApi as _hasiviApi } from '@/services/api/hasivu-api.service';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Button as _Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -29,8 +25,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   LineChart,
   Line,
-  AreaChart,
-  Area,
   BarChart,
   Bar,
   XAxis,
@@ -39,9 +33,6 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  RadialBarChart,
-  RadialBar,
-  PolarAngleAxis
 } from 'recharts';
 
 // Demo payment transactions for testing
@@ -54,7 +45,7 @@ const DEMO_TRANSACTIONS = [
     riskScore: 12,
     status: 'approved',
     paymentMethod: 'Credit Card',
-    location: 'Springfield Elementary'
+    location: 'Springfield Elementary',
   },
   {
     id: 'TXN-002',
@@ -65,7 +56,7 @@ const DEMO_TRANSACTIONS = [
     status: 'flagged',
     paymentMethod: 'Debit Card',
     location: 'Unknown Location',
-    anomaly: 'Unusual location pattern'
+    anomaly: 'Unusual location pattern',
   },
   {
     id: 'TXN-003',
@@ -75,8 +66,8 @@ const DEMO_TRANSACTIONS = [
     riskScore: 8,
     status: 'approved',
     paymentMethod: 'Wallet',
-    location: 'Springfield Elementary'
-  }
+    location: 'Springfield Elementary',
+  },
 ];
 
 // ML Model metrics
@@ -85,19 +76,19 @@ const ML_METRICS = {
     accuracy: 99.7,
     falsePositives: 0.1,
     truePositives: 99.6,
-    processingTime: 187
+    processingTime: 187,
   },
   churnPrediction: {
     accuracy: 94,
     precision: 92,
     recall: 96,
-    f1Score: 94
+    f1Score: 94,
   },
   revenueForecasting: {
     accuracy: 97,
     mape: 3.2, // Mean Absolute Percentage Error
-    confidence: 95
-  }
+    confidence: 95,
+  },
 };
 
 // Revenue data for charts
@@ -107,7 +98,7 @@ const revenueData = [
   { month: 'Mar', actual: 48000, predicted: 48500, transactions: 1300 },
   { month: 'Apr', actual: 55000, predicted: 54200, transactions: 1500 },
   { month: 'May', actual: 61000, predicted: 60500, transactions: 1650 },
-  { month: 'Jun', actual: 58000, predicted: 58300, transactions: 1580 }
+  { month: 'Jun', actual: 58000, predicted: 58300, transactions: 1580 },
 ];
 
 // Payment success rate data
@@ -115,7 +106,7 @@ const paymentSuccessData = [
   { name: 'Credit Card', success: 98, failed: 2 },
   { name: 'Debit Card', success: 96, failed: 4 },
   { name: 'Wallet', success: 99.5, failed: 0.5 },
-  { name: 'UPI', success: 97, failed: 3 }
+  { name: 'UPI', success: 97, failed: 3 },
 ];
 
 const PaymentIntelligenceDemo: React.FC = () => {
@@ -125,7 +116,7 @@ const PaymentIntelligenceDemo: React.FC = () => {
     totalTransactions: 2347892,
     fraudsPrevented: 180,
     moneySaved: 2300000,
-    activeModels: 4
+    activeModels: 4,
   });
   const [activeTab, setActiveTab] = useState('fraud-detection');
 
@@ -136,7 +127,7 @@ const PaymentIntelligenceDemo: React.FC = () => {
         totalTransactions: prev.totalTransactions + Math.floor(Math.random() * 10),
         fraudsPrevented: prev.fraudsPrevented + (Math.random() > 0.95 ? 1 : 0),
         moneySaved: prev.moneySaved + Math.floor(Math.random() * 1000),
-        activeModels: 4
+        activeModels: 4,
       }));
     }, 3000);
 
@@ -156,18 +147,18 @@ const PaymentIntelligenceDemo: React.FC = () => {
         riskFactors: [
           transaction.riskScore > 80 ? 'Unusual location pattern' : null,
           transaction.amount > 500 ? 'High transaction amount' : null,
-          'First-time payment method'
+          'First-time payment method',
         ].filter(Boolean),
         recommendation: transaction.riskScore > 80 ? 'Manual Review Required' : 'Auto-Approve',
         confidence: 95 + Math.random() * 5,
-        processingTime: 150 + Math.floor(Math.random() * 100)
+        processingTime: 150 + Math.floor(Math.random() * 100),
       },
       behaviorAnalysis: {
         typicalAmount: 85,
         typicalTime: '12:00 PM',
         frequencyScore: 85,
-        consistencyScore: transaction.riskScore < 50 ? 92 : 45
-      }
+        consistencyScore: transaction.riskScore < 50 ? 92 : 45,
+      },
     };
 
     setSelectedTransaction(analysis);
@@ -190,9 +181,7 @@ const PaymentIntelligenceDemo: React.FC = () => {
     <div className="w-full max-w-7xl mx-auto p-6 space-y-6">
       {/* Header */}
       <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">
-          AI Payment Intelligence Live Demo
-        </h2>
+        <h2 className="text-3xl font-bold text-gray-900 mb-2">AI Payment Intelligence Live Demo</h2>
         <p className="text-gray-600">
           Experience our ML-powered fraud detection and payment optimization
         </p>
@@ -205,7 +194,9 @@ const PaymentIntelligenceDemo: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Total Processed</p>
-                <p className="text-2xl font-bold">{liveMetrics.totalTransactions.toLocaleString()}</p>
+                <p className="text-2xl font-bold">
+                  {liveMetrics.totalTransactions.toLocaleString()}
+                </p>
               </div>
               <Activity className="h-8 w-8 text-blue-500" />
             </div>
@@ -229,7 +220,9 @@ const PaymentIntelligenceDemo: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Money Saved</p>
-                <p className="text-2xl font-bold">₹{(liveMetrics.moneySaved / 100000).toFixed(1)}L</p>
+                <p className="text-2xl font-bold">
+                  ₹{(liveMetrics.moneySaved / 100000).toFixed(1)}L
+                </p>
               </div>
               <DollarSign className="h-8 w-8 text-purple-500" />
             </div>
@@ -266,12 +259,10 @@ const PaymentIntelligenceDemo: React.FC = () => {
                   <Shield className="h-5 w-5" />
                   Live Transaction Stream
                 </CardTitle>
-                <CardDescription>
-                  Click on a transaction to see AI analysis
-                </CardDescription>
+                <CardDescription>Click on a transaction to see AI analysis</CardDescription>
               </CardHeader>
               <CardContent className="space-y-2">
-                {DEMO_TRANSACTIONS.map((transaction) => (
+                {DEMO_TRANSACTIONS.map(transaction => (
                   <motion.div
                     key={transaction.id}
                     whileHover={{ scale: 1.02 }}
@@ -280,17 +271,22 @@ const PaymentIntelligenceDemo: React.FC = () => {
                   >
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-full ${
-                          transaction.status === 'approved' ? 'bg-green-100' : 'bg-yellow-100'
-                        }`}>
-                          {transaction.status === 'approved' ? 
-                            <CheckCircle className="h-4 w-4 text-green-600" /> :
+                        <div
+                          className={`p-2 rounded-full ${
+                            transaction.status === 'approved' ? 'bg-green-100' : 'bg-yellow-100'
+                          }`}
+                        >
+                          {transaction.status === 'approved' ? (
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                          ) : (
                             <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                          }
+                          )}
                         </div>
                         <div>
                           <p className="font-medium">{transaction.studentName}</p>
-                          <p className="text-xs text-gray-500">{transaction.time} • {transaction.paymentMethod}</p>
+                          <p className="text-xs text-gray-500">
+                            {transaction.time} • {transaction.paymentMethod}
+                          </p>
                         </div>
                       </div>
                       <div className="text-right">
@@ -325,7 +321,7 @@ const PaymentIntelligenceDemo: React.FC = () => {
                   <div className="flex flex-col items-center justify-center h-64">
                     <motion.div
                       animate={{ rotate: 360 }}
-                      transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                      transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
                     >
                       <Brain className="h-12 w-12 text-blue-600" />
                     </motion.div>
@@ -338,7 +334,9 @@ const PaymentIntelligenceDemo: React.FC = () => {
                       <p className="text-sm font-medium mb-2">Risk Assessment</p>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm text-gray-600">Risk Score</span>
-                        <span className={`font-bold ${getRiskColor(selectedTransaction.riskScore)}`}>
+                        <span
+                          className={`font-bold ${getRiskColor(selectedTransaction.riskScore)}`}
+                        >
                           {selectedTransaction.riskScore}%
                         </span>
                       </div>
@@ -351,11 +349,15 @@ const PaymentIntelligenceDemo: React.FC = () => {
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
                           <span className="text-gray-600">Confidence</span>
-                          <span className="font-medium">{selectedTransaction.mlAnalysis.confidence.toFixed(1)}%</span>
+                          <span className="font-medium">
+                            {selectedTransaction.mlAnalysis.confidence.toFixed(1)}%
+                          </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-600">Processing Time</span>
-                          <span className="font-medium">{selectedTransaction.mlAnalysis.processingTime}ms</span>
+                          <span className="font-medium">
+                            {selectedTransaction.mlAnalysis.processingTime}ms
+                          </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-600">Recommendation</span>
@@ -371,9 +373,11 @@ const PaymentIntelligenceDemo: React.FC = () => {
                       <div className="p-3 bg-yellow-50 rounded-lg">
                         <p className="text-sm font-medium mb-2">Risk Factors Detected</p>
                         <ul className="text-sm text-yellow-800 space-y-1">
-                          {selectedTransaction.mlAnalysis.riskFactors.map((factor: string, i: number) => (
-                            <li key={i}>• {factor}</li>
-                          ))}
+                          {selectedTransaction.mlAnalysis.riskFactors.map(
+                            (factor: string, i: number) => (
+                              <li key={i}>• {factor}</li>
+                            )
+                          )}
                         </ul>
                       </div>
                     )}
@@ -384,11 +388,15 @@ const PaymentIntelligenceDemo: React.FC = () => {
                       <div className="grid grid-cols-2 gap-2 text-sm">
                         <div>
                           <span className="text-gray-600">Consistency</span>
-                          <p className="font-medium">{selectedTransaction.behaviorAnalysis.consistencyScore}%</p>
+                          <p className="font-medium">
+                            {selectedTransaction.behaviorAnalysis.consistencyScore}%
+                          </p>
                         </div>
                         <div>
                           <span className="text-gray-600">Frequency</span>
-                          <p className="font-medium">{selectedTransaction.behaviorAnalysis.frequencyScore}%</p>
+                          <p className="font-medium">
+                            {selectedTransaction.behaviorAnalysis.frequencyScore}%
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -450,7 +458,8 @@ const PaymentIntelligenceDemo: React.FC = () => {
                   Revenue Forecasting
                 </CardTitle>
                 <CardDescription>
-                  AI-powered revenue predictions with {ML_METRICS.revenueForecasting.accuracy}% accuracy
+                  AI-powered revenue predictions with {ML_METRICS.revenueForecasting.accuracy}%
+                  accuracy
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -461,17 +470,17 @@ const PaymentIntelligenceDemo: React.FC = () => {
                     <YAxis />
                     <Tooltip />
                     <Legend />
-                    <Line 
-                      type="monotone" 
-                      dataKey="actual" 
-                      stroke="#4CAF50" 
+                    <Line
+                      type="monotone"
+                      dataKey="actual"
+                      stroke="#4CAF50"
                       strokeWidth={2}
                       name="Actual Revenue"
                     />
-                    <Line 
-                      type="monotone" 
-                      dataKey="predicted" 
-                      stroke="#2196F3" 
+                    <Line
+                      type="monotone"
+                      dataKey="predicted"
+                      stroke="#2196F3"
                       strokeWidth={2}
                       strokeDasharray="5 5"
                       name="ML Prediction"
@@ -481,7 +490,9 @@ const PaymentIntelligenceDemo: React.FC = () => {
                 <div className="mt-4 p-3 bg-blue-50 rounded-lg">
                   <p className="text-sm font-medium mb-1">Next Month Forecast</p>
                   <p className="text-2xl font-bold text-blue-600">₹64,500</p>
-                  <p className="text-xs text-gray-600">Confidence: {ML_METRICS.revenueForecasting.confidence}%</p>
+                  <p className="text-xs text-gray-600">
+                    Confidence: {ML_METRICS.revenueForecasting.confidence}%
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -506,13 +517,13 @@ const PaymentIntelligenceDemo: React.FC = () => {
                       <span className="font-medium text-green-600">782 users</span>
                     </div>
                     <Progress value={78} className="h-2 bg-green-100" />
-                    
+
                     <div className="flex justify-between text-sm">
                       <span>Medium Risk (30-70%)</span>
                       <span className="font-medium text-yellow-600">156 users</span>
                     </div>
                     <Progress value={15} className="h-2 bg-yellow-100" />
-                    
+
                     <div className="flex justify-between text-sm">
                       <span>High Risk (70-100%)</span>
                       <span className="font-medium text-red-600">62 users</span>
@@ -535,7 +546,8 @@ const PaymentIntelligenceDemo: React.FC = () => {
                   <Alert className="bg-orange-50 border-orange-200">
                     <AlertTriangle className="h-4 w-4 text-orange-600" />
                     <AlertDescription className="text-sm">
-                      <strong>Alert:</strong> 12 high-value customers show increased churn risk this week
+                      <strong>Alert:</strong> 12 high-value customers show increased churn risk this
+                      week
                     </AlertDescription>
                   </Alert>
                 </div>
@@ -554,9 +566,7 @@ const PaymentIntelligenceDemo: React.FC = () => {
                   <RefreshCw className="h-5 w-5" />
                   AI-Powered Retry Optimization
                 </CardTitle>
-                <CardDescription>
-                  Intelligent payment retry scheduling
-                </CardDescription>
+                <CardDescription>Intelligent payment retry scheduling</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -605,9 +615,7 @@ const PaymentIntelligenceDemo: React.FC = () => {
                   <Zap className="h-5 w-5" />
                   Payment Method Optimization
                 </CardTitle>
-                <CardDescription>
-                  AI-recommended payment methods by success rate
-                </CardDescription>
+                <CardDescription>AI-recommended payment methods by success rate</CardDescription>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={250}>
@@ -620,11 +628,12 @@ const PaymentIntelligenceDemo: React.FC = () => {
                     <Bar dataKey="success" fill="#4CAF50" name="Success Rate %" />
                   </BarChart>
                 </ResponsiveContainer>
-                
+
                 <Alert className="mt-4 bg-green-50 border-green-200">
                   <Zap className="h-4 w-4 text-green-600" />
                   <AlertDescription className="text-sm">
-                    <strong>AI Recommendation:</strong> Promote Wallet payments for 2.5% higher success rate
+                    <strong>AI Recommendation:</strong> Promote Wallet payments for 2.5% higher
+                    success rate
                   </AlertDescription>
                 </Alert>
               </CardContent>

@@ -25,14 +25,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/30</span>
+                <span class='fraction'>0/26</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/8</span>
+                <span class='fraction'>0/4</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/30</span>
+                <span class='fraction'>0/26</span>
             </div>
         
             
@@ -155,14 +155,7 @@
 <a name='L90'></a><a href='#L90'>90</a>
 <a name='L91'></a><a href='#L91'>91</a>
 <a name='L92'></a><a href='#L92'>92</a>
-<a name='L93'></a><a href='#L93'>93</a>
-<a name='L94'></a><a href='#L94'>94</a>
-<a name='L95'></a><a href='#L95'>95</a>
-<a name='L96'></a><a href='#L96'>96</a>
-<a name='L97'></a><a href='#L97'>97</a>
-<a name='L98'></a><a href='#L98'>98</a>
-<a name='L99'></a><a href='#L99'>99</a>
-<a name='L100'></a><a href='#L100'>100</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L93'></a><a href='#L93'>93</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -203,6 +196,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -211,23 +205,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -239,12 +216,19 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -259,6 +243,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
@@ -267,10 +253,10 @@
  * Implements: GET /monitoring/dashboard
  */
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
-import { monitoringDashboardService } from '@/services/monitoring-dashboard.service';
-import { logger } from '@/utils/logger';
-import { createSuccessResponse, createErrorResponse, handleError } from '@/shared/response.utils';
-import { config } from '@/config/environment';
+import { monitoringDashboardService } from '../../services/monitoring-dashboard.service';
+import { logger } from '../../utils/logger';
+import { createSuccessResponse, createErrorResponse, handleError } from '../../shared/response.utils';
+import config from '../../config/environment';
 /**
  * System monitoring dashboard Lambda function handler
  * GET /monitoring/dashboard
@@ -301,7 +287,8 @@ export const monitoringDashboardHandler = <span class="cstat-no" title="statemen
       timestamp: new Date().toISOString()
     });
   } catch (error: any) {
-<span class="cstat-no" title="statement not covered" >    return handleError(error, 'Failed to retrieve monitoring dashboard data');</span>
+<span class="cstat-no" title="statement not covered" >    logger.error('Failed to retrieve monitoring dashboard data', error);</span>
+<span class="cstat-no" title="statement not covered" >    return handleError(error);</span>
   }
 };
 &nbsp;
@@ -317,9 +304,9 @@ export const serviceHealthHandler = <span class="cstat-no" title="statement not 
   
 <span class="cstat-no" title="statement not covered" >  try {</span>
     const service = <span class="cstat-no" title="statement not covered" >event.pathParameters?.service;</span>
-    
+&nbsp;
 <span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!service) {</span>
-<span class="cstat-no" title="statement not covered" >      return createErrorResponse('Service parameter is required', 400);</span>
+<span class="cstat-no" title="statement not covered" >      return createErrorResponse('VALIDATION_ERROR', 'Service parameter is required', 400);</span>
     }
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    logger.info('Processing service health request', {</span>
@@ -329,22 +316,12 @@ export const serviceHealthHandler = <span class="cstat-no" title="statement not 
     });
 &nbsp;
     let healthData: any;
-    
-<span class="cstat-no" title="statement not covered" >    switch (service.toLowerCase()) {</span>
-      case 'database':
-<span class="cstat-no" title="statement not covered" >        healthData = await monitoringDashboardService.getDatabaseHealth();</span>
-<span class="cstat-no" title="statement not covered" >        break;</span>
-      case 'redis':
-<span class="cstat-no" title="statement not covered" >        healthData = await monitoringDashboardService.getCacheHealth();</span>
-<span class="cstat-no" title="statement not covered" >        break;</span>
-      case 'payment':
-<span class="cstat-no" title="statement not covered" >        healthData = await monitoringDashboardService.getPaymentServiceHealth();</span>
-<span class="cstat-no" title="statement not covered" >        break;</span>
-      case 'rfid':
-<span class="cstat-no" title="statement not covered" >        healthData = await monitoringDashboardService.getRfidServiceHealth();</span>
-<span class="cstat-no" title="statement not covered" >        break;</span>
-      default:
-<span class="cstat-no" title="statement not covered" >        return createErrorResponse(`Unknown service: ${service}`, 400);</span>
+&nbsp;
+    // Get status for specific service
+<span class="cstat-no" title="statement not covered" >    healthData = await monitoringDashboardService.getServiceStatus(service.toLowerCase());</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!healthData) {</span>
+<span class="cstat-no" title="statement not covered" >      return createErrorResponse('UNKNOWN_SERVICE', `Unknown service: ${service}`, 400);</span>
     }
 &nbsp;
     const duration = <span class="cstat-no" title="statement not covered" >Date.now() - startTime;</span>
@@ -358,7 +335,9 @@ export const serviceHealthHandler = <span class="cstat-no" title="statement not 
       timestamp: new Date().toISOString()
     });
   } catch (error: any) {
-<span class="cstat-no" title="statement not covered" >    return handleError(error, `Failed to retrieve health status for service: ${event.pathParameters?.service || 'unknown'}`);</span>
+    const serviceName = <span class="cstat-no" title="statement not covered" >event.pathParameters?.service || 'unknown';</span>
+<span class="cstat-no" title="statement not covered" >    logger.error(`Failed to retrieve health status for service: ${serviceName}`, error);</span>
+<span class="cstat-no" title="statement not covered" >    return handleError(error);</span>
   }
 };</pre></td></tr></table></pre>
 
@@ -367,7 +346,7 @@ export const serviceHealthHandler = <span class="cstat-no" title="statement not 
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-09-03T01:56:53.416Z
+                at 2025-10-06T16:03:47.957Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

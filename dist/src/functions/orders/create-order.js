@@ -3,33 +3,40 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.handler = void 0;
 const logger_1 = require("@/utils/logger");
 const response_utils_1 = require("@/shared/response.utils");
-const database_service_1 = require("@/services/database.service");
+const DatabaseManager_1 = require("@/database/DatabaseManager");
 const uuid_1 = require("uuid");
 async function validateStudent(studentId, userId) {
-    const database = database_service_1.DatabaseService.getInstance();
-    const result = await database.query(`
-    SELECT s.id, s.firstName, s.lastName, s.parentId, s.schoolId, s.isActive,
-           sc.id as school_id, sc.name as school_name, sc.isActive as school_active
-    FROM users s
-    LEFT JOIN schools sc ON s.schoolId = sc.id
-    WHERE s.id = $1
-  `, [studentId]);
-    const student = result.rows[0];
+    const student = await DatabaseManager_1.prisma.user.findUnique({
+        where: { id: studentId },
+        include: {
+            school: {
+                select: {
+                    id: true,
+                    name: true,
+                    isActive: true,
+                },
+            },
+        },
+    });
     if (!student) {
         throw new Error('Student not found');
     }
     if (!student.isActive) {
         throw new Error('Student account is not active');
     }
-    if (!student.school_active) {
+    if (!student.school?.isActive) {
         throw new Error('School is not active');
     }
     if (student.parentId !== userId && student.id !== userId) {
-        const adminAccessResult = await database.query(`
-      SELECT id FROM users 
-      WHERE id = $1 AND schoolId = $2 AND role IN ('school_admin', 'admin', 'super_admin', 'staff') AND isActive = true
-    `, [userId, student.schoolId]);
-        if (adminAccessResult.rows.length === 0) {
+        const adminUser = await DatabaseManager_1.prisma.user.findFirst({
+            where: {
+                id: userId,
+                schoolId: student.schoolId,
+                role: { in: ['school_admin', 'admin', 'super_admin', 'staff'] },
+                isActive: true,
+            },
+        });
+        if (!adminUser) {
             throw new Error('Not authorized to place orders for this student');
         }
     }
@@ -39,10 +46,7 @@ async function validateStudent(studentId, userId) {
         lastName: student.lastName,
         parentId: student.parentId,
         schoolId: student.schoolId,
-        school: {
-            id: student.school_id,
-            name: student.school_name
-        }
+        school: student.school,
     };
 }
 function validateDeliveryDate(deliveryDate) {
@@ -60,8 +64,7 @@ function validateDeliveryDate(deliveryDate) {
         throw new Error('Delivery is not available on weekends');
     }
 }
-async function validateOrderItems(orderItems, schoolId, deliveryDate, mealPeriod) {
-    const database = database_service_1.DatabaseService.getInstance();
+async function validateOrderItems(orderItems, schoolId, deliveryDate) {
     if (orderItems.length === 0) {
         throw new Error('Order must contain at least one item');
     }
@@ -77,36 +80,30 @@ async function validateOrderItems(orderItems, schoolId, deliveryDate, mealPeriod
         if (item.quantity > 10) {
             throw new Error('Maximum 10 quantity allowed per item');
         }
-        const menuItemResult = await database.query(`
-      SELECT id, name, price, schoolId, isActive, 
-             availableDays, preparationTime, maxOrderQuantity
-      FROM menu_items 
-      WHERE id = $1 AND schoolId = $2 AND isActive = true
-    `, [item.menuItemId, schoolId]);
-        const menuItem = menuItemResult.rows[0];
+        const menuItem = await DatabaseManager_1.prisma.menuItem.findFirst({
+            where: {
+                id: item.menuItemId,
+                schoolId,
+                available: true,
+            },
+        });
         if (!menuItem) {
             throw new Error(`Menu item not found: ${item.menuItemId}`);
         }
-        if (!menuItem.isActive) {
-            throw new Error(`Menu item is not available: ${menuItem.name}`);
-        }
-        const deliveryDayName = deliveryDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
-        if (menuItem.availableDays && !menuItem.availableDays.includes(deliveryDayName)) {
-            throw new Error(`${menuItem.name} is not available on ${deliveryDayName}`);
-        }
-        if (menuItem.maxOrderQuantity && item.quantity > menuItem.maxOrderQuantity) {
-            throw new Error(`Maximum ${menuItem.maxOrderQuantity} items allowed per order for ${menuItem.name}`);
-        }
-        const itemTotal = menuItem.price * item.quantity;
+        const deliveryDayName = deliveryDate
+            .toLocaleDateString('en-US', { weekday: 'long' })
+            .toLowerCase();
+        const unitPrice = Number(menuItem.price);
+        const itemTotal = unitPrice * item.quantity;
         totalAmount += itemTotal;
         validatedItems.push({
             menuItemId: item.menuItemId,
             menuItemName: menuItem.name,
             quantity: item.quantity,
-            unitPrice: menuItem.price,
+            unitPrice,
             totalPrice: itemTotal,
             specialInstructions: item.specialInstructions,
-            customizations: item.customizations
+            customizations: item.customizations,
         });
     }
     return { validatedItems, totalAmount };
@@ -123,126 +120,110 @@ const handler = async (event, context) => {
     logger_1.logger.logFunctionStart('createOrderHandler', { event, context });
     try {
         if (event.httpMethod !== 'POST') {
-            return (0, response_utils_1.createErrorResponse)('Method not allowed', 405, 'METHOD_NOT_ALLOWED');
+            return (0, response_utils_1.createErrorResponse)('METHOD_NOT_ALLOWED', 'Method not allowed', 405);
         }
         const body = JSON.parse(event.body || '{}');
         logger_1.logger.info('Processing create order request', { body });
-        const { studentId, deliveryDate, mealPeriod, orderItems, deliveryInstructions, contactPhone } = body;
-        if (!studentId || !deliveryDate || !mealPeriod || !orderItems) {
-            return (0, response_utils_1.createErrorResponse)('Missing required fields: studentId, deliveryDate, mealPeriod, orderItems', 400, 'MISSING_REQUIRED_FIELDS');
-        }
-        if (!['breakfast', 'lunch', 'dinner', 'snack'].includes(mealPeriod)) {
-            return (0, response_utils_1.createErrorResponse)('Invalid meal period. Must be one of: breakfast, lunch, dinner, snack', 400, 'INVALID_MEAL_PERIOD');
+        const { studentId, deliveryDate, orderItems, deliveryInstructions, contactPhone, specialInstructions, allergyInfo, } = body;
+        if (!studentId || !deliveryDate || !orderItems) {
+            return (0, response_utils_1.createErrorResponse)('MISSING_REQUIRED_FIELDS', 'Missing required fields: studentId, deliveryDate, orderItems', 400);
         }
         const userId = event.requestContext?.authorizer?.userId || event.headers?.['x-user-id'];
         if (!userId) {
-            return (0, response_utils_1.createErrorResponse)('User authentication required', 401, 'AUTHENTICATION_REQUIRED');
+            return (0, response_utils_1.createErrorResponse)('AUTHENTICATION_REQUIRED', 'User authentication required', 401);
         }
         const student = await validateStudent(studentId, userId);
         const parsedDeliveryDate = new Date(deliveryDate);
         if (isNaN(parsedDeliveryDate.getTime())) {
-            return (0, response_utils_1.createErrorResponse)('Invalid delivery date format', 400, 'INVALID_DATE_FORMAT');
+            return (0, response_utils_1.createErrorResponse)('INVALID_DATE_FORMAT', 'Invalid delivery date format', 400);
         }
         validateDeliveryDate(parsedDeliveryDate);
-        const { validatedItems, totalAmount } = await validateOrderItems(orderItems, student.schoolId, parsedDeliveryDate, mealPeriod);
-        const database = database_service_1.DatabaseService.getInstance();
+        const { validatedItems, totalAmount } = await validateOrderItems(orderItems, student.schoolId, parsedDeliveryDate);
         const orderId = (0, uuid_1.v4)();
         const orderNumber = generateOrderNumber();
-        await database.query('BEGIN');
-        try {
-            const orderResult = await database.query(`
-        INSERT INTO orders (
-          id, orderNumber, studentId, schoolId, deliveryDate, mealPeriod,
-          status, paymentStatus, totalAmount, deliveryInstructions,
-          contactPhone, createdBy, createdAt, updatedAt
-        ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW()
-        ) RETURNING *
-      `, [
-                orderId,
-                orderNumber,
-                studentId,
-                student.schoolId,
-                parsedDeliveryDate.toISOString().split('T')[0],
-                mealPeriod,
-                'pending',
-                'pending',
-                totalAmount,
-                deliveryInstructions,
-                contactPhone,
-                userId
-            ]);
-            const order = orderResult.rows[0];
-            const orderItemPromises = validatedItems.map(async (item, index) => {
-                const orderItemId = (0, uuid_1.v4)();
-                return database.query(`
-          INSERT INTO order_items (
-            id, orderId, menuItemId, quantity, unitPrice, totalPrice,
-            specialInstructions, customizations, createdAt, updatedAt
-          ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW()
-          ) RETURNING *
-        `, [
-                    orderItemId,
-                    orderId,
-                    item.menuItemId,
-                    item.quantity,
-                    item.unitPrice,
-                    item.totalPrice,
-                    item.specialInstructions,
-                    JSON.stringify(item.customizations || {})
-                ]);
-            });
-            const orderItemResults = await Promise.all(orderItemPromises);
-            const createdOrderItems = orderItemResults.map((result, index) => ({
-                id: result.rows[0].id,
-                ...validatedItems[index]
-            }));
-            await database.query('COMMIT');
-            const response = {
-                id: orderId,
-                orderNumber: orderNumber,
-                studentId: studentId,
-                student: {
-                    id: student.id,
-                    firstName: student.firstName,
-                    lastName: student.lastName,
-                    schoolId: student.schoolId
-                },
-                school: student.school,
-                deliveryDate: parsedDeliveryDate.toISOString().split('T')[0],
-                mealPeriod: mealPeriod,
-                status: 'pending',
-                paymentStatus: 'pending',
-                totalAmount: totalAmount,
-                orderItems: createdOrderItems,
-                deliveryInstructions: deliveryInstructions,
-                contactPhone: contactPhone,
-                createdAt: order.createdAt
-            };
-            const duration = Date.now() - startTime;
-            logger_1.logger.logFunctionEnd("handler", { statusCode: 201, duration });
-            logger_1.logger.info('Order created successfully', {
-                orderId: orderId,
-                orderNumber: orderNumber,
-                totalAmount: totalAmount,
-                itemCount: orderItems.length
-            });
-            return (0, response_utils_1.createSuccessResponse)({
+        const result = await DatabaseManager_1.DatabaseManager.getInstance().transaction(async (prisma) => {
+            const order = await prisma.order.create({
                 data: {
-                    order: response
+                    id: orderId,
+                    orderNumber,
+                    userId,
+                    studentId,
+                    schoolId: student.schoolId,
+                    status: 'pending',
+                    totalAmount,
+                    currency: 'INR',
+                    orderDate: new Date(),
+                    deliveryDate: parsedDeliveryDate,
+                    paymentStatus: 'pending',
+                    specialInstructions: body.specialInstructions,
+                    allergyInfo: body.allergyInfo,
+                    metadata: JSON.stringify({}),
                 },
-                message: 'Order created successfully'
-            }, 201);
-        }
-        catch (transactionError) {
-            await database.query('ROLLBACK');
-            throw transactionError;
-        }
+            });
+            const orderItemPromises = validatedItems.map(async (item) => {
+                const orderItemId = (0, uuid_1.v4)();
+                return prisma.orderItem.create({
+                    data: {
+                        id: orderItemId,
+                        orderId,
+                        menuItemId: item.menuItemId,
+                        quantity: item.quantity,
+                        unitPrice: item.unitPrice,
+                        totalPrice: item.totalPrice,
+                        customizations: JSON.stringify(item.customizations || {}),
+                        notes: item.specialInstructions,
+                    },
+                });
+            });
+            const createdOrderItems = await Promise.all(orderItemPromises);
+            return { order, orderItems: createdOrderItems, validatedItems };
+        });
+        const response = {
+            id: result.order.id,
+            orderNumber: result.order.orderNumber,
+            studentId,
+            student: {
+                id: student.id,
+                firstName: student.firstName,
+                lastName: student.lastName,
+                schoolId: student.schoolId,
+            },
+            school: student.school,
+            deliveryDate: parsedDeliveryDate.toISOString().split('T')[0],
+            status: 'pending',
+            paymentStatus: 'pending',
+            totalAmount,
+            orderItems: result.orderItems.map((item, index) => ({
+                id: item.id,
+                menuItemId: item.menuItemId,
+                menuItemName: result.validatedItems[index].menuItemName,
+                quantity: item.quantity,
+                unitPrice: Number(item.unitPrice),
+                totalPrice: Number(item.totalPrice),
+                customizations: result.validatedItems[index].customizations,
+            })),
+            deliveryInstructions: body.deliveryInstructions,
+            contactPhone: body.contactPhone,
+            createdAt: result.order.createdAt,
+        };
+        const duration = Date.now() - startTime;
+        logger_1.logger.logFunctionEnd('handler', { statusCode: 201, duration });
+        logger_1.logger.info('Order created successfully', {
+            orderId: result.order.id,
+            orderNumber: result.order.orderNumber,
+            totalAmount,
+            itemCount: orderItems.length,
+        });
+        return (0, response_utils_1.createSuccessResponse)({
+            data: {
+                order: response,
+            },
+            message: 'Order created successfully',
+        }, 201);
     }
     catch (error) {
         const duration = Date.now() - startTime;
-        logger_1.logger.logFunctionEnd("handler", { statusCode: 500, duration });
+        logger_1.logger.logFunctionEnd('handler', { statusCode: 500, duration });
         return (0, response_utils_1.handleError)(error, 'Failed to create order');
     }
 };

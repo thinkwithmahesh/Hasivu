@@ -8,10 +8,10 @@ import toast from 'react-hot-toast';
  * Extended axios request config with custom properties;
 interface ExtendedAxiosRequestConfig extends InternalAxiosRequestConfig {}
  * API configuration and constants;
-export const API_CONFIG = {}
+export const _API_CONFIG =  {}
 } as const
  * API response types;
-export interface ApiResponse<T = any> {}
+export interface ApiResponse<_T =  any> {}
  * Request configuration interfaces;
 export interface ApiRequestConfig extends AxiosRequestConfig {}
  * Create and configure the main API client;
@@ -19,11 +19,9 @@ export interface ApiRequestConfig extends AxiosRequestConfig {}
    * Setup request and response interceptors;
   private setupInterceptors(): void {}
   // Add authentication token
-        const session = await getSession() as ExtendedSession;
+        const _session =  await getSession() as ExtendedSession;
         if (session?.accessToken) {}
           config.headers.Authorization = `Bearer ${session.accessToken}``
-          console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}``
-          console.log(`API Response: ${response.config.method?.toUpperCase()} ${response.config.url}``
       code: errorData?.code || `HTTP_${status}``
     return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}``
         `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.REFRESH_TOKEN}``

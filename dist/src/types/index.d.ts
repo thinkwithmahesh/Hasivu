@@ -1,8 +1,38 @@
-export type { AppError, ValidationError, NotFoundError, ConflictError, AuthenticationError, AuthorizationError, BusinessLogicError, ExternalServiceError, DatabaseError, RateLimitError } from '../utils/errors';
+export interface NutritionalInfo {
+    calories: number;
+    protein: number;
+    carbohydrates: number;
+    fat: number;
+    fiber?: number;
+    sugar?: number;
+    sodium?: number;
+    vitamins?: {
+        A?: number;
+        C?: number;
+        D?: number;
+        K?: number;
+        B1?: number;
+        B6?: number;
+        B12?: number;
+        folate?: number;
+        B3?: number;
+    };
+    minerals?: {
+        iron?: number;
+        calcium?: number;
+        magnesium?: number;
+        zinc?: number;
+    };
+    omega3?: number;
+    antioxidants?: string;
+    saturatedFat?: number;
+    transFat?: number;
+    glycemicIndex?: number;
+}
+export type { AllergenInfo, DietaryRestriction, ComplianceRule, ComplianceResult, StudentDietaryProfile, MenuItemCompliance, NutritionScore, PersonalizedRecommendations, MenuImprovements, SafetyAssessment, BatchAnalysisResult, Ingredient, MenuItem as NutritionMenuItem, NutritionalAnalysis, } from './nutrition';
+export type { AppError, ValidationError, NotFoundError, ConflictError, AuthenticationError, AuthorizationError, BusinessLogicError, ExternalServiceError, DatabaseError, RateLimitError, } from '../utils/errors';
 export { isOperationalError, getErrorMessage, createErrorResponse } from '../utils/errors';
-export type { CustomerProfile, ChildProfile, PaymentMethodInfo, CustomerMetrics, CustomerSearchFilters } from '../services/customer.service';
-export type { PaymentMethod, PaymentRequest, PaymentResponse, RefundRequest, RefundResponse, WebhookPayload } from '../services/paymentGateway.service';
-export type { DatabaseConfig, ConnectionStatus, QueryMetrics, TransactionOptions } from '../database/DatabaseManager';
+export type { DatabaseConfig, ConnectionStatus, QueryMetrics, TransactionOptions, } from '../database/DatabaseManager';
 export interface APIResponse<T = any> {
     success: boolean;
     data?: T;
@@ -82,7 +112,7 @@ export interface MenuItem {
     description: string;
     category: 'breakfast' | 'lunch' | 'snack' | 'dinner';
     price: number;
-    nutritionInfo: NutritionInfo;
+    nutritionInfo: NutritionalInfo;
     allergens: string[];
     dietaryTags: string[];
     imageUrl?: string;
@@ -90,17 +120,6 @@ export interface MenuItem {
     schoolId: string;
     createdAt: Date;
     updatedAt: Date;
-}
-export interface NutritionInfo {
-    calories: number;
-    protein: number;
-    carbs: number;
-    fat: number;
-    fiber: number;
-    sugar: number;
-    sodium: number;
-    vitamins?: Record<string, number>;
-    minerals?: Record<string, number>;
 }
 export interface DailyMenu {
     id: string;

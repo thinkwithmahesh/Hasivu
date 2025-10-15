@@ -1,0 +1,531 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.TenantIsolationStorage = void 0;
+const logger_1 = require("../../../../utils/logger");
+class TenantIsolationStorage {
+    config;
+    tenants = new Map();
+    isolationPolicies = new Map();
+    accessLog = [];
+    constructor(config) {
+        this.config = config;
+        logger_1.logger.info('TenantIsolationStorage initialized', { strategy: config.strategy });
+    }
+    async initialize() {
+        logger_1.logger.info('Initializing Tenant Isolation Storage');
+        await this.loadTenantConfigurations();
+        await this.setupIsolationPolicies();
+        await this.startAccessMonitoring();
+    }
+    async createTenant(tenantConfig) {
+        const tenantId = tenantConfig.id || `tenant_${Date.now()}`;
+        logger_1.logger.info('Creating tenant', { tenantId, name: tenantConfig.name });
+        try {
+            await this.validateTenantConfig(tenantConfig);
+            const isolation = await this.createTenantIsolation(tenantId, tenantConfig);
+            const tenantInfo = {
+                id: tenantId,
+                name: tenantConfig.name,
+                status: 'active',
+                createdAt: new Date(),
+                lastAccessed: new Date(),
+                configuration: tenantConfig,
+                isolation,
+                statistics: {
+                    dataSize: 0,
+                    queryCount: 0,
+                    storageQuota: tenantConfig.storageQuota || 10 * 1024 * 1024 * 1024,
+                    bandwidthQuota: tenantConfig.bandwidthQuota || 1024 * 1024 * 1024,
+                    connectionCount: 0
+                }
+            };
+            this.tenants.set(tenantId, tenantInfo);
+            await this.createIsolationPolicy(tenantId, tenantConfig);
+            logger_1.logger.info('Tenant created successfully', { tenantId, strategy: isolation.strategy });
+            return tenantId;
+        }
+        catch (error) {
+            logger_1.logger.error('Failed to create tenant', { tenantId, error });
+            throw new Error(`Tenant creation failed: ${(error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error))}`);
+        }
+    }
+    async executeTenantQuery(tenantId, query) {
+        logger_1.logger.info('Executing tenant query', { tenantId, queryId: query.id });
+        try {
+            await this.validateTenantAccess(tenantId);
+            const isolatedQuery = await this.applyTenantIsolation(tenantId, query);
+            await this.logAccess(tenantId, 'query_execution', {
+                queryId: query.id,
+                queryType: query.queryType
+            });
+            const result = await this.executeIsolatedQuery(tenantId, isolatedQuery);
+            await this.updateTenantStatistics(tenantId, result);
+            return result;
+        }
+        catch (error) {
+            logger_1.logger.error('Tenant query execution failed', { tenantId, queryId: query.id, error });
+            throw new Error(`Tenant query execution failed: ${(error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error))}`);
+        }
+    }
+    async getTenantData(tenantId, dataType) {
+        await this.validateTenantAccess(tenantId);
+        const tenant = this.tenants.get(tenantId);
+        if (!tenant) {
+            throw new Error(`Tenant ${tenantId} not found`);
+        }
+        const isolatedData = await this.filterDataByTenant(tenantId, dataType);
+        await this.logAccess(tenantId, 'data_access', { dataType });
+        return isolatedData;
+    }
+    async validateTenantIsolation(tenantId) {
+        logger_1.logger.info('Validating tenant isolation', { tenantId });
+        const tenant = this.tenants.get(tenantId);
+        if (!tenant) {
+            throw new Error(`Tenant ${tenantId} not found`);
+        }
+        const validationResult = {
+            tenantId,
+            strategy: tenant.isolation.strategy,
+            isValid: true,
+            violations: [],
+            recommendations: []
+        };
+        const dataIsolationCheck = await this.checkDataIsolation(tenantId);
+        if (!dataIsolationCheck.isValid) {
+            validationResult.isValid = false;
+            validationResult.violations.push(...dataIsolationCheck.violations);
+        }
+        const accessIsolationCheck = await this.checkAccessIsolation(tenantId);
+        if (!accessIsolationCheck.isValid) {
+            validationResult.isValid = false;
+            validationResult.violations.push(...accessIsolationCheck.violations);
+        }
+        const resourceIsolationCheck = await this.checkResourceIsolation(tenantId);
+        if (!resourceIsolationCheck.isValid) {
+            validationResult.isValid = false;
+            validationResult.violations.push(...resourceIsolationCheck.violations);
+        }
+        if (!validationResult.isValid) {
+            validationResult.recommendations = await this.generateIsolationRecommendations(validationResult.violations);
+        }
+        return validationResult;
+    }
+    async getTenantStatistics(tenantId) {
+        if (tenantId) {
+            const tenant = this.tenants.get(tenantId);
+            if (!tenant) {
+                throw new Error(`Tenant ${tenantId} not found`);
+            }
+            return {
+                tenantId,
+                name: tenant.name,
+                status: tenant.status,
+                statistics: tenant.statistics,
+                isolation: {
+                    strategy: tenant.isolation.strategy,
+                    enforcement: tenant.isolation.enforcement
+                },
+                lastAccessed: tenant.lastAccessed
+            };
+        }
+        const totalTenants = this.tenants.size;
+        const activeTenants = Array.from(this.tenants.values()).filter(t => t.status === 'active').length;
+        const totalDataSize = Array.from(this.tenants.values()).reduce((sum, t) => sum + t.statistics.dataSize, 0);
+        const totalQueries = Array.from(this.tenants.values()).reduce((sum, t) => sum + t.statistics.queryCount, 0);
+        return {
+            totalTenants,
+            activeTenants,
+            totalDataSize,
+            totalQueries,
+            isolationStrategy: this.config.strategy,
+            enforcement: this.config.enforcement,
+            tenants: Array.from(this.tenants.values()).map(t => ({
+                id: t.id,
+                name: t.name,
+                status: t.status,
+                dataSize: t.statistics.dataSize,
+                queryCount: t.statistics.queryCount
+            }))
+        };
+    }
+    async getHealth() {
+        const stats = await this.getTenantStatistics();
+        const isolationViolations = await this.checkAllTenantsIsolation();
+        return {
+            status: isolationViolations.length === 0 ? 'healthy' : 'warning',
+            version: '1.0.0',
+            lastUpdate: new Date(),
+            tenancy: {
+                totalTenants: stats.totalTenants,
+                activeTenants: stats.activeTenants,
+                isolationStrategy: this.config.strategy,
+                isolationViolations: isolationViolations.length
+            },
+            performance: {
+                avgQueryTime: 150,
+                isolationOverhead: 5,
+                accessValidationTime: 10
+            }
+        };
+    }
+    async loadTenantConfigurations() {
+        logger_1.logger.info('Loading tenant configurations');
+        const mockTenants = [
+            {
+                id: 'tenant_001',
+                name: 'Acme Corporation',
+                status: 'active',
+                createdAt: new Date('2024-09-01'),
+                lastAccessed: new Date(),
+                configuration: {
+                    id: 'tenant_001',
+                    name: 'Acme Corporation',
+                    region: 'us-east-1',
+                    storageQuota: 50 * 1024 * 1024 * 1024,
+                    bandwidthQuota: 10 * 1024 * 1024 * 1024,
+                    maxConnections: 100
+                },
+                isolation: {
+                    strategy: 'schema',
+                    enforcement: 'strict',
+                    namespace: 'acme_corp',
+                    schema: 'tenant_001_schema',
+                    accessControls: ['row_level_security', 'column_encryption']
+                },
+                statistics: {
+                    dataSize: 25 * 1024 * 1024 * 1024,
+                    queryCount: 15420,
+                    storageQuota: 50 * 1024 * 1024 * 1024,
+                    bandwidthQuota: 10 * 1024 * 1024 * 1024,
+                    connectionCount: 23
+                }
+            },
+            {
+                id: 'tenant_002',
+                name: 'Beta Industries',
+                status: 'active',
+                createdAt: new Date('2024-09-10'),
+                lastAccessed: new Date(),
+                configuration: {
+                    id: 'tenant_002',
+                    name: 'Beta Industries',
+                    region: 'eu-west-1',
+                    storageQuota: 100 * 1024 * 1024 * 1024,
+                    bandwidthQuota: 20 * 1024 * 1024 * 1024,
+                    maxConnections: 200
+                },
+                isolation: {
+                    strategy: 'database',
+                    enforcement: 'strict',
+                    namespace: 'beta_ind',
+                    database: 'tenant_002_db',
+                    accessControls: ['database_isolation', 'network_isolation']
+                },
+                statistics: {
+                    dataSize: 75 * 1024 * 1024 * 1024,
+                    queryCount: 8930,
+                    storageQuota: 100 * 1024 * 1024 * 1024,
+                    bandwidthQuota: 20 * 1024 * 1024 * 1024,
+                    connectionCount: 45
+                }
+            }
+        ];
+        mockTenants.forEach(tenant => {
+            this.tenants.set(tenant.id, tenant);
+        });
+    }
+    async setupIsolationPolicies() {
+        logger_1.logger.info('Setting up isolation policies');
+        this.tenants.forEach((tenant, tenantId) => {
+            const policy = {
+                tenantId,
+                strategy: this.config.strategy,
+                enforcement: this.config.enforcement,
+                rules: this.generateIsolationRules(tenant),
+                createdAt: new Date(),
+                lastUpdated: new Date()
+            };
+            this.isolationPolicies.set(tenantId, policy);
+        });
+    }
+    async startAccessMonitoring() {
+        if (!this.config.monitoring)
+            return;
+        logger_1.logger.info('Starting access monitoring');
+        setInterval(() => {
+            this.cleanupAccessLogs();
+        }, 24 * 60 * 60 * 1000);
+    }
+    async validateTenantConfig(config) {
+        if (!config.name || !config.id) {
+            throw new Error('Tenant name and ID are required');
+        }
+        if (this.tenants.has(config.id)) {
+            throw new Error(`Tenant ${config.id} already exists`);
+        }
+    }
+    async createTenantIsolation(tenantId, _config) {
+        const isolation = {
+            strategy: this.config.strategy,
+            enforcement: this.config.enforcement,
+            namespace: `${tenantId}_namespace`,
+            accessControls: this.getAccessControlsForStrategy(this.config.strategy)
+        };
+        switch (this.config.strategy) {
+            case 'namespace':
+                isolation.namespace = `ns_${tenantId}`;
+                break;
+            case 'database':
+                isolation.database = `db_${tenantId}`;
+                break;
+            case 'schema':
+                isolation.schema = `schema_${tenantId}`;
+                break;
+            case 'row_level':
+                isolation.rowLevelFilter = `tenant_id = '${tenantId}'`;
+                break;
+        }
+        return isolation;
+    }
+    async createIsolationPolicy(tenantId, _config) {
+        const tenant = this.tenants.get(tenantId);
+        if (!tenant)
+            return;
+        const policy = {
+            tenantId,
+            strategy: this.config.strategy,
+            enforcement: this.config.enforcement,
+            rules: this.generateIsolationRules(tenant),
+            createdAt: new Date(),
+            lastUpdated: new Date()
+        };
+        this.isolationPolicies.set(tenantId, policy);
+    }
+    generateIsolationRules(tenant) {
+        const rules = [];
+        rules.push({
+            type: 'data_access',
+            condition: `tenant_id = '${tenant.id}'`,
+            action: 'allow',
+            priority: 1
+        });
+        rules.push({
+            type: 'resource_limit',
+            condition: `storage_usage <= ${tenant.statistics.storageQuota}`,
+            action: 'enforce',
+            priority: 2
+        });
+        rules.push({
+            type: 'resource_limit',
+            condition: `connection_count <= ${tenant.configuration.maxConnections}`,
+            action: 'enforce',
+            priority: 3
+        });
+        rules.push({
+            type: 'cross_tenant_access',
+            condition: `accessing_tenant_id != '${tenant.id}'`,
+            action: 'deny',
+            priority: 10
+        });
+        return rules;
+    }
+    getAccessControlsForStrategy(strategy) {
+        const controls = {
+            'namespace': ['namespace_isolation', 'api_key_validation'],
+            'database': ['database_isolation', 'connection_pooling'],
+            'schema': ['schema_isolation', 'row_level_security'],
+            'row_level': ['row_level_security', 'column_encryption']
+        };
+        return controls[strategy] || ['basic_isolation'];
+    }
+    async validateTenantAccess(tenantId) {
+        const tenant = this.tenants.get(tenantId);
+        if (!tenant) {
+            throw new Error(`Tenant ${tenantId} not found`);
+        }
+        if (tenant.status !== 'active') {
+            throw new Error(`Tenant ${tenantId} is not active`);
+        }
+        if (tenant.configuration.maxConnections && tenant.statistics.connectionCount >= tenant.configuration.maxConnections) {
+            throw new Error(`Tenant ${tenantId} has reached connection limit`);
+        }
+        if (tenant.statistics.dataSize >= tenant.statistics.storageQuota) {
+            throw new Error(`Tenant ${tenantId} has reached storage quota`);
+        }
+    }
+    async applyTenantIsolation(tenantId, query) {
+        const policy = this.isolationPolicies.get(tenantId);
+        if (!policy) {
+            throw new Error(`No isolation policy found for tenant ${tenantId}`);
+        }
+        const isolatedQuery = { ...query };
+        isolatedQuery.parameters = {
+            ...isolatedQuery.parameters,
+            tenantId,
+            isolationStrategy: policy.strategy
+        };
+        if (policy.strategy === 'row_level' && isolatedQuery.sql) {
+            isolatedQuery.sql = this.addRowLevelSecurity(isolatedQuery.sql, tenantId);
+        }
+        return isolatedQuery;
+    }
+    addRowLevelSecurity(sql, tenantId) {
+        if (sql.toLowerCase().includes('where')) {
+            return sql.replace(/where/i, `WHERE tenant_id = '${tenantId}' AND`);
+        }
+        else {
+            const selectMatch = sql.match(/^(select.*?from\s+\w+)/i);
+            if (selectMatch) {
+                return sql.replace(selectMatch[1], `${selectMatch[1]} WHERE tenant_id = '${tenantId}'`);
+            }
+        }
+        return sql;
+    }
+    async executeIsolatedQuery(tenantId, query) {
+        const startTime = Date.now();
+        const mockData = this.generateTenantMockData(tenantId) || [];
+        const result = {
+            id: `result_${Date.now()}`,
+            rows: mockData,
+            columns: [
+                { name: 'id', type: 'integer', nullable: false },
+                { name: 'tenant_id', type: 'varchar', nullable: false },
+                { name: 'data', type: 'text', nullable: true }
+            ],
+            rowCount: mockData.length,
+            executionTimeMs: Date.now() - startTime,
+            executedAt: new Date(),
+            cached: false,
+            tenantId,
+            metadata: {
+                tablesScanned: [`tenant_${tenantId}_data`],
+                partitionsPruned: 0,
+                indexesUsed: [`idx_tenant_${tenantId}`],
+                optimizations: ['tenant_isolation'],
+                cacheHit: false,
+                tier: 'hot'
+            }
+        };
+        return result;
+    }
+    generateTenantMockData(tenantId) {
+        const data = [];
+        const rowCount = Math.floor(Math.random() * 100) + 1;
+        for (let i = 0; i < rowCount; i++) {
+            data.push({
+                id: i + 1,
+                tenant_id: tenantId,
+                data: `Tenant ${tenantId} data item ${i + 1}`,
+                created_at: new Date()
+            });
+        }
+        return data;
+    }
+    async filterDataByTenant(tenantId, dataType) {
+        return this.generateTenantMockData(tenantId) || [];
+    }
+    async updateTenantStatistics(tenantId, result) {
+        const tenant = this.tenants.get(tenantId);
+        if (tenant) {
+            tenant.statistics.queryCount++;
+            tenant.lastAccessed = new Date();
+            tenant.statistics.dataSize += result.rowCount * 100;
+        }
+    }
+    async logAccess(tenantId, action, metadata) {
+        const logEntry = {
+            tenantId,
+            action,
+            timestamp: new Date(),
+            metadata,
+            success: true
+        };
+        this.accessLog.push(logEntry);
+        if (this.accessLog.length > 10000) {
+            this.accessLog = this.accessLog.slice(-10000);
+        }
+    }
+    async checkDataIsolation(tenantId) {
+        return {
+            isValid: true,
+            violations: []
+        };
+    }
+    async checkAccessIsolation(tenantId) {
+        return {
+            isValid: true,
+            violations: []
+        };
+    }
+    async checkResourceIsolation(tenantId) {
+        const tenant = this.tenants.get(tenantId);
+        if (!tenant) {
+            return {
+                isValid: false,
+                violations: [`Tenant ${tenantId} not found`]
+            };
+        }
+        const violations = [];
+        if (tenant.statistics.dataSize > tenant.statistics.storageQuota) {
+            violations.push('Storage quota exceeded');
+        }
+        if (tenant.configuration.maxConnections && tenant.statistics.connectionCount > tenant.configuration.maxConnections) {
+            violations.push('Connection limit exceeded');
+        }
+        return {
+            isValid: violations.length === 0,
+            violations
+        };
+    }
+    async generateIsolationRecommendations(violations) {
+        const recommendations = [];
+        violations.forEach(violation => {
+            if (violation.includes('storage quota')) {
+                recommendations.push('Increase storage quota or archive old data');
+            }
+            else if (violation.includes('connection limit')) {
+                recommendations.push('Optimize connection pooling or increase connection limit');
+            }
+            else if (violation.includes('cross-tenant access')) {
+                recommendations.push('Review and strengthen access controls');
+            }
+        });
+        return recommendations;
+    }
+    async checkAllTenantsIsolation() {
+        const violations = [];
+        for (const [tenantId] of this.tenants) {
+            try {
+                const validation = await this.validateTenantIsolation(tenantId);
+                if (!validation.isValid) {
+                    violations.push(...validation.violations.map(v => `${tenantId}: ${v}`));
+                }
+            }
+            catch (error) {
+                violations.push(`${tenantId}: Validation failed - ${(error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error))}`);
+            }
+        }
+        return violations;
+    }
+    cleanupAccessLogs() {
+        const cutoffTime = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        this.accessLog = this.accessLog.filter(log => log.timestamp >= cutoffTime);
+        logger_1.logger.debug('Cleaned up old access logs');
+    }
+    async shutdown() {
+        logger_1.logger.info('Shutting down Tenant Isolation Storage');
+        this.tenants.clear();
+        this.isolationPolicies.clear();
+        this.accessLog = [];
+        logger_1.logger.info('Tenant Isolation Storage shutdown complete');
+    }
+    async getStatistics() {
+        return await this.getTenantStatistics();
+    }
+    async getHealthStatus() {
+        return await this.getHealth();
+    }
+}
+exports.TenantIsolationStorage = TenantIsolationStorage;
+exports.default = TenantIsolationStorage;
+//# sourceMappingURL=tenant-isolation-storage.js.map

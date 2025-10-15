@@ -7,7 +7,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 import { logger } from '@/utils/logger';
 import { createSuccessResponse, createErrorResponse, handleError } from '@/shared/response.utils';
-import { DatabaseService } from '@/services/database.service';
+import { prisma, DatabaseManager } from '@/database/DatabaseManager';
 
 /**
  * Order details response interface
@@ -29,7 +29,6 @@ interface OrderDetailsResponse {
     address?: string;
   };
   deliveryDate: string;
-  mealPeriod: string;
   status: string;
   paymentStatus: string;
   totalAmount: number;
@@ -71,246 +70,114 @@ interface OrderDetailsResponse {
 }
 
 /**
- * Validate order exists and user has permission to view
+ * Get comprehensive order details with authorization check
  */
-async function validateOrderAccess(orderId: string, userId: string): Promise<any> {
-  const database = DatabaseService.getInstance();
-  
-  const result = await database.query(`
-    SELECT o.id, o.studentId, o.schoolId, o.status, s.parentId,
-           st.firstName as student_firstName, st.lastName as student_lastName,
-           st.grade, st.section, st.schoolId as student_schoolId,
-           sc.name as school_name, sc.address as school_address
-    FROM orders o
-    LEFT JOIN users s ON o.studentId = s.id
-    LEFT JOIN users st ON o.studentId = st.id
-    LEFT JOIN schools sc ON o.schoolId = sc.id
-    WHERE o.id = $1
-  `, [orderId]);
-  
-  const order = result.rows[0];
-  
+async function getOrderWithAuthorization(orderId: string, userId: string): Promise<any> {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: {
+      user: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+        },
+      },
+      student: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          grade: true,
+          section: true,
+          parentId: true,
+          schoolId: true,
+        },
+      },
+      school: {
+        select: {
+          id: true,
+          name: true,
+          address: true,
+        },
+      },
+      orderItems: {
+        include: {
+          menuItem: {
+            select: {
+              id: true,
+              name: true,
+              nutritionalInfo: true,
+              allergens: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'asc',
+        },
+      },
+      payments: {
+        select: {
+          id: true,
+          status: true,
+          amount: true,
+          razorpayPaymentId: true,
+          paidAt: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        take: 1,
+      },
+    },
+  });
+
   if (!order) {
     throw new Error('Order not found');
   }
-  
+
   // Check if user has permission to view this order
-  const canView = order.studentId === userId || // Student themselves
-                  order.parentId === userId;     // Parent of student
-  
+  const canView =
+    order.studentId === userId || // Student themselves
+    order.student.parentId === userId; // Parent of student
+
   if (!canView) {
     // Check if user is school staff with access
-    const staffAccessResult = await database.query(`
-      SELECT id FROM users 
-      WHERE id = $1 AND schoolId = $2 AND role IN ('school_admin', 'admin', 'super_admin', 'staff') AND isActive = true
-    `, [userId, order.schoolId]);
-    
-    if (staffAccessResult.rows.length === 0) {
+    const staffUser = await prisma.user.findFirst({
+      where: {
+        id: userId,
+        schoolId: order.schoolId,
+        role: { in: ['school_admin', 'admin', 'super_admin', 'staff'] },
+        isActive: true,
+      },
+    });
+
+    if (!staffUser) {
       throw new Error('Not authorized to view this order');
     }
   }
-  
+
   return order;
 }
 
 /**
- * Get comprehensive order details
+ * Get basic tracking history (simplified for current schema)
  */
-async function getOrderDetails(orderId: string): Promise<any> {
-  const database = DatabaseService.getInstance();
-  
-  const result = await database.query(`
-    SELECT o.*, 
-           s.firstName as student_firstName, s.lastName as student_lastName, 
-           s.grade, s.section,
-           sc.name as school_name, sc.address as school_address
-    FROM orders o
-    LEFT JOIN users s ON o.studentId = s.id
-    LEFT JOIN schools sc ON o.schoolId = sc.id
-    WHERE o.id = $1
-  `, [orderId]);
-  
-  const order = result.rows[0];
-  
-  if (!order) {
-    throw new Error('Order not found');
-  }
-  
-  return order;
-}
-
-/**
- * Get order items with menu details
- */
-async function getOrderItems(orderId: string): Promise<any[]> {
-  const database = DatabaseService.getInstance();
-  
-  const result = await database.query(`
-    SELECT oi.*, 
-           mi.name as menuItemName, mi.nutritionalInfo, mi.allergens,
-           mi.ingredients, mi.preparationTime
-    FROM order_items oi
-    LEFT JOIN menu_items mi ON oi.menuItemId = mi.id
-    WHERE oi.orderId = $1
-    ORDER BY oi.createdAt
-  `, [orderId]);
-  
-  return result.rows.map(item => ({
-    id: item.id,
-    menuItemId: item.menuItemId,
-    menuItemName: item.menuItemName,
-    quantity: item.quantity,
-    unitPrice: item.unitPrice,
-    totalPrice: item.totalPrice,
-    specialInstructions: item.specialInstructions,
-    customizations: parseJsonField(item.customizations, 'customizations', orderId),
-    nutritionalInfo: parseJsonField(item.nutritionalInfo, 'nutritionalInfo', orderId),
-    allergens: item.allergens || [],
-    ingredients: item.ingredients || [],
-    preparationTime: item.preparationTime
-  }));
-}
-
-/**
- * Get order tracking history
- */
-async function getOrderTrackingHistory(orderId: string): Promise<any[]> {
-  const database = DatabaseService.getInstance();
-  
-  try {
-    const result = await database.query(`
-      SELECT id, orderId, status, notes, updatedBy, createdAt as timestamp
-      FROM order_status_history
-      WHERE orderId = $1
-      ORDER BY createdAt DESC
-    `, [orderId]);
-    
-    return result.rows;
-  } catch (error) {
-    // If order_status_history table doesn't exist, return basic history
-    logger.warn('Order status history table not available, using basic tracking', { orderId });
-    
-    const orderResult = await database.query(`
-      SELECT status, updatedAt, createdAt
-      FROM orders
-      WHERE id = $1
-    `, [orderId]);
-    
-    const order = orderResult.rows[0];
-    if (!order) return [];
-    
-    return [
-      {
-        id: `${orderId}-created`,
-        status: 'pending',
-        timestamp: order.createdAt,
-        notes: 'Order created'
-      },
-      {
-        id: `${orderId}-current`,
-        status: order.status,
-        timestamp: order.updatedAt,
-        notes: `Order status: ${order.status}`
-      }
-    ];
-  }
-}
-
-/**
- * Get payment details for the order
- */
-async function getPaymentDetails(orderId: string): Promise<any> {
-  const database = DatabaseService.getInstance();
-  
-  try {
-    const result = await database.query(`
-      SELECT po.id as paymentOrderId, po.razorpayOrderId, po.status, po.paidAt,
-             pt.razorpayPaymentId, pt.capturedAt
-      FROM payment_orders po
-      LEFT JOIN payment_transactions pt ON po.id = pt.paymentOrderId
-      WHERE po.orderId = $1
-      ORDER BY po.createdAt DESC
-      LIMIT 1
-    `, [orderId]);
-    
-    if (result.rows.length === 0) {
-      return null;
-    }
-    
-    const payment = result.rows[0];
-    return {
-      paymentOrderId: payment.paymentOrderId,
-      razorpayOrderId: payment.razorpayOrderId,
-      paymentMethod: payment.razorpayPaymentId ? 'razorpay' : 'pending',
-      status: payment.status,
-      paidAt: payment.paidAt || payment.capturedAt
-    };
-  } catch (error) {
-    logger.warn('Payment details not available', { orderId, error: error instanceof Error ? error.message : 'Unknown error' });
-    return null;
-  }
-}
-
-/**
- * Get delivery details including RFID verification
- */
-async function getDeliveryDetails(orderId: string, status: string): Promise<any> {
-  const database = DatabaseService.getInstance();
-  
-  try {
-    const result = await database.query(`
-      SELECT deliveredAt, deliveredBy, rfidVerified, deliveryNotes
-      FROM order_deliveries
-      WHERE orderId = $1
-      ORDER BY createdAt DESC
-      LIMIT 1
-    `, [orderId]);
-    
-    if (result.rows.length === 0) {
-      // Return estimated delivery time based on order status
-      if (['confirmed', 'preparing', 'ready'].includes(status)) {
-        const estimatedTime = new Date();
-        estimatedTime.setHours(estimatedTime.getHours() + 2); // 2 hours from now
-        
-        return {
-          estimatedDeliveryTime: estimatedTime,
-          actualDeliveryTime: null,
-          deliveredBy: null,
-          rfidVerified: false
-        };
-      }
-      return null;
-    }
-    
-    const delivery = result.rows[0];
-    return {
-      estimatedDeliveryTime: null,
-      actualDeliveryTime: delivery.deliveredAt,
-      deliveredBy: delivery.deliveredBy,
-      rfidVerified: delivery.rfidVerified || false,
-      deliveryNotes: delivery.deliveryNotes
-    };
-  } catch (error) {
-    logger.warn('Delivery details not available', { orderId, error: error instanceof Error ? error.message : 'Unknown error' });
-    return null;
-  }
-}
-
-/**
- * Parse JSON fields safely
- */
-function parseJsonField(jsonString: string, fieldName: string, orderId: string): any {
-  if (!jsonString) return {};
-  
-  try {
-    return JSON.parse(jsonString);
-  } catch (error) {
-    logger.warn(`Failed to parse ${fieldName} for order ${orderId}`, {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      jsonString
-    });
-    return {};
-  }
+function getBasicTrackingHistory(order: any): any[] {
+  return [
+    {
+      id: `${order.id}-created`,
+      status: 'pending',
+      timestamp: order.createdAt,
+      notes: 'Order created',
+    },
+    {
+      id: `${order.id}-current`,
+      status: order.status,
+      timestamp: order.updatedAt,
+      notes: `Order status: ${order.status}`,
+    },
+  ];
 }
 
 /**
@@ -326,94 +193,111 @@ export const handler = async (
   try {
     // Only allow GET method
     if (event.httpMethod !== 'GET') {
-      return createErrorResponse(
-        'Method not allowed',
-        405,
-        'METHOD_NOT_ALLOWED'
-      );
+      return createErrorResponse('METHOD_NOT_ALLOWED', 'Method not allowed', 405);
     }
 
     // Extract orderId from path parameters
     const orderId = event.pathParameters?.orderId;
     if (!orderId) {
-      return createErrorResponse(
-        'Missing orderId in path parameters',
-        400,
-        'MISSING_ORDER_ID'
-      );
+      return createErrorResponse('MISSING_ORDER_ID', 'Missing orderId in path parameters', 400);
     }
 
     // Extract userId from event context (would come from JWT in real implementation)
     const userId = event.requestContext?.authorizer?.userId || event.headers?.['x-user-id'];
     if (!userId) {
-      return createErrorResponse(
-        'User authentication required',
-        401,
-        'AUTHENTICATION_REQUIRED'
-      );
+      return createErrorResponse('AUTHENTICATION_REQUIRED', 'User authentication required', 401);
     }
 
     logger.info('Processing get order request', { orderId, userId });
 
-    // Validate order exists and user has permission
-    await validateOrderAccess(orderId, userId);
+    // Get comprehensive order details with authorization
+    const order = await getOrderWithAuthorization(orderId, userId);
 
-    // Get comprehensive order details
-    const orderData = await getOrderDetails(orderId);
-    const orderItems = await getOrderItems(orderId);
-    const trackingHistory = await getOrderTrackingHistory(orderId);
-    const paymentDetails = await getPaymentDetails(orderId);
-    const deliveryDetails = await getDeliveryDetails(orderId, orderData.status);
+    // Get basic tracking history
+    const trackingHistory = getBasicTrackingHistory(order);
+
+    // Prepare payment details from included payments
+    const paymentDetails =
+      order.payments.length > 0
+        ? {
+            paymentOrderId: order.payments[0].id,
+            razorpayOrderId: undefined, // Not available in current schema
+            paymentMethod: 'payment',
+            status: order.payments[0].status,
+            paidAt: order.payments[0].paidAt || undefined,
+          }
+        : undefined;
+
+    // Prepare delivery details (simplified for current schema)
+    const deliveryDetails = order.deliveredAt
+      ? {
+          estimatedDeliveryTime: undefined,
+          actualDeliveryTime: order.deliveredAt,
+          deliveredBy: undefined,
+          rfidVerified: false,
+        }
+      : undefined;
 
     const response: OrderDetailsResponse = {
-      id: orderData.id,
-      orderNumber: orderData.orderNumber,
-      studentId: orderData.studentId,
+      id: order.id,
+      orderNumber: order.orderNumber,
+      studentId: order.studentId,
       student: {
-        id: orderData.studentId,
-        firstName: orderData.student_firstName,
-        lastName: orderData.student_lastName,
-        grade: orderData.grade,
-        section: orderData.section
+        id: order.student.id,
+        firstName: order.student.firstName,
+        lastName: order.student.lastName,
+        grade: order.student.grade,
+        section: order.student.section,
       },
       school: {
-        id: orderData.schoolId,
-        name: orderData.school_name,
-        address: orderData.school_address
+        id: order.school.id,
+        name: order.school.name,
+        address: order.school.address,
       },
-      deliveryDate: orderData.deliveryDate,
-      mealPeriod: orderData.mealPeriod,
-      status: orderData.status,
-      paymentStatus: orderData.paymentStatus,
-      totalAmount: orderData.totalAmount,
-      orderItems: orderItems,
-      trackingHistory: trackingHistory,
-      paymentDetails: paymentDetails,
-      deliveryDetails: deliveryDetails,
-      deliveryInstructions: orderData.deliveryInstructions,
-      contactPhone: orderData.contactPhone,
-      createdAt: orderData.createdAt,
-      updatedAt: orderData.updatedAt
+      deliveryDate: order.deliveryDate.toISOString().split('T')[0],
+      status: order.status,
+      paymentStatus: order.paymentStatus,
+      totalAmount: Number(order.totalAmount),
+      orderItems: order.orderItems.map((item: any) => ({
+        id: item.id,
+        menuItemId: item.menuItemId,
+        menuItemName: item.menuItem.name,
+        quantity: item.quantity,
+        unitPrice: Number(item.unitPrice),
+        totalPrice: Number(item.totalPrice),
+        specialInstructions: item.notes,
+        customizations: item.customizations ? JSON.parse(item.customizations) : {},
+        nutritionalInfo: item.menuItem.nutritionalInfo
+          ? JSON.parse(item.menuItem.nutritionalInfo)
+          : {},
+        allergens: item.menuItem.allergens || [],
+      })),
+      trackingHistory,
+      paymentDetails: paymentDetails || undefined,
+      deliveryDetails: deliveryDetails || undefined,
+      deliveryInstructions: order.specialInstructions,
+      contactPhone: undefined, // Not in current schema
+      createdAt: order.createdAt,
+      updatedAt: order.updatedAt,
     };
 
     const duration = Date.now() - startTime;
-    logger.logFunctionEnd("handler", { statusCode: 200, duration });
+    logger.logFunctionEnd('handler', { statusCode: 200, duration });
     logger.info('Order details retrieved successfully', {
-      orderId: orderId,
-      itemCount: orderItems.length,
-      status: orderData.status
+      orderId,
+      itemCount: order.orderItems.length,
+      status: order.status,
     });
 
     return createSuccessResponse({
       data: {
-        order: response
+        order: response,
       },
-      message: 'Order details retrieved successfully'
+      message: 'Order details retrieved successfully',
     });
-
-  } catch (error) {
+  } catch (error: unknown) {
     const duration = Date.now() - startTime;
-    logger.logFunctionEnd("handler", { statusCode: 500, duration });
+    logger.logFunctionEnd('handler', { statusCode: 500, duration });
     return handleError(error, 'Failed to retrieve order details');
   }
 };

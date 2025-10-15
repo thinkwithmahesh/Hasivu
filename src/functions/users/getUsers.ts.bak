@@ -1,0 +1,174 @@
+/**
+ * HASIVU Platform - Get Users Lambda Function
+ * List users with advanced filtering, pagination, and search
+ * Implements Story 1.3: Core User Management System
+ */
+import { APIGatewayProxyResult, Context } from 'aws-lambda';
+import { UserService, UserSearchFilters } from '../../services/user.service';
+import { LoggerService } from '../shared/logger.service';
+import { ValidationService } from '../shared/validation.service';
+import { handleError, createSuccessResponse } from '../shared/response.utils';
+import Joi from 'joi';
+
+// JWT Authentication Middleware
+import { 
+  withAuth, 
+  AuthenticatedEvent, 
+  getAuthUser 
+} from '../../middleware/jwt-auth.middleware';
+
+// Request validation schema
+const _getUsersSchema =  Joi.object({
+  query: Joi.string().optional().allow('').max(100),
+  role: Joi.string().valid('student', 'parent', 'teacher', 'staff', 'school_admin', 'admin', 'super_admin').optional(),
+  schoolId: Joi.string().uuid().optional(),
+  isActive: Joi.boolean().optional(),
+  parentId: Joi.string().uuid().optional(),
+  hasChildren: Joi.boolean().optional(),
+  sortBy: Joi.string().valid('firstName', 'lastName', 'email', 'createdAt', 'updatedAt').optional(),
+  sortOrder: Joi.string().valid('asc', 'desc').optional(),
+  page: Joi.number().integer().min(1).max(1000).optional(),
+  limit: Joi.number().integer().min(1).max(100).optional()
+});
+
+/**
+ * Get Users Lambda Handler
+ * GET /api/v1/users
+ * 
+ * Query Parameters:
+ * - query: Search term for name/email
+ * - role: Filter by user role
+ * - schoolId: Filter by school (admins only)
+ * - isActive: Filter by status
+ * - parentId: Filter by parent
+ * - hasChildren: Filter by parent status
+ * - sortBy: Sort field
+ * - sortOrder: Sort direction
+ * - page: Page number
+ * - limit: Items per page
+ */
+const _getUsersHandler =  async (
+  event: AuthenticatedEvent,
+  context: Context
+): Promise<APIGatewayProxyResult>
+  const _requestId 
+  try {
+    logger.info('Get users request started', {
+      requestId,
+      queryParams: event.queryStringParameters,
+      userAgent: event.headers['User-Agent']
+    });
+
+    // Get authenticated user from JWT middleware
+    const _authenticatedUser =  getAuthUser(event);
+    const _requestingUserId =  authenticatedUser!.userId;
+    
+    logger.info('Authenticated user accessing getUsers', {
+      requestId,
+      requestingUserId
+    });
+
+    // Parse and validate query parameters
+    const _queryParams =  event.queryStringParameters || {};
+    
+    const filters: _UserSearchFilters =  {
+      query: queryParams.query || undefined,
+      role: queryParams.role as any || undefined,
+      schoolId: queryParams.schoolId || undefined,
+      isActive: queryParams.isActive ? queryParams.isActive 
+    // Validate filters
+    const _validation =  ValidationService.validateObject(filters, getUsersSchema);
+    if (!validation.isValid) {
+      logger.warn('Invalid query parameters', {
+        requestId,
+        errors: validation.errors,
+        filters
+      });
+      return handleError(new Error(`Validation failed: ${validation.errors?.join(', ')}`), undefined, 400, requestId);
+    }
+
+    // Check permissions - users can only see users from their school unless admin
+    const _requestingUser =  await UserService.getUserById(requestingUserId);
+    if (!requestingUser) {
+      logger.error('Requesting user not found', {
+        requestId,
+        userId: requestingUserId
+      });
+      return handleError(new Error('User not found'), undefined, 404, requestId);
+    }
+
+    // Apply school filtering based on user permissions
+    if (!['admin', 'super_admin'].includes(requestingUser.role)) {
+      // Non-admin users can only see users from their school
+      filters.schoolId =  requestingUser.schoolId || undefined;
+      
+      // Parents can only see their children and themselves
+      if (requestingUser.role = 
+      }
+    }
+
+    logger.info('Searching users with filters', {
+      requestId,
+      userId: requestingUserId,
+      role: requestingUser.role,
+      appliedFilters: filters
+    });
+
+    // Search users
+    const _result =  await UserService.searchUsers(filters);
+
+    // Transform response to remove sensitive data
+    const _transformedUsers =  result.users.map(user 
+    // Log successful operation
+    logger.info('Get users request completed', {
+      requestId,
+      userId: requestingUserId,
+      resultCount: result.users.length,
+      total: result.total,
+      page: result.page,
+      totalPages: result.totalPages
+    });
+
+    // Return response
+    return createSuccessResponse({
+      users: transformedUsers,
+      pagination: {
+        page: result.page,
+        limit: result.limit,
+        total: result.total,
+        totalPages: result.totalPages,
+        hasNext: result.page < result.totalPages,
+        hasPrev: result.page > 1
+      },
+      filters: {
+        query: filters.query,
+        role: filters.role,
+        schoolId: filters.schoolId,
+        isActive: filters.isActive,
+        parentId: filters.parentId,
+        hasChildren: filters.hasChildren,
+        sortBy: filters.sortBy,
+        sortOrder: filters.sortOrder
+      }
+    }, 'Users retrieved successfully', 200, requestId);
+
+  } catch (error: any) {
+    logger.error('Get users request failed', {
+      requestId,
+      error: (error as Error).message,
+      stack: (error as Error).stack
+    });
+    return handleError(error as Error, undefined, 500, requestId);
+  }
+};
+
+/**
+ * Export handler wrapped with JWT authentication
+ * Requires authentication - school admins see their school, admins see all
+ */
+export const _handler =  withAuth(getUsersHandler, {
+  required: true,
+  roles: ['admin', 'super_admin', 'school_admin', 'teacher', 'staff']
+});
+
+export default handler;

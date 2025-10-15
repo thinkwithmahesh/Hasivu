@@ -39,21 +39,20 @@ const deliveryVerificationSchema = Joi.object({
         latitude: Joi.number().optional(),
         longitude: Joi.number().optional(),
         venue: Joi.string().optional(),
-        description: Joi.string().optional()
+        description: Joi.string().optional(),
     }).required(),
     metadata: Joi.object({
         signalStrength: Joi.number().optional(),
         readerVersion: Joi.string().optional(),
-        timestamp: Joi.string().optional()
-    }).optional().default({})
+        timestamp: Joi.string().optional(),
+    })
+        .optional()
+        .default({}),
 });
 async function validateRFIDCard(cardId) {
     const card = await prisma.rFIDCard.findFirst({
         where: {
-            OR: [
-                { cardNumber: cardId },
-                { id: cardId }
-            ]
+            OR: [{ cardNumber: cardId }, { id: cardId }],
         },
         include: {
             student: {
@@ -65,10 +64,10 @@ async function validateRFIDCard(cardId) {
                     section: true,
                     schoolId: true,
                     parentId: true,
-                    isActive: true
-                }
-            }
-        }
+                    isActive: true,
+                },
+            },
+        },
     });
     if (!card) {
         throw new Error('RFID card not found');
@@ -89,7 +88,7 @@ async function validateRFIDCard(cardId) {
         id: card.id,
         cardNumber: card.cardNumber,
         student: card.student,
-        schoolId: card.schoolId
+        schoolId: card.schoolId,
     };
 }
 async function findPendingOrder(studentId, orderId) {
@@ -98,8 +97,8 @@ async function findPendingOrder(studentId, orderId) {
         order = await prisma.order.findFirst({
             where: {
                 id: orderId,
-                studentId: studentId
-            }
+                studentId,
+            },
         });
     }
     else {
@@ -109,19 +108,19 @@ async function findPendingOrder(studentId, orderId) {
         tomorrow.setDate(tomorrow.getDate() + 1);
         order = await prisma.order.findFirst({
             where: {
-                studentId: studentId,
+                studentId,
                 deliveryDate: {
                     gte: today,
-                    lt: tomorrow
+                    lt: tomorrow,
                 },
                 status: {
-                    in: ['confirmed', 'preparing', 'ready']
+                    in: ['confirmed', 'preparing', 'ready'],
                 },
-                paymentStatus: 'paid'
+                paymentStatus: 'paid',
             },
             orderBy: {
-                createdAt: 'asc'
-            }
+                createdAt: 'asc',
+            },
         });
     }
     if (!order) {
@@ -150,8 +149,8 @@ async function validateRFIDReader(readerId) {
             location: true,
             schoolId: true,
             isActive: true,
-            lastHeartbeat: true
-        }
+            lastHeartbeat: true,
+        },
     });
     if (!reader) {
         throw new Error('RFID reader not found');
@@ -162,8 +161,8 @@ async function validateRFIDReader(readerId) {
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
     if (reader.lastHeartbeat && new Date(reader.lastHeartbeat) < fiveMinutesAgo) {
         logger_service_1.LoggerService.getInstance().warn('RFID reader heartbeat is stale', {
-            readerId: readerId,
-            lastHeartbeat: reader.lastHeartbeat
+            readerId,
+            lastHeartbeat: reader.lastHeartbeat,
         });
     }
     return reader;
@@ -181,32 +180,32 @@ async function recordDeliveryVerification(order, student, reader, location, meta
                     cardId: order.cardId || null,
                     status: 'verified',
                     verificationData: JSON.stringify({
-                        location: location,
-                        readerInfo: metadata || {}
+                        location,
+                        readerInfo: metadata || {},
                     }),
-                    verifiedAt: new Date()
-                }
+                    verifiedAt: new Date(),
+                },
             });
             await tx.order.update({
                 where: { id: order.id },
                 data: {
                     status: 'delivered',
                     deliveredAt: new Date(),
-                    updatedAt: new Date()
-                }
+                    updatedAt: new Date(),
+                },
             });
             await tx.rFIDReader.update({
                 where: { id: reader.id },
                 data: {
-                    lastHeartbeat: new Date()
-                }
+                    lastHeartbeat: new Date(),
+                },
             });
         });
         logger_service_1.LoggerService.getInstance().info('Delivery verification recorded', {
-            verificationId: verificationId,
+            verificationId,
             orderId: order.id,
             studentId: student.id,
-            readerId: reader.id
+            readerId: reader.id,
         });
         return verificationId;
     }
@@ -226,29 +225,29 @@ async function sendDeliveryNotifications(order, student, verification) {
                 orderNumber: order.orderNumber,
                 mealPeriod: order.mealPeriod,
                 deliveredAt: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
-                verificationMethod: 'RFID Card'
-            }
+                verificationMethod: 'RFID Card',
+            },
         };
         logger_service_1.LoggerService.getInstance().info('Delivery notification should be sent', {
             orderId: order.id,
             studentId: student.id,
             parentId: student.parentId,
-            messageContent: messageContent
+            messageContent,
         });
         notifications.push('app');
         return {
             sent: true,
-            channels: notifications
+            channels: notifications,
         };
     }
     catch (error) {
         logger_service_1.LoggerService.getInstance().error('Failed to send delivery notifications', error, {
             orderId: order.id,
-            studentId: student.id
+            studentId: student.id,
         });
         return {
             sent: false,
-            channels: []
+            channels: [],
         };
     }
 }
@@ -269,10 +268,10 @@ const deliveryVerificationHandler = async (event, context) => {
     try {
         logger.info('Delivery verification request started', {
             requestId: context.awsRequestId,
-            httpMethod: event.httpMethod
+            httpMethod: event.httpMethod,
         });
         if (event.httpMethod !== 'POST') {
-            return (0, response_utils_1.createErrorResponse)(405, 'Method not allowed', undefined, 'METHOD_NOT_ALLOWED');
+            return (0, response_utils_1.createErrorResponse)('METHOD_NOT_ALLOWED', 'Method not allowed', 405);
         }
         const authenticatedUser = await (0, lambda_auth_middleware_1.authenticateLambda)(event);
         const requestBody = JSON.parse(event.body || '{}');
@@ -280,9 +279,9 @@ const deliveryVerificationHandler = async (event, context) => {
         if (error) {
             logger.warn('Invalid delivery verification request data', {
                 requestId: context.awsRequestId,
-                error: error.details
+                error: error.details,
             });
-            return (0, response_utils_1.createErrorResponse)(400, 'Invalid request data', undefined, 'VALIDATION_ERROR');
+            return (0, response_utils_1.createErrorResponse)('VALIDATION_ERROR', 'Invalid request data', 400);
         }
         const { cardId, readerId, orderId, location, metadata } = verifyData;
         const cardInfo = await validateRFIDCard(cardId);
@@ -291,70 +290,70 @@ const deliveryVerificationHandler = async (event, context) => {
                 requestId: context.awsRequestId,
                 userId: authenticatedUser.user?.id,
                 cardId,
-                schoolId: cardInfo.schoolId
+                schoolId: cardInfo.schoolId,
             });
-            return (0, response_utils_1.createErrorResponse)(403, 'Insufficient permissions to perform delivery verification', undefined, 'UNAUTHORIZED');
+            return (0, response_utils_1.createErrorResponse)('UNAUTHORIZED', 'Insufficient permissions to perform delivery verification', 403);
         }
         const reader = await validateRFIDReader(readerId);
         if (reader.schoolId !== cardInfo.student.schoolId) {
-            return (0, response_utils_1.createErrorResponse)(403, 'RFID reader does not belong to student\'s school', undefined, 'SCHOOL_MISMATCH');
+            return (0, response_utils_1.createErrorResponse)('SCHOOL_MISMATCH', "RFID reader does not belong to student's school", 403);
         }
         const order = await findPendingOrder(cardInfo.student.id, orderId);
         const verificationId = await recordDeliveryVerification(order, cardInfo.student, reader, location, metadata);
         const notifications = await sendDeliveryNotifications(order, cardInfo.student, {
-            verificationId: verificationId,
-            reader: reader,
-            location: location
+            verificationId,
+            reader,
+            location,
         });
         const school = await prisma.school.findUnique({
             where: { id: cardInfo.student.schoolId },
-            select: { id: true, name: true }
+            select: { id: true, name: true },
         });
         const response = {
             success: true,
-            verificationId: verificationId,
+            verificationId,
             order: {
                 id: order.id,
                 orderNumber: order.orderNumber,
                 status: 'delivered',
-                deliveredAt: new Date()
+                deliveredAt: new Date(),
             },
             student: {
                 id: cardInfo.student.id,
                 firstName: cardInfo.student.firstName,
                 lastName: cardInfo.student.lastName,
                 grade: cardInfo.student.grade,
-                section: cardInfo.student.section
+                section: cardInfo.student.section,
             },
             school: {
                 id: school?.id || cardInfo.student.schoolId,
-                name: school?.name || 'Unknown School'
+                name: school?.name || 'Unknown School',
             },
             delivery: {
                 verifiedBy: reader.name,
-                location: location,
+                location,
                 timestamp: new Date(),
-                method: 'rfid'
+                method: 'rfid',
             },
-            notifications: notifications
+            notifications,
         };
         const duration = Date.now() - startTime;
         logger.info('Delivery verification completed successfully', {
-            verificationId: verificationId,
+            verificationId,
             orderId: order.id,
             studentId: cardInfo.student.id,
-            duration: duration
+            duration,
         });
         return (0, response_utils_1.createSuccessResponse)({
             message: `Delivery verified for ${cardInfo.student.firstName} ${cardInfo.student.lastName}`,
-            data: response
+            data: response,
         });
     }
     catch (error) {
         const duration = Date.now() - startTime;
         logger.error('Delivery verification failed', error, {
-            duration: duration,
-            requestId: context.awsRequestId
+            duration,
+            requestId: context.awsRequestId,
         });
         return (0, response_utils_1.handleError)(error, 'Failed to verify delivery');
     }

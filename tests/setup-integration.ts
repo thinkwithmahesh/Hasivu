@@ -25,7 +25,7 @@ let testLogger: LoggingService;
 // Integration test configuration
 export const IntegrationTestConfig = {
   database: {
-    url: process.env.DATABASE_URL || 'postgresql://test_user:test_pass@localhost:5432/hasivu_test',
+    url: process.env.DATABASE_URL || 'file:./test.db',
     schema: 'public',
     maxConnections: 10,
     connectionTimeout: 30000,
@@ -107,37 +107,45 @@ export async function initTestDatabase(): Promise<PrismaClient> {
  */
 export async function cleanTestDatabase(): Promise<void> {
   console.log('🔄 Cleaning test database...');
-  
+
   try {
     if (!testPrisma) {
       throw new Error('Test database not initialized. Call initTestDatabase() first.');
     }
 
-    // Get all table names from the database schema
-    const tableNames = await testPrisma.$queryRaw<Array<{ table_name: string }>>`
-      SELECT table_name 
-      FROM information_schema.tables 
-      WHERE table_schema = 'public' 
-        AND table_type = 'BASE TABLE'
-        AND table_name != '_prisma_migrations'
+    // For SQLite, get all table names using sqlite_master
+    const tableNames = await testPrisma.$queryRaw<Array<{ name: string }>>`
+      SELECT name FROM sqlite_master
+      WHERE type='table'
+        AND name NOT LIKE 'sqlite_%'
+        AND name != '_prisma_migrations'
     `;
 
-    // Disable foreign key checks temporarily
-    await testPrisma.$executeRaw`SET session_replication_role = replica;`;
-    
+    // Disable foreign key checks temporarily for SQLite
+    await testPrisma.$executeRaw`PRAGMA foreign_keys = OFF;`;
+
     // Clean all tables
-    for (const { table_name } of tableNames) {
+    for (const { name: tableName } of tableNames) {
       try {
-        await testPrisma.$executeRawUnsafe(`TRUNCATE TABLE "${table_name}" CASCADE;`);
-        console.log(`✅ Cleaned table: ${table_name}`);
+        await testPrisma.$executeRawUnsafe(`DELETE FROM "${tableName}";`);
+        console.log(`✅ Cleaned table: ${tableName}`);
       } catch (tableError) {
-        console.warn(`⚠️ Failed to clean table ${table_name}:`, tableError);
+        console.warn(`⚠️ Failed to clean table ${tableName}:`, tableError);
       }
     }
-    
+
+    // Reset auto-increment counters
+    for (const { name: tableName } of tableNames) {
+      try {
+        await testPrisma.$executeRawUnsafe(`DELETE FROM sqlite_sequence WHERE name="${tableName}";`);
+      } catch (tableError) {
+        // Ignore errors for tables without auto-increment
+      }
+    }
+
     // Re-enable foreign key checks
-    await testPrisma.$executeRaw`SET session_replication_role = DEFAULT;`;
-    
+    await testPrisma.$executeRaw`PRAGMA foreign_keys = ON;`;
+
     console.log('✅ Test database cleaned successfully');
   } catch (error) {
     console.error('❌ Failed to clean test database:', error);

@@ -1,89 +1,78 @@
-"use client"
+'use client';
 
-import React, { useState } from 'react'
-import { NextPage } from 'next'
-import Head from 'next/head'
-import { Card } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import MobileLayout from '@/components/mobile/MobileLayout'
+import React, { useState } from 'react';
+import { NextPage } from 'next';
+import Head from 'next/head';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+// Tabs components removed - not currently used
+import MobileLayout from '@/components/mobile/MobileLayout';
 
 // Touch Optimized Components
-import { 
-  TouchContainer, 
-  SwipeableCard, 
-  PullToRefresh, 
-  TouchInput 
-} from '@/components/mobile/TouchOptimized'
+import {
+  TouchContainer,
+  SwipeableCard,
+  PullToRefresh,
+  TouchInput,
+} from '@/components/mobile/TouchOptimized';
 
 // Bottom Sheets
-import { 
-  BottomSheet, 
-  useBottomSheet, 
-  MealDetailsSheet, 
-  RFIDScannerSheet 
-} from '@/components/mobile/BottomSheet'
+import {
+  BottomSheet,
+  useBottomSheet,
+  MealDetailsSheet,
+  RFIDScannerSheet,
+} from '@/components/mobile/BottomSheet';
 
 // PWA Features
 import {
-  PWAInstallPrompt,
-  OfflineStatus,
-  NotificationPermission,
   NetworkStatusIndicator,
   ShareButton,
-  EmergencyBanner,
-  QuickRFIDDisplay
-} from '@/components/mobile/PWAFeatures'
+  QuickRFIDDisplay,
+} from '@/components/mobile/PWAFeatures';
 
 // School Mobile Components
 import {
   QuickMealCarousel,
   LiveOrderTracking,
   ParentApprovalInterface,
-  SchoolScheduleIntegration
-} from '@/components/mobile/SchoolMobileComponents'
+  SchoolScheduleIntegration,
+} from '@/components/mobile/SchoolMobileComponents';
 
 // Hooks
-import { usePWAInstall, useNetworkStatus, usePushNotifications } from '@/hooks/usePWA'
-import { useMobileLayout } from '@/hooks/useMobileLayout'
+import { usePWAInstall, useNetworkStatus, usePushNotifications } from '@/hooks/usePWA';
+import { useMobileLayout } from '@/hooks/useMobileLayout';
 
 import {
   Smartphone,
   Touch,
-  Wifi,
   Bell,
   Utensils,
-  Calendar,
-  CreditCard,
-  Settings,
   Heart,
   Star,
-  Clock,
-  MapPin,
   Share,
   Download,
   RefreshCw,
   Zap,
   CheckCircle,
-  AlertTriangle
-} from 'lucide-react'
+} from 'lucide-react';
 
 const MobileFeaturesDemo: NextPage = () => {
-  const { isMobile, isTablet, vibrate, shareContent } = useMobileLayout()
-  const { isInstallable, installApp } = usePWAInstall()
-  const { isOnline, connectionQuality } = useNetworkStatus()
-  const { permission, requestPermission } = usePushNotifications()
+  const { isMobile, isTablet, vibrate, shareContent } = useMobileLayout();
+  const { isInstallable, installApp } = usePWAInstall();
+  const { isOnline, connectionQuality } = useNetworkStatus();
+  const { permission, requestPermission } = usePushNotifications();
 
   // Demo state
-  const [searchValue, setSearchValue] = useState('')
-  const [refreshCount, setRefreshCount] = useState(0)
-  const [orderStatus, setOrderStatus] = useState<'placed' | 'preparing' | 'ready'>('preparing')
+  const [searchValue, setSearchValue] = useState('');
+  const [refreshCount, setRefreshCount] = useState(0);
+  const [orderStatus, setOrderStatus] = useState<'placed' | 'preparing' | 'ready'>('preparing');
 
   // Bottom sheet states
-  const mealDetailsSheet = useBottomSheet()
-  const rfidScannerSheet = useBottomSheet()
-  const demoSheet = useBottomSheet()
+  const mealDetailsSheet = useBottomSheet();
+  const rfidScannerSheet = useBottomSheet();
+  const demoSheet = useBottomSheet();
 
   // Demo data
   const mockMeals = [
@@ -98,7 +87,7 @@ const MobileFeaturesDemo: NextPage = () => {
       isPopular: true,
       description: 'Tender chicken in rich tomato curry with basmati rice',
       allergens: ['dairy', 'gluten'],
-      nutrition: { calories: 450, protein: 25, carbs: 60, fat: 15 }
+      nutrition: { calories: 450, protein: 25, carbs: 60, fat: 15 },
     },
     {
       id: '2',
@@ -111,7 +100,7 @@ const MobileFeaturesDemo: NextPage = () => {
       isPopular: false,
       description: 'Fresh vegetables wrapped in whole wheat tortilla',
       allergens: ['gluten'],
-      nutrition: { calories: 320, protein: 12, carbs: 45, fat: 8 }
+      nutrition: { calories: 320, protein: 12, carbs: 45, fat: 8 },
     },
     {
       id: '3',
@@ -124,20 +113,20 @@ const MobileFeaturesDemo: NextPage = () => {
       isPopular: true,
       description: 'Rich, fudgy brownie with chocolate chunks',
       allergens: ['dairy', 'eggs', 'nuts'],
-      nutrition: { calories: 280, protein: 4, carbs: 35, fat: 14 }
-    }
-  ]
+      nutrition: { calories: 280, protein: 4, carbs: 35, fat: 14 },
+    },
+  ];
 
   const mockOrder = {
     id: 'ORD123456',
     items: [
       { name: 'Butter Chicken Rice Bowl', quantity: 1 },
-      { name: 'Mango Lassi', quantity: 1 }
+      { name: 'Mango Lassi', quantity: 1 },
     ],
     status: orderStatus,
     estimatedTime: 12,
-    pickupLocation: 'Canteen Counter 2'
-  }
+    pickupLocation: 'Canteen Counter 2',
+  };
 
   const mockPendingOrders = [
     {
@@ -145,80 +134,85 @@ const MobileFeaturesDemo: NextPage = () => {
       studentName: 'Arjun Sharma',
       items: [
         { name: 'Pizza Slice', price: 80, quantity: 2 },
-        { name: 'Cold Drink', price: 30, quantity: 1 }
+        { name: 'Cold Drink', price: 30, quantity: 1 },
       ],
       total: 190,
       requestedTime: new Date(),
-      dietaryNotes: 'No onions please'
-    }
-  ]
+      dietaryNotes: 'No onions please',
+    },
+  ];
 
   const currentSchedule = {
     currentPeriod: {
       subject: 'Mathematics',
       teacher: 'Mrs. Gupta',
       room: 'A-204',
-      endTime: new Date(Date.now() + 30 * 60 * 1000)
+      endTime: new Date(Date.now() + 30 * 60 * 1000),
     },
     nextMealTime: {
       type: 'lunch' as const,
       time: new Date(Date.now() + 90 * 60 * 1000),
-      location: 'Main Canteen'
+      location: 'Main Canteen',
     },
-    isOrderingOpen: true
-  }
+    isOrderingOpen: true,
+  };
 
   const handleRefresh = async () => {
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    setRefreshCount(prev => prev + 1)
-  }
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    setRefreshCount(prev => prev + 1);
+  };
 
   const handleMealOrder = (mealId: string, quantity: number) => {
-    vibrate([20, 10, 20])
-    console.log('Ordered:', mealId, 'Quantity:', quantity)
-  }
+    vibrate([20, 10, 20]);
+  };
 
   const handleShare = () => {
     shareContent({
       title: 'HASIVU Mobile Demo',
       text: 'Check out these amazing mobile features for school food ordering!',
-      url: window.location.href
-    })
-  }
+      url: window.location.href,
+    });
+  };
 
   const demoSections = [
     {
       id: 'touch',
       label: 'Touch UI',
       icon: <Touch className="h-4 w-4" />,
-      color: 'bg-blue-500'
+      color: 'bg-blue-500',
     },
     {
       id: 'pwa',
       label: 'PWA Features',
       icon: <Smartphone className="h-4 w-4" />,
-      color: 'bg-green-500'
+      color: 'bg-green-500',
     },
     {
       id: 'school',
       label: 'School Features',
       icon: <Utensils className="h-4 w-4" />,
-      color: 'bg-purple-500'
+      color: 'bg-purple-500',
     },
     {
       id: 'performance',
       label: 'Performance',
       icon: <Zap className="h-4 w-4" />,
-      color: 'bg-orange-500'
-    }
-  ]
+      color: 'bg-orange-500',
+    },
+  ];
 
   return (
     <>
       <Head>
         <title>Mobile Features Demo - HASIVU</title>
-        <meta name="description" content="Comprehensive mobile experience demo for HASIVU school platform" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+        <meta
+          name="description"
+          content="Comprehensive mobile experience demo for HASIVU school platform"
+        />
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+        />
       </Head>
 
       <MobileLayout
@@ -226,7 +220,7 @@ const MobileFeaturesDemo: NextPage = () => {
         user={{
           id: 'demo-user',
           name: 'Demo Student',
-          email: 'demo@hasivu.com'
+          email: 'demo@hasivu.com',
         }}
         showBottomNav={isMobile}
         showHeader={true}
@@ -240,7 +234,12 @@ const MobileFeaturesDemo: NextPage = () => {
                 {connectionQuality}
               </Badge>
               {isInstallable && (
-                <Button size="sm" variant="outline" onClick={installApp} className="h-6 px-2 text-xs">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={installApp}
+                  className="h-6 px-2 text-xs"
+                >
                   <Download className="h-3 w-3 mr-1" />
                   Install
                 </Button>
@@ -259,7 +258,8 @@ const MobileFeaturesDemo: NextPage = () => {
               </div>
               <h1 className="text-xl font-bold text-gray-900">Mobile Features Demo</h1>
               <p className="text-sm text-gray-600">
-                Experience touch-optimized components, PWA features, and school-specific mobile interfaces
+                Experience touch-optimized components, PWA features, and school-specific mobile
+                interfaces
               </p>
               <div className="flex justify-center space-x-2">
                 <ShareButton
@@ -281,14 +281,12 @@ const MobileFeaturesDemo: NextPage = () => {
 
           {/* Feature Categories */}
           <div className="grid grid-cols-2 gap-3 px-4">
-            {demoSections.map((section) => (
-              <TouchContainer
-                key={section.id}
-                hapticFeedback
-                onTap={() => demoSheet.open()}
-              >
+            {demoSections.map(section => (
+              <TouchContainer key={section.id} hapticFeedback onTap={() => demoSheet.open()}>
                 <Card className="p-4 text-center hover:shadow-md transition-shadow">
-                  <div className={`mx-auto w-10 h-10 ${section.color} rounded-lg flex items-center justify-center text-white mb-3`}>
+                  <div
+                    className={`mx-auto w-10 h-10 ${section.color} rounded-lg flex items-center justify-center text-white mb-3`}
+                  >
                     {section.icon}
                   </div>
                   <h3 className="font-semibold text-sm text-gray-900">{section.label}</h3>
@@ -304,7 +302,7 @@ const MobileFeaturesDemo: NextPage = () => {
               label="Search meals"
               placeholder="Try typing something..."
               value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
+              onChange={e => setSearchValue(e.target.value)}
               clearable
               onClear={() => setSearchValue('')}
               icon={<Bell className="h-4 w-4" />}
@@ -315,10 +313,7 @@ const MobileFeaturesDemo: NextPage = () => {
           {/* Quick Meal Carousel */}
           <div>
             <h2 className="text-lg font-bold text-gray-900 px-4 mb-4">Quick Order Demo</h2>
-            <QuickMealCarousel
-              meals={mockMeals}
-              onOrderMeal={handleMealOrder}
-            />
+            <QuickMealCarousel meals={mockMeals} onOrderMeal={handleMealOrder} />
           </div>
 
           {/* Swipeable Cards Demo */}
@@ -327,13 +322,13 @@ const MobileFeaturesDemo: NextPage = () => {
             <SwipeableCard
               leftAction={{
                 icon: <Heart className="h-5 w-5" />,
-                color: "bg-red-500 text-white",
-                label: "Like"
+                color: 'bg-red-500 text-white',
+                label: 'Like',
               }}
               rightAction={{
                 icon: <Star className="h-5 w-5" />,
-                color: "bg-yellow-500 text-white",
-                label: "Favorite"
+                color: 'bg-yellow-500 text-white',
+                label: 'Favorite',
               }}
               onSwipeLeft={() => vibrate(20)}
               onSwipeRight={() => vibrate(20)}
@@ -354,9 +349,7 @@ const MobileFeaturesDemo: NextPage = () => {
               <Card className="p-4 text-center">
                 <RefreshCw className="h-8 w-8 text-gray-400 mx-auto mb-2" />
                 <h3 className="font-semibold text-gray-900 mb-1">Pull down to refresh</h3>
-                <p className="text-sm text-gray-600">
-                  Refreshed {refreshCount} times
-                </p>
+                <p className="text-sm text-gray-600">Refreshed {refreshCount} times</p>
               </Card>
             </PullToRefresh>
           </div>
@@ -368,10 +361,10 @@ const MobileFeaturesDemo: NextPage = () => {
               order={mockOrder}
               onRefresh={() => {
                 setOrderStatus(prev => {
-                  const statuses = ['placed', 'preparing', 'ready'] as const
-                  const currentIndex = statuses.indexOf(prev)
-                  return statuses[(currentIndex + 1) % statuses.length]
-                })
+                  const statuses = ['placed', 'preparing', 'ready'] as const;
+                  const currentIndex = statuses.indexOf(prev);
+                  return statuses[(currentIndex + 1) % statuses.length];
+                });
               }}
             />
           </div>
@@ -390,9 +383,8 @@ const MobileFeaturesDemo: NextPage = () => {
             <h2 className="text-lg font-bold text-gray-900">Parent Approval Interface</h2>
             <ParentApprovalInterface
               pendingOrders={mockPendingOrders}
-              onApprove={(id) => vibrate([20, 10, 20])}
-              onReject={(id, reason) => vibrate([50, 20, 50])}
-              onModify={(id) => console.log('Modify:', id)}
+              onApprove={_id => vibrate([20, 10, 20])}
+              onReject={(_id, _reason) => vibrate([50, 20, 50])}
             />
           </div>
 
@@ -410,20 +402,10 @@ const MobileFeaturesDemo: NextPage = () => {
           <div className="px-4 space-y-4">
             <h2 className="text-lg font-bold text-gray-900">Bottom Sheets</h2>
             <div className="grid grid-cols-2 gap-3">
-              <Button
-                variant="outline"
-                onClick={mealDetailsSheet.open}
-                className="h-12"
-                haptic
-              >
+              <Button variant="outline" onClick={mealDetailsSheet.open} className="h-12" haptic>
                 Meal Details
               </Button>
-              <Button
-                variant="outline"
-                onClick={rfidScannerSheet.open}
-                className="h-12"
-                haptic
-              >
+              <Button variant="outline" onClick={rfidScannerSheet.open} className="h-12" haptic>
                 RFID Scanner
               </Button>
             </div>
@@ -444,13 +426,8 @@ const MobileFeaturesDemo: NextPage = () => {
                   Enable Notifications
                 </Button>
               )}
-              
-              <Button
-                variant="outline"
-                onClick={handleShare}
-                className="justify-start"
-                haptic
-              >
+
+              <Button variant="outline" onClick={handleShare} className="justify-start" haptic>
                 <Share className="h-4 w-4 mr-2" />
                 Share Demo
               </Button>
@@ -489,17 +466,16 @@ const MobileFeaturesDemo: NextPage = () => {
           onClose={mealDetailsSheet.close}
           meal={mockMeals[0]}
           onAddToCart={() => {
-            vibrate([20, 10, 20])
-            mealDetailsSheet.close()
+            vibrate([20, 10, 20]);
+            mealDetailsSheet.close();
           }}
         />
 
         <RFIDScannerSheet
           isOpen={rfidScannerSheet.isOpen}
           onClose={rfidScannerSheet.close}
-          onScanComplete={(code) => {
-            console.log('Scanned:', code)
-            vibrate([20, 10, 20])
+          onScanComplete={code => {
+            vibrate([20, 10, 20]);
           }}
         />
 
@@ -513,7 +489,7 @@ const MobileFeaturesDemo: NextPage = () => {
           <div className="p-4 space-y-4">
             <div className="space-y-3">
               <h3 className="font-semibold text-gray-900">Features Demonstrated:</h3>
-              
+
               <div className="space-y-2">
                 <div className="flex items-center space-x-3">
                   <CheckCircle className="h-4 w-4 text-green-600" />
@@ -549,23 +525,19 @@ const MobileFeaturesDemo: NextPage = () => {
             <div className="bg-blue-50 rounded-lg p-3">
               <h4 className="font-medium text-blue-900 mb-1">Performance Optimizations</h4>
               <p className="text-sm text-blue-700">
-                All components use virtual scrolling, image lazy loading, and touch debouncing 
-                for smooth 60fps interactions on mobile devices.
+                All components use virtual scrolling, image lazy loading, and touch debouncing for
+                smooth 60fps interactions on mobile devices.
               </p>
             </div>
 
-            <Button
-              onClick={demoSheet.close}
-              className="w-full"
-              haptic
-            >
+            <Button onClick={demoSheet.close} className="w-full" haptic>
               Close Demo Info
             </Button>
           </div>
         </BottomSheet>
       </MobileLayout>
     </>
-  )
-}
+  );
+};
 
-export default MobileFeaturesDemo
+export default MobileFeaturesDemo;

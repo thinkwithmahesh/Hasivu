@@ -6,7 +6,7 @@ Resources:
   WebApplicationFirewall:
     Type: AWS::WAFv2::WebACL
     Properties:
-      Name: !Sub "${AWS::StackName}-waf"
+      Name: !Sub '${AWS::StackName}-waf'
       Scope: REGIONAL
       DefaultAction:
         Allow: {}
@@ -31,9 +31,9 @@ Resources:
           Statement:
             GeoMatchStatement:
               CountryCodes:
-                - CN  # Block China
-                - RU  # Block Russia
-                - KP  # Block North Korea
+                - CN # Block China
+                - RU # Block Russia
+                - KP # Block North Korea
           Action:
             Block: {}
           VisibilityConfig:
@@ -86,29 +86,29 @@ Resources:
       VisibilityConfig:
         SampledRequestsEnabled: true
         CloudWatchMetricsEnabled: true
-        MetricName: !Sub "${AWS::StackName}-waf"
+        MetricName: !Sub '${AWS::StackName}-waf'
 
   # API Gateway security configuration
   ApiGatewayDomainName:
     Type: AWS::ApiGateway::DomainName
     Properties:
-      DomainName: !Sub "api.${DomainName}"
+      DomainName: !Sub 'api.${DomainName}'
       CertificateArn: !Ref SSLCertificate
       SecurityPolicy: TLS_1_2
       EndpointConfiguration:
         Types:
           - REGIONAL
       MutualTlsAuthentication:
-        TruststoreUri: !Sub "s3://${SecurityBucket}/truststore.pem"
+        TruststoreUri: !Sub 's3://${SecurityBucket}/truststore.pem'
 
   # SSL Certificate for API Gateway
   SSLCertificate:
     Type: AWS::CertificateManager::Certificate
     Properties:
-      DomainName: !Sub "api.${DomainName}"
+      DomainName: !Sub 'api.${DomainName}'
       ValidationMethod: DNS
       DomainValidationOptions:
-        - DomainName: !Sub "api.${DomainName}"
+        - DomainName: !Sub 'api.${DomainName}'
           HostedZoneId: !Ref HostedZone
 
   # Security Group for RDS (restrict database access)
@@ -166,7 +166,7 @@ Resources:
   SecurityBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub "${AWS::StackName}-security-${AWS::AccountId}"
+      BucketName: !Sub '${AWS::StackName}-security-${AWS::AccountId}'
       BucketEncryption:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:
@@ -194,16 +194,16 @@ Resources:
   SecurityLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub "/aws/security/${AWS::StackName}"
+      LogGroupName: !Sub '/aws/security/${AWS::StackName}'
       RetentionInDays: 90
 
   # CloudTrail for API auditing
   CloudTrail:
     Type: AWS::CloudTrail::Trail
     Properties:
-      TrailName: !Sub "${AWS::StackName}-security-trail"
+      TrailName: !Sub '${AWS::StackName}-security-trail'
       S3BucketName: !Ref SecurityBucket
-      S3KeyPrefix: "cloudtrail-logs"
+      S3KeyPrefix: 'cloudtrail-logs'
       IncludeGlobalServiceEvents: true
       IsMultiRegionTrail: true
       EnableLogFileValidation: true
@@ -211,15 +211,15 @@ Resources:
         - ReadWriteType: All
           IncludeManagementEvents: true
           DataResources:
-            - Type: "AWS::S3::Object"
+            - Type: 'AWS::S3::Object'
               Values:
-                - !Sub "${SecurityBucket}/*"
+                - !Sub '${SecurityBucket}/*'
 
   # Config Rule for security compliance
   ConfigRule:
     Type: AWS::Config::ConfigRule
     Properties:
-      ConfigRuleName: !Sub "${AWS::StackName}-security-compliance"
+      ConfigRuleName: !Sub '${AWS::StackName}-security-compliance'
       Source:
         Owner: AWS
         SourceIdentifier: S3_BUCKET_PUBLIC_ACCESS_PROHIBITED
@@ -228,17 +228,17 @@ Resources:
   SecurityAlertTopic:
     Type: AWS::SNS::Topic
     Properties:
-      TopicName: !Sub "${AWS::StackName}-security-alerts"
-      DisplayName: "Hasivu Security Alerts"
+      TopicName: !Sub '${AWS::StackName}-security-alerts'
+      DisplayName: 'Hasivu Security Alerts'
 
   # CloudWatch Alarm for suspicious activity
   SuspiciousActivityAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: !Sub "${AWS::StackName}-suspicious-activity"
-      AlarmDescription: "Alerts on suspicious activity patterns"
-      MetricName: "SuspiciousActivity"
-      Namespace: "HASIVU/Security"
+      AlarmName: !Sub '${AWS::StackName}-suspicious-activity'
+      AlarmDescription: 'Alerts on suspicious activity patterns'
+      MetricName: 'SuspiciousActivity'
+      Namespace: 'HASIVU/Security'
       Statistic: Sum
       Period: 300
       EvaluationPeriods: 1
@@ -267,40 +267,40 @@ Outputs:
     Description: WAF ARN for API Gateway association
     Value: !GetAtt WebApplicationFirewall.Arn
     Export:
-      Name: !Sub "${AWS::StackName}-waf-arn"
+      Name: !Sub '${AWS::StackName}-waf-arn'
 
   SecurityBucketName:
     Description: S3 bucket for security logs
     Value: !Ref SecurityBucket
     Export:
-      Name: !Sub "${AWS::StackName}-security-bucket"
+      Name: !Sub '${AWS::StackName}-security-bucket'
 
   SecurityLogGroupName:
     Description: CloudWatch log group for security events
     Value: !Ref SecurityLogGroup
     Export:
-      Name: !Sub "${AWS::StackName}-security-logs"
+      Name: !Sub '${AWS::StackName}-security-logs'
 
   SecurityAlertTopicArn:
     Description: SNS topic for security alerts
     Value: !Ref SecurityAlertTopic
     Export:
-      Name: !Sub "${AWS::StackName}-security-alerts"
+      Name: !Sub '${AWS::StackName}-security-alerts'
 
   DatabaseSecurityGroupId:
     Description: Security group ID for database access
     Value: !Ref DatabaseSecurityGroup
     Export:
-      Name: !Sub "${AWS::StackName}-db-sg"
+      Name: !Sub '${AWS::StackName}-db-sg'
 
   LambdaSecurityGroupId:
     Description: Security group ID for Lambda functions
     Value: !Ref LambdaSecurityGroup
     Export:
-      Name: !Sub "${AWS::StackName}-lambda-sg"
+      Name: !Sub '${AWS::StackName}-lambda-sg'
 
   RedisSecurityGroupId:
     Description: Security group ID for Redis access
     Value: !Ref RedisSecurityGroup
     Export:
-      Name: !Sub "${AWS::StackName}-redis-sg"
+      Name: !Sub '${AWS::StackName}-redis-sg'

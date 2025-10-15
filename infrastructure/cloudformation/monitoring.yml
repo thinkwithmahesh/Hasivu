@@ -11,23 +11,23 @@ Parameters:
     Default: production
     AllowedValues: [dev, staging, production]
     Description: Environment name for resource naming
-  
+
   ProjectName:
     Type: String
     Default: hasivu-platform
     Description: Project name for resource tagging
-  
+
   NotificationEmail:
     Type: String
     Description: Email address for critical alerts
     AllowedPattern: '^[^@]+@[^@]+\.[^@]+$'
-  
+
   SlackWebhookUrl:
     Type: String
     NoEcho: true
     Description: Slack webhook URL for notifications
     Default: ''
-  
+
   AlertingTopicArn:
     Type: String
     Description: SNS Topic ARN for alerts (from main infrastructure)
@@ -40,7 +40,7 @@ Resources:
   # =====================================================
   # CLOUDWATCH DASHBOARD
   # =====================================================
-  
+
   HasivuPlatformDashboard:
     Type: AWS::CloudWatch::Dashboard
     Properties:
@@ -151,7 +151,7 @@ Resources:
   # =====================================================
   # LAMBDA FUNCTION ALARMS
   # =====================================================
-  
+
   # High Error Rate Alarm
   LambdaHighErrorRateAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -173,7 +173,7 @@ Resources:
       Dimensions:
         - Name: FunctionName
           Value: !Sub '${ProjectName}-api-${EnvironmentName}-login'
-  
+
   # High Duration Alarm
   LambdaHighDurationAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -185,12 +185,12 @@ Resources:
       Statistic: Average
       Period: 300
       EvaluationPeriods: 3
-      Threshold: !If [IsProduction, 15000, 20000]  # 15s for prod, 20s for others
+      Threshold: !If [IsProduction, 15000, 20000] # 15s for prod, 20s for others
       ComparisonOperator: GreaterThanThreshold
       AlarmActions:
         - !Ref AlertingTopicArn
       TreatMissingData: notBreaching
-  
+
   # Throttling Alarm
   LambdaThrottleAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -207,7 +207,7 @@ Resources:
       AlarmActions:
         - !Ref AlertingTopicArn
       TreatMissingData: notBreaching
-  
+
   # API Gateway Alarms
   ApiGateway4XXAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -224,7 +224,7 @@ Resources:
       AlarmActions:
         - !Ref AlertingTopicArn
       TreatMissingData: notBreaching
-  
+
   ApiGateway5XXAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
@@ -240,7 +240,7 @@ Resources:
       AlarmActions:
         - !Ref AlertingTopicArn
       TreatMissingData: notBreaching
-  
+
   ApiGatewayLatencyAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
@@ -251,7 +251,7 @@ Resources:
       Statistic: Average
       Period: 300
       EvaluationPeriods: 3
-      Threshold: !If [IsProduction, 5000, 10000]  # 5s for prod, 10s for others
+      Threshold: !If [IsProduction, 5000, 10000] # 5s for prod, 10s for others
       ComparisonOperator: GreaterThanThreshold
       AlarmActions:
         - !Ref AlertingTopicArn
@@ -260,7 +260,7 @@ Resources:
   # =====================================================
   # CUSTOM METRICS AND ALARMS
   # =====================================================
-  
+
   # Payment Processing Alarm
   PaymentErrorAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -280,7 +280,7 @@ Resources:
       Dimensions:
         - Name: FunctionName
           Value: !Sub '${ProjectName}-api-${EnvironmentName}-createPaymentOrder'
-  
+
   # Authentication System Health
   AuthSystemHealthAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -304,7 +304,7 @@ Resources:
   # =====================================================
   # LOG MONITORING
   # =====================================================
-  
+
   # Critical Error Log Filter
   CriticalErrorLogFilter:
     Type: AWS::Logs::MetricFilter
@@ -316,7 +316,7 @@ Resources:
           MetricName: CriticalErrors
           MetricValue: '1'
           DefaultValue: 0
-  
+
   CriticalErrorAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
@@ -332,7 +332,7 @@ Resources:
       AlarmActions:
         - !Ref AlertingTopicArn
       TreatMissingData: notBreaching
-  
+
   # Database Connection Error Filter
   DatabaseErrorLogFilter:
     Type: AWS::Logs::MetricFilter
@@ -344,7 +344,7 @@ Resources:
           MetricName: ConnectionErrors
           MetricValue: '1'
           DefaultValue: 0
-  
+
   DatabaseErrorAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
@@ -364,7 +364,7 @@ Resources:
   # =====================================================
   # SLACK NOTIFICATION LAMBDA (Optional)
   # =====================================================
-  
+
   SlackNotificationFunction:
     Type: AWS::Lambda::Function
     Condition: HasSlackWebhook
@@ -384,9 +384,9 @@ Resources:
           import json
           import urllib3
           import os
-          
+
           http = urllib3.PoolManager()
-          
+
           def lambda_handler(event, context):
               webhook_url = os.environ['SLACK_WEBHOOK_URL']
               environment = os.environ['ENVIRONMENT']
@@ -450,7 +450,7 @@ Resources:
                   'statusCode': 200,
                   'body': json.dumps('Message sent to Slack')
               }
-  
+
   SlackNotificationRole:
     Type: AWS::IAM::Role
     Condition: HasSlackWebhook
@@ -464,7 +464,7 @@ Resources:
             Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-  
+
   SlackNotificationSubscription:
     Type: AWS::SNS::Subscription
     Condition: HasSlackWebhook
@@ -472,7 +472,7 @@ Resources:
       Protocol: lambda
       TopicArn: !Ref AlertingTopicArn
       Endpoint: !GetAtt SlackNotificationFunction.Arn
-  
+
   SlackNotificationPermission:
     Type: AWS::Lambda::Permission
     Condition: HasSlackWebhook
@@ -485,7 +485,7 @@ Resources:
   # =====================================================
   # BUDGET ALERTS (Production Only)
   # =====================================================
-  
+
   CostBudget:
     Type: AWS::Budgets::Budget
     Condition: IsProduction
@@ -493,7 +493,7 @@ Resources:
       Budget:
         BudgetName: !Sub '${ProjectName}-${EnvironmentName}-monthly-budget'
         BudgetLimit:
-          Amount: 1000  # $1000 per month
+          Amount: 1000 # $1000 per month
           Unit: USD
         TimeUnit: MONTHLY
         BudgetType: COST
@@ -506,7 +506,7 @@ Resources:
         - Notification:
             NotificationType: ACTUAL
             ComparisonOperator: GREATER_THAN
-            Threshold: 80  # Alert at 80% of budget
+            Threshold: 80 # Alert at 80% of budget
             ThresholdType: PERCENTAGE
           Subscribers:
             - SubscriptionType: EMAIL
@@ -514,7 +514,7 @@ Resources:
         - Notification:
             NotificationType: FORECASTED
             ComparisonOperator: GREATER_THAN
-            Threshold: 100  # Alert if forecasted to exceed budget
+            Threshold: 100 # Alert if forecasted to exceed budget
             ThresholdType: PERCENTAGE
           Subscribers:
             - SubscriptionType: EMAIL
@@ -526,14 +526,14 @@ Outputs:
     Value: !Sub 'https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${ProjectName}-${EnvironmentName}-overview'
     Export:
       Name: !Sub '${ProjectName}-${EnvironmentName}-DashboardUrl'
-  
+
   SlackNotificationFunctionArn:
     Condition: HasSlackWebhook
     Description: 'Slack notification Lambda function ARN'
     Value: !GetAtt SlackNotificationFunction.Arn
     Export:
       Name: !Sub '${ProjectName}-${EnvironmentName}-SlackNotificationFunctionArn'
-  
+
   MonitoringStackStatus:
     Description: 'Monitoring stack deployment status'
     Value: 'Successfully deployed'

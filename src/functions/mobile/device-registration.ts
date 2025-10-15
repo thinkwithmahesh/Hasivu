@@ -6,9 +6,12 @@
  */
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 import { PrismaClient } from '@prisma/client';
-import { LoggerService } from '../shared/logger.service';
+import { logger } from '../../utils/logger';
 import { createSuccessResponse, createErrorResponse, handleError } from '../shared/response.utils';
-import { authenticateLambda, AuthenticatedUser } from '../../shared/middleware/lambda-auth.middleware';
+import {
+  authenticateLambda,
+  AuthenticatedUser,
+} from '../../shared/middleware/lambda-auth.middleware';
 import Joi from 'joi';
 import crypto from 'crypto';
 
@@ -30,9 +33,15 @@ const deviceRegistrationSchema = Joi.object({
     orderUpdates: Joi.boolean().optional().default(true),
     paymentReminders: Joi.boolean().optional().default(true),
     weeklyReports: Joi.boolean().optional().default(true),
-    quietHoursStart: Joi.string().pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
-    quietHoursEnd: Joi.string().pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/).optional()
-  }).optional().default({})
+    quietHoursStart: Joi.string()
+      .pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
+      .optional(),
+    quietHoursEnd: Joi.string()
+      .pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
+      .optional(),
+  })
+    .optional()
+    .default({}),
 });
 
 // Device update schema
@@ -50,9 +59,13 @@ const deviceUpdateSchema = Joi.object({
     orderUpdates: Joi.boolean().optional(),
     paymentReminders: Joi.boolean().optional(),
     weeklyReports: Joi.boolean().optional(),
-    quietHoursStart: Joi.string().pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
-    quietHoursEnd: Joi.string().pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/).optional()
-  }).optional()
+    quietHoursStart: Joi.string()
+      .pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
+      .optional(),
+    quietHoursEnd: Joi.string()
+      .pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
+      .optional(),
+  }).optional(),
 });
 
 // Interfaces
@@ -134,14 +147,14 @@ async function registerMobileDevice(
   deviceData: DeviceRegistrationRequest
 ): Promise<any> {
   const deviceId = generateDeviceId(userId, deviceData.deviceToken);
-  
+
   // Check if device already exists
   const existingDevice = await prisma.userDevice.findUnique({
-    where: { id: deviceId }
+    where: { id: deviceId },
   });
-  
+
   const now = new Date();
-  
+
   if (existingDevice) {
     // Update existing device
     const updatedDevice = await prisma.userDevice.update({
@@ -160,11 +173,11 @@ async function registerMobileDevice(
           registrationMethod: 'api_update',
           deviceName: deviceData.deviceName || null,
           timezone: deviceData.timezone || null,
-          language: deviceData.language || null
-        })
-      }
+          language: deviceData.language || null,
+        }),
+      },
     });
-    
+
     return updatedDevice;
   } else {
     // Create new device
@@ -188,11 +201,11 @@ async function registerMobileDevice(
           initialVersion: deviceData.appVersion || 'unknown',
           deviceName: deviceData.deviceName || null,
           timezone: deviceData.timezone || null,
-          language: deviceData.language || null
-        })
-      }
+          language: deviceData.language || null,
+        }),
+      },
     } as any); // Type assertion to resolve complex Prisma type conflicts
-    
+
     return newDevice;
   }
 }
@@ -207,13 +220,13 @@ async function updateMobileDevice(
 ): Promise<any> {
   // Verify device ownership
   const existingDevice = await prisma.userDevice.findUnique({
-    where: { id: deviceId, userId }
+    where: { id: deviceId, userId },
   });
-  
+
   if (!existingDevice) {
     throw new Error('Device not found or access denied');
   }
-  
+
   // Merge notification settings
   let notificationSettings = {};
   try {
@@ -221,11 +234,11 @@ async function updateMobileDevice(
   } catch (error) {
     notificationSettings = {};
   }
-  
+
   if (updateData.notificationSettings) {
     notificationSettings = { ...notificationSettings, ...updateData.notificationSettings };
   }
-  
+
   const updatedDevice = await prisma.userDevice.update({
     where: { id: deviceId },
     data: {
@@ -242,11 +255,11 @@ async function updateMobileDevice(
       metadata: JSON.stringify({
         ...JSON.parse(existingDevice.metadata || '{}'),
         lastUpdate: new Date().toISOString(),
-        updateMethod: 'api_update'
-      })
-    }
+        updateMethod: 'api_update',
+      }),
+    },
   });
-  
+
   return updatedDevice;
 }
 
@@ -256,51 +269,51 @@ async function updateMobileDevice(
 async function getDeviceNotificationStats(deviceId: string): Promise<any> {
   // Note: This would typically query a notifications delivery table
   // For now, we'll return mock statistics
-  
+
   // Simplified notification statistics to avoid complex groupBy typing issues
   const sentCount = await prisma.notification.count({
     where: {
       data: { contains: deviceId },
-      status: 'sent'
-    }
+      status: 'sent',
+    },
   });
-  
+
   const deliveredCount = await prisma.notification.count({
     where: {
       data: { contains: deviceId },
-      status: 'delivered'
-    }
+      status: 'delivered',
+    },
   });
-  
+
   const failedCount = await prisma.notification.count({
     where: {
       data: { contains: deviceId },
-      status: 'failed'
-    }
+      status: 'failed',
+    },
   });
-  
+
   let totalSent = sentCount;
   let totalDelivered = deliveredCount;
   let totalFailed = failedCount;
-  
+
   const lastNotification = await prisma.notification.findFirst({
     where: {
       data: {
-        contains: deviceId
-      }
+        contains: deviceId,
+      },
     },
     orderBy: { createdAt: 'desc' },
-    select: { createdAt: true }
+    select: { createdAt: true },
   });
-  
+
   const deliveryRate = totalSent > 0 ? (totalDelivered / totalSent) * 100 : 0;
-  
+
   return {
     totalSent,
     totalDelivered,
     totalFailed,
     lastNotificationAt: lastNotification?.createdAt,
-    deliveryRate: Math.round(deliveryRate * 100) / 100
+    deliveryRate: Math.round(deliveryRate * 100) / 100,
   };
 }
 
@@ -314,9 +327,9 @@ async function formatDeviceResponse(device: any): Promise<MobileDeviceResponse> 
   } catch (error) {
     notificationSettings = {};
   }
-  
+
   const notificationStats = await getDeviceNotificationStats(device.id);
-  
+
   return {
     id: device.id,
     deviceToken: device.deviceToken,
@@ -331,7 +344,7 @@ async function formatDeviceResponse(device: any): Promise<MobileDeviceResponse> 
     lastSeenAt: device.lastSeenAt,
     registeredAt: device.registeredAt,
     notificationSettings,
-    notificationStats
+    notificationStats,
   };
 }
 
@@ -340,13 +353,13 @@ async function formatDeviceResponse(device: any): Promise<MobileDeviceResponse> 
  */
 async function deactivateMobileDevice(deviceId: string, userId: string): Promise<void> {
   const device = await prisma.userDevice.findUnique({
-    where: { id: deviceId, userId }
+    where: { id: deviceId, userId },
   });
-  
+
   if (!device) {
     throw new Error('Device not found or access denied');
   }
-  
+
   await prisma.userDevice.update({
     where: { id: deviceId },
     data: {
@@ -355,9 +368,9 @@ async function deactivateMobileDevice(deviceId: string, userId: string): Promise
       metadata: JSON.stringify({
         ...JSON.parse(device.metadata || '{}'),
         deactivatedAt: new Date().toISOString(),
-        deactivationMethod: 'api_delete'
-      })
-    }
+        deactivationMethod: 'api_delete',
+      }),
+    },
   });
 }
 
@@ -380,9 +393,9 @@ async function createDeviceAuditLog(
       createdById: userId,
       metadata: JSON.stringify({
         action: `MOBILE_DEVICE_${action}`,
-        timestamp: new Date().toISOString()
-      })
-    }
+        timestamp: new Date().toISOString(),
+      }),
+    },
   });
 }
 
@@ -393,24 +406,23 @@ export const deviceRegistrationHandler = async (
   event: APIGatewayProxyEvent,
   context: Context
 ): Promise<APIGatewayProxyResult> => {
-  const logger = LoggerService.getInstance();
   const requestId = context.awsRequestId;
   const httpMethod = event.httpMethod;
-  
+
   try {
     logger.info('Mobile device registration request started', { requestId, httpMethod });
-    
+
     // Authenticate request
-    const authResult = await authenticateLambda(event);
-    
+    const authResult = await authenticateLambda(event as any);
+
     // Check authentication success and extract user
     if (!authResult.success || !authResult.user) {
       logger.warn('Authentication failed', { requestId, error: authResult.error });
-      return createErrorResponse(401, 'Authentication failed');
+      return createErrorResponse('AUTHENTICATION_FAILED', 'Authentication failed', 401);
     }
-    
+
     const authenticatedUser = authResult.user;
-    
+
     switch (httpMethod) {
       case 'POST':
         return await handleDeviceRegistration(event, requestId, authenticatedUser);
@@ -421,18 +433,19 @@ export const deviceRegistrationHandler = async (
       case 'GET':
         return await handleGetDevices(event, requestId, authenticatedUser);
       default:
-        return createErrorResponse(405, 'Method not allowed');
+        return createErrorResponse('METHOD_NOT_ALLOWED', 'Method not allowed', 405);
     }
-    
   } catch (error: any) {
-    logger.error('Mobile device registration failed', {
-      requestId,
-      httpMethod,
-      error: error.message,
-      stack: error.stack
-    });
-    
-    return handleError(error, 'Failed to process device registration request');
+    logger.error(
+      'Mobile device registration failed',
+      error instanceof Error ? error : new Error(String(error)),
+      {
+        requestId,
+        httpMethod,
+      }
+    );
+
+    return handleError(error instanceof Error ? error : new Error(String(error)));
   } finally {
     await prisma.$disconnect();
   }
@@ -446,40 +459,41 @@ async function handleDeviceRegistration(
   requestId: string,
   authenticatedUser: AuthenticatedUser
 ): Promise<APIGatewayProxyResult> {
-  const logger = LoggerService.getInstance();
-  
   // Parse and validate request body
   const requestBody = JSON.parse(event.body || '{}');
   const { error, value: deviceData } = deviceRegistrationSchema.validate(requestBody);
-  
+
   if (error) {
     logger.warn('Invalid device registration data', { requestId, error: error.details });
-    return createErrorResponse(400, 'Invalid request data', error.details);
+    return createErrorResponse('INVALID_REQUEST', 'Invalid request data', 400, error.details);
   }
-  
+
   // Register device
-  const device = await registerMobileDevice(authenticatedUser.id, deviceData as DeviceRegistrationRequest);
-  
+  const device = await registerMobileDevice(
+    authenticatedUser.id,
+    deviceData as DeviceRegistrationRequest
+  );
+
   // Create audit log
   await createDeviceAuditLog(device.id, 'REGISTER', authenticatedUser.id, {
     deviceType: device.deviceType,
     deviceModel: device.deviceModel,
-    appVersion: device.appVersion
+    appVersion: device.appVersion,
   });
-  
+
   // Format response
   const deviceResponse = await formatDeviceResponse(device);
-  
+
   logger.info('Mobile device registered successfully', {
     requestId,
     deviceId: device.id,
     deviceType: device.deviceType,
-    userId: authenticatedUser.id
+    userId: authenticatedUser.id,
   });
-  
+
   return createSuccessResponse({
     message: 'Mobile device registered successfully',
-    data: deviceResponse
+    data: deviceResponse,
   });
 }
 
@@ -491,41 +505,43 @@ async function handleDeviceUpdate(
   requestId: string,
   authenticatedUser: AuthenticatedUser
 ): Promise<APIGatewayProxyResult> {
-  const logger = LoggerService.getInstance();
-  
   // Extract device ID from path parameters
   const deviceId = event.pathParameters?.deviceId;
   if (!deviceId) {
-    return createErrorResponse(400, 'Device ID is required');
+    return createErrorResponse('INVALID_PARAMETERS', 'Device ID is required', 400);
   }
-  
+
   // Parse and validate request body
   const requestBody = JSON.parse(event.body || '{}');
   const { error, value: updateData } = deviceUpdateSchema.validate(requestBody);
-  
+
   if (error) {
     logger.warn('Invalid device update data', { requestId, error: error.details });
-    return createErrorResponse(400, 'Invalid request data', error.details);
+    return createErrorResponse('INVALID_REQUEST', 'Invalid request data', 400, error.details);
   }
-  
+
   // Update device
-  const device = await updateMobileDevice(deviceId, authenticatedUser.id, updateData as DeviceUpdateRequest);
-  
+  const device = await updateMobileDevice(
+    deviceId,
+    authenticatedUser.id,
+    updateData as DeviceUpdateRequest
+  );
+
   // Create audit log
   await createDeviceAuditLog(deviceId, 'UPDATE', authenticatedUser.id, updateData);
-  
+
   // Format response
   const deviceResponse = await formatDeviceResponse(device);
-  
+
   logger.info('Mobile device updated successfully', {
     requestId,
     deviceId,
-    userId: authenticatedUser.id
+    userId: authenticatedUser.id,
   });
-  
+
   return createSuccessResponse({
     message: 'Mobile device updated successfully',
-    data: deviceResponse
+    data: deviceResponse,
   });
 }
 
@@ -537,31 +553,29 @@ async function handleDeviceDeactivation(
   requestId: string,
   authenticatedUser: AuthenticatedUser
 ): Promise<APIGatewayProxyResult> {
-  const logger = LoggerService.getInstance();
-  
   // Extract device ID from path parameters
   const deviceId = event.pathParameters?.deviceId;
   if (!deviceId) {
-    return createErrorResponse(400, 'Device ID is required');
+    return createErrorResponse('INVALID_PARAMETERS', 'Device ID is required', 400);
   }
-  
+
   // Deactivate device
   await deactivateMobileDevice(deviceId, authenticatedUser.id);
-  
+
   // Create audit log
   await createDeviceAuditLog(deviceId, 'DEACTIVATE', authenticatedUser.id, {
     reason: 'user_requested',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
-  
+
   logger.info('Mobile device deactivated successfully', {
     requestId,
     deviceId,
-    userId: authenticatedUser.id
+    userId: authenticatedUser.id,
   });
-  
+
   return createSuccessResponse({
-    message: 'Mobile device deactivated successfully'
+    message: 'Mobile device deactivated successfully',
   });
 }
 
@@ -573,30 +587,26 @@ async function handleGetDevices(
   requestId: string,
   authenticatedUser: AuthenticatedUser
 ): Promise<APIGatewayProxyResult> {
-  const logger = LoggerService.getInstance();
-  
   // Get user's devices
   const devices = await prisma.userDevice.findMany({
     where: {
       userId: authenticatedUser.id,
-      isActive: true
+      isActive: true,
     },
-    orderBy: { lastSeen: 'desc' } // Corrected field name for schema compatibility
+    orderBy: { lastSeen: 'desc' }, // Corrected field name for schema compatibility
   });
-  
+
   // Format devices
-  const deviceResponses = await Promise.all(
-    devices.map(device => formatDeviceResponse(device))
-  );
-  
+  const deviceResponses = await Promise.all(devices.map(device => formatDeviceResponse(device)));
+
   logger.info('User devices retrieved successfully', {
     requestId,
     deviceCount: devices.length,
-    userId: authenticatedUser.id
+    userId: authenticatedUser.id,
   });
-  
+
   return createSuccessResponse({
     message: 'Mobile devices retrieved successfully',
-    data: deviceResponses
+    data: deviceResponses,
   });
 }

@@ -23,26 +23,32 @@ const mealPlannerRequestSchema = zod_1.z.object({
         fatGrams: zod_1.z.number().positive().max(200),
         fiberGrams: zod_1.z.number().positive().max(100),
         sodiumMg: zod_1.z.number().positive().max(5000),
-        sugarGrams: zod_1.z.number().positive().max(100)
+        sugarGrams: zod_1.z.number().positive().max(100),
     }),
     dietaryRestrictions: zod_1.z.array(zod_1.z.string()).default([]),
     allergies: zod_1.z.array(zod_1.z.string()).default([]),
-    preferences: zod_1.z.object({
+    preferences: zod_1.z
+        .object({
         favoriteCategories: zod_1.z.array(zod_1.z.string()).default([]),
         dislikedItems: zod_1.z.array(zod_1.z.string()).default([]),
         spiceLevel: zod_1.z.enum(['none', 'mild', 'medium', 'spicy']).default('mild'),
-        preferredCuisines: zod_1.z.array(zod_1.z.string()).default([])
-    }).default(() => ({
+        preferredCuisines: zod_1.z.array(zod_1.z.string()).default([]),
+    })
+        .default(() => ({
         favoriteCategories: [],
         dislikedItems: [],
         spiceLevel: 'mild',
-        preferredCuisines: []
+        preferredCuisines: [],
     })),
-    budget: zod_1.z.object({
+    budget: zod_1.z
+        .object({
         maxCostPerMeal: zod_1.z.number().positive().max(50),
-        maxCostPerDay: zod_1.z.number().positive().max(200)
-    }).optional(),
-    optimizationPriorities: zod_1.z.array(zod_1.z.enum(['nutrition', 'cost', 'variety', 'preferences', 'health'])).default(['nutrition', 'health'])
+        maxCostPerDay: zod_1.z.number().positive().max(200),
+    })
+        .optional(),
+    optimizationPriorities: zod_1.z
+        .array(zod_1.z.enum(['nutrition', 'cost', 'variety', 'preferences', 'health']))
+        .default(['nutrition', 'health']),
 });
 const generateMealPlanSchema = zod_1.z.object({
     date: zod_1.z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -58,11 +64,11 @@ const generateMealPlanSchema = zod_1.z.object({
             fat: zod_1.z.number(),
             fiber: zod_1.z.number(),
             sodium: zod_1.z.number(),
-            sugar: zod_1.z.number()
+            sugar: zod_1.z.number(),
         }),
         cost: zod_1.z.number(),
         allergens: zod_1.z.array(zod_1.z.string()),
-        ingredients: zod_1.z.array(zod_1.z.string())
+        ingredients: zod_1.z.array(zod_1.z.string()),
     })),
     requirements: zod_1.z.object({
         targetCalories: zod_1.z.number().positive(),
@@ -70,10 +76,10 @@ const generateMealPlanSchema = zod_1.z.object({
         allergies: zod_1.z.array(zod_1.z.string()),
         preferences: zod_1.z.object({
             favoriteCategories: zod_1.z.array(zod_1.z.string()),
-            dislikedItems: zod_1.z.array(zod_1.z.string())
+            dislikedItems: zod_1.z.array(zod_1.z.string()),
         }),
-        maxCost: zod_1.z.number().positive().optional()
-    })
+        maxCost: zod_1.z.number().positive().optional(),
+    }),
 });
 async function validateUserAccess(event, requestId) {
     const clientIP = event.requestContext?.identity?.sourceIp || 'unknown';
@@ -86,7 +92,7 @@ async function validateUserAccess(event, requestId) {
             requestId,
             clientIP,
             userAgent: userAgent.substring(0, 200),
-            action: 'authentication_failed'
+            action: 'authentication_failed',
         });
         throw new Error('Authentication required');
     }
@@ -95,7 +101,7 @@ async function validateUserAccess(event, requestId) {
     }
     const user = await database.prisma.user.findUnique({
         where: { id: userId },
-        select: { id: true, status: true, role: true }
+        select: { id: true, status: true, role: true },
     });
     if (!user || user.status !== 'ACTIVE') {
         throw new Error('Access denied');
@@ -103,7 +109,7 @@ async function validateUserAccess(event, requestId) {
     if (!['admin', 'nutritionist'].includes(user.role)) {
         const studentSchool = await database.prisma.user.findFirst({
             where: { id: userId, schoolId },
-            select: { id: true }
+            select: { id: true },
         });
         if (!studentSchool) {
             throw new Error('Access denied - invalid school context');
@@ -116,7 +122,7 @@ async function getAvailableMenuItems(schoolId, startDate, endDate, requestId) {
         const menuItems = await database.prisma.menuItem.findMany({
             where: {
                 schoolId,
-                available: true
+                available: true,
             },
             select: {
                 id: true,
@@ -130,16 +136,15 @@ async function getAvailableMenuItems(schoolId, startDate, endDate, requestId) {
                 tags: true,
                 preparationTime: true,
                 portionSize: true,
-                imageUrl: true
-            }
+                imageUrl: true,
+            },
         });
         return menuItems;
     }
     catch (error) {
-        logger.error('Failed to get available menu items', {
+        logger.error('Failed to get available menu items', error instanceof Error ? error : new Error('Unknown error'), {
             requestId,
             schoolId,
-            error: error instanceof Error ? error.message : 'Unknown error'
         });
         throw new Error('Failed to retrieve menu items');
     }
@@ -149,25 +154,25 @@ async function getUserPreferences(userId, schoolId, requestId) {
         const recentMeals = await database.prisma.orderItem.findMany({
             where: {
                 order: {
-                    userId: userId,
+                    userId,
                     createdAt: {
-                        gte: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
-                    }
-                }
+                        gte: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000),
+                    },
+                },
             },
             include: {
                 menuItem: true,
-                order: true
+                order: true,
             },
             orderBy: { createdAt: 'desc' },
-            take: 200
+            take: 200,
         });
         const categoryPreferences = {};
         const itemRatings = {};
         const dislikedItems = [];
         recentMeals.forEach(meal => {
             if (meal.menuItem) {
-                const category = meal.menuItem.category;
+                const { category } = meal.menuItem;
                 categoryPreferences[category] = (categoryPreferences[category] || 0) + 1;
                 itemRatings[meal.menuItem.id] = (itemRatings[meal.menuItem.id] || 0) + 1;
             }
@@ -179,21 +184,20 @@ async function getUserPreferences(userId, schoolId, requestId) {
             recentSelections: recentMeals.slice(0, 20).map(m => ({
                 itemId: m.menuItem?.id,
                 itemName: m.menuItem?.name,
-                selectedAt: m.createdAt
-            }))
+                selectedAt: m.createdAt,
+            })),
         };
     }
     catch (error) {
-        logger.error('Failed to get user preferences', {
+        logger.error('Failed to get user preferences', error instanceof Error ? error : new Error('Unknown error'), {
             requestId,
             userId,
-            error: error instanceof Error ? error.message : 'Unknown error'
         });
         return {
             categoryPreferences: {},
             itemRatings: {},
             dislikedItems: [],
-            recentSelections: []
+            recentSelections: [],
         };
     }
 }
@@ -254,13 +258,15 @@ Ensure the response is valid JSON only, no additional text.`;
                 anthropic_version: 'bedrock-2023-05-31',
                 max_tokens: 4000,
                 temperature: 0.3,
-                messages: [{
+                messages: [
+                    {
                         role: 'user',
-                        content: prompt
-                    }]
+                        content: prompt,
+                    },
+                ],
             }),
             contentType: 'application/json',
-            accept: 'application/json'
+            accept: 'application/json',
         });
         const response = await bedrockClient.send(command);
         const responseBody = JSON.parse(new TextDecoder().decode(response.body));
@@ -284,13 +290,12 @@ Ensure the response is valid JSON only, no additional text.`;
             healthScore: Math.max(1, Math.min(10, rec.healthScore || 5)),
             appealFactor: Math.max(1, Math.min(10, rec.appealFactor || 5)),
             reasoning: rec.reasoning || 'AI recommendation',
-            modifications: rec.modifications || []
+            modifications: rec.modifications || [],
         }));
     }
     catch (error) {
-        logger.error('Failed to generate AI meal recommendations', {
+        logger.error('Failed to generate AI meal recommendations', error instanceof Error ? error : new Error('Unknown error'), {
             requestId,
-            error: error instanceof Error ? error.message : 'Unknown error'
         });
         return generateFallbackRecommendations(availableItems, requirements, mealType);
     }
@@ -300,7 +305,7 @@ function generateFallbackRecommendations(availableItems, requirements, mealType)
         breakfast: { caloriesPct: 0.25, proteinPct: 0.3 },
         lunch: { caloriesPct: 0.35, proteinPct: 0.4 },
         snack: { caloriesPct: 0.15, proteinPct: 0.15 },
-        dinner: { caloriesPct: 0.25, proteinPct: 0.15 }
+        dinner: { caloriesPct: 0.25, proteinPct: 0.15 },
     };
     const target = mealTargets[mealType] || mealTargets.lunch;
     const safeItems = availableItems.filter(item => {
@@ -318,9 +323,7 @@ function generateFallbackRecommendations(availableItems, requirements, mealType)
         }
         return true;
     });
-    const recommendations = safeItems
-        .slice(0, 5)
-        .map(item => ({
+    const recommendations = safeItems.slice(0, 5).map((item) => ({
         itemId: item.id,
         itemName: item.name,
         category: item.category || 'general',
@@ -332,13 +335,13 @@ function generateFallbackRecommendations(availableItems, requirements, mealType)
             fat: item.nutritionalInfo?.fat || 7,
             fiber: item.nutritionalInfo?.fiber || 3,
             sodium: item.nutritionalInfo?.sodium || 300,
-            sugar: item.nutritionalInfo?.sugar || 8
+            sugar: item.nutritionalInfo?.sugar || 8,
         },
-        cost: item.cost || 3.50,
+        cost: item.cost || 3.5,
         healthScore: 6,
         appealFactor: 7,
         reasoning: `Fallback recommendation for ${mealType}. Meets basic nutritional needs and dietary restrictions.`,
-        modifications: []
+        modifications: [],
     }));
     return recommendations;
 }
@@ -350,9 +353,11 @@ function calculateDayNutrition(dailyMeals) {
         fat: 0,
         fiber: 0,
         sodium: 0,
-        sugar: 0
+        sugar: 0,
     };
-    Object.values(dailyMeals).flat().forEach(item => {
+    Object.values(dailyMeals)
+        .flat()
+        .forEach(item => {
         summary.calories += item.nutritionalContribution.calories * item.portionSize;
         summary.protein += item.nutritionalContribution.protein * item.portionSize;
         summary.carbs += item.nutritionalContribution.carbs * item.portionSize;
@@ -366,7 +371,9 @@ function calculateDayNutrition(dailyMeals) {
 function calculateHealthScore(nutrition, goals) {
     const scores = [];
     const calorieRatio = nutrition.calories / goals.calories;
-    scores.push(calorieRatio >= 0.85 && calorieRatio <= 1.15 ? 10 : Math.max(0, 10 - Math.abs(1 - calorieRatio) * 20));
+    scores.push(calorieRatio >= 0.85 && calorieRatio <= 1.15
+        ? 10
+        : Math.max(0, 10 - Math.abs(1 - calorieRatio) * 20));
     const proteinRatio = nutrition.protein / goals.protein;
     scores.push(proteinRatio >= 0.9 ? 10 : proteinRatio * 10);
     const fiberRatio = nutrition.fiber / goals.fiber;
@@ -398,25 +405,30 @@ async function generateWeeklyMealPlan(data, userId, schoolId, requestId) {
             const dailyMeals = {};
             for (const mealType of data.mealTypes) {
                 const mealCalories = data.nutritionalGoals.caloriesPerDay *
-                    (mealType === 'breakfast' ? 0.25 : mealType === 'lunch' ? 0.35 : mealType === 'dinner' ? 0.25 : 0.15);
+                    (mealType === 'breakfast'
+                        ? 0.25
+                        : mealType === 'lunch'
+                            ? 0.35
+                            : mealType === 'dinner'
+                                ? 0.25
+                                : 0.15);
                 const requirements = {
                     targetCalories: mealCalories,
                     dietaryRestrictions: data.dietaryRestrictions,
                     allergies: data.allergies,
                     preferences: {
                         ...data.preferences,
-                        ...historicalPreferences
+                        ...historicalPreferences,
                     },
-                    maxCost: data.budget?.maxCostPerMeal
+                    maxCost: data.budget?.maxCostPerMeal,
                 };
                 try {
                     const recommendations = await generateMealRecommendations(dayAvailableItems, requirements, historicalPreferences, mealType, dateStr, requestId);
                     dailyMeals[mealType] = recommendations.slice(0, 2);
                 }
                 catch (error) {
-                    logger.error(`Failed to generate meal for ${dateStr} ${mealType}`, {
+                    logger.error(`Failed to generate meal for ${dateStr} ${mealType}`, error instanceof Error ? error : new Error('Unknown error'), {
                         requestId,
-                        error: error instanceof Error ? error.message : 'Unknown error'
                     });
                     continue;
                 }
@@ -429,10 +441,12 @@ async function generateWeeklyMealPlan(data, userId, schoolId, requestId) {
                 fat: data.nutritionalGoals.fatGrams,
                 fiber: data.nutritionalGoals.fiberGrams,
                 sodium: data.nutritionalGoals.sodiumMg,
-                sugar: data.nutritionalGoals.sugarGrams
+                sugar: data.nutritionalGoals.sugarGrams,
             };
             const dailyHealthScore = calculateHealthScore(dailyNutrition, goalsForComparison);
-            const estimatedCost = Object.values(dailyMeals).flat().reduce((sum, item) => sum + (item.cost * item.portionSize), 0);
+            const estimatedCost = Object.values(dailyMeals)
+                .flat()
+                .reduce((sum, item) => sum + item.cost * item.portionSize, 0);
             const varietyScore = Object.keys(dailyMeals).length * 2.5;
             dailyPlans.push({
                 date: dateStr,
@@ -440,7 +454,7 @@ async function generateWeeklyMealPlan(data, userId, schoolId, requestId) {
                 dailyNutrition,
                 dailyHealthScore,
                 estimatedCost,
-                varietyScore
+                varietyScore,
             });
         }
         if (dailyPlans.length === 0) {
@@ -456,10 +470,11 @@ async function generateWeeklyMealPlan(data, userId, schoolId, requestId) {
             fat: total.fat + day.dailyNutrition.fat,
             fiber: total.fiber + day.dailyNutrition.fiber,
             sodium: total.sodium + day.dailyNutrition.sodium,
-            sugar: total.sugar + day.dailyNutrition.sugar
+            sugar: total.sugar + day.dailyNutrition.sugar,
         }), { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sodium: 0, sugar: 0 });
         const avgNutrition = Object.keys(totalNutrition).reduce((avg, key) => {
-            avg[key] = totalNutrition[key] / dailyPlans.length;
+            avg[key] =
+                totalNutrition[key] / dailyPlans.length;
             return avg;
         }, {});
         const goalAchievement = {
@@ -469,34 +484,40 @@ async function generateWeeklyMealPlan(data, userId, schoolId, requestId) {
             fat: Math.round((avgNutrition.fat / data.nutritionalGoals.fatGrams) * 100),
             fiber: Math.round((avgNutrition.fiber / data.nutritionalGoals.fiberGrams) * 100),
             sodium: Math.round((avgNutrition.sodium / data.nutritionalGoals.sodiumMg) * 100),
-            sugar: Math.round((avgNutrition.sugar / data.nutritionalGoals.sugarGrams) * 100)
+            sugar: Math.round((avgNutrition.sugar / data.nutritionalGoals.sugarGrams) * 100),
         };
         const aiInsights = {
             strengths: [
-                avgHealthScore >= 8 ? 'Excellent nutritional balance achieved' : 'Good nutritional foundation',
+                avgHealthScore >= 8
+                    ? 'Excellent nutritional balance achieved'
+                    : 'Good nutritional foundation',
                 avgVarietyScore >= 8 ? 'Great meal variety for engaging dining' : 'Adequate meal variety',
-                goalAchievement.protein >= 90 ? 'Strong protein intake for growth' : 'Moderate protein levels'
+                goalAchievement.protein >= 90
+                    ? 'Strong protein intake for growth'
+                    : 'Moderate protein levels',
             ],
             improvementAreas: [
                 goalAchievement.fiber < 80 ? 'Increase fiber-rich foods for digestive health' : '',
                 goalAchievement.sodium > 110 ? 'Consider lower-sodium alternatives' : '',
-                avgHealthScore < 7 ? 'Focus on more nutrient-dense options' : ''
+                avgHealthScore < 7 ? 'Focus on more nutrient-dense options' : '',
             ].filter(Boolean),
             nutritionalGaps: [
                 goalAchievement.fiber < 80 ? 'fiber' : '',
                 goalAchievement.protein < 80 ? 'protein' : '',
-                avgNutrition.calories < data.nutritionalGoals.caloriesPerDay * 0.85 ? 'calories' : ''
+                avgNutrition.calories < data.nutritionalGoals.caloriesPerDay * 0.85 ? 'calories' : '',
             ].filter(Boolean),
             varietyRecommendations: [
                 'Try rotating between different protein sources',
                 'Include more colorful vegetables for variety',
-                'Explore different preparation methods for favorite foods'
+                'Explore different preparation methods for favorite foods',
             ],
             costOptimizations: [
-                totalCost > (data.budget?.maxCostPerDay || 10) * dailyPlans.length ? 'Consider more cost-effective protein sources' : '',
+                totalCost > (data.budget?.maxCostPerDay || 10) * dailyPlans.length
+                    ? 'Consider more cost-effective protein sources'
+                    : '',
                 'Seasonal ingredients may offer better value',
-                'Bulk preparation can reduce overall costs'
-            ].filter(Boolean)
+                'Bulk preparation can reduce overall costs',
+            ].filter(Boolean),
         };
         const weeklyPlan = {
             planId,
@@ -513,7 +534,7 @@ async function generateWeeklyMealPlan(data, userId, schoolId, requestId) {
                 fat: data.nutritionalGoals.fatGrams,
                 fiber: data.nutritionalGoals.fiberGrams,
                 sodium: data.nutritionalGoals.sodiumMg,
-                sugar: data.nutritionalGoals.sugarGrams
+                sugar: data.nutritionalGoals.sugarGrams,
             },
             dailyPlans,
             overallSummary: {
@@ -521,12 +542,12 @@ async function generateWeeklyMealPlan(data, userId, schoolId, requestId) {
                 avgHealthScore,
                 avgVarietyScore,
                 nutritionalBalance: avgHealthScore,
-                goalAchievement
+                goalAchievement,
             },
             aiInsights,
             preferences: data.preferences,
             createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
+            updatedAt: new Date().toISOString(),
         };
         await database.prisma.$transaction(async (prisma) => {
             await prisma.menuPlan.create({
@@ -545,9 +566,9 @@ async function generateWeeklyMealPlan(data, userId, schoolId, requestId) {
                         nutritionalGoals: data.nutritionalGoals,
                         planData: weeklyPlan,
                         totalCost,
-                        avgHealthScore
-                    })
-                }
+                        avgHealthScore,
+                    }),
+                },
             });
             await prisma.auditLog.create({
                 data: {
@@ -562,9 +583,9 @@ async function generateWeeklyMealPlan(data, userId, schoolId, requestId) {
                         dayCount: dailyPlans.length,
                         mealTypes: data.mealTypes,
                         totalCost,
-                        avgHealthScore
-                    })
-                }
+                        avgHealthScore,
+                    }),
+                },
             });
         });
         logger.info('Weekly meal plan generated successfully', {
@@ -574,16 +595,15 @@ async function generateWeeklyMealPlan(data, userId, schoolId, requestId) {
             schoolId,
             dayCount: dailyPlans.length,
             totalCost,
-            avgHealthScore
+            avgHealthScore,
         });
         return weeklyPlan;
     }
     catch (error) {
-        logger.error('Failed to generate weekly meal plan', {
+        logger.error('Failed to generate weekly meal plan', error instanceof Error ? error : new Error('Unknown error'), {
             requestId,
             userId,
             schoolId,
-            error: error instanceof Error ? error.message : 'Unknown error'
         });
         throw error;
     }
@@ -599,33 +619,33 @@ const mealPlannerHandler = async (event, context) => {
             method: event.httpMethod,
             path: event.path,
             clientIP,
-            userAgent: userAgent.substring(0, 200)
+            userAgent: userAgent.substring(0, 200),
         });
         if (event.httpMethod !== 'POST') {
-            return (0, response_utils_1.createErrorResponse)(405, `Method ${event.httpMethod} not allowed`, undefined, 'METHOD_NOT_ALLOWED', requestId);
+            return (0, response_utils_1.createErrorResponse)('METHOD_NOT_ALLOWED', `Method ${event.httpMethod} not allowed`, 405, undefined);
         }
         if (!event.body) {
-            return (0, response_utils_1.createErrorResponse)(400, 'Request body required', undefined, 'MISSING_BODY', requestId);
+            return (0, response_utils_1.createErrorResponse)('MISSING_BODY', 'Request body required', 400, undefined);
         }
         const { userId, schoolId } = await validateUserAccess(event, requestId);
         const requestData = JSON.parse(event.body);
         const validatedData = mealPlannerRequestSchema.parse(requestData);
         if (validatedData.schoolId !== schoolId) {
-            return (0, response_utils_1.createErrorResponse)(403, 'Access denied - invalid school context', undefined, 'ACCESS_DENIED', requestId);
+            return (0, response_utils_1.createErrorResponse)('ACCESS_DENIED', 'Access denied - invalid school context', 403, undefined);
         }
         const startDate = new Date(validatedData.startDate);
         const endDate = new Date(validatedData.endDate);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         if (startDate < today) {
-            return (0, response_utils_1.createErrorResponse)(400, 'Start date cannot be in the past', undefined, 'INVALID_DATE_RANGE', requestId);
+            return (0, response_utils_1.createErrorResponse)('INVALID_DATE_RANGE', 'Start date cannot be in the past', 400, undefined);
         }
         if (endDate <= startDate) {
-            return (0, response_utils_1.createErrorResponse)(400, 'End date must be after start date', undefined, 'INVALID_DATE_RANGE', requestId);
+            return (0, response_utils_1.createErrorResponse)('INVALID_DATE_RANGE', 'End date must be after start date', 400, undefined);
         }
         const dayDiff = (endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24);
         if (dayDiff > 14) {
-            return (0, response_utils_1.createErrorResponse)(400, 'Date range cannot exceed 14 days', undefined, 'DATE_RANGE_TOO_LONG', requestId);
+            return (0, response_utils_1.createErrorResponse)('DATE_RANGE_TOO_LONG', 'Date range cannot exceed 14 days', 400, undefined);
         }
         const mealPlan = await generateWeeklyMealPlan(validatedData, userId, schoolId, requestId);
         const duration = Date.now() - startTime;
@@ -638,7 +658,7 @@ const mealPlannerHandler = async (event, context) => {
             totalCost: mealPlan.overallSummary.totalCost,
             avgHealthScore: mealPlan.overallSummary.avgHealthScore,
             duration,
-            success: true
+            success: true,
         });
         return (0, response_utils_1.createSuccessResponse)({
             mealPlan,
@@ -647,35 +667,34 @@ const mealPlannerHandler = async (event, context) => {
                 totalDays: mealPlan.dailyPlans.length,
                 totalCost: mealPlan.overallSummary.totalCost,
                 avgHealthScore: mealPlan.overallSummary.avgHealthScore,
-                goalAchievement: mealPlan.overallSummary.goalAchievement
-            }
-        }, 'Meal plan generated successfully', 201, requestId);
+                goalAchievement: mealPlan.overallSummary.goalAchievement,
+            },
+        });
     }
     catch (error) {
         const duration = Date.now() - startTime;
-        logger.error('AI meal planner request failed', {
+        logger.error('AI meal planner request failed', error instanceof Error ? error : new Error('Unknown error'), {
             requestId,
-            error: error instanceof Error ? error.message : 'Unknown error',
-            duration
+            duration,
         });
         if (error instanceof zod_1.z.ZodError) {
-            return (0, response_utils_1.createErrorResponse)(400, 'Invalid request data', error.issues, 'VALIDATION_ERROR', requestId);
+            return (0, response_utils_1.createErrorResponse)('VALIDATION_ERROR', 'Invalid request data', 400, error.issues);
         }
         if (error instanceof Error) {
             if (error.message.includes('Authentication required')) {
-                return (0, response_utils_1.createErrorResponse)(401, 'Authentication required', undefined, 'AUTHENTICATION_REQUIRED', requestId);
+                return (0, response_utils_1.createErrorResponse)('AUTHENTICATION_REQUIRED', 'Authentication required', 401, undefined);
             }
             if (error.message.includes('Access denied')) {
-                return (0, response_utils_1.createErrorResponse)(403, 'Access denied', undefined, 'ACCESS_DENIED', requestId);
+                return (0, response_utils_1.createErrorResponse)('ACCESS_DENIED', 'Access denied', 403, undefined);
             }
             if (error.message.includes('No menu items available')) {
-                return (0, response_utils_1.createErrorResponse)(404, 'No menu items available for the specified date range', undefined, 'NO_MENU_ITEMS', requestId);
+                return (0, response_utils_1.createErrorResponse)('NO_MENU_ITEMS', 'No menu items available for the specified date range', 404, undefined);
             }
             if (error.message.includes('Failed to generate')) {
-                return (0, response_utils_1.createErrorResponse)(422, error.message, undefined, 'GENERATION_FAILED', requestId);
+                return (0, response_utils_1.createErrorResponse)('GENERATION_FAILED', error.message, 422, undefined);
             }
         }
-        return (0, response_utils_1.createErrorResponse)(500, 'Internal server error', undefined, 'INTERNAL_ERROR', requestId);
+        return (0, response_utils_1.createErrorResponse)('INTERNAL_ERROR', 'Internal server error', 500, undefined);
     }
 };
 exports.mealPlannerHandler = mealPlannerHandler;

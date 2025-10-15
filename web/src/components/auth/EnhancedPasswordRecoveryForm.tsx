@@ -1,24 +1,27 @@
-"use client"
+'use client';
 
-import * as React from "react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { 
-  Mail, Phone, Shield, HelpCircle, ArrowLeft, Send,
-  CheckCircle, AlertTriangle, School, Users, Key
-} from "lucide-react"
-import Link from "next/link"
-
-import { Button } from "@/components/ui/button"
+import * as React from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+  Mail,
+  Phone,
+  Shield,
+  HelpCircle,
+  ArrowLeft,
+  Send,
+  CheckCircle,
+  AlertTriangle,
+  School,
+  Users,
+  Key,
+} from 'lucide-react';
+import Link from 'next/link';
+
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label as _Label } from '@/components/ui/label';
 import {
   Form,
   FormControl,
@@ -26,11 +29,11 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Separator } from "@/components/ui/separator"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+} from '@/components/ui/form';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 import {
   forgotPasswordSchema,
@@ -39,30 +42,30 @@ import {
   type ForgotPasswordFormData,
   type SecurityQuestionsData,
   type ParentVerificationData,
-  detectRoleFromEmail
-} from "./schemas"
+  detectRoleFromEmail,
+} from './schemas';
 
 interface EnhancedPasswordRecoveryFormProps {
-  onEmailRecovery: (data: ForgotPasswordFormData) => Promise<void>
-  onSecurityQuestions: (data: SecurityQuestionsData) => Promise<void>
-  onParentVerification: (data: ParentVerificationData) => Promise<void>
-  onSendSMS?: (phone: string) => Promise<void>
-  isLoading?: boolean
-  error?: string | null
-  success?: string | null
-  className?: string
+  onEmailRecovery: (data: ForgotPasswordFormData) => Promise<void>;
+  onSecurityQuestions: (data: SecurityQuestionsData) => Promise<void>;
+  onParentVerification: (data: ParentVerificationData) => Promise<void>;
+  onSendSMS?: (phone: string) => Promise<void>;
+  isLoading?: boolean;
+  error?: string | null;
+  success?: string | null;
+  className?: string;
 }
 
 const SECURITY_QUESTIONS = [
-  "What was the name of your first pet?",
+  'What was the name of your first pet?',
   "What is your mother's maiden name?",
-  "What was the name of your elementary school?",
-  "What is your favorite food?",
-  "What was your childhood nickname?",
-  "What is the name of your best friend?",
-  "What was your first car model?",
-  "What city were you born in?"
-]
+  'What was the name of your elementary school?',
+  'What is your favorite food?',
+  'What was your childhood nickname?',
+  'What is the name of your best friend?',
+  'What was your first car model?',
+  'What city were you born in?',
+];
 
 export function EnhancedPasswordRecoveryForm({
   onEmailRecovery,
@@ -72,110 +75,117 @@ export function EnhancedPasswordRecoveryForm({
   isLoading = false,
   error,
   success,
-  className
+  className,
 }: EnhancedPasswordRecoveryFormProps) {
-  const [recoveryMethod, setRecoveryMethod] = React.useState<"email" | "security" | "parent">("email")
-  const [detectedRole, setDetectedRole] = React.useState<string | null>(null)
-  const [step, setStep] = React.useState<"initial" | "questions" | "verification" | "success">("initial")
+  const [recoveryMethod, setRecoveryMethod] = React.useState<'email' | 'security' | 'parent'>(
+    'email'
+  );
+  const [detectedRole, setDetectedRole] = React.useState<string | null>(null);
+  const [step, setStep] = React.useState<'initial' | 'questions' | 'verification' | 'success'>(
+    'initial'
+  );
 
   // Email recovery form
   const emailForm = useForm<ForgotPasswordFormData>({
     resolver: zodResolver(forgotPasswordSchema),
     defaultValues: {
-      email: "",
-      userType: "student"
-    }
-  })
+      email: '',
+      userType: 'student',
+    },
+  });
 
   // Security questions form
   const questionsForm = useForm<SecurityQuestionsData>({
     resolver: zodResolver(securityQuestionsSchema),
     defaultValues: {
-      question1: { question: SECURITY_QUESTIONS[0], answer: "" },
-      question2: { question: SECURITY_QUESTIONS[1], answer: "" },
-      question3: { question: SECURITY_QUESTIONS[2], answer: "" }
-    }
-  })
+      question1: { question: SECURITY_QUESTIONS[0], answer: '' },
+      question2: { question: SECURITY_QUESTIONS[1], answer: '' },
+      question3: { question: SECURITY_QUESTIONS[2], answer: '' },
+    },
+  });
 
   // Parent verification form
   const parentForm = useForm<ParentVerificationData>({
     resolver: zodResolver(parentVerificationSchema),
     defaultValues: {
-      studentEmail: "",
-      parentPhone: "",
-      verificationCode: ""
-    }
-  })
+      studentEmail: '',
+      parentPhone: '',
+      verificationCode: '',
+    },
+  });
 
-  const watchedEmail = emailForm.watch("email")
+  const watchedEmail = emailForm.watch('email');
 
   // Role detection from email
   React.useEffect(() => {
-    if (watchedEmail && watchedEmail.includes("@hasivu.edu")) {
-      const role = detectRoleFromEmail(watchedEmail)
-      setDetectedRole(role)
-      
+    if (watchedEmail && watchedEmail.includes('@hasivu.edu')) {
+      const role = detectRoleFromEmail(watchedEmail);
+      setDetectedRole(role);
+
       if (role) {
-        emailForm.setValue("userType", role === "student" ? "student" : role === "parent" ? "parent" : "staff")
+        emailForm.setValue(
+          'userType',
+          role === 'student' ? 'student' : role === 'parent' ? 'parent' : 'staff'
+        );
       }
     } else {
-      setDetectedRole(null)
+      setDetectedRole(null);
     }
-  }, [watchedEmail, emailForm])
+  }, [watchedEmail, emailForm]);
 
   const handleEmailRecovery = async (data: ForgotPasswordFormData) => {
     try {
-      await onEmailRecovery(data)
-      setStep("success")
+      await onEmailRecovery(data);
+      setStep('success');
     } catch (error) {
-      console.error("Email recovery error:", error)
+      // Error handled silently
     }
-  }
+  };
 
   const handleSecurityQuestions = async (data: SecurityQuestionsData) => {
     try {
-      await onSecurityQuestions(data)
-      setStep("success")
+      await onSecurityQuestions(data);
+      setStep('success');
     } catch (error) {
-      console.error("Security questions error:", error)
+      // Error handled silently
     }
-  }
+  };
 
   const handleParentVerification = async (data: ParentVerificationData) => {
     try {
-      await onParentVerification(data)
-      setStep("success")
+      await onParentVerification(data);
+      setStep('success');
     } catch (error) {
-      console.error("Parent verification error:", error)
+      // Error handled silently
     }
-  }
+  };
 
   const handleSendVerificationCode = async () => {
-    const phone = parentForm.getValues("parentPhone")
+    const phone = parentForm.getValues('parentPhone');
     if (phone && onSendSMS) {
       try {
-        await onSendSMS(phone)
+        await onSendSMS(phone);
       } catch (error) {
-        console.error("SMS send error:", error)
+        // Error handled silently
       }
     }
-  }
+  };
 
   const renderRoleBadge = () => {
-    if (!detectedRole) return null
+    if (!detectedRole) return null;
 
     const roleConfig = {
-      student: { label: "Student", color: "bg-blue-100 text-blue-800", icon: School },
-      parent: { label: "Parent", color: "bg-green-100 text-green-800", icon: Users },
-      admin: { label: "Admin", color: "bg-purple-100 text-purple-800", icon: Shield },
-      kitchen: { label: "Kitchen", color: "bg-orange-100 text-orange-800", icon: Users },
-      teacher: { label: "Teacher", color: "bg-indigo-100 text-indigo-800", icon: School }
-    }
+      student: { label: 'Student', color: 'bg-blue-100 text-blue-800', icon: School },
+      parent: { label: 'Parent', color: 'bg-green-100 text-green-800', icon: Users },
+      admin: { label: 'Admin', color: 'bg-purple-100 text-purple-800', icon: Shield },
+      kitchen: { label: 'Kitchen', color: 'bg-orange-100 text-orange-800', icon: Users },
+      teacher: { label: 'Teacher', color: 'bg-indigo-100 text-indigo-800', icon: School },
+    };
 
-    const config = roleConfig[detectedRole as keyof typeof roleConfig]
-    if (!config) return null
+    const config = roleConfig[detectedRole as keyof typeof roleConfig];
+    if (!config) return null;
 
-    const IconComponent = config.icon
+    const IconComponent = config.icon;
 
     return (
       <div className="mt-2 flex items-center gap-2">
@@ -184,10 +194,10 @@ export function EnhancedPasswordRecoveryForm({
           Detected: {config.label}
         </Badge>
       </div>
-    )
-  }
+    );
+  };
 
-  if (step === "success") {
+  if (step === 'success') {
     return (
       <Card className={className}>
         <CardHeader className="text-center">
@@ -207,7 +217,7 @@ export function EnhancedPasswordRecoveryForm({
               If you don't receive instructions within a few minutes, please check your spam folder
               or contact support.
             </p>
-            
+
             <div className="flex flex-col gap-3">
               <Button asChild variant="default">
                 <Link href="/auth/login">
@@ -215,25 +225,21 @@ export function EnhancedPasswordRecoveryForm({
                   Back to Login
                 </Link>
               </Button>
-              
+
               <Button asChild variant="outline">
-                <a href="mailto:support@hasivu.edu">
-                  Contact Support
-                </a>
+                <a href="mailto:support@hasivu.edu">Contact Support</a>
               </Button>
             </div>
           </div>
         </CardContent>
       </Card>
-    )
+    );
   }
 
   return (
     <Card className={className}>
       <CardHeader>
-        <CardTitle className="text-2xl font-bold text-center">
-          Recover Your Account
-        </CardTitle>
+        <CardTitle className="text-2xl font-bold text-center">Recover Your Account</CardTitle>
         <CardDescription className="text-center">
           Choose your preferred recovery method for your HASIVU account
         </CardDescription>
@@ -254,7 +260,7 @@ export function EnhancedPasswordRecoveryForm({
           </Alert>
         )}
 
-        <Tabs value={recoveryMethod} onValueChange={(value) => setRecoveryMethod(value as any)}>
+        <Tabs value={recoveryMethod} onValueChange={value => setRecoveryMethod(value as any)}>
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="email" className="flex items-center gap-2">
               <Mail className="h-4 w-4" />
@@ -304,11 +310,7 @@ export function EnhancedPasswordRecoveryForm({
                   )}
                 />
 
-                <Button 
-                  type="submit" 
-                  className="w-full"
-                  disabled={isLoading}
-                >
+                <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -334,14 +336,17 @@ export function EnhancedPasswordRecoveryForm({
             </div>
 
             <Form {...questionsForm}>
-              <form onSubmit={questionsForm.handleSubmit(handleSecurityQuestions)} className="space-y-4">
+              <form
+                onSubmit={questionsForm.handleSubmit(handleSecurityQuestions)}
+                className="space-y-4"
+              >
                 <FormField
                   control={questionsForm.control}
                   name="question1.answer"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-sm font-medium">
-                        {questionsForm.getValues("question1.question")}
+                        {questionsForm.getValues('question1.question')}
                       </FormLabel>
                       <FormControl>
                         <div className="relative">
@@ -365,7 +370,7 @@ export function EnhancedPasswordRecoveryForm({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-sm font-medium">
-                        {questionsForm.getValues("question2.question")}
+                        {questionsForm.getValues('question2.question')}
                       </FormLabel>
                       <FormControl>
                         <div className="relative">
@@ -389,7 +394,7 @@ export function EnhancedPasswordRecoveryForm({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-sm font-medium">
-                        {questionsForm.getValues("question3.question")}
+                        {questionsForm.getValues('question3.question')}
                       </FormLabel>
                       <FormControl>
                         <div className="relative">
@@ -407,11 +412,7 @@ export function EnhancedPasswordRecoveryForm({
                   )}
                 />
 
-                <Button 
-                  type="submit" 
-                  className="w-full"
-                  disabled={isLoading}
-                >
+                <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -444,7 +445,10 @@ export function EnhancedPasswordRecoveryForm({
             </div>
 
             <Form {...parentForm}>
-              <form onSubmit={parentForm.handleSubmit(handleParentVerification)} className="space-y-4">
+              <form
+                onSubmit={parentForm.handleSubmit(handleParentVerification)}
+                className="space-y-4"
+              >
                 <FormField
                   control={parentForm.control}
                   name="studentEmail"
@@ -496,7 +500,7 @@ export function EnhancedPasswordRecoveryForm({
                     type="button"
                     variant="outline"
                     onClick={handleSendVerificationCode}
-                    disabled={isLoading || !parentForm.getValues("parentPhone")}
+                    disabled={isLoading || !parentForm.getValues('parentPhone')}
                     className="flex-1"
                   >
                     <Send className="w-4 h-4 mr-2" />
@@ -530,11 +534,7 @@ export function EnhancedPasswordRecoveryForm({
                   )}
                 />
 
-                <Button 
-                  type="submit" 
-                  className="w-full"
-                  disabled={isLoading}
-                >
+                <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -563,7 +563,7 @@ export function EnhancedPasswordRecoveryForm({
 
         <div className="text-center space-y-3">
           <p className="text-sm text-gray-600">
-            Remember your password?{" "}
+            Remember your password?{' '}
             <Link
               href="/auth/login"
               className="text-primary-600 hover:text-primary-500 font-medium focus:outline-none focus:underline"
@@ -571,19 +571,16 @@ export function EnhancedPasswordRecoveryForm({
               Sign in instead
             </Link>
           </p>
-          
+
           <p className="text-xs text-gray-500">
-            Still need help? Contact{" "}
-            <a
-              href="mailto:support@hasivu.edu"
-              className="text-primary-600 hover:underline"
-            >
+            Still need help? Contact{' '}
+            <a href="mailto:support@hasivu.edu" className="text-primary-600 hover:underline">
               support@hasivu.edu
-            </a>{" "}
+            </a>{' '}
             or call the school office
           </p>
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

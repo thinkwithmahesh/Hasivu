@@ -1,1 +1,1 @@
-{"version":3,"file":"device-registration.d.ts","sourceRoot":"","sources":["../../../../src/functions/mobile/device-registration.ts"],"names":[],"mappings":"AAMA,OAAO,EAAE,oBAAoB,EAAE,qBAAqB,EAAE,OAAO,EAAE,MAAM,YAAY,CAAC;AAiYlF,eAAO,MAAM,yBAAyB,yCAE3B,OAAO,KACf,QAAQ,qBAAqB,CA4C/B,CAAC"}
+{"version":3,"file":"device-registration.d.ts","sourceRoot":"","sources":["../../../../src/functions/mobile/device-registration.ts"],"names":[],"mappings":"AAMA,OAAO,EAAE,oBAAoB,EAAE,qBAAqB,EAAE,OAAO,EAAE,MAAM,YAAY,CAAC;AA8YlF,eAAO,MAAM,yBAAyB,yCAE3B,OAAO,KACf,QAAQ,qBAAqB,CA4C/B,CAAC"}

@@ -4,20 +4,41 @@
  * Service Layer Architecture Enhancement - Phase 2
  */
 
-import { EnhancedOrderService, CreateOrderInput, AddToCartInput } from '../../../src/services/order.service.enhanced';
+import { EnhancedOrderService } from '../../../src/services/order.service.enhanced';
 import { ServiceContainer, getTestContainer } from '../../../src/container/ServiceContainer';
 import { IServiceContainer } from '../../../src/container/ServiceContainer';
 
+interface CreateOrderInput {
+  studentId: string;
+  parentId: string;
+  schoolId: string;
+  items: Array<{
+    menuItemId: string;
+    quantity: number;
+    specialInstructions?: string;
+  }>;
+  deliveryDate: Date;
+  deliveryType: 'delivery' | 'pickup';
+  deliveryAddress?: string;
+}
+
+interface AddToCartInput {
+  studentId: string;
+  menuItemId: string;
+  quantity: number;
+  specialInstructions?: string;
+}
+
 describe('EnhancedOrderService', () => {
   let orderService: EnhancedOrderService;
-  let container: ServiceContainer;
-  let mockContainer: IServiceContainer;
+  let mockContainer: ServiceContainer;
 
   beforeEach(() => {
-    // Create test container with mocked dependencies
-    container = getTestContainer();
-    mockContainer = container as any; // Access mocked methods
-    orderService = new EnhancedOrderService(container);
+    // Create fresh test container with all mock dependencies
+    mockContainer = getTestContainer();
+
+    // Use singleton instance for testing
+    orderService = EnhancedOrderService.getInstance();
 
     // Reset all mocks before each test
     jest.clearAllMocks();
@@ -91,7 +112,7 @@ describe('EnhancedOrderService', () => {
       (mockContainer.notificationService.sendOrderConfirmation as jest.Mock).mockImplementation(() => Promise.resolve());
 
       // Execute
-      const result = await orderService.createOrder(validOrderInput);
+      const result = await EnhancedOrderService.createOrder(validOrderInput);
 
       // Verify
       expect(result.success).toBe(true);
@@ -127,7 +148,7 @@ describe('EnhancedOrderService', () => {
       });
 
       // Execute
-      const result = await orderService.createOrder(validOrderInput);
+      const result = await EnhancedOrderService.createOrder(validOrderInput);
 
       // Verify
       expect(result.success).toBe(false);
@@ -146,7 +167,7 @@ describe('EnhancedOrderService', () => {
       };
 
       // Execute
-      const result = await orderService.createOrder(invalidInput);
+      const result = await EnhancedOrderService.createOrder(invalidInput);
 
       // Verify
       expect(result.success).toBe(false);
@@ -163,7 +184,7 @@ describe('EnhancedOrderService', () => {
       };
 
       // Execute
-      const result = await orderService.createOrder(cutoffInput);
+      const result = await EnhancedOrderService.createOrder(cutoffInput);
 
       // Verify
       expect(result.success).toBe(false);
@@ -200,7 +221,7 @@ describe('EnhancedOrderService', () => {
       });
 
       // Execute
-      const result = await orderService.createOrder(invalidQuantityInput);
+      const result = await EnhancedOrderService.createOrder(invalidQuantityInput);
 
       // Verify
       expect(result.success).toBe(false);
@@ -238,7 +259,7 @@ describe('EnhancedOrderService', () => {
       (mockContainer.redisService.set as jest.Mock).mockImplementation(() => Promise.resolve());
 
       // Execute
-      const result = await orderService.addToCart(validCartInput);
+      const result = await EnhancedOrderService.addToCart(validCartInput);
 
       // Verify
       expect(result.success).toBe(true);
@@ -261,7 +282,7 @@ describe('EnhancedOrderService', () => {
       (mockContainer.menuItemRepository.findById as jest.Mock).mockResolvedValue(null);
 
       // Execute
-      const result = await orderService.addToCart(validCartInput);
+      const result = await EnhancedOrderService.addToCart(validCartInput);
 
       // Verify
       expect(result.success).toBe(false);
@@ -288,7 +309,7 @@ describe('EnhancedOrderService', () => {
       (mockContainer.menuItemRepository.findById as jest.Mock).mockResolvedValue(mockMenuItem);
 
       // Execute
-      const result = await orderService.addToCart(invalidCartInput);
+      const result = await EnhancedOrderService.addToCart(invalidCartInput);
 
       // Verify
       expect(result.success).toBe(false);
@@ -320,7 +341,7 @@ describe('EnhancedOrderService', () => {
       (mockContainer.redisService.set as jest.Mock).mockImplementation(() => Promise.resolve());
 
       // Execute
-      const result = await orderService.addToCart(validCartInput);
+      const result = await EnhancedOrderService.addToCart(validCartInput);
 
       // Verify - quantity should be updated (1 + 2 = 3)
       expect(result.success).toBe(true);
@@ -335,7 +356,7 @@ describe('EnhancedOrderService', () => {
     it('should return null for non-existent cart', async () => {
       (mockContainer.redisService.get as jest.Mock).mockResolvedValue(null);
 
-      const result = await orderService.getCart('student-123');
+      const result = await EnhancedOrderService.getCart('student-123');
 
       expect(result.success).toBe(true);
       expect(result.data).toBeNull();
@@ -355,7 +376,7 @@ describe('EnhancedOrderService', () => {
 
       (mockContainer.redisService.get as jest.Mock).mockResolvedValue(JSON.stringify(cartData));
 
-      const result = await orderService.getCart('student-123');
+      const result = await EnhancedOrderService.getCart('student-123');
 
       expect(result.success).toBe(true);
       expect(result.data?.items).toHaveLength(1);
@@ -373,7 +394,7 @@ describe('EnhancedOrderService', () => {
       (mockContainer.redisService.get as jest.Mock).mockResolvedValue(JSON.stringify(expiredCartData));
       (mockContainer.redisService.del as jest.Mock).mockImplementation(() => Promise.resolve());
 
-      const result = await orderService.getCart('student-123');
+      const result = await EnhancedOrderService.getCart('student-123');
 
       expect(result.success).toBe(true);
       expect(result.data).toBeNull();
@@ -385,7 +406,7 @@ describe('EnhancedOrderService', () => {
     it('should clear cart successfully', async () => {
       (mockContainer.redisService.del as jest.Mock).mockImplementation(() => Promise.resolve());
 
-      await orderService.clearCart('student-123');
+      await EnhancedOrderService.clearCart('student-123');
 
       expect(mockContainer.redisService.del).toHaveBeenCalledWith('cart:student-123');
     });
@@ -394,7 +415,7 @@ describe('EnhancedOrderService', () => {
       (mockContainer.redisService.del as jest.Mock).mockRejectedValue(new Error('Redis connection failed'));
 
       // Should not throw - method handles errors internally
-      await expect(orderService.clearCart('student-123')).resolves.toBeUndefined();
+      await expect(EnhancedOrderService.clearCart('student-123')).resolves.toBeUndefined();
     });
   });
 
@@ -419,9 +440,10 @@ describe('EnhancedOrderService', () => {
         }
       });
 
-      const isolatedService = new EnhancedOrderService(isolatedContainer);
+      // Update mockContainer with isolated configuration
+      mockContainer = isolatedContainer;
 
-      const result = await isolatedService.addToCart({
+      const result = await EnhancedOrderService.addToCart({
         studentId: 'test',
         menuItemId: 'isolated-item',
         quantity: 1
@@ -439,11 +461,9 @@ describe('EnhancedOrderService', () => {
         }
       });
 
-      const customService = new EnhancedOrderService(customContainer);
-      
       // Verify custom mock was applied
       expect(jest.isMockFunction(customContainer.menuItemRepository.nameExists)).toBe(true);
-      
+
       // Verify other mocks are still defaults
       expect(jest.isMockFunction(customContainer.menuItemRepository.findById)).toBe(true);
     });

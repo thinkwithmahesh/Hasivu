@@ -105,7 +105,7 @@ async function getUserPaymentMethods(userId, schoolId, query, requestId) {
         logger.error('Failed to get payment methods', {
             requestId,
             userId,
-            error: error instanceof Error ? error.message : 'Unknown error'
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error'
         });
         throw error;
     }
@@ -156,7 +156,7 @@ async function createPaymentMethod(data, userId, schoolId, requestId) {
         logger.error('Failed to create payment method', {
             requestId,
             userId,
-            error: error instanceof Error ? error.message : 'Unknown error'
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error'
         });
         throw error;
     }
@@ -194,7 +194,7 @@ async function updatePaymentMethod(methodId, data, userId, schoolId, requestId) 
             requestId,
             userId,
             methodId,
-            error: error instanceof Error ? error.message : 'Unknown error'
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error'
         });
         throw error;
     }
@@ -225,7 +225,7 @@ async function deletePaymentMethod(methodId, userId, schoolId, requestId) {
             requestId,
             userId,
             methodId,
-            error: error instanceof Error ? error.message : 'Unknown error'
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error'
         });
         throw error;
     }
@@ -247,7 +247,7 @@ const managePaymentMethodsHandler = async (event, context) => {
         const methodId = event.pathParameters?.methodId;
         let result;
         switch (event.httpMethod) {
-            case 'GET':
+            case 'GET': {
                 const queryParams = event.queryStringParameters || {};
                 const listQuery = listPaymentMethodsQuerySchema.parse(queryParams);
                 const { paymentMethods, total } = await getUserPaymentMethods(userId, schoolId, listQuery, requestId);
@@ -262,7 +262,8 @@ const managePaymentMethodsHandler = async (event, context) => {
                     defaultMethod: paymentMethods.find(pm => pm.isDefault) || null
                 };
                 break;
-            case 'POST':
+            }
+            case 'POST': {
                 if (!event.body) {
                     return (0, response_utils_1.createErrorResponse)(400, 'Request body required', undefined, 'MISSING_BODY', requestId);
                 }
@@ -273,7 +274,8 @@ const managePaymentMethodsHandler = async (event, context) => {
                     message: 'Payment method created successfully'
                 };
                 break;
-            case 'PUT':
+            }
+            case 'PUT': {
                 if (!methodId) {
                     return (0, response_utils_1.createErrorResponse)(400, 'Missing methodId in path parameters', undefined, 'MISSING_METHOD_ID', requestId);
                 }
@@ -287,6 +289,7 @@ const managePaymentMethodsHandler = async (event, context) => {
                     message: 'Payment method updated successfully'
                 };
                 break;
+            }
             case 'DELETE':
                 if (!methodId) {
                     return (0, response_utils_1.createErrorResponse)(400, 'Missing methodId in path parameters', undefined, 'MISSING_METHOD_ID', requestId);
@@ -311,28 +314,28 @@ const managePaymentMethodsHandler = async (event, context) => {
             success: true
         });
         const statusCode = event.httpMethod === 'POST' ? 201 : 200;
-        return (0, response_utils_1.createSuccessResponse)(statusCode, 'Payment method operation completed successfully', result, requestId);
+        return (0, response_utils_1.createSuccessResponse)(result, 'Payment method operation completed successfully', statusCode, requestId);
     }
     catch (error) {
         const duration = Date.now() - startTime;
         logger.error('Payment method management request failed', {
             requestId,
             method: event.httpMethod,
-            error: error instanceof Error ? error.message : 'Unknown error',
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error',
             duration
         });
         if (error instanceof Error) {
-            if (error.message.includes('Authentication required')) {
+            if (error instanceof Error ? error.message : String(error).includes('Authentication required')) {
                 return (0, response_utils_1.createErrorResponse)(401, 'Authentication required', undefined, 'AUTHENTICATION_REQUIRED', requestId);
             }
-            if (error.message.includes('Access denied')) {
+            if (error instanceof Error ? error.message : String(error).includes('Access denied')) {
                 return (0, response_utils_1.createErrorResponse)(403, 'Access denied', undefined, 'ACCESS_DENIED', requestId);
             }
-            if (error.message.includes('not found')) {
+            if (error instanceof Error ? error.message : String(error).includes('not found')) {
                 return (0, response_utils_1.createErrorResponse)(404, 'Payment method not found', undefined, 'NOT_FOUND', requestId);
             }
-            if (error.message.includes('limit exceeded')) {
-                return (0, response_utils_1.createErrorResponse)(409, error.message, undefined, 'LIMIT_EXCEEDED', requestId);
+            if (error instanceof Error ? error.message : String(error).includes('limit exceeded')) {
+                return (0, response_utils_1.createErrorResponse)(409, error instanceof Error ? error.message : String(error), undefined, 'LIMIT_EXCEEDED', requestId);
             }
         }
         return (0, response_utils_1.createErrorResponse)(500, 'Internal server error', undefined, 'INTERNAL_ERROR', requestId);

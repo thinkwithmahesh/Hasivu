@@ -22,7 +22,7 @@ class PaymentAnalyticsService {
                 this.getPaymentBreakdowns(dateRange, schoolId),
                 this.getTopPerformers(dateRange, schoolId),
                 this.generateAlerts(dateRange, schoolId),
-                this.generateRecommendations(dateRange, schoolId)
+                this.generateRecommendations(dateRange, schoolId),
             ]);
             const dashboard = {
                 metrics,
@@ -30,19 +30,19 @@ class PaymentAnalyticsService {
                 breakdowns,
                 topPerformers,
                 alerts,
-                recommendations
+                recommendations,
             };
             await redis_service_1.RedisService.setex(cacheKey, this.CACHE_TTL, JSON.stringify(dashboard));
             const duration = Date.now() - startTime;
             logger_1.logger.info('Payment analytics dashboard data generated successfully', {
                 period,
                 schoolId: schoolId || 'all',
-                duration: duration
+                duration,
             });
             return dashboard;
         }
         catch (error) {
-            logger_1.logger.error('Error generating payment analytics dashboard data', error);
+            logger_1.logger.error('Error generating payment analytics dashboard data', error instanceof Error ? error : new Error(String(error)));
             throw error;
         }
     }
@@ -68,44 +68,44 @@ class PaymentAnalyticsService {
         }
         return { startDate, endDate };
     }
-    async getPaymentMetrics(dateRange, schoolId) {
+    async getPaymentMetrics(_dateRange, _schoolId) {
         return {
             totalPayments: 1250,
-            totalRevenue: 185750.00,
-            avgOrderValue: 148.60,
+            totalRevenue: 185750.0,
+            avgOrderValue: 148.6,
             paymentSuccessRate: 97.2,
             refundRate: 2.1,
             chargebackRate: 0.3,
             newCustomers: 89,
-            returningCustomers: 156
+            returningCustomers: 156,
         };
     }
-    async getPaymentTrends(dateRange, schoolId) {
+    async getPaymentTrends(_dateRange, _schoolId) {
         return {
             revenue: [],
             volume: [],
             successRate: [],
-            avgOrderValue: []
+            avgOrderValue: [],
         };
     }
-    async getPaymentBreakdowns(dateRange, schoolId) {
+    async getPaymentBreakdowns(_dateRange, _schoolId) {
         return {
             byMethod: [],
             bySchool: [],
-            byTimeOfDay: []
+            byTimeOfDay: [],
         };
     }
-    async getTopPerformers(dateRange, schoolId) {
+    async getTopPerformers(_dateRange, _schoolId) {
         return {
             schools: [],
             paymentMethods: [],
-            products: []
+            products: [],
         };
     }
-    async generateAlerts(dateRange, schoolId) {
+    async generateAlerts(_dateRange, _schoolId) {
         return [];
     }
-    async generateRecommendations(dateRange, schoolId) {
+    async generateRecommendations(_dateRange, _schoolId) {
         return [];
     }
 }

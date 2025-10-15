@@ -1,14 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  LineChart, Line, PieChart, Pie, Cell 
+import {
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
 } from 'recharts';
-import { 
-  Radio, Shield, CheckCircle, Clock, 
-  CreditCard, RefreshCw, 
-  MapPin, Search, 
-  Plus, Edit2, Trash2
+import {
+  Radio,
+  Shield,
+  CheckCircle,
+  Clock,
+  CreditCard,
+  RefreshCw,
+  MapPin,
+  Search,
+  Plus,
+  Edit2,
+  Trash2,
 } from 'lucide-react';
 import { hasivuApiService } from '../services/hasivu-api.service';
 
@@ -82,12 +97,14 @@ const RFIDManagementDashboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'cards' | 'readers' | 'logs'>('overview');
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'offline' | 'maintenance'>('all');
-  const [showAddCard, setShowAddCard] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'offline' | 'maintenance'>(
+    'all'
+  );
+  const [_showAddCard, setShowAddCard] = useState(false);
 
   useEffect(() => {
     loadRFIDData();
-    
+
     // Auto-refresh every 10 seconds for real-time updates
     const interval = setInterval(loadRFIDData, 10000);
     return () => clearInterval(interval);
@@ -96,12 +113,12 @@ const RFIDManagementDashboard: React.FC = () => {
   const loadRFIDData = async () => {
     try {
       if (!data) setIsLoading(true);
-      
+
       const [cardsRes, readersRes, logsRes, analyticsRes] = await Promise.all([
         hasivuApiService.getRFIDCards(),
         hasivuApiService.getRFIDReaders(),
         hasivuApiService.getRFIDLogs({ limit: 100 }),
-        hasivuApiService.getRFIDAnalytics()
+        hasivuApiService.getRFIDAnalytics(),
       ]);
 
       const rfidData: RFIDDashboardData = {
@@ -111,7 +128,7 @@ const RFIDManagementDashboard: React.FC = () => {
           onlineReaders: readersRes.data.online || 24,
           todayVerifications: analyticsRes.data.todayVerifications || 1847,
           successRate: analyticsRes.data.successRate || 99.94,
-          avgResponseTime: analyticsRes.data.avgResponseTime || 0.14
+          avgResponseTime: analyticsRes.data.avgResponseTime || 0.14,
         },
         cards: cardsRes.data.cards || generateMockCards(),
         readers: readersRes.data.readers || generateMockReaders(),
@@ -119,13 +136,12 @@ const RFIDManagementDashboard: React.FC = () => {
         analytics: analyticsRes.data.analytics || {
           daily: generateMockDailyData(),
           byLocation: generateMockLocationData(),
-          statusDistribution: generateMockStatusData()
-        }
+          statusDistribution: generateMockStatusData(),
+        },
       };
 
       setData(rfidData);
     } catch (error) {
-      console.error('Failed to load RFID data:', error);
       if (!data) {
         // Load fallback demo data
         setData({
@@ -135,7 +151,7 @@ const RFIDManagementDashboard: React.FC = () => {
             onlineReaders: 24,
             todayVerifications: 1847,
             successRate: 99.94,
-            avgResponseTime: 0.14
+            avgResponseTime: 0.14,
           },
           cards: generateMockCards(),
           readers: generateMockReaders(),
@@ -143,8 +159,8 @@ const RFIDManagementDashboard: React.FC = () => {
           analytics: {
             daily: generateMockDailyData(),
             byLocation: generateMockLocationData(),
-            statusDistribution: generateMockStatusData()
-          }
+            statusDistribution: generateMockStatusData(),
+          },
         });
       }
     } finally {
@@ -160,9 +176,9 @@ const RFIDManagementDashboard: React.FC = () => {
       studentName: 'John Smith',
       schoolId: 'SCH001',
       status: 'active',
-      balance: 45.50,
+      balance: 45.5,
       lastUsed: '2024-01-15T12:30:00Z',
-      createdAt: '2023-09-01T08:00:00Z'
+      createdAt: '2023-09-01T08:00:00Z',
     },
     {
       id: '2',
@@ -173,7 +189,7 @@ const RFIDManagementDashboard: React.FC = () => {
       status: 'active',
       balance: 32.75,
       lastUsed: '2024-01-15T11:45:00Z',
-      createdAt: '2023-09-01T08:00:00Z'
+      createdAt: '2023-09-01T08:00:00Z',
     },
     {
       id: '3',
@@ -184,8 +200,8 @@ const RFIDManagementDashboard: React.FC = () => {
       status: 'lost',
       balance: 0,
       lastUsed: '2024-01-10T14:20:00Z',
-      createdAt: '2023-09-01T08:00:00Z'
-    }
+      createdAt: '2023-09-01T08:00:00Z',
+    },
   ];
 
   const generateMockReaders = (): RFIDReader[] => [
@@ -197,7 +213,7 @@ const RFIDManagementDashboard: React.FC = () => {
       signalStrength: 95,
       lastPing: '2024-01-15T12:34:45Z',
       todayScans: 342,
-      batteryLevel: 89
+      batteryLevel: 89,
     },
     {
       id: '2',
@@ -207,7 +223,7 @@ const RFIDManagementDashboard: React.FC = () => {
       signalStrength: 87,
       lastPing: '2024-01-15T12:34:42Z',
       todayScans: 156,
-      batteryLevel: 72
+      batteryLevel: 72,
     },
     {
       id: '3',
@@ -216,8 +232,8 @@ const RFIDManagementDashboard: React.FC = () => {
       status: 'maintenance',
       signalStrength: 0,
       lastPing: '2024-01-14T16:20:00Z',
-      todayScans: 0
-    }
+      todayScans: 0,
+    },
   ];
 
   const generateMockLogs = (): VerificationLog[] => [
@@ -229,7 +245,7 @@ const RFIDManagementDashboard: React.FC = () => {
       studentName: 'John Smith',
       status: 'success',
       responseTime: 0.12,
-      location: 'Main Cafeteria'
+      location: 'Main Cafeteria',
     },
     {
       id: '2',
@@ -239,7 +255,7 @@ const RFIDManagementDashboard: React.FC = () => {
       studentName: 'Emma Johnson',
       status: 'success',
       responseTime: 0.15,
-      location: 'Library'
+      location: 'Library',
     },
     {
       id: '3',
@@ -249,8 +265,8 @@ const RFIDManagementDashboard: React.FC = () => {
       studentName: 'Unknown',
       status: 'blocked',
       responseTime: 0.08,
-      location: 'Main Cafeteria'
-    }
+      location: 'Main Cafeteria',
+    },
   ];
 
   const generateMockDailyData = () => [
@@ -260,7 +276,7 @@ const RFIDManagementDashboard: React.FC = () => {
     { date: '2024-01-12', verifications: 1756, success: 1748, failed: 8 },
     { date: '2024-01-13', verifications: 1689, success: 1681, failed: 8 },
     { date: '2024-01-14', verifications: 1598, success: 1591, failed: 7 },
-    { date: '2024-01-15', verifications: 1847, success: 1838, failed: 9 }
+    { date: '2024-01-15', verifications: 1847, success: 1838, failed: 9 },
   ];
 
   const generateMockLocationData = () => [
@@ -268,22 +284,24 @@ const RFIDManagementDashboard: React.FC = () => {
     { location: 'Library', count: 324, success: 322 },
     { location: 'Gymnasium', count: 267, success: 265 },
     { location: 'Science Lab', count: 189, success: 188 },
-    { location: 'Art Room', count: 156, success: 156 }
+    { location: 'Art Room', count: 156, success: 156 },
   ];
 
   const generateMockStatusData = () => [
     { status: 'Active', count: 2398 },
     { status: 'Inactive', count: 89 },
     { status: 'Lost', count: 34 },
-    { status: 'Blocked', count: 22 }
+    { status: 'Blocked', count: 22 },
   ];
 
-  const filteredReaders = data?.readers.filter(reader => {
-    const matchesSearch = reader.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         reader.location.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || reader.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  }) || [];
+  const filteredReaders =
+    data?.readers.filter(reader => {
+      const matchesSearch =
+        reader.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        reader.location.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = statusFilter === 'all' || reader.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    }) || [];
 
   const StatusBadge = ({ status }: { status: string }) => {
     const colors = {
@@ -295,11 +313,13 @@ const RFIDManagementDashboard: React.FC = () => {
       lost: 'bg-red-100 text-red-800',
       blocked: 'bg-red-100 text-red-800',
       success: 'bg-green-100 text-green-800',
-      failed: 'bg-red-100 text-red-800'
+      failed: 'bg-red-100 text-red-800',
     };
 
     return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800'}`}>
+      <span
+        className={`px-2 py-1 rounded-full text-xs font-medium ${colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800'}`}
+      >
         {status.charAt(0).toUpperCase() + status.slice(1)}
       </span>
     );
@@ -327,9 +347,11 @@ const RFIDManagementDashboard: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">RFID Management</h1>
-          <p className="text-gray-600 mt-1">Monitor and manage RFID cards and readers across your schools</p>
+          <p className="text-gray-600 mt-1">
+            Monitor and manage RFID cards and readers across your schools
+          </p>
         </div>
-        
+
         <div className="flex items-center space-x-4">
           <button
             onClick={() => setShowAddCard(true)}
@@ -338,7 +360,7 @@ const RFIDManagementDashboard: React.FC = () => {
             <Plus className="w-4 h-4" />
             <span>Add Card</span>
           </button>
-          
+
           <button
             onClick={loadRFIDData}
             className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center space-x-2"
@@ -356,21 +378,25 @@ const RFIDManagementDashboard: React.FC = () => {
             <div className="p-2 bg-blue-100 rounded-lg">
               <CreditCard className="w-5 h-5 text-blue-600" />
             </div>
-            <span className="text-2xl font-bold text-gray-900">{data.summary.totalCards.toLocaleString()}</span>
+            <span className="text-2xl font-bold text-gray-900">
+              {data.summary.totalCards.toLocaleString()}
+            </span>
           </div>
           <p className="text-sm text-gray-600 mt-2">Total Cards</p>
         </div>
-        
+
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
           <div className="flex items-center justify-between">
             <div className="p-2 bg-green-100 rounded-lg">
               <CheckCircle className="w-5 h-5 text-green-600" />
             </div>
-            <span className="text-2xl font-bold text-gray-900">{data.summary.activeCards.toLocaleString()}</span>
+            <span className="text-2xl font-bold text-gray-900">
+              {data.summary.activeCards.toLocaleString()}
+            </span>
           </div>
           <p className="text-sm text-gray-600 mt-2">Active Cards</p>
         </div>
-        
+
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
           <div className="flex items-center justify-between">
             <div className="p-2 bg-purple-100 rounded-lg">
@@ -380,17 +406,19 @@ const RFIDManagementDashboard: React.FC = () => {
           </div>
           <p className="text-sm text-gray-600 mt-2">Online Readers</p>
         </div>
-        
+
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
           <div className="flex items-center justify-between">
             <div className="p-2 bg-orange-100 rounded-lg">
               <Shield className="w-5 h-5 text-orange-600" />
             </div>
-            <span className="text-2xl font-bold text-gray-900">{data.summary.todayVerifications.toLocaleString()}</span>
+            <span className="text-2xl font-bold text-gray-900">
+              {data.summary.todayVerifications.toLocaleString()}
+            </span>
           </div>
           <p className="text-sm text-gray-600 mt-2">Today's Scans</p>
         </div>
-        
+
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
           <div className="flex items-center justify-between">
             <div className="p-2 bg-green-100 rounded-lg">
@@ -400,13 +428,15 @@ const RFIDManagementDashboard: React.FC = () => {
           </div>
           <p className="text-sm text-gray-600 mt-2">Success Rate</p>
         </div>
-        
+
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
           <div className="flex items-center justify-between">
             <div className="p-2 bg-blue-100 rounded-lg">
               <Clock className="w-5 h-5 text-blue-600" />
             </div>
-            <span className="text-2xl font-bold text-gray-900">{data.summary.avgResponseTime}s</span>
+            <span className="text-2xl font-bold text-gray-900">
+              {data.summary.avgResponseTime}s
+            </span>
           </div>
           <p className="text-sm text-gray-600 mt-2">Avg Response</p>
         </div>
@@ -419,8 +449,8 @@ const RFIDManagementDashboard: React.FC = () => {
             { id: 'overview', label: 'Overview' },
             { id: 'cards', label: 'Card Management' },
             { id: 'readers', label: 'Reader Status' },
-            { id: 'logs', label: 'Verification Logs' }
-          ].map((tab) => (
+            { id: 'logs', label: 'Verification Logs' },
+          ].map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
@@ -489,15 +519,15 @@ const RFIDManagementDashboard: React.FC = () => {
                   type="text"
                   placeholder="Search readers..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={e => setSearchTerm(e.target.value)}
                   className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full"
                 />
               </div>
             </div>
-            
+
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as any)}
+              onChange={e => setStatusFilter(e.target.value as any)}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="all">All Status</option>
@@ -509,7 +539,7 @@ const RFIDManagementDashboard: React.FC = () => {
 
           {/* Readers Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredReaders.map((reader) => (
+            {filteredReaders.map(reader => (
               <motion.div
                 key={reader.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -518,12 +548,16 @@ const RFIDManagementDashboard: React.FC = () => {
               >
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-3">
-                    <div className={`p-2 rounded-lg ${reader.status === 'online' ? 'bg-green-100' : reader.status === 'maintenance' ? 'bg-yellow-100' : 'bg-red-100'}`}>
-                      <Radio className={`w-5 h-5 ${reader.status === 'online' ? 'text-green-600' : reader.status === 'maintenance' ? 'text-yellow-600' : 'text-red-600'}`} />
+                    <div
+                      className={`p-2 rounded-lg ${reader.status === 'online' ? 'bg-green-100' : reader.status === 'maintenance' ? 'bg-yellow-100' : 'bg-red-100'}`}
+                    >
+                      <Radio
+                        className={`w-5 h-5 ${reader.status === 'online' ? 'text-green-600' : reader.status === 'maintenance' ? 'text-yellow-600' : 'text-red-600'}`}
+                      />
                     </div>
                     <StatusBadge status={reader.status} />
                   </div>
-                  
+
                   <div className="flex items-center space-x-2">
                     <button className="p-1 text-gray-400 hover:text-gray-600">
                       <Edit2 className="w-4 h-4" />
@@ -533,33 +567,33 @@ const RFIDManagementDashboard: React.FC = () => {
                     </button>
                   </div>
                 </div>
-                
+
                 <h4 className="font-semibold text-gray-900 mb-2">{reader.name}</h4>
                 <p className="text-sm text-gray-600 mb-4 flex items-center">
                   <MapPin className="w-4 h-4 mr-1" />
                   {reader.location}
                 </p>
-                
+
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Signal Strength</span>
                     <div className="flex items-center space-x-2">
                       <div className="w-16 bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-green-500 h-2 rounded-full" 
+                        <div
+                          className="bg-green-500 h-2 rounded-full"
                           style={{ width: `${reader.signalStrength}%` }}
                         ></div>
                       </div>
                       <span className="text-sm font-medium">{reader.signalStrength}%</span>
                     </div>
                   </div>
-                  
+
                   {reader.batteryLevel && (
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-600">Battery Level</span>
                       <div className="flex items-center space-x-2">
                         <div className="w-16 bg-gray-200 rounded-full h-2">
-                          <div 
+                          <div
                             className={`h-2 rounded-full ${reader.batteryLevel > 30 ? 'bg-green-500' : 'bg-red-500'}`}
                             style={{ width: `${reader.batteryLevel}%` }}
                           ></div>
@@ -568,15 +602,19 @@ const RFIDManagementDashboard: React.FC = () => {
                       </div>
                     </div>
                   )}
-                  
+
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Today's Scans</span>
-                    <span className="text-sm font-medium">{reader.todayScans.toLocaleString()}</span>
+                    <span className="text-sm font-medium">
+                      {reader.todayScans.toLocaleString()}
+                    </span>
                   </div>
-                  
+
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Last Ping</span>
-                    <span className="text-sm text-gray-500">{new Date(reader.lastPing).toLocaleTimeString()}</span>
+                    <span className="text-sm text-gray-500">
+                      {new Date(reader.lastPing).toLocaleTimeString()}
+                    </span>
                   </div>
                 </div>
               </motion.div>
@@ -590,7 +628,7 @@ const RFIDManagementDashboard: React.FC = () => {
           <div className="px-6 py-4 border-b border-gray-200">
             <h3 className="text-lg font-semibold text-gray-900">Recent Verification Logs</h3>
           </div>
-          
+
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -616,7 +654,7 @@ const RFIDManagementDashboard: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {data.verificationLogs.map((log) => (
+                {data.verificationLogs.map(log => (
                   <tr key={log.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {new Date(log.timestamp).toLocaleString()}

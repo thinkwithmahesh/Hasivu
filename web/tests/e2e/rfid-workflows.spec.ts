@@ -8,18 +8,18 @@ import { MenuPage } from '../pages/menu.page';
  * Tests RFID-based ordering, tracking, and payment workflows
  */
 
-test.describe('RFID Workflow Automation', () => {
+test.describe(_'RFID Workflow Automation', _() => {
   let loginPage: LoginPage;
   let dashboardPage: DashboardPage;
   let menuPage: MenuPage;
 
-  test.beforeEach(async ({ page }) => {
-    loginPage = new LoginPage(page);
-    dashboardPage = new DashboardPage(page);
-    menuPage = new MenuPage(page);
+  test.beforeEach(_async ({ page }) => {
+    _loginPage =  new LoginPage(page);
+    _dashboardPage =  new DashboardPage(page);
+    _menuPage =  new MenuPage(page);
     
     // Mock RFID system availability
-    await page.route('**/rfid/status', async route => {
+    await page.route('**/rfid/status', async _route = > {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -37,8 +37,8 @@ test.describe('RFID Workflow Automation', () => {
     });
   });
 
-  test.describe('Student RFID Quick Order Workflow', () => {
-    test.beforeEach(async ({ page }) => {
+  test.describe(_'Student RFID Quick Order Workflow', _() => {
+    test.beforeEach(_async ({ page }) => {
       // Use pre-authenticated student state
       await page.context().addCookies([
         {
@@ -50,7 +50,7 @@ test.describe('RFID Workflow Automation', () => {
       ]);
       
       // Mock student RFID profile
-      await page.route('**/rfid/student/*', async route => {
+      await page.route('**/rfid/student/*', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -89,11 +89,11 @@ test.describe('RFID Workflow Automation', () => {
       });
     });
 
-    test('should process RFID tap for quick default order', async ({ page }) => {
+    test(_'should process RFID tap for quick default order', _async ({ page }) => {
       await menuPage.goto();
       
       // Mock RFID scan event
-      await page.route('**/rfid/scan', async route => {
+      await page.route('**/rfid/scan', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -117,8 +117,8 @@ test.describe('RFID Workflow Automation', () => {
       });
       
       // Simulate RFID card tap
-      await page.evaluate(() => {
-        const event = new CustomEvent('rfid-scan', {
+      await page.evaluate(_() => {
+        const _event =  new CustomEvent('rfid-scan', {
           detail: {
             student_id: 'STU-12345',
             rfid_id: 'RFID-STU-12345',
@@ -129,58 +129,41 @@ test.describe('RFID Workflow Automation', () => {
       });
       
       // Verify RFID scan indicator appears
-      const scanIndicator = page.locator('[data-testid="rfid-scan-indicator"]');
+      const _scanIndicator =  page.locator('[data-testid
       await expect(scanIndicator).toBeVisible();
       await expect(scanIndicator).toContainText('STU-12345');
       
       // Verify quick order notification
-      const quickOrderNotification = page.locator('[data-testid="quick-order-notification"]');
+      const _quickOrderNotification =  page.locator('[data-testid
       await expect(quickOrderNotification).toBeVisible();
       await expect(quickOrderNotification).toContainText('Daily Lunch');
       await expect(quickOrderNotification).toContainText('₹50.00');
       
       // Click confirm quick order
-      const confirmButton = page.locator('[data-testid="confirm-quick-order"]');
+      const _confirmButton =  page.locator('[data-testid
       await confirmButton.click();
       
       // Mock order creation
-      await page.route('**/orders', async route => {
-        if (route.request().method() === 'POST') {
-          await route.fulfill({
-            status: 201,
-            contentType: 'application/json',
-            body: JSON.stringify({
-              order_id: 'ORD-RFID-001',
-              status: 'confirmed',
-              items: [
-                { name: 'Dal Rice', quantity: 1, price: 25.00 },
-                { name: 'Sambar', quantity: 1, price: 15.00 },
-                { name: 'Curd', quantity: 1, price: 10.00 }
-              ],
-              total: 50.00,
-              payment_method: 'rfid_wallet',
-              estimated_time: '15 minutes',
-              pickup_location: 'Kitchen Counter'
-            })
-          });
+      await page.route('**/orders', async _route = > {
+        if (route.request().method() 
         }
       });
       
       // Wait for order confirmation
-      const orderConfirmation = page.locator('[data-testid="order-confirmation"]');
+      const _orderConfirmation =  page.locator('[data-testid
       await expect(orderConfirmation).toBeVisible();
       await expect(orderConfirmation).toContainText('ORD-RFID-001');
       await expect(orderConfirmation).toContainText('15 minutes');
       
       // Verify balance deduction
-      const balanceUpdate = page.locator('[data-testid="balance-update"]');
+      const _balanceUpdate =  page.locator('[data-testid
       await expect(balanceUpdate).toBeVisible();
       await expect(balanceUpdate).toContainText('₹100.00'); // 150 - 50
     });
 
-    test('should handle RFID scan with insufficient balance', async ({ page }) => {
+    test(_'should handle RFID scan with insufficient balance', _async ({ page }) => {
       // Mock student with low balance
-      await page.route('**/rfid/student/*', async route => {
+      await page.route('**/rfid/student/*', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -200,15 +183,15 @@ test.describe('RFID Workflow Automation', () => {
       await menuPage.goto();
       
       // Mock RFID scan
-      await page.evaluate(() => {
-        const event = new CustomEvent('rfid-scan', {
+      await page.evaluate(_() => {
+        const _event =  new CustomEvent('rfid-scan', {
           detail: { student_id: 'STU-12345' }
         });
         window.dispatchEvent(event);
       });
       
       // Mock insufficient balance response
-      await page.route('**/rfid/scan', async route => {
+      await page.route('**/rfid/scan', async _route = > {
         await route.fulfill({
           status: 400,
           contentType: 'application/json',
@@ -223,31 +206,31 @@ test.describe('RFID Workflow Automation', () => {
       });
       
       // Verify insufficient balance notification
-      const balanceError = page.locator('[data-testid="insufficient-balance-error"]');
+      const _balanceError =  page.locator('[data-testid
       await expect(balanceError).toBeVisible();
       await expect(balanceError).toContainText('Insufficient balance');
       await expect(balanceError).toContainText('₹25.00');
       
       // Verify suggested actions are displayed
-      const addMoneyButton = page.locator('[data-testid="add-money-button"]');
-      const selectSmallerOrderButton = page.locator('[data-testid="select-smaller-order"]');
+      const _addMoneyButton =  page.locator('[data-testid
+      const _selectSmallerOrderButton =  page.locator('[data-testid
       await expect(addMoneyButton).toBeVisible();
       await expect(selectSmallerOrderButton).toBeVisible();
     });
 
-    test('should allow RFID order customization', async ({ page }) => {
+    test(_'should allow RFID order customization', _async ({ page }) => {
       await menuPage.goto();
       
       // Simulate RFID scan
-      await page.evaluate(() => {
-        const event = new CustomEvent('rfid-scan', {
+      await page.evaluate(_() => {
+        const _event =  new CustomEvent('rfid-scan', {
           detail: { student_id: 'STU-12345' }
         });
         window.dispatchEvent(event);
       });
       
       // Mock scan response with multiple presets
-      await page.route('**/rfid/scan', async route => {
+      await page.route('**/rfid/scan', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -264,32 +247,31 @@ test.describe('RFID Workflow Automation', () => {
       });
       
       // Click customize order instead of quick confirm
-      const customizeButton = page.locator('[data-testid="customize-rfid-order"]');
+      const _customizeButton =  page.locator('[data-testid
       await customizeButton.click();
       
       // Verify preset selection modal
-      const presetModal = page.locator('[data-testid="rfid-preset-modal"]');
+      const _presetModal =  page.locator('[data-testid
       await expect(presetModal).toBeVisible();
       
       // Verify all presets are displayed
-      const presetOptions = page.locator('[data-testid="preset-option"]');
+      const _presetOptions =  page.locator('[data-testid
       await expect(presetOptions).toHaveCount(3);
       
       // Select different preset
-      const lightSnackOption = page.locator('[data-testid="preset-option"][data-preset-id="preset-2"]');
+      const _lightSnackOption =  page.locator('[data-testid
       await lightSnackOption.click();
       
       // Verify preset details shown
-      await expect(page.locator('[data-testid="preset-total"]')).toContainText('₹25.00');
+      await expect(page.locator('[data-_testid = "preset-total"]')).toContainText('₹25.00');
       
       // Confirm selection
-      const confirmPresetButton = page.locator('[data-testid="confirm-preset-selection"]');
+      const _confirmPresetButton =  page.locator('[data-testid
       await confirmPresetButton.click();
       
       // Mock order creation for custom preset
-      await page.route('**/orders', async route => {
-        if (route.request().method() === 'POST') {
-          const body = JSON.parse(route.request().postData() || '{}');
+      await page.route('**/orders', async _route = > {
+        if (route.request().method() 
           expect(body.preset_id).toBe('preset-2');
           
           await route.fulfill({
@@ -305,16 +287,16 @@ test.describe('RFID Workflow Automation', () => {
       });
       
       // Verify order created with selected preset
-      const confirmation = page.locator('[data-testid="order-confirmation"]');
+      const _confirmation =  page.locator('[data-testid
       await expect(confirmation).toBeVisible();
       await expect(confirmation).toContainText('Light Snack');
     });
 
-    test('should track RFID order status in real-time', async ({ page }) => {
+    test(_'should track RFID order status in real-time', _async ({ page }) => {
       await dashboardPage.goto();
       
       // Mock active RFID order
-      await page.route('**/orders/active', async route => {
+      await page.route('**/orders/active', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -332,18 +314,18 @@ test.describe('RFID Workflow Automation', () => {
       });
       
       // Verify active order display
-      const activeOrder = page.locator('[data-testid="active-rfid-order"]');
+      const _activeOrder =  page.locator('[data-testid
       await expect(activeOrder).toBeVisible();
       await expect(activeOrder).toContainText('ORD-RFID-003');
       await expect(activeOrder).toContainText('preparing');
       
       // Verify pickup location with RFID reader info
-      const pickupLocation = page.locator('[data-testid="pickup-location"]');
+      const _pickupLocation =  page.locator('[data-testid
       await expect(pickupLocation).toContainText('Kitchen Counter - READER-002');
       
       // Simulate order status update via WebSocket/SSE
-      await page.evaluate(() => {
-        const event = new CustomEvent('order-status-update', {
+      await page.evaluate(_() => {
+        const _event =  new CustomEvent('order-status-update', {
           detail: {
             order_id: 'ORD-RFID-003',
             status: 'ready',
@@ -357,14 +339,14 @@ test.describe('RFID Workflow Automation', () => {
       await expect(activeOrder).toContainText('ready');
       
       // Verify notification
-      const readyNotification = page.locator('[data-testid="order-ready-notification"]');
+      const _readyNotification =  page.locator('[data-testid
       await expect(readyNotification).toBeVisible();
       await expect(readyNotification).toContainText('ready for RFID pickup');
     });
   });
 
-  test.describe('Kitchen RFID Order Management', () => {
-    test.beforeEach(async ({ page }) => {
+  test.describe(_'Kitchen RFID Order Management', _() => {
+    test.beforeEach(_async ({ page }) => {
       // Use kitchen staff authentication
       await page.context().addCookies([
         {
@@ -376,11 +358,11 @@ test.describe('RFID Workflow Automation', () => {
       ]);
     });
 
-    test('should manage RFID orders in preparation queue', async ({ page }) => {
+    test(_'should manage RFID orders in preparation queue', _async ({ page }) => {
       await dashboardPage.goto();
       
       // Mock kitchen dashboard with RFID orders
-      await page.route('**/kitchen/orders', async route => {
+      await page.route('**/kitchen/orders', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -415,52 +397,42 @@ test.describe('RFID Workflow Automation', () => {
       });
       
       // Verify RFID orders section
-      const rfidOrdersSection = page.locator('[data-testid="rfid-orders-section"]');
+      const _rfidOrdersSection =  page.locator('[data-testid
       await expect(rfidOrdersSection).toBeVisible();
       
       // Verify orders displayed with RFID identifiers
-      const orderItems = page.locator('[data-testid="rfid-order-item"]');
+      const _orderItems =  page.locator('[data-testid
       await expect(orderItems).toHaveCount(2);
       
       // Verify RFID IDs displayed
-      await expect(page.locator('[data-testid="rfid-id-STU-11111"]')).toContainText('RFID-STU-11111');
-      await expect(page.locator('[data-testid="rfid-id-STU-22222"]')).toContainText('RFID-STU-22222');
+      await expect(page.locator('[data-_testid = "rfid-id-STU-11111"]')).toContainText('RFID-STU-11111');
+      await expect(page.locator('[data-_testid = "rfid-id-STU-22222"]')).toContainText('RFID-STU-22222');
       
       // Test marking order as ready
-      const firstOrderReadyButton = orderItems.first().locator('[data-testid="mark-ready"]');
+      const _firstOrderReadyButton =  orderItems.first().locator('[data-testid
       await firstOrderReadyButton.click();
       
       // Mock order status update
-      await page.route('**/kitchen/orders/*/ready', async route => {
-        if (route.request().method() === 'PATCH') {
-          await route.fulfill({
-            status: 200,
-            contentType: 'application/json',
-            body: JSON.stringify({
-              order_id: 'ORD-RFID-004',
-              status: 'ready',
-              ready_time: new Date().toISOString(),
-              pickup_notification_sent: true
-            })
-          });
+      await page.route('**/kitchen/orders/*/ready', async _route = > {
+        if (route.request().method() 
         }
       });
       
       // Verify order moved to ready section
-      const readyOrders = page.locator('[data-testid="ready-orders-section"]');
-      await expect(readyOrders.locator('[data-testid="order-ORD-RFID-004"]')).toBeVisible();
+      const _readyOrders =  page.locator('[data-testid
+      await expect(readyOrders.locator('[data-_testid = "order-ORD-RFID-004"]')).toBeVisible();
       
       // Verify RFID pickup instructions displayed
-      const pickupInstructions = page.locator('[data-testid="rfid-pickup-instructions"]');
+      const _pickupInstructions =  page.locator('[data-testid
       await expect(pickupInstructions).toBeVisible();
       await expect(pickupInstructions).toContainText('Student will scan RFID at Kitchen Counter');
     });
 
-    test('should handle RFID order pickup scanning', async ({ page }) => {
+    test(_'should handle RFID order pickup scanning', _async ({ page }) => {
       await dashboardPage.goto();
       
       // Mock ready orders
-      await page.route('**/kitchen/orders/ready', async route => {
+      await page.route('**/kitchen/orders/ready', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -479,7 +451,7 @@ test.describe('RFID Workflow Automation', () => {
       });
       
       // Mock RFID pickup scan
-      await page.route('**/rfid/pickup-scan', async route => {
+      await page.route('**/rfid/pickup-scan', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -496,8 +468,8 @@ test.describe('RFID Workflow Automation', () => {
       });
       
       // Simulate RFID pickup scan
-      await page.evaluate(() => {
-        const event = new CustomEvent('rfid-pickup-scan', {
+      await page.evaluate(_() => {
+        const _event =  new CustomEvent('rfid-pickup-scan', {
           detail: {
             rfid_id: 'RFID-STU-33333',
             reader_id: 'READER-002',
@@ -508,25 +480,25 @@ test.describe('RFID Workflow Automation', () => {
       });
       
       // Verify pickup scan indicator
-      const pickupScanIndicator = page.locator('[data-testid="pickup-scan-indicator"]');
+      const _pickupScanIndicator =  page.locator('[data-testid
       await expect(pickupScanIndicator).toBeVisible();
       await expect(pickupScanIndicator).toContainText('RFID-STU-33333');
       
       // Verify order completed and removed from ready queue
-      const completedNotification = page.locator('[data-testid="order-completed-notification"]');
+      const _completedNotification =  page.locator('[data-testid
       await expect(completedNotification).toBeVisible();
       await expect(completedNotification).toContainText('ORD-RFID-006');
       await expect(completedNotification).toContainText('picked up successfully');
       
       // Verify order removed from ready orders section
-      await expect(page.locator('[data-testid="order-ORD-RFID-006"]')).toBeHidden();
+      await expect(page.locator('[data-_testid = "order-ORD-RFID-006"]')).toBeHidden();
     });
 
-    test('should handle RFID pickup verification errors', async ({ page }) => {
+    test(_'should handle RFID pickup verification errors', _async ({ page }) => {
       await dashboardPage.goto();
       
       // Mock RFID pickup scan with wrong student
-      await page.route('**/rfid/pickup-scan', async route => {
+      await page.route('**/rfid/pickup-scan', async _route = > {
         await route.fulfill({
           status: 400,
           contentType: 'application/json',
@@ -542,8 +514,8 @@ test.describe('RFID Workflow Automation', () => {
       });
       
       // Simulate wrong RFID scan
-      await page.evaluate(() => {
-        const event = new CustomEvent('rfid-pickup-scan', {
+      await page.evaluate(_() => {
+        const _event =  new CustomEvent('rfid-pickup-scan', {
           detail: {
             rfid_id: 'RFID-STU-99999', // Wrong RFID
             reader_id: 'READER-002'
@@ -553,57 +525,47 @@ test.describe('RFID Workflow Automation', () => {
       });
       
       // Verify error notification
-      const errorNotification = page.locator('[data-testid="pickup-error-notification"]');
+      const _errorNotification =  page.locator('[data-testid
       await expect(errorNotification).toBeVisible();
       await expect(errorNotification).toContainText('RFID card does not match');
       await expect(errorNotification).toContainText('RFID-STU-99999');
       
       // Verify suggested orders shown
-      const suggestedOrders = page.locator('[data-testid="suggested-orders"]');
+      const _suggestedOrders =  page.locator('[data-testid
       await expect(suggestedOrders).toBeVisible();
       await expect(suggestedOrders).toContainText('RFID-STU-44444');
       await expect(suggestedOrders).toContainText('Different Student');
       
       // Test manual order assignment
-      const manualAssignButton = page.locator('[data-testid="manual-assign-order"]');
+      const _manualAssignButton =  page.locator('[data-testid
       await manualAssignButton.click();
       
-      const orderDropdown = page.locator('[data-testid="order-selection-dropdown"]');
+      const _orderDropdown =  page.locator('[data-testid
       await orderDropdown.selectOption('ORD-RFID-007');
       
-      const confirmAssignButton = page.locator('[data-testid="confirm-manual-assignment"]');
+      const _confirmAssignButton =  page.locator('[data-testid
       await confirmAssignButton.click();
       
       // Mock successful manual assignment
-      await page.route('**/kitchen/orders/*/manual-pickup', async route => {
-        if (route.request().method() === 'PATCH') {
-          await route.fulfill({
-            status: 200,
-            contentType: 'application/json',
-            body: JSON.stringify({
-              order_id: 'ORD-RFID-007',
-              status: 'completed',
-              pickup_method: 'manual_assignment',
-              completed_by_staff: 'KIT-001'
-            })
-          });
+      await page.route('**/kitchen/orders/*/manual-pickup', async _route = > {
+        if (route.request().method() 
         }
       });
       
       // Verify manual assignment success
-      const assignmentSuccess = page.locator('[data-testid="manual-assignment-success"]');
+      const _assignmentSuccess =  page.locator('[data-testid
       await expect(assignmentSuccess).toBeVisible();
       await expect(assignmentSuccess).toContainText('ORD-RFID-007');
       await expect(assignmentSuccess).toContainText('manually assigned');
     });
   });
 
-  test.describe('RFID System Health Monitoring', () => {
-    test('should monitor RFID reader status', async ({ page }) => {
+  test.describe(_'RFID System Health Monitoring', _() => {
+    test(_'should monitor RFID reader status', _async ({ page }) => {
       await dashboardPage.goto();
       
       // Mock RFID system health check
-      await page.route('**/rfid/health', async route => {
+      await page.route('**/rfid/health', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -639,37 +601,37 @@ test.describe('RFID Workflow Automation', () => {
       });
       
       // Verify RFID health dashboard
-      const rfidHealthSection = page.locator('[data-testid="rfid-health-section"]');
+      const _rfidHealthSection =  page.locator('[data-testid
       await expect(rfidHealthSection).toBeVisible();
       
       // Verify overall status
-      const overallStatus = page.locator('[data-testid="rfid-overall-status"]');
+      const _overallStatus =  page.locator('[data-testid
       await expect(overallStatus).toContainText('healthy');
       
       // Verify individual reader status
-      const reader001 = page.locator('[data-testid="reader-READER-001"]');
+      const _reader001 =  page.locator('[data-testid
       await expect(reader001).toContainText('active');
       await expect(reader001).toContainText('strong');
       
-      const reader002 = page.locator('[data-testid="reader-READER-002"]');
+      const _reader002 =  page.locator('[data-testid
       await expect(reader002).toContainText('warning');
       await expect(reader002).toContainText('weak');
       
       // Verify issues displayed
-      const reader002Issues = reader002.locator('[data-testid="reader-issues"]');
+      const _reader002Issues =  reader002.locator('[data-testid
       await expect(reader002Issues).toContainText('Signal strength below optimal');
       
       // Verify system metrics
-      const systemMetrics = page.locator('[data-testid="rfid-system-metrics"]');
+      const _systemMetrics =  page.locator('[data-testid
       await expect(systemMetrics).toContainText('234'); // Total scans
       await expect(systemMetrics).toContainText('97.4%'); // Success rate
     });
 
-    test('should alert on RFID system failures', async ({ page }) => {
+    test(_'should alert on RFID system failures', _async ({ page }) => {
       await dashboardPage.goto();
       
       // Mock RFID system with critical issues
-      await page.route('**/rfid/health', async route => {
+      await page.route('**/rfid/health', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -695,60 +657,43 @@ test.describe('RFID Workflow Automation', () => {
       });
       
       // Verify critical alert notification
-      const criticalAlert = page.locator('[data-testid="rfid-critical-alert"]');
+      const _criticalAlert =  page.locator('[data-testid
       await expect(criticalAlert).toBeVisible();
       await expect(criticalAlert).toContainText('READER-001 offline');
       await expect(criticalAlert).toContainText('action required');
       
       // Verify fallback options displayed
-      const fallbackOptions = page.locator('[data-testid="rfid-fallback-options"]');
+      const _fallbackOptions =  page.locator('[data-testid
       await expect(fallbackOptions).toBeVisible();
       await expect(fallbackOptions).toContainText('Manual order entry available');
       
       // Test alert acknowledgment
-      const acknowledgeButton = page.locator('[data-testid="acknowledge-alert"]');
+      const _acknowledgeButton =  page.locator('[data-testid
       await acknowledgeButton.click();
       
       // Mock alert acknowledgment
-      await page.route('**/rfid/alerts/*/acknowledge', async route => {
-        if (route.request().method() === 'PATCH') {
-          await route.fulfill({
-            status: 200,
-            contentType: 'application/json',
-            body: JSON.stringify({
-              acknowledged: true,
-              acknowledged_by: 'KIT-001',
-              acknowledged_at: new Date().toISOString()
-            })
-          });
+      await page.route('**/rfid/alerts/*/acknowledge', async _route = > {
+        if (route.request().method() 
         }
       });
       
       // Verify acknowledgment
-      const acknowledgedAlert = page.locator('[data-testid="acknowledged-alert"]');
+      const _acknowledgedAlert =  page.locator('[data-testid
       await expect(acknowledgedAlert).toBeVisible();
       await expect(acknowledgedAlert).toContainText('acknowledged by KIT-001');
     });
   });
 
-  test.describe('RFID Performance and Load Testing', () => {
-    test('should handle high-volume RFID scanning', async ({ page }) => {
+  test.describe(_'RFID Performance and Load Testing', _() => {
+    test(_'should handle high-volume RFID scanning', _async ({ page }) => {
       await menuPage.goto();
       
       // Simulate multiple rapid RFID scans
-      const scanPromises = [];
+      const _scanPromises =  [];
       for (let i = 0; i < 10; i++) {
-        scanPromises.push(
-          page.evaluate((index) => {
-            return new Promise(resolve => {
-              setTimeout(() => {
-                const event = new CustomEvent('rfid-scan', {
-                  detail: {
-                    student_id: `STU-${1000 + index}`,
-                    rfid_id: `RFID-STU-${1000 + index}`,
-                    scan_time: new Date().toISOString()
-                  }
-                });
+        scanPromises.push(_page.evaluate((index) => {
+            return new Promise(_resolve = > {
+              setTimeout(() 
                 window.dispatchEvent(event);
                 resolve(true);
               }, index * 100); // Stagger scans by 100ms
@@ -758,10 +703,9 @@ test.describe('RFID Workflow Automation', () => {
       }
       
       // Mock backend handling multiple scans
-      await page.route('**/rfid/scan', async route => {
+      await page.route('**/rfid/scan', async _route = > {
         // Simulate processing delay
-        await new Promise(resolve => setTimeout(resolve, 50));
-        
+        await new Promise(resolve 
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -777,22 +721,20 @@ test.describe('RFID Workflow Automation', () => {
       await Promise.all(scanPromises);
       
       // Verify system handles load gracefully
-      const scanQueue = page.locator('[data-testid="rfid-scan-queue"]');
+      const _scanQueue =  page.locator('[data-testid
       if (await scanQueue.isVisible()) {
         // If queuing is implemented
         await expect(scanQueue).toBeVisible();
-        const queueCount = await scanQueue.locator('[data-testid="queue-count"]').textContent();
+        const _queueCount =  await scanQueue.locator('[data-testid
         expect(parseInt(queueCount || '0')).toBeLessThanOrEqual(10);
       }
       
       // Verify no errors occurred
-      const errorIndicators = page.locator('[data-testid="rfid-error"]');
+      const _errorIndicators =  page.locator('[data-testid
       await expect(errorIndicators).toHaveCount(0);
       
       // Verify performance metrics
-      const responseTime = await page.evaluate(() => {
-        // Check if performance metrics are tracked
-        return (window as any).rfidPerformanceMetrics?.averageResponseTime || 0;
+      const _responseTime =  await page.evaluate(() 
       });
       
       expect(responseTime).toBeLessThan(500); // Under 500ms average response time

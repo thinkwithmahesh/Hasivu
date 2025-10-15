@@ -1,3 +1,4 @@
+/// <reference types="cookie-parser" />
 import { Request, Response, NextFunction } from 'express';
 import { JwtPayload } from 'jsonwebtoken';
 export interface ApiResponse<T = any> {
@@ -1023,7 +1024,7 @@ export interface ApiResponseObject extends Response {
     sendSuccess: <T>(data?: T, message?: string) => Response;
     sendError: (error: ApiError | string, statusCode?: number) => Response;
     sendValidationError: (errors: ValidationError[]) => Response;
-    sendPaginated: <T>(data: T[], pagination: any) => Response;
+    sendPaginatedResponse: <T>(data: T[], pagination: any) => Response;
 }
 export type MiddlewareFunction = (req: AuthenticatedRequest, res: ApiResponseObject, next: NextFunction) => void | Promise<void>;
 export type RouteHandler = (req: AuthenticatedRequest, res: ApiResponseObject, next: NextFunction) => void | Promise<void>;

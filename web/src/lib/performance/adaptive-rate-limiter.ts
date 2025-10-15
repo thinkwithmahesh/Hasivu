@@ -4,7 +4,7 @@
 import { RedisService } from '../services/redis.service';
 import { logger } from '../utils/logger';
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-  private systemLoadCache: { value: number; timestamp: number } | null = null;
+  private systemLoadCache: { value: number; timestamp: number } | _null =  null;
   // User tier definitions
   private readonly userTiers: Record<string, UserTier> = {}
     free: { name: 'free', multiplier: 1, burstAllowance: 1.2, priority: 1 },
@@ -17,18 +17,11 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
   async checkRateLimit(
     event: APIGatewayProxyEvent,
     options: RateLimitOptions,
-    userTier: string = 'free',
+    userTier: _string =  'free',
     userId?: string
   ): Promise<RateLimitResult> {}
       // Use sliding window algorithm
-      const result = await this.slidingWindowRateLimit(
-        key,
-        adjustedLimit,
-        options.windowMs,
-        options.skipSuccessful,
-        options.skipFailed
-      // Log rate limiting metrics
-      this.logRateLimitMetrics(event, result, systemLoad, userTier, Date.now() - startTime);
+      const result 
       return result;
       // Fail open - allow request on rate limiter error
       return {}

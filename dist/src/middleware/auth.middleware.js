@@ -7,15 +7,16 @@ exports.requestTimeout = exports.auditLog = exports.authorize = exports.requireP
 const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 const helmet_1 = __importDefault(require("helmet"));
 const auth_service_1 = require("../services/auth.service");
-const jwt_service_1 = require("../shared/services/jwt.service");
-const logger_1 = require("../utils/logger");
+const session_service_1 = require("../services/session.service");
+const jwt_service_1 = require("../shared/jwt.service");
+const logger_service_1 = require("../shared/logger.service");
 exports.securityHeaders = (0, helmet_1.default)({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
             styleSrc: ["'self'", "'unsafe-inline'"],
             scriptSrc: ["'self'"],
-            imgSrc: ["'self'", "data:", "https:"],
+            imgSrc: ["'self'", 'data:', 'https:'],
             connectSrc: ["'self'"],
             fontSrc: ["'self'"],
             objectSrc: ["'none'"],
@@ -23,7 +24,7 @@ exports.securityHeaders = (0, helmet_1.default)({
             frameSrc: ["'none'"],
         },
     },
-    crossOriginEmbedderPolicy: false
+    crossOriginEmbedderPolicy: false,
 });
 exports.authRateLimit = (0, express_rate_limit_1.default)({
     windowMs: 15 * 60 * 1000,
@@ -32,24 +33,24 @@ exports.authRateLimit = (0, express_rate_limit_1.default)({
     standardHeaders: true,
     legacyHeaders: false,
     handler: (req, res) => {
-        logger_1.logger.warn('Rate limit exceeded for authentication', {
+        logger_service_1.logger.warn('Rate limit exceeded for authentication', {
             ip: req.ip,
             userAgent: req.get('User-Agent'),
-            path: req.path
+            path: req.path,
         });
         res.status(429).json({
             error: 'Too many requests',
             message: 'Too many authentication attempts, please try again later',
-            retryAfter: Math.round(15 * 60)
+            retryAfter: Math.round(15 * 60),
         });
-    }
+    },
 });
 exports.generalRateLimit = (0, express_rate_limit_1.default)({
     windowMs: 15 * 60 * 1000,
     max: 100,
     message: 'Too many requests, please try again later',
     standardHeaders: true,
-    legacyHeaders: false
+    legacyHeaders: false,
 });
 const validateInput = (req, res, next) => {
     try {
@@ -87,17 +88,19 @@ const validateInput = (req, res, next) => {
         next();
     }
     catch (error) {
-        logger_1.logger.error('Input validation failed', error);
+        logger_service_1.logger.error('Input validation failed', undefined, {
+            errorMessage: error instanceof Error ? error.message : String(error),
+        });
         res.status(400).json({
             error: 'Invalid input',
-            message: 'Request contains invalid data'
+            message: 'Request contains invalid data',
         });
     }
 };
 exports.validateInput = validateInput;
 const corsMiddleware = (req, res, next) => {
     const allowedOrigins = process.env.CORS_ORIGINS?.split(',') || ['http://localhost:3000'];
-    const origin = req.headers.origin;
+    const { origin } = req.headers;
     if (origin && allowedOrigins.includes(origin)) {
         res.header('Access-Control-Allow-Origin', origin);
     }
@@ -118,7 +121,7 @@ const authMiddleware = async (req, res, next) => {
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
             res.status(401).json({
                 error: 'Unauthorized',
-                message: 'Access token is required'
+                message: 'Access token is required',
             });
             return;
         }
@@ -126,63 +129,74 @@ const authMiddleware = async (req, res, next) => {
         if (!token) {
             res.status(401).json({
                 error: 'Unauthorized',
-                message: 'Invalid access token format'
+                message: 'Invalid access token format',
             });
             return;
         }
-        const verificationResult = await jwt_service_1.jwtService.verifyToken(token, 'access');
-        if (!verificationResult.isValid) {
+        const verificationResult = await jwt_service_1.jwtService.verifyToken(token);
+        if (!verificationResult.isValid || !verificationResult.payload) {
             res.status(401).json({
                 error: 'Unauthorized',
-                message: verificationResult.error || 'Invalid token'
+                message: verificationResult.error || 'Invalid token',
             });
             return;
         }
         const decoded = verificationResult.payload;
-        const sessionData = await auth_service_1.authService.validateSession(decoded.sessionId);
-        if (!sessionData.valid) {
+        if (decoded.tokenType !== 'access') {
             res.status(401).json({
                 error: 'Unauthorized',
-                message: 'Invalid or expired session'
+                message: 'Invalid token type',
             });
             return;
         }
-        await auth_service_1.authService.updateSessionActivity(decoded.sessionId, {
+        const sessionData = await session_service_1.sessionService.validateSession(decoded.sessionId || '');
+        if (!sessionData.valid) {
+            res.status(401).json({
+                error: 'Unauthorized',
+                message: 'Invalid or expired session',
+            });
+            return;
+        }
+        await auth_service_1.authService.updateSessionActivity(decoded.sessionId || '', {
             userAgent: req.get('User-Agent'),
-            ipAddress: req.ip
+            ipAddress: req.ip,
         });
         req.user = {
             id: decoded.userId,
             email: decoded.email,
             role: decoded.role,
-            permissions: decoded.permissions
+            permissions: decoded.permissions,
+            schoolId: decoded.schoolId,
+            tenantId: decoded.tenantId,
         };
         req.sessionId = decoded.sessionId;
-        logger_1.logger.debug('User authenticated successfully', {
+        logger_service_1.logger.debug('User authenticated successfully', {
             userId: decoded.userId,
             role: decoded.role,
-            sessionId: decoded.sessionId
+            sessionId: decoded.sessionId,
         });
         next();
     }
     catch (error) {
-        logger_1.logger.error('Authentication middleware error', error);
+        logger_service_1.logger.error('Authentication middleware error', undefined, {
+            errorMessage: error instanceof Error ? error.message : String(error),
+        });
         if (error.message === 'Token expired') {
             res.status(401).json({
                 error: 'Token expired',
-                message: 'Please refresh your token or login again'
+                message: 'Please refresh your token or login again',
             });
         }
         else if (error.message?.includes('timeout')) {
             res.status(401).json({
                 error: 'Authentication timeout',
-                message: 'Token verification took too long - possible security threat'
+                message: 'Token verification took too long - possible security threat',
             });
         }
         else {
             res.status(401).json({
                 error: 'Authentication failed',
-                message: 'Invalid or malformed token'
+                message: 'Invalid or malformed token',
             });
         }
     }
@@ -201,32 +215,36 @@ const optionalAuthMiddleware = async (req, res, next) => {
             return;
         }
         try {
-            const verificationResult = await jwt_service_1.jwtService.verifyToken(token, 'access');
-            if (verificationResult.isValid) {
+            const verificationResult = await jwt_service_1.jwtService.verifyToken(token);
+            if (verificationResult.isValid && verificationResult.payload) {
                 const decoded = verificationResult.payload;
-                const sessionData = await auth_service_1.authService.validateSession(decoded.sessionId);
-                if (sessionData.valid) {
-                    req.user = {
-                        id: decoded.userId,
-                        email: decoded.email,
-                        role: decoded.role,
-                        permissions: decoded.permissions
-                    };
-                    req.sessionId = decoded.sessionId;
-                    await auth_service_1.authService.updateSessionActivity(decoded.sessionId, {
-                        userAgent: req.get('User-Agent'),
-                        ipAddress: req.ip
-                    });
+                if (decoded.tokenType === 'access') {
+                    const sessionData = await session_service_1.sessionService.validateSession(decoded.sessionId || '');
+                    if (sessionData.valid) {
+                        req.user = {
+                            id: decoded.userId,
+                            email: decoded.email,
+                            role: decoded.role,
+                            permissions: decoded.permissions,
+                        };
+                        req.sessionId = decoded.sessionId;
+                        await auth_service_1.authService.updateSessionActivity(decoded.sessionId || '', {
+                            userAgent: req.get('User-Agent'),
+                            ipAddress: req.ip,
+                        });
+                    }
                 }
             }
         }
         catch (error) {
-            logger_1.logger.debug('Optional authentication failed', { error: error.message });
+            logger_service_1.logger.debug('Optional authentication failed', { errorMessage: error.message });
         }
         next();
     }
     catch (error) {
-        logger_1.logger.error('Optional authentication middleware error', error);
+        logger_service_1.logger.error('Optional authentication middleware error', undefined, {
+            errorMessage: error instanceof Error ? error.message : String(error),
+        });
         next();
     }
 };
@@ -237,20 +255,20 @@ const requireRole = (roles) => {
         if (!req.user) {
             res.status(401).json({
                 error: 'Unauthorized',
-                message: 'Authentication required'
+                message: 'Authentication required',
             });
             return;
         }
         if (!allowedRoles.includes(req.user.role)) {
-            logger_1.logger.warn('Insufficient role permissions', {
+            logger_service_1.logger.warn('Insufficient role permissions', {
                 userId: req.user.id,
                 userRole: req.user.role,
-                requiredRoles: allowedRoles
+                requiredRoles: allowedRoles,
             });
             res.status(403).json({
                 error: 'Forbidden',
                 message: 'Insufficient permissions',
-                details: `Required role: ${allowedRoles.join(' or ')}`
+                details: `Required role: ${allowedRoles.join(' or ')}`,
             });
             return;
         }
@@ -264,21 +282,21 @@ const requirePermission = (permissions) => {
         if (!req.user) {
             res.status(401).json({
                 error: 'Unauthorized',
-                message: 'Authentication required'
+                message: 'Authentication required',
             });
             return;
         }
         const hasPermission = requiredPermissions.some(permission => req.user.permissions.includes(permission));
         if (!hasPermission) {
-            logger_1.logger.warn('Insufficient permissions', {
+            logger_service_1.logger.warn('Insufficient permissions', {
                 userId: req.user.id,
                 userPermissions: req.user.permissions,
-                requiredPermissions
+                requiredPermissions,
             });
             res.status(403).json({
                 error: 'Forbidden',
                 message: 'Insufficient permissions',
-                details: `Required permission: ${requiredPermissions.join(' or ')}`
+                details: `Required permission: ${requiredPermissions.join(' or ')}`,
             });
             return;
         }
@@ -295,7 +313,7 @@ const authorize = (options) => {
             }
             res.status(401).json({
                 error: 'Unauthorized',
-                message: 'Authentication required'
+                message: 'Authentication required',
             });
             return;
         }
@@ -304,7 +322,7 @@ const authorize = (options) => {
                 res.status(403).json({
                     error: 'Forbidden',
                     message: 'Insufficient permissions',
-                    details: `Required role: ${options.roles.join(' or ')}`
+                    details: `Required role: ${options.roles.join(' or ')}`,
                 });
                 return;
             }
@@ -315,7 +333,7 @@ const authorize = (options) => {
                 res.status(403).json({
                     error: 'Forbidden',
                     message: 'Insufficient permissions',
-                    details: `Required permission: ${options.permissions.join(' or ')}`
+                    details: `Required permission: ${options.permissions.join(' or ')}`,
                 });
                 return;
             }
@@ -327,7 +345,7 @@ exports.authorize = authorize;
 const auditLog = (operation) => {
     return (req, res, next) => {
         const startTime = Date.now();
-        logger_1.logger.info('Sensitive operation attempted', {
+        logger_service_1.logger.info('Sensitive operation attempted', {
             operation,
             userId: req.user?.id,
             userEmail: req.user?.email,
@@ -336,19 +354,19 @@ const auditLog = (operation) => {
             userAgent: req.get('User-Agent'),
             method: req.method,
             path: req.path,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
         });
         const originalJson = res.json;
         res.json = function (body) {
             const duration = Date.now() - startTime;
             const success = res.statusCode >= 200 && res.statusCode < 300;
-            logger_1.logger.info('Sensitive operation completed', {
+            logger_service_1.logger.info('Sensitive operation completed', {
                 operation,
                 userId: req.user?.id,
                 success,
                 statusCode: res.statusCode,
                 duration,
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
             });
             return originalJson.call(this, body);
         };
@@ -360,15 +378,15 @@ const requestTimeout = (timeoutMs = 30000) => {
     return (req, res, next) => {
         const timeout = setTimeout(() => {
             if (!res.headersSent) {
-                logger_1.logger.warn('Request timeout', {
+                logger_service_1.logger.warn('Request timeout', {
                     method: req.method,
                     path: req.path,
                     ip: req.ip,
-                    timeout: timeoutMs
+                    timeout: timeoutMs,
                 });
                 res.status(408).json({
                     error: 'Request timeout',
-                    message: 'Request took too long to process'
+                    message: 'Request took too long to process',
                 });
             }
         }, timeoutMs);

@@ -21,7 +21,7 @@ class CognitoServiceClass {
     clientId;
     constructor() {
         this.client = new client_cognito_identity_provider_1.CognitoIdentityProviderClient({
-            region: process.env.AWS_REGION || 'us-east-1'
+            region: process.env.AWS_REGION || 'us-east-1',
         });
         this.userPoolId = process.env.COGNITO_USER_POOL_ID;
         this.clientId = process.env.COGNITO_CLIENT_ID;
@@ -48,17 +48,17 @@ class CognitoServiceClass {
                     { Name: 'family_name', Value: userData.lastName },
                     ...(userData.phoneNumber ? [{ Name: 'phone_number', Value: userData.phoneNumber }] : []),
                     ...(userData.role ? [{ Name: 'custom:role', Value: userData.role }] : []),
-                    ...(userData.schoolId ? [{ Name: 'custom:school_id', Value: userData.schoolId }] : [])
-                ]
+                    ...(userData.schoolId ? [{ Name: 'custom:school_id', Value: userData.schoolId }] : []),
+                ],
             });
             const response = await this.client.send(command);
             logger_1.logger.integration('Cognito signUp operation completed successfully', {
                 email: userData.email,
-                userSub: response.UserSub
+                userSub: response.UserSub,
             });
             return {
                 userSub: response.UserSub,
-                isConfirmed: !!response.UserConfirmed
+                isConfirmed: !!response.UserConfirmed,
             };
         }
         catch (error) {
@@ -70,7 +70,7 @@ class CognitoServiceClass {
             const command = new client_cognito_identity_provider_1.ConfirmSignUpCommand({
                 ClientId: this.clientId,
                 Username: email,
-                ConfirmationCode: confirmationCode
+                ConfirmationCode: confirmationCode,
             });
             await this.client.send(command);
             logger_1.logger.integration('Cognito confirmSignUp operation completed successfully', { email });
@@ -83,10 +83,12 @@ class CognitoServiceClass {
         try {
             const command = new client_cognito_identity_provider_1.ResendConfirmationCodeCommand({
                 ClientId: this.clientId,
-                Username: email
+                Username: email,
             });
             await this.client.send(command);
-            logger_1.logger.integration('Cognito resendConfirmationCode operation completed successfully', { email });
+            logger_1.logger.integration('Cognito resendConfirmationCode operation completed successfully', {
+                email,
+            });
         }
         catch (error) {
             throw this.handleCognitoError(error);
@@ -100,8 +102,8 @@ class CognitoServiceClass {
                 AuthFlow: client_cognito_identity_provider_1.AuthFlowType.USER_PASSWORD_AUTH,
                 AuthParameters: {
                     USERNAME: credentials.email,
-                    PASSWORD: credentials.password
-                }
+                    PASSWORD: credentials.password,
+                },
             });
             const response = await this.client.send(command);
             if (!response.AuthenticationResult) {
@@ -115,11 +117,11 @@ class CognitoServiceClass {
                 expiresIn: response.AuthenticationResult.ExpiresIn,
                 userSub: this.decodeToken(response.AuthenticationResult.AccessToken).sub,
                 challengeName: response.ChallengeName,
-                challengeParameters: response.ChallengeParameters
+                challengeParameters: response.ChallengeParameters,
             };
             logger_1.logger.integration('Cognito signIn operation completed successfully', {
                 email: credentials.email,
-                userSub: authResult.userSub
+                userSub: authResult.userSub,
             });
             return authResult;
         }
@@ -135,7 +137,7 @@ class CognitoServiceClass {
                 accessToken: authResult.accessToken,
                 refreshToken: authResult.refreshToken,
                 idToken: authResult.idToken,
-                user
+                user,
             };
         }
         catch (error) {
@@ -148,8 +150,8 @@ class CognitoServiceClass {
                 ClientId: this.clientId,
                 AuthFlow: client_cognito_identity_provider_1.AuthFlowType.REFRESH_TOKEN_AUTH,
                 AuthParameters: {
-                    REFRESH_TOKEN: refreshToken
-                }
+                    REFRESH_TOKEN: refreshToken,
+                },
             });
             const response = await this.client.send(command);
             if (!response.AuthenticationResult) {
@@ -158,9 +160,11 @@ class CognitoServiceClass {
             const result = {
                 accessToken: response.AuthenticationResult.AccessToken,
                 idToken: response.AuthenticationResult.IdToken,
-                expiresIn: response.AuthenticationResult.ExpiresIn
+                expiresIn: response.AuthenticationResult.ExpiresIn,
             };
-            logger_1.logger.integration('Cognito refreshToken operation completed successfully', { tokenRefreshed: true });
+            logger_1.logger.integration('Cognito refreshToken operation completed successfully', {
+                tokenRefreshed: true,
+            });
             return result;
         }
         catch (error) {
@@ -170,7 +174,7 @@ class CognitoServiceClass {
     async signOut(accessToken) {
         try {
             const command = new client_cognito_identity_provider_1.GlobalSignOutCommand({
-                AccessToken: accessToken
+                AccessToken: accessToken,
             });
             await this.client.send(command);
             logger_1.logger.integration('Cognito signOut operation completed successfully');
@@ -182,7 +186,7 @@ class CognitoServiceClass {
     async getUser(accessToken) {
         try {
             const command = new client_cognito_identity_provider_1.GetUserCommand({
-                AccessToken: accessToken
+                AccessToken: accessToken,
             });
             const response = await this.client.send(command);
             const attributes = {};
@@ -221,7 +225,9 @@ class CognitoServiceClass {
                     }
                 }
             });
-            logger_1.logger.integration('Cognito getUser operation completed successfully', { userSub: attributes.sub });
+            logger_1.logger.integration('Cognito getUser operation completed successfully', {
+                userSub: attributes.sub,
+            });
             return { user: attributes };
         }
         catch (error) {
@@ -234,7 +240,7 @@ class CognitoServiceClass {
             return user;
         }
         catch (error) {
-            throw new CognitoServiceError('Invalid or expired access token', error);
+            throw new CognitoServiceError('Invalid or expired access token', 'InvalidToken', 401);
         }
     }
     async updateUserAttributes(accessToken, attributes) {
@@ -267,10 +273,12 @@ class CognitoServiceClass {
             });
             const command = new client_cognito_identity_provider_1.UpdateUserAttributesCommand({
                 AccessToken: accessToken,
-                UserAttributes: userAttributes
+                UserAttributes: userAttributes,
             });
             await this.client.send(command);
-            logger_1.logger.integration('Cognito updateUserAttributes operation completed successfully', { attributesUpdated: userAttributes.length });
+            logger_1.logger.integration('Cognito updateUserAttributes operation completed successfully', {
+                attributesUpdated: userAttributes.length,
+            });
         }
         catch (error) {
             throw this.handleCognitoError(error);
@@ -281,7 +289,7 @@ class CognitoServiceClass {
             const command = new client_cognito_identity_provider_1.ChangePasswordCommand({
                 AccessToken: accessToken,
                 PreviousPassword: previousPassword,
-                ProposedPassword: proposedPassword
+                ProposedPassword: proposedPassword,
             });
             await this.client.send(command);
             logger_1.logger.integration('Cognito changePassword operation completed successfully');
@@ -294,7 +302,7 @@ class CognitoServiceClass {
         try {
             const command = new client_cognito_identity_provider_1.ForgotPasswordCommand({
                 ClientId: this.clientId,
-                Username: email
+                Username: email,
             });
             await this.client.send(command);
             logger_1.logger.integration('Cognito forgotPassword operation completed successfully', { email });
@@ -309,10 +317,12 @@ class CognitoServiceClass {
                 ClientId: this.clientId,
                 Username: email,
                 ConfirmationCode: confirmationCode,
-                Password: newPassword
+                Password: newPassword,
             });
             await this.client.send(command);
-            logger_1.logger.integration('Cognito confirmForgotPassword operation completed successfully', { email });
+            logger_1.logger.integration('Cognito confirmForgotPassword operation completed successfully', {
+                email,
+            });
         }
         catch (error) {
             throw this.handleCognitoError(error);
@@ -354,7 +364,10 @@ class CognitoServiceClass {
             case 'TooManyRequestsException':
                 return new CognitoServiceError('Too many requests', 'TooManyRequests', 429);
             default:
-                logger_1.logger.error('Unhandled Cognito error', { error: errorName, message: errorMessage });
+                logger_1.logger.error('Unhandled Cognito error', new Error(errorMessage), {
+                    errorName,
+                    errorMessage,
+                });
                 return new CognitoServiceError(errorMessage, errorName, 500);
         }
     }

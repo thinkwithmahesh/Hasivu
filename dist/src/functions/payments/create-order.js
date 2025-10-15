@@ -61,7 +61,7 @@ async function validateUser(userId, requestId) {
         logger.error('Database error during user validation', {
             userId,
             requestId,
-            error: error instanceof Error ? error.message : 'Unknown error',
+            error: error instanceof Error ? error.message : String(error),
             action: 'user_validation_error'
         });
         throw error;
@@ -141,7 +141,7 @@ async function validateMealOrder(orderId, userId, requestId) {
             orderId,
             userId,
             requestId,
-            error: error instanceof Error ? error.message : 'Unknown error',
+            error: error instanceof Error ? error.message : String(error),
             action: 'order_validation_error'
         });
         throw error;
@@ -200,7 +200,7 @@ async function createRazorpayPaymentOrder(amountInPaise, currency, userId, reque
     }
     catch (error) {
         logger.error('Failed to create Razorpay payment order', {
-            error: error instanceof Error ? error.message : 'Unknown error',
+            error: error instanceof Error ? error.message : String(error),
             stack: error instanceof Error ? error.stack : undefined,
             userId,
             orderId,
@@ -241,7 +241,7 @@ async function createRazorpayOrderWithRetry(orderOptions, requestId, maxRetries 
             logger.warn(`Razorpay order creation attempt ${attempt} failed`, {
                 attempt,
                 maxRetries: maxRetries + 1,
-                error: error instanceof Error ? error.message : 'Unknown error',
+                error: error instanceof Error ? error.message : String(error),
                 requestId,
                 action: 'razorpay_retry_attempt'
             });
@@ -311,7 +311,7 @@ const createPaymentOrderHandler = async (event, context) => {
         if (!customerInfo.email || typeof customerInfo.email !== 'string' || !isValidEmail(customerInfo.email)) {
             return (0, response_utils_1.createErrorResponse)(400, 'Valid customer email is required', undefined, 'INVALID_CUSTOMER_EMAIL', requestId);
         }
-        const supportedCurrencies = ['INR', 'USD'];
+        const supportedCurrencies = ['INR'];
         if (!supportedCurrencies.includes(currency.toUpperCase())) {
             return (0, response_utils_1.createErrorResponse)(400, `Unsupported currency. Supported: ${supportedCurrencies.join(', ')}`, undefined, 'UNSUPPORTED_CURRENCY', requestId);
         }
@@ -360,7 +360,7 @@ const createPaymentOrderHandler = async (event, context) => {
                 createdAt: new Date(),
                 updatedAt: new Date()
             };
-            const paymentOrder = await database.prisma.paymentOrder.create({
+            await database.prisma.paymentOrder.create({
                 data: paymentOrderData
             });
             logger.info('Payment order created in database', {
@@ -441,7 +441,7 @@ const createPaymentOrderHandler = async (event, context) => {
         const duration = Date.now() - startTime;
         logger.error('Payment order creation failed', {
             requestId,
-            error: error instanceof Error ? error.message : 'Unknown error',
+            error: error instanceof Error ? error.message : String(error),
             stack: error instanceof Error ? error.stack : undefined,
             duration,
             action: 'payment_order_creation_failed'

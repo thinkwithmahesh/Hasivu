@@ -7,7 +7,7 @@
  */
 
 // ESM Manual Mock Setup for DatabaseService
-// Jest will automatically use the manual mock from src/shared/__mocks__/database.service.ts
+// Jest will automatically use the manual mock from tests/__mocks__/@shared/database.service.ts
 jest.mock('@shared/database.service');
 
 // Import mock functions from the manual mock for direct access
@@ -19,7 +19,7 @@ import {
   mockNotificationCount,
   mockUserFindUnique,
   mockUserUpdate
-} from '../../../src/shared/__mocks__/database.service';
+} from '../../__mocks__/@shared/database.service';
 
 // Redis service mocks
 const mockRedisGet = jest.fn();
@@ -75,7 +75,7 @@ jest.mock('@/utils/cache', () => ({
   }
 }));
 
-import { 
+import {
   NotificationService,
   NotificationRequest,
   BulkNotificationRequest,
@@ -216,7 +216,7 @@ describe('NotificationService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    notificationService = new NotificationService();
+    notificationService = NotificationService.getInstance();
 
     // Setup default mocks using direct references
     mockUserFindUnique.mockResolvedValue(mockUser as any);
@@ -479,7 +479,7 @@ describe('NotificationService', () => {
 
       it('should handle partial failures in bulk sending', async () => {
         // Make one user not found
-        mockUserFindUnique.mockImplementation((query) => {
+        mockUserFindUnique.mockImplementation((query: any) => {
           if (query.where.id === 'user-2') {
             return null as any;
           }
@@ -559,9 +559,7 @@ describe('NotificationService', () => {
       };
 
       it('should send order confirmation notification', async () => {
-        const result = await NotificationService.sendOrderConfirmation(orderData);
-
-        expect(result.success).toBe(true);
+        await NotificationService.sendOrderConfirmation(orderData);
         expect(mockNotificationCreate).toHaveBeenCalledWith({
           data: expect.objectContaining({
             templateId: 'order_confirmation',

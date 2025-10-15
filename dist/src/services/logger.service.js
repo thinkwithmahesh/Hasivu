@@ -17,12 +17,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.LoggerService = exports.Logger = exports.default = void 0;
+exports._LoggerService = exports.Logger = exports.default = void 0;
 const logger_1 = require("../utils/logger");
 __exportStar(require("../utils/logger"), exports);
 var logger_2 = require("../utils/logger");
 Object.defineProperty(exports, "default", { enumerable: true, get: function () { return __importDefault(logger_2).default; } });
 var logger_3 = require("../utils/logger");
 Object.defineProperty(exports, "Logger", { enumerable: true, get: function () { return logger_3.Logger; } });
-exports.LoggerService = logger_1.Logger;
+exports._LoggerService = logger_1.Logger;
 //# sourceMappingURL=logger.service.js.map

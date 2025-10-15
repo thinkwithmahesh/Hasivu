@@ -32,9 +32,11 @@ All scripts are located in the `scripts/` directory:
 ## Remaining Issues
 
 ### High Priority
+
 - **Hardcoded Secrets**: 18 instances in 4 files need to be replaced with environment variables
 
 ### Medium Priority
+
 - **Synchronous Operations**: 31 instances remain that should be converted to async
 - **RegExp Vulnerabilities**: 24 instances need ReDoS protection
 

@@ -1,14 +1,9 @@
-"use client"
+'use client';
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  StudentDashboard, 
-  ParentDashboard, 
-  AdminDashboard, 
-  KitchenDashboard 
-} from './index';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { StudentDashboard, ParentDashboard, AdminDashboard, KitchenDashboard } from './index';
 import { Student } from './types';
 import { Users, UserCheck, Shield, ChefHat, School } from 'lucide-react';
 
@@ -20,7 +15,7 @@ const mockStudent: Student = {
   section: 'A',
   rollNumber: '15',
   avatar: '/avatars/arjun.jpg',
-  rfidCode: 'HSV8A015'
+  rfidCode: 'HSV8A015',
 };
 
 const mockChildren: Student[] = [
@@ -30,7 +25,7 @@ const mockChildren: Student[] = [
     class: '8',
     section: 'A',
     rollNumber: '15',
-    avatar: '/avatars/arjun.jpg'
+    avatar: '/avatars/arjun.jpg',
   },
   {
     id: 'child-2',
@@ -38,38 +33,43 @@ const mockChildren: Student[] = [
     class: '5',
     section: 'B',
     rollNumber: '22',
-    avatar: '/avatars/priya.jpg'
-  }
+    avatar: '/avatars/priya.jpg',
+  },
 ];
 
 export function DashboardDemo() {
-  const [currentRole, setCurrentRole] = useState<'student' | 'parent' | 'admin' | 'kitchen'>('student');
+  const [currentRole, setCurrentRole] = useState<'student' | 'parent' | 'admin' | 'kitchen'>(
+    'student'
+  );
 
   const roleInfo = {
     student: {
       title: 'Student Dashboard',
       description: 'Personal nutrition tracking, meal orders, achievements, and RFID pickup system',
       icon: UserCheck,
-      color: 'text-blue-600'
+      color: 'text-blue-600',
     },
     parent: {
-      title: 'Parent Dashboard', 
-      description: 'Monitor children\'s meal orders, nutrition, spending, and receive real-time notifications',
+      title: 'Parent Dashboard',
+      description:
+        "Monitor children's meal orders, nutrition, spending, and receive real-time notifications",
       icon: Users,
-      color: 'text-green-600'
+      color: 'text-green-600',
     },
     admin: {
       title: 'Admin Dashboard',
-      description: 'School-wide analytics, order management, nutrition reports, and operational insights',
+      description:
+        'School-wide analytics, order management, nutrition reports, and operational insights',
       icon: Shield,
-      color: 'text-purple-600'
+      color: 'text-purple-600',
     },
     kitchen: {
       title: 'Kitchen Dashboard',
-      description: 'Real-time order processing, inventory management, and kitchen operations tracking',
+      description:
+        'Real-time order processing, inventory management, and kitchen operations tracking',
       icon: ChefHat,
-      color: 'text-orange-600'
-    }
+      color: 'text-orange-600',
+    },
   };
 
   const currentInfo = roleInfo[currentRole];
@@ -87,7 +87,9 @@ export function DashboardDemo() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">HASIVU Dashboard Demo</h1>
-                <p className="text-gray-600 mt-1">Role-based dashboard components for school meal platform</p>
+                <p className="text-gray-600 mt-1">
+                  Role-based dashboard components for school meal platform
+                </p>
               </div>
             </div>
           </div>
@@ -103,7 +105,11 @@ export function DashboardDemo() {
             <CardDescription>{currentInfo.description}</CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs value={currentRole} onValueChange={(value) => setCurrentRole(value as any)} className="w-full">
+            <Tabs
+              value={currentRole}
+              onValueChange={value => setCurrentRole(value as any)}
+              className="w-full"
+            >
               <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="student" className="flex items-center gap-2">
                   <UserCheck className="h-4 w-4" />
@@ -126,7 +132,9 @@ export function DashboardDemo() {
               <div className="mt-6">
                 <TabsContent value="student" className="space-y-4">
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                    <h3 className="font-semibold text-blue-900 mb-2">Student Dashboard Features:</h3>
+                    <h3 className="font-semibold text-blue-900 mb-2">
+                      Student Dashboard Features:
+                    </h3>
                     <ul className="text-blue-800 text-sm space-y-1">
                       <li>• Nutrition tracking with daily/weekly progress charts</li>
                       <li>• Meal order history with status updates</li>
@@ -140,7 +148,9 @@ export function DashboardDemo() {
 
                 <TabsContent value="parent" className="space-y-4">
                   <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-                    <h3 className="font-semibold text-green-900 mb-2">Parent Dashboard Features:</h3>
+                    <h3 className="font-semibold text-green-900 mb-2">
+                      Parent Dashboard Features:
+                    </h3>
                     <ul className="text-green-800 text-sm space-y-1">
                       <li>• Multi-child management with individual tracking</li>
                       <li>• Real-time order status and pickup notifications</li>
@@ -154,7 +164,9 @@ export function DashboardDemo() {
 
                 <TabsContent value="admin" className="space-y-4">
                   <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-6">
-                    <h3 className="font-semibold text-purple-900 mb-2">Admin Dashboard Features:</h3>
+                    <h3 className="font-semibold text-purple-900 mb-2">
+                      Admin Dashboard Features:
+                    </h3>
                     <ul className="text-purple-800 text-sm space-y-1">
                       <li>• School-wide analytics with revenue and order metrics</li>
                       <li>• Order management table with bulk operations</li>
@@ -168,7 +180,9 @@ export function DashboardDemo() {
 
                 <TabsContent value="kitchen" className="space-y-4">
                   <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
-                    <h3 className="font-semibold text-orange-900 mb-2">Kitchen Dashboard Features:</h3>
+                    <h3 className="font-semibold text-orange-900 mb-2">
+                      Kitchen Dashboard Features:
+                    </h3>
                     <ul className="text-orange-800 text-sm space-y-1">
                       <li>• Real-time order queue with priority sorting</li>
                       <li>• Inventory management with low stock alerts</li>
@@ -188,7 +202,9 @@ export function DashboardDemo() {
         <Card>
           <CardHeader>
             <CardTitle>Technical Implementation</CardTitle>
-            <CardDescription>Built with modern React patterns and ShadCN UI components</CardDescription>
+            <CardDescription>
+              Built with modern React patterns and ShadCN UI components
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

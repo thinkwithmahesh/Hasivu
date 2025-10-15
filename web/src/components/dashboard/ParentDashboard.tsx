@@ -1,9 +1,10 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+// Removed unused imports: useEffect, AnimatePresence, Users, Calendar, Filter, ChevronDown
+// These imports were not used in the component, causing ESLint no-unused-vars errors
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import {
-  Users,
   CreditCard,
   ShoppingCart,
   TrendingUp,
@@ -15,20 +16,16 @@ import {
   AlertTriangle,
   Heart,
   Utensils,
-  Calendar,
   Settings,
   Plus,
   Eye,
   Download,
-  Filter,
-  Search,
-  ChevronDown,
   ArrowRight,
   Activity,
   Target,
   Shield,
   Trophy,
-  Zap
+  Zap,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -37,7 +34,13 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 
@@ -88,23 +91,8 @@ interface OrderItem {
   };
 }
 
-interface Transaction {
-  id: string;
-  type: 'payment' | 'refund' | 'topup';
-  amount: number;
-  description: string;
-  timestamp: string;
-  status: 'success' | 'pending' | 'failed';
-  fraudScore?: number;
-}
-
-interface NutritionInsight {
-  period: string;
-  totalMeals: number;
-  averageScore: number;
-  topNutrients: string[];
-  recommendations: string[];
-}
+// Removed unused interfaces: Transaction and NutritionInsight
+// These interfaces were defined but never used in the component, causing ESLint no-unused-vars errors
 
 // Mock data for demonstration
 const mockChildren: Child[] = [
@@ -113,7 +101,8 @@ const mockChildren: Child[] = [
     name: 'Priya Sharma',
     grade: '7th Grade',
     school: 'DPS Bangalore East',
-    avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face',
+    avatar:
+      'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face',
     dietaryRestrictions: ['Vegetarian'],
     favoriteItems: ['Masala Dosa', 'Sambar Rice', 'Coconut Chutney'],
     nutritionScore: 87,
@@ -122,15 +111,16 @@ const mockChildren: Child[] = [
     preferences: {
       spiceLevel: 'mild',
       cuisineType: ['South Indian', 'North Indian'],
-      mealTime: '12:30 PM'
-    }
+      mealTime: '12:30 PM',
+    },
   },
   {
-    id: '2', 
+    id: '2',
     name: 'Arjun Sharma',
     grade: '4th Grade',
     school: 'DPS Bangalore East',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
+    avatar:
+      'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
     dietaryRestrictions: [],
     favoriteItems: ['Chicken Biryani', 'Roti', 'Dal Makhani'],
     nutritionScore: 92,
@@ -139,9 +129,9 @@ const mockChildren: Child[] = [
     preferences: {
       spiceLevel: 'medium',
       cuisineType: ['North Indian', 'Continental'],
-      mealTime: '1:00 PM'
-    }
-  }
+      mealTime: '1:00 PM',
+    },
+  },
 ];
 
 const mockOrders: Order[] = [
@@ -156,8 +146,8 @@ const mockOrders: Order[] = [
         quantity: 1,
         price: 85,
         category: 'South Indian',
-        nutritionInfo: { calories: 320, protein: 12, carbs: 58, fat: 8 }
-      }
+        nutritionInfo: { calories: 320, protein: 12, carbs: 58, fat: 8 },
+      },
     ],
     status: 'delivered',
     orderTime: '2024-01-15T11:30:00Z',
@@ -165,7 +155,7 @@ const mockOrders: Order[] = [
     totalAmount: 85,
     nutritionScore: 88,
     rfidVerified: true,
-    photoProof: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=200&h=150&fit=crop'
+    photoProof: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=200&h=150&fit=crop',
   },
   {
     id: 'ORD-002',
@@ -178,26 +168,30 @@ const mockOrders: Order[] = [
         quantity: 1,
         price: 120,
         category: 'North Indian',
-        nutritionInfo: { calories: 450, protein: 25, carbs: 65, fat: 15 }
-      }
+        nutritionInfo: { calories: 450, protein: 25, carbs: 65, fat: 15 },
+      },
     ],
     status: 'preparing',
     orderTime: '2024-01-15T12:00:00Z',
     totalAmount: 120,
     nutritionScore: 85,
-    rfidVerified: false
-  }
+    rfidVerified: false,
+  },
 ];
 
 // Multi-child selector component
-const ChildSelector = ({ children, selectedChild, onSelect }: {
+const ChildSelector = ({
+  children,
+  selectedChild,
+  onSelect,
+}: {
   children: Child[];
   selectedChild: Child | null;
   onSelect: (child: Child) => void;
 }) => {
   return (
     <div className="flex flex-wrap gap-3 mb-6">
-      {children.map((child) => (
+      {children.map(child => (
         <motion.button
           key={child.id}
           onClick={() => onSelect(child)}
@@ -211,7 +205,12 @@ const ChildSelector = ({ children, selectedChild, onSelect }: {
         >
           <Avatar className="w-12 h-12">
             <AvatarImage src={child.avatar} alt={child.name} />
-            <AvatarFallback>{child.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+            <AvatarFallback>
+              {child.name
+                .split(' ')
+                .map(n => n[0])
+                .join('')}
+            </AvatarFallback>
           </Avatar>
           <div className="text-left">
             <div className="font-semibold text-gray-900">{child.name}</div>
@@ -225,7 +224,7 @@ const ChildSelector = ({ children, selectedChild, onSelect }: {
           )}
         </motion.button>
       ))}
-      
+
       <motion.button
         className="flex items-center justify-center p-4 rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 hover:border-hasivu-orange-300 hover:bg-hasivu-orange-25 transition-all duration-200 min-w-[120px]"
         whileHover={{ scale: 1.02 }}
@@ -244,12 +243,18 @@ const ChildSelector = ({ children, selectedChild, onSelect }: {
 const OrderTracker = ({ order }: { order: Order }) => {
   const getStatusColor = (status: Order['status']) => {
     switch (status) {
-      case 'ordered': return 'text-blue-600 bg-blue-100';
-      case 'preparing': return 'text-yellow-600 bg-yellow-100';
-      case 'ready': return 'text-orange-600 bg-orange-100';
-      case 'delivered': return 'text-green-600 bg-green-100';
-      case 'cancelled': return 'text-red-600 bg-red-100';
-      default: return 'text-gray-600 bg-gray-100';
+      case 'ordered':
+        return 'text-blue-600 bg-blue-100';
+      case 'preparing':
+        return 'text-yellow-600 bg-yellow-100';
+      case 'ready':
+        return 'text-orange-600 bg-orange-100';
+      case 'delivered':
+        return 'text-green-600 bg-green-100';
+      case 'cancelled':
+        return 'text-red-600 bg-red-100';
+      default:
+        return 'text-gray-600 bg-gray-100';
     }
   };
 
@@ -258,9 +263,9 @@ const OrderTracker = ({ order }: { order: Order }) => {
       { key: 'ordered', label: 'Order Placed', icon: ShoppingCart },
       { key: 'preparing', label: 'Preparing', icon: Utensils },
       { key: 'ready', label: 'Ready', icon: Bell },
-      { key: 'delivered', label: 'Delivered', icon: CheckCircle }
+      { key: 'delivered', label: 'Delivered', icon: CheckCircle },
     ];
-    
+
     return steps;
   };
 
@@ -280,7 +285,7 @@ const OrderTracker = ({ order }: { order: Order }) => {
       <CardContent className="space-y-4">
         {/* Order Items */}
         <div className="space-y-2">
-          {order.items.map((item) => (
+          {order.items.map(item => (
             <div key={item.id} className="flex justify-between items-center">
               <div>
                 <span className="font-medium">{item.name}</span>
@@ -290,31 +295,40 @@ const OrderTracker = ({ order }: { order: Order }) => {
             </div>
           ))}
         </div>
-        
+
         <Separator />
-        
+
         {/* Status Timeline */}
         <div className="space-y-2">
-          {getStatusSteps().map((step, index) => {
+          {getStatusSteps().map((step, _index) => {
+            // Changed unused 'index' parameter to '_index' to comply with ESLint no-unused-vars rule
+            // The index was not used in the map function, so prefixed with underscore
             const isActive = order.status === step.key;
-            const isCompleted = ['ordered', 'preparing', 'ready', 'delivered'].indexOf(order.status) >= 
-                              ['ordered', 'preparing', 'ready', 'delivered'].indexOf(step.key);
-            
+            const isCompleted =
+              ['ordered', 'preparing', 'ready', 'delivered'].indexOf(order.status) >=
+              ['ordered', 'preparing', 'ready', 'delivered'].indexOf(step.key);
+
             return (
               <div key={step.key} className="flex items-center space-x-3">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                  isCompleted ? 'bg-hasivu-green-100 text-hasivu-green-600' : 'bg-gray-100 text-gray-400'
-                }`}>
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                    isCompleted
+                      ? 'bg-hasivu-green-100 text-hasivu-green-600'
+                      : 'bg-gray-100 text-gray-400'
+                  }`}
+                >
                   <step.icon className="w-4 h-4" />
                 </div>
-                <span className={`text-sm ${isActive ? 'font-semibold text-hasivu-orange-600' : 'text-gray-600'}`}>
+                <span
+                  className={`text-sm ${isActive ? 'font-semibold text-hasivu-orange-600' : 'text-gray-600'}`}
+                >
                   {step.label}
                 </span>
               </div>
             );
           })}
         </div>
-        
+
         {/* RFID Verification */}
         {order.rfidVerified && (
           <div className="flex items-center space-x-2 p-3 bg-hasivu-green-50 rounded-lg border border-hasivu-green-200">
@@ -328,13 +342,15 @@ const OrderTracker = ({ order }: { order: Order }) => {
             )}
           </div>
         )}
-        
+
         {/* Nutrition Score */}
         <div className="flex items-center justify-between">
           <span className="text-sm text-gray-600">Nutrition Score</span>
           <div className="flex items-center space-x-2">
             <Progress value={order.nutritionScore} className="w-16 h-2" />
-            <span className="text-sm font-semibold text-hasivu-green-600">{order.nutritionScore}%</span>
+            <span className="text-sm font-semibold text-hasivu-green-600">
+              {order.nutritionScore}%
+            </span>
           </div>
         </div>
       </CardContent>
@@ -351,13 +367,31 @@ const NutritionInsights = ({ child }: { child: Child }) => {
     { day: 'Thu', score: 92, meals: 1 },
     { day: 'Fri', score: 87, meals: 1 },
     { day: 'Sat', score: 0, meals: 0 },
-    { day: 'Sun', score: 0, meals: 0 }
+    { day: 'Sun', score: 0, meals: 0 },
   ];
-  
+
   const achievements = [
-    { id: 1, name: 'Healthy Week', description: '5 days of balanced meals', icon: Trophy, unlocked: true },
-    { id: 2, name: 'Protein Power', description: 'Met protein goals 3 days in a row', icon: Target, unlocked: true },
-    { id: 3, name: 'Variety Explorer', description: 'Tried 3 new dishes this week', icon: Star, unlocked: false }
+    {
+      id: 1,
+      name: 'Healthy Week',
+      description: '5 days of balanced meals',
+      icon: Trophy,
+      unlocked: true,
+    },
+    {
+      id: 2,
+      name: 'Protein Power',
+      description: 'Met protein goals 3 days in a row',
+      icon: Target,
+      unlocked: true,
+    },
+    {
+      id: 3,
+      name: 'Variety Explorer',
+      description: 'Tried 3 new dishes this week',
+      icon: Star,
+      unlocked: false,
+    },
   ];
 
   return (
@@ -380,9 +414,11 @@ const NutritionInsights = ({ child }: { child: Child }) => {
               {weeklyData.map((day, index) => (
                 <div key={index} className="text-center">
                   <div className="text-xs text-gray-500 mb-1">{day.day}</div>
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold ${
-                    day.meals > 0 ? 'bg-hasivu-green-500 text-white' : 'bg-gray-200 text-gray-400'
-                  }`}>
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold ${
+                      day.meals > 0 ? 'bg-hasivu-green-500 text-white' : 'bg-gray-200 text-gray-400'
+                    }`}
+                  >
                     {day.score || '-'}
                   </div>
                 </div>
@@ -403,22 +439,25 @@ const NutritionInsights = ({ child }: { child: Child }) => {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {achievements.map((achievement) => (
-              <div key={achievement.id} className={`flex items-center space-x-3 p-3 rounded-lg transition-all ${
-                achievement.unlocked 
-                  ? 'bg-hasivu-green-50 border border-hasivu-green-200' 
-                  : 'bg-gray-50 border border-gray-200 opacity-60'
-              }`}>
-                <achievement.icon className={`w-6 h-6 ${
-                  achievement.unlocked ? 'text-hasivu-green-600' : 'text-gray-400'
-                }`} />
+            {achievements.map(achievement => (
+              <div
+                key={achievement.id}
+                className={`flex items-center space-x-3 p-3 rounded-lg transition-all ${
+                  achievement.unlocked
+                    ? 'bg-hasivu-green-50 border border-hasivu-green-200'
+                    : 'bg-gray-50 border border-gray-200 opacity-60'
+                }`}
+              >
+                <achievement.icon
+                  className={`w-6 h-6 ${
+                    achievement.unlocked ? 'text-hasivu-green-600' : 'text-gray-400'
+                  }`}
+                />
                 <div className="flex-1">
                   <div className="font-medium">{achievement.name}</div>
                   <div className="text-sm text-gray-600">{achievement.description}</div>
                 </div>
-                {achievement.unlocked && (
-                  <CheckCircle className="w-5 h-5 text-hasivu-green-600" />
-                )}
+                {achievement.unlocked && <CheckCircle className="w-5 h-5 text-hasivu-green-600" />}
               </div>
             ))}
           </div>
@@ -434,44 +473,53 @@ const NutritionInsights = ({ child }: { child: Child }) => {
           <div>
             <label className="text-sm font-medium text-gray-700">Dietary Restrictions</label>
             <div className="flex flex-wrap gap-2 mt-1">
-              {child.dietaryRestrictions.length > 0 ? child.dietaryRestrictions.map((restriction) => (
-                <Badge key={restriction} variant="secondary" className="bg-blue-100 text-blue-800">
-                  {restriction}
-                </Badge>
-              )) : (
+              {child.dietaryRestrictions.length > 0 ? (
+                child.dietaryRestrictions.map(restriction => (
+                  <Badge
+                    key={restriction}
+                    variant="secondary"
+                    className="bg-blue-100 text-blue-800"
+                  >
+                    {restriction}
+                  </Badge>
+                ))
+              ) : (
                 <span className="text-sm text-gray-500">None</span>
               )}
             </div>
           </div>
-          
+
           <div>
             <label className="text-sm font-medium text-gray-700">Allergies</label>
             <div className="flex flex-wrap gap-2 mt-1">
-              {child.allergies.length > 0 ? child.allergies.map((allergy) => (
-                <Badge key={allergy} variant="destructive" className="bg-red-100 text-red-800">
-                  {allergy}
-                </Badge>
-              )) : (
+              {child.allergies.length > 0 ? (
+                child.allergies.map(allergy => (
+                  <Badge key={allergy} variant="destructive" className="bg-red-100 text-red-800">
+                    {allergy}
+                  </Badge>
+                ))
+              ) : (
                 <span className="text-sm text-gray-500">None reported</span>
               )}
             </div>
           </div>
-          
+
           <div>
             <label className="text-sm font-medium text-gray-700">Preferred Cuisines</label>
             <div className="flex flex-wrap gap-2 mt-1">
-              {child.preferences.cuisineType.map((cuisine) => (
+              {child.preferences.cuisineType.map(cuisine => (
                 <Badge key={cuisine} className="bg-hasivu-orange-100 text-hasivu-orange-800">
                   {cuisine}
                 </Badge>
               ))}
             </div>
           </div>
-          
+
           <div>
             <label className="text-sm font-medium text-gray-700">Spice Preference</label>
             <Badge className="ml-2 bg-yellow-100 text-yellow-800">
-              {child.preferences.spiceLevel.charAt(0).toUpperCase() + child.preferences.spiceLevel.slice(1)}
+              {child.preferences.spiceLevel.charAt(0).toUpperCase() +
+                child.preferences.spiceLevel.slice(1)}
             </Badge>
           </div>
         </CardContent>
@@ -492,7 +540,7 @@ export const ParentDashboard: React.FC = () => {
     return orderDate === today;
   });
 
-  const childOrders = selectedChild 
+  const childOrders = selectedChild
     ? orders.filter(order => order.childId === selectedChild.id)
     : [];
 
@@ -523,7 +571,7 @@ export const ParentDashboard: React.FC = () => {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Child Selection */}
-        <ChildSelector 
+        <ChildSelector
           children={mockChildren}
           selectedChild={selectedChild}
           onSelect={setSelectedChild}
@@ -558,7 +606,7 @@ export const ParentDashboard: React.FC = () => {
                         </div>
                       </CardContent>
                     </Card>
-                    
+
                     <Card>
                       <CardContent className="pt-6">
                         <div className="flex items-center">
@@ -572,7 +620,7 @@ export const ParentDashboard: React.FC = () => {
                         </div>
                       </CardContent>
                     </Card>
-                    
+
                     <Card>
                       <CardContent className="pt-6">
                         <div className="flex items-center">
@@ -600,7 +648,7 @@ export const ParentDashboard: React.FC = () => {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-4">
-                        {childOrders.slice(0, 3).map((order) => (
+                        {childOrders.slice(0, 3).map(order => (
                           <OrderTracker key={order.id} order={order} />
                         ))}
                       </div>
@@ -716,20 +764,18 @@ export const ParentDashboard: React.FC = () => {
                 <CardTitle className="flex items-center justify-between">
                   Recent Orders
                   <div className="flex items-center space-x-2">
-                    <Input 
-                      placeholder="Search orders..." 
-                      className="w-64"
-                      prefix={<Search className="w-4 h-4" />}
-                    />
+                    <Input placeholder="Search orders..." className="w-64" />
+                    {/* Removed invalid 'prefix' prop from Input component as it expects a string, not JSX element */}
+                    {/* This was causing TypeScript error: Type 'Element' is not assignable to type 'string' */}
                   </div>
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {orders.map((order) => (
+                  {orders.map(order => (
                     <OrderTracker key={order.id} order={order} />
                   ))}
-                  
+
                   {/* Enhanced Order Cards */}
                   <div className="grid gap-4">
                     {[
@@ -741,42 +787,56 @@ export const ParentDashboard: React.FC = () => {
                         orderTime: '2024-01-15T12:15:00Z',
                         estimatedDelivery: '12:45 PM',
                         nutritionScore: 91,
-                        specialInstructions: 'Less spicy, extra rice'
+                        specialInstructions: 'Less spicy, extra rice',
                       },
                       {
-                        id: 'ORD-004', 
+                        id: 'ORD-004',
                         childName: 'Arjun Sharma',
                         items: [{ name: 'Chicken Fried Rice', quantity: 1, price: 110 }],
                         status: 'ordered' as const,
                         orderTime: '2024-01-15T12:20:00Z',
                         estimatedDelivery: '1:15 PM',
                         nutritionScore: 88,
-                        specialInstructions: 'No vegetables'
-                      }
-                    ].map((order) => (
-                      <Card key={order.id} className="border-l-4 border-l-hasivu-orange-500 hover:shadow-lg transition-shadow">
+                        specialInstructions: 'No vegetables',
+                      },
+                    ].map(order => (
+                      <Card
+                        key={order.id}
+                        className="border-l-4 border-l-hasivu-orange-500 hover:shadow-lg transition-shadow"
+                      >
                         <CardContent className="pt-6">
                           <div className="flex justify-between items-start">
                             <div className="flex-1">
                               <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center space-x-3">
                                   <Avatar className="w-8 h-8">
-                                    <AvatarFallback>{order.childName.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                                    <AvatarFallback>
+                                      {order.childName
+                                        .split(' ')
+                                        .map(n => n[0])
+                                        .join('')}
+                                    </AvatarFallback>
                                   </Avatar>
                                   <div>
                                     <h4 className="font-semibold">{order.childName}</h4>
                                     <p className="text-sm text-gray-600">Order #{order.id}</p>
                                   </div>
                                 </div>
-                                <Badge className={`${
-                                  order.status === 'ready' ? 'bg-orange-100 text-orange-800' :
-                                  order.status === 'ordered' ? 'bg-blue-100 text-blue-800' :
-                                  'bg-gray-100 text-gray-800'
-                                }`}>
-                                  {order.status === 'ready' ? 'Ready for Pickup' : order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                                <Badge
+                                  className={`${
+                                    order.status === 'ready'
+                                      ? 'bg-orange-100 text-orange-800'
+                                      : order.status === 'ordered'
+                                        ? 'bg-blue-100 text-blue-800'
+                                        : 'bg-gray-100 text-gray-800'
+                                  }`}
+                                >
+                                  {order.status === 'ready'
+                                    ? 'Ready for Pickup'
+                                    : order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                                 </Badge>
                               </div>
-                              
+
                               <div className="space-y-2 mb-4">
                                 {order.items.map((item, idx) => (
                                   <div key={idx} className="flex justify-between items-center">
@@ -785,30 +845,35 @@ export const ParentDashboard: React.FC = () => {
                                   </div>
                                 ))}
                               </div>
-                              
+
                               <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
-                                <span>Ordered: {new Date(order.orderTime).toLocaleTimeString()}</span>
+                                <span>
+                                  Ordered: {new Date(order.orderTime).toLocaleTimeString()}
+                                </span>
                                 <span className="flex items-center">
                                   <Clock className="w-4 h-4 mr-1" />
                                   ETA: {order.estimatedDelivery}
                                 </span>
                               </div>
-                              
+
                               {order.specialInstructions && (
                                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3">
                                   <p className="text-sm text-amber-800">
-                                    <strong>Special Instructions:</strong> {order.specialInstructions}
+                                    <strong>Special Instructions:</strong>{' '}
+                                    {order.specialInstructions}
                                   </p>
                                 </div>
                               )}
-                              
+
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center space-x-2">
                                   <span className="text-sm text-gray-600">Nutrition Score:</span>
                                   <Progress value={order.nutritionScore} className="w-20 h-2" />
-                                  <span className="text-sm font-semibold text-hasivu-green-600">{order.nutritionScore}%</span>
+                                  <span className="text-sm font-semibold text-hasivu-green-600">
+                                    {order.nutritionScore}%
+                                  </span>
                                 </div>
-                                
+
                                 <div className="flex items-center space-x-2">
                                   <Button variant="outline" size="sm">
                                     <MapPin className="w-4 h-4 mr-1" />
@@ -835,7 +900,9 @@ export const ParentDashboard: React.FC = () => {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
               <div>
                 <h2 className="text-2xl font-bold text-gray-900">Nutrition & Goals</h2>
-                <p className="text-gray-600">AI-powered nutrition insights and personalized goals</p>
+                <p className="text-gray-600">
+                  AI-powered nutrition insights and personalized goals
+                </p>
               </div>
               <div className="flex items-center space-x-3">
                 <Select defaultValue="week">
@@ -855,255 +922,321 @@ export const ParentDashboard: React.FC = () => {
               </div>
             </div>
 
-            {selectedChild && (() => {
-              const weeklyData = [
-                { day: 'Mon', score: 85, meals: 1 },
-                { day: 'Tue', score: 90, meals: 1 },
-                { day: 'Wed', score: 88, meals: 1 },
-                { day: 'Thu', score: 92, meals: 1 },
-                { day: 'Fri', score: 87, meals: 1 },
-                { day: 'Sat', score: 0, meals: 0 },
-                { day: 'Sun', score: 0, meals: 0 }
-              ];
-              
-              return (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  {/* Main Nutrition Analytics */}
-                  <div className="lg:col-span-2 space-y-6">
-                    {/* Nutrition Score Trends */}
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center">
-                          <TrendingUp className="w-5 h-5 mr-2 text-hasivu-green-600" />
-                          Nutrition Score Trends
-                        </CardTitle>
-                        <CardDescription>Weekly nutrition performance for {selectedChild.name}</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="h-64 flex items-end justify-between space-x-2">
-                          {weeklyData.map((day, index) => {
-                          const height = day.meals > 0 ? (day.score / 100) * 200 : 0;
-                          return (
-                            <div key={index} className="flex flex-col items-center flex-1">
-                              <div className="w-full bg-gray-200 rounded-t-lg relative overflow-hidden" style={{ height: '200px' }}>
-                                <motion.div 
-                                  className={`absolute bottom-0 w-full rounded-t-lg ${
-                                    day.score >= 90 ? 'bg-gradient-to-t from-green-500 to-green-400' :
-                                    day.score >= 80 ? 'bg-gradient-to-t from-yellow-500 to-yellow-400' :
-                                    day.score >= 70 ? 'bg-gradient-to-t from-orange-500 to-orange-400' :
-                                    day.meals > 0 ? 'bg-gradient-to-t from-red-500 to-red-400' : ''
-                                  }`}
-                                  initial={{ height: 0 }}
-                                  animate={{ height: `${height}px` }}
-                                  transition={{ delay: index * 0.1, duration: 0.5 }}
-                                />
-                              </div>
-                              <div className="text-center mt-2">
-                                <div className="text-xs text-gray-500">{day.day}</div>
-                                <div className="text-sm font-semibold">{day.score || '-'}</div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </CardContent>
-                  </Card>
+            {selectedChild &&
+              (() => {
+                const weeklyData = [
+                  { day: 'Mon', score: 85, meals: 1 },
+                  { day: 'Tue', score: 90, meals: 1 },
+                  { day: 'Wed', score: 88, meals: 1 },
+                  { day: 'Thu', score: 92, meals: 1 },
+                  { day: 'Fri', score: 87, meals: 1 },
+                  { day: 'Sat', score: 0, meals: 0 },
+                  { day: 'Sun', score: 0, meals: 0 },
+                ];
 
-                  {/* Nutritional Breakdown */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Weekly Nutritional Breakdown</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {[
-                          { label: 'Protein', value: 24, unit: 'g', target: 30, color: 'bg-red-500' },
-                          { label: 'Carbs', value: 180, unit: 'g', target: 200, color: 'bg-blue-500' },
-                          { label: 'Fat', value: 45, unit: 'g', target: 50, color: 'bg-yellow-500' },
-                          { label: 'Fiber', value: 18, unit: 'g', target: 25, color: 'bg-green-500' }
-                        ].map((nutrient) => (
-                          <div key={nutrient.label} className="text-center">
-                            <div className="relative w-20 h-20 mx-auto mb-2">
-                              <svg className="w-20 h-20 transform -rotate-90">
-                                <circle 
-                                  cx="40" cy="40" r="36" 
-                                  stroke="currentColor" 
-                                  strokeWidth="4" 
-                                  fill="none" 
-                                  className="text-gray-200" 
-                                />
-                                <circle 
-                                  cx="40" cy="40" r="36" 
-                                  stroke="currentColor" 
-                                  strokeWidth="4" 
-                                  fill="none" 
-                                  strokeDasharray={`${2 * Math.PI * 36}`} 
-                                  strokeDashoffset={`${2 * Math.PI * 36 * (1 - nutrient.value / nutrient.target)}`}
-                                  className={nutrient.color.replace('bg-', 'text-')}
-                                />
-                              </svg>
-                              <div className="absolute inset-0 flex items-center justify-center">
-                                <span className="text-sm font-bold">{Math.round((nutrient.value / nutrient.target) * 100)}%</span>
-                              </div>
-                            </div>
-                            <div className="font-medium">{nutrient.label}</div>
-                            <div className="text-sm text-gray-600">{nutrient.value}{nutrient.unit} / {nutrient.target}{nutrient.unit}</div>
+                return (
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Main Nutrition Analytics */}
+                    <div className="lg:col-span-2 space-y-6">
+                      {/* Nutrition Score Trends */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center">
+                            <TrendingUp className="w-5 h-5 mr-2 text-hasivu-green-600" />
+                            Nutrition Score Trends
+                          </CardTitle>
+                          <CardDescription>
+                            Weekly nutrition performance for {selectedChild.name}
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="h-64 flex items-end justify-between space-x-2">
+                            {weeklyData.map((day, index) => {
+                              const height = day.meals > 0 ? (day.score / 100) * 200 : 0;
+                              return (
+                                <div key={index} className="flex flex-col items-center flex-1">
+                                  <div
+                                    className="w-full bg-gray-200 rounded-t-lg relative overflow-hidden"
+                                    style={{ height: '200px' }}
+                                  >
+                                    <motion.div
+                                      className={`absolute bottom-0 w-full rounded-t-lg ${
+                                        day.score >= 90
+                                          ? 'bg-gradient-to-t from-green-500 to-green-400'
+                                          : day.score >= 80
+                                            ? 'bg-gradient-to-t from-yellow-500 to-yellow-400'
+                                            : day.score >= 70
+                                              ? 'bg-gradient-to-t from-orange-500 to-orange-400'
+                                              : day.meals > 0
+                                                ? 'bg-gradient-to-t from-red-500 to-red-400'
+                                                : ''
+                                      }`}
+                                      initial={{ height: 0 }}
+                                      animate={{ height: `${height}px` }}
+                                      transition={{ delay: index * 0.1, duration: 0.5 }}
+                                    />
+                                  </div>
+                                  <div className="text-center mt-2">
+                                    <div className="text-xs text-gray-500">{day.day}</div>
+                                    <div className="text-sm font-semibold">{day.score || '-'}</div>
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
+                        </CardContent>
+                      </Card>
 
-                  {/* AI Recommendations */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center">
-                        <Zap className="w-5 h-5 mr-2 text-purple-600" />
-                        AI Nutrition Recommendations
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        {[
-                          {
-                            type: 'success',
-                            icon: CheckCircle,
-                            title: 'Great Protein Intake!',
-                            description: 'Priya is meeting her protein goals consistently. Keep including dal and paneer.',
-                            color: 'text-green-600 bg-green-50 border-green-200'
-                          },
-                          {
-                            type: 'warning',
-                            icon: AlertTriangle,
-                            title: 'Increase Fiber Intake',
-                            description: 'Consider adding more vegetables and fruits. Try mixed vegetable curry or fresh fruit sides.',
-                            color: 'text-amber-600 bg-amber-50 border-amber-200'
-                          },
-                          {
-                            type: 'info',
-                            icon: Target,
-                            title: 'Balanced Meal Suggestion',
-                            description: 'Tomorrow, try: Rajma Rice + Mixed Veg + Curd + Apple for optimal nutrition balance.',
-                            color: 'text-blue-600 bg-blue-50 border-blue-200'
-                          }
-                        ].map((rec, index) => {
-                          const IconComponent = rec.icon;
-                          return (
-                            <div key={index} className={`flex items-start space-x-3 p-4 rounded-lg border ${rec.color}`}>
-                              <IconComponent className="w-5 h-5 mt-0.5 flex-shrink-0" />
-                              <div>
-                                <h4 className="font-semibold mb-1">{rec.title}</h4>
-                                <p className="text-sm opacity-90">{rec.description}</p>
+                      {/* Nutritional Breakdown */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Weekly Nutritional Breakdown</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            {[
+                              {
+                                label: 'Protein',
+                                value: 24,
+                                unit: 'g',
+                                target: 30,
+                                color: 'bg-red-500',
+                              },
+                              {
+                                label: 'Carbs',
+                                value: 180,
+                                unit: 'g',
+                                target: 200,
+                                color: 'bg-blue-500',
+                              },
+                              {
+                                label: 'Fat',
+                                value: 45,
+                                unit: 'g',
+                                target: 50,
+                                color: 'bg-yellow-500',
+                              },
+                              {
+                                label: 'Fiber',
+                                value: 18,
+                                unit: 'g',
+                                target: 25,
+                                color: 'bg-green-500',
+                              },
+                            ].map(nutrient => (
+                              <div key={nutrient.label} className="text-center">
+                                <div className="relative w-20 h-20 mx-auto mb-2">
+                                  <svg className="w-20 h-20 transform -rotate-90">
+                                    <circle
+                                      cx="40"
+                                      cy="40"
+                                      r="36"
+                                      stroke="currentColor"
+                                      strokeWidth="4"
+                                      fill="none"
+                                      className="text-gray-200"
+                                    />
+                                    <circle
+                                      cx="40"
+                                      cy="40"
+                                      r="36"
+                                      stroke="currentColor"
+                                      strokeWidth="4"
+                                      fill="none"
+                                      strokeDasharray={`${2 * Math.PI * 36}`}
+                                      strokeDashoffset={`${2 * Math.PI * 36 * (1 - nutrient.value / nutrient.target)}`}
+                                      className={nutrient.color.replace('bg-', 'text-')}
+                                    />
+                                  </svg>
+                                  <div className="absolute inset-0 flex items-center justify-center">
+                                    <span className="text-sm font-bold">
+                                      {Math.round((nutrient.value / nutrient.target) * 100)}%
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="font-medium">{nutrient.label}</div>
+                                <div className="text-sm text-gray-600">
+                                  {nutrient.value}
+                                  {nutrient.unit} / {nutrient.target}
+                                  {nutrient.unit}
+                                </div>
                               </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
 
-                {/* Sidebar - Goals & Achievements */}
-                <div className="space-y-6">
-                  {/* Weekly Goals */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Weekly Goals</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      {[
-                        { label: 'Healthy Meals', current: 5, target: 7, icon: Utensils },
-                        { label: 'Nutrition Score', current: 87, target: 90, icon: Star },
-                        { label: 'Variety Score', current: 8, target: 10, icon: Heart }
-                      ].map((goal, index) => {
-                        const IconComponent = goal.icon;
-                        const progress = (goal.current / goal.target) * 100;
-                        return (
-                          <div key={index} className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center space-x-2">
-                                <IconComponent className="w-4 h-4 text-hasivu-orange-600" />
-                                <span className="font-medium text-sm">{goal.label}</span>
+                      {/* AI Recommendations */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center">
+                            <Zap className="w-5 h-5 mr-2 text-purple-600" />
+                            AI Nutrition Recommendations
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-4">
+                            {[
+                              {
+                                type: 'success',
+                                icon: CheckCircle,
+                                title: 'Great Protein Intake!',
+                                description:
+                                  'Priya is meeting her protein goals consistently. Keep including dal and paneer.',
+                                color: 'text-green-600 bg-green-50 border-green-200',
+                              },
+                              {
+                                type: 'warning',
+                                icon: AlertTriangle,
+                                title: 'Increase Fiber Intake',
+                                description:
+                                  'Consider adding more vegetables and fruits. Try mixed vegetable curry or fresh fruit sides.',
+                                color: 'text-amber-600 bg-amber-50 border-amber-200',
+                              },
+                              {
+                                type: 'info',
+                                icon: Target,
+                                title: 'Balanced Meal Suggestion',
+                                description:
+                                  'Tomorrow, try: Rajma Rice + Mixed Veg + Curd + Apple for optimal nutrition balance.',
+                                color: 'text-blue-600 bg-blue-50 border-blue-200',
+                              },
+                            ].map((rec, index) => {
+                              const IconComponent = rec.icon;
+                              return (
+                                <div
+                                  key={index}
+                                  className={`flex items-start space-x-3 p-4 rounded-lg border ${rec.color}`}
+                                >
+                                  <IconComponent className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                                  <div>
+                                    <h4 className="font-semibold mb-1">{rec.title}</h4>
+                                    <p className="text-sm opacity-90">{rec.description}</p>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {/* Sidebar - Goals & Achievements */}
+                    <div className="space-y-6">
+                      {/* Weekly Goals */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-lg">Weekly Goals</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          {[
+                            { label: 'Healthy Meals', current: 5, target: 7, icon: Utensils },
+                            { label: 'Nutrition Score', current: 87, target: 90, icon: Star },
+                            { label: 'Variety Score', current: 8, target: 10, icon: Heart },
+                          ].map((goal, index) => {
+                            const IconComponent = goal.icon;
+                            const progress = (goal.current / goal.target) * 100;
+                            return (
+                              <div key={index} className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center space-x-2">
+                                    <IconComponent className="w-4 h-4 text-hasivu-orange-600" />
+                                    <span className="font-medium text-sm">{goal.label}</span>
+                                  </div>
+                                  <span className="text-sm text-gray-600">
+                                    {goal.current}/{goal.target}
+                                  </span>
+                                </div>
+                                <Progress value={progress} className="h-2" />
                               </div>
-                              <span className="text-sm text-gray-600">{goal.current}/{goal.target}</span>
-                            </div>
-                            <Progress value={progress} className="h-2" />
-                          </div>
-                        );
-                      })}
-                    </CardContent>
-                  </Card>
+                            );
+                          })}
+                        </CardContent>
+                      </Card>
 
-                  {/* Recent Achievements */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg flex items-center">
-                        <Trophy className="w-5 h-5 mr-2 text-yellow-500" />
-                        Recent Achievements
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        {[
-                          {
-                            title: 'Protein Champion',
-                            description: 'Met protein goals 5 days straight!',
-                            date: '2 days ago',
-                            icon: '🏆'
-                          },
-                          {
-                            title: 'Variety Explorer', 
-                            description: 'Tried 3 new healthy dishes',
-                            date: '1 week ago', 
-                            icon: '🌟'
-                          },
-                          {
-                            title: 'Consistent Eater',
-                            description: 'No missed meals this week',
-                            date: '3 days ago',
-                            icon: '💪'
-                          }
-                        ].map((achievement, index) => (
-                          <div key={index} className="flex items-start space-x-3 p-3 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg border border-yellow-200">
-                            <div className="text-2xl">{achievement.icon}</div>
-                            <div className="flex-1">
-                              <h4 className="font-semibold text-sm">{achievement.title}</h4>
-                              <p className="text-xs text-gray-600 mb-1">{achievement.description}</p>
-                              <p className="text-xs text-gray-500">{achievement.date}</p>
-                            </div>
+                      {/* Recent Achievements */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-lg flex items-center">
+                            <Trophy className="w-5 h-5 mr-2 text-yellow-500" />
+                            Recent Achievements
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            {[
+                              {
+                                title: 'Protein Champion',
+                                description: 'Met protein goals 5 days straight!',
+                                date: '2 days ago',
+                                icon: '🏆',
+                              },
+                              {
+                                title: 'Variety Explorer',
+                                description: 'Tried 3 new healthy dishes',
+                                date: '1 week ago',
+                                icon: '🌟',
+                              },
+                              {
+                                title: 'Consistent Eater',
+                                description: 'No missed meals this week',
+                                date: '3 days ago',
+                                icon: '💪',
+                              },
+                            ].map((achievement, index) => (
+                              <div
+                                key={index}
+                                className="flex items-start space-x-3 p-3 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg border border-yellow-200"
+                              >
+                                <div className="text-2xl">{achievement.icon}</div>
+                                <div className="flex-1">
+                                  <h4 className="font-semibold text-sm">{achievement.title}</h4>
+                                  <p className="text-xs text-gray-600 mb-1">
+                                    {achievement.description}
+                                  </p>
+                                  <p className="text-xs text-gray-500">{achievement.date}</p>
+                                </div>
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
+                        </CardContent>
+                      </Card>
 
-                  {/* Health Insights */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Health Insights</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <Heart className="w-4 h-4 text-green-600" />
-                          <span className="font-medium text-sm text-green-800">Overall Health</span>
-                        </div>
-                        <p className="text-xs text-green-700">Excellent nutrition balance. Keep up the good work!</p>
-                      </div>
-                      
-                      <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <Activity className="w-4 h-4 text-blue-600" />
-                          <span className="font-medium text-sm text-blue-800">Growth Tracking</span>
-                        </div>
-                        <p className="text-xs text-blue-700">Nutrition supporting healthy growth patterns</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
-              );
-            })()}
+                      {/* Health Insights */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-lg">Health Insights</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <Heart className="w-4 h-4 text-green-600" />
+                              <span className="font-medium text-sm text-green-800">
+                                Overall Health
+                              </span>
+                            </div>
+                            <p className="text-xs text-green-700">
+                              Excellent nutrition balance. Keep up the good work!
+                            </p>
+                          </div>
+
+                          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <Activity className="w-4 h-4 text-blue-600" />
+                              <span className="font-medium text-sm text-blue-800">
+                                Growth Tracking
+                              </span>
+                            </div>
+                            <p className="text-xs text-blue-700">
+                              Nutrition supporting healthy growth patterns
+                            </p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+                );
+              })()}
           </TabsContent>
 
           <TabsContent value="payments" className="space-y-6">
@@ -1146,13 +1279,19 @@ export const ParentDashboard: React.FC = () => {
                           <CreditCard className="w-8 h-8 text-hasivu-green-100" />
                         </div>
                         <div className="mt-4 flex items-center justify-between">
-                          <span className="text-xs text-hasivu-green-100">Wallet ID: WAL-2024-001</span>
-                          <Button size="sm" variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-0">
+                          <span className="text-xs text-hasivu-green-100">
+                            Wallet ID: WAL-2024-001
+                          </span>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="bg-white/20 hover:bg-white/30 text-white border-0"
+                          >
                             Top Up
                           </Button>
                         </div>
                       </div>
-                      
+
                       <div className="space-y-4">
                         <div className="text-center p-4 border-2 border-dashed border-gray-300 rounded-lg">
                           <TrendingUp className="w-8 h-8 text-gray-400 mx-auto mb-2" />
@@ -1161,7 +1300,7 @@ export const ParentDashboard: React.FC = () => {
                           <p className="text-xs text-green-600">↓ 12% from last month</p>
                         </div>
                       </div>
-                      
+
                       <div className="space-y-4">
                         <div className="text-center p-4 border-2 border-dashed border-gray-300 rounded-lg">
                           <Shield className="w-8 h-8 text-gray-400 mx-auto mb-2" />
@@ -1205,7 +1344,7 @@ export const ParentDashboard: React.FC = () => {
                           status: 'success' as const,
                           timestamp: '2024-01-15T12:45:00Z',
                           child: 'Priya Sharma',
-                          fraudScore: 0.1
+                          fraudScore: 0.1,
                         },
                         {
                           id: 'TXN-002',
@@ -1215,7 +1354,7 @@ export const ParentDashboard: React.FC = () => {
                           status: 'success' as const,
                           timestamp: '2024-01-15T13:00:00Z',
                           child: 'Arjun Sharma',
-                          fraudScore: 0.05
+                          fraudScore: 0.05,
                         },
                         {
                           id: 'TXN-003',
@@ -1225,7 +1364,7 @@ export const ParentDashboard: React.FC = () => {
                           status: 'success' as const,
                           timestamp: '2024-01-14T10:30:00Z',
                           child: '',
-                          fraudScore: 0
+                          fraudScore: 0,
                         },
                         {
                           id: 'TXN-004',
@@ -1235,19 +1374,34 @@ export const ParentDashboard: React.FC = () => {
                           status: 'pending' as const,
                           timestamp: '2024-01-14T16:20:00Z',
                           child: 'Priya Sharma',
-                          fraudScore: 0
-                        }
-                      ].map((transaction) => (
-                        <div key={transaction.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                          fraudScore: 0,
+                        },
+                      ].map(transaction => (
+                        <div
+                          key={transaction.id}
+                          className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                        >
                           <div className="flex items-center space-x-4">
-                            <div className={`p-2 rounded-full ${
-                              transaction.type === 'payment' ? 'bg-red-100' :
-                              transaction.type === 'topup' ? 'bg-green-100' :
-                              transaction.type === 'refund' ? 'bg-blue-100' : 'bg-gray-100'
-                            }`}>
-                              {transaction.type === 'payment' && <ArrowRight className="w-4 h-4 text-red-600 rotate-90" />}
-                              {transaction.type === 'topup' && <ArrowRight className="w-4 h-4 text-green-600 -rotate-90" />}
-                              {transaction.type === 'refund' && <ArrowRight className="w-4 h-4 text-blue-600 -rotate-90" />}
+                            <div
+                              className={`p-2 rounded-full ${
+                                transaction.type === 'payment'
+                                  ? 'bg-red-100'
+                                  : transaction.type === 'topup'
+                                    ? 'bg-green-100'
+                                    : transaction.type === 'refund'
+                                      ? 'bg-blue-100'
+                                      : 'bg-gray-100'
+                              }`}
+                            >
+                              {transaction.type === 'payment' && (
+                                <ArrowRight className="w-4 h-4 text-red-600 rotate-90" />
+                              )}
+                              {transaction.type === 'topup' && (
+                                <ArrowRight className="w-4 h-4 text-green-600 -rotate-90" />
+                              )}
+                              {transaction.type === 'refund' && (
+                                <ArrowRight className="w-4 h-4 text-blue-600 -rotate-90" />
+                              )}
                             </div>
                             <div className="flex-1">
                               <div className="flex items-center space-x-2">
@@ -1267,16 +1421,22 @@ export const ParentDashboard: React.FC = () => {
                             </div>
                           </div>
                           <div className="text-right">
-                            <div className={`font-semibold ${
-                              transaction.amount > 0 ? 'text-green-600' : 'text-red-600'
-                            }`}>
+                            <div
+                              className={`font-semibold ${
+                                transaction.amount > 0 ? 'text-green-600' : 'text-red-600'
+                              }`}
+                            >
                               {transaction.amount > 0 ? '+' : ''}Rs.{Math.abs(transaction.amount)}
                             </div>
-                            <Badge className={`text-xs ${
-                              transaction.status === 'success' ? 'bg-green-100 text-green-800' :
-                              transaction.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                              'bg-red-100 text-red-800'
-                            }`}>
+                            <Badge
+                              className={`text-xs ${
+                                transaction.status === 'success'
+                                  ? 'bg-green-100 text-green-800'
+                                  : transaction.status === 'pending'
+                                    ? 'bg-yellow-100 text-yellow-800'
+                                    : 'bg-red-100 text-red-800'
+                              }`}
+                            >
                               {transaction.status}
                             </Badge>
                           </div>
@@ -1309,13 +1469,15 @@ export const ParentDashboard: React.FC = () => {
                         <div className="text-sm text-orange-700">Suspicious Activities</div>
                       </div>
                     </div>
-                    
+
                     <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg p-4">
                       <div className="flex items-center space-x-3">
                         <CheckCircle className="w-6 h-6 text-green-600" />
                         <div>
                           <h4 className="font-semibold text-green-800">All Systems Protected</h4>
-                          <p className="text-sm text-green-700">Your account is fully secured with real-time fraud monitoring</p>
+                          <p className="text-sm text-green-700">
+                            Your account is fully secured with real-time fraud monitoring
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -1359,9 +1521,12 @@ export const ParentDashboard: React.FC = () => {
                     {[
                       { type: 'UPI', details: 'parent@upi', primary: true },
                       { type: 'Card', details: '**** **** **** 1234', primary: false },
-                      { type: 'Net Banking', details: 'SBI ****5678', primary: false }
+                      { type: 'Net Banking', details: 'SBI ****5678', primary: false },
                     ].map((method, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-3 border border-gray-200 rounded-lg"
+                      >
                         <div className="flex items-center space-x-3">
                           <div className="p-2 bg-blue-100 rounded">
                             <CreditCard className="w-4 h-4 text-blue-600" />
@@ -1390,7 +1555,9 @@ export const ParentDashboard: React.FC = () => {
                     <div className="flex items-center justify-between">
                       <div>
                         <div className="font-medium text-sm">Two-Factor Auth</div>
-                        <div className="text-xs text-gray-600">SMS verification for transactions</div>
+                        <div className="text-xs text-gray-600">
+                          SMS verification for transactions
+                        </div>
                       </div>
                       <div className="w-4 h-4 bg-green-500 rounded-full"></div>
                     </div>
@@ -1399,7 +1566,9 @@ export const ParentDashboard: React.FC = () => {
                         <div className="font-medium text-sm">Transaction Limits</div>
                         <div className="text-xs text-gray-600">Rs.500 per transaction</div>
                       </div>
-                      <Button variant="outline" size="sm">Edit</Button>
+                      <Button variant="outline" size="sm">
+                        Edit
+                      </Button>
                     </div>
                     <div className="flex items-center justify-between">
                       <div>

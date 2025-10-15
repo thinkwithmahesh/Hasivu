@@ -1,0 +1,463 @@
+/**
+ * HASIVU Platform - Metrics Collection Service
+ * Production-grade metrics collection with memory-efficient storage
+ * Supports counters, gauges, histograms, and timing metrics
+ */
+
+import { EventEmitter } from 'events';
+import { logger } from '../utils/logger';
+
+/**
+ * Metric types supported by the collector
+ */
+export type MetricType = 'counter' | 'gauge' | 'histogram' | 'timer';
+
+/**
+ * Metric data structure
+ */
+export interface Metric {
+  name: string;
+  type: MetricType;
+  value: number;
+  timestamp: Date;
+  tags?: Record<string, string>;
+  unit?: string;
+}
+
+/**
+ * Counter metric for tracking incremental values
+ */
+export interface CounterMetric extends Metric {
+  type: 'counter';
+  count: number;
+}
+
+/**
+ * Gauge metric for tracking current values
+ */
+export interface GaugeMetric extends Metric {
+  type: 'gauge';
+  value: number;
+}
+
+/**
+ * Timer metric for tracking duration
+ */
+export interface TimerMetric extends Metric {
+  type: 'timer';
+  duration: number;
+  unit: 'ms' | 'ns' | 's';
+}
+
+/**
+ * Histogram metric for tracking value distributions
+ */
+export interface HistogramMetric extends Metric {
+  type: 'histogram';
+  buckets: Record<string, number>;
+  count: number;
+  sum: number;
+}
+
+/**
+ * Metrics aggregation result
+ */
+export interface MetricsAggregation {
+  totalMetrics: number;
+  metricsByType: Record<MetricType, number>;
+  timeRange: { start: Date; end: Date };
+  topMetrics: Array<{ name: string; count: number; avgValue: number }>;
+}
+
+/**
+ * Production-ready metrics collection service
+ */
+export class MetricsCollector extends EventEmitter {
+  private readonly metrics = new Map<string, Metric[]>();
+  private readonly counters = new Map<string, number>();
+  private readonly gauges = new Map<string, number>();
+  private readonly timers = new Map<string, number[]>();
+  
+  // Configuration
+  private readonly maxMetricsPerName = 1000;
+  private readonly retentionPeriod = 24 * 60 * 60 * 1000; // 24 hours
+  private readonly cleanupInterval = 60 * 60 * 1000; // 1 hour
+  
+  private cleanupTimer?: NodeJS.Timeout;
+
+  constructor() {
+    super();
+    this.startCleanupProcess();
+    logger.info('MetricsCollector initialized');
+  }
+
+  /**
+   * Increment a counter metric
+   */
+  increment(name: string, value = 1, tags?: Record<string, string>): void {
+    try {
+      const currentValue = this.counters.get(name) || 0;
+      const newValue = currentValue + value;
+      
+      this.counters.set(name, newValue);
+      
+      const metric: CounterMetric = {
+        name,
+        type: 'counter',
+        value: newValue,
+        count: newValue,
+        timestamp: new Date(),
+        tags,
+        unit: 'count'
+      };
+      
+      this.storeMetric(metric);
+      this.emit('metric:collected', metric);
+      
+      logger.debug('Counter incremented', { name, value, newValue });
+    } catch (error: unknown) {
+      logger.error('Failed to increment counter', { error, name, value });
+    }
+  }
+
+  /**
+   * Decrement a counter metric
+   */
+  decrement(name: string, value = 1, tags?: Record<string, string>): void {
+    this.increment(name, -value, tags);
+  }
+
+  /**
+   * Set a gauge metric value
+   */
+  gauge(name: string, value: number, tags?: Record<string, string>): void {
+    try {
+      this.gauges.set(name, value);
+      
+      const metric: GaugeMetric = {
+        name,
+        type: 'gauge',
+        value,
+        timestamp: new Date(),
+        tags,
+        unit: 'value'
+      };
+      
+      this.storeMetric(metric);
+      this.emit('metric:collected', metric);
+      
+      logger.debug('Gauge set', { name, value });
+    } catch (error: unknown) {
+      logger.error('Failed to set gauge', { error, name, value });
+    }
+  }
+
+  /**
+   * Record a timing metric
+   */
+  timing(name: string, duration: number, unit: 'ms' | 'ns' | 's' = 'ms', tags?: Record<string, string>): void {
+    try {
+      const timings = this.timers.get(name) || [];
+      timings.push(duration);
+      
+      // Keep only recent timings to prevent memory bloat
+      if (timings.length > this.maxMetricsPerName) {
+        timings.splice(0, timings.length - this.maxMetricsPerName);
+      }
+      
+      this.timers.set(name, timings);
+      
+      const metric: TimerMetric = {
+        name,
+        type: 'timer',
+        value: duration,
+        duration,
+        timestamp: new Date(),
+        tags,
+        unit
+      };
+      
+      this.storeMetric(metric);
+      this.emit('metric:collected', metric);
+      
+      logger.debug('Timing recorded', { name, duration, unit });
+    } catch (error: unknown) {
+      logger.error('Failed to record timing', { error, name, duration });
+    }
+  }
+
+  /**
+   * Time a function execution
+   */
+  time<T>(name: string, fn: () => T, tags?: Record<string, string>): T;
+  time<T>(name: string, fn: () => Promise<T>, tags?: Record<string, string>): Promise<T>;
+  time<T>(name: string, fn: () => T | Promise<T>, tags?: Record<string, string>): T | Promise<T> {
+    const startTime = Date.now();
+    
+    try {
+      const result = fn();
+      
+      if (result instanceof Promise) {
+        return result
+          .then((value) => {
+            this.timing(name, Date.now() - startTime, 'ms', tags);
+            return value;
+          })
+          .catch((error) => {
+            this.timing(name, Date.now() - startTime, 'ms', { ...tags, error: 'true' });
+            throw error;
+          });
+      } else {
+        this.timing(name, Date.now() - startTime, 'ms', tags);
+        return result;
+      }
+    } catch (error: unknown) {
+      this.timing(name, Date.now() - startTime, 'ms', { ...tags, error: 'true' });
+      throw error;
+    }
+  }
+
+  /**
+   * Record a histogram metric
+   */
+  histogram(name: string, value: number, tags?: Record<string, string>): void {
+    try {
+      const buckets = this.calculateHistogramBuckets(value);
+      const existingMetrics = this.metrics.get(name) || [];
+      const histogramMetrics = existingMetrics.filter(m => m.type === 'histogram') as HistogramMetric[];
+      
+      let totalCount = 1;
+      let totalSum = value;
+      
+      if (histogramMetrics.length > 0) {
+        const latest = histogramMetrics[histogramMetrics.length - 1];
+        totalCount = latest.count + 1;
+        totalSum = latest.sum + value;
+      }
+      
+      const metric: HistogramMetric = {
+        name,
+        type: 'histogram',
+        value,
+        buckets,
+        count: totalCount,
+        sum: totalSum,
+        timestamp: new Date(),
+        tags,
+        unit: 'distribution'
+      };
+      
+      this.storeMetric(metric);
+      this.emit('metric:collected', metric);
+      
+      logger.debug('Histogram recorded', { name, value, buckets });
+    } catch (error: unknown) {
+      logger.error('Failed to record histogram', { error, name, value });
+    }
+  }
+
+  /**
+   * Get current counter value
+   */
+  getCounter(name: string): number {
+    return this.counters.get(name) || 0;
+  }
+
+  /**
+   * Get current gauge value
+   */
+  getGauge(name: string): number | undefined {
+    return this.gauges.get(name);
+  }
+
+  /**
+   * Get timing statistics for a metric
+   */
+  getTimingStats(name: string): { count: number; avg: number; min: number; max: number; p95: number; p99: number } | null {
+    const timings = this.timers.get(name);
+    if (!timings || timings.length === 0) {
+      return null;
+    }
+    
+    const sorted = [...timings].sort((a, b) => a - b);
+    const count = sorted.length;
+    const sum = sorted.reduce((a, b) => a + b, 0);
+    const avg = sum / count;
+    const min = sorted[0];
+    const max = sorted[count - 1];
+    const p95 = sorted[Math.floor(count * 0.95)];
+    const p99 = sorted[Math.floor(count * 0.99)];
+    
+    return { count, avg, min, max, p95, p99 };
+  }
+
+  /**
+   * Get all metrics within a time range
+   */
+  getMetrics(startTime?: Date, endTime?: Date): Metric[] {
+    const now = new Date();
+    const start = startTime || new Date(now.getTime() - 60 * 60 * 1000); // Last hour
+    const end = endTime || now;
+    
+    const allMetrics: Metric[] = [];
+    
+    for (const metrics of this.metrics.values()) {
+      const filteredMetrics = metrics.filter(m => 
+        m.timestamp >= start && m.timestamp <= end
+      );
+      allMetrics.push(...filteredMetrics);
+    }
+    
+    return allMetrics.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+  }
+
+  /**
+   * Get metrics aggregation summary
+   */
+  getAggregation(startTime?: Date, endTime?: Date): MetricsAggregation {
+    const metrics = this.getMetrics(startTime, endTime);
+    const metricsByType: Record<MetricType, number> = {
+      counter: 0,
+      gauge: 0,
+      histogram: 0,
+      timer: 0
+    };
+    
+    const metricCounts = new Map<string, { count: number; totalValue: number }>();
+    
+    for (const metric of metrics) {
+      metricsByType[metric.type]++;
+      
+      const current = metricCounts.get(metric.name) || { count: 0, totalValue: 0 };
+      metricCounts.set(metric.name, {
+        count: current.count + 1,
+        totalValue: current.totalValue + metric.value
+      });
+    }
+    
+    const topMetrics = Array.from(metricCounts.entries())
+      .map(([name, data]) => ({
+        name,
+        count: data.count,
+        avgValue: data.totalValue / data.count
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+    
+    return {
+      totalMetrics: metrics.length,
+      metricsByType,
+      timeRange: {
+        start: startTime || new Date(Date.now() - 60 * 60 * 1000),
+        end: endTime || new Date()
+      },
+      topMetrics
+    };
+  }
+
+  /**
+   * Reset all metrics
+   */
+  reset(): void {
+    this.metrics.clear();
+    this.counters.clear();
+    this.gauges.clear();
+    this.timers.clear();
+    
+    logger.info('All metrics reset');
+    this.emit('metrics:reset');
+  }
+
+  /**
+   * Get service health status
+   */
+  getHealthStatus(): { healthy: boolean; metricsCount: number; memoryUsage: string } {
+    const totalMetrics = Array.from(this.metrics.values())
+      .reduce((sum, metrics) => sum + metrics.length, 0);
+    
+    const memoryUsage = process.memoryUsage();
+    const memoryMB = Math.round(memoryUsage.heapUsed / 1024 / 1024);
+    
+    return {
+      healthy: true,
+      metricsCount: totalMetrics,
+      memoryUsage: `${memoryMB}MB`
+    };
+  }
+
+  /**
+   * Shutdown the metrics collector
+   */
+  shutdown(): void {
+    if (this.cleanupTimer) {
+      clearInterval(this.cleanupTimer);
+    }
+    
+    logger.info('MetricsCollector shut down');
+    this.emit('shutdown');
+  }
+
+  // Private methods
+
+  private storeMetric(metric: Metric): void {
+    const metrics = this.metrics.get(metric.name) || [];
+    metrics.push(metric);
+    
+    // Prevent memory bloat by limiting metrics per name
+    if (metrics.length > this.maxMetricsPerName) {
+      metrics.splice(0, metrics.length - this.maxMetricsPerName);
+    }
+    
+    this.metrics.set(metric.name, metrics);
+  }
+
+  private calculateHistogramBuckets(value: number): Record<string, number> {
+    const buckets = {
+      '1': value <= 1 ? 1 : 0,
+      '5': value <= 5 ? 1 : 0,
+      '10': value <= 10 ? 1 : 0,
+      '25': value <= 25 ? 1 : 0,
+      '50': value <= 50 ? 1 : 0,
+      '100': value <= 100 ? 1 : 0,
+      '250': value <= 250 ? 1 : 0,
+      '500': value <= 500 ? 1 : 0,
+      '1000': value <= 1000 ? 1 : 0,
+      '+Inf': 1
+    };
+    
+    return buckets;
+  }
+
+  private startCleanupProcess(): void {
+    this.cleanupTimer = setInterval(() => {
+      this.cleanupOldMetrics();
+    }, this.cleanupInterval);
+  }
+
+  private cleanupOldMetrics(): void {
+    const cutoffTime = new Date(Date.now() - this.retentionPeriod);
+    let cleanedCount = 0;
+    
+    for (const [name, metrics] of this.metrics.entries()) {
+      const filteredMetrics = metrics.filter(m => m.timestamp > cutoffTime);
+      
+      if (filteredMetrics.length !== metrics.length) {
+        this.metrics.set(name, filteredMetrics);
+        cleanedCount += metrics.length - filteredMetrics.length;
+      }
+      
+      // Remove empty metric arrays
+      if (filteredMetrics.length === 0) {
+        this.metrics.delete(name);
+      }
+    }
+    
+    if (cleanedCount > 0) {
+      logger.debug('Cleaned up old metrics', { cleanedCount });
+    }
+  }
+}
+
+// Export singleton instance
+export const metricsCollector = new MetricsCollector();
+export default metricsCollector;

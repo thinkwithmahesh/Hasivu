@@ -1,15 +1,15 @@
-"use client"
+'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { cn } from '@/lib/utils'
-import { 
-  Smartphone, 
-  Download, 
-  Wifi, 
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { cn } from '@/lib/utils';
+import {
+  Smartphone,
+  Download,
+  Wifi,
   WifiOff,
   Bell,
   BellOff,
@@ -24,170 +24,170 @@ import {
   HardDrive,
   Zap,
   Cloud,
-  CloudOff
-} from 'lucide-react'
+  CloudOff,
+} from 'lucide-react';
 
 // PWA Installation Hook
 export const usePWAInstall = () => {
-  const [isInstallable, setIsInstallable] = useState(false)
-  const [isInstalled, setIsInstalled] = useState(false)
-  const [installPrompt, setInstallPrompt] = useState<any>(null)
-  
+  const [isInstallable, setIsInstallable] = useState(false);
+  const [isInstalled, setIsInstalled] = useState(false);
+  const [installPrompt, setInstallPrompt] = useState<any>(null);
+
   useEffect(() => {
     // Check if already installed
     const checkInstalled = () => {
       if (window.matchMedia('(display-mode: standalone)').matches) {
-        setIsInstalled(true)
+        setIsInstalled(true);
       }
-    }
-    
+    };
+
     // Listen for beforeinstallprompt event
     const handleBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault()
-      setInstallPrompt(e)
-      setIsInstallable(true)
-    }
-    
+      e.preventDefault();
+      setInstallPrompt(e);
+      setIsInstallable(true);
+    };
+
     // Listen for app installed event
     const handleAppInstalled = () => {
-      setIsInstalled(true)
-      setIsInstallable(false)
-    }
-    
-    checkInstalled()
-    
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
-    window.addEventListener('appinstalled', handleAppInstalled)
-    
+      setIsInstalled(true);
+      setIsInstallable(false);
+    };
+
+    checkInstalled();
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
+
     return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
-      window.removeEventListener('appinstalled', handleAppInstalled)
-    }
-  }, [])
-  
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
+  }, []);
+
   const installApp = useCallback(async () => {
-    if (!installPrompt) return false
-    
+    if (!installPrompt) return false;
+
     try {
-      const result = await installPrompt.prompt()
-      const outcome = await result.userChoice
-      
+      const result = await installPrompt.prompt();
+      const outcome = await result.userChoice;
+
       if (outcome === 'accepted') {
-        setIsInstalled(true)
-        setIsInstallable(false)
+        setIsInstalled(true);
+        setIsInstallable(false);
       }
-      
-      setInstallPrompt(null)
-      return outcome === 'accepted'
-      
+
+      setInstallPrompt(null);
+      return outcome === 'accepted';
     } catch (error) {
-      console.error('PWA installation failed:', error)
-      return false
+      return false;
     }
-  }, [installPrompt])
-  
+  }, [installPrompt]);
+
   return {
     isInstallable,
     isInstalled,
-    installApp
-  }
-}
+    installApp,
+  };
+};
 
 // Network Status Hook
 export const useNetworkStatus = () => {
-  const [isOnline, setIsOnline] = useState(navigator.onLine)
-  const [connectionType, setConnectionType] = useState<string>('unknown')
-  const [effectiveType, setEffectiveType] = useState<string>('unknown')
-  
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [connectionType, setConnectionType] = useState<string>('unknown');
+  const [effectiveType, setEffectiveType] = useState<string>('unknown');
+
   useEffect(() => {
     const updateOnlineStatus = () => {
-      setIsOnline(navigator.onLine)
-    }
-    
+      setIsOnline(navigator.onLine);
+    };
+
     const updateConnectionInfo = () => {
       // @ts-ignore - connection is not in TypeScript definitions
-      const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection
-      
+      const connection =
+        navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+
       if (connection) {
-        setConnectionType(connection.type || 'unknown')
-        setEffectiveType(connection.effectiveType || 'unknown')
+        setConnectionType(connection.type || 'unknown');
+        setEffectiveType(connection.effectiveType || 'unknown');
       }
-    }
-    
-    updateConnectionInfo()
-    
-    window.addEventListener('online', updateOnlineStatus)
-    window.addEventListener('offline', updateOnlineStatus)
-    
+    };
+
+    updateConnectionInfo();
+
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+
     // @ts-ignore
-    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection
+    const connection =
+      navigator.connection || navigator.mozConnection || navigator.webkitConnection;
     if (connection) {
-      connection.addEventListener('change', updateConnectionInfo)
+      connection.addEventListener('change', updateConnectionInfo);
     }
-    
+
     return () => {
-      window.removeEventListener('online', updateOnlineStatus)
-      window.removeEventListener('offline', updateOnlineStatus)
-      
+      window.removeEventListener('online', updateOnlineStatus);
+      window.removeEventListener('offline', updateOnlineStatus);
+
       if (connection) {
-        connection.removeEventListener('change', updateConnectionInfo)
+        connection.removeEventListener('change', updateConnectionInfo);
       }
-    }
-  }, [])
-  
+    };
+  }, []);
+
   return {
     isOnline,
     connectionType,
     effectiveType,
-    isSlowConnection: effectiveType === 'slow-2g' || effectiveType === '2g'
-  }
-}
+    isSlowConnection: effectiveType === 'slow-2g' || effectiveType === '2g',
+  };
+};
 
 // Push Notifications Hook
 export const usePushNotifications = () => {
-  const [permission, setPermission] = useState<NotificationPermission>('default')
-  const [subscription, setSubscription] = useState<PushSubscription | null>(null)
-  const [isSupported, setIsSupported] = useState(false)
-  
+  const [permission, setPermission] = useState<NotificationPermission>('default');
+  const [subscription, setSubscription] = useState<PushSubscription | null>(null);
+  const [isSupported, setIsSupported] = useState(false);
+
   useEffect(() => {
     const checkSupport = () => {
-      const supported = 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window
-      setIsSupported(supported)
-      
+      const supported =
+        'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
+      setIsSupported(supported);
+
       if (supported) {
-        setPermission(Notification.permission)
+        setPermission(Notification.permission);
       }
-    }
-    
-    checkSupport()
-  }, [])
-  
+    };
+
+    checkSupport();
+  }, []);
+
   const requestPermission = useCallback(async () => {
-    if (!isSupported) return false
-    
+    if (!isSupported) return false;
+
     try {
-      const result = await Notification.requestPermission()
-      setPermission(result)
-      return result === 'granted'
+      const result = await Notification.requestPermission();
+      setPermission(result);
+      return result === 'granted';
     } catch (error) {
-      console.error('Notification permission request failed:', error)
-      return false
+      return false;
     }
-  }, [isSupported])
-  
+  }, [isSupported]);
+
   const subscribeToPush = useCallback(async () => {
-    if (!isSupported || permission !== 'granted') return null
-    
+    if (!isSupported || permission !== 'granted') return null;
+
     try {
-      const registration = await navigator.serviceWorker.ready
-      
+      const registration = await navigator.serviceWorker.ready;
+
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
-      })
-      
-      setSubscription(subscription)
-      
+        applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+      });
+
+      setSubscription(subscription);
+
       // Send subscription to server
       await fetch('/api/v1/notifications/subscribe', {
         method: 'POST',
@@ -195,25 +195,23 @@ export const usePushNotifications = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          subscription: subscription.toJSON()
-        })
-      })
-      
-      return subscription
-      
+          subscription: subscription.toJSON(),
+        }),
+      });
+
+      return subscription;
     } catch (error) {
-      console.error('Push subscription failed:', error)
-      return null
+      return null;
     }
-  }, [isSupported, permission])
-  
+  }, [isSupported, permission]);
+
   const unsubscribeFromPush = useCallback(async () => {
-    if (!subscription) return false
-    
+    if (!subscription) return false;
+
     try {
-      await subscription.unsubscribe()
-      setSubscription(null)
-      
+      await subscription.unsubscribe();
+      setSubscription(null);
+
       // Notify server
       await fetch('/api/v1/notifications/unsubscribe', {
         method: 'POST',
@@ -221,192 +219,181 @@ export const usePushNotifications = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          endpoint: subscription.endpoint
-        })
-      })
-      
-      return true
-      
+          endpoint: subscription.endpoint,
+        }),
+      });
+
+      return true;
     } catch (error) {
-      console.error('Push unsubscription failed:', error)
-      return false
+      return false;
     }
-  }, [subscription])
-  
+  }, [subscription]);
+
   return {
     isSupported,
     permission,
     subscription,
     requestPermission,
     subscribeToPush,
-    unsubscribeFromPush
-  }
-}
+    unsubscribeFromPush,
+  };
+};
 
 // Cache Management Hook
 export const useCacheManagement = () => {
-  const [cacheSize, setCacheSize] = useState<number>(0)
-  const [cacheStatus, setCacheStatus] = useState<any>(null)
-  const [isLoading, setIsLoading] = useState(false)
-  
+  const [cacheSize, setCacheSize] = useState<number>(0);
+  const [cacheStatus, setCacheStatus] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
   const getCacheInfo = useCallback(async () => {
-    setIsLoading(true)
-    
+    setIsLoading(true);
+
     try {
       // Get cache storage estimate
       if ('storage' in navigator && 'estimate' in navigator.storage) {
-        const estimate = await navigator.storage.estimate()
-        setCacheSize(estimate.usage || 0)
+        const estimate = await navigator.storage.estimate();
+        setCacheSize(estimate.usage || 0);
       }
-      
+
       // Get cache status from service worker
       if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-        const messageChannel = new MessageChannel()
-        
-        navigator.serviceWorker.controller.postMessage(
-          { type: 'GET_CACHE_STATUS' },
-          [messageChannel.port2]
-        )
-        
-        messageChannel.port1.onmessage = (event) => {
-          setCacheStatus(event.data)
-        }
+        const messageChannel = new MessageChannel();
+
+        navigator.serviceWorker.controller.postMessage({ type: 'GET_CACHE_STATUS' }, [
+          messageChannel.port2,
+        ]);
+
+        messageChannel.port1.onmessage = event => {
+          setCacheStatus(event.data);
+        };
       }
-      
     } catch (error) {
-      console.error('Failed to get cache info:', error)
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }, [])
-  
+  }, []);
+
   const clearCache = useCallback(async () => {
     try {
       if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-        navigator.serviceWorker.controller.postMessage({ type: 'CLEAR_CACHES' })
+        navigator.serviceWorker.controller.postMessage({ type: 'CLEAR_CACHES' });
       }
-      
+
       // Refresh cache info
       setTimeout(() => {
-        getCacheInfo()
-      }, 1000)
-      
-      return true
-      
+        getCacheInfo();
+      }, 1000);
+
+      return true;
     } catch (error) {
-      console.error('Failed to clear cache:', error)
-      return false
+      return false;
     }
-  }, [getCacheInfo])
-  
+  }, [getCacheInfo]);
+
   useEffect(() => {
-    getCacheInfo()
-  }, [getCacheInfo])
-  
+    getCacheInfo();
+  }, [getCacheInfo]);
+
   return {
     cacheSize,
     cacheStatus,
     isLoading,
     getCacheInfo,
-    clearCache
-  }
-}
+    clearCache,
+  };
+};
 
 // Battery Status Hook
 export const useBatteryStatus = () => {
-  const [batteryLevel, setBatteryLevel] = useState<number | null>(null)
-  const [isCharging, setIsCharging] = useState<boolean | null>(null)
-  const [isSupported, setIsSupported] = useState(false)
-  
+  const [batteryLevel, setBatteryLevel] = useState<number | null>(null);
+  const [isCharging, setIsCharging] = useState<boolean | null>(null);
+  const [isSupported, setIsSupported] = useState(false);
+
   useEffect(() => {
     const getBatteryInfo = async () => {
       try {
         // @ts-ignore - battery API not in TypeScript definitions
         if ('getBattery' in navigator) {
           // @ts-ignore
-          const battery = await navigator.getBattery()
-          setIsSupported(true)
-          
+          const battery = await navigator.getBattery();
+          setIsSupported(true);
+
           const updateBatteryInfo = () => {
-            setBatteryLevel(battery.level)
-            setIsCharging(battery.charging)
-          }
-          
-          updateBatteryInfo()
-          
-          battery.addEventListener('levelchange', updateBatteryInfo)
-          battery.addEventListener('chargingchange', updateBatteryInfo)
-          
+            setBatteryLevel(battery.level);
+            setIsCharging(battery.charging);
+          };
+
+          updateBatteryInfo();
+
+          battery.addEventListener('levelchange', updateBatteryInfo);
+          battery.addEventListener('chargingchange', updateBatteryInfo);
+
           return () => {
-            battery.removeEventListener('levelchange', updateBatteryInfo)
-            battery.removeEventListener('chargingchange', updateBatteryInfo)
-          }
+            battery.removeEventListener('levelchange', updateBatteryInfo);
+            battery.removeEventListener('chargingchange', updateBatteryInfo);
+          };
         }
-      } catch (error) {
-        console.warn('Battery API not supported:', error)
-      }
-    }
-    
-    getBatteryInfo()
-  }, [])
-  
+      } catch (error) {}
+    };
+
+    getBatteryInfo();
+  }, []);
+
   return {
     batteryLevel,
     isCharging,
     isSupported,
-    isLowBattery: batteryLevel !== null && batteryLevel < 0.2
-  }
-}
+    isLowBattery: batteryLevel !== null && batteryLevel < 0.2,
+  };
+};
 
 // PWA Install Prompt Component
 interface PWAInstallPromptProps {
-  className?: string
+  className?: string;
 }
 
 export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ className }) => {
-  const { isInstallable, isInstalled, installApp } = usePWAInstall()
-  const [isInstalling, setIsInstalling] = useState(false)
-  
+  const { isInstallable, isInstalled, installApp } = usePWAInstall();
+  const [isInstalling, setIsInstalling] = useState(false);
+
   const handleInstall = async () => {
-    setIsInstalling(true)
-    const success = await installApp()
-    setIsInstalling(false)
-    
+    setIsInstalling(true);
+    const success = await installApp();
+    setIsInstalling(false);
+
     if (success) {
       // Haptic feedback
       if ('vibrate' in navigator) {
-        navigator.vibrate([100, 50, 100])
+        navigator.vibrate([100, 50, 100]);
       }
     }
-  }
-  
+  };
+
   if (isInstalled) {
     return (
-      <Alert className={cn("border-green-200 bg-green-50", className)}>
+      <Alert className={cn('border-green-200 bg-green-50', className)}>
         <CheckCircle className="h-4 w-4 text-green-600" />
         <AlertDescription className="text-green-800">
           HASIVU app is installed! You can access it from your home screen.
         </AlertDescription>
       </Alert>
-    )
+    );
   }
-  
+
   if (!isInstallable) {
-    return null
+    return null;
   }
-  
+
   return (
-    <Card className={cn("p-4 border-blue-200 bg-blue-50", className)}>
+    <Card className={cn('p-4 border-blue-200 bg-blue-50', className)}>
       <div className="flex items-start space-x-3">
         <Smartphone className="h-6 w-6 text-blue-600 mt-1" />
         <div className="flex-1">
-          <h3 className="font-semibold text-blue-900 mb-1">
-            Install HASIVU App
-          </h3>
+          <h3 className="font-semibold text-blue-900 mb-1">Install HASIVU App</h3>
           <p className="text-sm text-blue-800 mb-3">
             Install the app for faster access, offline ordering, and push notifications.
           </p>
-          <Button 
+          <Button
             onClick={handleInstall}
             disabled={isInstalling}
             size="sm"
@@ -422,23 +409,25 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ className })
         </div>
       </div>
     </Card>
-  )
-}
+  );
+};
 
 // Network Status Indicator
 interface NetworkStatusProps {
-  className?: string
+  className?: string;
 }
 
 export const NetworkStatus: React.FC<NetworkStatusProps> = ({ className }) => {
-  const { isOnline, connectionType, effectiveType, isSlowConnection } = useNetworkStatus()
-  
+  const { isOnline, connectionType, effectiveType, isSlowConnection } = useNetworkStatus();
+
   return (
-    <div className={cn("flex items-center space-x-2 p-2 rounded-lg", className, {
-      "bg-green-50 text-green-800": isOnline && !isSlowConnection,
-      "bg-yellow-50 text-yellow-800": isOnline && isSlowConnection,
-      "bg-red-50 text-red-800": !isOnline
-    })}>
+    <div
+      className={cn('flex items-center space-x-2 p-2 rounded-lg', className, {
+        'bg-green-50 text-green-800': isOnline && !isSlowConnection,
+        'bg-yellow-50 text-yellow-800': isOnline && isSlowConnection,
+        'bg-red-50 text-red-800': !isOnline,
+      })}
+    >
       {isOnline ? (
         <>
           <Wifi className="h-4 w-4" />
@@ -458,62 +447,61 @@ export const NetworkStatus: React.FC<NetworkStatusProps> = ({ className }) => {
         </>
       )}
     </div>
-  )
-}
+  );
+};
 
 // Push Notifications Settings
 interface PushNotificationSettingsProps {
-  className?: string
+  className?: string;
 }
 
-export const PushNotificationSettings: React.FC<PushNotificationSettingsProps> = ({ className }) => {
-  const { 
-    isSupported, 
-    permission, 
-    subscription, 
-    requestPermission, 
-    subscribeToPush, 
-    unsubscribeFromPush 
-  } = usePushNotifications()
-  
-  const [isLoading, setIsLoading] = useState(false)
-  
+export const PushNotificationSettings: React.FC<PushNotificationSettingsProps> = ({
+  className,
+}) => {
+  const {
+    isSupported,
+    permission,
+    subscription,
+    requestPermission,
+    subscribeToPush,
+    unsubscribeFromPush,
+  } = usePushNotifications();
+
+  const [isLoading, setIsLoading] = useState(false);
+
   const handleToggleNotifications = async () => {
-    setIsLoading(true)
-    
+    setIsLoading(true);
+
     try {
       if (subscription) {
-        await unsubscribeFromPush()
+        await unsubscribeFromPush();
       } else {
         if (permission !== 'granted') {
-          const granted = await requestPermission()
+          const granted = await requestPermission();
           if (!granted) {
-            setIsLoading(false)
-            return
+            setIsLoading(false);
+            return;
           }
         }
-        await subscribeToPush()
+        await subscribeToPush();
       }
     } catch (error) {
-      console.error('Notification toggle failed:', error)
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
-  
+  };
+
   if (!isSupported) {
     return (
-      <Alert className={cn("", className)}>
+      <Alert className={cn('', className)}>
         <AlertCircle className="h-4 w-4" />
-        <AlertDescription>
-          Push notifications are not supported in this browser.
-        </AlertDescription>
+        <AlertDescription>Push notifications are not supported in this browser.</AlertDescription>
       </Alert>
-    )
+    );
   }
-  
+
   return (
-    <Card className={cn("p-4", className)}>
+    <Card className={cn('p-4', className)}>
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
           {subscription ? (
@@ -523,28 +511,26 @@ export const PushNotificationSettings: React.FC<PushNotificationSettingsProps> =
           )}
           <div>
             <h3 className="font-semibold">Push Notifications</h3>
-            <p className="text-sm text-gray-600">
-              {subscription ? 'Enabled' : 'Disabled'}
-            </p>
+            <p className="text-sm text-gray-600">{subscription ? 'Enabled' : 'Disabled'}</p>
           </div>
         </div>
-        
+
         <Button
           onClick={handleToggleNotifications}
           disabled={isLoading}
-          variant={subscription ? "destructive" : "default"}
+          variant={subscription ? 'destructive' : 'default'}
           size="sm"
         >
           {isLoading ? (
             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
           ) : subscription ? (
-            "Disable"
+            'Disable'
           ) : (
-            "Enable"
+            'Enable'
           )}
         </Button>
       </div>
-      
+
       {permission === 'denied' && (
         <Alert className="mt-3">
           <AlertCircle className="h-4 w-4" />
@@ -554,34 +540,34 @@ export const PushNotificationSettings: React.FC<PushNotificationSettingsProps> =
         </Alert>
       )}
     </Card>
-  )
-}
+  );
+};
 
 // Cache Management Component
 interface CacheManagementProps {
-  className?: string
+  className?: string;
 }
 
 export const CacheManagement: React.FC<CacheManagementProps> = ({ className }) => {
-  const { cacheSize, cacheStatus, isLoading, getCacheInfo, clearCache } = useCacheManagement()
-  const [isClearing, setIsClearing] = useState(false)
-  
+  const { cacheSize, cacheStatus, isLoading, getCacheInfo, clearCache } = useCacheManagement();
+  const [isClearing, setIsClearing] = useState(false);
+
   const handleClearCache = async () => {
-    setIsClearing(true)
-    await clearCache()
-    setIsClearing(false)
-  }
-  
+    setIsClearing(true);
+    await clearCache();
+    setIsClearing(false);
+  };
+
   const formatBytes = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes'
-    const k = 1024
-    const sizes = ['Bytes', 'KB', 'MB', 'GB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-  }
-  
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
   return (
-    <Card className={cn("p-4", className)}>
+    <Card className={cn('p-4', className)}>
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
@@ -593,36 +579,23 @@ export const CacheManagement: React.FC<CacheManagementProps> = ({ className }) =
               </p>
             </div>
           </div>
-          
+
           <div className="flex space-x-2">
-            <Button
-              onClick={getCacheInfo}
-              disabled={isLoading}
-              variant="outline"
-              size="sm"
-            >
-              {isLoading ? (
-                <Loader2 className="h-4 w-4" />
-              ) : (
-                <RefreshCw className="h-4 w-4" />
-              )}
+            <Button onClick={getCacheInfo} disabled={isLoading} variant="outline" size="sm">
+              {isLoading ? <Loader2 className="h-4 w-4" /> : <RefreshCw className="h-4 w-4" />}
             </Button>
-            
+
             <Button
               onClick={handleClearCache}
               disabled={isClearing}
               variant="destructive"
               size="sm"
             >
-              {isClearing ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                "Clear"
-              )}
+              {isClearing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : 'Clear'}
             </Button>
           </div>
         </div>
-        
+
         {cacheStatus && (
           <div className="grid grid-cols-2 gap-2 text-xs">
             {Object.entries(cacheStatus.caches).map(([name, count]) => (
@@ -635,64 +608,68 @@ export const CacheManagement: React.FC<CacheManagementProps> = ({ className }) =
         )}
       </div>
     </Card>
-  )
-}
+  );
+};
 
 // Battery Status Component
 interface BatteryStatusProps {
-  className?: string
+  className?: string;
 }
 
 export const BatteryStatus: React.FC<BatteryStatusProps> = ({ className }) => {
-  const { batteryLevel, isCharging, isSupported, isLowBattery } = useBatteryStatus()
-  
+  const { batteryLevel, isCharging, isSupported, isLowBattery } = useBatteryStatus();
+
   if (!isSupported) {
-    return null
+    return null;
   }
-  
+
   return (
-    <div className={cn("flex items-center space-x-2 p-2 rounded-lg", className, {
-      "bg-red-50 text-red-800": isLowBattery && !isCharging,
-      "bg-yellow-50 text-yellow-800": isLowBattery && isCharging,
-      "bg-green-50 text-green-800": !isLowBattery
-    })}>
-      <Battery className={cn("h-4 w-4", {
-        "text-red-600": isLowBattery && !isCharging,
-        "text-yellow-600": isCharging,
-        "text-green-600": !isLowBattery
-      })} />
-      
+    <div
+      className={cn('flex items-center space-x-2 p-2 rounded-lg', className, {
+        'bg-red-50 text-red-800': isLowBattery && !isCharging,
+        'bg-yellow-50 text-yellow-800': isLowBattery && isCharging,
+        'bg-green-50 text-green-800': !isLowBattery,
+      })}
+    >
+      <Battery
+        className={cn('h-4 w-4', {
+          'text-red-600': isLowBattery && !isCharging,
+          'text-yellow-600': isCharging,
+          'text-green-600': !isLowBattery,
+        })}
+      />
+
       <span className="text-sm font-medium">
         {batteryLevel !== null ? `${Math.round(batteryLevel * 100)}%` : 'Unknown'}
         {isCharging && ' (Charging)'}
       </span>
-      
+
       {isLowBattery && !isCharging && (
         <Badge variant="destructive" className="text-xs">
           Low Battery
         </Badge>
       )}
     </div>
-  )
-}
+  );
+};
 
 // PWA Status Dashboard
 interface PWAStatusDashboardProps {
-  className?: string
+  className?: string;
 }
 
 export const PWAStatusDashboard: React.FC<PWAStatusDashboardProps> = ({ className }) => {
   return (
-    <div className={cn("space-y-4", className)}>
+    <div className={cn('space-y-4', className)}>
       <PWAInstallPrompt />
-      
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <NetworkStatus />
         <BatteryStatus />
       </div>
-      
+
       <PushNotificationSettings />
       <CacheManagement />
     </div>
-  )
-}
+  );
+};

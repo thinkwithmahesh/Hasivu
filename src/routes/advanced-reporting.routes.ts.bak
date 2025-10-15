@@ -1,0 +1,811 @@
+/**
+ * HASIVU Epic 3 → Story 5: Advanced Reporting Routes
+ *
+ * API endpoints for the advanced reporting and insights platform:
+ * - Report template management
+ * - Report generation and scheduling
+ * - Export management and downloads
+ * - Real-time analytics dashboards
+ * - AI insights and recommendations
+ *
+ * Production-ready implementation with enterprise security
+ *
+ * @author HASIVU Development Team
+ * @version 1.0.0
+ * @since 2024-09-18
+ */
+
+import { Router } from 'express';
+import { body, param, query, validationResult } from 'express-validator';
+import { Request, Response, NextFunction, RequestHandler } from 'express';
+import { AdvancedReportingService } from '../services/advanced-reporting.service';
+import { AIInsightsEngine } from '../services/ai-insights.service';
+import { authMiddleware, AuthenticatedRequest } from '../middleware/auth.middleware';
+import { requestLogger, LoggedRequest } from '../middleware/logging.middleware';
+import { generalRateLimit, authRateLimit } from '../middleware/rateLimiter.middleware';
+import { structuredLogger } from '../services/structured-logging.service';
+import { ApiResponse } from '../types/api.types';
+import * as fs from 'fs';
+import * as path from 'path';
+
+const router = Router();
+
+// Validation error handler
+const handleValidationErrors = (req: any, res: Response, next: NextFunction): void => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    res.status(400).json({
+      success: false,
+      message: 'Validation errors',
+      errors: errors.array(),
+      data: null
+    } as unknown as ApiResponse<any>);
+    return;
+  }
+  next();
+};
+
+// Advanced reporting access control middleware
+const requireReportingAccess = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+  if (!['admin', 'super_admin', 'school_admin', 'analyst'].includes(req.user!.role)) {
+    res.status(403).json({
+      success: false,
+      message: 'Insufficient permissions for advanced reporting access',
+      errors: [],
+      data: null
+    } as unknown as ApiResponse<any>);
+    return;
+  }
+  next();
+};
+
+// Apply middleware
+router.use(requestLogger as any);
+router.use(generalRateLimit);
+router.use(authMiddleware as any);
+router.use(requireReportingAccess as any);
+
+/**
+ * POST /api/v1/reporting/templates
+ * Create a new report template
+ */
+router.post('/templates',
+  [
+    body('name')
+      .isLength({ min: 1, max: 255 })
+      .withMessage('Template name is required and must be under 255 characters'),
+    body('description')
+      .optional()
+      .isLength({ max: 1000 })
+      .withMessage('Description must be under 1000 characters'),
+    body('category')
+      .isIn(['executive', 'operational', 'financial', 'academic', 'custom'])
+      .withMessage('Invalid template category'),
+    body('layout')
+      .isObject()
+      .withMessage('Layout configuration is required'),
+    body('layout.sections')
+      .isArray({ min: 1 })
+      .withMessage('At least one section is required'),
+    body('dataRequirements')
+      .isArray()
+      .withMessage('Data requirements must be an array'),
+    body('parameters')
+      .optional()
+      .isArray()
+      .withMessage('Parameters must be an array'),
+    body('scheduleOptions')
+      .optional()
+      .isObject()
+      .withMessage('Schedule options must be an object'),
+    body('exportFormats')
+      .isArray({ min: 1 })
+      .withMessage('At least one export format is required')
+  ],
+  handleValidationErrors as any,
+  (async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const templateData = req.body;
+
+      // Add tenant context for school admins
+      if (req.user!.role === 'school_admin') {
+        templateData.tenantId = req.user!.schoolId || req.user!.tenantId;
+      }
+
+      const reportingService = req.app.get('advancedReportingService') as AdvancedReportingService;
+      const template = await reportingService.createReportTemplate(templateData, req.user!.id);
+
+      structuredLogger.business({
+        event: 'report_template_created',
+        category: 'reporting',
+        metadata: {
+          templateId: template.id,
+          templateName: template.name,
+          category: template.category,
+          userId: req.user!.id
+        },
+        context: { sessionId: req.sessionId || 'unknown', timestamp: new Date() }
+      });
+
+      res.status(201).json({
+        success: true,
+        message: 'Report template created successfully',
+        errors: [],
+        data: template
+      } as unknown as ApiResponse<any>);
+    } catch (error: unknown) {
+      next(error);
+    }
+  }) as any
+);
+
+/**
+ * GET /api/v1/reporting/templates
+ * List available report templates
+ */
+router.get('/templates',
+  [
+    query('category')
+      .optional()
+      .isIn(['executive', 'operational', 'financial', 'academic', 'custom'])
+      .withMessage('Invalid category filter'),
+    query('page')
+      .optional()
+      .isInt({ min: 1 })
+      .toInt()
+      .withMessage('Page must be a positive integer'),
+    query('limit')
+      .optional()
+      .isInt({ min: 1, max: 100 })
+      .toInt()
+      .withMessage('Limit must be between 1 and 100')
+  ],
+  handleValidationErrors as any,
+  (async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { category, page = 1, limit = 20 } = req.query;
+      const tenantId = req.user!.role === 'school_admin' ?
+        (req.user!.schoolId || req.user!.tenantId) : undefined;
+
+      const reportingService = req.app.get('advancedReportingService') as AdvancedReportingService;
+      const templates = await reportingService.getReportTemplates({
+        category: category as string,
+        tenantId,
+        page: page as number,
+        limit: limit as number
+      });
+
+      res.json({
+        success: true,
+        message: 'Report templates retrieved successfully',
+        errors: [],
+        data: templates
+      } as unknown as ApiResponse<any>);
+    } catch (error: unknown) {
+      next(error);
+    }
+  }) as any
+);
+
+/**
+ * POST /api/v1/reporting/generate
+ * Generate a new report
+ */
+router.post('/generate',
+  authRateLimit, // Stricter rate limiting for resource-intensive operations
+  [
+    body('templateId')
+      .isUUID()
+      .withMessage('Template ID must be a valid UUID'),
+    body('parameters')
+      .optional()
+      .isObject()
+      .withMessage('Parameters must be an object'),
+    body('dateRange')
+      .optional()
+      .isObject()
+      .withMessage('Date range must be an object'),
+    body('dateRange.start')
+      .optional()
+      .isISO8601()
+      .toDate()
+      .withMessage('Start date must be a valid ISO 8601 date'),
+    body('dateRange.end')
+      .optional()
+      .isISO8601()
+      .toDate()
+      .withMessage('End date must be a valid ISO 8601 date'),
+    body('options')
+      .optional()
+      .isObject()
+      .withMessage('Options must be an object'),
+    body('options.includeInsights')
+      .optional()
+      .isBoolean()
+      .withMessage('Include insights must be a boolean'),
+    body('options.exportFormats')
+      .optional()
+      .isArray()
+      .withMessage('Export formats must be an array'),
+    body('options.priority')
+      .optional()
+      .isIn(['low', 'normal', 'high'])
+      .withMessage('Priority must be low, normal, or high')
+  ],
+  handleValidationErrors as any,
+  (async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { templateId, parameters = {}, dateRange, options = {} } = req.body;
+      const tenantId = req.user!.schoolId || req.user!.tenantId || 'default';
+
+      // Apply default date range if not provided
+      if (dateRange) {
+        parameters.dateRange = dateRange;
+      }
+
+      const reportingService = req.app.get('advancedReportingService') as AdvancedReportingService;
+      const report = await reportingService.generateReport(
+        templateId,
+        parameters,
+        req.user!.id,
+        tenantId,
+        options
+      );
+
+      structuredLogger.business({
+        event: 'report_generated',
+        category: 'reporting',
+        metadata: {
+          reportId: report.id,
+          templateId,
+          executionTime: report.executionTime,
+          sectionsGenerated: Object.keys(report.data.sections).length,
+          insightsGenerated: report.insights.length,
+          userId: req.user!.id,
+          tenantId
+        },
+        context: { sessionId: req.sessionId || 'unknown', timestamp: new Date() }
+      });
+
+      res.status(201).json({
+        success: true,
+        message: 'Report generated successfully',
+        errors: [],
+        data: {
+          reportId: report.id,
+          status: report.status,
+          executionTime: report.executionTime,
+          exports: report.exports.map(exp => ({
+            id: exp.id,
+            format: exp.format,
+            size: exp.size,
+            downloadUrl: `/api/v1/reporting/reports/${report.id}/download/${exp.id}`
+          }))
+        }
+      } as unknown as ApiResponse<any>);
+    } catch (error: unknown) {
+      next(error);
+    }
+  }) as any
+);
+
+/**
+ * GET /api/v1/reporting/reports/:reportId
+ * Get report details and status
+ */
+router.get('/reports/:reportId',
+  [
+    param('reportId')
+      .isUUID()
+      .withMessage('Report ID must be a valid UUID')
+  ],
+  handleValidationErrors as any,
+  (async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { reportId } = req.params;
+
+      const reportingService = req.app.get('advancedReportingService') as AdvancedReportingService;
+      const report = await reportingService.getReport(reportId, req.user!.id);
+
+      // Check access permissions
+      const tenantId = req.user!.schoolId || req.user!.tenantId || 'default';
+      if (!report) {
+        res.status(404).json({
+          success: false,
+          message: 'Report not found',
+          errors: [],
+          data: null
+        } as unknown as ApiResponse<any>);
+        return;
+      }
+
+      if (req.user!.role === 'school_admin' && report.tenantId !== tenantId) {
+        res.status(403).json({
+          success: false,
+          message: 'Access denied to this report',
+          errors: [],
+          data: null
+        } as unknown as ApiResponse<any>);
+        return;
+      }
+
+      res.json({
+        success: true,
+        message: 'Report retrieved successfully',
+        errors: [],
+        data: report
+      } as unknown as ApiResponse<any>);
+    } catch (error: unknown) {
+      next(error);
+    }
+  }) as any
+);
+
+/**
+ * GET /api/v1/reporting/reports/:reportId/status
+ * Get report generation status and progress
+ */
+router.get('/reports/:reportId/status',
+  [
+    param('reportId')
+      .isUUID()
+      .withMessage('Report ID must be a valid UUID')
+  ],
+  handleValidationErrors as any,
+  (async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { reportId } = req.params;
+
+      const reportingService = req.app.get('advancedReportingService') as AdvancedReportingService;
+      const status = await reportingService.getReportStatus(reportId);
+
+      res.json({
+        success: true,
+        message: 'Report status retrieved successfully',
+        errors: [],
+        data: status
+      } as unknown as ApiResponse<any>);
+    } catch (error: unknown) {
+      next(error);
+    }
+  }) as any
+);
+
+/**
+ * GET /api/v1/reporting/reports/:reportId/download/:exportId
+ * Download a report export
+ */
+router.get('/reports/:reportId/download/:exportId',
+  [
+    param('reportId')
+      .isUUID()
+      .withMessage('Report ID must be a valid UUID'),
+    param('exportId')
+      .isUUID()
+      .withMessage('Export ID must be a valid UUID')
+  ],
+  handleValidationErrors as any,
+  (async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { reportId, exportId } = req.params;
+
+      const reportingService = req.app.get('advancedReportingService') as AdvancedReportingService;
+      const exportInfo = await reportingService.getReportExport(reportId, exportId, req.user!.id);
+
+      if (!exportInfo) {
+        res.status(404).json({
+          success: false,
+          message: 'Export not found',
+          errors: [],
+          data: null
+        } as unknown as ApiResponse<any>);
+        return;
+      }
+
+      // Check file exists
+      if (!fs.existsSync(exportInfo.path)) {
+        res.status(404).json({
+          success: false,
+          message: 'Export file not found',
+          errors: [],
+          data: null
+        } as unknown as ApiResponse<any>);
+        return;
+      }
+
+      // Set appropriate headers
+      const filename = path.basename(exportInfo.path);
+      const mimeTypes = {
+        'pdf': 'application/pdf',
+        'excel': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'csv': 'text/csv',
+        'json': 'application/json',
+        'html': 'text/html'
+      };
+
+      res.setHeader('Content-Type', mimeTypes[exportInfo.format as keyof typeof mimeTypes] || 'application/octet-stream');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Length', exportInfo.size);
+
+      // Stream file to response
+      const fileStream = fs.createReadStream(exportInfo.path);
+      fileStream.pipe(res);
+
+      // Update download count
+      await reportingService.incrementDownloadCount(exportId);
+
+      structuredLogger.business({
+        event: 'report_downloaded',
+        category: 'reporting',
+        metadata: {
+          reportId,
+          exportId,
+          format: exportInfo.format,
+          size: exportInfo.size,
+          userId: req.user!.id
+        },
+        context: { sessionId: req.sessionId || 'unknown', timestamp: new Date() }
+      });
+
+    } catch (error: unknown) {
+      next(error);
+    }
+  }) as any
+);
+
+/**
+ * POST /api/v1/reporting/schedule
+ * Schedule automated report generation
+ */
+router.post('/schedule',
+  [
+    body('templateId')
+      .isUUID()
+      .withMessage('Template ID must be a valid UUID'),
+    body('schedule')
+      .isObject()
+      .withMessage('Schedule configuration is required'),
+    body('schedule.frequency')
+      .isIn(['hourly', 'daily', 'weekly', 'monthly', 'quarterly', 'yearly', 'custom'])
+      .withMessage('Invalid schedule frequency'),
+    body('schedule.timezone')
+      .isLength({ min: 1 })
+      .withMessage('Timezone is required'),
+    body('schedule.recipients')
+      .isArray({ min: 1 })
+      .withMessage('At least one recipient is required'),
+    body('parameters')
+      .optional()
+      .isObject()
+      .withMessage('Parameters must be an object')
+  ],
+  handleValidationErrors as any,
+  (async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { templateId, schedule, parameters = {} } = req.body;
+      const tenantId = req.user!.schoolId || req.user!.tenantId || 'default';
+
+      const reportingService = req.app.get('advancedReportingService') as AdvancedReportingService;
+      const scheduleId = await reportingService.scheduleReport(
+        templateId,
+        schedule,
+        req.user!.id,
+        tenantId
+      );
+
+      structuredLogger.business({
+        event: 'report_scheduled',
+        category: 'reporting',
+        metadata: {
+          scheduleId,
+          templateId,
+          frequency: schedule.frequency,
+          userId: req.user!.id,
+          tenantId
+        },
+        context: { sessionId: req.sessionId || 'unknown', timestamp: new Date() }
+      });
+
+      res.status(201).json({
+        success: true,
+        message: 'Report scheduled successfully',
+        errors: [],
+        data: { scheduleId }
+      } as unknown as ApiResponse<any>);
+    } catch (error: unknown) {
+      next(error);
+    }
+  }) as any
+);
+
+/**
+ * GET /api/v1/reporting/dashboard
+ * Get advanced analytics dashboard data
+ */
+router.get('/dashboard',
+  [
+    query('startDate')
+      .optional()
+      .isISO8601()
+      .withMessage('Start date must be a valid ISO 8601 date'),
+    query('endDate')
+      .optional()
+      .isISO8601()
+      .withMessage('End date must be a valid ISO 8601 date'),
+    query('filters')
+      .optional()
+      .isJSON()
+      .withMessage('Filters must be valid JSON')
+  ],
+  handleValidationErrors as any,
+  (async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { startDate, endDate, filters } = req.query;
+      const tenantId = req.user!.schoolId || req.user!.tenantId || 'default';
+
+      const dateRange = {
+        start: startDate ? new Date(startDate as string) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+        end: endDate ? new Date(endDate as string) : new Date()
+      };
+
+      const parsedFilters = filters ? JSON.parse(filters as string) : {};
+
+      const reportingService = req.app.get('advancedReportingService') as AdvancedReportingService;
+      const dashboard = await reportingService.getAnalyticsDashboard(
+        tenantId,
+        dateRange,
+        parsedFilters
+      );
+
+      res.json({
+        success: true,
+        message: 'Analytics dashboard retrieved successfully',
+        errors: [],
+        data: dashboard
+      } as unknown as ApiResponse<any>);
+    } catch (error: unknown) {
+      next(error);
+    }
+  }) as any
+);
+
+/**
+ * POST /api/v1/reporting/insights/analyze
+ * Generate AI insights for custom data
+ */
+router.post('/insights/analyze',
+  authRateLimit, // AI operations are resource-intensive
+  [
+    body('data')
+      .isObject()
+      .withMessage('Data is required'),
+    body('analysisType')
+      .isIn(['trends', 'anomalies', 'predictions', 'correlations', 'recommendations'])
+      .withMessage('Invalid analysis type'),
+    body('config')
+      .optional()
+      .isObject()
+      .withMessage('Configuration must be an object'),
+    body('dateRange')
+      .optional()
+      .isObject()
+      .withMessage('Date range must be an object')
+  ],
+  handleValidationErrors as any,
+  (async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { data, analysisType, config = {}, dateRange } = req.body;
+
+      const aiInsights = req.app.get('aiInsightsEngine') as AIInsightsEngine;
+      let insights: any[] = [];
+
+      switch (analysisType) {
+        case 'trends':
+          insights = await aiInsights.analyzeTrends(data, dateRange || {
+            start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+            end: new Date()
+          }, config);
+          break;
+
+        case 'anomalies':
+          insights = await aiInsights.detectAnomalies(data, {
+            sensitivity: 0.8,
+            algorithm: 'isolation_forest',
+            ...config
+          });
+          break;
+
+        case 'predictions':
+          insights = await aiInsights.generatePredictions(data, {
+            horizon: '30d',
+            confidence: 0.85,
+            ...config
+          });
+          break;
+
+        case 'correlations':
+          insights = await aiInsights.findCorrelations(data, {
+            threshold: 0.7,
+            method: 'pearson',
+            ...config
+          });
+          break;
+
+        case 'recommendations':
+          insights = await aiInsights.generateRecommendations(data, {}, {
+            context: 'general',
+            priority: 'business_impact',
+            ...config
+          });
+          break;
+      }
+
+      structuredLogger.business({
+        event: 'ai_insights_generated',
+        category: 'reporting',
+        metadata: {
+          analysisType,
+          insightsCount: insights.length,
+          highPriorityInsights: insights.filter((i: any) => i.priority === 'high' || i.priority === 'critical').length,
+          userId: req.user!.id
+        },
+        context: { sessionId: req.sessionId || 'unknown', timestamp: new Date() }
+      });
+
+      res.json({
+        success: true,
+        message: 'AI insights generated successfully',
+        errors: [],
+        data: { insights, analysisType, count: insights.length }
+      } as unknown as ApiResponse<any>);
+    } catch (error: unknown) {
+      next(error);
+    }
+  }) as any
+);
+
+/**
+ * GET /api/v1/reporting/insights/:insightId/explanation
+ * Get natural language explanation for an insight
+ */
+router.get('/insights/:insightId/explanation',
+  [
+    param('insightId')
+      .isUUID()
+      .withMessage('Insight ID must be a valid UUID')
+  ],
+  handleValidationErrors as any,
+  (async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { insightId } = req.params;
+
+      const reportingService = req.app.get('advancedReportingService') as AdvancedReportingService;
+      const aiInsights = req.app.get('aiInsightsEngine') as AIInsightsEngine;
+
+      const insight = await reportingService.getInsight(insightId);
+      const explanation = await aiInsights.generateNaturalLanguageExplanation(
+        insight as any, // Type casting to resolve VisualizationConfig incompatibility
+        { userId: req.user!.id, timestamp: new Date() }
+      );
+
+      res.json({
+        success: true,
+        message: 'Insight explanation generated successfully',
+        errors: [],
+        data: explanation
+      } as unknown as ApiResponse<any>);
+    } catch (error: unknown) {
+      next(error);
+    }
+  }) as any
+);
+
+/**
+ * GET /api/v1/reporting/exports/formats
+ * Get available export formats and their capabilities
+ */
+router.get('/exports/formats',
+  (async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const formats = [
+        {
+          type: 'pdf',
+          name: 'PDF Document',
+          description: 'Portable document format suitable for sharing and printing',
+          mimeType: 'application/pdf',
+          features: ['charts', 'tables', 'formatting', 'branding'],
+          maxFileSize: '50MB'
+        },
+        {
+          type: 'excel',
+          name: 'Excel Workbook',
+          description: 'Microsoft Excel format with multiple sheets and formulas',
+          mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          features: ['multiple_sheets', 'formulas', 'charts', 'pivot_tables'],
+          maxFileSize: '100MB'
+        },
+        {
+          type: 'csv',
+          name: 'CSV File',
+          description: 'Comma-separated values for data analysis tools',
+          mimeType: 'text/csv',
+          features: ['tabular_data', 'lightweight', 'universal_compatibility'],
+          maxFileSize: '500MB'
+        },
+        {
+          type: 'json',
+          name: 'JSON Data',
+          description: 'JavaScript Object Notation for API consumption',
+          mimeType: 'application/json',
+          features: ['structured_data', 'api_friendly', 'metadata_included'],
+          maxFileSize: '200MB'
+        },
+        {
+          type: 'powerbi',
+          name: 'Power BI Dataset',
+          description: 'Microsoft Power BI compatible dataset',
+          mimeType: 'application/json',
+          features: ['business_intelligence', 'interactive_dashboards', 'real_time_updates'],
+          maxFileSize: '1GB'
+        },
+        {
+          type: 'tableau',
+          name: 'Tableau Extract',
+          description: 'Tableau compatible data extract',
+          mimeType: 'application/json',
+          features: ['advanced_analytics', 'data_blending', 'visual_analytics'],
+          maxFileSize: '1GB'
+        },
+        {
+          type: 'html',
+          name: 'HTML Report',
+          description: 'Interactive web-based report',
+          mimeType: 'text/html',
+          features: ['interactive_charts', 'responsive_design', 'web_sharing'],
+          maxFileSize: '25MB'
+        }
+      ];
+
+      res.json({
+        success: true,
+        message: 'Export formats retrieved successfully',
+        errors: [],
+        data: { formats, count: formats.length }
+      } as unknown as ApiResponse<any>);
+    } catch (error: unknown) {
+      next(error);
+    }
+  }) as any
+);
+
+/**
+ * GET /api/v1/reporting/health
+ * Get reporting service health status
+ */
+router.get('/health',
+  (async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const reportingService = req.app.get('advancedReportingService') as AdvancedReportingService;
+      const aiInsights = req.app.get('aiInsightsEngine') as AIInsightsEngine;
+
+      const health = {
+        reportingService: await reportingService.getHealthStatus(),
+        aiInsights: await aiInsights.getHealthStatus(),
+        timestamp: new Date()
+      };
+
+      const overallHealth = health.reportingService.status === 'healthy' && health.aiInsights.status === 'healthy';
+
+      res.status(overallHealth ? 200 : 503).json({
+        success: overallHealth,
+        message: overallHealth ? 'Reporting services healthy' : 'Some reporting services unhealthy',
+        errors: [],
+        data: health
+      } as unknown as ApiResponse<any>);
+    } catch (error: unknown) {
+      next(error);
+    }
+  }) as any
+);
+
+export { router as advancedReportingRoutes };

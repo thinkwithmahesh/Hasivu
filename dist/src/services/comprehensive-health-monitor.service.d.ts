@@ -71,7 +71,7 @@ export declare class ComprehensiveHealthMonitorService {
     startContinuousMonitoring(intervalMs?: number): void;
     stopContinuousMonitoring(): void;
     getLastHealthCheck(): SystemHealthReport | null;
-    getCircuitBreakerStatus(serviceName: string): import("./circuit-breaker.service").CircuitBreakerStats;
+    getCircuitBreakerStatus(serviceName: string): import("./circuit-breaker.service").CircuitBreakerStats | null;
     forceCircuitBreakerState(serviceName: string, state: 'open' | 'closed' | 'half_open'): void;
     getSystemMetrics(): Promise<HealthMetrics | null>;
     private parseRedisInfo;

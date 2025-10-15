@@ -29,7 +29,7 @@ const uiSlice = createSlice({
     setLanguage: (state, action: PayloadAction<Language>) => {
       state.language = action.payload;
     },
-    toggleSidebar: (state) => {
+    toggleSidebar: state => {
       state.sidebarOpen = !state.sidebarOpen;
     },
     setLoading: (state, action: PayloadAction<boolean>) => {
@@ -41,12 +41,6 @@ const uiSlice = createSlice({
   },
 });
 
-export const {
-  setTheme,
-  setLanguage,
-  toggleSidebar,
-  setLoading,
-  setError,
-} = uiSlice.actions;
+export const { setTheme, setLanguage, toggleSidebar, setLoading, setError } = uiSlice.actions;
 
 export default uiSlice.reducer;

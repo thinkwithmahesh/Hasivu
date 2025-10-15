@@ -819,7 +819,7 @@ export const createMockAPIGatewayEvent = (
   headers?: Record<string, string>
 ) => ({
   httpMethod: method,
-  path: path,
+  path,
   body: body ? JSON.stringify(body) : null,
   pathParameters: pathParameters || {},
   headers: {
@@ -836,7 +836,7 @@ export const createMockAPIGatewayEvent = (
       sourceIp: '127.0.0.1'
     },
     httpMethod: method,
-    path: path,
+    path,
     stage: 'test',
     requestTime: '01/Jan/2024:00:00:00 +0000',
     requestTimeEpoch: 1704067200

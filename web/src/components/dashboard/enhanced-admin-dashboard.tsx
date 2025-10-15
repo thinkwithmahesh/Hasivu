@@ -385,7 +385,6 @@ export const EnhancedAdminDashboard: React.FC<EnhancedAdminDashboardProps> = ({
   };
 
   const handleAddToCart = (meal: MealItem, customizations: any) => {
-    console.log('Added to cart:', meal.name, customizations);
     // Implementation for adding to cart
   };
 

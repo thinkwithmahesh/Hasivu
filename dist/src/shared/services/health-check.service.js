@@ -26,6 +26,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.healthCheckService = exports.HealthCheckService = exports.HealthCheckServiceError = void 0;
 const logger_1 = require("@/utils/logger");
 const environment_1 = require("@/config/environment");
+const os = __importStar(require("os"));
 class HealthCheckServiceError extends Error {
     code;
     service;
@@ -126,7 +127,7 @@ class HealthCheckService {
         catch (error) {
             const duration = Date.now() - startTime;
             logger_1.logger.error('Health check failed', {
-                error: error.message,
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
                 duration: `${duration}ms`,
                 stack: error.stack
             });
@@ -140,7 +141,7 @@ class HealthCheckService {
                 metrics: this.getEmptyMetrics(),
                 alerts: [{
                         level: 'critical',
-                        message: `Health check failed: ${error.message}`,
+                        message: `Health check failed: ${error instanceof Error ? error.message : String(error)}`,
                         timestamp: Date.now()
                     }],
                 summary: { healthy: 0, degraded: 0, unhealthy: 0, total: 0 },
@@ -152,8 +153,7 @@ class HealthCheckService {
         try {
             const memUsage = process.memoryUsage();
             const cpuUsage = process.cpuUsage();
-            const loadAvg = require('os').loadavg();
-            const os = require('os');
+            const loadAvg = os.loadavg();
             const cpuPercent = Math.min(100, Math.round((cpuUsage.user + cpuUsage.system) / 1000000 * 100 / os.cpus().length));
             const totalSystemMemory = os.totalmem();
             const freeSystemMemory = os.freemem();
@@ -193,7 +193,7 @@ class HealthCheckService {
         }
         catch (error) {
             logger_1.logger.error('Failed to collect system metrics', {
-                error: error.message
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
             });
             return this.getEmptyMetrics();
         }
@@ -257,7 +257,7 @@ class HealthCheckService {
         }
         if (metrics.cpu.loadAverage && metrics.cpu.loadAverage.length > 0) {
             const loadAvg1min = metrics.cpu.loadAverage[0];
-            const cpuCount = require('os').cpus().length;
+            const cpuCount = os.cpus().length;
             const loadPerCpu = loadAvg1min / cpuCount;
             if (loadPerCpu >= 2.0) {
                 alerts.push({
@@ -354,10 +354,10 @@ class HealthCheckService {
                 responseTime,
                 lastCheck: Date.now(),
                 details: {
-                    error: error.message,
+                    error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
                     connectionFailure: true
                 },
-                error: `Database health check failed: ${error.message}`
+                error: `Database health check failed: ${error instanceof Error ? error.message : String(error)}`
             };
         }
     }
@@ -366,7 +366,7 @@ class HealthCheckService {
         try {
             const RedisService = null;
             const redisService = RedisService;
-            if (typeof redisService.healthCheck === 'function') {
+            if (redisService && typeof redisService.healthCheck === 'function') {
                 const healthResult = await redisService.healthCheck();
                 const responseTime = Date.now() - startTime;
                 return {
@@ -378,7 +378,7 @@ class HealthCheckService {
                     details: healthResult
                 };
             }
-            else {
+            else if (redisService) {
                 await redisService.ping();
                 const responseTime = Date.now() - startTime;
                 return {
@@ -392,6 +392,18 @@ class HealthCheckService {
                     }
                 };
             }
+            else {
+                return {
+                    name: 'redis',
+                    status: 'unhealthy',
+                    responseTime: Date.now() - startTime,
+                    lastCheck: Date.now(),
+                    details: {
+                        error: 'Redis service not available',
+                        notConfigured: true
+                    }
+                };
+            }
         }
         catch (error) {
             const responseTime = Date.now() - startTime;
@@ -401,10 +413,10 @@ class HealthCheckService {
                 responseTime,
                 lastCheck: Date.now(),
                 details: {
-                    error: error.message,
+                    error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
                     connectionFailure: true
                 },
-                error: `Redis health check failed: ${error.message}`
+                error: `Redis health check failed: ${error instanceof Error ? error.message : String(error)}`
             };
         }
     }
@@ -447,10 +459,10 @@ class HealthCheckService {
                 responseTime,
                 lastCheck: Date.now(),
                 details: {
-                    error: error.message,
+                    error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
                     serviceFailure: true
                 },
-                error: `Email service health check failed: ${error.message}`
+                error: `Email service health check failed: ${error instanceof Error ? error.message : String(error)}`
             };
         }
     }
@@ -493,10 +505,10 @@ class HealthCheckService {
                 responseTime,
                 lastCheck: Date.now(),
                 details: {
-                    error: error.message,
+                    error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
                     serviceFailure: true
                 },
-                error: `Payment service health check failed: ${error.message}`
+                error: `Payment service health check failed: ${error instanceof Error ? error.message : String(error)}`
             };
         }
     }

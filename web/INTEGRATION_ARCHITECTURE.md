@@ -5,9 +5,10 @@
 This document outlines the comprehensive integration strategy for connecting ShadCN UI components with the HASIVU backend services running on localhost:3000.
 
 ### Backend Services Available
+
 - **API Server**: Express.js with TypeScript (localhost:3000)
 - **Socket.IO**: Real-time WebSocket server
-- **Database**: PostgreSQL with Prisma ORM  
+- **Database**: PostgreSQL with Prisma ORM
 - **Redis**: Session and caching layer
 - **Authentication**: JWT-based with refresh tokens
 - **Payment Gateway**: Razorpay integration
@@ -33,7 +34,9 @@ interface ApiConfig {
 }
 
 const config: ApiConfig = {
-  baseURL: process.env.NEXT_PUBLIC_API_URL || process.env.WEB_INTEGRATION_ARCHITECTURE_PASSWORD_1,
+  baseURL:
+    process.env.NEXT_PUBLIC_API_URL ||
+    process.env.WEB_INTEGRATION_ARCHITECTURE_PASSWORD_1,
   timeout: 30000,
   retries: 3,
   retryDelay: 1000,
@@ -60,27 +63,27 @@ class EnhancedApiClient {
   private setupInterceptors() {
     // Request interceptor
     this.client.interceptors.request.use(
-      async (config) => {
+      async config => {
         const token = this.getStoredToken();
         if (token && !config.headers.Authorization) {
           config.headers.Authorization = `Bearer ${token}`;
         }
         return config;
       },
-      (error) => Promise.reject(error)
+      error => Promise.reject(error)
     );
 
     // Response interceptor with automatic token refresh
     this.client.interceptors.response.use(
-      (response) => response,
-      async (error) => {
+      response => response,
+      async error => {
         const originalRequest = error.config;
 
         if (error.response?.status === 401 && !originalRequest._retry) {
           if (this.refreshing) {
             return new Promise((resolve, reject) => {
               this.failedQueue.push({ resolve, reject });
-            }).then((token) => {
+            }).then(token => {
               originalRequest.headers.Authorization = `Bearer ${token}`;
               return this.client(originalRequest);
             });
@@ -114,7 +117,7 @@ class EnhancedApiClient {
       {},
       { withCredentials: true }
     );
-    
+
     const newToken = response.data.accessToken;
     this.setStoredToken(newToken);
     return newToken;
@@ -128,7 +131,7 @@ class EnhancedApiClient {
         resolve(token!);
       }
     });
-    
+
     this.failedQueue = [];
   }
 
@@ -160,11 +163,11 @@ export const apiClient = new EnhancedApiClient();
 export class AuthService {
   static async login(credentials: LoginCredentials): Promise<AuthResponse> {
     const response = await apiClient.post('/auth/login', credentials);
-    
+
     // Store tokens
     localStorage.setItem('accessToken', response.data.tokens.accessToken);
     localStorage.setItem('refreshToken', response.data.tokens.refreshToken);
-    
+
     return response.data;
   }
 
@@ -210,8 +213,12 @@ export class OrderService {
     return response.data;
   }
 
-  static async getOrderHistory(pagination?: PaginationParams): Promise<PaginatedOrders> {
-    const response = await apiClient.get('/orders/history', { params: pagination });
+  static async getOrderHistory(
+    pagination?: PaginationParams
+  ): Promise<PaginatedOrders> {
+    const response = await apiClient.get('/orders/history', {
+      params: pagination,
+    });
     return response.data;
   }
 
@@ -227,12 +234,16 @@ export class OrderService {
 
 // src/services/PaymentService.ts
 export class PaymentService {
-  static async initializePayment(orderData: PaymentRequest): Promise<RazorpayOrder> {
+  static async initializePayment(
+    orderData: PaymentRequest
+  ): Promise<RazorpayOrder> {
     const response = await apiClient.post('/payments/initialize', orderData);
     return response.data;
   }
 
-  static async verifyPayment(verificationData: PaymentVerification): Promise<PaymentResult> {
+  static async verifyPayment(
+    verificationData: PaymentVerification
+  ): Promise<PaymentResult> {
     const response = await apiClient.post('/payments/verify', verificationData);
     return response.data;
   }
@@ -257,19 +268,34 @@ import { toast } from 'react-hot-toast';
 
 interface SocketEvents {
   // Order events
-  order_status_update: (data: { orderId: string; status: string; timestamp: string }) => void;
+  order_status_update: (data: {
+    orderId: string;
+    status: string;
+    timestamp: string;
+  }) => void;
   order_created: (data: { orderId: string; userId: string }) => void;
-  
+
   // Payment events
-  payment_success: (data: { orderId: string; transactionId: string; amount: number }) => void;
+  payment_success: (data: {
+    orderId: string;
+    transactionId: string;
+    amount: number;
+  }) => void;
   payment_failed: (data: { orderId: string; error: string }) => void;
-  
+
   // Delivery events
   delivery_started: (data: { orderId: string; estimatedTime: string }) => void;
-  delivery_completed: (data: { orderId: string; rfidVerified: boolean }) => void;
-  
+  delivery_completed: (data: {
+    orderId: string;
+    rfidVerified: boolean;
+  }) => void;
+
   // Notifications
-  notification: (data: { type: string; message: string; title: string }) => void;
+  notification: (data: {
+    type: string;
+    message: string;
+    title: string;
+  }) => void;
 }
 
 class SocketClient {
@@ -281,12 +307,15 @@ class SocketClient {
   connect(token: string) {
     if (this.socket?.connected) return;
 
-    this.socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3000', {
-      auth: { token },
-      transports: ['websocket', 'polling'],
-      upgrade: true,
-      rememberUpgrade: true,
-    });
+    this.socket = io(
+      process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3000',
+      {
+        auth: { token },
+        transports: ['websocket', 'polling'],
+        upgrade: true,
+        rememberUpgrade: true,
+      }
+    );
 
     this.setupEventHandlers();
   }
@@ -300,14 +329,14 @@ class SocketClient {
       toast.success('Connected to real-time updates');
     });
 
-    this.socket.on('disconnect', (reason) => {
+    this.socket.on('disconnect', reason => {
       console.log('Socket disconnected:', reason);
       if (reason === 'io server disconnect') {
         this.socket?.connect();
       }
     });
 
-    this.socket.on('connect_error', (error) => {
+    this.socket.on('connect_error', error => {
       console.error('Socket connection error:', error);
       this.handleReconnection();
     });
@@ -325,7 +354,7 @@ class SocketClient {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
       const delay = Math.pow(2, this.reconnectAttempts) * 1000;
-      
+
       setTimeout(() => {
         console.log(`Reconnection attempt ${this.reconnectAttempts}`);
         this.socket?.connect();
@@ -342,9 +371,9 @@ class SocketClient {
     if (!this.eventListeners.has(event)) {
       this.eventListeners.set(event, new Set());
     }
-    
+
     this.eventListeners.get(event)!.add(callback);
-    
+
     // Return unsubscribe function
     return () => {
       const listeners = this.eventListeners.get(event);
@@ -474,7 +503,7 @@ function authReducer(state: AuthState, action: any): AuthState {
     case 'LOGIN_START':
     case 'REGISTER_START':
       return { ...state, isLoading: true, error: null };
-    
+
     case 'LOGIN_SUCCESS':
     case 'REGISTER_SUCCESS':
       return {
@@ -486,7 +515,7 @@ function authReducer(state: AuthState, action: any): AuthState {
         isLoading: false,
         error: null,
       };
-    
+
     case 'AUTH_ERROR':
       return {
         ...state,
@@ -494,15 +523,15 @@ function authReducer(state: AuthState, action: any): AuthState {
         isLoading: false,
         isAuthenticated: false,
       };
-    
+
     case 'LOGOUT':
       return {
         ...initialState,
       };
-    
+
     case 'CLEAR_ERROR':
       return { ...state, error: null };
-    
+
     default:
       return state;
   }
@@ -518,7 +547,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const response = await AuthService.login(credentials);
       dispatch({ type: 'LOGIN_SUCCESS', payload: response });
-      
+
       // Connect to socket after successful login
       socketClient.connect(response.tokens.accessToken);
     } catch (error) {
@@ -532,7 +561,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const response = await AuthService.register(userData);
       dispatch({ type: 'REGISTER_SUCCESS', payload: response });
-      
+
       socketClient.connect(response.tokens.accessToken);
     } catch (error) {
       dispatch({ type: 'AUTH_ERROR', payload: error.message });
@@ -553,13 +582,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshAuth = async () => {
     try {
       const profile = await AuthService.getProfile();
-      dispatch({ 
-        type: 'LOGIN_SUCCESS', 
-        payload: { 
-          user: profile, 
-          tokens: { 
+      dispatch({
+        type: 'LOGIN_SUCCESS',
+        payload: {
+          user: profile,
+          tokens: {
             accessToken: state.token,
-            refreshToken: state.refreshToken 
+            refreshToken: state.refreshToken
           }
         }
       });
@@ -576,7 +605,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
     const refreshToken = localStorage.getItem('refreshToken');
-    
+
     if (token && refreshToken) {
       dispatch({
         type: 'LOGIN_SUCCESS',
@@ -676,11 +705,11 @@ const orderSlice = createSlice({
         order.rfidVerified = rfidVerified;
       }
     },
-    clearError: (state) => {
+    clearError: state => {
       state.error = null;
     },
   },
-  extraReducers: (builder) => {
+  extraReducers: builder => {
     builder
       .addCase(fetchOrders.fulfilled, (state, action) => {
         state.orders = action.payload.orders;
@@ -698,7 +727,8 @@ const orderSlice = createSlice({
   },
 });
 
-export const { updateOrderStatus, markOrderDelivered, clearError } = orderSlice.actions;
+export const { updateOrderStatus, markOrderDelivered, clearError } =
+  orderSlice.actions;
 export default orderSlice.reducer;
 
 // src/store/slices/menuSlice.ts
@@ -776,7 +806,7 @@ export class ErrorBoundary extends Component<Props, State> {
               <p className="text-muted-foreground">
                 We encountered an unexpected error. Please try refreshing the page.
               </p>
-              <Button 
+              <Button
                 onClick={() => window.location.reload()}
                 className="w-full"
               >
@@ -797,15 +827,15 @@ export class ErrorBoundary extends Component<Props, State> {
 export function useErrorHandler() {
   const handleError = useCallback((error: any, context?: string) => {
     console.error(`Error in ${context}:`, error);
-    
+
     let message = 'An unexpected error occurred';
-    
+
     if (error.response?.data?.message) {
       message = error.response.data.message;
     } else if (error.message) {
       message = error.message;
     }
-    
+
     toast.error(message);
   }, []);
 
@@ -871,10 +901,10 @@ export function useOrders(params?: PaginationParams) {
 
 export function useCreateOrder() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: OrderService.createOrder,
-    onSuccess: (newOrder) => {
+    onSuccess: newOrder => {
       queryClient.invalidateQueries(['orders']);
       queryClient.setQueryData(['orders', newOrder.id], newOrder);
     },
@@ -887,7 +917,10 @@ export function useCreateOrder() {
 ```typescript
 // src/lib/cache.ts
 class CacheManager {
-  private cache = new Map<string, { data: any; timestamp: number; ttl: number }>();
+  private cache = new Map<
+    string,
+    { data: any; timestamp: number; ttl: number }
+  >();
 
   set(key: string, data: any, ttl = 5 * 60 * 1000) {
     this.cache.set(key, {
@@ -910,7 +943,7 @@ class CacheManager {
   }
 
   invalidate(pattern: string) {
-    const keys = Array.from(this.cache.keys()).filter(key => 
+    const keys = Array.from(this.cache.keys()).filter(key =>
       key.includes(pattern)
     );
     keys.forEach(key => this.cache.delete(key));
@@ -981,7 +1014,7 @@ export function LoginForm() {
           Sign in to your HASIVU account to order meals
         </CardDescription>
       </CardHeader>
-      
+
       <CardContent>
         {error && (
           <Alert variant="destructive" className="mb-4">
@@ -1093,7 +1126,7 @@ export function OrderTracker({ orderId }: { orderId: string }) {
   const { subscribe } = useSocket();
   useOrderUpdates(orderId);
 
-  const currentOrder = useAppSelector(state => 
+  const currentOrder = useAppSelector(state =>
     state.orders.orders.find(order => order.id === orderId)
   );
 
@@ -1243,7 +1276,7 @@ export function useResponsive() {
   useEffect(() => {
     const updateScreenSize = () => {
       const width = window.innerWidth;
-      
+
       if (width >= breakpoints['2xl']) setScreenSize('2xl');
       else if (width >= breakpoints.xl) setScreenSize('xl');
       else if (width >= breakpoints.lg) setScreenSize('lg');
@@ -1287,7 +1320,9 @@ export class CSRFManager {
   }
 
   static async attachToRequest(config: any) {
-    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(config.method?.toUpperCase())) {
+    if (
+      ['POST', 'PUT', 'PATCH', 'DELETE'].includes(config.method?.toUpperCase())
+    ) {
       const token = await this.getToken();
       config.headers['X-CSRF-Token'] = token;
     }

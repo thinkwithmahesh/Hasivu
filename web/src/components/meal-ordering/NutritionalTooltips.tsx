@@ -1,51 +1,44 @@
-"use client"
+'use client';
 
-import * as React from "react"
+import * as React from 'react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Separator } from '@/components/ui/separator';
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import { Separator } from "@/components/ui/separator"
-import { 
-  Info, 
-  Zap, 
-  Droplets, 
-  Wheat, 
-  Apple, 
-  AlertTriangle, 
-  Leaf, 
+  Info as _Info,
+  Zap,
+  Droplets,
+  Wheat,
+  Apple,
+  AlertTriangle,
+  Leaf,
   Shield,
   Clock,
-  Users
-} from "lucide-react"
-import { NutritionalInfo, DietaryInfo } from "./types"
+  Users,
+} from 'lucide-react';
+import { NutritionalInfo, DietaryInfo } from './types';
 
 interface NutritionalTooltipProps {
-  nutrition: NutritionalInfo
-  dietary: DietaryInfo
-  children: React.ReactNode
-  side?: "top" | "bottom" | "left" | "right"
+  nutrition: NutritionalInfo;
+  dietary: DietaryInfo;
+  children: React.ReactNode;
+  side?: 'top' | 'bottom' | 'left' | 'right';
 }
 
 export function NutritionalTooltip({
   nutrition,
   dietary,
   children,
-  side = "top"
+  side = 'top',
 }: NutritionalTooltipProps) {
   // Calculate daily value percentages (based on 2000 calorie diet)
-  const getDVPercentage = (value: number, dv: number) => Math.round((value / dv) * 100)
+  const getDVPercentage = (value: number, dv: number) => Math.round((value / dv) * 100);
 
   return (
     <TooltipProvider>
       <Tooltip>
-        <TooltipTrigger asChild>
-          {children}
-        </TooltipTrigger>
+        <TooltipTrigger asChild>{children}</TooltipTrigger>
         <TooltipContent side={side} className="w-80 p-0">
           <div className="p-4 space-y-3">
             {/* Header */}
@@ -61,10 +54,7 @@ export function NutritionalTooltip({
                 <span className="text-2xl font-bold">{nutrition.calories}</span>
                 <span className="text-sm text-muted-foreground">calories</span>
               </div>
-              <Progress 
-                value={getDVPercentage(nutrition.calories, 2000)} 
-                className="h-2"
-              />
+              <Progress value={getDVPercentage(nutrition.calories, 2000)} className="h-2" />
               <span className="text-xs text-muted-foreground">
                 {getDVPercentage(nutrition.calories, 2000)}% Daily Value*
               </span>
@@ -73,7 +63,7 @@ export function NutritionalTooltip({
             {/* Macronutrients */}
             <div className="space-y-2">
               <div className="text-sm font-medium">Macronutrients</div>
-              
+
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
@@ -134,8 +124,10 @@ export function NutritionalTooltip({
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="font-medium">{nutrition.sodium}mg</span>
-                    <Badge 
-                      variant={getDVPercentage(nutrition.sodium, 2300) > 20 ? "destructive" : "outline"}
+                    <Badge
+                      variant={
+                        getDVPercentage(nutrition.sodium, 2300) > 20 ? 'destructive' : 'outline'
+                      }
                       className="text-xs px-1.5 py-0"
                     >
                       {getDVPercentage(nutrition.sodium, 2300)}%
@@ -199,7 +191,7 @@ export function NutritionalTooltip({
                     Allergen Information
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    Contains: {dietary.allergens.join(", ")}
+                    Contains: {dietary.allergens.join(', ')}
                   </div>
                 </div>
               </>
@@ -208,30 +200,29 @@ export function NutritionalTooltip({
             {/* Footer */}
             <div className="pt-2 border-t">
               <div className="text-xs text-muted-foreground">
-                * % Daily Values are based on a 2,000 calorie diet. Your daily values may be higher or lower depending on your calorie needs.
+                * % Daily Values are based on a 2,000 calorie diet. Your daily values may be higher
+                or lower depending on your calorie needs.
               </div>
             </div>
           </div>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
-  )
+  );
 }
 
 // Quick info tooltip for meal attributes
 interface QuickInfoTooltipProps {
-  info: string
-  children: React.ReactNode
-  icon?: React.ReactNode
+  info: string;
+  children: React.ReactNode;
+  icon?: React.ReactNode;
 }
 
 export function QuickInfoTooltip({ info, children, icon }: QuickInfoTooltipProps) {
   return (
     <TooltipProvider>
       <Tooltip>
-        <TooltipTrigger asChild>
-          {children}
-        </TooltipTrigger>
+        <TooltipTrigger asChild>{children}</TooltipTrigger>
         <TooltipContent className="max-w-xs">
           <div className="flex items-start gap-2">
             {icon && <div className="mt-0.5">{icon}</div>}
@@ -240,62 +231,59 @@ export function QuickInfoTooltip({ info, children, icon }: QuickInfoTooltipProps
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
-  )
+  );
 }
 
 // Preparation time tooltip
-export function PreparationTimeTooltip({ 
-  minutes, 
-  children 
-}: { 
-  minutes: number
-  children: React.ReactNode 
+export function PreparationTimeTooltip({
+  minutes,
+  children,
+}: {
+  minutes: number;
+  children: React.ReactNode;
 }) {
   const getPreparationInfo = (minutes: number) => {
     if (minutes <= 15) {
       return {
         text: `Quick preparation in ${minutes} minutes. Perfect for busy schedules!`,
-        color: "text-green-600"
-      }
+        color: 'text-green-600',
+      };
     } else if (minutes <= 30) {
       return {
         text: `Fresh preparation takes ${minutes} minutes. Worth the wait for quality!`,
-        color: "text-amber-600"
-      }
+        color: 'text-amber-600',
+      };
     } else {
       return {
         text: `Artisan preparation requires ${minutes} minutes. Premium quality meal.`,
-        color: "text-red-600"
-      }
+        color: 'text-red-600',
+      };
     }
-  }
+  };
 
-  const info = getPreparationInfo(minutes)
+  const info = getPreparationInfo(minutes);
 
   return (
-    <QuickInfoTooltip 
-      info={info.text}
-      icon={<Clock className={`h-3 w-3 ${info.color}`} />}
-    >
+    <QuickInfoTooltip info={info.text} icon={<Clock className={`h-3 w-3 ${info.color}`} />}>
       {children}
     </QuickInfoTooltip>
-  )
+  );
 }
 
 // Serving size tooltip
-export function ServingSizeTooltip({ 
-  size, 
-  children 
-}: { 
-  size: string
-  children: React.ReactNode 
+export function ServingSizeTooltip({
+  size,
+  children,
+}: {
+  size: string;
+  children: React.ReactNode;
 }) {
   return (
-    <QuickInfoTooltip 
+    <QuickInfoTooltip
       info={`Serving size: ${size}. Perfect portion for balanced nutrition.`}
       icon={<Users className="h-3 w-3 text-blue-600" />}
     >
       {children}
     </QuickInfoTooltip>
-  )
+  );
 }

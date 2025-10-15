@@ -153,7 +153,7 @@ const handler = async (event, context) => {
         });
         return (0, response_utils_1.createSuccessResponse)({
             data: {
-                menuItems: itemsResult.rows.map(item => ({
+                menuItems: itemsResult.rows.map((item) => ({
                     id: item.id,
                     name: item.name,
                     description: item.description,
@@ -193,7 +193,7 @@ const handler = async (event, context) => {
         const duration = Date.now() - startTime;
         logger.error('Get menu items request failed', {
             requestId,
-            error: error.message,
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
             duration: `${duration}ms`
         });
         return (0, response_utils_1.handleError)(error, 'Failed to retrieve menu items');

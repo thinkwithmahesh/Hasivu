@@ -93,23 +93,18 @@ async function generateRevenueAnalytics(query, userId, schoolId, requestId) {
                 totalAmount: true
             }
         });
-        let dateFormat;
         let dateGroupBy;
         switch (query.granularity) {
             case 'daily':
-                dateFormat = 'YYYY-MM-DD';
                 dateGroupBy = 'DATE(i."createdAt")';
                 break;
             case 'weekly':
-                dateFormat = 'YYYY-WW';
                 dateGroupBy = 'DATE_TRUNC(\'week\', i."createdAt")';
                 break;
             case 'quarterly':
-                dateFormat = 'YYYY-Q';
                 dateGroupBy = 'DATE_TRUNC(\'quarter\', i."createdAt")';
                 break;
             default:
-                dateFormat = 'YYYY-MM';
                 dateGroupBy = 'DATE_TRUNC(\'month\', i."createdAt")';
                 break;
         }
@@ -199,7 +194,7 @@ async function generateRevenueAnalytics(query, userId, schoolId, requestId) {
             requestId,
             userId,
             schoolId,
-            error: error instanceof Error ? error.message : 'Unknown error'
+            error: error instanceof Error ? error.message : String(error)
         });
         throw error;
     }
@@ -304,7 +299,7 @@ async function generatePerformanceMetrics(request, userId, schoolId, requestId) 
             requestId,
             userId,
             schoolId,
-            error: error instanceof Error ? error.message : 'Unknown error'
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error'
         });
         throw error;
     }
@@ -391,9 +386,9 @@ async function generateComplianceReport(request, userId, schoolId, requestId) {
             securityCompliance: securityCompliance[0] || {},
             dataRetention: dataRetention[0] || {},
             recommendations: [
-                ...(financialCompliance[0]?.amount_discrepancies > 0 ? ['Review invoice calculation logic'] : []),
-                ...(securityCompliance[0]?.unencrypted_cards > 0 ? ['Implement card tokenization'] : []),
-                ...(dataRetention[0]?.payments_due_for_archival > 0 ? ['Implement data archival policy'] : [])
+                ...((financialCompliance[0]?.amount_discrepancies > 0) ? ['Review invoice calculation logic'] : []),
+                ...((securityCompliance[0]?.unencrypted_cards > 0) ? ['Implement card tokenization'] : []),
+                ...((dataRetention[0]?.payments_due_for_archival > 0) ? ['Implement data archival policy'] : [])
             ]
         };
         if (request.reportFormat === 'csv') {
@@ -420,7 +415,7 @@ async function generateComplianceReport(request, userId, schoolId, requestId) {
             requestId,
             userId,
             schoolId,
-            error: error instanceof Error ? error.message : 'Unknown error'
+            error: error instanceof Error ? error.message : String(error)
         });
         throw error;
     }
@@ -441,7 +436,7 @@ const invoiceAnalyticsHandler = async (event, context) => {
         const { userId, schoolId, role } = await validateUserAccess(event, requestId);
         let result;
         switch (event.httpMethod) {
-            case 'GET':
+            case 'GET': {
                 const queryParams = event.queryStringParameters || {};
                 const analyticsQuery = analyticsQuerySchema.parse(queryParams);
                 if (analyticsQuery.reportType === 'revenue' || !analyticsQuery.reportType) {
@@ -459,7 +454,8 @@ const invoiceAnalyticsHandler = async (event, context) => {
                     return (0, response_utils_1.createErrorResponse)(400, 'Invalid report type', undefined, 'INVALID_REPORT_TYPE', requestId);
                 }
                 break;
-            case 'POST':
+            }
+            case 'POST': {
                 if (!event.body) {
                     return (0, response_utils_1.createErrorResponse)(400, 'Request body required', undefined, 'MISSING_BODY', requestId);
                 }
@@ -476,6 +472,7 @@ const invoiceAnalyticsHandler = async (event, context) => {
                     return (0, response_utils_1.createErrorResponse)(400, 'Invalid endpoint', undefined, 'INVALID_ENDPOINT', requestId);
                 }
                 break;
+            }
             default:
                 return (0, response_utils_1.createErrorResponse)(405, `Method ${event.httpMethod} not allowed`, undefined, 'METHOD_NOT_ALLOWED', requestId);
         }
@@ -489,24 +486,24 @@ const invoiceAnalyticsHandler = async (event, context) => {
             duration,
             success: true
         });
-        return (0, response_utils_1.createSuccessResponse)(200, 'Invoice analytics generated successfully', result, requestId);
+        return (0, response_utils_1.createSuccessResponse)(result, 'Invoice analytics generated successfully', 200, requestId);
     }
     catch (error) {
         const duration = Date.now() - startTime;
         logger.error('Invoice analytics request failed', {
             requestId,
             method: event.httpMethod,
-            error: error instanceof Error ? error.message : 'Unknown error',
+            error: error instanceof Error ? error.message : String(error),
             duration
         });
         if (error instanceof Error) {
-            if (error.message.includes('Authentication required')) {
+            if (error instanceof Error ? error.message : String(error).includes('Authentication required')) {
                 return (0, response_utils_1.createErrorResponse)(401, 'Authentication required', undefined, 'AUTHENTICATION_REQUIRED', requestId);
             }
-            if (error.message.includes('Insufficient permissions')) {
+            if (error instanceof Error ? error.message : String(error).includes('Insufficient permissions')) {
                 return (0, response_utils_1.createErrorResponse)(403, 'Insufficient permissions for analytics access', undefined, 'ACCESS_DENIED', requestId);
             }
-            if (error.message.includes('Access denied')) {
+            if (error instanceof Error ? error.message : String(error).includes('Access denied')) {
                 return (0, response_utils_1.createErrorResponse)(403, 'Access denied', undefined, 'ACCESS_DENIED', requestId);
             }
         }

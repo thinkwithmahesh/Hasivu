@@ -100,7 +100,7 @@ async function validateMenuItems(menuItemIds, schoolId) {
     WHERE schoolId = $1 AND id IN (${placeholders}) AND isActive = true
   `;
     const result = await database.query(query, [schoolId, ...menuItemIds]);
-    const foundIds = result.rows.map(item => item.id);
+    const foundIds = result.rows.map((item) => item.id);
     const missingIds = menuItemIds.filter(id => !foundIds.includes(id));
     if (missingIds.length > 0) {
         throw new Error(`Menu items not found or inactive: ${missingIds.join(', ')}`);
@@ -314,7 +314,7 @@ const createDailyMenuHandler = async (event, context) => {
             requestData = JSON.parse(event.body);
         }
         catch (error) {
-            logger.warn('Invalid JSON in request body', { requestId, error: error.message });
+            logger.warn('Invalid JSON in request body', { requestId, error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) });
             return (0, response_utils_1.createErrorResponse)('Invalid JSON in request body', 400, 'INVALID_JSON');
         }
         const validationService = validation_service_1.ValidationService.getInstance();
@@ -347,6 +347,9 @@ const createDailyMenuHandler = async (event, context) => {
             slotsCount: requestData.slots.length,
             userId: authenticatedUser.userId
         });
+        if (!authenticatedUser.userId) {
+            return (0, response_utils_1.createErrorResponse)('User authentication failed', 401, 'UNAUTHENTICATED');
+        }
         const { menuPlan, user } = await validateMenuPlanAccess(requestData.menuPlanId, authenticatedUser.userId);
         validateDayType(requestData.dayType);
         const targetDate = new Date(requestData.date);
@@ -386,7 +389,7 @@ const createDailyMenuHandler = async (event, context) => {
         const duration = Date.now() - startTime;
         logger.error('Create daily menu request failed', {
             requestId,
-            error: error.message,
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
             duration: `${duration}ms`
         });
         return (0, response_utils_1.handleError)(error, 'Failed to create daily menu');

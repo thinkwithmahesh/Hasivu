@@ -1,0 +1,39 @@
+/**
+ * Staff Management Service - Stub Implementation
+ * TODO: Implement full staff management functionality
+ */
+
+import { logger } from '../utils/logger';
+
+export class StaffManagementService {
+  constructor() {
+    logger.info('StaffManagementService initialized (stub)');
+  }
+
+  async getStaffSchedule(): Promise<any[]> {
+    return [];
+  }
+
+  async updateStaffStatus(staffId: string, status: string): Promise<void> {
+    logger.info(`Staff ${staffId} status updated to ${status}`);
+  }
+
+  async getAvailableStaff(): Promise<any[]> {
+    return [];
+  }
+
+  // Additional stub methods for kitchen.routes.ts
+  async getCurrentStaffStatus(_schoolId: string): Promise<any> {
+    return {
+      present: 5,
+      absent: 1,
+      onBreak: 2,
+      averageEfficiency: 85,
+    };
+  }
+}
+
+const staffManagementServiceInstance = new StaffManagementService();
+export const staffManagementService = staffManagementServiceInstance;
+export const _staffManagementService = staffManagementServiceInstance;
+export default staffManagementServiceInstance;

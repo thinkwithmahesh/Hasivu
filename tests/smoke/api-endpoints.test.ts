@@ -139,7 +139,7 @@ describe('API Smoke Tests', () => {
           
         } catch (error) {
           // Skip if endpoint is not available
-          console.warn(`⚠️ Endpoint ${endpoint} not available:`, error.message);
+          console.warn(`⚠️ Endpoint ${endpoint} not available:`, error instanceof Error ? error.message : String(error));
         }
       }
     }, smokeTestConfig.timeout * 2);

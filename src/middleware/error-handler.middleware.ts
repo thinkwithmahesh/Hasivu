@@ -5,7 +5,7 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
-import { logger } from '../utils/logger';
+import { logger } from '../shared/logger.service';
 import { ValidationResult } from '../services/validation.service';
 
 /**
@@ -36,7 +36,7 @@ export enum ErrorType {
   EXTERNAL_SERVICE = 'external_service',
   TIMEOUT = 'timeout',
   INTERNAL = 'internal',
-  CIRCUIT_BREAKER = 'circuit_breaker'
+  CIRCUIT_BREAKER = 'circuit_breaker',
 }
 
 /**
@@ -46,74 +46,69 @@ const ERROR_PATTERNS = {
   [ErrorType.VALIDATION]: {
     statusCode: 400,
     includeDetails: true,
-    logLevel: 'warn' as const
+    logLevel: 'warn' as const,
   },
   [ErrorType.AUTHENTICATION]: {
     statusCode: 401,
     includeDetails: false,
-    logLevel: 'warn' as const
+    logLevel: 'warn' as const,
   },
   [ErrorType.AUTHORIZATION]: {
     statusCode: 403,
     includeDetails: false,
-    logLevel: 'warn' as const
+    logLevel: 'warn' as const,
   },
   [ErrorType.NOT_FOUND]: {
     statusCode: 404,
     includeDetails: false,
-    logLevel: 'info' as const
+    logLevel: 'info' as const,
   },
   [ErrorType.RATE_LIMIT]: {
     statusCode: 429,
     includeDetails: false,
     logLevel: 'warn' as const,
-    includeRetryAfter: true
+    includeRetryAfter: true,
   },
   [ErrorType.SERVICE_UNAVAILABLE]: {
     statusCode: 503,
     includeDetails: false,
     logLevel: 'error' as const,
-    includeRetryAfter: true
+    includeRetryAfter: true,
   },
   [ErrorType.DATABASE]: {
     statusCode: 500,
     includeDetails: false,
-    logLevel: 'error' as const
+    logLevel: 'error' as const,
   },
   [ErrorType.EXTERNAL_SERVICE]: {
     statusCode: 502,
     includeDetails: false,
     logLevel: 'error' as const,
-    includeRetryAfter: true
+    includeRetryAfter: true,
   },
   [ErrorType.TIMEOUT]: {
     statusCode: 408,
     includeDetails: false,
     logLevel: 'warn' as const,
-    includeRetryAfter: true
+    includeRetryAfter: true,
   },
   [ErrorType.INTERNAL]: {
     statusCode: 500,
     includeDetails: false,
-    logLevel: 'error' as const
+    logLevel: 'error' as const,
   },
   [ErrorType.CIRCUIT_BREAKER]: {
     statusCode: 503,
     includeDetails: false,
     logLevel: 'warn' as const,
-    includeRetryAfter: true
-  }
+    includeRetryAfter: true,
+  },
 };
 
 /**
  * Main error handler middleware
  */
-export const errorHandler = (
-  error: any,
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void => {
+export const errorHandler = (error: any, req: Request, res: Response, next: NextFunction): void => {
   // Generate request ID if not exists
   const requestId = generateRequestId();
 
@@ -122,7 +117,7 @@ export const errorHandler = (
 
   // Get error pattern configuration
   const pattern = ERROR_PATTERNS[errorType];
-  const statusCode = pattern.statusCode;
+  const { statusCode } = pattern;
 
   // Get degraded services information
   const degradedServices = getDegradedServices();
@@ -136,7 +131,7 @@ export const errorHandler = (
     requestId,
     ...(degradedServices.length > 0 && { degradedServices }),
     ...(shouldIncludeDetails(errorType) && { details: getErrorDetails(error) }),
-    ...(shouldIncludeRetryAfter(errorType, error) && { retryAfter: getRetryAfter(error) })
+    ...(shouldIncludeRetryAfter(errorType, error) && { retryAfter: getRetryAfter(error) }),
   };
 
   // Log error with appropriate level
@@ -225,7 +220,7 @@ function getErrorMessage(error: any, errorType: ErrorType): string {
     [ErrorType.EXTERNAL_SERVICE]: 'External service unavailable',
     [ErrorType.TIMEOUT]: 'Request timeout',
     [ErrorType.INTERNAL]: 'Internal server error',
-    [ErrorType.CIRCUIT_BREAKER]: 'Service circuit breaker activated'
+    [ErrorType.CIRCUIT_BREAKER]: 'Service circuit breaker activated',
   };
 
   // For validation errors, include specific validation messages
@@ -250,13 +245,13 @@ function getErrorDetails(error: any): any {
   if (error.details) return error.details;
   if (error.errors) return error.errors;
   if (error.issues) return error.issues;
-  
+
   // For development, include stack trace
   if (process.env.NODE_ENV === 'development') {
     return {
       stack: error.stack,
       name: error.name,
-      code: error.code
+      code: error.code,
     };
   }
 
@@ -270,14 +265,20 @@ function shouldIncludeRetryAfter(errorType: ErrorType, error: any): boolean {
 
 function getRetryAfter(error: any): number {
   if (error.retryAfter) return error.retryAfter;
-  
+
   // Default retry intervals by error type
   const defaultRetryAfter = {
+    [ErrorType.VALIDATION]: 0, // No retry for validation errors
+    [ErrorType.AUTHENTICATION]: 0, // No retry for auth errors
+    [ErrorType.AUTHORIZATION]: 0, // No retry for auth errors
+    [ErrorType.NOT_FOUND]: 0, // No retry for not found
     [ErrorType.RATE_LIMIT]: 60, // 1 minute
     [ErrorType.SERVICE_UNAVAILABLE]: 300, // 5 minutes
+    [ErrorType.DATABASE]: 60, // 1 minute
     [ErrorType.EXTERNAL_SERVICE]: 120, // 2 minutes
     [ErrorType.TIMEOUT]: 30, // 30 seconds
-    [ErrorType.CIRCUIT_BREAKER]: 180 // 3 minutes
+    [ErrorType.INTERNAL]: 60, // 1 minute
+    [ErrorType.CIRCUIT_BREAKER]: 180, // 3 minutes
   };
 
   return defaultRetryAfter[classifyError(error)] || 60;
@@ -291,7 +292,7 @@ function getDegradedServices(): string[] {
 
 function logError(error: any, errorType: ErrorType, req: Request, requestId: string): void {
   const pattern = ERROR_PATTERNS[errorType];
-  const logLevel = pattern.logLevel;
+  const { logLevel } = pattern;
 
   const logData = {
     requestId,
@@ -303,12 +304,12 @@ function logError(error: any, errorType: ErrorType, req: Request, requestId: str
     ip: req.ip,
     timestamp: new Date().toISOString(),
     ...(error.stack && { stack: error.stack }),
-    ...(error.code && { code: error.code })
+    ...(error.code && { code: error.code }),
   };
 
   switch (logLevel) {
     case 'error':
-      logger.error('Application error occurred', logData);
+      logger.error('Application error occurred', undefined, logData);
       break;
     case 'warn':
       logger.warn('Application warning occurred', logData);
@@ -317,7 +318,7 @@ function logError(error: any, errorType: ErrorType, req: Request, requestId: str
       logger.info('Application info event', logData);
       break;
     default:
-      logger.error('Unknown error level', logData);
+      logger.error('Unknown error level', undefined, logData);
   }
 }
 

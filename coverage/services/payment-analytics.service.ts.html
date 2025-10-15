@@ -32,7 +32,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/11</span>
+                <span class='fraction'>0/13</span>
             </div>
         
             
@@ -400,15 +400,7 @@
 <a name='L335'></a><a href='#L335'>335</a>
 <a name='L336'></a><a href='#L336'>336</a>
 <a name='L337'></a><a href='#L337'>337</a>
-<a name='L338'></a><a href='#L338'>338</a>
-<a name='L339'></a><a href='#L339'>339</a>
-<a name='L340'></a><a href='#L340'>340</a>
-<a name='L341'></a><a href='#L341'>341</a>
-<a name='L342'></a><a href='#L342'>342</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L338'></a><a href='#L338'>338</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -750,12 +742,8 @@
  * Comprehensive payment analytics with real-time insights and trends
  * Implements: GET /analytics/payments/dashboard
  */
-import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
-import { DatabaseService } from '@/services/database.service';
 import { RedisService } from '@/services/redis.service';
 import { logger } from '@/utils/logger';
-import { createSuccessResponse, createErrorResponse, handleError } from '@/shared/response.utils';
-import { config } from '@/config/environment';
 &nbsp;
 /**
  * Payment analytics dashboard interface
@@ -958,7 +946,7 @@ export interface PaymentRecommendation {
 <span class="cstat-no" title="statement not covered" >      return dashboard;</span>
 &nbsp;
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      logger.error('Error generating payment analytics dashboard data', error);</span>
+<span class="cstat-no" title="statement not covered" >      logger.error('Error generating payment analytics dashboard data', error instanceof Error ? error : new Error(String(error)));</span>
 <span class="cstat-no" title="statement not covered" >      throw error;</span>
     }
   }
@@ -995,8 +983,8 @@ export interface PaymentRecommendation {
    * Get payment metrics for the specified period
    */
   private <span class="fstat-no" title="function not covered" >async </span>getPaymentMetrics(
-    dateRange: { startDate: Date; endDate: Date },
-    schoolId?: string
+    _dateRange: { startDate: Date; endDate: Date },
+    _schoolId?: string
   ): Promise&lt;PaymentMetrics&gt; {
     // This would typically query the database for payment metrics
     // For now, returning mock data structure
@@ -1016,8 +1004,8 @@ export interface PaymentRecommendation {
    * Get payment trends for the specified period
    */
   private <span class="fstat-no" title="function not covered" >async </span>getPaymentTrends(
-    dateRange: { startDate: Date; endDate: Date },
-    schoolId?: string
+    _dateRange: { startDate: Date; endDate: Date },
+    _schoolId?: string
   ): Promise&lt;PaymentTrends&gt; {
     // This would typically query the database for trend data
     // For now, returning mock data structure
@@ -1033,8 +1021,8 @@ export interface PaymentRecommendation {
    * Get payment breakdowns for the specified period
    */
   private <span class="fstat-no" title="function not covered" >async </span>getPaymentBreakdowns(
-    dateRange: { startDate: Date; endDate: Date },
-    schoolId?: string
+    _dateRange: { startDate: Date; endDate: Date },
+    _schoolId?: string
   ): Promise&lt;PaymentBreakdowns&gt; {
     // This would typically query the database for breakdown data
     // For now, returning mock data structure
@@ -1049,8 +1037,8 @@ export interface PaymentRecommendation {
    * Get top performers for the specified period
    */
   private <span class="fstat-no" title="function not covered" >async </span>getTopPerformers(
-    dateRange: { startDate: Date; endDate: Date },
-    schoolId?: string
+    _dateRange: { startDate: Date; endDate: Date },
+    _schoolId?: string
   ): Promise&lt;TopPerformers&gt; {
     // This would typically query the database for top performer data
     // For now, returning mock data structure
@@ -1065,8 +1053,8 @@ export interface PaymentRecommendation {
    * Generate alerts based on payment data analysis
    */
   private <span class="fstat-no" title="function not covered" >async </span>generateAlerts(
-    dateRange: { startDate: Date; endDate: Date },
-    schoolId?: string
+    _dateRange: { startDate: Date; endDate: Date },
+    _schoolId?: string
   ): Promise&lt;PaymentAlert[]&gt; {
     // This would typically analyze payment data for anomalies
     // For now, returning empty array
@@ -1077,8 +1065,8 @@ export interface PaymentRecommendation {
    * Generate recommendations based on payment analysis
    */
   private <span class="fstat-no" title="function not covered" >async </span>generateRecommendations(
-    dateRange: { startDate: Date; endDate: Date },
-    schoolId?: string
+    _dateRange: { startDate: Date; endDate: Date },
+    _schoolId?: string
   ): Promise&lt;PaymentRecommendation[]&gt; {
     // This would typically analyze payment data for optimization opportunities
     // For now, returning empty array
@@ -1093,7 +1081,7 @@ export default PaymentAnalyticsService;</pre></td></tr></table></pre>
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-09-03T01:56:53.571Z
+                at 2025-10-06T16:03:48.029Z
             </div>
         <script src="../prettify.js"></script>
         <script>

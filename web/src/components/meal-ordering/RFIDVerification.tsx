@@ -3,55 +3,60 @@
  * Uses InputOTP for RFID card verification and security codes
  */
 
-"use client"
+'use client';
 
-import React, { useState, useEffect, useCallback } from 'react'
-import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from '@/components/ui/input-otp'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Progress } from '@/components/ui/progress'
-import { 
-  CreditCard, 
-  Shield, 
-  CheckCircle, 
-  XCircle, 
-  Clock, 
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+  InputOTPSeparator,
+} from '@/components/ui/input-otp';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Progress } from '@/components/ui/progress';
+import {
+  CreditCard,
+  Shield,
+  CheckCircle,
+  XCircle as _XCircle,
+  Clock,
   Scan,
   AlertTriangle,
   RefreshCw,
   User,
-  MapPin
-} from 'lucide-react'
-import { toast } from 'sonner'
+  MapPin,
+} from 'lucide-react';
+import { toast } from 'sonner';
 
-import type { StudentInfo, RFIDPickupInfo, OrderHistoryItem } from './types'
+import type { StudentInfo, RFIDPickupInfo, OrderHistoryItem } from './types';
 
 interface RFIDVerificationProps {
-  studentInfo: StudentInfo
-  pendingOrders: OrderHistoryItem[]
-  onVerificationComplete: (rfidInfo: RFIDPickupInfo) => void
-  onVerificationFailed: (error: string) => void
-  className?: string
-  isScanning?: boolean
+  studentInfo: StudentInfo;
+  pendingOrders: OrderHistoryItem[];
+  onVerificationComplete: (rfidInfo: RFIDPickupInfo) => void;
+  onVerificationFailed: (error: string) => void;
+  className?: string;
+  isScanning?: boolean;
 }
 
 interface VerificationState {
-  step: 'rfid' | 'security' | 'location' | 'complete'
-  rfidCode: string
-  securityCode: string
-  locationCode: string
-  isVerifying: boolean
-  error: string | null
-  progress: number
-  selectedOrder: OrderHistoryItem | null
+  step: 'rfid' | 'security' | 'location' | 'complete';
+  rfidCode: string;
+  securityCode: string;
+  locationCode: string;
+  isVerifying: boolean;
+  error: string | null;
+  progress: number;
+  selectedOrder: OrderHistoryItem | null;
 }
 
-const VERIFICATION_TIMEOUT = 30000 // 30 seconds
-const RFID_CODE_LENGTH = 6
-const SECURITY_CODE_LENGTH = 4
-const LOCATION_CODE_LENGTH = 3
+const VERIFICATION_TIMEOUT = 30000; // 30 seconds
+const RFID_CODE_LENGTH = 6;
+const SECURITY_CODE_LENGTH = 4;
+const LOCATION_CODE_LENGTH = 3;
 
 export function RFIDVerification({
   studentInfo,
@@ -59,7 +64,7 @@ export function RFIDVerification({
   onVerificationComplete,
   onVerificationFailed,
   className,
-  isScanning = false
+  isScanning = false,
 }: RFIDVerificationProps) {
   const [state, setState] = useState<VerificationState>({
     step: 'rfid',
@@ -69,139 +74,145 @@ export function RFIDVerification({
     isVerifying: false,
     error: null,
     progress: 0,
-    selectedOrder: pendingOrders[0] || null
-  })
+    selectedOrder: pendingOrders[0] || null,
+  });
 
-  const [timeRemaining, setTimeRemaining] = useState(VERIFICATION_TIMEOUT / 1000)
+  const [timeRemaining, setTimeRemaining] = useState(VERIFICATION_TIMEOUT / 1000);
 
   // Timeout effect
   useEffect(() => {
-    if (!state.isVerifying) return
+    if (!state.isVerifying) return;
 
     const interval = setInterval(() => {
-      setTimeRemaining((prev) => {
+      setTimeRemaining(prev => {
         if (prev <= 1) {
-          setState(prev => ({ ...prev, isVerifying: false, error: 'Verification timeout' }))
-          onVerificationFailed('Verification timeout. Please try again.')
-          return VERIFICATION_TIMEOUT / 1000
+          setState(prev => ({ ...prev, isVerifying: false, error: 'Verification timeout' }));
+          onVerificationFailed('Verification timeout. Please try again.');
+          return VERIFICATION_TIMEOUT / 1000;
         }
-        return prev - 1
-      })
-    }, 1000)
+        return prev - 1;
+      });
+    }, 1000);
 
-    return () => clearInterval(interval)
-  }, [state.isVerifying, onVerificationFailed])
+    return () => clearInterval(interval);
+  }, [state.isVerifying, onVerificationFailed]);
 
   // Auto-start verification when RFID code is complete
   useEffect(() => {
     if (state.rfidCode.length === RFID_CODE_LENGTH && !state.isVerifying && state.step === 'rfid') {
-      handleRFIDVerification()
+      handleRFIDVerification();
     }
-  }, [state.rfidCode])
+  }, [state.rfidCode]);
 
   // Auto-advance when security code is complete
   useEffect(() => {
     if (state.securityCode.length === SECURITY_CODE_LENGTH && state.step === 'security') {
-      handleSecurityVerification()
+      handleSecurityVerification();
     }
-  }, [state.securityCode])
+  }, [state.securityCode]);
 
   // Auto-complete when location code is complete
   useEffect(() => {
     if (state.locationCode.length === LOCATION_CODE_LENGTH && state.step === 'location') {
-      handleLocationVerification()
+      handleLocationVerification();
     }
-  }, [state.locationCode])
+  }, [state.locationCode]);
 
   const handleRFIDVerification = useCallback(async () => {
-    setState(prev => ({ ...prev, isVerifying: true, error: null, progress: 25 }))
-    
+    setState(prev => ({ ...prev, isVerifying: true, error: null, progress: 25 }));
+
     try {
       // Simulate RFID verification API call
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
       // Mock verification logic
       if (state.rfidCode === studentInfo.rfidCardId) {
-        setState(prev => ({ 
-          ...prev, 
-          step: 'security', 
-          isVerifying: false, 
+        setState(prev => ({
+          ...prev,
+          step: 'security',
+          isVerifying: false,
           progress: 50,
-          error: null 
-        }))
-        toast.success('RFID verified successfully')
+          error: null,
+        }));
+        toast.success('RFID verified successfully');
       } else {
-        throw new Error('Invalid RFID card')
+        throw new Error('Invalid RFID card');
       }
     } catch (error) {
-      setState(prev => ({ 
-        ...prev, 
-        isVerifying: false, 
+      setState(prev => ({
+        ...prev,
+        isVerifying: false,
         error: 'RFID verification failed',
-        progress: 0
-      }))
-      onVerificationFailed('RFID verification failed. Please check your card.')
+        progress: 0,
+      }));
+      onVerificationFailed('RFID verification failed. Please check your card.');
     }
-  }, [state.rfidCode, studentInfo.rfidCardId, onVerificationFailed])
+  }, [state.rfidCode, studentInfo.rfidCardId, onVerificationFailed]);
 
   const handleSecurityVerification = useCallback(async () => {
-    setState(prev => ({ ...prev, isVerifying: true, error: null, progress: 75 }))
-    
+    setState(prev => ({ ...prev, isVerifying: true, error: null, progress: 75 }));
+
     try {
       // Simulate security code verification
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      setState(prev => ({ 
-        ...prev, 
-        step: 'location', 
-        isVerifying: false, 
-        progress: 85 
-      }))
-      toast.success('Security code verified')
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      setState(prev => ({
+        ...prev,
+        step: 'location',
+        isVerifying: false,
+        progress: 85,
+      }));
+      toast.success('Security code verified');
     } catch (error) {
-      setState(prev => ({ 
-        ...prev, 
-        isVerifying: false, 
+      setState(prev => ({
+        ...prev,
+        isVerifying: false,
         error: 'Invalid security code',
-        progress: 50
-      }))
+        progress: 50,
+      }));
     }
-  }, [])
+  }, []);
 
   const handleLocationVerification = useCallback(async () => {
-    setState(prev => ({ ...prev, isVerifying: true, error: null, progress: 95 }))
-    
+    setState(prev => ({ ...prev, isVerifying: true, error: null, progress: 95 }));
+
     try {
       // Simulate location verification
-      await new Promise(resolve => setTimeout(resolve, 800))
-      
+      await new Promise(resolve => setTimeout(resolve, 800));
+
       const rfidInfo: RFIDPickupInfo = {
         studentId: studentInfo.id,
         orderId: state.selectedOrder?.orderId || '',
         rfidCardId: state.rfidCode,
         pickupLocation: `Location-${state.locationCode}`,
         pickupTime: new Date().toISOString(),
-        verificationStatus: 'verified'
-      }
-      
-      setState(prev => ({ 
-        ...prev, 
-        step: 'complete', 
-        isVerifying: false, 
-        progress: 100 
-      }))
-      
-      toast.success('Verification complete! You can now collect your order.')
-      onVerificationComplete(rfidInfo)
+        verificationStatus: 'verified',
+      };
+
+      setState(prev => ({
+        ...prev,
+        step: 'complete',
+        isVerifying: false,
+        progress: 100,
+      }));
+
+      toast.success('Verification complete! You can now collect your order.');
+      onVerificationComplete(rfidInfo);
     } catch (error) {
-      setState(prev => ({ 
-        ...prev, 
-        isVerifying: false, 
+      setState(prev => ({
+        ...prev,
+        isVerifying: false,
         error: 'Location verification failed',
-        progress: 75
-      }))
+        progress: 75,
+      }));
     }
-  }, [state.rfidCode, state.locationCode, state.selectedOrder, studentInfo.id, onVerificationComplete])
+  }, [
+    state.rfidCode,
+    state.locationCode,
+    state.selectedOrder,
+    studentInfo.id,
+    onVerificationComplete,
+  ]);
 
   const resetVerification = useCallback(() => {
     setState({
@@ -212,40 +223,55 @@ export function RFIDVerification({
       isVerifying: false,
       error: null,
       progress: 0,
-      selectedOrder: pendingOrders[0] || null
-    })
-    setTimeRemaining(VERIFICATION_TIMEOUT / 1000)
-  }, [pendingOrders])
+      selectedOrder: pendingOrders[0] || null,
+    });
+    setTimeRemaining(VERIFICATION_TIMEOUT / 1000);
+  }, [pendingOrders]);
 
   const getStepTitle = () => {
     switch (state.step) {
-      case 'rfid': return 'Scan RFID Card'
-      case 'security': return 'Enter Security Code'
-      case 'location': return 'Verify Pickup Location'
-      case 'complete': return 'Verification Complete'
-      default: return 'Verification'
+      case 'rfid':
+        return 'Scan RFID Card';
+      case 'security':
+        return 'Enter Security Code';
+      case 'location':
+        return 'Verify Pickup Location';
+      case 'complete':
+        return 'Verification Complete';
+      default:
+        return 'Verification';
     }
-  }
+  };
 
   const getStepDescription = () => {
     switch (state.step) {
-      case 'rfid': return 'Please scan your RFID card or enter the card number'
-      case 'security': return 'Enter the 4-digit security code from your card'
-      case 'location': return 'Enter the 3-digit location code from pickup point'
-      case 'complete': return 'Your identity has been verified successfully'
-      default: return ''
+      case 'rfid':
+        return 'Please scan your RFID card or enter the card number';
+      case 'security':
+        return 'Enter the 4-digit security code from your card';
+      case 'location':
+        return 'Enter the 3-digit location code from pickup point';
+      case 'complete':
+        return 'Your identity has been verified successfully';
+      default:
+        return '';
     }
-  }
+  };
 
   const getStepIcon = () => {
     switch (state.step) {
-      case 'rfid': return <CreditCard className="w-6 h-6 text-primary-500" />
-      case 'security': return <Shield className="w-6 h-6 text-primary-500" />
-      case 'location': return <MapPin className="w-6 h-6 text-primary-500" />
-      case 'complete': return <CheckCircle className="w-6 h-6 text-green-500" />
-      default: return <Scan className="w-6 h-6 text-gray-500" />
+      case 'rfid':
+        return <CreditCard className="w-6 h-6 text-primary-500" />;
+      case 'security':
+        return <Shield className="w-6 h-6 text-primary-500" />;
+      case 'location':
+        return <MapPin className="w-6 h-6 text-primary-500" />;
+      case 'complete':
+        return <CheckCircle className="w-6 h-6 text-green-500" />;
+      default:
+        return <Scan className="w-6 h-6 text-gray-500" />;
     }
-  }
+  };
 
   if (pendingOrders.length === 0) {
     return (
@@ -258,7 +284,7 @@ export function RFIDVerification({
           </div>
         </CardContent>
       </Card>
-    )
+    );
   }
 
   return (
@@ -272,7 +298,7 @@ export function RFIDVerification({
               <CardDescription>{getStepDescription()}</CardDescription>
             </div>
           </div>
-          
+
           {state.isVerifying && (
             <Badge variant="outline" className="text-primary-600">
               <Clock className="w-3 h-3 mr-1" />
@@ -280,7 +306,7 @@ export function RFIDVerification({
             </Badge>
           )}
         </div>
-        
+
         {state.progress > 0 && (
           <div className="mt-4">
             <div className="flex items-center justify-between text-sm mb-2">
@@ -298,8 +324,8 @@ export function RFIDVerification({
           <div>
             <label className="text-sm font-medium mb-2 block">Select Order to Collect:</label>
             <div className="space-y-2">
-              {pendingOrders.map((order) => (
-                <Card 
+              {pendingOrders.map(order => (
+                <Card
                   key={order.orderId}
                   className={`p-3 cursor-pointer transition-colors ${
                     state.selectedOrder?.orderId === order.orderId
@@ -355,15 +381,13 @@ export function RFIDVerification({
                     <span className="text-sm">Scanning for RFID card...</span>
                   </div>
                 ) : (
-                  <div className="text-sm text-gray-600">
-                    Enter your 6-digit RFID card number
-                  </div>
+                  <div className="text-sm text-gray-600">Enter your 6-digit RFID card number</div>
                 )}
               </div>
-              
+
               <InputOTP
                 value={state.rfidCode}
-                onChange={(value) => setState(prev => ({ ...prev, rfidCode: value }))}
+                onChange={value => setState(prev => ({ ...prev, rfidCode: value }))}
                 maxLength={RFID_CODE_LENGTH}
                 disabled={state.isVerifying}
               >
@@ -390,10 +414,10 @@ export function RFIDVerification({
               <div className="mb-4 text-sm text-gray-600">
                 Enter the 4-digit security code printed on your RFID card
               </div>
-              
+
               <InputOTP
                 value={state.securityCode}
-                onChange={(value) => setState(prev => ({ ...prev, securityCode: value }))}
+                onChange={value => setState(prev => ({ ...prev, securityCode: value }))}
                 maxLength={SECURITY_CODE_LENGTH}
                 disabled={state.isVerifying}
               >
@@ -415,10 +439,10 @@ export function RFIDVerification({
               <div className="mb-4 text-sm text-gray-600">
                 Enter the 3-digit code displayed at the pickup location
               </div>
-              
+
               <InputOTP
                 value={state.locationCode}
-                onChange={(value) => setState(prev => ({ ...prev, locationCode: value }))}
+                onChange={value => setState(prev => ({ ...prev, locationCode: value }))}
                 maxLength={LOCATION_CODE_LENGTH}
                 disabled={state.isVerifying}
               >
@@ -436,13 +460,11 @@ export function RFIDVerification({
         {state.step === 'complete' && (
           <div className="text-center py-4">
             <CheckCircle className="w-16 h-16 mx-auto mb-4 text-green-500" />
-            <h3 className="font-semibold text-green-700 mb-2">
-              Verification Successful!
-            </h3>
+            <h3 className="font-semibold text-green-700 mb-2">Verification Successful!</h3>
             <p className="text-sm text-gray-600 mb-4">
               You can now collect your order from the pickup location.
             </p>
-            
+
             {state.selectedOrder && (
               <Card className="p-3 bg-green-50 border-green-200">
                 <div className="text-sm">
@@ -472,19 +494,16 @@ export function RFIDVerification({
               Reset
             </Button>
           )}
-          
+
           {state.step === 'complete' && (
-            <Button
-              onClick={resetVerification}
-              className="flex-1"
-            >
+            <Button onClick={resetVerification} className="flex-1">
               Verify Another Order
             </Button>
           )}
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
 
-export default RFIDVerification
+export default RFIDVerification;

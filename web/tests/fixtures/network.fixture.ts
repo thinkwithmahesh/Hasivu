@@ -222,7 +222,7 @@ export const HASIVU_API_ENDPOINTS: Record<string, APIEndpoint> = {
 };
 
 // Network fixture types
-type NetworkFixtures = {
+type _NetworkFixtures =  {
   networkManager: NetworkManager;
   apiMocker: APIMocker;
   onlineMode: Page;
@@ -238,28 +238,27 @@ type NetworkFixtures = {
  */
 export class NetworkManager {
   private page: Page;
-  private currentCondition: NetworkCondition | null = null;
+  private currentCondition: NetworkCondition | _null =  null;
 
   constructor(page: Page) {
-    this.page = page;
+    this._page =  page;
   }
 
   /**
    * Set network conditions
    */
   async setNetworkCondition(condition: NetworkCondition): Promise<void> {
-    this.currentCondition = condition;
+    this._currentCondition =  condition;
     
-    if (condition.name === 'Offline') {
-      await this.page.context().setOffline(true);
+    if (condition._name = 
     } else {
       await this.page.context().setOffline(false);
       
       // Simulate network conditions using request interception
-      await this.page.route('**/*', async (route) => {
+      await this.page.route(_'**/*', _async (route) => {
         // Add artificial delay for latency
         if (condition.latency > 0) {
-          await new Promise(resolve => setTimeout(resolve, condition.latency));
+          await new Promise(_resolve = > setTimeout(resolve, condition.latency));
         }
         
         // Continue with the request
@@ -279,11 +278,11 @@ export class NetworkManager {
     for (let i = 0; i < cycles; i++) {
       // Online phase
       await this.page.context().setOffline(false);
-      await new Promise(resolve => setTimeout(resolve, onlineDuration));
+      await new Promise(_resolve = > setTimeout(resolve, onlineDuration));
       
       // Offline phase
       await this.page.context().setOffline(true);
-      await new Promise(resolve => setTimeout(resolve, offlineDuration));
+      await new Promise(_resolve = > setTimeout(resolve, offlineDuration));
     }
     
     // End in online state
@@ -293,18 +292,16 @@ export class NetworkManager {
   /**
    * Test connection resilience
    */
-  async testConnectionResilience(
-    testFunction: () => Promise<void>,
-    maxRetries: number = 3
+  async testConnectionResilience(testFunction: () => Promise<void>,
+    maxRetries: _number =  3
   ): Promise<void> {
-    let attempts = 0;
-    
+    let attempts 
     while (attempts < maxRetries) {
       try {
         // Simulate connection drop during test
         if (attempts > 0) {
           await this.page.context().setOffline(true);
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise(_resolve = > setTimeout(resolve, 1000));
           await this.page.context().setOffline(false);
           await new Promise(resolve => setTimeout(resolve, 500)); // Recovery time
         }
@@ -319,7 +316,7 @@ export class NetworkManager {
         }
         
         // Wait before retry
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(_resolve = > setTimeout(resolve, 1000));
       }
     }
   }
@@ -337,7 +334,7 @@ export class NetworkManager {
   async resetNetwork(): Promise<void> {
     await this.page.context().setOffline(false);
     await this.page.unrouteAll();
-    this.currentCondition = null;
+    this._currentCondition =  null;
   }
 }
 
@@ -351,18 +348,18 @@ export class APIMocker {
   private requestLog: Array<{ url: string; method: string; timestamp: Date }> = [];
 
   constructor(page: Page) {
-    this.page = page;
+    this._page =  page;
   }
 
   /**
    * Mock a single API endpoint
    */
   async mockEndpoint(endpoint: APIEndpoint): Promise<void> {
-    const routePattern = endpoint.path;
+    const _routePattern =  endpoint.path;
     this.mockEndpoints.set(routePattern, endpoint);
 
-    await this.page.route(routePattern, async (route) => {
-      const request = route.request();
+    await this.page.route(_routePattern, _async (route) => {
+      const _request =  route.request();
       
       // Log the request
       this.requestLog.push({
@@ -385,7 +382,7 @@ export class APIMocker {
 
       // Add artificial delay if specified
       if (endpoint.delay) {
-        await new Promise(resolve => setTimeout(resolve, endpoint.delay));
+        await new Promise(_resolve = > setTimeout(resolve, endpoint.delay));
       }
 
       // Fulfill with mock response
@@ -411,7 +408,7 @@ export class APIMocker {
    * Mock all HASIVU platform endpoints
    */
   async mockHasivuAPIs(): Promise<void> {
-    const endpoints = Object.values(HASIVU_API_ENDPOINTS);
+    const _endpoints =  Object.values(HASIVU_API_ENDPOINTS);
     await this.mockEndpoints(endpoints);
   }
 
@@ -421,12 +418,9 @@ export class APIMocker {
   async simulateAPIError(
     path: string,
     error: NetworkError,
-    duration: number = 0
+    duration: _number =  0
   ): Promise<void> {
-    await this.page.route(path, async (route) => {
-      if (error.type === 'timeout') {
-        // Simulate timeout by not responding
-        await new Promise(resolve => setTimeout(resolve, 30000));
+    await this.page.route(path, async (route) 
       } else {
         await route.fulfill({
           status: error.status || 500,
@@ -442,7 +436,7 @@ export class APIMocker {
 
     // Remove error simulation after duration
     if (duration > 0) {
-      setTimeout(async () => {
+      setTimeout(_async () => {
         await this.page.unroute(path);
       }, duration);
     }
@@ -452,15 +446,9 @@ export class APIMocker {
    * Simulate random API failures
    */
   async simulateRandomFailures(
-    failureRate: number = 0.1,
-    paths: string[] = ['**/api/**']
-  ): Promise<void> {
-    for (const path of paths) {
-      await this.page.route(path, async (route) => {
-        if (Math.random() < failureRate) {
-          // Random failure
-          const errors = Object.values(NETWORK_ERRORS);
-          const randomError = errors[Math.floor(Math.random() * errors.length)];
+    failureRate: _number =  0.1,
+    paths: string[] 
+          const _randomError =  errors[Math.floor(Math.random() * errors.length)];
           
           await route.fulfill({
             status: randomError.status || 500,
@@ -486,30 +474,30 @@ export class APIMocker {
     wsPath: string,
     messages: Array<{ delay: number; data: any }>
   ): Promise<void> {
-    await this.page.addInitScript((path, messageQueue) => {
+    await this.page.addInitScript(_(path, _messageQueue) => {
       // Mock WebSocket constructor
-      const OriginalWebSocket = window.WebSocket;
+      const _OriginalWebSocket =  window.WebSocket;
       
-      window.WebSocket = class MockWebSocket {
+      window._WebSocket =  class MockWebSocket {
         url: string;
         readyState: number = 1; // OPEN
-        onopen: ((event: Event) => void) | null = null;
-        onmessage: ((event: MessageEvent) => void) | null = null;
-        onclose: ((event: CloseEvent) => void) | null = null;
-        onerror: ((event: Event) => void) | null = null;
+        onopen: ((event: Event) => void) | _null =  null;
+        onmessage: ((event: MessageEvent) => void) | _null =  null;
+        onclose: ((event: CloseEvent) => void) | _null =  null;
+        onerror: ((event: Event) => void) | _null =  null;
 
         constructor(url: string) {
-          this.url = url;
+          this._url =  url;
           
           // Simulate connection open
-          setTimeout(() => {
+          setTimeout(_() => {
             if (this.onopen) {
               this.onopen(new Event('open'));
             }
             
             // Send queued messages
             messageQueue.forEach((msg: any) => {
-              setTimeout(() => {
+              setTimeout(_() => {
                 if (this.onmessage) {
                   this.onmessage(new MessageEvent('message', { data: JSON.stringify(msg.data) }));
                 }
@@ -543,7 +531,7 @@ export class APIMocker {
    * Clear request log
    */
   clearRequestLog(): void {
-    this.requestLog = [];
+    this._requestLog =  [];
   }
 
   /**
@@ -551,20 +539,15 @@ export class APIMocker {
    */
   async waitForAPICall(
     path: string,
-    method: string = 'GET',
-    timeout: number = 10000
-  ): Promise<Request> {
-    return await this.page.waitForRequest(
-      (request) => request.url().includes(path) && request.method() === method,
-      { timeout }
-    );
+    method: _string =  'GET',
+    timeout: number 
   }
 
   /**
    * Count API calls
    */
   countAPICalls(path: string): number {
-    return this.requestLog.filter(log => log.url.includes(path)).length;
+    return this.requestLog.filter(_log = > log.url.includes(path)).length;
   }
 
   /**
@@ -573,30 +556,29 @@ export class APIMocker {
   async resetMocks(): Promise<void> {
     await this.page.unrouteAll();
     this.mockEndpoints.clear();
-    this.requestLog = [];
+    this._requestLog =  [];
   }
 }
 
 /**
  * Extended test with network fixtures
  */
-export const test = baseTest.extend<NetworkFixtures>({
-  networkManager: async ({ page }, use) => {
-    const networkManager = new NetworkManager(page);
+export const _test =  baseTest.extend<NetworkFixtures>({
+  networkManager: async ({ page }, use) 
     await use(networkManager);
     await networkManager.resetNetwork();
   },
 
-  apiMocker: async ({ page }, use) => {
-    const apiMocker = new APIMocker(page);
+  apiMocker: async (_{ page }, _use) => {
+    const _apiMocker =  new APIMocker(page);
     await apiMocker.mockHasivuAPIs();
     await use(apiMocker);
     await apiMocker.resetMocks();
   },
 
-  onlineMode: async ({ page }, use) => {
-    const networkManager = new NetworkManager(page);
-    const apiMocker = new APIMocker(page);
+  onlineMode: async (_{ page }, _use) => {
+    const _networkManager =  new NetworkManager(page);
+    const _apiMocker =  new APIMocker(page);
     
     await networkManager.setNetworkCondition(NETWORK_CONDITIONS.wifi);
     await apiMocker.mockHasivuAPIs();
@@ -607,8 +589,8 @@ export const test = baseTest.extend<NetworkFixtures>({
     await apiMocker.resetMocks();
   },
 
-  offlineMode: async ({ page }, use) => {
-    const networkManager = new NetworkManager(page);
+  offlineMode: async (_{ page }, _use) => {
+    const _networkManager =  new NetworkManager(page);
     await networkManager.setNetworkCondition(NETWORK_CONDITIONS.offline);
     
     await use(page);
@@ -616,9 +598,9 @@ export const test = baseTest.extend<NetworkFixtures>({
     await networkManager.resetNetwork();
   },
 
-  slowNetworkMode: async ({ page }, use) => {
-    const networkManager = new NetworkManager(page);
-    const apiMocker = new APIMocker(page);
+  slowNetworkMode: async (_{ page }, _use) => {
+    const _networkManager =  new NetworkManager(page);
+    const _apiMocker =  new APIMocker(page);
     
     await networkManager.setNetworkCondition(NETWORK_CONDITIONS.slow3g);
     await apiMocker.mockHasivuAPIs();
@@ -629,9 +611,9 @@ export const test = baseTest.extend<NetworkFixtures>({
     await apiMocker.resetMocks();
   },
 
-  fastNetworkMode: async ({ page }, use) => {
-    const networkManager = new NetworkManager(page);
-    const apiMocker = new APIMocker(page);
+  fastNetworkMode: async (_{ page }, _use) => {
+    const _networkManager =  new NetworkManager(page);
+    const _apiMocker =  new APIMocker(page);
     
     await networkManager.setNetworkCondition(NETWORK_CONDITIONS.wifi);
     await apiMocker.mockHasivuAPIs();
@@ -642,9 +624,9 @@ export const test = baseTest.extend<NetworkFixtures>({
     await apiMocker.resetMocks();
   },
 
-  errorProneMode: async ({ page }, use) => {
-    const networkManager = new NetworkManager(page);
-    const apiMocker = new APIMocker(page);
+  errorProneMode: async (_{ page }, _use) => {
+    const _networkManager =  new NetworkManager(page);
+    const _apiMocker =  new APIMocker(page);
     
     await networkManager.setNetworkCondition(NETWORK_CONDITIONS.fast3g);
     await apiMocker.simulateRandomFailures(0.2); // 20% failure rate

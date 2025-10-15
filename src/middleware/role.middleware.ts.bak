@@ -1,0 +1,174 @@
+/**
+ * Role-based access control middleware for HASIVU Platform
+ * Validates user roles and permissions for API endpoints
+ */
+
+import { Request, Response, NextFunction } from 'express';
+import { logger } from '../services/logger.service';
+
+export interface AuthenticatedRequest extends Request {
+  user?: {
+    id: string;
+    email: string;
+    role: string;
+    schoolId?: string;
+    permissions?: string[];
+  };
+}
+
+/**
+ * Middleware to check if user has required roles
+ * @param allowedRoles Array of allowed role names
+ * @returns Express middleware function
+ */
+export const roleMiddleware = (allowedRoles: string[]) => {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+    try {
+      // Check if user is authenticated
+      if (!req.user) {
+        logger.warn('Role middleware: No user found in request', {
+          path: req.path,
+          method: req.method,
+          ip: req.ip
+        });
+        res.status(401).json({
+          success: false,
+          message: 'Authentication required',
+          error: 'UNAUTHENTICATED'
+        });
+        return;
+      }
+
+      const userRole = req.user.role;
+
+      // Check if user role is in allowed roles
+      if (!allowedRoles.includes(userRole)) {
+        logger.warn('Role middleware: Insufficient permissions', {
+          userId: req.user.id,
+          userRole: userRole,
+          allowedRoles,
+          path: req.path,
+          method: req.method
+        });
+
+        res.status(403).json({
+          success: false,
+          message: 'Insufficient permissions',
+          error: 'INSUFFICIENT_PERMISSIONS',
+          requiredRoles: allowedRoles,
+          userRole: userRole
+        });
+        return;
+      }
+
+      // Log successful role check
+      logger.debug('Role middleware: Access granted', {
+        userId: req.user.id,
+        userRole: userRole,
+        path: req.path,
+        method: req.method
+      });
+
+      next();
+
+    } catch (error: unknown) {
+      logger.error('Role middleware error', {
+        error: (error instanceof Error ? error.message : String(error)),
+        stack: (error instanceof Error ? error.stack : undefined),
+        path: req.path,
+        method: req.method
+      });
+
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        error: 'MIDDLEWARE_ERROR'
+      });
+      return;
+    }
+  };
+};
+
+/**
+ * Middleware to check specific permissions
+ * @param requiredPermissions Array of required permission strings
+ * @returns Express middleware function
+ */
+export const permissionMiddleware = (requiredPermissions: string[]) => {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+    try {
+      // Check if user is authenticated
+      if (!req.user) {
+        res.status(401).json({
+          success: false,
+          message: 'Authentication required',
+          error: 'UNAUTHENTICATED'
+        });
+        return;
+      }
+
+      const userPermissions = req.user.permissions || [];
+
+      // Check if user has all required permissions
+      const hasAllPermissions = requiredPermissions.every(permission =>
+        userPermissions.includes(permission)
+      );
+
+      if (!hasAllPermissions) {
+        logger.warn('Permission middleware: Missing permissions', {
+          userId: req.user!.id,
+          userPermissions,
+          requiredPermissions,
+          path: req.path,
+          method: req.method
+        });
+
+        res.status(403).json({
+          success: false,
+          message: 'Insufficient permissions',
+          error: 'INSUFFICIENT_PERMISSIONS',
+          requiredPermissions,
+          userPermissions
+        });
+        return;
+      }
+
+      next();
+
+    } catch (error: unknown) {
+      logger.error('Permission middleware error', {
+        error: (error instanceof Error ? error.message : String(error)),
+        stack: (error instanceof Error ? error.stack : undefined),
+        path: req.path,
+        method: req.method
+      });
+
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        error: 'MIDDLEWARE_ERROR'
+      });
+      return;
+    }
+  };
+};
+
+/**
+ * Middleware for admin-only access
+ */
+export const adminOnly = roleMiddleware(['admin', 'super_admin']);
+
+/**
+ * Middleware for school staff access
+ */
+export const schoolStaffOnly = roleMiddleware(['school_admin', 'staff', 'teacher', 'admin', 'super_admin']);
+
+/**
+ * Middleware for parent access
+ */
+export const parentOnly = roleMiddleware(['parent', 'admin', 'super_admin']);
+
+/**
+ * Middleware for student access
+ */
+export const studentOnly = roleMiddleware(['student', 'admin', 'super_admin']);

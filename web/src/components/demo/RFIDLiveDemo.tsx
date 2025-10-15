@@ -1,22 +1,22 @@
-"use client";
+'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  CreditCard, 
-  CheckCircle, 
-  XCircle, 
-  Loader2, 
-  Wifi, 
+import { motion, _AnimatePresence } from 'framer-motion';
+import {
+  CreditCard,
+  CheckCircle,
+  XCircle,
+  _Loader2,
+  Wifi,
   WifiOff,
-  User,
+  _User,
   Package,
   Clock,
-  Camera,
+  _Camera,
   AlertCircle,
-  Activity
+  Activity,
 } from 'lucide-react';
-import { hasiviApi } from '@/services/api/hasivu-api.service';
+import { _hasiviApi } from '@/services/api/hasivu-api.service';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -66,31 +66,33 @@ const DEMO_CARDS: DemoRFIDCard[] = [
     studentName: 'Emma Johnson',
     schoolName: 'Springfield Elementary',
     grade: '5th Grade',
-    photoUrl: 'https://ui-avatars.com/api/?name=Emma+Johnson&background=4CAF50&color=fff'
+    photoUrl: 'https://ui-avatars.com/api/?name=Emma+Johnson&background=4CAF50&color=fff',
   },
   {
     cardNumber: 'RFID-2024-0002',
     studentName: 'Michael Chen',
     schoolName: 'Springfield Elementary',
     grade: '4th Grade',
-    photoUrl: 'https://ui-avatars.com/api/?name=Michael+Chen&background=2196F3&color=fff'
+    photoUrl: 'https://ui-avatars.com/api/?name=Michael+Chen&background=2196F3&color=fff',
   },
   {
     cardNumber: 'RFID-2024-0003',
     studentName: 'Sofia Rodriguez',
     schoolName: 'Springfield Elementary',
     grade: '6th Grade',
-    photoUrl: 'https://ui-avatars.com/api/?name=Sofia+Rodriguez&background=9C27B0&color=fff'
-  }
+    photoUrl: 'https://ui-avatars.com/api/?name=Sofia+Rodriguez&background=9C27B0&color=fff',
+  },
 ];
 
 const RFIDLiveDemo: React.FC = () => {
   const [isScanning, setIsScanning] = useState(false);
-  const [readerStatus, setReaderStatus] = useState<'online' | 'offline' | 'connecting'>('connecting');
+  const [readerStatus, setReaderStatus] = useState<'online' | 'offline' | 'connecting'>(
+    'connecting'
+  );
   const [selectedCard, setSelectedCard] = useState<DemoRFIDCard | null>(null);
   const [verificationResult, setVerificationResult] = useState<RFIDVerificationResult | null>(null);
   const [manualCardNumber, setManualCardNumber] = useState('');
-  const [isManualMode, setIsManualMode] = useState(false);
+  const [_isManualMode, setIsManualMode] = useState(false);
   const [signalStrength, setSignalStrength] = useState(85);
   const [verificationHistory, setVerificationHistory] = useState<RFIDVerificationResult[]>([]);
   const scanTimeoutRef = useRef<NodeJS.Timeout>();
@@ -101,7 +103,7 @@ const RFIDLiveDemo: React.FC = () => {
       setReaderStatus('connecting');
       await new Promise(resolve => setTimeout(resolve, 1500));
       setReaderStatus('online');
-      
+
       // Simulate signal strength fluctuation
       const interval = setInterval(() => {
         setSignalStrength(prev => {
@@ -133,7 +135,7 @@ const RFIDLiveDemo: React.FC = () => {
 
       // In production, this would call the actual API
       // const response = await hasiviApi.verifyRFIDCard(card.cardNumber, 'demo-reader-001');
-      
+
       // For demo, simulate the response
       const mockResult: RFIDVerificationResult = {
         success: true,
@@ -148,35 +150,33 @@ const RFIDLiveDemo: React.FC = () => {
           id: 'demo-reader-001',
           name: 'Cafeteria Reader #1',
           location: 'Main Entrance',
-          status: 'online'
+          status: 'online',
         },
         orderInfo: {
           id: `ORD-${Date.now()}`,
           status: 'ready',
           deliveryDate: new Date(),
-          items: ['Chicken Sandwich', 'Apple Juice', 'Fresh Fruit Cup']
+          items: ['Chicken Sandwich', 'Apple Juice', 'Fresh Fruit Cup'],
         },
         signalQuality: signalStrength > 80 ? 'excellent' : signalStrength > 60 ? 'good' : 'fair',
         verificationTime: scanDelay,
-        photoUrl: card.photoUrl
+        photoUrl: card.photoUrl,
       };
 
       setVerificationResult(mockResult);
       setVerificationHistory(prev => [mockResult, ...prev.slice(0, 4)]);
-      
+
       // Success feedback
       toast.success(`Verified: ${card.studentName}`);
-      
+
       // Auto-reset after 5 seconds
       scanTimeoutRef.current = setTimeout(() => {
         setVerificationResult(null);
         setSelectedCard(null);
       }, 5000);
-
     } catch (error) {
-      console.error('RFID verification error:', error);
       toast.error('Verification failed. Please try again.');
-      
+
       setVerificationResult({
         success: false,
         cardNumber: card.cardNumber,
@@ -190,10 +190,10 @@ const RFIDLiveDemo: React.FC = () => {
           id: 'demo-reader-001',
           name: 'Cafeteria Reader #1',
           location: 'Main Entrance',
-          status: 'online'
+          status: 'online',
         },
         signalQuality: 'poor',
-        verificationTime: 0
+        verificationTime: 0,
       });
     } finally {
       setIsScanning(false);
@@ -222,11 +222,12 @@ const RFIDLiveDemo: React.FC = () => {
 
   const getSignalIcon = () => {
     if (readerStatus === 'offline') return <WifiOff className="h-5 w-5 text-red-500" />;
-    if (readerStatus === 'connecting') return <Wifi className="h-5 w-5 text-yellow-500 animate-pulse" />;
+    if (readerStatus === 'connecting')
+      return <Wifi className="h-5 w-5 text-yellow-500 animate-pulse" />;
     return <Wifi className="h-5 w-5 text-green-500" />;
   };
 
-  const getSignalColor = () => {
+  const _getSignalColor = () => {
     if (signalStrength > 80) return 'bg-green-500';
     if (signalStrength > 60) return 'bg-yellow-500';
     return 'bg-red-500';
@@ -236,9 +237,7 @@ const RFIDLiveDemo: React.FC = () => {
     <div className="w-full max-w-6xl mx-auto p-6 space-y-6">
       {/* Header */}
       <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">
-          RFID Verification Live Demo
-        </h2>
+        <h2 className="text-3xl font-bold text-gray-900 mb-2">RFID Verification Live Demo</h2>
         <p className="text-gray-600">
           Experience our real-time RFID meal delivery verification system
         </p>
@@ -284,11 +283,7 @@ const RFIDLiveDemo: React.FC = () => {
                   <CreditCard className="h-24 w-24 text-blue-600" />
                 </motion.div>
               ) : selectedCard ? (
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="text-center"
-                >
+                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-center">
                   <CheckCircle className="h-24 w-24 text-green-500 mx-auto mb-2" />
                   <p className="text-green-600 font-medium">Card Verified!</p>
                 </motion.div>
@@ -304,7 +299,7 @@ const RFIDLiveDemo: React.FC = () => {
             <div className="space-y-2">
               <p className="text-sm font-medium text-gray-700">Demo RFID Cards:</p>
               <div className="grid gap-2">
-                {DEMO_CARDS.map((card) => (
+                {DEMO_CARDS.map(card => (
                   <Button
                     key={card.cardNumber}
                     variant={selectedCard?.cardNumber === card.cardNumber ? 'default' : 'outline'}
@@ -312,8 +307,8 @@ const RFIDLiveDemo: React.FC = () => {
                     onClick={() => handleCardSelect(card)}
                     disabled={isScanning}
                   >
-                    <img 
-                      src={card.photoUrl} 
+                    <img
+                      src={card.photoUrl}
                       alt={card.studentName}
                       className="w-10 h-10 rounded-full mr-3"
                     />
@@ -335,8 +330,8 @@ const RFIDLiveDemo: React.FC = () => {
                 <Input
                   placeholder="Enter card number"
                   value={manualCardNumber}
-                  onChange={(e) => setManualCardNumber(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleManualVerification()}
+                  onChange={e => setManualCardNumber(e.target.value)}
+                  onKeyPress={e => e.key === 'Enter' && handleManualVerification()}
                 />
                 <Button onClick={handleManualVerification} disabled={isScanning}>
                   Verify
@@ -350,10 +345,7 @@ const RFIDLiveDemo: React.FC = () => {
         <div className="space-y-4">
           {/* Current Verification */}
           {verificationResult && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
               <Card className={verificationResult.success ? 'border-green-500' : 'border-red-500'}>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -371,7 +363,7 @@ const RFIDLiveDemo: React.FC = () => {
                       {/* Student Info */}
                       <div className="flex items-center gap-4">
                         {verificationResult.photoUrl && (
-                          <img 
+                          <img
                             src={verificationResult.photoUrl}
                             alt={verificationResult.studentName}
                             className="w-16 h-16 rounded-full"
@@ -379,7 +371,9 @@ const RFIDLiveDemo: React.FC = () => {
                         )}
                         <div className="flex-1">
                           <p className="font-semibold text-lg">{verificationResult.studentName}</p>
-                          <p className="text-sm text-gray-600">ID: {verificationResult.studentId}</p>
+                          <p className="text-sm text-gray-600">
+                            ID: {verificationResult.studentId}
+                          </p>
                         </div>
                       </div>
 
@@ -410,7 +404,9 @@ const RFIDLiveDemo: React.FC = () => {
                         <div className="flex items-center gap-2">
                           <Activity className="h-4 w-4 text-gray-400" />
                           <span className="text-gray-600">Speed:</span>
-                          <span className="font-medium">{verificationResult.verificationTime}ms</span>
+                          <span className="font-medium">
+                            {verificationResult.verificationTime}ms
+                          </span>
                         </div>
                       </div>
 
@@ -445,13 +441,13 @@ const RFIDLiveDemo: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {verificationHistory.map((history, index) => (
+                  {verificationHistory.map((history, _index) => (
                     <div
                       key={history.verificationId}
                       className="flex items-center justify-between p-2 bg-gray-50 rounded"
                     >
                       <div className="flex items-center gap-3">
-                        <img 
+                        <img
                           src={history.photoUrl}
                           alt={history.studentName}
                           className="w-8 h-8 rounded-full"

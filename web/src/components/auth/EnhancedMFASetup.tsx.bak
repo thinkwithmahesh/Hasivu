@@ -1,0 +1,687 @@
+/**
+ * HASIVU Platform - Enhanced MFA Setup Component
+ * Complete multi-factor authentication enrollment interface
+ * Supports TOTP, SMS, Email, and backup code management
+ */
+
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Smartphone,
+  Mail,
+  Key,
+  Shield,
+  CheckCircle,
+  AlertTriangle,
+  Copy,
+  Download,
+  QrCode,
+  RefreshCw,
+  Eye,
+  EyeOff
+} from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
+import { useEnhancedAuth } from '@/contexts/enhanced-auth-context';
+import { toast } from 'react-hot-toast';
+
+interface MFAMethod {
+  type: 'totp' | 'sms' | 'email';
+  enabled: boolean;
+  verified: boolean;
+  lastUsed?: Date;
+}
+
+interface SetupStep {
+  id: string;
+  title: string;
+  description: string;
+  completed: boolean;
+}
+
+const EnhancedMFASetup: React.FC = () => {
+  const { user, setupMFA, verifyMFA } = useEnhancedAuth();
+  const [activeTab, setActiveTab] = useState<'totp' | 'sms' | 'email' | 'backup'>('totp');
+  const [setupStep, setSetupStep] = useState<'choose' | 'setup' | 'verify' | 'complete'>('choose');
+  const [isLoading, setIsLoading] = useState(false);
+
+  // TOTP Setup State
+  const [totpSecret, setTotpSecret] = useState<string>('');
+  const [totpQRCode, setTotpQRCode] = useState<string>('');
+  const [totpCode, setTotpCode] = useState<string>('');
+  const [showSecret, setShowSecret] = useState(false);
+
+  // SMS Setup State
+  const [phoneNumber, setPhoneNumber] = useState<string>('');
+  const [smsCode, setSmsCode] = useState<string>('');
+  const [smsChallengeId, setSmsChallengeId] = useState<string>('');
+
+  // Email Setup State
+  const [emailCode, setEmailCode] = useState<string>('');
+  const [emailChallengeId, setEmailChallengeId] = useState<string>('');
+
+  // Backup Codes State
+  const [backupCodes, setBackupCodes] = useState<string[]>([]);
+  const [backupCodesRevealed, setBackupCodesRevealed] = useState(false);
+
+  // Current MFA Methods
+  const [mfaMethods, setMfaMethods] = useState<MFAMethod[]>([
+    { type: 'totp', enabled: false, verified: false },
+    { type: 'sms', enabled: false, verified: false },
+    { type: 'email', enabled: false, verified: false }
+  ]);
+
+  const [verificationAttempts, setVerificationAttempts] = useState(0);
+  const maxAttempts = 3;
+
+  useEffect(() => {
+    // Load existing MFA methods from user data
+    if (user) {
+      setMfaMethods(prev => prev.map(method => ({
+        ...method,
+        enabled: user.mfaMethods.includes(method.type),
+        verified: user.mfaMethods.includes(method.type)
+      })));
+    }
+  }, [user]);
+
+  const handleStartSetup = async (method: 'totp' | 'sms' | 'email') => {
+    try {
+      setIsLoading(true);
+      setActiveTab(method);
+      setSetupStep('setup');
+      setVerificationAttempts(0);
+
+      const result = await setupMFA(method, method === 'sms' ? phoneNumber : undefined);
+
+      switch (method) {
+        case 'totp':
+          if (result.secret && result.qrCode) {
+            setTotpSecret(result.secret);
+            setTotpQRCode(result.qrCode);
+            setBackupCodes(result.backupCodes || []);
+          }
+          break;
+
+        case 'sms':
+          if (result.challenge) {
+            setSmsChallengeId(result.challenge.challengeId);
+            toast.success(`SMS verification code sent to ${result.challenge.maskedDestination}`);
+          }
+          break;
+
+        case 'email':
+          if (result.challenge) {
+            setEmailChallengeId(result.challenge.challengeId);
+            toast.success(`Email verification code sent to ${result.challenge.maskedDestination}`);
+          }
+          break;
+      }
+
+      setSetupStep('verify');
+    } catch (error) {
+      toast.error(`Failed to setup ${method.toUpperCase()}: ${error.message}`);
+      setSetupStep('choose');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerifySetup = async () => {
+    try {
+      setIsLoading(true);
+
+      let result;
+      switch (activeTab) {
+        case 'totp':
+          result = await verifyMFA({
+            code: totpCode,
+            type: 'totp'
+          });
+          break;
+
+        case 'sms':
+          result = await verifyMFA({
+            challengeId: smsChallengeId,
+            code: smsCode,
+            type: 'sms'
+          });
+          break;
+
+        case 'email':
+          result = await verifyMFA({
+            challengeId: emailChallengeId,
+            code: emailCode,
+            type: 'email'
+          });
+          break;
+
+        default:
+          throw new Error('Invalid MFA method');
+      }
+
+      if (result.success) {
+        // Update MFA methods
+        setMfaMethods(prev => prev.map(method =>
+          method.type === activeTab
+            ? { ...method, enabled: true, verified: true, lastUsed: new Date() }
+            : method
+        ));
+
+        toast.success(`${activeTab.toUpperCase()} authentication enabled successfully!`);
+        setSetupStep('complete');
+      } else {
+        setVerificationAttempts(prev => prev + 1);
+        toast.error(result.message || 'Verification failed');
+
+        if (verificationAttempts + 1 >= maxAttempts) {
+          toast.error('Maximum verification attempts reached. Please start over.');
+          setSetupStep('choose');
+        }
+      }
+    } catch (error) {
+      toast.error(`Verification failed: ${error.message}`);
+      setVerificationAttempts(prev => prev + 1);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCopyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success(`${label} copied to clipboard`);
+  };
+
+  const handleDownloadBackupCodes = () => {
+    const content = `HASIVU Platform - MFA Backup Codes\n\nGenerated: ${new Date().toLocaleString()}\nUser: ${user?.email}\n\n${backupCodes.join('\n')}\n\nKeep these codes secure. Each code can only be used once.`;
+
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `hasivu-backup-codes-${Date.now()}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    toast.success('Backup codes downloaded');
+  };
+
+  const resetSetup = () => {
+    setSetupStep('choose');
+    setTotpCode('');
+    setSmsCode('');
+    setEmailCode('');
+    setTotpSecret('');
+    setTotpQRCode('');
+    setVerificationAttempts(0);
+  };
+
+  const getMethodIcon = (method: 'totp' | 'sms' | 'email') => {
+    switch (method) {
+      case 'totp': return <Key className="h-5 w-5" />;
+      case 'sms': return <Smartphone className="h-5 w-5" />;
+      case 'email': return <Mail className="h-5 w-5" />;
+    }
+  };
+
+  const getMethodTitle = (method: 'totp' | 'sms' | 'email') => {
+    switch (method) {
+      case 'totp': return 'Authenticator App';
+      case 'sms': return 'SMS Verification';
+      case 'email': return 'Email Verification';
+    }
+  };
+
+  const getMethodDescription = (method: 'totp' | 'sms' | 'email') => {
+    switch (method) {
+      case 'totp': return 'Use Google Authenticator, Authy, or similar apps';
+      case 'sms': return 'Receive codes via SMS text message';
+      case 'email': return 'Receive codes via email';
+    }
+  };
+
+  const renderChooseMethod = () => (
+    <div className="space-y-6">
+      <div className="text-center">
+        <Shield className="h-12 w-12 text-blue-600 mx-auto mb-4" />
+        <h2 className="text-2xl font-bold mb-2">Enhanced Security Setup</h2>
+        <p className="text-muted-foreground">
+          Add an extra layer of security to protect your account
+        </p>
+      </div>
+
+      <div className="grid gap-4">
+        {(['totp', 'sms', 'email'] as const).map((method) => {
+          const methodData = mfaMethods.find(m => m.type === method);
+          const isEnabled = methodData?.enabled || false;
+
+          return (
+            <Card key={method} className={`cursor-pointer transition-colors ${isEnabled ? 'border-green-500' : 'hover:border-primary'}`}>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    {getMethodIcon(method)}
+                    <div>
+                      <h3 className="font-medium">{getMethodTitle(method)}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {getMethodDescription(method)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {isEnabled ? (
+                      <Badge variant="outline" className="text-green-600 border-green-600">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Enabled
+                      </Badge>
+                    ) : (
+                      <Button
+                        onClick={() => handleStartSetup(method)}
+                        disabled={isLoading}
+                      >
+                        {isLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : 'Setup'}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      <Alert>
+        <AlertTriangle className="h-4 w-4" />
+        <AlertDescription>
+          We recommend setting up at least two methods for better security and account recovery options.
+        </AlertDescription>
+      </Alert>
+    </div>
+  );
+
+  const renderTOTPSetup = () => (
+    <div className="space-y-6">
+      <div className="text-center">
+        <QrCode className="h-12 w-12 text-blue-600 mx-auto mb-4" />
+        <h2 className="text-2xl font-bold mb-2">Setup Authenticator App</h2>
+      </div>
+
+      {setupStep === 'setup' && (
+        <div className="space-y-6">
+          <div className="text-center">
+            <div className="bg-white p-4 rounded-lg border inline-block mb-4">
+              <QRCodeSVG value={totpQRCode} size={200} />
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              Scan this QR code with your authenticator app
+            </p>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Manual Entry</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Label htmlFor="secret">Secret Key</Label>
+              <div className="flex gap-2 mt-1">
+                <Input
+                  id="secret"
+                  value={totpSecret}
+                  type={showSecret ? 'text' : 'password'}
+                  readOnly
+                  className="font-mono text-xs"
+                />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setShowSecret(!showSecret)}
+                >
+                  {showSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => handleCopyToClipboard(totpSecret, 'Secret key')}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Enter this key manually if you can't scan the QR code
+              </p>
+            </CardContent>
+          </Card>
+
+          <div className="text-center">
+            <Button onClick={() => setSetupStep('verify')}>
+              I've Added the Code
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {setupStep === 'verify' && (
+        <div className="space-y-4">
+          <div className="text-center">
+            <p className="text-muted-foreground mb-4">
+              Enter the 6-digit code from your authenticator app
+            </p>
+          </div>
+
+          <div className="max-w-xs mx-auto">
+            <Label htmlFor="totp-code">Verification Code</Label>
+            <Input
+              id="totp-code"
+              value={totpCode}
+              onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              placeholder="000000"
+              className="text-center text-lg tracking-widest"
+              maxLength={6}
+            />
+          </div>
+
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground mb-4">
+              Attempt {verificationAttempts + 1} of {maxAttempts}
+            </p>
+          </div>
+
+          <div className="flex gap-2 justify-center">
+            <Button variant="outline" onClick={resetSetup}>
+              Start Over
+            </Button>
+            <Button
+              onClick={handleVerifySetup}
+              disabled={totpCode.length !== 6 || isLoading}
+            >
+              {isLoading ? <RefreshCw className="h-4 w-4 animate-spin mr-2" /> : null}
+              Verify Code
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  const renderSMSSetup = () => (
+    <div className="space-y-6">
+      <div className="text-center">
+        <Smartphone className="h-12 w-12 text-blue-600 mx-auto mb-4" />
+        <h2 className="text-2xl font-bold mb-2">Setup SMS Verification</h2>
+      </div>
+
+      {setupStep === 'setup' && (
+        <div className="space-y-4">
+          <div className="max-w-sm mx-auto">
+            <Label htmlFor="phone">Phone Number</Label>
+            <Input
+              id="phone"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              placeholder="+1 (555) 123-4567"
+              type="tel"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Include country code (e.g., +1 for US)
+            </p>
+          </div>
+
+          <div className="text-center">
+            <Button
+              onClick={() => handleStartSetup('sms')}
+              disabled={!phoneNumber || isLoading}
+            >
+              {isLoading ? <RefreshCw className="h-4 w-4 animate-spin mr-2" /> : null}
+              Send Verification Code
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {setupStep === 'verify' && (
+        <div className="space-y-4">
+          <div className="text-center">
+            <p className="text-muted-foreground mb-4">
+              Enter the 6-digit code sent to your phone
+            </p>
+          </div>
+
+          <div className="max-w-xs mx-auto">
+            <Label htmlFor="sms-code">Verification Code</Label>
+            <Input
+              id="sms-code"
+              value={smsCode}
+              onChange={(e) => setSmsCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              placeholder="000000"
+              className="text-center text-lg tracking-widest"
+              maxLength={6}
+            />
+          </div>
+
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground mb-4">
+              Attempt {verificationAttempts + 1} of {maxAttempts}
+            </p>
+          </div>
+
+          <div className="flex gap-2 justify-center">
+            <Button variant="outline" onClick={resetSetup}>
+              Start Over
+            </Button>
+            <Button
+              onClick={handleVerifySetup}
+              disabled={smsCode.length !== 6 || isLoading}
+            >
+              {isLoading ? <RefreshCw className="h-4 w-4 animate-spin mr-2" /> : null}
+              Verify Code
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  const renderEmailSetup = () => (
+    <div className="space-y-6">
+      <div className="text-center">
+        <Mail className="h-12 w-12 text-blue-600 mx-auto mb-4" />
+        <h2 className="text-2xl font-bold mb-2">Setup Email Verification</h2>
+        <p className="text-muted-foreground">
+          We'll send codes to {user?.email}
+        </p>
+      </div>
+
+      {setupStep === 'setup' && (
+        <div className="text-center">
+          <Button onClick={() => handleStartSetup('email')} disabled={isLoading}>
+            {isLoading ? <RefreshCw className="h-4 w-4 animate-spin mr-2" /> : null}
+            Send Verification Code
+          </Button>
+        </div>
+      )}
+
+      {setupStep === 'verify' && (
+        <div className="space-y-4">
+          <div className="text-center">
+            <p className="text-muted-foreground mb-4">
+              Enter the 8-character code sent to your email
+            </p>
+          </div>
+
+          <div className="max-w-xs mx-auto">
+            <Label htmlFor="email-code">Verification Code</Label>
+            <Input
+              id="email-code"
+              value={emailCode}
+              onChange={(e) => setEmailCode(e.target.value.toUpperCase().slice(0, 8))}
+              placeholder="ABC12345"
+              className="text-center text-lg tracking-widest"
+              maxLength={8}
+            />
+          </div>
+
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground mb-4">
+              Attempt {verificationAttempts + 1} of {maxAttempts}
+            </p>
+          </div>
+
+          <div className="flex gap-2 justify-center">
+            <Button variant="outline" onClick={resetSetup}>
+              Start Over
+            </Button>
+            <Button
+              onClick={handleVerifySetup}
+              disabled={emailCode.length !== 8 || isLoading}
+            >
+              {isLoading ? <RefreshCw className="h-4 w-4 animate-spin mr-2" /> : null}
+              Verify Code
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  const renderBackupCodes = () => (
+    <div className="space-y-6">
+      <div className="text-center">
+        <Key className="h-12 w-12 text-green-600 mx-auto mb-4" />
+        <h2 className="text-2xl font-bold mb-2">Backup Recovery Codes</h2>
+        <p className="text-muted-foreground">
+          Save these codes securely. Each can only be used once.
+        </p>
+      </div>
+
+      {backupCodes.length > 0 && (
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-medium">Recovery Codes</h3>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setBackupCodesRevealed(!backupCodesRevealed)}
+                >
+                  {backupCodesRevealed ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {backupCodesRevealed ? 'Hide' : 'Show'}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDownloadBackupCodes}
+                >
+                  <Download className="h-4 w-4 mr-1" />
+                  Download
+                </Button>
+              </div>
+            </div>
+
+            {backupCodesRevealed && (
+              <div className="grid grid-cols-2 gap-2">
+                {backupCodes.map((code, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center gap-2 p-2 bg-gray-50 rounded font-mono text-sm"
+                  >
+                    <span className="flex-1">{code}</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleCopyToClipboard(code, `Code ${index + 1}`)}
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      <Alert>
+        <AlertTriangle className="h-4 w-4" />
+        <AlertDescription>
+          Store these codes in a secure location. If you lose access to your other MFA methods,
+          these codes are your only way to regain access to your account.
+        </AlertDescription>
+      </Alert>
+    </div>
+  );
+
+  const renderComplete = () => (
+    <div className="space-y-6 text-center">
+      <div>
+        <CheckCircle className="h-16 w-16 text-green-600 mx-auto mb-4" />
+        <h2 className="text-2xl font-bold mb-2">Setup Complete!</h2>
+        <p className="text-muted-foreground">
+          {getMethodTitle(activeTab)} has been successfully enabled for your account.
+        </p>
+      </div>
+
+      <div className="flex gap-2 justify-center">
+        <Button variant="outline" onClick={resetSetup}>
+          Setup Another Method
+        </Button>
+        <Button onClick={() => setActiveTab('backup')}>
+          View Backup Codes
+        </Button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="max-w-2xl mx-auto p-6">
+      <Card>
+        <CardContent className="p-8">
+          {setupStep === 'choose' ? (
+            <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)}>
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="totp">TOTP</TabsTrigger>
+                <TabsTrigger value="sms">SMS</TabsTrigger>
+                <TabsTrigger value="email">Email</TabsTrigger>
+                <TabsTrigger value="backup">Backup</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="totp" className="mt-6">
+                {renderChooseMethod()}
+              </TabsContent>
+
+              <TabsContent value="sms" className="mt-6">
+                {renderChooseMethod()}
+              </TabsContent>
+
+              <TabsContent value="email" className="mt-6">
+                {renderChooseMethod()}
+              </TabsContent>
+
+              <TabsContent value="backup" className="mt-6">
+                {renderBackupCodes()}
+              </TabsContent>
+            </Tabs>
+          ) : setupStep === 'complete' ? (
+            renderComplete()
+          ) : (
+            <div>
+              {activeTab === 'totp' && renderTOTPSetup()}
+              {activeTab === 'sms' && renderSMSSetup()}
+              {activeTab === 'email' && renderEmailSetup()}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default EnhancedMFASetup;

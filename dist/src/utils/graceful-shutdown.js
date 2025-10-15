@@ -57,7 +57,7 @@ const defaultOptions = {
     maintainConnections: false
 };
 const serviceRegistry = new Map();
-let connections = new Set();
+const connections = new Set();
 let isShuttingDown = false;
 let shutdownStatus = {
     initiated: false,
@@ -288,7 +288,7 @@ async function shutdownServices(opts) {
     opts.logger.info('Starting service shutdown sequence...');
     try {
         const servicesByPriority = new Map();
-        for (const [name, config] of serviceRegistry) {
+        for (const [_name, config] of serviceRegistry) {
             const priority = config.priority;
             if (!servicesByPriority.has(priority)) {
                 servicesByPriority.set(priority, []);
@@ -449,7 +449,7 @@ function registerCoreServices() {
             graceful: true,
             dependencies: ['Notification'],
             cleanupFunction: async () => {
-                const whatsappService = whatsapp_service_1.WhatsAppService.getInstance();
+                const _whatsappService = whatsapp_service_1.WhatsAppService.getInstance();
                 logger_1.logger.info('WhatsApp service cleanup completed');
             }
         });
@@ -471,12 +471,12 @@ function registerCoreServices() {
             preserveState: true,
             dependencies: ['Cache'],
             cleanupFunction: async () => {
-                const redisService = redis_service_1.RedisService;
-                await redisService.disconnect();
+                const _redisService = redis_service_1.RedisService;
+                await _redisService.disconnect();
             },
             healthCheck: async () => {
                 try {
-                    const redisService = redis_service_1.RedisService;
+                    const _redisService = redis_service_1.RedisService;
                     return true;
                 }
                 catch {
@@ -492,12 +492,12 @@ function registerCoreServices() {
             preserveState: true,
             dependencies: ['Redis', 'Queue', 'Cache'],
             cleanupFunction: async () => {
-                const dbService = database_service_1.DatabaseService.getInstance();
-                await dbService.disconnect();
+                const _dbService = database_service_1.DatabaseService.getInstance();
+                await _dbService.disconnect();
             },
             healthCheck: async () => {
                 try {
-                    const dbService = database_service_1.DatabaseService.getInstance();
+                    const _dbService = database_service_1.DatabaseService.getInstance();
                     return true;
                 }
                 catch {
@@ -844,7 +844,7 @@ class TimeoutManager {
 }
 exports.TimeoutManager = TimeoutManager;
 async function cleanupResources(options = {}) {
-    const { timeout = 30000, forceCleanup = false, preserveState = true } = options;
+    const { timeout = 30000, forceCleanup = false } = options;
     logger_1.logger.info('Starting resource cleanup...');
     try {
         const cleanupPromises = [];

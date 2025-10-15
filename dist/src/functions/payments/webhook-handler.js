@@ -81,7 +81,7 @@ function verifyWebhookSignature(signature, body, secret, requestId) {
     catch (error) {
         logger.error('Error during webhook signature verification', {
             requestId,
-            error: error instanceof Error ? error.message : 'Unknown error',
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error',
             action: 'signature_verification_error'
         });
         return false;
@@ -178,7 +178,7 @@ async function processPaymentCaptured(payload, requestId) {
     catch (error) {
         logger.error('Error processing payment captured webhook', {
             requestId,
-            error: error instanceof Error ? error.message : 'Unknown error',
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error',
             action: 'payment_captured_error'
         });
         return {
@@ -186,7 +186,7 @@ async function processPaymentCaptured(payload, requestId) {
             eventType: 'payment.captured',
             processedAt: new Date(),
             entityId: '',
-            error: error instanceof Error ? error.message : 'Unknown error'
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error'
         };
     }
 }
@@ -284,7 +284,7 @@ async function processPaymentFailed(payload, requestId) {
     catch (error) {
         logger.error('Error processing payment failed webhook', {
             requestId,
-            error: error instanceof Error ? error.message : 'Unknown error',
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error',
             action: 'payment_failed_error'
         });
         return {
@@ -292,7 +292,7 @@ async function processPaymentFailed(payload, requestId) {
             eventType: 'payment.failed',
             processedAt: new Date(),
             entityId: '',
-            error: error instanceof Error ? error.message : 'Unknown error'
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error'
         };
     }
 }
@@ -361,7 +361,7 @@ async function processRefundCreated(payload, requestId) {
     catch (error) {
         logger.error('Error processing refund created webhook', {
             requestId,
-            error: error instanceof Error ? error.message : 'Unknown error',
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error',
             action: 'refund_created_error'
         });
         return {
@@ -369,7 +369,7 @@ async function processRefundCreated(payload, requestId) {
             eventType: 'refund.created',
             processedAt: new Date(),
             entityId: '',
-            error: error instanceof Error ? error.message : 'Unknown error'
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error'
         };
     }
 }
@@ -473,7 +473,7 @@ const webhookHandler = async (event, context) => {
             logger.warn('Failed to parse webhook payload JSON', {
                 requestId,
                 clientIP,
-                error: error instanceof Error ? error.message : 'Parse error',
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Parse error',
                 action: 'webhook_validation_failed',
                 reason: 'invalid_json'
             });
@@ -529,12 +529,12 @@ const webhookHandler = async (event, context) => {
         const processingTime = Date.now() - startTime;
         logger.error('Webhook handler error', {
             requestId,
-            error: error instanceof Error ? error.message : 'Unknown error',
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error',
             stack: error instanceof Error ? error.stack : undefined,
             processingTime,
             action: 'webhook_handler_error'
         });
-        return (0, response_utils_1.createErrorResponse)(500, 'Internal server error during webhook processing', { error: error instanceof Error ? error.message : 'Unknown error' }, 'INTERNAL_ERROR', requestId);
+        return (0, response_utils_1.createErrorResponse)(500, 'Internal server error during webhook processing', { error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error' }, 'INTERNAL_ERROR', requestId);
     }
 };
 exports.webhookHandler = webhookHandler;

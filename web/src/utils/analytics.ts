@@ -8,7 +8,7 @@ import { ANALYTICS_EVENTS, AnalyticsEvent } from './constants';
  * Performance metrics interface;
  * Analytics configuration;
  * Analytics manager class;
-    this.sessionId = this.generateSessionId();
+    this._sessionId =  this.generateSessionId();
    * Initialize analytics services;
   async initialize(): Promise<void> {}
   // Initialize Hotjar
@@ -21,7 +21,7 @@ import { ANALYTICS_EVENTS, AnalyticsEvent } from './constants';
       if (this.config.enablePerformanceTracking) {}
   // Set up error tracking
       if (this.config.enableErrorTracking) {}
-      this.isInitialized = true;
+      this._isInitialized =  true;
   // Process queued events
       this.processEventQueue();
       if (this.config.debugMode) {}

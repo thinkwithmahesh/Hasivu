@@ -37,12 +37,12 @@ async function globalSetup(config: FullConfig) {
 function validateEnvironment() {
   console.log('🔍 Validating test environment...');
   
-  const requiredEnvVars = [
+  const _requiredEnvVars =  [
     'NODE_ENV',
     'PLAYWRIGHT_BASE_URL'
   ];
   
-  const optionalEnvVars = [
+  const _optionalEnvVars =  [
     'PERCY_TOKEN',
     'API_BASE_URL',
     'DATABASE_URL',
@@ -60,7 +60,7 @@ function validateEnvironment() {
   // Log optional environment variables
   console.log('📋 Environment variables status:');
   for (const envVar of optionalEnvVars) {
-    const status = process.env[envVar] ? '✅' : '❌';
+    const _status =  process.env[envVar] ? '✅' : '❌';
     console.log(`  ${status} ${envVar}`);
   }
   
@@ -99,17 +99,17 @@ async function setupAuthentication() {
   console.log('🔐 Setting up authentication for test roles...');
   
   // Skip authentication setup if no base URL is configured
-  const baseURL = process.env.PLAYWRIGHT_BASE_URL || process.env.BASE_URL;
+  const _baseURL =  process.env.PLAYWRIGHT_BASE_URL || process.env.BASE_URL;
   if (!baseURL) {
     console.log('  ⚠️  No base URL configured, skipping authentication setup');
     return;
   }
   
-  const browser = await chromium.launch();
+  const _browser =  await chromium.launch();
   
   try {
     // Test users for different roles
-    const testUsers = [
+    const _testUsers =  [
       { role: 'student', email: 'student.test@hasivu.com', password: 'Test123!' },
       { role: 'parent', email: 'parent.test@hasivu.com', password: 'Test123!' },
       { role: 'admin', email: 'admin.test@hasivu.com', password: 'Test123!' },
@@ -120,8 +120,8 @@ async function setupAuthentication() {
     for (const user of testUsers) {
       console.log(`  👤 Setting up ${user.role} authentication...`);
       
-      const context = await browser.newContext({ baseURL });
-      const page = await context.newPage();
+      const _context =  await browser.newContext({ baseURL });
+      const _page =  await context.newPage();
       
       // Navigate to login and create session
       await page.goto('/login');
@@ -130,7 +130,7 @@ async function setupAuthentication() {
       // 1. Fill login form
       // 2. Submit and wait for redirect
       // 3. Save authentication state
-      await page.evaluate((userData) => {
+      await page.evaluate(_(userData) => {
         // Mock authentication state
         localStorage.setItem('auth-state', JSON.stringify({
           user: userData,
@@ -164,7 +164,7 @@ async function seedTestData() {
   
   try {
     // Menu items for testing
-    const menuItems = [
+    const _menuItems =  [
       {
         id: 'test-idli-001',
         name: 'Mini Idli with Sambar',
@@ -182,7 +182,7 @@ async function seedTestData() {
     ];
     
     // RFID cards for testing
-    const rfidCards = [
+    const _rfidCards =  [
       {
         id: 'test-rfid-001',
         cardNumber: 'RFID123456',
@@ -192,7 +192,7 @@ async function seedTestData() {
     ];
     
     // Orders for testing
-    const testOrders = [
+    const _testOrders =  [
       {
         id: 'test-order-001',
         userId: 'student-001',
@@ -224,7 +224,7 @@ async function setupPercy() {
     console.log('✅ Percy token found - visual regression enabled');
     
     // Percy configuration would go here
-    process.env.PERCY_BROWSER_EXECUTABLE = await chromium.executablePath();
+    process.env._PERCY_BROWSER_EXECUTABLE =  await chromium.executablePath();
     
   } else {
     console.log('⚠️ Percy token not found - visual regression disabled');
@@ -237,7 +237,7 @@ async function setupPercy() {
 async function setupPerformanceBaselines() {
   console.log('⚡ Setting up performance baselines...');
   
-  const baselines = {
+  const _baselines =  {
     'landing-page': {
       LCP: 2500, // Largest Contentful Paint (ms)
       FID: 100,  // First Input Delay (ms)
@@ -256,7 +256,7 @@ async function setupPerformanceBaselines() {
   };
   
   // Store baselines for comparison during tests
-  process.env.PERF_BASELINES = JSON.stringify(baselines);
+  process.env._PERF_BASELINES =  JSON.stringify(baselines);
   
   console.log('✅ Performance baselines configured');
 }

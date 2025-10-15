@@ -1,162 +1,60 @@
 /**
- * Change Password Lambda Function
- * Replaces: PATCH /auth/change-password
- * Migration from Express route to AWS Lambda with Cognito password change
+ * Change Password Function
+ * Lambda function to change user password
  */
-import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
-import { CognitoService } from '../shared/cognito.service';
-import { DatabaseService } from '../shared/database.service';
-import { logger } from '../../utils/logger';
-import { ValidationService } from '../shared/validation.service';
 
-// Initialize services
-const cognito = CognitoService;
-const db = DatabaseService;
-const validator = ValidationService.getInstance();
+import { APIGatewayProxyResult } from 'aws-lambda';
+import { authService } from '../../services/auth.service';
+import { createSuccessResponse, createErrorResponse } from '../shared/response.utils';
 
-// Common Lambda response helper
-const createResponse = (statusCode: number, body: any, headers: Record<string, string> = {}): APIGatewayProxyResult => ({
-  statusCode,
-  headers: {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type,Authorization',
-    'Access-Control-Allow-Methods': 'OPTIONS,POST,PATCH',
-    ...headers
-  },
-  body: JSON.stringify(body)
-});
+export interface ChangePasswordRequest {
+  userId: string;
+  currentPassword: string;
+  newPassword: string;
+  newPasswordConfirm: string;
+}
 
-// Error handling helper
-const handleError = (error: any, context: Context): APIGatewayProxyResult => {
-  logger.error('Change password Lambda function error', error, { requestId: context.awsRequestId });
-  
-  if (error.name === 'ValidationError') {
-    return createResponse(400, {
-      error: 'VALIDATION_ERROR',
-      message: error.message,
-      details: error.details
-    });
-  }
-  
-  if (error.name === 'NotAuthorizedException') {
-    return createResponse(401, {
-      error: 'INVALID_CREDENTIALS',
-      message: 'Current password is incorrect'
-    });
-  }
-  
-  if (error.name === 'InvalidPasswordException') {
-    return createResponse(400, {
-      error: 'INVALID_PASSWORD',
-      message: 'New password does not meet security requirements'
-    });
-  }
-  
-  return createResponse(500, {
-    error: 'INTERNAL_SERVER_ERROR',
-    message: 'An error occurred while changing password'
-  });
-};
-
-/**
- * Main Lambda handler for change password
- */
-export const changePasswordHandler = async (
-  event: APIGatewayProxyEvent,
-  context: Context
-): Promise<APIGatewayProxyResult> => {
+export const handler = async (event: any, _context: any): Promise<APIGatewayProxyResult> => {
   try {
-    logger.info('Change password request received', {
-      requestId: context.awsRequestId,
-      headers: event.headers
-    });
+    const body: ChangePasswordRequest = JSON.parse(event.body || '{}');
 
-    // Handle CORS preflight
-    if (event.httpMethod === 'OPTIONS') {
-      return createResponse(200, { message: 'CORS preflight successful' });
+    // Validate input
+    if (!body.userId || !body.currentPassword || !body.newPassword) {
+      return createErrorResponse(
+        'VALIDATION_ERROR',
+        'User ID, current password, and new password are required',
+        400
+      );
     }
 
-    // Validate HTTP method
-    if (event.httpMethod !== 'PATCH') {
-      return createResponse(405, {
-        error: 'METHOD_NOT_ALLOWED',
-        message: 'Only PATCH method is allowed'
-      });
+    // Check password confirmation
+    if (body.newPassword !== body.newPasswordConfirm) {
+      return createErrorResponse('VALIDATION_ERROR', 'New passwords do not match', 400);
     }
 
-    // Parse request body
-    let body;
-    try {
-      body = JSON.parse(event.body || '{}');
-    } catch (error) {
-      return createResponse(400, {
-        error: 'INVALID_JSON',
-        message: 'Request body must be valid JSON'
-      });
+    // Validate new password strength
+    if (body.newPassword.length < 8) {
+      return createErrorResponse(
+        'VALIDATION_ERROR',
+        'New password must be at least 8 characters long',
+        400
+      );
     }
 
-    // Validate required fields
-    const validation = await validator.validatePasswordChange(body);
-    if (!validation.isValid) {
-      return createResponse(400, {
-        error: 'VALIDATION_ERROR',
-        message: 'Invalid request data',
-        details: validation.errors
-      });
-    }
+    // Change password
+    await authService.changePassword(body.userId, body.currentPassword, body.newPassword);
 
-    const { currentPassword, newPassword } = body;
-
-    // Get user from authorization header
-    const authorization = event.headers.Authorization || event.headers.authorization;
-    if (!authorization) {
-      return createResponse(401, {
-        error: 'AUTHORIZATION_REQUIRED',
-        message: 'Authorization header is required'
-      });
-    }
-
-    const token = authorization.replace('Bearer ', '');
-    
-    // Verify token and get user
-    const user = await cognito.verifyToken(token);
-    if (!user) {
-      return createResponse(401, {
-        error: 'INVALID_TOKEN',
-        message: 'Invalid or expired token'
-      });
-    }
-
-    // Change password in Cognito
-    await cognito.changePassword(token, currentPassword, newPassword);
-
-    // Log successful password change
-    logger.info('Password changed successfully', {
-      userId: user.sub,
-      username: user.username,
-      requestId: context.awsRequestId
-    });
-
-    // Update last modified timestamp in database
-    try {
-      await db.user.update({
-        where: { id: user.sub },
-        data: { updatedAt: new Date() }
-      });
-    } catch (dbError) {
-      // Don't fail the request if database update fails
-      logger.warn('Failed to update user timestamp', { error: dbError, userId: user.sub });
-    }
-
-    return createResponse(200, {
-      message: 'Password changed successfully',
-      timestamp: new Date().toISOString()
-    });
-
+    return createSuccessResponse({ message: 'Password changed successfully' }, 200);
   } catch (error) {
-    return handleError(error, context);
+    return createErrorResponse(
+      'PASSWORD_CHANGE_FAILED',
+      error instanceof Error ? error.message : 'Password change failed',
+      500
+    );
   }
 };
 
-export default changePasswordHandler;
+// Export handler as changePasswordHandler for tests
+export const changePasswordHandler = handler;
+
+export default handler;

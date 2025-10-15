@@ -12,21 +12,7 @@ import { logger } from '../../../src/utils/logger';
 
 // Using actual enums imported from service
 
-// Mock dependencies
-jest.mock('../../../src/repositories/dailyMenu.repository');
-jest.mock('../../../src/repositories/menuItem.repository');
-jest.mock('../../../src/utils/cache');
-jest.mock('../../../src/utils/logger');
-jest.mock('../../../src/services/database.service', () => ({
-  DatabaseService: {
-    client: {},
-    getInstance: jest.fn(),
-    connect: jest.fn(),
-    disconnect: jest.fn(),
-    getHealth: jest.fn(),
-    isConnected: jest.fn()
-  }
-}));
+// Mock dependencies are now in tests/setup.ts
 
 const MockedDailyMenuRepository = jest.mocked(DailyMenuRepository);
 const MockedMenuItemRepository = jest.mocked(MenuItemRepository);
@@ -75,7 +61,7 @@ describe('DailyMenuService', () => {
         updatedAt: new Date()
       };
 
-      MockedDailyMenuRepository.findByDateRange.mockResolvedValue(null);
+      MockedDailyMenuRepository.findByDateRange.mockResolvedValue([]);
       MockedMenuItemRepository.findById
         .mockResolvedValueOnce(mockMenuItems[0] as any)
         .mockResolvedValueOnce(mockMenuItems[1] as any);
@@ -134,7 +120,7 @@ describe('DailyMenuService', () => {
     });
 
     it('should validate menu items exist', async () => {
-      MockedDailyMenuRepository.findByDateRange.mockResolvedValue(null);
+      MockedDailyMenuRepository.findByDateRange.mockResolvedValue([]);
       MockedMenuItemRepository.findById
         .mockResolvedValueOnce(mockMenuItems[0] as any)
         .mockResolvedValueOnce(null);
@@ -145,7 +131,7 @@ describe('DailyMenuService', () => {
 
     it('should validate menu items are available', async () => {
       const unavailableItem = { ...mockMenuItems[1], available: false };
-      MockedDailyMenuRepository.findByDateRange.mockResolvedValue(null);
+      MockedDailyMenuRepository.findByDateRange.mockResolvedValue([]);
       MockedMenuItemRepository.findById
         .mockResolvedValueOnce(mockMenuItems[0] as any)
         .mockResolvedValueOnce(unavailableItem as any);
@@ -156,7 +142,7 @@ describe('DailyMenuService', () => {
 
     it('should validate menu items have correct category', async () => {
       const wrongCategoryItem = { ...mockMenuItems[1], category: MenuCategory.DESSERT };
-      MockedDailyMenuRepository.findByDateRange.mockResolvedValue(null);
+      MockedDailyMenuRepository.findByDateRange.mockResolvedValue([]);
       MockedMenuItemRepository.findById
         .mockResolvedValueOnce(mockMenuItems[0] as any)
         .mockResolvedValueOnce(wrongCategoryItem as any);
@@ -178,7 +164,7 @@ describe('DailyMenuService', () => {
       const today = new Date();
       const todayInput = { ...validInput, date: today };
 
-      MockedDailyMenuRepository.findByDateRange.mockResolvedValue(null);
+      MockedDailyMenuRepository.findByDateRange.mockResolvedValue([]);
       MockedMenuItemRepository.findById
         .mockResolvedValueOnce(mockMenuItems[0] as any)
         .mockResolvedValueOnce(mockMenuItems[1] as any);
@@ -471,7 +457,7 @@ describe('DailyMenuService', () => {
       const clonedMenu = { id: 'cloned-123', date: targetDate };
 
       jest.spyOn(DailyMenuService, 'getDailyMenuById').mockResolvedValue(sourceMenu as any);
-      MockedDailyMenuRepository.findByDateRange.mockResolvedValue(null);
+      MockedDailyMenuRepository.findByDateRange.mockResolvedValue([]);
       jest.spyOn(DailyMenuService, 'createDailyMenu').mockResolvedValue(clonedMenu as any);
 
       const result = await DailyMenuService.cloneDailyMenu('source-123', targetDate);
@@ -499,7 +485,7 @@ describe('DailyMenuService', () => {
       const clonedMenu = { id: 'cloned-123' };
 
       jest.spyOn(DailyMenuService, 'getDailyMenuById').mockResolvedValue(sourceMenu as any);
-      MockedDailyMenuRepository.findByDateRange.mockResolvedValue(null);
+      MockedDailyMenuRepository.findByDateRange.mockResolvedValue([]);
       jest.spyOn(DailyMenuService, 'createDailyMenu').mockResolvedValue(clonedMenu as any);
 
       await DailyMenuService.cloneDailyMenu('source-123', targetDate, 'school-456');
@@ -537,7 +523,7 @@ describe('DailyMenuService', () => {
       const clonedMenu = { id: 'cloned-123' };
 
       jest.spyOn(DailyMenuService, 'getDailyMenuById').mockResolvedValue(sourceMenu as any);
-      MockedDailyMenuRepository.findByDateRange.mockResolvedValue(null);
+      MockedDailyMenuRepository.findByDateRange.mockResolvedValue([]);
       jest.spyOn(DailyMenuService, 'createDailyMenu').mockResolvedValue(clonedMenu as any);
 
       await DailyMenuService.cloneDailyMenu('source-123', targetDate);
@@ -590,7 +576,7 @@ describe('DailyMenuService', () => {
       // Test through cloneDailyMenu which uses this private method
       const sourceMenu = { id: 'source-123', schoolId: 'school-123', category: MenuCategory.LUNCH, menuItems: [] };
       jest.spyOn(DailyMenuService, 'getDailyMenuById').mockResolvedValue(sourceMenu as any);
-      MockedDailyMenuRepository.findByDateRange.mockResolvedValue(null);
+      MockedDailyMenuRepository.findByDateRange.mockResolvedValue([]);
       jest.spyOn(DailyMenuService, 'createDailyMenu').mockResolvedValue({ id: 'cloned' } as any);
 
       await DailyMenuService.cloneDailyMenu('source-123', monday);
@@ -610,7 +596,7 @@ describe('DailyMenuService', () => {
 
       const sourceMenu = { id: 'source-123', schoolId: 'school-123', category: MenuCategory.LUNCH, menuItems: [] };
       jest.spyOn(DailyMenuService, 'getDailyMenuById').mockResolvedValue(sourceMenu as any);
-      MockedDailyMenuRepository.findByDateRange.mockResolvedValue(null);
+      MockedDailyMenuRepository.findByDateRange.mockResolvedValue([]);
       jest.spyOn(DailyMenuService, 'createDailyMenu').mockResolvedValue({ id: 'cloned' } as any);
 
       await DailyMenuService.cloneDailyMenu('source-123', saturday);
@@ -668,7 +654,7 @@ describe('DailyMenuService', () => {
       const mockMenuItem = { id: 'item-1', available: true, category: MenuCategory.LUNCH };
       const mockDailyMenu = { id: 'menu-123', ...validInput };
 
-      MockedDailyMenuRepository.findByDateRange.mockResolvedValue(null);
+      MockedDailyMenuRepository.findByDateRange.mockResolvedValue([]);
       MockedMenuItemRepository.findById.mockResolvedValue(mockMenuItem as any);
       MockedDailyMenuRepository.create.mockResolvedValue(mockDailyMenu as any);
       jest.spyOn(DailyMenuService, 'getDailyMenuById').mockResolvedValue(mockDailyMenu as any);
@@ -727,7 +713,7 @@ describe('DailyMenuService', () => {
       const mockMenuItem = { id: 'item-1', available: true, category: MenuCategory.LUNCH };
       const mockDailyMenu = { id: 'menu-123', ...validInput };
 
-      MockedDailyMenuRepository.findByDateRange.mockResolvedValue(null);
+      MockedDailyMenuRepository.findByDateRange.mockResolvedValue([]);
       MockedMenuItemRepository.findById.mockResolvedValue(mockMenuItem as any);
       MockedDailyMenuRepository.create.mockResolvedValue(mockDailyMenu as any);
       jest.spyOn(DailyMenuService, 'getDailyMenuById').mockResolvedValue(mockDailyMenu as any);

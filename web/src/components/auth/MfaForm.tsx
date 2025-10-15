@@ -1,12 +1,12 @@
-"use client"
+'use client';
 
-import * as React from "react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { Shield, Loader2, ArrowLeft, Smartphone, Key, RefreshCw } from "lucide-react"
-import Link from "next/link"
+import * as React from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Shield, Loader2, ArrowLeft, Smartphone, Key, RefreshCw } from 'lucide-react';
+import Link from 'next/link';
 
-import { Button } from "@/components/ui/button"
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -14,9 +14,9 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Form,
   FormControl,
@@ -24,45 +24,45 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
+} from '@/components/ui/form';
 
-import { mfaSchema, type MfaFormData } from "./schemas"
+import { mfaSchema, type MfaFormData } from './schemas';
 
 interface MfaFormProps {
-  onSubmit: (data: MfaFormData) => Promise<void>
-  onUseBackupCode?: () => void
-  onResendCode?: () => Promise<void>
-  isLoading?: boolean
-  isResending?: boolean
-  error?: string | null
-  method?: "authenticator" | "sms" | "email"
-  contact?: string // phone number or email for sms/email method
-  className?: string
+  onSubmit: (data: MfaFormData) => Promise<void>;
+  onUseBackupCode?: () => void;
+  onResendCode?: () => Promise<void>;
+  isLoading?: boolean;
+  isResending?: boolean;
+  error?: string | null;
+  method?: 'authenticator' | 'sms' | 'email';
+  contact?: string; // phone number or email for sms/email method
+  className?: string;
 }
 
 const methodConfig = {
   authenticator: {
     icon: Key,
-    title: "Authenticator App",
-    description: "Enter the 6-digit code from your authenticator app",
-    placeholder: "000000",
-    inputMode: "numeric" as const,
+    title: 'Authenticator App',
+    description: 'Enter the 6-digit code from your authenticator app',
+    placeholder: '000000',
+    inputMode: 'numeric' as const,
   },
   sms: {
     icon: Smartphone,
-    title: "SMS Verification",
-    description: "Enter the 6-digit code sent to your phone",
-    placeholder: "000000", 
-    inputMode: "numeric" as const,
+    title: 'SMS Verification',
+    description: 'Enter the 6-digit code sent to your phone',
+    placeholder: '000000',
+    inputMode: 'numeric' as const,
   },
   email: {
     icon: Shield,
-    title: "Email Verification",
-    description: "Enter the 6-digit code sent to your email",
-    placeholder: "000000",
-    inputMode: "numeric" as const,
+    title: 'Email Verification',
+    description: 'Enter the 6-digit code sent to your email',
+    placeholder: '000000',
+    inputMode: 'numeric' as const,
   },
-}
+};
 
 export function MfaForm({
   onSubmit,
@@ -71,107 +71,101 @@ export function MfaForm({
   isLoading = false,
   isResending = false,
   error,
-  method = "authenticator",
+  method = 'authenticator',
   contact,
-  className
+  className,
 }: MfaFormProps) {
-  const [timeLeft, setTimeLeft] = React.useState(method === "authenticator" ? 0 : 60)
-  const [canResend, setCanResend] = React.useState(method === "authenticator")
+  const [timeLeft, setTimeLeft] = React.useState(method === 'authenticator' ? 0 : 60);
+  const [canResend, setCanResend] = React.useState(method === 'authenticator');
 
-  const config = methodConfig[method]
-  const IconComponent = config.icon
+  const config = methodConfig[method];
+  const IconComponent = config.icon;
 
   const form = useForm<MfaFormData>({
     resolver: zodResolver(mfaSchema),
     defaultValues: {
-      code: "",
+      code: '',
     },
-  })
+  });
 
   // Countdown timer for resend functionality (not applicable for authenticator)
   React.useEffect(() => {
-    if (method !== "authenticator" && timeLeft > 0) {
-      const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000)
-      return () => clearTimeout(timer)
-    } else if (method !== "authenticator" && timeLeft === 0) {
-      setCanResend(true)
+    if (method !== 'authenticator' && timeLeft > 0) {
+      const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
+      return () => clearTimeout(timer);
+    } else if (method !== 'authenticator' && timeLeft === 0) {
+      setCanResend(true);
     }
-  }, [timeLeft, method])
+  }, [timeLeft, method]);
 
   const handleSubmit = async (data: MfaFormData) => {
     try {
-      await onSubmit(data)
+      await onSubmit(data);
     } catch (error) {
-      console.error("MFA verification error:", error)
+      // Error handled silently
     }
-  }
+  };
 
   const handleResendCode = async () => {
-    if (onResendCode && canResend && method !== "authenticator") {
+    if (onResendCode && canResend && method !== 'authenticator') {
       try {
-        await onResendCode()
-        setTimeLeft(60)
-        setCanResend(false)
-        form.reset()
+        await onResendCode();
+        setTimeLeft(60);
+        setCanResend(false);
+        form.reset();
       } catch (error) {
-        console.error("Resend code error:", error)
+        // Error handled silently
       }
     }
-  }
+  };
 
   const handleCodeInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, '').slice(0, 6)
-    form.setValue('code', value)
-    
+    const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+    form.setValue('code', value);
+
     // Auto-submit when 6 digits are entered
     if (value.length === 6) {
-      form.handleSubmit(handleSubmit)()
+      form.handleSubmit(handleSubmit)();
     }
-  }
+  };
 
   const formatContact = (contact: string, method: string) => {
-    if (method === "sms") {
+    if (method === 'sms') {
       // Format phone number: +91 98765 ***10
-      return contact.replace(/(\+\d{1,3})(\d{3,5})(\d+)(\d{2})/, "$1 $2 ***$4")
-    } else if (method === "email") {
+      return contact.replace(/(\+\d{1,3})(\d{3,5})(\d+)(\d{2})/, '$1 $2 ***$4');
+    } else if (method === 'email') {
       // Format email: j***@example.com
-      const [username, domain] = contact.split("@")
-      return `${username.charAt(0)}***@${domain}`
+      const [username, domain] = contact.split('@');
+      return `${username.charAt(0)}***@${domain}`;
     }
-    return contact
-  }
+    return contact;
+  };
 
   return (
     <Card className={className} aria-label="Multi-factor authentication form">
       <CardHeader className="space-y-1 text-center">
-        <CardTitle className="text-3xl font-bold text-primary-600">
-          {config.title}
-        </CardTitle>
-        <CardDescription className="text-gray-600">
-          {config.description}
-        </CardDescription>
+        <CardTitle className="text-3xl font-bold text-primary-600">{config.title}</CardTitle>
+        <CardDescription className="text-gray-600">{config.description}</CardDescription>
       </CardHeader>
-      
+
       <CardContent className="space-y-4">
         <div className="text-center space-y-2">
           <div className="mx-auto w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center">
             <IconComponent className="w-8 h-8 text-primary-600" />
           </div>
-          
-          {contact && method !== "authenticator" && (
+
+          {contact && method !== 'authenticator' && (
             <div className="space-y-1">
               <p className="text-sm text-gray-600">
-                {method === "sms" ? "Code sent to:" : "Code sent to:"}
+                {method === 'sms' ? 'Code sent to:' : 'Code sent to:'}
               </p>
-              <p className="font-medium text-gray-900">
-                {formatContact(contact, method)}
-              </p>
+              <p className="font-medium text-gray-900">{formatContact(contact, method)}</p>
             </div>
           )}
         </div>
 
         {error && (
-          <div 
+          <div
             className="p-3 rounded-md bg-error-50 border border-error-200 text-error-700 text-sm"
             role="alert"
             aria-live="polite"
@@ -230,12 +224,10 @@ export function MfaForm({
         </Form>
 
         {/* Resend code functionality for SMS/Email */}
-        {method !== "authenticator" && (
+        {method !== 'authenticator' && (
           <div className="text-center space-y-3">
-            <div className="text-sm text-gray-600">
-              Didn't receive the code?
-            </div>
-            
+            <div className="text-sm text-gray-600">Didn't receive the code?</div>
+
             {canResend ? (
               <Button
                 variant="outline"
@@ -256,9 +248,7 @@ export function MfaForm({
                 )}
               </Button>
             ) : (
-              <p className="text-sm text-gray-500">
-                Resend available in {timeLeft} seconds
-              </p>
+              <p className="text-sm text-gray-500">Resend available in {timeLeft} seconds</p>
             )}
           </div>
         )}
@@ -281,10 +271,10 @@ export function MfaForm({
         <div className="p-3 bg-info-50 border border-info-200 rounded-md">
           <div className="text-sm text-info-700">
             <p className="font-medium mb-1">
-              {method === "authenticator" ? "Authenticator Tips:" : "Verification Tips:"}
+              {method === 'authenticator' ? 'Authenticator Tips:' : 'Verification Tips:'}
             </p>
             <ul className="space-y-1 text-left">
-              {method === "authenticator" ? (
+              {method === 'authenticator' ? (
                 <>
                   <li>• Use Google Authenticator, Authy, or similar app</li>
                   <li>• Make sure your device time is synchronized</li>
@@ -312,16 +302,16 @@ export function MfaForm({
         </Link>
       </CardFooter>
     </Card>
-  )
+  );
 }
 
 // Backup Code Form Component
 interface BackupCodeFormProps {
-  onSubmit: (code: string) => Promise<void>
-  onBackToMfa?: () => void
-  isLoading?: boolean
-  error?: string | null
-  className?: string
+  onSubmit: (code: string) => Promise<void>;
+  onBackToMfa?: () => void;
+  isLoading?: boolean;
+  error?: string | null;
+  className?: string;
 }
 
 export function BackupCodeForm({
@@ -329,32 +319,30 @@ export function BackupCodeForm({
   onBackToMfa,
   isLoading = false,
   error,
-  className
+  className,
 }: BackupCodeFormProps) {
-  const [backupCode, setBackupCode] = React.useState("")
+  const [backupCode, setBackupCode] = React.useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (backupCode.trim()) {
       try {
-        await onSubmit(backupCode.trim())
+        await onSubmit(backupCode.trim());
       } catch (error) {
-        console.error("Backup code verification error:", error)
+        // Error handled silently
       }
     }
-  }
+  };
 
   return (
     <Card className={className} aria-label="Backup code form">
       <CardHeader className="space-y-1 text-center">
-        <CardTitle className="text-3xl font-bold text-primary-600">
-          Use Backup Code
-        </CardTitle>
+        <CardTitle className="text-3xl font-bold text-primary-600">Use Backup Code</CardTitle>
         <CardDescription className="text-gray-600">
           Enter one of your backup codes to sign in
         </CardDescription>
       </CardHeader>
-      
+
       <CardContent className="space-y-4">
         <div className="text-center space-y-2">
           <div className="mx-auto w-16 h-16 bg-warning-100 rounded-full flex items-center justify-center">
@@ -363,7 +351,7 @@ export function BackupCodeForm({
         </div>
 
         {error && (
-          <div 
+          <div
             className="p-3 rounded-md bg-error-50 border border-error-200 text-error-700 text-sm"
             role="alert"
             aria-live="polite"
@@ -374,12 +362,10 @@ export function BackupCodeForm({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label className="text-gray-700 text-center block">
-              Backup Code
-            </Label>
+            <Label className="text-gray-700 text-center block">Backup Code</Label>
             <Input
               value={backupCode}
-              onChange={(e) => setBackupCode(e.target.value)}
+              onChange={e => setBackupCode(e.target.value)}
               placeholder="Enter backup code"
               className="text-center font-mono"
               autoComplete="off"
@@ -442,5 +428,5 @@ export function BackupCodeForm({
         </Link>
       </CardFooter>
     </Card>
-  )
+  );
 }

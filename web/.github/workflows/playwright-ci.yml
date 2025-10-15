@@ -18,32 +18,32 @@ on:
         default: 'all'
         type: choice
         options:
-        - all
-        - smoke
-        - critical
-        - performance
-        - accessibility
-        - visual
+          - all
+          - smoke
+          - critical
+          - performance
+          - accessibility
+          - visual
       environment:
         description: 'Environment to test against'
         required: true
         default: 'staging'
         type: choice
         options:
-        - staging
-        - production
-        - local
+          - staging
+          - production
+          - local
 
 env:
   # Enterprise configuration
   NODE_VERSION: '18'
   PLAYWRIGHT_VERSION: '1.40.0'
   PERCY_PARALLEL_TOTAL: 2
-  
+
   # Brand colors for reporting
   BRAND_PRIMARY: '#2563eb'
   BRAND_SECONDARY: '#16a34a'
-  
+
   # Performance thresholds
   LCP_THRESHOLD: '2500'
   FID_THRESHOLD: '100'
@@ -55,43 +55,43 @@ jobs:
     name: 🛠️ Setup & Validation
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    
+
     outputs:
       test-suite: ${{ steps.determine-suite.outputs.suite }}
       should-run-visual: ${{ steps.determine-suite.outputs.visual }}
       should-run-performance: ${{ steps.determine-suite.outputs.performance }}
       cache-key: ${{ steps.cache-key.outputs.key }}
-    
+
     steps:
-    - name: 📥 Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-    
-    - name: 📋 Determine test suite
-      id: determine-suite
-      run: |
-        if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-          SUITE="${{ github.event.inputs.test_suite }}"
-        elif [[ "${{ github.event_name }}" == "schedule" ]]; then
-          SUITE="all"
-        elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-          SUITE="critical"
-        else
-          SUITE="smoke"
-        fi
-        
-        echo "suite=$SUITE" >> $GITHUB_OUTPUT
-        echo "visual=$([[ $SUITE == "all" || $SUITE == "visual" ]] && echo "true" || echo "false")" >> $GITHUB_OUTPUT
-        echo "performance=$([[ $SUITE == "all" || $SUITE == "performance" ]] && echo "true" || echo "false")" >> $GITHUB_OUTPUT
-        
-        echo "🎯 Test suite: $SUITE"
-    
-    - name: 🔑 Generate cache key
-      id: cache-key
-      run: |
-        KEY="playwright-${{ runner.os }}-${{ hashFiles('**/package-lock.json', '**/playwright.config.ts') }}"
-        echo "key=$KEY" >> $GITHUB_OUTPUT
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 📋 Determine test suite
+        id: determine-suite
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            SUITE="${{ github.event.inputs.test_suite }}"
+          elif [[ "${{ github.event_name }}" == "schedule" ]]; then
+            SUITE="all"
+          elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            SUITE="critical"
+          else
+            SUITE="smoke"
+          fi
+
+          echo "suite=$SUITE" >> $GITHUB_OUTPUT
+          echo "visual=$([[ $SUITE == "all" || $SUITE == "visual" ]] && echo "true" || echo "false")" >> $GITHUB_OUTPUT
+          echo "performance=$([[ $SUITE == "all" || $SUITE == "performance" ]] && echo "true" || echo "false")" >> $GITHUB_OUTPUT
+
+          echo "🎯 Test suite: $SUITE"
+
+      - name: 🔑 Generate cache key
+        id: cache-key
+        run: |
+          KEY="playwright-${{ runner.os }}-${{ hashFiles('**/package-lock.json', '**/playwright.config.ts') }}"
+          echo "key=$KEY" >> $GITHUB_OUTPUT
 
   # 🏗️ Build and prepare test environment
   build:
@@ -99,41 +99,41 @@ jobs:
     runs-on: ubuntu-latest
     needs: setup
     timeout-minutes: 15
-    
+
     steps:
-    - name: 📥 Checkout code
-      uses: actions/checkout@v4
-    
-    - name: 🚀 Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-    
-    - name: 📦 Install dependencies
-      run: |
-        npm ci --prefer-offline --no-audit
-        echo "✅ Dependencies installed"
-    
-    - name: 🔧 Build application
-      run: |
-        npm run build
-        echo "✅ Application built successfully"
-        
-    - name: 💾 Cache build artifacts
-      uses: actions/cache@v3
-      with:
-        path: |
-          .next
-          node_modules
-        key: build-${{ runner.os }}-${{ github.sha }}
-        
-    - name: 📊 Build summary
-      run: |
-        echo "### 🏗️ Build Summary" >> $GITHUB_STEP_SUMMARY
-        echo "- **Node Version**: ${{ env.NODE_VERSION }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Build Time**: $(date)" >> $GITHUB_STEP_SUMMARY
-        echo "- **Bundle Size**: $(du -sh .next 2>/dev/null || echo 'N/A')" >> $GITHUB_STEP_SUMMARY
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🚀 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: |
+          npm ci --prefer-offline --no-audit
+          echo "✅ Dependencies installed"
+
+      - name: 🔧 Build application
+        run: |
+          npm run build
+          echo "✅ Application built successfully"
+
+      - name: 💾 Cache build artifacts
+        uses: actions/cache@v3
+        with:
+          path: |
+            .next
+            node_modules
+          key: build-${{ runner.os }}-${{ github.sha }}
+
+      - name: 📊 Build summary
+        run: |
+          echo "### 🏗️ Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Node Version**: ${{ env.NODE_VERSION }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Build Time**: $(date)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Bundle Size**: $(du -sh .next 2>/dev/null || echo 'N/A')" >> $GITHUB_STEP_SUMMARY
 
   # 🧪 Core functional tests
   test-functional:
@@ -141,77 +141,77 @@ jobs:
     runs-on: ubuntu-latest
     needs: [setup, build]
     timeout-minutes: 30
-    
+
     strategy:
       fail-fast: false
       matrix:
         browser: [chromium, firefox, webkit]
         shard: [1/3, 2/3, 3/3]
-    
+
     steps:
-    - name: 📥 Checkout code
-      uses: actions/checkout@v4
-    
-    - name: 🚀 Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-    
-    - name: 🎭 Install Playwright browsers
-      run: |
-        npm ci --prefer-offline
-        npx playwright install ${{ matrix.browser }} --with-deps
-    
-    - name: 💾 Restore build cache
-      uses: actions/cache@v3
-      with:
-        path: |
-          .next
-          node_modules
-        key: build-${{ runner.os }}-${{ github.sha }}
-    
-    - name: 🚀 Start application
-      run: |
-        npm run start &
-        sleep 10
-        curl --fail http://localhost:3002 || (echo "App failed to start" && exit 1)
-      env:
-        PORT: 3002
-        NODE_ENV: production
-    
-    - name: 🧪 Run functional tests
-      run: |
-        npx playwright test \
-          --project="Desktop Chrome" \
-          --shard=${{ matrix.shard }} \
-          --reporter=json,html,github \
-          tests/e2e/
-      env:
-        PLAYWRIGHT_BASE_URL: http://localhost:3002
-        CI: true
-    
-    - name: 📊 Upload test results
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: functional-results-${{ matrix.browser }}-${{ strategy.job-index }}
-        path: |
-          test-results/
-          playwright-report/
-        retention-days: 30
-    
-    - name: 📋 Test summary
-      if: always()
-      run: |
-        echo "### 🧪 Functional Test Results (${{ matrix.browser }})" >> $GITHUB_STEP_SUMMARY
-        echo "- **Shard**: ${{ matrix.shard }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Status**: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
-        
-        if [ -f test-results/results.json ]; then
-          TOTAL=$(jq '.suites | length' test-results/results.json 2>/dev/null || echo "N/A")
-          echo "- **Total Suites**: $TOTAL" >> $GITHUB_STEP_SUMMARY
-        fi
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🚀 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 🎭 Install Playwright browsers
+        run: |
+          npm ci --prefer-offline
+          npx playwright install ${{ matrix.browser }} --with-deps
+
+      - name: 💾 Restore build cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            .next
+            node_modules
+          key: build-${{ runner.os }}-${{ github.sha }}
+
+      - name: 🚀 Start application
+        run: |
+          npm run start &
+          sleep 10
+          curl --fail http://localhost:3002 || (echo "App failed to start" && exit 1)
+        env:
+          PORT: 3002
+          NODE_ENV: production
+
+      - name: 🧪 Run functional tests
+        run: |
+          npx playwright test \
+            --project="Desktop Chrome" \
+            --shard=${{ matrix.shard }} \
+            --reporter=json,html,github \
+            tests/e2e/
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:3002
+          CI: true
+
+      - name: 📊 Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: functional-results-${{ matrix.browser }}-${{ strategy.job-index }}
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 30
+
+      - name: 📋 Test summary
+        if: always()
+        run: |
+          echo "### 🧪 Functional Test Results (${{ matrix.browser }})" >> $GITHUB_STEP_SUMMARY
+          echo "- **Shard**: ${{ matrix.shard }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status**: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+
+          if [ -f test-results/results.json ]; then
+            TOTAL=$(jq '.suites | length' test-results/results.json 2>/dev/null || echo "N/A")
+            echo "- **Total Suites**: $TOTAL" >> $GITHUB_STEP_SUMMARY
+          fi
 
   # ⚡ Performance testing
   test-performance:
@@ -220,75 +220,75 @@ jobs:
     needs: [setup, build]
     if: needs.setup.outputs.should-run-performance == 'true'
     timeout-minutes: 25
-    
+
     steps:
-    - name: 📥 Checkout code
-      uses: actions/checkout@v4
-    
-    - name: 🚀 Setup Node.js & Playwright
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-    
-    - name: 📦 Install dependencies
-      run: |
-        npm ci --prefer-offline
-        npx playwright install chromium --with-deps
-    
-    - name: 💾 Restore build cache
-      uses: actions/cache@v3
-      with:
-        path: |
-          .next
-          node_modules  
-        key: build-${{ runner.os }}-${{ github.sha }}
-    
-    - name: 🚀 Start application
-      run: |
-        npm run start &
-        sleep 10
-      env:
-        PORT: 3002
-        NODE_ENV: production
-    
-    - name: ⚡ Run performance tests
-      run: |
-        npx playwright test \
-          --project="Performance" \
-          --reporter=json,html \
-          tests/performance/
-      env:
-        PLAYWRIGHT_BASE_URL: http://localhost:3002
-        LCP_THRESHOLD: ${{ env.LCP_THRESHOLD }}
-        FID_THRESHOLD: ${{ env.FID_THRESHOLD }}
-        CLS_THRESHOLD: ${{ env.CLS_THRESHOLD }}
-    
-    - name: 📊 Process performance results
-      if: always()
-      run: |
-        if [ -f test-results/performance-report.json ]; then
-          echo "### ⚡ Performance Test Results" >> $GITHUB_STEP_SUMMARY
-          echo "- **LCP Threshold**: ${LCP_THRESHOLD}ms" >> $GITHUB_STEP_SUMMARY
-          echo "- **FID Threshold**: ${FID_THRESHOLD}ms" >> $GITHUB_STEP_SUMMARY
-          echo "- **CLS Threshold**: ${CLS_THRESHOLD}" >> $GITHUB_STEP_SUMMARY
-          
-          # Add performance metrics if available
-          if command -v jq &> /dev/null; then
-            AVG_LCP=$(jq -r '.summary.avgLoadTime // "N/A"' test-results/performance-report.json)
-            echo "- **Average LCP**: ${AVG_LCP}ms" >> $GITHUB_STEP_SUMMARY
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🚀 Setup Node.js & Playwright
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: |
+          npm ci --prefer-offline
+          npx playwright install chromium --with-deps
+
+      - name: 💾 Restore build cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            .next
+            node_modules
+          key: build-${{ runner.os }}-${{ github.sha }}
+
+      - name: 🚀 Start application
+        run: |
+          npm run start &
+          sleep 10
+        env:
+          PORT: 3002
+          NODE_ENV: production
+
+      - name: ⚡ Run performance tests
+        run: |
+          npx playwright test \
+            --project="Performance" \
+            --reporter=json,html \
+            tests/performance/
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:3002
+          LCP_THRESHOLD: ${{ env.LCP_THRESHOLD }}
+          FID_THRESHOLD: ${{ env.FID_THRESHOLD }}
+          CLS_THRESHOLD: ${{ env.CLS_THRESHOLD }}
+
+      - name: 📊 Process performance results
+        if: always()
+        run: |
+          if [ -f test-results/performance-report.json ]; then
+            echo "### ⚡ Performance Test Results" >> $GITHUB_STEP_SUMMARY
+            echo "- **LCP Threshold**: ${LCP_THRESHOLD}ms" >> $GITHUB_STEP_SUMMARY
+            echo "- **FID Threshold**: ${FID_THRESHOLD}ms" >> $GITHUB_STEP_SUMMARY
+            echo "- **CLS Threshold**: ${CLS_THRESHOLD}" >> $GITHUB_STEP_SUMMARY
+            
+            # Add performance metrics if available
+            if command -v jq &> /dev/null; then
+              AVG_LCP=$(jq -r '.summary.avgLoadTime // "N/A"' test-results/performance-report.json)
+              echo "- **Average LCP**: ${AVG_LCP}ms" >> $GITHUB_STEP_SUMMARY
+            fi
           fi
-        fi
-    
-    - name: 📊 Upload performance results
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: performance-results
-        path: |
-          test-results/performance*
-          playwright-report/
-        retention-days: 30
+
+      - name: 📊 Upload performance results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: performance-results
+          path: |
+            test-results/performance*
+            playwright-report/
+          retention-days: 30
 
   # ♿ Accessibility testing
   test-accessibility:
@@ -296,122 +296,122 @@ jobs:
     runs-on: ubuntu-latest
     needs: [setup, build]
     timeout-minutes: 20
-    
-    steps:
-    - name: 📥 Checkout code
-      uses: actions/checkout@v4
-    
-    - name: 🚀 Setup Node.js & Playwright
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-    
-    - name: 📦 Install dependencies
-      run: |
-        npm ci --prefer-offline
-        npx playwright install chromium --with-deps
-    
-    - name: 💾 Restore build cache
-      uses: actions/cache@v3
-      with:
-        path: |
-          .next
-          node_modules
-        key: build-${{ runner.os }}-${{ github.sha }}
-    
-    - name: 🚀 Start application
-      run: |
-        npm run start &
-        sleep 10
-      env:
-        PORT: 3002
-    
-    - name: ♿ Run accessibility tests
-      run: |
-        npx playwright test \
-          --project="Accessibility" \
-          --reporter=json,html \
-          tests/accessibility/
-      env:
-        PLAYWRIGHT_BASE_URL: http://localhost:3002
-    
-    - name: 📊 Upload accessibility results
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: accessibility-results
-        path: |
-          test-results/accessibility*
-          playwright-report/
-        retention-days: 30
-    
-    - name: 📋 Accessibility summary
-      if: always()
-      run: |
-        echo "### ♿ Accessibility Test Results" >> $GITHUB_STEP_SUMMARY
-        echo "- **WCAG Level**: AA" >> $GITHUB_STEP_SUMMARY
-        echo "- **Brand Colors**: Primary ${{ env.BRAND_PRIMARY }}, Secondary ${{ env.BRAND_SECONDARY }}" >> $GITHUB_STEP_SUMMARY
 
-  # 👁️ Visual regression testing  
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🚀 Setup Node.js & Playwright
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: |
+          npm ci --prefer-offline
+          npx playwright install chromium --with-deps
+
+      - name: 💾 Restore build cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            .next
+            node_modules
+          key: build-${{ runner.os }}-${{ github.sha }}
+
+      - name: 🚀 Start application
+        run: |
+          npm run start &
+          sleep 10
+        env:
+          PORT: 3002
+
+      - name: ♿ Run accessibility tests
+        run: |
+          npx playwright test \
+            --project="Accessibility" \
+            --reporter=json,html \
+            tests/accessibility/
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:3002
+
+      - name: 📊 Upload accessibility results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: accessibility-results
+          path: |
+            test-results/accessibility*
+            playwright-report/
+          retention-days: 30
+
+      - name: 📋 Accessibility summary
+        if: always()
+        run: |
+          echo "### ♿ Accessibility Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "- **WCAG Level**: AA" >> $GITHUB_STEP_SUMMARY
+          echo "- **Brand Colors**: Primary ${{ env.BRAND_PRIMARY }}, Secondary ${{ env.BRAND_SECONDARY }}" >> $GITHUB_STEP_SUMMARY
+
+  # 👁️ Visual regression testing
   test-visual:
     name: 👁️ Visual Regression Tests
     runs-on: ubuntu-latest
     needs: [setup, build]
     if: needs.setup.outputs.should-run-visual == 'true'
     timeout-minutes: 25
-    
+
     steps:
-    - name: 📥 Checkout code
-      uses: actions/checkout@v4
-    
-    - name: 🚀 Setup Node.js & Playwright
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-    
-    - name: 📦 Install dependencies
-      run: |
-        npm ci --prefer-offline
-        npx playwright install chromium --with-deps
-    
-    - name: 💾 Restore build cache
-      uses: actions/cache@v3
-      with:
-        path: |
-          .next
-          node_modules
-        key: build-${{ runner.os }}-${{ github.sha }}
-    
-    - name: 🚀 Start application
-      run: |
-        npm run start &
-        sleep 10
-      env:
-        PORT: 3002
-    
-    - name: 👁️ Run visual regression tests
-      run: |
-        npx playwright test \
-          --project="Visual Regression" \
-          --reporter=json,html \
-          tests/visual/
-      env:
-        PLAYWRIGHT_BASE_URL: http://localhost:3002
-        PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
-        PERCY_BRANCH: ${{ github.head_ref || github.ref_name }}
-    
-    - name: 📊 Upload visual test results
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: visual-results
-        path: |
-          test-results/visual*
-          test-results/screenshots/
-          playwright-report/
-        retention-days: 30
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🚀 Setup Node.js & Playwright
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: |
+          npm ci --prefer-offline
+          npx playwright install chromium --with-deps
+
+      - name: 💾 Restore build cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            .next
+            node_modules
+          key: build-${{ runner.os }}-${{ github.sha }}
+
+      - name: 🚀 Start application
+        run: |
+          npm run start &
+          sleep 10
+        env:
+          PORT: 3002
+
+      - name: 👁️ Run visual regression tests
+        run: |
+          npx playwright test \
+            --project="Visual Regression" \
+            --reporter=json,html \
+            tests/visual/
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:3002
+          PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
+          PERCY_BRANCH: ${{ github.head_ref || github.ref_name }}
+
+      - name: 📊 Upload visual test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: visual-results
+          path: |
+            test-results/visual*
+            test-results/screenshots/
+            playwright-report/
+          retention-days: 30
 
   # 📱 Mobile testing
   test-mobile:
@@ -419,59 +419,59 @@ jobs:
     runs-on: ubuntu-latest
     needs: [setup, build]
     timeout-minutes: 20
-    
+
     strategy:
       matrix:
         device: ['Mobile Chrome', 'Mobile Safari']
-    
+
     steps:
-    - name: 📥 Checkout code
-      uses: actions/checkout@v4
-    
-    - name: 🚀 Setup Node.js & Playwright
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-    
-    - name: 📦 Install dependencies  
-      run: |
-        npm ci --prefer-offline
-        npx playwright install --with-deps
-    
-    - name: 💾 Restore build cache
-      uses: actions/cache@v3
-      with:
-        path: |
-          .next
-          node_modules
-        key: build-${{ runner.os }}-${{ github.sha }}
-    
-    - name: 🚀 Start application
-      run: |
-        npm run start &
-        sleep 10
-      env:
-        PORT: 3002
-    
-    - name: 📱 Run mobile tests
-      run: |
-        npx playwright test \
-          --project="${{ matrix.device }}" \
-          --reporter=json,html \
-          tests/mobile/
-      env:
-        PLAYWRIGHT_BASE_URL: http://localhost:3002
-    
-    - name: 📊 Upload mobile test results
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: mobile-results-${{ matrix.device }}
-        path: |
-          test-results/
-          playwright-report/
-        retention-days: 30
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🚀 Setup Node.js & Playwright
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: |
+          npm ci --prefer-offline
+          npx playwright install --with-deps
+
+      - name: 💾 Restore build cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            .next
+            node_modules
+          key: build-${{ runner.os }}-${{ github.sha }}
+
+      - name: 🚀 Start application
+        run: |
+          npm run start &
+          sleep 10
+        env:
+          PORT: 3002
+
+      - name: 📱 Run mobile tests
+        run: |
+          npx playwright test \
+            --project="${{ matrix.device }}" \
+            --reporter=json,html \
+            tests/mobile/
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:3002
+
+      - name: 📊 Upload mobile test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mobile-results-${{ matrix.device }}
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 30
 
   # 📊 Generate comprehensive reports
   generate-reports:
@@ -480,78 +480,78 @@ jobs:
     needs: [test-functional, test-performance, test-accessibility, test-visual, test-mobile]
     if: always()
     timeout-minutes: 10
-    
+
     steps:
-    - name: 📥 Checkout code
-      uses: actions/checkout@v4
-    
-    - name: 📦 Download all test artifacts
-      uses: actions/download-artifact@v4
-      with:
-        path: all-results/
-    
-    - name: 🚀 Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-    
-    - name: 📊 Generate executive summary
-      run: |
-        # Create comprehensive test report
-        cat > executive-summary.md << 'EOF'
-        # 🚀 HASIVU Enterprise Test Execution Report
-        
-        ## 🎨 Brand Colors: Vibrant Blue (#2563eb), Deep Green (#16a34a)
-        
-        **Execution Time**: $(date)
-        **Branch**: ${{ github.ref_name }}
-        **Commit**: ${{ github.sha }}
-        **Test Suite**: ${{ needs.setup.outputs.test-suite }}
-        
-        ## Test Results Summary
-        
-        | Test Type | Status | Details |
-        |-----------|---------|---------|
-        | 🧪 Functional | ${{ needs.test-functional.result }} | Cross-browser compatibility |
-        | ⚡ Performance | ${{ needs.test-performance.result }} | Core Web Vitals compliance |
-        | ♿ Accessibility | ${{ needs.test-accessibility.result }} | WCAG AA compliance |
-        | 👁️ Visual Regression | ${{ needs.test-visual.result }} | Brand guideline consistency |
-        | 📱 Mobile | ${{ needs.test-mobile.result }} | Mobile responsiveness |
-        
-        ## Quality Gates
-        
-        - **Functional Testing**: ${{ needs.test-functional.result == 'success' && '✅ PASSED' || '❌ FAILED' }}
-        - **Performance Budgets**: ${{ needs.test-performance.result == 'success' && '✅ PASSED' || '❌ FAILED' }}
-        - **Accessibility Compliance**: ${{ needs.test-accessibility.result == 'success' && '✅ PASSED' || '❌ FAILED' }}
-        - **Visual Consistency**: ${{ needs.test-visual.result == 'success' && '✅ PASSED' || '❌ FAILED' }}
-        - **Mobile Experience**: ${{ needs.test-mobile.result == 'success' && '✅ PASSED' || '❌ FAILED' }}
-        
-        ## Next Steps
-        
-        ${{ needs.test-functional.result != 'success' && '- 🔧 Address functional test failures' || '' }}
-        ${{ needs.test-performance.result != 'success' && '- ⚡ Optimize performance bottlenecks' || '' }}
-        ${{ needs.test-accessibility.result != 'success' && '- ♿ Fix accessibility violations' || '' }}
-        ${{ needs.test-visual.result != 'success' && '- 👁️ Update visual baselines' || '' }}
-        ${{ needs.test-mobile.result != 'success' && '- 📱 Fix mobile responsiveness issues' || '' }}
-        
-        ---
-        *Generated by HASIVU Enterprise Playwright Framework v2.0*
-        EOF
-        
-        echo "Executive summary generated"
-    
-    - name: 📋 Add summary to job
-      run: |
-        cat executive-summary.md >> $GITHUB_STEP_SUMMARY
-    
-    - name: 📊 Upload consolidated report
-      uses: actions/upload-artifact@v4
-      with:
-        name: test-execution-report
-        path: |
-          executive-summary.md
-          all-results/
-        retention-days: 90
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Download all test artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-results/
+
+      - name: 🚀 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: 📊 Generate executive summary
+        run: |
+          # Create comprehensive test report
+          cat > executive-summary.md << 'EOF'
+          # 🚀 HASIVU Enterprise Test Execution Report
+
+          ## 🎨 Brand Colors: Vibrant Blue (#2563eb), Deep Green (#16a34a)
+
+          **Execution Time**: $(date)
+          **Branch**: ${{ github.ref_name }}
+          **Commit**: ${{ github.sha }}
+          **Test Suite**: ${{ needs.setup.outputs.test-suite }}
+
+          ## Test Results Summary
+
+          | Test Type | Status | Details |
+          |-----------|---------|---------|
+          | 🧪 Functional | ${{ needs.test-functional.result }} | Cross-browser compatibility |
+          | ⚡ Performance | ${{ needs.test-performance.result }} | Core Web Vitals compliance |
+          | ♿ Accessibility | ${{ needs.test-accessibility.result }} | WCAG AA compliance |
+          | 👁️ Visual Regression | ${{ needs.test-visual.result }} | Brand guideline consistency |
+          | 📱 Mobile | ${{ needs.test-mobile.result }} | Mobile responsiveness |
+
+          ## Quality Gates
+
+          - **Functional Testing**: ${{ needs.test-functional.result == 'success' && '✅ PASSED' || '❌ FAILED' }}
+          - **Performance Budgets**: ${{ needs.test-performance.result == 'success' && '✅ PASSED' || '❌ FAILED' }}
+          - **Accessibility Compliance**: ${{ needs.test-accessibility.result == 'success' && '✅ PASSED' || '❌ FAILED' }}
+          - **Visual Consistency**: ${{ needs.test-visual.result == 'success' && '✅ PASSED' || '❌ FAILED' }}
+          - **Mobile Experience**: ${{ needs.test-mobile.result == 'success' && '✅ PASSED' || '❌ FAILED' }}
+
+          ## Next Steps
+
+          ${{ needs.test-functional.result != 'success' && '- 🔧 Address functional test failures' || '' }}
+          ${{ needs.test-performance.result != 'success' && '- ⚡ Optimize performance bottlenecks' || '' }}
+          ${{ needs.test-accessibility.result != 'success' && '- ♿ Fix accessibility violations' || '' }}
+          ${{ needs.test-visual.result != 'success' && '- 👁️ Update visual baselines' || '' }}
+          ${{ needs.test-mobile.result != 'success' && '- 📱 Fix mobile responsiveness issues' || '' }}
+
+          ---
+          *Generated by HASIVU Enterprise Playwright Framework v2.0*
+          EOF
+
+          echo "Executive summary generated"
+
+      - name: 📋 Add summary to job
+        run: |
+          cat executive-summary.md >> $GITHUB_STEP_SUMMARY
+
+      - name: 📊 Upload consolidated report
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-execution-report
+          path: |
+            executive-summary.md
+            all-results/
+          retention-days: 90
 
   # 🚢 Deployment validation
   validate-deployment:
@@ -560,50 +560,50 @@ jobs:
     needs: [test-functional, test-performance, test-accessibility]
     if: github.ref == 'refs/heads/main' && needs.test-functional.result == 'success'
     timeout-minutes: 15
-    
+
     environment: production
-    
+
     steps:
-    - name: 📥 Checkout code  
-      uses: actions/checkout@v4
-    
-    - name: 🚀 Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-    
-    - name: 📦 Install Playwright
-      run: |
-        npm ci --prefer-offline
-        npx playwright install chromium --with-deps
-    
-    - name: 🧪 Run smoke tests against production
-      run: |
-        npx playwright test \
-          --project="Desktop Chrome" \
-          --grep="@smoke" \
-          --reporter=json,html \
-          tests/e2e/
-      env:
-        PLAYWRIGHT_BASE_URL: ${{ secrets.PRODUCTION_URL }}
-    
-    - name: 📊 Upload deployment validation results
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: deployment-validation
-        path: |
-          test-results/
-          playwright-report/
-        retention-days: 30
-    
-    - name: ✅ Deployment validation summary
-      run: |
-        echo "### 🚢 Production Deployment Validation" >> $GITHUB_STEP_SUMMARY
-        echo "- **Environment**: Production" >> $GITHUB_STEP_SUMMARY
-        echo "- **URL**: ${{ secrets.PRODUCTION_URL }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Status**: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🚀 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install Playwright
+        run: |
+          npm ci --prefer-offline
+          npx playwright install chromium --with-deps
+
+      - name: 🧪 Run smoke tests against production
+        run: |
+          npx playwright test \
+            --project="Desktop Chrome" \
+            --grep="@smoke" \
+            --reporter=json,html \
+            tests/e2e/
+        env:
+          PLAYWRIGHT_BASE_URL: ${{ secrets.PRODUCTION_URL }}
+
+      - name: 📊 Upload deployment validation results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: deployment-validation
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 30
+
+      - name: ✅ Deployment validation summary
+        run: |
+          echo "### 🚢 Production Deployment Validation" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment**: Production" >> $GITHUB_STEP_SUMMARY
+          echo "- **URL**: ${{ secrets.PRODUCTION_URL }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status**: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
 
   # 🔔 Notifications
   notify:
@@ -611,24 +611,24 @@ jobs:
     runs-on: ubuntu-latest
     needs: [generate-reports]
     if: always()
-    
+
     steps:
-    - name: 📧 Notify on failure
-      if: contains(needs.*.result, 'failure')
-      uses: 8398a7/action-slack@v3
-      with:
-        status: failure
-        text: '🚨 HASIVU Enterprise tests failed! Check the results.'
-        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
-      env:
-        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
-    
-    - name: ✅ Notify on success
-      if: needs.generate-reports.result == 'success'
-      uses: 8398a7/action-slack@v3  
-      with:
-        status: success
-        text: '✅ HASIVU Enterprise tests passed! All quality gates met.'
-        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
-      env:
-        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+      - name: 📧 Notify on failure
+        if: contains(needs.*.result, 'failure')
+        uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          text: '🚨 HASIVU Enterprise tests failed! Check the results.'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+
+      - name: ✅ Notify on success
+        if: needs.generate-reports.result == 'success'
+        uses: 8398a7/action-slack@v3
+        with:
+          status: success
+          text: '✅ HASIVU Enterprise tests passed! All quality gates met.'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}

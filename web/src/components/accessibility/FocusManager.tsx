@@ -21,7 +21,7 @@ export const FocusTrap: React.FC<FocusTrapProps> = ({
   children,
   active = true,
   restoreFocus = true,
-  className
+  className,
 }) => {
   const containerRef = React.useRef<HTMLDivElement>(null);
   const previousFocusRef = React.useRef<HTMLElement | null>(null);
@@ -44,7 +44,7 @@ export const FocusTrap: React.FC<FocusTrapProps> = ({
         'textarea:not([disabled])',
         'a[href]',
         '[tabindex]:not([tabindex="-1"])',
-        '[contenteditable="true"]'
+        '[contenteditable="true"]',
       ].join(', ');
 
       return Array.from(container.querySelectorAll(selectors)) as HTMLElement[];
@@ -87,7 +87,7 @@ export const FocusTrap: React.FC<FocusTrapProps> = ({
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
-      
+
       // Restore focus to the previously focused element
       if (restoreFocus && previousFocusRef.current) {
         previousFocusRef.current.focus();
@@ -121,7 +121,7 @@ export const FocusGuard: React.FC<{ onFocus: () => void }> = ({ onFocus }) => (
       overflow: 'hidden',
       clip: 'rect(0, 0, 0, 0)',
       whiteSpace: 'nowrap',
-      border: 0
+      border: 0,
     }}
   />
 );
@@ -136,11 +136,7 @@ interface AutoFocusProps {
   delay?: number;
 }
 
-export const AutoFocus: React.FC<AutoFocusProps> = ({
-  children,
-  disabled = false,
-  delay = 0
-}) => {
+export const AutoFocus: React.FC<AutoFocusProps> = ({ children, disabled = false, delay = 0 }) => {
   const ref = React.useRef<HTMLElement>(null);
 
   React.useEffect(() => {
@@ -164,7 +160,7 @@ export const AutoFocus: React.FC<AutoFocusProps> = ({
       } else if (children.ref) {
         children.ref.current = node;
       }
-    }
+    },
   });
 };
 
@@ -183,89 +179,90 @@ export const RovingFocus: React.FC<RovingFocusProps> = ({
   children,
   orientation = 'vertical',
   loop = true,
-  className
+  className,
 }) => {
   const containerRef = React.useRef<HTMLDivElement>(null);
 
-  const handleKeyDown = React.useCallback((e: React.KeyboardEvent) => {
-    const container = containerRef.current;
-    if (!container) return;
+  const handleKeyDown = React.useCallback(
+    (e: React.KeyboardEvent) => {
+      const container = containerRef.current;
+      if (!container) return;
 
-    const focusableElements = Array.from(
-      container.querySelectorAll('[role="menuitem"], button, a, input, [tabindex]:not([tabindex="-1"])')
-    ) as HTMLElement[];
+      const focusableElements = Array.from(
+        container.querySelectorAll(
+          '[role="menuitem"], button, a, input, [tabindex]:not([tabindex="-1"])'
+        )
+      ) as HTMLElement[];
 
-    const currentIndex = focusableElements.indexOf(document.activeElement as HTMLElement);
-    if (currentIndex === -1) return;
+      const currentIndex = focusableElements.indexOf(document.activeElement as HTMLElement);
+      if (currentIndex === -1) return;
 
-    let nextIndex = currentIndex;
+      let nextIndex = currentIndex;
 
-    switch (e.key) {
-      case 'ArrowDown':
-        if (orientation === 'vertical' || orientation === 'both') {
-          e.preventDefault();
-          nextIndex = currentIndex + 1;
-          if (nextIndex >= focusableElements.length) {
-            nextIndex = loop ? 0 : focusableElements.length - 1;
+      switch (e.key) {
+        case 'ArrowDown':
+          if (orientation === 'vertical' || orientation === 'both') {
+            e.preventDefault();
+            nextIndex = currentIndex + 1;
+            if (nextIndex >= focusableElements.length) {
+              nextIndex = loop ? 0 : focusableElements.length - 1;
+            }
           }
-        }
-        break;
+          break;
 
-      case 'ArrowUp':
-        if (orientation === 'vertical' || orientation === 'both') {
-          e.preventDefault();
-          nextIndex = currentIndex - 1;
-          if (nextIndex < 0) {
-            nextIndex = loop ? focusableElements.length - 1 : 0;
+        case 'ArrowUp':
+          if (orientation === 'vertical' || orientation === 'both') {
+            e.preventDefault();
+            nextIndex = currentIndex - 1;
+            if (nextIndex < 0) {
+              nextIndex = loop ? focusableElements.length - 1 : 0;
+            }
           }
-        }
-        break;
+          break;
 
-      case 'ArrowRight':
-        if (orientation === 'horizontal' || orientation === 'both') {
-          e.preventDefault();
-          nextIndex = currentIndex + 1;
-          if (nextIndex >= focusableElements.length) {
-            nextIndex = loop ? 0 : focusableElements.length - 1;
+        case 'ArrowRight':
+          if (orientation === 'horizontal' || orientation === 'both') {
+            e.preventDefault();
+            nextIndex = currentIndex + 1;
+            if (nextIndex >= focusableElements.length) {
+              nextIndex = loop ? 0 : focusableElements.length - 1;
+            }
           }
-        }
-        break;
+          break;
 
-      case 'ArrowLeft':
-        if (orientation === 'horizontal' || orientation === 'both') {
-          e.preventDefault();
-          nextIndex = currentIndex - 1;
-          if (nextIndex < 0) {
-            nextIndex = loop ? focusableElements.length - 1 : 0;
+        case 'ArrowLeft':
+          if (orientation === 'horizontal' || orientation === 'both') {
+            e.preventDefault();
+            nextIndex = currentIndex - 1;
+            if (nextIndex < 0) {
+              nextIndex = loop ? focusableElements.length - 1 : 0;
+            }
           }
-        }
-        break;
+          break;
 
-      case 'Home':
-        e.preventDefault();
-        nextIndex = 0;
-        break;
+        case 'Home':
+          e.preventDefault();
+          nextIndex = 0;
+          break;
 
-      case 'End':
-        e.preventDefault();
-        nextIndex = focusableElements.length - 1;
-        break;
+        case 'End':
+          e.preventDefault();
+          nextIndex = focusableElements.length - 1;
+          break;
 
-      default:
-        return;
-    }
+        default:
+          return;
+      }
 
-    if (nextIndex !== currentIndex && focusableElements[nextIndex]) {
-      focusableElements[nextIndex].focus();
-    }
-  }, [orientation, loop]);
+      if (nextIndex !== currentIndex && focusableElements[nextIndex]) {
+        focusableElements[nextIndex].focus();
+      }
+    },
+    [orientation, loop]
+  );
 
   return (
-    <div
-      ref={containerRef}
-      className={className}
-      onKeyDown={handleKeyDown}
-    >
+    <div ref={containerRef} className={className} onKeyDown={handleKeyDown}>
       {children}
     </div>
   );
@@ -332,7 +329,7 @@ export const FocusRing: React.FC<FocusRingProps> = ({
   children,
   offset = 2,
   radius = 4,
-  color = 'ring-primary-500'
+  color = 'ring-primary-500',
 }) => {
   const focusVisible = useFocusVisible();
 
@@ -340,13 +337,8 @@ export const FocusRing: React.FC<FocusRingProps> = ({
     className: cn(
       children.props.className,
       'relative outline-none',
-      focusVisible && [
-        'ring-2',
-        color,
-        `ring-offset-${offset}`,
-        `rounded-${radius}`
-      ]
-    )
+      focusVisible && ['ring-2', color, `ring-offset-${offset}`, `rounded-${radius}`]
+    ),
   });
 };
 

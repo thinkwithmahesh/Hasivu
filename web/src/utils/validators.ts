@@ -38,7 +38,8 @@ export const validationMessages = {
   required: 'This field is required',
   email: 'Please enter a valid email address',
   phone: 'Please enter a valid 10-digit phone number',
-  password: 'Password must be at least 8 characters with uppercase, lowercase, number and special character',
+  password:
+    'Password must be at least 8 characters with uppercase, lowercase, number and special character',
   minLength: (min: number) => `Must be at least ${min} characters`,
   maxLength: (max: number) => `Must be no more than ${max} characters`,
   range: (min: number, max: number) => `Must be between ${min} and ${max}`,
@@ -101,10 +102,7 @@ export const validationSchemas = {
       .required(validationMessages.required)
       .min(2, validationMessages.minLength(2))
       .max(50, validationMessages.maxLength(50)),
-    email: yup
-      .string()
-      .required(validationMessages.required)
-      .email(validationMessages.email),
+    email: yup.string().required(validationMessages.required).email(validationMessages.email),
     phone: yup
       .string()
       .required(validationMessages.required)
@@ -121,10 +119,7 @@ export const validationSchemas = {
 
   // Login schema
   login: yup.object().shape({
-    email: yup
-      .string()
-      .required(validationMessages.required)
-      .email(validationMessages.email),
+    email: yup.string().required(validationMessages.required).email(validationMessages.email),
     password: yup.string().required(validationMessages.required),
   }),
 
@@ -176,7 +171,7 @@ export const validationSchemas = {
       .number()
       .required(validationMessages.required)
       .positive(validationMessages.positive)
-      .test('decimal', 'Amount can have at most 2 decimal places', (value) => {
+      .test('decimal', 'Amount can have at most 2 decimal places', value => {
         return value == null || /^\d+(\.\d{1,2})?$/.test(value.toString());
       }),
     paymentMethod: yup
@@ -221,11 +216,11 @@ export const customValidators = {
     const today = new Date();
     const age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
-    
+
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
       return age - 1 >= 5 && age - 1 <= 18;
     }
-    
+
     return age >= 5 && age <= 18;
   },
 
@@ -234,7 +229,7 @@ export const customValidators = {
     const now = new Date();
     const timeDiff = deliveryDate.getTime() - now.getTime();
     const hoursDiff = timeDiff / (1000 * 3600);
-    
+
     return hoursDiff >= cutoffHours;
   },
 };
@@ -251,7 +246,7 @@ export const formValidators = {
     } catch (error) {
       if (error instanceof yup.ValidationError) {
         const errors: Record<string, string> = {};
-        error.inner.forEach((err) => {
+        error.inner.forEach(err => {
           if (err.path) {
             errors[err.path] = err.message;
           }

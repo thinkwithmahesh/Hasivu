@@ -74,7 +74,7 @@ export const useTouchFeedback = (
     pressTimer.current = setTimeout((
     }, 200)
   }, [])
-  const handleTouchEnd = useCallback((
+  const handleTouchEnd = useCallback(_(
   // Delayed release for visual feedback
     setTimeout(() => setIsPressed(false), 100)
   }, [])

@@ -1,0 +1,1280 @@
+# HASIVU Platform - Production Monitoring Stack (Prometheus + Grafana + AlertManager)
+# Enterprise-grade observability and alerting for 99.9% uptime
+# Version: 1.0 | Production-Ready | Full Observability Stack
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+  labels:
+    name: monitoring
+    project: hasivu-platform
+
+---
+# Prometheus Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: monitoring
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+      external_labels:
+        cluster: 'hasivu-production'
+        environment: 'production'
+
+    rule_files:
+      - "/etc/prometheus/rules/*.yml"
+
+    alerting:
+      alertmanagers:
+        - static_configs:
+            - targets:
+              - alertmanager:9093
+
+    scrape_configs:
+      # Prometheus itself
+      - job_name: 'prometheus'
+        static_configs:
+          - targets: ['localhost:9090']
+
+      # Kubernetes API Server
+      - job_name: 'kubernetes-apiservers'
+        kubernetes_sd_configs:
+          - role: endpoints
+        scheme: https
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]
+            action: keep
+            regex: default;kubernetes;https
+
+      # Kubernetes Nodes
+      - job_name: 'kubernetes-nodes'
+        kubernetes_sd_configs:
+          - role: node
+        scheme: https
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        relabel_configs:
+          - action: labelmap
+            regex: __meta_kubernetes_node_label_(.+)
+          - target_label: __address__
+            replacement: kubernetes.default.svc:443
+          - source_labels: [__meta_kubernetes_node_name]
+            regex: (.+)
+            target_label: __metrics_path__
+            replacement: /api/v1/nodes/${1}/proxy/metrics
+
+      # Kubernetes Pods
+      - job_name: 'kubernetes-pods'
+        kubernetes_sd_configs:
+          - role: pod
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: true
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+            action: replace
+            regex: ([^:]+)(?::\d+)?;(\d+)
+            replacement: $1:$2
+            target_label: __address__
+          - action: labelmap
+            regex: __meta_kubernetes_pod_label_(.+)
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: kubernetes_namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            action: replace
+            target_label: kubernetes_pod_name
+
+      # HASIVU Platform Application
+      - job_name: 'hasivu-platform'
+        kubernetes_sd_configs:
+          - role: endpoints
+            namespaces:
+              names:
+                - hasivu-production
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_service_name]
+            action: keep
+            regex: hasivu-platform
+          - source_labels: [__meta_kubernetes_endpoint_port_name]
+            action: keep
+            regex: metrics
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+          - source_labels: [__meta_kubernetes_service_name]
+            target_label: service
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: pod
+
+      # PostgreSQL Exporter
+      - job_name: 'postgres-exporter'
+        static_configs:
+          - targets: ['postgres-exporter:9187']
+        scrape_interval: 30s
+
+      # Redis Exporter
+      - job_name: 'redis-exporter'
+        static_configs:
+          - targets: ['redis-exporter:9121']
+        scrape_interval: 30s
+
+      # Node Exporter
+      - job_name: 'node-exporter'
+        kubernetes_sd_configs:
+          - role: endpoints
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_endpoints_name]
+            regex: 'node-exporter'
+            action: keep
+
+      # cAdvisor
+      - job_name: 'cadvisor'
+        kubernetes_sd_configs:
+          - role: node
+        scheme: https
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        relabel_configs:
+          - action: labelmap
+            regex: __meta_kubernetes_node_label_(.+)
+          - target_label: __address__
+            replacement: kubernetes.default.svc:443
+          - source_labels: [__meta_kubernetes_node_name]
+            regex: (.+)
+            target_label: __metrics_path__
+            replacement: /api/v1/nodes/${1}/proxy/metrics/cadvisor
+
+---
+# Prometheus Rules for HASIVU Platform
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-rules
+  namespace: monitoring
+data:
+  hasivu-platform.yml: |
+    groups:
+    - name: hasivu.platform.rules
+      interval: 30s
+      rules:
+      # High-level SLI/SLO metrics
+      - record: hasivu:sli:availability_ratio
+        expr: |
+          (
+            sum(rate(http_requests_total{job="hasivu-platform",code!~"5.."}[5m])) /
+            sum(rate(http_requests_total{job="hasivu-platform"}[5m]))
+          )
+
+      - record: hasivu:sli:latency_p99
+        expr: |
+          histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{job="hasivu-platform"}[5m]))
+
+      - record: hasivu:sli:error_rate
+        expr: |
+          sum(rate(http_requests_total{job="hasivu-platform",code=~"5.."}[5m])) /
+          sum(rate(http_requests_total{job="hasivu-platform"}[5m]))
+
+      # Business metrics
+      - record: hasivu:business:order_rate
+        expr: |
+          sum(rate(orders_total{status="completed"}[5m]))
+
+      - record: hasivu:business:payment_success_rate
+        expr: |
+          sum(rate(payments_total{status="success"}[5m])) /
+          sum(rate(payments_total[5m]))
+
+      # Alert rules
+      - alert: HASIVUHighErrorRate
+        expr: hasivu:sli:error_rate > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          service: hasivu-platform
+          team: platform
+        annotations:
+          summary: "HASIVU Platform high error rate"
+          description: "Error rate is {{ $value | humanizePercentage }} for more than 5 minutes"
+          runbook_url: "https://runbooks.hasivu.com/high-error-rate"
+
+      - alert: HASIVUHighLatency
+        expr: hasivu:sli:latency_p99 > 2
+        for: 10m
+        labels:
+          severity: warning
+          service: hasivu-platform
+          team: platform
+        annotations:
+          summary: "HASIVU Platform high latency"
+          description: "99th percentile latency is {{ $value }}s for more than 10 minutes"
+          runbook_url: "https://runbooks.hasivu.com/high-latency"
+
+      - alert: HASIVULowAvailability
+        expr: hasivu:sli:availability_ratio < 0.999
+        for: 2m
+        labels:
+          severity: critical
+          service: hasivu-platform
+          team: platform
+        annotations:
+          summary: "HASIVU Platform availability below SLO"
+          description: "Availability is {{ $value | humanizePercentage }} (SLO: 99.9%)"
+          runbook_url: "https://runbooks.hasivu.com/low-availability"
+
+      - alert: HASIVUDatabaseDown
+        expr: up{job="postgres-exporter"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: postgresql
+          team: platform
+        annotations:
+          summary: "HASIVU Database is down"
+          description: "PostgreSQL database has been unreachable for more than 1 minute"
+          runbook_url: "https://runbooks.hasivu.com/database-down"
+
+      - alert: HASIVURedisDown
+        expr: up{job="redis-exporter"} == 0
+        for: 2m
+        labels:
+          severity: warning
+          service: redis
+          team: platform
+        annotations:
+          summary: "HASIVU Redis cache is down"
+          description: "Redis cache has been unreachable for more than 2 minutes"
+          runbook_url: "https://runbooks.hasivu.com/redis-down"
+
+      - alert: HASIVUPodCrashLooping
+        expr: |
+          rate(kube_pod_container_status_restarts_total{namespace="hasivu-production"}[5m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+          service: kubernetes
+          team: platform
+        annotations:
+          summary: "HASIVU Pod is crash looping"
+          description: "Pod {{ $labels.pod }} is restarting frequently"
+          runbook_url: "https://runbooks.hasivu.com/pod-crash-looping"
+
+      - alert: HASIVUHighMemoryUsage
+        expr: |
+          (
+            container_memory_usage_bytes{namespace="hasivu-production",pod=~"hasivu-platform-.*"} /
+            container_spec_memory_limit_bytes{namespace="hasivu-production",pod=~"hasivu-platform-.*"}
+          ) > 0.9
+        for: 10m
+        labels:
+          severity: warning
+          service: hasivu-platform
+          team: platform
+        annotations:
+          summary: "HASIVU High memory usage"
+          description: "Pod {{ $labels.pod }} memory usage is {{ $value | humanizePercentage }}"
+          runbook_url: "https://runbooks.hasivu.com/high-memory-usage"
+
+      - alert: HASIVUPaymentFailures
+        expr: |
+          (
+            sum(rate(payments_total{status="failed"}[5m])) /
+            sum(rate(payments_total[5m]))
+          ) > 0.05
+        for: 3m
+        labels:
+          severity: critical
+          service: payments
+          team: platform
+        annotations:
+          summary: "HASIVU High payment failure rate"
+          description: "Payment failure rate is {{ $value | humanizePercentage }}"
+          runbook_url: "https://runbooks.hasivu.com/payment-failures"
+
+---
+# Prometheus Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: monitoring
+  labels:
+    app: prometheus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      serviceAccountName: prometheus
+      containers:
+        - name: prometheus
+          image: prom/prometheus:v2.47.0
+          args:
+            - '--config.file=/etc/prometheus/prometheus.yml'
+            - '--storage.tsdb.path=/prometheus'
+            - '--storage.tsdb.retention.time=30d'
+            - '--storage.tsdb.retention.size=50GB'
+            - '--web.console.libraries=/etc/prometheus/console_libraries'
+            - '--web.console.templates=/etc/prometheus/consoles'
+            - '--web.enable-lifecycle'
+            - '--web.enable-admin-api'
+            - '--log.level=info'
+          ports:
+            - containerPort: 9090
+              name: web
+          resources:
+            requests:
+              memory: '2Gi'
+              cpu: '1000m'
+            limits:
+              memory: '4Gi'
+              cpu: '2000m'
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/prometheus
+            - name: rules-volume
+              mountPath: /etc/prometheus/rules
+            - name: storage-volume
+              mountPath: /prometheus
+          livenessProbe:
+            httpGet:
+              path: /-/healthy
+              port: 9090
+            initialDelaySeconds: 30
+            timeoutSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: 9090
+            initialDelaySeconds: 30
+            timeoutSeconds: 30
+      volumes:
+        - name: config-volume
+          configMap:
+            name: prometheus-config
+        - name: rules-volume
+          configMap:
+            name: prometheus-rules
+        - name: storage-volume
+          persistentVolumeClaim:
+            claimName: prometheus-storage
+
+---
+# Prometheus PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prometheus-storage
+  namespace: monitoring
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi
+  storageClassName: fast-ssd
+
+---
+# Prometheus Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: monitoring
+  labels:
+    app: prometheus
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9090
+      targetPort: 9090
+      name: web
+  selector:
+    app: prometheus
+
+---
+# Prometheus ServiceAccount
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: prometheus
+  namespace: monitoring
+
+---
+# Prometheus ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: prometheus
+rules:
+  - apiGroups: ['']
+    resources:
+      - nodes
+      - nodes/proxy
+      - services
+      - endpoints
+      - pods
+    verbs: ['get', 'list', 'watch']
+  - apiGroups:
+      - extensions
+    resources:
+      - ingresses
+    verbs: ['get', 'list', 'watch']
+  - nonResourceURLs: ['/metrics']
+    verbs: ['get']
+
+---
+# Prometheus ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: prometheus
+subjects:
+  - kind: ServiceAccount
+    name: prometheus
+    namespace: monitoring
+
+---
+# AlertManager Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alertmanager-config
+  namespace: monitoring
+data:
+  alertmanager.yml: |
+    global:
+      smtp_smarthost: 'localhost:587'
+      smtp_from: 'alerts@hasivu.com'
+      smtp_auth_username: 'alerts@hasivu.com'
+      smtp_auth_password: 'smtp_password'
+
+    templates:
+      - '/etc/alertmanager/templates/*.tmpl'
+
+    route:
+      group_by: ['alertname', 'service']
+      group_wait: 10s
+      group_interval: 10s
+      repeat_interval: 1h
+      receiver: 'web.hook'
+      routes:
+      - match:
+          severity: critical
+        receiver: 'critical-alerts'
+        group_wait: 10s
+        repeat_interval: 5m
+      - match:
+          severity: warning
+        receiver: 'warning-alerts'
+        group_wait: 30s
+        repeat_interval: 30m
+
+    receivers:
+    - name: 'web.hook'
+      webhook_configs:
+      - url: 'http://localhost:5001/'
+
+    - name: 'critical-alerts'
+      email_configs:
+      - to: 'oncall@hasivu.com'
+        subject: 'CRITICAL: {{ .GroupLabels.alertname }} - {{ .GroupLabels.service }}'
+        body: |
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Details: {{ range .Labels.SortedPairs }}{{ .Name }}: {{ .Value }}{{ end }}
+          {{ end }}
+      slack_configs:
+      - api_url: '{{ .SlackAPIURL }}'
+        channel: '#critical-alerts'
+        title: 'CRITICAL ALERT: {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
+        color: 'danger'
+      pagerduty_configs:
+      - routing_key: '{{ .PagerDutyRoutingKey }}'
+        description: '{{ .GroupLabels.alertname }} - {{ .GroupLabels.service }}'
+        severity: 'critical'
+
+    - name: 'warning-alerts'
+      email_configs:
+      - to: 'team@hasivu.com'
+        subject: 'WARNING: {{ .GroupLabels.alertname }} - {{ .GroupLabels.service }}'
+        body: |
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Details: {{ range .Labels.SortedPairs }}{{ .Name }}: {{ .Value }}{{ end }}
+          {{ end }}
+      slack_configs:
+      - api_url: '{{ .SlackAPIURL }}'
+        channel: '#alerts'
+        title: 'Warning: {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
+        color: 'warning'
+
+    inhibit_rules:
+    - source_match:
+        severity: 'critical'
+      target_match:
+        severity: 'warning'
+      equal: ['alertname', 'service']
+
+---
+# AlertManager Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alertmanager
+  namespace: monitoring
+  labels:
+    app: alertmanager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alertmanager
+  template:
+    metadata:
+      labels:
+        app: alertmanager
+    spec:
+      containers:
+        - name: alertmanager
+          image: prom/alertmanager:v0.26.0
+          args:
+            - '--config.file=/etc/alertmanager/alertmanager.yml'
+            - '--storage.path=/alertmanager'
+            - '--data.retention=120h'
+            - '--web.listen-address=:9093'
+            - '--web.external-url=http://alertmanager.monitoring.svc.cluster.local:9093'
+            - '--cluster.listen-address=0.0.0.0:9094'
+          ports:
+            - containerPort: 9093
+              name: web
+            - containerPort: 9094
+              name: cluster
+          resources:
+            requests:
+              memory: '512Mi'
+              cpu: '250m'
+            limits:
+              memory: '1Gi'
+              cpu: '500m'
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/alertmanager
+            - name: storage-volume
+              mountPath: /alertmanager
+          livenessProbe:
+            httpGet:
+              path: /-/healthy
+              port: 9093
+            initialDelaySeconds: 30
+            timeoutSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: 9093
+            initialDelaySeconds: 30
+            timeoutSeconds: 30
+      volumes:
+        - name: config-volume
+          configMap:
+            name: alertmanager-config
+        - name: storage-volume
+          persistentVolumeClaim:
+            claimName: alertmanager-storage
+
+---
+# AlertManager PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: alertmanager-storage
+  namespace: monitoring
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: fast-ssd
+
+---
+# AlertManager Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: alertmanager
+  namespace: monitoring
+  labels:
+    app: alertmanager
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9093
+      targetPort: 9093
+      name: web
+  selector:
+    app: alertmanager
+
+---
+# Grafana Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-config
+  namespace: monitoring
+data:
+  grafana.ini: |
+    [analytics]
+    check_for_updates = true
+
+    [grafana_net]
+    url = https://grafana.net
+
+    [log]
+    mode = console
+    level = info
+
+    [paths]
+    data = /var/lib/grafana/data
+    logs = /var/log/grafana
+    plugins = /var/lib/grafana/plugins
+    provisioning = /etc/grafana/provisioning
+
+    [server]
+    protocol = http
+    http_port = 3000
+    domain = grafana.hasivu.com
+    root_url = https://grafana.hasivu.com
+
+    [database]
+    type = sqlite3
+
+    [session]
+    provider = file
+
+    [security]
+    admin_user = admin
+    admin_password = ${GRAFANA_ADMIN_PASSWORD}
+    secret_key = ${GRAFANA_SECRET_KEY}
+
+    [users]
+    allow_sign_up = false
+    allow_org_create = false
+
+    [auth]
+    disable_login_form = false
+
+    [auth.anonymous]
+    enabled = false
+
+    [smtp]
+    enabled = true
+    host = localhost:587
+    user = alerts@hasivu.com
+    password = smtp_password
+    from_address = alerts@hasivu.com
+    from_name = HASIVU Grafana
+
+---
+# Grafana Provisioning - DataSources
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasources
+  namespace: monitoring
+data:
+  datasources.yaml: |
+    apiVersion: 1
+    datasources:
+    - name: Prometheus
+      type: prometheus
+      access: proxy
+      url: http://prometheus:9090
+      isDefault: true
+      editable: true
+      uid: prometheus-uid
+      jsonData:
+        timeInterval: "15s"
+        queryTimeout: "60s"
+        httpMethod: "POST"
+
+---
+# Grafana Provisioning - Dashboards
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards-config
+  namespace: monitoring
+data:
+  dashboards.yaml: |
+    apiVersion: 1
+    providers:
+    - name: 'HASIVU Platform'
+      orgId: 1
+      folder: 'HASIVU'
+      type: file
+      disableDeletion: false
+      updateIntervalSeconds: 10
+      allowUiUpdates: true
+      options:
+        path: /var/lib/grafana/dashboards
+
+---
+# Grafana Dashboard - HASIVU Platform Overview
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-hasivu-overview
+  namespace: monitoring
+data:
+  hasivu-platform-overview.json: |
+    {
+      "dashboard": {
+        "id": null,
+        "title": "HASIVU Platform Overview",
+        "tags": ["hasivu", "platform", "overview"],
+        "timezone": "Asia/Kolkata",
+        "panels": [
+          {
+            "id": 1,
+            "title": "🎯 Platform Health Score",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "hasivu:sli:availability_ratio * 100",
+                "legendFormat": "Availability %"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "min": 0,
+                "max": 100,
+                "unit": "percent",
+                "thresholds": {
+                  "steps": [
+                    {"color": "red", "value": 0},
+                    {"color": "yellow", "value": 99},
+                    {"color": "green", "value": 99.9}
+                  ]
+                }
+              }
+            },
+            "gridPos": {"h": 8, "w": 6, "x": 0, "y": 0}
+          },
+          {
+            "id": 2,
+            "title": "⚡ Request Rate",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "sum(rate(http_requests_total{job=\"hasivu-platform\"}[5m]))",
+                "legendFormat": "Requests/sec"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "unit": "reqps",
+                "color": {"mode": "palette-classic"}
+              }
+            },
+            "gridPos": {"h": 8, "w": 6, "x": 6, "y": 0}
+          },
+          {
+            "id": 3,
+            "title": "🚨 Error Rate",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "hasivu:sli:error_rate * 100",
+                "legendFormat": "Error %"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "unit": "percent",
+                "thresholds": {
+                  "steps": [
+                    {"color": "green", "value": 0},
+                    {"color": "yellow", "value": 1},
+                    {"color": "red", "value": 5}
+                  ]
+                }
+              }
+            },
+            "gridPos": {"h": 8, "w": 6, "x": 12, "y": 0}
+          },
+          {
+            "id": 4,
+            "title": "⏱️ Response Time P99",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "hasivu:sli:latency_p99",
+                "legendFormat": "P99 Latency"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "unit": "s",
+                "thresholds": {
+                  "steps": [
+                    {"color": "green", "value": 0},
+                    {"color": "yellow", "value": 1},
+                    {"color": "red", "value": 2}
+                  ]
+                }
+              }
+            },
+            "gridPos": {"h": 8, "w": 6, "x": 18, "y": 0}
+          },
+          {
+            "id": 5,
+            "title": "📊 Request Volume",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "sum(rate(http_requests_total{job=\"hasivu-platform\"}[5m])) by (status)",
+                "legendFormat": "{{status}}"
+              }
+            ],
+            "yAxes": [
+              {"unit": "reqps", "min": 0}
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8}
+          },
+          {
+            "id": 6,
+            "title": "🧠 Memory Usage",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "sum(container_memory_usage_bytes{namespace=\"hasivu-production\",pod=~\"hasivu-platform-.*\"}) by (pod)",
+                "legendFormat": "{{pod}}"
+              }
+            ],
+            "yAxes": [
+              {"unit": "bytes", "min": 0}
+            ],
+            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8}
+          }
+        ],
+        "time": {"from": "now-6h", "to": "now"},
+        "refresh": "30s"
+      }
+    }
+
+---
+# Grafana Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: monitoring
+  labels:
+    app: grafana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      containers:
+        - name: grafana
+          image: grafana/grafana:10.1.0
+          ports:
+            - containerPort: 3000
+              name: web
+          env:
+            - name: GRAFANA_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-secrets
+                  key: admin-password
+            - name: GRAFANA_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-secrets
+                  key: secret-key
+          resources:
+            requests:
+              memory: '1Gi'
+              cpu: '500m'
+            limits:
+              memory: '2Gi'
+              cpu: '1000m'
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/grafana
+            - name: datasources-volume
+              mountPath: /etc/grafana/provisioning/datasources
+            - name: dashboards-config-volume
+              mountPath: /etc/grafana/provisioning/dashboards
+            - name: dashboards-volume
+              mountPath: /var/lib/grafana/dashboards
+            - name: storage-volume
+              mountPath: /var/lib/grafana
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 30
+            timeoutSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 30
+            timeoutSeconds: 30
+      volumes:
+        - name: config-volume
+          configMap:
+            name: grafana-config
+        - name: datasources-volume
+          configMap:
+            name: grafana-datasources
+        - name: dashboards-config-volume
+          configMap:
+            name: grafana-dashboards-config
+        - name: dashboards-volume
+          configMap:
+            name: grafana-dashboard-hasivu-overview
+        - name: storage-volume
+          persistentVolumeClaim:
+            claimName: grafana-storage
+
+---
+# Grafana PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grafana-storage
+  namespace: monitoring
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: fast-ssd
+
+---
+# Grafana Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: monitoring
+  labels:
+    app: grafana
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3000
+      targetPort: 3000
+      name: web
+  selector:
+    app: grafana
+
+---
+# Grafana Secrets
+apiVersion: v1
+kind: Secret
+metadata:
+  name: grafana-secrets
+  namespace: monitoring
+type: Opaque
+stringData:
+  admin-password: 'secure-admin-password-change-in-production'
+  secret-key: 'secure-secret-key-32-characters'
+
+---
+# Node Exporter DaemonSet
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: node-exporter
+  namespace: monitoring
+  labels:
+    app: node-exporter
+spec:
+  selector:
+    matchLabels:
+      app: node-exporter
+  template:
+    metadata:
+      labels:
+        app: node-exporter
+    spec:
+      hostNetwork: true
+      hostPID: true
+      containers:
+        - name: node-exporter
+          image: prom/node-exporter:v1.6.1
+          args:
+            - '--path.rootfs=/host'
+            - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+          ports:
+            - containerPort: 9100
+              name: metrics
+          resources:
+            requests:
+              memory: '128Mi'
+              cpu: '100m'
+            limits:
+              memory: '256Mi'
+              cpu: '200m'
+          volumeMounts:
+            - name: root
+              mountPath: /host
+              readOnly: true
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+      volumes:
+        - name: root
+          hostPath:
+            path: /
+      tolerations:
+        - operator: Exists
+          effect: NoSchedule
+
+---
+# Node Exporter Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: node-exporter
+  namespace: monitoring
+  labels:
+    app: node-exporter
+  annotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/port: '9100'
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+    - port: 9100
+      targetPort: 9100
+      name: metrics
+  selector:
+    app: node-exporter
+
+---
+# PostgreSQL Exporter
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-exporter
+  namespace: monitoring
+  labels:
+    app: postgres-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-exporter
+  template:
+    metadata:
+      labels:
+        app: postgres-exporter
+    spec:
+      containers:
+        - name: postgres-exporter
+          image: prometheuscommunity/postgres-exporter:v0.13.2
+          ports:
+            - containerPort: 9187
+              name: metrics
+          env:
+            - name: DATA_SOURCE_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-exporter-secret
+                  key: data-source-name
+          resources:
+            requests:
+              memory: '128Mi'
+              cpu: '100m'
+            limits:
+              memory: '256Mi'
+              cpu: '200m'
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: 9187
+            initialDelaySeconds: 30
+            timeoutSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: 9187
+            initialDelaySeconds: 5
+            timeoutSeconds: 10
+
+---
+# PostgreSQL Exporter Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-exporter
+  namespace: monitoring
+  labels:
+    app: postgres-exporter
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9187
+      targetPort: 9187
+      name: metrics
+  selector:
+    app: postgres-exporter
+
+---
+# Redis Exporter
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-exporter
+  namespace: monitoring
+  labels:
+    app: redis-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis-exporter
+  template:
+    metadata:
+      labels:
+        app: redis-exporter
+    spec:
+      containers:
+        - name: redis-exporter
+          image: oliver006/redis_exporter:v1.52.0
+          ports:
+            - containerPort: 9121
+              name: metrics
+          env:
+            - name: REDIS_ADDR
+              value: 'redis://hasivu-redis.hasivu-production.svc.cluster.local:6379'
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: redis-exporter-secret
+                  key: redis-password
+          resources:
+            requests:
+              memory: '128Mi'
+              cpu: '100m'
+            limits:
+              memory: '256Mi'
+              cpu: '200m'
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: 9121
+            initialDelaySeconds: 30
+            timeoutSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: 9121
+            initialDelaySeconds: 5
+            timeoutSeconds: 10
+
+---
+# Redis Exporter Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-exporter
+  namespace: monitoring
+  labels:
+    app: redis-exporter
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9121
+      targetPort: 9121
+      name: metrics
+  selector:
+    app: redis-exporter
+
+---
+# Required Secrets (Create these manually with actual credentials)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-exporter-secret
+  namespace: monitoring
+type: Opaque
+stringData:
+  data-source-name: 'postgresql://monitoring_user:monitoring_password@hasivu-postgres.hasivu-production.svc.cluster.local:5432/hasivu_production?sslmode=disable'
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: redis-exporter-secret
+  namespace: monitoring
+type: Opaque
+stringData:
+  redis-password: 'redis-monitoring-password'
+
+---
+# Ingress for Grafana (if needed)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana-ingress
+  namespace: monitoring
+  annotations:
+    kubernetes.io/ingress.class: 'nginx'
+    nginx.ingress.kubernetes.io/ssl-redirect: 'true'
+    cert-manager.io/cluster-issuer: 'letsencrypt-prod'
+spec:
+  tls:
+    - hosts:
+        - grafana.hasivu.com
+      secretName: grafana-tls
+  rules:
+    - host: grafana.hasivu.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: grafana
+                port:
+                  number: 3000

@@ -22,7 +22,7 @@ jobs:
     name: Quality & Security Checks
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -33,7 +33,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
         with:
@@ -87,11 +87,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: quality-checks
-    
+
     strategy:
       matrix:
         node-version: ['16.x', '18.x', '20.x']
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -100,7 +100,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
         with:
@@ -121,7 +121,7 @@ jobs:
         run: pnpm run test:integration
         env:
           CI: true
-          
+
       - name: Upload coverage reports
         uses: codecov/codecov-action@v3
         if: matrix.node-version == '18.x'
@@ -136,7 +136,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: quality-checks
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -145,7 +145,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
         with:
@@ -186,7 +186,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: quality-checks
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -195,7 +195,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
         with:
@@ -243,11 +243,11 @@ jobs:
     timeout-minutes: 10
     needs: [tests, e2e-tests]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    
+
     environment:
       name: staging
       url: https://staging.hasivu.com
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -256,7 +256,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
         with:
@@ -307,11 +307,11 @@ jobs:
     timeout-minutes: 15
     needs: [tests, e2e-tests, performance-tests, deploy-staging]
     if: github.ref == 'refs/heads/production' && github.event_name == 'push'
-    
+
     environment:
       name: production
       url: https://app.hasivu.com
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -320,7 +320,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
         with:
@@ -408,25 +408,25 @@ jobs:
           release_name: Production Release v${{ github.run_number }}
           body: |
             🚀 **HASIVU Production Deployment**
-            
+
             **Changes in this release:**
             - Complete backend integration with Lambda functions
             - Real-time notifications and WebSocket support  
             - Mobile-responsive navigation system
             - Progressive loading components
             - Enhanced security and authentication
-            
+
             **Performance Metrics:**
             - ✅ All tests passed
             - ✅ Lighthouse performance score: 90+
             - ✅ Security audit: Clean
             - ✅ E2E tests: Passed
-            
+
             **Deployment Details:**
             - Branch: ${{ github.ref }}
             - Commit: ${{ github.sha }}
             - Deployed at: $(date -u)
-            
+
             **URLs:**
             - 🌐 Production: https://app.hasivu.com
             - 🧪 Staging: https://staging.hasivu.com

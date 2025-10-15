@@ -42,7 +42,7 @@ class ErrorReporter {
     retryCount: number = 0
   ): string {
     const eventId = Date.now().toString(36) + Math.random().toString(36).substr(2);
-    
+
     const errorReport = {
       eventId,
       timestamp: new Date().toISOString(),
@@ -61,15 +61,10 @@ class ErrorReporter {
 
     // Log to console in development
     if (process.env.NODE_ENV === 'development') {
-      console.group(`🚨 Error Boundary: ${error.name}`);
-      console.error('Error:', error);
-      console.error('Component Stack:', errorInfo.componentStack);
-      console.error('Full Report:', errorReport);
-      console.groupEnd();
     }
 
     // TODO: In production, send to error reporting service
-    // await fetch('/api/errors', { 
+    // await fetch('/api/errors', {
     //   method: 'POST',
     //   body: JSON.stringify(errorReport),
     //   headers: { 'Content-Type': 'application/json' }
@@ -121,7 +116,7 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.retryCount >= 3) return;
 
     this.setState({ isRetrying: true });
-    
+
     this.retryTimeoutId = setTimeout(() => {
       this.setState(prevState => ({
         hasError: false,
@@ -162,7 +157,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
       const { error, eventId, showDetails, retryCount, isRetrying } = this.state;
       const { level = 'component', retryable = true, showErrorDetails = true } = this.props;
-      
+
       const canRetry = retryable && retryCount < 3;
       const isPageLevel = level === 'page';
 
@@ -176,10 +171,12 @@ export class ErrorBoundary extends Component<Props, State> {
           role="alert"
           aria-live="assertive"
         >
-          <Card className={cn(
-            'w-full max-w-lg mx-auto',
-            isPageLevel ? 'border-red-200 bg-white shadow-lg' : 'border-red-200 bg-red-50'
-          )}>
+          <Card
+            className={cn(
+              'w-full max-w-lg mx-auto',
+              isPageLevel ? 'border-red-200 bg-white shadow-lg' : 'border-red-200 bg-red-50'
+            )}
+          >
             <CardHeader className="text-center">
               <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
                 <AlertTriangle className="w-8 h-8 text-red-600" />
@@ -213,10 +210,10 @@ export class ErrorBoundary extends Component<Props, State> {
                     <span>{isRetrying ? 'Retrying...' : 'Try Again'}</span>
                   </Button>
                 )}
-                
+
                 {isPageLevel && (
-                  <Button 
-                    onClick={this.handleGoHome} 
+                  <Button
+                    onClick={this.handleGoHome}
                     variant="outline"
                     className="flex items-center justify-center space-x-2"
                   >
@@ -246,7 +243,11 @@ export class ErrorBoundary extends Component<Props, State> {
                   >
                     <Bug className="w-4 h-4" />
                     <span>Error Details</span>
-                    {showDetails ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    {showDetails ? (
+                      <ChevronUp className="w-4 h-4" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4" />
+                    )}
                   </Button>
 
                   {showDetails && (

@@ -2,7 +2,7 @@ import { test, expect, Page } from '@playwright/test';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 
-const execAsync = promisify(exec);
+const _execAsync =  promisify(exec);
 
 /**
  * P0 Critical Visual Regression Tests with AWS S3 Baseline Storage for HASIVU Platform
@@ -22,14 +22,14 @@ const execAsync = promisify(exec);
  * - Multi-language layout verification
  */
 
-test.describe('P0 Critical Visual Regression Tests @critical @p0 @visual', () => {
+test.describe(_'P0 Critical Visual Regression Tests @critical @p0 @visual', _() => {
   
   // Test configuration
   const VISUAL_THRESHOLD = 0.05; // 5% visual difference threshold
-  const S3_BUCKET = 'hasivu-visual-baselines';
-  const TEST_ENVIRONMENTS = ['chrome', 'firefox', 'safari', 'mobile-chrome', 'tablet-safari'];
+  const _S3_BUCKET =  'hasivu-visual-baselines';
+  const _TEST_ENVIRONMENTS =  ['chrome', 'firefox', 'safari', 'mobile-chrome', 'tablet-safari'];
   
-  const testUsers = {
+  const _testUsers =  {
     student: {
       email: 'student@hasivu.test',
       password: 'password123',
@@ -52,7 +52,7 @@ test.describe('P0 Critical Visual Regression Tests @critical @p0 @visual', () =>
   // AWS S3 Baseline Management
   async function uploadBaseline(screenshotPath: string, baselineName: string): Promise<void> {
     try {
-      const command = `aws s3 cp "${screenshotPath}" s3://${S3_BUCKET}/baselines/${baselineName}.png --region us-east-1`;
+      const _command =  `aws s3 cp "${screenshotPath}" s3://${S3_BUCKET}/baselines/${baselineName}.png --region us-east-1`;
       await execAsync(command);
       console.log(`Uploaded baseline: ${baselineName}`);
     } catch (error) {
@@ -62,7 +62,7 @@ test.describe('P0 Critical Visual Regression Tests @critical @p0 @visual', () =>
 
   async function downloadBaseline(baselineName: string, localPath: string): Promise<boolean> {
     try {
-      const command = `aws s3 cp s3://${S3_BUCKET}/baselines/${baselineName}.png "${localPath}" --region us-east-1`;
+      const _command =  `aws s3 cp s3://${S3_BUCKET}/baselines/${baselineName}.png "${localPath}" --region us-east-1`;
       await execAsync(command);
       return true;
     } catch (error) {
@@ -71,14 +71,14 @@ test.describe('P0 Critical Visual Regression Tests @critical @p0 @visual', () =>
     }
   }
 
-  async function compareWithBaseline(page: Page, screenshotName: string, options: any = {}): Promise<void> {
-    const environment = process.env.BROWSER_NAME || 'chrome';
-    const viewport = `${page.viewportSize()?.width}x${page.viewportSize()?.height}`;
-    const baselineName = `${screenshotName}_${environment}_${viewport}`;
-    const localBaselinePath = `./tests/visual/baselines/${baselineName}.png`;
+  async function compareWithBaseline(page: Page, screenshotName: string, options: _any =  {}): Promise<void> {
+    const environment 
+    const _viewport =  `${page.viewportSize()?.width}x${page.viewportSize()?.height}`;
+    const _baselineName =  `${screenshotName}_${environment}_${viewport}`;
+    const _localBaselinePath =  `./tests/visual/baselines/${baselineName}.png`;
     
     // Download baseline from S3 if exists
-    const baselineExists = await downloadBaseline(baselineName, localBaselinePath);
+    const _baselineExists =  await downloadBaseline(baselineName, localBaselinePath);
     
     if (baselineExists) {
       // Compare with existing baseline
@@ -88,26 +88,26 @@ test.describe('P0 Critical Visual Regression Tests @critical @p0 @visual', () =>
       });
     } else {
       // Create new baseline
-      const screenshot = await page.screenshot({ fullPage: true });
+      const _screenshot =  await page.screenshot({ fullPage: true });
       await page.screenshot({ path: localBaselinePath, fullPage: true });
       await uploadBaseline(localBaselinePath, baselineName);
       console.log(`Created new baseline: ${baselineName}`);
     }
   }
 
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(_async ({ page }) => {
     // Mock all critical APIs for consistent visual testing
-    await page.route('**/auth/login', async route => {
-      const request = route.request();
-      const postData = JSON.parse(request.postData() || '{}');
+    await page.route('**/auth/login', async _route = > {
+      const request 
+      const _postData =  JSON.parse(request.postData() || '{}');
       
-      const userMap = {
+      const _userMap =  {
         [testUsers.student.email]: testUsers.student,
         [testUsers.parent.email]: testUsers.parent,
         [testUsers.admin.email]: testUsers.admin
       };
       
-      const user = userMap[postData.email];
+      const _user =  userMap[postData.email];
       if (user) {
         await route.fulfill({
           status: 200,
@@ -122,7 +122,7 @@ test.describe('P0 Critical Visual Regression Tests @critical @p0 @visual', () =>
     });
 
     // Mock menu API for consistent visuals
-    await page.route('**/api/menu/today', async route => {
+    await page.route('**/api/menu/today', async _route = > {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -134,42 +134,11 @@ test.describe('P0 Critical Visual Regression Tests @critical @p0 @visual', () =>
               name: 'South Indian Breakfast',
               description: 'Traditional breakfast with idli, vada, sambar and chutney',
               price: 45.00,
-              image_url: 'https://images.unsplash.com/photo-1562440499-64c9a74f0650?w=400',
-              available: true,
-              nutrition: { calories: 320, protein: 12, carbs: 55, fat: 8 },
-              allergens: ['gluten'],
-              preparation_time: 15
-            },
-            {
-              id: 'MENU-002', 
-              name: 'North Indian Lunch',
-              description: 'Roti, dal, sabzi, rice and pickle',
-              price: 65.00,
-              image_url: 'https://images.unsplash.com/photo-1585032226651-759b368d7246?w=400',
-              available: true,
-              nutrition: { calories: 450, protein: 18, carbs: 68, fat: 12 },
-              allergens: ['dairy'],
-              preparation_time: 25
-            },
-            {
-              id: 'MENU-003',
-              name: 'Evening Snacks',
-              description: 'Samosa, pakora with mint and tamarind chutney',
-              price: 35.00,
-              image_url: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=400',
-              available: false,
-              nutrition: { calories: 280, protein: 8, carbs: 35, fat: 15 },
-              allergens: ['gluten'],
-              preparation_time: 10
-            }
-          ],
-          date: '2025-09-05'
-        })
-      });
+              image_url: 'https://images.unsplash.com/photo-1562440499-64c9a74f0650?w
     });
 
     // Mock notification API for consistent counts
-    await page.route('**/api/notifications**', async route => {
+    await page.route('**/api/notifications**', async _route = > {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -199,21 +168,21 @@ test.describe('P0 Critical Visual Regression Tests @critical @p0 @visual', () =>
     });
   });
 
-  test.describe('Student Dashboard Visual Tests', () => {
+  test.describe(_'Student Dashboard Visual Tests', _() => {
     
-    test('student dashboard desktop layout @p0 @student @desktop', async ({ page }) => {
+    test(_'student dashboard desktop layout @p0 @student @desktop', _async ({ page }) => {
       // Set desktop viewport
       await page.setViewportSize({ width: 1920, height: 1080 });
       
       await page.goto('/auth/login');
-      await page.locator('[data-testid="role-tab-student"]').click();
-      await page.locator('[data-testid="email-input"]').fill(testUsers.student.email);
-      await page.locator('[data-testid="password-input"]').fill(testUsers.student.password);
-      await page.locator('[data-testid="login-button"]').click();
+      await page.locator('[data-_testid = "role-tab-student"]').click();
+      await page.locator('[data-_testid = "email-input"]').fill(testUsers.student.email);
+      await page.locator('[data-_testid = "password-input"]').fill(testUsers.student.password);
+      await page.locator('[data-_testid = "login-button"]').click();
       
       // Wait for dashboard to fully load
-      await expect(page.locator('[data-testid="student-dashboard"]')).toBeVisible();
-      await expect(page.locator('[data-testid="meal-balance"]')).toContainText('₹150.00');
+      await expect(page.locator('[data-_testid = "student-dashboard"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "meal-balance"]')).toContainText('₹150.00');
       
       // Wait for animations to settle
       await page.waitForTimeout(1000);
@@ -224,17 +193,17 @@ test.describe('P0 Critical Visual Regression Tests @critical @p0 @visual', () =>
       });
     });
 
-    test('student dashboard mobile layout @p0 @student @mobile', async ({ page }) => {
+    test(_'student dashboard mobile layout @p0 @student @mobile', _async ({ page }) => {
       // Set mobile viewport
       await page.setViewportSize({ width: 375, height: 812 });
       
       await page.goto('/auth/login');
-      await page.locator('[data-testid="role-tab-student"]').click();
-      await page.locator('[data-testid="email-input"]').fill(testUsers.student.email);
-      await page.locator('[data-testid="password-input"]').fill(testUsers.student.password);
-      await page.locator('[data-testid="login-button"]').click();
+      await page.locator('[data-_testid = "role-tab-student"]').click();
+      await page.locator('[data-_testid = "email-input"]').fill(testUsers.student.email);
+      await page.locator('[data-_testid = "password-input"]').fill(testUsers.student.password);
+      await page.locator('[data-_testid = "login-button"]').click();
       
-      await expect(page.locator('[data-testid="student-dashboard"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "student-dashboard"]')).toBeVisible();
       await page.waitForTimeout(1000);
       
       await compareWithBaseline(page, 'student_dashboard_mobile', {
@@ -243,17 +212,17 @@ test.describe('P0 Critical Visual Regression Tests @critical @p0 @visual', () =>
       });
     });
 
-    test('student dashboard tablet layout @p0 @student @tablet', async ({ page }) => {
+    test(_'student dashboard tablet layout @p0 @student @tablet', _async ({ page }) => {
       // Set tablet viewport
       await page.setViewportSize({ width: 768, height: 1024 });
       
       await page.goto('/auth/login');
-      await page.locator('[data-testid="role-tab-student"]').click();
-      await page.locator('[data-testid="email-input"]').fill(testUsers.student.email);
-      await page.locator('[data-testid="password-input"]').fill(testUsers.student.password);
-      await page.locator('[data-testid="login-button"]').click();
+      await page.locator('[data-_testid = "role-tab-student"]').click();
+      await page.locator('[data-_testid = "email-input"]').fill(testUsers.student.email);
+      await page.locator('[data-_testid = "password-input"]').fill(testUsers.student.password);
+      await page.locator('[data-_testid = "login-button"]').click();
       
-      await expect(page.locator('[data-testid="student-dashboard"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "student-dashboard"]')).toBeVisible();
       await page.waitForTimeout(1000);
       
       await compareWithBaseline(page, 'student_dashboard_tablet', {
@@ -262,23 +231,23 @@ test.describe('P0 Critical Visual Regression Tests @critical @p0 @visual', () =>
       });
     });
 
-    test('student menu page with items @p0 @student @menu', async ({ page }) => {
+    test(_'student menu page with items @p0 @student @menu', _async ({ page }) => {
       await page.setViewportSize({ width: 1920, height: 1080 });
       
       await page.goto('/auth/login');
-      await page.locator('[data-testid="role-tab-student"]').click();
-      await page.locator('[data-testid="email-input"]').fill(testUsers.student.email);
-      await page.locator('[data-testid="password-input"]').fill(testUsers.student.password);
-      await page.locator('[data-testid="login-button"]').click();
+      await page.locator('[data-_testid = "role-tab-student"]').click();
+      await page.locator('[data-_testid = "email-input"]').fill(testUsers.student.email);
+      await page.locator('[data-_testid = "password-input"]').fill(testUsers.student.password);
+      await page.locator('[data-_testid = "login-button"]').click();
       
       // Navigate to menu
-      await page.click('[data-testid="menu-nav-link"]');
-      await expect(page.locator('[data-testid="menu-page"]')).toBeVisible();
+      await page.click('[data-_testid = "menu-nav-link"]');
+      await expect(page.locator('[data-_testid = "menu-page"]')).toBeVisible();
       
       // Wait for menu items to load
-      await expect(page.locator('[data-testid="menu-item-MENU-001"]')).toBeVisible();
-      await expect(page.locator('[data-testid="menu-item-MENU-002"]')).toBeVisible();
-      await expect(page.locator('[data-testid="menu-item-MENU-003"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "menu-item-MENU-001"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "menu-item-MENU-002"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "menu-item-MENU-003"]')).toBeVisible();
       
       // Wait for images to load
       await page.waitForLoadState('networkidle');
@@ -291,13 +260,13 @@ test.describe('P0 Critical Visual Regression Tests @critical @p0 @visual', () =>
     });
   });
 
-  test.describe('Parent Dashboard Visual Tests', () => {
+  test.describe(_'Parent Dashboard Visual Tests', _() => {
     
-    test('parent dashboard with child management @p0 @parent @dashboard', async ({ page }) => {
+    test(_'parent dashboard with child management @p0 @parent @dashboard', _async ({ page }) => {
       await page.setViewportSize({ width: 1920, height: 1080 });
       
       // Mock children data
-      await page.route('**/api/parent/children', async route => {
+      await page.route('**/api/parent/children', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -328,14 +297,14 @@ test.describe('P0 Critical Visual Regression Tests @critical @p0 @visual', () =>
       });
       
       await page.goto('/auth/login');
-      await page.locator('[data-testid="role-tab-parent"]').click();
-      await page.locator('[data-testid="email-input"]').fill(testUsers.parent.email);
-      await page.locator('[data-testid="password-input"]').fill(testUsers.parent.password);
-      await page.locator('[data-testid="login-button"]').click();
+      await page.locator('[data-_testid = "role-tab-parent"]').click();
+      await page.locator('[data-_testid = "email-input"]').fill(testUsers.parent.email);
+      await page.locator('[data-_testid = "password-input"]').fill(testUsers.parent.password);
+      await page.locator('[data-_testid = "login-button"]').click();
       
-      await expect(page.locator('[data-testid="parent-dashboard"]')).toBeVisible();
-      await expect(page.locator('[data-testid="child-card-STU-001"]')).toBeVisible();
-      await expect(page.locator('[data-testid="child-card-STU-002"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "parent-dashboard"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "child-card-STU-001"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "child-card-STU-002"]')).toBeVisible();
       
       await page.waitForTimeout(1000);
       
@@ -345,10 +314,10 @@ test.describe('P0 Critical Visual Regression Tests @critical @p0 @visual', () =>
       });
     });
 
-    test('parent mobile dashboard @p0 @parent @mobile', async ({ page }) => {
+    test(_'parent mobile dashboard @p0 @parent @mobile', _async ({ page }) => {
       await page.setViewportSize({ width: 375, height: 812 });
       
-      await page.route('**/api/parent/children', async route => {
+      await page.route('**/api/parent/children', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -367,12 +336,12 @@ test.describe('P0 Critical Visual Regression Tests @critical @p0 @visual', () =>
       });
       
       await page.goto('/auth/login');
-      await page.locator('[data-testid="role-tab-parent"]').click();
-      await page.locator('[data-testid="email-input"]').fill(testUsers.parent.email);
-      await page.locator('[data-testid="password-input"]').fill(testUsers.parent.password);
-      await page.locator('[data-testid="login-button"]').click();
+      await page.locator('[data-_testid = "role-tab-parent"]').click();
+      await page.locator('[data-_testid = "email-input"]').fill(testUsers.parent.email);
+      await page.locator('[data-_testid = "password-input"]').fill(testUsers.parent.password);
+      await page.locator('[data-_testid = "login-button"]').click();
       
-      await expect(page.locator('[data-testid="parent-dashboard"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "parent-dashboard"]')).toBeVisible();
       await page.waitForTimeout(1000);
       
       await compareWithBaseline(page, 'parent_dashboard_mobile', {
@@ -382,13 +351,13 @@ test.describe('P0 Critical Visual Regression Tests @critical @p0 @visual', () =>
     });
   });
 
-  test.describe('Admin Dashboard Visual Tests', () => {
+  test.describe(_'Admin Dashboard Visual Tests', _() => {
     
-    test('admin analytics dashboard @p0 @admin @analytics', async ({ page }) => {
+    test(_'admin analytics dashboard @p0 @admin @analytics', _async ({ page }) => {
       await page.setViewportSize({ width: 1920, height: 1080 });
       
       // Mock analytics data
-      await page.route('**/api/admin/analytics**', async route => {
+      await page.route('**/api/admin/analytics**', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -416,13 +385,13 @@ test.describe('P0 Critical Visual Regression Tests @critical @p0 @visual', () =>
       });
       
       await page.goto('/auth/login');
-      await page.locator('[data-testid="role-tab-admin"]').click();
-      await page.locator('[data-testid="email-input"]').fill(testUsers.admin.email);
-      await page.locator('[data-testid="password-input"]').fill(testUsers.admin.password);
-      await page.locator('[data-testid="login-button"]').click();
+      await page.locator('[data-_testid = "role-tab-admin"]').click();
+      await page.locator('[data-_testid = "email-input"]').fill(testUsers.admin.email);
+      await page.locator('[data-_testid = "password-input"]').fill(testUsers.admin.password);
+      await page.locator('[data-_testid = "login-button"]').click();
       
-      await expect(page.locator('[data-testid="admin-dashboard"]')).toBeVisible();
-      await expect(page.locator('[data-testid="analytics-cards"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "admin-dashboard"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "analytics-cards"]')).toBeVisible();
       
       // Wait for charts to render
       await page.waitForTimeout(3000);
@@ -434,28 +403,28 @@ test.describe('P0 Critical Visual Regression Tests @critical @p0 @visual', () =>
     });
   });
 
-  test.describe('Order Flow Visual Tests', () => {
+  test.describe(_'Order Flow Visual Tests', _() => {
     
-    test('checkout page with payment options @p0 @checkout @payment', async ({ page }) => {
+    test(_'checkout page with payment options @p0 @checkout @payment', _async ({ page }) => {
       await page.setViewportSize({ width: 1920, height: 1080 });
       
       await page.goto('/auth/login');
-      await page.locator('[data-testid="role-tab-student"]').click();
-      await page.locator('[data-testid="email-input"]').fill(testUsers.student.email);
-      await page.locator('[data-testid="password-input"]').fill(testUsers.student.password);
-      await page.locator('[data-testid="login-button"]').click();
+      await page.locator('[data-_testid = "role-tab-student"]').click();
+      await page.locator('[data-_testid = "email-input"]').fill(testUsers.student.email);
+      await page.locator('[data-_testid = "password-input"]').fill(testUsers.student.password);
+      await page.locator('[data-_testid = "login-button"]').click();
       
       // Add items to cart
-      await page.click('[data-testid="menu-nav-link"]');
-      await page.locator('[data-testid="add-to-cart-MENU-001"]').click();
-      await page.locator('[data-testid="add-to-cart-MENU-002"]').click();
+      await page.click('[data-_testid = "menu-nav-link"]');
+      await page.locator('[data-_testid = "add-to-cart-MENU-001"]').click();
+      await page.locator('[data-_testid = "add-to-cart-MENU-002"]').click();
       
       // Go to checkout
-      await page.click('[data-testid="cart-button"]');
-      await page.click('[data-testid="proceed-to-checkout"]');
+      await page.click('[data-_testid = "cart-button"]');
+      await page.click('[data-_testid = "proceed-to-checkout"]');
       
-      await expect(page.locator('[data-testid="checkout-page"]')).toBeVisible();
-      await expect(page.locator('[data-testid="payment-options"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "checkout-page"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "payment-options"]')).toBeVisible();
       
       await page.waitForTimeout(1000);
       
@@ -465,11 +434,11 @@ test.describe('P0 Critical Visual Regression Tests @critical @p0 @visual', () =>
       });
     });
 
-    test('order confirmation page @p0 @order @confirmation', async ({ page }) => {
+    test(_'order confirmation page @p0 @order @confirmation', _async ({ page }) => {
       await page.setViewportSize({ width: 1920, height: 1080 });
       
       // Mock order confirmation
-      await page.route('**/api/orders/create', async route => {
+      await page.route('**/api/orders/create', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -492,8 +461,8 @@ test.describe('P0 Critical Visual Regression Tests @critical @p0 @visual', () =>
       
       await page.goto('/orders/confirmation/ORD-VISUAL-001');
       
-      await expect(page.locator('[data-testid="order-confirmation"]')).toBeVisible();
-      await expect(page.locator('[data-testid="order-number"]')).toContainText('H001234');
+      await expect(page.locator('[data-_testid = "order-confirmation"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "order-number"]')).toContainText('H001234');
       
       await page.waitForTimeout(1000);
       
@@ -504,14 +473,14 @@ test.describe('P0 Critical Visual Regression Tests @critical @p0 @visual', () =>
     });
   });
 
-  test.describe('Error State Visual Tests', () => {
+  test.describe(_'Error State Visual Tests', _() => {
     
-    test('404 error page @p0 @error @404', async ({ page }) => {
+    test(_'404 error page @p0 @error @404', _async ({ page }) => {
       await page.setViewportSize({ width: 1920, height: 1080 });
       
       await page.goto('/non-existent-page');
       
-      await expect(page.locator('[data-testid="error-404"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "error-404"]')).toBeVisible();
       await page.waitForTimeout(1000);
       
       await compareWithBaseline(page, '404_error_page', {
@@ -520,11 +489,11 @@ test.describe('P0 Critical Visual Regression Tests @critical @p0 @visual', () =>
       });
     });
 
-    test('network error state @p0 @error @network', async ({ page }) => {
+    test(_'network error state @p0 @error @network', _async ({ page }) => {
       await page.setViewportSize({ width: 1920, height: 1080 });
       
       // Mock network error
-      await page.route('**/api/**', async route => {
+      await page.route('**/api/**', async _route = > {
         await route.fulfill({
           status: 500,
           contentType: 'application/json',
@@ -538,7 +507,7 @@ test.describe('P0 Critical Visual Regression Tests @critical @p0 @visual', () =>
       
       await page.goto('/dashboard');
       
-      await expect(page.locator('[data-testid="network-error"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "network-error"]')).toBeVisible();
       await page.waitForTimeout(1000);
       
       await compareWithBaseline(page, 'network_error_state', {
@@ -547,11 +516,11 @@ test.describe('P0 Critical Visual Regression Tests @critical @p0 @visual', () =>
       });
     });
 
-    test('insufficient balance error @p0 @error @balance', async ({ page }) => {
+    test(_'insufficient balance error @p0 @error @balance', _async ({ page }) => {
       await page.setViewportSize({ width: 1920, height: 1080 });
       
       // Mock low balance user
-      await page.route('**/auth/login', async route => {
+      await page.route('**/auth/login', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -566,7 +535,7 @@ test.describe('P0 Critical Visual Regression Tests @critical @p0 @visual', () =>
       });
       
       // Mock payment failure
-      await page.route('**/api/payments/**', async route => {
+      await page.route('**/api/payments/**', async _route = > {
         await route.fulfill({
           status: 400,
           contentType: 'application/json',
@@ -579,18 +548,18 @@ test.describe('P0 Critical Visual Regression Tests @critical @p0 @visual', () =>
       });
       
       await page.goto('/auth/login');
-      await page.locator('[data-testid="role-tab-student"]').click();
-      await page.locator('[data-testid="email-input"]').fill(testUsers.student.email);
-      await page.locator('[data-testid="password-input"]').fill(testUsers.student.password);
-      await page.locator('[data-testid="login-button"]').click();
+      await page.locator('[data-_testid = "role-tab-student"]').click();
+      await page.locator('[data-_testid = "email-input"]').fill(testUsers.student.email);
+      await page.locator('[data-_testid = "password-input"]').fill(testUsers.student.password);
+      await page.locator('[data-_testid = "login-button"]').click();
       
       // Try to make order
-      await page.click('[data-testid="menu-nav-link"]');
+      await page.click('[data-_testid = "menu-nav-link"]');
       await page.locator('[data-testid="add-to-cart-MENU-002"]').click(); // Expensive item
-      await page.click('[data-testid="proceed-to-checkout"]');
-      await page.click('[data-testid="confirm-payment"]');
+      await page.click('[data-_testid = "proceed-to-checkout"]');
+      await page.click('[data-_testid = "confirm-payment"]');
       
-      await expect(page.locator('[data-testid="insufficient-balance-error"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "insufficient-balance-error"]')).toBeVisible();
       await page.waitForTimeout(1000);
       
       await compareWithBaseline(page, 'insufficient_balance_error', {
@@ -600,24 +569,24 @@ test.describe('P0 Critical Visual Regression Tests @critical @p0 @visual', () =>
     });
   });
 
-  test.describe('Theme Variations', () => {
+  test.describe(_'Theme Variations', _() => {
     
-    test('dark theme student dashboard @p0 @theme @dark', async ({ page }) => {
+    test(_'dark theme student dashboard @p0 @theme @dark', _async ({ page }) => {
       await page.setViewportSize({ width: 1920, height: 1080 });
       
       // Enable dark theme
-      await page.addInitScript(() => {
+      await page.addInitScript(_() => {
         localStorage.setItem('theme', 'dark');
         document.documentElement.classList.add('dark');
       });
       
       await page.goto('/auth/login');
-      await page.locator('[data-testid="role-tab-student"]').click();
-      await page.locator('[data-testid="email-input"]').fill(testUsers.student.email);
-      await page.locator('[data-testid="password-input"]').fill(testUsers.student.password);
-      await page.locator('[data-testid="login-button"]').click();
+      await page.locator('[data-_testid = "role-tab-student"]').click();
+      await page.locator('[data-_testid = "email-input"]').fill(testUsers.student.email);
+      await page.locator('[data-_testid = "password-input"]').fill(testUsers.student.password);
+      await page.locator('[data-_testid = "login-button"]').click();
       
-      await expect(page.locator('[data-testid="student-dashboard"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "student-dashboard"]')).toBeVisible();
       await page.waitForTimeout(1000);
       
       await compareWithBaseline(page, 'student_dashboard_dark_theme', {
@@ -626,22 +595,22 @@ test.describe('P0 Critical Visual Regression Tests @critical @p0 @visual', () =>
       });
     });
 
-    test('high contrast theme accessibility @p0 @theme @accessibility', async ({ page }) => {
+    test(_'high contrast theme accessibility @p0 @theme @accessibility', _async ({ page }) => {
       await page.setViewportSize({ width: 1920, height: 1080 });
       
       // Enable high contrast theme
-      await page.addInitScript(() => {
+      await page.addInitScript(_() => {
         localStorage.setItem('theme', 'high-contrast');
         document.documentElement.classList.add('high-contrast');
       });
       
       await page.goto('/auth/login');
-      await page.locator('[data-testid="role-tab-student"]').click();
-      await page.locator('[data-testid="email-input"]').fill(testUsers.student.email);
-      await page.locator('[data-testid="password-input"]').fill(testUsers.student.password);
-      await page.locator('[data-testid="login-button"]').click();
+      await page.locator('[data-_testid = "role-tab-student"]').click();
+      await page.locator('[data-_testid = "email-input"]').fill(testUsers.student.email);
+      await page.locator('[data-_testid = "password-input"]').fill(testUsers.student.password);
+      await page.locator('[data-_testid = "login-button"]').click();
       
-      await expect(page.locator('[data-testid="student-dashboard"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "student-dashboard"]')).toBeVisible();
       await page.waitForTimeout(1000);
       
       await compareWithBaseline(page, 'student_dashboard_high_contrast', {
@@ -651,15 +620,15 @@ test.describe('P0 Critical Visual Regression Tests @critical @p0 @visual', () =>
     });
   });
 
-  test.describe('Component Isolation Visual Tests', () => {
+  test.describe(_'Component Isolation Visual Tests', _() => {
     
-    test('menu item card component @p0 @component @menu-card', async ({ page }) => {
+    test(_'menu item card component @p0 @component @menu-card', _async ({ page }) => {
       await page.setViewportSize({ width: 400, height: 600 });
       
       // Navigate to isolated component view
-      await page.goto('/components/menu-item-card?id=MENU-001');
+      await page.goto('/components/menu-item-card?_id = MENU-001');
       
-      await expect(page.locator('[data-testid="menu-item-card"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "menu-item-card"]')).toBeVisible();
       await page.waitForTimeout(1000);
       
       await compareWithBaseline(page, 'menu_item_card_component', {
@@ -667,12 +636,12 @@ test.describe('P0 Critical Visual Regression Tests @critical @p0 @visual', () =>
       });
     });
 
-    test('order status tracker component @p0 @component @order-tracker', async ({ page }) => {
+    test(_'order status tracker component @p0 @component @order-tracker', _async ({ page }) => {
       await page.setViewportSize({ width: 600, height: 400 });
       
-      await page.goto('/components/order-status-tracker?status=preparing');
+      await page.goto('/components/order-status-tracker?_status = preparing');
       
-      await expect(page.locator('[data-testid="order-status-tracker"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "order-status-tracker"]')).toBeVisible();
       await page.waitForTimeout(1000);
       
       await compareWithBaseline(page, 'order_status_tracker_component', {
@@ -681,14 +650,14 @@ test.describe('P0 Critical Visual Regression Tests @critical @p0 @visual', () =>
     });
   });
 
-  test.describe('Animation States', () => {
+  test.describe(_'Animation States', _() => {
     
-    test('loading states animation @p0 @animation @loading', async ({ page }) => {
+    test(_'loading states animation @p0 @animation @loading', _async ({ page }) => {
       await page.setViewportSize({ width: 1920, height: 1080 });
       
       // Mock slow loading for animation capture
-      await page.route('**/api/menu/today', async route => {
-        await new Promise(resolve => setTimeout(resolve, 2000));
+      await page.route('**/api/menu/today', async _route = > {
+        await new Promise(resolve 
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -697,15 +666,15 @@ test.describe('P0 Critical Visual Regression Tests @critical @p0 @visual', () =>
       });
       
       await page.goto('/auth/login');
-      await page.locator('[data-testid="role-tab-student"]').click();
-      await page.locator('[data-testid="email-input"]').fill(testUsers.student.email);
-      await page.locator('[data-testid="password-input"]').fill(testUsers.student.password);
-      await page.locator('[data-testid="login-button"]').click();
+      await page.locator('[data-_testid = "role-tab-student"]').click();
+      await page.locator('[data-_testid = "email-input"]').fill(testUsers.student.email);
+      await page.locator('[data-_testid = "password-input"]').fill(testUsers.student.password);
+      await page.locator('[data-_testid = "login-button"]').click();
       
-      await page.click('[data-testid="menu-nav-link"]');
+      await page.click('[data-_testid = "menu-nav-link"]');
       
       // Capture loading state
-      await expect(page.locator('[data-testid="menu-loading"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "menu-loading"]')).toBeVisible();
       
       await compareWithBaseline(page, 'menu_loading_state', {
         animations: 'allow' // Allow animations for loading states
@@ -713,18 +682,18 @@ test.describe('P0 Critical Visual Regression Tests @critical @p0 @visual', () =>
     });
   });
 
-  test.describe('Responsive Breakpoint Tests', () => {
+  test.describe(_'Responsive Breakpoint Tests', _() => {
     
-    test('320px mobile viewport @p0 @responsive @320px', async ({ page }) => {
+    test(_'320px mobile viewport @p0 @responsive @320px', _async ({ page }) => {
       await page.setViewportSize({ width: 320, height: 568 });
       
       await page.goto('/auth/login');
-      await page.locator('[data-testid="role-tab-student"]').click();
-      await page.locator('[data-testid="email-input"]').fill(testUsers.student.email);
-      await page.locator('[data-testid="password-input"]').fill(testUsers.student.password);
-      await page.locator('[data-testid="login-button"]').click();
+      await page.locator('[data-_testid = "role-tab-student"]').click();
+      await page.locator('[data-_testid = "email-input"]').fill(testUsers.student.email);
+      await page.locator('[data-_testid = "password-input"]').fill(testUsers.student.password);
+      await page.locator('[data-_testid = "login-button"]').click();
       
-      await expect(page.locator('[data-testid="student-dashboard"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "student-dashboard"]')).toBeVisible();
       await page.waitForTimeout(1000);
       
       await compareWithBaseline(page, 'student_dashboard_320px', {
@@ -733,16 +702,16 @@ test.describe('P0 Critical Visual Regression Tests @critical @p0 @visual', () =>
       });
     });
 
-    test('4K desktop viewport @p0 @responsive @4k', async ({ page }) => {
+    test(_'4K desktop viewport @p0 @responsive @4k', _async ({ page }) => {
       await page.setViewportSize({ width: 3840, height: 2160 });
       
       await page.goto('/auth/login');
-      await page.locator('[data-testid="role-tab-student"]').click();
-      await page.locator('[data-testid="email-input"]').fill(testUsers.student.email);
-      await page.locator('[data-testid="password-input"]').fill(testUsers.student.password);
-      await page.locator('[data-testid="login-button"]').click();
+      await page.locator('[data-_testid = "role-tab-student"]').click();
+      await page.locator('[data-_testid = "email-input"]').fill(testUsers.student.email);
+      await page.locator('[data-_testid = "password-input"]').fill(testUsers.student.password);
+      await page.locator('[data-_testid = "login-button"]').click();
       
-      await expect(page.locator('[data-testid="student-dashboard"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "student-dashboard"]')).toBeVisible();
       await page.waitForTimeout(1000);
       
       await compareWithBaseline(page, 'student_dashboard_4k', {
@@ -753,34 +722,28 @@ test.describe('P0 Critical Visual Regression Tests @critical @p0 @visual', () =>
   });
 
   // Utility function to generate baselines for all environments
-  test.describe('Baseline Generation', () => {
+  test.describe(_'Baseline Generation', _() => {
     
-    test.skip('generate all baselines @baseline @skip', async ({ page, browserName }) => {
+    test.skip(_'generate all baselines @baseline @skip', _async ({ page, _browserName }) => {
       // This test is normally skipped but can be run manually to generate new baselines
-      // Run with: npm run test:visual -- --grep="generate all baselines"
+      // Run with: npm run test:visual -- --_grep = "generate all baselines"
       
-      const viewports = [
-        { name: 'mobile', width: 375, height: 812 },
-        { name: 'tablet', width: 768, height: 1024 },
-        { name: 'desktop', width: 1920, height: 1080 },
-        { name: '4k', width: 3840, height: 2160 }
-      ];
-      
+      const viewports 
       for (const viewport of viewports) {
         await page.setViewportSize({ width: viewport.width, height: viewport.height });
         
         // Generate student dashboard baseline
         await page.goto('/auth/login');
-        await page.locator('[data-testid="role-tab-student"]').click();
-        await page.locator('[data-testid="email-input"]').fill(testUsers.student.email);
-        await page.locator('[data-testid="password-input"]').fill(testUsers.student.password);
-        await page.locator('[data-testid="login-button"]').click();
+        await page.locator('[data-_testid = "role-tab-student"]').click();
+        await page.locator('[data-_testid = "email-input"]').fill(testUsers.student.email);
+        await page.locator('[data-_testid = "password-input"]').fill(testUsers.student.password);
+        await page.locator('[data-_testid = "login-button"]').click();
         
-        await expect(page.locator('[data-testid="student-dashboard"]')).toBeVisible();
+        await expect(page.locator('[data-_testid = "student-dashboard"]')).toBeVisible();
         await page.waitForTimeout(1000);
         
-        const baselineName = `student_dashboard_${viewport.name}_${browserName}`;
-        const screenshotPath = `./tests/visual/baselines/${baselineName}.png`;
+        const _baselineName =  `student_dashboard_${viewport.name}_${browserName}`;
+        const _screenshotPath =  `./tests/visual/baselines/${baselineName}.png`;
         await page.screenshot({ path: screenshotPath, fullPage: true });
         await uploadBaseline(screenshotPath, baselineName);
       }

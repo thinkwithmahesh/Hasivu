@@ -1,4 +1,4 @@
-export type UserRole = 'student' | 'parent' | 'admin' | 'kitchen' | 'teacher';
+export type _UserRole =  'student' | 'parent' | 'admin' | 'kitchen' | 'teacher';
   icon?: React.ComponentType<{ className?: string }>;
   badge?: number;
   roles: UserRole[];

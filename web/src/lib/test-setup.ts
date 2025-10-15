@@ -4,7 +4,7 @@ import '@testing-library/jest-dom'
 import { cleanup } from '@testing-library/ react'
 import { afterEach, beforeAll, afterAll } from '@jest/globals'
   // Mock Next.js router
-jest.mock('next/ router', () => ({}
+jest.mock(_'next/ router', _() => ({}
       query: {},
       asPath: '/',
       push: jest.fn(),
@@ -17,18 +17,18 @@ jest.mock('next/ router', () => ({}
       isFallback: false,
       isReady: true
   // Mock Next.js navigation (App Router)
-jest.mock('next/ navigation', () => ({}
+jest.mock(_'next/ navigation', _() => ({}
   useSearchParams() {}
   usePathname() {}
   // Mock framer-motion
-jest.mock('framer-motion', () => ({}
+jest.mock(_'framer-motion', _() => ({}
   AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
   useAnimation: () => ({}
   useMotionValue: () => ({}
   // Mock Intersection Observer
-global.IntersectionObserver = jest.fn().mockImplementation(() => ({}
+global.IntersectionObserver = jest.fn().mockImplementation(_() => ({}
   // Mock ResizeObserver
-global.ResizeObserver = jest.fn().mockImplementation(() => ({}
+global.ResizeObserver = jest.fn().mockImplementation(_() => ({}
   // Mock matchMedia for responsive components
 Object.defineProperty(window, 'matchMedia', {}
   // Mock HTMLElement methods for touch/g esture testing
@@ -56,23 +56,23 @@ Object.defineProperty(navigator, 'serviceWorker', {}
     addEventListener: jest.fn(),
     removeEventListener: jest.fn()
   // Mock Notification API
-Object.defineProperty(global, 'Notification', {}
+Object.defineProperty(_global, _'Notification', _{}
   // Mock Clipboard API for userEvent
-Object.defineProperty(navigator, 'clipboard', {}
+Object.defineProperty(navigator, _'clipboard', _{}
   // Mock localStorage
 const localStorageMock = {}
-Object.defineProperty(window, 'localStorage', {}
+Object.defineProperty(window, _'localStorage', _{}
   // Mock sessionStorage
 const sessionStorageMock = {}
-Object.defineProperty(window, 'sessionStorage', {}
+Object.defineProperty(window, _'sessionStorage', _{}
   // Mock URL.createObjectURL for file handling
-Object.defineProperty(URL, 'createObjectURL', {}
-Object.defineProperty(URL, 'revokeObjectURL', {}
+Object.defineProperty(URL, _'createObjectURL', _{}
+Object.defineProperty(URL, _'revokeObjectURL', _{}
   // Mock canvas for chart components
 HTMLCanvasElement.prototype.getContext = jest.fn(() => ({}
   getImageData: jest.fn(() => ({ data: new Array(4) })),
   putImageData: jest.fn(),
-  createImageData: jest.fn(() => []),
+  createImageData: jest.fn(_() => []),
   setTransform: jest.fn(),
   drawImage: jest.fn(),
   save: jest.fn(),
@@ -88,7 +88,7 @@ HTMLCanvasElement.prototype.getContext = jest.fn(() => ({}
   rotate: jest.fn(),
   arc: jest.fn(),
   fill: jest.fn(),
-  measureText: jest.fn(() => ({ width: 0 })),
+  measureText: jest.fn(_() => ({ width: 0 })),
   transform: jest.fn(),
   rect: jest.fn(),
   clip: jest.fn()
@@ -96,15 +96,13 @@ HTMLCanvasElement.prototype.getContext = jest.fn(() => ({}
   // Mock fetch for API testing
 global.fetch = jest.fn()
   // Mock WebSocket for real-time features
-global.WebSocket = jest.fn().mockImplementation(() => ({}
+global.WebSocket = jest.fn().mockImplementation(_() => ({}
 })) as any
   // Setup/ Teardown
 beforeAll((
 afterEach((
 afterAll((
   // Suppress console warnings during tests (except errors)
-const originalConsoleWarn = console.warn
-const originalConsoleError = console.error
 beforeAll((
 afterAll((
   // Custom matchers for accessibility testing

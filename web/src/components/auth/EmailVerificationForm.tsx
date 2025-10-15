@@ -1,12 +1,12 @@
-"use client"
+'use client';
 
-import * as React from "react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { Mail, Loader2, ArrowLeft, Send, CheckCircle, RefreshCw } from "lucide-react"
-import Link from "next/link"
+import * as React from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Mail, Loader2, ArrowLeft, Send as _Send, CheckCircle, RefreshCw } from 'lucide-react';
+import Link from 'next/link';
 
-import { Button } from "@/components/ui/button"
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -14,8 +14,8 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import {
   Form,
   FormControl,
@@ -23,19 +23,19 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
+} from '@/components/ui/form';
 
-import { emailVerificationSchema, type EmailVerificationFormData } from "./schemas"
+import { emailVerificationSchema, type EmailVerificationFormData } from './schemas';
 
 interface EmailVerificationFormProps {
-  onSubmit: (data: EmailVerificationFormData) => Promise<void>
-  onResendCode?: () => Promise<void>
-  isLoading?: boolean
-  isResending?: boolean
-  error?: string | null
-  success?: boolean
-  email: string
-  className?: string
+  onSubmit: (data: EmailVerificationFormData) => Promise<void>;
+  onResendCode?: () => Promise<void>;
+  isLoading?: boolean;
+  isResending?: boolean;
+  error?: string | null;
+  success?: boolean;
+  email: string;
+  className?: string;
 }
 
 export function EmailVerificationForm({
@@ -46,79 +46,78 @@ export function EmailVerificationForm({
   error,
   success = false,
   email,
-  className
+  className,
 }: EmailVerificationFormProps) {
-  const [timeLeft, setTimeLeft] = React.useState(60)
-  const [canResend, setCanResend] = React.useState(false)
+  const [timeLeft, setTimeLeft] = React.useState(60);
+  const [canResend, setCanResend] = React.useState(false);
 
   const form = useForm<EmailVerificationFormData>({
     resolver: zodResolver(emailVerificationSchema),
     defaultValues: {
-      code: "",
+      code: '',
     },
-  })
+  });
 
   // Countdown timer for resend functionality
   React.useEffect(() => {
     if (timeLeft > 0) {
-      const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000)
-      return () => clearTimeout(timer)
+      const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
+      return () => clearTimeout(timer);
     } else {
-      setCanResend(true)
+      setCanResend(true);
     }
-  }, [timeLeft])
+  }, [timeLeft]);
 
   const handleSubmit = async (data: EmailVerificationFormData) => {
     try {
-      await onSubmit(data)
+      await onSubmit(data);
     } catch (error) {
-      console.error("Email verification error:", error)
+      // Error handled silently
     }
-  }
+  };
 
   const handleResendCode = async () => {
     if (onResendCode && canResend) {
       try {
-        await onResendCode()
-        setTimeLeft(60)
-        setCanResend(false)
-        form.reset()
+        await onResendCode();
+        setTimeLeft(60);
+        setCanResend(false);
+        form.reset();
       } catch (error) {
-        console.error("Resend code error:", error)
+        // Error handled silently
       }
     }
-  }
+  };
 
   const handleCodeInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, '').slice(0, 6)
-    form.setValue('code', value)
-    
+    const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+    form.setValue('code', value);
+
     // Auto-submit when 6 digits are entered
     if (value.length === 6) {
-      form.handleSubmit(handleSubmit)()
+      form.handleSubmit(handleSubmit)();
     }
-  }
+  };
 
   if (success) {
     return (
       <Card className={className} aria-label="Email verification success">
         <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-3xl font-bold text-success-600">
-            Email Verified!
-          </CardTitle>
+          <CardTitle className="text-3xl font-bold text-success-600">Email Verified!</CardTitle>
           <CardDescription className="text-gray-600">
             Your email has been successfully verified. Welcome to HASIVU!
           </CardDescription>
         </CardHeader>
-        
+
         <CardContent className="text-center space-y-4">
           <div className="mx-auto w-16 h-16 bg-success-100 rounded-full flex items-center justify-center">
             <CheckCircle className="w-8 h-8 text-success-600" />
           </div>
-          
+
           <div className="p-4 bg-success-50 border border-success-200 rounded-md">
             <p className="text-sm text-success-700">
-              Your account is now active and you can start using all features of the HASIVU platform.
+              Your account is now active and you can start using all features of the HASIVU
+              platform.
             </p>
           </div>
         </CardContent>
@@ -131,26 +130,24 @@ export function EmailVerificationForm({
           </Link>
         </CardFooter>
       </Card>
-    )
+    );
   }
 
   return (
     <Card className={className} aria-label="Email verification form">
       <CardHeader className="space-y-1 text-center">
-        <CardTitle className="text-3xl font-bold text-primary-600">
-          Verify Your Email
-        </CardTitle>
+        <CardTitle className="text-3xl font-bold text-primary-600">Verify Your Email</CardTitle>
         <CardDescription className="text-gray-600">
           We've sent a 6-digit verification code to your email address
         </CardDescription>
       </CardHeader>
-      
+
       <CardContent className="space-y-4">
         <div className="text-center space-y-2">
           <div className="mx-auto w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center">
             <Mail className="w-8 h-8 text-primary-600" />
           </div>
-          
+
           <div className="space-y-1">
             <p className="text-sm text-gray-600">Verification code sent to:</p>
             <p className="font-medium text-gray-900">{email}</p>
@@ -158,7 +155,7 @@ export function EmailVerificationForm({
         </div>
 
         {error && (
-          <div 
+          <div
             className="p-3 rounded-md bg-error-50 border border-error-200 text-error-700 text-sm"
             role="alert"
             aria-live="polite"
@@ -207,17 +204,15 @@ export function EmailVerificationForm({
                   Verifying...
                 </>
               ) : (
-                "Verify Email"
+                'Verify Email'
               )}
             </Button>
           </form>
         </Form>
 
         <div className="text-center space-y-3">
-          <div className="text-sm text-gray-600">
-            Didn't receive the code?
-          </div>
-          
+          <div className="text-sm text-gray-600">Didn't receive the code?</div>
+
           {canResend ? (
             <Button
               variant="outline"
@@ -238,9 +233,7 @@ export function EmailVerificationForm({
               )}
             </Button>
           ) : (
-            <p className="text-sm text-gray-500">
-              Resend available in {timeLeft} seconds
-            </p>
+            <p className="text-sm text-gray-500">Resend available in {timeLeft} seconds</p>
           )}
         </div>
 
@@ -266,5 +259,5 @@ export function EmailVerificationForm({
         </Link>
       </CardFooter>
     </Card>
-  )
+  );
 }

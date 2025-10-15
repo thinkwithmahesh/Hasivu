@@ -25,14 +25,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/185</span>
+                <span class='fraction'>0/184</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/89</span>
+                <span class='fraction'>0/91</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/174</span>
+                <span class='fraction'>0/173</span>
             </div>
         
             
@@ -736,7 +736,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1387,11 +1387,11 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 import { DynamoDBClient, GetItemCommand, PutItemCommand, QueryCommand } from '@aws-sdk/client-dynamodb';
 import { TranslateClient, TranslateTextCommand } from '@aws-sdk/client-translate';
-import { LoggerService } from '../../shared/utils/logger';
-import { createSuccessResponse, createErrorResponse, handleError } from '../shared/response.utils';
+import { logger } from '../../utils/logger';
+import { createSuccessResponse, createErrorResponse, handleError } from '../../shared/response.utils';
 &nbsp;
 // Initialize services
-const logger = <span class="cstat-no" title="statement not covered" >LoggerService.getInstance();</span>
+// logger instance already imported from utils/logger
 const dynamoClient = <span class="cstat-no" title="statement not covered" >new DynamoDBClient({});</span>
 const translateClient = <span class="cstat-no" title="statement not covered" >new TranslateClient({});</span>
 &nbsp;
@@ -1503,10 +1503,10 @@ export const handler = <span class="cstat-no" title="statement not covered" ><sp
     } else <span class="cstat-no" title="statement not covered" >if (method === 'POST' &amp;&amp; path.includes('/batch')) {</span>
 <span class="cstat-no" title="statement not covered" >      return await batchAdaptContent(event, context);</span>
     } else {
-<span class="cstat-no" title="statement not covered" >      return createErrorResponse(404, 'Endpoint not found', undefined, undefined, context.awsRequestId);</span>
+<span class="cstat-no" title="statement not covered" >      return createErrorResponse('NOT_FOUND', 'Endpoint not found', 404);</span>
     }
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    return handleError(error as Error, undefined, 500, context.awsRequestId);</span>
+<span class="cstat-no" title="statement not covered" >    return handleError(error as Error);</span>
   }
 };
 &nbsp;
@@ -1528,7 +1528,7 @@ async function <span class="fstat-no" title="function not covered" >adaptContent
 &nbsp;
     // Validate request
 <span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!adaptationRequest.content?.text || !adaptationRequest.context) {</span>
-<span class="cstat-no" title="statement not covered" >      return createErrorResponse(400, 'Content and context are required', undefined, undefined, context.awsRequestId);</span>
+<span class="cstat-no" title="statement not covered" >      return createErrorResponse('VALIDATION_ERROR', 'Content and context are required', 400);</span>
     }
 &nbsp;
     // Check cache first
@@ -1537,7 +1537,7 @@ async function <span class="fstat-no" title="function not covered" >adaptContent
     
 <span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (cachedResult) {</span>
 <span class="cstat-no" title="statement not covered" >      logger.info('Returning cached adaptation result', { requestId, cacheKey });</span>
-<span class="cstat-no" title="statement not covered" >      return createSuccessResponse(cachedResult, 'Cached adaptation result', 200, context.awsRequestId);</span>
+<span class="cstat-no" title="statement not covered" >      return createSuccessResponse(cachedResult, 200);</span>
     }
 &nbsp;
     // Get cultural rules for the context
@@ -1616,10 +1616,10 @@ async function <span class="fstat-no" title="function not covered" >adaptContent
     const duration = <span class="cstat-no" title="statement not covered" >Date.now() - startTime;</span>
 <span class="cstat-no" title="statement not covered" >    logger.info('Function completed: culturalAdapter', { statusCode: 200, duration, requestId: context.awsRequestId });</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    return createSuccessResponse(result, 'Content adapted successfully', 200, context.awsRequestId);</span>
+<span class="cstat-no" title="statement not covered" >    return createSuccessResponse(result, 200);</span>
 &nbsp;
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    return handleError(error as Error, undefined, 500, context.awsRequestId);</span>
+<span class="cstat-no" title="statement not covered" >    return handleError(error as Error);</span>
   }
 }
 &nbsp;
@@ -1635,7 +1635,7 @@ async function <span class="fstat-no" title="function not covered" >getCulturalR
     const religion = <span class="cstat-no" title="statement not covered" >event.queryStringParameters?.religion as ReligiousContext;</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!culture) {</span>
-<span class="cstat-no" title="statement not covered" >      return createErrorResponse(400, 'Culture parameter is required', undefined, undefined, context.awsRequestId);</span>
+<span class="cstat-no" title="statement not covered" >      return createErrorResponse('VALIDATION_ERROR', 'Culture parameter is required', 400);</span>
     }
 &nbsp;
     const rules = <span class="cstat-no" title="statement not covered" >await getCulturalRulesForContext({</span>
@@ -1658,10 +1658,10 @@ async function <span class="fstat-no" title="function not covered" >getCulturalR
         category: rule.category,
         description: rule.description
       }))
-    }, 'Cultural rules retrieved successfully', 200, context.awsRequestId);
+    }, 200);
 &nbsp;
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    return handleError(error as Error, undefined, 500, context.awsRequestId);</span>
+<span class="cstat-no" title="statement not covered" >    return handleError(error as Error);</span>
   }
 }
 &nbsp;
@@ -1680,10 +1680,10 @@ async function <span class="fstat-no" title="function not covered" >getFestivalC
 &nbsp;
     const festivalContext = <span class="cstat-no" title="statement not covered" >await getFestivalContextForDate(date, religion);</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    return createSuccessResponse(festivalContext, 'Festival context retrieved successfully', 200, context.awsRequestId);</span>
+<span class="cstat-no" title="statement not covered" >    return createSuccessResponse(festivalContext, 200);</span>
 &nbsp;
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    return handleError(error as Error, undefined, 500, context.awsRequestId);</span>
+<span class="cstat-no" title="statement not covered" >    return handleError(error as Error);</span>
   }
 }
 &nbsp;
@@ -1699,11 +1699,11 @@ async function <span class="fstat-no" title="function not covered" >batchAdaptCo
     const requests: AdaptationRequest[] = <span class="cstat-no" title="statement not covered" >body.requests || [];</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!Array.isArray(requests) || requests.length === 0) {</span>
-<span class="cstat-no" title="statement not covered" >      return createErrorResponse(400, 'Requests array is required', undefined, undefined, context.awsRequestId);</span>
+<span class="cstat-no" title="statement not covered" >      return createErrorResponse('VALIDATION_ERROR', 'Requests array is required', 400);</span>
     }
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (requests.length &gt; 50) {</span>
-<span class="cstat-no" title="statement not covered" >      return createErrorResponse(400, 'Maximum 50 requests per batch', undefined, undefined, context.awsRequestId);</span>
+<span class="cstat-no" title="statement not covered" >      return createErrorResponse('VALIDATION_ERROR', 'Maximum 50 requests per batch', 400);</span>
     }
 &nbsp;
     const batchId = <span class="cstat-no" title="statement not covered" >`batch_${Date.now()}`;</span>
@@ -1723,7 +1723,7 @@ async function <span class="fstat-no" title="function not covered" >batchAdaptCo
           const result = <span class="cstat-no" title="statement not covered" >await adaptContent(mockEvent, context);</span>
 <span class="cstat-no" title="statement not covered" >          return JSON.parse(result.body);</span>
         } catch (error) {
-<span class="cstat-no" title="statement not covered" >          logger.error('Batch adaptation error:', error);</span>
+<span class="cstat-no" title="statement not covered" >          logger.error('Batch adaptation error', error instanceof Error ? error : undefined);</span>
 <span class="cstat-no" title="statement not covered" >          return {</span>
             error: 'Adaptation failed',
             details: error instanceof Error ? error.message : 'Unknown error'
@@ -1741,10 +1741,10 @@ async function <span class="fstat-no" title="function not covered" >batchAdaptCo
       successfulAdaptations: results.filter(<span class="fstat-no" title="function not covered" >r </span>=&gt; <span class="cstat-no" title="statement not covered" >!r.error)</span>.length,
       failedAdaptations: results.filter(<span class="fstat-no" title="function not covered" >r </span>=&gt; <span class="cstat-no" title="statement not covered" >r.error)</span>.length,
       results
-    }, 'Batch adaptation completed', 200, context.awsRequestId);
+    }, 200);
 &nbsp;
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    return handleError(error as Error, undefined, 500, context.awsRequestId);</span>
+<span class="cstat-no" title="statement not covered" >    return handleError(error as Error);</span>
   }
 }
 &nbsp;
@@ -2035,7 +2035,7 @@ export default handler;</pre></td></tr></table></pre>
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-09-03T01:56:53.571Z
+                at 2025-10-06T16:03:48.029Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

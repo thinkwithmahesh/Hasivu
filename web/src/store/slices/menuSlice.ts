@@ -1,7 +1,7 @@
 /**
  * HASIVU Platform - Menu Management Redux Slice
  */
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, PayloadAction as _PayloadAction } from '@reduxjs/toolkit';
 import apiClient from '@/lib/api-client';
 
 export interface MenuItem {
@@ -44,13 +44,13 @@ const menuSlice = createSlice({
   name: 'menu',
   initialState,
   reducers: {
-    clearError: (state) => {
+    clearError: state => {
       state.error = null;
     },
   },
-  extraReducers: (builder) => {
+  extraReducers: builder => {
     builder
-      .addCase(fetchMenuItems.pending, (state) => {
+      .addCase(fetchMenuItems.pending, state => {
         state.isLoading = true;
         state.error = null;
       })

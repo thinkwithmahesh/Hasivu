@@ -170,7 +170,7 @@ describe('RFID Complete Workflow E2E Tests', () => {
             expect(readyResults.every(result => result.success)).toBe(true);
             console.log('Phase 4: Simulating delivery verifications...');
             const verificationPromises = [];
-            const cardNumbers = cardCreationResults.map(result => result.data.cardNumber);
+            const cardNumbers = cardCreationResults.map(result => result.data?.cardNumber);
             const successfulDeliveries = Math.floor(students.length * 0.8);
             for (let i = 0; i < successfulDeliveries; i++) {
                 const student = students[i];
@@ -407,7 +407,7 @@ describe('RFID Complete Workflow E2E Tests', () => {
                 }
             }));
             const batchSize = 50;
-            const cardIds = cards.map(c => c.data.id);
+            const cardIds = cards.map(c => c.data?.id).filter(Boolean);
             for (let i = 0; i < cardIds.length; i += batchSize) {
                 const batch = cardIds.slice(i, i + batchSize);
                 let batchResult;
@@ -433,7 +433,7 @@ describe('RFID Complete Workflow E2E Tests', () => {
                 const readerIndex = Math.floor(Math.random() * readerCount);
                 if ('verifyDelivery' in rfidService && typeof rfidService.verifyDelivery === 'function') {
                     return rfidService.verifyDelivery({
-                        cardNumber: cards[studentIndex].data.cardNumber,
+                        cardNumber: cards[studentIndex].data?.cardNumber,
                         readerId: `hc-reader-${readerIndex + 1}`,
                         orderId: orders[studentIndex].order.id,
                         timestamp: new Date(),
@@ -523,7 +523,7 @@ describe('RFID Complete Workflow E2E Tests', () => {
                 })
                 : Promise.resolve({ success: true, data: { id: `card-dr-${i}`, cardNumber: `DR${(i + 1).toString().padStart(6, '0')}` } })));
             if ('batchActivateCards' in rfidService && typeof rfidService.batchActivateCards === 'function') {
-                await rfidService.batchActivateCards(cards.map(c => c.data.id), test_helpers_1.AuthTestHelper.generateValidToken({ role: 'school_admin', schoolId }));
+                await rfidService.batchActivateCards(cards.map(c => c.data?.id).filter(Boolean), test_helpers_1.AuthTestHelper.generateValidToken({ role: 'school_admin', schoolId }));
             }
             const orders = await Promise.all(students.map(student => paymentService.createOrder({
                 userId: student.id,
@@ -535,7 +535,7 @@ describe('RFID Complete Workflow E2E Tests', () => {
             const normalVerifications = await Promise.all(students.slice(0, 10).map((student, i) => {
                 if ('verifyDelivery' in rfidService && typeof rfidService.verifyDelivery === 'function') {
                     return rfidService.verifyDelivery({
-                        cardNumber: cards[i].data.cardNumber,
+                        cardNumber: cards[i].data?.cardNumber,
                         readerId: `primary-reader-${(i % 3) + 1}`,
                         orderId: orders[i].order.id
                     });
@@ -562,7 +562,7 @@ describe('RFID Complete Workflow E2E Tests', () => {
             const failoverVerifications = await Promise.all(students.slice(10, 15).map((student, i) => {
                 if ('verifyDelivery' in rfidService && typeof rfidService.verifyDelivery === 'function') {
                     return rfidService.verifyDelivery({
-                        cardNumber: cards[i + 10].data.cardNumber,
+                        cardNumber: cards[i + 10].data?.cardNumber,
                         readerId: `primary-reader-${(i % 3) + 1}`,
                         orderId: orders[i + 10].order.id,
                         allowFailover: true
@@ -664,7 +664,7 @@ describe('RFID Complete Workflow E2E Tests', () => {
                 })
                 : { success: true, data: { id: 'card-sms-001', cardNumber: 'SMS123456789' } };
             if ('activateCard' in rfidService && typeof rfidService.activateCard === 'function') {
-                await rfidService.activateCard(card.data.id);
+                await rfidService.activateCard(card.data?.id);
             }
             const order = await paymentService.createOrder({
                 userId: student.id,
@@ -722,7 +722,7 @@ describe('RFID Complete Workflow E2E Tests', () => {
                 })
                 : { success: true, data: { id: 'card-pay-001', cardNumber: 'PAY123456789' } };
             if ('activateCard' in rfidService && typeof rfidService.activateCard === 'function') {
-                await rfidService.activateCard(card.data.id);
+                await rfidService.activateCard(card.data?.id);
             }
             const order = await paymentService.createOrder({
                 userId: student.id,
@@ -790,7 +790,7 @@ describe('RFID Complete Workflow E2E Tests', () => {
                 })
                 : { success: true, data: { id: 'card-parent-001', cardNumber: 'PARENT123456' } };
             if ('activateCard' in rfidService && typeof rfidService.activateCard === 'function') {
-                await rfidService.activateCard(card.data.id);
+                await rfidService.activateCard(card.data?.id);
             }
             const order = await paymentService.createOrder({
                 userId: student.id,
@@ -998,12 +998,12 @@ describe('RFID Complete Workflow E2E Tests', () => {
                 }
             }));
             if ('batchActivateCards' in rfidService && typeof rfidService.batchActivateCards === 'function') {
-                await rfidService.batchActivateCards(cards.map(c => c.data.id), test_helpers_1.AuthTestHelper.generateValidToken({ role: 'school_admin', schoolId }));
+                await rfidService.batchActivateCards(cards.map(c => c.data?.id).filter(Boolean), test_helpers_1.AuthTestHelper.generateValidToken({ role: 'school_admin', schoolId }));
             }
             const nutritionVerifications = await Promise.all(students.map((student, i) => {
                 if ('verifyDeliveryWithNutrition' in rfidService && typeof rfidService.verifyDeliveryWithNutrition === 'function') {
                     return rfidService.verifyDeliveryWithNutrition({
-                        cardNumber: cards[i].data.cardNumber,
+                        cardNumber: cards[i].data?.cardNumber,
                         readerId: 'nutrition-reader-1',
                         orderId: orders[i].order.id,
                         trackNutrition: true,
@@ -1061,7 +1061,7 @@ describe('RFID Complete Workflow E2E Tests', () => {
             let allergenVerification;
             if ('verifyDeliveryWithNutrition' in rfidService && typeof rfidService.verifyDeliveryWithNutrition === 'function') {
                 allergenVerification = await rfidService.verifyDeliveryWithNutrition({
-                    cardNumber: cards[0].data.cardNumber,
+                    cardNumber: cards[0].data?.cardNumber,
                     readerId: 'nutrition-reader-1',
                     orderId: allergenOrder.order.id,
                     trackNutrition: true,
@@ -1117,7 +1117,7 @@ describe('RFID Complete Workflow E2E Tests', () => {
                 cardType: 'student'
             })));
             if ('batchActivateCards' in rfidService && typeof rfidService.batchActivateCards === 'function') {
-                await rfidService.batchActivateCards(cards.map(c => c.data.id), test_helpers_1.AuthTestHelper.generateValidToken({ role: 'school_admin', schoolId }));
+                await rfidService.batchActivateCards(cards.map(c => c.data?.id).filter(Boolean), test_helpers_1.AuthTestHelper.generateValidToken({ role: 'school_admin', schoolId }));
             }
             const orders = await Promise.all(students.map(student => paymentService.createOrder({
                 userId: student.id,
@@ -1128,7 +1128,7 @@ describe('RFID Complete Workflow E2E Tests', () => {
             const normalVerifications = await Promise.all(students.slice(0, 40).map((student, i) => {
                 if ('verifyDelivery' in rfidService && typeof rfidService.verifyDelivery === 'function') {
                     return rfidService.verifyDelivery({
-                        cardNumber: cards[i].data.cardNumber,
+                        cardNumber: cards[i].data?.cardNumber,
                         readerId: `monitoring-reader-${(i % 3) + 1}`,
                         orderId: orders[i].order.id,
                         timestamp: new Date(Date.now() + i * 100)
@@ -1397,13 +1397,13 @@ describe('RFID Complete Workflow E2E Tests', () => {
                 cardType: 'student'
             })));
             if ('batchActivateCards' in rfidService && typeof rfidService.batchActivateCards === 'function') {
-                await rfidService.batchActivateCards(loadTestCards.map(c => c.data.id), test_helpers_1.AuthTestHelper.generateValidToken({ role: 'school_admin', schoolId }));
+                await rfidService.batchActivateCards(loadTestCards.map(c => c.data?.id).filter(Boolean), test_helpers_1.AuthTestHelper.generateValidToken({ role: 'school_admin', schoolId }));
             }
             else {
                 for (const card of loadTestCards) {
-                    if (card.data.id) {
+                    if (card.data?.id) {
                         if ('activateCard' in rfidService && typeof rfidService.activateCard === 'function') {
-                            await rfidService.activateCard(card.data.id, test_helpers_1.AuthTestHelper.generateValidToken({ role: 'school_admin', schoolId }));
+                            await rfidService.activateCard(card.data?.id, test_helpers_1.AuthTestHelper.generateValidToken({ role: 'school_admin', schoolId }));
                         }
                     }
                 }
@@ -1412,7 +1412,7 @@ describe('RFID Complete Workflow E2E Tests', () => {
                 const studentIndex = i % loadTestStudents.length;
                 if ('simulateCardScan' in rfidService && typeof rfidService.simulateCardScan === 'function') {
                     return rfidService.simulateCardScan({
-                        cardNumber: loadTestCards[studentIndex].data.cardNumber,
+                        cardNumber: loadTestCards[studentIndex].data?.cardNumber,
                         readerId: `load-reader-${(i % 5) + 1}`,
                         operationType: 'verification',
                         metadata: { loadTestOperation: true }
@@ -1422,7 +1422,7 @@ describe('RFID Complete Workflow E2E Tests', () => {
                     return Promise.resolve({
                         success: true,
                         data: {
-                            cardNumber: loadTestCards[studentIndex].data.cardNumber,
+                            cardNumber: loadTestCards[studentIndex].data?.cardNumber,
                             readerId: `load-reader-${(i % 5) + 1}`,
                             timestamp: new Date(),
                             operationType: 'verification',
@@ -1573,7 +1573,7 @@ describe('RFID Complete Workflow E2E Tests', () => {
                 cardType: 'student'
             });
             if ('activateCard' in rfidService && typeof rfidService.activateCard === 'function') {
-                await rfidService.activateCard(card.data.id);
+                await rfidService.activateCard(card.data?.id);
             }
             const order = await paymentService.createOrder({
                 userId: student.id,
@@ -1750,7 +1750,7 @@ describe('RFID Complete Workflow E2E Tests', () => {
                 cardType: 'student'
             });
             if ('activateCard' in rfidService && typeof rfidService.activateCard === 'function') {
-                await rfidService.activateCard(legitimateCard.data.id);
+                await rfidService.activateCard(legitimateCard.data?.id);
             }
             const normalOrders = await Promise.all(Array.from({ length: 10 }, (_, i) => paymentService.createOrder({
                 userId: legitimateStudent.id,
@@ -2101,7 +2101,7 @@ describe('RFID Complete Workflow E2E Tests', () => {
                 cardType: 'student'
             });
             if ('activateCard' in rfidService && typeof rfidService.activateCard === 'function') {
-                await rfidService.activateCard(card.data.id);
+                await rfidService.activateCard(card.data?.id);
             }
             const order = await paymentService.createOrder({
                 userId: student.id,
@@ -2225,7 +2225,7 @@ describe('RFID Complete Workflow E2E Tests', () => {
                 cardType: 'student'
             })));
             if ('batchActivateCards' in rfidService && typeof rfidService.batchActivateCards === 'function') {
-                await rfidService.batchActivateCards(cards.map(c => c.data.id), test_helpers_1.AuthTestHelper.generateValidToken({ role: 'school_admin', schoolId }));
+                await rfidService.batchActivateCards(cards.map(c => c.data?.id).filter(Boolean), test_helpers_1.AuthTestHelper.generateValidToken({ role: 'school_admin', schoolId }));
             }
             const orders = await Promise.all(students.map(student => paymentService.createOrder({
                 userId: student.id,
@@ -2320,7 +2320,7 @@ describe('RFID Complete Workflow E2E Tests', () => {
             const failoverOperations = await Promise.all(students.slice(0, 15).map((student, i) => {
                 if ('verifyDelivery' in rfidService && typeof rfidService.verifyDelivery === 'function') {
                     return rfidService.verifyDelivery({
-                        cardNumber: cards[i].data.cardNumber,
+                        cardNumber: cards[i].data?.cardNumber,
                         readerId: 'failover-reader-1',
                         orderId: orders[i].order.id,
                         expectFailover: true
@@ -2331,7 +2331,7 @@ describe('RFID Complete Workflow E2E Tests', () => {
                         success: true,
                         data: {
                             verificationId: `failover-verify-${i + 1}`,
-                            cardNumber: cards[i].data.cardNumber,
+                            cardNumber: cards[i].data?.cardNumber,
                             readerId: 'failover-reader-1',
                             orderId: orders[i].order.id,
                             timestamp: new Date().toISOString(),
@@ -2564,7 +2564,7 @@ describe('RFID Complete Workflow E2E Tests', () => {
                 cardType: 'student'
             });
             if ('activateCard' in rfidService && typeof rfidService.activateCard === 'function') {
-                await rfidService.activateCard(mobileCard.data.id);
+                await rfidService.activateCard(mobileCard.data?.id);
             }
             const mobileOrder = await paymentService.createOrder({
                 userId: mobileStudent.id,
@@ -3350,7 +3350,7 @@ describe('RFID Complete Workflow E2E Tests', () => {
                 };
             }
             expect(modelTraining.success).toBe(true);
-            expect(modelTraining.data.models.every(m => m.accuracy > 85)).toBe(true);
+            expect(modelTraining.data.models.every((m) => m.accuracy > 85)).toBe(true);
             let demandForecast;
             if ('generateDemandForecast' in rfidService && typeof rfidService.generateDemandForecast === 'function') {
                 demandForecast = await rfidService.generateDemandForecast({
@@ -3557,7 +3557,7 @@ describe('RFID Complete Workflow E2E Tests', () => {
             cardType: 'student'
         })));
         if ('batchActivateCards' in rfidService && typeof rfidService.batchActivateCards === 'function') {
-            await rfidService.batchActivateCards(cards.map(c => c.data.id), adminToken);
+            await rfidService.batchActivateCards(cards.map(c => c.data?.id).filter(Boolean), adminToken);
         }
         else {
             console.log(`Mock: Batch activated ${cards.length} cards for analytics environment`);
@@ -3581,7 +3581,7 @@ describe('RFID Complete Workflow E2E Tests', () => {
                 const cardIndex = i % cards.length;
                 if ('verifyDelivery' in rfidService && typeof rfidService.verifyDelivery === 'function') {
                     return rfidService.verifyDelivery({
-                        cardNumber: cards[cardIndex].data.cardNumber,
+                        cardNumber: cards[cardIndex].data?.cardNumber,
                         readerId: `analytics-reader-${(i % 5) + 1}`,
                         orderId: order.order.id,
                         timestamp: new Date(date.getTime() + i * 60000)
@@ -3592,7 +3592,7 @@ describe('RFID Complete Workflow E2E Tests', () => {
                         success: true,
                         data: {
                             verificationId: `analytics-verify-${i + 1}`,
-                            cardNumber: cards[cardIndex].data.cardNumber,
+                            cardNumber: cards[cardIndex].data?.cardNumber,
                             readerId: `analytics-reader-${(i % 5) + 1}`,
                             orderId: order.order.id,
                             timestamp: new Date(date.getTime() + i * 60000).toISOString(),

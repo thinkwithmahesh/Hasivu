@@ -1,104 +1,104 @@
 # Add to functions section
-  # Static Content Serving Functions
-  serve-static:
-    handler: src/functions/static/serve-static.serveStaticContentHandler
-    events:
-      - http:
-          path: /static/{proxy+}
-          method: get
-          cors: true
-    environment:
-      FUNCTION_NAME: serve-static
+# Static Content Serving Functions
+serve-static:
+  handler: src/functions/static/serve-static.serveStaticContentHandler
+  events:
+    - http:
+        path: /static/{proxy+}
+        method: get
+        cors: true
+  environment:
+    FUNCTION_NAME: serve-static
 
-  serve-health-dashboard:
-    handler: src/functions/static/serve-static.serveHealthDashboardHandler
-    events:
-      - http:
-          path: /health/dashboard
-          method: get
-          cors: true
-    environment:
-      FUNCTION_NAME: serve-health-dashboard
+serve-health-dashboard:
+  handler: src/functions/static/serve-static.serveHealthDashboardHandler
+  events:
+    - http:
+        path: /health/dashboard
+        method: get
+        cors: true
+  environment:
+    FUNCTION_NAME: serve-health-dashboard
 
-# Add to resources section
-    # S3 Bucket for static assets
-    S3BucketStaticAssets:
-      Type: AWS::S3::Bucket
-      Properties:
-        BucketName: hasivu-${self:provider.stage}-static-assets
-        PublicAccessBlockConfiguration:
-          BlockPublicAcls: true
-          BlockPublicPolicy: true
-          IgnorePublicAcls: true
-          RestrictPublicBuckets: true
-        BucketEncryption:
-          ServerSideEncryptionConfiguration:
-            - ServerSideEncryptionByDefault:
-                SSEAlgorithm: AES256
-        VersioningConfiguration:
-          Status: Enabled
-        WebsiteConfiguration:
-          IndexDocument: index.html
-          ErrorDocument: error.html
-        LifecycleConfiguration:
-          Rules:
-            - Status: Enabled
-              ExpirationInDays: 365
-              NoncurrentVersionExpirationInDays: 30
+  # Add to resources section
+  # S3 Bucket for static assets
+  S3BucketStaticAssets:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: hasivu-${self:provider.stage}-static-assets
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      VersioningConfiguration:
+        Status: Enabled
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: error.html
+      LifecycleConfiguration:
+        Rules:
+          - Status: Enabled
+            ExpirationInDays: 365
+            NoncurrentVersionExpirationInDays: 30
 
-    # CloudFront Distribution for static assets
-    CloudFrontDistribution:
-      Type: AWS::CloudFront::Distribution
-      Properties:
-        DistributionConfig:
-          Origins:
-            - Id: S3Origin
-              DomainName: !GetAtt S3BucketStaticAssets.DomainName
-              S3OriginConfig:
-                OriginAccessIdentity: ''
-          Enabled: true
-          DefaultRootObject: index.html
-          PriceClass: PriceClass_200
-          DefaultCacheBehavior:
-            TargetOriginId: S3Origin
-            ViewerProtocolPolicy: redirect-to-https
-            AllowedMethods:
-              - GET
-              - HEAD
-            CachedMethods:
-              - GET
-              - HEAD
-            ForwardedValues:
-              QueryString: false
-              Cookies:
-                Forward: none
-            MinTTL: 0
-            DefaultTTL: 86400
-            MaxTTL: 31536000
-          CustomErrorResponses:
-            - ErrorCode: 404
-              ResponseCode: 200
-              ResponsePagePath: /index.html
-          Restrictions:
-            GeoRestriction:
-              RestrictionType: whitelist
-              Locations:
-                - IN
-          ViewerCertificate:
-            CloudFrontDefaultCertificate: true
+  # CloudFront Distribution for static assets
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Origins:
+          - Id: S3Origin
+            DomainName: !GetAtt S3BucketStaticAssets.DomainName
+            S3OriginConfig:
+              OriginAccessIdentity: ''
+        Enabled: true
+        DefaultRootObject: index.html
+        PriceClass: PriceClass_200
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+            - GET
+            - HEAD
+          CachedMethods:
+            - GET
+            - HEAD
+          ForwardedValues:
+            QueryString: false
+            Cookies:
+              Forward: none
+          MinTTL: 0
+          DefaultTTL: 86400
+          MaxTTL: 31536000
+        CustomErrorResponses:
+          - ErrorCode: 404
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+        Restrictions:
+          GeoRestriction:
+            RestrictionType: whitelist
+            Locations:
+              - IN
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: true
 
-# Add to outputs section
-    StaticAssetsBucketName:
-      Value: !Ref S3BucketStaticAssets
-      Export:
-        Name: hasivu-${self:provider.stage}-static-assets-bucket-name
+  # Add to outputs section
+  StaticAssetsBucketName:
+    Value: !Ref S3BucketStaticAssets
+    Export:
+      Name: hasivu-${self:provider.stage}-static-assets-bucket-name
 
-    CloudFrontDistributionId:
-      Value: !Ref CloudFrontDistribution
-      Export:
-        Name: hasivu-${self:provider.stage}-cloudfront-distribution-id
+  CloudFrontDistributionId:
+    Value: !Ref CloudFrontDistribution
+    Export:
+      Name: hasivu-${self:provider.stage}-cloudfront-distribution-id
 
-    CloudFrontDomainName:
-      Value: !GetAtt CloudFrontDistribution.DomainName
-      Export:
-        Name: hasivu-${self:provider.stage}-cloudfront-domain-name
+  CloudFrontDomainName:
+    Value: !GetAtt CloudFrontDistribution.DomainName
+    Export:
+      Name: hasivu-${self:provider.stage}-cloudfront-domain-name

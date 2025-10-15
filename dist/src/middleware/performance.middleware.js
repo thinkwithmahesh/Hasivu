@@ -44,14 +44,14 @@ const performanceMiddleware = (req, res, next) => {
             }
             catch (error) {
                 logger_1.logger.error('Performance monitoring error', {
-                    error: error instanceof Error ? error.message : 'Unknown error',
+                    error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error',
                     requestId: req.requestId
                 });
             }
         });
         res.on('error', (error) => {
             logger_1.logger.error('Response error during performance monitoring', {
-                error: error.message,
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
                 requestId: req.requestId,
                 responseTime: req.endTime ? req.endTime - (req.startTime || 0) : 'incomplete'
             });
@@ -60,7 +60,7 @@ const performanceMiddleware = (req, res, next) => {
     }
     catch (error) {
         logger_1.logger.error('Performance middleware initialization error', {
-            error: error instanceof Error ? error.message : 'Unknown error',
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error',
             requestId: req.requestId
         });
         next(error);

@@ -1,10 +1,10 @@
-import React from 'react'
-import Head from 'next/head'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { cn } from '@/lib/utils'
+import React from 'react';
+import Head from 'next/head';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 import {
   WifiOff,
   RefreshCw,
@@ -13,18 +13,18 @@ import {
   Wallet,
   Clock,
   AlertCircle,
-  Signal
-} from 'lucide-react'
+  Signal,
+} from 'lucide-react';
 
 // Offline meal data that would be cached
 const offlineMealData = [
   {
     id: 'offline-1',
-    name: 'Today\'s Special Thali',
+    name: "Today's Special Thali",
     price: 45,
     category: 'Main Course',
     isVeg: true,
-    preparationTime: 15
+    preparationTime: 15,
   },
   {
     id: 'offline-2',
@@ -32,7 +32,7 @@ const offlineMealData = [
     price: 35,
     category: 'Snacks',
     isVeg: true,
-    preparationTime: 10
+    preparationTime: 10,
   },
   {
     id: 'offline-3',
@@ -40,57 +40,60 @@ const offlineMealData = [
     price: 25,
     category: 'Healthy',
     isVeg: true,
-    preparationTime: 5
-  }
-]
+    preparationTime: 5,
+  },
+];
 
 const OfflinePage: React.FC = () => {
-  const [isOnline, setIsOnline] = React.useState(false)
-  const [retryCount, setRetryCount] = React.useState(0)
+  const [isOnline, setIsOnline] = React.useState(false);
+  const [retryCount, setRetryCount] = React.useState(0);
 
   React.useEffect(() => {
     // Check online status
-    setIsOnline(navigator.onLine)
+    setIsOnline(navigator.onLine);
 
     const handleOnline = () => {
-      setIsOnline(true)
-      window.location.reload()
-    }
+      setIsOnline(true);
+      window.location.reload();
+    };
 
     const handleOffline = () => {
-      setIsOnline(false)
-    }
+      setIsOnline(false);
+    };
 
-    window.addEventListener('online', handleOnline)
-    window.addEventListener('offline', handleOffline)
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
 
     return () => {
-      window.removeEventListener('online', handleOnline)
-      window.removeEventListener('offline', handleOffline)
-    }
-  }, [])
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   const handleRetry = () => {
-    setRetryCount(prev => prev + 1)
-    
+    setRetryCount(prev => prev + 1);
+
     // Simple connectivity check
     fetch('/api/v1/health', { method: 'HEAD' })
       .then(() => {
-        window.location.reload()
+        window.location.reload();
       })
       .catch(() => {
         // Still offline
         setTimeout(() => {
-          setRetryCount(prev => prev + 1)
-        }, 1000)
-      })
-  }
+          setRetryCount(prev => prev + 1);
+        }, 1000);
+      });
+  };
 
   return (
     <>
       <Head>
         <title>Offline - HASIVU</title>
-        <meta name="description" content="You're currently offline. View cached content or wait for connection." />
+        <meta
+          name="description"
+          content="You're currently offline. View cached content or wait for connection."
+        />
         <meta name="robots" content="noindex, nofollow" />
       </Head>
 
@@ -107,9 +110,12 @@ const OfflinePage: React.FC = () => {
                 <p className="text-xs text-muted-foreground">Offline Mode</p>
               </div>
             </div>
-            
+
             <div className="flex items-center space-x-2">
-              <Badge variant={isOnline ? "default" : "destructive"} className="flex items-center space-x-1">
+              <Badge
+                variant={isOnline ? 'default' : 'destructive'}
+                className="flex items-center space-x-1"
+              >
                 {isOnline ? (
                   <>
                     <Signal className="h-3 w-3" />
@@ -146,15 +152,15 @@ const OfflinePage: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="flex flex-col sm:flex-row gap-3">
-                  <Button 
+                  <Button
                     onClick={handleRetry}
                     disabled={retryCount > 0}
                     className="flex items-center space-x-2"
                   >
-                    <RefreshCw className={cn("h-4 w-4", retryCount > 0 && "animate-spin")} />
+                    <RefreshCw className={cn('h-4 w-4', retryCount > 0 && 'animate-spin')} />
                     <span>{retryCount > 0 ? 'Checking...' : 'Try Again'}</span>
                   </Button>
-                  
+
                   <Link href="/" passHref>
                     <Button variant="outline" className="flex items-center space-x-2">
                       <Home className="h-4 w-4" />
@@ -179,8 +185,8 @@ const OfflinePage: React.FC = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {offlineMealData.map((meal) => (
-                    <div 
+                  {offlineMealData.map(meal => (
+                    <div
                       key={meal.id}
                       className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
                     >
@@ -201,7 +207,7 @@ const OfflinePage: React.FC = () => {
                       </div>
                     </div>
                   ))}
-                  
+
                   <div className="pt-2 border-t">
                     <Button variant="outline" disabled className="w-full">
                       <AlertCircle className="h-4 w-4 mr-2" />
@@ -218,9 +224,7 @@ const OfflinePage: React.FC = () => {
                     <Wallet className="h-5 w-5 text-green-600" />
                     <span>Available Offline</span>
                   </CardTitle>
-                  <CardDescription>
-                    Features you can use without internet
-                  </CardDescription>
+                  <CardDescription>Features you can use without internet</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-3">
@@ -228,23 +232,23 @@ const OfflinePage: React.FC = () => {
                       <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                       <span className="text-sm">View cached meal menu</span>
                     </div>
-                    
+
                     <div className="flex items-center space-x-3 p-2 bg-green-50 rounded-lg">
                       <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                       <span className="text-sm">Browse order history</span>
                     </div>
-                    
+
                     <div className="flex items-center space-x-3 p-2 bg-green-50 rounded-lg">
                       <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                       <span className="text-sm">View account information</span>
                     </div>
-                    
+
                     <div className="flex items-center space-x-3 p-2 bg-yellow-50 rounded-lg">
                       <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
                       <span className="text-sm">Prepare orders (sync when online)</span>
                     </div>
                   </div>
-                  
+
                   <div className="pt-2 border-t">
                     <div className="text-xs text-muted-foreground">
                       <Clock className="h-3 w-3 inline mr-1" />
@@ -259,9 +263,7 @@ const OfflinePage: React.FC = () => {
             <Card>
               <CardHeader>
                 <CardTitle>Troubleshooting</CardTitle>
-                <CardDescription>
-                  Try these steps to restore your connection
-                </CardDescription>
+                <CardDescription>Try these steps to restore your connection</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid sm:grid-cols-2 gap-4 text-sm">
@@ -274,7 +276,7 @@ const OfflinePage: React.FC = () => {
                       <li>• Restart your router if using WiFi</li>
                     </ul>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <h4 className="font-medium">App Issues</h4>
                     <ul className="space-y-1 text-muted-foreground">
@@ -301,7 +303,7 @@ const OfflinePage: React.FC = () => {
         )}
       </div>
     </>
-  )
-}
+  );
+};
 
-export default OfflinePage
+export default OfflinePage;

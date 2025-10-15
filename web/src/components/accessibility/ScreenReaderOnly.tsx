@@ -16,17 +16,17 @@ interface ScreenReaderOnlyProps {
 export const ScreenReaderOnly: React.FC<ScreenReaderOnlyProps> = ({
   children,
   className,
-  as: Component = 'span'
+  as: Component = 'span',
 }) => {
   return (
     <Component
       className={cn(
         // Visually hidden but accessible to screen readers
-        "sr-only",
+        'sr-only',
         // Alternative implementation for better compatibility
-        "absolute w-px h-px p-0 -m-px overflow-hidden whitespace-nowrap border-0",
+        'absolute w-px h-px p-0 -m-px overflow-hidden whitespace-nowrap border-0',
         // Ensure it doesn't affect layout
-        "clip-path-[inset(50%)]",
+        'clip-path-[inset(50%)]',
         className
       )}
       style={{
@@ -57,11 +57,11 @@ export const LiveRegion: React.FC<LiveRegionProps> = ({
   politeness = 'polite',
   atomic = false,
   relevant = 'additions text',
-  className
+  className,
 }) => {
   return (
     <div
-      className={cn("sr-only", className)}
+      className={cn('sr-only', className)}
       aria-live={politeness}
       aria-atomic={atomic}
       aria-relevant={relevant}
@@ -85,7 +85,7 @@ interface StatusMessageProps {
 export const StatusMessage: React.FC<StatusMessageProps> = ({
   message,
   type = 'status',
-  show = true
+  show = true,
 }) => {
   if (!show || !message) return null;
 
@@ -114,23 +114,23 @@ interface SkipToContentProps {
 export const SkipToContent: React.FC<SkipToContentProps> = ({
   targetId = 'main-content',
   label = 'Skip to main content',
-  className
+  className,
 }) => {
   return (
     <a
       href={`#${targetId}`}
       className={cn(
         // Hidden until focused
-        "absolute top-0 left-0 -translate-y-full",
-        "focus:translate-y-0 z-[9999]",
+        'absolute top-0 left-0 -translate-y-full',
+        'focus:translate-y-0 z-[9999]',
         // HASIVU brand styling for skip links
-        "bg-hasivu-primary-600 hover:bg-hasivu-primary-700 text-white px-4 py-2",
-        "transition-all duration-200 shadow-lg",
-        "focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2",
-        "font-medium text-sm rounded-md",
+        'bg-hasivu-primary-600 hover:bg-hasivu-primary-700 text-white px-4 py-2',
+        'transition-all duration-200 shadow-lg',
+        'focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2',
+        'font-medium text-sm rounded-md',
         className
       )}
-      onClick={(e) => {
+      onClick={e => {
         const target = document.getElementById(targetId);
         if (target) {
           e.preventDefault();
@@ -159,7 +159,7 @@ export const LoadingAnnouncement: React.FC<LoadingAnnouncementProps> = ({
   isLoading,
   loadingText = 'Loading content...',
   completedText = 'Content loaded.',
-  delay = 1000
+  delay = 1000,
 }) => {
   const [announced, setAnnounced] = React.useState(false);
   const [showCompleted, setShowCompleted] = React.useState(false);
@@ -176,7 +176,7 @@ export const LoadingAnnouncement: React.FC<LoadingAnnouncementProps> = ({
     if (!isLoading && announced) {
       setShowCompleted(true);
       setAnnounced(false);
-      
+
       timer = setTimeout(() => {
         setShowCompleted(false);
       }, 3000);
@@ -187,16 +187,8 @@ export const LoadingAnnouncement: React.FC<LoadingAnnouncementProps> = ({
 
   return (
     <>
-      {isLoading && announced && (
-        <LiveRegion politeness="polite">
-          {loadingText}
-        </LiveRegion>
-      )}
-      {showCompleted && (
-        <LiveRegion politeness="polite">
-          {completedText}
-        </LiveRegion>
-      )}
+      {isLoading && announced && <LiveRegion politeness="polite">{loadingText}</LiveRegion>}
+      {showCompleted && <LiveRegion politeness="polite">{completedText}</LiveRegion>}
     </>
   );
 };

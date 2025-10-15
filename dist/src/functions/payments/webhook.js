@@ -25,13 +25,11 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.paymentWebhookHandler = void 0;
 const logger_service_1 = require("../shared/logger.service");
-const validation_service_1 = require("../shared/validation.service");
 const database_service_1 = require("../shared/database.service");
 const response_utils_1 = require("../shared/response.utils");
 const crypto = __importStar(require("crypto"));
 const zod_1 = require("zod");
 const logger = logger_service_1.LoggerService.getInstance();
-const validator = validation_service_1.ValidationService.getInstance();
 const db = database_service_1.LambdaDatabaseService.getInstance();
 var WebhookEventType;
 (function (WebhookEventType) {
@@ -101,7 +99,7 @@ function verifyWebhookSignature(body, signature) {
         return isValid;
     }
     catch (error) {
-        logger.error('Webhook signature verification error', { error: error.message });
+        logger.error('Webhook signature verification error', { error: error instanceof Error ? error.message : String(error) });
         return false;
     }
 }
@@ -111,9 +109,9 @@ const webhookPayloadSchema = zod_1.z.object({
     event: zod_1.z.nativeEnum(WebhookEventType),
     contains: zod_1.z.array(zod_1.z.string()),
     payload: zod_1.z.object({
-        payment: zod_1.z.object({ entity: zod_1.z.any() }).optional(),
-        order: zod_1.z.object({ entity: zod_1.z.any() }).optional(),
-        refund: zod_1.z.object({ entity: zod_1.z.any() }).optional()
+        payment: zod_1.z.object({ entity: zod_1.z.unknown() }).optional(),
+        order: zod_1.z.object({ entity: zod_1.z.unknown() }).optional(),
+        refund: zod_1.z.object({ entity: zod_1.z.unknown() }).optional()
     }),
     created_at: zod_1.z.number().positive()
 });
@@ -124,10 +122,11 @@ function validatePayload(payload) {
         if (!validationResult.success) {
             errors.push(...validationResult.error.issues.map(err => `${err.path.join('.')}: ${err.message}`));
         }
-        if (payload.created_at) {
+        const typedPayload = payload;
+        if (typedPayload.created_at) {
             const maxAge = 300000;
             const now = Date.now();
-            const payloadAge = now - (payload.created_at * 1000);
+            const payloadAge = now - (typedPayload.created_at * 1000);
             if (payloadAge > maxAge) {
                 errors.push('Payload too old - possible replay attack');
             }
@@ -135,18 +134,18 @@ function validatePayload(payload) {
                 errors.push('Payload from future - possible replay attack');
             }
         }
-        if (payload.event && validationResult.success) {
-            switch (payload.event) {
+        if (typedPayload.event && validationResult.success) {
+            switch (typedPayload.event) {
                 case WebhookEventType.PAYMENT_AUTHORIZED:
                 case WebhookEventType.PAYMENT_CAPTURED:
                 case WebhookEventType.PAYMENT_FAILED:
-                    if (!payload.payload?.payment?.entity) {
+                    if (!typedPayload.payload?.payment?.entity) {
                         errors.push('Payment entity missing for payment event');
                     }
                     break;
                 case WebhookEventType.REFUND_CREATED:
                 case WebhookEventType.REFUND_PROCESSED:
-                    if (!payload.payload?.refund?.entity) {
+                    if (!typedPayload.payload?.refund?.entity) {
                         errors.push('Refund entity missing for refund event');
                     }
                     break;
@@ -154,16 +153,17 @@ function validatePayload(payload) {
         }
     }
     catch (error) {
-        errors.push(`Payload validation error: ${error.message}`);
+        errors.push(`Payload validation error: ${error instanceof Error ? error.message : String(error)}`);
     }
     return { valid: errors.length === 0, errors };
 }
 async function handlePaymentAuthorized(paymentData) {
-    const paymentId = paymentData.id;
+    const typedPaymentData = paymentData;
+    const paymentId = typedPaymentData.id;
     logger.info('Processing payment authorized event', { paymentId });
     try {
         const paymentOrder = await db.prisma.paymentOrder.findUnique({
-            where: { razorpayOrderId: paymentData.order_id },
+            where: { razorpayOrderId: typedPaymentData.order_id },
             select: {
                 id: true,
                 amount: true,
@@ -176,7 +176,7 @@ async function handlePaymentAuthorized(paymentData) {
         if (!paymentOrder) {
             logger.warn('Payment order not found for authorized payment', {
                 paymentId,
-                orderId: paymentData.order_id
+                orderId: typedPaymentData.order_id
             });
             return;
         }
@@ -193,12 +193,12 @@ async function handlePaymentAuthorized(paymentData) {
                 id: transactionId,
                 paymentOrderId: paymentOrder.id,
                 razorpayPaymentId: paymentId,
-                amount: parseFloat(paymentData.amount) / 100,
-                currency: paymentData.currency || 'INR',
+                amount: typedPaymentData.amount / 100,
+                currency: typedPaymentData.currency || 'INR',
                 status: 'authorized',
-                method: paymentData.method || 'unknown',
+                method: typedPaymentData.method || 'unknown',
                 gateway: 'razorpay',
-                fees: JSON.stringify(paymentData.fee ? { fee: paymentData.fee } : {})
+                fees: JSON.stringify(typedPaymentData.fee ? { fee: typedPaymentData.fee } : {})
             }
         });
         await db.prisma.auditLog.create({
@@ -209,8 +209,8 @@ async function handlePaymentAuthorized(paymentData) {
                 action: 'payment_authorized',
                 changes: JSON.stringify({
                     paymentId,
-                    amount: paymentData.amount,
-                    method: paymentData.method
+                    amount: typedPaymentData.amount,
+                    method: typedPaymentData.method
                 }),
                 createdById: 'system-webhook-handler',
                 ipAddress: 'webhook',
@@ -220,19 +220,20 @@ async function handlePaymentAuthorized(paymentData) {
         logger.info('Payment authorized event processed successfully', {
             paymentId,
             transactionId,
-            amount: paymentData.amount
+            amount: typedPaymentData.amount
         });
     }
     catch (error) {
         logger.error('Failed to process payment authorized event', {
             paymentId,
-            error: error.message
+            error: error instanceof Error ? error.message : String(error)
         });
         throw error;
     }
 }
 async function handlePaymentCaptured(paymentData) {
-    const paymentId = paymentData.id;
+    const typedPaymentData = paymentData;
+    const paymentId = typedPaymentData.id;
     logger.info('Processing payment captured event', { paymentId });
     try {
         await db.prisma.$transaction(async (prisma) => {
@@ -261,10 +262,10 @@ async function handlePaymentCaptured(paymentData) {
                     capturedAt: new Date(),
                     fees: JSON.stringify({
                         ...JSON.parse(paymentTransaction.fees || '{}'),
-                        capturedFee: paymentData.fee || 0,
+                        capturedFee: typedPaymentData.fee || 0,
                         capturedAt: new Date().toISOString(),
-                        captureId: paymentData.id,
-                        captureAmount: paymentData.amount
+                        captureId: typedPaymentData.id,
+                        captureAmount: typedPaymentData.amount
                     })
                 }
             });
@@ -287,7 +288,7 @@ async function handlePaymentCaptured(paymentData) {
                 catch (orderError) {
                     logger.warn('Failed to update order payment status', {
                         orderId: paymentTransaction.paymentOrder.orderId,
-                        error: orderError.message
+                        error: orderError instanceof Error ? orderError.message : String(orderError)
                     });
                 }
             }
@@ -299,7 +300,7 @@ async function handlePaymentCaptured(paymentData) {
                     action: 'payment_captured',
                     changes: JSON.stringify({
                         paymentId,
-                        amount: paymentData.amount,
+                        amount: typedPaymentData.amount,
                         capturedAt: new Date().toISOString(),
                         orderId: paymentTransaction.paymentOrderId
                     }),
@@ -311,25 +312,26 @@ async function handlePaymentCaptured(paymentData) {
         });
         logger.info('Payment captured event processed successfully', {
             paymentId,
-            amount: paymentData.amount
+            amount: typedPaymentData.amount
         });
     }
     catch (error) {
         logger.error('Failed to process payment captured event', {
             paymentId,
-            error: error.message
+            error: error instanceof Error ? error.message : String(error)
         });
         throw error;
     }
 }
 async function handlePaymentFailed(paymentData) {
-    const paymentId = paymentData.id;
-    const failureReason = paymentData.error_description || paymentData.error_reason || 'Payment failed';
+    const typedPaymentData = paymentData;
+    const paymentId = typedPaymentData.id;
+    const failureReason = typedPaymentData.error_description || typedPaymentData.error_reason || 'Payment failed';
     logger.info('Processing payment failed event', { paymentId, failureReason });
     try {
         await db.prisma.$transaction(async (prisma) => {
             const paymentOrder = await prisma.paymentOrder.findUnique({
-                where: { razorpayOrderId: paymentData.order_id },
+                where: { razorpayOrderId: typedPaymentData.order_id },
                 select: {
                     id: true,
                     amount: true,
@@ -341,7 +343,7 @@ async function handlePaymentFailed(paymentData) {
             if (!paymentOrder) {
                 logger.warn('Payment order not found for failed payment', {
                     paymentId,
-                    orderId: paymentData.order_id
+                    orderId: typedPaymentData.order_id
                 });
                 return;
             }
@@ -363,10 +365,10 @@ async function handlePaymentFailed(paymentData) {
                         id: transactionId,
                         paymentOrderId: paymentOrder.id,
                         razorpayPaymentId: paymentId,
-                        amount: parseFloat(paymentData.amount) / 100,
-                        currency: paymentData.currency || 'INR',
+                        amount: typedPaymentData.amount / 100,
+                        currency: typedPaymentData.currency || 'INR',
                         status: 'failed',
-                        method: paymentData.method || 'unknown',
+                        method: typedPaymentData.method || 'unknown',
                         gateway: 'razorpay',
                         fees: JSON.stringify({}),
                     }
@@ -390,7 +392,7 @@ async function handlePaymentFailed(paymentData) {
                 catch (orderError) {
                     logger.warn('Failed to update order payment status', {
                         orderId: paymentOrder.orderId,
-                        error: orderError.message
+                        error: orderError instanceof Error ? orderError.message : String(orderError)
                     });
                 }
             }
@@ -402,9 +404,9 @@ async function handlePaymentFailed(paymentData) {
                     action: 'payment_failed',
                     changes: JSON.stringify({
                         paymentId,
-                        amount: paymentData.amount,
+                        amount: typedPaymentData.amount,
                         failureReason,
-                        errorCode: paymentData.error_code,
+                        errorCode: typedPaymentData.error_code,
                         failedAt: new Date().toISOString()
                     }),
                     createdById: 'system-webhook-handler',
@@ -421,14 +423,15 @@ async function handlePaymentFailed(paymentData) {
     catch (error) {
         logger.error('Failed to process payment failed event', {
             paymentId,
-            error: error.message
+            error: error instanceof Error ? error.message : String(error)
         });
         throw error;
     }
 }
 async function handleRefundEvent(refundData, eventType) {
-    const refundId = refundData.id;
-    const paymentId = refundData.payment_id;
+    const typedRefundData = refundData;
+    const refundId = typedRefundData.id;
+    const paymentId = typedRefundData.payment_id;
     logger.info('Processing refund event', { refundId, eventType, paymentId });
     try {
         await db.prisma.$transaction(async (prisma) => {
@@ -452,13 +455,13 @@ async function handleRefundEvent(refundData, eventType) {
             const existingRefund = await prisma.paymentRefund.findUnique({
                 where: { razorpayRefundId: refundId }
             });
-            const refundAmount = parseFloat(refundData.amount) / 100;
+            const refundAmount = typedRefundData.amount / 100;
             const isProcessed = eventType === WebhookEventType.REFUND_PROCESSED;
             if (existingRefund) {
                 await prisma.paymentRefund.update({
                     where: { id: existingRefund.id },
                     data: {
-                        status: refundData.status,
+                        status: typedRefundData.status,
                         processedAt: isProcessed ? new Date() : existingRefund.processedAt,
                     }
                 });
@@ -471,9 +474,9 @@ async function handleRefundEvent(refundData, eventType) {
                         razorpayRefundId: refundId,
                         paymentId: paymentTransaction.id,
                         amount: refundAmount,
-                        currency: refundData.currency || 'INR',
-                        status: refundData.status,
-                        reason: refundData.reason || 'customer_request',
+                        currency: typedRefundData.currency || 'INR',
+                        status: typedRefundData.status,
+                        reason: typedRefundData.reason || 'customer_request',
                         processedAt: isProcessed ? new Date() : null,
                     }
                 });
@@ -496,8 +499,8 @@ async function handleRefundEvent(refundData, eventType) {
                     changes: JSON.stringify({
                         refundId,
                         paymentId,
-                        amount: refundData.amount,
-                        status: refundData.status,
+                        amount: typedRefundData.amount,
+                        status: typedRefundData.status,
                         eventType,
                         processedAt: isProcessed ? new Date().toISOString() : null
                     }),
@@ -509,8 +512,8 @@ async function handleRefundEvent(refundData, eventType) {
         });
         logger.info('Refund event processed successfully', {
             refundId,
-            amount: refundData.amount,
-            status: refundData.status,
+            amount: typedRefundData.amount,
+            status: typedRefundData.status,
             eventType
         });
     }
@@ -518,7 +521,7 @@ async function handleRefundEvent(refundData, eventType) {
         logger.error('Failed to process refund event', {
             refundId,
             eventType,
-            error: error.message
+            error: error instanceof Error ? error.message : String(error)
         });
         throw error;
     }
@@ -584,7 +587,7 @@ async function processWebhookEvent(payload) {
         logger.error('Webhook event processing failed', {
             eventType,
             duration: `${eventDuration}ms`,
-            error: error.message
+            error: error instanceof Error ? error.message : String(error)
         });
         throw error;
     }
@@ -654,7 +657,7 @@ const paymentWebhookHandler = async (event, context) => {
             logger.error('Failed to parse webhook payload', {
                 requestId,
                 body: body.substring(0, 100) + '...',
-                error: parseError.message,
+                error: parseError instanceof Error ? parseError.message : String(parseError),
                 clientIP
             });
             return (0, response_utils_1.createErrorResponse)(400, 'Invalid JSON payload', undefined, 'INVALID_JSON');
@@ -706,16 +709,16 @@ const paymentWebhookHandler = async (event, context) => {
             clientIP: event.requestContext?.identity?.sourceIp
         });
         if (error instanceof Error) {
-            if (error.message === 'Webhook processing timeout') {
+            if (error instanceof Error ? error.message : String(error) === 'Webhook processing timeout') {
                 return (0, response_utils_1.createErrorResponse)(408, 'Processing timeout', undefined, 'PROCESSING_TIMEOUT');
             }
-            if (error.message.includes('signature')) {
+            if (error instanceof Error ? error.message : String(error).includes('signature')) {
                 return (0, response_utils_1.createErrorResponse)(401, 'Authentication failed', undefined, 'AUTH_FAILED');
             }
-            if (error.message.includes('rate limit')) {
+            if (error instanceof Error ? error.message : String(error).includes('rate limit')) {
                 return (0, response_utils_1.createErrorResponse)(429, 'Rate limit exceeded', undefined, 'RATE_LIMITED');
             }
-            if (error.message.includes('validation')) {
+            if (error instanceof Error ? error.message : String(error).includes('validation')) {
                 return (0, response_utils_1.createErrorResponse)(400, 'Validation failed', undefined, 'VALIDATION_ERROR');
             }
         }

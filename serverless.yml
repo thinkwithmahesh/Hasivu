@@ -1,6 +1,6 @@
 service: hasivu-platform
 
-frameworkVersion: '3'
+frameworkVersion: '4'
 
 provider:
   name: aws
@@ -10,7 +10,7 @@ provider:
   memorySize: 512
   timeout: 30
   architecture: arm64
-  
+
   environment:
     NODE_ENV: ${self:provider.stage}
     DATABASE_URL: ${ssm:/hasivu/${self:provider.stage}/database-url}
@@ -29,7 +29,7 @@ provider:
     NOTIFICATION_TOPIC_ARN: ${cf:hasivu-${self:provider.stage}-messaging.NotificationTopicArn}
     RETRY_QUEUE_URL: ${cf:hasivu-${self:provider.stage}-queues.RetryQueueUrl}
     MAX_RETRY_ATTEMPTS: 3
-    
+
   iam:
     role:
       statements:
@@ -39,31 +39,31 @@ provider:
             - ssm:GetParameters
             - secretsmanager:GetSecretValue
           Resource:
-            - "arn:aws:ssm:${aws:region}:${aws:accountId}:parameter/hasivu/${self:provider.stage}/*"
-            - "arn:aws:secretsmanager:${aws:region}:${aws:accountId}:secret:hasivu/${self:provider.stage}/*"
+            - 'arn:aws:ssm:${aws:region}:${aws:accountId}:parameter/hasivu/${self:provider.stage}/*'
+            - 'arn:aws:secretsmanager:${aws:region}:${aws:accountId}:secret:hasivu/${self:provider.stage}/*'
         - Effect: Allow
           Action:
             - s3:GetObject
             - s3:PutObject
             - s3:DeleteObject
-          Resource: "arn:aws:s3:::hasivu-${self:provider.stage}-uploads/*"
+          Resource: 'arn:aws:s3:::hasivu-${self:provider.stage}-uploads/*'
         - Effect: Allow
           Action:
             - cognito-idp:AdminCreateUser
             - cognito-idp:AdminSetUserPassword
             - cognito-idp:AdminUpdateUserAttributes
-          Resource: "arn:aws:cognito-idp:${aws:region}:${aws:accountId}:userpool/*"
+          Resource: 'arn:aws:cognito-idp:${aws:region}:${aws:accountId}:userpool/*'
         - Effect: Allow
           Action:
             - ses:SendEmail
             - ses:SendRawEmail
-          Resource: "*"
+          Resource: '*'
         - Effect: Allow
           Action:
             - logs:CreateLogGroup
             - logs:CreateLogStream
             - logs:PutLogEvents
-          Resource: "*"
+          Resource: '*'
         - Effect: Allow
           Action:
             - dynamodb:GetItem
@@ -73,15 +73,15 @@ provider:
             - dynamodb:Query
             - dynamodb:Scan
           Resource:
-            - "arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/payment-webhook-idempotency-${self:provider.stage}"
+            - 'arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/payment-webhook-idempotency-${self:provider.stage}'
         - Effect: Allow
           Action:
             - sqs:SendMessage
             - sqs:ReceiveMessage
             - sqs:DeleteMessage
           Resource:
-            - "arn:aws:sqs:${aws:region}:${aws:accountId}:payment-retry-queue-${self:provider.stage}"
-            - "arn:aws:sqs:${aws:region}:${aws:accountId}:payment-dlq-${self:provider.stage}"
+            - 'arn:aws:sqs:${aws:region}:${aws:accountId}:payment-retry-queue-${self:provider.stage}'
+            - 'arn:aws:sqs:${aws:region}:${aws:accountId}:payment-dlq-${self:provider.stage}'
         - Effect: Allow
           Action:
             - sns:Publish
@@ -90,23 +90,28 @@ provider:
             - sns:GetEndpointAttributes
             - sns:SetEndpointAttributes
           Resource:
-            - "arn:aws:sns:${aws:region}:${aws:accountId}:payment-notifications-${self:provider.stage}"
-            - "arn:aws:sns:${aws:region}:${aws:accountId}:push-notifications-${self:provider.stage}"
-            - "arn:aws:sns:${aws:region}:${aws:accountId}:app/*"
+            - 'arn:aws:sns:${aws:region}:${aws:accountId}:payment-notifications-${self:provider.stage}'
+            - 'arn:aws:sns:${aws:region}:${aws:accountId}:push-notifications-${self:provider.stage}'
+            - 'arn:aws:sns:${aws:region}:${aws:accountId}:app/*'
         - Effect: Allow
           Action:
             - s3:GetObject
             - s3:PutObject
           Resource:
-            - "arn:aws:s3:::hasivu-${self:provider.stage}-ml-models/*"
-            - "arn:aws:s3:::hasivu-${self:provider.stage}-invoice-templates/*"
-            - "arn:aws:s3:::hasivu-${self:provider.stage}-invoices/*"
-            - "arn:aws:s3:::hasivu-${self:provider.stage}-analytics/*"
+            - 'arn:aws:s3:::hasivu-${self:provider.stage}-ml-models/*'
+            - 'arn:aws:s3:::hasivu-${self:provider.stage}-invoice-templates/*'
+            - 'arn:aws:s3:::hasivu-${self:provider.stage}-invoices/*'
+            - 'arn:aws:s3:::hasivu-${self:provider.stage}-analytics/*'
         - Effect: Allow
           Action:
             - sagemaker:InvokeEndpoint
           Resource:
-            - "arn:aws:sagemaker:${aws:region}:${aws:accountId}:endpoint/*"
+            - 'arn:aws:sagemaker:${aws:region}:${aws:accountId}:endpoint/*'
+        - Effect: Allow
+          Action:
+            - bedrock:InvokeModel
+          Resource:
+            - 'arn:aws:bedrock:${aws:region}::foundation-model/*'
 
   apiGateway:
     restApiId: ${ssm:/hasivu/${self:provider.stage}/api-gateway-id, ''}
@@ -132,7 +137,7 @@ provider:
   logs:
     restApi: true
     level: INFO
-    
+
   tracing:
     lambda: true
     apiGateway: true
@@ -149,11 +154,11 @@ custom:
     enabled: true
     prewarm: true
     concurrency: 5
-    
+
   splitStacks:
     perFunction: false
     perType: true
-    
+
   associateWaf:
     name: hasivu-${self:provider.stage}-waf
     version: V2
@@ -213,6 +218,16 @@ functions:
     environment:
       FUNCTION_NAME: auth-refresh-token
 
+  auth-forgot-password:
+    handler: src/functions/auth/forgot-password.forgotPasswordHandler
+    events:
+      - http:
+          path: /auth/forgot-password
+          method: post
+          cors: true
+    environment:
+      FUNCTION_NAME: auth-forgot-password
+
   auth-logout:
     handler: src/functions/auth/logout.logoutHandler
     events:
@@ -231,10 +246,6 @@ functions:
           path: /api/v1/users
           method: get
           cors: true
-          authorizer:
-            name: auth
-            type: COGNITO_USER_POOLS
-            arn: ${ssm:/hasivu/${self:provider.stage}/cognito-user-pool-arn}
     environment:
       FUNCTION_NAME: users-list
 
@@ -245,10 +256,6 @@ functions:
           path: /api/v1/users/{id}
           method: get
           cors: true
-          authorizer:
-            name: auth
-            type: COGNITO_USER_POOLS
-            arn: ${ssm:/hasivu/${self:provider.stage}/cognito-user-pool-arn}
     environment:
       FUNCTION_NAME: users-get
 
@@ -259,10 +266,6 @@ functions:
           path: /api/v1/users/{id}
           method: put
           cors: true
-          authorizer:
-            name: auth
-            type: COGNITO_USER_POOLS
-            arn: ${ssm:/hasivu/${self:provider.stage}/cognito-user-pool-arn}
     environment:
       FUNCTION_NAME: users-update
 
@@ -275,10 +278,6 @@ functions:
           path: /api/v1/users/bulk-import
           method: post
           cors: true
-          authorizer:
-            name: auth
-            type: COGNITO_USER_POOLS
-            arn: ${ssm:/hasivu/${self:provider.stage}/cognito-user-pool-arn}
     environment:
       FUNCTION_NAME: users-bulk-import
 
@@ -289,10 +288,6 @@ functions:
           path: /api/v1/users/{id}/children
           method: post
           cors: true
-          authorizer:
-            name: auth
-            type: COGNITO_USER_POOLS
-            arn: ${ssm:/hasivu/${self:provider.stage}/cognito-user-pool-arn}
     environment:
       FUNCTION_NAME: users-manage-children
 
@@ -1260,6 +1255,349 @@ functions:
     environment:
       FUNCTION_NAME: monitoring-recommendations
 
+  # =====================================================
+  # Epic 6: Advanced Analytics & Insights - Lambda Functions
+  # =====================================================
+
+  # Analytics Orchestrator - Central hub for all analytics operations
+  analytics-orchestrator:
+    handler: src/functions/analytics/analytics-orchestrator.handler
+    timeout: 180
+    memorySize: 2048
+    events:
+      - http:
+          path: /analytics/orchestrator/execute
+          method: post
+          cors: true
+      - http:
+          path: /analytics/orchestrator/health
+          method: get
+          cors: true
+      - http:
+          path: /analytics/orchestrator/status
+          method: get
+          cors: true
+      - http:
+          path: /analytics/orchestrator/cache-stats
+          method: get
+          cors: true
+      - http:
+          path: /analytics/orchestrator/batch
+          method: post
+          cors: true
+    environment:
+      FUNCTION_NAME: analytics-orchestrator
+      ANALYTICS_DATA_BUCKET: hasivu-${self:provider.stage}-analytics
+
+  # Business Intelligence Aggregator - Enterprise-level BI insights
+  analytics-business-intelligence:
+    handler: src/functions/analytics/business-intelligence-aggregator.handler
+    timeout: 240
+    memorySize: 3008
+    events:
+      - http:
+          path: /analytics/business-intelligence/dashboard
+          method: get
+          cors: true
+      - http:
+          path: /analytics/business-intelligence/metrics
+          method: get
+          cors: true
+      - http:
+          path: /analytics/business-intelligence/trends
+          method: get
+          cors: true
+      - http:
+          path: /analytics/business-intelligence/insights
+          method: post
+          cors: true
+    environment:
+      FUNCTION_NAME: analytics-business-intelligence
+      ML_MODEL_BUCKET: hasivu-${self:provider.stage}-ml-models
+
+  # Cross-School Analytics - Multi-school comparative analysis
+  analytics-cross-school:
+    handler: src/functions/analytics/cross-school-analytics.handler
+    timeout: 180
+    memorySize: 2048
+    events:
+      - http:
+          path: /analytics/cross-school/compare
+          method: post
+          cors: true
+      - http:
+          path: /analytics/cross-school/benchmarks
+          method: get
+          cors: true
+      - http:
+          path: /analytics/cross-school/rankings
+          method: get
+          cors: true
+      - http:
+          path: /analytics/cross-school/insights
+          method: get
+          cors: true
+    environment:
+      FUNCTION_NAME: analytics-cross-school
+
+  # Executive Dashboard Engine - C-level insights and KPIs
+  analytics-executive-dashboard:
+    handler: src/functions/analytics/executive-dashboard-engine.handler
+    timeout: 120
+    memorySize: 2048
+    events:
+      - http:
+          path: /analytics/executive/dashboard
+          method: get
+          cors: true
+      - http:
+          path: /analytics/executive/kpis
+          method: get
+          cors: true
+      - http:
+          path: /analytics/executive/strategic-metrics
+          method: get
+          cors: true
+      - http:
+          path: /analytics/executive/reports
+          method: post
+          cors: true
+    environment:
+      FUNCTION_NAME: analytics-executive-dashboard
+
+  # Performance Benchmarking - School performance metrics
+  analytics-performance-benchmarking:
+    handler: src/functions/analytics/performance-benchmarking.handler
+    timeout: 180
+    memorySize: 2048
+    events:
+      - http:
+          path: /analytics/performance/benchmark
+          method: post
+          cors: true
+      - http:
+          path: /analytics/performance/compare
+          method: get
+          cors: true
+      - http:
+          path: /analytics/performance/metrics
+          method: get
+          cors: true
+      - http:
+          path: /analytics/performance/trends
+          method: get
+          cors: true
+    environment:
+      FUNCTION_NAME: analytics-performance-benchmarking
+
+  # Predictive Insights Engine - ML-powered forecasting
+  analytics-predictive-insights:
+    handler: src/functions/analytics/predictive-insights-engine.handler
+    timeout: 240
+    memorySize: 3008
+    events:
+      - http:
+          path: /analytics/predictive/forecast
+          method: post
+          cors: true
+      - http:
+          path: /analytics/predictive/demand
+          method: get
+          cors: true
+      - http:
+          path: /analytics/predictive/enrollment
+          method: get
+          cors: true
+      - http:
+          path: /analytics/predictive/risk-assessment
+          method: get
+          cors: true
+    environment:
+      FUNCTION_NAME: analytics-predictive-insights
+      ML_MODEL_BUCKET: hasivu-${self:provider.stage}-ml-models
+
+  # Revenue Optimization Analyzer - Financial analytics
+  analytics-revenue-optimization:
+    handler: src/functions/analytics/revenue-optimization-analyzer.handler
+    timeout: 180
+    memorySize: 2048
+    events:
+      - http:
+          path: /analytics/revenue/optimize
+          method: post
+          cors: true
+      - http:
+          path: /analytics/revenue/metrics
+          method: get
+          cors: true
+      - http:
+          path: /analytics/revenue/forecasts
+          method: get
+          cors: true
+      - http:
+          path: /analytics/revenue/recommendations
+          method: get
+          cors: true
+    environment:
+      FUNCTION_NAME: analytics-revenue-optimization
+
+  # Strategic Insights Generator - AI-powered strategic recommendations
+  analytics-strategic-insights:
+    handler: src/functions/analytics/strategic-insights-generator.handler
+    timeout: 240
+    memorySize: 3008
+    events:
+      - http:
+          path: /analytics/strategic/generate
+          method: post
+          cors: true
+      - http:
+          path: /analytics/strategic/insights
+          method: get
+          cors: true
+      - http:
+          path: /analytics/strategic/opportunities
+          method: get
+          cors: true
+      - http:
+          path: /analytics/strategic/risks
+          method: get
+          cors: true
+    environment:
+      FUNCTION_NAME: analytics-strategic-insights
+      ML_MODEL_BUCKET: hasivu-${self:provider.stage}-ml-models
+
+  # =====================================================
+  # Epic 7: Intelligent Nutrition Management - Lambda Functions
+  # =====================================================
+
+  # Dietary Recommendation Engine - Personalized dietary recommendations
+  nutrition-dietary-recommendations:
+    handler: src/functions/nutrition/dietary-recommendation-engine.handler
+    timeout: 120
+    memorySize: 2048
+    events:
+      - http:
+          path: /nutrition/recommendations/generate
+          method: post
+          cors: true
+      - http:
+          path: /nutrition/recommendations/student/{studentId}
+          method: get
+          cors: true
+      - http:
+          path: /nutrition/recommendations/class/{classId}
+          method: get
+          cors: true
+      - http:
+          path: /nutrition/recommendations/personalized
+          method: post
+          cors: true
+    environment:
+      FUNCTION_NAME: nutrition-dietary-recommendations
+      ML_MODEL_BUCKET: hasivu-${self:provider.stage}-ml-models
+
+  # Meal Optimization AI - ML-powered meal planning optimization
+  nutrition-meal-optimization:
+    handler: src/functions/nutrition/meal-optimization-ai.handler
+    timeout: 180
+    memorySize: 2048
+    events:
+      - http:
+          path: /nutrition/meal-optimization/optimize
+          method: post
+          cors: true
+      - http:
+          path: /nutrition/meal-optimization/suggestions
+          method: get
+          cors: true
+      - http:
+          path: /nutrition/meal-optimization/balance
+          method: post
+          cors: true
+      - http:
+          path: /nutrition/meal-optimization/cost-efficiency
+          method: get
+          cors: true
+    environment:
+      FUNCTION_NAME: nutrition-meal-optimization
+      ML_MODEL_BUCKET: hasivu-${self:provider.stage}-ml-models
+
+  # Nutrition Analyzer - Comprehensive nutritional analysis
+  nutrition-analyzer:
+    handler: src/functions/nutrition/nutrition-analyzer.nutritionAnalyzerHandler
+    timeout: 180
+    memorySize: 2048
+    events:
+      - http:
+          path: /nutrition/analyze
+          method: post
+          cors: true
+      - http:
+          path: /nutrition/analysis/{analysisId}
+          method: get
+          cors: true
+      - http:
+          path: /nutrition/analysis/school/{schoolId}
+          method: get
+          cors: true
+      - http:
+          path: /nutrition/analysis/batch
+          method: post
+          cors: true
+    environment:
+      FUNCTION_NAME: nutrition-analyzer
+
+  # Nutrition Compliance Checker - Regulatory compliance validation
+  nutrition-compliance:
+    handler: src/functions/nutrition/nutrition-compliance-checker.handler
+    timeout: 120
+    memorySize: 1024
+    events:
+      - http:
+          path: /nutrition/compliance/check
+          method: post
+          cors: true
+      - http:
+          path: /nutrition/compliance/report
+          method: get
+          cors: true
+      - http:
+          path: /nutrition/compliance/standards
+          method: get
+          cors: true
+      - http:
+          path: /nutrition/compliance/violations
+          method: get
+          cors: true
+    environment:
+      FUNCTION_NAME: nutrition-compliance
+
+  # Nutritional Trend Analyzer - Historical nutrition trends analysis
+  nutrition-trend-analyzer:
+    handler: src/functions/nutrition/nutritional-trend-analyzer.handler
+    timeout: 180
+    memorySize: 2048
+    events:
+      - http:
+          path: /nutrition/trends/analyze
+          method: post
+          cors: true
+      - http:
+          path: /nutrition/trends/historical
+          method: get
+          cors: true
+      - http:
+          path: /nutrition/trends/patterns
+          method: get
+          cors: true
+      - http:
+          path: /nutrition/trends/forecasts
+          method: get
+          cors: true
+    environment:
+      FUNCTION_NAME: nutrition-trend-analyzer
+
 resources:
   Resources:
     # S3 Bucket for uploads
@@ -1342,7 +1680,7 @@ resources:
         LifecycleConfiguration:
           Rules:
             - Status: Enabled
-              ExpirationInDays: 2555  # 7 years for tax compliance
+              ExpirationInDays: 2555 # 7 years for tax compliance
               NoncurrentVersionExpirationInDays: 90
 
     # S3 Bucket for analytics data
@@ -1364,7 +1702,7 @@ resources:
         LifecycleConfiguration:
           Rules:
             - Status: Enabled
-              ExpirationInDays: 1095  # 3 years
+              ExpirationInDays: 1095 # 3 years
               NoncurrentVersionExpirationInDays: 30
 
     # CloudWatch Log Groups
@@ -1412,7 +1750,7 @@ resources:
           MetricName: hasivu-${self:provider.stage}-waf
 
     # Epic 5 Payment System Resources
-    
+
     # DynamoDB table for webhook idempotency
     PaymentWebhookIdempotencyTable:
       Type: AWS::DynamoDB::Table
@@ -1542,33 +1880,33 @@ resources:
       Value: !Ref ApiGatewayRestApi
       Export:
         Name: hasivu-${self:provider.stage}-api-gateway-id
-        
+
     ApiGatewayRestApiRootResourceId:
       Value: !GetAtt ApiGatewayRestApi.RootResourceId
       Export:
         Name: hasivu-${self:provider.stage}-api-gateway-root-id
-        
+
     S3BucketName:
       Value: !Ref S3BucketUploads
       Export:
         Name: hasivu-${self:provider.stage}-s3-bucket-name
-        
+
     # Epic 5 Payment System Outputs
     PaymentIdempotencyTableName:
       Value: !Ref PaymentWebhookIdempotencyTable
       Export:
         Name: hasivu-${self:provider.stage}-payment-idempotency-table
-        
+
     PaymentRetryQueueUrl:
       Value: !Ref PaymentRetryQueue
       Export:
         Name: hasivu-${self:provider.stage}-payment-retry-queue-url
-        
+
     PaymentDeadLetterQueueUrl:
       Value: !Ref PaymentDeadLetterQueue
       Export:
         Name: hasivu-${self:provider.stage}-payment-dlq-url
-        
+
     PaymentNotificationsTopicArn:
       Value: !Ref PaymentNotificationsTopic
       Export:
@@ -1578,24 +1916,24 @@ resources:
       Value: !Ref PushNotificationsTopic
       Export:
         Name: hasivu-${self:provider.stage}-push-notifications-topic
-        
+
     # Epic 5 Story 5.4: ML Models Bucket
     MLModelsBucketName:
       Value: !Ref S3BucketMLModels
       Export:
         Name: hasivu-${self:provider.stage}-ml-models-bucket-name
-        
+
     # Epic 5 Story 5.3: Invoice System Buckets
     InvoiceTemplatesBucketName:
       Value: !Ref S3BucketInvoiceTemplates
       Export:
         Name: hasivu-${self:provider.stage}-invoice-templates-bucket-name
-        
+
     InvoicesBucketName:
       Value: !Ref S3BucketInvoices
       Export:
         Name: hasivu-${self:provider.stage}-invoices-bucket-name
-        
+
     AnalyticsBucketName:
       Value: !Ref S3BucketAnalytics
       Export:

@@ -1,6 +1,15 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.resetContainers = exports.getTestContainer = exports.getProductionContainer = exports.ServiceContainer = void 0;
+const order_repository_1 = require("../repositories/order.repository");
+const orderItem_repository_1 = require("../repositories/orderItem.repository");
+const menuItem_repository_1 = require("../repositories/menuItem.repository");
+const user_repository_1 = require("../repositories/user.repository");
+const paymentOrder_repository_1 = require("../repositories/paymentOrder.repository");
+const database_service_1 = require("../services/database.service");
+const notification_service_1 = require("../services/notification.service");
+const payment_service_1 = require("../services/payment.service");
+const redis_service_1 = require("../services/redis.service");
 class ServiceContainer {
     orderRepository;
     orderItemRepository;
@@ -23,25 +32,16 @@ class ServiceContainer {
         this.redisService = dependencies.redisService;
     }
     static createProductionContainer() {
-        const { OrderRepository } = require('../repositories/order.repository');
-        const { OrderItemRepository } = require('../repositories/orderItem.repository');
-        const { MenuItemRepository } = require('../repositories/menuItem.repository');
-        const { UserRepository } = require('../repositories/user.repository');
-        const { PaymentOrderRepository } = require('../repositories/paymentOrder.repository');
-        const { DatabaseService } = require('../services/database.service');
-        const { NotificationService } = require('../services/notification.service');
-        const { PaymentService } = require('../services/payment.service');
-        const { RedisService } = require('../services/redis.service');
         return new ServiceContainer({
-            orderRepository: OrderRepository,
-            orderItemRepository: OrderItemRepository,
-            menuItemRepository: MenuItemRepository,
-            userRepository: UserRepository,
-            paymentOrderRepository: PaymentOrderRepository,
-            databaseService: DatabaseService.getInstance(),
-            notificationService: NotificationService,
-            paymentService: PaymentService,
-            redisService: RedisService
+            orderRepository: order_repository_1.OrderRepository,
+            orderItemRepository: orderItem_repository_1.OrderItemRepository,
+            menuItemRepository: menuItem_repository_1.MenuItemRepository,
+            userRepository: user_repository_1.UserRepository,
+            paymentOrderRepository: paymentOrder_repository_1.PaymentOrderRepository,
+            databaseService: database_service_1.DatabaseService.getInstance(),
+            notificationService: notification_service_1.NotificationService,
+            paymentService: payment_service_1.PaymentService,
+            redisService: redis_service_1.RedisService,
         });
     }
     static createTestContainer(overrides = {}) {
@@ -55,30 +55,12 @@ class ServiceContainer {
             notificationService: createMockNotificationService(),
             paymentService: createMockPaymentService(),
             redisService: createMockRedisService(),
-            ...overrides
+            ...overrides,
         };
         return new ServiceContainer(mockDependencies);
     }
 }
 exports.ServiceContainer = ServiceContainer;
-class RepositoryAdapter {
-    StaticRepository;
-    constructor(StaticRepository) {
-        this.StaticRepository = StaticRepository;
-        const methods = Object.getOwnPropertyNames(StaticRepository).filter(prop => typeof StaticRepository[prop] === 'function');
-        methods.forEach(method => {
-            if (!this[method]) {
-                this[method] = StaticRepository[method].bind(StaticRepository);
-            }
-        });
-    }
-    create = (data) => this.StaticRepository.create(data);
-    findById = (id) => this.StaticRepository.findById(id);
-    findMany = (options) => this.StaticRepository.findMany(options);
-    update = (id, data) => this.StaticRepository.update(id, data);
-    delete = (id) => this.StaticRepository.delete(id);
-    count = (where) => this.StaticRepository.count(where);
-}
 function createMockOrderRepository() {
     return {
         create: jest.fn().mockResolvedValue({ id: 'order-1', status: 'pending' }),
@@ -99,15 +81,15 @@ function createMockOrderRepository() {
             deliveredOrders: 0,
             cancelledOrders: 0,
             ordersByStatus: {},
-            revenueByDay: []
+            revenueByDay: [],
         }),
         getDashboardStats: jest.fn().mockResolvedValue({
             todayOrders: 0,
             pendingOrders: 0,
             completedOrders: 0,
             totalRevenue: 0,
-            averageOrderValue: 0
-        })
+            averageOrderValue: 0,
+        }),
     };
 }
 function createMockOrderItemRepository() {
@@ -120,7 +102,7 @@ function createMockOrderItemRepository() {
         count: jest.fn().mockResolvedValue(0),
         findByOrderId: jest.fn().mockResolvedValue([]),
         getPopularItems: jest.fn().mockResolvedValue([]),
-        createMany: jest.fn().mockResolvedValue({ count: 0 })
+        createMany: jest.fn().mockResolvedValue({ count: 0 }),
     };
 }
 function createMockMenuItemRepository() {
@@ -135,7 +117,7 @@ function createMockMenuItemRepository() {
         findBySchoolId: jest.fn().mockResolvedValue({ items: [], total: 0 }),
         findAvailable: jest.fn().mockResolvedValue([]),
         search: jest.fn().mockResolvedValue([]),
-        updateAvailability: jest.fn().mockResolvedValue({ id: 'menu-1', available: true })
+        updateAvailability: jest.fn().mockResolvedValue({ id: 'menu-1', available: true }),
     };
 }
 function createMockUserRepository() {
@@ -153,7 +135,7 @@ function createMockUserRepository() {
         findStudentsByParentId: jest.fn().mockResolvedValue([]),
         findByRole: jest.fn().mockResolvedValue([]),
         updateLastLogin: jest.fn().mockResolvedValue({ id: 'user-1' }),
-        deactivateUser: jest.fn().mockResolvedValue({ id: 'user-1' })
+        deactivateUser: jest.fn().mockResolvedValue({ id: 'user-1' }),
     };
 }
 function createMockPaymentOrderRepository() {
@@ -168,7 +150,7 @@ function createMockPaymentOrderRepository() {
         findByRazorpayOrderId: jest.fn().mockResolvedValue(null),
         findByUserId: jest.fn().mockResolvedValue({ items: [], total: 0 }),
         findExpiredOrders: jest.fn().mockResolvedValue([]),
-        updateStatus: jest.fn().mockResolvedValue({ id: 'payment-1', status: 'captured' })
+        updateStatus: jest.fn().mockResolvedValue({ id: 'payment-1', status: 'captured' }),
     };
 }
 function createMockDatabaseService() {
@@ -182,27 +164,87 @@ function createMockDatabaseService() {
             performance: {},
             tables: [],
             errors: [],
-            timestamp: new Date()
+            timestamp: new Date(),
         }),
-        transaction: jest.fn().mockImplementation((callback) => callback({})),
+        transaction: jest.fn().mockImplementation(callback => callback({})),
         executeRaw: jest.fn().mockResolvedValue({}),
-        sanitizeQuery: jest.fn().mockImplementation((query) => query),
-        user: { findUnique: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn(), delete: jest.fn() },
-        order: { findUnique: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn(), delete: jest.fn() },
-        menuItem: { findUnique: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn(), delete: jest.fn() },
-        orderItem: { findUnique: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn(), delete: jest.fn() },
-        paymentOrder: { findUnique: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn(), delete: jest.fn() },
-        rfidCard: { findUnique: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn(), delete: jest.fn() },
-        rfidReader: { findUnique: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn(), delete: jest.fn() },
-        deliveryVerification: { findUnique: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn(), delete: jest.fn() },
-        notification: { findUnique: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn(), delete: jest.fn() },
-        whatsAppMessage: { findUnique: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn(), delete: jest.fn() }
+        sanitizeQuery: jest.fn().mockImplementation(query => query),
+        user: {
+            findUnique: jest.fn(),
+            findMany: jest.fn(),
+            create: jest.fn(),
+            update: jest.fn(),
+            delete: jest.fn(),
+        },
+        order: {
+            findUnique: jest.fn(),
+            findMany: jest.fn(),
+            create: jest.fn(),
+            update: jest.fn(),
+            delete: jest.fn(),
+        },
+        menuItem: {
+            findUnique: jest.fn(),
+            findMany: jest.fn(),
+            create: jest.fn(),
+            update: jest.fn(),
+            delete: jest.fn(),
+        },
+        orderItem: {
+            findUnique: jest.fn(),
+            findMany: jest.fn(),
+            create: jest.fn(),
+            update: jest.fn(),
+            delete: jest.fn(),
+        },
+        paymentOrder: {
+            findUnique: jest.fn(),
+            findMany: jest.fn(),
+            create: jest.fn(),
+            update: jest.fn(),
+            delete: jest.fn(),
+        },
+        rfidCard: {
+            findUnique: jest.fn(),
+            findMany: jest.fn(),
+            create: jest.fn(),
+            update: jest.fn(),
+            delete: jest.fn(),
+        },
+        rfidReader: {
+            findUnique: jest.fn(),
+            findMany: jest.fn(),
+            create: jest.fn(),
+            update: jest.fn(),
+            delete: jest.fn(),
+        },
+        deliveryVerification: {
+            findUnique: jest.fn(),
+            findMany: jest.fn(),
+            create: jest.fn(),
+            update: jest.fn(),
+            delete: jest.fn(),
+        },
+        notification: {
+            findUnique: jest.fn(),
+            findMany: jest.fn(),
+            create: jest.fn(),
+            update: jest.fn(),
+            delete: jest.fn(),
+        },
+        whatsAppMessage: {
+            findUnique: jest.fn(),
+            findMany: jest.fn(),
+            create: jest.fn(),
+            update: jest.fn(),
+            delete: jest.fn(),
+        },
     };
 }
 function createMockNotificationService() {
     return {
         sendOrderConfirmation: jest.fn().mockResolvedValue(undefined),
-        sendOrderStatusUpdate: jest.fn().mockResolvedValue(undefined)
+        sendOrderStatusUpdate: jest.fn().mockResolvedValue(undefined),
     };
 }
 function createMockPaymentService() {
@@ -211,16 +253,16 @@ function createMockPaymentService() {
             success: true,
             data: {
                 paymentId: 'payment-123',
-                status: 'captured'
-            }
-        })
+                status: 'captured',
+            },
+        }),
     };
 }
 function createMockRedisService() {
     return {
         get: jest.fn().mockResolvedValue(null),
-        set: jest.fn().mockResolvedValue(undefined),
-        del: jest.fn().mockResolvedValue(undefined)
+        set: jest.fn().mockResolvedValue('OK'),
+        del: jest.fn().mockResolvedValue(1),
     };
 }
 let productionContainer = null;

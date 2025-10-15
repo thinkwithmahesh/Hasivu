@@ -32,15 +32,17 @@ const readerSchema = joi_1.default.object({
     schoolId: joi_1.default.string().uuid().required(),
     ipAddress: joi_1.default.string().ip().optional(),
     configuration: joi_1.default.object().optional().default({}),
-    isActive: joi_1.default.boolean().optional().default(true)
+    isActive: joi_1.default.boolean().optional().default(true),
 });
 const updateReaderSchema = joi_1.default.object({
     name: joi_1.default.string().min(3).max(100).optional(),
     location: joi_1.default.string().min(3).max(200).optional(),
     ipAddress: joi_1.default.string().ip().optional(),
     configuration: joi_1.default.object().optional(),
-    status: joi_1.default.string().valid(...Object.values(ReaderStatus)).optional(),
-    isActive: joi_1.default.boolean().optional()
+    status: joi_1.default.string()
+        .valid(...Object.values(ReaderStatus))
+        .optional(),
+    isActive: joi_1.default.boolean().optional(),
 });
 class RFIDHardwareAbstraction {
     static getDefaultConfiguration(vendor) {
@@ -52,63 +54,63 @@ class RFIDHardwareAbstraction {
                     antenna1: { enabled: true, power: 30.0 },
                     antenna2: { enabled: true, power: 30.0 },
                     antenna3: { enabled: false, power: 0 },
-                    antenna4: { enabled: false, power: 0 }
+                    antenna4: { enabled: false, power: 0 },
                 },
                 protocolSettings: {
                     gen2: {
                         session: 'S0',
                         target: 'A',
-                        qValue: 8
-                    }
+                        qValue: 8,
+                    },
                 },
                 filterSettings: {
                     enableFilters: false,
-                    filters: []
-                }
+                    filters: [],
+                },
             },
             [ReaderVendor.IMPINJ]: {
                 readerMode: 'DenseReaderM4',
                 antennas: [
                     { id: 1, enabled: true, txPower: 30.0, rxSensitivity: -70 },
-                    { id: 2, enabled: true, txPower: 30.0, rxSensitivity: -70 }
+                    { id: 2, enabled: true, txPower: 30.0, rxSensitivity: -70 },
                 ],
                 tagReporting: {
                     enableRSSI: true,
                     enablePhase: false,
                     enableDoppler: false,
-                    enablePeakRSSI: true
+                    enablePeakRSSI: true,
                 },
                 searchMode: {
                     type: 'dual_target',
-                    populationEstimate: 32
-                }
+                    populationEstimate: 32,
+                },
             },
             [ReaderVendor.NXP]: {
                 operatingMode: 'continuous',
                 frequency: {
                     region: 'FCC',
-                    channels: 'auto'
+                    channels: 'auto',
                 },
                 readConfiguration: {
                     readRate: 'high',
                     sensitivity: 'medium',
-                    selectivity: 'medium'
+                    selectivity: 'medium',
                 },
                 antennaSettings: {
                     port1: { enabled: true, power: 30 },
-                    port2: { enabled: true, power: 30 }
-                }
+                    port2: { enabled: true, power: 30 },
+                },
             },
             [ReaderVendor.HONEYWELL]: {
                 readMode: 'performance',
                 antennaConfig: {
                     antenna1: { power: 30, enabled: true },
-                    antenna2: { power: 30, enabled: true }
+                    antenna2: { power: 30, enabled: true },
                 },
                 rfSettings: {
                     modulationType: 'DSB-ASK',
-                    dataEncoding: 'FM0'
-                }
+                    dataEncoding: 'FM0',
+                },
             },
             [ReaderVendor.ALIEN]: {
                 acquireMode: 'inventory',
@@ -116,8 +118,8 @@ class RFIDHardwareAbstraction {
                 rfAttenuation: '0',
                 rfLevel: '250',
                 tagListFormat: 'custom',
-                readerName: 'ALR-9900+'
-            }
+                readerName: 'ALR-9900+',
+            },
         };
         return configurations[vendor] || {};
     }
@@ -170,7 +172,7 @@ class RFIDHardwareAbstraction {
             [ReaderVendor.IMPINJ]: 5084,
             [ReaderVendor.NXP]: 4001,
             [ReaderVendor.HONEYWELL]: 2189,
-            [ReaderVendor.ALIEN]: 23
+            [ReaderVendor.ALIEN]: 23,
         };
         const port = config.port || defaultPorts[vendor];
         const protocol = config.protocol || 'tcp';
@@ -198,8 +200,8 @@ async function validateSchool(schoolId) {
             id: true,
             name: true,
             code: true,
-            isActive: true
-        }
+            isActive: true,
+        },
     });
     if (!school) {
         throw new Error('School not found');
@@ -214,20 +216,20 @@ async function getReaderStatistics(readerId) {
     today.setHours(0, 0, 0, 0);
     const [totalVerifications, verificationsToday] = await Promise.all([
         prisma.deliveryVerification.count({
-            where: { readerId }
+            where: { readerId },
         }),
         prisma.deliveryVerification.count({
             where: {
                 readerId,
-                verifiedAt: { gte: today }
-            }
-        })
+                verifiedAt: { gte: today },
+            },
+        }),
     ]);
     return {
         totalVerifications,
         verificationsToday,
         uptime: 99.5,
-        lastError: null
+        lastError: null,
     };
 }
 async function createReaderAuditLog(readerId, action, userId, changes) {
@@ -241,9 +243,9 @@ async function createReaderAuditLog(readerId, action, userId, changes) {
             createdById: userId,
             metadata: JSON.stringify({
                 action: `RFID_READER_${action}`,
-                timestamp: new Date().toISOString()
-            })
-        }
+                timestamp: new Date().toISOString(),
+            }),
+        },
     });
 }
 async function createReader(readerData, userId) {
@@ -252,8 +254,8 @@ async function createReader(readerData, userId) {
         where: {
             name: readerData.name,
             schoolId: readerData.schoolId,
-            isActive: true
-        }
+            isActive: true,
+        },
     });
     if (existingReader) {
         throw new Error(`Reader with name ${readerData.name} already exists in this school`);
@@ -264,15 +266,15 @@ async function createReader(readerData, userId) {
             name: readerData.name,
             location: readerData.location,
             schoolId: readerData.schoolId,
-            ipAddress: readerData.ipAddress || null,
+            ipAddress: readerData.ipAddress || '0.0.0.0',
             status: 'offline',
             isActive: readerData.isActive !== false,
-            configuration: JSON.stringify(mergedConfig)
-        }
+            configuration: JSON.stringify(mergedConfig),
+        },
     });
     await createReaderAuditLog(reader.id, 'CREATE', userId, {
         readerName: reader.name,
-        location: reader.location
+        location: reader.location ?? '',
     });
     let configuration = {};
     try {
@@ -284,7 +286,7 @@ async function createReader(readerData, userId) {
     return {
         id: reader.id,
         name: reader.name,
-        location: reader.location,
+        location: reader.location || '',
         schoolId: reader.schoolId,
         ipAddress: reader.ipAddress || undefined,
         status: reader.status,
@@ -293,12 +295,12 @@ async function createReader(readerData, userId) {
         lastHeartbeat: reader.lastHeartbeat || undefined,
         createdAt: reader.createdAt,
         updatedAt: reader.updatedAt,
-        schoolName: school.name
+        schoolName: school.name,
     };
 }
 async function updateReader(readerId, updateData, userId) {
     const existingReader = await prisma.rFIDReader.findUnique({
-        where: { id: readerId }
+        where: { id: readerId },
     });
     if (!existingReader) {
         throw new Error('Reader not found');
@@ -324,9 +326,9 @@ async function updateReader(readerId, updateData, userId) {
             ...(updateData.status && { status: updateData.status }),
             ...(updateData.isActive !== undefined && { isActive: updateData.isActive }),
             ...(updateData.configuration && {
-                configuration: updatedConfiguration
-            })
-        }
+                configuration: updatedConfiguration,
+            }),
+        },
     });
     await createReaderAuditLog(readerId, 'UPDATE', userId, updateData);
     let configuration = {};
@@ -338,7 +340,7 @@ async function updateReader(readerId, updateData, userId) {
     }
     const school = await prisma.school.findUnique({
         where: { id: updatedReader.schoolId },
-        select: { name: true }
+        select: { name: true },
     });
     return {
         id: updatedReader.id,
@@ -352,13 +354,13 @@ async function updateReader(readerId, updateData, userId) {
         lastHeartbeat: updatedReader.lastHeartbeat || undefined,
         createdAt: updatedReader.createdAt,
         updatedAt: updatedReader.updatedAt,
-        schoolName: school?.name
+        schoolName: school?.name,
     };
 }
 const manageReadersHandler = async (event, context) => {
     const logger = logger_service_1.LoggerService.getInstance();
     const requestId = context.awsRequestId;
-    const httpMethod = event.httpMethod;
+    const { httpMethod } = event;
     try {
         logger.info('RFID reader management request started', { requestId, httpMethod });
         const authenticatedUser = await (0, lambda_auth_middleware_1.authenticateLambda)(event);
@@ -372,15 +374,13 @@ const manageReadersHandler = async (event, context) => {
             case 'DELETE':
                 return await handleDeleteReader(event, requestId, authenticatedUser.user);
             default:
-                return (0, response_utils_1.createErrorResponse)(405, 'Method not allowed');
+                return (0, response_utils_1.createErrorResponse)('METHOD_NOT_ALLOWED', 'Method not allowed', 405);
         }
     }
     catch (error) {
-        logger.error('RFID reader management failed', {
+        logger.error('RFID reader management failed', error instanceof Error ? error : new Error(String(error)), {
             requestId,
             httpMethod,
-            error: error.message,
-            stack: error.stack
         });
         return (0, response_utils_1.handleError)(error, 'Failed to manage RFID reader');
     }
@@ -395,7 +395,7 @@ async function handleCreateReader(event, requestId, authenticatedUser) {
     const { error, value: readerData } = readerSchema.validate(requestBody);
     if (error) {
         logger.warn('Invalid create reader request data', { requestId, error: error.details });
-        return (0, response_utils_1.createErrorResponse)(400, 'Invalid request data', error.details);
+        return (0, response_utils_1.createErrorResponse)('VALIDATION_ERROR', 'Invalid request data', 400, error.details);
     }
     const createReaderData = readerData;
     if (!canManageReaders(authenticatedUser, createReaderData.schoolId)) {
@@ -403,9 +403,9 @@ async function handleCreateReader(event, requestId, authenticatedUser) {
             requestId,
             userId: authenticatedUser.id,
             schoolId: createReaderData.schoolId,
-            userRole: authenticatedUser.role
+            userRole: authenticatedUser.role,
         });
-        return (0, response_utils_1.createErrorResponse)(403, 'Insufficient permissions to manage readers for this school');
+        return (0, response_utils_1.createErrorResponse)('FORBIDDEN', 'Insufficient permissions to manage readers for this school', 403);
     }
     const reader = await createReader(createReaderData, authenticatedUser.id);
     logger.info('RFID reader created successfully', {
@@ -413,31 +413,31 @@ async function handleCreateReader(event, requestId, authenticatedUser) {
         readerId: reader.id,
         readerName: reader.name,
         schoolId: reader.schoolId,
-        createdBy: authenticatedUser.email
+        createdBy: authenticatedUser.email,
     });
     return (0, response_utils_1.createSuccessResponse)({
         message: 'RFID reader created successfully',
-        data: reader
+        data: reader,
     });
 }
 async function handleUpdateReader(event, requestId, authenticatedUser) {
     const logger = logger_service_1.LoggerService.getInstance();
     const readerId = event.pathParameters?.readerId;
     if (!readerId) {
-        return (0, response_utils_1.createErrorResponse)(400, 'Reader ID is required');
+        return (0, response_utils_1.createErrorResponse)('VALIDATION_ERROR', 'Reader ID is required', 400);
     }
     const requestBody = JSON.parse(event.body || '{}');
     const { error, value: updateData } = updateReaderSchema.validate(requestBody);
     if (error) {
         logger.warn('Invalid update reader request data', { requestId, error: error.details });
-        return (0, response_utils_1.createErrorResponse)(400, 'Invalid request data', error.details);
+        return (0, response_utils_1.createErrorResponse)('VALIDATION_ERROR', 'Invalid request data', 400, error.details);
     }
     const existingReader = await prisma.rFIDReader.findUnique({
         where: { id: readerId },
-        select: { schoolId: true }
+        select: { schoolId: true },
     });
     if (!existingReader) {
-        return (0, response_utils_1.createErrorResponse)(404, 'Reader not found');
+        return (0, response_utils_1.createErrorResponse)('NOT_FOUND', 'Reader not found', 404);
     }
     if (!canManageReaders(authenticatedUser, existingReader.schoolId)) {
         logger.warn('Unauthorized reader update attempt', {
@@ -445,19 +445,19 @@ async function handleUpdateReader(event, requestId, authenticatedUser) {
             userId: authenticatedUser.id,
             readerId,
             schoolId: existingReader.schoolId,
-            userRole: authenticatedUser.role
+            userRole: authenticatedUser.role,
         });
-        return (0, response_utils_1.createErrorResponse)(403, 'Insufficient permissions to manage this reader');
+        return (0, response_utils_1.createErrorResponse)('FORBIDDEN', 'Insufficient permissions to manage this reader', 403);
     }
     const reader = await updateReader(readerId, updateData, authenticatedUser.id);
     logger.info('RFID reader updated successfully', {
         requestId,
         readerId: reader.id,
-        updatedBy: authenticatedUser.email
+        updatedBy: authenticatedUser.email,
     });
     return (0, response_utils_1.createSuccessResponse)({
         message: 'RFID reader updated successfully',
-        data: reader
+        data: reader,
     });
 }
 async function handleGetReaders(event, requestId, authenticatedUser) {
@@ -466,13 +466,13 @@ async function handleGetReaders(event, requestId, authenticatedUser) {
     const queryParams = event.queryStringParameters || {};
     if (readerId) {
         const reader = await prisma.rFIDReader.findUnique({
-            where: { id: readerId }
+            where: { id: readerId },
         });
         if (!reader) {
-            return (0, response_utils_1.createErrorResponse)(404, 'Reader not found');
+            return (0, response_utils_1.createErrorResponse)('NOT_FOUND', 'Reader not found', 404);
         }
         if (!canManageReaders(authenticatedUser, reader.schoolId)) {
-            return (0, response_utils_1.createErrorResponse)(403, 'Insufficient permissions to view this reader');
+            return (0, response_utils_1.createErrorResponse)('FORBIDDEN', 'Insufficient permissions to view this reader', 403);
         }
         let configuration = {};
         try {
@@ -487,12 +487,12 @@ async function handleGetReaders(event, requestId, authenticatedUser) {
         }
         const school = await prisma.school.findUnique({
             where: { id: reader.schoolId },
-            select: { name: true }
+            select: { name: true },
         });
         const readerResponse = {
             id: reader.id,
             name: reader.name,
-            location: reader.location,
+            location: reader.location || '',
             schoolId: reader.schoolId,
             ipAddress: reader.ipAddress || undefined,
             status: reader.status,
@@ -502,19 +502,19 @@ async function handleGetReaders(event, requestId, authenticatedUser) {
             createdAt: reader.createdAt,
             updatedAt: reader.updatedAt,
             schoolName: school?.name,
-            statistics
+            statistics,
         };
         return (0, response_utils_1.createSuccessResponse)({
             message: 'Reader retrieved successfully',
-            data: readerResponse
+            data: readerResponse,
         });
     }
     else {
-        const schoolId = queryParams.schoolId;
+        const { schoolId } = queryParams;
         const page = parseInt(queryParams.page || '1');
         const limit = Math.min(parseInt(queryParams.limit || '20'), 100);
         const skip = (page - 1) * limit;
-        let whereClause = { isActive: true };
+        const whereClause = { isActive: true };
         if (['super_admin', 'admin'].includes(authenticatedUser.role)) {
             if (schoolId) {
                 whereClause.schoolId = schoolId;
@@ -528,14 +528,14 @@ async function handleGetReaders(event, requestId, authenticatedUser) {
                 where: whereClause,
                 skip,
                 take: limit,
-                orderBy: { createdAt: 'desc' }
+                orderBy: { createdAt: 'desc' },
             }),
-            prisma.rFIDReader.count({ where: whereClause })
+            prisma.rFIDReader.count({ where: whereClause }),
         ]);
         const schoolIds = [...new Set(readers.map(r => r.schoolId))];
         const schools = await prisma.school.findMany({
             where: { id: { in: schoolIds } },
-            select: { id: true, name: true }
+            select: { id: true, name: true },
         });
         const schoolMap = new Map(schools.map(s => [s.id, s.name]));
         const readerResponses = readers.map(reader => {
@@ -549,7 +549,7 @@ async function handleGetReaders(event, requestId, authenticatedUser) {
             return {
                 id: reader.id,
                 name: reader.name,
-                location: reader.location,
+                location: reader.location || '',
                 schoolId: reader.schoolId,
                 ipAddress: reader.ipAddress || undefined,
                 status: reader.status,
@@ -558,7 +558,7 @@ async function handleGetReaders(event, requestId, authenticatedUser) {
                 lastHeartbeat: reader.lastHeartbeat || undefined,
                 createdAt: reader.createdAt,
                 updatedAt: reader.updatedAt,
-                schoolName: schoolMap.get(reader.schoolId)
+                schoolName: schoolMap.get(reader.schoolId),
             };
         });
         return (0, response_utils_1.createSuccessResponse)({
@@ -568,8 +568,8 @@ async function handleGetReaders(event, requestId, authenticatedUser) {
                 page,
                 limit,
                 total: totalCount,
-                pages: Math.ceil(totalCount / limit)
-            }
+                pages: Math.ceil(totalCount / limit),
+            },
         });
     }
 }
@@ -577,14 +577,14 @@ async function handleDeleteReader(event, requestId, authenticatedUser) {
     const logger = logger_service_1.LoggerService.getInstance();
     const readerId = event.pathParameters?.readerId;
     if (!readerId) {
-        return (0, response_utils_1.createErrorResponse)(400, 'Reader ID is required');
+        return (0, response_utils_1.createErrorResponse)('VALIDATION_ERROR', 'Reader ID is required', 400);
     }
     const existingReader = await prisma.rFIDReader.findUnique({
         where: { id: readerId },
-        select: { schoolId: true, name: true }
+        select: { schoolId: true, name: true },
     });
     if (!existingReader) {
-        return (0, response_utils_1.createErrorResponse)(404, 'Reader not found');
+        return (0, response_utils_1.createErrorResponse)('NOT_FOUND', 'Reader not found', 404);
     }
     if (!canManageReaders(authenticatedUser, existingReader.schoolId)) {
         logger.warn('Unauthorized reader deletion attempt', {
@@ -592,28 +592,28 @@ async function handleDeleteReader(event, requestId, authenticatedUser) {
             userId: authenticatedUser.id,
             readerId,
             schoolId: existingReader.schoolId,
-            userRole: authenticatedUser.role
+            userRole: authenticatedUser.role,
         });
-        return (0, response_utils_1.createErrorResponse)(403, 'Insufficient permissions to delete this reader');
+        return (0, response_utils_1.createErrorResponse)('FORBIDDEN', 'Insufficient permissions to delete this reader', 403);
     }
     await prisma.rFIDReader.update({
         where: { id: readerId },
         data: {
             isActive: false,
-            status: ReaderStatus.OFFLINE
-        }
+            status: ReaderStatus.OFFLINE,
+        },
     });
     await createReaderAuditLog(readerId, 'DELETE', authenticatedUser.id, {
         readerName: existingReader.name,
-        action: 'soft_delete'
+        action: 'soft_delete',
     });
     logger.info('RFID reader deleted successfully', {
         requestId,
         readerId,
-        deletedBy: authenticatedUser.email
+        deletedBy: authenticatedUser.email,
     });
     return (0, response_utils_1.createSuccessResponse)({
-        message: 'RFID reader deleted successfully'
+        message: 'RFID reader deleted successfully',
     });
 }
 //# sourceMappingURL=manage-readers.js.map

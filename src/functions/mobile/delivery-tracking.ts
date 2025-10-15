@@ -6,9 +6,12 @@
  */
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 import { PrismaClient } from '@prisma/client';
-import { LoggerService } from '../shared/logger.service';
+import { logger } from '../../utils/logger';
 import { createSuccessResponse, createErrorResponse, handleError } from '../shared/response.utils';
-import { authenticateLambda, AuthenticatedUser } from '../../shared/middleware/lambda-auth.middleware';
+import {
+  authenticateLambda,
+  AuthenticatedUser,
+} from '../../shared/middleware/lambda-auth.middleware';
 import Joi from 'joi';
 
 // Initialize database client
@@ -20,7 +23,7 @@ const trackingQuerySchema = Joi.object({
   includePrediction: Joi.boolean().optional().default(true),
   dateFrom: Joi.date().optional(),
   dateTo: Joi.date().optional(),
-  status: Joi.string().valid('active', 'completed', 'all').optional().default('all')
+  status: Joi.string().valid('active', 'completed', 'all').optional().default('all'),
 });
 
 // Order tracking interfaces
@@ -135,19 +138,16 @@ async function validateParentAccess(studentId: string, parentUserId: string): Pr
     where: { id: studentId },
     include: {
       school: {
-        select: { id: true, name: true, code: true, isActive: true }
+        select: { id: true, name: true, code: true, isActive: true },
       },
       rfidCards: {
         where: {
           isActive: true,
-          OR: [
-            { expiresAt: null },
-            { expiresAt: { gt: new Date() } }
-          ]
+          OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
         },
-        select: { id: true, cardNumber: true }
-      }
-    }
+        select: { id: true, cardNumber: true },
+      },
+    },
   });
 
   if (!student) {
@@ -167,13 +167,13 @@ async function validateParentAccess(studentId: string, parentUserId: string): Pr
     where: {
       studentId,
       parentId: parentUserId,
-      isActive: true
+      isActive: true,
     },
     include: {
       parent: {
-        select: { id: true, isActive: true }
-      }
-    }
+        select: { id: true, isActive: true },
+      },
+    },
   });
 
   if (!parentRelationship) {
@@ -201,7 +201,7 @@ function generateTrackingSteps(order: any, deliveryVerification?: any): Tracking
     timestamp: order.createdAt,
     completed: true,
     current: false,
-    icon: 'order-placed'
+    icon: 'order-placed',
   };
   steps.push(placedStep);
 
@@ -211,9 +211,11 @@ function generateTrackingSteps(order: any, deliveryVerification?: any): Tracking
     title: 'Order Confirmed',
     description: 'Your order has been confirmed and payment processed',
     timestamp: order.confirmedAt || (order.status === 'confirmed' ? order.updatedAt : undefined),
-    completed: ['confirmed', 'preparing', 'ready', 'out_for_delivery', 'delivered'].includes(order.status),
+    completed: ['confirmed', 'preparing', 'ready', 'out_for_delivery', 'delivered'].includes(
+      order.status
+    ),
     current: order.status === 'confirmed',
-    icon: 'order-confirmed'
+    icon: 'order-confirmed',
   };
   steps.push(confirmedStep);
 
@@ -226,7 +228,7 @@ function generateTrackingSteps(order: any, deliveryVerification?: any): Tracking
       timestamp: order.paidAt,
       completed: true,
       current: false,
-      icon: 'payment-confirmed'
+      icon: 'payment-confirmed',
     };
     steps.push(paymentStep);
   }
@@ -239,7 +241,7 @@ function generateTrackingSteps(order: any, deliveryVerification?: any): Tracking
     timestamp: order.preparingAt || (order.status === 'preparing' ? order.updatedAt : undefined),
     completed: ['preparing', 'ready', 'out_for_delivery', 'delivered'].includes(order.status),
     current: order.status === 'preparing',
-    icon: 'preparing'
+    icon: 'preparing',
   };
 
   if (!preparingStep.completed && order.status === 'confirmed') {
@@ -255,7 +257,7 @@ function generateTrackingSteps(order: any, deliveryVerification?: any): Tracking
     timestamp: order.readyAt || (order.status === 'ready' ? order.updatedAt : undefined),
     completed: ['ready', 'out_for_delivery', 'delivered'].includes(order.status),
     current: order.status === 'ready',
-    icon: 'ready'
+    icon: 'ready',
   };
 
   if (!readyStep.completed && ['confirmed', 'preparing'].includes(order.status)) {
@@ -268,10 +270,11 @@ function generateTrackingSteps(order: any, deliveryVerification?: any): Tracking
     step: 6,
     title: 'Out for Delivery',
     description: 'Your meal is on the way to the delivery location',
-    timestamp: order.outForDeliveryAt || (order.status === 'out_for_delivery' ? order.updatedAt : undefined),
+    timestamp:
+      order.outForDeliveryAt || (order.status === 'out_for_delivery' ? order.updatedAt : undefined),
     completed: ['out_for_delivery', 'delivered'].includes(order.status),
     current: order.status === 'out_for_delivery',
-    icon: 'out-for-delivery'
+    icon: 'out-for-delivery',
   };
 
   if (!outForDeliveryStep.completed && ['confirmed', 'preparing', 'ready'].includes(order.status)) {
@@ -283,13 +286,13 @@ function generateTrackingSteps(order: any, deliveryVerification?: any): Tracking
   const deliveredStep: TrackingStep = {
     step: 7,
     title: 'Delivered',
-    description: deliveryVerification 
+    description: deliveryVerification
       ? `Delivered and verified via RFID at ${deliveryVerification.location}`
       : 'Your meal has been delivered successfully',
     timestamp: order.deliveredAt || deliveryVerification?.verifiedAt,
     completed: order.status === 'delivered',
     current: order.status === 'delivered',
-    icon: 'delivered'
+    icon: 'delivered',
   };
   steps.push(deliveredStep);
 
@@ -299,7 +302,10 @@ function generateTrackingSteps(order: any, deliveryVerification?: any): Tracking
 /**
  * Get detailed order tracking information
  */
-async function getOrderTracking(orderId: string, parentUserId: string): Promise<MobileOrderTracking> {
+async function getOrderTracking(
+  orderId: string,
+  parentUserId: string
+): Promise<MobileOrderTracking> {
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     include: {
@@ -310,15 +316,15 @@ async function getOrderTracking(orderId: string, parentUserId: string): Promise<
           lastName: true,
           role: true,
           grade: true,
-          section: true
-        }
+          section: true,
+        },
       },
       school: {
         select: {
           id: true,
           name: true,
-          code: true
-        }
+          code: true,
+        },
       },
       orderItems: {
         include: {
@@ -327,10 +333,10 @@ async function getOrderTracking(orderId: string, parentUserId: string): Promise<
               id: true,
               name: true,
               category: true,
-              price: true
-            }
-          }
-        }
+              price: true,
+            },
+          },
+        },
       },
       deliveryVerifications: {
         include: {
@@ -338,14 +344,14 @@ async function getOrderTracking(orderId: string, parentUserId: string): Promise<
             select: {
               id: true,
               name: true,
-              location: true
-            }
-          }
+              location: true,
+            },
+          },
         },
         orderBy: { verifiedAt: 'desc' },
-        take: 1
-      }
-    }
+        take: 1,
+      },
+    },
   });
 
   if (!order) {
@@ -365,7 +371,7 @@ async function getOrderTracking(orderId: string, parentUserId: string): Promise<
       location: verification.location || 'School cafeteria',
       readerId: verification.readerId || undefined,
       readerName: verification.reader?.name,
-      readerLocation: verification.reader?.location
+      readerLocation: verification.reader?.location,
     };
   }
 
@@ -399,17 +405,17 @@ async function getOrderTracking(orderId: string, parentUserId: string): Promise<
     where: {
       userId: parentUserId,
       // Note: orderId stored in data JSON field for schema compatibility
-      type: 'order_update'
+      type: 'order_update',
     },
     select: {
       id: true,
       title: true,
       message: true,
       createdAt: true,
-      type: true
+      type: true,
     },
     orderBy: { createdAt: 'desc' },
-    take: 5
+    take: 5,
   });
 
   return {
@@ -426,11 +432,11 @@ async function getOrderTracking(orderId: string, parentUserId: string): Promise<
     currentStep,
     student: {
       id: order.student.id,
-      name: `${order.student.firstName} ${order.student.lastName}`,
-      firstName: order.student.firstName,
-      lastName: order.student.lastName,
+      name: `${order.student.firstName ?? ''} ${order.student.lastName ?? ''}`,
+      firstName: order.student.firstName ?? '',
+      lastName: order.student.lastName ?? '',
       grade: order.student.grade || undefined,
-      section: order.student.section || undefined
+      section: order.student.section || undefined,
     },
     school: order.school,
     deliveryVerification,
@@ -439,15 +445,15 @@ async function getOrderTracking(orderId: string, parentUserId: string): Promise<
       name: item.menuItem.name,
       quantity: item.quantity,
       price: item.unitPrice,
-      category: item.menuItem.category
+      category: item.menuItem.category,
     })),
     notifications: notifications.map(n => ({
       id: n.id,
-      title: n.title,
-      message: n.message,
+      title: n.title ?? '',
+      message: n.message ?? '',
       sentAt: n.createdAt,
-      type: n.type
-    }))
+      type: n.type,
+    })),
   };
 }
 
@@ -455,7 +461,7 @@ async function getOrderTracking(orderId: string, parentUserId: string): Promise<
  * Get student tracking overview for parent
  */
 async function getStudentTrackingOverview(
-  studentId: string, 
+  studentId: string,
   parentUserId: string,
   filters: any
 ): Promise<StudentTrackingOverview> {
@@ -470,15 +476,15 @@ async function getStudentTrackingOverview(
     where: {
       studentId,
       status: { in: ['confirmed', 'preparing', 'ready', 'out_for_delivery'] },
-      deliveryDate: { gte: now }
+      deliveryDate: { gte: now },
     },
     include: {
       student: { select: { id: true, firstName: true, lastName: true, role: true, section: true } },
       school: { select: { id: true, name: true, code: true } },
       orderItems: { include: { menuItem: { select: { name: true, category: true } } } },
-      deliveryVerifications: { take: 1, orderBy: { verifiedAt: 'desc' } }
+      deliveryVerifications: { take: 1, orderBy: { verifiedAt: 'desc' } },
     },
-    orderBy: { deliveryDate: 'asc' }
+    orderBy: { deliveryDate: 'asc' },
   });
 
   // Get recent deliveries (last 30 days)
@@ -486,16 +492,16 @@ async function getStudentTrackingOverview(
     where: {
       studentId,
       status: 'delivered',
-      deliveredAt: { gte: thirtyDaysAgo }
+      deliveredAt: { gte: thirtyDaysAgo },
     },
     include: {
       student: { select: { id: true, firstName: true, lastName: true, role: true, section: true } },
       school: { select: { id: true, name: true, code: true } },
       orderItems: { include: { menuItem: { select: { name: true, category: true } } } },
-      deliveryVerifications: { take: 1, orderBy: { verifiedAt: 'desc' } }
+      deliveryVerifications: { take: 1, orderBy: { verifiedAt: 'desc' } },
     },
     orderBy: { deliveredAt: 'desc' },
-    take: 10
+    take: 10,
   });
 
   // Get upcoming orders (next 7 days)
@@ -504,27 +510,27 @@ async function getStudentTrackingOverview(
     where: {
       studentId,
       deliveryDate: { gte: now, lte: sevenDaysFromNow },
-      status: { in: ['pending', 'confirmed'] }
+      status: { in: ['pending', 'confirmed'] },
     },
     include: {
       student: { select: { id: true, firstName: true, lastName: true, role: true, section: true } },
       school: { select: { id: true, name: true, code: true } },
-      orderItems: { include: { menuItem: { select: { name: true, category: true } } } }
+      orderItems: { include: { menuItem: { select: { name: true, category: true } } } },
     },
-    orderBy: { deliveryDate: 'asc' }
+    orderBy: { deliveryDate: 'asc' },
   });
 
   // Calculate delivery statistics
   const totalOrders = await prisma.order.count({
-    where: { studentId, createdAt: { gte: thirtyDaysAgo } }
+    where: { studentId, createdAt: { gte: thirtyDaysAgo } },
   });
 
   const successfulDeliveries = await prisma.order.count({
-    where: { 
-      studentId, 
+    where: {
+      studentId,
       status: 'delivered',
-      deliveredAt: { gte: thirtyDaysAgo }
-    }
+      deliveredAt: { gte: thirtyDaysAgo },
+    },
   });
 
   // Calculate average delivery time
@@ -532,21 +538,23 @@ async function getStudentTrackingOverview(
     where: {
       studentId,
       status: 'delivered',
-      deliveredAt: { 
+      deliveredAt: {
         gte: thirtyDaysAgo,
-        not: null 
+        not: null,
       },
-      createdAt: { not: null }
     },
-    select: { createdAt: true, deliveredAt: true }
+    select: { createdAt: true, deliveredAt: true },
   });
 
-  const averageDeliveryTime = deliveryTimes.length > 0
-    ? deliveryTimes.reduce((sum, order) => {
-        const diffMs = order.deliveredAt!.getTime() - order.createdAt.getTime();
-        return sum + diffMs;
-      }, 0) / deliveryTimes.length / (1000 * 60) // Convert to minutes
-    : 0;
+  const averageDeliveryTime =
+    deliveryTimes.length > 0
+      ? deliveryTimes.reduce((sum, order) => {
+          const diffMs = order.deliveredAt!.getTime() - order.createdAt.getTime();
+          return sum + diffMs;
+        }, 0) /
+        deliveryTimes.length /
+        (1000 * 60) // Convert to minutes
+      : 0;
 
   // Get favorite items
   const favoriteItems = await prisma.orderItem.groupBy({
@@ -555,25 +563,25 @@ async function getStudentTrackingOverview(
       order: {
         studentId,
         status: 'delivered',
-        deliveredAt: { gte: thirtyDaysAgo }
-      }
+        deliveredAt: { gte: thirtyDaysAgo },
+      },
     },
     _count: { menuItemId: true },
     _sum: { quantity: true },
     orderBy: { _count: { menuItemId: 'desc' } },
-    take: 5
+    take: 5,
   });
 
   const favoriteItemsWithDetails = await Promise.all(
-    favoriteItems.map(async (item) => {
+    favoriteItems.map(async item => {
       const menuItem = await prisma.menuItem.findUnique({
         where: { id: item.menuItemId },
-        select: { name: true, category: true }
+        select: { name: true, category: true },
       });
       return {
         name: menuItem?.name || 'Unknown Item',
         orderCount: item._count.menuItemId,
-        category: menuItem?.category || 'Unknown'
+        category: menuItem?.category || 'Unknown',
       };
     })
   );
@@ -583,7 +591,7 @@ async function getStudentTrackingOverview(
     where: {
       userId: parentUserId,
       // Note: studentId stored in data JSON field for schema compatibility
-      type: 'delivery_update'
+      type: 'delivery_update',
     },
     select: {
       id: true,
@@ -591,10 +599,10 @@ async function getStudentTrackingOverview(
       message: true,
       createdAt: true,
       type: true,
-      readAt: true
+      readAt: true,
     },
     orderBy: { createdAt: 'desc' },
-    take: 10
+    take: 10,
   });
 
   // Convert orders to tracking format
@@ -617,26 +625,28 @@ async function getStudentTrackingOverview(
         currentStep,
         student: {
           id: order.student.id,
-          name: `${order.student.firstName} ${order.student.lastName}`,
-          firstName: order.student.firstName,
-          lastName: order.student.lastName,
+          name: `${order.student.firstName ?? ''} ${order.student.lastName ?? ''}`,
+          firstName: order.student.firstName ?? '',
+          lastName: order.student.lastName ?? '',
           grade: order.student.grade || undefined,
-          section: order.student.section || undefined
+          section: order.student.section || undefined,
         },
         school: order.school,
-        deliveryVerification: deliveryVerification ? {
-          id: deliveryVerification.id,
-          verifiedAt: deliveryVerification.verifiedAt,
-          location: deliveryVerification.location || 'School cafeteria'
-        } : undefined,
+        deliveryVerification: deliveryVerification
+          ? {
+              id: deliveryVerification.id,
+              verifiedAt: deliveryVerification.verifiedAt,
+              location: deliveryVerification.location || 'School cafeteria',
+            }
+          : undefined,
         items: order.orderItems.map((item: any) => ({
           id: item.id,
           name: item.menuItem.name,
           quantity: item.quantity,
           price: item.price,
-          category: item.menuItem.category
+          category: item.menuItem.category,
         })),
-        notifications: []
+        notifications: [],
       };
     });
   };
@@ -648,7 +658,7 @@ async function getStudentTrackingOverview(
       firstName: student.firstName,
       lastName: student.lastName,
       grade: student.grade || undefined,
-      section: student.section || undefined
+      section: student.section || undefined,
     },
     school: student.school,
     activeOrders: convertToTracking(activeOrders),
@@ -658,18 +668,18 @@ async function getStudentTrackingOverview(
       totalOrders,
       successfulDeliveries,
       averageDeliveryTime: Math.round(averageDeliveryTime),
-      lastDeliveryDate: recentDeliveries[0]?.deliveredAt,
-      nextScheduledDelivery: upcomingOrders[0]?.deliveryDate,
-      favoriteItems: favoriteItemsWithDetails
+      lastDeliveryDate: recentDeliveries[0]?.deliveredAt ?? undefined,
+      nextScheduledDelivery: upcomingOrders[0]?.deliveryDate ?? undefined,
+      favoriteItems: favoriteItemsWithDetails,
     },
     notifications: notifications.map(n => ({
       id: n.id,
-      title: n.title,
-      message: n.message,
+      title: n.title ?? '',
+      message: n.message ?? '',
       sentAt: n.createdAt,
       type: n.type,
-      isRead: !!n.readAt
-    }))
+      isRead: !!n.readAt,
+    })),
   };
 }
 
@@ -681,12 +691,12 @@ function canAccessTracking(requestingUser: AuthenticatedUser, targetUserId: stri
   if (['super_admin', 'admin'].includes(requestingUser.role)) {
     return true;
   }
-  
+
   // Parents can only access their own tracking data
   if (requestingUser.role === 'parent' && requestingUser.id === targetUserId) {
     return true;
   }
-  
+
   return false;
 }
 
@@ -697,102 +707,117 @@ export const deliveryTrackingHandler = async (
   event: APIGatewayProxyEvent,
   context: Context
 ): Promise<APIGatewayProxyResult> => {
-  const logger = LoggerService.getInstance();
   const requestId = context.awsRequestId;
   const httpMethod = event.httpMethod;
   const pathParameters = event.pathParameters || {};
-  
+
   try {
     logger.info('Mobile delivery tracking request started', { requestId, httpMethod });
-    
+
     // Authenticate request
-    const authResult = await authenticateLambda(event);
-    
+    const authResult = await authenticateLambda(event as any);
+
     // Check authentication success and extract user
     if (!authResult.success || !authResult.user) {
       logger.warn('Authentication failed', { requestId, error: authResult.error });
-      return createErrorResponse(401, 'Authentication failed');
+      return createErrorResponse('AUTHENTICATION_FAILED', 'Authentication failed', 401);
     }
-    
+
     const authenticatedUser = authResult.user;
-    
+
     // Parse query parameters
     const queryParams = event.queryStringParameters || {};
     const { error, value: filters } = trackingQuerySchema.validate(queryParams);
-    
+
     if (error) {
       logger.warn('Invalid tracking query parameters', { requestId, error: error.details });
-      return createErrorResponse(400, 'Invalid query parameters', error.details);
+      return createErrorResponse(
+        'INVALID_PARAMETERS',
+        'Invalid query parameters',
+        400,
+        error.details
+      );
     }
-    
+
     if (pathParameters.orderId) {
       // Get specific order tracking
       const orderId = pathParameters.orderId;
-      
+
       // For order tracking, we need to verify parent access through the order
       const order = await prisma.order.findUnique({
         where: { id: orderId },
-        select: { studentId: true }
+        select: { studentId: true },
       });
-      
+
       if (!order) {
-        return createErrorResponse(404, 'Order not found');
+        return createErrorResponse('ORDER_NOT_FOUND', 'Order not found', 404);
       }
-      
+
       // Check if user can access this order's tracking data
       if (!canAccessTracking(authenticatedUser, authenticatedUser.id)) {
-        return createErrorResponse(403, 'Insufficient permissions to access tracking data');
+        return createErrorResponse(
+          'INSUFFICIENT_PERMISSIONS',
+          'Insufficient permissions to access tracking data',
+          403
+        );
       }
-      
+
       const tracking = await getOrderTracking(orderId, authenticatedUser.id);
-      
+
       logger.info('Order tracking retrieved', {
         requestId,
         orderId,
-        orderStatus: tracking.status
+        orderStatus: tracking.status,
       });
-      
+
       return createSuccessResponse({
         message: 'Order tracking retrieved successfully',
-        data: tracking
+        data: tracking,
       });
-      
     } else if (pathParameters.studentId) {
       // Get student tracking overview
       const studentId = pathParameters.studentId;
-      
+
       // Check if user can access this student's tracking data
       if (!canAccessTracking(authenticatedUser, authenticatedUser.id)) {
-        return createErrorResponse(403, 'Insufficient permissions to access tracking data');
+        return createErrorResponse(
+          'INSUFFICIENT_PERMISSIONS',
+          'Insufficient permissions to access tracking data',
+          403
+        );
       }
-      
+
       const overview = await getStudentTrackingOverview(studentId, authenticatedUser.id, filters);
-      
+
       logger.info('Student tracking overview retrieved', {
         requestId,
         studentId,
         activeOrdersCount: overview.activeOrders.length,
-        recentDeliveriesCount: overview.recentDeliveries.length
+        recentDeliveriesCount: overview.recentDeliveries.length,
       });
-      
+
       return createSuccessResponse({
         message: 'Student tracking overview retrieved successfully',
-        data: overview
+        data: overview,
       });
-      
     } else {
-      return createErrorResponse(400, 'Either orderId or studentId must be provided in path parameters');
+      return createErrorResponse(
+        'INVALID_REQUEST',
+        'Either orderId or studentId must be provided in path parameters',
+        400
+      );
     }
-    
   } catch (error: any) {
-    logger.error('Mobile delivery tracking failed', {
-      requestId,
-      httpMethod,
-      error: error.message,
-      stack: error.stack
-    });
-    
-    return handleError(error, 'Failed to retrieve delivery tracking information');
+    logger.error(
+      'Mobile delivery tracking failed',
+      error instanceof Error ? error : new Error(String(error)),
+      {
+        requestId,
+        httpMethod,
+      }
+    );
+
+    return handleError(error instanceof Error ? error : new Error(String(error)));
   } finally {
     await prisma.$disconnect();
   }

@@ -1,14 +1,14 @@
-"use client"
+'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Switch } from '@/components/ui/switch'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { cn } from '@/lib/utils'
-import { 
-  Bell, 
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { cn } from '@/lib/utils';
+import {
+  Bell,
   BellOff,
   AlertCircle,
   CheckCircle,
@@ -24,51 +24,51 @@ import {
   Vibrate,
   Smartphone,
   X,
-  Check
-} from 'lucide-react'
+  Check,
+} from 'lucide-react';
 
 // Types for notifications
 interface NotificationSettings {
-  enabled: boolean
-  orders: boolean
-  delivery: boolean
-  wallet: boolean
-  reminders: boolean
-  promotions: boolean
-  emergency: boolean
-  sound: boolean
-  vibration: boolean
+  enabled: boolean;
+  orders: boolean;
+  delivery: boolean;
+  wallet: boolean;
+  reminders: boolean;
+  promotions: boolean;
+  emergency: boolean;
+  sound: boolean;
+  vibration: boolean;
   quietHours: {
-    enabled: boolean
-    start: string
-    end: string
-  }
+    enabled: boolean;
+    start: string;
+    end: string;
+  };
 }
 
 interface PushNotification {
-  id: string
-  title: string
-  body: string
-  icon?: string
-  badge?: string
-  tag: string
-  timestamp: number
-  data?: any
+  id: string;
+  title: string;
+  body: string;
+  icon?: string;
+  badge?: string;
+  tag: string;
+  timestamp: number;
+  data?: any;
   actions?: Array<{
-    action: string
-    title: string
-    icon?: string
-  }>
-  silent: boolean
-  requireInteraction: boolean
-  vibrate?: number[]
+    action: string;
+    title: string;
+    icon?: string;
+  }>;
+  silent: boolean;
+  requireInteraction: boolean;
+  vibrate?: number[];
 }
 
 interface NotificationHistory {
-  id: string
-  notification: PushNotification
-  status: 'delivered' | 'clicked' | 'dismissed'
-  timestamp: number
+  id: string;
+  notification: PushNotification;
+  status: 'delivered' | 'clicked' | 'dismissed';
+  timestamp: number;
 }
 
 // Default notification settings
@@ -85,141 +85,133 @@ const defaultSettings: NotificationSettings = {
   quietHours: {
     enabled: false,
     start: '22:00',
-    end: '07:00'
-  }
-}
+    end: '07:00',
+  },
+};
 
 // Push notification hook
 export const usePushNotifications = () => {
-  const [permission, setPermission] = useState<NotificationPermission>('default')
-  const [subscription, setSubscription] = useState<PushSubscription | null>(null)
-  const [settings, setSettings] = useState<NotificationSettings>(defaultSettings)
-  const [isSupported, setIsSupported] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [history, setHistory] = useState<NotificationHistory[]>([])
+  const [permission, setPermission] = useState<NotificationPermission>('default');
+  const [subscription, setSubscription] = useState<PushSubscription | null>(null);
+  const [settings, setSettings] = useState<NotificationSettings>(defaultSettings);
+  const [isSupported, setIsSupported] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [history, setHistory] = useState<NotificationHistory[]>([]);
 
   // Check browser support
   useEffect(() => {
     const checkSupport = () => {
-      const supported = 
-        'Notification' in window && 
-        'serviceWorker' in navigator && 
-        'PushManager' in window
+      const supported =
+        'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
 
-      setIsSupported(supported)
-      
+      setIsSupported(supported);
+
       if (supported) {
-        setPermission(Notification.permission)
-        loadSettings()
-        loadHistory()
+        setPermission(Notification.permission);
+        loadSettings();
+        loadHistory();
       }
-    }
+    };
 
-    checkSupport()
-  }, [])
+    checkSupport();
+  }, []);
 
   // Load settings from localStorage
   const loadSettings = useCallback(() => {
     try {
-      const stored = localStorage.getItem('hasivu-notification-settings')
+      const stored = localStorage.getItem('hasivu-notification-settings');
       if (stored) {
-        setSettings({ ...defaultSettings, ...JSON.parse(stored) })
+        setSettings({ ...defaultSettings, ...JSON.parse(stored) });
       }
-    } catch (error) {
-      console.error('Failed to load notification settings:', error)
-    }
-  }, [])
+    } catch (error) {}
+  }, []);
 
   // Save settings to localStorage
   const saveSettings = useCallback((newSettings: NotificationSettings) => {
     try {
-      localStorage.setItem('hasivu-notification-settings', JSON.stringify(newSettings))
-      setSettings(newSettings)
-    } catch (error) {
-      console.error('Failed to save notification settings:', error)
-    }
-  }, [])
+      localStorage.setItem('hasivu-notification-settings', JSON.stringify(newSettings));
+      setSettings(newSettings);
+    } catch (error) {}
+  }, []);
 
   // Load notification history
   const loadHistory = useCallback(() => {
     try {
-      const stored = localStorage.getItem('hasivu-notification-history')
+      const stored = localStorage.getItem('hasivu-notification-history');
       if (stored) {
-        const parsed = JSON.parse(stored)
-        setHistory(parsed.slice(-50)) // Keep last 50 notifications
+        const parsed = JSON.parse(stored);
+        setHistory(parsed.slice(-50)); // Keep last 50 notifications
       }
-    } catch (error) {
-      console.error('Failed to load notification history:', error)
-    }
-  }, [])
+    } catch (error) {}
+  }, []);
 
   // Save notification to history
-  const saveToHistory = useCallback((notification: PushNotification, status: 'delivered' | 'clicked' | 'dismissed') => {
-    const historyItem: NotificationHistory = {
-      id: `${notification.id}-${Date.now()}`,
-      notification,
-      status,
-      timestamp: Date.now()
-    }
+  const saveToHistory = useCallback(
+    (notification: PushNotification, status: 'delivered' | 'clicked' | 'dismissed') => {
+      const historyItem: NotificationHistory = {
+        id: `${notification.id}-${Date.now()}`,
+        notification,
+        status,
+        timestamp: Date.now(),
+      };
 
-    setHistory(prev => {
-      const updated = [historyItem, ...prev].slice(0, 50)
-      try {
-        localStorage.setItem('hasivu-notification-history', JSON.stringify(updated))
-      } catch (error) {
-        console.error('Failed to save notification history:', error)
-      }
-      return updated
-    })
-  }, [])
+      setHistory(prev => {
+        const updated = [historyItem, ...prev].slice(0, 50);
+        try {
+          localStorage.setItem('hasivu-notification-history', JSON.stringify(updated));
+        } catch (error) {}
+        return updated;
+      });
+    },
+    []
+  );
 
   // Request permission
   const requestPermission = useCallback(async () => {
-    if (!isSupported) return false
+    if (!isSupported) return false;
 
-    setIsLoading(true)
-    
+    setIsLoading(true);
+
     try {
-      const result = await Notification.requestPermission()
-      setPermission(result)
-      
+      const result = await Notification.requestPermission();
+      setPermission(result);
+
       if (result === 'granted') {
         // Update settings
-        saveSettings({ ...settings, enabled: true })
+        saveSettings({ ...settings, enabled: true });
       }
-      
-      return result === 'granted'
+
+      return result === 'granted';
     } catch (error) {
-      console.error('Permission request failed:', error)
-      return false
+      return false;
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }, [isSupported, settings, saveSettings])
+  }, [isSupported, settings, saveSettings]);
 
   // Subscribe to push notifications
   const subscribe = useCallback(async () => {
-    if (!isSupported || permission !== 'granted') return null
+    if (!isSupported || permission !== 'granted') return null;
 
-    setIsLoading(true)
+    setIsLoading(true);
 
     try {
-      const registration = await navigator.serviceWorker.ready
-      
+      const registration = await navigator.serviceWorker.ready;
+
       // Check if already subscribed
-      const existingSubscription = await registration.pushManager.getSubscription()
+      const existingSubscription = await registration.pushManager.getSubscription();
       if (existingSubscription) {
-        setSubscription(existingSubscription)
-        return existingSubscription
+        setSubscription(existingSubscription);
+        return existingSubscription;
       }
 
       // Create new subscription
       const newSubscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
-      })
+        applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+      });
 
-      setSubscription(newSubscription)
+      setSubscription(newSubscription);
 
       // Send subscription to server
       await fetch('/api/v1/notifications/subscribe', {
@@ -229,28 +221,27 @@ export const usePushNotifications = () => {
         },
         body: JSON.stringify({
           subscription: newSubscription.toJSON(),
-          settings
-        })
-      })
+          settings,
+        }),
+      });
 
-      return newSubscription
+      return newSubscription;
     } catch (error) {
-      console.error('Push subscription failed:', error)
-      return null
+      return null;
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }, [isSupported, permission, settings])
+  }, [isSupported, permission, settings]);
 
   // Unsubscribe from push notifications
   const unsubscribe = useCallback(async () => {
-    if (!subscription) return false
+    if (!subscription) return false;
 
-    setIsLoading(true)
+    setIsLoading(true);
 
     try {
-      await subscription.unsubscribe()
-      setSubscription(null)
+      await subscription.unsubscribe();
+      setSubscription(null);
 
       // Notify server
       await fetch('/api/v1/notifications/unsubscribe', {
@@ -259,104 +250,106 @@ export const usePushNotifications = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          endpoint: subscription.endpoint
-        })
-      })
+          endpoint: subscription.endpoint,
+        }),
+      });
 
       // Update settings
-      saveSettings({ ...settings, enabled: false })
+      saveSettings({ ...settings, enabled: false });
 
-      return true
+      return true;
     } catch (error) {
-      console.error('Push unsubscription failed:', error)
-      return false
+      return false;
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }, [subscription, settings, saveSettings])
+  }, [subscription, settings, saveSettings]);
 
   // Update notification settings
-  const updateSettings = useCallback(async (newSettings: Partial<NotificationSettings>) => {
-    const updated = { ...settings, ...newSettings }
-    saveSettings(updated)
+  const updateSettings = useCallback(
+    async (newSettings: Partial<NotificationSettings>) => {
+      const updated = { ...settings, ...newSettings };
+      saveSettings(updated);
 
-    // If subscribed, update server settings
-    if (subscription) {
-      try {
-        await fetch('/api/v1/notifications/settings', {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            endpoint: subscription.endpoint,
-            settings: updated
-          })
-        })
-      } catch (error) {
-        console.error('Failed to update server settings:', error)
+      // If subscribed, update server settings
+      if (subscription) {
+        try {
+          await fetch('/api/v1/notifications/settings', {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              endpoint: subscription.endpoint,
+              settings: updated,
+            }),
+          });
+        } catch (error) {}
       }
-    }
-  }, [settings, subscription, saveSettings])
+    },
+    [settings, subscription, saveSettings]
+  );
 
   // Show local notification (for testing)
-  const showLocalNotification = useCallback(async (notification: Partial<PushNotification>) => {
-    if (permission !== 'granted') return false
+  const showLocalNotification = useCallback(
+    async (notification: Partial<PushNotification>) => {
+      if (permission !== 'granted') return false;
 
-    try {
-      const notif = new Notification(notification.title || 'HASIVU Notification', {
-        body: notification.body || '',
-        icon: notification.icon || '/icons/icon-192x192.png',
-        badge: notification.badge || '/icons/badge-72x72.png',
-        tag: notification.tag || 'hasivu-local',
-        data: notification.data,
-        requireInteraction: notification.requireInteraction || false,
-        silent: notification.silent || false,
-        vibrate: notification.vibrate || (settings.vibration ? [100, 50, 100] : [])
-      })
+      try {
+        const notif = new Notification(notification.title || 'HASIVU Notification', {
+          body: notification.body || '',
+          icon: notification.icon || '/icons/icon-192x192.png',
+          badge: notification.badge || '/icons/badge-72x72.png',
+          tag: notification.tag || 'hasivu-local',
+          data: notification.data,
+          requireInteraction: notification.requireInteraction || false,
+          silent: notification.silent || false,
+          vibrate: notification.vibrate || (settings.vibration ? [100, 50, 100] : []),
+        });
 
-      // Handle notification events
-      notif.onclick = (event) => {
-        event.preventDefault()
-        notif.close()
-        
-        // Handle notification click
-        if (notification.data?.url) {
-          window.focus()
-          window.location.href = notification.data.url
-        }
-        
-        saveToHistory(notification as PushNotification, 'clicked')
+        // Handle notification events
+        notif.onclick = event => {
+          event.preventDefault();
+          notif.close();
+
+          // Handle notification click
+          if (notification.data?.url) {
+            window.focus();
+            window.location.href = notification.data.url;
+          }
+
+          saveToHistory(notification as PushNotification, 'clicked');
+        };
+
+        notif.onclose = () => {
+          saveToHistory(notification as PushNotification, 'dismissed');
+        };
+
+        saveToHistory(notification as PushNotification, 'delivered');
+
+        return true;
+      } catch (error) {
+        return false;
       }
-
-      notif.onclose = () => {
-        saveToHistory(notification as PushNotification, 'dismissed')
-      }
-
-      saveToHistory(notification as PushNotification, 'delivered')
-
-      return true
-    } catch (error) {
-      console.error('Local notification failed:', error)
-      return false
-    }
-  }, [permission, settings.vibration, saveToHistory])
+    },
+    [permission, settings.vibration, saveToHistory]
+  );
 
   // Check if in quiet hours
   const isInQuietHours = useCallback(() => {
-    if (!settings.quietHours.enabled) return false
+    if (!settings.quietHours.enabled) return false;
 
-    const now = new Date()
-    const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`
-    
-    const { start, end } = settings.quietHours
-    
+    const now = new Date();
+    const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+
+    const { start, end } = settings.quietHours;
+
     if (start <= end) {
-      return currentTime >= start && currentTime <= end
+      return currentTime >= start && currentTime <= end;
     } else {
-      return currentTime >= start || currentTime <= end
+      return currentTime >= start || currentTime <= end;
     }
-  }, [settings.quietHours])
+  }, [settings.quietHours]);
 
   return {
     isSupported,
@@ -370,13 +363,13 @@ export const usePushNotifications = () => {
     unsubscribe,
     updateSettings,
     showLocalNotification,
-    isInQuietHours
-  }
-}
+    isInQuietHours,
+  };
+};
 
 // Notification Settings Component
 interface NotificationSettingsProps {
-  className?: string
+  className?: string;
 }
 
 export const NotificationSettings: React.FC<NotificationSettingsProps> = ({ className }) => {
@@ -389,47 +382,45 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({ clas
     requestPermission,
     subscribe,
     unsubscribe,
-    updateSettings
-  } = usePushNotifications()
+    updateSettings,
+  } = usePushNotifications();
 
   const handleToggleNotifications = async () => {
     if (subscription) {
-      await unsubscribe()
+      await unsubscribe();
     } else {
       if (permission !== 'granted') {
-        const granted = await requestPermission()
-        if (!granted) return
+        const granted = await requestPermission();
+        if (!granted) return;
       }
-      await subscribe()
+      await subscribe();
     }
-  }
+  };
 
   const handleSettingChange = (key: keyof NotificationSettings, value: boolean) => {
-    updateSettings({ [key]: value })
-  }
+    updateSettings({ [key]: value });
+  };
 
   const handleQuietHoursChange = (field: 'enabled' | 'start' | 'end', value: boolean | string) => {
     updateSettings({
       quietHours: {
         ...settings.quietHours,
-        [field]: value
-      }
-    })
-  }
+        [field]: value,
+      },
+    });
+  };
 
   if (!isSupported) {
     return (
       <Alert className={className}>
         <AlertCircle className="h-4 w-4" />
-        <AlertDescription>
-          Push notifications are not supported in this browser.
-        </AlertDescription>
+        <AlertDescription>Push notifications are not supported in this browser.</AlertDescription>
       </Alert>
-    )
+    );
   }
 
   return (
-    <Card className={cn("p-6", className)}>
+    <Card className={cn('p-6', className)}>
       <div className="space-y-6">
         {/* Main Toggle */}
         <div className="flex items-center justify-between">
@@ -441,23 +432,21 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({ clas
             )}
             <div>
               <h3 className="font-semibold">Push Notifications</h3>
-              <p className="text-sm text-gray-600">
-                {subscription ? 'Enabled' : 'Disabled'}
-              </p>
+              <p className="text-sm text-gray-600">{subscription ? 'Enabled' : 'Disabled'}</p>
             </div>
           </div>
-          
+
           <Button
             onClick={handleToggleNotifications}
             disabled={isLoading}
-            variant={subscription ? "destructive" : "default"}
+            variant={subscription ? 'destructive' : 'default'}
           >
             {isLoading ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             ) : subscription ? (
-              "Disable"
+              'Disable'
             ) : (
-              "Enable"
+              'Enable'
             )}
           </Button>
         </div>
@@ -466,7 +455,8 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({ clas
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              Notifications are blocked. Please enable them in your browser settings and refresh the page.
+              Notifications are blocked. Please enable them in your browser settings and refresh the
+              page.
             </AlertDescription>
           </Alert>
         )}
@@ -475,19 +465,21 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({ clas
         {subscription && (
           <div className="space-y-4">
             <h4 className="font-medium">Notification Types</h4>
-            
+
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <ShoppingCart className="h-4 w-4 text-blue-600" />
                   <div>
                     <div className="text-sm font-medium">Order Updates</div>
-                    <div className="text-xs text-gray-600">Order confirmation, preparation, ready for pickup</div>
+                    <div className="text-xs text-gray-600">
+                      Order confirmation, preparation, ready for pickup
+                    </div>
                   </div>
                 </div>
                 <Switch
                   checked={settings.orders}
-                  onCheckedChange={(checked) => handleSettingChange('orders', checked)}
+                  onCheckedChange={checked => handleSettingChange('orders', checked)}
                 />
               </div>
 
@@ -496,12 +488,14 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({ clas
                   <MapPin className="h-4 w-4 text-green-600" />
                   <div>
                     <div className="text-sm font-medium">Delivery Tracking</div>
-                    <div className="text-xs text-gray-600">Live delivery updates and location sharing</div>
+                    <div className="text-xs text-gray-600">
+                      Live delivery updates and location sharing
+                    </div>
                   </div>
                 </div>
                 <Switch
                   checked={settings.delivery}
-                  onCheckedChange={(checked) => handleSettingChange('delivery', checked)}
+                  onCheckedChange={checked => handleSettingChange('delivery', checked)}
                 />
               </div>
 
@@ -510,12 +504,14 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({ clas
                   <Wallet className="h-4 w-4 text-purple-600" />
                   <div>
                     <div className="text-sm font-medium">Wallet & Payments</div>
-                    <div className="text-xs text-gray-600">Low balance alerts, payment confirmations</div>
+                    <div className="text-xs text-gray-600">
+                      Low balance alerts, payment confirmations
+                    </div>
                   </div>
                 </div>
                 <Switch
                   checked={settings.wallet}
-                  onCheckedChange={(checked) => handleSettingChange('wallet', checked)}
+                  onCheckedChange={checked => handleSettingChange('wallet', checked)}
                 />
               </div>
 
@@ -529,7 +525,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({ clas
                 </div>
                 <Switch
                   checked={settings.reminders}
-                  onCheckedChange={(checked) => handleSettingChange('reminders', checked)}
+                  onCheckedChange={checked => handleSettingChange('reminders', checked)}
                 />
               </div>
 
@@ -538,12 +534,14 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({ clas
                   <MessageSquare className="h-4 w-4 text-pink-600" />
                   <div>
                     <div className="text-sm font-medium">Promotions</div>
-                    <div className="text-xs text-gray-600">Special offers, discounts, new menu items</div>
+                    <div className="text-xs text-gray-600">
+                      Special offers, discounts, new menu items
+                    </div>
                   </div>
                 </div>
                 <Switch
                   checked={settings.promotions}
-                  onCheckedChange={(checked) => handleSettingChange('promotions', checked)}
+                  onCheckedChange={checked => handleSettingChange('promotions', checked)}
                 />
               </div>
 
@@ -557,7 +555,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({ clas
                 </div>
                 <Switch
                   checked={settings.emergency}
-                  onCheckedChange={(checked) => handleSettingChange('emergency', checked)}
+                  onCheckedChange={checked => handleSettingChange('emergency', checked)}
                   disabled // Emergency alerts should always be enabled
                 />
               </div>
@@ -569,7 +567,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({ clas
         {subscription && (
           <div className="space-y-4">
             <h4 className="font-medium">Sound & Vibration</h4>
-            
+
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
@@ -578,7 +576,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({ clas
                 </div>
                 <Switch
                   checked={settings.sound}
-                  onCheckedChange={(checked) => handleSettingChange('sound', checked)}
+                  onCheckedChange={checked => handleSettingChange('sound', checked)}
                 />
               </div>
 
@@ -589,7 +587,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({ clas
                 </div>
                 <Switch
                   checked={settings.vibration}
-                  onCheckedChange={(checked) => handleSettingChange('vibration', checked)}
+                  onCheckedChange={checked => handleSettingChange('vibration', checked)}
                 />
               </div>
             </div>
@@ -600,13 +598,13 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({ clas
         {subscription && (
           <div className="space-y-4">
             <h4 className="font-medium">Quiet Hours</h4>
-            
+
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm">Enable quiet hours</span>
                 <Switch
                   checked={settings.quietHours.enabled}
-                  onCheckedChange={(checked) => handleQuietHoursChange('enabled', checked)}
+                  onCheckedChange={checked => handleQuietHoursChange('enabled', checked)}
                 />
               </div>
 
@@ -617,7 +615,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({ clas
                     <input
                       type="time"
                       value={settings.quietHours.start}
-                      onChange={(e) => handleQuietHoursChange('start', e.target.value)}
+                      onChange={e => handleQuietHoursChange('start', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                     />
                   </div>
@@ -626,7 +624,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({ clas
                     <input
                       type="time"
                       value={settings.quietHours.end}
-                      onChange={(e) => handleQuietHoursChange('end', e.target.value)}
+                      onChange={e => handleQuietHoursChange('end', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                     />
                   </div>
@@ -637,90 +635,82 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({ clas
         )}
       </div>
     </Card>
-  )
-}
+  );
+};
 
 // Notification History Component
 interface NotificationHistoryProps {
-  className?: string
-  limit?: number
+  className?: string;
+  limit?: number;
 }
 
-export const NotificationHistory: React.FC<NotificationHistoryProps> = ({ 
-  className, 
-  limit = 10 
+export const NotificationHistory: React.FC<NotificationHistoryProps> = ({
+  className,
+  limit = 10,
 }) => {
-  const { history } = usePushNotifications()
+  const { history } = usePushNotifications();
 
   const getStatusIcon = (status: NotificationHistory['status']) => {
     switch (status) {
       case 'delivered':
-        return <Bell className="h-4 w-4 text-blue-500" />
+        return <Bell className="h-4 w-4 text-blue-500" />;
       case 'clicked':
-        return <CheckCircle className="h-4 w-4 text-green-500" />
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
       case 'dismissed':
-        return <X className="h-4 w-4 text-gray-500" />
+        return <X className="h-4 w-4 text-gray-500" />;
       default:
-        return <Bell className="h-4 w-4 text-gray-500" />
+        return <Bell className="h-4 w-4 text-gray-500" />;
     }
-  }
+  };
 
   const getStatusColor = (status: NotificationHistory['status']) => {
     switch (status) {
       case 'delivered':
-        return 'bg-blue-50 text-blue-800'
+        return 'bg-blue-50 text-blue-800';
       case 'clicked':
-        return 'bg-green-50 text-green-800'
+        return 'bg-green-50 text-green-800';
       case 'dismissed':
-        return 'bg-gray-50 text-gray-800'
+        return 'bg-gray-50 text-gray-800';
       default:
-        return 'bg-gray-50 text-gray-800'
+        return 'bg-gray-50 text-gray-800';
     }
-  }
+  };
 
-  const displayHistory = history.slice(0, limit)
+  const displayHistory = history.slice(0, limit);
 
   if (displayHistory.length === 0) {
     return (
-      <Card className={cn("p-6", className)}>
+      <Card className={cn('p-6', className)}>
         <div className="text-center text-gray-500">
           <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
           <p className="text-sm">No notification history</p>
         </div>
       </Card>
-    )
+    );
   }
 
   return (
-    <Card className={cn("p-4", className)}>
+    <Card className={cn('p-4', className)}>
       <h3 className="font-semibold mb-4">Recent Notifications</h3>
-      
+
       <div className="space-y-3">
-        {displayHistory.map((item) => (
+        {displayHistory.map(item => (
           <div key={item.id} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
-            <div className="flex-shrink-0">
-              {getStatusIcon(item.status)}
-            </div>
-            
+            <div className="flex-shrink-0">{getStatusIcon(item.status)}</div>
+
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between">
-                <h4 className="text-sm font-medium truncate">
-                  {item.notification.title}
-                </h4>
-                <Badge className={cn("text-xs", getStatusColor(item.status))}>
-                  {item.status}
-                </Badge>
+                <h4 className="text-sm font-medium truncate">{item.notification.title}</h4>
+                <Badge className={cn('text-xs', getStatusColor(item.status))}>{item.status}</Badge>
               </div>
-              
-              <p className="text-sm text-gray-600 mt-1">
-                {item.notification.body}
-              </p>
-              
+
+              <p className="text-sm text-gray-600 mt-1">{item.notification.body}</p>
+
               <div className="flex items-center justify-between mt-2">
                 <span className="text-xs text-gray-500">
                   {new Date(item.timestamp).toLocaleString()}
                 </span>
-                
+
                 {item.notification.tag && (
                   <Badge variant="outline" className="text-xs">
                     {item.notification.tag}
@@ -731,7 +721,7 @@ export const NotificationHistory: React.FC<NotificationHistoryProps> = ({
           </div>
         ))}
       </div>
-      
+
       {history.length > limit && (
         <div className="text-center mt-4">
           <Button variant="ghost" size="sm">
@@ -740,17 +730,17 @@ export const NotificationHistory: React.FC<NotificationHistoryProps> = ({
         </div>
       )}
     </Card>
-  )
-}
+  );
+};
 
 // Test Notification Component
 interface TestNotificationProps {
-  className?: string
+  className?: string;
 }
 
 export const TestNotification: React.FC<TestNotificationProps> = ({ className }) => {
-  const { showLocalNotification, subscription } = usePushNotifications()
-  const [isLoading, setIsLoading] = useState(false)
+  const { showLocalNotification, subscription } = usePushNotifications();
+  const [isLoading, setIsLoading] = useState(false);
 
   const testNotifications = [
     {
@@ -759,47 +749,46 @@ export const TestNotification: React.FC<TestNotificationProps> = ({ className })
       tag: 'order-ready',
       data: { orderId: '1234', url: '/orders/1234' },
       requireInteraction: true,
-      vibrate: [200, 100, 200]
+      vibrate: [200, 100, 200],
     },
     {
       title: 'Delivery Update',
       body: 'Your meal delivery is 5 minutes away. Please be ready!',
       tag: 'delivery-update',
       data: { deliveryId: 'del456', url: '/delivery/del456' },
-      vibrate: [100, 50, 100]
+      vibrate: [100, 50, 100],
     },
     {
       title: 'Low Wallet Balance',
       body: 'Your wallet balance is low (₹25). Please top up to continue ordering.',
       tag: 'wallet-balance',
       data: { balance: 25, url: '/wallet' },
-      vibrate: [50]
+      vibrate: [50],
     },
     {
       title: 'Lunch Reminder',
       body: "Don't forget to order your lunch! Today's special: Butter Chicken Rice.",
       tag: 'meal-reminder',
       data: { url: '/menu' },
-      silent: true
-    }
-  ]
+      silent: true,
+    },
+  ];
 
   const handleTestNotification = async (notification: any) => {
-    if (!subscription) return
+    if (!subscription) return;
 
-    setIsLoading(true)
-    
+    setIsLoading(true);
+
     try {
       await showLocalNotification({
         ...notification,
-        id: `test-${Date.now()}`
-      })
+        id: `test-${Date.now()}`,
+      });
     } catch (error) {
-      console.error('Test notification failed:', error)
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   if (!subscription) {
     return (
@@ -809,13 +798,13 @@ export const TestNotification: React.FC<TestNotificationProps> = ({ className })
           Enable push notifications to test notification delivery.
         </AlertDescription>
       </Alert>
-    )
+    );
   }
 
   return (
-    <Card className={cn("p-4", className)}>
+    <Card className={cn('p-4', className)}>
       <h3 className="font-semibold mb-4">Test Notifications</h3>
-      
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {testNotifications.map((notification, index) => (
           <Button
@@ -828,13 +817,11 @@ export const TestNotification: React.FC<TestNotificationProps> = ({ className })
           >
             <div>
               <div className="font-medium text-sm">{notification.title}</div>
-              <div className="text-xs text-gray-600 mt-1">
-                {notification.body.slice(0, 50)}...
-              </div>
+              <div className="text-xs text-gray-600 mt-1">{notification.body.slice(0, 50)}...</div>
             </div>
           </Button>
         ))}
       </div>
     </Card>
-  )
-}
+  );
+};

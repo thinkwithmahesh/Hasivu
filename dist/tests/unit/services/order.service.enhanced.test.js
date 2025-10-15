@@ -4,12 +4,10 @@ const order_service_enhanced_1 = require("../../../src/services/order.service.en
 const ServiceContainer_1 = require("../../../src/container/ServiceContainer");
 describe('EnhancedOrderService', () => {
     let orderService;
-    let container;
     let mockContainer;
     beforeEach(() => {
-        container = (0, ServiceContainer_1.getTestContainer)();
-        mockContainer = container;
-        orderService = new order_service_enhanced_1.EnhancedOrderService(container);
+        mockContainer = (0, ServiceContainer_1.getTestContainer)();
+        orderService = order_service_enhanced_1.EnhancedOrderService.getInstance();
         jest.clearAllMocks();
     });
     describe('createOrder', () => {
@@ -65,9 +63,9 @@ describe('EnhancedOrderService', () => {
             mockContainer.orderItemRepository.createMany.mockResolvedValue({
                 count: 1
             });
-            mockContainer.redisService.del.mockResolvedValue();
-            mockContainer.notificationService.sendOrderConfirmation.mockResolvedValue();
-            const result = await orderService.createOrder(validOrderInput);
+            mockContainer.redisService.del.mockImplementation(() => Promise.resolve());
+            mockContainer.notificationService.sendOrderConfirmation.mockImplementation(() => Promise.resolve());
+            const result = await order_service_enhanced_1.EnhancedOrderService.createOrder(validOrderInput);
             expect(result.success).toBe(true);
             expect(result.data).toEqual(mockOrder);
             expect(mockContainer.menuItemRepository.findMany).toHaveBeenCalledWith({
@@ -94,7 +92,7 @@ describe('EnhancedOrderService', () => {
                 items: [],
                 total: 0
             });
-            const result = await orderService.createOrder(validOrderInput);
+            const result = await order_service_enhanced_1.EnhancedOrderService.createOrder(validOrderInput);
             expect(result.success).toBe(false);
             expect(result.error?.code).toBe('ITEMS_UNAVAILABLE');
             expect(result.error?.message).toContain('Menu items not available');
@@ -106,7 +104,7 @@ describe('EnhancedOrderService', () => {
                 ...validOrderInput,
                 deliveryDate: new Date(Date.now() - 86400000)
             };
-            const result = await orderService.createOrder(invalidInput);
+            const result = await order_service_enhanced_1.EnhancedOrderService.createOrder(invalidInput);
             expect(result.success).toBe(false);
             expect(result.error?.code).toBe('INVALID_DELIVERY_DATE');
             expect(mockContainer.menuItemRepository.findMany).not.toHaveBeenCalled();
@@ -116,7 +114,7 @@ describe('EnhancedOrderService', () => {
                 ...validOrderInput,
                 deliveryDate: new Date(Date.now() + 3600000)
             };
-            const result = await orderService.createOrder(cutoffInput);
+            const result = await order_service_enhanced_1.EnhancedOrderService.createOrder(cutoffInput);
             expect(result.success).toBe(false);
             expect(result.error?.code).toBe('ORDER_CUTOFF_PASSED');
         });
@@ -145,7 +143,7 @@ describe('EnhancedOrderService', () => {
             mockContainer.userRepository.findById.mockResolvedValue({
                 id: 'student-123'
             });
-            const result = await orderService.createOrder(invalidQuantityInput);
+            const result = await order_service_enhanced_1.EnhancedOrderService.createOrder(invalidQuantityInput);
             expect(result.success).toBe(false);
             expect(result.error?.code).toBe('QUANTITY_EXCEEDED');
             expect(result.error?.message).toContain('exceeds maximum allowed');
@@ -173,8 +171,8 @@ describe('EnhancedOrderService', () => {
             });
             mockContainer.menuItemRepository.findById.mockResolvedValue(mockMenuItem);
             mockContainer.redisService.get.mockResolvedValue(existingCart);
-            mockContainer.redisService.set.mockResolvedValue();
-            const result = await orderService.addToCart(validCartInput);
+            mockContainer.redisService.set.mockImplementation(() => Promise.resolve());
+            const result = await order_service_enhanced_1.EnhancedOrderService.addToCart(validCartInput);
             expect(result.success).toBe(true);
             expect(result.data?.items).toHaveLength(1);
             expect(result.data?.items[0].menuItemId).toBe('menu-item-123');
@@ -186,7 +184,7 @@ describe('EnhancedOrderService', () => {
         });
         it('should return error when menu item is not available', async () => {
             mockContainer.menuItemRepository.findById.mockResolvedValue(null);
-            const result = await orderService.addToCart(validCartInput);
+            const result = await order_service_enhanced_1.EnhancedOrderService.addToCart(validCartInput);
             expect(result.success).toBe(false);
             expect(result.error?.code).toBe('ITEM_UNAVAILABLE');
             expect(mockContainer.redisService.get).not.toHaveBeenCalled();
@@ -204,7 +202,7 @@ describe('EnhancedOrderService', () => {
                 available: true
             };
             mockContainer.menuItemRepository.findById.mockResolvedValue(mockMenuItem);
-            const result = await orderService.addToCart(invalidCartInput);
+            const result = await order_service_enhanced_1.EnhancedOrderService.addToCart(invalidCartInput);
             expect(result.success).toBe(false);
             expect(result.error?.code).toBe('QUANTITY_EXCEEDED');
         });
@@ -228,8 +226,8 @@ describe('EnhancedOrderService', () => {
             });
             mockContainer.menuItemRepository.findById.mockResolvedValue(mockMenuItem);
             mockContainer.redisService.get.mockResolvedValue(existingCart);
-            mockContainer.redisService.set.mockResolvedValue();
-            const result = await orderService.addToCart(validCartInput);
+            mockContainer.redisService.set.mockImplementation(() => Promise.resolve());
+            const result = await order_service_enhanced_1.EnhancedOrderService.addToCart(validCartInput);
             expect(result.success).toBe(true);
             expect(result.data?.items).toHaveLength(1);
             expect(result.data?.items[0].quantity).toBe(3);
@@ -240,7 +238,7 @@ describe('EnhancedOrderService', () => {
     describe('getCart', () => {
         it('should return null for non-existent cart', async () => {
             mockContainer.redisService.get.mockResolvedValue(null);
-            const result = await orderService.getCart('student-123');
+            const result = await order_service_enhanced_1.EnhancedOrderService.getCart('student-123');
             expect(result.success).toBe(true);
             expect(result.data).toBeNull();
         });
@@ -256,7 +254,7 @@ describe('EnhancedOrderService', () => {
                 expiresAt: new Date(Date.now() + 3600000)
             };
             mockContainer.redisService.get.mockResolvedValue(JSON.stringify(cartData));
-            const result = await orderService.getCart('student-123');
+            const result = await order_service_enhanced_1.EnhancedOrderService.getCart('student-123');
             expect(result.success).toBe(true);
             expect(result.data?.items).toHaveLength(1);
             expect(result.data?.totalAmount).toBe(700.00);
@@ -269,8 +267,8 @@ describe('EnhancedOrderService', () => {
                 expiresAt: new Date(Date.now() - 1000)
             };
             mockContainer.redisService.get.mockResolvedValue(JSON.stringify(expiredCartData));
-            mockContainer.redisService.del.mockResolvedValue();
-            const result = await orderService.getCart('student-123');
+            mockContainer.redisService.del.mockImplementation(() => Promise.resolve());
+            const result = await order_service_enhanced_1.EnhancedOrderService.getCart('student-123');
             expect(result.success).toBe(true);
             expect(result.data).toBeNull();
             expect(mockContainer.redisService.del).toHaveBeenCalledWith('cart:student-123');
@@ -278,13 +276,13 @@ describe('EnhancedOrderService', () => {
     });
     describe('clearCart', () => {
         it('should clear cart successfully', async () => {
-            mockContainer.redisService.del.mockResolvedValue();
-            await orderService.clearCart('student-123');
+            mockContainer.redisService.del.mockImplementation(() => Promise.resolve());
+            await order_service_enhanced_1.EnhancedOrderService.clearCart('student-123');
             expect(mockContainer.redisService.del).toHaveBeenCalledWith('cart:student-123');
         });
         it('should handle Redis errors gracefully', async () => {
             mockContainer.redisService.del.mockRejectedValue(new Error('Redis connection failed'));
-            await expect(orderService.clearCart('student-123')).resolves.toBeUndefined();
+            await expect(order_service_enhanced_1.EnhancedOrderService.clearCart('student-123')).resolves.toBeUndefined();
         });
     });
     describe('Dependency Injection Benefits', () => {
@@ -304,8 +302,8 @@ describe('EnhancedOrderService', () => {
                     findById: jest.fn().mockResolvedValue({ id: 'isolated-item', available: false })
                 }
             });
-            const isolatedService = new order_service_enhanced_1.EnhancedOrderService(isolatedContainer);
-            const result = await isolatedService.addToCart({
+            mockContainer = isolatedContainer;
+            const result = await order_service_enhanced_1.EnhancedOrderService.addToCart({
                 studentId: 'test',
                 menuItemId: 'isolated-item',
                 quantity: 1
@@ -320,7 +318,6 @@ describe('EnhancedOrderService', () => {
                     nameExists: jest.fn().mockResolvedValue(true)
                 }
             });
-            const customService = new order_service_enhanced_1.EnhancedOrderService(customContainer);
             expect(jest.isMockFunction(customContainer.menuItemRepository.nameExists)).toBe(true);
             expect(jest.isMockFunction(customContainer.menuItemRepository.findById)).toBe(true);
         });

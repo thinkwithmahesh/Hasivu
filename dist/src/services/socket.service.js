@@ -56,7 +56,7 @@ class SocketService {
         }
         catch (error) {
             logger_1.logger.error('Failed to initialize Socket.IO service', {
-                error: error instanceof Error ? error.message : 'Unknown error'
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error'
             });
             throw error;
         }
@@ -119,7 +119,7 @@ class SocketService {
             catch (error) {
                 logger_1.logger.error('Socket authentication error', {
                     socketId: socket.id,
-                    error: error instanceof Error ? error.message : 'Unknown error',
+                    error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error',
                     ip: socket.handshake.address
                 });
                 next(new Error('Authentication failed'));
@@ -175,7 +175,7 @@ class SocketService {
             catch (error) {
                 callback({
                     success: false,
-                    error: error instanceof Error ? error.message : 'Authentication failed'
+                    error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Authentication failed'
                 });
             }
         });
@@ -212,7 +212,7 @@ class SocketService {
                 logger_1.logger.error('Error joining room', {
                     socketId: socket.id,
                     room: data.room,
-                    error: error instanceof Error ? error.message : 'Unknown error'
+                    error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error'
                 });
                 callback({
                     success: false,
@@ -244,7 +244,7 @@ class SocketService {
                 logger_1.logger.error('Error leaving room', {
                     socketId: socket.id,
                     room: data.room,
-                    error: error instanceof Error ? error.message : 'Unknown error'
+                    error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error'
                 });
                 callback({
                     success: false,
@@ -275,7 +275,7 @@ class SocketService {
                 logger_1.logger.error('Error tracking order', {
                     socketId: socket.id,
                     orderId: data.orderId,
-                    error: error instanceof Error ? error.message : 'Unknown error'
+                    error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error'
                 });
                 callback({
                     success: false,
@@ -360,7 +360,7 @@ class SocketService {
             catch (error) {
                 logger_1.logger.error('Error sending message', {
                     socketId: socket.id,
-                    error: error instanceof Error ? error.message : 'Unknown error'
+                    error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error'
                 });
                 callback({
                     success: false,
@@ -479,7 +479,7 @@ class SocketService {
             catch (error) {
                 logger_1.logger.error('Error sending school notification', {
                     socketId: socket.id,
-                    error: error instanceof Error ? error.message : 'Unknown error'
+                    error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error'
                 });
             }
         });
@@ -490,7 +490,7 @@ class SocketService {
             logger_1.logger.error('Socket error', {
                 socketId: socket.id,
                 userId: socket.user?.id,
-                error: error instanceof Error ? error.message : 'Unknown error'
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error'
             });
         });
     }
@@ -538,7 +538,7 @@ class SocketService {
         catch (error) {
             logger_1.logger.error('Failed to send notification to user', {
                 userId,
-                error: error instanceof Error ? error.message : 'Unknown error'
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error'
             });
             return false;
         }
@@ -562,7 +562,7 @@ class SocketService {
             logger_1.logger.error('Failed to send order update', {
                 userId,
                 orderId: orderUpdate.orderId,
-                error: error instanceof Error ? error.message : 'Unknown error'
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error'
             });
             return false;
         }
@@ -577,7 +577,7 @@ class SocketService {
         }
         catch (error) {
             logger_1.logger.error('Failed to broadcast system maintenance', {
-                error: error instanceof Error ? error.message : 'Unknown error'
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error'
             });
         }
     }
@@ -604,7 +604,7 @@ class SocketService {
         }
         catch (error) {
             logger_1.logger.error('Socket service health check failed', {
-                error: error instanceof Error ? error.message : 'Unknown error'
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error'
             });
             return false;
         }
@@ -637,7 +637,7 @@ class SocketService {
         }
         catch (error) {
             logger_1.logger.error('Error during Socket.IO service shutdown', {
-                error: error instanceof Error ? error.message : 'Unknown error'
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error'
             });
         }
     }

@@ -1,8 +1,8 @@
 // Test route availability and component loading
 import { test, expect } from '@playwright/test';
 
-test.describe('Route Availability Tests', () => {
-  const routes = [
+test.describe(_'Route Availability Tests', _() => {
+  const _routes =  [
     { path: '/', name: 'Home' },
     { path: '/dashboard', name: 'Dashboard' },
     { path: '/kitchen-management', name: 'Kitchen Management' },
@@ -17,8 +17,8 @@ test.describe('Route Availability Tests', () => {
   ];
 
   for (const route of routes) {
-    test(`Route ${route.path} should be accessible`, async ({ page }) => {
-      const response = await page.goto(route.path);
+    test(_`Route ${route.path} should be accessible`, _async ({ page }) => {
+      const _response =  await page.goto(route.path);
       
       // Check if page loads successfully (not 404)
       expect(response?.status()).not.toBe(404);
@@ -27,21 +27,20 @@ test.describe('Route Availability Tests', () => {
       await page.waitForLoadState('networkidle');
       
       // Check if page has some content
-      const hasContent = await page.locator('body').textContent();
+      const _hasContent =  await page.locator('body').textContent();
       expect(hasContent?.length).toBeGreaterThan(0);
       
       // Check for common error messages
-      const hasError = await page.getByText(/404|not found|error/i).isVisible().catch(() => false);
+      const _hasError =  await page.getByText(/404|not found|error/i).isVisible().catch(() 
       expect(hasError).toBeFalsy();
     });
   }
 
-  test('All routes load without JavaScript errors', async ({ page }) => {
+  test(_'All routes load without JavaScript errors', _async ({ page }) => {
     const jsErrors: string[] = [];
     
-    page.on('console', msg => {
-      if (msg.type() === 'error') {
-        jsErrors.push(msg.text());
+    page.on('console', _msg = > {
+      if (msg.type() 
       }
     });
 

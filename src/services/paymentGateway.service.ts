@@ -3,9 +3,9 @@
  * Handles payment processing, gateway integration, and transaction management
  */
 
-import { DatabaseService } from '../shared/database.service';
-import { Logger } from '../utils/logger';
-import { ValidationError, NotFoundError, ExternalServiceError, BusinessLogicError } from '../utils/errors';
+import { DatabaseService } from './database.service';
+import { logger } from '../utils/logger';
+import { ValidationError, NotFoundError, BusinessLogicError } from '../utils/errors';
 
 export interface PaymentMethod {
   id: string;
@@ -72,7 +72,7 @@ export interface WebhookPayload {
 export class PaymentGatewayService {
   private static instance: PaymentGatewayService;
   private db = DatabaseService.getInstance();
-  private logger = Logger.getInstance();
+  private logger = logger;
 
   private constructor() {}
 
@@ -90,16 +90,16 @@ export class PaymentGatewayService {
     try {
       this.validatePaymentRequest(request);
 
-      const user = await this.db.getPrismaClient().user.findUnique({
-        where: { id: request.userId }
+      const user = await this.db.client.user.findUnique({
+        where: { id: request.userId },
       });
 
       if (!user) {
         throw new NotFoundError('User', request.userId);
       }
 
-      const order = await this.db.getPrismaClient().order.findUnique({
-        where: { id: request.orderId }
+      const order = await this.db.client.order.findUnique({
+        where: { id: request.orderId },
       });
 
       if (!order) {
@@ -107,11 +107,14 @@ export class PaymentGatewayService {
       }
 
       if (order.totalAmount !== request.amount) {
-        throw new BusinessLogicError('Payment amount does not match order amount', 'amount_mismatch');
+        throw new BusinessLogicError(
+          'Payment amount does not match order amount',
+          'amount_mismatch'
+        );
       }
 
       // Create payment record
-      const payment = await this.db.getPrismaClient().payment.create({
+      const payment = await this.db.client.payment.create({
         data: {
           orderId: request.orderId,
           userId: request.userId,
@@ -119,28 +122,28 @@ export class PaymentGatewayService {
           currency: request.currency,
           status: 'PENDING',
           paymentType: 'ORDER',
-          paymentMethodId: request.paymentMethodId
-        }
+          paymentMethodId: request.paymentMethodId,
+        },
       });
 
       // Process with gateway
       const gatewayResponse = await this.processWithGateway(payment, request);
 
       // Update payment status
-      const updatedPayment = await this.db.getPrismaClient().payment.update({
+      const updatedPayment = await this.db.client.payment.update({
         where: { id: payment.id },
         data: {
-          status: gatewayResponse.status.toUpperCase(),
+          status: (gatewayResponse.status || 'pending').toUpperCase(),
           razorpayPaymentId: gatewayResponse.gatewayTransactionId,
           gatewayResponse: JSON.stringify(gatewayResponse.gatewayResponse || {}),
           paidAt: gatewayResponse.processedAt || new Date(),
-          failureReason: gatewayResponse.failureReason
-        }
+          failureReason: gatewayResponse.failureReason,
+        },
       });
 
       return {
         transactionId: updatedPayment.id,
-        status: gatewayResponse.status,
+        status: gatewayResponse.status || 'pending',
         gatewayTransactionId: gatewayResponse.gatewayTransactionId,
         gatewayResponse: gatewayResponse.gatewayResponse,
         amount: request.amount,
@@ -148,10 +151,12 @@ export class PaymentGatewayService {
         fees: gatewayResponse.fees,
         netAmount: gatewayResponse.netAmount,
         processedAt: gatewayResponse.processedAt,
-        failureReason: gatewayResponse.failureReason
+        failureReason: gatewayResponse.failureReason,
       };
-    } catch (error) {
-      this.logger.error('Error processing payment', { request, error });
+    } catch (error: unknown) {
+      this.logger.error('Error processing payment', error instanceof Error ? error : undefined, {
+        request,
+      });
       throw error;
     }
   }
@@ -161,9 +166,9 @@ export class PaymentGatewayService {
    */
   async processRefund(request: RefundRequest): Promise<RefundResponse> {
     try {
-      const payment = await this.db.getPrismaClient().payment.findUnique({
+      const payment = await this.db.client.payment.findUnique({
         where: { id: request.transactionId },
-        include: { order: true }
+        include: { order: true },
       });
 
       if (!payment) {
@@ -171,17 +176,23 @@ export class PaymentGatewayService {
       }
 
       if (payment.status !== 'COMPLETED') {
-        throw new BusinessLogicError('Can only refund completed payments', 'invalid_payment_status');
+        throw new BusinessLogicError(
+          'Can only refund completed payments',
+          'invalid_payment_status'
+        );
       }
 
       const refundAmount = request.amount || payment.amount;
-      
+
       if (refundAmount > payment.amount) {
-        throw new BusinessLogicError('Refund amount cannot exceed payment amount', 'invalid_refund_amount');
+        throw new BusinessLogicError(
+          'Refund amount cannot exceed payment amount',
+          'invalid_refund_amount'
+        );
       }
 
       // Create refund record
-      const refund = await this.db.getPrismaClient().paymentRefund.create({
+      const refund = await this.db.client.paymentRefund.create({
         data: {
           paymentId: payment.id,
           amount: Math.round(refundAmount * 100), // Convert to paisa/cents
@@ -189,32 +200,34 @@ export class PaymentGatewayService {
           reason: request.reason,
           status: 'PENDING',
           razorpayRefundId: `temp_${Date.now()}`, // Will be updated after gateway processing
-          notes: JSON.stringify(request.metadata || {})
-        }
+          notes: JSON.stringify(request.metadata || {}),
+        },
       });
 
       // Process refund with gateway
       const gatewayRefund = await this.processRefundWithGateway(payment, refund);
 
       // Update refund status
-      const updatedRefund = await this.db.getPrismaClient().paymentRefund.update({
+      const updatedRefund = await this.db.client.paymentRefund.update({
         where: { id: refund.id },
         data: {
-          status: gatewayRefund.status.toUpperCase(),
+          status: (gatewayRefund.status || 'pending').toUpperCase(),
           razorpayRefundId: gatewayRefund.gatewayRefundId || refund.razorpayRefundId,
-          processedAt: gatewayRefund.processedAt
-        }
+          processedAt: gatewayRefund.processedAt,
+        },
       });
 
       return {
         refundId: updatedRefund.id,
-        status: gatewayRefund.status,
+        status: gatewayRefund.status || 'pending',
         amount: refundAmount,
         processedAt: gatewayRefund.processedAt,
-        gatewayRefundId: gatewayRefund.gatewayRefundId
+        gatewayRefundId: gatewayRefund.gatewayRefundId,
       };
-    } catch (error) {
-      this.logger.error('Error processing refund', { request, error });
+    } catch (error: unknown) {
+      this.logger.error('Error processing refund', error instanceof Error ? error : undefined, {
+        request,
+      });
       throw error;
     }
   }
@@ -229,13 +242,10 @@ export class PaymentGatewayService {
         throw new ValidationError('Invalid webhook signature');
       }
 
-      const payment = await this.db.getPrismaClient().payment.findFirst({
+      const payment = await this.db.client.payment.findFirst({
         where: {
-          OR: [
-            { id: payload.transactionId },
-            { razorpayPaymentId: payload.gatewayTransactionId }
-          ]
-        }
+          OR: [{ id: payload.transactionId }, { razorpayPaymentId: payload.gatewayTransactionId }],
+        },
       });
 
       if (!payment) {
@@ -244,16 +254,16 @@ export class PaymentGatewayService {
       }
 
       // Update payment status based on webhook
-      await this.db.getPrismaClient().payment.update({
+      await this.db.client.payment.update({
         where: { id: payment.id },
         data: {
           status: this.mapGatewayStatus(payload.status),
           gatewayResponse: {
-            ...payment.gatewayResponse as any,
-            webhook: payload.data
+            ...(payment.gatewayResponse as any),
+            webhook: payload.data,
           },
-          updatedAt: new Date()
-        }
+          updatedAt: new Date(),
+        },
       });
 
       // Handle status-specific actions
@@ -262,10 +272,12 @@ export class PaymentGatewayService {
       this.logger.info('Webhook processed successfully', {
         transactionId: payment.id,
         event: payload.event,
-        status: payload.status
+        status: payload.status,
       });
-    } catch (error) {
-      this.logger.error('Error processing webhook', { payload, error });
+    } catch (error: unknown) {
+      this.logger.error('Error processing webhook', error instanceof Error ? error : undefined, {
+        payload,
+      });
       throw error;
     }
   }
@@ -275,20 +287,21 @@ export class PaymentGatewayService {
    */
   async getPaymentMethods(userId: string): Promise<PaymentMethod[]> {
     try {
-      const paymentMethods = await this.db.getPrismaClient().paymentMethod.findMany({
+      const paymentMethods = await this.db.client.paymentMethod.findMany({
         where: {
           userId,
-          isActive: true
+          isActive: true,
         },
-        orderBy: [
-          { isDefault: 'desc' },
-          { createdAt: 'desc' }
-        ]
+        orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
       });
 
-      return paymentMethods.map(pm => this.mapToPaymentMethod(pm));
-    } catch (error) {
-      this.logger.error('Error fetching payment methods', { userId, error });
+      return paymentMethods.map((pm: any) => this.mapToPaymentMethod(pm));
+    } catch (error: unknown) {
+      this.logger.error(
+        'Error fetching payment methods',
+        error instanceof Error ? error : undefined,
+        { userId }
+      );
       throw error;
     }
   }
@@ -296,10 +309,13 @@ export class PaymentGatewayService {
   /**
    * Add payment method for user
    */
-  async addPaymentMethod(userId: string, methodData: Partial<PaymentMethod>): Promise<PaymentMethod> {
+  async addPaymentMethod(
+    userId: string,
+    methodData: Partial<PaymentMethod>
+  ): Promise<PaymentMethod> {
     try {
-      const user = await this.db.getPrismaClient().user.findUnique({
-        where: { id: userId }
+      const user = await this.db.client.user.findUnique({
+        where: { id: userId },
       });
 
       if (!user) {
@@ -307,11 +323,11 @@ export class PaymentGatewayService {
       }
 
       // If this is the first payment method, make it default
-      const existingMethods = await this.db.getPrismaClient().paymentMethod.count({
-        where: { userId, isActive: true }
+      const existingMethods = await this.db.client.paymentMethod.count({
+        where: { userId, isActive: true },
       });
 
-      const paymentMethod = await this.db.getPrismaClient().paymentMethod.create({
+      const paymentMethod = await this.db.client.paymentMethod.create({
         data: {
           userId,
           methodType: methodData.type || 'card',
@@ -319,13 +335,16 @@ export class PaymentGatewayService {
           providerMethodId: `method_${Date.now()}`,
           cardLast4: methodData.last4,
           isDefault: existingMethods === 0 || methodData.isDefault || false,
-          isActive: true
-        }
+          isActive: true,
+        },
       });
 
       return this.mapToPaymentMethod(paymentMethod);
-    } catch (error) {
-      this.logger.error('Error adding payment method', { userId, methodData, error });
+    } catch (error: unknown) {
+      this.logger.error('Error adding payment method', error instanceof Error ? error : undefined, {
+        userId,
+        methodData,
+      });
       throw error;
     }
   }
@@ -354,7 +373,10 @@ export class PaymentGatewayService {
   /**
    * Process payment with gateway (mock implementation)
    */
-  private async processWithGateway(payment: any, request: PaymentRequest): Promise<Partial<PaymentResponse>> {
+  private async processWithGateway(
+    payment: any,
+    request: PaymentRequest
+  ): Promise<Partial<PaymentResponse>> {
     // Mock gateway processing
     await new Promise(resolve => setTimeout(resolve, 1000));
 
@@ -368,16 +390,16 @@ export class PaymentGatewayService {
         gatewayResponse: {
           gateway: 'razorpay',
           method: 'card',
-          network: 'Visa'
+          network: 'Visa',
         },
         fees: Math.round(request.amount * 0.02), // 2% fee
         netAmount: Math.round(request.amount * 0.98),
-        processedAt: new Date()
+        processedAt: new Date(),
       };
     } else {
       return {
         status: 'failed',
-        failureReason: 'Payment declined by bank'
+        failureReason: 'Payment declined by bank',
       };
     }
   }
@@ -385,14 +407,17 @@ export class PaymentGatewayService {
   /**
    * Process refund with gateway (mock implementation)
    */
-  private async processRefundWithGateway(payment: any, refund: any): Promise<Partial<RefundResponse>> {
+  private async processRefundWithGateway(
+    _payment: any,
+    _refund: any
+  ): Promise<Partial<RefundResponse>> {
     // Mock refund processing
     await new Promise(resolve => setTimeout(resolve, 500));
 
     return {
       status: 'completed',
       gatewayRefundId: `rfnd_${Date.now()}`,
-      processedAt: new Date()
+      processedAt: new Date(),
     };
   }
 
@@ -401,7 +426,7 @@ export class PaymentGatewayService {
    */
   private verifyWebhookSignature(payload: WebhookPayload): boolean {
     // Mock signature verification
-    return payload.signature && payload.signature.length > 0;
+    return Boolean(payload.signature && payload.signature.length > 0);
   }
 
   /**
@@ -409,11 +434,11 @@ export class PaymentGatewayService {
    */
   private mapGatewayStatus(gatewayStatus: string): string {
     const statusMap: Record<string, string> = {
-      'created': 'PENDING',
-      'authorized': 'PROCESSING',
-      'captured': 'COMPLETED',
-      'failed': 'FAILED',
-      'cancelled': 'CANCELLED'
+      created: 'PENDING',
+      authorized: 'PROCESSING',
+      captured: 'COMPLETED',
+      failed: 'FAILED',
+      cancelled: 'CANCELLED',
     };
 
     return statusMap[gatewayStatus] || 'PENDING';
@@ -422,7 +447,11 @@ export class PaymentGatewayService {
   /**
    * Handle status update actions
    */
-  private async handleStatusUpdate(paymentId: string, status: string, event: string): Promise<void> {
+  private async handleStatusUpdate(
+    _paymentId: string,
+    status: string,
+    _event: string
+  ): Promise<void> {
     switch (status) {
       case 'completed':
         // Update order status, send confirmation email, etc.
@@ -449,7 +478,7 @@ export class PaymentGatewayService {
       expiryYear: record.expiryYear,
       isDefault: record.isDefault,
       isActive: record.isActive,
-      metadata: record.metadata
+      metadata: record.metadata,
     };
   }
 }

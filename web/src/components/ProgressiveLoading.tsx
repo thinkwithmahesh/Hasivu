@@ -22,9 +22,9 @@ export const SkeletonCard: React.FC<{ className?: string }> = ({ className = '' 
   </div>
 );
 
-export const SkeletonTable: React.FC<{ rows?: number; cols?: number }> = ({ 
-  rows = 5, 
-  cols = 4 
+export const SkeletonTable: React.FC<{ rows?: number; cols?: number }> = ({
+  rows = 5,
+  cols = 4,
 }) => (
   <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
     <div className="px-6 py-4 border-b border-gray-200">
@@ -112,7 +112,7 @@ export const ProgressiveLoading: React.FC<ProgressiveLoadingProps> = ({
   onRetry,
   className = '',
   showProgress = false,
-  minimumLoadTime = 500
+  minimumLoadTime = 500,
 }) => {
   const [showLoading, setShowLoading] = React.useState(isLoading);
   const [minimumTimeMet, setMinimumTimeMet] = React.useState(false);
@@ -122,7 +122,7 @@ export const ProgressiveLoading: React.FC<ProgressiveLoadingProps> = ({
     if (isLoading) {
       setShowLoading(true);
       setMinimumTimeMet(false);
-      
+
       const timer = setTimeout(() => {
         setMinimumTimeMet(true);
       }, minimumLoadTime);
@@ -142,14 +142,14 @@ export const ProgressiveLoading: React.FC<ProgressiveLoadingProps> = ({
   // Connection Status Indicator
   const ConnectionStatus = () => {
     if (connectionStatus === 'online') return null;
-    
+
     return (
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -20 }}
         className={`fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg flex items-center space-x-2 ${
-          connectionStatus === 'offline' 
+          connectionStatus === 'offline'
             ? 'bg-red-100 text-red-800 border border-red-200'
             : 'bg-yellow-100 text-yellow-800 border border-yellow-200'
         }`}
@@ -169,7 +169,7 @@ export const ProgressiveLoading: React.FC<ProgressiveLoadingProps> = ({
   // Loading Overlay for Refresh
   const RefreshOverlay = () => {
     if (!isRefreshing) return null;
-    
+
     return (
       <motion.div
         initial={{ opacity: 0 }}
@@ -188,7 +188,7 @@ export const ProgressiveLoading: React.FC<ProgressiveLoadingProps> = ({
   // Progress Bar
   const ProgressBar = () => {
     if (!showProgress || !showLoading) return null;
-    
+
     return (
       <div className="w-full bg-gray-200 rounded-full h-1 mb-4">
         <motion.div
@@ -206,7 +206,7 @@ export const ProgressiveLoading: React.FC<ProgressiveLoadingProps> = ({
     if (errorState) {
       return <div className={className}>{errorState}</div>;
     }
-    
+
     return (
       <div className={`flex flex-col items-center justify-center p-8 text-center ${className}`}>
         <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
@@ -232,7 +232,7 @@ export const ProgressiveLoading: React.FC<ProgressiveLoadingProps> = ({
     if (emptyState) {
       return <div className={className}>{emptyState}</div>;
     }
-    
+
     return (
       <div className={`flex flex-col items-center justify-center p-8 text-center ${className}`}>
         <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
@@ -281,21 +281,22 @@ export const DashboardLoading: React.FC = () => (
         <div className="h-10 bg-gray-200 rounded w-32"></div>
       </div>
     </div>
-    
+
     <SkeletonStats count={4} />
-    
+
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <SkeletonChart />
       <SkeletonChart />
     </div>
-    
+
     <SkeletonTable rows={6} cols={5} />
   </div>
 );
 
-export const TableLoading: React.FC<{ rows?: number; cols?: number }> = ({ rows = 10, cols = 4 }) => (
-  <SkeletonTable rows={rows} cols={cols} />
-);
+export const TableLoading: React.FC<{ rows?: number; cols?: number }> = ({
+  rows = 10,
+  cols = 4,
+}) => <SkeletonTable rows={rows} cols={cols} />;
 
 export const CardGridLoading: React.FC<{ count?: number }> = ({ count = 6 }) => (
   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -319,9 +320,9 @@ export const LazyLoad: React.FC<LazyLoadProps> = ({
   fallback = <div className="h-32 bg-gray-100 animate-pulse rounded-lg"></div>,
   threshold = 0.1,
   rootMargin = '50px',
-  onInView
+  onInView,
 }) => {
-  const [isInView, setIsInView] = React.useState(false);
+  const [_isInView, setIsInView] = React.useState(false);
   const [hasBeenInView, setHasBeenInView] = React.useState(false);
   const elementRef = React.useRef<HTMLDivElement>(null);
 
@@ -348,11 +349,7 @@ export const LazyLoad: React.FC<LazyLoadProps> = ({
     return () => observer.disconnect();
   }, [threshold, rootMargin, onInView, hasBeenInView]);
 
-  return (
-    <div ref={elementRef}>
-      {hasBeenInView ? children : fallback}
-    </div>
-  );
+  return <div ref={elementRef}>{hasBeenInView ? children : fallback}</div>;
 };
 
 // Enhanced Loading Button
@@ -375,10 +372,10 @@ export const LoadingButton: React.FC<LoadingButtonProps> = ({
   disabled = false,
   onClick,
   progress = 0,
-  showProgress = false
+  showProgress = false,
 }) => {
   const isDisabled = disabled || isLoading;
-  
+
   return (
     <button
       onClick={onClick}
@@ -396,12 +393,10 @@ export const LoadingButton: React.FC<LoadingButtonProps> = ({
           transition={{ duration: 0.5 }}
         />
       )}
-      
+
       {/* Button Content */}
       <div className="relative flex items-center justify-center space-x-2">
-        {isLoading && (
-          <Loader2 className="w-4 h-4 animate-spin" />
-        )}
+        {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
         <span>{isLoading ? loadingText : children}</span>
       </div>
     </button>
@@ -411,22 +406,25 @@ export const LoadingButton: React.FC<LoadingButtonProps> = ({
 // Loading States Hook
 export const useLoadingStates = () => {
   const [loadingStates, setLoadingStates] = React.useState<Record<string, boolean>>({});
-  
+
   const setLoading = React.useCallback((key: string, isLoading: boolean) => {
     setLoadingStates(prev => ({
       ...prev,
-      [key]: isLoading
+      [key]: isLoading,
     }));
   }, []);
-  
-  const isLoading = React.useCallback((key: string): boolean => {
-    return loadingStates[key] || false;
-  }, [loadingStates]);
-  
+
+  const isLoading = React.useCallback(
+    (key: string): boolean => {
+      return loadingStates[key] || false;
+    },
+    [loadingStates]
+  );
+
   const hasAnyLoading = React.useCallback((): boolean => {
     return Object.values(loadingStates).some(loading => loading);
   }, [loadingStates]);
-  
+
   return { setLoading, isLoading, hasAnyLoading, loadingStates };
 };
 

@@ -105,12 +105,10 @@ export declare class VersionLifecycleManager {
         };
     }>;
 }
-declare global {
-    namespace Express {
-        interface Request {
-            apiVersion?: string;
-            versionInfo?: VersionDetectionResult;
-        }
+declare module 'express' {
+    interface Request {
+        apiVersion?: string;
+        versionInfo?: VersionDetectionResult;
     }
 }
 export declare class VersionError extends Error {

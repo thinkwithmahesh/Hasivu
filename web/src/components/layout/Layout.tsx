@@ -132,16 +132,14 @@ export const Layout: React.FC<LayoutProps> = ({
         }}
       >
         {showHeader && <Header />}
-        
+
         <Box component="main" sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
           {containerVariant === 'fixed' ? (
             <Container maxWidth="lg" sx={{ py: 3, flex: 1 }}>
               {children}
             </Container>
           ) : (
-            <Box sx={{ py: 3, flex: 1 }}>
-              {children}
-            </Box>
+            <Box sx={{ py: 3, flex: 1 }}>{children}</Box>
           )}
         </Box>
 

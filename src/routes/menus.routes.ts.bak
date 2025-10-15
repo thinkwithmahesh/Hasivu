@@ -1,0 +1,787 @@
+/**
+ * HASIVU Platform - Menu Routes
+ * Comprehensive menu management API with full service integration
+ * Implements Story 2.1: Product Catalog Foundation and Story 2.2: Menu Planning
+ */
+
+import express, { Request, Response, NextFunction, RequestHandler } from 'express';
+import { z } from 'zod';
+import {
+  APIRequest,
+  APIResponse,
+  validateRequest,
+  paginationMiddleware,
+  createRateLimiter
+} from '../middleware/api.middleware';
+import { authMiddleware, requireRole } from '../middleware/auth.middleware';
+import { MenuItemService, MenuCategory } from '../services/menuItem.service';
+import { DailyMenuService } from '../services/dailyMenu.service';
+import { MenuPlanService } from '../services/menuPlan.service';
+import { NutritionalComplianceService } from '../services/nutritional-compliance.service';
+import { CacheService } from '../services/cache.service';
+import { AuditService } from '../services/audit.service';
+import { logger } from '../utils/logger';
+import { AppError } from '../utils/errors';
+
+const router = express.Router();
+const menuItemService = new MenuItemService();
+const dailyMenuService = new DailyMenuService();
+const menuPlanService = new MenuPlanService();
+const nutritionalService = new NutritionalComplianceService();
+const cacheService = new CacheService();
+const auditService = new AuditService();
+
+// Rate limiters
+const readRateLimit = createRateLimiter({ requests: 150, windowMs: 60000 });
+const writeRateLimit = createRateLimiter({ requests: 30, windowMs: 60000 });
+const publicRateLimit = createRateLimiter({ requests: 100, windowMs: 60000 });
+
+// Validation Schemas
+const createMenuItemSchema = z.object({
+  name: z.string().min(1, 'Name is required').max(200, 'Name too long'),
+  description: z.string().max(1000).optional(),
+  category: z.enum(['BREAKFAST', 'LUNCH', 'SNACKS', 'DINNER']),
+  price: z.number().min(0.01, 'Price must be greater than 0'),
+  currency: z.string().default('INR'),
+  available: z.boolean().default(true),
+  featured: z.boolean().default(false),
+  imageUrl: z.string().url().optional(),
+  nutritionalInfo: z.any().optional(),
+  allergens: z.array(z.string()).optional(),
+  ingredients: z.array(z.string()).optional(),
+  tags: z.array(z.string()).optional(),
+  preparationTime: z.number().min(0).optional(),
+  portionSize: z.string().optional(),
+  calories: z.number().min(0).optional(),
+  schoolId: z.string().uuid().optional()
+});
+
+const updateMenuItemSchema = z.object({
+  name: z.string().min(1).max(200).optional(),
+  description: z.string().max(1000).optional(),
+  category: z.enum(['BREAKFAST', 'LUNCH', 'SNACKS', 'DINNER']).optional(),
+  price: z.number().min(0.01).optional(),
+  currency: z.string().optional(),
+  available: z.boolean().optional(),
+  featured: z.boolean().optional(),
+  imageUrl: z.string().url().optional(),
+  nutritionalInfo: z.any().optional(),
+  allergens: z.array(z.string()).optional(),
+  ingredients: z.array(z.string()).optional(),
+  tags: z.array(z.string()).optional(),
+  preparationTime: z.number().min(0).optional(),
+  portionSize: z.string().optional(),
+  calories: z.number().min(0).optional()
+});
+
+const menuItemQuerySchema = z.object({
+  page: z.string().regex(/^\d+$/).optional(),
+  limit: z.string().regex(/^\d+$/).optional(),
+  category: z.enum(['BREAKFAST', 'LUNCH', 'SNACKS', 'DINNER']).optional(),
+  available: z.string().regex(/^(true|false)$/).optional(),
+  featured: z.string().regex(/^(true|false)$/).optional(),
+  schoolId: z.string().uuid().optional(),
+  search: z.string().optional(),
+  sortBy: z.enum(['name', 'price', 'sortOrder', 'createdAt']).optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional(),
+  priceMin: z.string().regex(/^\d+(\.\d{1,2})?$/).optional(),
+  priceMax: z.string().regex(/^\d+(\.\d{1,2})?$/).optional()
+});
+
+const menuItemIdSchema = z.object({
+  id: z.string().uuid('Invalid menu item ID')
+});
+
+const createDailyMenuSchema = z.object({
+  date: z.string().datetime('Invalid date format'),
+  schoolId: z.string().uuid('Invalid school ID'),
+  category: z.enum(['BREAKFAST', 'LUNCH', 'SNACKS', 'DINNER']),
+  dayType: z.enum(['WEEKDAY', 'WEEKEND', 'HOLIDAY', 'SPECIAL_EVENT']),
+  menuItemIds: z.array(z.string().uuid()).min(1, 'At least one menu item required'),
+  availableQuantity: z.number().min(0).optional(),
+  notes: z.string().max(500).optional()
+});
+
+const createMenuPlanSchema = z.object({
+  name: z.string().min(1, 'Name is required').max(200),
+  description: z.string().max(1000).optional(),
+  schoolId: z.string().uuid('Invalid school ID'),
+  startDate: z.string().datetime(),
+  endDate: z.string().datetime(),
+  recurringPattern: z.any().optional(),
+  approvalWorkflow: z.any().optional(),
+  metadata: z.any().optional()
+});
+
+/**
+ * GET /api/v1/menus/items
+ * Get menu items with comprehensive filtering and pagination
+ */
+router.get('/items',
+  readRateLimit,
+  authMiddleware,
+  paginationMiddleware,
+  validateRequest({ query: menuItemQuerySchema }) as any,
+  (async (req: APIRequest, res: APIResponse): Promise<void> => {
+    try {
+      const currentUser = req.user!;
+      const {
+        category,
+        available,
+        featured,
+        schoolId,
+        search,
+        sortBy = 'sortOrder',
+        sortOrder = 'asc',
+        priceMin,
+        priceMax
+      } = req.query as any;
+
+      const { page, limit, offset } = req.pagination!;
+
+      // Build filters based on user role and permissions
+      const filters: any = {};
+
+      // Role-based access control
+      switch (currentUser.role) {
+        case 'school_admin':
+          filters.schoolId = currentUser.schoolId;
+          break;
+        case 'admin':
+          // Admin can see all, but can filter by school
+          if (schoolId) filters.schoolId = schoolId;
+          break;
+        default:
+          // Parents and students see public menu items
+          filters.available = true;
+          break;
+      }
+
+      // Apply user-provided filters
+      if (category) filters.category = category;
+      if (available !== undefined) filters.available = available === 'true';
+      if (featured !== undefined) filters.featured = featured === 'true';
+      if (priceMin) filters.priceMin = parseFloat(priceMin);
+      if (priceMax) filters.priceMax = parseFloat(priceMax);
+
+      const result = await MenuItemService.getMenuItems(filters, {
+        page,
+        limit,
+        sortBy,
+        sortOrder
+      });
+
+      // Audit log for admin access
+      if (['admin', 'school_admin'].includes(currentUser.role)) {
+        auditService.log({
+          action: 'menus.items.list',
+          userId: currentUser.id,
+          metadata: {
+            filters,
+            resultCount: result.items.length,
+            requestId: req.requestId
+          }
+        });
+      }
+
+      res.json({
+        data: result.items,
+        pagination: {
+          page: result.page,
+          limit: result.limit,
+          total: result.total,
+          totalPages: result.totalPages,
+          hasNext: result.page < result.totalPages,
+          hasPrev: result.page > 1
+        },
+        requestId: req.requestId
+      });
+    } catch (error: unknown) {
+      logger.error('Failed to get menu items', {
+        error: (error instanceof Error ? error.message : String(error)),
+        requestId: req.requestId,
+        userId: req.user?.id
+      });
+      throw error;
+    }
+  }) as RequestHandler
+);
+
+/**
+ * GET /api/v1/menus/items/:id
+ * Get detailed menu item information
+ */
+router.get('/items/:id',
+  readRateLimit,
+  authMiddleware,
+  validateRequest({ params: menuItemIdSchema }),
+  (async (req: APIRequest, res: APIResponse): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const currentUser = req.user!;
+
+      const menuItem = await MenuItemService.getMenuItemById(id);
+
+      if (!menuItem) {
+        throw new AppError('Menu item not found', 404, true);
+      }
+
+      // Check access permissions
+      if (currentUser.role === 'school_admin' && menuItem.schoolId !== currentUser.schoolId) {
+        throw new AppError('Access denied: Item belongs to different school', 403, true);
+      }
+
+      // Audit log for sensitive access
+      auditService.log({
+        action: 'menus.items.view',
+        userId: currentUser.id,
+        metadata: {
+          menuItemId: id,
+          menuItemName: menuItem.name,
+          requestId: req.requestId
+        }
+      });
+
+      res.json({
+        data: menuItem,
+        requestId: req.requestId
+      });
+    } catch (error: unknown) {
+      logger.error('Failed to get menu item', {
+        error: (error instanceof Error ? error.message : String(error)),
+        requestId: req.requestId,
+        menuItemId: req.params.id,
+        userId: req.user?.id
+      });
+      throw error;
+    }
+  }) as RequestHandler
+);
+
+/**
+ * POST /api/v1/menus/items
+ * Create new menu item
+ */
+router.post('/items',
+  writeRateLimit,
+  authMiddleware,
+  requireRole(['admin', 'school_admin']),
+  validateRequest({ body: createMenuItemSchema }),
+  (async (req: APIRequest, res: APIResponse): Promise<void> => {
+    try {
+      const menuItemData = req.body;
+      const currentUser = req.user!;
+
+      // School admins can only create items for their school
+      if (currentUser.role === 'school_admin') {
+        menuItemData.schoolId = currentUser.schoolId;
+      }
+
+      const menuItem = await MenuItemService.createMenuItem(menuItemData);
+
+      // Audit log
+      auditService.log({
+        action: 'menus.items.create',
+        userId: currentUser.id,
+        metadata: {
+          menuItemId: menuItem.id,
+          menuItemName: menuItem.name,
+          category: menuItem.category,
+          schoolId: menuItem.schoolId,
+          requestId: req.requestId
+        }
+      });
+
+      logger.info('Menu item created successfully', {
+        menuItemId: menuItem.id,
+        name: menuItem.name,
+        createdBy: currentUser.id,
+        requestId: req.requestId
+      });
+
+      res.status(201).json({
+        data: menuItem,
+        message: 'Menu item created successfully',
+        requestId: req.requestId
+      });
+    } catch (error: unknown) {
+      logger.error('Failed to create menu item', {
+        error: (error instanceof Error ? error.message : String(error)),
+        requestId: req.requestId,
+        menuItemData: req.body,
+        userId: req.user?.id
+      });
+      throw error;
+    }
+  }) as RequestHandler
+);
+
+/**
+ * PUT /api/v1/menus/items/:id
+ * Update menu item
+ */
+router.put('/items/:id',
+  writeRateLimit,
+  authMiddleware,
+  requireRole(['admin', 'school_admin']),
+  validateRequest({
+    params: menuItemIdSchema,
+    body: updateMenuItemSchema
+  }),
+  (async (req: APIRequest, res: APIResponse): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const updateData = req.body;
+      const currentUser = req.user!;
+
+      // Check if menu item exists and user has access
+      const existingItem = await MenuItemService.getMenuItemById(id);
+      if (!existingItem) {
+        throw new AppError('Menu item not found', 404, true);
+      }
+
+      if (currentUser.role === 'school_admin' && existingItem.schoolId !== currentUser.schoolId) {
+        throw new AppError('Access denied: Cannot modify items from other schools', 403, true);
+      }
+
+      const updatedItem = await MenuItemService.updateMenuItem(id, updateData);
+
+      // Audit log
+      auditService.log({
+        action: 'menus.items.update',
+        userId: currentUser.id,
+        metadata: {
+          menuItemId: id,
+          changes: Object.keys(updateData),
+          previousName: existingItem.name,
+          newName: updatedItem.name,
+          requestId: req.requestId
+        }
+      });
+
+      logger.info('Menu item updated successfully', {
+        menuItemId: id,
+        changes: Object.keys(updateData),
+        updatedBy: currentUser.id,
+        requestId: req.requestId
+      });
+
+      res.json({
+        data: updatedItem,
+        message: 'Menu item updated successfully',
+        requestId: req.requestId
+      });
+    } catch (error: unknown) {
+      logger.error('Failed to update menu item', {
+        error: (error instanceof Error ? error.message : String(error)),
+        requestId: req.requestId,
+        menuItemId: req.params.id,
+        updateData: req.body,
+        userId: req.user?.id
+      });
+      throw error;
+    }
+  }) as RequestHandler
+);
+
+/**
+ * DELETE /api/v1/menus/items/:id
+ * Delete menu item (soft delete)
+ */
+router.delete('/items/:id',
+  writeRateLimit,
+  authMiddleware,
+  requireRole(['admin', 'school_admin']),
+  validateRequest({ params: menuItemIdSchema }),
+  (async (req: APIRequest, res: APIResponse): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const currentUser = req.user!;
+
+      // Check if menu item exists and user has access
+      const existingItem = await MenuItemService.getMenuItemById(id);
+      if (!existingItem) {
+        throw new AppError('Menu item not found', 404, true);
+      }
+
+      if (currentUser.role === 'school_admin' && existingItem.schoolId !== currentUser.schoolId) {
+        throw new AppError('Access denied: Cannot delete items from other schools', 403, true);
+      }
+
+      const deletedItem = await MenuItemService.deleteMenuItem(id);
+
+      // Audit log
+      auditService.log({
+        action: 'menus.items.delete',
+        userId: currentUser.id,
+        metadata: {
+          menuItemId: id,
+          menuItemName: existingItem.name,
+          schoolId: existingItem.schoolId,
+          requestId: req.requestId
+        }
+      });
+
+      logger.info('Menu item deleted successfully', {
+        menuItemId: id,
+        deletedBy: currentUser.id,
+        requestId: req.requestId
+      });
+
+      res.json({
+        data: deletedItem,
+        message: 'Menu item deleted successfully',
+        requestId: req.requestId
+      });
+    } catch (error: unknown) {
+      logger.error('Failed to delete menu item', {
+        error: (error instanceof Error ? error.message : String(error)),
+        requestId: req.requestId,
+        menuItemId: req.params.id,
+        userId: req.user?.id
+      });
+      throw error;
+    }
+  }) as RequestHandler
+);
+
+/**
+ * GET /api/v1/menus/daily/:schoolId/:date
+ * Get daily menu for specific school and date
+ */
+router.get('/daily/:schoolId/:date',
+  readRateLimit,
+  authMiddleware,
+  (async (req: APIRequest, res: APIResponse): Promise<void> => {
+    try {
+      const { schoolId, date: dateStr } = req.params;
+      const currentUser = req.user!;
+
+      // Validate date format
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) {
+        throw new AppError('Invalid date format', 400, true);
+      }
+
+      // Check access permissions
+      if (currentUser.role === 'school_admin' && schoolId !== currentUser.schoolId) {
+        throw new AppError('Access denied: Cannot view menus from other schools', 403, true);
+      }
+
+      const dailyMenus = await DailyMenuService.getDailyMenuByDate(schoolId, date);
+
+      // Audit log for admin access
+      if (['admin', 'school_admin'].includes(currentUser.role)) {
+        auditService.log({
+          action: 'menus.daily.view',
+          userId: currentUser.id,
+          metadata: {
+            schoolId,
+            date: dateStr,
+            menuCount: dailyMenus.length,
+            requestId: req.requestId
+          }
+        });
+      }
+
+      res.json({
+        data: dailyMenus,
+        date: dateStr,
+        schoolId,
+        requestId: req.requestId
+      });
+    } catch (error: unknown) {
+      logger.error('Failed to get daily menu', {
+        error: (error instanceof Error ? error.message : String(error)),
+        requestId: req.requestId,
+        schoolId: req.params.schoolId,
+        date: req.params.date,
+        userId: req.user?.id
+      });
+      throw error;
+    }
+  }) as RequestHandler
+);
+
+/**
+ * POST /api/v1/menus/daily
+ * Create daily menu
+ */
+router.post('/daily',
+  writeRateLimit,
+  authMiddleware,
+  requireRole(['admin', 'school_admin']),
+  validateRequest({ body: createDailyMenuSchema }),
+  (async (req: APIRequest, res: APIResponse): Promise<void> => {
+    try {
+      const dailyMenuData = req.body;
+      const currentUser = req.user!;
+
+      // School admins can only create menus for their school
+      if (currentUser.role === 'school_admin') {
+        dailyMenuData.schoolId = currentUser.schoolId!;
+      }
+
+      const dailyMenu = await DailyMenuService.createDailyMenu({
+        ...dailyMenuData,
+        date: new Date(dailyMenuData.date)
+      });
+
+      // Audit log
+      auditService.log({
+        action: 'menus.daily.create',
+        userId: currentUser.id,
+        metadata: {
+          dailyMenuId: dailyMenu.id,
+          schoolId: dailyMenuData.schoolId,
+          date: dailyMenuData.date,
+          category: dailyMenuData.category,
+          itemCount: dailyMenuData.menuItemIds.length,
+          requestId: req.requestId
+        }
+      });
+
+      logger.info('Daily menu created successfully', {
+        dailyMenuId: dailyMenu.id,
+        schoolId: dailyMenuData.schoolId,
+        date: dailyMenuData.date,
+        createdBy: currentUser.id,
+        requestId: req.requestId
+      });
+
+      res.status(201).json({
+        data: dailyMenu,
+        message: 'Daily menu created successfully',
+        requestId: req.requestId
+      });
+    } catch (error: unknown) {
+      logger.error('Failed to create daily menu', {
+        error: (error instanceof Error ? error.message : String(error)),
+        requestId: req.requestId,
+        dailyMenuData: req.body,
+        userId: req.user?.id
+      });
+      throw error;
+    }
+  }) as RequestHandler
+);
+
+/**
+ * POST /api/v1/menus/plans
+ * Create menu plan
+ */
+router.post('/plans',
+  writeRateLimit,
+  authMiddleware,
+  requireRole(['admin', 'school_admin']),
+  validateRequest({ body: createMenuPlanSchema }),
+  (async (req: APIRequest, res: APIResponse): Promise<void> => {
+    try {
+      const planData = req.body;
+      const currentUser = req.user!;
+
+      // School admins can only create plans for their school
+      if (currentUser.role === 'school_admin') {
+        planData.schoolId = currentUser.schoolId!;
+      }
+
+      const menuPlan = await menuPlanService.createMenuPlan({
+        ...planData,
+        startDate: new Date(planData.startDate),
+        endDate: new Date(planData.endDate)
+      });
+
+      // Audit log
+      auditService.log({
+        action: 'menus.plans.create',
+        userId: currentUser.id,
+        metadata: {
+          menuPlanId: menuPlan.id,
+          planName: menuPlan.name,
+          schoolId: planData.schoolId,
+          startDate: planData.startDate,
+          endDate: planData.endDate,
+          requestId: req.requestId
+        }
+      });
+
+      logger.info('Menu plan created successfully', {
+        menuPlanId: menuPlan.id,
+        name: menuPlan.name,
+        schoolId: planData.schoolId,
+        createdBy: currentUser.id,
+        requestId: req.requestId
+      });
+
+      res.status(201).json({
+        data: menuPlan,
+        message: 'Menu plan created successfully',
+        requestId: req.requestId
+      });
+    } catch (error: unknown) {
+      logger.error('Failed to create menu plan', {
+        error: (error instanceof Error ? error.message : String(error)),
+        requestId: req.requestId,
+        planData: req.body,
+        userId: req.user?.id
+      });
+      throw error;
+    }
+  }) as RequestHandler
+);
+
+/**
+ * GET /api/v1/menus/nutrition/analysis/:itemId
+ * Get nutritional analysis for menu item
+ */
+router.get('/nutrition/analysis/:itemId',
+  readRateLimit,
+  authMiddleware,
+  validateRequest({ params: menuItemIdSchema }),
+  (async (req: APIRequest, res: APIResponse): Promise<void> => {
+    try {
+      const { itemId } = req.params;
+      const currentUser = req.user!;
+
+      // Get menu item first
+      const menuItem = await MenuItemService.getMenuItemById(itemId);
+      if (!menuItem) {
+        throw new AppError('Menu item not found', 404, true);
+      }
+
+      // Check access permissions
+      if (currentUser.role === 'school_admin' && menuItem.schoolId !== currentUser.schoolId) {
+        throw new AppError('Access denied: Cannot analyze items from other schools', 403, true);
+      }
+
+      // Perform nutritional analysis
+      const analysis = await nutritionalService.analyzeNutritionalContent(menuItem as any);
+
+      // Audit log
+      auditService.log({
+        action: 'menus.nutrition.analyze',
+        userId: currentUser.id,
+        metadata: {
+          menuItemId: itemId,
+          menuItemName: menuItem.name,
+          analysisType: 'nutritional_content',
+          requestId: req.requestId
+        }
+      });
+
+      res.json({
+        data: analysis,
+        menuItem: {
+          id: menuItem.id,
+          name: menuItem.name,
+          category: menuItem.category
+        },
+        requestId: req.requestId
+      });
+    } catch (error: unknown) {
+      logger.error('Failed to analyze nutritional content', {
+        error: (error instanceof Error ? error.message : String(error)),
+        requestId: req.requestId,
+        menuItemId: req.params.itemId,
+        userId: req.user?.id
+      });
+      throw error;
+    }
+  }) as RequestHandler
+);
+
+/**
+ * GET /api/v1/menus/search
+ * Search menu items
+ */
+router.get('/search',
+  readRateLimit,
+  authMiddleware,
+  validateRequest({
+    query: z.object({
+      q: z.string().min(1, 'Search query is required'),
+      schoolId: z.string().uuid().optional(),
+      category: z.enum(['BREAKFAST', 'LUNCH', 'SNACKS', 'DINNER']).optional(),
+      limit: z.string().regex(/^\d+$/).optional()
+    })
+  }),
+  (async (req: APIRequest, res: APIResponse): Promise<void> => {
+    try {
+      const { q: searchTerm, schoolId, category, limit = '20' } = req.query as any;
+      const currentUser = req.user!;
+
+      // Build filters based on user role
+      const filters: any = {};
+      if (currentUser.role === 'school_admin') {
+        filters.schoolId = currentUser.schoolId;
+      } else if (schoolId) {
+        filters.schoolId = schoolId;
+      }
+
+      if (category) filters.category = category;
+      filters.available = true; // Only search available items
+
+      const result = await MenuItemService.searchMenuItems(
+        searchTerm,
+        filters,
+        { limit: parseInt(limit) }
+      );
+
+      res.json({
+        data: result.items,
+        total: result.total,
+        searchTerm,
+        requestId: req.requestId
+      });
+    } catch (error: unknown) {
+      logger.error('Failed to search menu items', {
+        error: (error instanceof Error ? error.message : String(error)),
+        requestId: req.requestId,
+        searchTerm: req.query.q,
+        userId: req.user?.id
+      });
+      throw error;
+    }
+  }) as RequestHandler
+);
+
+/**
+ * GET /api/v1/menus/featured
+ * Get featured menu items
+ */
+router.get('/featured',
+  publicRateLimit,
+  validateRequest({
+    query: z.object({
+      schoolId: z.string().uuid().optional(),
+      category: z.enum(['BREAKFAST', 'LUNCH', 'SNACKS', 'DINNER']).optional(),
+      limit: z.string().regex(/^\d+$/).optional()
+    })
+  }),
+  (async (req: APIRequest, res: APIResponse): Promise<void> => {
+    try {
+      const { schoolId, category, limit = '10' } = req.query as any;
+
+      const featuredItems = await MenuItemService.getFeaturedItems({
+        schoolId,
+        category: category as MenuCategory,
+        limit: parseInt(limit)
+      });
+
+      res.json({
+        data: featuredItems,
+        count: featuredItems.length,
+        requestId: req.requestId
+      });
+    } catch (error: unknown) {
+      logger.error('Failed to get featured menu items', {
+        error: (error instanceof Error ? error.message : String(error)),
+        requestId: req.requestId,
+        query: req.query
+      });
+      throw error;
+    }
+  }) as RequestHandler
+);
+
+export default router;

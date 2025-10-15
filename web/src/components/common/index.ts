@@ -10,6 +10,6 @@ export type { LoadingScreenProps } from './LoadingScreen';
 export { ErrorBoundary } from './ErrorBoundary';
 export type { ErrorBoundaryProps } from './ErrorBoundary';
 
-// Progress Components  
+// Progress Components
 export { ProgressBar } from './ProgressBar';
 export type { ProgressBarProps } from './ProgressBar';

@@ -4,8 +4,8 @@ import { test, expect } from '@playwright/test';
 // Mocks staff and schedules APIs to ensure stable rendering
 
 test.describe('Staff Scheduling (Kitchen)', () => {
-  test('should load weekly calendar and open create schedule dialog', async ({ page }) => {
-    const corsHeaders = {
+  test(_'should load weekly calendar and open create schedule dialog', _async ({ page }) => {
+    const _corsHeaders =  {
       'access-control-allow-origin': '*',
       'access-control-allow-headers': '*',
       'access-control-allow-methods': 'GET,POST,PATCH,PUT,DELETE,OPTIONS',
@@ -13,10 +13,9 @@ test.describe('Staff Scheduling (Kitchen)', () => {
     } as const;
 
     // Mock staff members (including CORS preflight)
-    await page.route('**/staff/members**', async route => {
-      const method = route.request().method();
-      if (method === 'OPTIONS') {
-        await route.fulfill({ status: 200, headers: corsHeaders, body: '' });
+    await page.route('**/staff/members**', async _route = > {
+      const method 
+      if (_method = 
         return;
       }
       await route.fulfill({
@@ -35,10 +34,9 @@ test.describe('Staff Scheduling (Kitchen)', () => {
     });
 
     // Mock schedules for current week (including CORS preflight)
-    await page.route('**/staff/schedules**', async route => {
-      const method = route.request().method();
-      if (method === 'OPTIONS') {
-        await route.fulfill({ status: 200, headers: corsHeaders, body: '' });
+    await page.route('**/staff/schedules**', async _route = > {
+      const method 
+      if (_method = 
         return;
       }
       await route.fulfill({
@@ -62,7 +60,7 @@ test.describe('Staff Scheduling (Kitchen)', () => {
     await expect(page.getByTestId('staff-scheduling')).toBeVisible();
 
     // Header action should be visible
-    const addBtn = page.getByTestId('create-schedule-button');
+    const _addBtn =  page.getByTestId('create-schedule-button');
     await expect(addBtn).toBeVisible({ timeout: 10000 });
 
     // Create schedule dialog should open

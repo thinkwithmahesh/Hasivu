@@ -56,7 +56,7 @@ class E2ETestSuite {
             return response;
         }, (error) => {
             logger.error('E2E Test Request Failed', {
-                error: error.message,
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
                 status: error.response?.status,
                 url: error.config?.url
             });
@@ -66,7 +66,7 @@ class E2ETestSuite {
     async runTestScenario(scenario) {
         const startTime = Date.now();
         const steps = [];
-        let retryCount = 0;
+        const retryCount = 0;
         logger.info(`Starting test scenario: ${scenario.name}`, {
             category: scenario.category,
             priority: scenario.priority,
@@ -123,7 +123,7 @@ class E2ETestSuite {
         catch (error) {
             const duration = Date.now() - startTime;
             logger.error(`Test scenario failed with error: ${scenario.name}`, {
-                error: error.message,
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
                 duration: `${duration}ms`,
                 completedSteps: steps.length
             });
@@ -133,7 +133,7 @@ class E2ETestSuite {
                 status: 'error',
                 duration,
                 steps,
-                error: error.message,
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
                 timestamp: startTime,
                 environment: process.env.NODE_ENV || 'development',
                 retryCount
@@ -230,7 +230,7 @@ class E2ETestSuite {
                     const duration = Date.now() - startTime;
                     logger.error(`Test step failed: ${step.name}`, {
                         scenario: scenarioName,
-                        error: error.message,
+                        error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
                         duration: `${duration}ms`,
                         retryCount: retryCount - 1
                     });
@@ -238,7 +238,7 @@ class E2ETestSuite {
                         stepName: step.name,
                         status: 'failed',
                         duration,
-                        error: error.message,
+                        error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
                         timestamp: startTime,
                         retryCount: retryCount - 1
                     };
@@ -248,7 +248,7 @@ class E2ETestSuite {
                     scenario: scenarioName,
                     retryCount,
                     maxRetries,
-                    error: error.message
+                    error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
                 });
             }
         }
@@ -507,7 +507,7 @@ class E2ETestSuite {
                 checks.apiConnectivity = response.status === 200;
             }
             catch (error) {
-                logger.warn('API connectivity check failed', { error: error instanceof Error ? error.message : 'Unknown error' });
+                logger.warn('API connectivity check failed', { error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error' });
             }
             if (this.currentAuthToken) {
                 try {
@@ -517,7 +517,7 @@ class E2ETestSuite {
                     checks.authService = response.status === 200;
                 }
                 catch (error) {
-                    logger.warn('Auth service check failed', { error: error instanceof Error ? error.message : 'Unknown error' });
+                    logger.warn('Auth service check failed', { error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error' });
                 }
             }
             const allHealthy = Object.values(checks).every(Boolean);
@@ -529,7 +529,7 @@ class E2ETestSuite {
         }
         catch (error) {
             logger.error('E2E test environment health check failed', {
-                error: error.message
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
             });
             return {
                 status: 'unhealthy',
@@ -540,7 +540,7 @@ class E2ETestSuite {
                     authService: false,
                     testConfiguration: false
                 },
-                error: error.message
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
             };
         }
     }

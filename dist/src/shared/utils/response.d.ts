@@ -96,7 +96,7 @@ export declare class ResponseUtil {
     private static generateRequestId;
     static success<T = any>(message?: string, data?: T, meta?: ResponseMeta, requestId?: string): ApiResponse<T>;
     static error(message: string, code?: string, details?: Record<string, any>, requestId?: string): ApiResponse<null>;
-    static validationError(message: string, errors: ValidationError[], requestId?: string): ApiResponse<null>;
+    static validationError(message: string | undefined, errors: ValidationError[], requestId?: string): ApiResponse<null>;
     static paginatedList<T = any>(items: T[], pagination: PaginationMeta, message?: string, requestId?: string): ApiResponse<ListResponse<T>>;
     static noContent(message?: string, requestId?: string): ApiResponse<null>;
 }

@@ -10,15 +10,14 @@ import React, { createContext, useContext, useEffect, useCallback, ReactNode } f
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { useAppDispatch, useAppSelector } from '@/store';
-import { 
-  loginUser, 
-  logoutUser, 
-  refreshToken, 
-  clearError, 
-  updateLastActivity, 
+import {
+  loginUser,
+  logoutUser,
+  refreshToken,
+  clearError,
+  updateLastActivity,
   updateUserProfile,
   clearAuth,
-  getCurrentUser
 } from '@/store/slices/authSlice';
 
 // Import UserRole from constants for consistency
@@ -79,12 +78,12 @@ export interface AuthContextType {
   logout: () => Promise<void>;
   register: (userData: RegisterData) => Promise<void>;
   refreshAccessToken: () => Promise<void>;
-  
+
   // User methods
   updateProfile: (updates: Partial<User>) => void;
   clearAuthError: () => void;
   updateActivity: () => void;
-  
+
   // Utility methods
   hasRole: (role: UserRole) => boolean;
   hasAnyRole: (roles: UserRole[]) => boolean;
@@ -115,35 +114,38 @@ const REFRESH_THRESHOLD = 5 * 60 * 1000; // Refresh 5 minutes before expiry
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const dispatch = useAppDispatch();
   const router = useRouter();
-  
+
   // Get auth state from Redux
-  const { 
-    user, 
-    token, 
-    refreshToken: refreshTokenValue, 
-    isAuthenticated, 
-    isLoading, 
-    error, 
-    lastActivity 
-  } = useAppSelector((state) => state.auth);
+  const {
+    user,
+    token,
+    refreshToken: refreshTokenValue,
+    isAuthenticated,
+    isLoading,
+    error,
+    lastActivity,
+  } = useAppSelector(state => state.auth);
 
   /**
    * Login method
    */
-  const login = useCallback(async (credentials: LoginCredentials): Promise<void> => {
-    try {
-      await dispatch(loginUser(credentials)).unwrap();
-      toast.success('Login successful!');
-      
-      // Redirect based on user role
-      const redirectPath = getRedirectPath(user?.role);
-      router.push(redirectPath);
-    } catch (error: any) {
-      const errorMessage = error.message || 'Login failed';
-      toast.error(errorMessage);
-      throw new Error(errorMessage);
-    }
-  }, [dispatch, router, user?.role]);
+  const login = useCallback(
+    async (credentials: LoginCredentials): Promise<void> => {
+      try {
+        await dispatch(loginUser(credentials)).unwrap();
+        toast.success('Login successful!');
+
+        // Redirect based on user role
+        const redirectPath = getRedirectPath(user?.role);
+        router.push(redirectPath);
+      } catch (error: any) {
+        const errorMessage = error.message || 'Login failed';
+        toast.error(errorMessage);
+        throw new Error(errorMessage);
+      }
+    },
+    [dispatch, router, user?.role]
+  );
 
   /**
    * Logout method
@@ -157,41 +159,48 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // Even if API call fails, clear local auth state
       dispatch(clearAuth());
       router.push('/auth/login');
-      console.error('Logout error:', error);
     }
   }, [dispatch, router]);
 
   /**
    * Register method
    */
-  const register = useCallback(async (userData: RegisterData): Promise<void> => {
-    try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userData),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Registration failed');
+  const register = useCallback(
+    async (userData: RegisterData): Promise<void> => {
+      try {
+        const response = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(userData),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || errorData.message || 'Registration failed');
+        }
+
+        const result = await response.json();
+
+        if (result.success) {
+          toast.success(result.message || 'Registration successful! Please verify your email.');
+
+          // Optionally auto-login after registration
+          if (result.autoLogin) {
+            await login({ email: userData.email, password: userData.password });
+          } else {
+            router.push('/auth/login');
+          }
+        } else {
+          throw new Error(result.error || 'Registration failed');
+        }
+      } catch (error: any) {
+        const errorMessage = error.message || 'Registration failed';
+        toast.error(errorMessage);
+        throw new Error(errorMessage);
       }
-      
-      const result = await response.json();
-      toast.success('Registration successful! Please verify your email.');
-      
-      // Optionally auto-login after registration
-      if (result.autoLogin) {
-        await login({ email: userData.email, password: userData.password });
-      } else {
-        router.push('/auth/login');
-      }
-    } catch (error: any) {
-      const errorMessage = error.message || 'Registration failed';
-      toast.error(errorMessage);
-      throw new Error(errorMessage);
-    }
-  }, [login, router]);
+    },
+    [login, router]
+  );
 
   /**
    * Refresh access token
@@ -201,7 +210,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       await dispatch(refreshToken()).unwrap();
       dispatch(updateLastActivity());
     } catch (error: any) {
-      console.error('Token refresh failed:', error);
       await logout();
     }
   }, [dispatch, logout]);
@@ -209,9 +217,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   /**
    * Update user profile
    */
-  const updateProfile = useCallback((updates: Partial<User>) => {
-    dispatch(updateUserProfile(updates));
-  }, [dispatch]);
+  const updateProfile = useCallback(
+    (updates: Partial<User>) => {
+      dispatch(updateUserProfile(updates));
+    },
+    [dispatch]
+  );
 
   /**
    * Clear auth error
@@ -230,16 +241,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   /**
    * Check if user has specific role
    */
-  const hasRole = useCallback((role: UserRole): boolean => {
-    return user?.role === role;
-  }, [user?.role]);
+  const hasRole = useCallback(
+    (role: UserRole): boolean => {
+      return user?.role === role;
+    },
+    [user?.role]
+  );
 
   /**
    * Check if user has any of the specified roles
    */
-  const hasAnyRole = useCallback((roles: UserRole[]): boolean => {
-    return user ? roles.includes(user.role) : false;
-  }, [user]);
+  const hasAnyRole = useCallback(
+    (roles: UserRole[]): boolean => {
+      return user ? roles.includes(user.role) : false;
+    },
+    [user]
+  );
 
   /**
    * Check if session is still valid
@@ -262,7 +279,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   /**
    * Get redirect path based on user role
    */
-  const getRedirectPath = (role?: UserRole): string => {
+  const getRedirectPath = (role?: string): string => {
     switch (role) {
       case 'student':
         return '/student/dashboard';
@@ -289,7 +306,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (!isAuthenticated || !token || !refreshTokenValue) return;
 
     const timeUntilExpiry = getTimeUntilExpiry();
-    
+
     // If session is expired, logout
     if (timeUntilExpiry <= 0) {
       logout();
@@ -334,18 +351,29 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
    */
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    
-    const publicRoutes = ['/auth/login', '/auth/register', '/auth/forgot-password', '/', '/about', '/contact'];
+
+    const publicRoutes = [
+      '/auth/login',
+      '/auth/register',
+      '/auth/forgot-password',
+      '/',
+      '/about',
+      '/contact',
+    ];
     const currentPath = window.location.pathname;
-    
+
     // Redirect authenticated users away from auth pages
     if (isAuthenticated && currentPath.startsWith('/auth/')) {
       const redirectPath = getRedirectPath(user?.role);
       router.replace(redirectPath);
     }
-    
+
     // Redirect unauthenticated users to login (except for public routes)
-    if (!isAuthenticated && !publicRoutes.includes(currentPath) && !currentPath.startsWith('/auth/')) {
+    if (
+      !isAuthenticated &&
+      !publicRoutes.includes(currentPath) &&
+      !currentPath.startsWith('/auth/')
+    ) {
       router.replace('/auth/login');
     }
   }, [isAuthenticated, user?.role, router]);
@@ -360,7 +388,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const timer = setTimeout(() => {
         clearAuthError();
       }, 5000);
-      
+
       return () => clearTimeout(timer);
     }
   }, [error, clearAuthError]);

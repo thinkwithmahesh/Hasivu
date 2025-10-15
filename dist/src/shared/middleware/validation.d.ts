@@ -64,7 +64,6 @@ export declare const CommonSchemas: {
     paymentAmount: z.ZodNumber;
     currency: z.ZodDefault<z.ZodEnum<{
         INR: "INR";
-        USD: "USD";
         EUR: "EUR";
         GBP: "GBP";
         CAD: "CAD";
@@ -118,7 +117,6 @@ export declare const HASIVUSchemas: {
         price: z.ZodNumber;
         currency: z.ZodDefault<z.ZodEnum<{
             INR: "INR";
-            USD: "USD";
             EUR: "EUR";
             GBP: "GBP";
             CAD: "CAD";
@@ -156,7 +154,6 @@ export declare const HASIVUSchemas: {
         amount: z.ZodNumber;
         currency: z.ZodDefault<z.ZodEnum<{
             INR: "INR";
-            USD: "USD";
             EUR: "EUR";
             GBP: "GBP";
             CAD: "CAD";

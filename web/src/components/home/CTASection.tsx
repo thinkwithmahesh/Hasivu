@@ -5,14 +5,7 @@
  */
 
 import React from 'react';
-import {
-  Box,
-  Typography,
-  Button,
-  Container,
-  Stack,
-  alpha,
-} from '@mui/material';
+import { Box, Typography, Button, Container, Stack, alpha } from '@mui/material';
 import { ArrowForward, GetApp, Phone } from '@mui/icons-material';
 
 /**
@@ -42,9 +35,9 @@ export interface CTASectionProps {
  */
 export const CTASection: React.FC<CTASectionProps> = ({
   title = "Ready to Transform Your School's Food Delivery?",
-  subtitle = "Join the revolution in school food management. Get started today and see the difference HASIVU makes for your school community.",
-  primaryButtonText = "Start Free Trial",
-  secondaryButtonText = "Download App",
+  subtitle = 'Join the revolution in school food management. Get started today and see the difference HASIVU makes for your school community.',
+  primaryButtonText = 'Start Free Trial',
+  secondaryButtonText = 'Download App',
   showContactButton = true,
   variant = 'gradient',
   onPrimaryClick,
@@ -152,7 +145,7 @@ export const CTASection: React.FC<CTASectionProps> = ({
                   color: 'white',
                   '&:hover': {
                     bgcolor: 'primary.dark',
-                    boxShadow: (theme) => `0 8px 24px ${alpha(theme.palette.primary.main, 0.4)}`,
+                    boxShadow: theme => `0 8px 24px ${alpha(theme.palette.primary.main, 0.4)}`,
                     transform: 'translateY(-2px)',
                   },
                 }),
@@ -205,7 +198,13 @@ export const CTASection: React.FC<CTASectionProps> = ({
 
           {/* Contact information */}
           {showContactButton && (
-            <Box sx={{ pt: 4, borderTop: '1px solid', borderColor: alpha(isGradient ? '#ffffff' : '#E0E0E0', 0.2) }}>
+            <Box
+              sx={{
+                pt: 4,
+                borderTop: '1px solid',
+                borderColor: alpha(isGradient ? '#ffffff' : '#E0E0E0', 0.2),
+              }}
+            >
               <Typography
                 variant="body2"
                 sx={{
@@ -220,7 +219,7 @@ export const CTASection: React.FC<CTASectionProps> = ({
               >
                 Need help getting started?
               </Typography>
-              
+
               <Button
                 variant="text"
                 startIcon={<Phone />}

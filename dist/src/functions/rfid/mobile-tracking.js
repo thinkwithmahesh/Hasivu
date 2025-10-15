@@ -12,11 +12,11 @@ async function validateParentAccess(studentId, parentUserId) {
             include: {
                 rfidCards: {
                     where: {
-                        isActive: true
-                    }
-                }
+                        isActive: true,
+                    },
+                },
             },
-            take: 1
+            take: 1,
         });
         if (!student) {
             return false;
@@ -29,12 +29,12 @@ async function validateParentAccess(studentId, parentUserId) {
         }
         const parentRelationship = await prisma.studentParent.findFirst({
             where: {
-                studentId: studentId,
-                parentId: parentUserId
+                studentId,
+                parentId: parentUserId,
             },
             include: {
-                parent: true
-            }
+                parent: true,
+            },
         });
         if (!parentRelationship) {
             return false;
@@ -45,7 +45,7 @@ async function validateParentAccess(studentId, parentUserId) {
         return true;
     }
     catch (error) {
-        logger_1.logger.error('Error validating parent access:', error);
+        logger_1.logger.error('Error validating parent access:', error instanceof Error ? error : new Error(String(error)));
         return false;
     }
 }
@@ -57,7 +57,7 @@ function generateTrackingSteps(order) {
         description: `Order #${order.orderNumber} has been placed successfully`,
         completed: true,
         timestamp: order.createdAt,
-        icon: 'shopping-cart'
+        icon: 'shopping-cart',
     };
     steps.push(placedStep);
     const confirmedStep = {
@@ -66,7 +66,7 @@ function generateTrackingSteps(order) {
         description: 'Your order has been confirmed and is being processed',
         completed: order.status !== 'pending',
         timestamp: order.confirmedAt,
-        icon: 'check-circle'
+        icon: 'check-circle',
     };
     steps.push(confirmedStep);
     if (order.paymentStatus === 'paid') {
@@ -76,7 +76,7 @@ function generateTrackingSteps(order) {
             description: 'Payment has been successfully processed',
             completed: true,
             timestamp: order.paidAt,
-            icon: 'credit-card'
+            icon: 'credit-card',
         };
         steps.push(paymentStep);
     }
@@ -86,7 +86,7 @@ function generateTrackingSteps(order) {
         description: 'Your meal is being prepared in the kitchen',
         completed: ['preparing', 'ready', 'out_for_delivery', 'delivered'].includes(order.status),
         timestamp: order.preparingAt,
-        icon: 'chef-hat'
+        icon: 'chef-hat',
     };
     if (!preparingStep.completed && order.status === 'confirmed') {
         preparingStep.description = 'Your order will start preparation soon';
@@ -98,7 +98,7 @@ function generateTrackingSteps(order) {
         description: 'Your meal is ready and waiting for delivery',
         completed: ['ready', 'out_for_delivery', 'delivered'].includes(order.status),
         timestamp: order.readyAt,
-        icon: 'package'
+        icon: 'package',
     };
     if (!readyStep.completed && ['confirmed', 'preparing'].includes(order.status)) {
         readyStep.description = 'Your meal will be ready soon';
@@ -110,7 +110,7 @@ function generateTrackingSteps(order) {
         description: 'Your order is on its way to the delivery location',
         completed: ['out_for_delivery', 'delivered'].includes(order.status),
         timestamp: order.outForDeliveryAt,
-        icon: 'truck'
+        icon: 'truck',
     };
     if (!outForDeliveryStep.completed && ['confirmed', 'preparing', 'ready'].includes(order.status)) {
         outForDeliveryStep.description = 'Your order will be dispatched soon';
@@ -123,7 +123,7 @@ function generateTrackingSteps(order) {
         completed: order.status === 'delivered',
         timestamp: order.deliveredAt,
         location: undefined,
-        icon: 'check-circle-2'
+        icon: 'check-circle-2',
     };
     steps.push(deliveredStep);
     return steps;
@@ -134,15 +134,15 @@ const getMobileTrackingHandler = async (event, context) => {
     try {
         const studentId = event.pathParameters?.studentId;
         if (!studentId) {
-            return (0, response_utils_1.createErrorResponse)(400, 'Student ID is required');
+            return (0, response_utils_1.createErrorResponse)('VALIDATION_ERROR', 'Student ID is required', 400);
         }
         const parentUserId = event.requestContext?.authorizer?.principalId;
         if (!parentUserId) {
-            return (0, response_utils_1.createErrorResponse)(401, 'Unauthorized: Parent authentication required');
+            return (0, response_utils_1.createErrorResponse)('UNAUTHORIZED', 'Unauthorized: Parent authentication required', 401);
         }
         const hasAccess = await validateParentAccess(studentId, parentUserId);
         if (!hasAccess) {
-            return (0, response_utils_1.createErrorResponse)(403, 'Unauthorized: Access denied to student information');
+            return (0, response_utils_1.createErrorResponse)('FORBIDDEN', 'Unauthorized: Access denied to student information', 403);
         }
         const student = await prisma.user.findUnique({
             where: { id: studentId },
@@ -150,13 +150,13 @@ const getMobileTrackingHandler = async (event, context) => {
                 school: true,
                 rfidCards: {
                     where: {
-                        isActive: true
-                    }
-                }
-            }
+                        isActive: true,
+                    },
+                },
+            },
         });
         if (!student) {
-            return (0, response_utils_1.createErrorResponse)(404, 'Student not found');
+            return (0, response_utils_1.createErrorResponse)('NOT_FOUND', 'Student not found', 404);
         }
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -164,87 +164,86 @@ const getMobileTrackingHandler = async (event, context) => {
         tomorrow.setDate(tomorrow.getDate() + 1);
         const activeOrders = await prisma.order.findMany({
             where: {
-                studentId: studentId,
+                studentId,
                 createdAt: {
                     gte: today,
-                    lt: tomorrow
+                    lt: tomorrow,
                 },
                 status: {
-                    in: ['pending', 'confirmed', 'preparing', 'ready', 'out_for_delivery']
-                }
+                    in: ['pending', 'confirmed', 'preparing', 'ready', 'out_for_delivery'],
+                },
             },
             include: {
                 student: {
                     include: {
-                        school: true
-                    }
+                        school: true,
+                    },
                 },
                 orderItems: {
                     include: {
-                        menuItem: true
-                    }
-                }
+                        menuItem: true,
+                    },
+                },
             },
             orderBy: {
-                createdAt: 'desc'
-            }
+                createdAt: 'desc',
+            },
         });
         const weekAgo = new Date();
         weekAgo.setDate(weekAgo.getDate() - 7);
         const recentDeliveries = await prisma.order.findMany({
             where: {
-                studentId: studentId,
+                studentId,
                 status: 'delivered',
                 deliveredAt: {
-                    gte: weekAgo
-                }
+                    gte: weekAgo,
+                },
             },
             include: {
                 student: {
                     include: {
-                        school: true
-                    }
+                        school: true,
+                    },
                 },
                 orderItems: {
                     include: {
-                        menuItem: true
-                    }
-                }
+                        menuItem: true,
+                    },
+                },
             },
             orderBy: {
-                deliveredAt: 'desc'
+                deliveredAt: 'desc',
             },
-            take: 10
+            take: 10,
         });
         const nextWeek = new Date();
         nextWeek.setDate(nextWeek.getDate() + 7);
         const upcomingOrders = await prisma.order.findMany({
             where: {
-                studentId: studentId,
+                studentId,
                 deliveryDate: {
                     gt: today,
-                    lte: nextWeek
-                }
+                    lte: nextWeek,
+                },
             },
             include: {
                 student: {
                     include: {
-                        school: true
-                    }
+                        school: true,
+                    },
                 },
                 orderItems: {
                     include: {
-                        menuItem: true
-                    }
-                }
+                        menuItem: true,
+                    },
+                },
             },
             orderBy: {
-                deliveryDate: 'asc'
-            }
+                deliveryDate: 'asc',
+            },
         });
         const totalDelivered = recentDeliveries.length;
-        const onTimeDeliveries = recentDeliveries.filter(order => order.deliveredAt && order.deliveryDate &&
-            order.deliveredAt <= order.deliveryDate).length;
+        const onTimeDeliveries = recentDeliveries.filter(order => order.deliveredAt && order.deliveryDate && order.deliveredAt <= order.deliveryDate).length;
         const onTimeDeliveryRate = totalDelivered > 0 ? (onTimeDeliveries / totalDelivered) * 100 : 0;
         const deliveryTimes = recentDeliveries
             .filter(order => order.createdAt && order.deliveredAt)
@@ -259,7 +258,7 @@ const getMobileTrackingHandler = async (event, context) => {
             menuPlan: {
                 name: order.orderItems?.[0]?.menuItem?.name || 'Meal Order',
                 date: order.deliveryDate,
-                meal: order.orderItems?.[0]?.menuItem?.category || 'Lunch'
+                meal: order.orderItems?.[0]?.menuItem?.category || 'Lunch',
             },
             student: {
                 id: order.student.id,
@@ -268,13 +267,13 @@ const getMobileTrackingHandler = async (event, context) => {
                 grade: order.student.grade || 'N/A',
                 school: {
                     name: order.student.school.name,
-                    location: order.student.school.address || 'School Campus'
-                }
+                    location: order.student.school.address || 'School Campus',
+                },
             },
             trackingSteps: generateTrackingSteps(order),
             deliveryVerification: undefined,
             estimatedDeliveryTime: order.deliveryDate,
-            notifications: []
+            notifications: [],
         });
         const response = {
             activeOrders: activeOrders.map(transformOrder),
@@ -282,12 +281,12 @@ const getMobileTrackingHandler = async (event, context) => {
             deliveryStats: {
                 totalDelivered,
                 onTimeDeliveryRate: Math.round(onTimeDeliveryRate * 100) / 100,
-                averageDeliveryTime: Math.round(averageDeliveryTime)
+                averageDeliveryTime: Math.round(averageDeliveryTime),
             },
-            upcomingOrders: upcomingOrders.map(transformOrder)
+            upcomingOrders: upcomingOrders.map(transformOrder),
         };
         const duration = Date.now() - startTime;
-        logger_1.logger.info("getMobileTracking completed", { statusCode: 200, duration });
+        logger_1.logger.info('getMobileTracking completed', { statusCode: 200, duration });
         return (0, response_utils_1.createSuccessResponse)(response);
     }
     catch (error) {
@@ -301,33 +300,33 @@ const updateTrackingStatusHandler = async (event, context) => {
     try {
         const orderId = event.pathParameters?.orderId;
         if (!orderId) {
-            return (0, response_utils_1.createErrorResponse)(400, 'Order ID is required');
+            return (0, response_utils_1.createErrorResponse)('VALIDATION_ERROR', 'Order ID is required', 400);
         }
         const body = JSON.parse(event.body || '{}');
         const { status, location, rfidCardId } = body;
         if (!status) {
-            return (0, response_utils_1.createErrorResponse)(400, 'Status is required');
+            return (0, response_utils_1.createErrorResponse)('VALIDATION_ERROR', 'Status is required', 400);
         }
         const validStatuses = ['confirmed', 'preparing', 'ready', 'out_for_delivery', 'delivered'];
         if (!validStatuses.includes(status)) {
-            return (0, response_utils_1.createErrorResponse)(400, 'Invalid status value');
+            return (0, response_utils_1.createErrorResponse)('VALIDATION_ERROR', 'Invalid status value', 400);
         }
         const order = await prisma.order.findUnique({
             where: { id: orderId },
             include: {
                 student: {
                     include: {
-                        rfidCards: true
-                    }
-                }
-            }
+                        rfidCards: true,
+                    },
+                },
+            },
         });
         if (!order) {
-            return (0, response_utils_1.createErrorResponse)(404, 'Order not found');
+            return (0, response_utils_1.createErrorResponse)('NOT_FOUND', 'Order not found', 404);
         }
         const updateData = {
-            status: status,
-            updatedAt: new Date()
+            status,
+            updatedAt: new Date(),
         };
         switch (status) {
             case 'confirmed':
@@ -348,27 +347,27 @@ const updateTrackingStatusHandler = async (event, context) => {
         }
         const updatedOrder = await prisma.order.update({
             where: { id: orderId },
-            data: updateData
+            data: updateData,
         });
         if (status === 'delivered' && rfidCardId) {
             await prisma.deliveryVerification.create({
                 data: {
-                    orderId: orderId,
+                    orderId,
                     studentId: order.studentId,
                     cardId: rfidCardId,
                     readerId: 'default-reader',
                     location: location || 'School',
-                    verificationNotes: 'Mobile tracking update'
-                }
+                    verificationNotes: 'Mobile tracking update',
+                },
             });
         }
         const duration = Date.now() - startTime;
-        logger_1.logger.info("getMobileTracking completed", { statusCode: 200, duration });
+        logger_1.logger.info('getMobileTracking completed', { statusCode: 200, duration });
         return (0, response_utils_1.createSuccessResponse)({
             message: 'Tracking status updated successfully',
-            orderId: orderId,
-            status: status,
-            timestamp: new Date()
+            orderId,
+            status,
+            timestamp: new Date(),
         });
     }
     catch (error) {
@@ -385,12 +384,12 @@ const handler = async (event, context) => {
             case 'PUT:/mobile/orders/{orderId}/tracking':
                 return await (0, exports.updateTrackingStatusHandler)(event, context);
             default:
-                return (0, response_utils_1.createErrorResponse)(404, 'Endpoint not found');
+                return (0, response_utils_1.createErrorResponse)('NOT_FOUND', 'Endpoint not found', 404);
         }
     }
     catch (error) {
-        logger_1.logger.error('Mobile tracking handler error:', error);
-        return (0, response_utils_1.handleError)(error);
+        logger_1.logger.error('Mobile tracking handler error:', error instanceof Error ? error : new Error(String(error)));
+        return (0, response_utils_1.handleError)(error instanceof Error ? error : new Error(String(error)));
     }
     finally {
         await prisma.$disconnect();
@@ -399,6 +398,6 @@ const handler = async (event, context) => {
 exports.handler = handler;
 exports.default = {
     getMobileTrackingHandler: exports.getMobileTrackingHandler,
-    updateTrackingStatusHandler: exports.updateTrackingStatusHandler
+    updateTrackingStatusHandler: exports.updateTrackingStatusHandler,
 };
 //# sourceMappingURL=mobile-tracking.js.map

@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TestRunner = void 0;
 const fs_1 = require("fs");
+const os_1 = require("os");
 const logger_1 = require("../shared/utils/logger");
 const e2e_test_suite_1 = require("./e2e-test-suite");
 const load_test_suite_1 = require("./load-test-suite");
@@ -95,10 +96,10 @@ class TestRunner {
         catch (error) {
             logger_1.logger.error('Test suite execution failed', {
                 executionId: this.currentExecution,
-                error: error.message,
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
                 stack: error.stack
             });
-            const errorSummary = await this.generateErrorSummary(this.currentExecution || 'unknown', startTime, new Date(), error);
+            const _errorSummary = await this.generateErrorSummary(this.currentExecution || 'unknown', startTime, new Date(), error);
             if (this.config.notifications.enabled && this.config.notifications.onFailure) {
                 await this.sendFailureNotification(error);
             }
@@ -124,7 +125,7 @@ class TestRunner {
             promises.push(this.runChaosTests().then(result => ({ type: 'chaos', result })));
         }
         const concurrentResults = await Promise.allSettled(promises);
-        concurrentResults.forEach((result, index) => {
+        concurrentResults.forEach((result, _index) => {
             if (result.status === 'fulfilled') {
                 const { type, result: testResult } = result.value;
                 this.processTestResult(type, testResult, testSuites, issues);
@@ -231,7 +232,7 @@ class TestRunner {
         };
     }
     processLoadResults(result) {
-        const successRate = ((result.metrics.totalRequests - result.metrics.failedRequests) / result.metrics.totalRequests) * 100;
+        const _successRate = ((result.metrics.totalRequests - result.metrics.failedRequests) / result.metrics.totalRequests) * 100;
         return {
             status: result.testStatus === 'warning' ? 'passed' : result.testStatus,
             results: result,
@@ -330,7 +331,7 @@ class TestRunner {
     extractChaosIssues(results, issues) {
         results.forEach(result => {
             if (result.criticalFailures) {
-                result.criticalFailures.forEach(failure => {
+                result.criticalFailures.forEach((failure) => {
                     issues.push({
                         id: this.generateIssueId(),
                         type: 'error',
@@ -350,7 +351,7 @@ class TestRunner {
         let totalTests = 0;
         let passedTests = 0;
         let failedTests = 0;
-        let skippedTests = 0;
+        const skippedTests = 0;
         Object.values(testSuites).forEach(suite => {
             if (suite?.summary) {
                 if ('totalScenarios' in suite.summary) {
@@ -764,7 +765,7 @@ class TestRunner {
         catch (error) {
             logger_1.logger.error('Failed to send email notification', {
                 executionId: summary.executionId,
-                error: error.message
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
             });
         }
     }
@@ -856,7 +857,7 @@ class TestRunner {
         catch (error) {
             logger_1.logger.error('Failed to send webhook notification', {
                 executionId: summary.executionId,
-                error: error.message
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
             });
         }
     }
@@ -870,7 +871,7 @@ class TestRunner {
               <h2 style="color: #721c24; margin: 0;">Test Execution Failed</h2>
               <p><strong>Execution ID:</strong> ${this.currentExecution}</p>
               <p><strong>Environment:</strong> ${this.config.environment}</p>
-              <p><strong>Error:</strong> ${error.message}</p>
+              <p><strong>Error:</strong> ${error instanceof Error ? error.message : String(error)}</p>
               <p><strong>Timestamp:</strong> ${new Date().toISOString()}</p>
             </div>
             
@@ -918,7 +919,7 @@ ${error.stack}
                     }
                 }
                 catch (error) {
-                    healthIssues.push(`Health endpoint ${healthEndpoint} failed: ${error.message}`);
+                    healthIssues.push(`Health endpoint ${healthEndpoint} failed: ${error instanceof Error ? error.message : String(error)}`);
                 }
             }
             if (this.config.enablePerformanceMonitoring) {
@@ -926,7 +927,7 @@ ${error.stack}
                     await this.redisService.ping();
                 }
                 catch (error) {
-                    healthIssues.push(`Redis connectivity failed: ${error.message}`);
+                    healthIssues.push(`Redis connectivity failed: ${error instanceof Error ? error.message : String(error)}`);
                 }
             }
             if (this.config.reporting.enabled) {
@@ -934,7 +935,7 @@ ${error.stack}
                     await fs_1.promises.mkdir(this.config.reporting.outputPath, { recursive: true });
                 }
                 catch (error) {
-                    healthIssues.push(`Cannot create reporting directory: ${error.message}`);
+                    healthIssues.push(`Cannot create reporting directory: ${error instanceof Error ? error.message : String(error)}`);
                 }
             }
             if (healthIssues.length > 0) {
@@ -952,7 +953,7 @@ ${error.stack}
         }
         catch (error) {
             logger_1.logger.error('Health check failed', {
-                error: error.message,
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
                 issues: healthIssues
             });
             throw error;
@@ -960,7 +961,7 @@ ${error.stack}
     }
     handleTestSuiteError(suiteType, error, testSuites, issues) {
         logger_1.logger.error(`${suiteType} test suite failed`, {
-            error: error.message,
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
             stack: error.stack
         });
         issues.push({
@@ -969,7 +970,7 @@ ${error.stack}
             severity: 'critical',
             component: suiteType,
             title: `${suiteType.toUpperCase()} Test Suite Failed`,
-            description: error.message,
+            description: error instanceof Error ? error.message : String(error),
             stackTrace: error.stack,
             timestamp: new Date(),
             suggestedFix: `Review ${suiteType} test configuration and system requirements`
@@ -1023,7 +1024,7 @@ ${error.stack}
                     severity: 'critical',
                     component: 'system',
                     title: 'Test Suite Execution Failed',
-                    description: error.message,
+                    description: error instanceof Error ? error.message : String(error),
                     stackTrace: error.stack,
                     timestamp: new Date()
                 }],
@@ -1043,12 +1044,12 @@ ${error.stack}
         }
         catch (error) {
             logger_1.logger.error('Cleanup failed', {
-                error: error.message
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
             });
         }
     }
     async performCleanup() {
-        const now = new Date();
+        const _now = new Date();
         const cleanupPromises = [];
         if (this.config.cleanup.retainReports > 0) {
             cleanupPromises.push(this.cleanupOldFiles(this.config.reporting.outputPath, 'test-report-*.json', this.config.cleanup.retainReports));
@@ -1087,7 +1088,7 @@ ${error.stack}
             logger_1.logger.warn('Failed to cleanup old files', {
                 basePath,
                 pattern,
-                error: error.message
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
             });
         }
     }
@@ -1126,7 +1127,7 @@ ${error.stack}
                 arch: process.arch,
                 nodeVersion: process.version,
                 memory: Math.round(process.memoryUsage().heapTotal / 1024 / 1024),
-                cpuCount: require('os').cpus().length
+                cpuCount: (0, os_1.cpus)().length
             }
         };
     }

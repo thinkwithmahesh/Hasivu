@@ -1,0 +1,196 @@
+export interface NutritionalInfo {
+    calories: number;
+    protein: number;
+    carbohydrates: number;
+    fat: number;
+    fiber?: number;
+    sugar?: number;
+    sodium?: number;
+    vitamins?: {
+        A?: number;
+        C?: number;
+        D?: number;
+        K?: number;
+        B1?: number;
+        B6?: number;
+        B12?: number;
+        folate?: number;
+        B3?: number;
+    };
+    minerals?: {
+        iron?: number;
+        calcium?: number;
+        magnesium?: number;
+        zinc?: number;
+    };
+    omega3?: number;
+    antioxidants?: string;
+    saturatedFat?: number;
+    transFat?: number;
+    glycemicIndex?: number;
+}
+export interface Ingredient {
+    name: string;
+    quantity?: string;
+    category?: string;
+    subCategory?: string;
+    allergens?: string[];
+    nutritionalValue: NutritionalInfo;
+}
+export interface MenuItem {
+    id: string;
+    name: string;
+    ingredients: Ingredient[];
+    nutritionalInfo?: NutritionalInfo;
+    dietaryTags?: string[];
+    preparationMethod?: string;
+    kitchenEquipment?: string;
+    allergens?: string[];
+    mealType?: string;
+    ageGroup?: string;
+}
+export interface NutritionalAnalysis {
+    id?: string;
+    totalCalories: number;
+    totalProtein: number;
+    totalCarbohydrates: number;
+    totalFat: number;
+    nutritionalDensity: number;
+    macroDistribution: {
+        proteinPercentage: number;
+        carbsPercentage: number;
+        fatPercentage: number;
+    };
+    micronutrients: {
+        vitamins: Record<string, number>;
+        minerals: Record<string, number>;
+    };
+    healthScore: number;
+    dataCompleteness?: number;
+    warnings?: string[];
+    estimatedValues?: any;
+    confidence?: number;
+    error?: string;
+    valid?: boolean;
+}
+export interface AllergenInfo {
+    allergens: string[];
+    crossContaminationRisk: number;
+    riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
+    warnings?: string[];
+}
+export interface DietaryRestriction {
+    type: string;
+    severity: 'MILD' | 'MODERATE' | 'SEVERE';
+    description?: string;
+}
+export interface ComplianceRule {
+    id: string;
+    name: string;
+    category: string;
+    description: string;
+    minValue?: number;
+    maxValue?: number;
+    required?: boolean;
+    priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+}
+export interface ComplianceResult {
+    compliant: boolean;
+    score: number;
+    violations: string[];
+    recommendations: string[];
+    ruleResults: Array<{
+        rule: ComplianceRule;
+        passed: boolean;
+        value?: number;
+        message?: string;
+    }>;
+}
+export interface StudentDietaryProfile {
+    id: string;
+    allergens: string[];
+    severity?: Record<string, 'MILD' | 'MODERATE' | 'SEVERE'>;
+    dietaryRestrictions?: string[];
+    medicalConditions?: string[];
+    emergencyContact?: string;
+    medicalNotes?: string;
+    allergySeverity?: Record<string, 'SEVERE' | 'MODERATE'>;
+    medications?: string[];
+    emergencyContacts?: Array<{
+        name: string;
+        phone: string;
+        relation: string;
+    }>;
+    specialInstructions?: string;
+}
+export interface MenuItemCompliance {
+    itemId: string;
+    compliant: boolean;
+    violations: string[];
+    warnings: string[];
+    score: number;
+    recommendations: string[];
+}
+export interface NutritionScore {
+    overall: number;
+    categories: {
+        protein: number;
+        micronutrients: number;
+        fiber: number;
+        addedSugar: number;
+        processedIngredients: number;
+        healthyFats: number;
+    };
+}
+export interface PersonalizedRecommendations {
+    changes: string[];
+    suggestedItems: string[];
+    priority: 'LOW' | 'MEDIUM' | 'HIGH';
+    rationale: string;
+    timeframe?: string;
+}
+export interface MenuImprovements {
+    issues: string[];
+    suggestions: Array<{
+        type: string;
+        description: string;
+        impact: number;
+    }>;
+    priorityScore: number;
+}
+export interface SafetyAssessment {
+    overallSafety: 'SAFE' | 'CAUTION' | 'DANGEROUS';
+    allergenSafety: {
+        safe: boolean;
+        riskLevel?: string;
+        warnings: Array<{
+            allergen: string;
+            severity: string;
+            description: string;
+        }>;
+    };
+    dietarySafety: {
+        compliant: boolean;
+        violations: string[];
+    };
+    medicalSafety: {
+        diabeticSafe?: boolean;
+        hypertensionSafe?: boolean;
+    };
+    recommendations: string[];
+    emergencyProtocol?: {
+        requiresEpiPen: boolean;
+        immediateActions: string[];
+    };
+    alternativeItems: string[];
+}
+export interface BatchAnalysisResult {
+    results: NutritionalAnalysis[];
+    summary: {
+        averageScore: number;
+        complianceRate: number;
+        totalItems: number;
+    };
+    processingTime: number;
+}
+//# sourceMappingURL=nutrition.d.ts.map

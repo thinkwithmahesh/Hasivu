@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.installGlobalErrorHandlers = exports.unhandledRejectionHandler = exports.uncaughtExceptionHandler = exports.transformDatabaseError = exports.validationErrorHandler = exports.asyncHandler = exports.notFoundHandler = exports.errorHandler = exports.createDatabaseError = exports.createConflictError = exports.createServiceUnavailableError = exports.createRateLimitError = exports.createAuthorizationError = exports.createAuthenticationError = exports.createNotFoundError = exports.createValidationError = exports.createError = exports.ErrorCodes = void 0;
-const logger_1 = require("../utils/logger");
+const logger_service_1 = require("../shared/logger.service");
 const environment_1 = require("../config/environment");
 exports.ErrorCodes = {
     VALIDATION_ERROR: 'VALIDATION_ERROR',
@@ -15,7 +15,7 @@ exports.ErrorCodes = {
     DATABASE_ERROR: 'DATABASE_ERROR',
     EXTERNAL_API_ERROR: 'EXTERNAL_API_ERROR',
     CONFIGURATION_ERROR: 'CONFIGURATION_ERROR',
-    INTERNAL_ERROR: 'INTERNAL_ERROR'
+    INTERNAL_ERROR: 'INTERNAL_ERROR',
 };
 function createError(code, message, statusCode = 500, details) {
     const error = new Error(message);
@@ -76,8 +76,8 @@ const errorHandler = (err, req, res, next) => {
             timestamp: new Date().toISOString(),
             requestId,
             path: req.path,
-            ...(shouldIncludeDetails(statusCode, isProduction) && { details: err.details })
-        }
+            ...(shouldIncludeDetails(statusCode, isProduction) && { details: err.details }),
+        },
     };
     res.status(statusCode).json(errorResponse);
 };
@@ -111,7 +111,7 @@ function logError(err, req, requestId) {
             code: err.code,
             statusCode: err.statusCode,
             stack: err.stack,
-            details: err.details
+            details: err.details,
         },
         request: {
             method: req.method,
@@ -121,15 +121,17 @@ function logError(err, req, requestId) {
             query: req.query,
             params: req.params,
             ip: req.ip,
-            userAgent: req.get('User-Agent')
+            userAgent: req.get('User-Agent'),
         },
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
     };
     if (err.statusCode && err.statusCode < 500) {
-        logger_1.logger.warn('Client error occurred', logData);
+        logger_service_1.logger.warn('Client error occurred', logData);
     }
     else {
-        logger_1.logger.error('Server error occurred', logData);
+        logger_service_1.logger.error('Server error occurred', undefined, {
+            errorMessage: logData instanceof Error ? logData.message : String(logData),
+        });
     }
 }
 const validationErrorHandler = (req, res, next) => {
@@ -138,7 +140,9 @@ const validationErrorHandler = (req, res, next) => {
 exports.validationErrorHandler = validationErrorHandler;
 const transformDatabaseError = (error) => {
     if (error.code === 'P2002') {
-        return createError(exports.ErrorCodes.DUPLICATE_RESOURCE, 'Resource already exists', 409, { field: error.meta?.target });
+        return createError(exports.ErrorCodes.DUPLICATE_RESOURCE, 'Resource already exists', 409, {
+            field: error.meta?.target,
+        });
     }
     if (error.code === 'P2025') {
         return createNotFoundError('Resource');
@@ -148,26 +152,21 @@ const transformDatabaseError = (error) => {
     }
     return createDatabaseError('Database operation failed', {
         originalError: error.message,
-        code: error.code
+        code: error.code,
     });
 };
 exports.transformDatabaseError = transformDatabaseError;
 const uncaughtExceptionHandler = (error) => {
-    logger_1.logger.error('Uncaught Exception', {
-        name: error.name,
-        message: error.message,
-        stack: error.stack,
-        timestamp: new Date().toISOString()
+    logger_service_1.logger.error('Uncaught Exception', error, {
+        timestamp: new Date().toISOString(),
     });
     process.exit(1);
 };
 exports.uncaughtExceptionHandler = uncaughtExceptionHandler;
 const unhandledRejectionHandler = (reason, promise) => {
-    logger_1.logger.error('Unhandled Promise Rejection', {
-        reason: reason.toString(),
-        stack: reason.stack,
+    logger_service_1.logger.error('Unhandled Promise Rejection', reason instanceof Error ? reason : new Error(String(reason)), {
         promise: promise.toString(),
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
     });
     process.exit(1);
 };
@@ -176,11 +175,11 @@ const installGlobalErrorHandlers = () => {
     process.on('uncaughtException', exports.uncaughtExceptionHandler);
     process.on('unhandledRejection', exports.unhandledRejectionHandler);
     process.on('SIGTERM', () => {
-        logger_1.logger.info('SIGTERM received, shutting down gracefully');
+        logger_service_1.logger.info('SIGTERM received, shutting down gracefully');
         process.exit(0);
     });
     process.on('SIGINT', () => {
-        logger_1.logger.info('SIGINT received, shutting down gracefully');
+        logger_service_1.logger.info('SIGINT received, shutting down gracefully');
         process.exit(0);
     });
 };

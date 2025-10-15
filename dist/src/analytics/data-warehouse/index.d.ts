@@ -1,0 +1,54 @@
+import { DataWarehouseOrchestrator } from './core/warehouse-orchestrator';
+import { ETLPipelineEngine } from './etl/pipeline-engine';
+import { AnalyticsStorageEngine } from './storage/analytics-storage';
+import { DataLakeManager } from './storage/data-lake-manager';
+import { SecurityComplianceFramework } from './security/compliance-framework';
+import { IntegrationOrchestrator } from './integration/integration-orchestrator';
+import { DataWarehouseConfig } from './config/warehouse-config-factory';
+export type DataWarehouseStatus = 'initializing' | 'starting' | 'running' | 'stopping' | 'stopped' | 'error';
+export declare class DataWarehousePlatform {
+    private readonly config;
+    static createDevelopment(overrides?: Partial<DataWarehouseConfig>): DataWarehousePlatform;
+    static createProduction(overrides?: Partial<DataWarehouseConfig>): DataWarehousePlatform;
+    static createTest(overrides?: Partial<DataWarehouseConfig>): DataWarehousePlatform;
+    private readonly metrics;
+    private readonly health;
+    private orchestrator;
+    private etlEngine;
+    private storageEngine;
+    private dataLake;
+    private security;
+    private integration;
+    private isInitialized;
+    private status;
+    constructor(config: DataWarehouseConfig);
+    private initializeComponents;
+    start(): Promise<void>;
+    stop(): Promise<void>;
+    getStatus(): Promise<{
+        status: DataWarehouseStatus;
+        components: Record<string, any>;
+        metrics: Record<string, number>;
+        health: Record<string, boolean>;
+    }>;
+    private startHealthMonitoring;
+    getOrchestrator(): DataWarehouseOrchestrator;
+    getETLEngine(): ETLPipelineEngine;
+    getStorageEngine(): AnalyticsStorageEngine;
+    getDataLake(): DataLakeManager;
+    getSecurity(): SecurityComplianceFramework;
+    getIntegration(): IntegrationOrchestrator;
+    private convertDataLakeConfig;
+    private convertSecurityConfig;
+}
+export { DataWarehouseOrchestrator, ETLPipelineEngine, AnalyticsStorageEngine, DataLakeManager, SecurityComplianceFramework, IntegrationOrchestrator };
+export type { DataWarehouseConfig, WarehouseOrchestratorConfig, SchemaDefinition, DataModel, WarehouseQuery, ColumnInfo, PartitionStrategy, TemporalConfig, MetadataConfig, QueryOptimizationConfig, StarSchemaConfig, SnowflakeSchemaConfig, DataLineage, TransformationInfo, DependencyInfo, ImpactInfo, MetadataEntry, LineageConfig } from './types/warehouse-types';
+export type { PartitioningConfig as WarehousePartitioningConfig, CompressionConfig as WarehouseCompressionConfig, QueryResult as WarehouseQueryResult, TenantIsolationConfig as WarehouseTenantIsolationConfig } from './types/warehouse-types';
+export type { ETLPipelineConfig, DataSource, DataSourceType, DataSourceConfig, DataSink, DataSinkType, DataSinkConfig, TransformationStep, TransformationType, AggregationRule, JoinCondition, StreamingConfig, StreamingEngineConfig, CheckpointConfig, WatermarkConfig, WindowConfig, BatchConfig, BatchEngineConfig, SchedulingConfig, ResourceConfig, DeltaLakeConfig, OptimizeConfig, VacuumConfig, SchemaEvolutionConfig, ConflictResolutionStrategy, OrchestrationConfig, OrchestrationEngineConfig, OrchestrationMonitoring, ErrorHandlingConfig, DeadLetterQueueConfig, ErrorHandlingRule, ValidationConfig, ValidationRuleConfig, ValidationRule, CDCConfig, CDCEngineConfig, CDCFilterConfig, DataQualityConfig, DataQualityRule, QualityMonitoringConfig, DataProfilingConfig, CredentialConfig, SourceSchema, SinkSchema, LoggingConfig, NotificationConfig } from './types/etl-types';
+export type { FilterCondition as ETLFilterCondition, RetryPolicy as ETLRetryPolicy, TransformationConfig as ETLTransformationConfig, PartitionConfig as ETLPartitionConfig, CompressionConfig as ETLCompressionConfig, AlertingConfig as ETLAlertingConfig, ReportingConfig as ETLReportingConfig } from './types/etl-types';
+export type { AnalyticsStorageConfig, StorageQuery, QueryType, ColumnMetadata, QueryMetadata, StorageTier, QueryPlan, PlanOptimization, DistributedConfig, ClusterConfig, NodeConfig, CoordinatorConfig, AutoScalingConfig, DistributedStorageConfig, NetworkingConfig, MemoryConfig, MemoryClusterConfig, MemoryNodeConfig, ReplicationConfig, CachingConfig, EvictionPolicy, PersistenceConfig, HybridConfig, TieringConfig, TieringPolicy, TieringCondition, MigrationConfig, TieringMonitoringConfig, IndexingConfig, IndexStrategy, IndexCondition, IndexCost, IndexMaintenance, IndexMonitoringConfig, IndexMaintenanceConfig, CompressionStrategy, AdaptiveCompressionConfig, CompressionMonitoringConfig, MaterializedView, ViewStatus, ViewMetadata, RefreshHistory, ViewPerformance, MaterializedViewConfig, ViewMonitoringConfig, StatisticsConfig, QueryRewritingConfig, RewritingRule, ExporterConfig, TracingConfig, ProfilingConfig, GCTuningConfig, ConnectionPoolingConfig, StorageStatistics, TieringStatistics, TierStatistics, IndexStatistics, QueryStatistics, ViewStatistics, AlertChannel, AlertRule } from './types/storage-types';
+export type { QueryResult as StorageQueryResult, CompressionConfig as StorageCompressionConfig, PartitioningConfig as StoragePartitioningConfig, TenantIsolationConfig as StorageTenantIsolationConfig, OptimizationConfig as StorageOptimizationConfig, ParallelConfig as StorageParallelConfig, MonitoringConfig as StorageMonitoringConfig, PerformanceConfig as StoragePerformanceConfig, AlertingConfig as StorageAlertingConfig, ReportingConfig as StorageReportingConfig, RetryPolicy as StorageRetryPolicy } from './types/storage-types';
+export * from './types/security-types';
+export * from './types/integration-types';
+export default DataWarehousePlatform;
+//# sourceMappingURL=index.d.ts.map

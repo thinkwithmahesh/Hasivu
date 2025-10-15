@@ -1,3 +1,4 @@
+/// <reference types="cookie-parser" />
 /// <reference types="node" />
 import { Request, Response, NextFunction } from 'express';
 export interface AuthenticatedRequest extends Request {
@@ -6,6 +7,8 @@ export interface AuthenticatedRequest extends Request {
         email: string;
         role: string;
         permissions: string[];
+        schoolId?: string;
+        tenantId?: string;
     };
     sessionId?: string;
 }

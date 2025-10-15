@@ -377,11 +377,12 @@ function groupRevenueByPeriod(payments, period) {
             case 'daily':
                 key = date.toISOString().split('T')[0];
                 break;
-            case 'weekly':
+            case 'weekly': {
                 const weekStart = new Date(date);
                 weekStart.setDate(date.getDate() - date.getDay());
                 key = weekStart.toISOString().split('T')[0];
                 break;
+            }
             case 'monthly':
                 key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
                 break;
@@ -747,7 +748,7 @@ function assessDataQuality(startDate, endDate, totalDataPoints) {
         overall: Math.round(overall)
     };
 }
-async function trainPaymentModel(schoolId, modelType, trainingPeriodMonths, features, hyperparameters) {
+async function trainPaymentModel(schoolId, modelType, trainingPeriodMonths, features) {
     const prismaClient = getPrismaClient();
     const modelId = `${modelType}_${schoolId || 'global'}_${Date.now()}`;
     const trainingStartTime = Date.now();
@@ -787,7 +788,7 @@ async function trainPaymentModel(schoolId, modelType, trainingPeriodMonths, feat
             throw new Error('Insufficient training data - minimum 100 data points required');
         }
         const extractedFeatures = extractModelFeatures(trainingData, features);
-        const trainingResults = simulateModelTraining(extractedFeatures, modelType, hyperparameters);
+        const trainingResults = simulateModelTraining(extractedFeatures);
         const trainingDuration = Date.now() - trainingStartTime;
         const nextRetrainingDate = new Date();
         nextRetrainingDate.setMonth(nextRetrainingDate.getMonth() + 3);
@@ -858,7 +859,7 @@ function extractModelFeatures(data, requestedFeatures) {
     });
     return extractedFeatures;
 }
-function simulateModelTraining(features, modelType, hyperparameters) {
+function simulateModelTraining(features) {
     const dataQuality = Object.values(features)[0]?.length || 0;
     const baseAccuracy = Math.min(0.95, 0.6 + (dataQuality / 1000) * 0.3);
     const results = {
@@ -892,16 +893,18 @@ const mlPaymentInsightsHandler = async (event, context) => {
             return authResult;
         }
         const { user: authenticatedUser } = authResult;
+        if (!authenticatedUser) {
+            return (0, response_utils_1.createErrorResponse)('Authentication failed - user not found', 401, 'AUTHENTICATION_ERROR');
+        }
         if (!['school_admin', 'admin', 'super_admin'].includes(authenticatedUser.role)) {
             logger.warn('Unauthorized ML insights access attempt', {
                 requestId,
-                userId: authenticatedUser.id,
+                userId: authenticatedUser.id || "",
                 role: authenticatedUser.role
             });
             return (0, response_utils_1.createErrorResponse)('Insufficient permissions for ML insights access', 403, 'INSUFFICIENT_PERMISSIONS');
         }
         const method = event.httpMethod;
-        const pathParameters = event.pathParameters || {};
         const queryStringParameters = event.queryStringParameters || {};
         switch (method) {
             case 'GET':
@@ -919,7 +922,7 @@ const mlPaymentInsightsHandler = async (event, context) => {
     catch (error) {
         logger.error('ML Payment Insights request failed', {
             requestId,
-            error: error.message,
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
             stack: error.stack
         });
         return (0, response_utils_1.handleError)(error, 'ML Payment Insights operation failed');
@@ -955,7 +958,7 @@ async function handleMLInsightsQuery(queryParams, authenticatedUser, requestId) 
         authenticatedUser.schoolId : insightsQuery.schoolId;
     logger.info('ML insights query processing', {
         requestId,
-        userId: authenticatedUser.id,
+        userId: authenticatedUser.id || "",
         timeframe: insightsQuery.timeframe,
         insightTypes: insightsQuery.insightTypes,
         schoolId,
@@ -988,7 +991,7 @@ async function handleMLInsightsQuery(queryParams, authenticatedUser, requestId) 
     catch (error) {
         logger.error('ML insights generation failed', {
             requestId,
-            error: error.message,
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
             insightsQuery
         });
         throw error;
@@ -1003,13 +1006,13 @@ async function handleModelTraining(event, authenticatedUser, requestId) {
     const trainingData = trainModelSchema.parse(requestBody);
     logger.info('Model training started', {
         requestId,
-        userId: authenticatedUser.id,
+        userId: authenticatedUser.id || "",
         modelType: trainingData.modelType,
         trainingPeriodMonths: trainingData.trainingPeriodMonths,
         schoolId: trainingData.schoolId
     });
     try {
-        const trainingResult = await trainPaymentModel(trainingData.schoolId, trainingData.modelType, trainingData.trainingPeriodMonths, trainingData.features, trainingData.hyperparameters);
+        const trainingResult = await trainPaymentModel(trainingData.schoolId, trainingData.modelType, trainingData.trainingPeriodMonths, trainingData.features);
         logger.info('Model training completed', {
             requestId,
             modelId: trainingResult.modelId,
@@ -1029,7 +1032,7 @@ async function handleModelTraining(event, authenticatedUser, requestId) {
     catch (error) {
         logger.error('Model training failed', {
             requestId,
-            error: error.message,
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
             trainingData
         });
         throw error;

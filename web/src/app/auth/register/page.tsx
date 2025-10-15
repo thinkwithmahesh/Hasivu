@@ -1,19 +1,19 @@
-"use client"
+'use client';
 
-import { useState } from 'react'
-import { RegisterForm } from '@/components/auth/RegisterForm'
-import { AuthLayout } from '@/components/auth/AuthLayout'
-import { useAuth } from '@/contexts/auth-context'
-import type { RegistrationFormData } from '@/components/auth/schemas'
+import { useState } from 'react';
+import { RegisterForm } from '@/components/auth/RegisterForm';
+import { AuthLayout } from '@/components/auth/AuthLayout';
+import { useAuth } from '@/contexts/auth-context';
+import type { RegistrationFormData } from '@/components/auth/schemas';
 
 export default function RegisterPage() {
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const { register } = useAuth()
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { register } = useAuth();
 
   const handleRegister = async (data: RegistrationFormData) => {
-    setIsLoading(true)
-    setError(null)
+    setIsLoading(true);
+    setError(null);
 
     try {
       const success = await register({
@@ -24,21 +24,19 @@ export default function RegisterPage() {
         grade: data.grade,
         section: data.section,
         role: 'parent', // Default role, can be adjusted based on email or selection
-      })
+      });
 
       if (success) {
         // Redirect will be handled by the auth context
-        console.log('Registration successful')
       } else {
-        setError('Registration failed. Please check your information and try again.')
+        setError('Registration failed. Please check your information and try again.');
       }
     } catch (err: any) {
-      console.error('Registration error:', err)
-      setError(err.message || 'An unexpected error occurred. Please try again.')
+      setError(err.message || 'An unexpected error occurred. Please try again.');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <AuthLayout
@@ -52,5 +50,5 @@ export default function RegisterPage() {
         className="w-full max-w-md"
       />
     </AuthLayout>
-  )
+  );
 }

@@ -10,7 +10,7 @@ async function checkServiceStatus(serviceName) {
     const startTime = Date.now();
     try {
         switch (serviceName) {
-            case 'database':
+            case 'database': {
                 const database = database_service_1.DatabaseService.getInstance();
                 const queryStartTime = Date.now();
                 await database.query('SELECT 1 as health_check');
@@ -26,7 +26,8 @@ async function checkServiceStatus(serviceName) {
                         queryTime: `${queryTime}ms`
                     }
                 };
-            case 'redis':
+            }
+            case 'redis': {
                 const redis = redis_service_1.RedisService;
                 const pingStartTime = Date.now();
                 await redis.ping();
@@ -41,7 +42,8 @@ async function checkServiceStatus(serviceName) {
                         pingTime: `${pingTime}ms`
                     }
                 };
-            case 'api':
+            }
+            case 'api': {
                 return {
                     name: 'api',
                     status: 'operational',
@@ -53,7 +55,8 @@ async function checkServiceStatus(serviceName) {
                         averageResponseTime: '150ms'
                     }
                 };
-            case 'payments':
+            }
+            case 'payments': {
                 return {
                     name: 'payments',
                     status: 'operational',
@@ -65,12 +68,13 @@ async function checkServiceStatus(serviceName) {
                         averageProcessingTime: '200ms'
                     }
                 };
+            }
             default:
                 throw new Error(`Unknown service: ${serviceName}`);
         }
     }
     catch (error) {
-        logger.error('Service status check failed', { serviceName, error: error.message });
+        logger.error('Service status check failed', { serviceName, error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) });
         return {
             name: serviceName,
             status: 'major_outage',
@@ -78,7 +82,7 @@ async function checkServiceStatus(serviceName) {
             responseTime: Date.now() - startTime,
             lastChecked: new Date().toISOString(),
             metrics: {
-                error: error.message
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
             }
         };
     }
@@ -166,7 +170,7 @@ const getStatusHandler = async (event, context) => {
         const duration = Date.now() - startTime;
         logger.error('System status request failed', {
             requestId,
-            error: error.message,
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
             duration: `${duration}ms`
         });
         return (0, response_utils_1.handleError)(error, 'Failed to retrieve system status');
@@ -235,7 +239,7 @@ const getDetailedStatusHandler = async (event, context) => {
         const duration = Date.now() - startTime;
         logger.error('Detailed system status request failed', {
             requestId,
-            error: error.message,
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
             duration: `${duration}ms`
         });
         return (0, response_utils_1.handleError)(error, 'Failed to retrieve detailed system status');
@@ -276,10 +280,10 @@ const getServiceStatusHandler = async (event, context) => {
         logger.error('Service status request failed', {
             requestId,
             serviceName: event.pathParameters?.serviceName,
-            error: error.message,
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
             duration: `${duration}ms`
         });
-        if (error.message.includes('Unknown service')) {
+        if (error instanceof Error ? error.message : String(error).includes('Unknown service')) {
             return (0, response_utils_1.createErrorResponse)(`Service ${event.pathParameters?.serviceName} not found`, 404, 'SERVICE_NOT_FOUND');
         }
         return (0, response_utils_1.handleError)(error, 'Failed to retrieve service status');

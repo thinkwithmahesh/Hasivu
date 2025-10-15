@@ -1,43 +1,28 @@
-export interface ValidationResult {
-    isValid: boolean;
-    errors: string[];
-    sanitizedValue?: any;
-    warnings?: string[];
-}
-export interface FieldValidationRule {
-    type: 'string' | 'number' | 'email' | 'phone' | 'url' | 'uuid' | 'date' | 'boolean' | 'array' | 'object';
-    required?: boolean;
-    minLength?: number;
-    maxLength?: number;
-    min?: number;
-    max?: number;
-    pattern?: RegExp;
-    enum?: any[];
-    customValidator?: (value: any) => boolean | string;
-    sanitize?: boolean;
-}
-export interface ValidationSchema {
-    [fieldName: string]: FieldValidationRule;
+import { ZodSchema } from 'zod';
+export interface ValidationResult<T = any> {
+    success: boolean;
+    data?: T;
+    errors?: Array<{
+        field: string;
+        message: string;
+    }>;
 }
 export declare class ValidationService {
     private static instance;
+    private constructor();
     static getInstance(): ValidationService;
-    validateField(fieldName: string, value: any, rules: FieldValidationRule): ValidationResult;
-    validateObject(data: any, schema: ValidationSchema): ValidationResult;
-    checkSecurity(fieldName: string, value: any): ValidationResult;
+    validate<T>(schema: ZodSchema<T>, data: unknown): ValidationResult<T>;
+    validateEmail(email: string): boolean;
+    validatePhone(phone: string): boolean;
+    validateUUID(uuid: string): boolean;
+    validateDate(date: string): boolean;
+    validateRequired(data: Record<string, any>, requiredFields: string[]): ValidationResult;
     sanitizeString(input: string): string;
-    sanitizeHtml(html: string): string;
-    sanitizeSqlInput(input: string): string;
-    private isNumeric;
-    private hasSuspiciousEncoding;
-    isValidEmail(email: string): boolean;
-    isValidPhone(phone: string): boolean;
-    isValidUUID(uuid: string): boolean;
-    isValidUrl(url: string): boolean;
-    isStrongPassword(password: string): ValidationResult;
-    validateRegistration(data: any): ValidationResult;
+    validatePassword(password: string): ValidationResult;
+    validateRange(value: number, min: number, max: number): boolean;
     sanitizePayload(payload: any): any;
-    validateProfileUpdate(data: any): ValidationResult;
+    static validateObject(schema: any, data: any): any;
 }
 export declare const validationService: ValidationService;
+export default ValidationService;
 //# sourceMappingURL=validation.service.d.ts.map

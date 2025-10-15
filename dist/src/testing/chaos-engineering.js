@@ -173,14 +173,14 @@ class ChaosEngineeringService extends events_1.EventEmitter {
             result.endTime = new Date();
             result.errors.push({
                 type: 'execution_error',
-                message: error.message,
+                message: error instanceof Error ? error.message : String(error),
                 timestamp: new Date(),
                 stack: error.stack
             });
             logger_1.logger.error('Chaos experiment failed', {
                 experimentId,
                 runId: result.id,
-                error: error.message
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
             });
             this.emit('experiment_failed', { experiment, result, error });
         }
@@ -254,7 +254,7 @@ class ChaosEngineeringService extends events_1.EventEmitter {
             catch (error) {
                 result.errors.push({
                     type: 'resource_exhaustion',
-                    message: error.message,
+                    message: error instanceof Error ? error.message : String(error),
                     timestamp: new Date()
                 });
             }
@@ -326,7 +326,7 @@ class ChaosEngineeringService extends events_1.EventEmitter {
                 }
             }
             catch (error) {
-                const message = `Safety check error: ${safetyCheck.name} - ${error.message}`;
+                const message = `Safety check error: ${safetyCheck.name} - ${error instanceof Error ? error.message : String(error)}`;
                 if (safetyCheck.required) {
                     throw new Error(message);
                 }
@@ -349,9 +349,10 @@ class ChaosEngineeringService extends events_1.EventEmitter {
     }
     async evaluateCondition(condition) {
         switch (condition.type) {
-            case 'time':
+            case 'time': {
                 const now = new Date();
                 return this.compareValues(now.getTime(), condition.value, condition.operator);
+            }
             case 'environment':
                 return this.compareValues(this.environment, condition.value, condition.operator);
             case 'custom':

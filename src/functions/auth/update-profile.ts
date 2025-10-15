@@ -1,222 +1,76 @@
 /**
- * Update User Profile Lambda Function
- * Updates user profile in both Cognito and database
+ * Update Profile Function
+ * Lambda function to update user profile
  */
-import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
-import { CognitoServiceClass } from '../../services/cognito.service';
-import { DatabaseService } from '../../services/database.service';
-import { logger as Logger } from '../../utils/logger';
-import { ValidationService } from '../../services/validation.service';
 
-// Initialize services
-const cognito = CognitoServiceClass.getInstance();
-const db = DatabaseService.getInstance();
-const logger = Logger;
-const validator = ValidationService.getInstance();
+import { APIGatewayProxyResult } from 'aws-lambda';
+import { authService } from '../../services/auth.service';
+import { createSuccessResponse, createErrorResponse } from '../shared/response.utils';
 
-// Common Lambda response helper
-const createResponse = (statusCode: number, body: any, headers: Record<string, string> = {}): APIGatewayProxyResult => ({
-  statusCode,
-  headers: {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
-    'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
-    ...headers
-  },
-  body: JSON.stringify(body)
-});
+export interface UpdateProfileRequest {
+  userId: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+}
 
-// Error handling helper
-const handleError = (error: any, context: Context): APIGatewayProxyResult => {
-  logger.error('Update profile Lambda function error', error, { requestId: context.awsRequestId });
-  
-  if (error.name === 'ValidationError') {
-    return createResponse(400, { error: error.message, details: error.details });
-  }
-  
-  if (error.isCognitoError) {
-    const statusCode = error.statusCode || 400;
-    return createResponse(statusCode, { 
-      error: error.message || 'Profile update failed',
-      code: error.code 
-    });
-  }
-  
-  return createResponse(500, { error: 'Internal server error' });
-};
-
-/**
- * Update User Profile Lambda Function Handler
- * Updates user profile in both Cognito and database
- */
-export const updateProfileHandler = async (
-  event: APIGatewayProxyEvent,
-  context: Context
-): Promise<APIGatewayProxyResult> => {
-  const startTime = Date.now();
-  
+export const handler = async (event: any, _context: any): Promise<APIGatewayProxyResult> => {
   try {
-    logger.logFunctionStart('updateProfileHandler', { requestId: context.awsRequestId });
+    const body: UpdateProfileRequest = JSON.parse(event.body || '{}');
+    const userId = event.pathParameters?.userId || body.userId;
 
-    // Get Cognito user ID from the event
-    const cognitoUserId = event.requestContext.authorizer?.claims?.sub;
-    
-    if (!cognitoUserId) {
-      return createResponse(401, { error: 'Unauthorized - No user ID found' });
+    // Validate input
+    if (!userId) {
+      return createErrorResponse('VALIDATION_ERROR', 'User ID is required', 400);
     }
 
-    // Parse and validate request body
-    const body = JSON.parse(event.body || '{}');
-    const validationResult = await validator.validateProfileUpdate(body);
-    if (!validationResult.isValid) {
-      return createResponse(400, { 
-        error: 'Validation failed',
-        details: validationResult.errors
-      });
-    }
-    const validatedData = validationResult.sanitizedValue;
+    // Prepare update data
+    const updateData: { firstName?: string; lastName?: string; phone?: string } = {};
+    if (body.firstName) updateData.firstName = body.firstName;
+    if (body.lastName) updateData.lastName = body.lastName;
+    if (body.phone !== undefined) updateData.phone = body.phone;
 
-    logger.info('Processing profile update request', { 
-      cognitoUserId,
-      fieldsToUpdate: Object.keys(validatedData),
-      requestId: context.awsRequestId 
-    });
-
-    // Get current user from database
-    const currentUser = await db.user.findFirst({
-      where: { cognitoUserId },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        phone: true,
-        role: true,
-        schoolId: true,
-        isActive: true,
-        preferences: true,
-        createdAt: true,
-        updatedAt: true
-      }
-    });
-
-    if (!currentUser) {
-      return createResponse(404, { error: 'User not found' });
+    if (Object.keys(updateData).length === 0) {
+      return createErrorResponse(
+        'VALIDATION_ERROR',
+        'At least one field to update is required',
+        400
+      );
     }
 
-    // Get access token from Authorization header
-    const authHeader = event.headers.Authorization || event.headers.authorization;
-    const accessToken = authHeader?.replace('Bearer ', '');
-    
-    if (!accessToken) {
-      return createResponse(401, { error: 'Access token required for profile updates' });
+    // Update profile
+    const result = await authService.updateProfile(userId, updateData);
+
+    if (!result.success) {
+      return createErrorResponse(
+        'PROFILE_UPDATE_FAILED',
+        result.error || 'Profile update failed',
+        400
+      );
     }
 
-    // Prepare updates for database
-    const databaseUpdates: any = {};
-    
-    // Prepare updates for Cognito
-    const cognitoUpdates: { [key: string]: string } = {};
-
-    // Handle name updates
-    if (validatedData.firstName && validatedData.firstName !== currentUser.firstName) {
-      databaseUpdates.firstName = validatedData.firstName;
-      cognitoUpdates.given_name = validatedData.firstName;
-    }
-
-    if (validatedData.lastName && validatedData.lastName !== currentUser.lastName) {
-      databaseUpdates.lastName = validatedData.lastName;
-      cognitoUpdates.family_name = validatedData.lastName;
-    }
-
-    // Handle phone update
-    if (validatedData.phone !== undefined && validatedData.phone !== currentUser.phone) {
-      databaseUpdates.phone = validatedData.phone;
-      if (validatedData.phone) {
-        cognitoUpdates.phone_number = validatedData.phone;
-      }
-    }
-
-    // Handle preferences update
-    if (validatedData.preferences !== undefined) {
-      const currentPreferences = (currentUser.preferences as any) || {};
-      const newPreferences = { ...currentPreferences, ...validatedData.preferences };
-      databaseUpdates.preferences = newPreferences;
-    }
-
-    // Update Cognito attributes if any
-    if (Object.keys(cognitoUpdates).length > 0) {
-      try {
-        await cognito.updateUserAttributes(accessToken, cognitoUpdates);
-        logger.info('Cognito attributes updated successfully', { 
-          attributes: Object.keys(cognitoUpdates),
-          cognitoUserId 
-        });
-      } catch (cognitoError) {
-        logger.error('Cognito update failed', cognitoError, { cognitoUserId });
-        throw cognitoError;
-      }
-    }
-
-    // Update database if any changes
-    let updatedUser = currentUser;
-    if (Object.keys(databaseUpdates).length > 0) {
-      updatedUser = await db.user.update({
-        where: { id: currentUser.id },
-        data: databaseUpdates,
-        select: {
-          id: true,
-          email: true,
-          firstName: true,
-          lastName: true,
-          phone: true,
-          role: true,
-          schoolId: true,
-          isActive: true,
-          preferences: true,
-          createdAt: true,
-          updatedAt: true
-        }
-      });
-      
-      logger.info('Database profile updated successfully', { 
-        userId: currentUser.id,
-        updatedFields: Object.keys(databaseUpdates) 
-      });
-    }
-
-    // Get school information
-    const school = updatedUser.schoolId ? await db.school.findUnique({
-      where: { id: updatedUser.schoolId },
-      select: {
-        id: true,
-        name: true,
-        address: true,
-        city: true,
-        state: true,
-        postalCode: true
-      }
-    }) : null;
-
-    const duration = Date.now() - startTime;
-    logger.logFunctionEnd("handler", { statusCode: 200, duration });
-    logger.info('Profile updated successfully', { 
-      userId: updatedUser.id,
-      email: updatedUser.email,
-      updatedFields: Object.keys(databaseUpdates),
-      duration 
-    });
-
-    return createResponse(200, {
-      message: 'Profile updated successfully',
-      user: {
-        ...updatedUser,
-        school
-      }
-    });
-
+    // Return updated profile (exclude password hash)
+    return createSuccessResponse(
+      {
+        id: result.user.id,
+        email: result.user.email,
+        firstName: result.user.firstName || '',
+        lastName: result.user.lastName || '',
+        role: result.user.role,
+        phone: result.user.phone || '',
+      },
+      200
+    );
   } catch (error) {
-    return handleError(error, context);
+    return createErrorResponse(
+      'PROFILE_UPDATE_FAILED',
+      error instanceof Error ? error.message : 'Profile update failed',
+      500
+    );
   }
 };
+
+// Export handler as updateProfileHandler for tests
+export const updateProfileHandler = handler;
+
+export default handler;

@@ -10,7 +10,7 @@ This configuration implements automated coding standards for the HASIVU Platform
 
 1. **Code Formatting & Linting**
    - **Triggers**: After Edit, MultiEdit, or Write operations on .ts/.js files
-   - **Actions**: 
+   - **Actions**:
      - Runs Prettier for code formatting
      - Runs ESLint with auto-fix for code quality
    - **Timeout**: 30 seconds
@@ -54,7 +54,7 @@ This configuration implements automated coding standards for the HASIVU Platform
 
 ### Session Management Hooks
 
-1. **Session Start** 
+1. **Session Start**
    - **Actions**: Displays welcome message and recent git changes (last 5 commits)
    - **Timeout**: 10 seconds
 
@@ -98,6 +98,7 @@ hasivu-platform/
 ## Customization
 
 To modify these rules:
+
 1. Edit the source rules in `MyCodeRules.md`
 2. Update the corresponding hooks in `.claude-code/settings.json`
 3. Restart Claude Code for changes to take effect

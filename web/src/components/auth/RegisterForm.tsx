@@ -1,12 +1,12 @@
-"use client"
+'use client';
 
-import * as React from "react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { Eye, EyeOff, Loader2, Mail, Lock, User, Phone, UserPlus, Building2 } from "lucide-react"
-import Link from "next/link"
+import * as React from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Eye, EyeOff, Loader2, Mail, Lock, User, Phone, UserPlus, Building2 } from 'lucide-react';
+import Link from 'next/link';
 
-import { Button } from "@/components/ui/button"
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -14,9 +14,9 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Form,
   FormControl,
@@ -24,32 +24,32 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
-import { Separator } from "@/components/ui/separator"
+} from '@/components/ui/form';
+import { Separator } from '@/components/ui/separator';
 
-import { registerSchema, type RegisterFormData } from "./schemas"
-import type { UserRole } from "@/types/auth"
+import { registerSchema, type RegisterFormData } from './schemas';
+import type { UserRole } from '@/types/auth';
 
 interface RegisterFormProps {
-  onSubmit: (data: RegisterFormData) => Promise<void>
-  onSocialLogin?: (provider: "google" | "facebook") => Promise<void>
-  isLoading?: boolean
-  error?: string | null
-  showSocialLogin?: boolean
-  availableRoles?: UserRole[]
-  className?: string
+  onSubmit: (data: RegisterFormData) => Promise<void>;
+  onSocialLogin?: (provider: 'google' | 'facebook') => Promise<void>;
+  isLoading?: boolean;
+  error?: string | null;
+  showSocialLogin?: boolean;
+  availableRoles?: UserRole[];
+  className?: string;
 }
 
 const roleLabels: Record<UserRole, string> = {
-  student: "Student",
-  parent: "Parent/Guardian",
-  teacher: "Teacher",
-  vendor: "Vendor/Caterer",
-  delivery_partner: "Delivery Partner",
-  school_admin: "School Administrator",
-  admin: "Administrator",
-  super_admin: "Super Administrator"
-}
+  student: 'Student',
+  parent: 'Parent/Guardian',
+  teacher: 'Teacher',
+  vendor: 'Vendor/Caterer',
+  delivery_partner: 'Delivery Partner',
+  school_admin: 'School Administrator',
+  admin: 'Administrator',
+  super_admin: 'Super Administrator',
+};
 
 export function RegisterForm({
   onSubmit,
@@ -57,62 +57,60 @@ export function RegisterForm({
   isLoading = false,
   error,
   showSocialLogin = true,
-  availableRoles = ["student", "parent", "teacher"],
-  className
+  availableRoles = ['student', 'parent', 'teacher'],
+  className,
 }: RegisterFormProps) {
-  const [showPassword, setShowPassword] = React.useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false)
+  const [showPassword, setShowPassword] = React.useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
 
   const form = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      email: "",
-      password: "",
-      confirmPassword: "",
-      firstName: "",
-      lastName: "",
-      phone: "",
-      role: "student",
-      schoolId: "",
+      email: '',
+      password: '',
+      confirmPassword: '',
+      firstName: '',
+      lastName: '',
+      phone: '',
+      role: 'student',
+      schoolId: '',
       termsAccepted: false,
     },
-  })
+  });
 
-  const selectedRole = form.watch("role")
-  const needsSchoolId = ["student", "parent", "teacher", "school_admin"].includes(selectedRole)
+  const selectedRole = form.watch('role');
+  const needsSchoolId = ['student', 'parent', 'teacher', 'school_admin'].includes(selectedRole);
 
   const handleSubmit = async (data: RegisterFormData) => {
     try {
-      await onSubmit(data)
+      await onSubmit(data);
     } catch (error) {
-      console.error("Registration error:", error)
+      // Error handled silently
     }
-  }
+  };
 
-  const handleSocialLogin = async (provider: "google" | "facebook") => {
+  const handleSocialLogin = async (provider: 'google' | 'facebook') => {
     if (onSocialLogin) {
       try {
-        await onSocialLogin(provider)
+        await onSocialLogin(provider);
       } catch (error) {
-        console.error(`${provider} registration error:`, error)
+        // Error handled silently
       }
     }
-  }
+  };
 
   return (
     <Card className={className} aria-label="Registration form">
       <CardHeader className="space-y-1 text-center">
-        <CardTitle className="text-3xl font-bold text-primary-600">
-          Create Account
-        </CardTitle>
+        <CardTitle className="text-3xl font-bold text-primary-600">Create Account</CardTitle>
         <CardDescription className="text-gray-600">
           Join HASIVU platform and start your journey
         </CardDescription>
       </CardHeader>
-      
+
       <CardContent className="space-y-4">
         {error && (
-          <div 
+          <div
             className="p-3 rounded-md bg-error-50 border border-error-200 text-error-700 text-sm"
             role="alert"
             aria-live="polite"
@@ -210,7 +208,7 @@ export function RegisterForm({
                         <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                         <Input
                           {...field}
-                          type={showPassword ? "text" : "password"}
+                          type={showPassword ? 'text' : 'password'}
                           placeholder="Create password"
                           className="pl-10 pr-10"
                           autoComplete="new-password"
@@ -220,7 +218,7 @@ export function RegisterForm({
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
                           className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
-                          aria-label={showPassword ? "Hide password" : "Show password"}
+                          aria-label={showPassword ? 'Hide password' : 'Show password'}
                         >
                           {showPassword ? (
                             <EyeOff className="h-4 w-4" />
@@ -246,7 +244,7 @@ export function RegisterForm({
                         <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                         <Input
                           {...field}
-                          type={showConfirmPassword ? "text" : "password"}
+                          type={showConfirmPassword ? 'text' : 'password'}
                           placeholder="Confirm password"
                           className="pl-10 pr-10"
                           autoComplete="new-password"
@@ -256,7 +254,7 @@ export function RegisterForm({
                           type="button"
                           onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                           className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
-                          aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                          aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
                         >
                           {showConfirmPassword ? (
                             <EyeOff className="h-4 w-4" />
@@ -310,7 +308,7 @@ export function RegisterForm({
                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                         disabled={isLoading}
                       >
-                        {availableRoles.map((role) => (
+                        {availableRoles.map(role => (
                           <option key={role} value={role}>
                             {roleLabels[role]}
                           </option>
@@ -331,7 +329,10 @@ export function RegisterForm({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-gray-700">
-                      School ID {["student", "teacher", "school_admin"].includes(selectedRole) ? "(Required)" : "(Optional)"}
+                      School ID{' '}
+                      {['student', 'teacher', 'school_admin'].includes(selectedRole)
+                        ? '(Required)'
+                        : '(Optional)'}
                     </FormLabel>
                     <FormControl>
                       <div className="relative">
@@ -367,7 +368,7 @@ export function RegisterForm({
                   </FormControl>
                   <div className="space-y-1 leading-none">
                     <Label className="text-sm text-gray-600">
-                      I agree to the{" "}
+                      I agree to the{' '}
                       <Link
                         href="/legal/terms"
                         className="text-primary-600 hover:text-primary-500 underline"
@@ -375,8 +376,8 @@ export function RegisterForm({
                         rel="noopener noreferrer"
                       >
                         Terms of Service
-                      </Link>{" "}
-                      and{" "}
+                      </Link>{' '}
+                      and{' '}
                       <Link
                         href="/legal/privacy"
                         className="text-primary-600 hover:text-primary-500 underline"
@@ -427,7 +428,7 @@ export function RegisterForm({
             <div className="grid grid-cols-2 gap-3">
               <Button
                 variant="outline"
-                onClick={() => handleSocialLogin("google")}
+                onClick={() => handleSocialLogin('google')}
                 disabled={isLoading}
                 className="border-gray-300 text-gray-700 hover:bg-gray-50"
               >
@@ -454,7 +455,7 @@ export function RegisterForm({
 
               <Button
                 variant="outline"
-                onClick={() => handleSocialLogin("facebook")}
+                onClick={() => handleSocialLogin('facebook')}
                 disabled={isLoading}
                 className="border-gray-300 text-gray-700 hover:bg-gray-50"
               >
@@ -470,7 +471,7 @@ export function RegisterForm({
 
       <CardFooter className="flex flex-col space-y-2 text-center text-sm text-gray-600">
         <p>
-          Already have an account?{" "}
+          Already have an account?{' '}
           <Link
             href="/auth/login"
             className="text-primary-600 hover:text-primary-500 font-medium focus:outline-none focus:underline"
@@ -480,5 +481,5 @@ export function RegisterForm({
         </p>
       </CardFooter>
     </Card>
-  )
+  );
 }

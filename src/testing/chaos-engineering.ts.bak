@@ -1,0 +1,882 @@
+/**
+ * HASIVU Platform - Chaos Engineering Framework
+ * Production-ready chaos engineering and fault injection system for testing system resilience
+ * Provides controlled failure injection to identify weaknesses and improve system reliability
+ */
+
+import { logger } from '../shared/utils/logger';
+import { EventEmitter } from 'events';
+
+/**
+ * Chaos experiment types
+ */
+export enum ChaosExperimentType {
+  LATENCY_INJECTION = 'latency_injection',
+  ERROR_INJECTION = 'error_injection',
+  RESOURCE_EXHAUSTION = 'resource_exhaustion',
+  NETWORK_PARTITION = 'network_partition',
+  SERVICE_SHUTDOWN = 'service_shutdown',
+  DATABASE_FAILURE = 'database_failure',
+  MEMORY_LEAK = 'memory_leak',
+  CPU_SPIKE = 'cpu_spike',
+  DISK_FULL = 'disk_full',
+  TIMEOUT_INJECTION = 'timeout_injection'
+}
+
+/**
+ * Chaos experiment severity levels
+ */
+export enum ChaosSeverity {
+  LOW = 'low',
+  MEDIUM = 'medium',
+  HIGH = 'high',
+  CRITICAL = 'critical'
+}
+
+/**
+ * Chaos experiment status
+ */
+export enum ChaosStatus {
+  PENDING = 'pending',
+  RUNNING = 'running',
+  COMPLETED = 'completed',
+  FAILED = 'failed',
+  CANCELLED = 'cancelled',
+  PAUSED = 'paused'
+}
+
+/**
+ * Target selection criteria
+ */
+export interface ChaosTarget {
+  type: 'service' | 'endpoint' | 'database' | 'network' | 'resource';
+  identifier: string;
+  tags?: Record<string, string>;
+  environment: string;
+  percentage?: number; // Percentage of instances to affect
+}
+
+/**
+ * Experiment configuration
+ */
+export interface ChaosExperimentConfig {
+  id: string;
+  name: string;
+  description: string;
+  type: ChaosExperimentType;
+  severity: ChaosSeverity;
+  targets: ChaosTarget[];
+  parameters: Record<string, any>;
+  duration: number; // Duration in milliseconds
+  schedule?: ChaosSchedule;
+  conditions?: ChaosCondition[];
+  rollbackTriggers?: ChaosRollbackTrigger[];
+  metrics?: ChaosMetric[];
+  enabled: boolean;
+  createdBy: string;
+  createdAt: Date;
+  lastRun?: Date;
+}
+
+/**
+ * Experiment scheduling configuration
+ */
+export interface ChaosSchedule {
+  type: 'once' | 'recurring' | 'cron';
+  pattern?: string; // Cron pattern for recurring experiments
+  startTime?: Date;
+  endTime?: Date;
+  interval?: number; // For recurring experiments in milliseconds
+}
+
+/**
+ * Condition for experiment execution
+ */
+export interface ChaosCondition {
+  type: 'metric' | 'time' | 'environment' | 'custom';
+  operator: '==' | '!=' | '>' | '<' | '>=' | '<=' | 'in' | 'not_in';
+  value: any;
+  metricName?: string;
+  customCheck?: () => Promise<boolean>;
+}
+
+/**
+ * Rollback trigger configuration
+ */
+export interface ChaosRollbackTrigger {
+  type: 'metric' | 'error_rate' | 'response_time' | 'custom';
+  threshold: number;
+  metricName?: string;
+  timeWindow: number; // Time window in milliseconds
+  customCheck?: () => Promise<boolean>;
+}
+
+/**
+ * Metric collection configuration
+ */
+export interface ChaosMetric {
+  name: string;
+  type: 'counter' | 'gauge' | 'histogram' | 'timer';
+  labels?: Record<string, string>;
+  collector: () => Promise<number>;
+}
+
+/**
+ * Experiment execution result
+ */
+export interface ChaosExperimentResult {
+  id: string;
+  experimentId: string;
+  status: ChaosStatus;
+  startTime: Date;
+  endTime?: Date;
+  duration?: number;
+  targetsAffected: number;
+  metricsCollected: Record<string, any>;
+  errors: ChaosError[];
+  rollbackTriggered: boolean;
+  rollbackReason?: string;
+  observations: string[];
+  impact: ChaosImpactAssessment;
+}
+
+/**
+ * Impact assessment of chaos experiment
+ */
+export interface ChaosImpactAssessment {
+  errorRate: number;
+  responseTimeImpact: number;
+  availabilityImpact: number;
+  userExperienceImpact: 'none' | 'minimal' | 'moderate' | 'severe';
+  recoveryTime: number;
+  cascadeFailures: string[];
+}
+
+/**
+ * Chaos engineering error
+ */
+export interface ChaosError {
+  type: string;
+  message: string;
+  timestamp: Date;
+  target?: string;
+  stack?: string;
+}
+
+/**
+ * Safety checks for chaos experiments
+ */
+export interface ChaosSafetyCheck {
+  name: string;
+  description: string;
+  check: () => Promise<boolean>;
+  severity: 'warning' | 'error' | 'critical';
+  required: boolean;
+}
+
+/**
+ * Main Chaos Engineering Service
+ */
+export class ChaosEngineeringService extends EventEmitter {
+  private static instance: ChaosEngineeringService;
+  private experiments: Map<string, ChaosExperimentConfig> = new Map();
+  private runningExperiments: Map<string, ChaosExperimentResult> = new Map();
+  private safetyChecks: ChaosSafetyCheck[] = [];
+  private isEnabled: boolean = false;
+  private environment: string;
+
+  private constructor() {
+    super();
+    this.environment = process.env.NODE_ENV || 'development';
+    this.initializeSafetyChecks();
+    
+    // Only enable in non-production environments by default
+    this.isEnabled = this.environment !== 'production';
+    
+    logger.info('Chaos Engineering Service initialized', {
+      environment: this.environment,
+      enabled: this.isEnabled
+    });
+  }
+
+  /**
+   * Get singleton instance
+   */
+  public static getInstance(): ChaosEngineeringService {
+    if (!ChaosEngineeringService.instance) {
+      ChaosEngineeringService.instance = new ChaosEngineeringService();
+    }
+    return ChaosEngineeringService.instance;
+  }
+
+  /**
+   * Initialize default safety checks
+   */
+  private initializeSafetyChecks(): void {
+    this.safetyChecks = [
+      {
+        name: 'production_environment_check',
+        description: 'Prevent chaos experiments in production without explicit override',
+        check: async () => this.environment !== 'production' || process.env.CHAOS_PRODUCTION_OVERRIDE === 'true',
+        severity: 'critical',
+        required: true
+      },
+      {
+        name: 'system_health_check',
+        description: 'Ensure system is healthy before running experiments',
+        check: async () => {
+          // Check system resources, active connections, etc.
+          const memUsage = process.memoryUsage();
+          return (memUsage.heapUsed / memUsage.heapTotal) < 0.9;
+        },
+        severity: 'error',
+        required: true
+      },
+      {
+        name: 'active_incidents_check',
+        description: 'Check for active incidents before running experiments',
+        check: async () => {
+          // Integration with incident management system
+          return true; // Placeholder - integrate with actual incident system
+        },
+        severity: 'warning',
+        required: false
+      }
+    ];
+  }
+
+  /**
+   * Enable/disable chaos engineering
+   */
+  public setEnabled(enabled: boolean, overrideProductionCheck: boolean = false): void {
+    if (this.environment === 'production' && enabled && !overrideProductionCheck) {
+      throw new Error('Cannot enable chaos engineering in production without explicit override');
+    }
+    
+    this.isEnabled = enabled;
+    logger.info('Chaos engineering enabled status changed', { enabled });
+    this.emit('enabled_changed', enabled);
+  }
+
+  /**
+   * Register a new chaos experiment
+   */
+  public async registerExperiment(config: ChaosExperimentConfig): Promise<void> {
+    if (this.experiments.has(config.id)) {
+      throw new Error(`Experiment with ID ${config.id} already exists`);
+    }
+
+    // Validate experiment configuration
+    await this.validateExperimentConfig(config);
+
+    this.experiments.set(config.id, config);
+    logger.info('Chaos experiment registered', {
+      experimentId: config.id,
+      name: config.name,
+      type: config.type,
+      severity: config.severity
+    });
+
+    this.emit('experiment_registered', config);
+  }
+
+  /**
+   * Execute a chaos experiment
+   */
+  public async executeExperiment(experimentId: string): Promise<ChaosExperimentResult> {
+    if (!this.isEnabled) {
+      throw new Error('Chaos engineering is disabled');
+    }
+
+    const experiment = this.experiments.get(experimentId);
+    if (!experiment) {
+      throw new Error(`Experiment ${experimentId} not found`);
+    }
+
+    if (this.runningExperiments.has(experimentId)) {
+      throw new Error(`Experiment ${experimentId} is already running`);
+    }
+
+    // Run safety checks
+    await this.runSafetyChecks();
+
+    // Check conditions
+    const conditionsMet = await this.checkConditions(experiment.conditions || []);
+    if (!conditionsMet) {
+      throw new Error('Experiment conditions not met');
+    }
+
+    const result: ChaosExperimentResult = {
+      id: `run_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      experimentId,
+      status: ChaosStatus.RUNNING,
+      startTime: new Date(),
+      targetsAffected: 0,
+      metricsCollected: {},
+      errors: [],
+      rollbackTriggered: false,
+      observations: [],
+      impact: {
+        errorRate: 0,
+        responseTimeImpact: 0,
+        availabilityImpact: 0,
+        userExperienceImpact: 'none',
+        recoveryTime: 0,
+        cascadeFailures: []
+      }
+    };
+
+    this.runningExperiments.set(experimentId, result);
+
+    try {
+      logger.info('Starting chaos experiment', {
+        experimentId,
+        runId: result.id,
+        type: experiment.type,
+        targets: experiment.targets.length
+      });
+
+      this.emit('experiment_started', { experiment, result });
+
+      // Execute the specific chaos experiment type
+      await this.executeExperimentType(experiment, result);
+
+      // Set up rollback monitoring
+      const rollbackMonitor = this.setupRollbackMonitoring(experiment, result);
+
+      // Wait for experiment duration
+      await new Promise(resolve => setTimeout(resolve, experiment.duration));
+
+      // Clean up rollback monitor
+      if (rollbackMonitor) {
+        clearInterval(rollbackMonitor);
+      }
+
+      // Complete the experiment
+      result.status = ChaosStatus.COMPLETED;
+      result.endTime = new Date();
+      result.duration = result.endTime.getTime() - result.startTime.getTime();
+
+      logger.info('Chaos experiment completed', {
+        experimentId,
+        runId: result.id,
+        duration: result.duration,
+        targetsAffected: result.targetsAffected
+      });
+
+      this.emit('experiment_completed', { experiment, result });
+
+    } catch (error: any) {
+      result.status = ChaosStatus.FAILED;
+      result.endTime = new Date();
+      result.errors.push({
+        type: 'execution_error',
+        message: error.message,
+        timestamp: new Date(),
+        stack: error.stack
+      });
+
+      logger.error('Chaos experiment failed', {
+        experimentId,
+        runId: result.id,
+        error: error instanceof Error ? error.message : String(error)
+      });
+
+      this.emit('experiment_failed', { experiment, result, error });
+    } finally {
+      // Perform cleanup
+      await this.cleanupExperiment(experiment, result);
+      this.runningExperiments.delete(experimentId);
+    }
+
+    return result;
+  }
+
+  /**
+   * Execute specific experiment type
+   */
+  private async executeExperimentType(
+    experiment: ChaosExperimentConfig, 
+    result: ChaosExperimentResult
+  ): Promise<void> {
+    switch (experiment.type) {
+      case ChaosExperimentType.LATENCY_INJECTION:
+        await this.executeLatencyInjection(experiment, result);
+        break;
+      case ChaosExperimentType.ERROR_INJECTION:
+        await this.executeErrorInjection(experiment, result);
+        break;
+      case ChaosExperimentType.RESOURCE_EXHAUSTION:
+        await this.executeResourceExhaustion(experiment, result);
+        break;
+      case ChaosExperimentType.MEMORY_LEAK:
+        await this.executeMemoryLeak(experiment, result);
+        break;
+      case ChaosExperimentType.CPU_SPIKE:
+        await this.executeCpuSpike(experiment, result);
+        break;
+      default:
+        throw new Error(`Unsupported experiment type: ${experiment.type}`);
+    }
+  }
+
+  /**
+   * Execute latency injection experiment
+   */
+  private async executeLatencyInjection(
+    experiment: ChaosExperimentConfig,
+    result: ChaosExperimentResult
+  ): Promise<void> {
+    const delay = experiment.parameters.delay || 1000;
+    const percentage = experiment.parameters.percentage || 100;
+
+    logger.info('Executing latency injection', { delay, percentage });
+
+    // Hook into HTTP requests to add artificial delay
+    const originalSetTimeout = global.setTimeout;
+    (global as any).setTimeout = function(callback: any, ms: number, ...args: any[]) {
+      if (Math.random() * 100 < percentage) {
+        return originalSetTimeout(callback, ms + delay, ...args);
+      }
+      return originalSetTimeout(callback, ms, ...args);
+    };
+
+    result.targetsAffected++;
+    result.observations.push(`Added ${delay}ms latency to ${percentage}% of requests`);
+  }
+
+  /**
+   * Execute error injection experiment
+   */
+  private async executeErrorInjection(
+    experiment: ChaosExperimentConfig,
+    result: ChaosExperimentResult
+  ): Promise<void> {
+    const errorRate = experiment.parameters.errorRate || 0.1;
+    const errorType = experiment.parameters.errorType || 'generic';
+
+    logger.info('Executing error injection', { errorRate, errorType });
+
+    // Store original Promise.resolve for restoration
+    const originalPromiseResolve = Promise.resolve;
+    
+    Promise.resolve = function<T>(value?: T | PromiseLike<T>): Promise<T> {
+      if (Math.random() < errorRate) {
+        return Promise.reject(new Error(`Chaos Engineering: Injected ${errorType} error`));
+      }
+      return originalPromiseResolve.call(this, value);
+    };
+
+    result.targetsAffected++;
+    result.observations.push(`Injected ${errorType} errors at ${errorRate * 100}% rate`);
+  }
+
+  /**
+   * Execute resource exhaustion experiment
+   */
+  private async executeResourceExhaustion(
+    experiment: ChaosExperimentConfig,
+    result: ChaosExperimentResult
+  ): Promise<void> {
+    const resourceType = experiment.parameters.resourceType || 'memory';
+    const intensity = experiment.parameters.intensity || 0.5;
+
+    logger.info('Executing resource exhaustion', { resourceType, intensity });
+
+    if (resourceType === 'memory') {
+      const memoryHog: any[] = [];
+      const targetSize = Math.floor(intensity * 100 * 1024 * 1024); // MB to bytes
+      
+      try {
+        for (let i = 0; i < targetSize / 1024; i++) {
+          memoryHog.push(new Array(256).fill('x')); // 1KB chunks
+        }
+      } catch (error: any) {
+        result.errors.push({
+          type: 'resource_exhaustion',
+          message: error.message,
+          timestamp: new Date()
+        });
+      }
+    }
+
+    result.targetsAffected++;
+    result.observations.push(`Exhausted ${resourceType} at ${intensity * 100}% intensity`);
+  }
+
+  /**
+   * Execute memory leak simulation
+   */
+  private async executeMemoryLeak(
+    experiment: ChaosExperimentConfig,
+    result: ChaosExperimentResult
+  ): Promise<void> {
+    const leakRate = experiment.parameters.leakRate || 1024; // bytes per second
+    const duration = experiment.duration;
+
+    logger.info('Executing memory leak simulation', { leakRate, duration });
+
+    const leakInterval = setInterval(() => {
+      // Create intentional memory leak
+      const leak = new Array(leakRate / 4).fill('leak');
+      (global as any).chaosMemoryLeak = (global as any).chaosMemoryLeak || [];
+      (global as any).chaosMemoryLeak.push(leak);
+    }, 1000);
+
+    // Clean up after experiment
+    setTimeout(() => {
+      clearInterval(leakInterval);
+      delete (global as any).chaosMemoryLeak;
+    }, duration);
+
+    result.targetsAffected++;
+    result.observations.push(`Simulated memory leak at ${leakRate} bytes/second`);
+  }
+
+  /**
+   * Execute CPU spike simulation
+   */
+  private async executeCpuSpike(
+    experiment: ChaosExperimentConfig,
+    result: ChaosExperimentResult
+  ): Promise<void> {
+    const intensity = experiment.parameters.intensity || 0.5;
+    const duration = experiment.duration;
+
+    logger.info('Executing CPU spike simulation', { intensity, duration });
+
+    const startTime = Date.now();
+    const spike = () => {
+      const now = Date.now();
+      if (now - startTime < duration) {
+        // Busy loop to consume CPU
+        for (let i = 0; i < intensity * 1000000; i++) {
+          Math.random();
+        }
+        setImmediate(spike);
+      }
+    };
+
+    spike();
+
+    result.targetsAffected++;
+    result.observations.push(`Generated CPU spike at ${intensity * 100}% intensity`);
+  }
+
+  /**
+   * Validate experiment configuration
+   */
+  private async validateExperimentConfig(config: ChaosExperimentConfig): Promise<void> {
+    if (!config.id || !config.name || !config.type) {
+      throw new Error('Experiment must have id, name, and type');
+    }
+
+    if (config.duration <= 0) {
+      throw new Error('Experiment duration must be positive');
+    }
+
+    if (config.targets.length === 0) {
+      throw new Error('Experiment must have at least one target');
+    }
+
+    // Validate severity for production environments
+    if (this.environment === 'production' && config.severity === ChaosSeverity.CRITICAL) {
+      throw new Error('Critical experiments not allowed in production');
+    }
+  }
+
+  /**
+   * Run safety checks before experiment execution
+   */
+  private async runSafetyChecks(): Promise<void> {
+    logger.info('Running safety checks');
+
+    for (const safetyCheck of this.safetyChecks) {
+      try {
+        const passed = await safetyCheck.check();
+        if (!passed) {
+          const message = `Safety check failed: ${safetyCheck.name}`;
+          if (safetyCheck.required) {
+            throw new Error(message);
+          } else {
+            logger.warn(message, { severity: safetyCheck.severity });
+          }
+        }
+      } catch (error: any) {
+        const message = `Safety check error: ${safetyCheck.name} - ${error.message}`;
+        if (safetyCheck.required) {
+          throw new Error(message);
+        } else {
+          logger.error(message);
+        }
+      }
+    }
+
+    logger.info('All safety checks passed');
+  }
+
+  /**
+   * Check experiment conditions
+   */
+  private async checkConditions(conditions: ChaosCondition[]): Promise<boolean> {
+    for (const condition of conditions) {
+      const result = await this.evaluateCondition(condition);
+      if (!result) {
+        logger.info('Condition not met', { condition });
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Evaluate a single condition
+   */
+  private async evaluateCondition(condition: ChaosCondition): Promise<boolean> {
+    switch (condition.type) {
+      case 'time':
+        const now = new Date();
+        return this.compareValues(now.getTime(), condition.value, condition.operator);
+      case 'environment':
+        return this.compareValues(this.environment, condition.value, condition.operator);
+      case 'custom':
+        return condition.customCheck ? await condition.customCheck() : true;
+      default:
+        return true;
+    }
+  }
+
+  /**
+   * Compare values based on operator
+   */
+  private compareValues(actual: any, expected: any, operator: string): boolean {
+    switch (operator) {
+      case '==': return actual === expected;
+      case '!=': return actual !== expected;
+      case '>': return actual > expected;
+      case '<': return actual < expected;
+      case '>=': return actual >= expected;
+      case '<=': return actual <= expected;
+      case 'in': return Array.isArray(expected) && expected.includes(actual);
+      case 'not_in': return Array.isArray(expected) && !expected.includes(actual);
+      default: return false;
+    }
+  }
+
+  /**
+   * Set up rollback monitoring
+   */
+  private setupRollbackMonitoring(
+    experiment: ChaosExperimentConfig,
+    result: ChaosExperimentResult
+  ): NodeJS.Timeout | null {
+    if (!experiment.rollbackTriggers || experiment.rollbackTriggers.length === 0) {
+      return null;
+    }
+
+    return setInterval(async () => {
+      for (const trigger of experiment.rollbackTriggers!) {
+        const shouldRollback = await this.checkRollbackTrigger(trigger);
+        if (shouldRollback) {
+          logger.warn('Rollback triggered', { trigger });
+          result.rollbackTriggered = true;
+          result.rollbackReason = `${trigger.type} threshold exceeded: ${trigger.threshold}`;
+          await this.cleanupExperiment(experiment, result);
+          this.emit('experiment_rollback', { experiment, result, trigger });
+          break;
+        }
+      }
+    }, 5000); // Check every 5 seconds
+  }
+
+  /**
+   * Check rollback trigger
+   */
+  private async checkRollbackTrigger(trigger: ChaosRollbackTrigger): Promise<boolean> {
+    switch (trigger.type) {
+      case 'error_rate':
+        // Placeholder - integrate with actual error rate monitoring
+        return false;
+      case 'response_time':
+        // Placeholder - integrate with actual response time monitoring
+        return false;
+      case 'custom':
+        return trigger.customCheck ? await trigger.customCheck() : false;
+      default:
+        return false;
+    }
+  }
+
+  /**
+   * Clean up after experiment
+   */
+  private async cleanupExperiment(
+    experiment: ChaosExperimentConfig,
+    result: ChaosExperimentResult
+  ): Promise<void> {
+    logger.info('Cleaning up chaos experiment', { experimentId: experiment.id });
+
+    // Restore original functions and clear global state
+    delete (global as any).chaosMemoryLeak;
+    
+    // Additional cleanup based on experiment type
+    switch (experiment.type) {
+      case ChaosExperimentType.LATENCY_INJECTION:
+        // Restore original setTimeout if modified
+        break;
+      case ChaosExperimentType.ERROR_INJECTION:
+        // Restore original Promise.resolve if modified
+        break;
+    }
+
+    result.observations.push('Cleanup completed');
+  }
+
+  /**
+   * Get experiment status
+   */
+  public getExperimentStatus(experimentId: string): ChaosStatus | null {
+    const result = this.runningExperiments.get(experimentId);
+    return result ? result.status : null;
+  }
+
+  /**
+   * List all registered experiments
+   */
+  public listExperiments(): ChaosExperimentConfig[] {
+    return Array.from(this.experiments.values());
+  }
+
+  /**
+   * Get experiment results
+   */
+  public getExperimentResults(): ChaosExperimentResult[] {
+    return Array.from(this.runningExperiments.values());
+  }
+
+  /**
+   * Stop running experiment
+   */
+  public async stopExperiment(experimentId: string): Promise<void> {
+    const result = this.runningExperiments.get(experimentId);
+    if (!result || result.status !== ChaosStatus.RUNNING) {
+      throw new Error(`No running experiment found with ID ${experimentId}`);
+    }
+
+    result.status = ChaosStatus.CANCELLED;
+    result.endTime = new Date();
+    
+    const experiment = this.experiments.get(experimentId);
+    if (experiment) {
+      await this.cleanupExperiment(experiment, result);
+    }
+
+    logger.info('Chaos experiment stopped', { experimentId });
+    this.emit('experiment_stopped', { experimentId, result });
+  }
+
+  /**
+   * Add custom safety check
+   */
+  public addSafetyCheck(safetyCheck: ChaosSafetyCheck): void {
+    this.safetyChecks.push(safetyCheck);
+    logger.info('Custom safety check added', { name: safetyCheck.name });
+  }
+}
+
+/**
+ * Default chaos engineering service instance
+ */
+export const chaosService = ChaosEngineeringService.getInstance();
+
+/**
+ * Utility functions for creating common experiments
+ */
+export class ChaosExperimentBuilder {
+  /**
+   * Create latency injection experiment
+   */
+  public static createLatencyExperiment(
+    id: string,
+    name: string,
+    delay: number,
+    percentage: number = 100,
+    duration: number = 60000
+  ): ChaosExperimentConfig {
+    return {
+      id,
+      name,
+      description: `Inject ${delay}ms latency to ${percentage}% of requests`,
+      type: ChaosExperimentType.LATENCY_INJECTION,
+      severity: delay > 5000 ? ChaosSeverity.HIGH : ChaosSeverity.MEDIUM,
+      targets: [{ type: 'service', identifier: 'all', environment: 'test' }],
+      parameters: { delay, percentage },
+      duration,
+      enabled: true,
+      createdBy: 'system',
+      createdAt: new Date()
+    };
+  }
+
+  /**
+   * Create error injection experiment
+   */
+  public static createErrorExperiment(
+    id: string,
+    name: string,
+    errorRate: number,
+    errorType: string = 'generic',
+    duration: number = 60000
+  ): ChaosExperimentConfig {
+    return {
+      id,
+      name,
+      description: `Inject ${errorType} errors at ${errorRate * 100}% rate`,
+      type: ChaosExperimentType.ERROR_INJECTION,
+      severity: errorRate > 0.5 ? ChaosSeverity.HIGH : ChaosSeverity.MEDIUM,
+      targets: [{ type: 'service', identifier: 'all', environment: 'test' }],
+      parameters: { errorRate, errorType },
+      duration,
+      enabled: true,
+      createdBy: 'system',
+      createdAt: new Date()
+    };
+  }
+
+  /**
+   * Create resource exhaustion experiment
+   */
+  public static createResourceExhaustionExperiment(
+    id: string,
+    name: string,
+    resourceType: string,
+    intensity: number,
+    duration: number = 60000
+  ): ChaosExperimentConfig {
+    return {
+      id,
+      name,
+      description: `Exhaust ${resourceType} at ${intensity * 100}% intensity`,
+      type: ChaosExperimentType.RESOURCE_EXHAUSTION,
+      severity: intensity > 0.8 ? ChaosSeverity.HIGH : ChaosSeverity.MEDIUM,
+      targets: [{ type: 'resource', identifier: resourceType, environment: 'test' }],
+      parameters: { resourceType, intensity },
+      duration,
+      enabled: true,
+      createdBy: 'system',
+      createdAt: new Date()
+    };
+  }
+}
+
+/**
+ * Default export
+ */
+export default {
+  ChaosEngineeringService,
+  ChaosExperimentBuilder,
+  chaosService,
+  ChaosExperimentType,
+  ChaosSeverity,
+  ChaosStatus
+};

@@ -99,8 +99,8 @@ describe('Menu System Integration Tests', () => {
         it('should successfully create a new menu item with all required fields', async () => {
             const mockDbClient = database_service_1.DatabaseService.client;
             mockDbClient.menuItem.create.mockResolvedValue(mockMenuItem);
-            menuItem_repository_1.MenuItemRepository.nameExists = jest.fn().mockResolvedValue(false);
-            const result = await menuItem_service_1.MenuItemService.createMenuItem(createInput);
+            mockDbClient.menuItem.findFirst.mockResolvedValue(null);
+            const result = await menuItem_service_1.MenuItemService.create(createInput);
             expect(result).toEqual(mockMenuItem);
             expect(mockDbClient.menuItem.create).toHaveBeenCalledWith({
                 data: expect.objectContaining({
@@ -120,16 +120,17 @@ describe('Menu System Integration Tests', () => {
             expect(result.available).toBe(true);
         });
         it('should throw error for duplicate menu item name in same school', async () => {
-            menuItem_repository_1.MenuItemRepository.nameExists = jest.fn().mockResolvedValue(true);
-            await expect(menuItem_service_1.MenuItemService.createMenuItem(createInput)).rejects.toThrow('A menu item with this name already exists in this school');
+            const mockDbClient = database_service_1.DatabaseService.client;
+            mockDbClient.menuItem.findFirst.mockResolvedValue(mockMenuItem);
+            await expect(menuItem_service_1.MenuItemService.create(createInput)).rejects.toThrow('A menu item with this name already exists in this school');
         });
         it('should validate required fields', async () => {
             const invalidInput = { ...createInput, name: '' };
-            await expect(menuItem_service_1.MenuItemService.createMenuItem(invalidInput)).rejects.toThrow();
+            await expect(menuItem_service_1.MenuItemService.create(invalidInput)).rejects.toThrow();
         });
         it('should validate price constraints', async () => {
             const invalidPriceInput = { ...createInput, price: 15000 };
-            await expect(menuItem_service_1.MenuItemService.createMenuItem(invalidPriceInput)).rejects.toThrow('Price cannot exceed ₹10,000');
+            await expect(menuItem_service_1.MenuItemService.create(invalidPriceInput)).rejects.toThrow('Price cannot exceed ₹10,000');
         });
         it('should set default values for optional fields', async () => {
             const minimalInput = {
@@ -143,8 +144,8 @@ describe('Menu System Integration Tests', () => {
             const mockDbClient = database_service_1.DatabaseService.client;
             const expectedItem = { ...mockMenuItem, ...minimalInput, available: true, featured: false };
             mockDbClient.menuItem.create.mockResolvedValue(expectedItem);
-            menuItem_repository_1.MenuItemRepository.nameExists = jest.fn().mockResolvedValue(false);
-            const result = await menuItem_service_1.MenuItemService.createMenuItem(minimalInput);
+            mockDbClient.menuItem.findFirst.mockResolvedValue(null);
+            const result = await menuItem_service_1.MenuItemService.create(minimalInput);
             expect(result.available).toBe(true);
             expect(result.featured).toBe(false);
             expect(mockDbClient.menuItem.create).toHaveBeenCalledWith({
@@ -160,21 +161,21 @@ describe('Menu System Integration Tests', () => {
                 ...createInput,
                 nutritionalInfo: 'invalid-json'
             };
-            await expect(menuItem_service_1.MenuItemService.createMenuItem(invalidNutritionalInput)).rejects.toThrow('Invalid nutritional information format');
+            await expect(menuItem_service_1.MenuItemService.create(invalidNutritionalInput)).rejects.toThrow('Invalid nutritional information format');
         });
         it('should validate allergens format', async () => {
             const invalidAllergensInput = {
                 ...createInput,
                 allergens: 'not-an-array'
             };
-            await expect(menuItem_service_1.MenuItemService.createMenuItem(invalidAllergensInput)).rejects.toThrow('Invalid allergens format');
+            await expect(menuItem_service_1.MenuItemService.create(invalidAllergensInput)).rejects.toThrow('Invalid allergens format');
         });
     });
     describe('Menu Item Retrieval', () => {
         it('should successfully retrieve menu item by ID', async () => {
             const mockDbClient = database_service_1.DatabaseService.client;
             mockDbClient.menuItem.findUnique.mockResolvedValue(mockMenuItem);
-            const result = await menuItem_service_1.MenuItemService.getMenuItemById('menu-item-123');
+            const result = await menuItem_service_1.MenuItemService.findById('menu-item-123');
             expect(result).toEqual(mockMenuItem);
             expect(mockDbClient.menuItem.findUnique).toHaveBeenCalledWith({
                 where: { id: 'menu-item-123' },
@@ -187,64 +188,33 @@ describe('Menu System Integration Tests', () => {
         it('should return null for non-existent menu item', async () => {
             const mockDbClient = database_service_1.DatabaseService.client;
             mockDbClient.menuItem.findUnique.mockResolvedValue(null);
-            const result = await menuItem_service_1.MenuItemService.getMenuItemById('non-existent');
+            const result = await menuItem_service_1.MenuItemService.findById('non-existent');
             expect(result).toBeNull();
         });
-        it('should get menu items with filters and pagination', async () => {
+        it('should get menu items by school', async () => {
             const mockDbClient = database_service_1.DatabaseService.client;
             mockDbClient.menuItem.findMany.mockResolvedValue(mockMenuItems);
-            mockDbClient.menuItem.count.mockResolvedValue(1);
-            const filters = { category: menuItem_repository_1.MenuCategory.BREAKFAST, available: true };
-            const pagination = { page: 1, limit: 10 };
-            const result = await menuItem_service_1.MenuItemService.getMenuItems(filters, pagination);
-            expect(result).toEqual({
-                items: mockMenuItems,
-                total: 1,
-                page: 1,
-                limit: 10,
-                totalPages: 1
-            });
+            const result = await menuItem_service_1.MenuItemService.findBySchool('school-123', false);
+            expect(result).toEqual(mockMenuItems);
             expect(mockDbClient.menuItem.findMany).toHaveBeenCalledWith({
-                where: expect.objectContaining({
-                    category: menuItem_repository_1.MenuCategory.BREAKFAST,
-                    available: true
-                }),
-                include: expect.objectContaining({
-                    school: true,
-                    vendor: true
-                }),
-                orderBy: { name: 'asc' },
-                skip: 0,
-                take: 10
+                where: {
+                    schoolId: 'school-123'
+                },
+                orderBy: { name: 'asc' }
             });
         });
-        it('should handle complex filtering combinations', async () => {
+        it('should get menu items by category', async () => {
             const mockDbClient = database_service_1.DatabaseService.client;
             mockDbClient.menuItem.findMany.mockResolvedValue(mockMenuItems);
-            mockDbClient.menuItem.count.mockResolvedValue(1);
-            const complexFilters = {
-                category: menuItem_repository_1.MenuCategory.BREAKFAST,
-                available: true,
-                featured: true,
-                priceMin: 50,
-                priceMax: 100,
-                schoolId: 'school-123',
-                vendorId: 'vendor-456'
-            };
-            const result = await menuItem_service_1.MenuItemService.getMenuItems(complexFilters, { page: 1, limit: 20 });
+            const result = await menuItem_service_1.MenuItemService.findByCategory('school-123', menuItem_repository_1.MenuCategory.BREAKFAST);
+            expect(result).toEqual(mockMenuItems);
             expect(mockDbClient.menuItem.findMany).toHaveBeenCalledWith({
-                where: expect.objectContaining({
-                    category: menuItem_repository_1.MenuCategory.BREAKFAST,
-                    available: true,
-                    featured: true,
-                    price: { gte: 50, lte: 100 },
+                where: {
                     schoolId: 'school-123',
-                    vendorId: 'vendor-456'
-                }),
-                include: expect.any(Object),
-                orderBy: { name: 'asc' },
-                skip: 0,
-                take: 20
+                    category: menuItem_repository_1.MenuCategory.BREAKFAST,
+                    available: true
+                },
+                orderBy: { name: 'asc' }
             });
         });
     });
@@ -252,76 +222,41 @@ describe('Menu System Integration Tests', () => {
         it('should search menu items by name and description', async () => {
             const mockDbClient = database_service_1.DatabaseService.client;
             mockDbClient.menuItem.findMany.mockResolvedValue(mockMenuItems);
-            mockDbClient.menuItem.count.mockResolvedValue(1);
-            const result = await menuItem_service_1.MenuItemService.searchMenuItems('dosa', { category: menuItem_repository_1.MenuCategory.BREAKFAST }, { page: 1, limit: 20 });
-            expect(result).toEqual({
-                items: mockMenuItems,
-                total: 1,
-                page: 1,
-                limit: 20,
-                totalPages: 1
-            });
+            const result = await menuItem_service_1.MenuItemService.search('school-123', 'dosa');
+            expect(result).toEqual(mockMenuItems);
             expect(mockDbClient.menuItem.findMany).toHaveBeenCalledWith({
                 where: {
-                    AND: [
-                        {
-                            OR: [
-                                { name: { contains: 'dosa', mode: 'insensitive' } },
-                                { description: { contains: 'dosa', mode: 'insensitive' } },
-                                { tags: { contains: 'dosa', mode: 'insensitive' } }
-                            ]
-                        },
-                        { category: menuItem_repository_1.MenuCategory.BREAKFAST },
-                        { available: true }
+                    schoolId: 'school-123',
+                    available: true,
+                    OR: [
+                        { name: { contains: 'dosa' } },
+                        { description: { contains: 'dosa' } }
                     ]
                 },
-                include: expect.objectContaining({
-                    school: true,
-                    vendor: true
-                }),
-                orderBy: [
-                    { featured: 'desc' },
-                    { name: 'asc' }
-                ],
-                skip: 0,
-                take: 20
+                orderBy: { name: 'asc' }
             });
         });
-        it('should throw error for empty search term', async () => {
-            await expect(menuItem_service_1.MenuItemService.searchMenuItems('', {}, {})).rejects.toThrow('Search term is required');
+        it('should return empty array for empty search term', async () => {
+            const mockDbClient = database_service_1.DatabaseService.client;
+            mockDbClient.menuItem.findMany.mockResolvedValue([]);
+            const result = await menuItem_service_1.MenuItemService.search('school-123', '');
+            expect(result).toEqual([]);
         });
-        it('should handle search with advanced filters', async () => {
+        it('should handle search with query', async () => {
             const mockDbClient = database_service_1.DatabaseService.client;
             mockDbClient.menuItem.findMany.mockResolvedValue(mockMenuItems);
-            mockDbClient.menuItem.count.mockResolvedValue(1);
-            const advancedFilters = {
-                category: menuItem_repository_1.MenuCategory.BREAKFAST,
-                priceMax: 100,
-                allergens: ['gluten-free'],
-                tags: ['vegetarian']
-            };
-            const result = await menuItem_service_1.MenuItemService.searchMenuItems('healthy', advancedFilters, { page: 1, limit: 10 });
+            const result = await menuItem_service_1.MenuItemService.search('school-123', 'healthy');
+            expect(result).toEqual(mockMenuItems);
             expect(mockDbClient.menuItem.findMany).toHaveBeenCalledWith({
                 where: {
-                    AND: [
-                        {
-                            OR: [
-                                { name: { contains: 'healthy', mode: 'insensitive' } },
-                                { description: { contains: 'healthy', mode: 'insensitive' } },
-                                { tags: { contains: 'healthy', mode: 'insensitive' } }
-                            ]
-                        },
-                        { category: menuItem_repository_1.MenuCategory.BREAKFAST },
-                        { price: { lte: 100 } },
-                        { allergens: { contains: 'gluten-free', mode: 'insensitive' } },
-                        { tags: { contains: 'vegetarian', mode: 'insensitive' } },
-                        { available: true }
+                    schoolId: 'school-123',
+                    available: true,
+                    OR: [
+                        { name: { contains: 'healthy' } },
+                        { description: { contains: 'healthy' } }
                     ]
                 },
-                include: expect.any(Object),
-                orderBy: expect.any(Array),
-                skip: 0,
-                take: 10
+                orderBy: { name: 'asc' }
             });
         });
     });

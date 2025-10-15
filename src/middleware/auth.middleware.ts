@@ -8,8 +8,9 @@ import { Request, Response, NextFunction } from 'express';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import { authService } from '../services/auth.service';
-import { jwtService } from '../shared/services/jwt.service';
-import { logger } from '../utils/logger';
+import { sessionService } from '../services/session.service';
+import { jwtService } from '../shared/jwt.service';
+import { logger } from '../shared/logger.service';
 
 /**
  * Extended Request interface with user data
@@ -20,6 +21,8 @@ export interface AuthenticatedRequest extends Request {
     email: string;
     role: string;
     permissions: string[];
+    schoolId?: string;
+    tenantId?: string;
   };
   sessionId?: string;
 }
@@ -42,7 +45,7 @@ export const securityHeaders = helmet({
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       scriptSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https:"],
+      imgSrc: ["'self'", 'data:', 'https:'],
       connectSrc: ["'self'"],
       fontSrc: ["'self'"],
       objectSrc: ["'none'"],
@@ -50,7 +53,7 @@ export const securityHeaders = helmet({
       frameSrc: ["'none'"],
     },
   },
-  crossOriginEmbedderPolicy: false
+  crossOriginEmbedderPolicy: false,
 });
 
 /**
@@ -66,14 +69,14 @@ export const authRateLimit = rateLimit({
     logger.warn('Rate limit exceeded for authentication', {
       ip: req.ip,
       userAgent: req.get('User-Agent'),
-      path: req.path
+      path: req.path,
     });
     res.status(429).json({
       error: 'Too many requests',
       message: 'Too many authentication attempts, please try again later',
-      retryAfter: Math.round(15 * 60) // 15 minutes in seconds
+      retryAfter: Math.round(15 * 60), // 15 minutes in seconds
     });
-  }
+  },
 });
 
 /**
@@ -84,7 +87,7 @@ export const generalRateLimit = rateLimit({
   max: 100, // limit each IP to 100 requests per windowMs
   message: 'Too many requests, please try again later',
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
 });
 
 /**
@@ -133,11 +136,13 @@ export const validateInput = (req: Request, res: Response, next: NextFunction): 
     }
 
     next();
-  } catch (error) {
-    logger.error('Input validation failed', error);
+  } catch (error: unknown) {
+    logger.error('Input validation failed', undefined, {
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
     res.status(400).json({
       error: 'Invalid input',
-      message: 'Request contains invalid data'
+      message: 'Request contains invalid data',
     });
   }
 };
@@ -147,7 +152,7 @@ export const validateInput = (req: Request, res: Response, next: NextFunction): 
  */
 export const corsMiddleware = (req: Request, res: Response, next: NextFunction): void => {
   const allowedOrigins = process.env.CORS_ORIGINS?.split(',') || ['http://localhost:3000'];
-  const origin = req.headers.origin;
+  const { origin } = req.headers;
 
   // Check if origin is allowed
   if (origin && allowedOrigins.includes(origin)) {
@@ -155,7 +160,10 @@ export const corsMiddleware = (req: Request, res: Response, next: NextFunction):
   }
 
   res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS,PATCH');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header(
+    'Access-Control-Allow-Headers',
+    'Origin, X-Requested-With, Content-Type, Accept, Authorization'
+  );
   res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Max-Age', '86400'); // 24 hours
 
@@ -182,7 +190,7 @@ export const authMiddleware = async (
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       res.status(401).json({
         error: 'Unauthorized',
-        message: 'Access token is required'
+        message: 'Access token is required',
       });
       return;
     }
@@ -191,37 +199,46 @@ export const authMiddleware = async (
     if (!token) {
       res.status(401).json({
         error: 'Unauthorized',
-        message: 'Invalid access token format'
+        message: 'Invalid access token format',
       });
       return;
     }
 
     // Verify JWT token with timeout protection
-    const verificationResult = await jwtService.verifyToken(token, 'access');
-    if (!verificationResult.isValid) {
+    const verificationResult = await jwtService.verifyToken(token);
+    if (!verificationResult.isValid || !verificationResult.payload) {
       res.status(401).json({
         error: 'Unauthorized',
-        message: verificationResult.error || 'Invalid token'
+        message: verificationResult.error || 'Invalid token',
       });
       return;
     }
 
     const decoded = verificationResult.payload;
 
+    // Check token type
+    if (decoded.tokenType !== 'access') {
+      res.status(401).json({
+        error: 'Unauthorized',
+        message: 'Invalid token type',
+      });
+      return;
+    }
+
     // Validate session
-    const sessionData = await authService.validateSession(decoded.sessionId);
+    const sessionData = await sessionService.validateSession(decoded.sessionId || '');
     if (!sessionData.valid) {
       res.status(401).json({
         error: 'Unauthorized',
-        message: 'Invalid or expired session'
+        message: 'Invalid or expired session',
       });
       return;
     }
 
     // Update session activity
-    await authService.updateSessionActivity(decoded.sessionId, {
+    await authService.updateSessionActivity(decoded.sessionId || '', {
       userAgent: req.get('User-Agent'),
-      ipAddress: req.ip
+      ipAddress: req.ip,
     });
 
     // Attach user data to request
@@ -229,33 +246,37 @@ export const authMiddleware = async (
       id: decoded.userId,
       email: decoded.email,
       role: decoded.role,
-      permissions: decoded.permissions
+      permissions: decoded.permissions,
+      schoolId: (decoded as any).schoolId,
+      tenantId: (decoded as any).tenantId,
     };
     req.sessionId = decoded.sessionId;
 
     logger.debug('User authenticated successfully', {
       userId: decoded.userId,
       role: decoded.role,
-      sessionId: decoded.sessionId
+      sessionId: decoded.sessionId,
     });
 
     next();
-  } catch (error) {
-    logger.error('Authentication middleware error', error);
+  } catch (error: unknown) {
+    logger.error('Authentication middleware error', undefined, {
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
     if ((error as Error).message === 'Token expired') {
       res.status(401).json({
         error: 'Token expired',
-        message: 'Please refresh your token or login again'
+        message: 'Please refresh your token or login again',
       });
     } else if ((error as Error).message?.includes('timeout')) {
       res.status(401).json({
         error: 'Authentication timeout',
-        message: 'Token verification took too long - possible security threat'
+        message: 'Token verification took too long - possible security threat',
       });
     } else {
       res.status(401).json({
         error: 'Authentication failed',
-        message: 'Invalid or malformed token'
+        message: 'Invalid or malformed token',
       });
     }
   }
@@ -285,36 +306,41 @@ export const optionalAuthMiddleware = async (
 
     // Try to verify token but don't fail if invalid
     try {
-      const verificationResult = await jwtService.verifyToken(token, 'access');
-      if (verificationResult.isValid) {
+      const verificationResult = await jwtService.verifyToken(token);
+      if (verificationResult.isValid && verificationResult.payload) {
         const decoded = verificationResult.payload;
-        
-        // Validate session
-        const sessionData = await authService.validateSession(decoded.sessionId);
-        if (sessionData.valid) {
-          req.user = {
-            id: decoded.userId,
-            email: decoded.email,
-            role: decoded.role,
-            permissions: decoded.permissions
-          };
-          req.sessionId = decoded.sessionId;
 
-          // Update session activity
-          await authService.updateSessionActivity(decoded.sessionId, {
-            userAgent: req.get('User-Agent'),
-            ipAddress: req.ip
-          });
+        // Check token type
+        if (decoded.tokenType === 'access') {
+          // Validate session
+          const sessionData = await sessionService.validateSession(decoded.sessionId || '');
+          if (sessionData.valid) {
+            req.user = {
+              id: decoded.userId,
+              email: decoded.email,
+              role: decoded.role,
+              permissions: decoded.permissions,
+            };
+            req.sessionId = decoded.sessionId;
+
+            // Update session activity
+            await authService.updateSessionActivity(decoded.sessionId || '', {
+              userAgent: req.get('User-Agent'),
+              ipAddress: req.ip,
+            });
+          }
         }
       }
-    } catch (error) {
+    } catch (error: unknown) {
       // Ignore authentication errors for optional middleware
-      logger.debug('Optional authentication failed', { error: (error as Error).message });
+      logger.debug('Optional authentication failed', { errorMessage: (error as Error).message });
     }
 
     next();
-  } catch (error) {
-    logger.error('Optional authentication middleware error', error);
+  } catch (error: unknown) {
+    logger.error('Optional authentication middleware error', undefined, {
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
     // Don't fail the request for optional authentication
     next();
   }
@@ -325,12 +351,12 @@ export const optionalAuthMiddleware = async (
  */
 export const requireRole = (roles: string | string[]) => {
   const allowedRoles = Array.isArray(roles) ? roles : [roles];
-  
+
   return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
     if (!req.user) {
       res.status(401).json({
         error: 'Unauthorized',
-        message: 'Authentication required'
+        message: 'Authentication required',
       });
       return;
     }
@@ -339,13 +365,13 @@ export const requireRole = (roles: string | string[]) => {
       logger.warn('Insufficient role permissions', {
         userId: req.user.id,
         userRole: req.user.role,
-        requiredRoles: allowedRoles
+        requiredRoles: allowedRoles,
       });
-      
+
       res.status(403).json({
         error: 'Forbidden',
         message: 'Insufficient permissions',
-        details: `Required role: ${allowedRoles.join(' or ')}`
+        details: `Required role: ${allowedRoles.join(' or ')}`,
       });
       return;
     }
@@ -359,17 +385,17 @@ export const requireRole = (roles: string | string[]) => {
  */
 export const requirePermission = (permissions: string | string[]) => {
   const requiredPermissions = Array.isArray(permissions) ? permissions : [permissions];
-  
+
   return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
     if (!req.user) {
       res.status(401).json({
         error: 'Unauthorized',
-        message: 'Authentication required'
+        message: 'Authentication required',
       });
       return;
     }
 
-    const hasPermission = requiredPermissions.some(permission => 
+    const hasPermission = requiredPermissions.some(permission =>
       req.user!.permissions.includes(permission)
     );
 
@@ -377,13 +403,13 @@ export const requirePermission = (permissions: string | string[]) => {
       logger.warn('Insufficient permissions', {
         userId: req.user.id,
         userPermissions: req.user.permissions,
-        requiredPermissions
+        requiredPermissions,
       });
-      
+
       res.status(403).json({
         error: 'Forbidden',
         message: 'Insufficient permissions',
-        details: `Required permission: ${requiredPermissions.join(' or ')}`
+        details: `Required permission: ${requiredPermissions.join(' or ')}`,
       });
       return;
     }
@@ -402,10 +428,10 @@ export const authorize = (options: AuthOptions) => {
         next();
         return;
       }
-      
+
       res.status(401).json({
         error: 'Unauthorized',
-        message: 'Authentication required'
+        message: 'Authentication required',
       });
       return;
     }
@@ -416,7 +442,7 @@ export const authorize = (options: AuthOptions) => {
         res.status(403).json({
           error: 'Forbidden',
           message: 'Insufficient permissions',
-          details: `Required role: ${options.roles.join(' or ')}`
+          details: `Required role: ${options.roles.join(' or ')}`,
         });
         return;
       }
@@ -424,15 +450,15 @@ export const authorize = (options: AuthOptions) => {
 
     // Check permissions if specified
     if (options.permissions && options.permissions.length > 0) {
-      const hasPermission = options.permissions.some(permission => 
+      const hasPermission = options.permissions.some(permission =>
         req.user!.permissions.includes(permission)
       );
-      
+
       if (!hasPermission) {
         res.status(403).json({
           error: 'Forbidden',
           message: 'Insufficient permissions',
-          details: `Required permission: ${options.permissions.join(' or ')}`
+          details: `Required permission: ${options.permissions.join(' or ')}`,
         });
         return;
       }
@@ -448,7 +474,7 @@ export const authorize = (options: AuthOptions) => {
 export const auditLog = (operation: string) => {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
     const startTime = Date.now();
-    
+
     // Log the operation attempt
     logger.info('Sensitive operation attempted', {
       operation,
@@ -459,24 +485,24 @@ export const auditLog = (operation: string) => {
       userAgent: req.get('User-Agent'),
       method: req.method,
       path: req.path,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
     // Override res.json to log the response
     const originalJson = res.json;
-    res.json = function(body) {
+    res.json = function (body) {
       const duration = Date.now() - startTime;
       const success = res.statusCode >= 200 && res.statusCode < 300;
-      
+
       logger.info('Sensitive operation completed', {
         operation,
         userId: req.user?.id,
         success,
         statusCode: res.statusCode,
         duration,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
-      
+
       return originalJson.call(this, body);
     };
 
@@ -495,12 +521,12 @@ export const requestTimeout = (timeoutMs: number = 30000) => {
           method: req.method,
           path: req.path,
           ip: req.ip,
-          timeout: timeoutMs
+          timeout: timeoutMs,
         });
-        
+
         res.status(408).json({
           error: 'Request timeout',
-          message: 'Request took too long to process'
+          message: 'Request took too long to process',
         });
       }
     }, timeoutMs);

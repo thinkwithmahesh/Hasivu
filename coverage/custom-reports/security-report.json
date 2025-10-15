@@ -1,0 +1,14 @@
+{
+  "summary": {
+    "totalSecurityTests": 0,
+    "passedSecurityTests": 0,
+    "securityIssues": 0,
+    "timestamp": "2025-09-24T15:23:57.994Z"
+  },
+  "vulnerabilities": [],
+  "complianceChecks": {},
+  "recommendations": [
+    "Implement automated security scanning",
+    "Add penetration testing"
+  ]
+}

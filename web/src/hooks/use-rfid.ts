@@ -12,16 +12,16 @@ import { useRFIDScanning } from './use-realtime';
   const [scanHistory, setScanHistory] = useState<any[]>([]);
   const [stats, setStats] = useState<RFIDStats>({}
   const [isLoading, setIsLoading] = useState(false);
-  const rfidScanning = useRFIDScanning();
+  const _rfidScanning =  useRFIDScanning();
   // Load RFID cards
-  const loadCards = useCallback(async (filters?: {}
+  const _loadCards =  useCallback(async (filters?: {}
   }, []);
   // Load RFID devices
-  const loadDevices = useCallback(async (
+  const _loadDevices =  useCallback(async (
     try {}
   }, [hasPermission]);
   // Load scan history
-  const loadScanHistory = useCallback(async (filters?: {}
+  const _loadScanHistory =  useCallback(async (filters?: {}
   }, []);
   // Verify RFID card
   const verifyCard = useCallback(async (cardId: string): Promise<ScanResult> => {}

@@ -56,7 +56,8 @@ const defaultTestimonials: Testimonial[] = [
     name: 'Priya Sharma',
     role: 'Parent',
     organization: 'Delhi Public School',
-    content: 'HASIVU has revolutionized how we manage our children\'s school meals. The RFID tracking gives me complete peace of mind knowing exactly when my daughter receives her lunch.',
+    content:
+      "HASIVU has revolutionized how we manage our children's school meals. The RFID tracking gives me complete peace of mind knowing exactly when my daughter receives her lunch.",
     rating: 5,
     avatar: '/images/avatars/parent1.jpg',
   },
@@ -64,7 +65,8 @@ const defaultTestimonials: Testimonial[] = [
     name: 'Rajesh Kumar',
     role: 'School Administrator',
     organization: 'Kendriya Vidyalaya',
-    content: 'The platform has streamlined our entire food delivery process. We can now track every meal, manage payments seamlessly, and ensure no student goes without their ordered food.',
+    content:
+      'The platform has streamlined our entire food delivery process. We can now track every meal, manage payments seamlessly, and ensure no student goes without their ordered food.',
     rating: 5,
     avatar: '/images/avatars/admin1.jpg',
   },
@@ -72,7 +74,8 @@ const defaultTestimonials: Testimonial[] = [
     name: 'Anita Desai',
     role: 'Parent',
     organization: 'Ryan International School',
-    content: 'I love getting real-time updates about my son\'s meal delivery. The payment system is so convenient, and the quality of food has improved significantly.',
+    content:
+      "I love getting real-time updates about my son's meal delivery. The payment system is so convenient, and the quality of food has improved significantly.",
     rating: 5,
     avatar: '/images/avatars/parent2.jpg',
   },
@@ -169,7 +172,7 @@ const TestimonialCard: React.FC<{ testimonial: Testimonial }> = ({ testimonial }
           >
             {testimonial.name.charAt(0)}
           </Avatar>
-          
+
           <Box>
             <Typography
               variant="subtitle1"
@@ -211,8 +214,8 @@ const TestimonialCard: React.FC<{ testimonial: Testimonial }> = ({ testimonial }
  * Testimonials Section Component
  */
 export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({
-  title = "What Our Community Says",
-  subtitle = "Real feedback from parents, students, and school administrators who trust HASIVU for their daily food delivery needs.",
+  title = 'What Our Community Says',
+  subtitle = 'Real feedback from parents, students, and school administrators who trust HASIVU for their daily food delivery needs.',
   testimonials = defaultTestimonials,
 }) => {
   return (
@@ -257,7 +260,7 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({
           >
             {title}
           </Typography>
-          
+
           <Typography
             variant="h6"
             sx={{

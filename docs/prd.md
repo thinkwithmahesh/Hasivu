@@ -1,21 +1,22 @@
 # HASIVU Platform Product Requirements Document (PRD)
 
 > **⚠️ LEGACY DOCUMENT - REFERENCE ONLY**
-> 
+>
 > **Status**: This monolithic PRD has been sharded into focused documents for better team collaboration.
-> 
+>
 > **New Structure**: See [prd/README.md](prd/README.md) for the new sharded PRD structure.
-> 
+>
 > **Migration Guide**: See [prd-migration-guide.md](prd-migration-guide.md) for complete migration details.
-> 
+>
 > **Usage**: This document is preserved for historical reference and migration validation only.
 > **Active Development**: Use the sharded documents in `/docs/prd/` for all active work.
-> 
+>
 > ---
 
 ## Goals and Background Context
 
 ### Goals
+
 - Deliver a comprehensive RFID-integrated e-commerce platform that eliminates 40% operational inefficiency in school food services
 - Enable seamless meal ordering, real-time delivery verification, and automated payment processing for 500+ premium schools in Bangalore
 - Achieve 80% order completion efficiency within 6 months and improve parent satisfaction from 3.2/5 to 4.5/5
@@ -26,15 +27,15 @@
 
 ### Background Context
 
-Premium private schools in Bangalore face systematic inefficiencies in food service operations, with manual coordination systems causing ₹25 lakhs+ annual losses per institution and significant parent frustration. Current solutions are fragmented point solutions that lack institutional-specific design and real-time verification capabilities. 
+Premium private schools in Bangalore face systematic inefficiencies in food service operations, with manual coordination systems causing ₹25 lakhs+ annual losses per institution and significant parent frustration. Current solutions are fragmented point solutions that lack institutional-specific design and real-time verification capabilities.
 
 HASIVU addresses this market gap with the first comprehensive RFID-integrated platform specifically designed for school environments, serving a ₹415 crore serviceable market with validated demand (89% purchase intent from 150+ parent surveys). The platform leverages proven technology stack and vendor partnerships to deliver immediate operational improvements while establishing foundation for broader digital transformation in educational institutions.
 
 ### Change Log
 
-| Date | Version | Description | Author |
-|------|---------|-------------|---------|
-| 2025-08-02 | 1.0 | Initial PRD creation based on comprehensive Project Brief | John (PM) |
+| Date       | Version | Description                                               | Author    |
+| ---------- | ------- | --------------------------------------------------------- | --------- |
+| 2025-08-02 | 1.0     | Initial PRD creation based on comprehensive Project Brief | John (PM) |
 
 ## Requirements
 
@@ -89,9 +90,11 @@ HASIVU addresses this market gap with the first comprehensive RFID-integrated pl
 ## User Interface Design Goals
 
 ### Overall UX Vision
+
 Create a mobile-first, intuitive platform that transforms school food service from a daily coordination burden into a seamless, transparent experience. The interface should feel familiar to parents accustomed to consumer e-commerce while addressing unique institutional requirements like meal scheduling, nutritional transparency, and real-time delivery verification. Design for time-constrained working parents who value efficiency, transparency, and child welfare.
 
 ### Key Interaction Paradigms
+
 - **One-Touch Reordering**: Instant reorder of previous meals with saved preferences
 - **Visual Meal Planning**: Calendar-based weekly/monthly meal scheduling with drag-and-drop functionality
 - **Progressive Disclosure**: Show essential information first, detailed nutritional/ingredient data on-demand
@@ -99,6 +102,7 @@ Create a mobile-first, intuitive platform that transforms school food service fr
 - **Gestural Navigation**: Swipe-based interactions for common actions (mark delivered, rate meal, quick reorder)
 
 ### Core Screens and Views
+
 - **Login/Onboarding Screen**: School code verification and parent profile setup with tutorial
 - **Home Dashboard**: Today's orders, quick actions, notification center, and child meal status
 - **Menu Catalog**: Daily/weekly menus with filtering by dietary preferences, nutrition info, and ratings
@@ -110,12 +114,15 @@ Create a mobile-first, intuitive platform that transforms school food service fr
 - **Vendor Portal**: Daily orders, inventory management, payment tracking, and delivery coordination
 
 ### Accessibility: WCAG AA
+
 Full WCAG 2.1 AA compliance ensuring platform accessibility for parents with disabilities, including support for screen readers, keyboard navigation, high contrast modes, and adjustable font sizes. Particular attention to color contrast ratios and alternative text for nutritional information and meal images.
 
 ### Branding
+
 Clean, modern design reflecting trust, transparency, and child-focused care. Color palette emphasizing food safety (greens), reliability (blues), and warmth (orange accents). Incorporate school branding elements where applicable while maintaining consistent HASIVU platform identity. Visual elements should convey professionalism suitable for premium school environment while remaining approachable for parents.
 
 ### Target Device and Platforms: Cross-Platform
+
 - **Primary**: iOS and Android mobile apps (React Native) optimized for phones
 - **Secondary**: Responsive web portal for desktop/tablet access
 - **Admin Interfaces**: Web-based dashboards optimized for desktop use by school administrators and vendors
@@ -124,15 +131,19 @@ Clean, modern design reflecting trust, transparency, and child-focused care. Col
 ## Technical Assumptions
 
 ### Repository Structure: Monorepo
+
 Single repository containing backend services, mobile app, web portal, and shared libraries to enable code reuse, consistent tooling, and simplified deployment coordination. Structure includes separate workspaces for backend, frontend/web, frontend/mobile, and shared utilities.
 
 ### Service Architecture
+
 **Microservices within Monorepo**: Implement domain-driven microservices (User Service, Order Service, Payment Service, RFID Service, Notification Service) with API Gateway for external communication, while maintaining deployment simplicity through containerized services within single repository structure.
 
 ### Testing Requirements
+
 **Full Testing Pyramid**: Comprehensive testing strategy including unit tests (>80% coverage), integration tests for service interactions, end-to-end tests for critical user journeys, and manual testing protocols for RFID hardware integration. Automated testing in CI/CD pipeline with quality gates preventing deployment of failing tests.
 
 ### Additional Technical Assumptions and Requests
+
 - **Database**: PostgreSQL primary database with Redis for caching and session management
 - **Cloud Infrastructure**: AWS-first approach using EC2, RDS, S3, Lambda, CloudFront with Infrastructure as Code (Terraform/CloudFormation)
 - **RFID Integration**: RESTful APIs for major vendors (Zebra, Impinj, Honeywell) with hardware abstraction layer for multi-vendor support
@@ -169,6 +180,7 @@ I want **complete project infrastructure setup with CI/CD pipeline**,
 so that **the team can develop, test, and deploy code reliably from day one**.
 
 #### Acceptance Criteria
+
 1. Monorepo structure created with backend, frontend/web, frontend/mobile, and shared workspaces
 2. Node.js backend environment configured with Express, TypeScript, and essential middleware
 3. PostgreSQL database connection established with connection pooling and health checks
@@ -185,6 +197,7 @@ I want **secure registration and login functionality**,
 so that **I can access the platform safely with appropriate permissions based on my role**.
 
 #### Acceptance Criteria
+
 1. JWT-based authentication system with access and refresh token management
 2. Role-based access control (RBAC) supporting Parent, School Admin, Vendor, and Student roles
 3. Secure password hashing using bcrypt with salt rounds configuration
@@ -201,6 +214,7 @@ I want **comprehensive user management capabilities**,
 so that **I can manage parent accounts, students, and vendor access within my school's system**.
 
 #### Acceptance Criteria
+
 1. User profile management with personal information, contact details, and preferences
 2. Parent-child relationship management with multiple children support per parent account
 3. School association management allowing users to belong to specific institutions
@@ -217,6 +231,7 @@ I want **centralized API gateway with comprehensive request management**,
 so that **all client applications can communicate securely and efficiently with backend services**.
 
 #### Acceptance Criteria
+
 1. API Gateway configured with request routing, authentication middleware, and rate limiting
 2. Standardized API response format with consistent error handling and status codes
 3. Request logging and monitoring with correlation IDs for distributed tracing
@@ -237,6 +252,7 @@ I want **comprehensive product catalog management system**,
 so that **I can maintain accurate menu items with detailed information for parent ordering**.
 
 #### Acceptance Criteria
+
 1. Product entity model with name, description, ingredients, nutritional information, and allergen data
 2. Category management system for organizing menu items (breakfast, lunch, snacks, beverages)
 3. Pricing management with base price, discounts, and promotional pricing capabilities
@@ -253,6 +269,7 @@ I want **flexible menu planning and scheduling capabilities**,
 so that **I can create daily and weekly menus that reflect our food service offerings and special events**.
 
 #### Acceptance Criteria
+
 1. Daily menu creation with date-specific product selections and availability windows
 2. Weekly menu templates with recurring patterns and automatic scheduling
 3. Special event menu support with custom descriptions and pricing
@@ -269,6 +286,7 @@ I want **detailed nutritional information for all menu items**,
 so that **I can make informed decisions about my child's meals based on dietary needs and preferences**.
 
 #### Acceptance Criteria
+
 1. Comprehensive nutritional data entry including calories, macronutrients, vitamins, and minerals
 2. Allergen information management with clear warnings and filtering capabilities
 3. Dietary restriction labeling (vegetarian, vegan, gluten-free, halal, etc.)
@@ -285,6 +303,7 @@ I want **comprehensive vendor management system**,
 so that **I can coordinate with food suppliers and track supply chain relationships effectively**.
 
 #### Acceptance Criteria
+
 1. Vendor profile management with contact information, capabilities, and service areas
 2. Product-vendor relationship tracking with pricing, lead times, and availability
 3. Vendor performance monitoring with delivery accuracy and quality metrics
@@ -305,6 +324,7 @@ I want **intuitive menu browsing with smart filtering and search**,
 so that **I can quickly find suitable meal options for my child's dietary needs and preferences**.
 
 #### Acceptance Criteria
+
 1. Mobile-optimized menu interface with high-quality product images and descriptions
 2. Smart filtering by dietary restrictions, allergens, price range, and nutritional criteria
 3. Search functionality with autocomplete and suggestion capabilities
@@ -321,6 +341,7 @@ I want **streamlined shopping cart with intelligent scheduling options**,
 so that **I can efficiently plan and order multiple meals while managing delivery preferences**.
 
 #### Acceptance Criteria
+
 1. Interactive shopping cart with drag-and-drop meal scheduling interface
 2. Quantity management with portion size options and special instructions
 3. Order timing selection with calendar view and delivery window preferences
@@ -337,6 +358,7 @@ I want **saved meal preferences and one-touch reordering**,
 so that **I can efficiently manage recurring meal orders without repetitive selection processes**.
 
 #### Acceptance Criteria
+
 1. Child dietary profile management with preferences, restrictions, and portion sizes
 2. Meal history tracking with rating and feedback collection
 3. Favorite meals list with easy reordering and modification capabilities
@@ -353,6 +375,7 @@ I want **secure and efficient checkout process with multiple payment options**,
 so that **I can complete orders quickly while maintaining payment security and receiving proper confirmation**.
 
 #### Acceptance Criteria
+
 1. Order review screen with complete meal details, timing, and pricing breakdown
 2. Delivery instruction management with special requirements and contact preferences
 3. Payment method selection with saved cards and alternative payment options
@@ -373,6 +396,7 @@ I want **robust RFID hardware integration with multiple vendor support**,
 so that **the platform can reliably communicate with RFID readers and cards across different school environments**.
 
 #### Acceptance Criteria
+
 1. Hardware abstraction layer supporting major RFID vendors (Zebra, Impinj, Honeywell)
 2. RFID reader configuration management with device registration and health monitoring
 3. Card/tag management system with unique identifiers and student associations
@@ -389,6 +413,7 @@ I want **comprehensive RFID card management for all students**,
 so that **I can efficiently manage card distribution, replacement, and tracking across the school**.
 
 #### Acceptance Criteria
+
 1. Student-card association management with unique identifiers and activation status
 2. Card issuance tracking with distribution dates and responsible administrator records
 3. Lost/stolen card reporting and deactivation with immediate system updates
@@ -405,6 +430,7 @@ I want **immediate confirmation when my child receives their meal**,
 so that **I have complete transparency and peace of mind about meal delivery and consumption**.
 
 #### Acceptance Criteria
+
 1. RFID scan processing with instant order verification and delivery confirmation
 2. Real-time notification to parent mobile app with delivery timestamp and meal details
 3. Photo capture capability at delivery point for visual confirmation
@@ -421,6 +447,7 @@ I want **complete order lifecycle tracking from confirmation to delivery**,
 so that **I can monitor my child's meal status and plan accordingly throughout the day**.
 
 #### Acceptance Criteria
+
 1. Order status pipeline with clear stages (confirmed, prepared, ready, delivered, completed)
 2. Real-time status updates with estimated timing and location information
 3. Push notification system with customizable alert preferences
@@ -441,6 +468,7 @@ I want **secure and diverse payment options**,
 so that **I can pay for meals using my preferred payment method with confidence in transaction security**.
 
 #### Acceptance Criteria
+
 1. Razorpay integration with card payments, UPI, net banking, and wallet support
 2. Stripe integration for international payment methods and backup processing
 3. PCI DSS compliant payment processing with tokenization and secure data handling
@@ -457,6 +485,7 @@ I want **clear billing statements and invoice management**,
 so that **I can track my meal expenses and manage my family's food service budget effectively**.
 
 #### Acceptance Criteria
+
 1. Automated invoice generation with detailed meal breakdown and pricing
 2. Monthly billing statements with transaction history and payment summaries
 3. Tax calculation and compliance with GST requirements for Indian market
@@ -473,6 +502,7 @@ I want **flexible subscription plans and automatic payment processing**,
 so that **I can manage recurring meal orders without manual intervention while maintaining control over my spending**.
 
 #### Acceptance Criteria
+
 1. Subscription plan management with weekly, monthly, and semester options
 2. Automatic payment processing with retry logic for failed transactions
 3. Subscription modification capabilities with prorated billing adjustments
@@ -489,6 +519,7 @@ I want **comprehensive financial reporting and payment analytics**,
 so that **I can monitor revenue, track payment performance, and make data-driven decisions about food service operations**.
 
 #### Acceptance Criteria
+
 1. Revenue reporting with daily, weekly, and monthly financial summaries
 2. Payment method analytics with transaction volume and success rate analysis
 3. Outstanding balance tracking with automated collection and reminder systems
@@ -509,6 +540,7 @@ I want **robust notification infrastructure with multiple delivery channels**,
 so that **all platform users receive timely information through their preferred communication methods**.
 
 #### Acceptance Criteria
+
 1. Notification service with template management and personalization capabilities
 2. Multi-channel delivery support (push notifications, SMS, email, WhatsApp)
 3. User preference management with granular notification control settings
@@ -525,6 +557,7 @@ I want **WhatsApp notifications for important meal updates**,
 so that **I receive information through the messaging platform I use most frequently**.
 
 #### Acceptance Criteria
+
 1. WhatsApp Business API integration with message template approval and management
 2. Order confirmation messages with meal details and delivery timing
 3. Delivery notifications with RFID verification confirmation and timestamps
@@ -541,6 +574,7 @@ I want **comprehensive in-app notification center**,
 so that **I can manage all platform communications and stay updated on relevant activities**.
 
 #### Acceptance Criteria
+
 1. Notification center with categorized messages and read/unread status management
 2. Real-time push notifications with customizable sound and vibration settings
 3. Notification filtering and search capabilities with category and date organization
@@ -557,6 +591,7 @@ I want **granular control over communication preferences**,
 so that **I receive relevant information without being overwhelmed by unnecessary notifications**.
 
 #### Acceptance Criteria
+
 1. Preference management dashboard with category-specific notification controls
 2. Delivery channel selection with priority ranking and fallback options
 3. Time-based notification scheduling with quiet hours and weekend preferences
@@ -577,6 +612,7 @@ I want **intelligent meal scheduling with calendar integration**,
 so that **I can efficiently plan meals for weeks or months while accommodating school events and family preferences**.
 
 #### Acceptance Criteria
+
 1. Calendar-based meal planning interface with drag-and-drop scheduling
 2. Recurring meal template creation with weekly, monthly, and custom patterns
 3. School event integration with automatic schedule adjustments and notifications
@@ -593,6 +629,7 @@ I want **detailed analytics and reporting capabilities**,
 so that **I can optimize food service operations and make data-driven decisions about menu planning and resource allocation**.
 
 #### Acceptance Criteria
+
 1. Operational dashboard with key performance indicators and real-time metrics
 2. Menu performance analytics with popularity rankings and nutritional analysis
 3. Parent satisfaction tracking with survey integration and feedback analysis
@@ -609,6 +646,7 @@ I want **comprehensive multi-school management capabilities**,
 so that **I can efficiently scale the platform across multiple institutions while maintaining data isolation and customization**.
 
 #### Acceptance Criteria
+
 1. School onboarding workflow with configuration templates and guided setup
 2. Multi-tenant data architecture with complete isolation and security
 3. School-specific customization with branding, pricing, and feature configuration
@@ -625,6 +663,7 @@ I want **advanced features that enhance my meal management experience**,
 so that **I can optimize my child's nutrition and streamline food service interactions**.
 
 #### Acceptance Criteria
+
 1. Nutritional tracking dashboard with daily, weekly, and monthly analysis
 2. AI-powered meal recommendations based on preferences and nutritional goals
 3. Social features with parent reviews, ratings, and community interaction
@@ -636,7 +675,7 @@ so that **I can optimize my child's nutrition and streamline food service intera
 
 ## Checklist Results Report
 
-*Note: PM Checklist execution would be performed here to validate completeness and quality of the PRD according to established standards.*
+_Note: PM Checklist execution would be performed here to validate completeness and quality of the PRD according to established standards._
 
 ## Next Steps
 
@@ -650,6 +689,6 @@ Please review the HASIVU Platform PRD and begin technical architecture design fo
 
 ---
 
-*Generated using BMad Method - Product Manager Agent*
-*Document Version: 1.0*
-*Created: August 2, 2025*
+_Generated using BMad Method - Product Manager Agent_
+_Document Version: 1.0_
+_Created: August 2, 2025_

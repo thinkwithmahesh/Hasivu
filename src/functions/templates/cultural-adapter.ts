@@ -1,6 +1,6 @@
 /**
  * Cultural Adaptation Service Lambda Function
- * 
+ *
  * Epic 6, Story 6.3 - Template Management & Personalization
  * - Multi-language template system with cultural adaptation
  * - Cultural sensitivity analysis and content modification
@@ -10,22 +10,46 @@
  */
 
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
-import { DynamoDBClient, GetItemCommand, PutItemCommand, QueryCommand } from '@aws-sdk/client-dynamodb';
+import {
+  DynamoDBClient,
+  GetItemCommand,
+  PutItemCommand,
+  QueryCommand,
+} from '@aws-sdk/client-dynamodb';
 import { TranslateClient, TranslateTextCommand } from '@aws-sdk/client-translate';
-import { LoggerService } from '../../shared/utils/logger';
-import { createSuccessResponse, createErrorResponse, handleError } from '../shared/response.utils';
+import { logger } from '../../utils/logger';
+import {
+  createSuccessResponse,
+  createErrorResponse,
+  handleError,
+} from '../../shared/response.utils';
 
 // Initialize services
-const logger = LoggerService.getInstance();
+// logger instance already imported from utils/logger
 const dynamoClient = new DynamoDBClient({});
 const translateClient = new TranslateClient({});
 
 // Types and interfaces
 type AdaptationLevel = 'basic' | 'standard' | 'comprehensive' | 'deep_cultural';
 
-type CulturalContext = 'western' | 'eastern' | 'middle_eastern' | 'african' | 'latin_american' | 'nordic' | 'mediterranean';
+type CulturalContext =
+  | 'western'
+  | 'eastern'
+  | 'middle_eastern'
+  | 'african'
+  | 'latin_american'
+  | 'nordic'
+  | 'mediterranean';
 
-type ReligiousContext = 'christian' | 'muslim' | 'hindu' | 'buddhist' | 'jewish' | 'sikh' | 'secular' | 'mixed';
+type ReligiousContext =
+  | 'christian'
+  | 'muslim'
+  | 'hindu'
+  | 'buddhist'
+  | 'jewish'
+  | 'sikh'
+  | 'secular'
+  | 'mixed';
 
 interface CulturalRule {
   id: string;
@@ -114,9 +138,8 @@ export const handler = async (
   const startTime = Date.now();
   const method = event.httpMethod;
   const path = event.path;
-  
+
   logger.info('Function started: culturalAdapter', { requestId: context.awsRequestId });
-  console.log(`Cultural Adapter - ${method} ${path}`);
 
   try {
     if (method === 'POST' && path.includes('/adapt')) {
@@ -128,10 +151,10 @@ export const handler = async (
     } else if (method === 'POST' && path.includes('/batch')) {
       return await batchAdaptContent(event, context);
     } else {
-      return createErrorResponse(404, 'Endpoint not found', undefined, undefined, context.awsRequestId);
+      return createErrorResponse('NOT_FOUND', 'Endpoint not found', 404);
     }
   } catch (error) {
-    return handleError(error as Error, undefined, 500, context.awsRequestId);
+    return handleError(error as Error);
   }
 };
 
@@ -153,16 +176,16 @@ async function adaptContent(
 
     // Validate request
     if (!adaptationRequest.content?.text || !adaptationRequest.context) {
-      return createErrorResponse(400, 'Content and context are required', undefined, undefined, context.awsRequestId);
+      return createErrorResponse('VALIDATION_ERROR', 'Content and context are required', 400);
     }
 
     // Check cache first
     const cacheKey = generateCacheKey(adaptationRequest);
     const cachedResult = await getCachedAdaptation(cacheKey);
-    
+
     if (cachedResult) {
       logger.info('Returning cached adaptation result', { requestId, cacheKey });
-      return createSuccessResponse(cachedResult, 'Cached adaptation result', 200, context.awsRequestId);
+      return createSuccessResponse(cachedResult, 200);
     }
 
     // Get cultural rules for the context
@@ -225,26 +248,27 @@ async function adaptContent(
           templateId: adaptationRequest.content.metadata.templateId,
           version: `${adaptationRequest.content.metadata.version}_culturally_adapted`,
           adaptationLevel: adaptationRequest.adaptationLevel,
-          processingTime: Date.now() - startTime
-        }
+          processingTime: Date.now() - startTime,
+        },
       },
       confidenceScore,
       suggestedReviews,
-      cacheKey
+      cacheKey,
     };
 
     // Cache the result
     await cacheAdaptationResult(cacheKey, result);
 
-    console.log(`Caching adaptation result: ${result.requestId}`);
-
     const duration = Date.now() - startTime;
-    logger.info('Function completed: culturalAdapter', { statusCode: 200, duration, requestId: context.awsRequestId });
+    logger.info('Function completed: culturalAdapter', {
+      statusCode: 200,
+      duration,
+      requestId: context.awsRequestId,
+    });
 
-    return createSuccessResponse(result, 'Content adapted successfully', 200, context.awsRequestId);
-
+    return createSuccessResponse(result, 200);
   } catch (error) {
-    return handleError(error as Error, undefined, 500, context.awsRequestId);
+    return handleError(error as Error);
   }
 }
 
@@ -260,7 +284,7 @@ async function getCulturalRules(
     const religion = event.queryStringParameters?.religion as ReligiousContext;
 
     if (!culture) {
-      return createErrorResponse(400, 'Culture parameter is required', undefined, undefined, context.awsRequestId);
+      return createErrorResponse('VALIDATION_ERROR', 'Culture parameter is required', 400);
     }
 
     const rules = await getCulturalRulesForContext({
@@ -269,24 +293,26 @@ async function getCulturalRules(
       language: 'en',
       region: 'global',
       schoolType: 'public',
-      timing: { date: new Date(), localTime: '12:00' }
+      timing: { date: new Date(), localTime: '12:00' },
     });
 
-    return createSuccessResponse({
-      culture,
-      religion,
-      ruleCount: rules.length,
-      rules: rules.map(rule => ({
-        id: rule.id,
-        rule: rule.rule,
-        severity: rule.severity,
-        category: rule.category,
-        description: rule.description
-      }))
-    }, 'Cultural rules retrieved successfully', 200, context.awsRequestId);
-
+    return createSuccessResponse(
+      {
+        culture,
+        religion,
+        ruleCount: rules.length,
+        rules: rules.map(rule => ({
+          id: rule.id,
+          rule: rule.rule,
+          severity: rule.severity,
+          category: rule.category,
+          description: rule.description,
+        })),
+      },
+      200
+    );
   } catch (error) {
-    return handleError(error as Error, undefined, 500, context.awsRequestId);
+    return handleError(error as Error);
   }
 }
 
@@ -305,10 +331,9 @@ async function getFestivalContext(
 
     const festivalContext = await getFestivalContextForDate(date, religion);
 
-    return createSuccessResponse(festivalContext, 'Festival context retrieved successfully', 200, context.awsRequestId);
-
+    return createSuccessResponse(festivalContext, 200);
   } catch (error) {
-    return handleError(error as Error, undefined, 500, context.awsRequestId);
+    return handleError(error as Error);
   }
 }
 
@@ -324,11 +349,11 @@ async function batchAdaptContent(
     const requests: AdaptationRequest[] = body.requests || [];
 
     if (!Array.isArray(requests) || requests.length === 0) {
-      return createErrorResponse(400, 'Requests array is required', undefined, undefined, context.awsRequestId);
+      return createErrorResponse('VALIDATION_ERROR', 'Requests array is required', 400);
     }
 
     if (requests.length > 50) {
-      return createErrorResponse(400, 'Maximum 50 requests per batch', undefined, undefined, context.awsRequestId);
+      return createErrorResponse('VALIDATION_ERROR', 'Maximum 50 requests per batch', 400);
     }
 
     const batchId = `batch_${Date.now()}`;
@@ -342,16 +367,18 @@ async function batchAdaptContent(
     }
 
     for (const chunk of chunks) {
-      const chunkPromises = chunk.map(async (request) => {
+      const chunkPromises = chunk.map(async request => {
         try {
           const mockEvent = { ...event, body: JSON.stringify(request) };
           const result = await adaptContent(mockEvent, context);
           return JSON.parse(result.body);
         } catch (error) {
-          logger.error('Batch adaptation error:', error);
+          logger.error('Batch adaptation error', error instanceof Error ? error : undefined, {
+            errorMessage: error instanceof Error ? error.message : String(error),
+          });
           return {
             error: 'Adaptation failed',
-            details: error instanceof Error ? error.message : 'Unknown error'
+            details: error instanceof Error ? error.message : 'Unknown error',
           };
         }
       });
@@ -360,16 +387,18 @@ async function batchAdaptContent(
       results.push(...chunkResults);
     }
 
-    return createSuccessResponse({
-      batchId,
-      totalRequests: requests.length,
-      successfulAdaptations: results.filter(r => !r.error).length,
-      failedAdaptations: results.filter(r => r.error).length,
-      results
-    }, 'Batch adaptation completed', 200, context.awsRequestId);
-
+    return createSuccessResponse(
+      {
+        batchId,
+        totalRequests: requests.length,
+        successfulAdaptations: results.filter(r => !r.error).length,
+        failedAdaptations: results.filter(r => r.error).length,
+        results,
+      },
+      200
+    );
   } catch (error) {
-    return handleError(error as Error, undefined, 500, context.awsRequestId);
+    return handleError(error as Error);
   }
 }
 
@@ -381,18 +410,20 @@ function generateCacheKey(request: AdaptationRequest): string {
   const content = request.content.text.substring(0, 100);
   const context = `${request.context.culture}_${request.context.language}_${request.context.religion || 'none'}`;
   const date = request.context.timing.date.toISOString().split('T')[0];
-  
+
   return `cultural_adapt_${Buffer.from(`${content}_${context}_${date}_${request.adaptationLevel}`).toString('base64').substring(0, 32)}`;
 }
 
 async function getCachedAdaptation(cacheKey: string): Promise<AdaptationResult | null> {
   try {
-    const result = await dynamoClient.send(new GetItemCommand({
-      TableName: process.env.CULTURAL_CACHE_TABLE || 'CulturalAdaptationCache',
-      Key: {
-        cacheKey: { S: cacheKey }
-      }
-    }));
+    const result = await dynamoClient.send(
+      new GetItemCommand({
+        TableName: process.env.CULTURAL_CACHE_TABLE || 'CulturalAdaptationCache',
+        Key: {
+          cacheKey: { S: cacheKey },
+        },
+      })
+    );
 
     if (result.Item) {
       return JSON.parse(result.Item.adaptationResult.S || '{}');
@@ -406,15 +437,17 @@ async function getCachedAdaptation(cacheKey: string): Promise<AdaptationResult |
 
 async function cacheAdaptationResult(cacheKey: string, result: AdaptationResult): Promise<void> {
   try {
-    await dynamoClient.send(new PutItemCommand({
-      TableName: process.env.CULTURAL_CACHE_TABLE || 'CulturalAdaptationCache',
-      Item: {
-        cacheKey: { S: cacheKey },
-        adaptationResult: { S: JSON.stringify(result) },
-        ttl: { N: Math.floor(Date.now() / 1000 + 86400).toString() }, // 24 hours
-        createdAt: { S: new Date().toISOString() }
-      }
-    }));
+    await dynamoClient.send(
+      new PutItemCommand({
+        TableName: process.env.CULTURAL_CACHE_TABLE || 'CulturalAdaptationCache',
+        Item: {
+          cacheKey: { S: cacheKey },
+          adaptationResult: { S: JSON.stringify(result) },
+          ttl: { N: Math.floor(Date.now() / 1000 + 86400).toString() }, // 24 hours
+          createdAt: { S: new Date().toISOString() },
+        },
+      })
+    );
   } catch (error) {
     logger.warn('Cache storage failed:', error);
   }
@@ -434,7 +467,7 @@ async function getCulturalRulesForContext(context: CommunicationContext): Promis
       rule: 'Ensure all food content is halal-compliant',
       severity: 'critical',
       category: 'content',
-      description: 'All food items must comply with Islamic dietary laws'
+      description: 'All food items must comply with Islamic dietary laws',
     });
   }
 
@@ -446,7 +479,7 @@ async function getCulturalRulesForContext(context: CommunicationContext): Promis
       rule: 'Prefer vegetarian options and avoid beef content',
       severity: 'important',
       category: 'content',
-      description: 'Respect Hindu dietary preferences and restrictions'
+      description: 'Respect Hindu dietary preferences and restrictions',
     });
   }
 
@@ -457,14 +490,17 @@ async function getCulturalRulesForContext(context: CommunicationContext): Promis
       rule: 'Use formal language and honorifics',
       severity: 'important',
       category: 'tone',
-      description: 'Eastern cultures often prefer formal communication styles'
+      description: 'Eastern cultures often prefer formal communication styles',
     });
   }
 
   return rules;
 }
 
-async function getFestivalContextForDate(date: Date, religion?: ReligiousContext): Promise<{
+async function getFestivalContextForDate(
+  date: Date,
+  religion?: ReligiousContext
+): Promise<{
   currentFestivals: Festival[];
   upcomingFestivals: Festival[];
   communicationRecommendations: string[];
@@ -489,18 +525,17 @@ async function getFestivalContextForDate(date: Date, religion?: ReligiousContext
         duringDays: 3,
         afterDays: 7,
         timing: 'acknowledge',
-        restrictions: ['avoid_scheduling_during_christmas_day']
-      }
+        restrictions: ['avoid_scheduling_during_christmas_day'],
+      },
     });
   }
 
-  const currentFestivals = festivals.filter(f => 
-    Math.abs(f.date.getTime() - date.getTime()) < 86400000 // Within 1 day
+  const currentFestivals = festivals.filter(
+    f => Math.abs(f.date.getTime() - date.getTime()) < 86400000 // Within 1 day
   );
 
-  const upcomingFestivals = festivals.filter(f => 
-    f.date.getTime() > date.getTime() && 
-    f.date.getTime() - date.getTime() < 7 * 86400000 // Within 7 days
+  const upcomingFestivals = festivals.filter(
+    f => f.date.getTime() > date.getTime() && f.date.getTime() - date.getTime() < 7 * 86400000 // Within 7 days
   );
 
   const recommendations: string[] = [];
@@ -514,7 +549,7 @@ async function getFestivalContextForDate(date: Date, religion?: ReligiousContext
   return {
     currentFestivals,
     upcomingFestivals,
-    communicationRecommendations: recommendations
+    communicationRecommendations: recommendations,
   };
 }
 
@@ -533,14 +568,16 @@ async function performCulturalAdaptation(
     if (rule.severity === 'critical' || level !== 'basic') {
       // Apply rule-specific adaptations
       if (rule.id === 'formal_communication') {
-        adaptedText = adaptedText.replace(/\bhi\b/gi, 'Dear Parent/Guardian')
-                                .replace(/\bthanks\b/gi, 'Thank you for your attention');
+        adaptedText = adaptedText
+          .replace(/\bhi\b/gi, 'Dear Parent/Guardian')
+          .replace(/\bthanks\b/gi, 'Thank you for your attention');
         adaptations.push('Applied formal communication style');
       }
-      
+
       if (rule.id === 'halal_food_only') {
-        adaptedText = adaptedText.replace(/pork/gi, 'halal protein')
-                                .replace(/bacon/gi, 'halal alternative');
+        adaptedText = adaptedText
+          .replace(/pork/gi, 'halal protein')
+          .replace(/bacon/gi, 'halal alternative');
         adaptations.push('Adapted content for halal compliance');
       }
     }
@@ -579,7 +616,7 @@ async function applyReligiousAdaptations(
   return {
     text: adaptedText,
     culturalAdaptations: content.culturalAdaptations,
-    religiousAdaptations
+    religiousAdaptations,
   };
 }
 
@@ -587,7 +624,12 @@ async function applyTimingAdaptations(
   content: { text: string; culturalAdaptations: string[]; religiousAdaptations: string[] },
   context: CommunicationContext,
   festivalContext: any
-): Promise<{ text: string; culturalAdaptations: string[]; religiousAdaptations: string[]; timingAdaptations: string[] }> {
+): Promise<{
+  text: string;
+  culturalAdaptations: string[];
+  religiousAdaptations: string[];
+  timingAdaptations: string[];
+}> {
   const timingAdaptations: string[] = [];
 
   // Check for timing conflicts with festivals
@@ -599,7 +641,7 @@ async function applyTimingAdaptations(
 
   return {
     ...content,
-    timingAdaptations
+    timingAdaptations,
   };
 }
 
@@ -616,10 +658,18 @@ function calculateConfidenceScore(
 
   // Increase confidence based on adaptation level
   switch (request.adaptationLevel) {
-    case 'basic': score += 0.0; break;
-    case 'standard': score += 0.05; break;
-    case 'comprehensive': score += 0.1; break;
-    case 'deep_cultural': score += 0.15; break;
+    case 'basic':
+      score += 0.0;
+      break;
+    case 'standard':
+      score += 0.05;
+      break;
+    case 'comprehensive':
+      score += 0.1;
+      break;
+    case 'deep_cultural':
+      score += 0.15;
+      break;
   }
 
   // Festival awareness

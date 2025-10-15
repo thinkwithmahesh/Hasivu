@@ -1,11 +1,20 @@
-"use client";
+'use client';
 
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Bell, BellRing, MessageSquare, AlertTriangle, CheckCircle, Clock, Settings } from 'lucide-react';
+import {
+  ArrowLeft,
+  Bell,
+  BellRing,
+  MessageSquare,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  Settings,
+} from 'lucide-react';
 
 export default function NotificationsPage() {
   const [activeTab, setActiveTab] = useState<'all' | 'unread' | 'system' | 'orders'>('all');
@@ -20,7 +29,7 @@ export default function NotificationsPage() {
       read: false,
       priority: 'high',
       icon: BellRing,
-      color: 'text-orange-600'
+      color: 'text-orange-600',
     },
     {
       id: 2,
@@ -31,7 +40,7 @@ export default function NotificationsPage() {
       read: false,
       priority: 'medium',
       icon: CheckCircle,
-      color: 'text-green-600'
+      color: 'text-green-600',
     },
     {
       id: 3,
@@ -42,7 +51,7 @@ export default function NotificationsPage() {
       read: true,
       priority: 'high',
       icon: AlertTriangle,
-      color: 'text-red-600'
+      color: 'text-red-600',
     },
     {
       id: 4,
@@ -53,7 +62,7 @@ export default function NotificationsPage() {
       read: true,
       priority: 'low',
       icon: CheckCircle,
-      color: 'text-green-600'
+      color: 'text-green-600',
     },
     {
       id: 5,
@@ -64,7 +73,7 @@ export default function NotificationsPage() {
       read: true,
       priority: 'medium',
       icon: MessageSquare,
-      color: 'text-blue-600'
+      color: 'text-blue-600',
     },
     {
       id: 6,
@@ -75,8 +84,8 @@ export default function NotificationsPage() {
       read: true,
       priority: 'medium',
       icon: Clock,
-      color: 'text-yellow-600'
-    }
+      color: 'text-yellow-600',
+    },
   ];
 
   const filterNotifications = () => {
@@ -94,10 +103,14 @@ export default function NotificationsPage() {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'high': return 'bg-red-100 text-red-700';
-      case 'medium': return 'bg-yellow-100 text-yellow-700';
-      case 'low': return 'bg-green-100 text-green-700';
-      default: return 'bg-gray-100 text-gray-700';
+      case 'high':
+        return 'bg-red-100 text-red-700';
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-700';
+      case 'low':
+        return 'bg-green-100 text-green-700';
+      default:
+        return 'bg-gray-100 text-gray-700';
     }
   };
 
@@ -122,7 +135,9 @@ export default function NotificationsPage() {
                   <span className="text-white font-bold text-xl">H</span>
                 </div>
                 <div>
-                  <div className="font-display font-bold text-2xl text-primary-600">Notifications</div>
+                  <div className="font-display font-bold text-2xl text-primary-600">
+                    Notifications
+                  </div>
                   <div className="text-sm text-gray-600 -mt-1">HASIVU Platform</div>
                 </div>
               </div>
@@ -145,7 +160,9 @@ export default function NotificationsPage() {
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Notifications Center</h1>
-          <p className="text-gray-600">Stay updated with system alerts, order updates, and platform activities</p>
+          <p className="text-gray-600">
+            Stay updated with system alerts, order updates, and platform activities
+          </p>
         </div>
 
         {/* Notification Tabs */}
@@ -154,9 +171,17 @@ export default function NotificationsPage() {
             {[
               { key: 'all', label: 'All', count: notifications.length },
               { key: 'unread', label: 'Unread', count: unreadCount },
-              { key: 'system', label: 'System', count: notifications.filter(n => n.type === 'system').length },
-              { key: 'orders', label: 'Orders', count: notifications.filter(n => n.type === 'order').length }
-            ].map((tab) => (
+              {
+                key: 'system',
+                label: 'System',
+                count: notifications.filter(n => n.type === 'system').length,
+              },
+              {
+                key: 'orders',
+                label: 'Orders',
+                count: notifications.filter(n => n.type === 'order').length,
+              },
+            ].map(tab => (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key as any)}
@@ -232,13 +257,11 @@ export default function NotificationsPage() {
                 Mark all as read
               </Button>
             </CardTitle>
-            <CardDescription>
-              {filteredNotifications.length} notifications
-            </CardDescription>
+            <CardDescription>{filteredNotifications.length} notifications</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {filteredNotifications.map((notification) => {
+              {filteredNotifications.map(notification => {
                 const IconComponent = notification.icon;
                 return (
                   <div
@@ -249,16 +272,20 @@ export default function NotificationsPage() {
                         : 'bg-blue-50 border-blue-200 shadow-sm'
                     }`}
                   >
-                    <div className={`p-2 rounded-full bg-white border-2 ${
-                      notification.read ? 'border-gray-300' : 'border-blue-300'
-                    }`}>
+                    <div
+                      className={`p-2 rounded-full bg-white border-2 ${
+                        notification.read ? 'border-gray-300' : 'border-blue-300'
+                      }`}
+                    >
                       <IconComponent className={`h-4 w-4 ${notification.color}`} />
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-2">
-                        <h4 className={`font-medium ${
-                          notification.read ? 'text-gray-700' : 'text-gray-900'
-                        }`}>
+                        <h4
+                          className={`font-medium ${
+                            notification.read ? 'text-gray-700' : 'text-gray-900'
+                          }`}
+                        >
                           {notification.title}
                         </h4>
                         <div className="flex items-center gap-2">
@@ -273,9 +300,11 @@ export default function NotificationsPage() {
                           )}
                         </div>
                       </div>
-                      <p className={`text-sm mb-2 ${
-                        notification.read ? 'text-gray-600' : 'text-gray-700'
-                      }`}>
+                      <p
+                        className={`text-sm mb-2 ${
+                          notification.read ? 'text-gray-600' : 'text-gray-700'
+                        }`}
+                      >
                         {notification.message}
                       </p>
                       <p className="text-xs text-gray-500">{notification.time}</p>

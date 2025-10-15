@@ -1,8 +1,11 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.dunningManagementHandler = void 0;
 const client_1 = require("@prisma/client");
-const Razorpay = require('razorpay');
+const razorpay_1 = __importDefault(require("razorpay"));
 const logger_service_1 = require("../shared/logger.service");
 const validation_service_1 = require("../shared/validation.service");
 const response_utils_1 = require("../../shared/response.utils");
@@ -16,16 +19,13 @@ const prisma = new client_1.PrismaClient({
         }
     }
 });
-const razorpay = new Razorpay({
+const razorpay = new razorpay_1.default({
     key_id: process.env.RAZORPAY_KEY_ID || '',
     key_secret: process.env.RAZORPAY_KEY_SECRET || ''
 });
 const MAX_DUNNING_ATTEMPTS = parseInt(process.env.MAX_DUNNING_ATTEMPTS || '5');
 const GRACE_PERIOD_DAYS = parseInt(process.env.PAYMENT_GRACE_PERIOD_DAYS || '7');
-const DUNNING_EMAIL_ENABLED = process.env.DUNNING_EMAIL_ENABLED === 'true';
-const DUNNING_SMS_ENABLED = process.env.DUNNING_SMS_ENABLED === 'true';
 const DUNNING_ESCALATION_DAYS = [1, 3, 7, 14, 30];
-const SUBSCRIPTION_SUSPENSION_DELAY = parseInt(process.env.SUBSCRIPTION_SUSPENSION_DELAY_DAYS || '45');
 const processDunningSchema = zod_1.z.object({
     paymentId: zod_1.z.string().uuid().optional(),
     subscriptionId: zod_1.z.string().uuid().optional(),
@@ -141,7 +141,7 @@ async function processDunningManagement(options = {}, authenticatedUser) {
                 results.failed++;
                 results.errors.push({
                     paymentId: payment.id,
-                    error: error.message
+                    error: error instanceof Error ? error.message : String(error)
                 });
                 logger.error(`Error processing dunning for payment ${payment.id}:`, error);
             }
@@ -177,15 +177,14 @@ async function processSinglePaymentDunning(payment, options, authenticatedUser) 
         if (dunningAttempts === 0 && !options.forceProcess) {
             const gracePeriodEnd = calculateGracePeriodEnd(payment.createdAt, dunningConfig.gracePeriodDays);
             if (new Date() < gracePeriodEnd) {
-                await sendGracePeriodNotification(payment, gracePeriodEnd, authenticatedUser);
+                await sendGracePeriodNotification(payment, gracePeriodEnd);
                 return { success: true };
             }
         }
         if (dunningAttempts >= dunningConfig.maxAttempts) {
             logger.info(`Maximum dunning attempts exceeded for payment ${payment.id}`);
-            return await suspendSubscription(payment, dunningAttempts, options.dryRun, authenticatedUser);
+            return await suspendSubscription(payment, dunningAttempts, options.dryRun);
         }
-        const nextAttemptDate = calculateNextAttemptDate(dunningAttempts + 1, payment.createdAt, dunningConfig.escalationDays);
         if (!options.forceProcess && nextDunningAt && new Date() < nextDunningAt) {
             logger.info(`Next dunning attempt not yet due for payment ${payment.id}`);
             return { success: true };
@@ -195,10 +194,10 @@ async function processSinglePaymentDunning(payment, options, authenticatedUser) 
     }
     catch (error) {
         logger.error(`Failed to process dunning for payment ${payment.id}:`, error);
-        return { success: false, error: error.message };
+        return { success: false, error: error instanceof Error ? error.message : String(error) };
     }
 }
-async function processPaymentDunningAttempt(payment, attemptNumber, config, dryRun, authenticatedUser) {
+async function processPaymentDunningAttempt(payment, attemptNumber, config, dryRun, _authenticatedUser) {
     const logger = logger_service_1.LoggerService.getInstance();
     try {
         if (!dryRun && payment.subscriptionId) {
@@ -230,14 +229,14 @@ async function processPaymentDunningAttempt(payment, attemptNumber, config, dryR
                     });
                 }
             }
-            await sendPaymentSuccessNotification(payment, authenticatedUser);
+            await sendPaymentSuccessNotification(payment);
             logger.info(`Payment retry successful: ${payment.id}`);
             return { success: true };
         }
         else {
             const nextAttemptNumber = attemptNumber;
             if (nextAttemptNumber >= config.maxAttempts) {
-                return await suspendSubscription(payment, nextAttemptNumber, dryRun, authenticatedUser);
+                return await suspendSubscription(payment, nextAttemptNumber, dryRun);
             }
             else {
                 const nextAttemptDate = calculateNextAttemptDate(nextAttemptNumber + 1, payment.createdAt, config.escalationDays);
@@ -250,14 +249,14 @@ async function processPaymentDunningAttempt(payment, attemptNumber, config, dryR
                         }
                     });
                 }
-                await sendDunningNotification(payment, nextAttemptNumber, nextAttemptDate, authenticatedUser);
+                await sendDunningNotification(payment, nextAttemptNumber, nextAttemptDate);
             }
             return { success: true };
         }
     }
     catch (error) {
         logger.error(`Error processing payment retry attempt ${attemptNumber}:`, error);
-        return { success: false, error: error.message };
+        return { success: false, error: error instanceof Error ? error.message : String(error) };
     }
 }
 async function attemptPaymentRetry(payment, attemptNumber, dryRun) {
@@ -293,11 +292,11 @@ async function attemptPaymentRetry(payment, attemptNumber, dryRun) {
         logger.error(`Razorpay order creation failed for payment ${payment.id}:`, error);
         return {
             success: false,
-            error: error.message || 'Payment gateway error'
+            error: error instanceof Error ? error.message : String(error) || 'Payment gateway error'
         };
     }
 }
-async function suspendSubscription(payment, attemptNumber, dryRun, authenticatedUser) {
+async function suspendSubscription(payment, attemptNumber, dryRun) {
     const logger = logger_service_1.LoggerService.getInstance();
     try {
         if (!dryRun && payment.subscriptionId) {
@@ -310,16 +309,16 @@ async function suspendSubscription(payment, attemptNumber, dryRun, authenticated
                 }
             });
         }
-        await sendSuspensionNotification(payment, authenticatedUser);
+        await sendSuspensionNotification(payment);
         logger.info(`Subscription suspended due to payment failures: ${payment.subscriptionId}`);
         return { success: true, suspended: true };
     }
     catch (error) {
         logger.error(`Failed to suspend subscription ${payment.subscriptionId}:`, error);
-        return { success: false, suspended: false, error: error.message };
+        return { success: false, suspended: false, error: error instanceof Error ? error.message : String(error) };
     }
 }
-async function sendGracePeriodNotification(payment, gracePeriodEnd, authenticatedUser) {
+async function sendGracePeriodNotification(payment, gracePeriodEnd) {
     const logger = logger_service_1.LoggerService.getInstance();
     const userId = payment.user.id;
     logger.info(`Sending grace period notification to user ${userId} for subscription ${payment.subscriptionId}`);
@@ -334,7 +333,7 @@ async function sendGracePeriodNotification(payment, gracePeriodEnd, authenticate
     };
     logger.info('Grace period notification data prepared', notificationData);
 }
-async function sendDunningNotification(payment, attemptNumber, nextAttemptDate, authenticatedUser) {
+async function sendDunningNotification(payment, attemptNumber, nextAttemptDate) {
     const logger = logger_service_1.LoggerService.getInstance();
     const userId = payment.user.id;
     logger.info(`Sending dunning notification to user ${userId} for payment ${payment.id}, attempt ${attemptNumber}`);
@@ -351,7 +350,7 @@ async function sendDunningNotification(payment, attemptNumber, nextAttemptDate, 
     };
     logger.info('Dunning notification data prepared', notificationData);
 }
-async function sendPaymentSuccessNotification(payment, authenticatedUser) {
+async function sendPaymentSuccessNotification(payment) {
     const logger = logger_service_1.LoggerService.getInstance();
     const userId = payment.user.id;
     logger.info(`Sending payment success notification to user ${userId} for payment ${payment.id}`);
@@ -365,7 +364,7 @@ async function sendPaymentSuccessNotification(payment, authenticatedUser) {
     };
     logger.info('Payment success notification data prepared', notificationData);
 }
-async function sendSuspensionNotification(payment, authenticatedUser) {
+async function sendSuspensionNotification(payment) {
     const logger = logger_service_1.LoggerService.getInstance();
     const userId = payment.user.id;
     logger.info(`Sending suspension notification to user ${userId} for subscription ${payment.subscriptionId}`);
@@ -397,7 +396,6 @@ async function getDunningAnalytics(options) {
     });
     const totalFailures = subscriptions.filter(s => s.dunningAttempts > 0).length;
     const activeProcesses = subscriptions.filter(s => s.dunningAttempts > 0 && s.status === 'active').length;
-    const suspendedProcesses = subscriptions.filter(s => s.status === 'suspended').length;
     const completedProcesses = subscriptions.filter(s => s.dunningAttempts > 0 && s.status === 'active').length;
     const recoveryRate = totalFailures > 0 ? Math.round((completedProcesses / totalFailures) * 100) : 0;
     const recoveryDurations = subscriptions
@@ -431,12 +429,10 @@ async function getDunningAnalytics(options) {
         escalationBreakdown
     };
 }
-const dunningManagementHandler = async (event, context) => {
+const dunningManagementHandler = async (event) => {
     const logger = logger_service_1.LoggerService.getInstance();
-    const requestId = context.awsRequestId;
     try {
         logger.info('Dunning management request started', {
-            requestId,
             method: event.httpMethod,
             path: event.path
         });
@@ -445,28 +441,30 @@ const dunningManagementHandler = async (event, context) => {
             return authResult;
         }
         const { user: authenticatedUser } = authResult;
+        if (!authenticatedUser) {
+            return (0, response_utils_1.createErrorResponse)('Authentication failed - user not found', 401, 'AUTHENTICATION_ERROR');
+        }
         const method = event.httpMethod;
         const path = event.path;
         switch (`${method}:${path}`) {
             case 'POST:/api/v1/payments/dunning/process':
-                return await handleProcessDunning(event, authenticatedUser, requestId);
+                return await handleProcessDunning(event, authenticatedUser);
             case 'GET:/api/v1/payments/dunning/status':
-                return await handleGetDunningStatus(event, authenticatedUser, requestId);
+                return await handleGetDunningStatus(event);
             case 'GET:/api/v1/payments/dunning/analytics':
-                return await handleGetDunningAnalytics(event, authenticatedUser, requestId);
+                return await handleGetDunningAnalytics(event);
             case 'PUT:/api/v1/payments/dunning/config':
-                return await handleUpdateDunningConfig(event, authenticatedUser, requestId);
+                return await handleUpdateDunningConfig(event, authenticatedUser);
             case 'GET:/api/v1/payments/dunning/config':
-                return await handleGetDunningConfig(event, authenticatedUser, requestId);
+                return await handleGetDunningConfig(event);
             default:
                 return (0, response_utils_1.createErrorResponse)(`Method ${method} not supported for path ${path}`, 405, 'METHOD_NOT_ALLOWED');
         }
     }
     catch (error) {
         logger.error('Dunning management request failed', {
-            requestId,
-            error: error.message,
-            stack: error.stack
+            error: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined
         });
         return (0, response_utils_1.handleError)(error, 'Dunning management operation failed');
     }
@@ -475,12 +473,11 @@ const dunningManagementHandler = async (event, context) => {
     }
 };
 exports.dunningManagementHandler = dunningManagementHandler;
-async function handleProcessDunning(event, authenticatedUser, requestId) {
+async function handleProcessDunning(event, authenticatedUser) {
     const logger = logger_service_1.LoggerService.getInstance();
     const requestBody = JSON.parse(event.body || '{}');
     const processData = processDunningSchema.parse(requestBody);
     logger.info('Processing dunning management request', {
-        requestId,
         processData,
         executedBy: authenticatedUser.email
     });
@@ -492,7 +489,6 @@ async function handleProcessDunning(event, authenticatedUser, requestId) {
         maxBatchSize: processData.maxBatchSize
     }, authenticatedUser);
     logger.info('Dunning processing completed', {
-        requestId,
         results,
         executedBy: authenticatedUser.email
     });
@@ -507,7 +503,7 @@ async function handleProcessDunning(event, authenticatedUser, requestId) {
         }
     });
 }
-async function handleGetDunningStatus(event, authenticatedUser, requestId) {
+async function handleGetDunningStatus(event) {
     const queryParams = event.queryStringParameters || {};
     const statusQuery = dunningStatusSchema.parse(queryParams);
     const whereClause = {};
@@ -551,7 +547,7 @@ async function handleGetDunningStatus(event, authenticatedUser, requestId) {
         }
     });
 }
-async function handleGetDunningAnalytics(event, authenticatedUser, requestId) {
+async function handleGetDunningAnalytics(event) {
     const queryParams = event.queryStringParameters || {};
     const options = {};
     if (queryParams.subscriptionId) {
@@ -571,7 +567,7 @@ async function handleGetDunningAnalytics(event, authenticatedUser, requestId) {
         data: analytics
     });
 }
-async function handleUpdateDunningConfig(event, authenticatedUser, requestId) {
+async function handleUpdateDunningConfig(event, authenticatedUser) {
     const logger = logger_service_1.LoggerService.getInstance();
     const requestBody = JSON.parse(event.body || '{}');
     const configData = updateDunningConfigSchema.parse(requestBody);
@@ -586,7 +582,6 @@ async function handleUpdateDunningConfig(event, authenticatedUser, requestId) {
         }
     });
     logger.info('Dunning configuration updated', {
-        requestId,
         subscriptionId: configData.subscriptionId,
         updatedBy: authenticatedUser.email
     });
@@ -595,7 +590,7 @@ async function handleUpdateDunningConfig(event, authenticatedUser, requestId) {
         data: updatedConfig
     });
 }
-async function handleGetDunningConfig(event, authenticatedUser, requestId) {
+async function handleGetDunningConfig(event) {
     const subscriptionId = event.queryStringParameters?.subscriptionId;
     if (!subscriptionId) {
         return (0, response_utils_1.createErrorResponse)('Subscription ID is required', 400, 'MISSING_SUBSCRIPTION_ID');

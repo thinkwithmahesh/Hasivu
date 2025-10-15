@@ -6,9 +6,12 @@
  */
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 import { PrismaClient } from '@prisma/client';
-import { LoggerService } from '../shared/logger.service';
+import { logger } from '../../utils/logger';
 import { createSuccessResponse, createErrorResponse, handleError } from '../shared/response.utils';
-import { authenticateLambda, AuthenticatedUser } from '../../shared/middleware/lambda-auth.middleware';
+import {
+  authenticateLambda,
+  AuthenticatedUser,
+} from '../../shared/middleware/lambda-auth.middleware';
 import Joi from 'joi';
 
 // Initialize database client
@@ -18,18 +21,18 @@ const prisma = new PrismaClient();
 type NotificationWithRelations = {
   id: string;
   type: string;
-  title: string;
-  message: string;
-  data: string;
+  title: string | null;
+  message: string | null;
+  data: string | null;
   priority: string;
   status: string;
   createdAt: Date;
-  readAt?: Date;
-  deliveredAt?: Date;
+  readAt: Date | null;
+  deliveredAt: Date | null;
   student?: {
     id: string;
-    firstName: string;
-    lastName: string;
+    firstName: string | null;
+    lastName: string | null;
   };
   order?: {
     id: string;
@@ -48,13 +51,15 @@ export enum NotificationType {
   CARD_ISSUE = 'card_issue',
   ACCOUNT_UPDATE = 'account_update',
   PAYMENT_REMINDER = 'payment_reminder',
-  WEEKLY_SUMMARY = 'weekly_summary'
+  WEEKLY_SUMMARY = 'weekly_summary',
 }
 
 // Push notification request schema
 const pushNotificationSchema = Joi.object({
   parentIds: Joi.array().items(Joi.string().uuid()).min(1).max(100).required(),
-  notificationType: Joi.string().valid(...Object.values(NotificationType)).required(),
+  notificationType: Joi.string()
+    .valid(...Object.values(NotificationType))
+    .required(),
   title: Joi.string().required().min(1).max(100),
   message: Joi.string().required().min(1).max(500),
   data: Joi.object().optional().default({}),
@@ -62,7 +67,7 @@ const pushNotificationSchema = Joi.object({
   priority: Joi.string().valid('low', 'normal', 'high', 'urgent').optional().default('normal'),
   schoolId: Joi.string().uuid().optional(),
   studentId: Joi.string().uuid().optional(),
-  orderId: Joi.string().uuid().optional()
+  orderId: Joi.string().uuid().optional(),
 });
 
 // Get notifications request schema
@@ -70,9 +75,11 @@ const getNotificationsSchema = Joi.object({
   page: Joi.number().integer().min(1).optional().default(1),
   limit: Joi.number().integer().min(1).max(50).optional().default(20),
   status: Joi.string().valid('unread', 'read', 'all').optional().default('all'),
-  notificationType: Joi.string().valid(...Object.values(NotificationType)).optional(),
+  notificationType: Joi.string()
+    .valid(...Object.values(NotificationType))
+    .optional(),
   dateFrom: Joi.date().optional(),
-  dateTo: Joi.date().optional()
+  dateTo: Joi.date().optional(),
 });
 
 // Interfaces
@@ -126,69 +133,72 @@ interface MobileNotificationResponse {
 /**
  * Validate parent relationship and permissions
  */
-async function validateParentAccess(parentId: string, requestingUser: AuthenticatedUser): Promise<any> {
+async function validateParentAccess(
+  parentId: string,
+  requestingUser: AuthenticatedUser
+): Promise<any> {
   // Super admin and admin can access any parent
   if (['super_admin', 'admin'].includes(requestingUser.role)) {
     const parent = await prisma.user.findUnique({
       where: { id: parentId, role: 'parent' },
       include: {
         school: {
-          select: { id: true, name: true, code: true }
-        }
-      }
+          select: { id: true, name: true, code: true },
+        },
+      },
     });
-    
+
     if (!parent) {
       throw new Error('Parent not found');
     }
-    
+
     return parent;
   }
-  
+
   // Parents can only access their own notifications
   if (requestingUser.role === 'parent') {
     if (requestingUser.id !== parentId) {
       throw new Error('Access denied: Can only access your own notifications');
     }
-    
+
     const parent = await prisma.user.findUnique({
       where: { id: parentId },
       include: {
         school: {
-          select: { id: true, name: true, code: true }
-        }
-      }
+          select: { id: true, name: true, code: true },
+        },
+      },
     });
-    
+
     if (!parent) {
       throw new Error('Parent not found');
     }
-    
+
     return parent;
   }
-  
+
   // School staff can access parents in their school
   if (['school_admin', 'staff', 'teacher'].includes(requestingUser.role)) {
     const parent = await prisma.user.findUnique({
-      where: { 
-        id: parentId, 
+      where: {
+        id: parentId,
         role: 'parent',
-        schoolId: requestingUser.schoolId
+        schoolId: requestingUser.schoolId,
       },
       include: {
         school: {
-          select: { id: true, name: true, code: true }
-        }
-      }
+          select: { id: true, name: true, code: true },
+        },
+      },
     });
-    
+
     if (!parent) {
       throw new Error('Parent not found or not in your school');
     }
-    
+
     return parent;
   }
-  
+
   throw new Error('Insufficient permissions');
 }
 
@@ -204,29 +214,30 @@ async function sendPushNotification(
 ): Promise<boolean> {
   // This would integrate with AWS SNS, Firebase FCM, or similar service
   // For now, we'll simulate the push notification
-  
+
   try {
-    const logger = LoggerService.getInstance();
-    
     // Simulate push notification service call
     // In production, this would be:
     // - AWS SNS for cross-platform push notifications
     // - Firebase FCM for Android/iOS
     // - Apple Push Notification Service (APNs)
-    
+
     logger.info('Push notification sent', {
       deviceToken: deviceToken.substring(0, 10) + '...',
       title,
       priority,
-      dataKeys: Object.keys(data)
+      dataKeys: Object.keys(data),
     });
-    
+
     return true;
   } catch (error) {
-    LoggerService.getInstance().error('Push notification failed', {
-      error: (error as Error).message,
-      deviceToken: deviceToken.substring(0, 10) + '...'
-    });
+    logger.error(
+      'Push notification failed',
+      error instanceof Error ? error : new Error(String(error)),
+      {
+        deviceToken: deviceToken.substring(0, 10) + '...',
+      }
+    );
     return false;
   }
 }
@@ -253,12 +264,12 @@ async function createMobileNotification(
         orderId: notificationData.orderId || null,
         mobileNotification: true,
         deviceDelivery: deliveryStatus,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       }),
       priority: notificationData.priority || 'normal',
       status: deliveryStatus,
-      deliveredAt: deliveryStatus === 'sent' ? new Date() : null
-    } as any
+      deliveredAt: deliveryStatus === 'sent' ? new Date() : null,
+    } as any,
   });
 
   return notification;
@@ -276,7 +287,7 @@ export async function sendDeliveryConfirmation(
 ): Promise<void> {
   const title = 'Meal Delivered Successfully';
   const message = `${studentName}'s meal (Order #${orderNumber}) has been delivered at ${deliveryLocation}`;
-  
+
   const notificationData: PushNotificationRequest = {
     parentIds: [parentId],
     notificationType: NotificationType.DELIVERY_CONFIRMATION,
@@ -288,8 +299,8 @@ export async function sendDeliveryConfirmation(
       studentName,
       deliveryLocation,
       deliveryTime: deliveryTime.toISOString(),
-      actionType: 'delivery_confirmation'
-    }
+      actionType: 'delivery_confirmation',
+    },
   };
 
   // Get parent device tokens
@@ -298,8 +309,8 @@ export async function sendDeliveryConfirmation(
     select: {
       id: true,
       deviceTokens: true,
-      preferences: true
-    }
+      preferences: true,
+    },
   });
 
   if (parent?.deviceTokens) {
@@ -333,7 +344,7 @@ async function getMobileNotifications(
   // Build where clause
   let whereClause: any = {
     userId: parentId,
-    type: { in: Object.values(NotificationType) } // Only mobile notification types
+    type: { in: Object.values(NotificationType) }, // Only mobile notification types
   };
 
   if (status !== 'all') {
@@ -363,15 +374,15 @@ async function getMobileNotifications(
           select: {
             id: true,
             firstName: true,
-            lastName: true
-          }
-        }
+            lastName: true,
+          },
+        },
       },
       skip,
       take: limit,
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
     }),
-    prisma.notification.count({ where: whereClause })
+    prisma.notification.count({ where: whereClause }),
   ]);
 
   // Format response
@@ -386,26 +397,30 @@ async function getMobileNotifications(
     return {
       id: notification.id,
       type: notification.type,
-      title: notification.title,
-      message: notification.message,
+      title: notification.title ?? '',
+      message: notification.message ?? '',
       data,
       priority: notification.priority,
       status: notification.status as any,
       createdAt: notification.createdAt,
-      readAt: notification.readAt || undefined,
-      deliveredAt: notification.deliveredAt || undefined,
-      student: notification.student ? {
-        id: notification.student.id,
-        name: `${notification.student.firstName} ${notification.student.lastName}`,
-        firstName: notification.student.firstName,
-        lastName: notification.student.lastName
-      } : undefined,
-      order: notification.order ? {
-        id: notification.order.id,
-        orderNumber: notification.order.orderNumber,
-        status: notification.order.status,
-        totalAmount: notification.order.totalAmount
-      } : undefined
+      readAt: notification.readAt ?? undefined,
+      deliveredAt: notification.deliveredAt ?? undefined,
+      student: notification.student
+        ? {
+            id: notification.student.id,
+            name: `${notification.student.firstName ?? ''} ${notification.student.lastName ?? ''}`,
+            firstName: notification.student.firstName ?? '',
+            lastName: notification.student.lastName ?? '',
+          }
+        : undefined,
+      order: notification.order
+        ? {
+            id: notification.order.id,
+            orderNumber: notification.order.orderNumber,
+            status: notification.order.status,
+            totalAmount: notification.order.totalAmount,
+          }
+        : undefined,
     };
   });
 
@@ -415,8 +430,8 @@ async function getMobileNotifications(
       page,
       limit,
       total: totalCount,
-      pages: Math.ceil(totalCount / limit)
-    }
+      pages: Math.ceil(totalCount / limit),
+    },
   };
 }
 
@@ -427,12 +442,12 @@ async function markNotificationAsRead(notificationId: string, parentId: string):
   await prisma.notification.updateMany({
     where: {
       id: notificationId,
-      userId: parentId
+      userId: parentId,
     },
     data: {
       readAt: new Date(),
-      status: 'read'
-    }
+      status: 'read',
+    },
   });
 }
 
@@ -451,36 +466,44 @@ export const parentNotificationsHandler = async (
   event: APIGatewayProxyEvent,
   context: Context
 ): Promise<APIGatewayProxyResult> => {
-  const logger = LoggerService.getInstance();
   const requestId = context.awsRequestId;
   const httpMethod = event.httpMethod;
-  
+
   try {
     logger.info('Parent mobile notifications request started', { requestId, httpMethod });
-    
+
     // Authenticate request
-    const authenticatedUser = await authenticateLambda(event);
-    
+    const authResult = await authenticateLambda(event as any);
+
+    // Check authentication success and extract user
+    if (!authResult.success || !authResult.user) {
+      logger.warn('Authentication failed', { requestId, error: authResult.error });
+      return createErrorResponse('AUTHENTICATION_FAILED', 'Authentication failed', 401);
+    }
+
+    const authenticatedUser = authResult.user;
+
     switch (httpMethod) {
       case 'POST':
-        return await handleSendNotification(event, requestId, authenticatedUser as AuthenticatedUser);
+        return await handleSendNotification(event, requestId, authenticatedUser);
       case 'GET':
-        return await handleGetNotifications(event, requestId, authenticatedUser as AuthenticatedUser);
+        return await handleGetNotifications(event, requestId, authenticatedUser);
       case 'PUT':
-        return await handleMarkAsRead(event, requestId, authenticatedUser as AuthenticatedUser);
+        return await handleMarkAsRead(event, requestId, authenticatedUser);
       default:
-        return createErrorResponse(405, 'Method not allowed');
+        return createErrorResponse('METHOD_NOT_ALLOWED', 'Method not allowed', 405);
     }
-    
   } catch (error: any) {
-    logger.error('Parent mobile notifications failed', {
-      requestId,
-      httpMethod,
-      error: error.message,
-      stack: error.stack
-    });
-    
-    return handleError(error, 'Failed to process mobile notification request');
+    logger.error(
+      'Parent mobile notifications failed',
+      error instanceof Error ? error : new Error(String(error)),
+      {
+        requestId,
+        httpMethod,
+      }
+    );
+
+    return handleError(error instanceof Error ? error : new Error(String(error)));
   } finally {
     await prisma.$disconnect();
   }
@@ -494,36 +517,38 @@ async function handleSendNotification(
   requestId: string,
   authenticatedUser: AuthenticatedUser
 ): Promise<APIGatewayProxyResult> {
-  const logger = LoggerService.getInstance();
-  
   // Authorization check
   if (!canSendNotifications(authenticatedUser)) {
     logger.warn('Unauthorized notification sending attempt', {
       requestId,
       userId: authenticatedUser.id,
-      userRole: authenticatedUser.role
+      userRole: authenticatedUser.role,
     });
-    return createErrorResponse(403, 'Insufficient permissions to send notifications');
+    return createErrorResponse(
+      'INSUFFICIENT_PERMISSIONS',
+      'Insufficient permissions to send notifications',
+      403
+    );
   }
-  
+
   // Parse and validate request body
   const requestBody = JSON.parse(event.body || '{}');
   const { error, value: notificationData } = pushNotificationSchema.validate(requestBody);
-  
+
   if (error) {
     logger.warn('Invalid notification request data', { requestId, error: error.details });
-    return createErrorResponse(400, 'Invalid request data', error.details);
+    return createErrorResponse('INVALID_REQUEST', 'Invalid request data', 400, error.details);
   }
-  
+
   const { parentIds, ...notificationDetails } = notificationData as PushNotificationRequest;
-  
+
   // Send notifications to all parents
   const results = [];
   for (const parentId of parentIds) {
     try {
       // Validate parent access
       const parent = await validateParentAccess(parentId, authenticatedUser);
-      
+
       // Get device tokens
       let deviceTokens: string[] = [];
       if (parent.deviceTokens) {
@@ -533,64 +558,63 @@ async function handleSendNotification(
           deviceTokens = [];
         }
       }
-      
+
       // Send push notifications
       let deliveryStatus: 'sent' | 'failed' = 'sent';
       if (deviceTokens.length > 0) {
         const pushResults = await Promise.all(
-          deviceTokens.map(token => 
+          deviceTokens.map(token =>
             sendPushNotification(
-              token, 
-              notificationDetails.title, 
-              notificationDetails.message, 
-              notificationDetails.data || {}, 
+              token,
+              notificationDetails.title,
+              notificationDetails.message,
+              notificationDetails.data || {},
               notificationDetails.priority || 'normal'
             )
           )
         );
-        
+
         // If all push notifications failed, mark as failed
         if (pushResults.every(result => !result)) {
           deliveryStatus = 'failed';
         }
       }
-      
+
       // Create notification record
       const notification = await createMobileNotification(
-        parentId, 
-        { parentIds: [parentId], ...notificationDetails }, 
+        parentId,
+        { parentIds: [parentId], ...notificationDetails },
         deliveryStatus
       );
-      
+
       results.push({
         parentId,
         notificationId: notification.id,
         status: deliveryStatus,
-        deviceCount: deviceTokens.length
+        deviceCount: deviceTokens.length,
       });
-      
     } catch (error: any) {
       results.push({
         parentId,
         status: 'failed',
-        error: error.message
+        error: error.message,
       });
     }
   }
-  
+
   logger.info('Mobile notifications sent', {
     requestId,
     totalParents: parentIds.length,
     successCount: results.filter(r => r.status === 'sent').length,
-    failureCount: results.filter(r => r.status === 'failed').length
+    failureCount: results.filter(r => r.status === 'failed').length,
   });
-  
+
   return createSuccessResponse({
     message: 'Mobile notifications processed',
     data: {
       totalParents: parentIds.length,
-      results
-    }
+      results,
+    },
   });
 }
 
@@ -602,40 +626,43 @@ async function handleGetNotifications(
   requestId: string,
   authenticatedUser: AuthenticatedUser
 ): Promise<APIGatewayProxyResult> {
-  const logger = LoggerService.getInstance();
-  
   // Extract parent ID from path parameters
   const parentId = event.pathParameters?.parentId;
   if (!parentId) {
-    return createErrorResponse(400, 'Parent ID is required');
+    return createErrorResponse('INVALID_PARAMETERS', 'Parent ID is required', 400);
   }
-  
+
   // Validate parent access
   await validateParentAccess(parentId, authenticatedUser);
-  
+
   // Parse query parameters
   const queryParams = event.queryStringParameters || {};
   const { error, value: filters } = getNotificationsSchema.validate(queryParams);
-  
+
   if (error) {
     logger.warn('Invalid get notifications parameters', { requestId, error: error.details });
-    return createErrorResponse(400, 'Invalid query parameters', error.details);
+    return createErrorResponse(
+      'INVALID_PARAMETERS',
+      'Invalid query parameters',
+      400,
+      error.details
+    );
   }
-  
+
   // Get notifications
   const result = await getMobileNotifications(parentId, filters as GetNotificationsRequest);
-  
+
   logger.info('Mobile notifications retrieved', {
     requestId,
     parentId,
     notificationCount: result.notifications.length,
-    total: result.pagination.total
+    total: result.pagination.total,
   });
-  
+
   return createSuccessResponse({
     message: 'Mobile notifications retrieved successfully',
     data: result.notifications,
-    pagination: result.pagination
+    pagination: result.pagination,
   });
 }
 
@@ -647,37 +674,35 @@ async function handleMarkAsRead(
   requestId: string,
   authenticatedUser: AuthenticatedUser
 ): Promise<APIGatewayProxyResult> {
-  const logger = LoggerService.getInstance();
-  
   // Extract notification ID from path parameters
   const notificationId = event.pathParameters?.notificationId;
   if (!notificationId) {
-    return createErrorResponse(400, 'Notification ID is required');
+    return createErrorResponse('INVALID_PARAMETERS', 'Notification ID is required', 400);
   }
-  
+
   // Get notification to verify ownership
   const notification = await prisma.notification.findUnique({
     where: { id: notificationId },
-    select: { userId: true }
+    select: { userId: true },
   });
-  
-  if (!notification) {
-    return createErrorResponse(404, 'Notification not found');
+
+  if (!notification || !notification.userId) {
+    return createErrorResponse('NOT_FOUND', 'Notification not found', 404);
   }
-  
+
   // Validate parent access
   await validateParentAccess(notification.userId, authenticatedUser);
-  
+
   // Mark as read
   await markNotificationAsRead(notificationId, notification.userId);
-  
+
   logger.info('Notification marked as read', {
     requestId,
     notificationId,
-    parentId: notification.userId
+    parentId: notification.userId,
   });
-  
+
   return createSuccessResponse({
-    message: 'Notification marked as read successfully'
+    message: 'Notification marked as read successfully',
   });
 }

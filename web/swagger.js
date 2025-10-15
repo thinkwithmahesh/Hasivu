@@ -1,0 +1,53 @@
+const swaggerJSDoc = require('swagger-jsdoc');
+
+const options = {
+  definition: {
+    openapi: '3.0.3',
+    info: {
+      title: 'HASIVU Platform API',
+      description:
+        'Comprehensive API documentation for the HASIVU school meal ordering and management platform',
+      version: '1.0.0',
+      contact: {
+        name: 'HASIVU Platform Support',
+        email: 'support@hasivu.com',
+      },
+      license: {
+        name: 'Proprietary',
+      },
+    },
+    servers: [
+      {
+        url: 'https://api.hasivu.com/v1',
+        description: 'Production server',
+      },
+      {
+        url: 'https://staging-api.hasivu.com/v1',
+        description: 'Staging server',
+      },
+      {
+        url: 'http://localhost:3000/api',
+        description: 'Local development server',
+      },
+    ],
+    security: [
+      {
+        bearerAuth: [],
+      },
+    ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          description: 'JWT Authorization header using the Bearer scheme',
+        },
+      },
+    },
+  },
+  apis: ['./src/app/api/**/*.ts', './src/app/api/**/*.js'],
+};
+
+const specs = swaggerJSDoc(options);
+module.exports = specs;

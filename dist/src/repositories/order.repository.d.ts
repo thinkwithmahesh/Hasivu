@@ -1,72 +1,85 @@
-import { Order, Prisma } from '@prisma/client';
-export declare enum OrderStatus {
-    PENDING = "pending",
-    CONFIRMED = "confirmed",
-    PREPARING = "preparing",
-    READY = "ready",
-    OUT_FOR_DELIVERY = "out_for_delivery",
-    DELIVERED = "delivered",
-    CANCELLED = "cancelled"
-}
-export interface OrderFindOptions {
-    filters?: Record<string, any>;
-    skip?: number;
-    take?: number;
-    sortBy?: string;
-    sortOrder?: 'asc' | 'desc';
-    include?: Prisma.OrderInclude;
-}
-export interface OrderFindResult {
-    items: Order[];
-    total: number;
-}
-export interface AnalyticsResult {
-    totalOrders: number;
-    totalRevenue: number;
-    deliveredOrders: number;
-    cancelledOrders: number;
-    ordersByStatus: Record<OrderStatus, number>;
-    revenueByDay: Array<{
-        date: string;
-        revenue: number;
-        orders: number;
-    }>;
-}
+import { Order } from '@prisma/client';
 export declare class OrderRepository {
-    static create(data: Prisma.OrderCreateInput): Promise<Order>;
+    private prisma;
+    constructor();
+    findAll(schoolId?: string): Promise<Order[]>;
+    findById(id: string): Promise<Order | null>;
+    findBySchool(schoolId: string): Promise<Order[]>;
+    findByStudent(studentId: string): Promise<Order[]>;
+    findByStatus(schoolId: string, status: string): Promise<Order[]>;
+    findByDateRange(schoolId: string, startDate: Date, endDate: Date): Promise<Order[]>;
+    create(data: Omit<Order, 'id' | 'createdAt' | 'updatedAt'>): Promise<Order>;
+    update(id: string, data: Partial<Order>): Promise<Order>;
+    updateStatus(id: string, status: string): Promise<Order>;
+    delete(id: string): Promise<Order>;
+    getPendingOrders(schoolId: string): Promise<Order[]>;
+    getActiveOrders(schoolId: string): Promise<Order[]>;
+    findByIdWithIncludes(id: string, include?: any): Promise<Order | null>;
+    static findByIdWithIncludes(id: string, include?: any): Promise<Order | null>;
     static findById(id: string): Promise<Order | null>;
-    static findByIdWithIncludes(id: string, include: Prisma.OrderInclude): Promise<Order | null>;
-    static findMany(options?: OrderFindOptions): Promise<OrderFindResult>;
-    static update(id: string, data: Prisma.OrderUpdateInput): Promise<Order>;
-    static delete(id: string): Promise<Order>;
-    static count(filters?: Record<string, any>): Promise<number>;
-    static getAnalytics(filters?: Record<string, any>, groupBy?: 'day' | 'week' | 'month'): Promise<AnalyticsResult>;
-    static findByStudentId(studentId: string, options?: Omit<OrderFindOptions, 'filters'> & {
-        status?: OrderStatus;
-    }): Promise<OrderFindResult>;
-    static findByParentId(parentId: string, options?: Omit<OrderFindOptions, 'filters'> & {
-        status?: OrderStatus;
-    }): Promise<OrderFindResult>;
-    static findBySchoolId(schoolId: string, options?: Omit<OrderFindOptions, 'filters'> & {
-        status?: OrderStatus;
-        dateFrom?: Date;
-        dateTo?: Date;
-    }): Promise<OrderFindResult>;
-    static findActiveOrders(filters?: Record<string, any>, options?: Omit<OrderFindOptions, 'filters'>): Promise<OrderFindResult>;
-    static findByDeliveryDate(deliveryDate: Date, options?: Omit<OrderFindOptions, 'filters'> & {
-        schoolId?: string;
-    }): Promise<OrderFindResult>;
-    static updateMany(where: Prisma.OrderWhereInput, data: Prisma.OrderUpdateManyMutationInput): Promise<Prisma.BatchPayload>;
-    static getDashboardStats(schoolId?: string, dateRange?: {
-        from: Date;
-        to: Date;
+    static update(id: string, data: Partial<Order>): Promise<Order>;
+    static findMany(options: {
+        filters?: {
+            studentId?: string;
+            status?: string;
+            schoolId?: string;
+        };
+        skip?: number;
+        take?: number;
+        sortBy?: string;
+        sortOrder?: 'asc' | 'desc';
     }): Promise<{
-        todayOrders: number;
-        pendingOrders: number;
-        completedOrders: number;
+        items: Order[];
+        total: number;
+    }>;
+    static count(filters?: {
+        studentId?: string;
+        status?: string;
+        schoolId?: string;
+    }): Promise<number>;
+    static getAnalytics(schoolId: string, startDate?: Date, endDate?: Date): Promise<{
+        totalOrders: number;
         totalRevenue: number;
-        averageOrderValue: number;
+        deliveredOrders: number;
+        cancelledOrders: number;
+        ordersByStatus: {
+            [status: string]: number;
+        };
+        revenueByDay: Array<{
+            date: string;
+            revenue: number;
+        }>;
+    }>;
+    findMany(options: {
+        filters?: {
+            studentId?: string;
+            status?: string;
+        };
+        skip?: number;
+        take?: number;
+        sortBy?: string;
+        sortOrder?: 'asc' | 'desc';
+    }): Promise<{
+        items: Order[];
+        total: number;
+    }>;
+    count(filters?: {
+        studentId?: string;
+        status?: string;
+    }): Promise<number>;
+    getAnalytics(schoolId: string, startDate?: Date, endDate?: Date): Promise<{
+        totalOrders: number;
+        totalRevenue: number;
+        deliveredOrders: number;
+        cancelledOrders: number;
+        ordersByStatus: {
+            [status: string]: number;
+        };
+        revenueByDay: Array<{
+            date: string;
+            revenue: number;
+        }>;
     }>;
 }
-export declare const orderRepository: OrderRepository;
+export default OrderRepository;
 //# sourceMappingURL=order.repository.d.ts.map

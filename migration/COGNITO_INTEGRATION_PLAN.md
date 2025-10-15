@@ -7,6 +7,7 @@ This document outlines the complete strategy for migrating from custom JWT authe
 ## **Current vs. Target Authentication Architecture**
 
 ### **Current State (Express + Custom JWT)**
+
 ```typescript
 // Current Authentication Flow
 1. User registers → bcrypt hash password → Store in database
@@ -17,6 +18,7 @@ This document outlines the complete strategy for migrating from custom JWT authe
 ```
 
 ### **Target State (Lambda + AWS Cognito)**
+
 ```typescript
 // Target Authentication Flow
 1. User registers → Cognito.signUp() → Store additional data in database
@@ -29,6 +31,7 @@ This document outlines the complete strategy for migrating from custom JWT authe
 ## **Phase 1: Cognito User Pool Configuration**
 
 ### **1.1 User Pool Settings**
+
 ```json
 {
   "poolName": "hasivu-platform-users",
@@ -65,6 +68,7 @@ This document outlines the complete strategy for migrating from custom JWT authe
 ```
 
 ### **1.2 Custom Attributes Schema**
+
 ```json
 {
   "schema": [
@@ -112,6 +116,7 @@ This document outlines the complete strategy for migrating from custom JWT authe
 ```
 
 ### **1.3 User Pool Client Configuration**
+
 ```json
 {
   "clientName": "hasivu-platform-client",
@@ -154,11 +159,12 @@ This document outlines the complete strategy for migrating from custom JWT authe
 ### **2.1 User Data Migration Approach**
 
 #### **Option A: Bulk Migration (Recommended for < 1000 users)**
+
 ```typescript
 async function bulkMigrateUsers() {
   // 1. Export existing users from database
   const existingUsers = await db.user.findMany({
-    where: { isActive: true }
+    where: { isActive: true },
   });
 
   // 2. Create users in Cognito with temporary passwords
@@ -173,28 +179,28 @@ async function bulkMigrateUsers() {
           { Name: 'family_name', Value: user.lastName },
           { Name: 'custom:school_id', Value: user.schoolId },
           { Name: 'custom:role', Value: user.role },
-          { Name: 'email_verified', Value: 'true' }
+          { Name: 'email_verified', Value: 'true' },
         ],
         TemporaryPassword: generateTemporaryPassword(),
-        MessageAction: 'RESEND' // Send welcome email
+        MessageAction: 'RESEND', // Send welcome email
       });
 
       // 3. Update local database with Cognito user ID
       await db.user.update({
         where: { id: user.id },
-        data: { 
+        data: {
           cognitoUserId: cognitoResponse.User?.Username,
           migrationStatus: 'migrated',
-          migrationDate: new Date()
-        }
+          migrationDate: new Date(),
+        },
       });
     } catch (error) {
       await db.user.update({
         where: { id: user.id },
-        data: { 
+        data: {
           migrationStatus: 'failed',
-          migrationError: error.message
-        }
+          migrationError: error.message,
+        },
       });
     }
   }
@@ -202,55 +208,59 @@ async function bulkMigrateUsers() {
 ```
 
 #### **Option B: Lazy Migration (Recommended for > 1000 users)**
+
 ```typescript
 // During login, migrate user if not already migrated
 async function lazyMigrateUser(email: string, password: string) {
   const user = await db.user.findFirst({ where: { email } });
-  
+
   if (!user.cognitoUserId) {
     // User not migrated yet, validate against old system
     const isValidPassword = await bcrypt.compare(password, user.hashedPassword);
-    
+
     if (isValidPassword) {
       // Migrate user to Cognito
       await cognito.adminCreateUser({
         UserPoolId: COGNITO_USER_POOL_ID,
         Username: email,
         TemporaryPassword: password,
-        UserAttributes: [/* ... */],
-        MessageAction: 'SUPPRESS' // No welcome email
+        UserAttributes: [
+          /* ... */
+        ],
+        MessageAction: 'SUPPRESS', // No welcome email
       });
-      
+
       // Set permanent password
       await cognito.adminSetUserPassword({
         UserPoolId: COGNITO_USER_POOL_ID,
         Username: email,
         Password: password,
-        Permanent: true
+        Permanent: true,
       });
-      
+
       // Continue with normal Cognito login
       return await cognito.initiateAuth({
         ClientId: COGNITO_CLIENT_ID,
         AuthFlow: 'USER_PASSWORD_AUTH',
-        AuthParameters: { USERNAME: email, PASSWORD: password }
+        AuthParameters: { USERNAME: email, PASSWORD: password },
       });
     }
   }
-  
+
   // User already migrated or invalid password
   return await cognito.initiateAuth({
     ClientId: COGNITO_CLIENT_ID,
     AuthFlow: 'USER_PASSWORD_AUTH',
-    AuthParameters: { USERNAME: email, PASSWORD: password }
+    AuthParameters: { USERNAME: email, PASSWORD: password },
   });
 }
 ```
 
 ### **2.2 Database Schema Updates**
+
 ```sql
 -- Add Cognito integration columns
-ALTER TABLE users 
+ALTER TABLE users
 ADD COLUMN cognito_user_id VARCHAR(255) UNIQUE,
 ADD COLUMN migration_status ENUM('pending', 'migrated', 'failed') DEFAULT 'pending',
 ADD COLUMN migration_date TIMESTAMP NULL,
@@ -280,6 +290,7 @@ CREATE TABLE user_migrations (
 ## **Phase 3: API Gateway Cognito Integration**
 
 ### **3.1 API Gateway Authorizer Configuration**
+
 ```yaml
 # serverless.yml authorizer configuration
 httpApi:
@@ -293,6 +304,7 @@ httpApi:
 ```
 
 ### **3.2 Lambda Function Authorization**
+
 ```typescript
 // Extract user information from API Gateway event
 export const protectedHandler = async (event: APIGatewayProxyEvent) => {
@@ -300,13 +312,14 @@ export const protectedHandler = async (event: APIGatewayProxyEvent) => {
   const userId = event.requestContext.authorizer?.claims?.sub;
   const email = event.requestContext.authorizer?.claims?.email;
   const role = event.requestContext.authorizer?.claims?.['custom:role'];
-  const schoolId = event.requestContext.authorizer?.claims?.['custom:school_id'];
-  
+  const schoolId =
+    event.requestContext.authorizer?.claims?.['custom:school_id'];
+
   // Use user information in business logic
   const user = await db.user.findFirst({
-    where: { cognitoUserId: userId }
+    where: { cognitoUserId: userId },
   });
-  
+
   // Proceed with protected operation
   return createResponse(200, { user, message: 'Access granted' });
 };
@@ -315,73 +328,74 @@ export const protectedHandler = async (event: APIGatewayProxyEvent) => {
 ## **Phase 4: Frontend Integration Changes**
 
 ### **4.1 Authentication Service Update**
+
 ```typescript
 // New AuthService using AWS Cognito
 export class AuthService {
   private cognitoConfig = {
     region: process.env.MIGRATION_COGNITO_INTEGRATION_PLAN_PASSWORD_7,
     userPoolId: process.env.REACT_APP_COGNITO_USER_POOL_ID,
-    clientId: process.env.REACT_APP_COGNITO_CLIENT_ID
+    clientId: process.env.REACT_APP_COGNITO_CLIENT_ID,
   };
 
   async login(email: string, password: string): Promise<AuthResult> {
     const response = await fetch('/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ email, password }),
     });
-    
+
     if (response.ok) {
       const data = await response.json();
-      
+
       // Store tokens in secure storage
       localStorage.setItem('accessToken', data.tokens.accessToken);
       localStorage.setItem('refreshToken', data.tokens.refreshToken);
       localStorage.setItem('idToken', data.tokens.idToken);
-      
+
       return { success: true, user: data.user };
     }
-    
+
     throw new Error('Authentication failed');
   }
 
   async refreshToken(): Promise<string> {
     const refreshToken = localStorage.getItem('refreshToken');
-    
+
     if (!refreshToken) {
       throw new Error('No refresh token available');
     }
-    
+
     const response = await fetch('/auth/refresh', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refreshToken })
+      body: JSON.stringify({ refreshToken }),
     });
-    
+
     if (response.ok) {
       const data = await response.json();
       localStorage.setItem('accessToken', data.tokens.accessToken);
       localStorage.setItem('idToken', data.tokens.idToken);
-      
+
       return data.tokens.accessToken;
     }
-    
+
     throw new Error('Token refresh failed');
   }
 
   async logout(): Promise<void> {
     const accessToken = localStorage.getItem('accessToken');
-    
+
     if (accessToken) {
       await fetch('/auth/logout', {
         method: 'POST',
-        headers: { 
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
-        }
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
       });
     }
-    
+
     // Clear local storage
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
@@ -390,29 +404,28 @@ export class AuthService {
 
   getAuthHeaders(): Record<string, string> {
     const accessToken = localStorage.getItem('accessToken');
-    
-    return accessToken 
-      ? { 'Authorization': `Bearer ${accessToken}` }
-      : {};
+
+    return accessToken ? { Authorization: `Bearer ${accessToken}` } : {};
   }
 }
 ```
 
 ### **4.2 HTTP Interceptor Updates**
+
 ```typescript
 // Update Axios interceptor for automatic token refresh
 axios.interceptors.response.use(
-  (response) => response,
-  async (error) => {
+  response => response,
+  async error => {
     const originalRequest = error.config;
-    
+
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
-      
+
       try {
         const authService = new AuthService();
         const newToken = await authService.refreshToken();
-        
+
         originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
         return axios(originalRequest);
       } catch (refreshError) {
@@ -421,7 +434,7 @@ axios.interceptors.response.use(
         return Promise.reject(refreshError);
       }
     }
-    
+
     return Promise.reject(error);
   }
 );
@@ -430,6 +443,7 @@ axios.interceptors.response.use(
 ## **Phase 5: Testing Strategy**
 
 ### **5.1 Unit Testing Cognito Integration**
+
 ```typescript
 // Mock Cognito for unit tests
 jest.mock('@aws-sdk/client-cognito-identity-provider', () => ({
@@ -437,19 +451,19 @@ jest.mock('@aws-sdk/client-cognito-identity-provider', () => ({
     signUp: jest.fn(),
     initiateAuth: jest.fn(),
     adminCreateUser: jest.fn(),
-    adminSetUserPassword: jest.fn()
-  }))
+    adminSetUserPassword: jest.fn(),
+  })),
 }));
 
 describe('Cognito Authentication', () => {
   test('should register user successfully', async () => {
     // Test implementation
   });
-  
+
   test('should handle authentication errors', async () => {
     // Test implementation
   });
-  
+
   test('should refresh tokens correctly', async () => {
     // Test implementation
   });
@@ -457,6 +471,7 @@ describe('Cognito Authentication', () => {
 ```
 
 ### **5.2 Integration Testing**
+
 ```typescript
 // Integration tests with actual Cognito test pool
 describe('Cognito Integration Tests', () => {
@@ -464,15 +479,15 @@ describe('Cognito Integration Tests', () => {
     // Set up test Cognito User Pool
     testUserPool = await createTestUserPool();
   });
-  
+
   test('end-to-end user registration flow', async () => {
     // Test complete registration process
   });
-  
+
   test('login with migrated user', async () => {
     // Test login for users migrated from old system
   });
-  
+
   afterAll(async () => {
     // Clean up test resources
     await deleteTestUserPool(testUserPool.Id);
@@ -483,6 +498,7 @@ describe('Cognito Integration Tests', () => {
 ## **Phase 6: Rollback Strategy for Cognito Migration**
 
 ### **6.1 Emergency Rollback**
+
 ```typescript
 // Fallback authentication service
 class FallbackAuthService {
@@ -499,10 +515,11 @@ class FallbackAuthService {
 ```
 
 ### **6.2 Data Rollback**
+
 ```sql
 -- Rollback user data if migration fails
-UPDATE users 
-SET cognito_user_id = NULL, 
+UPDATE users
+SET cognito_user_id = NULL,
     migration_status = 'pending',
     migration_date = NULL,
     migration_error = NULL
@@ -515,20 +532,25 @@ WHERE migration_status = 'failed';
 ## **Phase 7: Monitoring & Observability**
 
 ### **7.1 CloudWatch Metrics**
+
 ```typescript
 // Custom metrics for monitoring Cognito integration
 const cloudWatch = new CloudWatch();
 
 const putMetric = async (metricName: string, value: number, unit = 'Count') => {
-  await cloudWatch.putMetricData({
-    Namespace: 'HASIVU/Authentication',
-    MetricData: [{
-      MetricName: metricName,
-      Value: value,
-      Unit: unit,
-      Timestamp: new Date()
-    }]
-  }).promise();
+  await cloudWatch
+    .putMetricData({
+      Namespace: 'HASIVU/Authentication',
+      MetricData: [
+        {
+          MetricName: metricName,
+          Value: value,
+          Unit: unit,
+          Timestamp: new Date(),
+        },
+      ],
+    })
+    .promise();
 };
 
 // Track key metrics
@@ -539,6 +561,7 @@ await putMetric(process.env.MIGRATION_COGNITO_INTEGRATION_PLAN_PASSWORD_11, 1);
 ```
 
 ### **7.2 Alerting Setup**
+
 ```yaml
 # CloudWatch Alarms
 CognitoLoginFailureRate:
@@ -570,6 +593,7 @@ TokenRefreshFailureRate:
 ## **Success Criteria & Validation**
 
 ### **Authentication Flow Validation**
+
 - ✅ User registration creates Cognito user and database entry
 - ✅ Login returns valid Cognito tokens
 - ✅ Token refresh works seamlessly
@@ -580,14 +604,16 @@ TokenRefreshFailureRate:
 - ✅ Migrated users can login without issues
 
 ### **Security Validation**
+
 - ✅ No plaintext passwords stored anywhere
-- ✅ Tokens follow AWS security best practices  
+- ✅ Tokens follow AWS security best practices
 - ✅ Session management via Cognito tokens only
 - ✅ Proper RBAC implementation with Cognito attributes
 - ✅ Email verification working correctly
 - ✅ Password policy enforcement active
 
 ### **Performance Validation**
+
 - ✅ Authentication latency < 500ms
 - ✅ Token refresh latency < 200ms
 - ✅ API Gateway authorization latency < 50ms

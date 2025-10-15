@@ -25,14 +25,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/95</span>
+                <span class='fraction'>0/92</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/30</span>
+                <span class='fraction'>0/31</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/90</span>
+                <span class='fraction'>0/87</span>
             </div>
         
             
@@ -393,23 +393,7 @@
 <a name='L328'></a><a href='#L328'>328</a>
 <a name='L329'></a><a href='#L329'>329</a>
 <a name='L330'></a><a href='#L330'>330</a>
-<a name='L331'></a><a href='#L331'>331</a>
-<a name='L332'></a><a href='#L332'>332</a>
-<a name='L333'></a><a href='#L333'>333</a>
-<a name='L334'></a><a href='#L334'>334</a>
-<a name='L335'></a><a href='#L335'>335</a>
-<a name='L336'></a><a href='#L336'>336</a>
-<a name='L337'></a><a href='#L337'>337</a>
-<a name='L338'></a><a href='#L338'>338</a>
-<a name='L339'></a><a href='#L339'>339</a>
-<a name='L340'></a><a href='#L340'>340</a>
-<a name='L341'></a><a href='#L341'>341</a>
-<a name='L342'></a><a href='#L342'>342</a>
-<a name='L343'></a><a href='#L343'>343</a>
-<a name='L344'></a><a href='#L344'>344</a>
-<a name='L345'></a><a href='#L345'>345</a>
-<a name='L346'></a><a href='#L346'>346</a>
-<a name='L347'></a><a href='#L347'>347</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L331'></a><a href='#L331'>331</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -458,7 +442,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -583,11 +566,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -619,10 +598,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -718,21 +695,12 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -762,7 +730,7 @@
  */
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 import { UserService, CreateUserRequest } from '../../services/user.service';
-import { LoggerService } from '../shared/logger.service';
+import { logger } from '../../utils/logger';
 import { ValidationService } from '../shared/validation.service';
 import { handleError, createSuccessResponse } from '../shared/response.utils';
 import Joi from 'joi';
@@ -803,7 +771,6 @@ export const bulkImportUsersHandler = <span class="cstat-no" title="statement no
   event: APIGatewayProxyEvent,
   context: Context
 ): Promise&lt;APIGatewayProxyResult&gt; =&gt; {
-  const logger = <span class="cstat-no" title="statement not covered" >LoggerService.getInstance();</span>
   const requestId = <span class="cstat-no" title="statement not covered" >context.awsRequestId;</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >  try {</span>
@@ -816,17 +783,17 @@ export const bulkImportUsersHandler = <span class="cstat-no" title="statement no
     const userContext = <span class="cstat-no" title="statement not covered" >event.requestContext.authorizer;</span>
 <span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!userContext?.userId) {</span>
 <span class="cstat-no" title="statement not covered" >      logger.warn('Unauthorized bulk import attempt', { requestId });</span>
-<span class="cstat-no" title="statement not covered" >      return handleError(new Error('Unauthorized'), undefined, 401, requestId);</span>
+<span class="cstat-no" title="statement not covered" >      return handleError(new Error('Unauthorized'));</span>
     }
 &nbsp;
     // Get requesting user for permission checks
     const requestingUser = <span class="cstat-no" title="statement not covered" >await UserService.getUserById(userContext.userId);</span>
 <span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!requestingUser) {</span>
-<span class="cstat-no" title="statement not covered" >      logger.error('Requesting user not found', {</span>
+<span class="cstat-no" title="statement not covered" >      logger.error('Requesting user not found', new Error('User not found'), {</span>
         requestId,
         userId: userContext.userId
       });
-<span class="cstat-no" title="statement not covered" >      return handleError(new Error('Requesting user not found'), undefined, 404, requestId);</span>
+<span class="cstat-no" title="statement not covered" >      return handleError(new Error('Requesting user not found'));</span>
     }
 &nbsp;
     // Check bulk import permissions
@@ -836,7 +803,7 @@ export const bulkImportUsersHandler = <span class="cstat-no" title="statement no
         userId: userContext.userId,
         role: requestingUser.role
       });
-<span class="cstat-no" title="statement not covered" >      return handleError(new Error('Insufficient permissions for bulk import'), undefined, 403, requestId);</span>
+<span class="cstat-no" title="statement not covered" >      return handleError(new Error('Insufficient permissions for bulk import'));</span>
     }
 &nbsp;
     // Parse request body
@@ -847,7 +814,7 @@ export const bulkImportUsersHandler = <span class="cstat-no" title="statement no
       skipDuplicates?: boolean;
       updateExisting?: boolean;
     };
-    
+&nbsp;
 <span class="cstat-no" title="statement not covered" >    try {</span>
 <span class="cstat-no" title="statement not covered" >      importData = JSON.parse(event.body || '{}');</span>
     } catch (parseError) {
@@ -855,7 +822,7 @@ export const bulkImportUsersHandler = <span class="cstat-no" title="statement no
         requestId,
         error: (parseError as Error).message
       });
-<span class="cstat-no" title="statement not covered" >      return handleError(new Error('Invalid JSON in request body'), undefined, 400, requestId);</span>
+<span class="cstat-no" title="statement not covered" >      return handleError(new Error('Invalid JSON in request body'));</span>
     }
 &nbsp;
     // Validate input data
@@ -865,23 +832,23 @@ export const bulkImportUsersHandler = <span class="cstat-no" title="statement no
         requestId,
         errors: validation.errors
       });
-<span class="cstat-no" title="statement not covered" >      return handleError(new Error(`Validation failed: ${validation.errors?.join(', ')}`), undefined, 400, requestId);</span>
+<span class="cstat-no" title="statement not covered" >      return handleError(new Error(`Validation failed: ${validation.errors?.join(', ')}`));</span>
     }
 &nbsp;
     // Determine school ID based on permissions
     let targetSchoolId = <span class="cstat-no" title="statement not covered" >importData.schoolId;</span>
 <span class="cstat-no" title="statement not covered" >    if (requestingUser.role === 'school_admin') {</span>
       // School admins can only import to their own school
-<span class="cstat-no" title="statement not covered" >      targetSchoolId = requestingUser.schoolId;</span>
+<span class="cstat-no" title="statement not covered" >      targetSchoolId = requestingUser.schoolId ?? undefined;</span>
     } else <span class="cstat-no" title="statement not covered" ><span class="missing-if-branch" title="if path not taken" >I</span>if (!targetSchoolId) {</span>
-<span class="cstat-no" title="statement not covered" >      return handleError(new Error('School ID is required for admin users'), undefined, 400, requestId);</span>
+<span class="cstat-no" title="statement not covered" >      return handleError(new Error('School ID is required for admin users'));</span>
     }
 &nbsp;
     // Validate CSV data size
     const csvSizeBytes = <span class="cstat-no" title="statement not covered" >Buffer.byteLength(importData.csvData, 'utf8');</span>
     const maxSizeMB = <span class="cstat-no" title="statement not covered" >10;</span>
 <span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (csvSizeBytes &gt; maxSizeMB * 1024 * 1024) {</span>
-<span class="cstat-no" title="statement not covered" >      return handleError(new Error(`CSV data too large. Maximum size: ${maxSizeMB}MB`), undefined, 400, requestId);</span>
+<span class="cstat-no" title="statement not covered" >      return handleError(new Error(`CSV data too large. Maximum size: ${maxSizeMB}MB`));</span>
     }
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    logger.info('Processing CSV data', {</span>
@@ -892,8 +859,8 @@ export const bulkImportUsersHandler = <span class="cstat-no" title="statement no
     });
 &nbsp;
     // Parse CSV data
-    const parseResult = <span class="cstat-no" title="statement not covered" >await parseCSVData(importData.csvData, targetSchoolId);</span>
-    
+    const parseResult = <span class="cstat-no" title="statement not covered" >await parseCSVData(importData.csvData, targetSchoolId!);</span>
+&nbsp;
 <span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (parseResult.errors.length &gt; 0) {</span>
 <span class="cstat-no" title="statement not covered" >      logger.warn('CSV parsing errors detected', {</span>
         requestId,
@@ -919,57 +886,51 @@ export const bulkImportUsersHandler = <span class="cstat-no" title="statement no
         },
         validUsers: parseResult.validUsers,
         errors: parseResult.errors
-      }, 'Preview processed successfully', 200, requestId);
+      });
     }
 &nbsp;
     // Actual import mode
 <span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (parseResult.validUsers.length === 0) {</span>
-<span class="cstat-no" title="statement not covered" >      return handleError(new Error('No valid users found in CSV data'), undefined, 400, requestId);</span>
+<span class="cstat-no" title="statement not covered" >      return handleError(new Error('No valid users found in CSV data'));</span>
     }
 &nbsp;
     // Perform bulk import
-    const importResult = <span class="cstat-no" title="statement not covered" >await UserService.bulkImportUsers(</span>
-      importData.csvData,
-      userContext.userId,
-      targetSchoolId
-    );
+    const importResult = <span class="cstat-no" title="statement not covered" >await UserService.bulkImportUsers(parseResult.validUsers);</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    logger.info('Bulk import completed', {</span>
       requestId,
-      successCount: importResult.successCount,
-      errorCount: importResult.errorCount,
-      totalUsers: importResult.users.length
+      successCount: importResult.success.length,
+      errorCount: importResult.failed.length,
+      totalUsers: importResult.success.length
     });
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    return createSuccessResponse({</span>
       previewMode: false,
       summary: {
-        totalProcessed: importResult.successCount + importResult.errorCount,
-        successful: importResult.successCount,
-        errors: importResult.errorCount,
+        totalProcessed: importResult.success.length + importResult.failed.length,
+        successful: importResult.success.length,
+        errors: importResult.failed.length,
         duplicates: 0 // Not supported in current interface
       },
       results: {
-        successful: importResult.users.map(<span class="fstat-no" title="function not covered" >user </span>=&gt; (<span class="cstat-no" title="statement not covered" >{</span>
+        successful: importResult.success.map(<span class="fstat-no" title="function not covered" >(u</span>ser: any) =&gt; (<span class="cstat-no" title="statement not covered" >{</span>
           id: user.id,
           email: user.email,
           firstName: user.firstName,
           lastName: user.lastName,
           role: user.role
         })),
-        errors: importResult.errors,
+        errors: importResult.failed,
         duplicates: [] // Not supported in current interface
       },
       csvErrors: parseResult.errors
-    }, 'Bulk import completed successfully', 200, requestId);
+    });
 &nbsp;
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    logger.error('Bulk import request failed', {</span>
-      requestId,
-      error: (error as Error).message,
-      stack: (error as Error).stack
+<span class="cstat-no" title="statement not covered" >    logger.error('Bulk import request failed', error as Error, {</span>
+      requestId
     });
-<span class="cstat-no" title="statement not covered" >    return handleError(error as Error, undefined, 500, requestId);</span>
+<span class="cstat-no" title="statement not covered" >    return handleError(error as Error);</span>
   }
 };
 &nbsp;
@@ -1067,19 +1028,10 @@ async function <span class="fstat-no" title="function not covered" >parseCSVData
           firstName: userData.firstName,
           lastName: userData.lastName,
           email: userData.email,
+          password: `temp${Math.random().toString(36).substring(2)}`, // Temporary password
           role: userData.role as any,
-          schoolId,
-          isActive: true,
-          metadata: {
-            importedAt: new Date().toISOString(),
-            csvRow: i + 1
-          }
+          schoolId
         };
-&nbsp;
-        // Handle parent relationship if specified
-<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (userData.parentEmail) {</span>
-<span class="cstat-no" title="statement not covered" >          createUserRequest.metadata.parentEmail = userData.parentEmail;</span>
-        }
 &nbsp;
 <span class="cstat-no" title="statement not covered" >        validUsers.push(createUserRequest);</span>
 &nbsp;
@@ -1108,7 +1060,7 @@ export default bulkImportUsersHandler;</pre></td></tr></table></pre>
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-09-03T01:56:53.416Z
+                at 2025-10-06T16:03:47.957Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

@@ -11,14 +11,14 @@ on:
       - 'docs/**'
       - '*.md'
       - '.gitignore'
-  
+
   push:
     branches: [main, develop]
-  
+
   schedule:
     # Run performance tests daily at 2 AM UTC
     - cron: '0 2 * * *'
-  
+
   workflow_dispatch:
     inputs:
       environment:
@@ -57,22 +57,22 @@ jobs:
   setup-and-validate:
     name: Setup & Environment Validation
     runs-on: ubuntu-latest
-    
+
     outputs:
       test-environment: ${{ steps.determine-env.outputs.environment }}
       test-type: ${{ steps.determine-type.outputs.type }}
       cache-key: ${{ steps.cache-keys.outputs.key }}
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-      
+
       - name: Determine test environment
         id: determine-env
         run: |
@@ -85,7 +85,7 @@ jobs:
           else
             echo "environment=development" >> $GITHUB_OUTPUT
           fi
-      
+
       - name: Determine test type
         id: determine-type
         run: |
@@ -98,23 +98,23 @@ jobs:
           else
             echo "type=e2e" >> $GITHUB_OUTPUT
           fi
-      
+
       - name: Generate cache keys
         id: cache-keys
         run: |
           echo "key=performance-deps-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}" >> $GITHUB_OUTPUT
-      
+
       - name: Install dependencies
         run: |
           npm ci --prefer-offline --no-audit
           npm run build
-      
+
       - name: Validate configuration
         run: |
           echo "Test Environment: ${{ steps.determine-env.outputs.environment }}"
           echo "Test Type: ${{ steps.determine-type.outputs.type }}"
           echo "Enable Chaos: ${{ github.event.inputs.enable_chaos || 'false' }}"
-          
+
           # Validate required environment variables exist
           if [[ "${{ steps.determine-env.outputs.environment }}" == "staging" ]]; then
             if [[ -z "${{ secrets.STAGING_API_URL }}" ]]; then
@@ -122,7 +122,7 @@ jobs:
               exit 1
             fi
           fi
-      
+
       - name: Cache dependencies and build
         uses: actions/cache@v3
         with:
@@ -140,17 +140,17 @@ jobs:
     runs-on: ubuntu-latest
     needs: setup-and-validate
     if: needs.setup-and-validate.outputs.test-type == 'smoke' || needs.setup-and-validate.outputs.test-type == 'full'
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-      
+
       - name: Restore dependencies
         uses: actions/cache@v3
         with:
@@ -159,7 +159,7 @@ jobs:
             dist
             ~/.npm
           key: ${{ needs.setup-and-validate.outputs.cache-key }}
-      
+
       - name: Run smoke tests
         env:
           TEST_ENVIRONMENT: ${{ needs.setup-and-validate.outputs.test-environment }}
@@ -169,7 +169,7 @@ jobs:
           PROD_API_URL: ${{ secrets.PROD_API_URL }}
         run: |
           npm run test:smoke:${{ needs.setup-and-validate.outputs.test-environment }}
-      
+
       - name: Upload smoke test results
         uses: actions/upload-artifact@v3
         if: always()
@@ -187,7 +187,7 @@ jobs:
       always() && 
       needs.smoke-tests.result == 'success' &&
       (needs.setup-and-validate.outputs.test-type == 'e2e' || needs.setup-and-validate.outputs.test-type == 'full')
-    
+
     services:
       postgres:
         image: postgres:${{ env.POSTGRES_VERSION }}
@@ -202,7 +202,7 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
-      
+
       redis:
         image: redis:${{ env.REDIS_VERSION }}
         options: >-
@@ -212,17 +212,17 @@ jobs:
           --health-retries 5
         ports:
           - 6379:6379
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-      
+
       - name: Restore dependencies
         uses: actions/cache@v3
         with:
@@ -231,7 +231,7 @@ jobs:
             dist
             ~/.npm
           key: ${{ needs.setup-and-validate.outputs.cache-key }}
-      
+
       - name: Setup test database
         env:
           DATABASE_URL: postgres://testuser:testpassword@localhost:5432/hasivu_test
@@ -239,7 +239,7 @@ jobs:
           npm run db:generate
           npm run db:migrate
           npm run db:seed
-      
+
       - name: Run E2E tests
         env:
           TEST_ENVIRONMENT: ${{ needs.setup-and-validate.outputs.test-environment }}
@@ -251,7 +251,7 @@ jobs:
           PROD_API_URL: ${{ secrets.PROD_API_URL }}
         run: |
           npm run test:e2e:comprehensive
-      
+
       - name: Generate E2E test report
         if: always()
         run: |
@@ -261,7 +261,7 @@ jobs:
           else
             echo "Warning: Test report not found" >> test-summary.txt
           fi
-      
+
       - name: Upload E2E test results
         uses: actions/upload-artifact@v3
         if: always()
@@ -281,7 +281,7 @@ jobs:
       always() && 
       needs.e2e-tests.result == 'success' &&
       (needs.setup-and-validate.outputs.test-type == 'load' || needs.setup-and-validate.outputs.test-type == 'full')
-    
+
     strategy:
       matrix:
         load-profile:
@@ -294,17 +294,17 @@ jobs:
           - name: 'heavy'
             concurrent: 50
             duration: 180
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-      
+
       - name: Restore dependencies
         uses: actions/cache@v3
         with:
@@ -313,7 +313,7 @@ jobs:
             dist
             ~/.npm
           key: ${{ needs.setup-and-validate.outputs.cache-key }}
-      
+
       - name: Run load tests - ${{ matrix.load-profile.name }}
         env:
           TEST_ENVIRONMENT: ${{ needs.setup-and-validate.outputs.test-environment }}
@@ -325,18 +325,18 @@ jobs:
           PROD_API_URL: ${{ secrets.PROD_API_URL }}
         run: |
           npm run test:load:${{ needs.setup-and-validate.outputs.test-environment }}
-      
+
       - name: Analyze performance results
         run: |
           echo "Load Test Profile: ${{ matrix.load-profile.name }}" > load-analysis-${{ matrix.load-profile.name }}.txt
           echo "Concurrent Users: ${{ matrix.load-profile.concurrent }}" >> load-analysis-${{ matrix.load-profile.name }}.txt
           echo "Duration: ${{ matrix.load-profile.duration }}s" >> load-analysis-${{ matrix.load-profile.name }}.txt
-          
+
           # Extract key metrics if report exists
           if [ -f "test-reports/${{ needs.setup-and-validate.outputs.test-environment }}/test-report-*.json" ]; then
             echo "Performance targets analysis completed" >> load-analysis-${{ matrix.load-profile.name }}.txt
           fi
-      
+
       - name: Upload load test results
         uses: actions/upload-artifact@v3
         if: always()
@@ -357,17 +357,17 @@ jobs:
       needs.load-tests.result == 'success' &&
       needs.setup-and-validate.outputs.test-environment != 'production' &&
       (needs.setup-and-validate.outputs.test-type == 'chaos' || needs.setup-and-validate.outputs.test-type == 'full' || github.event.inputs.enable_chaos == 'true')
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-      
+
       - name: Restore dependencies
         uses: actions/cache@v3
         with:
@@ -376,7 +376,7 @@ jobs:
             dist
             ~/.npm
           key: ${{ needs.setup-and-validate.outputs.cache-key }}
-      
+
       - name: Run chaos engineering tests
         env:
           TEST_ENVIRONMENT: ${{ needs.setup-and-validate.outputs.test-environment }}
@@ -386,17 +386,17 @@ jobs:
         run: |
           echo "⚠️ Running chaos engineering tests in ${{ needs.setup-and-validate.outputs.test-environment }}"
           npm run test:chaos:${{ needs.setup-and-validate.outputs.test-environment }}
-      
+
       - name: Analyze resilience results
         run: |
           echo "Chaos Engineering Results" > chaos-analysis.txt
           echo "Environment: ${{ needs.setup-and-validate.outputs.test-environment }}" >> chaos-analysis.txt
           echo "Test Date: $(date)" >> chaos-analysis.txt
-          
+
           if [ -f "test-reports/${{ needs.setup-and-validate.outputs.test-environment }}/test-report-*.json" ]; then
             echo "Resilience analysis completed" >> chaos-analysis.txt
           fi
-      
+
       - name: Upload chaos test results
         uses: actions/upload-artifact@v3
         if: always()
@@ -413,44 +413,44 @@ jobs:
     runs-on: ubuntu-latest
     needs: [setup-and-validate, smoke-tests, e2e-tests, load-tests, chaos-tests]
     if: always()
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Download all test artifacts
         uses: actions/download-artifact@v3
         with:
           path: collected-results/
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: npm ci --prefer-offline --no-audit
-      
+
       - name: Generate comprehensive performance report
         run: |
           mkdir -p final-reports
-          
+
           echo "# HASIVU Platform - Performance Test Report" > final-reports/PERFORMANCE_REPORT.md
           echo "**Test Date:** $(date)" >> final-reports/PERFORMANCE_REPORT.md
           echo "**Environment:** ${{ needs.setup-and-validate.outputs.test-environment }}" >> final-reports/PERFORMANCE_REPORT.md
           echo "**Test Type:** ${{ needs.setup-and-validate.outputs.test-type }}" >> final-reports/PERFORMANCE_REPORT.md
           echo "" >> final-reports/PERFORMANCE_REPORT.md
-          
+
           # Analyze results from each test phase
           echo "## Test Results Summary" >> final-reports/PERFORMANCE_REPORT.md
-          
+
           if [[ "${{ needs.smoke-tests.result }}" == "success" ]]; then
             echo "✅ **Smoke Tests:** PASSED" >> final-reports/PERFORMANCE_REPORT.md
           else
             echo "❌ **Smoke Tests:** FAILED" >> final-reports/PERFORMANCE_REPORT.md
           fi
-          
+
           if [[ "${{ needs.e2e-tests.result }}" == "success" ]]; then
             echo "✅ **E2E Tests:** PASSED" >> final-reports/PERFORMANCE_REPORT.md
           elif [[ "${{ needs.e2e-tests.result }}" == "failure" ]]; then
@@ -458,7 +458,7 @@ jobs:
           else
             echo "⏭️ **E2E Tests:** SKIPPED" >> final-reports/PERFORMANCE_REPORT.md
           fi
-          
+
           if [[ "${{ needs.load-tests.result }}" == "success" ]]; then
             echo "✅ **Load Tests:** PASSED" >> final-reports/PERFORMANCE_REPORT.md
           elif [[ "${{ needs.load-tests.result }}" == "failure" ]]; then
@@ -466,7 +466,7 @@ jobs:
           else
             echo "⏭️ **Load Tests:** SKIPPED" >> final-reports/PERFORMANCE_REPORT.md
           fi
-          
+
           if [[ "${{ needs.chaos-tests.result }}" == "success" ]]; then
             echo "✅ **Chaos Tests:** PASSED" >> final-reports/PERFORMANCE_REPORT.md
           elif [[ "${{ needs.chaos-tests.result }}" == "failure" ]]; then
@@ -474,13 +474,13 @@ jobs:
           else
             echo "⏭️ **Chaos Tests:** SKIPPED" >> final-reports/PERFORMANCE_REPORT.md
           fi
-          
+
           echo "" >> final-reports/PERFORMANCE_REPORT.md
           echo "## Collected Artifacts" >> final-reports/PERFORMANCE_REPORT.md
           find collected-results/ -name "*.json" -o -name "*.txt" | while read file; do
             echo "- \`$(basename "$file")\`" >> final-reports/PERFORMANCE_REPORT.md
           done
-      
+
       - name: Determine overall status
         id: overall-status
         run: |
@@ -500,7 +500,7 @@ jobs:
             echo "status=success" >> $GITHUB_OUTPUT
             echo "reason=All performance tests passed" >> $GITHUB_OUTPUT
           fi
-      
+
       - name: Upload comprehensive report
         uses: actions/upload-artifact@v3
         if: always()
@@ -510,7 +510,7 @@ jobs:
             final-reports/
             collected-results/
           retention-days: 90
-      
+
       - name: Comment on PR (if applicable)
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
@@ -519,31 +519,31 @@ jobs:
             const status = '${{ steps.overall-status.outputs.status }}';
             const reason = '${{ steps.overall-status.outputs.reason }}';
             const environment = '${{ needs.setup-and-validate.outputs.test-environment }}';
-            
+
             const statusEmoji = status === 'success' ? '✅' : status === 'warning' ? '⚠️' : '❌';
-            
+
             const comment = `## ${statusEmoji} Performance Test Results
-            
+
             **Environment:** \`${environment}\`
             **Status:** ${status.toUpperCase()}
             **Details:** ${reason}
-            
+
             ### Test Coverage
             - Smoke Tests: ${{ needs.smoke-tests.result }}
             - E2E Tests: ${{ needs.e2e-tests.result }}  
             - Load Tests: ${{ needs.load-tests.result }}
             - Chaos Tests: ${{ needs.chaos-tests.result }}
-            
+
             📊 [View detailed report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
             `;
-            
+
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: comment
             });
-      
+
       - name: Set job status
         if: steps.overall-status.outputs.status == 'failure'
         run: |
@@ -556,7 +556,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [setup-and-validate, performance-analysis]
     if: always() && (github.event_name == 'schedule' || github.event_name == 'push')
-    
+
     steps:
       - name: Send Slack notification
         if: always()

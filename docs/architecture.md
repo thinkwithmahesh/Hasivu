@@ -14,9 +14,9 @@ HASIVU Platform is a greenfield development with unique requirements (RFID integ
 
 ### Change Log
 
-| Date | Version | Description | Author |
-|------|---------|-------------|---------|
-| 2025-08-02 | 1.0 | Initial fullstack architecture creation | Winston (Architect) |
+| Date       | Version | Description                             | Author              |
+| ---------- | ------- | --------------------------------------- | ------------------- |
+| 2025-08-02 | 1.0     | Initial fullstack architecture creation | Winston (Architect) |
 
 ## High Level Architecture
 
@@ -46,17 +46,17 @@ graph TD
     C[School Admin Portal] --> B
     D[Vendor Portal] --> B
     E[RFID Readers] --> F[RFID Gateway API]
-    
+
     B --> G[API Gateway]
     F --> G
-    
+
     G --> H[Auth Service Lambda]
     G --> I[User Service Lambda]
     G --> J[Order Service Lambda]
     G --> K[Payment Service Lambda]
     G --> L[RFID Service Lambda]
     G --> M[Notification Service Lambda]
-    
+
     H --> N[Cognito User Pool]
     I --> O[RDS PostgreSQL]
     J --> O
@@ -64,10 +64,10 @@ graph TD
     K --> Q[Stripe API]
     L --> R[RFID Vendor APIs]
     M --> S[SNS/WhatsApp API]
-    
+
     I --> T[ElastiCache Redis]
     J --> T
-    
+
     U[S3 Storage] --> B
     V[CloudWatch] --> W[Monitoring Dashboard]
 ```
@@ -86,30 +86,30 @@ graph TD
 
 ### Technology Stack Table
 
-| Category | Technology | Version | Purpose | Rationale |
-|----------|------------|---------|---------|-----------|
-| Frontend Language | TypeScript | 5.3+ | Type-safe development | Enhanced developer productivity, reduced runtime errors, shared types across stack |
-| Frontend Framework | React Native | 0.72+ | Cross-platform mobile | Single codebase for iOS/Android, native performance, mature ecosystem |
-| Web Framework | Next.js | 14+ | Server-side rendering | SEO optimization, performance, built-in API routes for admin portals |
-| UI Component Library | NativeBase | 3.4+ | Cross-platform components | Consistent design across mobile/web, accessibility built-in, customizable theming |
-| State Management | Zustand | 4.4+ | Lightweight state management | Simple API, TypeScript-first, no boilerplate compared to Redux |
-| Backend Language | TypeScript | 5.3+ | Full-stack consistency | Shared types, reduced context switching, strong ecosystem |
-| Backend Framework | AWS Lambda + Fastify | Lambda 20.x, Fastify 4.24+ | Serverless HTTP handling | Auto-scaling, cost-effective, fast startup times, TypeScript support |
-| API Style | REST + WebSocket | OpenAPI 3.0 | RESTful services with real-time | Industry standard, excellent tooling, real-time RFID updates |
-| Database | PostgreSQL | 15+ | ACID compliance, JSON support | Data integrity critical for payments, flexible schema for school configurations |
-| Cache | Redis | 7+ | Session and data caching | Fast lookups for user sessions, order status, RFID verification results |
-| File Storage | AWS S3 | - | Media and document storage | Scalable, cost-effective, CDN integration for meal images and receipts |
-| Authentication | AWS Cognito | - | User management and auth | Built-in social login, MFA support, PCI compliant, scales automatically |
-| Frontend Testing | Jest + React Testing Library | Jest 29+, RTL 13+ | Component and unit testing | Industry standard, excellent React integration, snapshot testing |
-| Backend Testing | Jest + Supertest | Jest 29+, Supertest 6+ | API and integration testing | Consistent tooling with frontend, HTTP testing capabilities |
-| E2E Testing | Playwright | 1.40+ | Cross-browser automation | Reliable, fast, excellent debugging tools, mobile testing support |
-| Build Tool | Turborepo | 1.11+ | Monorepo build optimization | Fast builds, intelligent caching, dependency management |
-| Bundler | Webpack (Next.js) / Metro (RN) | - | Code bundling and optimization | Built into chosen frameworks, optimized for each platform |
-| IaC Tool | Terraform | 1.6+ | Infrastructure as code | Version control infrastructure, reproducible deployments, AWS provider maturity |
-| CI/CD | GitHub Actions | - | Automated testing and deployment | Free for open source, excellent AWS integration, familiar workflow |
-| Monitoring | CloudWatch + Sentry | - | Application monitoring and errors | Native AWS integration, excellent error tracking, performance insights |
-| Logging | Winston + CloudWatch Logs | Winston 3.11+ | Structured logging | JSON logging, log levels, centralized log management |
-| CSS Framework | Tailwind CSS | 3.3+ | Utility-first styling | Rapid development, consistent design system, excellent customization |
+| Category             | Technology                     | Version                    | Purpose                           | Rationale                                                                          |
+| -------------------- | ------------------------------ | -------------------------- | --------------------------------- | ---------------------------------------------------------------------------------- |
+| Frontend Language    | TypeScript                     | 5.3+                       | Type-safe development             | Enhanced developer productivity, reduced runtime errors, shared types across stack |
+| Frontend Framework   | React Native                   | 0.72+                      | Cross-platform mobile             | Single codebase for iOS/Android, native performance, mature ecosystem              |
+| Web Framework        | Next.js                        | 14+                        | Server-side rendering             | SEO optimization, performance, built-in API routes for admin portals               |
+| UI Component Library | NativeBase                     | 3.4+                       | Cross-platform components         | Consistent design across mobile/web, accessibility built-in, customizable theming  |
+| State Management     | Zustand                        | 4.4+                       | Lightweight state management      | Simple API, TypeScript-first, no boilerplate compared to Redux                     |
+| Backend Language     | TypeScript                     | 5.3+                       | Full-stack consistency            | Shared types, reduced context switching, strong ecosystem                          |
+| Backend Framework    | AWS Lambda + Fastify           | Lambda 20.x, Fastify 4.24+ | Serverless HTTP handling          | Auto-scaling, cost-effective, fast startup times, TypeScript support               |
+| API Style            | REST + WebSocket               | OpenAPI 3.0                | RESTful services with real-time   | Industry standard, excellent tooling, real-time RFID updates                       |
+| Database             | PostgreSQL                     | 15+                        | ACID compliance, JSON support     | Data integrity critical for payments, flexible schema for school configurations    |
+| Cache                | Redis                          | 7+                         | Session and data caching          | Fast lookups for user sessions, order status, RFID verification results            |
+| File Storage         | AWS S3                         | -                          | Media and document storage        | Scalable, cost-effective, CDN integration for meal images and receipts             |
+| Authentication       | AWS Cognito                    | -                          | User management and auth          | Built-in social login, MFA support, PCI compliant, scales automatically            |
+| Frontend Testing     | Jest + React Testing Library   | Jest 29+, RTL 13+          | Component and unit testing        | Industry standard, excellent React integration, snapshot testing                   |
+| Backend Testing      | Jest + Supertest               | Jest 29+, Supertest 6+     | API and integration testing       | Consistent tooling with frontend, HTTP testing capabilities                        |
+| E2E Testing          | Playwright                     | 1.40+                      | Cross-browser automation          | Reliable, fast, excellent debugging tools, mobile testing support                  |
+| Build Tool           | Turborepo                      | 1.11+                      | Monorepo build optimization       | Fast builds, intelligent caching, dependency management                            |
+| Bundler              | Webpack (Next.js) / Metro (RN) | -                          | Code bundling and optimization    | Built into chosen frameworks, optimized for each platform                          |
+| IaC Tool             | Terraform                      | 1.6+                       | Infrastructure as code            | Version control infrastructure, reproducible deployments, AWS provider maturity    |
+| CI/CD                | GitHub Actions                 | -                          | Automated testing and deployment  | Free for open source, excellent AWS integration, familiar workflow                 |
+| Monitoring           | CloudWatch + Sentry            | -                          | Application monitoring and errors | Native AWS integration, excellent error tracking, performance insights             |
+| Logging              | Winston + CloudWatch Logs      | Winston 3.11+              | Structured logging                | JSON logging, log levels, centralized log management                               |
+| CSS Framework        | Tailwind CSS                   | 3.3+                       | Utility-first styling             | Rapid development, consistent design system, excellent customization               |
 
 ## Data Models
 
@@ -118,6 +118,7 @@ graph TD
 **Purpose:** Represents all platform users (parents, school admins, vendors, students) with role-based access control and institutional relationships.
 
 **Key Attributes:**
+
 - id: UUID - Unique identifier across all systems
 - email: string - Primary authentication identifier
 - role: UserRole - PARENT, SCHOOL_ADMIN, VENDOR, STUDENT
@@ -158,6 +159,7 @@ interface UserPreferences {
 ```
 
 #### Relationships
+
 - One-to-many with Child (for parents)
 - Many-to-one with School
 - One-to-many with Order (as customer)
@@ -168,6 +170,7 @@ interface UserPreferences {
 **Purpose:** Represents educational institutions with configuration for menus, vendors, and operational settings specific to each school's requirements.
 
 **Key Attributes:**
+
 - id: UUID - Unique school identifier
 - name: string - Official school name
 - code: string - Unique enrollment code for parents
@@ -205,6 +208,7 @@ interface SchoolConfig {
 ```
 
 #### Relationships
+
 - One-to-many with User (students, parents, admins)
 - Many-to-many with Vendor
 - One-to-many with Menu
@@ -215,6 +219,7 @@ interface SchoolConfig {
 **Purpose:** Central entity tracking meal orders from placement through RFID-verified delivery, maintaining complete audit trail for payments and compliance.
 
 **Key Attributes:**
+
 - id: UUID - Unique order identifier
 - parentId: UUID - Ordering parent reference
 - studentId: UUID - Student receiving meal
@@ -247,7 +252,7 @@ interface Order {
   updatedAt: Date;
 }
 
-type OrderStatus = 
+type OrderStatus =
   | 'PENDING_PAYMENT'
   | 'CONFIRMED'
   | 'IN_PREPARATION'
@@ -266,6 +271,7 @@ interface OrderItem {
 ```
 
 #### Relationships
+
 - Many-to-one with User (parent)
 - Many-to-one with User (student)
 - Many-to-one with School
@@ -278,6 +284,7 @@ interface OrderItem {
 **Purpose:** Represents food items available for ordering with comprehensive nutritional information, pricing, and availability scheduling.
 
 **Key Attributes:**
+
 - id: UUID - Unique menu item identifier
 - name: string - Display name for parents and students
 - description: string - Detailed item description
@@ -321,6 +328,7 @@ interface NutritionalInfo {
 ```
 
 #### Relationships
+
 - Many-to-one with Vendor
 - Many-to-one with School
 - One-to-many with OrderItem
@@ -331,6 +339,7 @@ interface NutritionalInfo {
 **Purpose:** Captures real-time delivery verification events from RFID hardware, providing transparent confirmation of meal delivery to students.
 
 **Key Attributes:**
+
 - id: UUID - Unique verification record
 - orderId: UUID - Associated order reference
 - cardId: string - RFID card identifier
@@ -369,6 +378,7 @@ interface RFIDMetadata {
 ```
 
 #### Relationships
+
 - One-to-one with Order
 - Many-to-one with RFIDReader
 - Many-to-one with RFIDCard
@@ -565,7 +575,15 @@ components:
           type: number
         status:
           type: string
-          enum: [PENDING_PAYMENT, CONFIRMED, IN_PREPARATION, READY_FOR_PICKUP, DELIVERED, CANCELLED]
+          enum:
+            [
+              PENDING_PAYMENT,
+              CONFIRMED,
+              IN_PREPARATION,
+              READY_FOR_PICKUP,
+              DELIVERED,
+              CANCELLED,
+            ]
         scheduledDate:
           type: string
           format: date
@@ -578,6 +596,7 @@ components:
 **Responsibility:** Manages user authentication, authorization, and session management across all platform interfaces with role-based access control.
 
 **Key Interfaces:**
+
 - POST /auth/login - User login with email/password
 - POST /auth/refresh - Token refresh for continued sessions
 - GET /auth/me - Current user profile and permissions
@@ -592,6 +611,7 @@ components:
 **Responsibility:** Handles complete order lifecycle from creation through RFID-verified delivery, including payment coordination and real-time status updates.
 
 **Key Interfaces:**
+
 - POST /orders - Create new meal orders with validation
 - GET /orders/:id - Retrieve order details and status
 - PUT /orders/:id/status - Update order progression states
@@ -607,6 +627,7 @@ components:
 **Responsibility:** Manages RFID hardware communication, delivery verification events, and real-time order confirmation with support for multiple vendor hardware.
 
 **Key Interfaces:**
+
 - POST /rfid/verify - Process RFID card scans
 - GET /rfid/readers/:schoolId - School RFID reader status
 - POST /rfid/readers/register - Hardware device registration
@@ -621,6 +642,7 @@ components:
 **Responsibility:** Handles secure payment processing, subscription management, and financial reporting with PCI DSS compliance through external gateways.
 
 **Key Interfaces:**
+
 - POST /payments/process - Process one-time payments
 - POST /payments/subscribe - Set up recurring payments
 - GET /payments/history/:userId - Payment transaction history
@@ -635,6 +657,7 @@ components:
 **Responsibility:** Delivers multi-channel notifications including push, SMS, WhatsApp, and email with user preference management and delivery confirmation.
 
 **Key Interfaces:**
+
 - POST /notifications/send - Send immediate notifications
 - POST /notifications/schedule - Schedule future notifications
 - GET /notifications/preferences/:userId - User notification settings
@@ -649,6 +672,7 @@ components:
 **Responsibility:** Manages school menus, nutritional information, vendor coordination, and availability scheduling with support for dietary restrictions.
 
 **Key Interfaces:**
+
 - GET /menus/school/:schoolId - School-specific menu retrieval
 - POST /menus/items - Create new menu items
 - PUT /menus/items/:id - Update menu item details
@@ -668,24 +692,24 @@ graph TD
     A --> E[Payment Service]
     A --> F[Notification Service]
     A --> G[Menu Service]
-    
+
     B --> H[Cognito]
     B --> I[Redis Cache]
-    
+
     C --> J[PostgreSQL]
     C --> I
     C --> K[SQS Queue]
-    
+
     D --> L[RFID Hardware APIs]
     D --> M[WebSocket API]
-    
+
     E --> N[Razorpay API]
     E --> O[Stripe API]
-    
+
     F --> P[SNS]
     F --> Q[SES]
     F --> R[WhatsApp API]
-    
+
     G --> J
     G --> S[S3 Storage]
     G --> T[CloudFront CDN]
@@ -702,6 +726,7 @@ graph TD
 - **Rate Limits:** 600 requests per minute per API key
 
 **Key Endpoints Used:**
+
 - `POST /orders` - Create payment orders with amount and currency
 - `POST /payments/{payment_id}/capture` - Capture authorized payments
 - `GET /payments/{payment_id}` - Retrieve payment status and details
@@ -718,6 +743,7 @@ graph TD
 - **Rate Limits:** 100 requests per second per API key
 
 **Key Endpoints Used:**
+
 - `POST /payment_intents` - Create payment intents for secure processing
 - `GET /payment_intents/{intent_id}` - Retrieve payment intent status
 - `POST /refunds` - Process refunds with reason codes
@@ -733,6 +759,7 @@ graph TD
 - **Rate Limits:** 1000 messages per second, messaging window restrictions
 
 **Key Endpoints Used:**
+
 - `POST /{phone_number_id}/messages` - Send template and interactive messages
 - `GET /{phone_number_id}/message_templates` - Retrieve approved message templates
 
@@ -747,6 +774,7 @@ graph TD
 - **Rate Limits:** Hardware-dependent, typically 100-1000 scans per minute
 
 **Key Endpoints Used:**
+
 - `POST /scan/events` - Receive RFID scan events from hardware
 - `GET /readers/status` - Monitor reader health and connectivity
 - `POST /readers/configure` - Update reader settings and thresholds
@@ -999,7 +1027,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
   variant = 'compact'
 }) => {
   const { updateOrderStatus } = useOrderStore();
-  
+
   const handleStatusUpdate = async (newStatus: OrderStatus) => {
     try {
       await OrderService.updateStatus(order.id, newStatus);
@@ -1082,14 +1110,14 @@ export const useOrderStore = create<OrderState & OrderActions>()(
           }
         },
 
-        createOrder: async (orderData) => {
+        createOrder: async orderData => {
           set({ loading: true, error: null });
           try {
             const newOrder = await OrderService.create(orderData);
             set(state => ({
               orders: [...state.orders, newOrder],
               currentOrder: newOrder,
-              loading: false
+              loading: false,
             }));
           } catch (error) {
             set({ error: error.message, loading: false });
@@ -1101,21 +1129,22 @@ export const useOrderStore = create<OrderState & OrderActions>()(
             orders: state.orders.map(order =>
               order.id === orderId ? { ...order, status } : order
             ),
-            currentOrder: state.currentOrder?.id === orderId
-              ? { ...state.currentOrder, status }
-              : state.currentOrder
+            currentOrder:
+              state.currentOrder?.id === orderId
+                ? { ...state.currentOrder, status }
+                : state.currentOrder,
           }));
         },
 
         clearError: () => set({ error: null }),
-        setCurrentOrder: (order) => set({ currentOrder: order })
+        setCurrentOrder: order => set({ currentOrder: order }),
       }),
       {
         name: 'order-store',
-        partialize: (state) => ({
+        partialize: state => ({
           orders: state.orders,
-          currentOrder: state.currentOrder
-        })
+          currentOrder: state.currentOrder,
+        }),
       }
     ),
     { name: 'OrderStore' }
@@ -1211,7 +1240,9 @@ class ApiClient {
 
   constructor() {
     this.client = axios.create({
-      baseURL: process.env.EXPO_PUBLIC_API_URL || process.env.DOCS_ARCHITECTURE_PASSWORD_2,
+      baseURL:
+        process.env.EXPO_PUBLIC_API_URL ||
+        process.env.DOCS_ARCHITECTURE_PASSWORD_2,
       timeout: 10000,
       headers: {
         'Content-Type': 'application/json',
@@ -1223,7 +1254,7 @@ class ApiClient {
 
   private setupInterceptors() {
     // Request interceptor for auth token
-    this.client.interceptors.request.use((config) => {
+    this.client.interceptors.request.use(config => {
       const { accessToken } = useAuthStore.getState();
       if (accessToken) {
         config.headers.Authorization = `Bearer ${accessToken}`;
@@ -1233,10 +1264,11 @@ class ApiClient {
 
     // Response interceptor for token refresh
     this.client.interceptors.response.use(
-      (response) => response,
-      async (error) => {
-        const { refreshToken, refreshAccessToken, logout } = useAuthStore.getState();
-        
+      response => response,
+      async error => {
+        const { refreshToken, refreshAccessToken, logout } =
+          useAuthStore.getState();
+
         if (error.response?.status === 401 && refreshToken) {
           try {
             await refreshAccessToken();
@@ -1247,7 +1279,7 @@ class ApiClient {
             throw refreshError;
           }
         }
-        
+
         throw error;
       }
     );
@@ -1258,12 +1290,20 @@ class ApiClient {
     return response.data;
   }
 
-  async post<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+  async post<T>(
+    url: string,
+    data?: unknown,
+    config?: AxiosRequestConfig
+  ): Promise<T> {
     const response = await this.client.post(url, data, config);
     return response.data;
   }
 
-  async put<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+  async put<T>(
+    url: string,
+    data?: unknown,
+    config?: AxiosRequestConfig
+  ): Promise<T> {
     const response = await this.client.put(url, data, config);
     return response.data;
   }
@@ -1293,7 +1333,10 @@ export class OrderService {
     return apiClient.post<Order>('/orders', orderData);
   }
 
-  static async updateStatus(orderId: string, status: OrderStatus): Promise<Order> {
+  static async updateStatus(
+    orderId: string,
+    status: OrderStatus
+  ): Promise<Order> {
     return apiClient.put<Order>(`/orders/${orderId}/status`, { status });
   }
 
@@ -1306,10 +1349,15 @@ export class OrderService {
   }
 
   // WebSocket connection for real-time updates
-  static subscribeToOrderUpdates(orderId: string, callback: (order: Order) => void) {
-    const ws = new WebSocket(`${process.env.EXPO_PUBLIC_WS_URL}/orders/${orderId}`);
-    
-    ws.onmessage = (event) => {
+  static subscribeToOrderUpdates(
+    orderId: string,
+    callback: (order: Order) => void
+  ) {
+    const ws = new WebSocket(
+      `${process.env.EXPO_PUBLIC_WS_URL}/orders/${orderId}`
+    );
+
+    ws.onmessage = event => {
       const order = JSON.parse(event.data);
       callback(order);
     };
@@ -1390,43 +1438,51 @@ export const handler: APIGatewayProxyHandler = async (event, context) => {
     if (!user) {
       return {
         statusCode: 401,
-        body: JSON.stringify({ error: 'Unauthorized' })
+        body: JSON.stringify({ error: 'Unauthorized' }),
       };
     }
 
     // Validation
-    const orderData = validateRequest<CreateOrderRequest>(event.body, 'CreateOrder');
+    const orderData = validateRequest<CreateOrderRequest>(
+      event.body,
+      'CreateOrder'
+    );
 
     // Business logic
     const order = await orderService.createOrder({
       ...orderData,
       parentId: user.id,
-      schoolId: user.schoolId
+      schoolId: user.schoolId,
     });
 
-    logger.info('Order created successfully', { orderId: order.id, parentId: user.id });
+    logger.info('Order created successfully', {
+      orderId: order.id,
+      parentId: user.id,
+    });
 
     return {
       statusCode: 201,
       headers: {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
+        'Access-Control-Allow-Origin': '*',
       },
-      body: JSON.stringify({ order })
+      body: JSON.stringify({ order }),
     };
-
   } catch (error) {
-    logger.error('Failed to create order', { error: error.message, stack: error.stack });
-    
+    logger.error('Failed to create order', {
+      error: error.message,
+      stack: error.stack,
+    });
+
     return {
       statusCode: error.statusCode || 500,
       body: JSON.stringify({
         error: {
           code: error.code || 'INTERNAL_ERROR',
           message: error.message || 'Internal server error',
-          correlationId
-        }
-      })
+          correlationId,
+        },
+      }),
     };
   }
 };
@@ -1475,7 +1531,7 @@ export class OrderRepository {
       JSON.stringify(orderData.items),
       orderData.totalAmount,
       orderData.scheduledDate,
-      JSON.stringify(orderData.deliveryWindow)
+      JSON.stringify(orderData.deliveryWindow),
     ];
 
     try {
@@ -1483,7 +1539,9 @@ export class OrderRepository {
       logger.info('Order created in database', { orderId: result.rows[0].id });
       return result.rows[0];
     } catch (error) {
-      logger.error('Failed to create order in database', { error: error.message });
+      logger.error('Failed to create order in database', {
+        error: error.message,
+      });
       throw error;
     }
   }
@@ -1494,7 +1552,11 @@ export class OrderRepository {
     return result.rows[0] || null;
   }
 
-  async findByParent(parentId: string, limit = 50, offset = 0): Promise<Order[]> {
+  async findByParent(
+    parentId: string,
+    limit = 50,
+    offset = 0
+  ): Promise<Order[]> {
     const query = `
       SELECT * FROM orders 
       WHERE parent_id = $1 
@@ -1513,15 +1575,18 @@ export class OrderRepository {
       RETURNING *
     `;
     const result = await this.db.query(query, [status, orderId]);
-    
+
     if (result.rows.length === 0) {
       throw new Error('Order not found');
     }
-    
+
     return result.rows[0];
   }
 
-  async findOrdersForDelivery(schoolId: string, date: string): Promise<Order[]> {
+  async findOrdersForDelivery(
+    schoolId: string,
+    date: string
+  ): Promise<Order[]> {
     const query = `
       SELECT o.*, u.profile as student_profile
       FROM orders o
@@ -1583,9 +1648,11 @@ const jwtVerifier = CognitoJwtVerifier.create({
   clientId: process.env.COGNITO_CLIENT_ID!,
 });
 
-export async function authenticateUser(event: APIGatewayProxyEvent): Promise<User | null> {
+export async function authenticateUser(
+  event: APIGatewayProxyEvent
+): Promise<User | null> {
   const authHeader = event.headers.Authorization || event.headers.authorization;
-  
+
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return null;
   }
@@ -1595,18 +1662,18 @@ export async function authenticateUser(event: APIGatewayProxyEvent): Promise<Use
   try {
     // Verify JWT signature and claims
     const payload = await jwtVerifier.verify(token);
-    
+
     // Check session validity in Redis
     const sessionKey = `session:${payload.sub}`;
     const sessionData = await redisClient.get(sessionKey);
-    
+
     if (!sessionData) {
       logger.warn('Session not found or expired', { userId: payload.sub });
       return null;
     }
 
     const session = JSON.parse(sessionData);
-    
+
     // Extend session TTL on active use
     await redisClient.expire(sessionKey, 3600); // 1 hour
 
@@ -1615,9 +1682,8 @@ export async function authenticateUser(event: APIGatewayProxyEvent): Promise<Use
       email: payload.email,
       role: session.role,
       schoolId: session.schoolId,
-      ...session.profile
+      ...session.profile,
     };
-
   } catch (error) {
     logger.error('JWT verification failed', { error: error.message });
     return null;
@@ -1629,11 +1695,11 @@ export function requireRole(requiredRole: string) {
     if (!user) {
       throw new Error('Authentication required');
     }
-    
+
     if (user.role !== requiredRole) {
       throw new Error('Insufficient permissions');
     }
-    
+
     return user;
   };
 }
@@ -1883,12 +1949,14 @@ CORS_ORIGIN=http://localhost:3000,http://localhost:3001,exp://192.168.1.100:8081
 ### Deployment Strategy
 
 **Frontend Deployment:**
+
 - **Platform:** Vercel for web portals, EAS Build + App Store/Play Store for mobile
 - **Build Command:** `turbo build --filter=@hasivu/web-admin --filter=@hasivu/web-vendor`
 - **Output Directory:** `apps/web-admin/dist`, `apps/web-vendor/dist`
 - **CDN/Edge:** Vercel Edge Network with global CDN, CloudFront for mobile assets
 
 **Backend Deployment:**
+
 - **Platform:** AWS Lambda via Serverless Framework with API Gateway
 - **Build Command:** `turbo build --filter=@hasivu/api`
 - **Deployment Method:** Blue-green deployment with automatic rollback on failure
@@ -1953,7 +2021,7 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/develop'
-    
+
     steps:
       - uses: actions/checkout@v4
       - name: Deploy to staging
@@ -1967,7 +2035,7 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
-    
+
     steps:
       - uses: actions/checkout@v4
       - name: Deploy to production
@@ -1980,27 +2048,30 @@ jobs:
 
 ### Environments
 
-| Environment | Frontend URL | Backend URL | Purpose |
-|-------------|--------------|-------------|---------|
-| Development | http://localhost:3000 | http://localhost:3002 | Local development |
-| Staging | https://staging-admin.hasivu.com | https://staging-api.hasivu.com | Pre-production testing |
-| Production | https://admin.hasivu.com | https://api.hasivu.com | Live environment |
+| Environment | Frontend URL                     | Backend URL                    | Purpose                |
+| ----------- | -------------------------------- | ------------------------------ | ---------------------- |
+| Development | http://localhost:3000            | http://localhost:3002          | Local development      |
+| Staging     | https://staging-admin.hasivu.com | https://staging-api.hasivu.com | Pre-production testing |
+| Production  | https://admin.hasivu.com         | https://api.hasivu.com         | Live environment       |
 
 ## Security and Performance
 
 ### Security Requirements
 
 **Frontend Security:**
+
 - CSP Headers: `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://api.hasivu.com wss://api.hasivu.com`
 - XSS Prevention: React's built-in XSS protection, input sanitization, Content Security Policy
 - Secure Storage: Secure keystore for tokens on mobile, httpOnly cookies for web, no sensitive data in localStorage
 
 **Backend Security:**
+
 - Input Validation: Joi schema validation for all API inputs, SQL injection prevention with parameterized queries
 - Rate Limiting: 100 requests per minute per IP, 1000 requests per hour per authenticated user
 - CORS Policy: Restricted to known frontend origins, credentials allowed only for same-origin requests
 
 **Authentication Security:**
+
 - Token Storage: JWT access tokens (15min expiry), refresh tokens (7 days), secure httpOnly cookies for web
 - Session Management: Redis-based session store, automatic session cleanup, concurrent session limits
 - Password Policy: Minimum 8 characters, complexity requirements, bcrypt hashing with 12 rounds
@@ -2008,11 +2079,13 @@ jobs:
 ### Performance Optimization
 
 **Frontend Performance:**
+
 - Bundle Size Target: <500KB initial bundle, <2MB total application size
 - Loading Strategy: Route-based code splitting, lazy loading of non-critical components, progressive image loading
 - Caching Strategy: Service worker for offline functionality, API response caching, static asset caching with versioning
 
 **Backend Performance:**
+
 - Response Time Target: <200ms for API endpoints, <100ms for health checks, <2s for complex RFID operations
 - Database Optimization: Connection pooling, query optimization with EXPLAIN analysis, strategic indexing
 - Caching Strategy: Redis for session data and frequently accessed data, CloudFront for static assets, API response caching
@@ -2157,10 +2230,10 @@ describe('OrderCard', () => {
   it('should call onStatusUpdate when status changes', async () => {
     const mockOnStatusUpdate = jest.fn();
     const { getByText } = renderWithProviders(
-      <OrderCard 
-        order={mockOrder} 
+      <OrderCard
+        order={mockOrder}
         onStatusUpdate={mockOnStatusUpdate}
-        variant="detailed" 
+        variant="detailed"
       />
     );
 
@@ -2189,15 +2262,17 @@ jest.mock('@/services/orderService');
 jest.mock('@/middleware/auth');
 
 const mockOrderService = orderService as jest.Mocked<typeof orderService>;
-const mockAuthenticateUser = authenticateUser as jest.MockedFunction<typeof authenticateUser>;
+const mockAuthenticateUser = authenticateUser as jest.MockedFunction<
+  typeof authenticateUser
+>;
 
 describe('Create Order Lambda', () => {
   const mockEvent: APIGatewayProxyEvent = {
     httpMethod: 'POST',
     path: '/orders',
     headers: {
-      'Authorization': 'Bearer valid-token',
-      'Content-Type': 'application/json'
+      Authorization: 'Bearer valid-token',
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify({
       studentId: process.env.DOCS_ARCHITECTURE_PASSWORD_8,
@@ -2205,11 +2280,11 @@ describe('Create Order Lambda', () => {
         {
           menuItemId: 'item-1',
           quantity: 1,
-          unitPrice: 50
-        }
+          unitPrice: 50,
+        },
       ],
       scheduledDate: '2025-08-03',
-      deliveryWindow: { start: '12:00', end: '13:00' }
+      deliveryWindow: { start: '12:00', end: '13:00' },
     }),
     isBase64Encoded: false,
     pathParameters: null,
@@ -2218,7 +2293,7 @@ describe('Create Order Lambda', () => {
     multiValueQueryStringParameters: null,
     stageVariables: null,
     requestContext: {} as any,
-    resource: ''
+    resource: '',
   };
 
   const mockContext: Context = {
@@ -2233,7 +2308,7 @@ describe('Create Order Lambda', () => {
     getRemainingTimeInMillis: () => 30000,
     done: jest.fn(),
     fail: jest.fn(),
-    succeed: jest.fn()
+    succeed: jest.fn(),
   };
 
   beforeEach(() => {
@@ -2251,7 +2326,7 @@ describe('Create Order Lambda', () => {
       preferences: { language: 'en' },
       isActive: true,
       createdAt: new Date(),
-      lastLoginAt: new Date()
+      lastLoginAt: new Date(),
     });
 
     mockOrderService.createOrder.mockResolvedValue({
@@ -2259,14 +2334,21 @@ describe('Create Order Lambda', () => {
       parentId: process.env.DOCS_ARCHITECTURE_PASSWORD_13,
       studentId: process.env.DOCS_ARCHITECTURE_PASSWORD_14,
       schoolId: process.env.DOCS_ARCHITECTURE_PASSWORD_15,
-      items: [{ menuItemId: 'item-1', quantity: 1, unitPrice: 50, customizations: [] }],
+      items: [
+        {
+          menuItemId: 'item-1',
+          quantity: 1,
+          unitPrice: 50,
+          customizations: [],
+        },
+      ],
       totalAmount: 50,
       status: 'PENDING_PAYMENT',
       scheduledDate: new Date('2025-08-03'),
       deliveryWindow: { start: '12:00', end: '13:00' },
       paymentInfo: { method: 'PENDING', transactionId: null },
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     });
 
     // Execute handler
@@ -2281,7 +2363,7 @@ describe('Create Order Lambda', () => {
       scheduledDate: '2025-08-03',
       deliveryWindow: { start: '12:00', end: '13:00' },
       parentId: process.env.DOCS_ARCHITECTURE_PASSWORD_17,
-      schoolId: process.env.DOCS_ARCHITECTURE_PASSWORD_18
+      schoolId: process.env.DOCS_ARCHITECTURE_PASSWORD_18,
     });
   });
 
@@ -2322,9 +2404,14 @@ test.describe('Parent Order Flow', () => {
     await page.goto('/');
   });
 
-  test('should complete full order flow from login to confirmation', async ({ page }) => {
+  test('should complete full order flow from login to confirmation', async ({
+    page,
+  }) => {
     // Step 1: Login as parent
-    await loginPage.login(process.env.DOCS_ARCHITECTURE_PASSWORD_19, process.env.DOCS_ARCHITECTURE_PASSWORD_20);
+    await loginPage.login(
+      process.env.DOCS_ARCHITECTURE_PASSWORD_19,
+      process.env.DOCS_ARCHITECTURE_PASSWORD_20
+    );
     await expect(page).toHaveURL('/home');
 
     // Step 2: Navigate to menu
@@ -2351,28 +2438,35 @@ test.describe('Parent Order Flow', () => {
     // Step 7: Verify order confirmation
     await expect(page.locator('.order-confirmation')).toBeVisible();
     await expect(page.locator('.order-number')).toContainText('Order #');
-    
+
     // Step 8: Verify order appears in order history
     await homePage.goToOrders();
-    await expect(page.locator('.order-card').first()).toContainText('CONFIRMED');
+    await expect(page.locator('.order-card').first()).toContainText(
+      'CONFIRMED'
+    );
   });
 
   test('should handle RFID delivery verification', async ({ page }) => {
     // This test would simulate the RFID verification flow
     // In a real scenario, this might involve API mocking or separate hardware simulation
-    
-    await loginPage.login(process.env.DOCS_ARCHITECTURE_PASSWORD_21, process.env.DOCS_ARCHITECTURE_PASSWORD_22);
+
+    await loginPage.login(
+      process.env.DOCS_ARCHITECTURE_PASSWORD_21,
+      process.env.DOCS_ARCHITECTURE_PASSWORD_22
+    );
     await homePage.goToOrders();
-    
+
     const orderCard = page.locator('.order-card').first();
     await expect(orderCard).toContainText('READY_FOR_PICKUP');
-    
+
     // Simulate RFID scan (this would typically be triggered by external hardware)
     await page.evaluate(() => {
       // Mock WebSocket message for RFID verification
-      window.dispatchEvent(new CustomEvent('rfid-verified', {
-        detail: { orderId: 'test-order-id', status: 'DELIVERED' }
-      }));
+      window.dispatchEvent(
+        new CustomEvent('rfid-verified', {
+          detail: { orderId: 'test-order-id', status: 'DELIVERED' },
+        })
+      );
     });
 
     // Verify UI updates
@@ -2397,16 +2491,16 @@ test.describe('Parent Order Flow', () => {
 
 ### Naming Conventions
 
-| Element | Frontend | Backend | Example |
-|---------|----------|---------|---------|
-| Components | PascalCase | - | `UserProfile.tsx` |
-| Hooks | camelCase with 'use' | - | `useAuth.ts` |
-| API Routes | - | kebab-case | `/api/user-profile` |
-| Database Tables | - | snake_case | `user_profiles` |
-| Constants | SCREAMING_SNAKE_CASE | SCREAMING_SNAKE_CASE | `MAX_ORDER_ITEMS` |
-| Files | kebab-case | kebab-case | `order-service.ts` |
-| Variables | camelCase | camelCase | `currentUser` |
-| Functions | camelCase | camelCase | `createOrder()` |
+| Element         | Frontend             | Backend              | Example             |
+| --------------- | -------------------- | -------------------- | ------------------- |
+| Components      | PascalCase           | -                    | `UserProfile.tsx`   |
+| Hooks           | camelCase with 'use' | -                    | `useAuth.ts`        |
+| API Routes      | -                    | kebab-case           | `/api/user-profile` |
+| Database Tables | -                    | snake_case           | `user_profiles`     |
+| Constants       | SCREAMING_SNAKE_CASE | SCREAMING_SNAKE_CASE | `MAX_ORDER_ITEMS`   |
+| Files           | kebab-case           | kebab-case           | `order-service.ts`  |
+| Variables       | camelCase            | camelCase            | `currentUser`       |
+| Functions       | camelCase            | camelCase            | `createOrder()`     |
 
 ## Error Handling Strategy
 
@@ -2466,13 +2560,37 @@ export class ApiError extends Error {
   }
 }
 
-export function handleApiError(error: any): ApiError {
-  if (error.response?.data?.error) {
-    const { code, message, details } = error.response.data.error;
-    return new ApiError(code, message, error.response.status, details);
+export function handleApiError(error: unknown): ApiError {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'response' in error &&
+    error.response &&
+    typeof error.response === 'object' &&
+    'data' in error.response &&
+    error.response.data &&
+    typeof error.response.data === 'object' &&
+    'error' in error.response.data
+  ) {
+    const { code, message, details } = error.response.data.error as {
+      code: string;
+      message: string;
+      details?: Record<string, unknown>;
+    };
+    return new ApiError(
+      code,
+      message,
+      (error.response as { status: number }).status,
+      details
+    );
   }
 
-  if (error.code === 'NETWORK_ERROR') {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'code' in error &&
+    error.code === 'NETWORK_ERROR'
+  ) {
     return new ApiError(
       'NETWORK_ERROR',
       'Please check your internet connection',
@@ -2480,22 +2598,18 @@ export function handleApiError(error: any): ApiError {
     );
   }
 
-  return new ApiError(
-    'UNKNOWN_ERROR',
-    'An unexpected error occurred',
-    500
-  );
+  return new ApiError('UNKNOWN_ERROR', 'An unexpected error occurred', 500);
 }
 
 export function getErrorMessage(error: ApiError): string {
   const errorMessages: Record<string, string> = {
     UNAUTHORIZED: 'Please log in to continue',
-    FORBIDDEN: 'You don\'t have permission to perform this action',
+    FORBIDDEN: "You don't have permission to perform this action",
     ORDER_NOT_FOUND: 'Order not found',
     PAYMENT_FAILED: 'Payment could not be processed',
     RFID_SCAN_FAILED: 'Unable to verify delivery. Please try again.',
     NETWORK_ERROR: 'Please check your internet connection',
-    VALIDATION_ERROR: 'Please check your input and try again'
+    VALIDATION_ERROR: 'Please check your input and try again',
   };
 
   return errorMessages[error.code] || error.message;
@@ -2505,21 +2619,21 @@ export function getErrorMessage(error: ApiError): string {
 export function useErrorHandler() {
   const showNotification = useNotificationStore(state => state.show);
 
-  return (error: any) => {
+  return (error: unknown) => {
     const apiError = handleApiError(error);
     const userMessage = getErrorMessage(apiError);
-    
+
     logger.error('API Error', {
       code: apiError.code,
       message: apiError.message,
       statusCode: apiError.statusCode,
-      details: apiError.details
+      details: apiError.details,
     });
 
     showNotification({
       type: 'error',
       message: userMessage,
-      duration: 5000
+      duration: 5000,
     });
   };
 }
@@ -2572,11 +2686,14 @@ export class ForbiddenError extends BusinessError {
   }
 }
 
-export function handleError(error: any, requestId: string): APIGatewayProxyResult {
+export function handleError(
+  error: unknown,
+  requestId: string
+): APIGatewayProxyResult {
   logger.error('Request failed', {
-    error: error.message,
-    stack: error.stack,
-    requestId
+    error: error instanceof Error ? error.message : String(error),
+    stack: error instanceof Error ? error.stack : undefined,
+    requestId,
   });
 
   if (error instanceof BusinessError) {
@@ -2584,7 +2701,7 @@ export function handleError(error: any, requestId: string): APIGatewayProxyResul
       statusCode: error.statusCode,
       headers: {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
+        'Access-Control-Allow-Origin': '*',
       },
       body: JSON.stringify({
         error: {
@@ -2592,9 +2709,9 @@ export function handleError(error: any, requestId: string): APIGatewayProxyResul
           message: error.message,
           details: error.details,
           timestamp: new Date().toISOString(),
-          requestId
-        }
-      })
+          requestId,
+        },
+      }),
     };
   }
 
@@ -2603,28 +2720,31 @@ export function handleError(error: any, requestId: string): APIGatewayProxyResul
     statusCode: 500,
     headers: {
       'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*'
+      'Access-Control-Allow-Origin': '*',
     },
     body: JSON.stringify({
       error: {
         code: 'INTERNAL_ERROR',
         message: 'An internal error occurred',
         timestamp: new Date().toISOString(),
-        requestId
-      }
-    })
+        requestId,
+      },
+    }),
   };
 }
 
 // Usage in Lambda functions
-export const createOrderHandler = async (event: APIGatewayProxyEvent, context: Context) => {
+export const createOrderHandler = async (
+  event: APIGatewayProxyEvent,
+  context: Context
+) => {
   try {
     // Business logic here
     const result = await orderService.createOrder(orderData);
-    
+
     return {
       statusCode: 201,
-      body: JSON.stringify({ order: result })
+      body: JSON.stringify({ order: result }),
     };
   } catch (error) {
     return handleError(error, context.awsRequestId);
@@ -2644,12 +2764,14 @@ export const createOrderHandler = async (event: APIGatewayProxyEvent, context: C
 ### Key Metrics
 
 **Frontend Metrics:**
+
 - Core Web Vitals (LCP, FID, CLS)
 - JavaScript errors and crash rates
 - API response times from client perspective
 - User interactions and conversion rates
 
 **Backend Metrics:**
+
 - Request rate (requests per second)
 - Error rate (percentage of failed requests)
 - Response time (95th percentile latency)
@@ -2657,9 +2779,9 @@ export const createOrderHandler = async (event: APIGatewayProxyEvent, context: C
 
 ---
 
-*Generated using BMad Method - Architect Agent*
-*Document Version: 1.0*
-*Created: August 2, 2025*
+_Generated using BMad Method - Architect Agent_
+_Document Version: 1.0_
+_Created: August 2, 2025_
 
 ## Next Steps
 
@@ -2668,8 +2790,9 @@ This comprehensive architecture document provides the complete technical foundat
 **Ready for Development:** The architecture enables immediate development team kickoff with clear guidance on technology choices, coding standards, and implementation patterns.
 
 **Key Implementation Priorities:**
+
 1. **Backend Foundation** - Lambda functions, database schema, authentication
-2. **Frontend Applications** - React Native mobile app, Next.js admin portals  
+2. **Frontend Applications** - React Native mobile app, Next.js admin portals
 3. **RFID Integration** - Hardware abstraction layer and verification workflows
 4. **Payment Processing** - PCI-compliant gateway integration
 5. **DevOps Pipeline** - CI/CD automation and monitoring setup

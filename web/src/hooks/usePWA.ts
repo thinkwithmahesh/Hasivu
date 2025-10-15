@@ -2,10 +2,8 @@ import { useState, useEffect, useCallback } from 'react'
 // PWA installation hook
 // TODO: Refactor this function - it may be too long
 export const
-usePWAInstall = (
-    const handleAppInstalled = (
-  // Check if already installed
-    if (window.matchMedia('(display-mode: standalone)').matches;
+_usePWAInstall =  (
+    const handleAppInstalled 
         (window.navigator as any).standalone === true) {}
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
     window.addEventListener('appinstalled', handleAppInstalled)

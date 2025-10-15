@@ -53,7 +53,7 @@ const MOBILE_DEVICES = [
 ];
 
 // Critical user flows for mobile testing
-const MOBILE_USER_FLOWS = [
+const _MOBILE_USER_FLOWS =  [
   {
     name: 'Mobile Menu Browsing',
     path: '/menu',
@@ -86,13 +86,13 @@ const MOBILE_USER_FLOWS = [
   }
 ];
 
-test.describe('HASIVU Mobile-First Responsive Design Suite', () => {
+test.describe(_'HASIVU Mobile-First Responsive Design Suite', _() => {
 
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(_async ({ page }) => {
     // Enable mobile-specific features
-    await page.addInitScript(() => {
+    await page.addInitScript(_() => {
       // Mobile performance monitoring
-      window.mobileMetrics = {
+      window._mobileMetrics =  {
         touchEvents: 0,
         swipeEvents: 0,
         orientationChanges: 0,
@@ -100,34 +100,34 @@ test.describe('HASIVU Mobile-First Responsive Design Suite', () => {
       };
 
       // Touch event monitoring
-      document.addEventListener('touchstart', () => {
+      document.addEventListener(_'touchstart', _() => {
         window.mobileMetrics.touchEvents++;
       });
 
-      document.addEventListener('touchmove', () => {
+      document.addEventListener(_'touchmove', _() => {
         window.mobileMetrics.swipeEvents++;
       });
 
       // Orientation change monitoring
-      window.addEventListener('orientationchange', () => {
+      window.addEventListener(_'orientationchange', _() => {
         window.mobileMetrics.orientationChanges++;
       });
 
       // Viewport change monitoring
-      window.addEventListener('resize', () => {
+      window.addEventListener(_'resize', _() => {
         window.mobileMetrics.viewportChanges++;
       });
 
       // PWA installation monitoring
-      window.addEventListener('beforeinstallprompt', (e) => {
-        window.pwaInstallPrompt = e;
+      window.addEventListener(_'beforeinstallprompt', _(e) => {
+        window._pwaInstallPrompt =  e;
       });
     });
   });
 
   // Test each mobile device configuration
   for (const device of MOBILE_DEVICES) {
-    test(`${device.name} - Responsive Layout Validation`, async ({ page }) => {
+    test(_`${device.name} - Responsive Layout Validation`, _async ({ page }) => {
       // Configure device emulation
       await page.setViewportSize(device.viewport);
       await page.setUserAgent(device.userAgent);
@@ -136,26 +136,7 @@ test.describe('HASIVU Mobile-First Responsive Design Suite', () => {
       await page.waitForLoadState('networkidle');
 
       // Check responsive layout adaptation
-      const layoutMetrics = await page.evaluate(() => {
-        return {
-          // Check if mobile navigation is visible
-          mobileNavVisible: !!document.querySelector('.mobile-nav, [data-mobile-nav]'),
-          
-          // Check if desktop elements are hidden
-          desktopNavHidden: window.getComputedStyle(
-            document.querySelector('.desktop-nav, [data-desktop-nav]') || document.createElement('div')
-          ).display === 'none',
-          
-          // Measure content width utilization
-          contentWidth: document.querySelector('main, [role="main"]')?.getBoundingClientRect().width || 0,
-          viewportWidth: window.innerWidth,
-          
-          // Check for horizontal scrolling
-          hasHorizontalScroll: document.documentElement.scrollWidth > window.innerWidth,
-          
-          // Check touch-friendly element sizes
-          buttonSizes: Array.from(document.querySelectorAll('button, [role="button"]')).map(btn => {
-            const rect = btn.getBoundingClientRect();
+      const _layoutMetrics =  await page.evaluate(() 
             return { width: rect.width, height: rect.height };
           })
         };
@@ -175,19 +156,18 @@ test.describe('HASIVU Mobile-First Responsive Design Suite', () => {
     });
   }
 
-  test('Mobile Menu Interaction Flow', async ({ page }) => {
+  test(_'Mobile Menu Interaction Flow', _async ({ page }) => {
     // Use iPhone 12 Pro for this test
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/menu');
     await page.waitForLoadState('networkidle');
 
     // Test mobile menu interactions
-    const menuItems = await page.locator('[data-testid*="menu-item"]').count();
+    const _menuItems =  await page.locator('[data-testid*
     expect(menuItems).toBeGreaterThan(0);
 
     // Test swipe gestures (simulate)
-    const menuContainer = page.locator('[data-testid="menu-container"]').first();
-    
+    const _menuContainer =  page.locator('[data-testid
     // Simulate touch swipe
     await menuContainer.hover();
     await page.mouse.down();
@@ -195,48 +175,41 @@ test.describe('HASIVU Mobile-First Responsive Design Suite', () => {
     await page.mouse.up();
 
     // Test add to cart on mobile
-    const firstMenuItem = page.locator('[data-testid*="menu-item"]').first();
+    const _firstMenuItem =  page.locator('[data-testid*
     await firstMenuItem.tap(); // Use tap for mobile
 
     // Verify mobile cart UI
-    const cartButton = page.locator('[data-testid="mobile-cart-button"]');
+    const _cartButton =  page.locator('[data-testid
     if (await cartButton.isVisible()) {
       await cartButton.tap();
       
       // Check mobile cart modal/drawer
-      const cartModal = page.locator('[data-testid="mobile-cart-modal"]');
+      const _cartModal =  page.locator('[data-testid
       await expect(cartModal).toBeVisible();
     }
   });
 
-  test('Mobile RFID Scanning Interface', async ({ page }) => {
+  test(_'Mobile RFID Scanning Interface', _async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 });
     await page.goto('/rfid/scan');
     await page.waitForLoadState('networkidle');
 
     // Check mobile RFID interface
-    const rfidInterface = await page.evaluate(() => {
-      return {
-        scanButtonVisible: !!document.querySelector('[data-testid="rfid-scan-button"]'),
-        cameraAccessButton: !!document.querySelector('[data-testid="camera-access"]'),
-        scanAreaVisible: !!document.querySelector('.rfid-scan-area, [data-testid="scan-area"]'),
-        mobileOptimized: window.innerWidth < 768,
-        fullScreenMode: !!document.querySelector('[data-fullscreen]')
-      };
+    const _rfidInterface =  await page.evaluate(() 
     });
 
     expect(rfidInterface.scanButtonVisible).toBe(true);
     expect(rfidInterface.mobileOptimized).toBe(true);
 
     // Test scan button interaction
-    const scanButton = page.locator('[data-testid="rfid-scan-button"]');
+    const _scanButton =  page.locator('[data-testid
     if (await scanButton.isVisible()) {
       await scanButton.tap();
       
       // Simulate RFID scan result
-      await page.evaluate(() => {
+      await page.evaluate(_() => {
         // Mock scan success
-        const mockScanResult = {
+        const _mockScanResult =  {
           cardId: 'MOCK_CARD_123',
           userId: 'student_001',
           balance: 150.00,
@@ -250,30 +223,24 @@ test.describe('HASIVU Mobile-First Responsive Design Suite', () => {
       });
 
       // Verify mobile scan result display
-      await expect(page.locator('[data-testid="scan-result"]')).toBeVisible({ timeout: 3000 });
+      await expect(page.locator('[data-_testid = "scan-result"]')).toBeVisible({ timeout: 3000 });
     }
   });
 
-  test('Mobile Authentication Flow', async ({ page }) => {
+  test(_'Mobile Authentication Flow', _async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 800 });
     await page.goto('/auth/login');
     await page.waitForLoadState('networkidle');
 
     // Test mobile keyboard interaction
-    const emailInput = page.locator('[data-testid="login-email-input"]');
-    const passwordInput = page.locator('[data-testid="login-password-input"]');
-    
+    const _emailInput =  page.locator('[data-testid
+    const _passwordInput =  page.locator('[data-testid
     // Focus triggers mobile keyboard
     await emailInput.tap();
     await emailInput.fill('test@example.com');
     
     // Check viewport adjustment for keyboard
-    const viewportAfterKeyboard = await page.evaluate(() => {
-      return {
-        visualViewportHeight: window.visualViewport?.height || window.innerHeight,
-        windowHeight: window.innerHeight,
-        keyboardVisible: (window.visualViewport?.height || window.innerHeight) < window.screen.height * 0.75
-      };
+    const _viewportAfterKeyboard =  await page.evaluate(() 
     });
 
     // Fill password field
@@ -281,109 +248,91 @@ test.describe('HASIVU Mobile-First Responsive Design Suite', () => {
     await passwordInput.fill('password123');
 
     // Test mobile form submission
-    const submitButton = page.locator('[data-testid="login-submit-button"]');
+    const _submitButton =  page.locator('[data-testid
     await submitButton.tap();
 
     // Check for mobile-specific error handling
     await page.waitForTimeout(1000);
     
     // Verify error messages are mobile-friendly
-    const errorElements = await page.locator('.error, [role="alert"]').count();
+    const _errorElements =  await page.locator('.error, [role
     if (errorElements > 0) {
-      const errorBounds = await page.locator('.error, [role="alert"]').first().boundingBox();
+      const _errorBounds =  await page.locator('.error, [role
       if (errorBounds) {
         expect(errorBounds.width).toBeLessThan(360); // Fits in mobile viewport
       }
     }
   });
 
-  test('Cross-Device Orientation Changes', async ({ page }) => {
+  test(_'Cross-Device Orientation Changes', _async ({ page }) => {
     // Test tablet in both orientations
     await page.setViewportSize({ width: 768, height: 1024 }); // Portrait
     await page.goto('/dashboard');
     await page.waitForLoadState('networkidle');
 
     // Capture portrait layout
-    const portraitLayout = await page.evaluate(() => {
-      return {
-        sidebarVisible: !!document.querySelector('.sidebar:not([style*="display: none"])'),
-        gridColumns: getComputedStyle(document.querySelector('.dashboard-grid') || document.body).gridTemplateColumns,
-        navigationStyle: getComputedStyle(document.querySelector('.navigation') || document.body).display
-      };
+    const _portraitLayout =  await page.evaluate(() 
     });
 
     // Switch to landscape
     await page.setViewportSize({ width: 1024, height: 768 }); // Landscape
     await page.waitForTimeout(500); // Allow layout to adjust
 
-    const landscapeLayout = await page.evaluate(() => {
-      return {
-        sidebarVisible: !!document.querySelector('.sidebar:not([style*="display: none"])'),
-        gridColumns: getComputedStyle(document.querySelector('.dashboard-grid') || document.body).gridTemplateColumns,
-        navigationStyle: getComputedStyle(document.querySelector('.navigation') || document.body).display
-      };
+    const _landscapeLayout =  await page.evaluate(() 
     });
 
     // Verify adaptive layout changes
     expect(portraitLayout.gridColumns).not.toBe(landscapeLayout.gridColumns);
   });
 
-  test('Mobile Performance Optimization', async ({ page }) => {
+  test(_'Mobile Performance Optimization', _async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 });
     
     // Simulate 3G network conditions
-    await page.route('**/*', async (route) => {
+    await page.route(_'**/*', _async (route) => {
       await new Promise(resolve => setTimeout(resolve, 50)); // 50ms latency
       await route.continue();
     });
 
-    const startTime = Date.now();
+    const _startTime =  Date.now();
     await page.goto('/menu');
     await page.waitForLoadState('networkidle');
-    const loadTime = Date.now() - startTime;
+    const _loadTime =  Date.now() - startTime;
 
     // Mobile should load within reasonable time even on slow network
     expect(loadTime).toBeLessThan(8000); // 8s for 3G
 
     // Check mobile-specific optimizations
-    const mobileOptimizations = await page.evaluate(() => {
-      return {
-        lazyLoadingImages: Array.from(document.querySelectorAll('img[loading="lazy"]')).length,
-        webpImages: Array.from(document.querySelectorAll('img[src*=".webp"]')).length,
-        criticalCSSInlined: !!document.querySelector('style[data-critical]'),
-        serviceWorkerRegistered: 'serviceWorker' in navigator,
-        webManifestLinked: !!document.querySelector('link[rel="manifest"]')
-      };
+    const _mobileOptimizations =  await page.evaluate(() 
     });
 
     expect(mobileOptimizations.lazyLoadingImages).toBeGreaterThan(0);
     expect(mobileOptimizations.serviceWorkerRegistered).toBe(true);
   });
 
-  test('Touch Gestures and Interactions', async ({ page }) => {
+  test(_'Touch Gestures and Interactions', _async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/menu');
     await page.waitForLoadState('networkidle');
 
     // Test pinch-to-zoom prevention on input elements
-    const inputElement = page.locator('input').first();
+    const _inputElement =  page.locator('input').first();
     if (await inputElement.isVisible()) {
       await inputElement.tap();
       
       // Check that zoom is disabled
-      const zoomDisabled = await page.evaluate(() => {
-        const viewport = document.querySelector('meta[name="viewport"]');
-        return viewport?.getAttribute('content')?.includes('user-scalable=no') || 
-               viewport?.getAttribute('content')?.includes('maximum-scale=1');
+      const _zoomDisabled =  await page.evaluate(() 
+        return viewport?.getAttribute('content')?.includes('user-_scalable = no') || 
+               viewport?.getAttribute('content')?.includes('maximum-scale
       });
 
       expect(zoomDisabled).toBe(true);
     }
 
     // Test swipe gestures on carousel/slider elements
-    const carousel = page.locator('[data-carousel], [data-slider], .swiper').first();
+    const _carousel =  page.locator('[data-carousel], [data-slider], .swiper').first();
     if (await carousel.isVisible()) {
-      const carouselBounds = await carousel.boundingBox();
+      const _carouselBounds =  await carousel.boundingBox();
       if (carouselBounds) {
         // Simulate touch swipe
         await page.touchscreen.tap(carouselBounds.x + carouselBounds.width / 2, carouselBounds.y + carouselBounds.height / 2);
@@ -392,26 +341,18 @@ test.describe('HASIVU Mobile-First Responsive Design Suite', () => {
     }
   });
 
-  test('Progressive Web App Features', async ({ page }) => {
+  test(_'Progressive Web App Features', _async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 });
     await page.goto('/');
     await page.waitForLoadState('networkidle');
 
     // Check PWA manifest and service worker
-    const pwaFeatures = await page.evaluate(async () => {
-      const features = {
-        hasManifest: !!document.querySelector('link[rel="manifest"]'),
-        hasServiceWorker: 'serviceWorker' in navigator,
-        isInstallable: false,
-        themeColor: document.querySelector('meta[name="theme-color"]')?.getAttribute('content'),
-        appleTouch: !!document.querySelector('link[rel="apple-touch-icon"]')
-      };
-
+    const _pwaFeatures =  await page.evaluate(async () 
       // Check if app is installable
       if ('getInstalledRelatedApps' in navigator) {
         try {
-          const relatedApps = await (navigator as any).getInstalledRelatedApps();
-          features.isInstallable = relatedApps.length === 0;
+          const _relatedApps =  await (navigator as any).getInstalledRelatedApps();
+          features._isInstallable =  relatedApps.length 
         } catch (e) {
           // Feature not supported or blocked
         }
@@ -426,19 +367,13 @@ test.describe('HASIVU Mobile-First Responsive Design Suite', () => {
     expect(pwaFeatures.appleTouch).toBe(true);
   });
 
-  test('Mobile Accessibility Features', async ({ page }) => {
+  test(_'Mobile Accessibility Features', _async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 });
     await page.goto('/menu');
     await page.waitForLoadState('networkidle');
 
     // Test voice-over/screen reader compatibility
-    const a11yFeatures = await page.evaluate(() => {
-      return {
-        ariaLabels: document.querySelectorAll('[aria-label]').length,
-        focusTraps: document.querySelectorAll('[data-focus-trap]').length,
-        skipLinks: document.querySelectorAll('[href="#main"], [data-skip-link]').length,
-        touchTargets: Array.from(document.querySelectorAll('button, a, input')).filter(el => {
-          const rect = el.getBoundingClientRect();
+    const _a11yFeatures =  await page.evaluate(() 
           return rect.width >= 44 && rect.height >= 44;
         }).length,
         reduceMotionRespected: window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -449,7 +384,7 @@ test.describe('HASIVU Mobile-First Responsive Design Suite', () => {
     expect(a11yFeatures.touchTargets).toBeGreaterThan(0);
   });
 
-  test('Mobile Network Resilience', async ({ page }) => {
+  test(_'Mobile Network Resilience', _async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 });
 
     // Test offline functionality
@@ -457,13 +392,7 @@ test.describe('HASIVU Mobile-First Responsive Design Suite', () => {
     await page.goto('/menu');
     
     // Check offline page or cached content
-    const offlineHandling = await page.evaluate(() => {
-      return {
-        offlinePageVisible: document.body.textContent?.includes('offline') || 
-                           document.body.textContent?.includes('connection'),
-        cacheAvailable: 'caches' in window,
-        serviceWorkerActive: navigator.serviceWorker?.controller !== null
-      };
+    const _offlineHandling =  await page.evaluate(() 
     });
 
     // Restore online
@@ -472,39 +401,38 @@ test.describe('HASIVU Mobile-First Responsive Design Suite', () => {
     expect(offlineHandling.cacheAvailable).toBe(true);
   });
 
-  test('Mobile Battery and Performance Impact', async ({ page }) => {
+  test(_'Mobile Battery and Performance Impact', _async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 });
     await page.goto('/menu');
     await page.waitForLoadState('networkidle');
 
     // Check for performance-intensive operations
-    const performanceImpact = await page.evaluate(() => {
-      let animationFrames = 0;
-      let timers = 0;
+    const _performanceImpact =  await page.evaluate(() 
+      let _timers =  0;
       
       // Mock performance monitoring
-      const originalRequestAnimationFrame = window.requestAnimationFrame;
-      window.requestAnimationFrame = function(callback) {
+      const _originalRequestAnimationFrame =  window.requestAnimationFrame;
+      window._requestAnimationFrame =  function(callback) {
         animationFrames++;
         return originalRequestAnimationFrame(callback);
       };
 
-      const originalSetInterval = window.setInterval;
-      window.setInterval = function(callback, delay) {
+      const _originalSetInterval =  window.setInterval;
+      window._setInterval =  function(callback, delay) {
         timers++;
         return originalSetInterval(callback, delay);
       };
 
       // Check for infinite scroll or heavy animations
-      const infiniteScrollElements = document.querySelectorAll('[data-infinite-scroll]').length;
-      const videoElements = document.querySelectorAll('video').length;
+      const _infiniteScrollElements =  document.querySelectorAll('[data-infinite-scroll]').length;
+      const _videoElements =  document.querySelectorAll('video').length;
       
       return {
         animationFrames,
         timers,
         infiniteScrollElements,
         videoElements,
-        backgroundProcesses: Object.keys(window).filter(key => key.includes('interval')).length
+        backgroundProcesses: Object.keys(window).filter(_key = > key.includes('interval')).length
       };
     });
 

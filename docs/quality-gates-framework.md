@@ -14,7 +14,9 @@ This framework establishes evidence-based task management practices to prevent s
 ## Quality Gate Definitions
 
 ### Stage 1: Todo → Doing
+
 **Entry Criteria:**
+
 - [ ] Task requirements clearly defined
 - [ ] Research completed (if applicable)
 - [ ] Approach/strategy documented
@@ -22,12 +24,15 @@ This framework establishes evidence-based task management practices to prevent s
 - [ ] Success criteria established
 
 **Evidence Required:**
+
 - Task description with clear acceptance criteria
 - Research findings documented (for complex tasks)
 - Approach strategy outlined
 
 ### Stage 2: Doing → Review
+
 **Entry Criteria:**
+
 - [ ] Implementation completed
 - [ ] All acceptance criteria met
 - [ ] Evidence of functionality documented
@@ -35,13 +40,16 @@ This framework establishes evidence-based task management practices to prevent s
 - [ ] No blocking issues remain
 
 **Evidence Required:**
+
 - **For Code Tasks**: TypeScript compilation success, test results
 - **For Build Tasks**: Successful build artifacts, error reduction metrics
 - **For Documentation Tasks**: Complete documentation artifacts
 - **For Infrastructure Tasks**: Deployment validation, service health checks
 
 ### Stage 3: Review → Done
+
 **Entry Criteria:**
+
 - [ ] Peer review completed (if applicable)
 - [ ] Quality validation passed
 - [ ] Integration testing successful
@@ -49,6 +57,7 @@ This framework establishes evidence-based task management practices to prevent s
 - [ ] No regression issues detected
 
 **Evidence Required:**
+
 - Validation results (compilation, tests, deployment)
 - Before/after metrics demonstrating improvement
 - Integration test results
@@ -57,7 +66,9 @@ This framework establishes evidence-based task management practices to prevent s
 ## Task-Specific Quality Gates
 
 ### Development Tasks
+
 **Evidence Requirements:**
+
 ```bash
 # TypeScript Compilation
 npx tsc --noEmit --skipLibCheck 2>&1 | grep "error" | wc -l
@@ -73,14 +84,18 @@ npm run build
 ```
 
 ### Infrastructure Tasks
+
 **Evidence Requirements:**
+
 - Service health endpoint responses (200 OK)
 - Performance benchmarks (response times, throughput)
 - Monitoring dashboard screenshots
 - Log entries showing successful deployment
 
 ### Documentation Tasks
+
 **Evidence Requirements:**
+
 - Complete documentation files in specified locations
 - Documentation review checklist completed
 - Links and references validated
@@ -89,6 +104,7 @@ npm run build
 ## Validation Checklists
 
 ### Pre-Completion Checklist
+
 Before marking any task as "Review" or "Done":
 
 1. **Functionality Verification**
@@ -111,44 +127,52 @@ Before marking any task as "Review" or "Done":
 
 ### Task Status Validation Matrix
 
-| Task Type | Todo→Doing | Doing→Review | Review→Done |
-|-----------|------------|--------------|-------------|
-| **Build/Compilation** | Requirements clear | Zero compilation errors | Integration validated |
-| **Feature Development** | Design approved | Tests passing | User acceptance |
-| **Bug Fix** | Root cause identified | Issue resolved | No regression |
-| **Documentation** | Outline complete | Content written | Review approved |
-| **Infrastructure** | Architecture defined | Services deployed | Monitoring active |
+| Task Type               | Todo→Doing            | Doing→Review            | Review→Done           |
+| ----------------------- | --------------------- | ----------------------- | --------------------- |
+| **Build/Compilation**   | Requirements clear    | Zero compilation errors | Integration validated |
+| **Feature Development** | Design approved       | Tests passing           | User acceptance       |
+| **Bug Fix**             | Root cause identified | Issue resolved          | No regression         |
+| **Documentation**       | Outline complete      | Content written         | Review approved       |
+| **Infrastructure**      | Architecture defined  | Services deployed       | Monitoring active     |
 
 ## Evidence Templates
 
 ### Code Completion Evidence
-```markdown
+
+````markdown
 ## Task: [Task Title]
+
 **Completion Date:** [Date]
 **Evidence Type:** Code Implementation
 
 ### Before State:
+
 - Compilation Errors: [Count]
 - Test Status: [Passing/Failing]
 - Functionality: [Description]
 
 ### After State:
+
 - Compilation Errors: 0
 - Test Status: All passing ([X]/[Y] tests)
 - Functionality: [Working as specified]
 
 ### Validation Commands:
+
 ```bash
 npx tsc --noEmit --skipLibCheck 2>&1 | grep "error" | wc -l
 npm test [test-file]
 npm run build
 ```
+````
 
 ### Artifacts:
+
 - [File paths of changed files]
 - [Test results screenshot/log]
 - [Build output confirmation]
-```
+
+````
 
 ### Infrastructure Deployment Evidence
 ```markdown
@@ -172,11 +196,12 @@ npm run build
 - Latency P95: [X]ms
 - Memory Usage: [X]MB
 - CPU Usage: [X]%
-```
+````
 
 ## Automated Quality Gates
 
 ### CI/CD Integration
+
 ```yaml
 quality_gates:
   pre_merge:
@@ -185,7 +210,7 @@ quality_gates:
     - integration_tests: required
     - security_scan: required
     - performance_check: required
-  
+
   deployment:
     - health_check: required
     - smoke_tests: required
@@ -193,6 +218,7 @@ quality_gates:
 ```
 
 ### Validation Scripts
+
 ```bash
 #!/bin/bash
 # quality-gate-validator.sh
@@ -229,24 +255,28 @@ echo "🎉 All quality gates passed!"
 ## Implementation Roadmap
 
 ### Phase 1: Framework Establishment (Week 1)
+
 - [ ] Create quality gate documentation
 - [ ] Establish evidence templates
 - [ ] Define validation checklists
 - [ ] Train team on new processes
 
 ### Phase 2: Tooling Implementation (Week 2)
+
 - [ ] Create validation scripts
 - [ ] Set up automated quality gates
 - [ ] Integrate with CI/CD pipeline
 - [ ] Create dashboard for tracking
 
 ### Phase 3: Process Enforcement (Week 3)
+
 - [ ] Audit existing tasks for evidence gaps
 - [ ] Reclassify tasks without proper evidence
 - [ ] Implement regular quality reviews
 - [ ] Establish accountability measures
 
 ### Phase 4: Continuous Improvement (Ongoing)
+
 - [ ] Monitor quality gate effectiveness
 - [ ] Refine evidence requirements
 - [ ] Update validation criteria
@@ -255,12 +285,14 @@ echo "🎉 All quality gates passed!"
 ## Success Metrics
 
 ### Quantitative Metrics
+
 - **Task Accuracy Rate**: % of "done" tasks with proper evidence (Target: 100%)
 - **False Positive Rate**: % of tasks incorrectly marked as complete (Target: 0%)
 - **Quality Gate Pass Rate**: % of tasks passing all validation stages (Target: 95%+)
 - **Deployment Success Rate**: % of deployments without rollbacks (Target: 98%+)
 
 ### Qualitative Metrics
+
 - Team confidence in task status accuracy
 - Reduced time spent on status clarification
 - Improved project planning reliability
@@ -269,12 +301,14 @@ echo "🎉 All quality gates passed!"
 ## Governance & Accountability
 
 ### Roles & Responsibilities
+
 - **Task Owner**: Provides evidence for task completion
 - **Quality Reviewer**: Validates evidence against criteria
 - **Project Manager**: Monitors quality gate compliance
 - **Delivery Auditor**: Conducts periodic evidence audits
 
 ### Escalation Process
+
 1. **Level 1**: Task Owner addresses quality gate failures
 2. **Level 2**: Quality Reviewer conducts additional validation
 3. **Level 3**: Project Manager reviews systemic issues

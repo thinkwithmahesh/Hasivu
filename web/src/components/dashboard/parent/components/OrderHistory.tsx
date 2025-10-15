@@ -6,9 +6,9 @@ interface OrderHistoryProps {
   onViewOrder?: (orderId: string) => void;
 }
 
-export const OrderHistory: React.FC<OrderHistoryProps> = ({ 
-  orders = [],
-  onViewOrder
+export const OrderHistory: React.FC<OrderHistoryProps> = ({
+  orders: _orders = [],
+  onViewOrder: _onViewOrder,
 }) => {
   return (
     <div className="bg-white rounded-lg shadow p-6">

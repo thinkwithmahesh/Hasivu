@@ -3,7 +3,7 @@ info:
   title: HASIVU Platform API
   description: |
     Complete API documentation for the HASIVU Platform - A comprehensive school meal delivery system with AWS Lambda-based microservices architecture.
-    
+
     ## Features
     - JWT-based authentication with AWS Cognito integration
     - Payment processing with Razorpay integration
@@ -12,22 +12,22 @@ info:
     - Advanced analytics and reporting
     - Subscription billing management
     - AI-powered payment intelligence
-    
+
     ## Authentication
     This API uses JWT tokens for authentication. Include the JWT token in the Authorization header:
     ```
     Authorization: Bearer <jwt_token>
     ```
-    
+
     ## Base URL
     - **Production**: `https://api.hasivu.com`
     - **Staging**: `https://api-staging.hasivu.com`
     - **Development**: `https://api-dev.hasivu.com`
-    
+
     ## Rate Limiting
     - **Rate Limit**: 1000 requests per minute per IP
     - **Burst Limit**: 2000 requests per minute
-    
+
     ## Error Handling
     All errors follow RFC 7807 problem details format with consistent structure.
   version: 1.0.0
@@ -71,14 +71,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/HealthResponse'
               example:
-                status: "healthy"
-                timestamp: "2024-01-15T10:30:00Z"
-                version: "1.0.0"
+                status: 'healthy'
+                timestamp: '2024-01-15T10:30:00Z'
+                version: '1.0.0'
                 services:
-                  database: "healthy"
-                  cognito: "healthy"
-                  razorpay: "healthy"
-                  s3: "healthy"
+                  database: 'healthy'
+                  cognito: 'healthy'
+                  razorpay: 'healthy'
+                  s3: 'healthy'
         503:
           $ref: '#/components/responses/ServiceUnavailable'
 
@@ -100,8 +100,8 @@ paths:
             schema:
               $ref: '#/components/schemas/LoginRequest'
             example:
-              email: "parent@example.com"
-              password: "SecurePass123!"
+              email: 'parent@example.com'
+              password: 'SecurePass123!'
       responses:
         200:
           description: Login successful
@@ -110,20 +110,20 @@ paths:
               schema:
                 $ref: '#/components/schemas/LoginResponse'
               example:
-                message: "Login successful"
+                message: 'Login successful'
                 user:
-                  id: "550e8400-e29b-41d4-a716-446655440000"
-                  email: "parent@example.com"
-                  firstName: "John"
-                  lastName: "Doe"
-                  role: "parent"
-                  schoolId: "660f9500-f30c-52e5-b827-557766551111"
+                  id: '550e8400-e29b-41d4-a716-446655440000'
+                  email: 'parent@example.com'
+                  firstName: 'John'
+                  lastName: 'Doe'
+                  role: 'parent'
+                  schoolId: '660f9500-f30c-52e5-b827-557766551111'
                   emailVerified: true
                 tokens:
-                  accessToken: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
-                  refreshToken: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
-                  idToken: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
-                  tokenType: "Bearer"
+                  accessToken: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...'
+                  refreshToken: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...'
+                  idToken: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...'
+                  tokenType: 'Bearer'
                   expiresIn: 3600
         400:
           $ref: '#/components/responses/BadRequest'
@@ -149,12 +149,12 @@ paths:
             schema:
               $ref: '#/components/schemas/RegisterRequest'
             example:
-              email: "newparent@example.com"
-              password: "SecurePass123!"
-              firstName: "Jane"
-              lastName: "Smith"
-              schoolId: "660f9500-f30c-52e5-b827-557766551111"
-              role: "parent"
+              email: 'newparent@example.com'
+              password: 'SecurePass123!'
+              firstName: 'Jane'
+              lastName: 'Smith'
+              schoolId: '660f9500-f30c-52e5-b827-557766551111'
+              role: 'parent'
       responses:
         201:
           description: User registered successfully
@@ -163,8 +163,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/RegisterResponse'
               example:
-                message: "User registered successfully. Please check your email for verification."
-                userId: "770e8400-e29b-41d4-a716-446655440000"
+                message: 'User registered successfully. Please check your email for verification.'
+                userId: '770e8400-e29b-41d4-a716-446655440000'
                 emailSent: true
         400:
           $ref: '#/components/responses/BadRequest'
@@ -186,8 +186,8 @@ paths:
             schema:
               $ref: '#/components/schemas/VerifyEmailRequest'
             example:
-              email: "newparent@example.com"
-              verificationCode: "123456"
+              email: 'newparent@example.com'
+              verificationCode: '123456'
       responses:
         200:
           description: Email verified successfully
@@ -215,7 +215,7 @@ paths:
             schema:
               $ref: '#/components/schemas/RefreshTokenRequest'
             example:
-              refreshToken: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+              refreshToken: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...'
       responses:
         200:
           description: Token refreshed successfully
@@ -270,7 +270,7 @@ paths:
           $ref: '#/components/responses/BadRequest'
         403:
           $ref: '#/components/responses/Forbidden'
-    
+
     get:
       tags:
         - Users
@@ -401,11 +401,11 @@ paths:
             schema:
               $ref: '#/components/schemas/CreatePaymentOrderRequest'
             example:
-              userId: "550e8400-e29b-41d4-a716-446655440000"
+              userId: '550e8400-e29b-41d4-a716-446655440000'
               amount: 250.00
-              currency: "INR"
-              description: "Lunch payment for John Doe"
-              orderId: "880f8500-g30d-63f6-c938-668877662222"
+              currency: 'INR'
+              description: 'Lunch payment for John Doe'
+              orderId: '880f8500-g30d-63f6-c938-668877662222'
       responses:
         201:
           description: Payment order created successfully
@@ -1167,7 +1167,14 @@ paths:
               properties:
                 approvalType:
                   type: string
-                  enum: [NUTRITIONIST_REVIEW, ADMIN_APPROVAL, PRINCIPAL_APPROVAL, KITCHEN_REVIEW, BUDGET_APPROVAL]
+                  enum:
+                    [
+                      NUTRITIONIST_REVIEW,
+                      ADMIN_APPROVAL,
+                      PRINCIPAL_APPROVAL,
+                      KITCHEN_REVIEW,
+                      BUDGET_APPROVAL,
+                    ]
                 comments:
                   type: string
       responses:
@@ -1747,7 +1754,7 @@ components:
       properties:
         message:
           type: string
-          example: "Operation completed successfully"
+          example: 'Operation completed successfully'
         data:
           type: object
           nullable: true
@@ -1757,10 +1764,10 @@ components:
       properties:
         error:
           type: string
-          example: "Error message"
+          example: 'Error message'
         code:
           type: string
-          example: "ERROR_CODE"
+          example: 'ERROR_CODE'
         details:
           type: array
           items:
@@ -1837,12 +1844,12 @@ components:
         email:
           type: string
           format: email
-          example: "user@example.com"
+          example: 'user@example.com'
         password:
           type: string
           format: password
           minLength: 8
-          example: "SecurePass123!"
+          example: 'SecurePass123!'
 
     LoginResponse:
       type: object
@@ -3394,14 +3401,14 @@ components:
             validation_error:
               summary: Validation error
               value:
-                error: "Validation failed"
-                code: "VALIDATION_ERROR"
+                error: 'Validation failed'
+                code: 'VALIDATION_ERROR'
                 details:
-                  - field: "email"
-                    message: "Please provide a valid email address"
-                    value: "invalid-email"
-                timestamp: "2024-01-15T10:30:00Z"
-                requestId: "req_123456"
+                  - field: 'email'
+                    message: 'Please provide a valid email address'
+                    value: 'invalid-email'
+                timestamp: '2024-01-15T10:30:00Z'
+                requestId: 'req_123456'
 
     Unauthorized:
       description: Unauthorized
@@ -3413,10 +3420,10 @@ components:
             invalid_token:
               summary: Invalid or expired token
               value:
-                error: "Invalid or expired token"
-                code: "UNAUTHORIZED"
-                timestamp: "2024-01-15T10:30:00Z"
-                requestId: "req_123456"
+                error: 'Invalid or expired token'
+                code: 'UNAUTHORIZED'
+                timestamp: '2024-01-15T10:30:00Z'
+                requestId: 'req_123456'
 
     Forbidden:
       description: Forbidden
@@ -3428,10 +3435,10 @@ components:
             insufficient_permissions:
               summary: Insufficient permissions
               value:
-                error: "Insufficient permissions to access this resource"
-                code: "FORBIDDEN"
-                timestamp: "2024-01-15T10:30:00Z"
-                requestId: "req_123456"
+                error: 'Insufficient permissions to access this resource'
+                code: 'FORBIDDEN'
+                timestamp: '2024-01-15T10:30:00Z'
+                requestId: 'req_123456'
 
     NotFound:
       description: Resource not found
@@ -3443,10 +3450,10 @@ components:
             not_found:
               summary: Resource not found
               value:
-                error: "Resource not found"
-                code: "NOT_FOUND"
-                timestamp: "2024-01-15T10:30:00Z"
-                requestId: "req_123456"
+                error: 'Resource not found'
+                code: 'NOT_FOUND'
+                timestamp: '2024-01-15T10:30:00Z'
+                requestId: 'req_123456'
 
     Conflict:
       description: Conflict
@@ -3458,10 +3465,10 @@ components:
             duplicate_email:
               summary: Duplicate email
               value:
-                error: "User with this email already exists"
-                code: "EMAIL_ALREADY_EXISTS"
-                timestamp: "2024-01-15T10:30:00Z"
-                requestId: "req_123456"
+                error: 'User with this email already exists'
+                code: 'EMAIL_ALREADY_EXISTS'
+                timestamp: '2024-01-15T10:30:00Z'
+                requestId: 'req_123456'
 
     TooManyRequests:
       description: Too many requests
@@ -3473,10 +3480,10 @@ components:
             rate_limit:
               summary: Rate limit exceeded
               value:
-                error: "Rate limit exceeded. Please try again later."
-                code: "TOO_MANY_REQUESTS"
-                timestamp: "2024-01-15T10:30:00Z"
-                requestId: "req_123456"
+                error: 'Rate limit exceeded. Please try again later.'
+                code: 'TOO_MANY_REQUESTS'
+                timestamp: '2024-01-15T10:30:00Z'
+                requestId: 'req_123456'
       headers:
         Retry-After:
           description: Number of seconds to wait before retrying
@@ -3493,10 +3500,10 @@ components:
             service_unavailable:
               summary: Service temporarily unavailable
               value:
-                error: "Service temporarily unavailable"
-                code: "SERVICE_UNAVAILABLE"
-                timestamp: "2024-01-15T10:30:00Z"
-                requestId: "req_123456"
+                error: 'Service temporarily unavailable'
+                code: 'SERVICE_UNAVAILABLE'
+                timestamp: '2024-01-15T10:30:00Z'
+                requestId: 'req_123456'
 
 tags:
   - name: Health

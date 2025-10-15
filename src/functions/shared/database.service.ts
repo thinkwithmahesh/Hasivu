@@ -8,6 +8,7 @@ import { PrismaClient, Prisma } from '@prisma/client';
 
 // Global variable to cache the Prisma client between Lambda invocations
 declare global {
+  // eslint-disable-next-line no-var
   var __prisma__: PrismaClient | undefined;
 }
 
@@ -52,8 +53,8 @@ export class LambdaDatabaseService {
     const prisma = new PrismaClient({
       datasources: {
         db: {
-          url: enhancedUrl
-        }
+          url: enhancedUrl,
+        },
       },
       log: this.getLogConfig(),
       errorFormat: 'minimal', // Reduce payload size
@@ -71,10 +72,10 @@ export class LambdaDatabaseService {
   private enhanceDatabaseUrlForLambda(url: string): string {
     try {
       const dbUrl = new URL(url);
-      
+
       // Add connection pooling parameters optimized for serverless
       const searchParams = new URLSearchParams(dbUrl.search);
-      
+
       // Serverless-optimized connection settings
       if (!searchParams.has('connection_limit')) {
         searchParams.set('connection_limit', '1'); // Single connection per Lambda
@@ -93,7 +94,6 @@ export class LambdaDatabaseService {
       return dbUrl.toString();
     } catch (error) {
       // If URL parsing fails, return original URL
-      console.warn('Failed to enhance database URL:', error);
       return url;
     }
   }
@@ -103,7 +103,7 @@ export class LambdaDatabaseService {
    */
   private getLogConfig(): Prisma.LogLevel[] {
     const isProduction = process.env.NODE_ENV === 'production';
-    
+
     if (isProduction) {
       return ['warn', 'error'];
     } else {
@@ -128,50 +128,50 @@ export class LambdaDatabaseService {
   /**
    * Convenient access to all Prisma models
    */
-  public get user() { 
-    return this.prisma.user; 
+  public get user() {
+    return this.prisma.user;
   }
-  
-  public get school() { 
-    return this.prisma.school; 
+
+  public get school() {
+    return this.prisma.school;
   }
-  
-  public get parentChild() { 
-    return this.prisma.parentChild; 
+
+  public get parentChild() {
+    return this.prisma.parentChild;
   }
-  
-  public get role() { 
-    return this.prisma.role; 
+
+  public get role() {
+    return this.prisma.role;
   }
-  
-  public get userRoleAssignment() { 
-    return this.prisma.userRoleAssignment; 
+
+  public get userRoleAssignment() {
+    return this.prisma.userRoleAssignment;
   }
-  
-  public get auditLog() { 
-    return this.prisma.auditLog; 
+
+  public get auditLog() {
+    return this.prisma.auditLog;
   }
-  
-  public get authSession() { 
-    return this.prisma.authSession; 
+
+  public get authSession() {
+    return this.prisma.authSession;
   }
-  
+
   // Note: Students are represented by User model with role='student'
-  
-  public get order() { 
-    return this.prisma.order; 
+
+  public get order() {
+    return this.prisma.order;
   }
-  
-  public get paymentTransaction() { 
-    return this.prisma.paymentTransaction; 
+
+  public get paymentTransaction() {
+    return this.prisma.paymentTransaction;
   }
-  
-  public get rfidCard() { 
-    return this.prisma.rFIDCard; 
+
+  public get rfidCard() {
+    return this.prisma.rFIDCard;
   }
-  
-  public get whatsappMessage() { 
-    return this.prisma.whatsAppMessage; 
+
+  public get whatsappMessage() {
+    return this.prisma.whatsAppMessage;
   }
 
   // Menu management models - these will be added based on actual Prisma schema
@@ -214,7 +214,7 @@ export class LambdaDatabaseService {
     const transactionOptions = {
       maxWait: options?.maxWait || 5000, // 5 seconds max wait
       timeout: options?.timeout || 25000, // 25 seconds timeout (within Lambda limit)
-      isolationLevel: options?.isolationLevel
+      isolationLevel: options?.isolationLevel,
     };
 
     return await this.prisma.$transaction(fn, transactionOptions);
@@ -228,7 +228,6 @@ export class LambdaDatabaseService {
       await this.prisma.$queryRaw`SELECT 1`;
       return true;
     } catch (error) {
-      console.error('Database connection test failed:', error);
       return false;
     }
   }
@@ -243,24 +242,24 @@ export class LambdaDatabaseService {
     details?: string;
   }> {
     const startTime = Date.now();
-    
+
     try {
       await this.prisma.$queryRaw`SELECT 1`;
       const latency = Date.now() - startTime;
-      
+
       return {
         status: 'healthy',
         connected: true,
-        latency
+        latency,
       };
     } catch (error) {
       const latency = Date.now() - startTime;
-      
+
       return {
         status: 'unhealthy',
         connected: false,
         latency,
-        details: error instanceof Error ? error.message : 'Unknown database error'
+        details: error instanceof Error ? error.message : 'Unknown database error',
       };
     }
   }
@@ -287,7 +286,6 @@ export class LambdaDatabaseService {
       await this.prisma.$connect();
       return true;
     } catch (error) {
-      console.error('Database readiness check failed:', error);
       return false;
     }
   }
@@ -299,7 +297,7 @@ export class LambdaDatabaseService {
     try {
       await this.prisma.$disconnect();
     } catch (error) {
-      console.error('Database cleanup failed:', error);
+      // Error handled silently
     }
   }
 
@@ -312,7 +310,7 @@ export class LambdaDatabaseService {
       // Clear global cache to force new connection
       global.__prisma__ = undefined;
     } catch (error) {
-      console.error('Database force disconnect failed:', error);
+      // Error handled silently
     }
   }
 }

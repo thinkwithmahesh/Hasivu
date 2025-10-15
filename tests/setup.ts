@@ -13,8 +13,9 @@ process.env.JWT_SECRET = 'test-jwt-secret-key-for-testing-only-minimum-64-charac
 process.env.JWT_REFRESH_SECRET = 'test-jwt-refresh-secret-key-for-testing-only-minimum-64-characters-required-for-security-validation';
 process.env.DATABASE_URL = 'postgresql://postgres:password@localhost:5432/hasivu_test';
 process.env.REDIS_URL = 'redis://localhost:6379/1';
-process.env.SKIP_DATABASE_TESTS = 'true';
-process.env.SKIP_REDIS_TESTS = 'true';
+// Enable database and Redis operations for comprehensive testing
+process.env.SKIP_DATABASE_TESTS = 'false';
+process.env.SKIP_REDIS_TESTS = 'false';
 process.env.RAZORPAY_KEY_ID = 'test_key_id';
 process.env.RAZORPAY_KEY_SECRET = 'test_key_secret';
 process.env.AWS_ACCESS_KEY_ID = 'test_access_key';
@@ -23,20 +24,20 @@ process.env.AWS_REGION = 'us-east-1';
 process.env.COGNITO_USER_POOL_ID = 'test_pool_id';
 process.env.COGNITO_CLIENT_ID = 'test_client_id';
 
+// Setup global mocks BEFORE any imports
+setupGlobalMocks();
+
 // Global test environment setup
 beforeAll(async () => {
   // Initialize test database if needed
   await setupTestDatabase();
-  
-  // Setup global mocks
-  setupGlobalMocks();
 });
 
 afterAll(async () => {
   // Cleanup test environment
   await cleanupTestDatabase();
   await cleanupRedis();
-  
+
   // Clear all mocks and timers
   jest.clearAllMocks();
   jest.clearAllTimers();
@@ -46,7 +47,7 @@ afterAll(async () => {
 beforeEach(() => {
   // Reset all mocks before each test
   jest.clearAllMocks();
-  
+
   // Mock console methods to reduce test noise
   jest.spyOn(console, 'log').mockImplementation(() => {});
   jest.spyOn(console, 'warn').mockImplementation(() => {});
@@ -56,7 +57,7 @@ beforeEach(() => {
 afterEach(async () => {
   // Cleanup test data after each test
   await cleanupTestData();
-  
+
   // Restore console methods
   jest.restoreAllMocks();
 });
@@ -355,7 +356,7 @@ expect.extend({
 const originalIt = global.it;
 global.it = Object.assign(
   (name: string, fn?: any, timeout?: number) => {
-    return originalIt(name, async (...args) => {
+    return originalIt(name, async (...args: any[]) => {
       const startTime = Date.now();
       try {
         if (fn) {

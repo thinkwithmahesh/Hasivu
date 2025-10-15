@@ -1,98 +1,53 @@
 import { Notification } from '@prisma/client';
-export type NotificationChannel = 'push' | 'email' | 'sms' | 'whatsapp' | 'in_app' | 'socket';
-export type NotificationPriority = 'low' | 'normal' | 'high' | 'urgent';
-export type NotificationStatus = 'pending' | 'sent' | 'delivered' | 'read' | 'failed' | 'expired';
-export interface NotificationChannelStatus {
-    status: NotificationStatus;
-    sentAt?: Date;
-    deliveredAt?: Date;
-    readAt?: Date;
-    error?: string;
+export interface NotificationFilters {
+    userId?: string;
+    type?: string;
+    status?: string;
+    isRead?: boolean;
 }
-export interface NotificationDeliveryStatus {
-    push: NotificationChannelStatus;
-    email: NotificationChannelStatus;
-    sms: NotificationChannelStatus;
-    whatsapp: NotificationChannelStatus;
-    in_app: NotificationChannelStatus;
-    socket: NotificationChannelStatus;
-}
-export interface NotificationTemplate {
-    id: string;
-    name: string;
-    subject?: string;
-    body: string;
-    channel: NotificationChannel;
-    variables?: Record<string, any>;
-    isActive?: boolean;
-    createdAt?: Date;
-    updatedAt?: Date;
-}
-export interface NotificationTemplateData {
-    id: string;
-    name: string;
+export interface CreateNotificationData {
+    userId: string;
     type: string;
-    channels: NotificationChannel[];
-    content: Record<NotificationChannel, {
-        subject?: string;
-        body: string;
-        buttonText?: string;
-        buttonUrl?: string;
-    }>;
-    variables: string[];
-    isActive: boolean;
-    conditions?: Record<string, any>;
-    createdAt: Date;
-    updatedAt: Date;
+    title: string;
+    message: string;
+    data?: any;
+    scheduledFor?: Date;
 }
+export declare const NotificationStatus: {
+    readonly PENDING: "pending";
+    readonly SENT: "sent";
+    readonly DELIVERED: "delivered";
+    readonly READ: "read";
+    readonly FAILED: "failed";
+    readonly EXPIRED: "expired";
+};
+export type NotificationStatus = (typeof NotificationStatus)[keyof typeof NotificationStatus];
+export declare const NotificationPriority: {
+    readonly LOW: "low";
+    readonly NORMAL: "normal";
+    readonly HIGH: "high";
+    readonly URGENT: "urgent";
+};
+export type NotificationPriority = (typeof NotificationPriority)[keyof typeof NotificationPriority];
+export type NotificationChannel = 'push' | 'email' | 'sms' | 'whatsapp' | 'in_app' | 'socket';
 export interface NotificationRequest {
     templateId: string;
     recipientId: string;
-    recipientType: 'user' | 'parent' | 'student' | 'admin';
+    recipientType: 'parent' | 'student' | 'staff';
     channels?: NotificationChannel[];
     variables?: Record<string, any>;
     priority?: NotificationPriority;
-    scheduledAt?: Date;
     expiresAt?: Date;
-    metadata?: Record<string, any>;
-}
-export interface NotificationData extends Notification {
-    templateData?: NotificationTemplateData;
-    deliveryStatus: Record<NotificationChannel, {
-        status: NotificationStatus;
-        sentAt?: Date;
-        deliveredAt?: Date;
-        readAt?: Date;
-        error?: string;
-    }>;
-}
-export interface NotificationPreferences {
-    channels: Record<NotificationChannel, boolean>;
-    quietHours: {
-        enabled: boolean;
-        startTime: string;
-        endTime: string;
-        timezone: string;
-    };
-    frequency: {
-        email: 'immediate' | 'daily' | 'weekly';
-        push: 'immediate' | 'batched';
-        sms: 'immediate' | 'urgent_only';
-        whatsapp: 'immediate' | 'daily';
-    };
-    topics: Record<string, boolean>;
 }
 export interface BulkNotificationRequest {
     templateId: string;
     recipients: Array<{
         recipientId: string;
-        recipientType: 'user' | 'parent' | 'student' | 'admin';
-        variables?: Record<string, any>;
+        recipientType: 'parent' | 'student' | 'staff';
+        variables: Record<string, any>;
     }>;
     channels?: NotificationChannel[];
     priority?: NotificationPriority;
-    scheduledAt?: Date;
-    metadata?: Record<string, any>;
 }
 export interface OrderConfirmationData {
     orderId: string;
@@ -108,13 +63,32 @@ export interface OrderStatusUpdateData {
     newStatus: string;
     message?: string;
 }
-export interface ServiceResponse<T> {
-    success: boolean;
-    data?: T;
-    error?: {
-        message: string;
-        code: string;
-        details?: any;
+export interface NotificationPreferences {
+    channels: {
+        push: boolean;
+        email: boolean;
+        sms: boolean;
+        whatsapp: boolean;
+        in_app: boolean;
+        socket: boolean;
+    };
+    quietHours: {
+        enabled: boolean;
+        startTime: string;
+        endTime: string;
+        timezone: string;
+    };
+    frequency: {
+        email: 'immediate' | 'daily' | 'weekly';
+        push: 'immediate' | 'batched';
+        sms: 'immediate' | 'urgent_only';
+        whatsapp: 'immediate' | 'batched';
+    };
+    topics: {
+        orderUpdates: boolean;
+        paymentUpdates: boolean;
+        systemAnnouncements: boolean;
+        promotions: boolean;
     };
 }
 export interface NotificationAnalytics {
@@ -129,67 +103,118 @@ export interface NotificationAnalytics {
         read: number;
         failed: number;
     }>;
-    templateStats: Array<{
-        templateId: string;
-        templateName: string;
+    templateStats: Record<string, {
         sent: number;
-        deliveryRate: number;
-        readRate: number;
+        delivered: number;
+        read: number;
+    }>;
+    timeSeries: Array<{
+        date: string;
+        sent: number;
+        delivered: number;
+        read: number;
     }>;
 }
 export declare class NotificationService {
-    private static readonly CACHE_TTL;
-    private static readonly RETRY_ATTEMPTS;
-    private static readonly BATCH_SIZE;
-    private static readonly QUIET_HOURS_BUFFER;
-    static sendNotification(request: NotificationRequest): Promise<ServiceResponse<NotificationData>>;
-    static sendBulkNotifications(request: BulkNotificationRequest): Promise<ServiceResponse<{
-        successful: number;
-        failed: number;
-        details: {
-            successful: any[];
-            failed: any[];
+    private static instance;
+    private prisma;
+    private constructor();
+    static getInstance(): NotificationService;
+    findById(id: string): Promise<Notification | null>;
+    findByUser(userId: string): Promise<Notification[]>;
+    findUnread(userId: string): Promise<Notification[]>;
+    findAll(filters?: NotificationFilters): Promise<Notification[]>;
+    create(data: CreateNotificationData): Promise<Notification>;
+    markAsRead(id: string): Promise<Notification>;
+    markAllAsRead(userId: string): Promise<number>;
+    delete(id: string): Promise<Notification>;
+    deleteOld(daysOld?: number): Promise<number>;
+    sendPushNotification(userId: string, notification: CreateNotificationData): Promise<void>;
+    static sendOrderStatusUpdate(data: {
+        orderId: string;
+        studentId: string;
+        parentId: string;
+        newStatus: string;
+        message?: string;
+    }): Promise<{
+        success: boolean;
+        data?: any;
+        error?: {
+            message: string;
+            code: string;
         };
-    }>>;
-    static sendOrderConfirmation(data: OrderConfirmationData): Promise<ServiceResponse<NotificationData>>;
-    static sendOrderStatusUpdate(data: OrderStatusUpdateData): Promise<ServiceResponse<NotificationData>>;
-    static markAsRead(notificationId: string, userId: string): Promise<ServiceResponse<Notification>>;
+    }>;
+    static sendNotification(request: NotificationRequest): Promise<{
+        success: boolean;
+        data?: any;
+        error?: {
+            message: string;
+            code: string;
+        };
+    }>;
+    static sendBulkNotifications(request: BulkNotificationRequest): Promise<{
+        success: boolean;
+        data?: {
+            successful: number;
+            failed: number;
+            details: {
+                successful: any[];
+                failed: any[];
+            };
+        };
+        error?: {
+            message: string;
+            code: string;
+        };
+    }>;
+    static sendOrderConfirmation(data: OrderConfirmationData): Promise<void>;
+    static markAsRead(notificationId: string, userId: string): Promise<{
+        success: boolean;
+        data?: any;
+        error?: {
+            message: string;
+            code: string;
+        };
+    }>;
     static getUserNotifications(userId: string, options?: {
         page?: number;
         limit?: number;
         status?: NotificationStatus;
-        priority?: NotificationPriority;
         unreadOnly?: boolean;
-    }): Promise<ServiceResponse<{
-        notifications: Notification[];
-        pagination: any;
-    }>>;
-    static updateNotificationPreferences(userId: string, preferences: Partial<NotificationPreferences>): Promise<ServiceResponse<NotificationPreferences>>;
-    static getNotificationAnalytics(filters: {
-        startDate: Date;
-        endDate: Date;
+        priority?: NotificationPriority;
+    }): Promise<{
+        success: boolean;
+        data?: {
+            notifications: any[];
+            pagination: any;
+        };
+        error?: {
+            message: string;
+            code: string;
+        };
+    }>;
+    static updateNotificationPreferences(userId: string, preferences: Partial<NotificationPreferences>): Promise<{
+        success: boolean;
+        data?: NotificationPreferences;
+        error?: {
+            message: string;
+            code: string;
+        };
+    }>;
+    static getNotificationAnalytics(_filters?: {
+        startDate?: Date;
+        endDate?: Date;
         templateId?: string;
         userId?: string;
-    }): Promise<ServiceResponse<NotificationAnalytics>>;
-    private static getTemplate;
-    private static getRecipient;
-    private static getUserPreferences;
-    private static determineChannels;
-    private static isQuietHours;
-    private static calculatePostQuietHoursTime;
-    private static scheduleNotification;
-    private static processTemplate;
-    private static replaceVariables;
-    private static initializeDeliveryStatus;
-    private static sendThroughChannels;
-    private static sendThroughChannel;
-    private static updateDeliveryStatus;
-    private static updateUnreadCount;
-    private static getDefaultPreferences;
-    private static getMockTemplate;
-    private static processNotificationAnalytics;
-    clearQueue(): Promise<void>;
-    disconnect(): Promise<void>;
+    }): Promise<{
+        success: boolean;
+        data?: NotificationAnalytics;
+        error?: {
+            message: string;
+            code: string;
+        };
+    }>;
 }
 export declare const notificationService: NotificationService;
+export default NotificationService;
 //# sourceMappingURL=notification.service.d.ts.map

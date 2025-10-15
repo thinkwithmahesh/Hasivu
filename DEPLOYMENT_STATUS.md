@@ -16,10 +16,10 @@
 
 2. **Lambda Functions**
    - ✅ Authentication functions (7 functions)
-   - ✅ Health check functions (4 functions) 
+   - ✅ Health check functions (4 functions)
    - ✅ User management functions (5 functions)
    - ✅ RFID functions (3 functions)
-   - ✅ Payment functions (3 functions) 
+   - ✅ Payment functions (3 functions)
    - ✅ Notification functions (3 functions)
 
 3. **Dependencies & Plugins**
@@ -36,9 +36,11 @@
 ### 🚫 Deployment Blockers
 
 1. **Serverless Framework Authentication Required**
+
    ```bash
    Error: You must sign in or use a license key with Serverless Framework V.4
    ```
+
    **Solution**: Run `serverless login` or set up license key
 
 2. **Environment Variables Setup**
@@ -48,6 +50,7 @@
 ### 🔧 Deployment Instructions
 
 1. **Authenticate with Serverless Framework**
+
    ```bash
    serverless login
    # OR
@@ -55,19 +58,21 @@
    ```
 
 2. **Set up Environment Variables**
+
    ```bash
    cp .env.example .env
    # Edit .env with actual values
    ```
 
 3. **Deploy to Development**
+
    ```bash
    npm run serverless:deploy:dev
    ```
 
 4. **Get Cognito Values from CloudFormation Output**
    After first deployment, get these values from AWS Console:
-   - COGNITO_USER_POOL_ID 
+   - COGNITO_USER_POOL_ID
    - COGNITO_CLIENT_ID
 
 5. **Update Environment Variables**

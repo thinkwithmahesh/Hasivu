@@ -1,13 +1,24 @@
-"use client"
+'use client';
 
-import * as React from "react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { Eye, EyeOff, Loader2, Mail, Lock, LogIn, Users, GraduationCap, Shield, ChefHat, Truck } from "lucide-react"
-import Link from "next/link"
-import { cn } from "@/lib/utils"
+import * as React from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import {
+  Eye,
+  EyeOff,
+  Loader2,
+  Mail,
+  Lock,
+  LogIn,
+  Users,
+  GraduationCap,
+  Shield,
+  ChefHat,
+  Truck,
+} from 'lucide-react';
+import Link from 'next/link';
 
-import { Button } from "@/components/ui/button"
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -15,9 +26,9 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Form,
   FormControl,
@@ -25,11 +36,11 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
-import { Separator } from "@/components/ui/separator"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+} from '@/components/ui/form';
+import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-import { loginSchema, type LoginFormData } from "./schemas"
+import { loginSchema, type LoginFormData } from './schemas';
 
 // Role configuration
 const USER_ROLES = {
@@ -42,7 +53,7 @@ const USER_ROLES = {
   parent: {
     label: 'Parent',
     icon: Users,
-    description: 'Manage your child\'s meals and payments',
+    description: "Manage your child's meals and payments",
     color: 'bg-green-500',
   },
   admin: {
@@ -63,20 +74,20 @@ const USER_ROLES = {
     description: 'Supply management and logistics',
     color: 'bg-indigo-500',
   },
-} as const
+} as const;
 
-type UserRole = keyof typeof USER_ROLES
+type UserRole = keyof typeof USER_ROLES;
 
 interface LoginFormProps {
-  onSubmit: (data: LoginFormData & { role: UserRole }) => Promise<void>
-  onSocialLogin?: (provider: "google" | "facebook") => Promise<void>
-  isLoading?: boolean
-  error?: string | null
-  showRememberMe?: boolean
-  showSocialLogin?: boolean
-  showRoleSelection?: boolean
-  defaultRole?: UserRole
-  className?: string
+  onSubmit: (data: LoginFormData & { role: UserRole }) => Promise<void>;
+  onSocialLogin?: (provider: 'google' | 'facebook') => Promise<void>;
+  isLoading?: boolean;
+  error?: string | null;
+  showRememberMe?: boolean;
+  showSocialLogin?: boolean;
+  showRoleSelection?: boolean;
+  defaultRole?: UserRole;
+  className?: string;
 }
 
 export function LoginForm({
@@ -88,38 +99,37 @@ export function LoginForm({
   showSocialLogin = true,
   showRoleSelection = true,
   defaultRole = 'student',
-  className
+  className,
 }: LoginFormProps) {
-  const [showPassword, setShowPassword] = React.useState(false)
-  const [selectedRole, setSelectedRole] = React.useState<UserRole>(defaultRole)
+  const [showPassword, setShowPassword] = React.useState(false);
+  const [selectedRole, setSelectedRole] = React.useState<UserRole>(defaultRole);
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: "",
-      password: "",
+      email: '',
+      password: '',
       rememberMe: false,
     },
-  })
+  });
 
   const handleSubmit = async (data: LoginFormData) => {
     try {
-      await onSubmit({ ...data, role: selectedRole })
+      await onSubmit({ ...data, role: selectedRole });
     } catch (error) {
       // Error handling is managed by parent component
-      console.error("Login error:", error)
     }
-  }
+  };
 
-  const handleSocialLogin = async (provider: "google" | "facebook") => {
+  const handleSocialLogin = async (provider: 'google' | 'facebook') => {
     if (onSocialLogin) {
       try {
-        await onSocialLogin(provider)
+        await onSocialLogin(provider);
       } catch (error) {
-        console.error(`${provider} login error:`, error)
+        // Error handled silently
       }
     }
-  }
+  };
 
   return (
     <Card className={className} aria-label="Login form">
@@ -135,10 +145,10 @@ export function LoginForm({
           )}
         </CardDescription>
       </CardHeader>
-      
+
       <CardContent className="space-y-4">
         {error && (
-          <div 
+          <div
             data-testid="general-error"
             className="p-3 rounded-md bg-error-50 border border-error-200 text-error-700 text-sm"
             role="alert"
@@ -151,12 +161,16 @@ export function LoginForm({
         {showRoleSelection && (
           <div className="mb-6">
             <Label className="text-sm font-medium text-gray-700 mb-3 block">Select Your Role</Label>
-            <Tabs value={selectedRole} onValueChange={(value) => setSelectedRole(value as UserRole)} className="w-full">
+            <Tabs
+              value={selectedRole}
+              onValueChange={value => setSelectedRole(value as UserRole)}
+              className="w-full"
+            >
               <TabsList className="grid w-full grid-cols-5 mb-4">
                 {Object.entries(USER_ROLES).map(([role, config]) => {
-                  const Icon = config.icon
+                  const Icon = config.icon;
                   return (
-                    <TabsTrigger 
+                    <TabsTrigger
                       key={role}
                       value={role}
                       data-testid={`role-tab-${role}`}
@@ -166,10 +180,10 @@ export function LoginForm({
                       <Icon className="h-4 w-4" />
                       {config.label}
                     </TabsTrigger>
-                  )
+                  );
                 })}
               </TabsList>
-              
+
               {/* Role descriptions */}
               {Object.entries(USER_ROLES).map(([role, config]) => (
                 <TabsContent key={role} value={role} className="mt-2">
@@ -221,7 +235,7 @@ export function LoginForm({
                       <Input
                         {...field}
                         data-testid="password-input"
-                        type={showPassword ? "text" : "password"}
+                        type={showPassword ? 'text' : 'password'}
                         placeholder="Enter your password"
                         className="pl-10 pr-10"
                         autoComplete="current-password"
@@ -232,7 +246,7 @@ export function LoginForm({
                         data-testid="password-toggle"
                         onClick={() => setShowPassword(!showPassword)}
                         className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none focus:text-gray-600"
-                        aria-label={showPassword ? "Hide password" : "Show password"}
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
                       >
                         {showPassword ? (
                           <EyeOff className="h-4 w-4" />
@@ -265,14 +279,12 @@ export function LoginForm({
                         />
                       </FormControl>
                       <div className="space-y-1 leading-none">
-                        <Label className="text-sm text-gray-600">
-                          Remember me
-                        </Label>
+                        <Label className="text-sm text-gray-600">Remember me</Label>
                       </div>
                     </FormItem>
                   )}
                 />
-                
+
                 <Link
                   href="/auth/forgot-password"
                   data-testid="forgot-password-link"
@@ -320,7 +332,7 @@ export function LoginForm({
               <Button
                 variant="outline"
                 data-testid="google-login-button"
-                onClick={() => handleSocialLogin("google")}
+                onClick={() => handleSocialLogin('google')}
                 disabled={isLoading}
                 className="border-gray-300 text-gray-700 hover:bg-gray-50"
               >
@@ -348,7 +360,7 @@ export function LoginForm({
               <Button
                 variant="outline"
                 data-testid="microsoft-login-button"
-                onClick={() => handleSocialLogin("facebook")}
+                onClick={() => handleSocialLogin('facebook')}
                 disabled={isLoading}
                 className="border-gray-300 text-gray-700 hover:bg-gray-50"
               >
@@ -364,7 +376,7 @@ export function LoginForm({
 
       <CardFooter className="flex flex-col space-y-2 text-center text-sm text-gray-600">
         <p>
-          Don't have an account?{" "}
+          Don't have an account?{' '}
           <Link
             href="/auth/register"
             data-testid="signup-link"
@@ -375,5 +387,5 @@ export function LoginForm({
         </p>
       </CardFooter>
     </Card>
-  )
+  );
 }

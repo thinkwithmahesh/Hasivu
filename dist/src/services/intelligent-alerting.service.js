@@ -211,7 +211,7 @@ class IntelligentAlertingService {
             catch (error) {
                 this.logger.warn(`Notification failed for channel: ${channel.type}`, {
                     alertId: alert.id,
-                    error: error.message
+                    error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
                 });
             }
         }
@@ -242,7 +242,7 @@ class IntelligentAlertingService {
         catch (error) {
             this.logger.error(`Failed to send ${channel.type} notification`, {
                 alertId: alert.id,
-                error: error.message
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
             });
             throw error;
         }

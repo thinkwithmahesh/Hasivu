@@ -38,10 +38,14 @@ export interface DailyMenuFilters {
     dayType?: DayType;
     isActive?: boolean;
 }
-import type { DailyMenuWithItems } from '../repositories/dailyMenu.repository';
+export interface DailyMenuWithItems extends DailyMenu {
+    menuItems: any[];
+}
 export declare class DailyMenuService {
     private static readonly CACHE_TTL;
     private static readonly MAX_ITEMS_PER_MENU;
+    private static instance;
+    static getInstance(): DailyMenuService;
     static createDailyMenu(input: CreateDailyMenuInput): Promise<DailyMenuWithItems>;
     static getDailyMenuById(id: string): Promise<DailyMenuWithItems | null>;
     static getDailyMenusByDateRange(schoolId: string, startDate: Date, endDate: Date, category?: MenuCategory): Promise<DailyMenuWithItems[]>;
@@ -51,8 +55,8 @@ export declare class DailyMenuService {
     static cloneDailyMenu(sourceId: string, targetDate: Date, schoolId?: string): Promise<DailyMenuWithItems>;
     static getWeeklyMenuPlan(schoolId: string, startDate: Date): Promise<Record<string, DailyMenuWithItems[]>>;
     private static validateCreateInput;
-    private static getDayTypeFromDate;
     private static clearRelatedCaches;
 }
 export declare const dailyMenuService: DailyMenuService;
+export default DailyMenuService;
 //# sourceMappingURL=dailyMenu.service.d.ts.map

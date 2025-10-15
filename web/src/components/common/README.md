@@ -5,6 +5,7 @@ This directory contains the core common components for the HASIVU platform front
 ## Components
 
 ### LoadingScreen
+
 Beautiful loading animation with HASIVU branding and customizable features.
 
 ```typescript
@@ -25,6 +26,7 @@ import { LoadingScreen } from '@/components/common';
 ```
 
 **Features:**
+
 - Animated HASIVU logo with pulsing effect
 - Progress tracking with visual indicators
 - School-friendly messaging and colors
@@ -33,6 +35,7 @@ import { LoadingScreen } from '@/components/common';
 - Multiple variants (fullscreen, inline)
 
 ### ErrorBoundary
+
 React error boundary with comprehensive error handling and user-friendly fallback UI.
 
 ```typescript
@@ -57,6 +60,7 @@ import { ErrorBoundary } from '@/components/common';
 ```
 
 **Features:**
+
 - Automatic error catching and reporting
 - Retry functionality with attempt limits
 - User-friendly error messages
@@ -66,6 +70,7 @@ import { ErrorBoundary } from '@/components/common';
 - Email error reporting integration
 
 ### ProgressBar
+
 NProgress-style top page progress bar for navigation transitions.
 
 ```typescript
@@ -79,7 +84,7 @@ import { ProgressBarProvider, useProgressBar } from '@/components/common';
 // Use in components
 function MyComponent() {
   const progressBar = useProgressBar();
-  
+
   const handleAsyncOperation = async () => {
     progressBar.start();
     try {
@@ -93,6 +98,7 @@ function MyComponent() {
 ```
 
 **Features:**
+
 - Smooth animations and transitions
 - Automatic router integration
 - Customizable colors and effects
@@ -103,6 +109,7 @@ function MyComponent() {
 ## Usage Examples
 
 ### Basic App Setup
+
 The components are already integrated in `_app.tsx`:
 
 ```typescript
@@ -122,40 +129,42 @@ export default function MyApp({ Component, pageProps, emotionCache }) {
 ```
 
 ### Manual Progress Control
+
 ```typescript
 import { useProgressBar } from '@/components/common';
 
 function DataLoadingComponent() {
   const progressBar = useProgressBar();
-  
+
   useEffect(() => {
     const loadData = async () => {
       progressBar.start();
-      
+
       try {
         // Simulate loading steps
         progressBar.set(25);
         await fetchUserData();
-        
+
         progressBar.set(50);
         await fetchMenuData();
-        
+
         progressBar.set(75);
         await fetchOrderHistory();
-        
+
         progressBar.finish();
       } catch (error) {
         progressBar.finish();
         throw error;
       }
     };
-    
+
     loadData();
   }, []);
 }
 ```
 
 ### Custom Error Handling
+
 ```typescript
 import { ErrorBoundary } from '@/components/common';
 
@@ -207,6 +216,6 @@ All components integrate with the HASIVU theme system:
 
 - **ARIA labels** and roles for screen readers
 - **Keyboard navigation** support
-- **High contrast** mode compatibility  
+- **High contrast** mode compatibility
 - **Reduced motion** preference support
 - **Focus management** for interactive elements

@@ -1,310 +1,151 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.monitoringDashboardService = exports.MonitoringDashboardService = void 0;
-const database_service_1 = require("../services/database.service");
-const redis_service_1 = require("../services/redis.service");
-const logger_1 = require("@/utils/logger");
-const environment_1 = require("@/config/environment");
+const performance_service_1 = require("./performance.service");
+const database_service_1 = require("./database.service");
+const redis_service_1 = require("./redis.service");
+const os_1 = __importDefault(require("os"));
 class MonitoringDashboardService {
-    CACHE_TTL = 60;
-    async getDashboardData() {
+    static instance;
+    healthCheckInterval = null;
+    constructor() { }
+    static getInstance() {
+        if (!MonitoringDashboardService.instance) {
+            MonitoringDashboardService.instance = new MonitoringDashboardService();
+        }
+        return MonitoringDashboardService.instance;
+    }
+    async checkAllServices() {
+        const services = [];
         try {
-            const startTime = Date.now();
-            logger_1.logger.info('Generating monitoring dashboard data');
-            const cacheKey = 'monitoring:dashboard';
-            const cached = await redis_service_1.RedisService.get(cacheKey);
-            if (cached) {
-                logger_1.logger.info('Returning cached monitoring dashboard data');
-                return JSON.parse(cached);
-            }
-            const [health, system, performance, business, alerts, recommendations] = await Promise.all([
-                this.getServiceHealth(),
-                this.getSystemMetrics(),
-                this.getPerformanceMetrics(),
-                this.getBusinessMetrics(),
-                this.getActiveAlerts(),
-                this.getRecommendations()
-            ]);
-            const dashboard = {
-                health,
-                system,
-                performance,
-                business,
-                alerts,
-                recommendations
-            };
-            await redis_service_1.RedisService.setex(cacheKey, this.CACHE_TTL, JSON.stringify(dashboard));
-            const duration = Date.now() - startTime;
-            logger_1.logger.info('Monitoring dashboard data generated successfully', {
-                duration
+            const dbHealth = await database_service_1.databaseService.healthCheck();
+            services.push({
+                service: 'database',
+                status: dbHealth.healthy ? 'healthy' : 'unhealthy',
+                latency: dbHealth.latency,
+                lastCheck: new Date(),
             });
-            return dashboard;
         }
         catch (error) {
-            logger_1.logger.error('Error generating monitoring dashboard data', error);
-            throw error;
-        }
-    }
-    async getServiceHealth() {
-        try {
-            await database_service_1.DatabaseService.client.$queryRaw `SELECT 1`;
-            const databaseHealth = 'healthy';
-            await redis_service_1.RedisService.ping();
-            const redisHealth = 'healthy';
-            const externalHealth = 'healthy';
-            const services = { database: databaseHealth, redis: redisHealth, external: externalHealth };
-            const overall = Object.values(services).every(status => status === 'healthy') ? 'healthy' : 'degraded';
-            return {
-                overall: overall,
-                services: services,
-                uptime: process.uptime(),
-                lastHealthCheck: new Date()
-            };
-        }
-        catch (error) {
-            logger_1.logger.error('Error checking service health', error);
-            return {
-                overall: 'unhealthy',
-                services: {
-                    database: 'unhealthy',
-                    redis: 'unhealthy',
-                    external: 'unknown'
-                },
-                uptime: process.uptime(),
-                lastHealthCheck: new Date()
-            };
-        }
-    }
-    async getSystemMetrics() {
-        try {
-            const memoryUsage = process.memoryUsage();
-            return {
-                cpu: {
-                    usage: 0,
-                    load: [],
-                    cores: 1
-                },
-                memory: {
-                    used: memoryUsage.heapUsed,
-                    total: memoryUsage.heapTotal,
-                    percentage: (memoryUsage.heapUsed / memoryUsage.heapTotal) * 100
-                },
-                process: {
-                    pid: process.pid,
-                    uptime: process.uptime(),
-                    memoryUsage
-                }
-            };
-        }
-        catch (error) {
-            logger_1.logger.error('Error getting system metrics', error);
-            throw error;
-        }
-    }
-    async getPerformanceMetrics() {
-        try {
-            const redisHealth = await redis_service_1.RedisService.getHealth();
-            return {
-                database: {
-                    connectionPool: {
-                        active: 1,
-                        idle: 0,
-                        total: 1
-                    },
-                    queryPerformance: {
-                        averageTime: 10,
-                        slowQueries: 0,
-                        totalQueries: 100
-                    }
-                },
-                redis: {
-                    connectionStatus: redisHealth.connected ? 'connected' : 'disconnected',
-                    memoryUsage: {
-                        used: 1024,
-                        peak: 2048,
-                        percentage: 50
-                    },
-                    operations: {
-                        hits: 80,
-                        misses: 20,
-                        hitRate: 80
-                    }
-                },
-                externalServices: {
-                    paymentGateway: 'online',
-                    notificationService: 'online',
-                    rfidSystem: 'online'
-                }
-            };
-        }
-        catch (error) {
-            logger_1.logger.error('Error getting performance metrics', error);
-            throw error;
-        }
-    }
-    async getBusinessMetrics() {
-        try {
-            return {
-                users: {
-                    active: 150,
-                    total: 500,
-                    newToday: 5
-                },
-                schools: {
-                    active: 25,
-                    total: 30,
-                    newThisMonth: 2
-                },
-                payments: {
-                    todayRevenue: 15000,
-                    todayCount: 85,
-                    successRate: 98.2
-                },
-                rfid: {
-                    verificationsToday: 320,
-                    successRate: 99.1,
-                    activeReaders: 12
-                },
-                notifications: {
-                    sentToday: 450,
-                    deliveryRate: 97.8,
-                    channels: {
-                        email: 180,
-                        sms: 120,
-                        push: 150
-                    }
-                }
-            };
-        }
-        catch (error) {
-            logger_1.logger.error('Error getting business metrics', error);
-            throw error;
-        }
-    }
-    async getActiveAlerts() {
-        try {
-            return [];
-        }
-        catch (error) {
-            logger_1.logger.error('Error getting active alerts', error);
-            return [];
-        }
-    }
-    async getRecommendations() {
-        try {
-            return [];
-        }
-        catch (error) {
-            logger_1.logger.error('Error getting recommendations', error);
-            return [];
-        }
-    }
-    async healthCheck() {
-        try {
-            const testKey = `health_check:${Date.now()}`;
-            await database_service_1.DatabaseService.client.$queryRaw `SELECT 1`;
-            await redis_service_1.RedisService.set(testKey, 'test', 10);
-            await redis_service_1.RedisService.del(testKey);
-            return {
-                status: 'healthy',
-                timestamp: new Date(),
-                services: {
-                    database: 'healthy',
-                    redis: 'healthy',
-                    webhookUrl: `${environment_1.config.server.baseUrl}/api/v1/webhooks/whatsapp`
-                }
-            };
-        }
-        catch (error) {
-            logger_1.logger.error('Health check failed', error);
-            return {
+            services.push({
+                service: 'database',
                 status: 'unhealthy',
-                timestamp: new Date(),
-                services: {
-                    database: 'unhealthy',
-                    redis: 'unhealthy'
-                }
-            };
+                lastCheck: new Date(),
+                message: error instanceof Error ? error.message : 'Unknown error',
+            });
         }
-    }
-    async getDatabaseHealth() {
-        const startTime = Date.now();
         try {
-            await database_service_1.DatabaseService.client.$queryRaw `SELECT 1`;
-            return {
-                status: 'healthy',
-                timestamp: new Date(),
-                responseTime: Date.now() - startTime
-            };
+            const redisHealth = await redis_service_1.redisService.healthCheck();
+            services.push({
+                service: 'redis',
+                status: redisHealth.healthy ? 'healthy' : 'unhealthy',
+                latency: redisHealth.latency,
+                lastCheck: new Date(),
+            });
         }
         catch (error) {
-            logger_1.logger.error('Database health check failed', { error });
-            return {
+            services.push({
+                service: 'redis',
                 status: 'unhealthy',
-                timestamp: new Date(),
-                responseTime: Date.now() - startTime
-            };
+                lastCheck: new Date(),
+                message: error instanceof Error ? error.message : 'Unknown error',
+            });
+        }
+        return services;
+    }
+    getSystemMetrics() {
+        const memUsage = performance_service_1.performanceService.getMemoryUsage();
+        const totalMemory = memUsage.heapTotal;
+        const usedMemory = memUsage.heapUsed;
+        return {
+            cpu: {
+                usage: 0,
+                cores: os_1.default.cpus().length,
+            },
+            memory: {
+                used: usedMemory,
+                total: totalMemory,
+                percentage: (usedMemory / totalMemory) * 100,
+            },
+            uptime: process.uptime(),
+            timestamp: new Date(),
+        };
+    }
+    async getDashboardData() {
+        const health = await this.checkAllServices();
+        const metrics = this.getSystemMetrics();
+        const endDate = new Date();
+        const startDate = new Date(endDate.getTime() - 60 * 60 * 1000);
+        const perfReport = performance_service_1.performanceService.generateReport(startDate, endDate);
+        return {
+            health,
+            metrics,
+            performance: {
+                avgResponseTime: perfReport.summary.avgResponseTime,
+                requestCount: perfReport.summary.totalRequests,
+                errorRate: perfReport.summary.errorRate,
+            },
+        };
+    }
+    startHealthChecks(intervalMs = 30000) {
+        if (this.healthCheckInterval) {
+            return;
+        }
+        this.healthCheckInterval = setInterval(async () => {
+            try {
+                await this.checkAllServices();
+            }
+            catch (error) {
+            }
+        }, intervalMs);
+    }
+    stopHealthChecks() {
+        if (this.healthCheckInterval) {
+            clearInterval(this.healthCheckInterval);
+            this.healthCheckInterval = null;
         }
     }
-    async getCacheHealth() {
-        const startTime = Date.now();
-        try {
-            const testKey = `cache_health:${Date.now()}`;
-            await redis_service_1.RedisService.set(testKey, 'test', 5);
-            await redis_service_1.RedisService.del(testKey);
-            return {
-                status: 'healthy',
-                timestamp: new Date(),
-                responseTime: Date.now() - startTime
-            };
-        }
-        catch (error) {
-            logger_1.logger.error('Cache health check failed', { error });
-            return {
-                status: 'unhealthy',
-                timestamp: new Date(),
-                responseTime: Date.now() - startTime
-            };
-        }
+    async getServiceStatus(serviceName) {
+        const allServices = await this.checkAllServices();
+        return allServices.find(s => s.service === serviceName) || null;
     }
-    async getPaymentServiceHealth() {
-        const startTime = Date.now();
-        try {
-            return {
-                status: 'healthy',
-                timestamp: new Date(),
-                responseTime: Date.now() - startTime
-            };
+    async getAlerts() {
+        const alerts = [];
+        const health = await this.checkAllServices();
+        const metrics = this.getSystemMetrics();
+        health.forEach(service => {
+            if (service.status === 'unhealthy') {
+                alerts.push({
+                    severity: 'critical',
+                    message: `Service ${service.service} is unhealthy: ${service.message || 'Unknown error'}`,
+                });
+            }
+            else if (service.status === 'degraded') {
+                alerts.push({
+                    severity: 'warning',
+                    message: `Service ${service.service} is degraded`,
+                });
+            }
+        });
+        if (metrics.memory.percentage > 90) {
+            alerts.push({
+                severity: 'critical',
+                message: `Memory usage is critical: ${metrics.memory.percentage.toFixed(1)}%`,
+            });
         }
-        catch (error) {
-            logger_1.logger.error('Payment service health check failed', { error });
-            return {
-                status: 'unhealthy',
-                timestamp: new Date(),
-                responseTime: Date.now() - startTime
-            };
+        else if (metrics.memory.percentage > 80) {
+            alerts.push({
+                severity: 'warning',
+                message: `Memory usage is high: ${metrics.memory.percentage.toFixed(1)}%`,
+            });
         }
-    }
-    async getRfidServiceHealth() {
-        const startTime = Date.now();
-        try {
-            return {
-                status: 'healthy',
-                timestamp: new Date(),
-                responseTime: Date.now() - startTime
-            };
-        }
-        catch (error) {
-            logger_1.logger.error('RFID service health check failed', { error });
-            return {
-                status: 'unhealthy',
-                timestamp: new Date(),
-                responseTime: Date.now() - startTime
-            };
-        }
+        return alerts;
     }
 }
 exports.MonitoringDashboardService = MonitoringDashboardService;
-exports.monitoringDashboardService = new MonitoringDashboardService();
-exports.default = exports.monitoringDashboardService;
+exports.monitoringDashboardService = MonitoringDashboardService.getInstance();
+exports.default = MonitoringDashboardService;
 //# sourceMappingURL=monitoring-dashboard.service.js.map

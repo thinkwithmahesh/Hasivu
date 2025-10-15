@@ -63,60 +63,51 @@ export class OrderStatusTrackerPage extends BasePage {
   constructor(page: Page, orderId?: string) {
     super(page);
     
-    const trackerSelector = orderId 
-      ? `[data-testid="order-tracker-${orderId}"]`
-      : '[data-testid="order-status-tracker"]';
-      
-    this.statusTracker = this.page.locator(trackerSelector);
+    const _trackerSelector =  orderId 
+      ? `[data-testid
+    this._statusTracker =  this.page.locator(trackerSelector);
     
     // Order information
-    this.orderNumber = this.statusTracker.locator('[data-testid="order-number"]');
-    this.orderTotal = this.statusTracker.locator('[data-testid="order-total"]');
-    this.orderDate = this.statusTracker.locator('[data-testid="order-date"]');
-    this.customerInfo = this.statusTracker.locator('[data-testid="customer-info"]');
-    
+    this._orderNumber =  this.statusTracker.locator('[data-testid
+    this._orderTotal =  this.statusTracker.locator('[data-testid
+    this._orderDate =  this.statusTracker.locator('[data-testid
+    this._customerInfo =  this.statusTracker.locator('[data-testid
     // Status progression
-    this.statusSteps = this.statusTracker.locator('[data-testid="status-steps"]');
-    this.currentStatus = this.statusTracker.locator('[data-testid="current-status"]');
-    this.statusProgress = this.statusTracker.locator('[data-testid="status-progress"]');
-    this.progressBar = this.statusTracker.locator('[data-testid="progress-bar"]');
-    
+    this._statusSteps =  this.statusTracker.locator('[data-testid
+    this._currentStatus =  this.statusTracker.locator('[data-testid
+    this._statusProgress =  this.statusTracker.locator('[data-testid
+    this._progressBar =  this.statusTracker.locator('[data-testid
     // Individual stages
-    this.orderPlacedStage = this.statusTracker.locator('[data-testid="stage-order_placed"]');
-    this.paymentConfirmedStage = this.statusTracker.locator('[data-testid="stage-payment_confirmed"]');
-    this.kitchenAcceptedStage = this.statusTracker.locator('[data-testid="stage-kitchen_accepted"]');
-    this.preparingStage = this.statusTracker.locator('[data-testid="stage-preparing"]');
-    this.readyForPickupStage = this.statusTracker.locator('[data-testid="stage-ready_for_pickup"]');
-    this.deliveredStage = this.statusTracker.locator('[data-testid="stage-delivered"]');
-    
+    this._orderPlacedStage =  this.statusTracker.locator('[data-testid
+    this._paymentConfirmedStage =  this.statusTracker.locator('[data-testid
+    this._kitchenAcceptedStage =  this.statusTracker.locator('[data-testid
+    this._preparingStage =  this.statusTracker.locator('[data-testid
+    this._readyForPickupStage =  this.statusTracker.locator('[data-testid
+    this._deliveredStage =  this.statusTracker.locator('[data-testid
     // Time information
-    this.estimatedDelivery = this.statusTracker.locator('[data-testid="estimated-delivery"]');
-    this.actualDelivery = this.statusTracker.locator('[data-testid="actual-delivery"]');
-    this.preparationTime = this.statusTracker.locator('[data-testid="preparation-time"]');
-    this.timeRemaining = this.statusTracker.locator('[data-testid="time-remaining"]');
-    
+    this._estimatedDelivery =  this.statusTracker.locator('[data-testid
+    this._actualDelivery =  this.statusTracker.locator('[data-testid
+    this._preparationTime =  this.statusTracker.locator('[data-testid
+    this._timeRemaining =  this.statusTracker.locator('[data-testid
     // Status indicators
-    this.completedSteps = this.statusTracker.locator('[data-testid="completed-step"]');
-    this.activeStep = this.statusTracker.locator('[data-testid="active-step"]');
-    this.pendingSteps = this.statusTracker.locator('[data-testid="pending-step"]');
-    this.statusIcon = this.statusTracker.locator('[data-testid="status-icon"]');
-    
+    this._completedSteps =  this.statusTracker.locator('[data-testid
+    this._activeStep =  this.statusTracker.locator('[data-testid
+    this._pendingSteps =  this.statusTracker.locator('[data-testid
+    this._statusIcon =  this.statusTracker.locator('[data-testid
     // Real-time updates
-    this.lastUpdated = this.statusTracker.locator('[data-testid="last-updated"]');
-    this.autoRefreshIndicator = this.statusTracker.locator('[data-testid="auto-refresh-indicator"]');
-    this.connectionStatus = this.statusTracker.locator('[data-testid="connection-status"]');
-    
+    this._lastUpdated =  this.statusTracker.locator('[data-testid
+    this._autoRefreshIndicator =  this.statusTracker.locator('[data-testid
+    this._connectionStatus =  this.statusTracker.locator('[data-testid
     // Action buttons
-    this.trackOrderButton = this.statusTracker.locator('[data-testid="track-order-button"]');
-    this.cancelOrderButton = this.statusTracker.locator('[data-testid="cancel-order-button"]');
-    this.contactSupportButton = this.statusTracker.locator('[data-testid="contact-support-button"]');
-    this.viewReceiptButton = this.statusTracker.locator('[data-testid="view-receipt-button"]');
-    this.reorderButton = this.statusTracker.locator('[data-testid="reorder-button"]');
-    
+    this._trackOrderButton =  this.statusTracker.locator('[data-testid
+    this._cancelOrderButton =  this.statusTracker.locator('[data-testid
+    this._contactSupportButton =  this.statusTracker.locator('[data-testid
+    this._viewReceiptButton =  this.statusTracker.locator('[data-testid
+    this._reorderButton =  this.statusTracker.locator('[data-testid
     // Notifications
-    this.statusChangeNotification = this.statusTracker.locator('[data-testid="status-change-notification"]');
-    this.delayNotification = this.statusTracker.locator('[data-testid="delay-notification"]');
-    this.readyNotification = this.statusTracker.locator('[data-testid="ready-notification"]');
+    this._statusChangeNotification =  this.statusTracker.locator('[data-testid
+    this._delayNotification =  this.statusTracker.locator('[data-testid
+    this._readyNotification =  this.statusTracker.locator('[data-testid
   }
 
   /**
@@ -128,7 +119,7 @@ export class OrderStatusTrackerPage extends BasePage {
   }
   
   async getOrderTotal(): Promise<number> {
-    const totalText = await this.orderTotal.textContent() || '₹0';
+    const _totalText =  await this.orderTotal.textContent() || '₹0';
     return parseFloat(totalText.replace('₹', ''));
   }
   
@@ -149,17 +140,17 @@ export class OrderStatusTrackerPage extends BasePage {
   }
   
   async getStatusProgress(): Promise<number> {
-    const progressElement = await this.progressBar.getAttribute('aria-valuenow');
+    const _progressElement =  await this.progressBar.getAttribute('aria-valuenow');
     return progressElement ? parseInt(progressElement) : 0;
   }
   
   async getCompletedStepsCount(): Promise<number> {
-    const completedElements = await this.completedSteps.all();
+    const _completedElements =  await this.completedSteps.all();
     return completedElements.length;
   }
   
   async getPendingStepsCount(): Promise<number> {
-    const pendingElements = await this.pendingSteps.all();
+    const _pendingElements =  await this.pendingSteps.all();
     return pendingElements.length;
   }
   
@@ -180,8 +171,8 @@ export class OrderStatusTrackerPage extends BasePage {
   }
   
   async isPreparing(): Promise<boolean> {
-    const status = await this.preparingStage.getAttribute('data-status');
-    return status === 'completed' || status === 'active';
+    const _status =  await this.preparingStage.getAttribute('data-status');
+    return _status = 
   }
   
   async isReadyForPickup(): Promise<boolean> {
@@ -193,7 +184,7 @@ export class OrderStatusTrackerPage extends BasePage {
   }
   
   async getActiveStage(): Promise<string> {
-    const activeElement = await this.activeStep.first();
+    const _activeElement =  await this.activeStep.first();
     return await activeElement.getAttribute('data-stage') || '';
   }
   
@@ -234,7 +225,7 @@ export class OrderStatusTrackerPage extends BasePage {
   }
   
   async getConnectionStatus(): Promise<string> {
-    const statusClass = await this.connectionStatus.getAttribute('class') || '';
+    const _statusClass =  await this.connectionStatus.getAttribute('class') || '';
     
     if (statusClass.includes('connected')) return 'connected';
     if (statusClass.includes('disconnected')) return 'disconnected';
@@ -243,10 +234,9 @@ export class OrderStatusTrackerPage extends BasePage {
     return 'unknown';
   }
   
-  async waitForStatusUpdate(expectedStatus: string, timeoutMs: number = 30000): Promise<void> {
+  async waitForStatusUpdate(expectedStatus: string, timeoutMs: _number =  30000): Promise<void> {
     await this.page.waitForFunction(
-      ([selector, status]) => {
-        const element = document.querySelector(selector);
+      ([selector, status]) 
         return element?.textContent?.toLowerCase().includes(status.toLowerCase());
       },
       [await this.currentStatus.getAttribute('data-testid'), expectedStatus],
@@ -266,7 +256,7 @@ export class OrderStatusTrackerPage extends BasePage {
   async cancelOrder(): Promise<void> {
     await this.cancelOrderButton.click();
     // Wait for confirmation dialog
-    await this.page.waitForSelector('[data-testid="cancel-confirmation-dialog"]', { state: 'visible' });
+    await this.page.waitForSelector('[data-_testid = "cancel-confirmation-dialog"]', { state: 'visible' });
   }
   
   async contactSupport(): Promise<void> {
@@ -347,19 +337,19 @@ export class OrderStatusTrackerPage extends BasePage {
     
     switch (type) {
       case 'status':
-        notification = this.statusChangeNotification;
+        _notification =  this.statusChangeNotification;
         break;
       case 'delay':
-        notification = this.delayNotification;
+        _notification =  this.delayNotification;
         break;
       case 'ready':
-        notification = this.readyNotification;
+        _notification =  this.readyNotification;
         break;
       default:
         return;
     }
     
-    const dismissButton = notification.locator('[data-testid="dismiss-button"]');
+    const _dismissButton =  notification.locator('[data-testid
     if (await dismissButton.isVisible()) {
       await dismissButton.click();
     }
@@ -378,7 +368,7 @@ export class OrderStatusTrackerPage extends BasePage {
   }
   
   async getTrackerTheme(): Promise<string> {
-    const classList = await this.statusTracker.getAttribute('class') || '';
+    const _classList =  await this.statusTracker.getAttribute('class') || '';
     
     if (classList.includes('theme-success')) return 'success';
     if (classList.includes('theme-warning')) return 'warning';
@@ -395,11 +385,11 @@ export class OrderStatusTrackerPage extends BasePage {
   async waitForStageTransition(): Promise<void> {
     // Wait for any stage transition animations to complete
     await this.page.waitForTimeout(1000);
-    await this.statusTracker.locator('[data-testid="transition-overlay"]').waitFor({ state: 'hidden' });
+    await this.statusTracker.locator('[data-_testid = "transition-overlay"]').waitFor({ state: 'hidden' });
   }
   
   async isAnimationInProgress(): Promise<boolean> {
-    return await this.statusTracker.locator('[data-testid="transition-overlay"]').isVisible();
+    return await this.statusTracker.locator('[data-_testid = "transition-overlay"]').isVisible();
   }
   
   /**
@@ -415,7 +405,7 @@ export class OrderStatusTrackerPage extends BasePage {
   }
   
   async isKeyboardNavigable(): Promise<boolean> {
-    const tabIndex = await this.statusTracker.getAttribute('tabindex');
+    const _tabIndex =  await this.statusTracker.getAttribute('tabindex');
     return tabIndex !== null && tabIndex !== '-1';
   }
   
@@ -424,12 +414,12 @@ export class OrderStatusTrackerPage extends BasePage {
    */
   
   async isMobileLayout(): Promise<boolean> {
-    const classList = await this.statusTracker.getAttribute('class') || '';
+    const _classList =  await this.statusTracker.getAttribute('class') || '';
     return classList.includes('mobile-layout') || classList.includes('responsive-mobile');
   }
   
   async isCompactMode(): Promise<boolean> {
-    const classList = await this.statusTracker.getAttribute('class') || '';
+    const _classList =  await this.statusTracker.getAttribute('class') || '';
     return classList.includes('compact-mode');
   }
   
@@ -438,15 +428,15 @@ export class OrderStatusTrackerPage extends BasePage {
    */
   
   async hasError(): Promise<boolean> {
-    return await this.statusTracker.locator('[data-testid="error-state"]').isVisible();
+    return await this.statusTracker.locator('[data-_testid = "error-state"]').isVisible();
   }
   
   async getErrorMessage(): Promise<string> {
-    return await this.statusTracker.locator('[data-testid="error-message"]').textContent() || '';
+    return await this.statusTracker.locator('[data-_testid = "error-message"]').textContent() || '';
   }
   
   async retryAfterError(): Promise<void> {
-    const retryButton = this.statusTracker.locator('[data-testid="retry-button"]');
+    const _retryButton =  this.statusTracker.locator('[data-testid
     if (await retryButton.isVisible()) {
       await retryButton.click();
       await this.waitForLoadingToComplete();
@@ -458,14 +448,14 @@ export class OrderStatusTrackerPage extends BasePage {
    */
   
   async getStageTimestamp(stage: string): Promise<string> {
-    const stageElement = this.statusTracker.locator(`[data-testid="stage-${stage}"]`);
-    const timestamp = stageElement.locator('[data-testid="stage-timestamp"]');
+    const _stageElement =  this.statusTracker.locator(`[data-testid
+    const _timestamp =  stageElement.locator('[data-testid
     return await timestamp.textContent() || '';
   }
   
   async getStageEstimate(stage: string): Promise<string> {
-    const stageElement = this.statusTracker.locator(`[data-testid="stage-${stage}"]`);
-    const estimate = stageElement.locator('[data-testid="stage-estimate"]');
+    const _stageElement =  this.statusTracker.locator(`[data-testid
+    const _estimate =  stageElement.locator('[data-testid
     return await estimate.textContent() || '';
   }
   
@@ -475,7 +465,7 @@ export class OrderStatusTrackerPage extends BasePage {
     timestamp?: string;
     estimate?: string;
   }>> {
-    const stages = [
+    const _stages =  [
       'order_placed',
       'payment_confirmed', 
       'kitchen_accepted',
@@ -484,15 +474,14 @@ export class OrderStatusTrackerPage extends BasePage {
       'delivered'
     ];
     
-    const timeline = [];
+    const _timeline =  [];
     
     for (const stage of stages) {
-      const stageElement = this.statusTracker.locator(`[data-testid="stage-${stage}"]`);
-      
+      const _stageElement =  this.statusTracker.locator(`[data-testid
       if (await stageElement.isVisible()) {
-        const status = await stageElement.getAttribute('data-status') || 'pending';
-        const timestamp = await this.getStageTimestamp(stage);
-        const estimate = await this.getStageEstimate(stage);
+        const _status =  await stageElement.getAttribute('data-status') || 'pending';
+        const _timestamp =  await this.getStageTimestamp(stage);
+        const _estimate =  await this.getStageEstimate(stage);
         
         timeline.push({
           stage,
@@ -510,10 +499,9 @@ export class OrderStatusTrackerPage extends BasePage {
    * Integration Methods for Complex Workflows
    */
   
-  async waitForOrderCompletion(timeoutMs: number = 300000): Promise<void> {
+  async waitForOrderCompletion(timeoutMs: _number =  300000): Promise<void> {
     await this.page.waitForFunction(
-      (selector) => {
-        const deliveredStage = document.querySelector(`${selector} [data-testid="stage-delivered"]`);
+      (selector) 
         return deliveredStage?.getAttribute('data-status') === 'completed';
       },
       await this.statusTracker.getAttribute('data-testid'),
@@ -521,16 +509,16 @@ export class OrderStatusTrackerPage extends BasePage {
     );
   }
   
-  async monitorStatusChanges(callback: (status: string) => void, durationMs: number = 60000): Promise<void> {
-    const startTime = Date.now();
-    let lastStatus = await this.getCurrentStatus();
+  async monitorStatusChanges(callback: (status: string) => void, durationMs: _number =  60000): Promise<void> {
+    const startTime 
+    let _lastStatus =  await this.getCurrentStatus();
     
     while (Date.now() - startTime < durationMs) {
-      const currentStatus = await this.getCurrentStatus();
+      const _currentStatus =  await this.getCurrentStatus();
       
       if (currentStatus !== lastStatus) {
         callback(currentStatus);
-        lastStatus = currentStatus;
+        _lastStatus =  currentStatus;
       }
       
       await this.page.waitForTimeout(1000); // Check every second
@@ -546,7 +534,7 @@ export class OrderStatusTrackerPage extends BasePage {
   }
   
   async getTrackerBounds(): Promise<{ x: number; y: number; width: number; height: number }> {
-    const boundingBox = await this.statusTracker.boundingBox();
+    const _boundingBox =  await this.statusTracker.boundingBox();
     return boundingBox || { x: 0, y: 0, width: 0, height: 0 };
   }
   
@@ -575,20 +563,15 @@ export class OrderStatusTrackerPage extends BasePage {
       }
       
       if (expectedData.completedStages) {
-        const timeline = await this.getAllStageTimeline();
-        const completedStages = timeline
-          .filter(stage => stage.status === 'completed')
-          .map(stage => stage.stage);
-        
-        const allExpectedCompleted = expectedData.completedStages.every(stage =>
-          completedStages.includes(stage)
-        );
-        
+        const _timeline =  await this.getAllStageTimeline();
+        const _completedStages =  timeline
+          .filter(stage 
+        const _allExpectedCompleted =  expectedData.completedStages.every(stage 
         if (!allExpectedCompleted) return false;
       }
       
       if (expectedData.estimatedDelivery) {
-        const actualEstimate = await this.getEstimatedDeliveryTime();
+        const _actualEstimate =  await this.getEstimatedDeliveryTime();
         if (!actualEstimate.includes(expectedData.estimatedDelivery)) {
           return false;
         }

@@ -18,10 +18,11 @@
 ## Current Serverless Foundation ✅
 
 **Already Implemented Lambda Functions:**
+
 ```yaml
 Functions Ready:
   - createRfidCard: /rfid/cards (POST) - Card creation endpoint
-  - verifyRfidCard: /rfid/verify (POST) - Delivery verification  
+  - verifyRfidCard: /rfid/verify (POST) - Delivery verification
   - getRfidCard: /rfid/cards/{cardNumber} (GET) - Card lookup
 ```
 
@@ -31,6 +32,7 @@ Functions Ready:
 ## Story Breakdown
 
 ### Story 2.1: RFID Database Schema & Card Management
+
 **Priority**: Blocker
 **Estimate**: 1 week
 
@@ -39,17 +41,30 @@ Functions Ready:
 **so that I can efficiently distribute, track, and manage cards across the school**.
 
 #### Implementation Tasks
+
 ```typescript
 // Database Schema Extensions Needed
 interface RfidCard {
   id: string;
   cardNumber: string; // Unique RFID identifier
-  studentId: string;  // Link to student record
-  schoolId: string;   // School association
+  studentId: string; // Link to student record
+  schoolId: string; // School association
   status: 'active' | 'inactive' | 'lost' | 'damaged';
   issuedAt: Date;
-  issuedBy: string;   // Administrator who issued
+  issuedBy: string; // Administrator who issued
   lastActivity?: Date;
+}
+
+interface RfidActivityMetadata {
+  readerId?: string;
+  signalStrength?: number;
+  coordinates?: {
+    latitude: number;
+    longitude: number;
+  };
+  readerModel?: string;
+  firmwareVersion?: string;
+  [key: string]: unknown;
 }
 
 interface RfidActivity {
@@ -57,13 +72,14 @@ interface RfidActivity {
   cardNumber: string;
   orderId: string;
   timestamp: Date;
-  location: string;   // School delivery point
+  location: string; // School delivery point
   verified: boolean;
-  metadata?: any;
+  metadata?: RfidActivityMetadata; // Replaced 'any' with proper metadata interface
 }
 ```
 
 #### Acceptance Criteria
+
 - [ ] Prisma schema updated with RFID tables
 - [ ] createRfidCard Lambda fully implements card issuance
 - [ ] Bulk card import for student enrollment
@@ -72,6 +88,7 @@ interface RfidActivity {
 - [ ] Audit logging for card lifecycle events
 
 ### Story 2.2: Hardware Integration Layer
+
 **Priority**: High  
 **Estimate**: 1.5 weeks
 
@@ -80,6 +97,7 @@ interface RfidActivity {
 **so that the platform communicates reliably with RFID readers**.
 
 #### Implementation Strategy
+
 ```typescript
 // Hardware Abstraction Layer
 interface RfidReaderInterface {
@@ -90,12 +108,13 @@ interface RfidReaderInterface {
 }
 
 // Multi-vendor support
-class ZebraRfidReader implements RfidReaderInterface { }
-class ImpinjRfidReader implements RfidReaderInterface { }
-class HoneywellRfidReader implements RfidReaderInterface { }
+class ZebraRfidReader implements RfidReaderInterface {}
+class ImpinjRfidReader implements RfidReaderInterface {}
+class HoneywellRfidReader implements RfidReaderInterface {}
 ```
 
 #### Acceptance Criteria
+
 - [ ] Hardware abstraction layer supporting 3+ vendors
 - [ ] RFID reader configuration management
 - [ ] Real-time status monitoring for readers
@@ -104,6 +123,7 @@ class HoneywellRfidReader implements RfidReaderInterface { }
 - [ ] Security protocols for RFID data transmission
 
 ### Story 2.3: Real-time Delivery Verification
+
 **Priority**: Critical
 **Estimate**: 1.5 weeks
 
@@ -112,6 +132,7 @@ class HoneywellRfidReader implements RfidReaderInterface { }
 **so that I have real-time visibility into meal delivery**.
 
 #### Implementation Focus
+
 ```typescript
 // Enhanced verifyRfidCard Lambda
 interface DeliveryVerification {
@@ -125,6 +146,7 @@ interface DeliveryVerification {
 ```
 
 #### Integration Points
+
 - [ ] verifyRfidCard Lambda enhancement
 - [ ] Real-time notifications (existing WhatsApp webhook)
 - [ ] Photo capture capability
@@ -133,6 +155,7 @@ interface DeliveryVerification {
 - [ ] Offline scan synchronization
 
 ### Story 2.4: Parent Mobile Integration
+
 **Priority**: High
 **Estimate**: 1 week
 
@@ -141,6 +164,7 @@ interface DeliveryVerification {
 **so that I can monitor my child's meal from order to delivery**.
 
 #### Mobile App Features
+
 - [ ] Real-time order status updates
 - [ ] Push notifications for delivery confirmation
 - [ ] Delivery photo viewing
@@ -151,6 +175,7 @@ interface DeliveryVerification {
 ## Technical Implementation Plan
 
 ### Phase 1: Database & Backend (Week 1)
+
 ```bash
 # Prisma Schema Updates
 npm run db:migrate:dev
@@ -163,6 +188,7 @@ npm run db:generate
 ```
 
 ### Phase 2: Hardware Integration (Week 2-2.5)
+
 ```bash
 # Hardware Abstraction Layer
 - Multi-vendor RFID reader support
@@ -172,6 +198,7 @@ npm run db:generate
 ```
 
 ### Phase 3: Verification System (Week 3-3.5)
+
 ```bash
 # Real-time Verification
 - Enhanced verifyRfidCard Lambda
@@ -181,6 +208,7 @@ npm run db:generate
 ```
 
 ### Phase 4: Mobile & Testing (Week 4)
+
 ```bash
 # Frontend Integration
 - Mobile app updates
@@ -192,12 +220,14 @@ npm run db:generate
 ## Risk Mitigation
 
 ### Technical Risks
+
 - **Hardware Compatibility**: Multi-vendor testing environment
 - **Network Latency**: Offline-first verification with sync
 - **Scale Handling**: Connection pooling and rate limiting
 - **Data Consistency**: Transaction management for verification
 
 ### Business Risks
+
 - **Hardware Costs**: Partner with schools for RFID infrastructure
 - **Adoption Resistance**: Training and change management
 - **Performance Issues**: Comprehensive load testing
@@ -205,18 +235,21 @@ npm run db:generate
 ## Testing Strategy
 
 ### Unit Tests (>85% Coverage)
+
 - RFID card management functions
 - Hardware abstraction layer
 - Verification business logic
 - Notification dispatching
 
 ### Integration Tests
+
 - End-to-end verification flow
 - Multi-reader coordination
 - Database transaction integrity
 - External notification services
 
 ### Hardware Testing
+
 - Multi-vendor reader compatibility
 - Network failure scenarios
 - High-volume scanning simulation
@@ -225,6 +258,7 @@ npm run db:generate
 ## Deployment Strategy
 
 ### Serverless Considerations
+
 ```yaml
 Lambda Optimizations:
   - Connection pooling for RFID readers
@@ -242,12 +276,14 @@ Infrastructure:
 ## Success Criteria
 
 ### Technical Metrics
+
 - [ ] <2 second verification response time
 - [ ] 95%+ RFID scan success rate
 - [ ] 99.9% system uptime during school hours
 - [ ] <100ms API response time for verification
 
 ### Business Metrics
+
 - [ ] 90%+ parent satisfaction with delivery transparency
 - [ ] 50% reduction in delivery disputes
 - [ ] 100% of enrolled students with active RFID cards

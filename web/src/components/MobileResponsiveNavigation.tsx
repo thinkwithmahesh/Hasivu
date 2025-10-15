@@ -1,9 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Menu, X, Home, BarChart3, Radio, CreditCard, Users, Settings, 
-  Search, LogOut, User, ChevronDown, Shield, Activity,
-  Building, FileText, Zap
+import {
+  Menu,
+  X,
+  Home,
+  BarChart3,
+  Radio,
+  CreditCard,
+  Users,
+  Settings,
+  Search,
+  LogOut,
+  User,
+  ChevronDown,
+  Shield,
+  Activity,
+  Building,
+  FileText,
+  Zap,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import NotificationSystem from './NotificationSystem';
@@ -29,7 +43,7 @@ interface MobileResponsiveNavigationProps {
 const MobileResponsiveNavigation: React.FC<MobileResponsiveNavigationProps> = ({
   currentPath = '/',
   onNavigate,
-  className = ''
+  className = '',
 }) => {
   const { user, isAuthenticated, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -46,14 +60,14 @@ const MobileResponsiveNavigation: React.FC<MobileResponsiveNavigationProps> = ({
         id: 'home',
         label: 'Home',
         icon: Home,
-        href: '/'
+        href: '/',
       },
       {
         id: 'demo',
         label: 'Live Demo',
         icon: Eye,
-        href: '/demo'
-      }
+        href: '/demo',
+      },
     ];
 
     if (!isAuthenticated) {
@@ -66,7 +80,7 @@ const MobileResponsiveNavigation: React.FC<MobileResponsiveNavigationProps> = ({
         label: 'Dashboard',
         icon: BarChart3,
         href: '/dashboard',
-        badge: 'New'
+        badge: 'New',
       },
       {
         id: 'rfid',
@@ -76,8 +90,8 @@ const MobileResponsiveNavigation: React.FC<MobileResponsiveNavigationProps> = ({
         submenu: [
           { id: 'rfid-cards', label: 'Card Management', icon: CreditCard, href: '/rfid/cards' },
           { id: 'rfid-readers', label: 'Reader Status', icon: Activity, href: '/rfid/readers' },
-          { id: 'rfid-logs', label: 'Verification Logs', icon: FileText, href: '/rfid/logs' }
-        ]
+          { id: 'rfid-logs', label: 'Verification Logs', icon: FileText, href: '/rfid/logs' },
+        ],
       },
       {
         id: 'payments',
@@ -85,11 +99,26 @@ const MobileResponsiveNavigation: React.FC<MobileResponsiveNavigationProps> = ({
         icon: CreditCard,
         href: '/payments',
         submenu: [
-          { id: 'payment-analytics', label: 'Analytics', icon: BarChart3, href: '/payments/analytics' },
-          { id: 'fraud-detection', label: 'Fraud Detection', icon: Shield, href: '/payments/fraud' },
-          { id: 'transaction-logs', label: 'Transactions', icon: FileText, href: '/payments/transactions' }
-        ]
-      }
+          {
+            id: 'payment-analytics',
+            label: 'Analytics',
+            icon: BarChart3,
+            href: '/payments/analytics',
+          },
+          {
+            id: 'fraud-detection',
+            label: 'Fraud Detection',
+            icon: Shield,
+            href: '/payments/fraud',
+          },
+          {
+            id: 'transaction-logs',
+            label: 'Transactions',
+            icon: FileText,
+            href: '/payments/transactions',
+          },
+        ],
+      },
     ];
 
     // Add admin-only items
@@ -100,14 +129,14 @@ const MobileResponsiveNavigation: React.FC<MobileResponsiveNavigationProps> = ({
           label: 'User Management',
           icon: Users,
           href: '/admin/users',
-          roles: ['admin', 'super_admin']
+          roles: ['admin', 'super_admin'],
         },
         {
           id: 'schools',
           label: 'School Management',
           icon: Building,
           href: '/admin/schools',
-          roles: ['admin', 'super_admin']
+          roles: ['admin', 'super_admin'],
         }
       );
     }
@@ -116,7 +145,7 @@ const MobileResponsiveNavigation: React.FC<MobileResponsiveNavigationProps> = ({
       id: 'settings',
       label: 'Settings',
       icon: Settings,
-      href: '/settings'
+      href: '/settings',
     });
 
     return [...publicItems, ...authenticatedItems];
@@ -128,10 +157,18 @@ const MobileResponsiveNavigation: React.FC<MobileResponsiveNavigationProps> = ({
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
-      if (isMobileMenuOpen && !target.closest('.mobile-menu') && !target.closest('.mobile-menu-trigger')) {
+      if (
+        isMobileMenuOpen &&
+        !target.closest('.mobile-menu') &&
+        !target.closest('.mobile-menu-trigger')
+      ) {
         setIsMobileMenuOpen(false);
       }
-      if (isUserMenuOpen && !target.closest('.user-menu') && !target.closest('.user-menu-trigger')) {
+      if (
+        isUserMenuOpen &&
+        !target.closest('.user-menu') &&
+        !target.closest('.user-menu-trigger')
+      ) {
         setIsUserMenuOpen(false);
       }
     };
@@ -170,19 +207,24 @@ const MobileResponsiveNavigation: React.FC<MobileResponsiveNavigationProps> = ({
 
   const filteredNavigationItems = navigationItems.filter(item => {
     if (!searchTerm) return true;
-    return item.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           item.submenu?.some(sub => sub.label.toLowerCase().includes(searchTerm.toLowerCase()));
+    return (
+      item.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.submenu?.some(sub => sub.label.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
   });
 
   const UserAvatar = () => (
     <div className="flex items-center space-x-3">
       <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
         <span className="text-white text-sm font-medium">
-          {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
+          {user?.firstName?.charAt(0)}
+          {user?.lastName?.charAt(0)}
         </span>
       </div>
       <div className="hidden md:block">
-        <p className="text-sm font-medium text-gray-900">{user?.firstName} {user?.lastName}</p>
+        <p className="text-sm font-medium text-gray-900">
+          {user?.firstName} {user?.lastName}
+        </p>
         <p className="text-xs text-gray-500 capitalize">{user?.role?.replace('_', ' ')}</p>
       </div>
     </div>
@@ -204,12 +246,15 @@ const MobileResponsiveNavigation: React.FC<MobileResponsiveNavigationProps> = ({
 
               {/* Desktop Navigation */}
               <div className="hidden md:ml-8 md:flex md:space-x-8">
-                {navigationItems.slice(0, 4).map((item) => {
-                  const isActive = currentPath === item.href || currentPath.startsWith(item.href + '/');
+                {navigationItems.slice(0, 4).map(item => {
+                  const isActive =
+                    currentPath === item.href || currentPath.startsWith(`${item.href}/`);
                   return (
                     <div key={item.id} className="relative group">
                       <button
-                        onClick={() => item.submenu ? toggleSubmenu(item.id) : handleNavigation(item.href)}
+                        onClick={() =>
+                          item.submenu ? toggleSubmenu(item.id) : handleNavigation(item.href)
+                        }
                         className={`flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors ${
                           isActive
                             ? 'border-blue-500 text-gray-900'
@@ -229,7 +274,7 @@ const MobileResponsiveNavigation: React.FC<MobileResponsiveNavigationProps> = ({
                       {/* Desktop Submenu */}
                       {item.submenu && (
                         <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                          {item.submenu.map((subItem) => (
+                          {item.submenu.map(subItem => (
                             <button
                               key={subItem.id}
                               onClick={() => handleNavigation(subItem.href)}
@@ -257,7 +302,7 @@ const MobileResponsiveNavigation: React.FC<MobileResponsiveNavigationProps> = ({
                   type="text"
                   placeholder="Search navigation..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={e => setSearchTerm(e.target.value)}
                   onFocus={() => setIsSearchFocused(true)}
                   onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
                   className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
@@ -336,11 +381,7 @@ const MobileResponsiveNavigation: React.FC<MobileResponsiveNavigationProps> = ({
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 className="mobile-menu-trigger md:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
               >
-                {isMobileMenuOpen ? (
-                  <X className="w-6 h-6" />
-                ) : (
-                  <Menu className="w-6 h-6" />
-                )}
+                {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
               </button>
             </div>
           </div>
@@ -366,19 +407,22 @@ const MobileResponsiveNavigation: React.FC<MobileResponsiveNavigationProps> = ({
                       type="text"
                       placeholder="Search..."
                       value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
+                      onChange={e => setSearchTerm(e.target.value)}
                       className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
                 </div>
 
                 {/* Mobile Navigation Items */}
-                {filteredNavigationItems.map((item) => {
-                  const isActive = currentPath === item.href || currentPath.startsWith(item.href + '/');
+                {filteredNavigationItems.map(item => {
+                  const isActive =
+                    currentPath === item.href || currentPath.startsWith(`${item.href}/`);
                   return (
                     <div key={item.id}>
                       <button
-                        onClick={() => item.submenu ? toggleSubmenu(item.id) : handleNavigation(item.href)}
+                        onClick={() =>
+                          item.submenu ? toggleSubmenu(item.id) : handleNavigation(item.href)
+                        }
                         className={`flex items-center justify-between w-full px-3 py-2 rounded-md text-base font-medium transition-colors ${
                           isActive
                             ? 'bg-blue-50 text-blue-700 border-blue-500'
@@ -413,7 +457,7 @@ const MobileResponsiveNavigation: React.FC<MobileResponsiveNavigationProps> = ({
                             exit={{ opacity: 0, height: 0 }}
                             className="ml-4 mt-1 space-y-1"
                           >
-                            {item.submenu.map((subItem) => (
+                            {item.submenu.map(subItem => (
                               <button
                                 key={subItem.id}
                                 onClick={() => handleNavigation(subItem.href)}

@@ -1,7 +1,10 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.emailService = exports.EmailService = exports.EmailServiceError = void 0;
-const sgMail = require('@sendgrid/mail');
+const mail_1 = __importDefault(require("@sendgrid/mail"));
 const logger = {
     info: (message, data) => console.log(message, data),
     warn: (message, data) => console.warn(message, data),
@@ -51,8 +54,8 @@ class EmailService {
             if (!this.fromEmail) {
                 throw new EmailServiceError('From email address is required', 'MISSING_FROM_EMAIL', 500);
             }
-            sgMail.setApiKey(this.apiKey);
-            sgMail.setSubstitutionWrappers('{{', '}}');
+            mail_1.default.setApiKey(this.apiKey);
+            mail_1.default.setSubstitutionWrappers('{{', '}}');
             this.initialized = true;
             logger.info('Email service initialized', {
                 environment: this.environment,
@@ -62,7 +65,7 @@ class EmailService {
         }
         catch (error) {
             logger.error('Failed to initialize email service', {
-                error: error.message,
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
                 environment: this.environment
             });
             throw error;
@@ -79,21 +82,34 @@ class EmailService {
                     email: message.from || this.fromEmail,
                     name: this.fromName
                 },
-                subject: message.subject,
-                text: message.text,
-                html: message.html,
-                templateId: message.templateId,
-                dynamicTemplateData: message.dynamicTemplateData,
-                attachments: message.attachments,
-                categories: message.categories,
-                customArgs: message.customArgs,
-                sendAt: message.sendAt,
-                batchId: message.batchId,
-                asm: message.asm,
-                ipPoolName: message.ipPoolName,
-                mailSettings: message.mailSettings,
-                trackingSettings: message.trackingSettings
+                subject: message.subject
             };
+            if (message.text)
+                emailMessage.text = message.text;
+            if (message.html)
+                emailMessage.html = message.html;
+            if (message.templateId)
+                emailMessage.templateId = message.templateId;
+            if (message.dynamicTemplateData)
+                emailMessage.dynamicTemplateData = message.dynamicTemplateData;
+            if (message.attachments)
+                emailMessage.attachments = message.attachments;
+            if (message.categories)
+                emailMessage.categories = message.categories;
+            if (message.customArgs)
+                emailMessage.customArgs = message.customArgs;
+            if (message.sendAt)
+                emailMessage.sendAt = message.sendAt;
+            if (message.batchId)
+                emailMessage.batchId = message.batchId;
+            if (message.asm)
+                emailMessage.asm = message.asm;
+            if (message.ipPoolName)
+                emailMessage.ipPoolName = message.ipPoolName;
+            if (message.mailSettings)
+                emailMessage.mailSettings = message.mailSettings;
+            if (message.trackingSettings)
+                emailMessage.trackingSettings = message.trackingSettings;
             if (!emailMessage.to) {
                 throw new EmailServiceError('Recipient email address is required', 'MISSING_RECIPIENT', 400);
             }
@@ -103,7 +119,7 @@ class EmailService {
             if (!emailMessage.text && !emailMessage.html && !emailMessage.templateId) {
                 throw new EmailServiceError('Email must have text, html, or template content', 'MISSING_CONTENT', 400);
             }
-            const [response] = await sgMail.send(emailMessage);
+            const [response] = await mail_1.default.send(emailMessage);
             const result = {
                 messageId: response.headers['x-message-id'] || '',
                 success: true,
@@ -144,12 +160,12 @@ class EmailService {
                 throw error;
             }
             logger.error('Failed to send email', {
-                error: error.message,
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
                 recipient: message.to,
                 subject: message.subject,
                 templateId: message.templateId
             });
-            throw new EmailServiceError(`Failed to send email: ${error.message}`, 'SEND_FAILED', 500, error);
+            throw new EmailServiceError(`Failed to send email: ${error instanceof Error ? error.message : String(error)}`, 'SEND_FAILED', 500, error);
         }
     }
     async sendTemplateEmail(to, templateId, templateData, options = {}) {
@@ -268,7 +284,7 @@ class EmailService {
         }
         catch (error) {
             logger.error('Email service health check failed', {
-                error: error.message
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
             });
             return {
                 status: 'unhealthy',
@@ -279,7 +295,7 @@ class EmailService {
                     fromEmailConfigured: !!this.fromEmail,
                     environment: this.environment
                 },
-                error: error.message
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
             };
         }
     }

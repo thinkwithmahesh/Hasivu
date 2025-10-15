@@ -4,27 +4,27 @@
  * Enhanced with better ShadCN patterns, mobile responsiveness, and accessibility
  */
 
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect as _useEffect } from 'react';
 import Image from 'next/image';
-import { 
-  Star, 
-  Clock, 
-  Users, 
-  AlertTriangle, 
-  Plus, 
-  Minus, 
-  Info, 
+import {
+  Star,
+  Clock,
+  Users,
+  AlertTriangle,
+  Plus,
+  Minus,
+  Info,
   Heart,
   Share2,
   Zap,
   Shield,
-  ShoppingCart
+  ShoppingCart,
 } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
+import { Separator as _Separator } from '@/components/ui/separator';
 import {
   Dialog,
   DialogContent,
@@ -34,7 +34,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-import type { MealCardProps, MealItem, StudentInfo } from './types';
+import type { MealCardProps, MealItem as _MealItem, StudentInfo as _StudentInfo } from './types';
 import {
   formatCurrency,
   getDietaryInfo,
@@ -75,10 +75,13 @@ const MealCard: React.FC<MealCardProps> = ({
     setQuantity(1);
   }, [meal, quantity, onAddToCart]);
 
-  const handleQuantityChange = useCallback((change: number) => {
-    const newQuantity = Math.max(1, Math.min(meal.maxQuantityPerStudent, quantity + change));
-    setQuantity(newQuantity);
-  }, [meal.maxQuantityPerStudent, quantity]);
+  const handleQuantityChange = useCallback(
+    (change: number) => {
+      const newQuantity = Math.max(1, Math.min(meal.maxQuantityPerStudent, quantity + change));
+      setQuantity(newQuantity);
+    },
+    [meal.maxQuantityPerStudent, quantity]
+  );
 
   const handleImageLoad = useCallback(() => {
     setIsImageLoading(false);
@@ -99,11 +102,11 @@ const MealCard: React.FC<MealCardProps> = ({
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     if (!touchStartX.current || !touchStartY.current) return;
-    
+
     const touch = e.touches[0];
     const deltaX = touch.clientX - touchStartX.current;
     const deltaY = touch.clientY - touchStartY.current;
-    
+
     // Detect horizontal swipe (more horizontal than vertical movement)
     if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
       if (deltaX > 0) {
@@ -116,9 +119,12 @@ const MealCard: React.FC<MealCardProps> = ({
 
   // Get meal availability status
   const getAvailabilityStatus = () => {
-    if (!meal.isAvailable) return { status: 'unavailable', text: 'Not Available', color: 'bg-red-100 text-red-800' };
-    if (!canOrder) return { status: 'closed', text: 'Ordering Closed', color: 'bg-gray-100 text-gray-800' };
-    if (!isSuitable) return { status: 'unsuitable', text: 'Not Suitable', color: 'bg-yellow-100 text-yellow-800' };
+    if (!meal.isAvailable)
+      return { status: 'unavailable', text: 'Not Available', color: 'bg-red-100 text-red-800' };
+    if (!canOrder)
+      return { status: 'closed', text: 'Ordering Closed', color: 'bg-gray-100 text-gray-800' };
+    if (!isSuitable)
+      return { status: 'unsuitable', text: 'Not Suitable', color: 'bg-yellow-100 text-yellow-800' };
     return { status: 'available', text: 'Available', color: 'bg-green-100 text-green-800' };
   };
 
@@ -127,7 +133,7 @@ const MealCard: React.FC<MealCardProps> = ({
 
   const handleTouchEnd = useCallback(() => {
     setIsPressed(false);
-    
+
     // Handle swipe actions
     if (swipeDirection === 'right' && availability.status === 'available') {
       // Swipe right to add to cart
@@ -142,7 +148,7 @@ const MealCard: React.FC<MealCardProps> = ({
       }
       setShowDetails(true);
     }
-    
+
     setSwipeDirection(null);
     touchStartX.current = null;
     touchStartY.current = null;
@@ -154,7 +160,7 @@ const MealCard: React.FC<MealCardProps> = ({
       const patterns = {
         light: 30,
         medium: 50,
-        heavy: 100
+        heavy: 100,
       };
       navigator.vibrate(patterns[type]);
     }
@@ -167,15 +173,18 @@ const MealCard: React.FC<MealCardProps> = ({
   }, [handleAddToCart, handleHapticFeedback]);
 
   // Enhanced quantity change with haptic feedback
-  const handleQuantityChangeWithFeedback = useCallback((change: number) => {
-    handleHapticFeedback('light');
-    handleQuantityChange(change);
-  }, [handleQuantityChange, handleHapticFeedback]);
+  const handleQuantityChangeWithFeedback = useCallback(
+    (change: number) => {
+      handleHapticFeedback('light');
+      handleQuantityChange(change);
+    },
+    [handleQuantityChange, handleHapticFeedback]
+  );
 
   // Enhanced add to cart with haptic feedback
 
   return (
-    <Card 
+    <Card
       ref={cardRef}
       className={cn(
         'group relative transition-all duration-300 hover:shadow-xl hover:-translate-y-1',
@@ -198,7 +207,7 @@ const MealCard: React.FC<MealCardProps> = ({
           {isImageLoading && (
             <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 animate-pulse" />
           )}
-          
+
           {/* Image */}
           {!imageError ? (
             <Image
@@ -223,12 +232,12 @@ const MealCard: React.FC<MealCardProps> = ({
               </div>
             </div>
           )}
-          
+
           {/* Gradient overlay for better text readability */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
-          
+
           {/* Availability Badge */}
-          <Badge 
+          <Badge
             variant="secondary"
             className={cn(
               'absolute top-3 right-3 font-medium backdrop-blur-sm',
@@ -241,8 +250,8 @@ const MealCard: React.FC<MealCardProps> = ({
 
           {/* Discount Badge */}
           {meal.originalPrice && meal.originalPrice > meal.price && (
-            <Badge 
-              variant="destructive" 
+            <Badge
+              variant="destructive"
               className="absolute top-3 left-3 font-bold backdrop-blur-sm shadow-sm animate-pulse"
             >
               <Zap className="w-3 h-3 mr-1" />
@@ -252,8 +261,8 @@ const MealCard: React.FC<MealCardProps> = ({
 
           {/* Dietary Type Indicator */}
           <div className="absolute bottom-3 left-3">
-            <Badge 
-              variant="outline" 
+            <Badge
+              variant="outline"
               className={cn(
                 'bg-white/95 backdrop-blur-sm shadow-sm border-white/50',
                 `text-${dietaryInfo.color}-700 hover:bg-${dietaryInfo.color}-50`
@@ -272,7 +281,7 @@ const MealCard: React.FC<MealCardProps> = ({
               size="sm"
               variant="secondary"
               className="h-10 w-10 p-0 backdrop-blur-sm bg-white/90 hover:bg-white touch-manipulation"
-              onClick={(e) => {
+              onClick={e => {
                 e.stopPropagation();
                 handleHapticFeedback('light');
                 // Add to favorites logic
@@ -285,7 +294,7 @@ const MealCard: React.FC<MealCardProps> = ({
               size="sm"
               variant="secondary"
               className="h-10 w-10 p-0 backdrop-blur-sm bg-white/90 hover:bg-white touch-manipulation"
-              onClick={(e) => {
+              onClick={e => {
                 e.stopPropagation();
                 handleHapticFeedback('light');
                 // Share meal logic
@@ -295,7 +304,7 @@ const MealCard: React.FC<MealCardProps> = ({
               <Share2 className="h-4 w-4" />
             </Button>
           </div>
-          
+
           {/* Swipe hint indicator for mobile */}
           <div className="absolute top-3 left-1/2 transform -translate-x-1/2 md:hidden">
             <div className="bg-black/60 text-white text-xs px-2 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300">
@@ -319,16 +328,16 @@ const MealCard: React.FC<MealCardProps> = ({
             </div>
             <div className="flex items-center shrink-0 bg-yellow-50 px-2 py-1 rounded-full">
               <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
-              <span className="text-sm font-semibold ml-1 text-gray-900">{meal.rating.toFixed(1)}</span>
+              <span className="text-sm font-semibold ml-1 text-gray-900">
+                {meal.rating.toFixed(1)}
+              </span>
               <span className="text-xs text-gray-500 ml-1">({meal.totalRatings})</span>
             </div>
           </div>
 
           {/* Price */}
           <div className="flex items-baseline space-x-2">
-            <span className="text-2xl font-bold text-primary">
-              {formatCurrency(meal.price)}
-            </span>
+            <span className="text-2xl font-bold text-primary">{formatCurrency(meal.price)}</span>
             {meal.originalPrice && meal.originalPrice > meal.price && (
               <span className="text-sm text-gray-500 line-through">
                 {formatCurrency(meal.originalPrice)}
@@ -351,7 +360,9 @@ const MealCard: React.FC<MealCardProps> = ({
               {spiceLevelInfo.intensity > 0 && (
                 <div className="flex items-center bg-red-50 px-2 py-1.5 rounded-md min-h-[32px] touch-manipulation">
                   <span className="mr-1.5 text-xs shrink-0">{spiceLevelInfo.icon}</span>
-                  <span className="font-medium text-red-700 whitespace-nowrap">{spiceLevelInfo.label}</span>
+                  <span className="font-medium text-red-700 whitespace-nowrap">
+                    {spiceLevelInfo.label}
+                  </span>
                 </div>
               )}
             </div>
@@ -365,20 +376,28 @@ const MealCard: React.FC<MealCardProps> = ({
                   <Shield className="h-4 w-4 text-gray-500 mr-1.5" />
                   <span className="text-xs font-medium text-gray-700">Nutrition Score</span>
                 </div>
-                <span className={cn(
-                  'text-xs font-bold px-2 py-1 rounded-full',
-                  nutritionalScore >= 80 ? 'bg-green-100 text-green-800' :
-                  nutritionalScore >= 60 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
-                )}>
+                <span
+                  className={cn(
+                    'text-xs font-bold px-2 py-1 rounded-full',
+                    nutritionalScore >= 80
+                      ? 'bg-green-100 text-green-800'
+                      : nutritionalScore >= 60
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : 'bg-red-100 text-red-800'
+                  )}
+                >
                   {nutritionalScore}/100
                 </span>
               </div>
               <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                <div 
+                <div
                   className={cn(
                     'h-full rounded-full transition-all duration-500',
-                    nutritionalScore >= 80 ? 'bg-green-500' :
-                    nutritionalScore >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                    nutritionalScore >= 80
+                      ? 'bg-green-500'
+                      : nutritionalScore >= 60
+                        ? 'bg-yellow-500'
+                        : 'bg-red-500'
                   )}
                   style={{ width: `${nutritionalScore}%` }}
                 />
@@ -397,9 +416,9 @@ const MealCard: React.FC<MealCardProps> = ({
                     {meal.allergens.map(allergen => {
                       const allergyInfo = getAllergyInfo(allergen);
                       return (
-                        <Badge 
-                          key={allergen} 
-                          variant="outline" 
+                        <Badge
+                          key={allergen}
+                          variant="outline"
                           className="text-xs bg-white border-orange-300 text-orange-700"
                         >
                           <span className="mr-1">{allergyInfo.icon}</span>
@@ -416,7 +435,10 @@ const MealCard: React.FC<MealCardProps> = ({
           {/* Special Indicators */}
           <div className="flex flex-wrap gap-1.5">
             {meal.isGlutenFree && (
-              <Badge variant="outline" className="text-xs bg-green-50 border-green-300 text-green-700">
+              <Badge
+                variant="outline"
+                className="text-xs bg-green-50 border-green-300 text-green-700"
+              >
                 🌾 Gluten-Free
               </Badge>
             )}
@@ -426,12 +448,18 @@ const MealCard: React.FC<MealCardProps> = ({
               </Badge>
             )}
             {meal.isJainFood && (
-              <Badge variant="outline" className="text-xs bg-yellow-50 border-yellow-300 text-yellow-700">
+              <Badge
+                variant="outline"
+                className="text-xs bg-yellow-50 border-yellow-300 text-yellow-700"
+              >
                 🗺️ Jain
               </Badge>
             )}
             {meal.schoolApprovalRequired && (
-              <Badge variant="outline" className="text-xs bg-purple-50 border-purple-300 text-purple-700">
+              <Badge
+                variant="outline"
+                className="text-xs bg-purple-50 border-purple-300 text-purple-700"
+              >
                 ✓ School Approved
               </Badge>
             )}
@@ -445,7 +473,9 @@ const MealCard: React.FC<MealCardProps> = ({
                 <span>
                   <span className="font-medium">Available:</span>
                   <br className="sm:hidden" />
-                  <span className="sm:ml-1">{formatTime(meal.availableFrom)} - {formatTime(meal.availableTo)}</span>
+                  <span className="sm:ml-1">
+                    {formatTime(meal.availableFrom)} - {formatTime(meal.availableTo)}
+                  </span>
                 </span>
               </div>
               <div className="flex items-center text-gray-600">
@@ -453,7 +483,9 @@ const MealCard: React.FC<MealCardProps> = ({
                 <span>
                   <span className="font-medium">Last order:</span>
                   <br className="sm:hidden" />
-                  <span className="sm:ml-1 font-semibold text-amber-700">{formatTime(meal.lastOrderTime)}</span>
+                  <span className="sm:ml-1 font-semibold text-amber-700">
+                    {formatTime(meal.lastOrderTime)}
+                  </span>
                 </span>
               </div>
             </div>
@@ -467,7 +499,10 @@ const MealCard: React.FC<MealCardProps> = ({
           {availability.status === 'available' && (
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
               <div className="flex items-center space-x-3">
-                <Label htmlFor={`quantity-${meal.id}`} className="text-sm font-medium text-gray-700">
+                <Label
+                  htmlFor={`quantity-${meal.id}`}
+                  className="text-sm font-medium text-gray-700"
+                >
                   Quantity:
                 </Label>
                 <div className="flex items-center border-2 rounded-lg bg-white shadow-sm">
@@ -481,7 +516,7 @@ const MealCard: React.FC<MealCardProps> = ({
                   >
                     <Minus className="h-4 w-4" />
                   </Button>
-                  <span 
+                  <span
                     id={`quantity-${meal.id}`}
                     className="px-4 py-3 text-base font-bold min-w-[3.5rem] text-center select-none"
                     role="spinbutton"
@@ -503,20 +538,18 @@ const MealCard: React.FC<MealCardProps> = ({
                   </Button>
                 </div>
                 {meal.maxQuantityPerStudent > 1 && (
-                  <span className="text-xs text-gray-500">
-                    Max: {meal.maxQuantityPerStudent}
-                  </span>
+                  <span className="text-xs text-gray-500">Max: {meal.maxQuantityPerStudent}</span>
                 )}
               </div>
 
-              <Button 
+              <Button
                 onClick={handleAddToCartWithFeedback}
                 className={cn(
                   'flex-1 h-12 font-semibold shadow-md transition-all duration-200 touch-manipulation',
                   'hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0',
                   'min-h-[48px]', // Ensure minimum touch target size
-                  !canOrder || !isSuitable 
-                    ? 'opacity-50 cursor-not-allowed' 
+                  !canOrder || !isSuitable
+                    ? 'opacity-50 cursor-not-allowed'
                     : 'bg-primary hover:bg-primary/90'
                 )}
                 disabled={!canOrder || !isSuitable}
@@ -532,7 +565,7 @@ const MealCard: React.FC<MealCardProps> = ({
           {/* Unavailable state */}
           {availability.status !== 'available' && (
             <div className="text-center">
-              <Button 
+              <Button
                 variant="outline"
                 className="w-full h-12 cursor-not-allowed min-h-[48px] touch-manipulation"
                 disabled
@@ -552,8 +585,8 @@ const MealCard: React.FC<MealCardProps> = ({
           {/* Cart Status */}
           {isInCart && cartQuantity > 0 && (
             <div className="flex items-center justify-center">
-              <Badge 
-                variant="secondary" 
+              <Badge
+                variant="secondary"
                 className="bg-primary/10 text-primary border-primary/20 px-3 py-1.5 font-medium animate-pulse"
               >
                 <div className="flex items-center">
@@ -567,8 +600,8 @@ const MealCard: React.FC<MealCardProps> = ({
           {/* View Details Button */}
           <Dialog open={showDetails} onOpenChange={setShowDetails}>
             <DialogTrigger asChild>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className={cn(
                   'w-full h-11 border-2 font-medium transition-all duration-200 touch-manipulation',
                   'hover:bg-gray-50 hover:border-gray-300 focus:ring-2 focus:ring-primary/20',
@@ -623,7 +656,9 @@ const MealCard: React.FC<MealCardProps> = ({
                         </div>
                         <div className="flex justify-between">
                           <span>Rating:</span>
-                          <span>{meal.rating}/5 ({meal.totalRatings} reviews)</span>
+                          <span>
+                            {meal.rating}/5 ({meal.totalRatings} reviews)
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -643,9 +678,21 @@ const MealCard: React.FC<MealCardProps> = ({
                           </div>
                         )}
                         <div className="flex flex-wrap gap-1 mt-2">
-                          {meal.isGlutenFree && <Badge variant="outline" className="text-xs">Gluten-Free</Badge>}
-                          {meal.isDiabeticFriendly && <Badge variant="outline" className="text-xs">Diabetic-Friendly</Badge>}
-                          {meal.isJainFood && <Badge variant="outline" className="text-xs">Jain</Badge>}
+                          {meal.isGlutenFree && (
+                            <Badge variant="outline" className="text-xs">
+                              Gluten-Free
+                            </Badge>
+                          )}
+                          {meal.isDiabeticFriendly && (
+                            <Badge variant="outline" className="text-xs">
+                              Diabetic-Friendly
+                            </Badge>
+                          )}
+                          {meal.isJainFood && (
+                            <Badge variant="outline" className="text-xs">
+                              Jain
+                            </Badge>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -720,7 +767,9 @@ const MealCard: React.FC<MealCardProps> = ({
                             <span className="text-sm font-medium">{meal.vendor.rating}/5</span>
                           </div>
                           {meal.vendor.hygieneCertification && (
-                            <Badge variant="outline" className="text-xs mt-1">Hygiene Certified</Badge>
+                            <Badge variant="outline" className="text-xs mt-1">
+                              Hygiene Certified
+                            </Badge>
                           )}
                         </div>
                       </div>
@@ -734,7 +783,9 @@ const MealCard: React.FC<MealCardProps> = ({
                   <div className="bg-gray-50 p-3 rounded-lg text-sm">
                     <div className="flex justify-between">
                       <span>Available Hours:</span>
-                      <span>{formatTime(meal.availableFrom)} - {formatTime(meal.availableTo)}</span>
+                      <span>
+                        {formatTime(meal.availableFrom)} - {formatTime(meal.availableTo)}
+                      </span>
                     </div>
                     <div className="flex justify-between mt-1">
                       <span>Last Order Time:</span>

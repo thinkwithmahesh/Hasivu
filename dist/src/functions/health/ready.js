@@ -103,7 +103,7 @@ const readinessCheckHandler = async (event, context) => {
     catch (error) {
         logger.error('Readiness check failed', {
             requestId,
-            error: error.message,
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
             stack: error.stack
         });
         return (0, response_utils_1.handleError)(error, 'Readiness check failed');

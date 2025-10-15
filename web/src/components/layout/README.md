@@ -23,7 +23,7 @@ This component library provides a complete navigation and layout solution for di
 ✅ **Collapsible Sidebar** - Space-efficient admin/kitchen navigation  
 ✅ **Automatic Breadcrumbs** - Context-aware navigation breadcrumbs  
 ✅ **Touch Optimization** - 44px minimum touch targets for mobile  
-✅ **HASIVU Brand Integration** - Consistent brand colors and styling  
+✅ **HASIVU Brand Integration** - Consistent brand colors and styling
 
 ## Component Architecture
 
@@ -158,9 +158,7 @@ function LoginPage() {
         <CardHeader>
           <CardTitle>Sign In</CardTitle>
         </CardHeader>
-        <CardContent>
-          {/* Login form */}
-        </CardContent>
+        <CardContent>{/* Login form */}</CardContent>
       </Card>
     </AuthLayout>
   );
@@ -231,6 +229,7 @@ interface SchoolStatus {
 ## Role-based Navigation
 
 ### Student Navigation
+
 - Home Dashboard
 - Meals (Menu, Order, History)
 - Schedule
@@ -238,12 +237,14 @@ interface SchoolStatus {
 - Profile
 
 ### Parent Navigation
+
 - Home Dashboard
 - My Children (Meals, Schedule, Reports)
 - Payments
 - Profile
 
 ### Admin Navigation
+
 - Dashboard
 - User Management (Students, Parents, Staff)
 - Meal Management (Menu, Orders, Inventory, Nutrition)
@@ -254,6 +255,7 @@ interface SchoolStatus {
 - Settings
 
 ### Kitchen Navigation
+
 - Kitchen Dashboard
 - Orders (Pending, Preparing, Ready, Completed)
 - Menu Management (Current, Upcoming, Recipes)
@@ -262,6 +264,7 @@ interface SchoolStatus {
 - Reports
 
 ### Teacher Navigation
+
 - Home Dashboard
 - Students
 - Lunch Schedule
@@ -271,6 +274,7 @@ interface SchoolStatus {
 ## Mobile Optimization
 
 ### Bottom Tab Navigation
+
 - Touch-optimized with 44px minimum touch targets
 - Role-specific tab items
 - Badge indicators for cart items
@@ -278,6 +282,7 @@ interface SchoolStatus {
 - Hidden on authentication pages
 
 ### Mobile Header
+
 - Hamburger menu for navigation
 - Notification bell with urgency indicators
 - Shopping cart with item counts
@@ -286,6 +291,7 @@ interface SchoolStatus {
 - RFID and meal service status indicators
 
 ### Responsive Behavior
+
 - Mobile-first design approach
 - Bottom navigation on mobile, desktop navigation on larger screens
 - Collapsible sidebar on admin/kitchen layouts
@@ -294,12 +300,14 @@ interface SchoolStatus {
 ## Emergency Features
 
 ### Emergency Alert System
+
 - School-wide emergency banner
 - Configurable emergency messages
 - Visual priority with red background and alert icon
 - Dismissible but persistent until emergency cleared
 
 ### RFID System Monitoring
+
 - Real-time connectivity status
 - Visual indicators (green for online, red for offline)
 - Integration with school's RFID payment system
@@ -307,12 +315,14 @@ interface SchoolStatus {
 ## Brand Integration
 
 ### HASIVU Brand Colors
+
 - Primary: Green theme (`#4CAF50`) for main actions
 - Secondary: Purple theme (`#9C27B0`) for secondary actions
 - Accent: Orange theme (`#FF9800`) for highlights and cart
 - Semantic colors for success, warning, error, and info states
 
 ### Typography
+
 - Display font: Poppins for headings and brand elements
 - Body font: Inter for readable content
 - Consistent spacing and sizing scales
@@ -343,11 +353,13 @@ Visit `/layout-demo` in your development environment to see an interactive showc
 ## Installation & Setup
 
 1. Ensure ShadCN/UI components are installed:
+
    ```bash
    npx shadcn-ui@latest add navigation-menu dropdown-menu sheet avatar button
    ```
 
 2. Import the layout components:
+
    ```tsx
    import { AppLayout, DashboardLayout } from '@/components/layout';
    ```

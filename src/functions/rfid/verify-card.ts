@@ -8,7 +8,11 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda
 import { PrismaClient } from '@prisma/client';
 import { LoggerService } from '../shared/logger.service';
 import { createSuccessResponse, createErrorResponse, handleError } from '../shared/response.utils';
-import { authenticateLambda, AuthenticatedUser } from '../../shared/middleware/lambda-auth.middleware';
+import {
+  authenticateLambda,
+  AuthenticatedUser,
+  AuthenticatedEvent,
+} from '../../shared/middleware/lambda-auth.middleware';
 import * as Joi from 'joi';
 
 // Initialize database client
@@ -16,11 +20,13 @@ const prisma = new PrismaClient();
 
 // RFID Card verification request schema
 const verifyCardSchema = Joi.object({
-  cardNumber: Joi.string().required().pattern(/^RFID-[A-Z0-9-]+$/),
+  cardNumber: Joi.string()
+    .required()
+    .pattern(/^RFID-[A-Z0-9-]+$/),
   readerId: Joi.string().uuid().optional(),
   orderId: Joi.string().uuid().optional(),
   location: Joi.string().optional(),
-  verificationData: Joi.object().optional().default({})
+  verificationData: Joi.object().optional().default({}),
 });
 
 // RFID Card verification interface
@@ -84,10 +90,10 @@ async function validateRfidCard(cardNumber: string): Promise<any> {
           email: true,
           role: true,
           isActive: true,
-          schoolId: true
-        }
+          schoolId: true,
+        },
       },
-    }
+    },
   });
 
   if (!card) {
@@ -111,8 +117,8 @@ async function validateRfidCard(cardNumber: string): Promise<any> {
       lastName: true,
       role: true,
       isActive: true,
-      schoolId: true
-    }
+      schoolId: true,
+    },
   });
 
   if (!student || !student.isActive) {
@@ -125,8 +131,8 @@ async function validateRfidCard(cardNumber: string): Promise<any> {
       id: true,
       name: true,
       code: true,
-      isActive: true
-    }
+      isActive: true,
+    },
   });
 
   if (!school || !school.isActive) {
@@ -149,8 +155,8 @@ async function validateRfidReader(readerId: string): Promise<any> {
       status: true,
       isActive: true,
       schoolId: true,
-      lastHeartbeat: true
-    }
+      lastHeartbeat: true,
+    },
   });
 
   if (!reader) {
@@ -163,9 +169,10 @@ async function validateRfidReader(readerId: string): Promise<any> {
 
   if (reader.status === 'offline') {
     // Log warning but don't block verification
-    LoggerService.getInstance().warn('RFID reader is offline', { 
-      readerId, 
-      location: reader.location 
+    const location: string = reader.location || '';
+    LoggerService.getInstance().warn('RFID reader is offline', {
+      readerId,
+      location,
     });
   }
 
@@ -183,26 +190,23 @@ async function validateOrderForDelivery(orderId: string, studentId: string): Pro
         include: {
           rfidCards: {
             where: {
-              OR: [
-                { expiresAt: null },
-                { expiresAt: { gt: new Date() } }
-              ],
-              isActive: true
+              OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+              isActive: true,
             },
             select: {
-              cardNumber: true
-            }
-          }
-        }
+              cardNumber: true,
+            },
+          },
+        },
       },
       school: {
         select: {
           id: true,
           name: true,
-          code: true
-        }
-      }
-    }
+          code: true,
+        },
+      },
+    },
   });
 
   if (!order) {
@@ -244,31 +248,31 @@ async function recordDeliveryVerification(
     data: {
       cardId: card.id,
       studentId: card.studentId,
-      readerId: readerId || null,
-      orderId: orderId || null,
+      readerId: readerId || 'manual-verification',
+      orderId: orderId ?? null,
       status: 'verified',
       verificationData: JSON.stringify({
-        location: location || null,
-        verificationData: verificationData || {}
+        location: location ?? null,
+        verificationData: verificationData || {},
       }),
-      verifiedAt: new Date()
-    }
+      verifiedAt: new Date(),
+    },
   });
 
   // Update card last used timestamp
   await prisma.rFIDCard.update({
     where: { id: card.id },
-    data: { lastUsedAt: new Date() }
+    data: { lastUsedAt: new Date() },
   });
 
   // Update order status if order was provided
   if (orderId) {
     await prisma.order.update({
       where: { id: orderId },
-      data: { 
+      data: {
         status: 'delivered',
-        deliveredAt: new Date()
-      }
+        deliveredAt: new Date(),
+      },
     });
   }
 
@@ -280,18 +284,20 @@ async function recordDeliveryVerification(
  */
 function canPerformVerification(requestingUser: AuthenticatedUser, schoolId: string): boolean {
   const userRole = requestingUser.role;
-  
+
   // Super admin and admin can verify anywhere
   if (['super_admin', 'admin'].includes(userRole)) {
     return true;
   }
-  
+
   // School admin, staff, and teachers can verify in their school
-  if (['school_admin', 'staff', 'teacher'].includes(userRole) && 
-      requestingUser.schoolId === schoolId) {
+  if (
+    ['school_admin', 'staff', 'teacher'].includes(userRole) &&
+    requestingUser.schoolId === schoolId
+  ) {
     return true;
   }
-  
+
   return false;
 }
 
@@ -316,9 +322,9 @@ async function createVerificationAuditLog(
         metadata: JSON.stringify({
           action: 'DELIVERY_VERIFIED',
           timestamp: new Date().toISOString(),
-          cardId
-        })
-      }
+          cardId,
+        }),
+      },
     });
   } catch (auditError) {
     // If audit log creation fails, log the error but don't fail the verification
@@ -336,74 +342,79 @@ export const verifyRfidCardHandler = async (
 ): Promise<APIGatewayProxyResult> => {
   const logger = LoggerService.getInstance();
   const requestId = context.awsRequestId;
-  
+
   try {
     logger.info('RFID card verification request started', { requestId });
-    
+
     // Authenticate request
     const authenticatedUser = await authenticateLambda(event);
-    
+
     // Parse and validate request body
     const requestBody = JSON.parse(event.body || '{}');
     const { error, value: verifyData } = verifyCardSchema.validate(requestBody);
-    
+
     if (error) {
       logger.warn('Invalid verification request data', { requestId, error: error.details });
-      return createErrorResponse(400, 'Invalid request data', undefined, 'VALIDATION_ERROR');
+      return createErrorResponse('VALIDATION_ERROR', 'Invalid request data', 400, error.details);
     }
-    
-    const { cardNumber, readerId, orderId, location, verificationData } = verifyData as VerifyCardRequest;
-    
+
+    const { cardNumber, readerId, orderId, location, verificationData } =
+      verifyData as VerifyCardRequest;
+
     // Validate RFID card
     const { card, student, school } = await validateRfidCard(cardNumber);
-    
+
     // Authorization check
     if (!canPerformVerification(authenticatedUser.user!, school.id)) {
       logger.warn('Unauthorized verification attempt', {
         requestId,
-        userId: authenticatedUser.id,
+        userId: authenticatedUser.userId,
         cardNumber,
         schoolId: school.id,
-        userRole: authenticatedUser.role
+        userRole: authenticatedUser.role,
       });
-      return createErrorResponse(403, 'Insufficient permissions to perform RFID verification', undefined, 'UNAUTHORIZED');
+      return createErrorResponse(
+        'UNAUTHORIZED',
+        'Insufficient permissions to perform RFID verification',
+        403
+      );
     }
-    
+
     let result: VerificationResult;
     let reader: any = null;
     let order: any = null;
     const warnings: string[] = [];
-    
+
     try {
       // Validate reader if provided
       if (readerId) {
         reader = await validateRfidReader(readerId);
-        
+
         // Check if reader belongs to the same school
         if (reader.schoolId !== school.id) {
           warnings.push('RFID reader belongs to a different school');
         }
       }
-      
+
       // Validate order if provided
       if (orderId) {
         order = await validateOrderForDelivery(orderId, student.id);
-        
+
         // Check if order belongs to the same school
         if (order.student.schoolId !== school.id) {
           throw new Error('Order belongs to a different school');
         }
       }
-      
+
       // Record delivery verification
       const verification = await recordDeliveryVerification(
         card,
         readerId,
         orderId,
-        location,
+        location ?? undefined,
         verificationData
       );
-      
+
       result = {
         success: true,
         cardId: card.id,
@@ -413,58 +424,56 @@ export const verifyRfidCardHandler = async (
         student: {
           id: student.id,
           name: `${student.firstName} ${student.lastName}`,
-          firstName: student.firstName,
-          lastName: student.lastName,
+          firstName: student.firstName || '',
+          lastName: student.lastName || '',
           email: student.email,
-          role: student.role
+          role: student.role,
         },
         school: {
           id: school.id,
           name: school.name,
-          code: school.code
+          code: school.code,
         },
-        order: order ? {
-          id: order.id,
-          orderNumber: order.orderNumber,
-          status: 'delivered', // Updated status
-          deliveryDate: order.deliveryDate,
-          totalAmount: order.totalAmount
-        } : undefined,
-        reader: reader ? {
-          id: reader.id,
-          name: reader.name,
-          location: reader.location,
-          status: reader.status
-        } : undefined,
-        warnings: warnings.length > 0 ? warnings : undefined
+        order: order
+          ? {
+              id: order.id,
+              orderNumber: order.orderNumber,
+              status: 'delivered', // Updated status
+              deliveryDate: order.deliveryDate,
+              totalAmount: order.totalAmount,
+            }
+          : undefined,
+        reader: reader
+          ? {
+              id: reader.id,
+              name: reader.name,
+              location: reader.location || '',
+              status: reader.status,
+            }
+          : undefined,
+        warnings: warnings.length > 0 ? warnings : undefined,
       };
-      
+
       // Create audit log
-      await createVerificationAuditLog(
-        verification.id,
-        card.id,
-        authenticatedUser.id,
-        {
-          cardNumber,
-          studentId: student.id,
-          schoolId: school.id,
-          orderId,
-          readerId,
-          location,
-          verifiedBy: authenticatedUser.email,
-          timestamp: new Date().toISOString()
-        }
-      );
-      
+      await createVerificationAuditLog(verification.id, card.id, authenticatedUser.userId!, {
+        cardNumber,
+        studentId: student.id,
+        schoolId: school.id,
+        orderId,
+        readerId,
+        location,
+        verifiedBy: authenticatedUser.email,
+        timestamp: new Date().toISOString(),
+      });
+
       logger.info('RFID card verified successfully', {
         requestId,
         verificationId: verification.id,
         cardNumber,
         studentId: student.id,
         orderId,
-        verifiedBy: authenticatedUser.email
+        verifiedBy: authenticatedUser.email,
       });
-      
     } catch (validationError: any) {
       result = {
         success: false,
@@ -475,39 +484,40 @@ export const verifyRfidCardHandler = async (
         student: {
           id: student.id,
           name: `${student.firstName} ${student.lastName}`,
-          firstName: student.firstName,
-          lastName: student.lastName,
+          firstName: student.firstName || '',
+          lastName: student.lastName || '',
           email: student.email,
-          role: student.role
+          role: student.role,
         },
         school: {
           id: school.id,
           name: school.name,
-          code: school.code
-        }
+          code: school.code,
+        },
       };
-      
+
       logger.warn('RFID card verification failed', {
         requestId,
         cardNumber,
         error: validationError.message,
-        studentId: student.id
+        studentId: student.id,
       });
     }
-    
+
     return createSuccessResponse({
       message: result.success ? 'Verification completed successfully' : 'Verification failed',
-      data: result
+      data: result,
     });
-    
   } catch (error: any) {
-    logger.error('RFID card verification error', {
-      requestId,
-      error: error.message,
-      stack: error.stack
-    });
-    
-    return handleError(error, 'Failed to verify RFID card');
+    logger.error(
+      'RFID card verification error',
+      error instanceof Error ? error : new Error(String(error)),
+      {
+        requestId,
+      }
+    );
+
+    return handleError(error as Error, 'Failed to verify RFID card');
   } finally {
     await prisma.$disconnect();
   }

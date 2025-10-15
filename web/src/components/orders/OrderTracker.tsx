@@ -4,25 +4,25 @@
  * Displays order progress, delivery updates, and RFID verification
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
-  CheckCircle, 
-  Clock, 
-  Truck, 
-  MapPin, 
+import {
+  CheckCircle,
+  Clock,
+  Truck,
+  MapPin,
   AlertCircle,
   RefreshCw,
   Eye,
   Phone,
-  MessageSquare
+  MessageSquare,
 } from 'lucide-react';
 import { useOrderTracking, useSocketConnection } from '@/hooks/useSocket';
-import { cn, formatTime, formatCurrency } from '@/lib/utils';
+import { cn, formatTime } from '@/lib/utils';
 import { toast } from 'react-hot-toast';
 
 interface OrderTrackerProps {
@@ -120,23 +120,19 @@ const statusSteps: StatusStep[] = [
   },
 ];
 
-export function OrderTracker({ 
-  orderId, 
+export function OrderTracker({
+  orderId,
   className,
   showActions = true,
-  compact = false 
+  compact = false,
 }: OrderTrackerProps) {
   const trackingData = useOrderTracking(orderId);
   const { isConnected, connectionState, reconnect } = useSocketConnection();
   const [showFullHistory, setShowFullHistory] = useState(false);
 
-  const currentStepIndex = statusSteps.findIndex(
-    step => step.key === trackingData.status
-  );
+  const currentStepIndex = statusSteps.findIndex(step => step.key === trackingData.status);
 
-  const progress = currentStepIndex >= 0 
-    ? ((currentStepIndex + 1) / statusSteps.length) * 100 
-    : 0;
+  const progress = currentStepIndex >= 0 ? ((currentStepIndex + 1) / statusSteps.length) * 100 : 0;
 
   const currentStep = statusSteps.find(step => step.key === trackingData.status);
   const isCompleted = trackingData.status === 'delivered';
@@ -174,28 +170,26 @@ export function OrderTracker({
       <div className={cn('flex items-center space-x-3', className)}>
         <div className="flex-shrink-0">
           {currentStep && (
-            <div className={cn(
-              'flex items-center justify-center w-8 h-8 rounded-full border-2',
-              currentStep.color.bg,
-              currentStep.color.border
-            )}>
+            <div
+              className={cn(
+                'flex items-center justify-center w-8 h-8 rounded-full border-2',
+                currentStep.color.bg,
+                currentStep.color.border
+              )}
+            >
               <currentStep.icon className={cn('w-4 h-4', currentStep.color.icon)} />
             </div>
           )}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center space-x-2">
-            <p className="text-sm font-medium text-gray-900 truncate">
-              Order #{orderId.slice(-8)}
-            </p>
+            <p className="text-sm font-medium text-gray-900 truncate">Order #{orderId.slice(-8)}</p>
             <Badge variant={getStatusBadgeVariant(trackingData.status)}>
               {trackingData.status.replace('_', ' ').toUpperCase()}
             </Badge>
           </div>
           {trackingData.estimatedTime && (
-            <p className="text-xs text-gray-500">
-              Est. {formatTime(trackingData.estimatedTime)}
-            </p>
+            <p className="text-xs text-gray-500">Est. {formatTime(trackingData.estimatedTime)}</p>
           )}
         </div>
       </div>
@@ -206,9 +200,7 @@ export function OrderTracker({
     <Card className={cn('w-full max-w-md mx-auto', className)}>
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-semibold">
-            Order #{orderId.slice(-8)}
-          </CardTitle>
+          <CardTitle className="text-lg font-semibold">Order #{orderId.slice(-8)}</CardTitle>
           <div className="flex items-center space-x-2">
             <Badge variant={getStatusBadgeVariant(trackingData.status)}>
               {trackingData.status.replace('_', ' ').toUpperCase()}
@@ -220,15 +212,14 @@ export function OrderTracker({
                 onClick={handleRefresh}
                 disabled={connectionState === 'connecting'}
               >
-                <RefreshCw className={cn(
-                  'w-4 h-4',
-                  connectionState === 'connecting' && 'animate-spin'
-                )} />
+                <RefreshCw
+                  className={cn('w-4 h-4', connectionState === 'connecting' && 'animate-spin')}
+                />
               </Button>
             )}
           </div>
         </div>
-        
+
         {trackingData.estimatedTime && !isCompleted && (
           <p className="text-sm text-muted-foreground">
             Estimated completion: {formatTime(trackingData.estimatedTime)}
@@ -262,13 +253,7 @@ export function OrderTracker({
               <span className="font-medium">Progress</span>
               <span className="text-muted-foreground">{Math.round(progress)}%</span>
             </div>
-            <Progress 
-              value={progress} 
-              className={cn(
-                'h-2',
-                isCompleted && 'bg-green-100'
-              )}
-            />
+            <Progress value={progress} className={cn('h-2', isCompleted && 'bg-green-100')} />
           </div>
         )}
 
@@ -299,50 +284,58 @@ export function OrderTracker({
                     isPending && 'border-gray-200 bg-gray-50'
                   )}
                 >
-                  <Icon className={cn(
-                    'w-5 h-5 transition-colors duration-200',
-                    isCompleted && step.color.icon,
-                    isPending && 'text-gray-400'
-                  )} />
+                  <Icon
+                    className={cn(
+                      'w-5 h-5 transition-colors duration-200',
+                      isCompleted && step.color.icon,
+                      isPending && 'text-gray-400'
+                    )}
+                  />
                 </div>
                 <div className="flex-1 pb-4">
-                  <p className={cn(
-                    'font-medium transition-colors duration-200',
-                    isCurrent && 'text-blue-600',
-                    isCompleted && !isCurrent && step.color.text,
-                    isPending && 'text-gray-500'
-                  )}>
+                  <p
+                    className={cn(
+                      'font-medium transition-colors duration-200',
+                      isCurrent && 'text-blue-600',
+                      isCompleted && !isCurrent && step.color.text,
+                      isPending && 'text-gray-500'
+                    )}
+                  >
                     {step.label}
                   </p>
-                  <p className={cn(
-                    'text-sm transition-colors duration-200',
-                    isCurrent && 'text-blue-500',
-                    isCompleted && !isCurrent && 'text-gray-600',
-                    isPending && 'text-gray-400'
-                  )}>
+                  <p
+                    className={cn(
+                      'text-sm transition-colors duration-200',
+                      isCurrent && 'text-blue-500',
+                      isCompleted && !isCurrent && 'text-gray-600',
+                      isPending && 'text-gray-400'
+                    )}
+                  >
                     {step.description}
                   </p>
-                  
+
                   {/* Show current step details */}
                   {isCurrent && trackingData.estimatedTime && (
                     <p className="text-xs text-blue-500 mt-1">
                       Est. completion: {formatTime(trackingData.estimatedTime)}
                     </p>
                   )}
-                  
+
                   {/* Show delivery person info */}
-                  {isCurrent && step.key === 'out_for_delivery' && trackingData.deliveryPersonId && (
-                    <div className="flex items-center space-x-2 mt-2">
-                      <Button variant="outline" size="sm">
-                        <Phone className="w-3 h-3 mr-1" />
-                        Call Driver
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        <MessageSquare className="w-3 h-3 mr-1" />
-                        Message
-                      </Button>
-                    </div>
-                  )}
+                  {isCurrent &&
+                    step.key === 'out_for_delivery' &&
+                    trackingData.deliveryPersonId && (
+                      <div className="flex items-center space-x-2 mt-2">
+                        <Button variant="outline" size="sm">
+                          <Phone className="w-3 h-3 mr-1" />
+                          Call Driver
+                        </Button>
+                        <Button variant="outline" size="sm">
+                          <MessageSquare className="w-3 h-3 mr-1" />
+                          Message
+                        </Button>
+                      </div>
+                    )}
                 </div>
               </div>
             );
@@ -351,20 +344,25 @@ export function OrderTracker({
 
         {/* RFID Verification Status */}
         {isCompleted && (
-          <Alert className={cn(
-            trackingData.location ? 'border-green-200 bg-green-50' : 'border-yellow-200 bg-yellow-50'
-          )}>
-            <CheckCircle className={cn(
-              'h-4 w-4',
-              trackingData.location ? 'text-green-600' : 'text-yellow-600'
-            )} />
-            <AlertDescription className={cn(
-              trackingData.location ? 'text-green-800' : 'text-yellow-800'
-            )}>
-              {trackingData.location 
-                ? '✅ Delivery verified with RFID' 
-                : '⏳ Delivery completed - RFID verification pending'
-              }
+          <Alert
+            className={cn(
+              trackingData.location
+                ? 'border-green-200 bg-green-50'
+                : 'border-yellow-200 bg-yellow-50'
+            )}
+          >
+            <CheckCircle
+              className={cn(
+                'h-4 w-4',
+                trackingData.location ? 'text-green-600' : 'text-yellow-600'
+              )}
+            />
+            <AlertDescription
+              className={cn(trackingData.location ? 'text-green-800' : 'text-yellow-800')}
+            >
+              {trackingData.location
+                ? '✅ Delivery verified with RFID'
+                : '⏳ Delivery completed - RFID verification pending'}
             </AlertDescription>
           </Alert>
         )}
@@ -385,24 +383,23 @@ export function OrderTracker({
                 </Button>
               )}
             </div>
-            
+
             <div className="space-y-2">
-              {(showFullHistory ? trackingData.updates : trackingData.updates.slice(0, 3))
-                .map((update, index) => (
+              {(showFullHistory ? trackingData.updates : trackingData.updates.slice(0, 3)).map(
+                (update, index) => (
                   <div key={index} className="flex justify-between items-start text-sm">
                     <div>
                       <p className="font-medium text-gray-900">
                         {update.status.replace('_', ' ').toUpperCase()}
                       </p>
-                      {update.message && (
-                        <p className="text-gray-600">{update.message}</p>
-                      )}
+                      {update.message && <p className="text-gray-600">{update.message}</p>}
                     </div>
                     <span className="text-xs text-gray-500 whitespace-nowrap ml-2">
                       {formatTime(update.timestamp)}
                     </span>
                   </div>
-                ))}
+                )
+              )}
             </div>
           </div>
         )}
@@ -424,13 +421,10 @@ export function OrderTracker({
         {/* Connection Status Indicator */}
         <div className="flex items-center justify-center pt-2">
           <div className="flex items-center space-x-2 text-xs text-gray-500">
-            <div className={cn(
-              'w-2 h-2 rounded-full',
-              isConnected ? 'bg-green-500' : 'bg-red-500'
-            )} />
-            <span>
-              {isConnected ? 'Live updates active' : 'Connection lost'}
-            </span>
+            <div
+              className={cn('w-2 h-2 rounded-full', isConnected ? 'bg-green-500' : 'bg-red-500')}
+            />
+            <span>{isConnected ? 'Live updates active' : 'Connection lost'}</span>
           </div>
         </div>
       </CardContent>

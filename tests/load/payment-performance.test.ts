@@ -15,12 +15,12 @@ import { CustomerService } from '../../src/services/customer.service';
 import { PaymentGatewayService } from '../../src/services/paymentGateway.service';
 import { NotificationService } from '../../src/services/notification.service';
 import { AnalyticsService } from '../../src/services/analytics.service';
-import { RFIDService } from '../../src/services/rfid.service';
+import { RfidService } from '../../src/services/rfid.service';
 import { DatabaseManager } from '../../src/database/DatabaseManager';
 import { LoadTestDataGenerator } from '../utils/LoadTestDataGenerator';
 import { MockPaymentProcessor } from '../mocks/MockPaymentProcessor';
 import { MockNotificationProvider } from '../mocks/MockNotificationProvider';
-import { PaymentMethod, PaymentStatus, OrderStatus } from '../../src/types';
+import { PaymentMethod, PaymentStatus, OrderStatus } from '../../src/types/api.types';
 import { OrderStatus as OrderStatusEnum } from '../../src/services/order.service';
 
 // Load testing configuration
@@ -137,7 +137,7 @@ describe('Payment Performance Load Tests', () => {
   let paymentGatewayService: PaymentGatewayService;
   let notificationService: typeof NotificationService;
   let analyticsService: typeof AnalyticsService;
-  let rfidService: typeof RFIDService;
+  let rfidService: typeof RfidService;
   let performanceTracker: PerformanceTracker;
 
   beforeAll(async () => {
@@ -150,7 +150,7 @@ describe('Payment Performance Load Tests', () => {
     paymentGatewayService = PaymentGatewayService.getInstance(); // Singleton
     notificationService = NotificationService; // Static class
     analyticsService = AnalyticsService; // Static class
-    rfidService = RFIDService; // Static class
+    rfidService = RfidService; // Static class
 
     // Static method services - no instance needed
     customerService = CustomerService.getInstance(); // Singleton
@@ -185,12 +185,13 @@ describe('Payment Performance Load Tests', () => {
       const result = await PaymentService.processPayment({
         orderId: testData.id,
         amount: testData.totalAmount,
-        paymentMethodId: 'card',
+        currency: 'INR',
+          paymentMethod: 'card',
               });
       const processingTime = performance.now() - startTime;
 
       expect(result.success).toBe(true);
-      expect(result.payment?.id).toBeDefined();
+      expect(result.data?.paymentId).toBeDefined();
       expect(processingTime).toBeLessThan(LOAD_TEST_CONFIG.PERFORMANCE_THRESHOLDS.PAYMENT_PROCESSING_MS);
     });
 
@@ -202,12 +203,13 @@ describe('Payment Performance Load Tests', () => {
       const result = await PaymentService.processPayment({
         orderId: testData.id,
         amount: testData.totalAmount,
-        paymentMethodId: 'card'
+        currency: 'INR',
+        paymentMethod: 'card'
       });
       const processingTime = performance.now() - startTime;
 
       expect(result.success).toBe(false);
-      expect(result.message).toBeDefined();
+      expect(result.error?.message).toBeDefined();
       expect(processingTime).toBeLessThan(LOAD_TEST_CONFIG.PERFORMANCE_THRESHOLDS.PAYMENT_PROCESSING_MS);
     });
 
@@ -262,9 +264,10 @@ describe('Payment Performance Load Tests', () => {
               const result = await PaymentService.processPayment({
                 orderId: order.id,
                 amount: order.totalAmount,
-                paymentMethodId: 'card',
+                currency: 'INR',
+          paymentMethod: 'card',
                               });
-              
+
               const responseTime = performance.now() - startTime;
               performanceTracker.recordTransaction(responseTime, result.success);
               return result;
@@ -305,7 +308,8 @@ describe('Payment Performance Load Tests', () => {
         return PaymentService.processPayment({
           orderId: order.id,
           amount: testAmount,
-          paymentMethodId: 'card',
+          currency: 'INR',
+          paymentMethod: 'card',
         });
       });
 
@@ -316,13 +320,13 @@ describe('Payment Performance Load Tests', () => {
       expect(successfulPayments.length).toBe(concurrentTransactions);
 
       // Verify unique transaction IDs
-      const transactionIds = successfulPayments.map(p => p.payment?.id);
+      const transactionIds = successfulPayments.map(p => p.data?.paymentId);
       const uniqueIds = new Set(transactionIds);
       expect(uniqueIds.size).toBe(concurrentTransactions);
 
       // Verify database consistency
       for (const result of successfulPayments) {
-        const paymentRecord = await paymentService.getPaymentOrder(result.payment?.id);
+        const paymentRecord = await paymentService.getPaymentOrder(result.data!.paymentId);
         expect(paymentRecord).toBeDefined();
         expect(paymentRecord.amount).toBe(testAmount);
         expect(paymentRecord.status).toBe('completed');
@@ -348,7 +352,8 @@ describe('Payment Performance Load Tests', () => {
         const result = await PaymentService.processPayment({
           orderId: testData.id,
           amount: testData.totalAmount,
-          paymentMethodId: method,
+          currency: 'INR',
+          paymentMethod: method,
                     ...(method === 'card' && {
           }),
           ...(method === 'card' && {
@@ -379,7 +384,8 @@ describe('Payment Performance Load Tests', () => {
       const result = await PaymentService.processPayment({
         orderId: testData.id,
         amount: testData.totalAmount,
-        paymentMethodId: 'card',
+        currency: 'INR',
+          paymentMethod: 'card',
               });
       const processingTime = performance.now() - startTime;
 
@@ -408,7 +414,8 @@ describe('Payment Performance Load Tests', () => {
         const result = await PaymentService.processPayment({
           orderId: order.id,
           amount: order.totalAmount,
-          paymentMethodId: 'card',
+          currency: 'INR',
+          paymentMethod: 'card',
         });
         const responseTime = performance.now() - startTime;
 
@@ -524,7 +531,8 @@ describe('Payment Performance Load Tests', () => {
           await PaymentService.processPayment({
             orderId: order.id,
             amount: order.totalAmount,
-            paymentMethodId: 'card',
+            currency: 'INR',
+          paymentMethod: 'card',
                       });
 
           memoryReadings.push(process.memoryUsage().heapUsed);
@@ -556,7 +564,8 @@ describe('Payment Performance Load Tests', () => {
           return PaymentService.processPayment({
             orderId: order.id,
             amount: 25.99,
-            paymentMethodId: 'card',
+            currency: 'INR',
+          paymentMethod: 'card',
                       });
         })();
         
@@ -605,7 +614,8 @@ describe('Payment Performance Load Tests', () => {
           const paymentResult = await PaymentService.processPayment({
             orderId: order.data?.id,
             amount: order.data?.totalAmount,
-            paymentMethodId: 'card',
+            currency: 'INR',
+          paymentMethod: 'card',
                       });
 
           // Update order status
@@ -675,7 +685,8 @@ describe('Payment Performance Load Tests', () => {
               const payment = await PaymentService.processPayment({
                 orderId: order.data?.id,
                 amount: order.data?.totalAmount,
-                paymentMethodId: paymentMethod,
+                currency: 'INR',
+                paymentMethod,
                                 ...(paymentMethod === 'card' && {
                 })
               });
@@ -729,7 +740,8 @@ describe('Payment Performance Load Tests', () => {
           const result = await PaymentService.processPayment({
             orderId: order.id,
             amount: order.totalAmount,
-            paymentMethodId: 'card',
+            currency: 'INR',
+          paymentMethod: 'card',
                       });
           const responseTime = performance.now() - startTime;
 

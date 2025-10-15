@@ -133,13 +133,13 @@ describe('PerformanceService', () => {
       }
 
       expect(metrics).toBeDefined();
-      expect(metrics.timestamp).toBeGreaterThan(0);
-      expect(metrics.memoryUsage.percentage).toBeGreaterThan(0);
-      expect(metrics.cpuUsage).toBeGreaterThanOrEqual(0);
-      expect(metrics.activeConnections).toBe(5);
-      expect(metrics.responseTime).toBeGreaterThanOrEqual(0);
-      expect(metrics.errorRate).toBeGreaterThanOrEqual(0);
-      expect(metrics.requestsPerMinute).toBeGreaterThanOrEqual(0);
+      expect((metrics as any).timestamp).toBeGreaterThan(0);
+      expect((metrics as any).memoryUsage.percentage).toBeGreaterThan(0);
+      expect((metrics as any).cpuUsage).toBeGreaterThanOrEqual(0);
+      expect((metrics as any).activeConnections).toBe(5);
+      expect((metrics as any).responseTime).toBeGreaterThanOrEqual(0);
+      expect((metrics as any).errorRate).toBeGreaterThanOrEqual(0);
+      expect((metrics as any).requestsPerMinute).toBeGreaterThanOrEqual(0);
     });
 
     it('should handle database metrics failure gracefully', async () => {
@@ -174,9 +174,9 @@ describe('PerformanceService', () => {
       }
 
       expect(metrics).toBeDefined();
-      expect(metrics.activeConnections).toBe(0);
-      expect(metrics.totalConnections).toBe(0);
-      expect(metrics.averageQueryTime).toBe(0);
+      expect((metrics as any).activeConnections).toBe(0);
+      expect((metrics as any).totalConnections).toBe(0);
+      expect((metrics as any).averageQueryTime).toBe(0);
     });
 
     it('should calculate memory usage percentage correctly', async () => {
@@ -216,9 +216,9 @@ describe('PerformanceService', () => {
       const expectedUsedMemory = 50000000 + 10000000; // rss + external
       const expectedPercentage = (expectedUsedMemory / 8000000000) * 100;
 
-      expect(metrics.memoryUsage.used).toBe(expectedUsedMemory);
-      expect(metrics.memoryUsage.total).toBe(8000000000);
-      expect(metrics.memoryUsage.percentage).toBeCloseTo(expectedPercentage, 2);
+      expect((metrics as any).memoryUsage.used).toBe(expectedUsedMemory);
+      expect((metrics as any).memoryUsage.total).toBe(8000000000);
+      expect((metrics as any).memoryUsage.percentage).toBeCloseTo(expectedPercentage, 2);
     });
 
     it('should calculate CPU usage correctly', async () => {
@@ -255,8 +255,8 @@ describe('PerformanceService', () => {
         };
       }
 
-      expect(metrics.cpuUsage).toBeGreaterThanOrEqual(0);
-      expect(metrics.cpuUsage).toBeLessThanOrEqual(100);
+      expect((metrics as any).cpuUsage).toBeGreaterThanOrEqual(0);
+      expect((metrics as any).cpuUsage).toBeLessThanOrEqual(100);
     });
   });
 
@@ -367,10 +367,10 @@ describe('PerformanceService', () => {
       
       (RedisService.get as jest.Mock).mockResolvedValue(JSON.stringify(mockTrendsData));
 
-      const trends = await PerformanceService.getPerformanceTrends('cpuUsage', { start: Date.now() - 86400000, end: Date.now() });
+      const trends = await PerformanceService.getPerformanceTrends('cpuUsage', { start: new Date(Date.now() - 86400000), end: new Date(Date.now()) });
 
       expect(trends).toHaveLength(5);
-      expect(trends.map(t => t.metric)).toEqual([
+      expect(trends.map((t: any) => t.metric)).toEqual([
         'responseTime',
         'errorRate', 
         'requestsPerMinute',
@@ -378,7 +378,7 @@ describe('PerformanceService', () => {
         'cpuUsage'
       ]);
 
-      const responseTimeTrend = trends.find(t => t.metric === 'responseTime');
+      const responseTimeTrend = trends.find((t: any) => t.metric === 'responseTime');
       expect(responseTimeTrend).toBeDefined();
       expect(responseTimeTrend!.data).toHaveLength(2);
       expect(responseTimeTrend!.trend).toBeOneOf(['improving', 'degrading', 'stable']);
@@ -387,10 +387,10 @@ describe('PerformanceService', () => {
     it('should handle empty trends data', async () => {
       (RedisService.get as jest.Mock).mockResolvedValue('{}');
 
-      const trends = await PerformanceService.getPerformanceTrends('cpuUsage', { start: Date.now() - 86400000, end: Date.now() });
+      const trends = await PerformanceService.getPerformanceTrends('cpuUsage', { start: new Date(Date.now() - 86400000), end: new Date(Date.now()) });
 
       expect(trends).toHaveLength(5);
-      trends.forEach(trend => {
+      trends.forEach((trend: any) => {
         expect(trend.data).toEqual([]);
         expect(trend.trend).toBe('stable');
       });
@@ -405,19 +405,19 @@ describe('PerformanceService', () => {
       
       (RedisService.get as jest.Mock).mockResolvedValue(JSON.stringify(improvingTrend));
 
-      const trends = await PerformanceService.getPerformanceTrends('cpuUsage', { start: Date.now() - 86400000, end: Date.now() });
+      const trends = await PerformanceService.getPerformanceTrends('cpuUsage', { start: new Date(Date.now() - 86400000), end: new Date(Date.now()) });
 
-      const responseTimeTrend = trends.find(t => t.metric === 'responseTime');
+      const responseTimeTrend = trends.find((t: any) => t.metric === 'responseTime');
       expect(responseTimeTrend!.trend).toBe('improving');
     });
 
     it('should support different time periods', async () => {
       (RedisService.get as jest.Mock).mockResolvedValue('{}');
 
-      await PerformanceService.getPerformanceTrends('cpuUsage', { start: Date.now() - 3600000, end: Date.now() });
+      await PerformanceService.getPerformanceTrends('cpuUsage', { start: new Date(Date.now() - 3600000), end: new Date(Date.now()) });
       expect(RedisService.get).toHaveBeenCalledWith('performance:trends:1h');
 
-      await PerformanceService.getPerformanceTrends('cpuUsage', { start: Date.now() - 604800000, end: Date.now() });
+      await PerformanceService.getPerformanceTrends('cpuUsage', { start: new Date(Date.now() - 604800000), end: new Date(Date.now()) });
       expect(RedisService.get).toHaveBeenCalledWith('performance:trends:7d');
     });
   });
@@ -509,7 +509,7 @@ describe('PerformanceService', () => {
       const healthStatus = await PerformanceService.getHealthStatus();
 
       expect(healthStatus.status).toBe('critical');
-      expect(healthStatus.alerts.some(alert => alert.severity === 'critical')).toBe(true);
+      expect(healthStatus.alerts.some((alert: any) => alert.severity === 'critical')).toBe(true);
     });
 
     it('should include system uptime in health status', async () => {
@@ -552,7 +552,7 @@ describe('PerformanceService', () => {
 
       const healthStatus = await PerformanceService.getHealthStatus();
 
-      expect(healthStatus.alerts.some(alert => alert.severity === 'critical')).toBe(true);
+      expect(healthStatus.alerts.some((alert: any) => alert.severity === 'critical')).toBe(true);
       expect(healthStatus.status).toBe('critical');
     });
   });
@@ -766,9 +766,9 @@ describe('PerformanceService', () => {
         };
       }
 
-      expect(compliance.compliant).toBe(false);
-      expect(compliance.deviation).toBe(25); // 25% over target
-      expect(compliance.recommendation).toContain('exceeds target');
+      expect((compliance as any).compliant).toBe(false);
+      expect((compliance as any).deviation).toBe(25); // 25% over target
+      expect((compliance as any).recommendation).toContain('exceeds target');
     });
   });
 
@@ -808,8 +808,8 @@ describe('PerformanceService', () => {
       }
 
       expect(metrics).toBeDefined();
-      expect(metrics.requestsPerMinute).toBe(0);
-      expect(metrics.errorRate).toBe(0);
+      expect((metrics as any).requestsPerMinute).toBe(0);
+      expect((metrics as any).errorRate).toBe(0);
     });
 
     it('should handle invalid JSON data gracefully', async () => {
@@ -847,7 +847,7 @@ describe('PerformanceService', () => {
       }
 
       expect(metrics).toBeDefined();
-      expect(metrics.requestsPerMinute).toBe(0);
+      expect((metrics as any).requestsPerMinute).toBe(0);
     });
   });
 });

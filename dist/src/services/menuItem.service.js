@@ -1,435 +1,22 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.menuItemService = exports.MenuItemService = exports.MenuCategory = void 0;
+exports.MenuItemService = exports.MenuCategory = void 0;
 const client_1 = require("@prisma/client");
-var MenuCategory;
-(function (MenuCategory) {
-    MenuCategory["BREAKFAST"] = "BREAKFAST";
-    MenuCategory["LUNCH"] = "LUNCH";
-    MenuCategory["SNACKS"] = "SNACKS";
-    MenuCategory["DINNER"] = "DINNER";
-})(MenuCategory || (exports.MenuCategory = MenuCategory = {}));
 const menuItem_repository_1 = require("../repositories/menuItem.repository");
-const logger_1 = require("../utils/logger");
 const cache_1 = require("../utils/cache");
-const uuid_1 = require("uuid");
+const logger_1 = require("../utils/logger");
+var menuItem_repository_2 = require("../repositories/menuItem.repository");
+Object.defineProperty(exports, "MenuCategory", { enumerable: true, get: function () { return menuItem_repository_2.MenuCategory; } });
 class MenuItemService {
-    static CACHE_TTL = 300;
-    static MAX_BATCH_SIZE = 100;
+    static repository;
+    static instance;
+    static getInstance() {
+        if (!MenuItemService.instance) {
+            MenuItemService.instance = new MenuItemService();
+        }
+        return MenuItemService.instance;
+    }
     static async createMenuItem(input) {
-        try {
-            logger_1.logger.info('Creating menu item', { name: input.name, category: input.category });
-            await this.validateCreateInput(input);
-            if (input.schoolId) {
-                const existingItem = await menuItem_repository_1.MenuItemRepository.findByNameAndSchool(input.name.trim(), input.schoolId);
-                if (existingItem) {
-                    throw new Error(`Menu item with name "${input.name}" already exists for this school`);
-                }
-            }
-            const createData = {
-                id: (0, uuid_1.v4)(),
-                name: input.name.trim(),
-                description: input.description?.trim(),
-                category: input.category,
-                price: new client_1.Prisma.Decimal(input.price),
-                originalPrice: input.originalPrice ? new client_1.Prisma.Decimal(input.originalPrice) : undefined,
-                currency: input.currency,
-                available: input.available ?? true,
-                featured: input.featured ?? false,
-                imageUrl: input.imageUrl,
-                nutritionalInfo: input.nutritionalInfo ? JSON.stringify(input.nutritionalInfo) : null,
-                allergens: input.allergens ? JSON.stringify(input.allergens) : null,
-                tags: input.tags ? JSON.stringify(input.tags) : null,
-                preparationTime: input.preparationTime,
-                portionSize: input.portionSize,
-                calories: input.calories,
-                sortOrder: input.sortOrder ?? 0,
-                metadata: JSON.stringify(input.metadata || {}),
-                ...(input.schoolId && {
-                    school: { connect: { id: input.schoolId } }
-                })
-            };
-            const menuItem = await menuItem_repository_1.MenuItemRepository.create(createData);
-            await this.clearRelatedCaches(menuItem.schoolId, menuItem.category);
-            logger_1.logger.info('Menu item created successfully', { menuItemId: menuItem.id });
-            return this.transformMenuItem(menuItem);
-        }
-        catch (error) {
-            logger_1.logger.error('Failed to create menu item', error, { input });
-            throw error;
-        }
-    }
-    static async getMenuItemById(id, includeSchool = true) {
-        try {
-            const cacheKey = `menu_item:${id}:${includeSchool}`;
-            const cached = await cache_1.cache.get(cacheKey);
-            if (cached) {
-                return JSON.parse(cached);
-            }
-            const menuItem = await menuItem_repository_1.MenuItemRepository.findById(id, includeSchool);
-            if (!menuItem) {
-                logger_1.logger.warn('Menu item not found', { menuItemId: id });
-                return null;
-            }
-            const transformedItem = this.transformMenuItem(menuItem);
-            await cache_1.cache.setex(cacheKey, this.CACHE_TTL, JSON.stringify(transformedItem));
-            return transformedItem;
-        }
-        catch (error) {
-            logger_1.logger.error('Failed to get menu item by ID', error, { menuItemId: id });
-            throw error;
-        }
-    }
-    static async getMenuItems(filters = {}, pagination = {}) {
-        try {
-            const page = pagination.page || 1;
-            const limit = Math.min(pagination.limit || 20, 100);
-            const skip = (page - 1) * limit;
-            const options = {
-                filters,
-                skip,
-                take: limit,
-                sortBy: pagination.sortBy || 'sortOrder',
-                sortOrder: pagination.sortOrder || 'asc'
-            };
-            const result = await menuItem_repository_1.MenuItemRepository.findMany(options);
-            const totalPages = Math.ceil(result.total / limit);
-            const transformedItems = result.items.map(item => this.transformMenuItem(item));
-            logger_1.logger.info('Retrieved menu items', {
-                count: transformedItems.length,
-                total: result.total,
-                page,
-                filters
-            });
-            return {
-                items: transformedItems,
-                total: result.total,
-                page,
-                limit,
-                totalPages
-            };
-        }
-        catch (error) {
-            logger_1.logger.error('Failed to get menu items', error, { filters, pagination });
-            throw error;
-        }
-    }
-    static async getMenuItemsByCategory(category, options = {}) {
-        try {
-            const filters = {
-                category,
-                ...(options.schoolId && { schoolId: options.schoolId }),
-                ...(options.available !== undefined && { available: options.available })
-            };
-            const pagination = {
-                limit: options.limit || 50,
-                sortBy: 'sortOrder',
-                sortOrder: 'asc'
-            };
-            const result = await this.getMenuItems(filters, pagination);
-            const items = result.items;
-            logger_1.logger.info('Retrieved menu items by category', {
-                category,
-                count: items.length,
-                options
-            });
-            return items;
-        }
-        catch (error) {
-            logger_1.logger.error('Failed to get menu items by category', error, { category, options });
-            throw error;
-        }
-    }
-    static async getFeaturedItems(options = {}) {
-        try {
-            const filters = {
-                featured: true,
-                available: true,
-                ...(options.schoolId && { schoolId: options.schoolId }),
-                ...(options.category && { category: options.category })
-            };
-            const pagination = {
-                limit: options.limit || 10,
-                sortBy: 'sortOrder',
-                sortOrder: 'asc'
-            };
-            const result = await this.getMenuItems(filters, pagination);
-            const items = result.items;
-            logger_1.logger.info('Retrieved featured menu items', {
-                count: items.length,
-                options
-            });
-            return items;
-        }
-        catch (error) {
-            logger_1.logger.error('Failed to get featured menu items', error, { options });
-            throw error;
-        }
-    }
-    static async searchMenuItems(searchTerm, filters = {}, pagination = {}) {
-        try {
-            if (!searchTerm.trim()) {
-                const result = await this.getMenuItems(filters, pagination);
-                return { items: result.items, total: result.total };
-            }
-            const result = await menuItem_repository_1.MenuItemRepository.search(searchTerm.trim(), filters, pagination);
-            const transformedItems = result.items.map(item => this.transformMenuItem(item));
-            return { items: transformedItems, total: result.total };
-            logger_1.logger.info('Searched menu items', {
-                searchTerm,
-                count: transformedItems.length,
-                total: result.total,
-                filters
-            });
-        }
-        catch (error) {
-            logger_1.logger.error('Failed to search menu items', error, { searchTerm, filters });
-            throw error;
-        }
-    }
-    static async updateMenuItem(id, input) {
-        try {
-            logger_1.logger.info('Updating menu item', { menuItemId: id });
-            const existing = await menuItem_repository_1.MenuItemRepository.findById(id);
-            if (!existing) {
-                throw new Error(`Menu item with ID ${id} not found`);
-            }
-            if (input.price !== undefined || input.category !== undefined) {
-                await this.validateUpdateInput(input);
-            }
-            if (input.name && input.name !== existing.name) {
-                if (existing.schoolId) {
-                    const duplicateItem = await menuItem_repository_1.MenuItemRepository.findByNameAndSchool(input.name.trim(), existing.schoolId);
-                    if (duplicateItem && duplicateItem.id !== id) {
-                        throw new Error(`Menu item with name "${input.name}" already exists for this school`);
-                    }
-                }
-            }
-            const updateData = {};
-            if (input.name !== undefined)
-                updateData.name = input.name.trim();
-            if (input.description !== undefined)
-                updateData.description = input.description?.trim();
-            if (input.category !== undefined)
-                updateData.category = input.category;
-            if (input.price !== undefined)
-                updateData.price = new client_1.Prisma.Decimal(input.price);
-            if (input.originalPrice !== undefined) {
-                updateData.originalPrice = input.originalPrice ? new client_1.Prisma.Decimal(input.originalPrice) : null;
-            }
-            if (input.currency !== undefined)
-                updateData.currency = input.currency;
-            if (input.available !== undefined)
-                updateData.available = input.available;
-            if (input.featured !== undefined)
-                updateData.featured = input.featured;
-            if (input.imageUrl !== undefined)
-                updateData.imageUrl = input.imageUrl;
-            if (input.nutritionalInfo !== undefined) {
-                updateData.nutritionalInfo = input.nutritionalInfo ? JSON.stringify(input.nutritionalInfo) : null;
-            }
-            if (input.allergens !== undefined)
-                updateData.allergens = JSON.stringify(input.allergens);
-            if (input.tags !== undefined)
-                updateData.tags = JSON.stringify(input.tags);
-            if (input.preparationTime !== undefined)
-                updateData.preparationTime = input.preparationTime;
-            if (input.portionSize !== undefined)
-                updateData.portionSize = input.portionSize;
-            if (input.calories !== undefined)
-                updateData.calories = input.calories;
-            if (input.sortOrder !== undefined)
-                updateData.sortOrder = input.sortOrder;
-            if (input.metadata !== undefined)
-                updateData.metadata = JSON.stringify(input.metadata);
-            const menuItem = await menuItem_repository_1.MenuItemRepository.update(id, updateData);
-            await this.clearRelatedCaches(menuItem.schoolId, menuItem.category);
-            await cache_1.cache.del(`menu_item:${id}:true`);
-            await cache_1.cache.del(`menu_item:${id}:false`);
-            logger_1.logger.info('Menu item updated successfully', { menuItemId: menuItem.id });
-            return this.transformMenuItem(menuItem);
-        }
-        catch (error) {
-            logger_1.logger.error('Failed to update menu item', error, { menuItemId: id, input });
-            throw error;
-        }
-    }
-    static async deleteMenuItem(id, hard = false) {
-        try {
-            logger_1.logger.info('Deleting menu item', { menuItemId: id, hard });
-            const existing = await menuItem_repository_1.MenuItemRepository.findById(id);
-            if (!existing) {
-                throw new Error(`Menu item with ID ${id} not found`);
-            }
-            let menuItem;
-            if (hard) {
-                menuItem = await menuItem_repository_1.MenuItemRepository.delete(id);
-            }
-            else {
-                menuItem = await menuItem_repository_1.MenuItemRepository.update(id, { available: false });
-            }
-            await this.clearRelatedCaches(menuItem.schoolId, menuItem.category);
-            await cache_1.cache.del(`menu_item:${id}:true`);
-            await cache_1.cache.del(`menu_item:${id}:false`);
-            logger_1.logger.info('Menu item deleted successfully', {
-                menuItemId: menuItem.id,
-                hard
-            });
-            return this.transformMenuItem(menuItem);
-        }
-        catch (error) {
-            logger_1.logger.error('Failed to delete menu item', error, { menuItemId: id });
-            throw error;
-        }
-    }
-    static async updateSortOrders(updates) {
-        try {
-            if (updates.length === 0) {
-                return;
-            }
-            if (updates.length > this.MAX_BATCH_SIZE) {
-                throw new Error(`Cannot update more than ${this.MAX_BATCH_SIZE} items at once`);
-            }
-            logger_1.logger.info('Updating menu item sort orders', { count: updates.length });
-            const ids = updates.map(u => u.id);
-            const existingItems = await Promise.all(ids.map(id => menuItem_repository_1.MenuItemRepository.findById(id)));
-            const missingItems = existingItems
-                .map((item, index) => item ? null : ids[index])
-                .filter(Boolean);
-            if (missingItems.length > 0) {
-                throw new Error(`Menu items not found: ${missingItems.join(', ')}`);
-            }
-            await menuItem_repository_1.MenuItemRepository.batchUpdateSortOrders(updates);
-            const schoolCategories = new Set();
-            existingItems.forEach(item => {
-                if (item?.schoolId && item?.category) {
-                    schoolCategories.add(`${item.schoolId}:${item.category}`);
-                }
-            });
-            await Promise.all(Array.from(schoolCategories).map(key => {
-                const [schoolId, category] = key.split(':');
-                return this.clearRelatedCaches(schoolId, category);
-            }));
-            logger_1.logger.info('Menu item sort orders updated successfully', {
-                count: updates.length
-            });
-        }
-        catch (error) {
-            logger_1.logger.error('Failed to update sort orders', error, { updates });
-            throw error;
-        }
-    }
-    static async toggleFeatured(id) {
-        try {
-            const existing = await this.getMenuItemById(id);
-            if (!existing) {
-                throw new Error(`Menu item with ID ${id} not found`);
-            }
-            return await this.updateMenuItem(id, { featured: !existing.featured });
-        }
-        catch (error) {
-            logger_1.logger.error('Failed to toggle featured status', error, { menuItemId: id });
-            throw error;
-        }
-    }
-    static async toggleAvailability(id) {
-        try {
-            const existing = await this.getMenuItemById(id);
-            if (!existing) {
-                throw new Error(`Menu item with ID ${id} not found`);
-            }
-            return await this.updateMenuItem(id, { available: !existing.available });
-        }
-        catch (error) {
-            logger_1.logger.error('Failed to toggle availability', error, { menuItemId: id });
-            throw error;
-        }
-    }
-    static async getMenuItemsByAllergens(excludeAllergens, options = {}) {
-        try {
-            const filters = {
-                available: true,
-                ...(options.schoolId && { schoolId: options.schoolId }),
-                ...(options.category && { category: options.category })
-            };
-            const result = await this.getMenuItems(filters);
-            const filteredItems = result.items.filter(item => {
-                if (!item.allergens)
-                    return true;
-                try {
-                    const itemAllergens = Array.isArray(item.allergens)
-                        ? item.allergens
-                        : JSON.parse(item.allergens);
-                    return !excludeAllergens.some(allergen => itemAllergens.includes(allergen));
-                }
-                catch {
-                    return true;
-                }
-            });
-            logger_1.logger.info('Retrieved menu items by allergen restrictions', {
-                excludeAllergens,
-                totalItems: result.items.length,
-                filteredItems: filteredItems.length,
-                options
-            });
-            return filteredItems;
-        }
-        catch (error) {
-            logger_1.logger.error('Failed to get menu items by allergens', error, {
-                excludeAllergens,
-                options
-            });
-            throw error;
-        }
-    }
-    static async getNutritionalSummary(itemIds) {
-        try {
-            const items = await Promise.all(itemIds.map(id => this.getMenuItemById(id)));
-            const validItems = items.filter(Boolean);
-            let totalCalories = 0;
-            const allAllergens = new Set();
-            const nutritionalInfo = {};
-            validItems.forEach(item => {
-                if (item.calories) {
-                    totalCalories += item.calories;
-                }
-                if (item.allergens) {
-                    try {
-                        const itemAllergens = Array.isArray(item.allergens)
-                            ? item.allergens
-                            : JSON.parse(item.allergens);
-                        itemAllergens.forEach(allergen => allAllergens.add(allergen));
-                    }
-                    catch {
-                    }
-                }
-                if (item.nutritionalInfo) {
-                    try {
-                        const itemNutrition = typeof item.nutritionalInfo === 'string'
-                            ? JSON.parse(item.nutritionalInfo)
-                            : item.nutritionalInfo;
-                        Object.keys(itemNutrition).forEach(key => {
-                            if (typeof itemNutrition[key] === 'number') {
-                                nutritionalInfo[key] = (nutritionalInfo[key] || 0) + itemNutrition[key];
-                            }
-                        });
-                    }
-                    catch {
-                    }
-                }
-            });
-            return {
-                totalCalories,
-                allergens: Array.from(allAllergens),
-                nutritionalInfo
-            };
-        }
-        catch (error) {
-            logger_1.logger.error('Failed to get nutritional summary', error, { itemIds });
-            throw error;
-        }
-    }
-    static async validateCreateInput(input) {
         if (!input.name?.trim()) {
             throw new Error('Menu item name is required');
         }
@@ -442,23 +29,101 @@ class MenuItemService {
         if (input.price <= 0) {
             throw new Error('Menu item price must be greater than 0');
         }
-        if (input.originalPrice && input.originalPrice <= 0) {
-            throw new Error('Original price must be greater than 0');
-        }
         if (input.originalPrice && input.originalPrice <= input.price) {
             throw new Error('Original price must be greater than current price');
         }
-        if (input.preparationTime && input.preparationTime < 0) {
-            throw new Error('Preparation time cannot be negative');
+        const existing = await menuItem_repository_1.MenuItemRepository.findByNameAndSchool(input.name, input.schoolId);
+        if (existing) {
+            throw new Error(`Menu item with name "${input.name}" already exists for this school`);
         }
-        if (input.calories && input.calories < 0) {
-            throw new Error('Calories cannot be negative');
-        }
+        const data = {
+            name: input.name,
+            description: input.description || null,
+            category: input.category,
+            price: input.price,
+            currency: input.currency || 'INR',
+            schoolId: input.schoolId,
+            available: input.available ?? true,
+            nutritionalInfo: input.nutritionalInfo ? JSON.stringify(input.nutritionalInfo) : null,
+            allergens: input.allergens ? JSON.stringify(input.allergens) : null,
+            imageUrl: input.imageUrl || null,
+            originalPrice: input.originalPrice,
+            featured: input.featured ?? false,
+            sortOrder: input.sortOrder ?? 0,
+            tags: [],
+            preparationTime: 0,
+            portionSize: '',
+            calories: 0,
+            protein: 0,
+            carbs: 0,
+            fat: 0,
+            vendorId: null,
+            metadata: {},
+        };
+        const menuItem = await menuItem_repository_1.MenuItemRepository.create(data);
+        await cache_1.cache.clear();
+        return menuItem;
     }
-    static async validateUpdateInput(input) {
-        if (input.name !== undefined && !input.name?.trim()) {
-            throw new Error('Menu item name cannot be empty');
+    static async getMenuItemById(id, includeUnavailable = true) {
+        const cacheKey = `menu_item:${id}:${includeUnavailable}`;
+        const cached = await cache_1.cache.get(cacheKey);
+        if (cached) {
+            return JSON.parse(cached);
         }
+        const menuItem = await menuItem_repository_1.MenuItemRepository.findById(id);
+        if (!menuItem) {
+            logger_1.logger.warn('Menu item not found', { menuItemId: id });
+            return null;
+        }
+        if (!includeUnavailable && !menuItem.available) {
+            return null;
+        }
+        await cache_1.cache.setex(cacheKey, 300, JSON.stringify(menuItem));
+        return menuItem;
+    }
+    static async getMenuItems(filters = {}, pagination = {}) {
+        const { page = 1, limit = 20, sortBy = 'sortOrder', sortOrder = 'asc' } = pagination;
+        const skip = (page - 1) * limit;
+        const result = await menuItem_repository_1.MenuItemRepository.findMany({
+            filters,
+            skip,
+            take: limit,
+            sortBy,
+            sortOrder,
+        });
+        const totalPages = Math.ceil(result.total / limit);
+        return {
+            items: result.items,
+            total: result.total,
+            page,
+            limit,
+            totalPages,
+        };
+    }
+    static async searchMenuItems(term, filters = {}, pagination = {}) {
+        if (!term.trim()) {
+            return this.getMenuItems(filters, pagination);
+        }
+        const { page = 1, limit = 20, sortBy = 'sortOrder', sortOrder = 'asc' } = pagination;
+        const skip = (page - 1) * limit;
+        const result = await menuItem_repository_1.MenuItemRepository.search({
+            query: term,
+            filters,
+            skip,
+            take: limit,
+            sortBy,
+            sortOrder,
+        });
+        const totalPages = Math.ceil(result.total / limit);
+        return {
+            items: result.items,
+            total: result.total,
+            page,
+            limit,
+            totalPages,
+        };
+    }
+    static async updateMenuItem(id, input) {
         if (input.name && input.name.length > 200) {
             throw new Error('Menu item name cannot exceed 200 characters');
         }
@@ -468,206 +133,229 @@ class MenuItemService {
         if (input.price !== undefined && input.price <= 0) {
             throw new Error('Menu item price must be greater than 0');
         }
-        if (input.originalPrice !== undefined && input.originalPrice !== null && input.originalPrice <= 0) {
-            throw new Error('Original price must be greater than 0');
+        if (input.originalPrice && input.price !== undefined && input.originalPrice <= input.price) {
+            throw new Error('Original price must be greater than current price');
         }
-        if (input.preparationTime !== undefined && input.preparationTime < 0) {
-            throw new Error('Preparation time cannot be negative');
+        const existing = await menuItem_repository_1.MenuItemRepository.findById(id);
+        if (!existing) {
+            throw new Error(`Menu item with ID ${id} not found`);
         }
-        if (input.calories !== undefined && input.calories < 0) {
-            throw new Error('Calories cannot be negative');
+        if (input.name && input.name !== existing.name && existing.schoolId) {
+            const duplicate = await menuItem_repository_1.MenuItemRepository.findByNameAndSchool(input.name, existing.schoolId);
+            if (duplicate) {
+                throw new Error(`Menu item with name "${input.name}" already exists for this school`);
+            }
         }
+        const updateData = { ...input };
+        if (input.allergens) {
+            updateData.allergens = JSON.stringify(input.allergens);
+        }
+        if (input.nutritionalInfo) {
+            updateData.nutritionalInfo = JSON.stringify(input.nutritionalInfo);
+        }
+        const updated = await menuItem_repository_1.MenuItemRepository.update(id, updateData);
+        await cache_1.cache.del(`menu_item:${id}:true`);
+        await cache_1.cache.del(`menu_item:${id}:false`);
+        await cache_1.cache.clear();
+        return updated;
     }
-    static transformMenuItem(rawItem) {
-        if (!rawItem)
-            return null;
-        try {
-            let nutritionalInfo = null;
-            let allergens = [];
-            let tags = [];
-            let metadata = {};
-            if (rawItem.nutritionalInfo) {
-                try {
-                    nutritionalInfo = typeof rawItem.nutritionalInfo === 'string'
-                        ? JSON.parse(rawItem.nutritionalInfo)
-                        : rawItem.nutritionalInfo;
+    static async deleteMenuItem(id, hard = false) {
+        const existing = await menuItem_repository_1.MenuItemRepository.findById(id);
+        if (!existing) {
+            throw new Error(`Menu item with ID ${id} not found`);
+        }
+        let deleted;
+        if (hard) {
+            deleted = await menuItem_repository_1.MenuItemRepository.delete(id);
+        }
+        else {
+            deleted = await menuItem_repository_1.MenuItemRepository.update(id, { available: false });
+        }
+        await cache_1.cache.del(`menu_item:${id}:true`);
+        await cache_1.cache.del(`menu_item:${id}:false`);
+        await cache_1.cache.clear();
+        return deleted;
+    }
+    static async updateSortOrders(updates) {
+        if (updates.length > 100) {
+            throw new Error('Cannot update more than 100 items at once');
+        }
+        if (updates.length === 0) {
+            return;
+        }
+        const ids = updates.map(u => u.id);
+        const existingItems = await menuItem_repository_1.MenuItemRepository.findMany({
+            filters: { ids },
+            take: ids.length,
+        });
+        if (existingItems.total !== ids.length) {
+            const foundIds = new Set(existingItems.items.map((item) => item.id));
+            const missingIds = ids.filter(id => !foundIds.has(id));
+            throw new Error(`Menu items not found: ${missingIds.join(', ')}`);
+        }
+        await menuItem_repository_1.MenuItemRepository.batchUpdateSortOrders(updates);
+        await cache_1.cache.clear();
+    }
+    static async toggleFeatured(id) {
+        const item = await this.getMenuItemById(id);
+        if (!item) {
+            throw new Error(`Menu item with ID ${id} not found`);
+        }
+        return this.updateMenuItem(id, { featured: !item.featured });
+    }
+    static async getMenuItemsByAllergens(allergens) {
+        const result = await this.getMenuItems();
+        return result.items.filter(item => {
+            if (!item.allergens) {
+                return true;
+            }
+            try {
+                const itemAllergens = JSON.parse(item.allergens);
+                if (!Array.isArray(itemAllergens)) {
+                    return true;
                 }
-                catch (e) {
-                    logger_1.logger.warn('Failed to parse nutritional info JSON', { itemId: rawItem.id });
+                return !allergens.some(allergen => itemAllergens.some((itemAllergen) => itemAllergen.toLowerCase().includes(allergen.toLowerCase())));
+            }
+            catch (error) {
+                return true;
+            }
+        });
+    }
+    static async getNutritionalSummary(itemIds) {
+        let totalCalories = 0;
+        const allAllergens = new Set();
+        const nutritionalTotals = {};
+        for (const id of itemIds) {
+            const item = await this.getMenuItemById(id);
+            if (item) {
+                if (item.nutritionalInfo) {
+                    try {
+                        const nutrition = typeof item.nutritionalInfo === 'string'
+                            ? JSON.parse(item.nutritionalInfo)
+                            : item.nutritionalInfo;
+                        if (nutrition.calories) {
+                            totalCalories += nutrition.calories;
+                        }
+                        Object.entries(nutrition).forEach(([key, value]) => {
+                            if (typeof value === 'number') {
+                                nutritionalTotals[key] = (nutritionalTotals[key] || 0) + value;
+                            }
+                        });
+                    }
+                    catch (error) {
+                    }
+                }
+                if (item.allergens) {
+                    try {
+                        const allergens = JSON.parse(item.allergens);
+                        if (Array.isArray(allergens)) {
+                            allergens.forEach((allergen) => allAllergens.add(allergen));
+                        }
+                    }
+                    catch (error) {
+                    }
                 }
             }
-            if (rawItem.allergens) {
-                try {
-                    allergens = typeof rawItem.allergens === 'string'
-                        ? JSON.parse(rawItem.allergens)
-                        : rawItem.allergens;
-                }
-                catch (e) {
-                    logger_1.logger.warn('Failed to parse allergens JSON', { itemId: rawItem.id });
-                }
-            }
-            if (rawItem.tags) {
-                try {
-                    tags = typeof rawItem.tags === 'string'
-                        ? JSON.parse(rawItem.tags)
-                        : rawItem.tags;
-                }
-                catch (e) {
-                    logger_1.logger.warn('Failed to parse tags JSON', { itemId: rawItem.id });
-                }
-            }
-            if (rawItem.metadata) {
-                try {
-                    metadata = typeof rawItem.metadata === 'string'
-                        ? JSON.parse(rawItem.metadata)
-                        : rawItem.metadata;
-                }
-                catch (e) {
-                    logger_1.logger.warn('Failed to parse metadata JSON', { itemId: rawItem.id });
-                }
-            }
-            let ingredients = [];
-            if (nutritionalInfo && typeof nutritionalInfo === 'object' && nutritionalInfo.ingredients) {
-                ingredients = Array.isArray(nutritionalInfo.ingredients) ? nutritionalInfo.ingredients : [];
-            }
-            else if (metadata && typeof metadata === 'object' && metadata.ingredients) {
-                ingredients = Array.isArray(metadata.ingredients) ? metadata.ingredients : [];
-            }
-            return {
-                ...rawItem,
-                nutritionalInfo,
-                allergens,
-                tags,
-                metadata,
-                ingredients,
-                isActive: rawItem.available === true,
-            };
         }
-        catch (error) {
-            logger_1.logger.warn('Failed to transform menu item', { error: error.message, itemId: rawItem?.id });
-            return rawItem;
-        }
+        return {
+            totalCalories,
+            allergens: Array.from(allAllergens),
+            nutritionalInfo: nutritionalTotals,
+        };
     }
-    static async bulkCreateMenuItems(items) {
-        try {
-            if (items.length === 0)
-                return [];
-            if (items.length > this.MAX_BATCH_SIZE) {
-                throw new Error(`Cannot create more than ${this.MAX_BATCH_SIZE} items at once`);
-            }
-            logger_1.logger.info('Bulk creating menu items', { count: items.length });
-            await Promise.all(items.map(item => this.validateCreateInput(item)));
-            const results = await Promise.all(items.map(item => this.createMenuItem(item)));
-            logger_1.logger.info('Bulk menu items created successfully', { count: results.length });
-            return results;
-        }
-        catch (error) {
-            logger_1.logger.error('Failed to bulk create menu items', error, { count: items.length });
-            throw error;
-        }
-    }
-    static async bulkUpdateAvailability(updates) {
-        try {
-            if (updates.length === 0)
-                return [];
-            if (updates.length > this.MAX_BATCH_SIZE) {
-                throw new Error(`Cannot update more than ${this.MAX_BATCH_SIZE} items at once`);
-            }
-            logger_1.logger.info('Bulk updating menu item availability', { count: updates.length });
-            const results = await Promise.all(updates.map(update => this.updateMenuItem(update.id, { available: update.available })));
-            logger_1.logger.info('Bulk availability updates completed', { count: results.length });
-            return results;
-        }
-        catch (error) {
-            logger_1.logger.error('Failed to bulk update availability', error, { count: updates.length });
-            throw error;
-        }
-    }
-    static async clearRelatedCaches(schoolId, category) {
-        try {
-            const cacheKeys = [
-                'menu_items:*',
-                'featured_items:*',
-                ...(schoolId ? [`school:${schoolId}:menu_items:*`] : []),
-                ...(category ? [`category:${category}:*`] : [])
-            ];
-            cache_1.cache.clear();
-        }
-        catch (error) {
-            logger_1.logger.warn('Failed to clear caches', error);
-        }
-    }
-    async clearCache() {
-        try {
-            cache_1.cache.clear();
-            logger_1.logger.info('Menu item caches cleared');
-        }
-        catch (error) {
-            logger_1.logger.warn('Failed to clear menu item caches', error);
-        }
-    }
-    async disconnect() {
-        try {
-            logger_1.logger.info('Menu item service disconnected');
-        }
-        catch (error) {
-            logger_1.logger.warn('Failed to disconnect menu item service', error);
-        }
-    }
-    async createMenuItem(input) {
-        return MenuItemService.createMenuItem(input);
-    }
-    async getMenuItemById(id, includeSchool = true) {
-        return MenuItemService.getMenuItemById(id, includeSchool);
-    }
-    async getMenuItems(filters = {}, pagination = {}) {
-        return MenuItemService.getMenuItems(filters, pagination);
-    }
-    async updateMenuItem(id, input) {
-        return MenuItemService.updateMenuItem(id, input);
-    }
-    async deleteMenuItem(id, hard = false) {
-        return MenuItemService.deleteMenuItem(id, hard);
-    }
-    async getMenuItemsByCategory(category, options = {}) {
-        return MenuItemService.getMenuItemsByCategory(category, options);
-    }
-    async getFeaturedItems(options = {}) {
-        return MenuItemService.getFeaturedItems(options);
-    }
-    async searchMenuItems(searchOptions) {
-        const searchTerm = searchOptions.query;
+    static async getFeaturedItems(options = {}) {
         const filters = {
-            ...(searchOptions.schoolId && { schoolId: searchOptions.schoolId }),
-            ...(searchOptions.filters || {})
+            featured: true,
+            available: true,
+            schoolId: options.schoolId,
+            category: options.category,
         };
-        const pagination = {
-            page: searchOptions.pagination?.page || 1,
-            limit: searchOptions.pagination?.limit || searchOptions.limit || 50,
-            sortBy: 'name',
-            sortOrder: 'asc'
-        };
-        const result = await MenuItemService.searchMenuItems(searchTerm, filters, pagination);
+        const result = await this.getMenuItems(filters, {
+            limit: options.limit || 10,
+            sortBy: 'sortOrder',
+            sortOrder: 'asc',
+        });
         return result.items;
     }
-    async bulkCreateMenuItems(items) {
-        return MenuItemService.bulkCreateMenuItems(items);
+    static async getMenuItemsByCategory(category, options = {}) {
+        const filters = {
+            category,
+            available: options.available ?? true,
+            schoolId: options.schoolId,
+        };
+        const result = await this.getMenuItems(filters, {
+            limit: options.limit || 50,
+            sortBy: 'sortOrder',
+            sortOrder: 'asc',
+        });
+        return result.items;
     }
-    async bulkUpdateAvailability(updates) {
-        return MenuItemService.bulkUpdateAvailability(updates);
+    static async toggleAvailability(id) {
+        const item = await this.getMenuItemById(id);
+        if (!item) {
+            throw new Error(`Menu item with ID ${id} not found`);
+        }
+        return this.updateMenuItem(id, { available: !item.available });
     }
-    transformMenuItem(rawItem) {
-        return MenuItemService.transformMenuItem(rawItem);
+    static async create(input) {
+        return await MenuItemService.createMenuItem(input);
+    }
+    static async findById(id) {
+        return await MenuItemService.getMenuItemById(id, true);
+    }
+    static async findBySchool(schoolId, includeUnavailable = true) {
+        const result = await MenuItemService.getMenuItems({ schoolId }, { limit: 1000 });
+        if (!includeUnavailable) {
+            return result.items.filter(item => item.available);
+        }
+        return result.items;
+    }
+    static async findByCategory(schoolId, category) {
+        return await MenuItemService.getMenuItemsByCategory(category, { schoolId, available: true });
+    }
+    static async search(schoolId, query) {
+        if (!query.trim()) {
+            return [];
+        }
+        const result = await MenuItemService.searchMenuItems(query, { schoolId, available: true }, { limit: 100 });
+        return result.items;
     }
     static async getMenuStats(schoolId) {
-        const stats = await menuItem_repository_1.MenuItemRepository.getStatistics(schoolId);
+        const prisma = new client_1.PrismaClient();
+        try {
+            const where = schoolId ? { schoolId } : {};
+            const aggregateResult = await prisma.menuItem.aggregate({
+                where,
+                _count: { id: true },
+                _avg: { price: true },
+            });
+            const categoryStats = await prisma.menuItem.groupBy({
+                by: ['category'],
+                where,
+                _count: { category: true },
+            });
+            const byCategory = {};
+            categoryStats.forEach((stat) => {
+                byCategory[stat.category] = stat._count.category;
+            });
+            return {
+                totalItems: aggregateResult._count.id || 0,
+                averagePrice: Number(aggregateResult._avg.price) || 0,
+                byCategory,
+            };
+        }
+        finally {
+            await prisma.$disconnect();
+        }
+    }
+    static extendMenuItem(item) {
         return {
-            totalItems: stats.totalItems,
-            averagePrice: Number(stats.averagePrice) || 0,
-            byCategory: stats.itemsByCategory
+            ...item,
+            allergens: item.allergens ? JSON.parse(item.allergens) : [],
+            nutritionalInfo: item.nutritionalInfo ? JSON.parse(item.nutritionalInfo) : {},
         };
     }
 }
 exports.MenuItemService = MenuItemService;
-exports.menuItemService = new MenuItemService();
+exports.default = MenuItemService;
 //# sourceMappingURL=menuItem.service.js.map

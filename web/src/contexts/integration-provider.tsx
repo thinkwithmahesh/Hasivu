@@ -93,9 +93,9 @@ export function IntegrationProvider({ children }: IntegrationProviderProps) {
       }));
     };
 
-    const unsubscribe = socketClient.subscribe('connection_status', (data) => {
+    const unsubscribe = socketClient.subscribe('connection_status', data => {
       updateSocketStatus();
-      
+
       if (data.status === 'connected') {
         toast.dismiss('socket-disconnected');
       } else if (data.status === 'disconnected') {
@@ -168,7 +168,7 @@ export function IntegrationProvider({ children }: IntegrationProviderProps) {
         };
       }
     } catch (error) {
-      console.error('Error getting system info:', error);
+      // Error handled silently
     }
 
     return null;
@@ -256,13 +256,9 @@ export function ConnectionStatusIndicator() {
   return (
     <div className="flex items-center space-x-2 text-sm">
       <div className={`w-2 h-2 rounded-full ${getStatusColor()}`} />
-      <span className="text-gray-600 dark:text-gray-300">
-        {getStatusText()}
-      </span>
+      <span className="text-gray-600 dark:text-gray-300">{getStatusText()}</span>
       {apiHealth.responseTime && (
-        <span className="text-xs text-gray-500">
-          ({apiHealth.responseTime}ms)
-        </span>
+        <span className="text-xs text-gray-500">({apiHealth.responseTime}ms)</span>
       )}
     </div>
   );
@@ -296,8 +292,6 @@ export class IntegrationErrorBoundary extends React.Component<
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('Integration error:', error, errorInfo);
-    
     // Report error to monitoring service
     if (process.env.NODE_ENV === 'production') {
       // Add error reporting here (e.g., Sentry)
@@ -311,9 +305,17 @@ export class IntegrationErrorBoundary extends React.Component<
           <div className="max-w-md w-full bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6">
             <div className="flex items-center space-x-3 mb-4">
               <div className="flex-shrink-0">
-                <svg className="h-8 w-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.082 16.5c-.77.833.192 2.5 1.732 2.5z" 
+                <svg
+                  className="h-8 w-8 text-red-500"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.082 16.5c-.77.833.192 2.5 1.732 2.5z"
                   />
                 </svg>
               </div>
@@ -326,7 +328,7 @@ export class IntegrationErrorBoundary extends React.Component<
                 </p>
               </div>
             </div>
-            
+
             <div className="mt-4">
               <button
                 onClick={() => window.location.reload()}
@@ -335,12 +337,10 @@ export class IntegrationErrorBoundary extends React.Component<
                 Reload Application
               </button>
             </div>
-            
+
             {process.env.NODE_ENV === 'development' && this.state.error && (
               <details className="mt-4">
-                <summary className="text-sm text-gray-500 cursor-pointer">
-                  Error Details
-                </summary>
+                <summary className="text-sm text-gray-500 cursor-pointer">Error Details</summary>
                 <pre className="mt-2 text-xs bg-gray-100 dark:bg-gray-700 p-3 rounded overflow-auto">
                   {this.state.error.stack}
                 </pre>
@@ -358,7 +358,7 @@ export class IntegrationErrorBoundary extends React.Component<
 // Hook for API status monitoring
 export function useApiStatus() {
   const { apiHealth, checkApiHealth } = useIntegration();
-  
+
   return {
     status: apiHealth.status,
     responseTime: apiHealth.responseTime,
@@ -371,7 +371,7 @@ export function useApiStatus() {
 // Hook for real-time connection monitoring
 export function useConnectionStatus() {
   const { isOnline, socketStatus, reconnectSocket } = useIntegration();
-  
+
   return {
     isOnline,
     socketConnected: socketStatus.connected,

@@ -1,13 +1,13 @@
 import { Order, OrderItem, MenuItem, User, PaymentOrder, Prisma } from '@prisma/client';
-export interface BaseRepository<T, CreateInput, UpdateInput, WhereInput = any> {
+export interface BaseRepository<T, CreateInput, UpdateInput, WhereInput = unknown> {
     create(data: CreateInput): Promise<T>;
     findById(id: string): Promise<T | null>;
     findMany(options?: {
         where?: WhereInput;
         skip?: number;
         take?: number;
-        orderBy?: any;
-        include?: any;
+        orderBy?: unknown;
+        include?: unknown;
     }): Promise<{
         items: T[];
         total: number;
@@ -18,24 +18,24 @@ export interface BaseRepository<T, CreateInput, UpdateInput, WhereInput = any> {
 }
 export interface IOrderRepository extends BaseRepository<Order, Prisma.OrderCreateInput, Prisma.OrderUpdateInput, Prisma.OrderWhereInput> {
     findByIdWithIncludes(id: string, include: Prisma.OrderInclude): Promise<Order | null>;
-    findByStudentId(studentId: string, options?: any): Promise<{
+    findByStudentId(studentId: string, options?: unknown): Promise<{
         items: Order[];
         total: number;
     }>;
-    findBySchoolId(schoolId: string, options?: any): Promise<{
+    findBySchoolId(schoolId: string, options?: unknown): Promise<{
         items: Order[];
         total: number;
     }>;
-    findActiveOrders(filters?: any, options?: any): Promise<{
+    findActiveOrders(filters?: unknown, options?: unknown): Promise<{
         items: Order[];
         total: number;
     }>;
-    findByDeliveryDate(deliveryDate: Date, options?: any): Promise<{
+    findByDeliveryDate(deliveryDate: Date, options?: unknown): Promise<{
         items: Order[];
         total: number;
     }>;
     updateMany(where: Prisma.OrderWhereInput, data: Prisma.OrderUpdateManyMutationInput): Promise<Prisma.BatchPayload>;
-    getAnalytics(filters?: any, groupBy?: 'day' | 'week' | 'month'): Promise<{
+    getAnalytics(filters?: unknown, groupBy?: 'day' | 'week' | 'month'): Promise<{
         totalOrders: number;
         totalRevenue: number;
         deliveredOrders: number;
@@ -60,12 +60,12 @@ export interface IOrderRepository extends BaseRepository<Order, Prisma.OrderCrea
 }
 export interface IOrderItemRepository extends BaseRepository<OrderItem, Prisma.OrderItemCreateInput, Prisma.OrderItemUpdateInput, Prisma.OrderItemWhereInput> {
     findByOrderId(orderId: string): Promise<OrderItem[]>;
-    getPopularItems(filters?: any, limit?: number): Promise<any[]>;
+    getPopularItems(filters?: unknown, limit?: number): Promise<unknown[]>;
     createMany(data: Prisma.OrderItemCreateManyInput[]): Promise<Prisma.BatchPayload>;
 }
 export interface IMenuItemRepository extends BaseRepository<MenuItem, Prisma.MenuItemCreateInput, Prisma.MenuItemUpdateInput, Prisma.MenuItemWhereInput> {
     nameExists(name: string, schoolId: string, excludeId?: string): Promise<boolean>;
-    findBySchoolId(schoolId: string, options?: any): Promise<{
+    findBySchoolId(schoolId: string, options?: unknown): Promise<{
         items: MenuItem[];
         total: number;
     }>;
@@ -86,12 +86,12 @@ export interface IUserRepository extends BaseRepository<User, Prisma.UserCreateI
 export interface IPaymentOrderRepository extends BaseRepository<PaymentOrder, Prisma.PaymentOrderCreateInput, Prisma.PaymentOrderUpdateInput, Prisma.PaymentOrderWhereInput> {
     findByOrderId(orderId: string): Promise<PaymentOrder | null>;
     findByRazorpayOrderId(razorpayOrderId: string): Promise<PaymentOrder | null>;
-    findByUserId(userId: string, options?: any): Promise<{
+    findByUserId(userId: string, options?: unknown): Promise<{
         items: PaymentOrder[];
         total: number;
     }>;
     findExpiredOrders(): Promise<PaymentOrder[]>;
-    updateStatus(id: string, status: string, metadata?: any): Promise<PaymentOrder>;
+    updateStatus(id: string, status: string, metadata?: unknown): Promise<PaymentOrder>;
 }
 export interface IDatabaseService {
     connect(): Promise<void>;
@@ -99,25 +99,25 @@ export interface IDatabaseService {
     getHealth(): Promise<{
         status: 'healthy' | 'warning' | 'error';
         responseTime: number;
-        connections: any;
-        performance: any;
-        tables: any[];
+        connections: unknown;
+        performance: unknown;
+        tables: unknown[];
         errors: string[];
         timestamp: Date;
     }>;
-    transaction<T>(callback: (tx: any) => Promise<T>, options?: any): Promise<T>;
-    executeRaw<T>(query: any, ...values: any[]): Promise<T>;
-    sanitizeQuery(query: string | any): string | any;
-    readonly user: any;
-    readonly order: any;
-    readonly menuItem: any;
-    readonly orderItem: any;
-    readonly paymentOrder: any;
-    readonly rfidCard: any;
-    readonly rfidReader: any;
-    readonly deliveryVerification: any;
-    readonly notification: any;
-    readonly whatsAppMessage: any;
+    transaction<T>(callback: (tx: unknown) => Promise<T>, options?: unknown): Promise<T>;
+    executeRaw<T>(query: unknown, ...values: unknown[]): Promise<T>;
+    sanitizeQuery(query: string | unknown): string | unknown;
+    readonly user: unknown;
+    readonly order: unknown;
+    readonly menuItem: unknown;
+    readonly orderItem: unknown;
+    readonly paymentOrder: unknown;
+    readonly rfidCard: unknown;
+    readonly rfidReader: unknown;
+    readonly deliveryVerification: unknown;
+    readonly notification: unknown;
+    readonly whatsAppMessage: unknown;
 }
 export interface INotificationService {
     sendOrderConfirmation(data: {
@@ -133,14 +133,21 @@ export interface INotificationService {
         parentId: string;
         newStatus: string;
         message?: string;
-    }): Promise<void>;
+    }): Promise<{
+        success: boolean;
+        data?: any;
+        error?: {
+            message: string;
+            code: string;
+        };
+    }>;
 }
 export interface IPaymentService {
     processPayment(data: {
         orderId: string;
         amount: number;
         currency: string;
-        paymentMethodId: string;
+        paymentMethod: string;
     }): Promise<{
         success: boolean;
         data?: {
@@ -154,7 +161,7 @@ export interface IPaymentService {
 }
 export interface IRedisService {
     get(key: string): Promise<string | null>;
-    set(key: string, value: string, ttl?: number): Promise<void>;
-    del(key: string): Promise<void>;
+    set(key: string, value: string, ttl?: number): Promise<string>;
+    del(key: string): Promise<number>;
 }
 //# sourceMappingURL=repository.interfaces.d.ts.map

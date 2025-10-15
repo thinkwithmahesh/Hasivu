@@ -10,9 +10,93 @@ interface PerformanceScore {
     score: number;
     grade: 'A+' | 'A' | 'B' | 'C' | 'D';
     status: 'excellent' | 'good' | 'fair' | 'poor';
-    metrics: Record<string, any>;
+    metrics: Record<string, number | string>;
     issues: string[];
     recommendations: string[];
+}
+interface APIResult {
+    endpoint: string;
+    method: string;
+    averageResponseTime: number;
+    p95ResponseTime: number;
+    errorRate: number;
+    requestsPerSecond: number;
+    successfulRequests: number;
+    totalRequests: number;
+}
+interface DatabaseResult {
+    status: string;
+    performance: {
+        avgQueryTime: number;
+        slowQueries: number;
+        connectionPoolUsage: number;
+        indexEfficiency: number;
+        queriesPerSecond: number;
+    };
+    connections: {
+        active: number;
+        idle: number;
+        total: number;
+        maxConnections: number;
+    };
+    indexAnalysis: {
+        missingIndexes: Array<{
+            table: string;
+            columns: string[];
+            impact: string;
+        }>;
+        redundantIndexes: unknown[];
+        indexUsageStats: unknown[];
+    };
+}
+interface LambdaResult {
+    summary: {
+        totalFunctions: number;
+        avgColdStartDuration: number;
+        avgExecutionDuration: number;
+        criticalIssues: number;
+        avgMemoryEfficiency: number;
+        highImpactColdStarts?: number;
+    };
+    functions: Array<{
+        functionName: string;
+        performance: {
+            coldStart: {
+                avgDuration: number;
+                impact: string;
+            };
+            duration: {
+                average: number;
+                p95: number;
+            };
+            memory: {
+                efficiency: number;
+            };
+            errors: {
+                rate: number;
+            };
+        };
+    }>;
+}
+interface WebSocketResult {
+    successfulRequests: number;
+    totalRequests: number;
+    averageLatency: number;
+    messagesExchanged: number;
+    errorRate: number;
+}
+interface RedisResult {
+    cacheHitRatio: number;
+    averageGetTime: number;
+    averageSetTime: number;
+    requestsPerSecond: number;
+    errorRate: number;
+}
+interface RFIDResult {
+    verificationsPerSecond: number;
+    averageResponseTime: number;
+    errorRate: number;
+    bulkVerificationTime: number;
 }
 interface BenchmarkReport {
     metadata: BenchmarkData;
@@ -26,12 +110,12 @@ interface BenchmarkReport {
     };
     scores: PerformanceScore[];
     detailed: {
-        api: any;
-        database: any;
-        lambda: any;
-        websocket: any;
-        redis: any;
-        rfid: any;
+        api: APIResult[];
+        database: DatabaseResult;
+        lambda: LambdaResult;
+        websocket: WebSocketResult;
+        redis: RedisResult;
+        rfid: RFIDResult;
     };
     optimization: {
         immediate: Array<{

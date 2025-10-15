@@ -1,36 +1,36 @@
-"use client"
+'use client';
 
-import React, { useState, useEffect, useCallback } from 'react'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { cn } from '@/lib/utils'
-import { 
-  Bell, 
-  Download, 
-  Wifi, 
-  WifiOff, 
-  Battery, 
+import React, { useState, useEffect, useCallback } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import {
+  Bell,
+  Download,
+  Wifi,
+  WifiOff,
+  Battery,
   Signal,
   Smartphone,
   Share,
   X,
   CheckCircle,
   AlertCircle,
-  Clock
-} from 'lucide-react'
+  Clock,
+} from 'lucide-react';
 
 // PWA Install Prompt Component
 interface PWAInstallPromptProps {
-  onInstall: () => void
-  onDismiss: () => void
-  variant?: 'card' | 'banner' | 'fab'
+  onInstall: () => void;
+  onDismiss: () => void;
+  variant?: 'card' | 'banner' | 'fab';
 }
 
 export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
   onInstall,
   onDismiss,
-  variant = 'card'
+  variant = 'card',
 }) => {
   if (variant === 'banner') {
     return (
@@ -53,7 +53,7 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   if (variant === 'fab') {
@@ -66,7 +66,7 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
       >
         <Download className="h-6 w-6" />
       </Button>
-    )
+    );
   }
 
   return (
@@ -90,45 +90,38 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
               </Button>
             </div>
           </div>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={onDismiss}
-            className="h-6 w-6 p-0"
-          >
+          <Button size="sm" variant="ghost" onClick={onDismiss} className="h-6 w-6 p-0">
             <X className="h-3 w-3" />
           </Button>
         </div>
       </div>
     </Card>
-  )
-}
+  );
+};
 
 // Offline Status Indicator
 interface OfflineStatusProps {
-  isOnline: boolean
-  onRetry?: () => void
-  className?: string
+  isOnline: boolean;
+  onRetry?: () => void;
+  className?: string;
 }
 
-export const OfflineStatus: React.FC<OfflineStatusProps> = ({
-  isOnline,
-  onRetry,
-  className
-}) => {
-  const [showBanner, setShowBanner] = useState(false)
+export const OfflineStatus: React.FC<OfflineStatusProps> = ({ isOnline, onRetry, className }) => {
+  const [showBanner, setShowBanner] = useState(false);
 
   useEffect(() => {
-    setShowBanner(!isOnline)
-  }, [isOnline])
+    setShowBanner(!isOnline);
+  }, [isOnline]);
 
-  if (!showBanner) return null
+  if (!showBanner) return null;
 
   return (
-    <div className={cn(
-      "fixed top-0 left-0 right-0 z-50 bg-orange-500 text-white p-3 safe-area-pt animate-slide-down",
-      className
-    )}>
+    <div
+      className={cn(
+        'fixed top-0 left-0 right-0 z-50 bg-orange-500 text-white p-3 safe-area-pt animate-slide-down',
+        className
+      )}
+    >
       <div className="flex items-center justify-between max-w-md mx-auto">
         <div className="flex items-center space-x-3">
           <WifiOff className="h-5 w-5" />
@@ -159,60 +152,58 @@ export const OfflineStatus: React.FC<OfflineStatusProps> = ({
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
 // Push Notification Permission
 interface NotificationPermissionProps {
-  onPermissionGranted?: () => void
-  onPermissionDenied?: () => void
+  onPermissionGranted?: () => void;
+  onPermissionDenied?: () => void;
 }
 
 export const NotificationPermission: React.FC<NotificationPermissionProps> = ({
   onPermissionGranted,
-  onPermissionDenied
+  onPermissionDenied,
 }) => {
-  const [permission, setPermission] = useState<NotificationPermission>('default')
-  const [showPrompt, setShowPrompt] = useState(false)
+  const [permission, setPermission] = useState<NotificationPermission>('default');
+  const [showPrompt, setShowPrompt] = useState(false);
 
   useEffect(() => {
     if ('Notification' in window) {
-      setPermission(Notification.permission)
-      
+      setPermission(Notification.permission);
+
       // Show prompt after 5 seconds if permission is default
       if (Notification.permission === 'default') {
-        const timer = setTimeout(() => setShowPrompt(true), 5000)
-        return () => clearTimeout(timer)
+        const timer = setTimeout(() => setShowPrompt(true), 5000);
+        return () => clearTimeout(timer);
       }
     }
-  }, [])
+  }, []);
 
   const requestPermission = useCallback(async () => {
     if ('Notification' in window) {
       try {
-        const result = await Notification.requestPermission()
-        setPermission(result)
-        setShowPrompt(false)
-        
+        const result = await Notification.requestPermission();
+        setPermission(result);
+        setShowPrompt(false);
+
         if (result === 'granted') {
-          onPermissionGranted?.()
+          onPermissionGranted?.();
           // Show test notification
           new Notification('HASIVU Notifications Enabled', {
-            body: 'You\'ll now receive updates about your orders and meal schedules.',
+            body: "You'll now receive updates about your orders and meal schedules.",
             icon: '/icons/icon-192x192.png',
-            badge: '/icons/icon-72x72.png'
-          })
+            badge: '/icons/icon-72x72.png',
+          });
         } else {
-          onPermissionDenied?.()
+          onPermissionDenied?.();
         }
-      } catch (error) {
-        console.error('Error requesting notification permission:', error)
-      }
+      } catch (error) {}
     }
-  }, [onPermissionGranted, onPermissionDenied])
+  }, [onPermissionGranted, onPermissionDenied]);
 
   if (!('Notification' in window) || permission === 'granted' || !showPrompt) {
-    return null
+    return null;
   }
 
   return (
@@ -247,44 +238,44 @@ export const NotificationPermission: React.FC<NotificationPermissionProps> = ({
         </div>
       </div>
     </Card>
-  )
-}
+  );
+};
 
 // Network Status Indicator (for status bar)
 export const NetworkStatusIndicator: React.FC = () => {
-  const [isOnline, setIsOnline] = useState(navigator.onLine)
-  const [connectionType, setConnectionType] = useState<string>('unknown')
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [connectionType, setConnectionType] = useState<string>('unknown');
 
   useEffect(() => {
-    const handleOnline = () => setIsOnline(true)
-    const handleOffline = () => setIsOnline(false)
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
 
-    window.addEventListener('online', handleOnline)
-    window.addEventListener('offline', handleOffline)
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
 
     // Get connection info if available
     if ('connection' in navigator) {
-      const connection = (navigator as any).connection
-      setConnectionType(connection.effectiveType || 'unknown')
-      
+      const connection = (navigator as any).connection;
+      setConnectionType(connection.effectiveType || 'unknown');
+
       const handleConnectionChange = () => {
-        setConnectionType(connection.effectiveType || 'unknown')
-      }
-      
-      connection.addEventListener('change', handleConnectionChange)
-      
+        setConnectionType(connection.effectiveType || 'unknown');
+      };
+
+      connection.addEventListener('change', handleConnectionChange);
+
       return () => {
-        window.removeEventListener('online', handleOnline)
-        window.removeEventListener('offline', handleOffline)
-        connection.removeEventListener('change', handleConnectionChange)
-      }
+        window.removeEventListener('online', handleOnline);
+        window.removeEventListener('offline', handleOffline);
+        connection.removeEventListener('change', handleConnectionChange);
+      };
     }
 
     return () => {
-      window.removeEventListener('online', handleOnline)
-      window.removeEventListener('offline', handleOffline)
-    }
-  }, [])
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   return (
     <div className="flex items-center space-x-1">
@@ -302,25 +293,25 @@ export const NetworkStatusIndicator: React.FC = () => {
         </>
       )}
     </div>
-  )
-}
+  );
+};
 
 // Background Sync Status
 interface BackgroundSyncStatusProps {
   pendingActions: Array<{
-    id: string
-    type: 'order' | 'payment' | 'feedback'
-    description: string
-    timestamp: Date
-  }>
-  onRetryAction?: (actionId: string) => void
+    id: string;
+    type: 'order' | 'payment' | 'feedback';
+    description: string;
+    timestamp: Date;
+  }>;
+  onRetryAction?: (actionId: string) => void;
 }
 
 export const BackgroundSyncStatus: React.FC<BackgroundSyncStatusProps> = ({
   pendingActions,
-  onRetryAction
+  onRetryAction,
 }) => {
-  if (pendingActions.length === 0) return null
+  if (pendingActions.length === 0) return null;
 
   return (
     <Card className="mx-4 mb-4 border-amber-200 bg-amber-50">
@@ -335,13 +326,11 @@ export const BackgroundSyncStatus: React.FC<BackgroundSyncStatusProps> = ({
           These actions will be completed when you're back online.
         </p>
         <div className="space-y-2">
-          {pendingActions.slice(0, 3).map((action) => (
+          {pendingActions.slice(0, 3).map(action => (
             <div key={action.id} className="flex items-center justify-between">
               <div className="flex-1">
                 <p className="text-sm text-gray-900">{action.description}</p>
-                <p className="text-xs text-gray-500">
-                  {action.timestamp.toLocaleTimeString()}
-                </p>
+                <p className="text-xs text-gray-500">{action.timestamp.toLocaleTimeString()}</p>
               </div>
               {onRetryAction && (
                 <Button
@@ -363,16 +352,16 @@ export const BackgroundSyncStatus: React.FC<BackgroundSyncStatusProps> = ({
         )}
       </div>
     </Card>
-  )
-}
+  );
+};
 
 // Share functionality for PWA
 interface ShareButtonProps {
-  title: string
-  text: string
-  url?: string
-  className?: string
-  variant?: 'button' | 'icon'
+  title: string;
+  text: string;
+  url?: string;
+  className?: string;
+  variant?: 'button' | 'icon';
 }
 
 export const ShareButton: React.FC<ShareButtonProps> = ({
@@ -380,103 +369,91 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
   text,
   url = window.location.href,
   className,
-  variant = 'button'
+  variant = 'button',
 }) => {
-  const [canShare, setCanShare] = useState(false)
+  const [canShare, setCanShare] = useState(false);
 
   useEffect(() => {
-    setCanShare('share' in navigator)
-  }, [])
+    setCanShare('share' in navigator);
+  }, []);
 
   const handleShare = useCallback(async () => {
     if ('share' in navigator) {
       try {
-        await navigator.share({ title, text, url })
-        
+        await navigator.share({ title, text, url });
+
         if ('vibrate' in navigator) {
-          navigator.vibrate(10)
+          navigator.vibrate(10);
         }
       } catch (error) {
         // User cancelled or error occurred
-        console.log('Share cancelled or failed:', error)
       }
     } else {
       // Fallback to clipboard
       try {
-        await navigator.clipboard.writeText(`${title}\n${text}\n${url}`)
-        // Show toast notification
-        alert('Link copied to clipboard!')
-      } catch (error) {
-        console.error('Failed to copy to clipboard:', error)
-      }
+        await navigator.clipboard.writeText(`${title}\n${text}\n${url}`);
+        // Use console.log instead of alert for better UX
+        console.log('Link copied to clipboard!');
+      } catch (error) {}
     }
-  }, [title, text, url])
+  }, [title, text, url]);
 
   if (!canShare && !('clipboard' in navigator)) {
-    return null
+    return null;
   }
 
   if (variant === 'icon') {
     return (
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={handleShare}
-        className={className}
-        haptic
-      >
+      <Button variant="ghost" size="icon" onClick={handleShare} className={className} haptic>
         <Share className="h-4 w-4" />
       </Button>
-    )
+    );
   }
 
   return (
-    <Button
-      variant="outline"
-      onClick={handleShare}
-      className={className}
-      haptic
-    >
+    <Button variant="outline" onClick={handleShare} className={className} haptic>
       <Share className="h-4 w-4 mr-2" />
       Share
     </Button>
-  )
-}
+  );
+};
 
 // Emergency notification banner for school emergencies
 interface EmergencyBannerProps {
-  message: string
-  type: 'emergency' | 'alert' | 'info'
-  onDismiss?: () => void
+  message: string;
+  type: 'emergency' | 'alert' | 'info';
+  onDismiss?: () => void;
   actionButton?: {
-    text: string
-    action: () => void
-  }
+    text: string;
+    action: () => void;
+  };
 }
 
 export const EmergencyBanner: React.FC<EmergencyBannerProps> = ({
   message,
   type,
   onDismiss,
-  actionButton
+  actionButton,
 }) => {
   const colors = {
     emergency: 'bg-red-600 text-white',
     alert: 'bg-orange-500 text-white',
-    info: 'bg-blue-600 text-white'
-  }
+    info: 'bg-blue-600 text-white',
+  };
 
   const icons = {
     emergency: <AlertCircle className="h-5 w-5" />,
     alert: <AlertCircle className="h-5 w-5" />,
-    info: <Bell className="h-5 w-5" />
-  }
+    info: <Bell className="h-5 w-5" />,
+  };
 
   return (
-    <div className={cn(
-      "fixed top-0 left-0 right-0 z-50 p-3 safe-area-pt animate-slide-down",
-      colors[type]
-    )}>
+    <div
+      className={cn(
+        'fixed top-0 left-0 right-0 z-50 p-3 safe-area-pt animate-slide-down',
+        colors[type]
+      )}
+    >
       <div className="flex items-center space-x-3 max-w-md mx-auto">
         {icons[type]}
         <p className="flex-1 text-sm font-medium">{message}</p>
@@ -504,46 +481,44 @@ export const EmergencyBanner: React.FC<EmergencyBannerProps> = ({
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
 // Quick RFID display for easy scanning
 interface QuickRFIDDisplayProps {
-  rfidCode: string
-  studentName: string
-  onCopy?: () => void
+  rfidCode: string;
+  studentName: string;
+  onCopy?: () => void;
 }
 
 export const QuickRFIDDisplay: React.FC<QuickRFIDDisplayProps> = ({
   rfidCode,
   studentName,
-  onCopy
+  onCopy,
 }) => {
   const handleCopy = useCallback(async () => {
     try {
-      await navigator.clipboard.writeText(rfidCode)
-      onCopy?.()
-      
+      await navigator.clipboard.writeText(rfidCode);
+      onCopy?.();
+
       if ('vibrate' in navigator) {
-        navigator.vibrate(20)
+        navigator.vibrate(20);
       }
-    } catch (error) {
-      console.error('Failed to copy RFID code:', error)
-    }
-  }, [rfidCode, onCopy])
+    } catch (error) {}
+  }, [rfidCode, onCopy]);
 
   return (
     <Card className="mx-4 mb-4 bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
       <div className="p-4 text-center">
         <h3 className="font-semibold text-gray-900 mb-1">Your RFID Code</h3>
         <p className="text-sm text-gray-600 mb-3">{studentName}</p>
-        
+
         <div className="bg-white rounded-lg p-4 mb-3 border-2 border-dashed border-blue-300">
           <div className="font-mono text-2xl font-bold text-blue-600 tracking-wider">
             {rfidCode}
           </div>
         </div>
-        
+
         <Button
           size="sm"
           variant="outline"
@@ -553,11 +528,11 @@ export const QuickRFIDDisplay: React.FC<QuickRFIDDisplayProps> = ({
         >
           Copy Code
         </Button>
-        
+
         <p className="text-xs text-gray-500 mt-2">
           Show this code to the scanner during meal pickup
         </p>
       </div>
     </Card>
-  )
-}
+  );
+};

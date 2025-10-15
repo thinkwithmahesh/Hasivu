@@ -141,7 +141,7 @@ console.warn = (...args) => {
 global.testUtils = {
   // Helper to wait for async operations
   waitForAsync: (ms = 0) => new Promise(resolve => setTimeout(resolve, ms)),
-  
+
   // Helper to create mock accessibility results
   createMockAxeResults: (violations = [], passes = []) => ({
     violations: violations.map(violation => ({
@@ -170,12 +170,12 @@ beforeAll(() => {
   if (typeof window !== 'undefined' && window.axe) {
     window.axe.configure({
       reporter: 'v2',
-      rules: {
+      rules: [
         // Disable problematic rules for testing
-        'color-contrast': { enabled: false }, // Hard to test in JSDOM
-        'landmark-unique': { enabled: true },
-        'page-has-heading-one': { enabled: true },
-      },
+        { id: 'color-contrast', enabled: false }, // Hard to test in JSDOM
+        { id: 'landmark-unique', enabled: true },
+        { id: 'page-has-heading-one', enabled: true },
+      ],
     });
   }
 });
@@ -184,11 +184,11 @@ beforeAll(() => {
 afterEach(() => {
   // Clear all mocks
   jest.clearAllMocks();
-  
+
   // Reset localStorage and sessionStorage
   localStorageMock.clear();
   sessionStorageMock.clear();
-  
+
   // Clean up DOM
   document.body.innerHTML = '';
   document.head.innerHTML = '';

@@ -140,7 +140,7 @@ describe('Menu Ecosystem Integration Tests', () => {
             expect(retrievedItem.updatedAt).not.toBe(retrievedItem.createdAt);
             const searchResults = await menuService.searchMenuItems({
                 query: 'Updated Item Name',
-                schoolId: menuItem.schoolId
+                schoolId: menuItem.schoolId || undefined
             });
             expect(searchResults.items).toHaveLength(1);
         });
@@ -271,7 +271,7 @@ describe('Menu Ecosystem Integration Tests', () => {
                 expect(nutritionalSummary.carbsPercentage).toBeGreaterThan(40);
                 expect(nutritionalSummary.balanceScore).toBeGreaterThan(0.7);
             }
-            const weeklyStats = await menuPlanService.getWeeklyNutritionalStats(weeklyPlan.plans.map(p => p.id));
+            const weeklyStats = await menuPlanService.getWeeklyNutritionalStats(weeklyPlan.plans.map((p) => p.id));
             expect(weeklyStats.averageCaloriesPerDay).toBeGreaterThan(900);
             expect(weeklyStats.varietyScore).toBeGreaterThan(0.6);
         });
@@ -533,7 +533,7 @@ describe('Menu Ecosystem Integration Tests', () => {
             expect(dailyMenu.menu.estimatedPreparationTime).toBeGreaterThan(0);
             expect(dailyMenu.menu.inventoryRequirements).toBeDefined();
             expect(dailyMenu.menu.inventoryRequirements.length).toBeGreaterThan(0);
-            const riceRequirement = dailyMenu.menu.inventoryRequirements.find(req => req.ingredient === 'rice');
+            const riceRequirement = dailyMenu.menu.inventoryRequirements.find((req) => req.ingredient === 'rice');
             expect(riceRequirement).toBeDefined();
             expect(riceRequirement.totalQuantityNeeded).toBe(15000);
             const costBreakdown = dailyMenu.menu.costBreakdown;
@@ -582,7 +582,7 @@ describe('Menu Ecosystem Integration Tests', () => {
             expect(adjustmentResult.success).toBe(true);
             expect(adjustmentResult.notificationsSent).toBe(true);
             const updatedMenu = await dailyMenuService.getDailyMenuById(dailyMenu.id);
-            const unavailableItem = updatedMenu.items.find(item => item.itemId === items[1].id);
+            const unavailableItem = updatedMenu.items.find((item) => item.itemId === items[1].id);
             expect(unavailableItem.isAvailable).toBe(false);
             expect(unavailableItem.unavailabilityReason).toBe('ingredient_shortage');
             expect(unavailableItem.availableQuantity).toBe(20);
@@ -600,7 +600,7 @@ describe('Menu Ecosystem Integration Tests', () => {
             expect(substitutionResult.success).toBe(true);
             expect(substitutionResult.substitutionApplied).toBe(true);
             const finalMenu = await dailyMenuService.getDailyMenuById(dailyMenu.id);
-            const substitutedItem = finalMenu.items.find(item => item.itemId === items[2].id);
+            const substitutedItem = finalMenu.items.find((item) => item.itemId === items[2].id);
             expect(substitutedItem).toBeDefined();
             expect(substitutedItem.substitutionReason).toBe('ingredient_shortage_replacement');
         });
@@ -656,9 +656,9 @@ describe('Menu Ecosystem Integration Tests', () => {
             const performance = await dailyMenuService.getMenuPerformance(dailyMenu.id);
             expect(performance.totalOrdered).toBe(205);
             expect(performance.items).toHaveLength(3);
-            const popularItem = performance.items.find(item => item.itemId === items[0].id);
-            const moderateItem = performance.items.find(item => item.itemId === items[1].id);
-            const specialtyItem = performance.items.find(item => item.itemId === items[2].id);
+            const popularItem = performance.items.find((item) => item.itemId === items[0].id);
+            const moderateItem = performance.items.find((item) => item.itemId === items[1].id);
+            const specialtyItem = performance.items.find((item) => item.itemId === items[2].id);
             expect(popularItem.orderRate).toBe(1.0);
             expect(popularItem.totalOrdered).toBe(100);
             expect(popularItem.performanceRating).toBe('excellent');
@@ -997,7 +997,7 @@ describe('Menu Ecosystem Integration Tests', () => {
             expect(complexSearchResult.items.length).toBeLessThanOrEqual(50);
             expect(complexSearchResult.totalCount).toBeGreaterThan(0);
             expect(searchEndTime - searchStartTime).toBeLessThan(2000);
-            complexSearchResult.items.forEach(item => {
+            complexSearchResult.items.forEach((item) => {
                 expect(['main-course', 'side-dish']).toContain(item.category);
                 expect(item.isVegan).toBe(true);
                 expect(item.price).toBeGreaterThanOrEqual(50);
@@ -1066,6 +1066,7 @@ describe('Menu Ecosystem Integration Tests', () => {
                     performanceMetrics.retrievalTimes.push(retrievalEnd - retrievalStart);
                     if (i % 10 === 0) {
                         const memoryUsage = process.memoryUsage();
+                        const iteration = i;
                         performanceMetrics.memoryUsages.push({
                             iteration: i,
                             heapUsed: memoryUsage.heapUsed,

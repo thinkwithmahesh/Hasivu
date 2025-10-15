@@ -14,7 +14,7 @@ const paymentSlice = createSlice({
   name: 'payment',
   initialState,
   reducers: {
-    clearError: (state) => {
+    clearError: state => {
       state.error = null;
     },
   },

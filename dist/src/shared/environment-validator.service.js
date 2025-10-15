@@ -54,7 +54,7 @@ class EnvironmentValidatorService {
             const criticalError = {
                 category: ValidationCategory.GENERAL,
                 field: 'validation_process',
-                message: `Environment validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                message: `Environment validation failed: ${error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error'}`,
                 severity: 'critical',
                 suggestion: 'Check environment configuration files and ensure all required variables are set'
             };
@@ -296,17 +296,16 @@ class EnvironmentValidatorService {
         else {
             this.addSuccess();
         }
-        const port = environment_1.config.port;
-        if (!port || port < 1 || port > 65535) {
+        if (!environment_1.config.server.port || environment_1.config.server.port < 1 || environment_1.config.server.port > 65535) {
             this.addError(category, 'PORT', 'Valid port number is required', 'medium', 'Set PORT environment variable (1-65535)');
         }
         else {
             this.addSuccess();
         }
-        if (!environment_1.config.apiVersion) {
+        if (!environment_1.config.server.apiVersion) {
             this.addWarning(category, 'API_VERSION', 'API version should be set', 'Set API_VERSION environment variable');
         }
-        if (!environment_1.config.baseUrl) {
+        if (!environment_1.config.server.baseUrl) {
             this.addError(category, 'BASE_URL', 'Base URL is required', 'medium', 'Set BASE_URL environment variable');
         }
     }

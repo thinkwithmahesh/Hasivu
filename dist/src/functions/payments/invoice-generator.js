@@ -82,7 +82,7 @@ const invoiceGeneratorHandler = async (event, context) => {
                                     name: invoice.school.name,
                                     address: invoice.school.address
                                 },
-                                items: invoice.invoiceItems.map(item => ({
+                                items: invoice.invoiceItems.map((item) => ({
                                     id: item.id,
                                     description: item.description,
                                     quantity: item.quantity,
@@ -156,7 +156,7 @@ const invoiceGeneratorHandler = async (event, context) => {
                         }
                     });
                     await db.invoiceItem.createMany({
-                        data: requestBody.items.map(item => ({
+                        data: requestBody.items.map((item) => ({
                             invoiceId: invoice.id,
                             description: item.description,
                             quantity: item.quantity,
@@ -196,7 +196,7 @@ const invoiceGeneratorHandler = async (event, context) => {
                         })
                     };
                 }
-            case 'PUT':
+            case 'PUT': {
                 if (!pathParameters.invoiceId) {
                     return {
                         statusCode: 400,
@@ -333,7 +333,7 @@ const invoiceGeneratorHandler = async (event, context) => {
                             updatedAt: updatedInvoice.updatedAt,
                             school: updatedInvoice.school,
                             user: updatedInvoice.user,
-                            items: updatedInvoice.invoiceItems.map(item => ({
+                            items: updatedInvoice.invoiceItems.map((item) => ({
                                 id: item.id,
                                 description: item.description,
                                 quantity: item.quantity,
@@ -348,6 +348,7 @@ const invoiceGeneratorHandler = async (event, context) => {
                         }
                     })
                 };
+            }
             case 'DELETE':
                 if (!pathParameters.invoiceId) {
                     return {

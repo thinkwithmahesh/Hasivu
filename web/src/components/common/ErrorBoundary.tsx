@@ -14,7 +14,7 @@ import {
   Alert,
   AlertTitle,
   Collapse,
-  IconButton,
+  IconButton as _IconButton,
   Chip,
   Stack,
   useTheme,
@@ -139,16 +139,17 @@ const DefaultErrorFallback: React.FC<ErrorFallbackProps> = ({
   const theme = useTheme();
 
   const errorTitle = customMessages?.title || 'Oops! Something went wrong';
-  const errorDescription = customMessages?.description || 
+  const errorDescription =
+    customMessages?.description ||
     "We're sorry, but something unexpected happened. Don't worry, our team has been notified and we're working on fixing this issue.";
   const actionText = customMessages?.actionText || 'Try Again';
 
   // Generate user-friendly error message
   const getUserFriendlyMessage = (error: Error | null): string => {
     if (!error) return 'An unknown error occurred';
-    
+
     const message = error.message?.toLowerCase() || '';
-    
+
     if (message.includes('network') || message.includes('fetch')) {
       return 'Network connection issue. Please check your internet connection.';
     }
@@ -164,13 +165,14 @@ const DefaultErrorFallback: React.FC<ErrorFallbackProps> = ({
     if (message.includes('server') || message.includes('500')) {
       return 'Server error. Please try again later.';
     }
-    
+
     return 'An unexpected error occurred. Please try again.';
   };
 
   const friendlyMessage = getUserFriendlyMessage(error);
-  const isNetworkError = error?.message?.toLowerCase().includes('network') || 
-                        error?.message?.toLowerCase().includes('fetch');
+  const isNetworkError =
+    error?.message?.toLowerCase().includes('network') ||
+    error?.message?.toLowerCase().includes('fetch');
 
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
@@ -374,7 +376,7 @@ const DefaultErrorFallback: React.FC<ErrorFallbackProps> = ({
               }}
             >
               <AlertTitle>Technical Details</AlertTitle>
-              
+
               <Box sx={{ mb: 2 }}>
                 <Typography variant="subtitle2" gutterBottom>
                   Error Message:
@@ -448,14 +450,15 @@ const DefaultErrorFallback: React.FC<ErrorFallbackProps> = ({
           <Typography
             variant="caption"
             sx={{
-            color: theme.palette.text.disabled,
-            mt: 3,
-            display: 'block',
-            fontStyle: 'italic',
-          }}
-        >
-          🍎 Don't worry! Every great meal starts with a little preparation. We'll get this sorted out!
-        </Typography>
+              color: theme.palette.text.disabled,
+              mt: 3,
+              display: 'block',
+              fontStyle: 'italic',
+            }}
+          >
+            🍎 Don't worry! Every great meal starts with a little preparation. We'll get this sorted
+            out!
+          </Typography>
         </Paper>
       </Fade>
     </Container>
@@ -464,7 +467,7 @@ const DefaultErrorFallback: React.FC<ErrorFallbackProps> = ({
 
 /**
  * HASIVU Error Boundary Component
- * 
+ *
  * Features:
  * - Catches JavaScript errors in child components
  * - Displays user-friendly error messages
@@ -494,7 +497,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
     // Generate unique error ID
     const errorId = `ERR_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
     return {
       hasError: true,
       error,
@@ -524,8 +527,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       this.props.onError(error, errorData);
     } else {
       // Default error logging
-      console.error('ErrorBoundary caught an error:', error, errorInfo);
-      
+
       // Send to error reporting service (implement your preferred service)
       this.reportErrorToService(error, errorData);
     }
@@ -535,15 +537,11 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     try {
       // Implement your error reporting service here
       // Examples: Sentry, LogRocket, Bugsnag, custom endpoint
-      
+
       // For now, we'll just log to console in development
       if (process.env.NODE_ENV === 'development') {
-        console.group('🐛 Error Report');
-        console.error('Error:', error);
-        console.info('Error Data:', errorData);
-        console.groupEnd();
       }
-      
+
       // Example API call (uncomment and modify as needed):
       /*
       await fetch('/api/errors', {
@@ -554,9 +552,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         body: JSON.stringify(errorData),
       });
       */
-    } catch (reportingError) {
-      console.error('Failed to report error:', reportingError);
-    }
+    } catch (reportingError) {}
   };
 
   private handleRetry = () => {
@@ -589,7 +585,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
   private handleReportError = () => {
     if (this.state.error && this.state.errorInfo) {
-      const errorData: CustomErrorInfo = {
+      const _errorData: CustomErrorInfo = {
         message: this.state.error.message,
         stack: this.state.error.stack,
         componentStack: this.state.errorInfo.componentStack,
@@ -602,14 +598,14 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       const subject = encodeURIComponent(`HASIVU Error Report - ${this.state.errorId}`);
       const body = encodeURIComponent(
         `Error Report for HASIVU Platform\n\n` +
-        `Error ID: ${this.state.errorId}\n` +
-        `Timestamp: ${new Date().toISOString()}\n` +
-        `URL: ${window.location.href}\n\n` +
-        `Error Message: ${this.state.error.message}\n\n` +
-        `Please describe what you were doing when this error occurred:\n\n` +
-        `[Please describe your actions here]\n\n` +
-        `Technical Details:\n${this.state.error.stack}\n\n` +
-        `Component Stack:\n${this.state.errorInfo.componentStack}`
+          `Error ID: ${this.state.errorId}\n` +
+          `Timestamp: ${new Date().toISOString()}\n` +
+          `URL: ${window.location.href}\n\n` +
+          `Error Message: ${this.state.error.message}\n\n` +
+          `Please describe what you were doing when this error occurred:\n\n` +
+          `[Please describe your actions here]\n\n` +
+          `Technical Details:\n${this.state.error.stack}\n\n` +
+          `Component Stack:\n${this.state.errorInfo.componentStack}`
       );
 
       window.open(`mailto:support@hasivu.com?subject=${subject}&body=${body}`);
@@ -639,7 +635,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   render() {
     if (this.state.hasError) {
       const FallbackComponent = this.props.fallback || DefaultErrorFallback;
-      
+
       return (
         <FallbackComponent
           error={this.state.error}

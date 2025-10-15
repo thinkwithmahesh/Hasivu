@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, _useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Shield,
@@ -11,22 +11,22 @@ import {
   Eye,
   Camera,
   Wifi,
-  WifiOff,
+  _WifiOff,
   RefreshCw,
-  User,
+  _User,
   MapPin,
-  Calendar,
+  _Calendar,
   Activity,
   Signal,
   Battery,
-  AlertCircle
+  AlertCircle,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Progress } from '@/components/ui/progress';
+import { _Progress } from '@/components/ui/progress';
 
 // Enhanced TypeScript interfaces for RFID system
 interface RFIDDevice {
@@ -57,7 +57,7 @@ interface RFIDTransaction {
   fraudScore: number;
 }
 
-interface Student {
+interface _Student {
   id: string;
   name: string;
   grade: string;
@@ -77,17 +77,17 @@ const mockDevices: RFIDDevice[] = [
     batteryLevel: 85,
     signalStrength: 95,
     lastPing: '2024-01-15T12:45:30Z',
-    firmware: 'v2.1.3'
+    firmware: 'v2.1.3',
   },
   {
-    id: 'RFID-002', 
+    id: 'RFID-002',
     name: 'South Wing Counter',
     location: '1st Floor - South Wing',
     status: 'online',
     batteryLevel: 67,
     signalStrength: 88,
     lastPing: '2024-01-15T12:45:28Z',
-    firmware: 'v2.1.3'
+    firmware: 'v2.1.3',
   },
   {
     id: 'RFID-003',
@@ -97,8 +97,8 @@ const mockDevices: RFIDDevice[] = [
     batteryLevel: 23,
     signalStrength: 0,
     lastPing: '2024-01-15T11:30:15Z',
-    firmware: 'v2.0.8'
-  }
+    firmware: 'v2.0.8',
+  },
 ];
 
 const mockTransactions: RFIDTransaction[] = [
@@ -106,7 +106,8 @@ const mockTransactions: RFIDTransaction[] = [
     id: 'TXN-RFID-001',
     studentId: 'STU-001',
     studentName: 'Priya Sharma',
-    avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face',
+    avatar:
+      'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face',
     mealId: 'MEAL-001',
     mealName: 'Masala Dosa with Sambar',
     timestamp: '2024-01-15T12:45:00Z',
@@ -116,13 +117,14 @@ const mockTransactions: RFIDTransaction[] = [
     nutritionScore: 88,
     photoUrl: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=200&h=150&fit=crop',
     verificationTime: 0.3,
-    fraudScore: 0.1
+    fraudScore: 0.1,
   },
   {
     id: 'TXN-RFID-002',
-    studentId: 'STU-002', 
+    studentId: 'STU-002',
     studentName: 'Arjun Sharma',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
+    avatar:
+      'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
     mealId: 'MEAL-002',
     mealName: 'Chicken Biryani',
     timestamp: '2024-01-15T12:47:00Z',
@@ -130,22 +132,33 @@ const mockTransactions: RFIDTransaction[] = [
     deviceId: 'RFID-001',
     location: 'Cafeteria Main Counter',
     nutritionScore: 85,
-    fraudScore: 0.05
-  }
+    fraudScore: 0.05,
+  },
 ];
 
 // RFID Scanner Animation Component
-const RFIDScannerAnimation = ({ isScanning, status }: { isScanning: boolean; status: RFIDTransaction['status'] }) => {
+const RFIDScannerAnimation = ({
+  isScanning,
+  status,
+}: {
+  isScanning: boolean;
+  status: RFIDTransaction['status'];
+}) => {
   return (
     <div className="relative w-32 h-32 mx-auto mb-6">
       {/* Base scanner circle */}
-      <div className={`absolute inset-0 rounded-full border-4 transition-colors duration-300 ${
-        status === 'verified' ? 'border-green-500' :
-        status === 'failed' ? 'border-red-500' :
-        status === 'processing' ? 'border-blue-500' :
-        'border-gray-300'
-      }`} />
-      
+      <div
+        className={`absolute inset-0 rounded-full border-4 transition-colors duration-300 ${
+          status === 'verified'
+            ? 'border-green-500'
+            : status === 'failed'
+              ? 'border-red-500'
+              : status === 'processing'
+                ? 'border-blue-500'
+                : 'border-gray-300'
+        }`}
+      />
+
       {/* Animated scanning rings */}
       <AnimatePresence>
         {isScanning && (
@@ -161,23 +174,28 @@ const RFIDScannerAnimation = ({ isScanning, status }: { isScanning: boolean; sta
                 exit={{ scale: 0, opacity: 0 }}
                 transition={{
                   duration: 2,
-                  delay: delay,
+                  delay,
                   repeat: isScanning ? Infinity : 0,
-                  ease: "easeOut"
+                  ease: 'easeOut',
                 }}
               />
             ))}
           </>
         )}
       </AnimatePresence>
-      
+
       {/* Center icon */}
-      <div className={`absolute inset-0 flex items-center justify-center rounded-full ${
-        status === 'verified' ? 'bg-green-100' :
-        status === 'failed' ? 'bg-red-100' :
-        status === 'processing' ? 'bg-blue-100' :
-        'bg-gray-100'
-      }`}>
+      <div
+        className={`absolute inset-0 flex items-center justify-center rounded-full ${
+          status === 'verified'
+            ? 'bg-green-100'
+            : status === 'failed'
+              ? 'bg-red-100'
+              : status === 'processing'
+                ? 'bg-blue-100'
+                : 'bg-gray-100'
+        }`}
+      >
         {status === 'verified' && <CheckCircle className="w-12 h-12 text-green-600" />}
         {status === 'failed' && <AlertTriangle className="w-12 h-12 text-red-600" />}
         {status === 'processing' && <Zap className="w-12 h-12 text-blue-600 animate-pulse" />}
@@ -191,10 +209,14 @@ const RFIDScannerAnimation = ({ isScanning, status }: { isScanning: boolean; sta
 const DeviceStatus = ({ device }: { device: RFIDDevice }) => {
   const getStatusColor = (status: RFIDDevice['status']) => {
     switch (status) {
-      case 'online': return 'bg-green-500';
-      case 'offline': return 'bg-red-500';
-      case 'error': return 'bg-yellow-500';
-      default: return 'bg-gray-500';
+      case 'online':
+        return 'bg-green-500';
+      case 'offline':
+        return 'bg-red-500';
+      case 'error':
+        return 'bg-yellow-500';
+      default:
+        return 'bg-gray-500';
     }
   };
 
@@ -235,7 +257,7 @@ const DeviceStatus = ({ device }: { device: RFIDDevice }) => {
             <div className="text-xs text-gray-500">Signal</div>
           </div>
         </div>
-        
+
         <div className="pt-2 border-t">
           <div className="flex items-center justify-between text-sm">
             <span className="text-gray-600">Firmware:</span>
@@ -257,7 +279,7 @@ const DeviceStatus = ({ device }: { device: RFIDDevice }) => {
 const TransactionHistory = ({ transactions }: { transactions: RFIDTransaction[] }) => {
   return (
     <div className="space-y-4">
-      {transactions.map((transaction) => (
+      {transactions.map(transaction => (
         <motion.div
           key={transaction.id}
           initial={{ opacity: 0, y: 20 }}
@@ -266,26 +288,36 @@ const TransactionHistory = ({ transactions }: { transactions: RFIDTransaction[] 
         >
           <Avatar className="w-12 h-12">
             <AvatarImage src={transaction.avatar} alt={transaction.studentName} />
-            <AvatarFallback>{transaction.studentName.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+            <AvatarFallback>
+              {transaction.studentName
+                .split(' ')
+                .map(n => n[0])
+                .join('')}
+            </AvatarFallback>
           </Avatar>
-          
+
           <div className="flex-1">
             <div className="flex items-center justify-between mb-2">
               <h4 className="font-medium">{transaction.studentName}</h4>
-              <Badge className={`${
-                transaction.status === 'verified' ? 'bg-green-100 text-green-800' :
-                transaction.status === 'processing' ? 'bg-blue-100 text-blue-800' :
-                transaction.status === 'failed' ? 'bg-red-100 text-red-800' :
-                'bg-gray-100 text-gray-800'
-              }`}>
+              <Badge
+                className={`${
+                  transaction.status === 'verified'
+                    ? 'bg-green-100 text-green-800'
+                    : transaction.status === 'processing'
+                      ? 'bg-blue-100 text-blue-800'
+                      : transaction.status === 'failed'
+                        ? 'bg-red-100 text-red-800'
+                        : 'bg-gray-100 text-gray-800'
+                }`}
+              >
                 {transaction.status}
               </Badge>
             </div>
-            
+
             <div className="text-sm text-gray-600 mb-2">
               {transaction.mealName} • {transaction.location}
             </div>
-            
+
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4 text-xs text-gray-500">
                 <span>{new Date(transaction.timestamp).toLocaleTimeString()}</span>
@@ -294,7 +326,7 @@ const TransactionHistory = ({ transactions }: { transactions: RFIDTransaction[] 
                 )}
                 <span>Score: {transaction.nutritionScore}%</span>
               </div>
-              
+
               <div className="flex items-center space-x-2">
                 {transaction.photoUrl && (
                   <Button variant="outline" size="sm">
@@ -319,7 +351,8 @@ const TransactionHistory = ({ transactions }: { transactions: RFIDTransaction[] 
 
 // Real-time RFID Monitor Component
 const RealTimeMonitor = () => {
-  const [activeTransactions, setActiveTransactions] = useState<RFIDTransaction[]>(mockTransactions);
+  const [_activeTransactions, _setActiveTransactions] =
+    useState<RFIDTransaction[]>(mockTransactions);
   const [isScanning, setIsScanning] = useState(false);
   const [scannerStatus, setScannerStatus] = useState<RFIDTransaction['status']>('pending');
 
@@ -330,10 +363,10 @@ const RealTimeMonitor = () => {
       if (Math.random() > 0.7) {
         setIsScanning(true);
         setScannerStatus('processing');
-        
+
         setTimeout(() => {
           setScannerStatus(Math.random() > 0.1 ? 'verified' : 'failed');
-          
+
           setTimeout(() => {
             setIsScanning(false);
             setScannerStatus('pending');
@@ -357,28 +390,33 @@ const RealTimeMonitor = () => {
       <CardContent>
         <div className="text-center">
           <RFIDScannerAnimation isScanning={isScanning} status={scannerStatus} />
-          
+
           <div className="mb-6">
-            <div className={`text-lg font-semibold mb-2 ${
-              scannerStatus === 'verified' ? 'text-green-600' :
-              scannerStatus === 'failed' ? 'text-red-600' :
-              scannerStatus === 'processing' ? 'text-blue-600' :
-              'text-gray-600'
-            }`}>
+            <div
+              className={`text-lg font-semibold mb-2 ${
+                scannerStatus === 'verified'
+                  ? 'text-green-600'
+                  : scannerStatus === 'failed'
+                    ? 'text-red-600'
+                    : scannerStatus === 'processing'
+                      ? 'text-blue-600'
+                      : 'text-gray-600'
+              }`}
+            >
               {scannerStatus === 'verified' && 'Meal Verified Successfully!'}
               {scannerStatus === 'failed' && 'Verification Failed'}
               {scannerStatus === 'processing' && 'Processing RFID Scan...'}
               {scannerStatus === 'pending' && 'Ready to Scan'}
             </div>
-            
+
             <div className="text-sm text-gray-600">
               {isScanning ? 'Scanning RFID card...' : 'Place RFID card near scanner'}
             </div>
           </div>
 
           <div className="flex justify-center space-x-3">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => {
                 setIsScanning(true);
                 setScannerStatus('processing');
@@ -403,7 +441,7 @@ const RealTimeMonitor = () => {
 export const RFIDVerificationSystem: React.FC = () => {
   const [devices] = useState<RFIDDevice[]>(mockDevices);
   const [recentTransactions] = useState<RFIDTransaction[]>(mockTransactions);
-  
+
   const onlineDevices = devices.filter(d => d.status === 'online').length;
   const totalScans = 1247;
   const successRate = 99.7;
@@ -418,9 +456,13 @@ export const RFIDVerificationSystem: React.FC = () => {
             <p className="text-gray-600">Real-time meal delivery verification and monitoring</p>
           </div>
           <div className="flex items-center space-x-3">
-            <div className={`flex items-center px-3 py-2 rounded-full ${
-              onlineDevices === devices.length ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-            }`}>
+            <div
+              className={`flex items-center px-3 py-2 rounded-full ${
+                onlineDevices === devices.length
+                  ? 'bg-green-100 text-green-800'
+                  : 'bg-yellow-100 text-yellow-800'
+              }`}
+            >
               <Wifi className="w-4 h-4 mr-2" />
               {onlineDevices}/{devices.length} Online
             </div>
@@ -442,7 +484,7 @@ export const RFIDVerificationSystem: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center">
@@ -456,7 +498,7 @@ export const RFIDVerificationSystem: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center">
@@ -470,7 +512,7 @@ export const RFIDVerificationSystem: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center">
@@ -510,7 +552,7 @@ export const RFIDVerificationSystem: React.FC = () => {
         <div>
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Device Status</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {devices.map((device) => (
+            {devices.map(device => (
               <DeviceStatus key={device.id} device={device} />
             ))}
           </div>

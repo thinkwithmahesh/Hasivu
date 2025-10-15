@@ -1,0 +1,184 @@
+/**
+ * Simple Queue Manager Service
+ * 
+ * Simplified in-memory queue manager for ETL pipelines
+ * This will be replaced with Redis/SQS implementation in Phase 2
+ * 
+ * @author HASIVU Development Team  
+ * @version 1.0.0
+ */
+
+import { EventEmitter } from 'events';
+import { logger } from '../shared/utils/logger';
+
+export interface QueueMessage {
+  id: string;
+  data: any;
+  priority: number;
+  timestamp: Date;
+  retryCount: number;
+  maxRetries: number;
+}
+
+export interface QueueConfig {
+  maxSize?: number;
+  retryDelay?: number;
+  maxRetries?: number;
+}
+
+export class QueueManager extends EventEmitter {
+  private readonly queues = new Map<string, QueueMessage[]>();
+  private readonly processingQueues = new Set<string>();
+  private isRunning = false;
+  
+  constructor(private readonly config: QueueConfig = {}) {
+    super();
+    logger.info('QueueManager initialized');
+  }
+  
+  async start(): Promise<void> {
+    if (this.isRunning) return;
+    
+    this.isRunning = true;
+    logger.info('QueueManager started');
+  }
+  
+  async stop(): Promise<void> {
+    if (!this.isRunning) return;
+    
+    this.isRunning = false;
+    this.queues.clear();
+    this.processingQueues.clear();
+    logger.info('QueueManager stopped');
+  }
+  
+  async enqueue(queueName: string, data: any, options: { priority?: number; maxRetries?: number } = {}): Promise<string> {
+    const message: QueueMessage = {
+      id: this.generateMessageId(),
+      data,
+      priority: options.priority || 0,
+      timestamp: new Date(),
+      retryCount: 0,
+      maxRetries: options.maxRetries || this.config.maxRetries || 3
+    };
+    
+    let queue = this.queues.get(queueName);
+    if (!queue) {
+      queue = [];
+      this.queues.set(queueName, queue);
+    }
+    
+    queue.push(message);
+    
+    // Sort by priority (higher priority first)
+    queue.sort((a, b) => b.priority - a.priority);
+    
+    logger.debug('Message enqueued', { queueName, messageId: message.id });
+    this.emit('message:enqueued', { queueName, message });
+    
+    return message.id;
+  }
+  
+  async dequeue(queueName: string): Promise<QueueMessage | null> {
+    const queue = this.queues.get(queueName);
+    if (!queue || queue.length === 0) {
+      return null;
+    }
+    
+    const message = queue.shift();
+    if (message) {
+      logger.debug('Message dequeued', { queueName, messageId: message.id });
+      this.emit('message:dequeued', { queueName, message });
+    }
+    
+    return message || null;
+  }
+  
+  async getQueueSize(queueName: string): Promise<number> {
+    const queue = this.queues.get(queueName);
+    return queue ? queue.length : 0;
+  }
+  
+  async getQueueNames(): Promise<string[]> {
+    return Array.from(this.queues.keys());
+  }
+  
+  async processQueue(
+    queueName: string, 
+    processor: (message: QueueMessage) => Promise<void>,
+    options: { concurrency?: number } = {}
+  ): Promise<void> {
+    if (this.processingQueues.has(queueName)) {
+      logger.warn('Queue is already being processed', { queueName });
+      return;
+    }
+    
+    this.processingQueues.add(queueName);
+    
+    try {
+      logger.info('Starting queue processing', { queueName });
+      
+      let message = await this.dequeue(queueName);
+      while (message) {
+        try {
+          await processor(message);
+          logger.debug('Message processed successfully', { queueName, messageId: message.id });
+          
+        } catch (error: unknown) {
+          logger.error('Failed to process message', { queueName, messageId: message.id, error });
+          
+          // Retry logic
+          if (message.retryCount < message.maxRetries) {
+            message.retryCount++;
+            await this.enqueue(queueName, message.data, { 
+              priority: message.priority,
+              maxRetries: message.maxRetries 
+            });
+            logger.info('Message requeued for retry', { 
+              queueName, 
+              messageId: message.id, 
+              retryCount: message.retryCount 
+            });
+          } else {
+            logger.error('Message exceeded max retries, moving to DLQ', { 
+              queueName, 
+              messageId: message.id 
+            });
+            this.emit('message:failed', { queueName, message, error });
+          }
+        }
+        
+        message = await this.dequeue(queueName);
+      }
+      
+    } finally {
+      this.processingQueues.delete(queueName);
+      logger.info('Finished queue processing', { queueName });
+    }
+  }
+  
+  async clearQueue(queueName: string): Promise<void> {
+    this.queues.delete(queueName);
+    logger.info('Queue cleared', { queueName });
+  }
+  
+  async getStats(): Promise<Record<string, any>> {
+    const stats = {
+      totalQueues: this.queues.size,
+      totalMessages: 0,
+      queueSizes: {} as Record<string, number>,
+      isRunning: this.isRunning
+    };
+    
+    for (const [name, queue] of this.queues) {
+      stats.queueSizes[name] = queue.length;
+      stats.totalMessages += queue.length;
+    }
+    
+    return stats;
+  }
+  
+  private generateMessageId(): string {
+    return `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+}

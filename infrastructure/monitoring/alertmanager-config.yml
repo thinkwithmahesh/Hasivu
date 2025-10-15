@@ -19,10 +19,10 @@ global:
   smtp_auth_username: 'alerts@hasivu.com'
   smtp_auth_password: '${SMTP_PASSWORD}'
   smtp_require_tls: true
-  
+
   # Slack API configuration
   slack_api_url: 'https://hooks.slack.com/services/${SLACK_WEBHOOK_PATH}'
-  
+
   # PagerDuty configuration
   pagerduty_url: 'https://events.pagerduty.com/v2/enqueue'
 
@@ -37,7 +37,7 @@ route:
   group_interval: 5m
   repeat_interval: 12h
   receiver: 'default'
-  
+
   routes:
     # Critical system alerts - immediate escalation
     - match:
@@ -52,13 +52,13 @@ route:
             service: database
           receiver: 'database-critical'
           continue: true
-        
+
         # Payment system critical issues
         - match:
             service: payment
           receiver: 'payment-critical'
           continue: true
-        
+
         # Authentication critical issues
         - match:
             service: authentication
@@ -188,7 +188,7 @@ receivers:
             <p><strong>Dashboard:</strong> <a href="https://monitoring.hasivu.com/d/hasivu-ops">View Dashboard</a></p>
           </div>
           {{ end }}
-    
+
     slack_configs:
       - api_url: '${SLACK_WEBHOOK_URL_CRITICAL}'
         channel: '#alerts-critical'
@@ -219,14 +219,14 @@ receivers:
         subject: '[CRITICAL] Database Alert - Immediate Action Required'
         body: |
           🔴 CRITICAL DATABASE ALERT
-          
+
           {{ range .Alerts }}
           Issue: {{ .Annotations.summary }}
           Details: {{ .Annotations.description }}
           Database: {{ .Labels.database }}
           Instance: {{ .Labels.instance }}
           Time: {{ .StartsAt }}
-          
+
           IMMEDIATE ACTIONS:
           1. Check database connectivity
           2. Review recent changes
@@ -248,19 +248,19 @@ receivers:
         subject: '[CRITICAL] Payment System Alert - Revenue Impact'
         body: |
           💳 CRITICAL PAYMENT SYSTEM ALERT
-          
+
           {{ range .Alerts }}
           Issue: {{ .Annotations.summary }}
           Impact: {{ .Annotations.description }}
           Gateway: {{ .Labels.gateway }}
           Error Rate: {{ .Labels.error_rate }}%
           Time: {{ .StartsAt }}
-          
+
           BUSINESS IMPACT:
           - Revenue collection may be affected
           - Customer experience degraded
           - Potential compliance issues
-          
+
           ESCALATION PATH:
           1. Payment team (immediate)
           2. CTO (15 minutes)
@@ -279,14 +279,14 @@ receivers:
         subject: '[CRITICAL] Authentication System Alert'
         body: |
           🔐 CRITICAL AUTHENTICATION ALERT
-          
+
           {{ range .Alerts }}
           Issue: {{ .Annotations.summary }}
           Details: {{ .Annotations.description }}
           Service: {{ .Labels.service }}
           Users Affected: {{ .Labels.affected_users }}
           Time: {{ .StartsAt }}
-          
+
           SECURITY IMPLICATIONS:
           - User access may be compromised
           - System security at risk
@@ -300,7 +300,7 @@ receivers:
         subject: '[HIGH] HASIVU Alert: {{ .GroupLabels.alertname }}'
         body: |
           ⚠️ HIGH PRIORITY ALERT
-          
+
           {{ range .Alerts }}
           Alert: {{ .Annotations.summary }}
           Description: {{ .Annotations.description }}
@@ -308,7 +308,7 @@ receivers:
           Severity: {{ .Labels.severity }}
           Instance: {{ .Labels.instance }}
           Started: {{ .StartsAt }}
-          
+
           Dashboard: https://monitoring.hasivu.com/d/hasivu-ops
           Runbook: {{ .Annotations.runbook_url }}
           {{ end }}
@@ -327,14 +327,14 @@ receivers:
         subject: '[SECURITY] HASIVU Security Alert'
         body: |
           🛡️ SECURITY ALERT
-          
+
           {{ range .Alerts }}
           Event: {{ .Annotations.summary }}
           Details: {{ .Annotations.description }}
           Source IP: {{ .Labels.source_ip }}
           User: {{ .Labels.user }}
           Time: {{ .StartsAt }}
-          
+
           Threat Level: {{ .Labels.threat_level }}
           Recommended Action: {{ .Annotations.recommendation }}
           {{ end }}
@@ -353,14 +353,14 @@ receivers:
         subject: '[BUSINESS] HASIVU Business Metric Alert'
         body: |
           📊 BUSINESS METRIC ALERT
-          
+
           {{ range .Alerts }}
           Metric: {{ .Annotations.summary }}
           Impact: {{ .Annotations.description }}
           Current Value: {{ .Labels.current_value }}
           Threshold: {{ .Labels.threshold }}
           Time: {{ .StartsAt }}
-          
+
           Business Impact: {{ .Annotations.business_impact }}
           Recommended Action: {{ .Annotations.recommendation }}
           {{ end }}
@@ -378,7 +378,7 @@ receivers:
         subject: '[PERFORMANCE] HASIVU Performance Alert'
         body: |
           ⚡ PERFORMANCE ALERT
-          
+
           {{ range .Alerts }}
           Issue: {{ .Annotations.summary }}
           Details: {{ .Annotations.description }}
@@ -386,7 +386,7 @@ receivers:
           Response Time: {{ .Labels.response_time }}ms
           Threshold: {{ .Labels.threshold }}ms
           Time: {{ .StartsAt }}
-          
+
           Performance Impact: {{ .Annotations.performance_impact }}
           Optimization Tips: {{ .Annotations.optimization }}
           {{ end }}
@@ -398,7 +398,7 @@ receivers:
         subject: '[COST] HASIVU Cost Alert'
         body: |
           💰 COST ALERT
-          
+
           {{ range .Alerts }}
           Alert: {{ .Annotations.summary }}
           Details: {{ .Annotations.description }}
@@ -407,7 +407,7 @@ receivers:
           Budget: ${{ .Labels.budget }}
           Utilization: {{ .Labels.utilization }}%
           Time: {{ .StartsAt }}
-          
+
           Cost Optimization: {{ .Annotations.optimization }}
           {{ end }}
 
@@ -418,7 +418,7 @@ receivers:
         subject: '[RFID] HASIVU RFID System Alert'
         body: |
           📱 RFID SYSTEM ALERT
-          
+
           {{ range .Alerts }}
           Issue: {{ .Annotations.summary }}
           Details: {{ .Annotations.description }}
@@ -426,7 +426,7 @@ receivers:
           Location: {{ .Labels.location }}
           Success Rate: {{ .Labels.success_rate }}%
           Time: {{ .StartsAt }}
-          
+
           Troubleshooting: {{ .Annotations.troubleshooting }}
           {{ end }}
 
@@ -437,7 +437,7 @@ receivers:
         subject: '[DEV] Development Environment Alert'
         body: |
           🔧 DEVELOPMENT ALERT
-          
+
           {{ range .Alerts }}
           Alert: {{ .Annotations.summary }}
           Service: {{ .Labels.service }}
@@ -452,13 +452,13 @@ receivers:
         subject: '[STAGING] Staging Environment Alert'
         body: |
           🧪 STAGING ALERT
-          
+
           {{ range .Alerts }}
           Alert: {{ .Annotations.summary }}
           Service: {{ .Labels.service }}
           Environment: staging
           Time: {{ .StartsAt }}
-          
+
           Impact on Testing: {{ .Annotations.testing_impact }}
           {{ end }}
 

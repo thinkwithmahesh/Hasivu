@@ -17,7 +17,7 @@ exports.testRedis = testRedis;
 let testLogger;
 exports.IntegrationTestConfig = {
     database: {
-        url: process.env.DATABASE_URL || 'postgresql://test_user:test_pass@localhost:5432/hasivu_test',
+        url: process.env.DATABASE_URL || 'file:./test.db',
         schema: 'public',
         maxConnections: 10,
         connectionTimeout: 30000,
@@ -89,23 +89,29 @@ async function cleanTestDatabase() {
             throw new Error('Test database not initialized. Call initTestDatabase() first.');
         }
         const tableNames = await testPrisma.$queryRaw `
-      SELECT table_name 
-      FROM information_schema.tables 
-      WHERE table_schema = 'public' 
-        AND table_type = 'BASE TABLE'
-        AND table_name != '_prisma_migrations'
+      SELECT name FROM sqlite_master
+      WHERE type='table'
+        AND name NOT LIKE 'sqlite_%'
+        AND name != '_prisma_migrations'
     `;
-        await testPrisma.$executeRaw `SET session_replication_role = replica;`;
-        for (const { table_name } of tableNames) {
+        await testPrisma.$executeRaw `PRAGMA foreign_keys = OFF;`;
+        for (const { name: tableName } of tableNames) {
             try {
-                await testPrisma.$executeRawUnsafe(`TRUNCATE TABLE "${table_name}" CASCADE;`);
-                console.log(`✅ Cleaned table: ${table_name}`);
+                await testPrisma.$executeRawUnsafe(`DELETE FROM "${tableName}";`);
+                console.log(`✅ Cleaned table: ${tableName}`);
             }
             catch (tableError) {
-                console.warn(`⚠️ Failed to clean table ${table_name}:`, tableError);
+                console.warn(`⚠️ Failed to clean table ${tableName}:`, tableError);
             }
         }
-        await testPrisma.$executeRaw `SET session_replication_role = DEFAULT;`;
+        for (const { name: tableName } of tableNames) {
+            try {
+                await testPrisma.$executeRawUnsafe(`DELETE FROM sqlite_sequence WHERE name="${tableName}";`);
+            }
+            catch (tableError) {
+            }
+        }
+        await testPrisma.$executeRaw `PRAGMA foreign_keys = ON;`;
         console.log('✅ Test database cleaned successfully');
     }
     catch (error) {

@@ -1,139 +1,64 @@
-export interface Config {
-    server: {
-        nodeEnv: string;
-        port: number;
-        host: string;
-        appName: string;
-        apiVersion: string;
-        baseUrl: string;
+export interface EnvironmentConfig {
+    NODE_ENV: string;
+    PORT: number;
+    APP_NAME: string;
+    APP_VERSION: string;
+    DATABASE_URL: string;
+    JWT_SECRET: string;
+    JWT_REFRESH_SECRET: string;
+    JWT_EXPIRY: string;
+    JWT_REFRESH_EXPIRY: string;
+    JWT_ISSUER: string;
+    JWT_AUDIENCE: string;
+    REDIS_URL?: string;
+    REDIS_HOST?: string;
+    REDIS_PORT?: number;
+    REDIS_PASSWORD?: string;
+    AWS_REGION?: string;
+    AWS_ACCESS_KEY_ID?: string;
+    AWS_SECRET_ACCESS_KEY?: string;
+    RAZORPAY_KEY_ID?: string;
+    RAZORPAY_KEY_SECRET?: string;
+    SMTP_HOST?: string;
+    SMTP_PORT?: number;
+    SMTP_USER?: string;
+    SMTP_PASSWORD?: string;
+    ENABLE_PUSH_NOTIFICATIONS?: boolean;
+    ENABLE_EMAIL_NOTIFICATIONS?: boolean;
+    ENABLE_SMS_NOTIFICATIONS?: boolean;
+}
+declare class Environment {
+    private static instance;
+    private config;
+    private constructor();
+    static getInstance(): Environment;
+    private loadConfig;
+    get<K extends keyof EnvironmentConfig>(key: K): EnvironmentConfig[K];
+    getAll(): EnvironmentConfig;
+    isDevelopment(): boolean;
+    isProduction(): boolean;
+    isTest(): boolean;
+    validate(): {
+        isValid: boolean;
+        missingKeys: string[];
     };
-    database: {
-        url: string;
-        host: string;
-        port: number;
-        name: string;
-        username: string;
-        password: string;
-        ssl: boolean;
-        poolMin: number;
-        poolMax: number;
-        acquireTimeout: number;
-        idleTimeout: number;
-    };
-    redis: {
-        url: string;
-        host: string;
-        port: number;
-        password: string;
-        db: number;
-        maxRetries: number;
-        retryDelay: number;
-        enableOfflineQueue: boolean;
-        lazyConnect: boolean;
-    };
+}
+export declare const env: Environment;
+export default env;
+export declare const config: {
     jwt: {
         secret: string;
         refreshSecret: string;
-        expiresIn: string;
-        refreshExpiresIn: string;
         issuer: string;
         audience: string;
+        expiresIn: string;
+        refreshExpiresIn: string;
     };
-    security: {
-        bcryptRounds: number;
-        sessionSecret: string;
-        corsOrigins: string;
-        trustedProxies: string;
-        encryptionKey: string;
-        rateLimitEnabled: boolean;
-        securityHeadersEnabled: boolean;
+    redis: {
+        url: string;
     };
-    rateLimit: {
-        windowMs: number;
-        maxRequests: number;
-        skipSuccessful: boolean;
-        skipFailed: boolean;
+    server: {
+        nodeEnv: string;
     };
-    cors: {
-        origins: string;
-    };
-    upload: {
-        maxSize: string;
-        allowedTypes: string;
-        destination: string;
-    };
-    aws: {
-        region: string;
-        accessKeyId: string;
-        secretAccessKey: string;
-        s3Bucket: string;
-        sesFromEmail: string;
-        cloudwatchLogGroup: string;
-    };
-    razorpay: {
-        keyId: string;
-        keySecret: string;
-        webhookSecret: string;
-        baseUrl: string;
-    };
-    whatsapp: {
-        apiUrl: string;
-        accessToken: string;
-        phoneNumberId: string;
-        webhookVerifyToken: string;
-        businessAccountId: string;
-    };
-    sendgrid: {
-        apiKey: string;
-        fromEmail: string;
-        fromName: string;
-    };
-    firebase: {
-        projectId: string;
-        privateKey: string;
-        clientEmail: string;
-        databaseUrl: string;
-    };
-    monitoring: {
-        enableMetrics: boolean;
-        metricsPort: number;
-        logLevel: string;
-        logFile: string;
-        enableCloudwatch: boolean;
-        enableSentry: boolean;
-        sentryDsn: string;
-    };
-    features: {
-        enableWebsocket: boolean;
-        enableFileUpload: boolean;
-        enableNotifications: boolean;
-        enableAnalytics: boolean;
-        enableRfid: boolean;
-        enableTesting: boolean;
-    };
-    development: {
-        enableHotReload: boolean;
-        enableDebug: boolean;
-        enableProfiling: boolean;
-        enableSqlLogging: boolean;
-    };
-    notifications: {
-        email: {
-            apiKey: string;
-            fromEmail: string;
-            provider: string;
-        };
-        sms: {
-            apiKey: string;
-            provider: string;
-        };
-        push: {
-            apiKey: string;
-            provider: string;
-        };
-    };
-}
-export declare const config: Config;
-export declare function validateConfig(): void;
-export default config;
+};
 //# sourceMappingURL=environment.d.ts.map

@@ -6,15 +6,15 @@ interface OrderTrackingProps {
   onRefresh?: () => void;
 }
 
-export const OrderTracking: React.FC<OrderTrackingProps> = ({ 
-  currentOrder = null,
-  onRefresh
+export const OrderTracking: React.FC<OrderTrackingProps> = ({
+  currentOrder: _currentOrder = null,
+  onRefresh,
 }) => {
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold">Order Tracking</h2>
-        <button 
+        <button
           onClick={onRefresh}
           className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded"
         >

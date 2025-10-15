@@ -1,12 +1,12 @@
-"use client"
+'use client';
 
-import * as React from "react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { Mail, Loader2, ArrowLeft, Send, CheckCircle, Eye, EyeOff } from "lucide-react"
-import Link from "next/link"
+import * as React from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Mail, Loader2, ArrowLeft, Send, CheckCircle, Eye, EyeOff } from 'lucide-react';
+import Link from 'next/link';
 
-import { Button } from "@/components/ui/button"
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -14,8 +14,8 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import {
   Form,
   FormControl,
@@ -23,16 +23,16 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
+} from '@/components/ui/form';
 
-import { forgotPasswordSchema, resetPasswordSchema, type ForgotPasswordFormData } from "./schemas"
+import { forgotPasswordSchema, resetPasswordSchema, type ForgotPasswordFormData } from './schemas';
 
 interface ForgotPasswordFormProps {
-  onSubmit: (data: ForgotPasswordFormData) => Promise<void>
-  isLoading?: boolean
-  error?: string | null
-  success?: boolean
-  className?: string
+  onSubmit: (data: ForgotPasswordFormData) => Promise<void>;
+  isLoading?: boolean;
+  error?: string | null;
+  success?: boolean;
+  className?: string;
 }
 
 export function ForgotPasswordForm({
@@ -40,53 +40,50 @@ export function ForgotPasswordForm({
   isLoading = false,
   error,
   success = false,
-  className
+  className,
 }: ForgotPasswordFormProps) {
   const form = useForm<ForgotPasswordFormData>({
     resolver: zodResolver(forgotPasswordSchema),
     defaultValues: {
-      email: "",
+      email: '',
     },
-  })
+  });
 
   const handleSubmit = async (data: ForgotPasswordFormData) => {
     try {
-      await onSubmit(data)
+      await onSubmit(data);
     } catch (error) {
-      console.error("Forgot password error:", error)
+      // Error handled silently
     }
-  }
+  };
 
-  const email = form.watch("email")
+  const email = form.watch('email');
 
   return (
     <Card className={className} aria-label="Forgot password form">
       <CardHeader className="space-y-1 text-center">
         <CardTitle className="text-3xl font-bold text-primary-600">
-          {success ? "Check Your Email" : "Forgot Password?"}
+          {success ? 'Check Your Email' : 'Forgot Password?'}
         </CardTitle>
         <CardDescription className="text-gray-600">
-          {success 
+          {success
             ? "We've sent password reset instructions to your email"
-            : "Enter your email address and we'll send you instructions to reset your password"
-          }
+            : "Enter your email address and we'll send you instructions to reset your password"}
         </CardDescription>
       </CardHeader>
-      
+
       <CardContent className="space-y-4">
         {success ? (
           <div className="text-center space-y-4">
             <div className="mx-auto w-16 h-16 bg-success-100 rounded-full flex items-center justify-center">
               <CheckCircle className="w-8 h-8 text-success-600" />
             </div>
-            
+
             <div className="space-y-2">
-              <p className="text-sm text-gray-600">
-                We've sent password reset instructions to:
-              </p>
+              <p className="text-sm text-gray-600">We've sent password reset instructions to:</p>
               <p className="font-medium text-gray-900">{email}</p>
             </div>
-            
+
             <div className="p-4 bg-info-50 border border-info-200 rounded-md">
               <div className="text-sm text-info-700">
                 <p className="font-medium mb-1">Didn't receive the email?</p>
@@ -120,7 +117,7 @@ export function ForgotPasswordForm({
         ) : (
           <>
             {error && (
-              <div 
+              <div
                 className="p-3 rounded-md bg-error-50 border border-error-200 text-error-700 text-sm"
                 role="alert"
                 aria-live="polite"
@@ -189,17 +186,21 @@ export function ForgotPasswordForm({
         </Link>
       </CardFooter>
     </Card>
-  )
+  );
 }
 
 // Reset Password Form Component
 interface ResetPasswordFormProps {
-  onSubmit: (data: { token: string; newPassword: string; confirmPassword: string }) => Promise<void>
-  isLoading?: boolean
-  error?: string | null
-  success?: boolean
-  token: string
-  className?: string
+  onSubmit: (data: {
+    token: string;
+    newPassword: string;
+    confirmPassword: string;
+  }) => Promise<void>;
+  isLoading?: boolean;
+  error?: string | null;
+  success?: boolean;
+  token: string;
+  className?: string;
 }
 
 export function ResetPasswordForm({
@@ -208,26 +209,26 @@ export function ResetPasswordForm({
   error,
   success = false,
   token,
-  className
+  className,
 }: ResetPasswordFormProps) {
-  const [showPassword, setShowPassword] = React.useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false)
+  const [showPassword, setShowPassword] = React.useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
 
   const form = useForm({
     resolver: zodResolver(resetPasswordSchema),
     defaultValues: {
-      newPassword: "",
-      confirmPassword: "",
+      newPassword: '',
+      confirmPassword: '',
     },
-  })
+  });
 
   const handleSubmit = async (data: any) => {
     try {
-      await onSubmit({ ...data, token })
+      await onSubmit({ ...data, token });
     } catch (error) {
-      console.error("Reset password error:", error)
+      // Error handled silently
     }
-  }
+  };
 
   if (success) {
     return (
@@ -240,7 +241,7 @@ export function ResetPasswordForm({
             Your password has been updated. You can now sign in with your new password.
           </CardDescription>
         </CardHeader>
-        
+
         <CardContent className="text-center space-y-4">
           <div className="mx-auto w-16 h-16 bg-success-100 rounded-full flex items-center justify-center">
             <CheckCircle className="w-8 h-8 text-success-600" />
@@ -255,23 +256,19 @@ export function ResetPasswordForm({
           </Link>
         </CardFooter>
       </Card>
-    )
+    );
   }
 
   return (
     <Card className={className} aria-label="Reset password form">
       <CardHeader className="space-y-1 text-center">
-        <CardTitle className="text-3xl font-bold text-primary-600">
-          Reset Your Password
-        </CardTitle>
-        <CardDescription className="text-gray-600">
-          Enter your new password below
-        </CardDescription>
+        <CardTitle className="text-3xl font-bold text-primary-600">Reset Your Password</CardTitle>
+        <CardDescription className="text-gray-600">Enter your new password below</CardDescription>
       </CardHeader>
-      
+
       <CardContent className="space-y-4">
         {error && (
-          <div 
+          <div
             className="p-3 rounded-md bg-error-50 border border-error-200 text-error-700 text-sm"
             role="alert"
             aria-live="polite"
@@ -292,7 +289,7 @@ export function ResetPasswordForm({
                     <div className="relative">
                       <Input
                         {...field}
-                        type={showPassword ? "text" : "password"}
+                        type={showPassword ? 'text' : 'password'}
                         placeholder="Enter new password"
                         className="pr-10"
                         autoComplete="new-password"
@@ -302,7 +299,7 @@ export function ResetPasswordForm({
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
                         className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
-                        aria-label={showPassword ? "Hide password" : "Show password"}
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
                       >
                         {showPassword ? (
                           <EyeOff className="h-4 w-4" />
@@ -327,7 +324,7 @@ export function ResetPasswordForm({
                     <div className="relative">
                       <Input
                         {...field}
-                        type={showConfirmPassword ? "text" : "password"}
+                        type={showConfirmPassword ? 'text' : 'password'}
                         placeholder="Confirm new password"
                         className="pr-10"
                         autoComplete="new-password"
@@ -337,7 +334,7 @@ export function ResetPasswordForm({
                         type="button"
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                         className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
-                        aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                        aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
                       >
                         {showConfirmPassword ? (
                           <EyeOff className="h-4 w-4" />
@@ -357,8 +354,7 @@ export function ResetPasswordForm({
                 <span className="font-medium">Password requirements:</span>
                 <br />
                 • At least 8 characters long
-                <br />
-                • Mix of letters, numbers, and special characters recommended
+                <br />• Mix of letters, numbers, and special characters recommended
               </p>
             </div>
 
@@ -374,7 +370,7 @@ export function ResetPasswordForm({
                   Updating password...
                 </>
               ) : (
-                "Update Password"
+                'Update Password'
               )}
             </Button>
           </form>
@@ -391,5 +387,5 @@ export function ResetPasswordForm({
         </Link>
       </CardFooter>
     </Card>
-  )
+  );
 }

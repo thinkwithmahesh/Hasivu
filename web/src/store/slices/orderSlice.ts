@@ -86,39 +86,42 @@ const orderSlice = createSlice({
   name: 'orders',
   initialState,
   reducers: {
-    clearError: (state) => {
+    clearError: state => {
       state.error = null;
     },
     setCurrentOrder: (state, action: PayloadAction<Order | null>) => {
       state.currentOrder = action.payload;
     },
-    updateOrderStatus: (state, action: PayloadAction<{ orderId: string; status: Order['status'] }>) => {
+    updateOrderStatus: (
+      state,
+      action: PayloadAction<{ orderId: string; status: Order['status'] }>
+    ) => {
       const { orderId, status } = action.payload;
-      
+
       // Update in all orders
       const orderIndex = state.orders.findIndex(order => order.id === orderId);
       if (orderIndex !== -1) {
         state.orders[orderIndex].status = status;
       }
-      
+
       // Update current order
       if (state.currentOrder?.id === orderId) {
         state.currentOrder.status = status;
       }
-      
+
       // Update active orders
       const activeIndex = state.activeOrders.findIndex(order => order.id === orderId);
       if (activeIndex !== -1) {
         state.activeOrders[activeIndex].status = status;
       }
-      
+
       state.lastUpdated = new Date().toISOString();
     },
   },
-  extraReducers: (builder) => {
+  extraReducers: builder => {
     // Fetch orders
     builder
-      .addCase(fetchOrders.pending, (state) => {
+      .addCase(fetchOrders.pending, state => {
         state.isLoading = true;
         state.error = null;
       })
@@ -137,7 +140,7 @@ const orderSlice = createSlice({
 
     // Create order
     builder
-      .addCase(createOrder.pending, (state) => {
+      .addCase(createOrder.pending, state => {
         state.isCreating = true;
         state.error = null;
       })
@@ -155,11 +158,7 @@ const orderSlice = createSlice({
   },
 });
 
-export const {
-  clearError,
-  setCurrentOrder,
-  updateOrderStatus,
-} = orderSlice.actions;
+export const { clearError, setCurrentOrder, updateOrderStatus } = orderSlice.actions;
 
 // Selectors
 export const selectOrders = (state: any) => state.orders.orders;

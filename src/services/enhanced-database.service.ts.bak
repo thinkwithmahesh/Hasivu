@@ -1,0 +1,160 @@
+/**
+ * HASIVU Platform - Enhanced Database Service
+ * Minimal stub for compilation
+ */
+
+import { PrismaClient } from '@prisma/client';
+
+export interface EnhancedDatabaseHealth {
+  status: 'healthy' | 'warning' | 'error';
+  responseTime: number;
+  connections: {
+    active: number;
+    idle: number;
+    total: number;
+    maxConnections: number;
+    poolUtilization: number;
+  };
+  performance: {
+    avgQueryTime: number;
+    slowQueries: number;
+    queryThroughput: number;
+    cacheHitRate: number;
+  };
+  replication: {
+    readReplicas: Array<{
+      id: string;
+      status: 'healthy' | 'degraded' | 'offline';
+      lag: number;
+    }>;
+    writeStatus: 'healthy' | 'degraded' | 'offline';
+  };
+  cache: {
+    hitRate: number;
+    missRate: number;
+    evictions: number;
+    memory: number;
+  };
+  tables: Array<{
+    name: string;
+    rowCount: number;
+    size: string;
+    indexHealth: 'good' | 'needs_optimization';
+  }>;
+  errors: Array<{
+    type: string;
+    message: string;
+    timestamp: Date;
+    count: number;
+  }>;
+  timestamp: Date;
+}
+
+export interface QueryOptimization {
+  useCache: boolean;
+  cacheTTL?: number;
+  useReadReplica: boolean;
+  timeout?: number;
+  retries?: number;
+  batchSize?: number;
+  indexHints?: string[];
+}
+
+export interface TransactionOptions {
+  isolation?: any;
+  maxWait?: number;
+  timeout?: number;
+  retries?: number;
+}
+
+class EnhancedDatabaseService {
+  private prisma: PrismaClient;
+
+  constructor() {
+    this.prisma = new PrismaClient();
+  }
+
+  async executeQuery<T>(
+    queryFn: (prisma: PrismaClient) => Promise<T>,
+    options: QueryOptimization = { useCache: false, useReadReplica: false }
+  ): Promise<T> {
+    // Stub implementation - just execute the query
+    return await queryFn(this.prisma);
+  }
+
+  async executeTransaction<T>(
+    transactionFn: (prisma: PrismaClient) => Promise<T>,
+    options: TransactionOptions = {}
+  ): Promise<T> {
+    // Stub implementation - just execute the transaction
+    return await this.prisma.$transaction(transactionFn);
+  }
+
+  async batchInsert<T>(
+    data: T[],
+    insertFn: (items: T[]) => Promise<any>,
+    batchSize: number = 100
+  ): Promise<void> {
+    // Stub implementation
+    await insertFn(data);
+  }
+
+  async getHealth(): Promise<EnhancedDatabaseHealth> {
+    // Stub implementation
+    return {
+      status: 'healthy',
+      responseTime: 10,
+      connections: {
+        active: 1,
+        idle: 4,
+        total: 5,
+        maxConnections: 10,
+        poolUtilization: 0.5
+      },
+      performance: {
+        avgQueryTime: 50,
+        slowQueries: 0,
+        queryThroughput: 100,
+        cacheHitRate: 0.8
+      },
+      replication: {
+        readReplicas: [],
+        writeStatus: 'healthy'
+      },
+      cache: {
+        hitRate: 0.8,
+        missRate: 0.2,
+        evictions: 0,
+        memory: 1024
+      },
+      tables: [],
+      errors: [],
+      timestamp: new Date()
+    };
+  }
+
+  async optimizeDatabase(): Promise<{
+    optimizations: string[];
+    performance: {
+      before: any;
+      after: any;
+    };
+  }> {
+    // Stub implementation
+    return {
+      optimizations: [],
+      performance: {
+        before: {},
+        after: {}
+      }
+    };
+  }
+
+  async cleanup(): Promise<void> {
+    // Stub implementation
+    await this.prisma.$disconnect();
+  }
+}
+
+export const enhancedDatabaseService = new EnhancedDatabaseService();
+export default enhancedDatabaseService;

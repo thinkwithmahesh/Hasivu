@@ -1,110 +1,100 @@
 import { User } from '@prisma/client';
+export interface UserFilters {
+    role?: string;
+    schoolId?: string;
+    search?: string;
+    isActive?: boolean;
+}
 export interface CreateUserRequest {
     email: string;
+    password: string;
     firstName: string;
     lastName: string;
-    phone?: string;
-    role: UserRole;
+    role: string;
     schoolId?: string;
-    parentId?: string;
-    childrenIds?: string[];
-    isActive?: boolean;
-    metadata?: Record<string, any>;
-    preferences?: UserPreferences;
+    phoneNumber?: string;
 }
 export interface UpdateUserRequest {
+    email?: string;
     firstName?: string;
     lastName?: string;
-    phone?: string;
-    role?: UserRole;
-    schoolId?: string;
-    parentId?: string;
-    childrenIds?: string[];
+    phoneNumber?: string;
+    role?: string;
     isActive?: boolean;
-    metadata?: Record<string, any>;
-    preferences?: UserPreferences;
+    schoolId?: string;
 }
 export interface UserSearchFilters {
+    email?: string;
+    role?: string;
     schoolId?: string;
-    role?: UserRole;
     isActive?: boolean;
-    parentId?: string;
     search?: string;
-    query?: string;
-    hasChildren?: boolean;
-    sortBy?: string;
-    sortOrder?: 'asc' | 'desc';
     page?: number;
     limit?: number;
 }
-export interface UserListResponse {
-    users: User[];
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
+export interface UserWithChildren extends User {
+    children?: User[];
 }
-export interface BulkImportResult {
-    success: boolean;
-    successCount: number;
-    errorCount: number;
-    users: User[];
-    errors: ImportError[];
-}
-export interface ImportError {
-    row: number;
-    error: string;
-    data: any;
-}
-export interface UserAuditLog {
-    id: string;
-    userId: string;
-    action: string;
-    performedBy: string;
-    changes: Record<string, {
-        from: any;
-        to: any;
-    }>;
-    metadata?: Record<string, any>;
-    timestamp: Date;
-}
-export interface UserPreferences {
-    language: 'en' | 'hi' | 'kn';
-    notifications: {
-        email: boolean;
-        sms: boolean;
-        push: boolean;
-        whatsapp: boolean;
-    };
-    theme: 'light' | 'dark' | 'auto';
-    timezone?: string;
-}
-export type UserRole = 'student' | 'parent' | 'teacher' | 'staff' | 'school_admin' | 'admin' | 'super_admin';
 export declare class UserService {
-    private static prisma;
-    private static redis;
-    static createUser(data: CreateUserRequest, createdBy: string): Promise<User>;
-    static getUserById(id: string): Promise<User | null>;
-    static getUserByEmail(email: string): Promise<User | null>;
-    static updateUser(id: string, data: UpdateUserRequest, updatedBy: string): Promise<User>;
-    static deleteUser(id: string, deletedBy: string): Promise<void>;
-    static searchUsers(filters: UserSearchFilters): Promise<UserListResponse>;
-    static bulkImportUsers(csvData: string, importedBy: string, schoolId?: string): Promise<BulkImportResult>;
-    static updateChildrenAssociations(parentId: string, childrenIds: string[], updatedBy: string): Promise<void>;
-    static getUserAuditLogs(userId: string, limit?: number): Promise<UserAuditLog[]>;
-    private static validateUserData;
-    private static validateUserUpdateData;
-    private static validateSchoolAccess;
-    private static validateParentChildRelationship;
-    private static validateUpdatePermissions;
-    private static validateDeletePermissions;
-    private static checkUserDependencies;
-    private static createAuditLog;
-    private static calculateChanges;
-    private static parseCsvData;
-    private static validateBulkImportRow;
-    private static cacheUser;
-    private static getCachedUser;
-    private static removeCachedUser;
+    private static instance;
+    private prisma;
+    constructor();
+    static getInstance(): UserService;
+    findById(id: string): Promise<User | null>;
+    findByEmail(email: string): Promise<User | null>;
+    findAll(filters?: UserFilters): Promise<User[]>;
+    findBySchool(schoolId: string): Promise<User[]>;
+    findByRole(role: string): Promise<User[]>;
+    create(data: Omit<User, 'id' | 'createdAt' | 'updatedAt'>): Promise<User>;
+    update(id: string, data: Partial<User>): Promise<User>;
+    delete(id: string): Promise<User>;
+    bulkCreate(users: Omit<User, 'id' | 'createdAt' | 'updatedAt'>[]): Promise<number>;
+    getChildren(parentId: string): Promise<User[]>;
+    addChild(parentId: string, childId: string): Promise<User>;
+    removeChild(childId: string): Promise<User>;
+    getUserById(userId: string): Promise<User>;
+    searchUsers(filters: UserSearchFilters): Promise<{
+        users: User[];
+        total: number;
+        page: number;
+        limit: number;
+    }>;
+    bulkImportUsers(users: CreateUserRequest[]): Promise<{
+        success: User[];
+        failed: Array<{
+            userData: CreateUserRequest;
+            error: string;
+        }>;
+    }>;
+    updateUser(userId: string, data: UpdateUserRequest): Promise<User>;
+    updateChildrenAssociations(parentId: string, childIds: string[]): Promise<{
+        success: boolean;
+    }>;
+    getUserAuditLogs(_userId: string): Promise<any[]>;
+    createUser(data: CreateUserRequest): Promise<User>;
+    static getUserById(userId: string): Promise<User>;
+    static searchUsers(filters: UserSearchFilters): Promise<{
+        users: User[];
+        total: number;
+        page: number;
+        limit: number;
+    }>;
+    static bulkImportUsers(users: CreateUserRequest[]): Promise<{
+        success: User[];
+        failed: Array<{
+            userData: CreateUserRequest;
+            error: string;
+        }>;
+    }>;
+    static updateUser(userId: string, data: UpdateUserRequest): Promise<User>;
+    static updateChildrenAssociations(parentId: string, childIds: string[]): Promise<{
+        success: boolean;
+    }>;
+    static getUserAuditLogs(userId: string): Promise<any[]>;
+    static createUser(data: CreateUserRequest): Promise<User>;
+    createSchool(data: any): Promise<any>;
+    static createSchool(data: any): Promise<any>;
 }
+export declare const userService: UserService;
+export default UserService;
 //# sourceMappingURL=user.service.d.ts.map

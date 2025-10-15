@@ -1,0 +1,49 @@
+{
+  "environment": "production",
+  "stackName": "hasivu-platform-production",
+  "region": "ap-south-1",
+  "setup": {
+    "timestamp": "2025-09-28T13:41:28.829Z",
+    "logGroups": {
+      "application": "/hasivu/production/application",
+      "errors": "/hasivu/production/errors",
+      "performance": "/hasivu/production/performance",
+      "business": "/hasivu/production/business-metrics",
+      "security": "/hasivu/production/security-events"
+    },
+    "metrics": {
+      "namespaces": ["HASIVU/Business", "HASIVU/Performance", "HASIVU/Security"],
+      "alarms": [
+        "HASIVU-production-HighErrorRate",
+        "HASIVU-production-SlowAPIResponse",
+        "HASIVU-production-AuthFailures",
+        "HASIVU-production-LowCacheHitRate"
+      ]
+    },
+    "dashboard": "HASIVU-production-Dashboard",
+    "recommendations": [
+      "Monitor custom metrics regularly using CloudWatch console",
+      "Set up SNS topics for alarm notifications",
+      "Review performance metrics weekly",
+      "Analyze business metrics for growth insights",
+      "Monitor security events for threat detection"
+    ]
+  },
+  "usage": {
+    "customMetrics": {
+      "business": "Track orders, payments, users, revenue",
+      "performance": "Monitor API response times, cache hit rates",
+      "security": "Track authentication failures, suspicious activity"
+    },
+    "alarms": {
+      "errorRate": "Triggers when error rate > 5%",
+      "responseTime": "Triggers when API response > 2 seconds",
+      "authFailures": "Triggers when auth failures > 100 per 5 minutes",
+      "cacheHitRate": "Triggers when cache hit rate < 70%"
+    },
+    "logs": {
+      "location": "CloudWatch Logs under /hasivu/ log groups",
+      "retention": "365 days"
+    }
+  }
+}

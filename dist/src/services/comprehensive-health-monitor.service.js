@@ -245,7 +245,7 @@ class ComprehensiveHealthMonitorService {
     async checkAWS_S3(service) {
         const startTime = Date.now();
         try {
-            const s3 = new (require('aws-sdk')).S3();
+            const s3 = new aws_sdk_1.S3();
             const buckets = await s3.listBuckets().promise();
             const testKey = `health-check-${Date.now()}.txt`;
             const testBucket = process.env.AWS_S3_BUCKET;

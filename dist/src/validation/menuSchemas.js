@@ -14,9 +14,9 @@ exports.ALLERGEN_TYPES = [
     'WHEAT', 'SOYBEANS', 'SESAME', 'SULPHITES', 'MUSTARD', 'CELERY'
 ];
 const MENU_SAFE_PATTERNS = {
-    menuName: /^[a-zA-Z0-9\s\-\(\)&,'.]{1,100}$/,
-    description: /^[a-zA-Z0-9\s\-\(\)&,'.!?\n\r]{1,500}$/,
-    imageUrl: /^https?:\/\/[a-zA-Z0-9\-._~:\/?#[\]@!$&'()*+,;=]{1,500}$/,
+    menuName: /^[a-zA-Z0-9\s\-()&,'.]{1,100}$/,
+    description: /^[a-zA-Z0-9\s\-()&,'.!?\n\r]{1,500}$/,
+    imageUrl: /^https?:\/\/[a-zA-Z0-9\-._~:?/#[\]@!$&'()*+,;=]{1,500}$/,
     tag: /^[a-zA-Z0-9_]{1,50}$/,
     portionSize: /^[a-zA-Z0-9\s.]{1,50}$/,
     currency: /^[A-Z]{3}$/,

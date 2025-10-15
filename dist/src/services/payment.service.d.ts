@@ -1,237 +1,136 @@
-export declare enum PaymentMethod {
-    CARD = "card",
-    NETBANKING = "netbanking",
-    UPI = "upi",
-    WALLET = "wallet",
-    UNKNOWN = "unknown"
+import { Payment } from '@prisma/client';
+export interface PaymentFilters {
+    userId?: string;
+    orderId?: string;
+    status?: string;
+    method?: string;
 }
-export declare enum PaymentRefundStatus {
-    PENDING = "pending",
-    PROCESSED = "processed",
-    FAILED = "failed"
-}
-export interface PaymentMethodInterface {
-    id: string;
-    type: PaymentMethod;
-    provider: string;
-    details: Record<string, any>;
-    isDefault: boolean;
-    createdAt: Date;
-    updatedAt: Date;
-}
-export interface PaymentOrder {
-    id: string;
-    razorpayOrderId: string;
-    userId: string;
-    amount: number;
-    currency: string;
-    status: 'created' | 'attempted' | 'paid' | 'failed' | 'cancelled';
-    notes: Record<string, any>;
-    receipt: string;
-    createdAt: Date;
-    expiresAt: Date;
-}
-export interface PaymentTransaction {
-    id: string;
+export interface CreatePaymentData {
     orderId: string;
-    razorpayPaymentId: string;
-    method: PaymentMethod | string;
-    amount: number;
-    currency: string;
-    status: 'created' | 'authorized' | 'captured' | 'failed' | 'refunded';
-    gateway: string;
-    fees: Record<string, number> | string;
-    notes?: Record<string, any>;
-    createdAt: Date;
-    capturedAt?: Date;
-    refundedAt?: Date;
-}
-export interface PaymentRefund {
-    id: string;
-    paymentId: string;
-    razorpayRefundId: string;
-    amount: number;
-    currency: string;
-    status: PaymentRefundStatus | 'pending' | 'processed' | 'failed';
-    reason: string;
-    notes?: Record<string, any> | string;
-    createdAt: Date;
-    processedAt?: Date;
-}
-export interface PaymentSubscription {
-    id: string;
-    razorpaySubscriptionId: string;
     userId: string;
-    planId: string;
-    status: 'created' | 'authenticated' | 'active' | 'paused' | 'cancelled' | 'completed';
-    currentPeriodStart: Date;
-    currentPeriodEnd: Date;
-    notes: Record<string, any>;
-    createdAt: Date;
-    updatedAt: Date;
+    amount: number;
+    currency?: string;
+    method: string;
+    transactionId?: string;
 }
 export declare class PaymentService {
-    private razorpay?;
+    private static instance;
+    private prisma;
+    private razorpay;
     private webhookSecret;
+    isRazorpayAvailable(): boolean;
     constructor();
-    private isRazorpayAvailable;
+    static getInstance(): PaymentService;
+    findById(id: string): Promise<Payment | null>;
+    findByOrder(orderId: string): Promise<Payment[]>;
+    findByUser(userId: string): Promise<Payment[]>;
+    findAll(filters?: PaymentFilters): Promise<Payment[]>;
+    create(data: CreatePaymentData): Promise<Payment>;
+    updateStatus(id: string, status: string, transactionId?: string): Promise<Payment>;
+    processPayment(paymentId: string): Promise<Payment>;
+    refund(paymentId: string, amount?: number): Promise<Payment>;
+    getTotalRevenue(filters?: PaymentFilters): Promise<number>;
     initialize(): Promise<void>;
-    createPaymentOrder(orderData: {
+    createPaymentOrder(data: {
         userId: string;
         amount: number;
         currency?: string;
-        notes?: Record<string, any>;
+        notes?: any;
         receipt?: string;
-    }): Promise<PaymentOrder>;
-    createOrder(orderData: {
-        userId: string;
-        amount?: number;
-        currency?: string;
-        notes?: Record<string, any>;
-        receipt?: string;
-        schoolId?: string;
-        deliveryDate?: Date;
-        items?: any[];
-    }): Promise<{
-        success: boolean;
-        order: PaymentOrder;
-        error?: string;
-    }>;
-    verifyPaymentSignature(razorpayOrderId: string, razorpayPaymentId: string, razorpaySignature: string): boolean;
-    capturePayment(orderId: string, paymentId: string, signature: string): Promise<PaymentTransaction>;
-    createRefund(paymentId: string, amount?: number, reason?: string): Promise<PaymentRefund>;
-    createSubscriptionPlan(planData: {
+    }): Promise<any>;
+    verifyPaymentSignature(orderId: string, paymentId: string, signature: string): boolean;
+    capturePayment(orderId: string, paymentId: string, signature: string): Promise<any>;
+    createRefund(paymentId: string, amount?: number, reason?: string): Promise<any>;
+    createSubscriptionPlan(data: {
         interval: 'daily' | 'weekly' | 'monthly' | 'yearly';
         period: number;
         amount: number;
         currency?: string;
-        notes?: Record<string, any>;
     }): Promise<any>;
-    createSubscription(subscriptionParams: {
+    createSubscription(data: {
         userId: string;
         planId: string;
-        notes?: Record<string, any>;
-    }): Promise<PaymentSubscription>;
+    }): Promise<any>;
     handleWebhook(body: string, signature: string): Promise<{
         success: boolean;
         message: string;
     }>;
-    getPaymentOrder(orderId: string): Promise<PaymentOrder | null>;
-    private handlePaymentCaptured;
-    private handlePaymentFailed;
-    private handleRefundProcessed;
-    private handleSubscriptionCharged;
-    processPayment(paymentData: {
-        orderId?: string;
-        amount: number;
-        currency?: string;
-        paymentMethodId?: string;
-        notes?: Record<string, any>;
-        userId?: string;
-        userRole?: string;
-    }): Promise<{
-        success: boolean;
-        payment?: any;
-        message?: string;
-    }>;
-    updateOrder(orderId: string, updateData: any, token?: string): Promise<{
-        success: boolean;
-        data?: any;
-        error?: string;
-    }>;
-    private isValidToken;
-    getAllOrders(filters?: any, token?: string): Promise<{
-        success: boolean;
-        data?: any;
-        error?: string;
-    }>;
-    getOrderAnalytics(token?: string): Promise<{
-        success: boolean;
-        data?: any;
-        error?: string;
-    }>;
-    refundOrder(orderId: string, token?: string, amount?: number): Promise<{
-        success: boolean;
-        data?: any;
-        error?: string;
-    }>;
-    cancelAnyOrder(orderId: string, reason?: string, token?: string): Promise<{
-        success: boolean;
-        data?: any;
-        error?: string;
-    }>;
-    viewAllPayments(filters?: any): Promise<{
-        success: boolean;
-        data?: any;
-        error?: string;
-    }>;
-    refundPayment(paymentId: string, token: string, amount?: number): Promise<{
-        success: boolean;
-        data?: any;
-        error?: string;
-    }>;
-    viewSchoolFinancials(token: string, schoolId?: string): Promise<{
-        success: boolean;
-        data?: any;
-        error?: string;
-    }>;
-    manageSchoolPayments(token: string, schoolId?: string, action?: string): Promise<{
-        success: boolean;
-        data?: any;
-        error?: string;
-    }>;
-    createPayment(paymentData: any): Promise<{
-        success: boolean;
-        id?: string;
-        error?: string;
-    }>;
-    encryptPaymentData(paymentData: any): Promise<any>;
-    decryptPaymentData(encryptedData: any): Promise<any>;
-    registerWebhook(url: string, events: string[]): Promise<{
-        success: boolean;
-        data?: any;
-        error?: string;
-    }>;
-    sendWebhook(webhookId: string, event: any): Promise<{
-        success: boolean;
-        data?: any;
-        error?: string;
-    }>;
-    updateOrderStatus(orderId: string, status: string): Promise<{
-        success: boolean;
-        data?: any;
-        error?: string;
-    }>;
-    renewSubscription(subscriptionId: string, token?: string): Promise<{
-        success: boolean;
-        subscription?: any;
-        error?: string;
-    }>;
-    getSubscriptionById(subscriptionId: string): Promise<any>;
-    cancelSubscription(params: {
-        userId: string;
-        subscriptionId: string;
-        cancelAtCycleEnd?: boolean;
-    }): Promise<any>;
-    getPaymentAnalytics(params: {
-        userId: string;
-        period: string;
-        type: string;
-    }): Promise<any>;
+    getPaymentOrder(orderId: string): Promise<any>;
+    updateOrder(_orderId: string, _updates: any): Promise<void>;
+    getAllOrders(_filters?: any): Promise<any[]>;
+    getPaymentAnalytics(_filters?: any): Promise<any>;
+    createOrder(data: any): Promise<any>;
     static processPayment(paymentData: {
-        orderId?: string;
+        orderId: string;
         amount: number;
-        currency?: string;
-        paymentMethodId?: string;
-        notes?: Record<string, any>;
-        userId?: string;
-        userRole?: string;
+        currency: string;
+        paymentMethod: string;
+        paymentDetails?: any;
     }): Promise<{
         success: boolean;
-        payment?: any;
-        message?: string;
-        error?: string;
+        data?: {
+            paymentId: string;
+            status: string;
+        };
+        error?: {
+            message: string;
+            code: string;
+        };
     }>;
+    static refundPayment(refundData: {
+        paymentId: string;
+        amount: number;
+        reason: string;
+    }): Promise<{
+        success: boolean;
+        data?: {
+            refundId: string;
+            status: string;
+        };
+        error?: {
+            message: string;
+            code: string;
+        };
+    }>;
+    static getUserPaymentIds(userId: string): Promise<string[]>;
+    static findMany(filters?: PaymentFilters): Promise<Payment[]>;
+    static validatePaymentOrder(paymentMethod: string): Promise<boolean>;
+    static checkDuplicatePayment(orderId: string, amount: number): Promise<boolean>;
+    static initiatePayment(paymentData: {
+        orderId: string;
+        amount: number;
+        paymentMethod: string;
+    }): Promise<{
+        success: boolean;
+        data?: {
+            paymentId: string;
+            status: string;
+        };
+        error?: {
+            message: string;
+            code: string;
+        };
+    }>;
+    static createPaymentRecord(data: CreatePaymentData): Promise<Payment>;
+    static findById(id: string): Promise<Payment | null>;
+    static canUserVerifyPayment(userId: string, paymentId: string): Promise<boolean>;
+    static completePayment(paymentId: string): Promise<Payment>;
+    static updateOrderAfterPayment(_orderId: string, _paymentId: string): Promise<void>;
+    static validateRefund(paymentId: string, amount?: number): Promise<boolean>;
+    static updateOrderAfterRefund(_orderId: string, _refundId: string): Promise<void>;
+    static createPaymentOrder(data: {
+        userId: string;
+        amount: number;
+        currency?: string;
+        notes?: any;
+        receipt?: string;
+    }): Promise<any>;
+    static updateOrder(_orderId: string, _updates: any): Promise<void>;
+    static getPaymentOrder(orderId: string): Promise<any>;
+    static getAllOrders(_filters?: any): Promise<any[]>;
+    static getPaymentAnalytics(_filters?: any): Promise<any>;
+    static getPaymentStatus(_orderId: string): string;
 }
 export declare const paymentService: PaymentService;
+export default PaymentService;
 //# sourceMappingURL=payment.service.d.ts.map

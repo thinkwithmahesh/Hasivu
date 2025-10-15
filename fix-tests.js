@@ -8,16 +8,12 @@
 const fs = require('fs');
 const path = require('path');
 
-const testDirs = [
-  'tests/unit/auth',
-  'tests/unit/payments', 
-  'tests/unit/services'
-];
+const testDirs = ['tests/unit/auth', 'tests/unit/payments', 'tests/unit/services'];
 
 const brokenTestFiles = [
   'tests/unit/auth/jwt.service.test.ts',
   'tests/unit/auth/auth-security.test.ts',
-  'tests/unit/auth/rbac.test.ts', 
+  'tests/unit/auth/rbac.test.ts',
   'tests/unit/auth/session-management.test.ts',
   'tests/unit/payments/advanced-payment.test.ts',
   'tests/unit/payments/billing-automation.test.ts',
@@ -35,7 +31,7 @@ const brokenTestFiles = [
   'tests/unit/services/rfid-service-fixed.test.ts',
   'tests/unit/services/rfid.service.comprehensive.test.ts',
   'tests/unit/services/transaction.service.test.ts',
-  'tests/unit/services/validation.service.test.ts'
+  'tests/unit/services/validation.service.test.ts',
 ];
 
 console.log('🧹 Cleaning up broken test files...');
@@ -53,9 +49,9 @@ brokenTestFiles.forEach(file => {
 });
 
 // Remove .bak files
-const removeBakFiles = (dir) => {
+const removeBakFiles = dir => {
   if (!fs.existsSync(dir)) return;
-  
+
   const files = fs.readdirSync(dir);
   files.forEach(file => {
     const fullPath = path.join(dir, file);

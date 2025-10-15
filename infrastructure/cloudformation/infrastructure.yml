@@ -9,34 +9,34 @@ Parameters:
     AllowedValues:
       - staging
       - production
-  
+
   DomainName:
     Description: Domain name for the application
     Type: String
     Default: hasivu.com
-  
+
   CertificateArn:
     Description: ARN of the SSL certificate for the domain
     Type: String
-  
+
   VpcCidr:
     Description: CIDR block for the VPC
     Type: String
     Default: 10.0.0.0/16
-  
+
   DatabaseMasterUsername:
     Description: Master username for the RDS instance
     Type: String
     Default: postgres
     NoEcho: true
-  
+
   DatabaseMasterPassword:
     Description: Master password for the RDS instance
     Type: String
     MinLength: 8
     MaxLength: 128
     NoEcho: true
-  
+
   NotificationEmail:
     Description: Email address for alerts and notifications
     Type: String
@@ -59,7 +59,7 @@ Resources:
   # =====================================================
   # NETWORKING - VPC, SUBNETS, SECURITY GROUPS
   # =====================================================
-  
+
   VPC:
     Type: AWS::EC2::VPC
     Properties:
@@ -68,113 +68,113 @@ Resources:
       EnableDnsSupport: true
       Tags:
         - Key: Name
-          Value: !Sub "${EnvironmentName}-hasivu-vpc"
+          Value: !Sub '${EnvironmentName}-hasivu-vpc'
         - Key: Environment
           Value: !Ref EnvironmentName
-  
+
   # Internet Gateway
   InternetGateway:
     Type: AWS::EC2::InternetGateway
     Properties:
       Tags:
         - Key: Name
-          Value: !Sub "${EnvironmentName}-hasivu-igw"
-  
+          Value: !Sub '${EnvironmentName}-hasivu-igw'
+
   InternetGatewayAttachment:
     Type: AWS::EC2::VPCGatewayAttachment
     Properties:
       InternetGatewayId: !Ref InternetGateway
       VpcId: !Ref VPC
-  
+
   # Public Subnets for NAT Gateways
   PublicSubnet1:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VPC
       AvailabilityZone: !Select [0, !GetAZs '']
-      CidrBlock: !Sub 
-        - "${VpcPrefix}.1.0/24"
+      CidrBlock: !Sub
+        - '${VpcPrefix}.1.0/24'
         - VpcPrefix: !Select [0, !Split ['.', !Select [0, !Split ['/', !Ref VpcCidr]]]]
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Sub "${EnvironmentName}-hasivu-public-subnet-1"
-  
+          Value: !Sub '${EnvironmentName}-hasivu-public-subnet-1'
+
   PublicSubnet2:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VPC
       AvailabilityZone: !Select [1, !GetAZs '']
-      CidrBlock: !Sub 
-        - "${VpcPrefix}.2.0/24"
+      CidrBlock: !Sub
+        - '${VpcPrefix}.2.0/24'
         - VpcPrefix: !Select [0, !Split ['.', !Select [0, !Split ['/', !Ref VpcCidr]]]]
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Sub "${EnvironmentName}-hasivu-public-subnet-2"
-  
+          Value: !Sub '${EnvironmentName}-hasivu-public-subnet-2'
+
   # Private Subnets for Lambda and RDS
   PrivateSubnet1:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VPC
       AvailabilityZone: !Select [0, !GetAZs '']
-      CidrBlock: !Sub 
-        - "${VpcPrefix}.10.0/24"
+      CidrBlock: !Sub
+        - '${VpcPrefix}.10.0/24'
         - VpcPrefix: !Select [0, !Split ['.', !Select [0, !Split ['/', !Ref VpcCidr]]]]
       Tags:
         - Key: Name
-          Value: !Sub "${EnvironmentName}-hasivu-private-subnet-1"
-  
+          Value: !Sub '${EnvironmentName}-hasivu-private-subnet-1'
+
   PrivateSubnet2:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VPC
       AvailabilityZone: !Select [1, !GetAZs '']
-      CidrBlock: !Sub 
-        - "${VpcPrefix}.11.0/24"
+      CidrBlock: !Sub
+        - '${VpcPrefix}.11.0/24'
         - VpcPrefix: !Select [0, !Split ['.', !Select [0, !Split ['/', !Ref VpcCidr]]]]
       Tags:
         - Key: Name
-          Value: !Sub "${EnvironmentName}-hasivu-private-subnet-2"
-  
+          Value: !Sub '${EnvironmentName}-hasivu-private-subnet-2'
+
   PrivateSubnet3:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VPC
       AvailabilityZone: !Select [2, !GetAZs '']
-      CidrBlock: !Sub 
-        - "${VpcPrefix}.12.0/24"
+      CidrBlock: !Sub
+        - '${VpcPrefix}.12.0/24'
         - VpcPrefix: !Select [0, !Split ['.', !Select [0, !Split ['/', !Ref VpcCidr]]]]
       Tags:
         - Key: Name
-          Value: !Sub "${EnvironmentName}-hasivu-private-subnet-3"
-  
+          Value: !Sub '${EnvironmentName}-hasivu-private-subnet-3'
+
   # Database Subnets (Isolated)
   DatabaseSubnet1:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VPC
       AvailabilityZone: !Select [0, !GetAZs '']
-      CidrBlock: !Sub 
-        - "${VpcPrefix}.20.0/24"
+      CidrBlock: !Sub
+        - '${VpcPrefix}.20.0/24'
         - VpcPrefix: !Select [0, !Split ['.', !Select [0, !Split ['/', !Ref VpcCidr]]]]
       Tags:
         - Key: Name
-          Value: !Sub "${EnvironmentName}-hasivu-database-subnet-1"
-  
+          Value: !Sub '${EnvironmentName}-hasivu-database-subnet-1'
+
   DatabaseSubnet2:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VPC
       AvailabilityZone: !Select [1, !GetAZs '']
-      CidrBlock: !Sub 
-        - "${VpcPrefix}.21.0/24"
+      CidrBlock: !Sub
+        - '${VpcPrefix}.21.0/24'
         - VpcPrefix: !Select [0, !Split ['.', !Select [0, !Split ['/', !Ref VpcCidr]]]]
       Tags:
         - Key: Name
-          Value: !Sub "${EnvironmentName}-hasivu-database-subnet-2"
-  
+          Value: !Sub '${EnvironmentName}-hasivu-database-subnet-2'
+
   # NAT Gateways
   NatGateway1EIP:
     Type: AWS::EC2::EIP
@@ -183,8 +183,8 @@ Resources:
       Domain: vpc
       Tags:
         - Key: Name
-          Value: !Sub "${EnvironmentName}-hasivu-nat1-eip"
-  
+          Value: !Sub '${EnvironmentName}-hasivu-nat1-eip'
+
   NatGateway2EIP:
     Type: AWS::EC2::EIP
     DependsOn: InternetGatewayAttachment
@@ -192,8 +192,8 @@ Resources:
       Domain: vpc
       Tags:
         - Key: Name
-          Value: !Sub "${EnvironmentName}-hasivu-nat2-eip"
-  
+          Value: !Sub '${EnvironmentName}-hasivu-nat2-eip'
+
   NatGateway1:
     Type: AWS::EC2::NatGateway
     Properties:
@@ -201,8 +201,8 @@ Resources:
       SubnetId: !Ref PublicSubnet1
       Tags:
         - Key: Name
-          Value: !Sub "${EnvironmentName}-hasivu-nat1"
-  
+          Value: !Sub '${EnvironmentName}-hasivu-nat1'
+
   NatGateway2:
     Type: AWS::EC2::NatGateway
     Properties:
@@ -210,8 +210,8 @@ Resources:
       SubnetId: !Ref PublicSubnet2
       Tags:
         - Key: Name
-          Value: !Sub "${EnvironmentName}-hasivu-nat2"
-  
+          Value: !Sub '${EnvironmentName}-hasivu-nat2'
+
   # Route Tables
   PublicRouteTable:
     Type: AWS::EC2::RouteTable
@@ -219,8 +219,8 @@ Resources:
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: !Sub "${EnvironmentName}-hasivu-public-routes"
-  
+          Value: !Sub '${EnvironmentName}-hasivu-public-routes'
+
   DefaultPublicRoute:
     Type: AWS::EC2::Route
     DependsOn: InternetGatewayAttachment
@@ -228,72 +228,72 @@ Resources:
       RouteTableId: !Ref PublicRouteTable
       DestinationCidrBlock: 0.0.0.0/0
       GatewayId: !Ref InternetGateway
-  
+
   PublicSubnet1RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref PublicRouteTable
       SubnetId: !Ref PublicSubnet1
-  
+
   PublicSubnet2RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref PublicRouteTable
       SubnetId: !Ref PublicSubnet2
-  
+
   PrivateRouteTable1:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: !Sub "${EnvironmentName}-hasivu-private-routes-1"
-  
+          Value: !Sub '${EnvironmentName}-hasivu-private-routes-1'
+
   DefaultPrivateRoute1:
     Type: AWS::EC2::Route
     Properties:
       RouteTableId: !Ref PrivateRouteTable1
       DestinationCidrBlock: 0.0.0.0/0
       NatGatewayId: !Ref NatGateway1
-  
+
   PrivateSubnet1RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref PrivateRouteTable1
       SubnetId: !Ref PrivateSubnet1
-  
+
   PrivateSubnet3RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref PrivateRouteTable1
       SubnetId: !Ref PrivateSubnet3
-  
+
   PrivateRouteTable2:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: !Sub "${EnvironmentName}-hasivu-private-routes-2"
-  
+          Value: !Sub '${EnvironmentName}-hasivu-private-routes-2'
+
   DefaultPrivateRoute2:
     Type: AWS::EC2::Route
     Properties:
       RouteTableId: !Ref PrivateRouteTable2
       DestinationCidrBlock: 0.0.0.0/0
       NatGatewayId: !Ref NatGateway2
-  
+
   PrivateSubnet2RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref PrivateRouteTable2
       SubnetId: !Ref PrivateSubnet2
-  
+
   # Security Groups
   LambdaSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: !Sub "${EnvironmentName}-hasivu-lambda-sg"
+      GroupName: !Sub '${EnvironmentName}-hasivu-lambda-sg'
       GroupDescription: Security group for Lambda functions
       VpcId: !Ref VPC
       SecurityGroupEgress:
@@ -301,12 +301,12 @@ Resources:
           CidrIp: 0.0.0.0/0
       Tags:
         - Key: Name
-          Value: !Sub "${EnvironmentName}-hasivu-lambda-sg"
-  
+          Value: !Sub '${EnvironmentName}-hasivu-lambda-sg'
+
   DatabaseSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: !Sub "${EnvironmentName}-hasivu-database-sg"
+      GroupName: !Sub '${EnvironmentName}-hasivu-database-sg'
       GroupDescription: Security group for RDS database
       VpcId: !Ref VPC
       SecurityGroupIngress:
@@ -320,12 +320,12 @@ Resources:
           SourceSecurityGroupId: !Ref RDSProxySecurityGroup
       Tags:
         - Key: Name
-          Value: !Sub "${EnvironmentName}-hasivu-database-sg"
-  
+          Value: !Sub '${EnvironmentName}-hasivu-database-sg'
+
   RedisSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: !Sub "${EnvironmentName}-hasivu-redis-sg"
+      GroupName: !Sub '${EnvironmentName}-hasivu-redis-sg'
       GroupDescription: Security group for Redis cluster
       VpcId: !Ref VPC
       SecurityGroupIngress:
@@ -335,12 +335,12 @@ Resources:
           SourceSecurityGroupId: !Ref LambdaSecurityGroup
       Tags:
         - Key: Name
-          Value: !Sub "${EnvironmentName}-hasivu-redis-sg"
-  
+          Value: !Sub '${EnvironmentName}-hasivu-redis-sg'
+
   RDSProxySecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: !Sub "${EnvironmentName}-hasivu-rds-proxy-sg"
+      GroupName: !Sub '${EnvironmentName}-hasivu-rds-proxy-sg'
       GroupDescription: Security group for RDS Proxy
       VpcId: !Ref VPC
       SecurityGroupIngress:
@@ -355,29 +355,29 @@ Resources:
           DestinationSecurityGroupId: !Ref DatabaseSecurityGroup
       Tags:
         - Key: Name
-          Value: !Sub "${EnvironmentName}-hasivu-rds-proxy-sg"
+          Value: !Sub '${EnvironmentName}-hasivu-rds-proxy-sg'
 
   # =====================================================
   # RDS POSTGRESQL DATABASE
   # =====================================================
-  
+
   DatabaseSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
     Properties:
-      DBSubnetGroupName: !Sub "${EnvironmentName}-hasivu-db-subnet-group"
+      DBSubnetGroupName: !Sub '${EnvironmentName}-hasivu-db-subnet-group'
       DBSubnetGroupDescription: Subnet group for RDS database
       SubnetIds:
         - !Ref DatabaseSubnet1
         - !Ref DatabaseSubnet2
       Tags:
         - Key: Name
-          Value: !Sub "${EnvironmentName}-hasivu-db-subnet-group"
-  
+          Value: !Sub '${EnvironmentName}-hasivu-db-subnet-group'
+
   DatabaseParameterGroup:
     Type: AWS::RDS::DBParameterGroup
     Properties:
       Family: postgres14
-      Description: !Sub "${EnvironmentName} HASIVU Database Parameter Group"
+      Description: !Sub '${EnvironmentName} HASIVU Database Parameter Group'
       Parameters:
         shared_preload_libraries: pg_stat_statements
         log_statement: all
@@ -391,13 +391,13 @@ Resources:
         track_io_timing: 1
       Tags:
         - Key: Name
-          Value: !Sub "${EnvironmentName}-hasivu-db-params"
-  
+          Value: !Sub '${EnvironmentName}-hasivu-db-params'
+
   Database:
     Type: AWS::RDS::DBInstance
     DeletionPolicy: Snapshot
     Properties:
-      DBInstanceIdentifier: !Sub "${EnvironmentName}-hasivu-postgres"
+      DBInstanceIdentifier: !Sub '${EnvironmentName}-hasivu-postgres'
       DBName: hasivu_platform
       Engine: postgres
       EngineVersion: '14.9'
@@ -412,26 +412,26 @@ Resources:
       DBSubnetGroupName: !Ref DatabaseSubnetGroup
       DBParameterGroupName: !Ref DatabaseParameterGroup
       BackupRetentionPeriod: 30
-      PreferredBackupWindow: "03:00-04:00"
-      PreferredMaintenanceWindow: "sun:04:00-sun:05:00"
+      PreferredBackupWindow: '03:00-04:00'
+      PreferredMaintenanceWindow: 'sun:04:00-sun:05:00'
       MultiAZ: !If [IsProduction, true, false]
       PubliclyAccessible: false
       DeletionProtection: !If [IsProduction, true, false]
       EnablePerformanceInsights: true
       PerformanceInsightsRetentionPeriod: 7
       MonitoringInterval: 60
-      MonitoringRoleArn: !Sub "arn:aws:iam::${AWS::AccountId}:role/rds-monitoring-role"
+      MonitoringRoleArn: !Sub 'arn:aws:iam::${AWS::AccountId}:role/rds-monitoring-role'
       Tags:
         - Key: Name
-          Value: !Sub "${EnvironmentName}-hasivu-postgres"
+          Value: !Sub '${EnvironmentName}-hasivu-postgres'
         - Key: Environment
           Value: !Ref EnvironmentName
-  
+
   # RDS Proxy for connection pooling
   RDSProxy:
     Type: AWS::RDS::DBProxy
     Properties:
-      DBProxyName: !Sub "${EnvironmentName}-hasivu-rds-proxy"
+      DBProxyName: !Sub '${EnvironmentName}-hasivu-rds-proxy'
       EngineFamily: POSTGRESQL
       Auth:
         - AuthScheme: SECRETS
@@ -451,8 +451,8 @@ Resources:
       RequireTLS: true
       Tags:
         - Key: Name
-          Value: !Sub "${EnvironmentName}-hasivu-rds-proxy"
-  
+          Value: !Sub '${EnvironmentName}-hasivu-rds-proxy'
+
   RDSProxyTargetGroup:
     Type: AWS::RDS::DBProxyTargetGroup
     Properties:
@@ -464,33 +464,33 @@ Resources:
         MaxConnectionsPercent: 100
         MaxIdleConnectionsPercent: 50
         ConnectionBorrowTimeout: 120
-  
+
   # =====================================================
   # REDIS CLUSTER FOR CACHING
   # =====================================================
-  
+
   RedisSubnetGroup:
     Type: AWS::ElastiCache::SubnetGroup
     Properties:
-      CacheSubnetGroupName: !Sub "${EnvironmentName}-hasivu-redis-subnet-group"
+      CacheSubnetGroupName: !Sub '${EnvironmentName}-hasivu-redis-subnet-group'
       Description: Subnet group for Redis cluster
       SubnetIds:
         - !Ref PrivateSubnet1
         - !Ref PrivateSubnet2
         - !Ref PrivateSubnet3
-  
+
   RedisParameterGroup:
     Type: AWS::ElastiCache::ParameterGroup
     Properties:
       CacheParameterGroupFamily: redis7.x
-      Description: !Sub "${EnvironmentName} HASIVU Redis Parameter Group"
+      Description: !Sub '${EnvironmentName} HASIVU Redis Parameter Group'
       Properties:
         maxmemory-policy: allkeys-lru
-  
+
   RedisCluster:
     Type: AWS::ElastiCache::ReplicationGroup
     Properties:
-      ReplicationGroupId: !Sub "${EnvironmentName}-hasivu-redis"
+      ReplicationGroupId: !Sub '${EnvironmentName}-hasivu-redis'
       Description: Redis cluster for HASIVU Platform
       NodeType: !FindInMap [EnvironmentMap, !Ref EnvironmentName, RedisNodeType]
       Engine: redis
@@ -506,23 +506,23 @@ Resources:
       MultiAZEnabled: !If [IsProduction, true, false]
       AutomaticFailoverEnabled: !If [IsProduction, true, false]
       SnapshotRetentionLimit: 5
-      SnapshotWindow: "03:00-05:00"
-      PreferredMaintenanceWindow: "sun:05:00-sun:07:00"
+      SnapshotWindow: '03:00-05:00'
+      PreferredMaintenanceWindow: 'sun:05:00-sun:07:00'
       NotificationTopicArn: !Ref AlertingTopic
       Tags:
         - Key: Name
-          Value: !Sub "${EnvironmentName}-hasivu-redis"
+          Value: !Sub '${EnvironmentName}-hasivu-redis'
         - Key: Environment
           Value: !Ref EnvironmentName
 
   # =====================================================
   # COGNITO USER POOL
   # =====================================================
-  
+
   CognitoUserPool:
     Type: AWS::Cognito::UserPool
     Properties:
-      UserPoolName: !Sub "${EnvironmentName}-hasivu-users"
+      UserPoolName: !Sub '${EnvironmentName}-hasivu-users'
       Policies:
         PasswordPolicy:
           MinimumLength: 8
@@ -564,7 +564,7 @@ Resources:
           Required: false
           Mutable: true
       UserPoolTags:
-        Name: !Sub "${EnvironmentName}-hasivu-users"
+        Name: !Sub '${EnvironmentName}-hasivu-users'
         Environment: !Ref EnvironmentName
       AccountRecoverySetting:
         RecoveryMechanisms:
@@ -581,11 +581,11 @@ Resources:
       DeviceConfiguration:
         ChallengeRequiredOnNewDevice: true
         DeviceOnlyRememberedOnUserPrompt: false
-  
+
   CognitoUserPoolClient:
     Type: AWS::Cognito::UserPoolClient
     Properties:
-      ClientName: !Sub "${EnvironmentName}-hasivu-web-client"
+      ClientName: !Sub '${EnvironmentName}-hasivu-web-client'
       UserPoolId: !Ref CognitoUserPool
       ExplicitAuthFlows:
         - ADMIN_NO_SRP_AUTH
@@ -621,11 +621,11 @@ Resources:
   # =====================================================
   # S3 BUCKET FOR FILE STORAGE
   # =====================================================
-  
+
   S3Bucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub "${EnvironmentName}-hasivu-storage-${AWS::AccountId}"
+      BucketName: !Sub '${EnvironmentName}-hasivu-storage-${AWS::AccountId}'
       BucketEncryption:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:
@@ -656,7 +656,7 @@ Resources:
       CorsConfiguration:
         CorsRules:
           - AllowedHeaders:
-              - "*"
+              - '*'
             AllowedMethods:
               - GET
               - PUT
@@ -664,18 +664,18 @@ Resources:
               - DELETE
               - HEAD
             AllowedOrigins:
-              - !Sub "https://app.${DomainName}"
-              - !Sub "https://admin.${DomainName}"
-              - !Sub "https://www.${DomainName}"
+              - !Sub 'https://app.${DomainName}'
+              - !Sub 'https://admin.${DomainName}'
+              - !Sub 'https://www.${DomainName}'
             ExposedHeaders:
               - ETag
             MaxAge: 3600
       Tags:
         - Key: Name
-          Value: !Sub "${EnvironmentName}-hasivu-storage"
+          Value: !Sub '${EnvironmentName}-hasivu-storage'
         - Key: Environment
           Value: !Ref EnvironmentName
-  
+
   S3BucketPolicy:
     Type: AWS::S3::BucketPolicy
     Properties:
@@ -684,23 +684,23 @@ Resources:
         Statement:
           - Sid: DenyUnSecureCommunications
             Effect: Deny
-            Principal: "*"
-            Action: "s3:*"
+            Principal: '*'
+            Action: 's3:*'
             Resource:
-              - !Sub "${S3Bucket}/*"
-              - !Sub "${S3Bucket}"
+              - !Sub '${S3Bucket}/*'
+              - !Sub '${S3Bucket}'
             Condition:
               Bool:
-                "aws:SecureTransport": "false"
+                'aws:SecureTransport': 'false'
 
   # =====================================================
   # SECRETS MANAGER
   # =====================================================
-  
+
   DatabaseSecret:
     Type: AWS::SecretsManager::Secret
     Properties:
-      Name: !Sub "${EnvironmentName}/hasivu/database"
+      Name: !Sub '${EnvironmentName}/hasivu/database'
       Description: Database credentials for HASIVU Platform
       GenerateSecretString:
         SecretStringTemplate: !Sub '{"username": "${DatabaseMasterUsername}"}'
@@ -709,14 +709,14 @@ Resources:
         ExcludeCharacters: '"@/\'
       Tags:
         - Key: Name
-          Value: !Sub "${EnvironmentName}-hasivu-db-secret"
+          Value: !Sub '${EnvironmentName}-hasivu-db-secret'
         - Key: Environment
           Value: !Ref EnvironmentName
-  
+
   RazorpaySecret:
     Type: AWS::SecretsManager::Secret
     Properties:
-      Name: !Sub "${EnvironmentName}/hasivu/razorpay"
+      Name: !Sub '${EnvironmentName}/hasivu/razorpay'
       Description: Razorpay API credentials
       SecretString: !Sub |
         {
@@ -725,14 +725,14 @@ Resources:
         }
       Tags:
         - Key: Name
-          Value: !Sub "${EnvironmentName}-hasivu-razorpay-secret"
+          Value: !Sub '${EnvironmentName}-hasivu-razorpay-secret'
         - Key: Environment
           Value: !Ref EnvironmentName
-  
+
   WhatsAppSecret:
     Type: AWS::SecretsManager::Secret
     Properties:
-      Name: !Sub "${EnvironmentName}/hasivu/whatsapp"
+      Name: !Sub '${EnvironmentName}/hasivu/whatsapp'
       Description: WhatsApp Business API credentials
       SecretString: !Sub |
         {
@@ -742,32 +742,32 @@ Resources:
         }
       Tags:
         - Key: Name
-          Value: !Sub "${EnvironmentName}-hasivu-whatsapp-secret"
+          Value: !Sub '${EnvironmentName}-hasivu-whatsapp-secret'
         - Key: Environment
           Value: !Ref EnvironmentName
-  
+
   JwtSecret:
     Type: AWS::SecretsManager::Secret
     Properties:
-      Name: !Sub "${EnvironmentName}/hasivu/jwt"
+      Name: !Sub '${EnvironmentName}/hasivu/jwt'
       Description: JWT signing secret
       GenerateSecretString:
         PasswordLength: 64
         ExcludeCharacters: '"@/\'
       Tags:
         - Key: Name
-          Value: !Sub "${EnvironmentName}-hasivu-jwt-secret"
+          Value: !Sub '${EnvironmentName}-hasivu-jwt-secret'
         - Key: Environment
           Value: !Ref EnvironmentName
 
   # =====================================================
   # IAM ROLES
   # =====================================================
-  
+
   RDSProxyRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub "${EnvironmentName}-hasivu-rds-proxy-role"
+      RoleName: !Sub '${EnvironmentName}-hasivu-rds-proxy-role'
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -791,14 +791,14 @@ Resources:
   # =====================================================
   # LAMBDA LAYER FOR COMMON DEPENDENCIES
   # =====================================================
-  
+
   CommonLayer:
     Type: AWS::Lambda::LayerVersion
     Properties:
-      LayerName: !Sub "${EnvironmentName}-hasivu-common-layer"
+      LayerName: !Sub '${EnvironmentName}-hasivu-common-layer'
       Description: Common dependencies for HASIVU Lambda functions
       Content:
-        S3Bucket: !Sub "${EnvironmentName}-hasivu-deployment-${AWS::AccountId}"
+        S3Bucket: !Sub '${EnvironmentName}-hasivu-deployment-${AWS::AccountId}'
         S3Key: layers/common-layer.zip
       CompatibleRuntimes:
         - nodejs18.x
@@ -807,14 +807,14 @@ Resources:
   # =====================================================
   # SNS TOPICS FOR ALERTING
   # =====================================================
-  
+
   AlertingTopic:
     Type: AWS::SNS::Topic
     Properties:
-      TopicName: !Sub "${EnvironmentName}-hasivu-alerts"
+      TopicName: !Sub '${EnvironmentName}-hasivu-alerts'
       DisplayName: HASIVU Platform Alerts
       KmsMasterKeyId: alias/aws/sns
-  
+
   AlertingTopicSubscription:
     Type: AWS::SNS::Subscription
     Properties:
@@ -825,11 +825,11 @@ Resources:
   # =====================================================
   # CLOUDWATCH DASHBOARD
   # =====================================================
-  
+
   PlatformDashboard:
     Type: AWS::CloudWatch::Dashboard
     Properties:
-      DashboardName: !Sub "${EnvironmentName}-HASIVU-Platform"
+      DashboardName: !Sub '${EnvironmentName}-HASIVU-Platform'
       DashboardBody: !Sub |
         {
           "widgets": [
@@ -899,119 +899,119 @@ Outputs:
     Description: VPC ID
     Value: !Ref VPC
     Export:
-      Name: !Sub "${EnvironmentName}-hasivu-vpc-id"
-  
+      Name: !Sub '${EnvironmentName}-hasivu-vpc-id'
+
   PrivateSubnet1Id:
     Description: Private Subnet 1 ID
     Value: !Ref PrivateSubnet1
     Export:
-      Name: !Sub "${EnvironmentName}-hasivu-private-subnet-1-id"
-  
+      Name: !Sub '${EnvironmentName}-hasivu-private-subnet-1-id'
+
   PrivateSubnet2Id:
     Description: Private Subnet 2 ID
     Value: !Ref PrivateSubnet2
     Export:
-      Name: !Sub "${EnvironmentName}-hasivu-private-subnet-2-id"
-  
+      Name: !Sub '${EnvironmentName}-hasivu-private-subnet-2-id'
+
   PrivateSubnet3Id:
     Description: Private Subnet 3 ID
     Value: !Ref PrivateSubnet3
     Export:
-      Name: !Sub "${EnvironmentName}-hasivu-private-subnet-3-id"
-  
+      Name: !Sub '${EnvironmentName}-hasivu-private-subnet-3-id'
+
   LambdaSecurityGroupId:
     Description: Lambda Security Group ID
     Value: !Ref LambdaSecurityGroup
     Export:
-      Name: !Sub "${EnvironmentName}-hasivu-lambda-sg-id"
-  
+      Name: !Sub '${EnvironmentName}-hasivu-lambda-sg-id'
+
   # Database Outputs
   DatabaseEndpoint:
     Description: RDS Database Endpoint
     Value: !GetAtt Database.Endpoint.Address
     Export:
-      Name: !Sub "${EnvironmentName}-hasivu-db-endpoint"
-  
+      Name: !Sub '${EnvironmentName}-hasivu-db-endpoint'
+
   DatabasePort:
     Description: RDS Database Port
     Value: !GetAtt Database.Endpoint.Port
     Export:
-      Name: !Sub "${EnvironmentName}-hasivu-db-port"
-  
+      Name: !Sub '${EnvironmentName}-hasivu-db-port'
+
   RDSProxyEndpoint:
     Description: RDS Proxy Endpoint
     Value: !GetAtt RDSProxy.Endpoint
     Export:
-      Name: !Sub "${EnvironmentName}-hasivu-rds-proxy-endpoint"
-  
+      Name: !Sub '${EnvironmentName}-hasivu-rds-proxy-endpoint'
+
   # Redis Outputs
   RedisEndpoint:
     Description: Redis Primary Endpoint
     Value: !GetAtt RedisCluster.PrimaryEndPoint.Address
     Export:
-      Name: !Sub "${EnvironmentName}-hasivu-redis-endpoint"
-  
+      Name: !Sub '${EnvironmentName}-hasivu-redis-endpoint'
+
   RedisPort:
     Description: Redis Port
     Value: !GetAtt RedisCluster.PrimaryEndPoint.Port
     Export:
-      Name: !Sub "${EnvironmentName}-hasivu-redis-port"
-  
+      Name: !Sub '${EnvironmentName}-hasivu-redis-port'
+
   # Cognito Outputs
   CognitoUserPoolId:
     Description: Cognito User Pool ID
     Value: !Ref CognitoUserPool
     Export:
-      Name: !Sub "${EnvironmentName}-hasivu-cognito-user-pool-id"
-  
+      Name: !Sub '${EnvironmentName}-hasivu-cognito-user-pool-id'
+
   CognitoClientId:
     Description: Cognito User Pool Client ID
     Value: !Ref CognitoUserPoolClient
     Export:
-      Name: !Sub "${EnvironmentName}-hasivu-cognito-client-id"
-  
+      Name: !Sub '${EnvironmentName}-hasivu-cognito-client-id'
+
   # S3 Outputs
   S3BucketName:
     Description: S3 Bucket Name
     Value: !Ref S3Bucket
     Export:
-      Name: !Sub "${EnvironmentName}-hasivu-s3-bucket"
-  
+      Name: !Sub '${EnvironmentName}-hasivu-s3-bucket'
+
   S3BucketArn:
     Description: S3 Bucket ARN
     Value: !GetAtt S3Bucket.Arn
     Export:
-      Name: !Sub "${EnvironmentName}-hasivu-s3-bucket-arn"
-  
+      Name: !Sub '${EnvironmentName}-hasivu-s3-bucket-arn'
+
   # Secrets Outputs
   RazorpaySecretArn:
     Description: Razorpay Secret ARN
     Value: !Ref RazorpaySecret
     Export:
-      Name: !Sub "${EnvironmentName}-hasivu-razorpay-secret-arn"
-  
+      Name: !Sub '${EnvironmentName}-hasivu-razorpay-secret-arn'
+
   WhatsAppSecretArn:
     Description: WhatsApp Secret ARN
     Value: !Ref WhatsAppSecret
     Export:
-      Name: !Sub "${EnvironmentName}-hasivu-whatsapp-secret-arn"
-  
+      Name: !Sub '${EnvironmentName}-hasivu-whatsapp-secret-arn'
+
   JwtSecretArn:
     Description: JWT Secret ARN
     Value: !Ref JwtSecret
     Export:
-      Name: !Sub "${EnvironmentName}-hasivu-jwt-secret-arn"
-  
+      Name: !Sub '${EnvironmentName}-hasivu-jwt-secret-arn'
+
   # Layer Output
   CommonLayerArn:
     Description: Common Layer ARN
     Value: !Ref CommonLayer
     Export:
-      Name: !Sub "${EnvironmentName}-hasivu-common-layer-arn"
-  
+      Name: !Sub '${EnvironmentName}-hasivu-common-layer-arn'
+
   # Alerting Output
   AlertingTopicArn:
     Description: SNS Topic for Alerts
     Value: !Ref AlertingTopic
     Export:
-      Name: !Sub "${EnvironmentName}-hasivu-alerting-topic-arn"
+      Name: !Sub '${EnvironmentName}-hasivu-alerting-topic-arn'

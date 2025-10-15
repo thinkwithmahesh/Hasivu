@@ -3,7 +3,7 @@ import { twMerge } from "tailwind-merge";
  * Combines clsx and tailwind-merge for optimal class merging
  * This is the recommended utility function for ShadCN/UI components;
  * Format currency values for display;
-export function formatCurrency(value: number, currency = 'INR'): string {}
+export function formatCurrency(value: number, _currency =  'INR'): string {}
 }).format(value)
  * Format date values;
 export function formatDate(date: Date | string, format: 'short' | 'medium' | 'long' = 'medium'): string {}
@@ -32,5 +32,5 @@ export function getInitials(name: string): string {}
  * Truncate text with ellipsis;
 export function truncate(text: string, length: number): string {}
  * Generate random ID;
-export function generateId(prefix = 'id'): string {}
+export function generateId(_prefix = 'id'): string {}
   return `${prefix}_${Math.random().toString(36).substr(2, 9)}``

@@ -1,0 +1,509 @@
+'use client';
+
+/**
+ * HASIVU Platform - Unified Error Boundary System
+ * 
+ * Comprehensive error boundary combining the best features from existing implementations
+ * with enhanced shadcn/ui Alert integration for consistent fallback UI patterns.
+ * 
+ * Features:
+ * - Production-ready error reporting and logging
+ * - Multiple error boundary types (Page, Section, Component)
+ * - Retry mechanisms with exponential backoff
+ * - shadcn Alert components for consistent UI
+ * - HOC patterns for easy component wrapping
+ * - Development vs Production error display modes
+ * - Accessibility compliance (ARIA attributes)
+ * - Event ID tracking for error correlation
+ */
+
+import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { AlertTriangle, RefreshCw, Home, Bug, ChevronDown, ChevronUp, Shield, Zap } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel,
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle 
+} from '@/components/ui/alert-dialog';
+import { cn } from '@/lib/utils';
+
+// ============================================================================
+// Types and Interfaces
+// ============================================================================
+
+export interface ErrorBoundaryProps {
+  children?: ReactNode;
+  fallback?: ReactNode;
+  onError?: (error: Error, errorInfo: ErrorInfo) => void;
+  showErrorDetails?: boolean;
+  isolate?: boolean;
+  level?: 'page' | 'section' | 'component';
+  retryable?: boolean;
+  errorBoundaryId?: string;
+  title?: string;
+  description?: string;
+  variant?: 'default' | 'destructive';
+  showDialog?: boolean;
+  maxRetries?: number;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+  errorInfo: ErrorInfo | null;
+  eventId: string | null;
+  showDetails: boolean;
+  showDialog: boolean;
+  retryCount: number;
+  isRetrying: boolean;
+  lastErrorTime: number;
+}
+
+// ============================================================================
+// Error Reporting Utility
+// ============================================================================
+
+class ErrorReporter {
+  static report(
+    error: Error,
+    errorInfo: ErrorInfo,
+    boundaryId?: string,
+    retryCount: number = 0
+  ): string {
+    const eventId = Date.now().toString(36) + Math.random().toString(36).substr(2);
+    const timestamp = new Date().toISOString();
+    
+    const errorReport = {
+      eventId,
+      timestamp,
+      error: {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+      },
+      componentStack: errorInfo.componentStack,
+      boundaryId,
+      retryCount,
+      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
+      url: typeof window !== 'undefined' ? window.location.href : 'unknown',
+      userId: 'anonymous', // TODO: Get from auth context
+      viewport: typeof window !== 'undefined' ? {
+        width: window.innerWidth,
+        height: window.innerHeight
+      } : null,
+    };
+
+    // Development logging
+    if (process.env.NODE_ENV === 'development') {
+      console.group(`🚨 Error Boundary (${boundaryId || 'Unknown'}): ${error.name}`);
+      console.error('Error:', error);
+      console.error('Component Stack:', errorInfo.componentStack);
+      console.error('Full Report:', errorReport);
+      console.groupEnd();
+    }
+
+    // Production error reporting
+    if (process.env.NODE_ENV === 'production') {
+      // TODO: Integrate with error reporting service (Sentry, DataDog, etc.)
+      // Example: await sendToErrorService(errorReport);
+      console.error('Production Error:', { eventId, error: error.message, boundaryId });
+    }
+
+    return eventId;
+  }
+}
+
+// ============================================================================
+// Main Error Boundary Component
+// ============================================================================
+
+export class UnifiedErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  private retryTimeoutId: NodeJS.Timeout | null = null;
+
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = {
+      hasError: false,
+      error: null,
+      errorInfo: null,
+      eventId: null,
+      showDetails: false,
+      showDialog: false,
+      retryCount: 0,
+      isRetrying: false,
+      lastErrorTime: 0,
+    };
+  }
+
+  static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
+    return { 
+      hasError: true, 
+      error,
+      lastErrorTime: Date.now() 
+    };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    const eventId = ErrorReporter.report(
+      error,
+      errorInfo,
+      this.props.errorBoundaryId,
+      this.state.retryCount
+    );
+
+    this.setState({
+      error,
+      errorInfo,
+      eventId,
+      showDialog: this.props.showDialog || this.props.level === 'page',
+    });
+
+    // Call custom error handler
+    this.props.onError?.(error, errorInfo);
+  }
+
+  handleRetry = () => {
+    const maxRetries = this.props.maxRetries || 3;
+    if (this.state.retryCount >= maxRetries) return;
+
+    this.setState({ isRetrying: true });
+    
+    // Exponential backoff: 1s, 2s, 4s
+    const delay = Math.pow(2, this.state.retryCount) * 1000;
+    
+    this.retryTimeoutId = setTimeout(() => {
+      this.setState(prevState => ({
+        hasError: false,
+        error: null,
+        errorInfo: null,
+        eventId: null,
+        showDetails: false,
+        showDialog: false,
+        retryCount: prevState.retryCount + 1,
+        isRetrying: false,
+        lastErrorTime: 0,
+      }));
+    }, delay);
+  };
+
+  handleGoHome = () => {
+    if (typeof window !== 'undefined') {
+      window.location.href = '/';
+    }
+  };
+
+  handleReload = () => {
+    if (typeof window !== 'undefined') {
+      window.location.reload();
+    }
+  };
+
+  toggleDetails = () => {
+    this.setState(prevState => ({
+      showDetails: !prevState.showDetails,
+    }));
+  };
+
+  handleDialogClose = () => {
+    this.setState({ showDialog: false });
+  };
+
+  componentWillUnmount() {
+    if (this.retryTimeoutId) {
+      clearTimeout(this.retryTimeoutId);
+    }
+  }
+
+  renderErrorAlert() {
+    const { error, eventId, showDetails, retryCount, isRetrying } = this.state;
+    const { level = 'component', retryable = true, variant = 'destructive', maxRetries = 3 } = this.props;
+    
+    const canRetry = retryable && retryCount < maxRetries;
+    const isPageLevel = level === 'page';
+    const isDevelopment = process.env.NODE_ENV === 'development';
+
+    const errorTitle = this.props.title || (
+      isPageLevel ? 'Application Error' : 'Component Error'
+    );
+
+    const errorDescription = this.props.description || (
+      isPageLevel 
+        ? 'We encountered an unexpected error. Our team has been notified.'
+        : 'This component encountered an error and cannot be displayed.'
+    );
+
+    return (
+      <Alert 
+        variant={variant} 
+        className={cn(
+          'relative',
+          this.props.isolate && 'border-destructive/50',
+          isPageLevel && 'max-w-2xl mx-auto'
+        )}
+        role="alert"
+        aria-live="assertive"
+      >
+        <AlertTriangle className="h-4 w-4" />
+        <AlertTitle className="flex items-center justify-between">
+          {errorTitle}
+          {eventId && (
+            <span className="text-xs font-mono bg-destructive/10 px-2 py-1 rounded">
+              {eventId}
+            </span>
+          )}
+        </AlertTitle>
+        
+        <AlertDescription className="space-y-4">
+          <p>{errorDescription}</p>
+          
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row gap-2">
+            {canRetry && (
+              <Button
+                onClick={this.handleRetry}
+                disabled={isRetrying}
+                variant={isPageLevel ? 'default' : 'outline'}
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className={cn('h-4 w-4', isRetrying && 'animate-spin')} />
+                {isRetrying ? `Retrying...` : 'Try Again'}
+              </Button>
+            )}
+            
+            {isPageLevel && (
+              <>
+                <Button 
+                  onClick={this.handleGoHome}
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  <Home className="h-4 w-4" />
+                  Go Home
+                </Button>
+                <Button 
+                  onClick={this.handleReload}
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Reload Page
+                </Button>
+              </>
+            )}
+          </div>
+
+          {/* Retry Counter */}
+          {retryCount > 0 && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Shield className="h-3 w-3" />
+              <span>Attempt {retryCount} of {maxRetries}</span>
+            </div>
+          )}
+
+          {/* Development Error Details */}
+          {isDevelopment && error && (
+            <div className="border-t pt-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={this.toggleDetails}
+                className="h-auto p-0 font-normal text-muted-foreground hover:text-foreground"
+              >
+                <Bug className="h-4 w-4 mr-2" />
+                Error Details (Development)
+                {showDetails ? <ChevronUp className="h-4 w-4 ml-1" /> : <ChevronDown className="h-4 w-4 ml-1" />}
+              </Button>
+
+              {showDetails && (
+                <div className="mt-3 p-3 bg-muted rounded border text-sm space-y-2">
+                  <div>
+                    <strong className="text-foreground">Error:</strong>
+                    <pre className="mt-1 text-xs font-mono whitespace-pre-wrap text-red-600 dark:text-red-400">
+                      {error.message}
+                    </pre>
+                  </div>
+                  {error.stack && (
+                    <div>
+                      <strong className="text-foreground">Stack Trace:</strong>
+                      <pre className="mt-1 text-xs font-mono whitespace-pre-wrap text-muted-foreground max-h-32 overflow-auto">
+                        {error.stack}
+                      </pre>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Production Help Text */}
+          {!isDevelopment && (
+            <p className="text-sm text-muted-foreground">
+              If this problem persists, please contact support with the error ID above.
+            </p>
+          )}
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  renderErrorDialog() {
+    const { error, eventId, showDialog } = this.state;
+    const { level = 'component' } = this.props;
+
+    if (!showDialog || !error) return null;
+
+    return (
+      <AlertDialog open={showDialog} onOpenChange={this.handleDialogClose}>
+        <AlertDialogContent className="max-w-lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              {level === 'page' ? 'Application Error' : 'Component Error'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              An unexpected error has occurred. We apologize for the inconvenience.
+              {eventId && (
+                <span className="block mt-2 text-xs font-mono">
+                  Error ID: {eventId}
+                </span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={this.handleDialogClose}>
+              Dismiss
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={this.handleRetry} className="flex items-center gap-2">
+              <RefreshCw className="h-4 w-4" />
+              Try Again
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    );
+  }
+
+  render() {
+    if (this.state.hasError) {
+      // Custom fallback UI
+      if (this.props.fallback) {
+        return this.props.fallback;
+      }
+
+      const { level = 'component' } = this.props;
+      const isPageLevel = level === 'page';
+
+      return (
+        <div
+          className={cn(
+            'flex items-center justify-center p-4',
+            isPageLevel && 'min-h-screen bg-background',
+            this.props.isolate && 'rounded-lg border-destructive/20'
+          )}
+        >
+          <div className={cn('w-full', isPageLevel ? 'max-w-2xl' : 'max-w-lg')}>
+            {this.renderErrorAlert()}
+            {this.renderErrorDialog()}
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+// ============================================================================
+// HOC for Easy Component Wrapping
+// ============================================================================
+
+export function withErrorBoundary<P extends object>(
+  Component: React.ComponentType<P>,
+  errorBoundaryProps?: Omit<ErrorBoundaryProps, 'children'>
+) {
+  const WrappedComponent = (props: P) => (
+    <UnifiedErrorBoundary {...errorBoundaryProps}>
+      <Component {...props} />
+    </UnifiedErrorBoundary>
+  );
+
+  WrappedComponent.displayName = `withErrorBoundary(${Component.displayName || Component.name})`;
+  return WrappedComponent;
+}
+
+// ============================================================================
+// Specialized Error Boundaries
+// ============================================================================
+
+export const PageErrorBoundary = ({ children, ...props }: Omit<ErrorBoundaryProps, 'level'>) => (
+  <UnifiedErrorBoundary level="page" showDialog={true} {...props}>
+    {children}
+  </UnifiedErrorBoundary>
+);
+
+export const SectionErrorBoundary = ({ children, ...props }: Omit<ErrorBoundaryProps, 'level' | 'isolate'>) => (
+  <UnifiedErrorBoundary level="section" isolate={true} {...props}>
+    {children}
+  </UnifiedErrorBoundary>
+);
+
+export const ComponentErrorBoundary = ({ children, ...props }: Omit<ErrorBoundaryProps, 'level' | 'retryable'>) => (
+  <UnifiedErrorBoundary level="component" retryable={false} {...props}>
+    {children}
+  </UnifiedErrorBoundary>
+);
+
+// ============================================================================
+// Specialized Error Boundaries for Common Use Cases
+// ============================================================================
+
+export const ApiErrorBoundary = ({ children, ...props }: Omit<ErrorBoundaryProps, 'title' | 'description'>) => (
+  <UnifiedErrorBoundary
+    title="API Connection Error"
+    description="Unable to connect to the server. Please check your connection and try again."
+    variant="destructive"
+    {...props}
+  >
+    {children}
+  </UnifiedErrorBoundary>
+);
+
+export const DataErrorBoundary = ({ children, ...props }: Omit<ErrorBoundaryProps, 'title' | 'description'>) => (
+  <UnifiedErrorBoundary
+    title="Data Loading Error"
+    description="Failed to load required data. This might be a temporary issue."
+    variant="destructive"
+    retryable={true}
+    maxRetries={3}
+    {...props}
+  >
+    {children}
+  </UnifiedErrorBoundary>
+);
+
+export const NavigationErrorBoundary = ({ children, ...props }: Omit<ErrorBoundaryProps, 'title' | 'description'>) => (
+  <UnifiedErrorBoundary
+    title="Navigation Error"
+    description="An error occurred while navigating. You can go back or try refreshing the page."
+    variant="destructive"
+    level="section"
+    {...props}
+  >
+    {children}
+  </UnifiedErrorBoundary>
+);
+
+// ============================================================================
+// Default Export
+// ============================================================================
+
+export default UnifiedErrorBoundary;

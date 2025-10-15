@@ -6,13 +6,13 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
-import { 
-  ShoppingCart, 
-  Clock, 
-  MapPin, 
-  CreditCard, 
-  Wallet, 
-  AlertCircle, 
+import {
+  ShoppingCart,
+  Clock,
+  MapPin,
+  CreditCard,
+  Wallet,
+  AlertCircle,
   CheckCircle,
   Minus,
   Plus,
@@ -21,14 +21,12 @@ import {
   Star,
   Smartphone,
   Shield,
-  Zap,
   Heart,
-  TrendingUp
+  TrendingUp,
 } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
@@ -71,7 +69,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
   const [showNutrition, setShowNutrition] = useState(false);
   const [showRFIDCode, setShowRFIDCode] = useState(false);
   const [generatedPickupCode, setGeneratedPickupCode] = useState<string>('');
-  
+
   const form = useForm<MealOrderForm>({
     defaultValues: {
       deliveryTime: orderSummary.selectedDeliverySlot.id,
@@ -84,10 +82,10 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
 
   // Calculate total nutrition
   const totalNutrition = calculateTotalNutrition(orderSummary.items);
-  
+
   // Validate order
   const validation = validateOrder(orderSummary, student);
-  
+
   // Check if parent approval is needed
   const requiresApproval = needsParentApproval(orderSummary, student);
 
@@ -106,29 +104,35 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
     setShowRFIDCode(true);
   }, [student.id]);
 
-  const onSubmit = useCallback(async (data: MealOrderForm) => {
-    if (!validation.isValid) return;
-    
-    try {
-      await onPlaceOrder(data);
-      // Generate pickup code after successful order
-      handleGeneratePickupCode();
-    } catch (error) {
-      console.error('Order placement failed:', error);
-    }
-  }, [validation.isValid, onPlaceOrder, handleGeneratePickupCode]);
+  const onSubmit = useCallback(
+    async (data: MealOrderForm) => {
+      if (!validation.isValid) return;
 
-  const handleQuantityUpdate = useCallback((mealId: string, change: number) => {
-    const currentItem = orderSummary.items.find(item => item.mealItem.id === mealId);
-    if (currentItem) {
-      const newQuantity = Math.max(0, currentItem.quantity + change);
-      if (newQuantity === 0) {
-        onRemoveItem(mealId);
-      } else {
-        onUpdateQuantity(mealId, newQuantity);
+      try {
+        await onPlaceOrder(data);
+        // Generate pickup code after successful order
+        handleGeneratePickupCode();
+      } catch (error) {
+        // Error handled silently
       }
-    }
-  }, [orderSummary.items, onRemoveItem, onUpdateQuantity]);
+    },
+    [validation.isValid, onPlaceOrder, handleGeneratePickupCode]
+  );
+
+  const handleQuantityUpdate = useCallback(
+    (mealId: string, change: number) => {
+      const currentItem = orderSummary.items.find(item => item.mealItem.id === mealId);
+      if (currentItem) {
+        const newQuantity = Math.max(0, currentItem.quantity + change);
+        if (newQuantity === 0) {
+          onRemoveItem(mealId);
+        } else {
+          onUpdateQuantity(mealId, newQuantity);
+        }
+      }
+    },
+    [orderSummary.items, onRemoveItem, onUpdateQuantity]
+  );
 
   if (orderSummary.items.length === 0) {
     return (
@@ -157,17 +161,15 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
                 <ShoppingCart className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <span className="text-lg font-bold text-gray-900">
-                  Order Summary
-                </span>
+                <span className="text-lg font-bold text-gray-900">Order Summary</span>
                 <p className="text-sm text-gray-600 mt-0.5">
-                  {orderSummary.items.length} item{orderSummary.items.length !== 1 ? 's' : ''} • 
+                  {orderSummary.items.length} item{orderSummary.items.length !== 1 ? 's' : ''} •
                   Total: {formatCurrency(orderSummary.total)}
                 </p>
               </div>
             </div>
-            <Badge 
-              variant="secondary" 
+            <Badge
+              variant="secondary"
               className="bg-primary/10 text-primary px-3 py-1.5 font-semibold"
             >
               {orderSummary.items.length}
@@ -176,8 +178,8 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
         </CardHeader>
         <CardContent className="p-6 space-y-4">
           {orderSummary.items.map((item, index) => (
-            <div 
-              key={item.mealItem.id} 
+            <div
+              key={item.mealItem.id}
               className={cn(
                 'border rounded-xl p-4 transition-all duration-200 hover:shadow-md',
                 'bg-gradient-to-r from-white to-gray-50',
@@ -196,14 +198,12 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
                     <Heart className="h-4 w-4 text-white" />
                   </div>
                 </div>
-                
+
                 {/* Meal Details */}
                 <div className="flex-1 min-w-0">
                   <h4 className="font-semibold text-sm">{item.mealItem.name}</h4>
-                  <p className="text-xs text-gray-600 line-clamp-2">
-                    {item.mealItem.description}
-                  </p>
-                  
+                  <p className="text-xs text-gray-600 line-clamp-2">{item.mealItem.description}</p>
+
                   {/* Meal Info */}
                   <div className="flex items-center space-x-3 mt-2 text-xs text-gray-500">
                     <div className="flex items-center">
@@ -235,16 +235,18 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
                           Spice: {item.customizations.spiceLevel}
                         </Badge>
                       )}
-                      {item.customizations.extraItems && item.customizations.extraItems.length > 0 && (
-                        <Badge variant="outline" className="text-xs">
-                          +{item.customizations.extraItems.join(', ')}
-                        </Badge>
-                      )}
-                      {item.customizations.removedItems && item.customizations.removedItems.length > 0 && (
-                        <Badge variant="outline" className="text-xs">
-                          -{item.customizations.removedItems.join(', ')}
-                        </Badge>
-                      )}
+                      {item.customizations.extraItems &&
+                        item.customizations.extraItems.length > 0 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{item.customizations.extraItems.join(', ')}
+                          </Badge>
+                        )}
+                      {item.customizations.removedItems &&
+                        item.customizations.removedItems.length > 0 && (
+                          <Badge variant="outline" className="text-xs">
+                            -{item.customizations.removedItems.join(', ')}
+                          </Badge>
+                        )}
                     </div>
                   )}
                 </div>
@@ -254,7 +256,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
                   <div className="text-lg font-semibold">
                     {formatCurrency(item.mealItem.price * item.quantity)}
                   </div>
-                  
+
                   {/* Quantity Controls */}
                   <div className="flex items-center border rounded-md">
                     <Button
@@ -297,7 +299,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
 
       {/* Enhanced Nutritional Summary */}
       <Card className="shadow-lg border-0">
-        <CardHeader 
+        <CardHeader
           className="cursor-pointer hover:bg-gray-50 transition-colors duration-200 rounded-t-lg"
           onClick={() => setShowNutrition(!showNutrition)}
         >
@@ -313,8 +315,8 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
                 </p>
               </div>
             </div>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="sm"
               className="bg-gray-100 hover:bg-gray-200 rounded-full w-8 h-8 p-0"
             >
@@ -361,17 +363,21 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
               <div className="bg-gray-50 p-3 rounded-lg">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium text-gray-700">Fiber:</span>
-                  <span className="font-bold text-gray-900">{Math.round(totalNutrition.fiber)}g</span>
+                  <span className="font-bold text-gray-900">
+                    {Math.round(totalNutrition.fiber)}g
+                  </span>
                 </div>
               </div>
               <div className="bg-gray-50 p-3 rounded-lg">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium text-gray-700">Sodium:</span>
-                  <span className="font-bold text-gray-900">{Math.round(totalNutrition.sodium)}mg</span>
+                  <span className="font-bold text-gray-900">
+                    {Math.round(totalNutrition.sodium)}mg
+                  </span>
                 </div>
               </div>
             </div>
-            
+
             {/* Enhanced Nutritional Guidelines */}
             <Alert className="border-green-200 bg-green-50">
               <Shield className="h-4 w-4 text-green-600" />
@@ -415,12 +421,17 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
                       </FormControl>
                       <SelectContent>
                         <SelectItem value={orderSummary.selectedDeliverySlot.id}>
-                          {formatTime(orderSummary.selectedDeliverySlot.startTime)} - {formatTime(orderSummary.selectedDeliverySlot.endTime)}
+                          {formatTime(orderSummary.selectedDeliverySlot.startTime)} -{' '}
+                          {formatTime(orderSummary.selectedDeliverySlot.endTime)}
                         </SelectItem>
                       </SelectContent>
                     </Select>
                     <FormDescription>
-                      Estimated delivery: {calculateEstimatedDelivery(orderSummary.items, orderSummary.selectedDeliverySlot)}
+                      Estimated delivery:{' '}
+                      {calculateEstimatedDelivery(
+                        orderSummary.items,
+                        orderSummary.selectedDeliverySlot
+                      )}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -438,15 +449,13 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
                       <span>Delivery Location</span>
                     </FormLabel>
                     <FormControl>
-                      <Input 
-                        placeholder="Classroom or pickup location" 
-                        {...field} 
+                      <Input
+                        placeholder="Classroom or pickup location"
+                        {...field}
                         defaultValue={orderSummary.selectedDeliverySlot.deliveryLocation}
                       />
                     </FormControl>
-                    <FormDescription>
-                      Where should we deliver your order?
-                    </FormDescription>
+                    <FormDescription>Where should we deliver your order?</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -472,7 +481,9 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
                         <SelectItem value="wallet">
                           <div className="flex items-center space-x-2">
                             <Wallet className="h-4 w-4" />
-                            <span>School Wallet ({formatCurrency(student.walletBalance)} available)</span>
+                            <span>
+                              School Wallet ({formatCurrency(student.walletBalance)} available)
+                            </span>
                           </div>
                         </SelectItem>
                         <SelectItem value="upi">
@@ -502,14 +513,9 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
                   <FormItem>
                     <FormLabel>Special Instructions (Optional)</FormLabel>
                     <FormControl>
-                      <Input 
-                        placeholder="Any specific requirements or preferences..."
-                        {...field}
-                      />
+                      <Input placeholder="Any specific requirements or preferences..." {...field} />
                     </FormControl>
-                    <FormDescription>
-                      Let us know if you have any special requests
-                    </FormDescription>
+                    <FormDescription>Let us know if you have any special requests</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -520,8 +526,9 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
                 <Alert>
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>
-                    This order requires parent approval due to the amount ({formatCurrency(orderSummary.total)}) 
-                    or your account settings. Your parent will be notified and must approve before the order is processed.
+                    This order requires parent approval due to the amount (
+                    {formatCurrency(orderSummary.total)}) or your account settings. Your parent will
+                    be notified and must approve before the order is processed.
                   </AlertDescription>
                 </Alert>
               )}
@@ -554,31 +561,35 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
             <span>Subtotal</span>
             <span>{formatCurrency(orderSummary.subtotal)}</span>
           </div>
-          
+
           {orderSummary.discounts > 0 && (
             <div className="flex justify-between text-sm text-green-600">
               <span>Discounts</span>
               <span>-{formatCurrency(orderSummary.discounts)}</span>
             </div>
           )}
-          
+
           <div className="flex justify-between text-sm">
             <span>Taxes (GST)</span>
             <span>{formatCurrency(orderSummary.taxes)}</span>
           </div>
-          
+
           <div className="flex justify-between text-sm">
             <span>Delivery Charges</span>
-            <span>{orderSummary.deliveryCharges === 0 ? 'FREE' : formatCurrency(orderSummary.deliveryCharges)}</span>
+            <span>
+              {orderSummary.deliveryCharges === 0
+                ? 'FREE'
+                : formatCurrency(orderSummary.deliveryCharges)}
+            </span>
           </div>
-          
+
           <Separator />
-          
+
           <div className="flex justify-between font-semibold text-lg">
             <span>Total</span>
             <span>{formatCurrency(orderSummary.total)}</span>
           </div>
-          
+
           {/* Savings Display */}
           {orderSummary.discounts > 0 && (
             <div className="text-center">
@@ -588,7 +599,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
             </div>
           )}
         </CardContent>
-        
+
         <CardFooter className="p-6">
           <div className="w-full space-y-4">
             {/* Main Order Button */}

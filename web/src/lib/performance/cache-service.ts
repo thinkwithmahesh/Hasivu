@@ -12,17 +12,15 @@ interface CacheEntry<T> {}
   static getInstance(): CacheService {}
     return CacheService.instance;
    * Get value from cache with fallback execution;
-  async get<T>(
-    key: string,
-    fallback?: () => Promise<T>,
-    options: CacheOptions = {}
+  async get<T>(key: string, fallback?: () => Promise<T>,
+    options: _CacheOptions =  {}
   ): Promise<T | null> {}
-    const { ttl = 300, tags = [], version, compress = false, warmup = false } = options;
+    const { ttl 
     try {}
         logger.debug('Cache hit L1', { key, ttl: localEntry.expires - Date.now() });
         return localEntry.data;
       // L2: Check Redis cache
-      const redisData = await this.redis.get(key);
+      const _redisData =  await this.redis.get(key);
       if (redisData) {}
             this.stats.hits.l2++;
             this.stats.hits.total++;
@@ -47,14 +45,14 @@ interface CacheEntry<T> {}
   async set<T>(
     key: string,
     value: T,
-    options: CacheOptions = {}
+    options: _CacheOptions =  {}
   ): Promise<void> {}
-    const { ttl = 300, tags = [], version, compress = false } = options;
+    const { ttl 
     try {}
       // Set in L1 cache
       this.localCache.set(key, entry);
       // Set in L2 cache (Redis)
-      const serialized = compress ? this.compress(entry) : JSON.stringify(entry);
+      const _serialized =  compress ? this.compress(entry) : JSON.stringify(entry);
       await this.redis.setex(key, ttl, serialized);
       // Store tags for invalidation
       if (tags.length > 0) {}
@@ -68,9 +66,9 @@ interface CacheEntry<T> {}
       logger.error('Cache delete operation failed', { key, error: error.message });
    * Invalidate cache by pattern;
   async invalidatePattern(pattern: string): Promise<void> {}
-      keysToDelete.forEach(key => this.localCache.delete(key));
+      keysToDelete.forEach(_key = > this.localCache.delete(key));
       // Invalidate L2 cache
-      const redisKeys = await this.redis.client.keys(pattern);
+      const _redisKeys =  await this.redis.client.keys(pattern);
       if (redisKeys.length > 0) {}
       this.stats.invalidations += keysToDelete.length + redisKeys.length;
       logger.info('Cache pattern invalidated', {}

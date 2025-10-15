@@ -24,7 +24,13 @@ import * as Yup from 'yup';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { Ionicons } from '@expo/vector-icons';
 
-import { login, clearError, selectAuth, selectIsLoginLocked, selectLockTimeRemaining } from '@/store/slices/authSlice';
+import {
+  login,
+  clearError,
+  selectAuth,
+  selectIsLoginLocked,
+  selectLockTimeRemaining,
+} from '@/store/slices/authSlice';
 import { theme, colors, typography, spacing, borderRadius } from '@/constants/theme';
 import { AppDispatch } from '@/store';
 import { LoginCredentials } from '@/types/auth';
@@ -33,9 +39,7 @@ import { LoginCredentials } from '@/types/auth';
  * Login form validation schema
  */
 const loginSchema = Yup.object().shape({
-  email: Yup.string()
-    .email('Please enter a valid email address')
-    .required('Email is required'),
+  email: Yup.string().email('Please enter a valid email address').required('Email is required'),
   password: Yup.string()
     .min(6, 'Password must be at least 6 characters')
     .required('Password is required'),
@@ -75,7 +79,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   useEffect(() => {
     if (isLoginLocked && lockTimeRemaining > 0) {
       setLockCountdown(Math.ceil(lockTimeRemaining / 1000));
-      
+
       const interval = setInterval(() => {
         const remaining = Math.ceil((lockTimeRemaining - (Date.now() % lockTimeRemaining)) / 1000);
         if (remaining <= 0) {
@@ -106,7 +110,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
     try {
       const compatible = await LocalAuthentication.hasHardwareAsync();
       const enrolled = await LocalAuthentication.isEnrolledAsync();
-      
+
       setBiometricSupported(compatible);
       setBiometricEnrolled(enrolled);
     } catch (error) {

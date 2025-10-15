@@ -133,7 +133,7 @@ Resources:
           Amount: !Ref
             - MultiplyValues
             - - !Ref MonthlyBudgetLimit
-              - 0.4  # 40% of total budget for Lambda
+              - 0.4 # 40% of total budget for Lambda
         TimeUnit: MONTHLY
         BudgetType: COST
         CostFilters:
@@ -164,7 +164,7 @@ Resources:
           Amount: !Ref
             - MultiplyValues
             - - !Ref MonthlyBudgetLimit
-              - 0.25  # 25% of total budget for RDS
+              - 0.25 # 25% of total budget for RDS
         TimeUnit: MONTHLY
         BudgetType: COST
         CostFilters:
@@ -424,17 +424,17 @@ Resources:
           import logging
           from datetime import datetime, timedelta
           from decimal import Decimal
-          
+
           logger = logging.getLogger()
           logger.setLevel(logging.INFO)
-          
+
           # Initialize AWS clients
           ce = boto3.client('ce')  # Cost Explorer
           cloudwatch = boto3.client('cloudwatch')
           lambda_client = boto3.client('lambda')
           rds = boto3.client('rds')
           sns = boto3.client('sns')
-          
+
           def lambda_handler(event, context):
               try:
                   environment = os.environ['ENVIRONMENT']
@@ -473,7 +473,7 @@ Resources:
                       'statusCode': 500,
                       'body': json.dumps(f'Error: {str(e)}')
                   }
-          
+
           def analyze_costs():
               """Analyze current and historical costs"""
               try:
@@ -531,7 +531,7 @@ Resources:
               except Exception as e:
                   logger.error(f"Error analyzing costs: {str(e)}")
                   return {'error': str(e)}
-          
+
           def analyze_cost_trend(results):
               """Analyze cost trend over time"""
               try:
@@ -558,7 +558,7 @@ Resources:
               except Exception as e:
                   logger.error(f"Error analyzing cost trend: {str(e)}")
                   return 'unknown'
-          
+
           def identify_optimizations():
               """Identify cost optimization opportunities"""
               try:
@@ -581,7 +581,7 @@ Resources:
               except Exception as e:
                   logger.error(f"Error identifying optimizations: {str(e)}")
                   return []
-          
+
           def check_lambda_optimizations():
               """Check Lambda-specific optimizations"""
               try:
@@ -620,7 +620,7 @@ Resources:
               except Exception as e:
                   logger.error(f"Error checking Lambda optimizations: {str(e)}")
                   return []
-          
+
           def check_rds_optimizations():
               """Check RDS-specific optimizations"""
               try:
@@ -649,7 +649,7 @@ Resources:
               except Exception as e:
                   logger.error(f"Error checking RDS optimizations: {str(e)}")
                   return []
-          
+
           def check_general_optimizations():
               """Check general AWS optimizations"""
               try:
@@ -665,7 +665,7 @@ Resources:
               except Exception as e:
                   logger.error(f"Error checking general optimizations: {str(e)}")
                   return []
-          
+
           def get_lambda_memory_usage(function_name):
               """Get average memory usage for a Lambda function"""
               try:
@@ -696,7 +696,7 @@ Resources:
               except Exception as e:
                   logger.error(f"Error getting Lambda memory usage: {str(e)}")
                   return None
-          
+
           def get_lambda_invocations(function_name):
               """Get Lambda function invocation count"""
               try:
@@ -724,7 +724,7 @@ Resources:
               except Exception as e:
                   logger.error(f"Error getting Lambda invocations: {str(e)}")
                   return 0
-          
+
           def get_rds_cpu_usage(instance_id):
               """Get RDS CPU utilization"""
               try:
@@ -755,7 +755,7 @@ Resources:
               except Exception as e:
                   logger.error(f"Error getting RDS CPU usage: {str(e)}")
                   return None
-          
+
           def calculate_lambda_memory_savings(current_memory, usage_ratio):
               """Calculate potential Lambda memory savings"""
               # Simplified calculation - actual savings would depend on invocation patterns
@@ -771,7 +771,7 @@ Resources:
               new_cost = (recommended_memory / 1024) * avg_duration * monthly_invocations * 0.0000166667
               
               return max(0, current_cost - new_cost)
-          
+
           def generate_recommendations(cost_analysis, optimizations):
               """Generate cost optimization recommendations"""
               try:
@@ -799,25 +799,25 @@ Resources:
               except Exception as e:
                   logger.error(f"Error generating recommendations: {str(e)}")
                   return {'error': str(e)}
-          
+
           def send_optimization_notification(recommendations):
               """Send cost optimization notification"""
               try:
                   message = f"""
           Cost Optimization Report - {os.environ['PROJECT_NAME']} ({os.environ['ENVIRONMENT']})
-          
+
           Total Potential Monthly Savings: ${recommendations['total_potential_savings']:.2f}
           Optimization Opportunities Found: {recommendations['optimization_count']}
-          
+
           Priority Optimizations ({len(recommendations['priority_optimizations'])}):
           {format_optimizations(recommendations['priority_optimizations'])}
-          
+
           Quick Wins ({len(recommendations['quick_wins'])}):
           {format_optimizations(recommendations['quick_wins'])}
-          
+
           Long-term Optimizations ({len(recommendations['long_term_optimizations'])}):
           {format_optimizations(recommendations['long_term_optimizations'])}
-          
+
           Review the full cost optimization dashboard for detailed analysis.
                   """
                   
@@ -831,7 +831,7 @@ Resources:
                   
               except Exception as e:
                   logger.error(f"Error sending optimization notification: {str(e)}")
-          
+
           def format_optimizations(optimizations):
               """Format optimizations for notification"""
               if not optimizations:
@@ -845,7 +845,7 @@ Resources:
                   formatted.append(f"... and {len(optimizations) - 5} more")
               
               return '\n'.join(formatted)
-          
+
           def update_cost_metrics(cost_analysis):
               """Update CloudWatch metrics with cost data"""
               try:
@@ -897,7 +897,7 @@ Resources:
                   
               except Exception as e:
                   logger.error(f"Error updating cost metrics: {str(e)}")
-          
+
           def decimal_default(obj):
               """JSON encoder for Decimal objects"""
               if isinstance(obj, Decimal):
@@ -934,7 +934,7 @@ Resources:
                   - lambda:GetFunction
                   - rds:DescribeDBInstances
                   - sns:Publish
-                Resource: "*"
+                Resource: '*'
 
   # Schedule cost optimization analysis
   CostOptimizationSchedule:
@@ -942,7 +942,7 @@ Resources:
     Properties:
       Name: !Sub '${ProjectName}-${Environment}-cost-optimization-schedule'
       Description: 'Run cost optimization analysis daily'
-      ScheduleExpression: 'cron(0 8 * * ? *)'  # Daily at 8 AM UTC
+      ScheduleExpression: 'cron(0 8 * * ? *)' # Daily at 8 AM UTC
       State: ENABLED
       Targets:
         - Arn: !GetAtt CostOptimizationFunction.Arn
@@ -968,7 +968,7 @@ Resources:
       Budget:
         BudgetName: !Sub '${ProjectName}-${Environment}-ri-budget'
         BudgetLimit:
-          Amount: 500  # Reserved Instance budget
+          Amount: 500 # Reserved Instance budget
           Unit: USD
         TimeUnit: MONTHLY
         BudgetType: RI_COVERAGE
@@ -980,7 +980,7 @@ Resources:
         - Notification:
             NotificationType: ACTUAL
             ComparisonOperator: LESS_THAN
-            Threshold: 80  # Alert if RI coverage falls below 80%
+            Threshold: 80 # Alert if RI coverage falls below 80%
             ThresholdType: PERCENTAGE
           Subscribers:
             - SubscriptionType: EMAIL

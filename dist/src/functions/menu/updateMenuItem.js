@@ -226,7 +226,7 @@ const updateMenuItemHandler = async (event, context) => {
             validationService.validateUUID(menuItemId, 'Menu item ID');
         }
         catch (error) {
-            logger.warn('Invalid menu item ID format', { requestId, menuItemId, error: error.message });
+            logger.warn('Invalid menu item ID format', { requestId, menuItemId, error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) });
             return (0, response_utils_1.createErrorResponse)('Invalid menu item ID format', 400, 'INVALID_MENU_ITEM_ID');
         }
         if (!event.body) {
@@ -238,7 +238,7 @@ const updateMenuItemHandler = async (event, context) => {
             requestData = JSON.parse(event.body);
         }
         catch (error) {
-            logger.warn('Invalid JSON in request body', { requestId, error: error.message });
+            logger.warn('Invalid JSON in request body', { requestId, error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) });
             return (0, response_utils_1.createErrorResponse)('Invalid JSON in request body', 400, 'INVALID_JSON');
         }
         logger.info('Processing update menu item request', {
@@ -254,9 +254,9 @@ const updateMenuItemHandler = async (event, context) => {
             logger.warn('Validation failed for update data', {
                 requestId,
                 menuItemId,
-                error: error.message
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
             });
-            return (0, response_utils_1.createErrorResponse)(error.message, 400, 'VALIDATION_FAILED');
+            return (0, response_utils_1.createErrorResponse)(error instanceof Error ? error.message : String(error), 400, 'VALIDATION_FAILED');
         }
         if (Object.keys(validatedData).length === 0) {
             logger.warn('No valid updates provided', { requestId, menuItemId });
@@ -330,7 +330,7 @@ const updateMenuItemHandler = async (event, context) => {
         logger.error('Update menu item request failed', {
             requestId,
             menuItemId: event.pathParameters?.id,
-            error: error.message,
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
             duration: `${duration}ms`
         });
         return (0, response_utils_1.handleError)(error, 'Failed to update menu item');

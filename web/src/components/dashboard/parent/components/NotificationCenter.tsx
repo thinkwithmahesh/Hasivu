@@ -7,16 +7,16 @@ interface NotificationCenterProps {
   onClearAll?: () => void;
 }
 
-export const NotificationCenter: React.FC<NotificationCenterProps> = ({ 
-  notifications = [],
-  onMarkAsRead,
-  onClearAll
+export const NotificationCenter: React.FC<NotificationCenterProps> = ({
+  notifications: _notifications = [],
+  onMarkAsRead: _onMarkAsRead,
+  onClearAll,
 }) => {
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold">Notifications</h2>
-        <button 
+        <button
           onClick={onClearAll}
           className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
         >

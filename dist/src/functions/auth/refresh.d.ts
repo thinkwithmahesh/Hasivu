@@ -1,3 +1,8 @@
-import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
-export declare const handler: (event: APIGatewayProxyEvent, context: Context) => Promise<APIGatewayProxyResult>;
+import { APIGatewayProxyResult } from 'aws-lambda';
+export interface RefreshRequest {
+    refreshToken: string;
+}
+export declare const handler: (event: any, _context: any) => Promise<APIGatewayProxyResult>;
+export declare const refreshHandler: (event: any, _context: any) => Promise<APIGatewayProxyResult>;
+export default handler;
 //# sourceMappingURL=refresh.d.ts.map

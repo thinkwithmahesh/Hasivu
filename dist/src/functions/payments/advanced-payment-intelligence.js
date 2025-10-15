@@ -91,14 +91,14 @@ async function detectFraudRisk(transactionData, historicalContext, userProfile, 
             evidence: [{ hour, isBusinessHours: false }]
         });
     }
-    if (userProfile.successRate && userProfile.successRate > 0.9 && transactionData.previousFailures > 3) {
+    if (userProfile.successRate && userProfile.successRate > 0.9 && (transactionData.previousFailures || 0) > 3) {
         const weight = 0.15;
         fraudScore += weight;
         riskFactors.push({
             factor: 'Unusual failure pattern',
             weight,
             description: 'Multiple consecutive failures for typically successful user',
-            evidence: [{ normalSuccessRate: userProfile.successRate, recentFailures: transactionData.previousFailures }]
+            evidence: [{ normalSuccessRate: userProfile.successRate, recentFailures: transactionData.previousFailures || 0 }]
         });
     }
     if (schoolProfile.riskScore && schoolProfile.riskScore > 0.7) {
@@ -187,7 +187,7 @@ function generateFraudRecommendations(fraudScore, riskFactors) {
     });
     return Array.from(new Set(recommendations));
 }
-async function recognizePaymentPatterns(historicalData, timeframe, schoolId) {
+async function recognizePaymentPatterns(historicalData) {
     const patterns = [];
     const anomalies = [];
     const trends = [];
@@ -332,7 +332,7 @@ function findAmountClusters(amounts) {
 function analyzeBehavioralPatterns(data) {
     const userBehavior = {};
     data.forEach(payment => {
-        const userId = payment.userId || payment.order?.userId;
+        const userId = payment.userId || payment.order?.user?.id;
         if (!userId)
             return;
         if (!userBehavior[userId]) {
@@ -526,10 +526,9 @@ function calculateTrend(values) {
         prediction
     };
 }
-async function performBehavioralAnalysis(historicalData, userProfiles, schoolProfiles, schoolId) {
-    const prismaClient = getPrismaClient();
-    const userBehavior = calculateUserBehavior(historicalData, userProfiles);
-    const schoolBehavior = calculateSchoolBehavior(historicalData, schoolProfiles, schoolId);
+async function performBehavioralAnalysis(_historicalData, _schoolProfiles, schoolId) {
+    const userBehavior = calculateUserBehavior(_historicalData);
+    const schoolBehavior = calculateSchoolBehavior(_historicalData, _schoolProfiles, schoolId);
     const comparativeBenchmarks = await generateBenchmarks(userBehavior, schoolBehavior);
     const behavioralInsights = generateBehavioralInsights(userBehavior, schoolBehavior, comparativeBenchmarks);
     return {
@@ -539,7 +538,7 @@ async function performBehavioralAnalysis(historicalData, userProfiles, schoolPro
         behavioralInsights
     };
 }
-function calculateUserBehavior(data, userProfiles) {
+function calculateUserBehavior(data) {
     const totalTransactions = data.length;
     const totalAmount = data.reduce((sum, t) => sum + t.amount, 0);
     const successfulTransactions = data.filter(t => t.status === 'completed').length;
@@ -732,7 +731,7 @@ function generateBehavioralInsights(userBehavior, schoolBehavior, benchmarks) {
     }
     return insights;
 }
-async function generateOptimizationRecommendations(currentMetrics, historicalData, benchmarks) {
+async function generateOptimizationRecommendations(currentMetrics) {
     const currentPerformance = {
         successRate: currentMetrics.successRate || 0,
         averageProcessingTime: 2500,
@@ -888,7 +887,7 @@ async function generateIntelligenceInsights(timeframe, schoolId, insightTypes = 
         insights.push(...fraudAlerts);
     }
     if (insightTypes.includes('all') || insightTypes.includes('user_behavior')) {
-        const patternInsights = await generatePatternInsights(payments, riskLevel);
+        const patternInsights = await generatePatternInsights(payments);
         insights.push(...patternInsights);
     }
     if (insightTypes.includes('all') || insightTypes.includes('payment_optimization')) {
@@ -896,7 +895,7 @@ async function generateIntelligenceInsights(timeframe, schoolId, insightTypes = 
         insights.push(...optimizationInsights);
     }
     if (insightTypes.includes('all') || insightTypes.includes('risk_assessment')) {
-        const riskInsights = await generateRiskInsights(payments, riskLevel);
+        const riskInsights = await generateRiskInsights(payments);
         insights.push(...riskInsights);
     }
     return insights.sort((a, b) => {
@@ -959,7 +958,7 @@ async function generateFraudAlerts(payments, riskLevel) {
     }
     return alerts;
 }
-async function generatePatternInsights(payments, riskLevel) {
+async function generatePatternInsights(payments) {
     const insights = [];
     const userCounts = {};
     payments.forEach(p => {
@@ -1073,11 +1072,11 @@ async function generateOptimizationInsights(payments, riskLevel) {
     }
     return insights;
 }
-async function generateRiskInsights(payments, riskLevel) {
+async function generateRiskInsights(payments) {
     const insights = [];
     const now = Date.now();
     const last24Hours = payments.filter(p => now - new Date(p.createdAt).getTime() < 24 * 60 * 60 * 1000);
-    if (last24Hours.length > 100 && (riskLevel === 'all' || riskLevel === 'medium' || riskLevel === 'high')) {
+    if (last24Hours.length > 100) {
         insights.push({
             id: `risk_high_velocity_${Date.now()}`,
             timestamp: new Date(),
@@ -1149,16 +1148,18 @@ const advancedPaymentIntelligenceHandler = async (event, context) => {
             return authResult;
         }
         const { user: authenticatedUser } = authResult;
+        if (!authenticatedUser) {
+            return (0, response_utils_1.createErrorResponse)('Authentication failed - user not found', 401, 'AUTHENTICATION_ERROR');
+        }
         if (!['school_admin', 'admin', 'super_admin'].includes(authenticatedUser.role)) {
             logger.warn('Unauthorized intelligence access attempt', {
                 requestId,
-                userId: authenticatedUser.id,
+                userId: authenticatedUser.id || "",
                 role: authenticatedUser.role
             });
             return (0, response_utils_1.createErrorResponse)('Insufficient permissions for payment intelligence access', 403, 'INSUFFICIENT_PERMISSIONS');
         }
         const method = event.httpMethod;
-        const pathParameters = event.pathParameters || {};
         const queryStringParameters = event.queryStringParameters || {};
         switch (method) {
             case 'GET':
@@ -1179,7 +1180,7 @@ const advancedPaymentIntelligenceHandler = async (event, context) => {
     catch (error) {
         logger.error('Advanced Payment Intelligence request failed', {
             requestId,
-            error: error.message,
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
             stack: error.stack
         });
         return (0, response_utils_1.handleError)(error, 'Advanced Payment Intelligence operation failed');
@@ -1199,7 +1200,7 @@ async function handleIntelligenceInsights(queryParams, authenticatedUser, reques
         authenticatedUser.schoolId : insightsQuery.schoolId;
     logger.info('Intelligence insights query processing', {
         requestId,
-        userId: authenticatedUser.id,
+        userId: authenticatedUser.id || "",
         timeframe: insightsQuery.timeframe,
         insightTypes: insightsQuery.insightTypes,
         schoolId,
@@ -1235,7 +1236,7 @@ async function handleIntelligenceInsights(queryParams, authenticatedUser, reques
     catch (error) {
         logger.error('Intelligence insights generation failed', {
             requestId,
-            error: error.message,
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
             insightsQuery
         });
         throw error;
@@ -1249,7 +1250,7 @@ async function handleTransactionAnalysis(event, authenticatedUser, requestId) {
         authenticatedUser.schoolId : analysisData.schoolId;
     logger.info('Transaction analysis started', {
         requestId,
-        userId: authenticatedUser.id,
+        userId: authenticatedUser.id || "",
         analysisType: analysisData.analysisType,
         transactionId: analysisData.transactionId,
         schoolId
@@ -1320,17 +1321,16 @@ async function handleTransactionAnalysis(event, authenticatedUser, requestId) {
             }
         }
         if (analysisData.analysisType === 'comprehensive' || analysisData.analysisType === 'pattern_recognition') {
-            const patternAnalysis = await recognizePaymentPatterns(historicalData, 'month', schoolId);
+            const patternAnalysis = await recognizePaymentPatterns(historicalData);
             analysisResult.patternRecognition = patternAnalysis;
         }
         if (analysisData.analysisType === 'comprehensive' || analysisData.analysisType === 'behavioral_analysis') {
-            const behavioralAnalysis = await performBehavioralAnalysis(historicalData, [], [], schoolId);
+            const behavioralAnalysis = await performBehavioralAnalysis(historicalData, [], schoolId);
             analysisResult.behavioralAnalysis = behavioralAnalysis;
         }
         if (analysisData.analysisType === 'comprehensive' || analysisData.analysisType === 'optimization_suggestions') {
             const currentMetrics = { successRate: 0.85 };
-            const benchmarks = {};
-            const optimization = await generateOptimizationRecommendations(currentMetrics, historicalData, benchmarks);
+            const optimization = await generateOptimizationRecommendations(currentMetrics);
             analysisResult.optimizationRecommendations = optimization;
         }
         logger.info('Transaction analysis completed successfully', {
@@ -1360,7 +1360,7 @@ async function handleTransactionAnalysis(event, authenticatedUser, requestId) {
     catch (error) {
         logger.error('Transaction analysis failed', {
             requestId,
-            error: error.message,
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
             analysisData
         });
         throw error;

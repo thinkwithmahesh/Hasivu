@@ -1,0 +1,850 @@
+/**
+ * Access Control Manager - Real-world Implementation
+ * Manages data access permissions, authentication, and audit trails
+ */
+
+import { logger } from '../../../../utils/logger';
+import {
+  AccessControlInfo,
+  UserPermission,
+  RoleDefinition,
+  AccessAuditLog
+} from '../../types/data-lake-types';
+
+export interface AccessRequest {
+  userId: string;
+  resource: string;
+  action: 'read' | 'write' | 'delete' | 'admin';
+  context?: Record<string, any>;
+  timestamp: Date;
+}
+
+export interface AccessDecision {
+  granted: boolean;
+  reason: string;
+  conditions?: string[];
+  expires?: Date;
+}
+
+export interface AccessPolicy {
+  id: string;
+  name: string;
+  description: string;
+  rules: AccessRule[];
+  priority: number;
+  enabled: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface AccessRule {
+  id: string;
+  effect: 'allow' | 'deny';
+  subjects: string[]; // user IDs, roles, groups
+  resources: string[]; // dataset patterns, specific resources
+  actions: string[]; // read, write, delete, admin
+  conditions?: AccessCondition[];
+}
+
+export interface AccessCondition {
+  type: 'time' | 'ip' | 'location' | 'attribute';
+  operator: 'equals' | 'contains' | 'in' | 'between';
+  value: any;
+}
+
+export interface AccessSession {
+  sessionId: string;
+  userId: string;
+  roles: string[];
+  permissions: UserPermission[];
+  createdAt: Date;
+  lastActivity: Date;
+  ipAddress?: string;
+  userAgent?: string;
+}
+
+export class AccessControlManager {
+  private policies: Map<string, AccessPolicy> = new Map();
+  private roles: Map<string, RoleDefinition> = new Map();
+  private userPermissions: Map<string, UserPermission[]> = new Map();
+  private activeSessions: Map<string, AccessSession> = new Map();
+  private auditLog: AccessAuditLog[] = [];
+  private config: {
+    sessionTimeout: number;
+    auditRetention: number;
+    defaultRole: string;
+    enableAudit: boolean;
+  };
+
+  constructor(config: any = {}) {
+    this.config = {
+      sessionTimeout: 3600, // 1 hour
+      auditRetention: 90, // 90 days
+      defaultRole: 'viewer',
+      enableAudit: true,
+      ...config
+    };
+
+    this.initializeDefaultRoles();
+    this.initializeDefaultPolicies();
+
+    logger.info('AccessControlManager initialized', {
+      sessionTimeout: this.config.sessionTimeout,
+      enableAudit: this.config.enableAudit
+    });
+  }
+
+  async initialize(): Promise<void> {
+    try {
+      logger.info('Initializing Access Control Manager');
+
+      // Initialize audit log storage
+      this.auditLog = [];
+
+      // Initialize session management
+      this.activeSessions = new Map();
+
+      // Start session cleanup timer
+      this.startSessionCleanup();
+
+      logger.info('Access Control Manager initialized successfully');
+    } catch (error: unknown) {
+      logger.error('Failed to initialize Access Control Manager', { error });
+      throw new Error(`Access Control Manager initialization failed: ${(error instanceof Error ? error.message : String(error))}`);
+    }
+  }
+
+  private startSessionCleanup(): void {
+    setInterval(() => {
+      const now = Date.now();
+      const expiredSessions: string[] = [];
+
+      this.activeSessions.forEach((session, sessionId) => {
+        const sessionAge = now - session.createdAt.getTime();
+        if (sessionAge > this.config.sessionTimeout * 1000) {
+          expiredSessions.push(sessionId);
+        }
+      });
+
+      expiredSessions.forEach(sessionId => {
+        this.activeSessions.delete(sessionId);
+        logger.debug('Session expired and cleaned up', { sessionId });
+      });
+    }, 60000); // Check every minute
+  }
+
+  async authenticateUser(
+    userId: string,
+    credentials: any,
+    context?: Record<string, any>
+  ): Promise<AccessSession> {
+    const startTime = Date.now();
+
+    try {
+      logger.info('Authenticating user', { userId });
+
+      // Simulate authentication process
+      const isValid = await this.validateCredentials(userId, credentials);
+
+      if (!isValid) {
+        this.logAuditEvent({
+          userId,
+          action: 'authentication',
+          resource: 'system',
+          result: 'denied',
+          reason: 'Invalid credentials',
+          timestamp: new Date(),
+          ipAddress: context?.ipAddress,
+          userAgent: context?.userAgent
+        });
+
+        throw new Error('Authentication failed');
+      }
+
+      // Get user roles and permissions
+      const roles = await this.getUserRoles(userId);
+      const permissions = await this.getUserPermissions(userId);
+
+      // Create session
+      const sessionId = this.generateSessionId();
+      const session: AccessSession = {
+        sessionId,
+        userId,
+        roles,
+        permissions,
+        createdAt: new Date(),
+        lastActivity: new Date(),
+        ipAddress: context?.ipAddress,
+        userAgent: context?.userAgent
+      };
+
+      this.activeSessions.set(sessionId, session);
+
+      this.logAuditEvent({
+        userId,
+        action: 'authentication',
+        resource: 'system',
+        result: 'granted',
+        reason: 'Valid credentials',
+        timestamp: new Date(),
+        sessionId,
+        ipAddress: context?.ipAddress,
+        userAgent: context?.userAgent
+      });
+
+      const executionTime = Date.now() - startTime;
+
+      logger.info('User authenticated successfully', {
+        userId,
+        sessionId,
+        roleCount: roles.length,
+        executionTime
+      });
+
+      return session;
+
+    } catch (error: unknown) {
+      logger.error('Authentication failed', { userId, error });
+      throw new Error(`Authentication failed: ${(error instanceof Error ? error.message : String(error))}`);
+    }
+  }
+
+  async checkAccess(
+    sessionId: string,
+    request: AccessRequest
+  ): Promise<AccessDecision> {
+    const startTime = Date.now();
+
+    try {
+      logger.debug('Checking access', {
+        sessionId,
+        userId: request.userId,
+        resource: request.resource,
+        action: request.action
+      });
+
+      // Validate session
+      const session = await this.validateSession(sessionId);
+      if (!session) {
+        return {
+          granted: false,
+          reason: 'Invalid or expired session'
+        };
+      }
+
+      // Update session activity
+      session.lastActivity = new Date();
+
+      // Evaluate access policies
+      const decision = await this.evaluateAccess(session, request);
+
+      // Log audit event
+      this.logAuditEvent({
+        userId: request.userId,
+        action: request.action,
+        resource: request.resource,
+        result: decision.granted ? 'granted' : 'denied',
+        reason: decision.reason,
+        timestamp: request.timestamp,
+        sessionId,
+        ipAddress: session.ipAddress,
+        userAgent: session.userAgent
+      });
+
+      const executionTime = Date.now() - startTime;
+
+      logger.debug('Access check completed', {
+        sessionId,
+        granted: decision.granted,
+        reason: decision.reason,
+        executionTime
+      });
+
+      return decision;
+
+    } catch (error: unknown) {
+      logger.error('Access check failed', { sessionId, request, error });
+      return {
+        granted: false,
+        reason: `Access check error: ${(error instanceof Error ? error.message : String(error))}`
+      };
+    }
+  }
+
+  async validateAccess(
+    userId: string,
+    resource: string,
+    action: string,
+    context?: Record<string, any>
+  ): Promise<boolean> {
+    try {
+      logger.debug('Validating access', { userId, resource, action, context });
+
+      // Create access request
+      const request: AccessRequest = {
+        userId,
+        resource,
+        action: action as 'read' | 'write' | 'delete' | 'admin',
+        context,
+        timestamp: new Date()
+      };
+
+      // Get user's active session
+      const sessions = Array.from(this.activeSessions.values());
+      const userSession = sessions.find(session => session.userId === userId);
+
+      if (!userSession) {
+        logger.warn('No active session found for user', { userId });
+        return false;
+      }
+
+      // Check access using existing checkAccess method
+      const decision = await this.checkAccess(userSession.sessionId, request);
+
+      logger.debug('Access validation result', {
+        userId,
+        resource,
+        action,
+        granted: decision.granted,
+        reason: decision.reason
+      });
+
+      return decision.granted;
+
+    } catch (error: unknown) {
+      logger.error('Access validation failed', { userId, resource, action, error });
+      return false;
+    }
+  }
+
+  async createRole(role: RoleDefinition): Promise<void> {
+    try {
+      logger.info('Creating role', { roleId: role.id, name: role.name });
+
+      if (this.roles.has(role.id)) {
+        throw new Error(`Role already exists: ${role.id}`);
+      }
+
+      this.roles.set(role.id, {
+        ...role,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+
+      logger.info('Role created successfully', { roleId: role.id });
+
+    } catch (error: unknown) {
+      logger.error('Failed to create role', { roleId: role.id, error });
+      throw new Error(`Role creation failed: ${(error instanceof Error ? error.message : String(error))}`);
+    }
+  }
+
+  async updateRole(roleId: string, updates: Partial<RoleDefinition>): Promise<void> {
+    try {
+      logger.info('Updating role', { roleId });
+
+      const role = this.roles.get(roleId);
+      if (!role) {
+        throw new Error(`Role not found: ${roleId}`);
+      }
+
+      const updatedRole = {
+        ...role,
+        ...updates,
+        updatedAt: new Date()
+      };
+
+      this.roles.set(roleId, updatedRole);
+
+      logger.info('Role updated successfully', { roleId });
+
+    } catch (error: unknown) {
+      logger.error('Failed to update role', { roleId, error });
+      throw new Error(`Role update failed: ${(error instanceof Error ? error.message : String(error))}`);
+    }
+  }
+
+  async deleteRole(roleId: string): Promise<void> {
+    try {
+      logger.info('Deleting role', { roleId });
+
+      if (!this.roles.has(roleId)) {
+        throw new Error(`Role not found: ${roleId}`);
+      }
+
+      this.roles.delete(roleId);
+
+      // Remove role from user permissions
+      for (const [userId, permissions] of Array.from(this.userPermissions)) {
+        const filteredPermissions = permissions.filter(p => p.role !== roleId);
+        this.userPermissions.set(userId, filteredPermissions);
+      }
+
+      logger.info('Role deleted successfully', { roleId });
+
+    } catch (error: unknown) {
+      logger.error('Failed to delete role', { roleId, error });
+      throw new Error(`Role deletion failed: ${(error instanceof Error ? error.message : String(error))}`);
+    }
+  }
+
+  async assignRole(userId: string, roleId: string, resource?: string): Promise<void> {
+    try {
+      logger.info('Assigning role', { userId, roleId, resource });
+
+      const role = this.roles.get(roleId);
+      if (!role) {
+        throw new Error(`Role not found: ${roleId}`);
+      }
+
+      const permissions = this.userPermissions.get(userId) || [];
+
+      const permission: UserPermission = {
+        userId,
+        role: roleId,
+        resource: resource || '*',
+        grantedAt: new Date(),
+        grantedBy: 'system'
+      };
+
+      permissions.push(permission);
+      this.userPermissions.set(userId, permissions);
+
+      logger.info('Role assigned successfully', { userId, roleId });
+
+    } catch (error: unknown) {
+      logger.error('Failed to assign role', { userId, roleId, error });
+      throw new Error(`Role assignment failed: ${(error instanceof Error ? error.message : String(error))}`);
+    }
+  }
+
+  async revokeRole(userId: string, roleId: string, resource?: string): Promise<void> {
+    try {
+      logger.info('Revoking role', { userId, roleId, resource });
+
+      const permissions = this.userPermissions.get(userId) || [];
+      const filteredPermissions = permissions.filter(p =>
+        !(p.role === roleId && (resource ? p.resource === resource : true))
+      );
+
+      this.userPermissions.set(userId, filteredPermissions);
+
+      logger.info('Role revoked successfully', { userId, roleId });
+
+    } catch (error: unknown) {
+      logger.error('Failed to revoke role', { userId, roleId, error });
+      throw new Error(`Role revocation failed: ${(error instanceof Error ? error.message : String(error))}`);
+    }
+  }
+
+  async createPolicy(policy: Omit<AccessPolicy, 'createdAt' | 'updatedAt'>): Promise<void> {
+    try {
+      logger.info('Creating access policy', { policyId: policy.id, name: policy.name });
+
+      if (this.policies.has(policy.id)) {
+        throw new Error(`Policy already exists: ${policy.id}`);
+      }
+
+      this.policies.set(policy.id, {
+        ...policy,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+
+      logger.info('Access policy created successfully', { policyId: policy.id });
+
+    } catch (error: unknown) {
+      logger.error('Failed to create policy', { policyId: policy.id, error });
+      throw new Error(`Policy creation failed: ${(error instanceof Error ? error.message : String(error))}`);
+    }
+  }
+
+  async getAuditLog(
+    filters?: {
+      userId?: string;
+      resource?: string;
+      action?: string;
+      startDate?: Date;
+      endDate?: Date;
+    }
+  ): Promise<AccessAuditLog[]> {
+    try {
+      let filteredLog = [...this.auditLog];
+
+      if (filters) {
+        if (filters.userId) {
+          filteredLog = filteredLog.filter(log => log.userId === filters.userId);
+        }
+        if (filters.resource) {
+          filteredLog = filteredLog.filter(log => log.resource === filters.resource);
+        }
+        if (filters.action) {
+          filteredLog = filteredLog.filter(log => log.action === filters.action);
+        }
+        if (filters.startDate) {
+          filteredLog = filteredLog.filter(log => log.timestamp >= filters.startDate!);
+        }
+        if (filters.endDate) {
+          filteredLog = filteredLog.filter(log => log.timestamp <= filters.endDate!);
+        }
+      }
+
+      return filteredLog.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+
+    } catch (error: unknown) {
+      logger.error('Failed to get audit log', { filters, error });
+      throw new Error(`Audit log retrieval failed: ${(error instanceof Error ? error.message : String(error))}`);
+    }
+  }
+
+  async revokeSession(sessionId: string): Promise<void> {
+    try {
+      logger.info('Revoking session', { sessionId });
+
+      const session = this.activeSessions.get(sessionId);
+      if (!session) {
+        throw new Error(`Session not found: ${sessionId}`);
+      }
+
+      this.activeSessions.delete(sessionId);
+
+      this.logAuditEvent({
+        userId: session.userId,
+        action: 'logout',
+        resource: 'system',
+        result: 'granted',
+        reason: 'Session revoked',
+        timestamp: new Date(),
+        sessionId
+      });
+
+      logger.info('Session revoked successfully', { sessionId });
+
+    } catch (error: unknown) {
+      logger.error('Failed to revoke session', { sessionId, error });
+      throw new Error(`Session revocation failed: ${(error instanceof Error ? error.message : String(error))}`);
+    }
+  }
+
+  private async validateCredentials(userId: string, credentials: any): Promise<boolean> {
+    // Simulate credential validation
+    // In real implementation, would validate against user store, LDAP, etc.
+    return credentials && credentials.password === 'valid_password';
+  }
+
+  private async getUserRoles(userId: string): Promise<string[]> {
+    const permissions = this.userPermissions.get(userId) || [];
+    return Array.from(new Set(permissions.map(p => p.role)));
+  }
+
+  private async getUserPermissions(userId: string): Promise<UserPermission[]> {
+    return this.userPermissions.get(userId) || [];
+  }
+
+  private async validateSession(sessionId: string): Promise<AccessSession | null> {
+    const session = this.activeSessions.get(sessionId);
+    if (!session) {
+      return null;
+    }
+
+    // Check session timeout
+    const now = new Date();
+    const timeoutThreshold = new Date(session.lastActivity.getTime() + this.config.sessionTimeout * 1000);
+
+    if (now > timeoutThreshold) {
+      this.activeSessions.delete(sessionId);
+      return null;
+    }
+
+    return session;
+  }
+
+  private async evaluateAccess(
+    session: AccessSession,
+    request: AccessRequest
+  ): Promise<AccessDecision> {
+    // Check user permissions first
+    const hasDirectPermission = await this.checkDirectPermission(session, request);
+    if (hasDirectPermission) {
+      return {
+        granted: true,
+        reason: 'Direct permission granted'
+      };
+    }
+
+    // Evaluate policies
+    const applicablePolicies = this.getApplicablePolicies(session, request);
+
+    // Sort by priority (higher priority first)
+    applicablePolicies.sort((a, b) => b.priority - a.priority);
+
+    for (const policy of applicablePolicies) {
+      const decision = await this.evaluatePolicy(policy, session, request);
+      if (decision.granted !== undefined) {
+        return decision;
+      }
+    }
+
+    // Default deny
+    return {
+      granted: false,
+      reason: 'No applicable policy grants access'
+    };
+  }
+
+  private async checkDirectPermission(
+    session: AccessSession,
+    request: AccessRequest
+  ): Promise<boolean> {
+    // Check if user has direct permission for the resource
+    for (const permission of session.permissions) {
+      if (this.matchesResource(permission.resource, request.resource)) {
+        const role = this.roles.get(permission.role);
+        if (role && role.permissions.includes(request.action)) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  private getApplicablePolicies(
+    session: AccessSession,
+    request: AccessRequest
+  ): AccessPolicy[] {
+    const applicablePolicies: AccessPolicy[] = [];
+
+    for (const policy of Array.from(this.policies.values())) {
+      if (!policy.enabled) continue;
+
+      for (const rule of policy.rules) {
+        if (this.ruleApplies(rule, session, request)) {
+          applicablePolicies.push(policy);
+          break;
+        }
+      }
+    }
+
+    return applicablePolicies;
+  }
+
+  private ruleApplies(
+    rule: AccessRule,
+    session: AccessSession,
+    request: AccessRequest
+  ): boolean {
+    // Check subjects (users, roles)
+    const subjectMatch = rule.subjects.some(subject => {
+      if (subject === request.userId) return true;
+      if (session.roles.includes(subject)) return true;
+      return false;
+    });
+
+    if (!subjectMatch) return false;
+
+    // Check resources
+    const resourceMatch = rule.resources.some(resource =>
+      this.matchesResource(resource, request.resource)
+    );
+
+    if (!resourceMatch) return false;
+
+    // Check actions
+    const actionMatch = rule.actions.includes(request.action) || rule.actions.includes('*');
+
+    if (!actionMatch) return false;
+
+    // Check conditions
+    if (rule.conditions) {
+      const conditionMatch = rule.conditions.every(condition =>
+        this.evaluateCondition(condition, session, request)
+      );
+      if (!conditionMatch) return false;
+    }
+
+    return true;
+  }
+
+  private async evaluatePolicy(
+    policy: AccessPolicy,
+    session: AccessSession,
+    request: AccessRequest
+  ): Promise<AccessDecision> {
+    for (const rule of policy.rules) {
+      if (this.ruleApplies(rule, session, request)) {
+        return {
+          granted: rule.effect === 'allow',
+          reason: `Policy ${policy.name}: ${rule.effect}`
+        };
+      }
+    }
+
+    return { granted: false, reason: 'Policy not applicable' };
+  }
+
+  private matchesResource(pattern: string, resource: string): boolean {
+    if (pattern === '*') return true;
+    if (pattern === resource) return true;
+
+    // Simple wildcard matching
+    const regex = new RegExp(pattern.replace(/\*/g, '.*'));
+    return regex.test(resource);
+  }
+
+  private evaluateCondition(
+    condition: AccessCondition,
+    session: AccessSession,
+    request: AccessRequest
+  ): boolean {
+    switch (condition.type) {
+      case 'time':
+        return this.evaluateTimeCondition(condition, request);
+      case 'ip':
+        return this.evaluateIpCondition(condition, session);
+      default:
+        return true;
+    }
+  }
+
+  private evaluateTimeCondition(condition: AccessCondition, request: AccessRequest): boolean {
+    const now = request.timestamp;
+
+    switch (condition.operator) {
+      case 'between':
+        const [start, end] = condition.value;
+        return now >= new Date(start) && now <= new Date(end);
+      default:
+        return true;
+    }
+  }
+
+  private evaluateIpCondition(condition: AccessCondition, session: AccessSession): boolean {
+    if (!session.ipAddress) return false;
+
+    switch (condition.operator) {
+      case 'equals':
+        return session.ipAddress === condition.value;
+      case 'in':
+        return condition.value.includes(session.ipAddress);
+      default:
+        return true;
+    }
+  }
+
+  private generateSessionId(): string {
+    return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  private logAuditEvent(event: Omit<AccessAuditLog, 'id'>): void {
+    if (!this.config.enableAudit) return;
+
+    const auditEvent: AccessAuditLog = {
+      id: `audit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      ...event
+    };
+
+    this.auditLog.push(auditEvent);
+
+    // Cleanup old audit entries
+    const cutoffDate = new Date(Date.now() - this.config.auditRetention * 24 * 60 * 60 * 1000);
+    this.auditLog = this.auditLog.filter(log => log.timestamp >= cutoffDate);
+
+    logger.debug('Audit event logged', {
+      eventId: auditEvent.id,
+      userId: auditEvent.userId,
+      action: auditEvent.action,
+      result: auditEvent.result
+    });
+  }
+
+  private initializeDefaultRoles(): void {
+    // Admin role
+    this.roles.set('admin', {
+      id: 'admin',
+      name: 'Administrator',
+      description: 'Full system access',
+      permissions: ['read', 'write', 'delete', 'admin'],
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+
+    // Editor role
+    this.roles.set('editor', {
+      id: 'editor',
+      name: 'Editor',
+      description: 'Read and write access',
+      permissions: ['read', 'write'],
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+
+    // Viewer role
+    this.roles.set('viewer', {
+      id: 'viewer',
+      name: 'Viewer',
+      description: 'Read-only access',
+      permissions: ['read'],
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+  }
+
+  private initializeDefaultPolicies(): void {
+    // Default allow policy for authenticated users
+    this.policies.set('default_authenticated', {
+      id: 'default_authenticated',
+      name: 'Default Authenticated Access',
+      description: 'Basic access for authenticated users',
+      rules: [
+        {
+          id: 'allow_read',
+          effect: 'allow',
+          subjects: ['*'],
+          resources: ['public/*'],
+          actions: ['read']
+        }
+      ],
+      priority: 1,
+      enabled: true,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+
+    // Admin full access policy
+    this.policies.set('admin_full_access', {
+      id: 'admin_full_access',
+      name: 'Administrator Full Access',
+      description: 'Full system access for administrators',
+      rules: [
+        {
+          id: 'admin_all',
+          effect: 'allow',
+          subjects: ['admin'],
+          resources: ['*'],
+          actions: ['*']
+        }
+      ],
+      priority: 100,
+      enabled: true,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+  }
+
+  async shutdown(): Promise<void> {
+    logger.info('Shutting down Access Control Manager');
+
+    // Clear active sessions
+    this.activeSessions.clear();
+
+    // Clear in-memory data
+    this.policies.clear();
+    this.roles.clear();
+    this.userPermissions.clear();
+
+    logger.info('Access Control Manager shutdown complete');
+  }
+}
+
+export default AccessControlManager;

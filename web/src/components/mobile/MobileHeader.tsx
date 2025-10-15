@@ -5,26 +5,11 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { 
-  Menu, 
-  Bell, 
-  Search, 
-  Wallet, 
-  Wifi, 
-  WifiOff,
-  Battery,
-  Signal
-} from 'lucide-react';
+import { Menu, Bell, Search, Wallet, Wifi, WifiOff, Battery, Signal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { 
-  Sheet, 
-  SheetContent, 
-  SheetTrigger, 
-  SheetHeader,
-  SheetTitle 
-} from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/utils/formatCurrency';
 
@@ -64,7 +49,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
   onSearchClick,
   onNotificationClick,
   onMenuClick,
-  className
+  className,
 }) => {
   const getStudentInitials = (name: string) => {
     return name
@@ -94,12 +79,14 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
   };
 
   return (
-    <header className={cn(
-      'sticky top-0 z-50',
-      'bg-white border-b border-gray-200',
-      'safe-area-inset-top',
-      className
-    )}>
+    <header
+      className={cn(
+        'sticky top-0 z-50',
+        'bg-white border-b border-gray-200',
+        'safe-area-inset-top',
+        className
+      )}
+    >
       {/* Status bar info for PWA */}
       <div className="bg-primary/5 px-4 py-1 text-xs text-gray-600 flex justify-between items-center md:hidden">
         <div className="flex items-center space-x-2">
@@ -118,7 +105,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
             )}
           </div>
         </div>
-        
+
         <div className="flex items-center space-x-2">
           {getBatteryLevel() && (
             <div className="flex items-center space-x-1">
@@ -165,7 +152,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
                     </div>
                   </SheetTitle>
                 </SheetHeader>
-                
+
                 {/* Menu content */}
                 <div className="mt-6 space-y-4">
                   {showWallet && (
@@ -207,8 +194,8 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
                   <div className="pt-4 border-t border-gray-200">
                     <div className="flex items-center space-x-2">
                       {student.school.logo && (
-                        <img 
-                          src={student.school.logo} 
+                        <img
+                          src={student.school.logo}
                           alt={student.school.name}
                           className="h-6 w-6 rounded"
                         />
@@ -221,24 +208,15 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
             </Sheet>
 
             <div>
-              <h1 className="text-lg font-semibold text-gray-900 truncate">
-                {title}
-              </h1>
-              <p className="text-xs text-gray-500 hidden sm:block">
-                {student.school.name}
-              </p>
+              <h1 className="text-lg font-semibold text-gray-900 truncate">{title}</h1>
+              <p className="text-xs text-gray-500 hidden sm:block">{student.school.name}</p>
             </div>
           </div>
 
           {/* Right side - Actions */}
           <div className="flex items-center space-x-2">
             {showSearch && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-10 w-10 p-0"
-                onClick={onSearchClick}
-              >
+              <Button variant="ghost" size="sm" className="h-10 w-10 p-0" onClick={onSearchClick}>
                 <Search className="h-5 w-5" />
                 <span className="sr-only">Search</span>
               </Button>
@@ -269,7 +247,10 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
                   animate={{ scale: 1 }}
                   className="absolute -top-1 -right-1"
                 >
-                  <Badge variant="destructive" className="h-5 w-5 p-0 text-xs flex items-center justify-center">
+                  <Badge
+                    variant="destructive"
+                    className="h-5 w-5 p-0 text-xs flex items-center justify-center"
+                  >
                     {notificationCount > 9 ? '9+' : notificationCount}
                   </Badge>
                 </motion.div>

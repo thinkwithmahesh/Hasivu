@@ -20,14 +20,14 @@ The HASIVU Platform provides official SDKs for popular programming languages and
 
 ### Available SDKs
 
-| SDK | Language | Status | Installation |
-|-----|----------|---------|--------------|
-| JavaScript/TypeScript | JavaScript, TypeScript | ✅ Stable | `npm install @hasivu/api-sdk` |
-| React Components | React, Next.js | ✅ Stable | `npm install @hasivu/react-components` |
-| Python | Python 3.7+ | ✅ Stable | `pip install hasivu-api` |
-| Node.js | Node.js 14+ | ✅ Stable | `npm install @hasivu/node-sdk` |
-| PHP | PHP 7.4+ | 🚧 Beta | `composer require hasivu/php-sdk` |
-| Java | Java 8+ | 🚧 Beta | Maven/Gradle available |
+| SDK                   | Language               | Status    | Installation                           |
+| --------------------- | ---------------------- | --------- | -------------------------------------- |
+| JavaScript/TypeScript | JavaScript, TypeScript | ✅ Stable | `npm install @hasivu/api-sdk`          |
+| React Components      | React, Next.js         | ✅ Stable | `npm install @hasivu/react-components` |
+| Python                | Python 3.7+            | ✅ Stable | `pip install hasivu-api`               |
+| Node.js               | Node.js 14+            | ✅ Stable | `npm install @hasivu/node-sdk`         |
+| PHP                   | PHP 7.4+               | 🚧 Beta   | `composer require hasivu/php-sdk`      |
+| Java                  | Java 8+                | 🚧 Beta   | Maven/Gradle available                 |
 
 ## JavaScript/TypeScript SDK
 
@@ -49,7 +49,7 @@ const config: HasivuConfig = {
   environment: 'production', // 'development', 'staging', 'production'
   timeout: 10000,
   retryAttempts: 3,
-  retryDelay: 1000
+  retryDelay: 1000,
 };
 
 const api = new HasivuAPI(config);
@@ -62,14 +62,14 @@ const api = new HasivuAPI(config);
 const loginUser = async (email: string, password: string) => {
   try {
     const response = await api.auth.login({ email, password });
-    
+
     // Store tokens securely
     localStorage.setItem('hasivu_access_token', response.tokens.accessToken);
     localStorage.setItem('hasivu_refresh_token', response.tokens.refreshToken);
-    
+
     // Set token for subsequent requests
     api.setAccessToken(response.tokens.accessToken);
-    
+
     return response.user;
   } catch (error) {
     console.error('Login failed:', error);
@@ -119,7 +119,7 @@ interface AuthMethods {
 // Usage examples
 const user = await api.auth.login({
   email: process.env.API_CLIENT_SDK_GUIDE_PASSWORD_6,
-  password: process.env.API_CLIENT_SDK_GUIDE_PASSWORD_1
+  password: process.env.API_CLIENT_SDK_GUIDE_PASSWORD_1,
 });
 
 const newUser = await api.auth.register({
@@ -128,7 +128,7 @@ const newUser = await api.auth.register({
   firstName: 'John',
   lastName: 'Doe',
   schoolId: process.env.API_CLIENT_SDK_GUIDE_PASSWORD_4,
-  role: 'parent'
+  role: 'parent',
 });
 ```
 
@@ -137,30 +137,37 @@ const newUser = await api.auth.register({
 ```typescript
 interface PaymentMethods {
   createOrder(data: CreatePaymentOrderRequest): Promise<PaymentOrderResponse>;
-  verifyPayment(data: VerifyPaymentRequest): Promise<PaymentVerificationResponse>;
+  verifyPayment(
+    data: VerifyPaymentRequest
+  ): Promise<PaymentVerificationResponse>;
   getStatus(orderId: string): Promise<PaymentStatusResponse>;
   refund(data: RefundRequest): Promise<RefundResponse>;
-  
+
   // Payment methods management
   getPaymentMethods(): Promise<PaymentMethodListResponse>;
-  addPaymentMethod(data: AddPaymentMethodRequest): Promise<PaymentMethodResponse>;
-  updatePaymentMethod(id: string, data: UpdatePaymentMethodRequest): Promise<PaymentMethodResponse>;
+  addPaymentMethod(
+    data: AddPaymentMethodRequest
+  ): Promise<PaymentMethodResponse>;
+  updatePaymentMethod(
+    id: string,
+    data: UpdatePaymentMethodRequest
+  ): Promise<PaymentMethodResponse>;
   deletePaymentMethod(id: string): Promise<void>;
 }
 
 // Usage examples
 const paymentOrder = await api.payments.createOrder({
   userId: 'user-uuid',
-  amount: 250.00,
+  amount: 250.0,
   currency: 'INR',
   description: 'Lunch payment',
-  orderId: 'order-uuid'
+  orderId: 'order-uuid',
 });
 
 const verification = await api.payments.verifyPayment({
   razorpayOrderId: paymentOrder.razorpayOrderId,
   razorpayPaymentId: process.env.API_CLIENT_SDK_GUIDE_PASSWORD_3,
-  razorpaySignature: 'signature_hash'
+  razorpaySignature: 'signature_hash',
 });
 ```
 
@@ -171,11 +178,14 @@ interface SubscriptionMethods {
   list(filters?: SubscriptionFilters): Promise<SubscriptionListResponse>;
   create(data: CreateSubscriptionRequest): Promise<SubscriptionResponse>;
   get(id: string): Promise<SubscriptionResponse>;
-  update(id: string, data: UpdateSubscriptionRequest): Promise<SubscriptionResponse>;
+  update(
+    id: string,
+    data: UpdateSubscriptionRequest
+  ): Promise<SubscriptionResponse>;
   pause(id: string): Promise<SubscriptionResponse>;
   resume(id: string): Promise<SubscriptionResponse>;
   cancel(id: string, reason?: string): Promise<SubscriptionResponse>;
-  
+
   // Subscription plans
   getPlans(filters?: PlanFilters): Promise<SubscriptionPlanListResponse>;
   getPlan(id: string): Promise<SubscriptionPlanResponse>;
@@ -184,13 +194,13 @@ interface SubscriptionMethods {
 // Usage examples
 const subscriptions = await api.subscriptions.list({
   status: 'active',
-  schoolId: process.env.API_CLIENT_SDK_GUIDE_PASSWORD_1
+  schoolId: process.env.API_CLIENT_SDK_GUIDE_PASSWORD_1,
 });
 
 const newSubscription = await api.subscriptions.create({
   subscriptionPlanId: 'plan-uuid',
   studentId: 'student-uuid',
-  startDate: '2024-01-15'
+  startDate: '2024-01-15',
 });
 ```
 
@@ -203,14 +213,17 @@ interface OrderMethods {
   get(id: string): Promise<OrderResponse>;
   update(id: string, data: UpdateOrderRequest): Promise<OrderResponse>;
   cancel(id: string): Promise<OrderResponse>;
-  getHistory(userId: string, options?: PaginationOptions): Promise<OrderHistoryResponse>;
+  getHistory(
+    userId: string,
+    options?: PaginationOptions
+  ): Promise<OrderHistoryResponse>;
 }
 
 // Usage examples
 const orders = await api.orders.list({
   status: 'pending',
   page: 1,
-  limit: 20
+  limit: 20,
 });
 
 const newOrder = await api.orders.create({
@@ -218,11 +231,11 @@ const newOrder = await api.orders.create({
     {
       menuItemId: 'item-uuid',
       quantity: 1,
-      specialInstructions: 'No onions'
-    }
+      specialInstructions: 'No onions',
+    },
   ],
   deliveryDate: '2024-01-15',
-  specialRequests: 'Deliver to classroom 101'
+  specialRequests: 'Deliver to classroom 101',
 });
 ```
 
@@ -240,7 +253,7 @@ interface MenuMethods {
 const dailyMenu = await api.menus.getDailyMenu('school-uuid', '2024-01-15');
 const menuPlans = await api.menus.getPlans({
   schoolId: 'school-uuid',
-  status: 'APPROVED'
+  status: 'APPROVED',
 });
 ```
 
@@ -251,23 +264,30 @@ interface RFIDMethods {
   getReaders(schoolId?: string): Promise<RfidReaderListResponse>;
   testReader(readerId: string): Promise<RfidTestResponse>;
   registerCard(data: RegisterRfidCardRequest): Promise<RfidCardResponse>;
-  verifyDelivery(data: VerifyDeliveryRequest): Promise<DeliveryVerificationResponse>;
+  verifyDelivery(
+    data: VerifyDeliveryRequest
+  ): Promise<DeliveryVerificationResponse>;
   bulkVerify(data: BulkVerifyRequest): Promise<BulkVerificationResponse>;
-  trackStudent(studentId: string, options?: DateRangeOptions): Promise<StudentTrackingResponse>;
+  trackStudent(
+    studentId: string,
+    options?: DateRangeOptions
+  ): Promise<StudentTrackingResponse>;
   getParentDashboard(parentId: string): Promise<ParentDashboardResponse>;
-  getDeliveryHistory(filters?: DeliveryHistoryFilters): Promise<DeliveryHistoryResponse>;
+  getDeliveryHistory(
+    filters?: DeliveryHistoryFilters
+  ): Promise<DeliveryHistoryResponse>;
 }
 
 // Usage examples
 const verification = await api.rfid.verifyDelivery({
   cardNumber: process.env.API_CLIENT_SDK_GUIDE_PASSWORD_5,
   readerId: 'reader-uuid',
-  orderId: 'order-uuid'
+  orderId: 'order-uuid',
 });
 
 const studentTracking = await api.rfid.trackStudent('student-uuid', {
   startDate: '2024-01-01',
-  endDate: '2024-01-31'
+  endDate: '2024-01-31',
 });
 ```
 
@@ -275,10 +295,16 @@ const studentTracking = await api.rfid.trackStudent('student-uuid', {
 
 ```typescript
 interface AnalyticsMethods {
-  getPaymentDashboard(options?: AnalyticsOptions): Promise<PaymentAnalyticsResponse>;
+  getPaymentDashboard(
+    options?: AnalyticsOptions
+  ): Promise<PaymentAnalyticsResponse>;
   getPaymentTrends(options?: TrendsOptions): Promise<PaymentTrendsResponse>;
-  getSubscriptionDashboard(options?: AnalyticsOptions): Promise<SubscriptionAnalyticsResponse>;
-  getPredictiveInsights(options?: InsightsOptions): Promise<PredictiveInsightsResponse>;
+  getSubscriptionDashboard(
+    options?: AnalyticsOptions
+  ): Promise<SubscriptionAnalyticsResponse>;
+  getPredictiveInsights(
+    options?: InsightsOptions
+  ): Promise<PredictiveInsightsResponse>;
   getFraudDetection(options?: FraudOptions): Promise<FraudDetectionResponse>;
 }
 
@@ -286,12 +312,12 @@ interface AnalyticsMethods {
 const paymentAnalytics = await api.analytics.getPaymentDashboard({
   schoolId: 'school-uuid',
   startDate: '2024-01-01',
-  endDate: '2024-01-31'
+  endDate: '2024-01-31',
 });
 
 const insights = await api.analytics.getPredictiveInsights({
   schoolId: 'school-uuid',
-  insightType: 'revenue_forecast'
+  insightType: 'revenue_forecast',
 });
 ```
 
@@ -305,19 +331,23 @@ import { WebhookValidator } from '@hasivu/api-sdk';
 const validator = new WebhookValidator('your-webhook-secret');
 
 // Express.js webhook handler
-app.post('/webhooks/hasivu', express.raw({ type: 'application/json' }), (req, res) => {
-  const signature = req.headers['x-hasivu-signature'] as string;
-  const payload = req.body;
-  
-  if (!validator.isValid(payload, signature)) {
-    return res.status(401).send('Invalid signature');
+app.post(
+  '/webhooks/hasivu',
+  express.raw({ type: 'application/json' }),
+  (req, res) => {
+    const signature = req.headers['x-hasivu-signature'] as string;
+    const payload = req.body;
+
+    if (!validator.isValid(payload, signature)) {
+      return res.status(401).send('Invalid signature');
+    }
+
+    const event = JSON.parse(payload.toString());
+    handleWebhookEvent(event);
+
+    res.status(200).send('OK');
   }
-  
-  const event = JSON.parse(payload.toString());
-  handleWebhookEvent(event);
-  
-  res.status(200).send('OK');
-});
+);
 
 const handleWebhookEvent = (event: WebhookEvent) => {
   switch (event.type) {
@@ -341,21 +371,24 @@ const handleWebhookEvent = (event: WebhookEvent) => {
 ```typescript
 import { HasivuAPIError, RetryableError } from '@hasivu/api-sdk';
 
-const createOrderWithRetry = async (orderData: CreateOrderRequest, maxRetries = 3) => {
+const createOrderWithRetry = async (
+  orderData: CreateOrderRequest,
+  maxRetries = 3
+) => {
   let lastError: Error;
-  
+
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       return await api.orders.create(orderData);
     } catch (error) {
       lastError = error;
-      
+
       if (error instanceof HasivuAPIError) {
         // Don't retry client errors (4xx)
         if (error.status >= 400 && error.status < 500) {
           throw error;
         }
-        
+
         // Retry server errors (5xx) and network errors
         if (error instanceof RetryableError && attempt < maxRetries) {
           const delay = Math.pow(2, attempt) * 1000; // Exponential backoff
@@ -363,11 +396,11 @@ const createOrderWithRetry = async (orderData: CreateOrderRequest, maxRetries = 
           continue;
         }
       }
-      
+
       throw error;
     }
   }
-  
+
   throw lastError;
 };
 ```
@@ -409,52 +442,52 @@ class AuthManager:
         self.access_token = None
         self.refresh_token = None
         self.token_expires_at = None
-    
+
     def login(self, email: str, password: str) -> dict:
         try:
             response = self.api.auth.login({
                 'email': email,
                 process.env.API_CLIENT_SDK_GUIDE_PASSWORD_8: password
             })
-            
+
             self.access_token = response['tokens']['access_token']
             self.refresh_token = response['tokens']['refresh_token']
             self.token_expires_at = datetime.now() + timedelta(
                 seconds=response['tokens']['expires_in']
             )
-            
+
             # Set token for subsequent requests
             self.api.set_access_token(self.access_token)
-            
+
             return response['user']
-            
+
         except HasivuAPIError as e:
             print(f"Login failed: {e}")
             raise
-    
+
     def refresh_access_token(self) -> str:
         if not self.refresh_token:
             raise ValueError("No refresh token available")
-        
+
         try:
             response = self.api.auth.refresh({
                 'refresh_token': self.refresh_token
             })
-            
+
             self.access_token = response['access_token']
             self.token_expires_at = datetime.now() + timedelta(
                 seconds=response['expires_in']
             )
-            
+
             self.api.set_access_token(self.access_token)
             return self.access_token
-            
+
         except HasivuAPIError as e:
             print(f"Token refresh failed: {e}")
             raise
-    
+
     def ensure_valid_token(self):
-        if (self.token_expires_at and 
+        if (self.token_expires_at and
             self.token_expires_at <= datetime.now() + timedelta(minutes=5)):
             self.refresh_access_token()
 
@@ -471,11 +504,11 @@ class PaymentManager:
     def __init__(self, api: HasivuAPI, auth_manager: AuthManager):
         self.api = api
         self.auth_manager = auth_manager
-    
-    def create_payment_order(self, user_id: str, amount: float, 
+
+    def create_payment_order(self, user_id: str, amount: float,
                            order_id: str = None, description: str = None) -> dict:
         self.auth_manager.ensure_valid_token()
-        
+
         try:
             return self.api.payments.create_order({
                 'user_id': user_id,
@@ -487,11 +520,11 @@ class PaymentManager:
         except HasivuAPIError as e:
             print(f"Payment order creation failed: {e}")
             raise
-    
-    def verify_payment(self, razorpay_order_id: str, 
+
+    def verify_payment(self, razorpay_order_id: str,
                       razorpay_payment_id: str, razorpay_signature: str) -> dict:
         self.auth_manager.ensure_valid_token()
-        
+
         return self.api.payments.verify_payment({
             'razorpay_order_id': razorpay_order_id,
             'razorpay_payment_id': razorpay_payment_id,
@@ -503,19 +536,19 @@ class SubscriptionManager:
     def __init__(self, api: HasivuAPI, auth_manager: AuthManager):
         self.api = api
         self.auth_manager = auth_manager
-    
+
     def create_subscription(self, plan_id: str, student_id: str = None) -> dict:
         self.auth_manager.ensure_valid_token()
-        
+
         return self.api.subscriptions.create({
             'subscription_plan_id': plan_id,
             'student_id': student_id,
             process.env.API_CLIENT_SDK_GUIDE_PASSWORD_13: datetime.now().strftime('%Y-%m-%d')
         })
-    
+
     def get_user_subscriptions(self, filters: dict = None) -> list:
         self.auth_manager.ensure_valid_token()
-        
+
         response = self.api.subscriptions.list(filters or {})
         return response['subscriptions']
 
@@ -524,19 +557,19 @@ class AnalyticsManager:
     def __init__(self, api: HasivuAPI, auth_manager: AuthManager):
         self.api = api
         self.auth_manager = auth_manager
-    
+
     def get_payment_analytics(self, school_id: str, start_date: str, end_date: str) -> dict:
         self.auth_manager.ensure_valid_token()
-        
+
         return self.api.analytics.get_payment_dashboard({
             'school_id': school_id,
             'start_date': start_date,
             process.env.API_CLIENT_SDK_GUIDE_PASSWORD_14: end_date
         })
-    
+
     def get_predictive_insights(self, school_id: str, insight_type: str) -> dict:
         self.auth_manager.ensure_valid_token()
-        
+
         return self.api.analytics.get_predictive_insights({
             'school_id': school_id,
             'insight_type': insight_type
@@ -570,13 +603,13 @@ from hasivu_api import AsyncHasivuAPI
 
 async def main():
     api = AsyncHasivuAPI(config)
-    
+
     # Login
     user = await api.auth.login({
         'email': 'user@example.com',
         'password': process.env.API_CLIENT_SDK_GUIDE_PASSWORD_9
     })
-    
+
     # Create multiple orders concurrently
     order_tasks = [
         api.orders.create({
@@ -584,16 +617,16 @@ async def main():
         })
         for i in range(5)
     ]
-    
+
     orders = await asyncio.gather(*order_tasks)
-    
+
     # Get analytics
     analytics = await api.analytics.get_payment_dashboard({
         'school_id': 'school-uuid',
         'start_date': '2024-01-01',
         'end_date': '2024-01-31'
     })
-    
+
     print(f"Created {len(orders)} orders")
     print(f"Total revenue: ₹{analytics['total_payments']}")
 
@@ -618,7 +651,7 @@ import { HasivuProvider, HasivuConfig } from '@hasivu/react-components';
 
 const config: HasivuConfig = {
   baseURL: 'https://api.hasivu.com',
-  environment: 'production'
+  environment: 'production',
 };
 
 function App() {
@@ -643,8 +676,16 @@ export default App;
 import React, { useState } from 'react';
 import { useHasivu } from '@hasivu/react-components';
 
+interface User {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+}
+
 interface LoginFormProps {
-  onLoginSuccess?: (user: any) => void;
+  onLoginSuccess?: (user: User) => void; // Replaced 'any' with proper User interface
 }
 
 export const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
@@ -654,7 +695,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       const user = await login(email, password);
       onLoginSuccess?.(user);
@@ -671,30 +712,26 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
           id="email"
           type="email"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={e => setEmail(e.target.value)}
           required
           disabled={loading}
         />
       </div>
-      
+
       <div className="form-group">
         <label htmlFor="password">Password:</label>
         <input
           id="password"
           type="password"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={e => setPassword(e.target.value)}
           required
           disabled={loading}
         />
       </div>
-      
-      {error && (
-        <div className="error-message">
-          {error.message}
-        </div>
-      )}
-      
+
+      {error && <div className="error-message">{error.message}</div>}
+
       <button type="submit" disabled={loading}>
         {loading ? 'Logging in...' : 'Login'}
       </button>
@@ -710,10 +747,18 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
 import React, { useState, useEffect } from 'react';
 import { useHasivu } from '@hasivu/react-components';
 
+interface Payment {
+  id: string;
+  orderId: string;
+  amount: number;
+  status: string;
+  razorpayPaymentId?: string;
+}
+
 interface PaymentFormProps {
   orderId: string;
   amount: number;
-  onPaymentSuccess?: (payment: any) => void;
+  onPaymentSuccess?: (payment: Payment) => void; // Replaced 'any' with proper Payment interface
   onPaymentError?: (error: Error) => void;
 }
 
@@ -721,7 +766,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
   orderId,
   amount,
   onPaymentSuccess,
-  onPaymentError
+  onPaymentError,
 }) => {
   const { api, user } = useHasivu();
   const [paymentOrder, setPaymentOrder] = useState<any>(null);
@@ -739,7 +784,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
         userId: user.id,
         orderId,
         amount,
-        currency: 'INR'
+        currency: 'INR',
       });
       setPaymentOrder(order);
     } catch (error) {
@@ -751,7 +796,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
     if (!paymentOrder) return;
 
     setProcessing(true);
-    
+
     try {
       // Initialize Razorpay
       const options = {
@@ -761,14 +806,19 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
         order_id: paymentOrder.razorpayOrderId,
         name: 'HASIVU Platform',
         description: 'Meal Payment',
-        handler: async (response: any) => {
+        handler: async (response: {
+          razorpay_order_id: string;
+          razorpay_payment_id: string;
+          razorpay_signature: string;
+        }) => {
+          // Replaced 'any' with proper Razorpay response interface
           try {
             const verification = await api.payments.verifyPayment({
               razorpayOrderId: response.razorpay_order_id,
               razorpayPaymentId: response.razorpay_payment_id,
-              razorpaySignature: response.razorpay_signature
+              razorpaySignature: response.razorpay_signature,
             });
-            
+
             onPaymentSuccess?.(verification);
           } catch (error) {
             onPaymentError?.(error);
@@ -777,12 +827,12 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
           }
         },
         modal: {
-          ondismiss: () => setProcessing(false)
+          ondismiss: () => setProcessing(false),
         },
         prefill: {
           email: user.email,
-          contact: user.phone
-        }
+          contact: user.phone,
+        },
       };
 
       const razorpay = new (window as any).Razorpay(options);
@@ -800,13 +850,15 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
         <p>Amount: ₹{amount.toFixed(2)}</p>
         <p>Order ID: {orderId}</p>
       </div>
-      
+
       <button
         onClick={handlePayment}
         disabled={!paymentOrder || processing}
         className="pay-button"
       >
-        {processing ? process.env.API_CLIENT_SDK_GUIDE_PASSWORD_15 : `Pay ₹${amount.toFixed(2)}`}
+        {processing
+          ? process.env.API_CLIENT_SDK_GUIDE_PASSWORD_15
+          : `Pay ₹${amount.toFixed(2)}`}
       </button>
     </div>
   );
@@ -820,6 +872,24 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
 import React, { useState, useEffect } from 'react';
 import { useHasivu } from '@hasivu/react-components';
 
+interface OrderItem {
+  menuItemId: string;
+  quantity: number;
+  specialInstructions?: string;
+  menuItem?: {
+    name: string;
+  };
+}
+
+interface Order {
+  id: string;
+  orderNumber: string;
+  status: string;
+  totalAmount: number;
+  createdAt: string;
+  items?: OrderItem[];
+}
+
 interface OrderHistoryProps {
   userId?: string;
   limit?: number;
@@ -827,10 +897,10 @@ interface OrderHistoryProps {
 
 export const OrderHistory: React.FC<OrderHistoryProps> = ({
   userId,
-  limit = 20
+  limit = 20,
 }) => {
   const { api, user } = useHasivu();
-  const [orders, setOrders] = useState<any[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]); // Replaced 'any[]' with proper Order[] type
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -842,15 +912,15 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({
     try {
       setLoading(true);
       setError(null);
-      
+
       const targetUserId = userId || user?.id;
       if (!targetUserId) return;
 
       const response = await api.orders.getHistory(targetUserId, {
         page: 1,
-        limit
+        limit,
       });
-      
+
       setOrders(response.orders);
     } catch (err) {
       setError(err.message);
@@ -874,7 +944,7 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({
         <p>No orders found.</p>
       ) : (
         <div className="orders-list">
-          {orders.map((order) => (
+          {orders.map(order => (
             <div key={order.id} className="order-card">
               <div className="order-header">
                 <h3>Order #{order.orderNumber}</h3>
@@ -882,20 +952,25 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({
                   {order.status}
                 </span>
               </div>
-              
+
               <div className="order-details">
                 <p>Amount: ₹{order.totalAmount.toFixed(2)}</p>
                 <p>Date: {new Date(order.createdAt).toLocaleDateString()}</p>
-                
+
                 {order.items && (
                   <div className="order-items">
                     <h4>Items:</h4>
                     <ul>
-                      {order.items.map((item: any, index: number) => (
-                        <li key={index}>
-                          {item.menuItem?.name} x {item.quantity}
-                        </li>
-                      ))}
+                      {order.items.map(
+                        (
+                          item: OrderItem,
+                          index: number // Replaced 'any' with OrderItem type
+                        ) => (
+                          <li key={index}>
+                            {item.menuItem?.name} x {item.quantity}
+                          </li>
+                        )
+                      )}
                     </ul>
                   </div>
                 )}
@@ -916,9 +991,37 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({
 import { useState, useCallback } from 'react';
 import { useHasivu } from '@hasivu/react-components';
 
+interface PaymentOrderData {
+  userId: string;
+  orderId: string;
+  amount: number;
+  currency?: string;
+}
+
+interface PaymentOrder {
+  id: string;
+  razorpayOrderId: string;
+  amount: number;
+  currency: string;
+}
+
+interface PaymentVerificationData {
+  razorpayOrderId: string;
+  razorpayPaymentId: string;
+  razorpaySignature: string;
+}
+
+interface PaymentVerification {
+  success: boolean;
+  paymentId: string;
+  orderId: string;
+}
+
 interface UsePaymentReturn {
-  createPaymentOrder: (orderData: any) => Promise<any>;
-  verifyPayment: (verificationData: any) => Promise<any>;
+  createPaymentOrder: (orderData: PaymentOrderData) => Promise<PaymentOrder>; // Replaced 'any' with proper types
+  verifyPayment: (
+    verificationData: PaymentVerificationData
+  ) => Promise<PaymentVerification>; // Replaced 'any' with proper types
   loading: boolean;
   error: string | null;
 }
@@ -928,41 +1031,49 @@ export const usePayment = (): UsePaymentReturn => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const createPaymentOrder = useCallback(async (orderData: any) => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const result = await api.payments.createOrder(orderData);
-      return result;
-    } catch (err) {
-      setError(err.message);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, [api]);
+  const createPaymentOrder = useCallback(
+    async (orderData: PaymentOrderData) => {
+      // Replaced 'any' with PaymentOrderData
+      setLoading(true);
+      setError(null);
 
-  const verifyPayment = useCallback(async (verificationData: any) => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const result = await api.payments.verifyPayment(verificationData);
-      return result;
-    } catch (err) {
-      setError(err.message);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, [api]);
+      try {
+        const result = await api.payments.createOrder(orderData);
+        return result;
+      } catch (err) {
+        setError(err.message);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [api]
+  );
+
+  const verifyPayment = useCallback(
+    async (verificationData: PaymentVerificationData) => {
+      // Replaced 'any' with PaymentVerificationData
+      setLoading(true);
+      setError(null);
+
+      try {
+        const result = await api.payments.verifyPayment(verificationData);
+        return result;
+      } catch (err) {
+        setError(err.message);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [api]
+  );
 
   return {
     createPaymentOrder,
     verifyPayment,
     loading,
-    error
+    error,
   };
 };
 
@@ -970,9 +1081,25 @@ export const usePayment = (): UsePaymentReturn => {
 import { useState, useEffect } from 'react';
 import { useHasivu } from '@hasivu/react-components';
 
-export const useSubscriptions = (filters?: any) => {
+interface SubscriptionFilters {
+  status?: string;
+  schoolId?: string;
+  userId?: string;
+}
+
+interface Subscription {
+  id: string;
+  status: string;
+  subscriptionPlanId: string;
+  studentId?: string;
+  startDate: string;
+  billingAmount?: number;
+}
+
+export const useSubscriptions = (filters?: SubscriptionFilters) => {
+  // Replaced 'any' with SubscriptionFilters
   const { api } = useHasivu();
-  const [subscriptions, setSubscriptions] = useState<any[]>([]);
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]); // Replaced 'any[]' with Subscription[]
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -992,16 +1119,25 @@ export const useSubscriptions = (filters?: any) => {
     }
   };
 
-  const createSubscription = async (subscriptionData: any) => {
+  const createSubscription = async (subscriptionData: {
+    subscriptionPlanId: string;
+    studentId?: string;
+    startDate: string;
+  }) => {
+    // Replaced 'any' with proper subscription creation data type
     const newSubscription = await api.subscriptions.create(subscriptionData);
     setSubscriptions(prev => [...prev, newSubscription]);
     return newSubscription;
   };
 
-  const updateSubscription = async (id: string, updateData: any) => {
+  const updateSubscription = async (
+    id: string,
+    updateData: Partial<Subscription>
+  ) => {
+    // Replaced 'any' with Partial<Subscription>
     const updatedSubscription = await api.subscriptions.update(id, updateData);
     setSubscriptions(prev =>
-      prev.map(sub => sub.id === id ? updatedSubscription : sub)
+      prev.map(sub => (sub.id === id ? updatedSubscription : sub))
     );
     return updatedSubscription;
   };
@@ -1012,7 +1148,7 @@ export const useSubscriptions = (filters?: any) => {
     error,
     fetchSubscriptions,
     createSubscription,
-    updateSubscription
+    updateSubscription,
   };
 };
 ```
@@ -1034,10 +1170,12 @@ const { HasivuAPI, WebhookValidator } = require('@hasivu/node-sdk');
 const app = express();
 const api = new HasivuAPI({
   baseURL: 'https://api.hasivu.com',
-  apiKey: process.env.HASIVU_API_KEY
+  apiKey: process.env.HASIVU_API_KEY,
 });
 
-const webhookValidator = new WebhookValidator(process.env.HASIVU_WEBHOOK_SECRET);
+const webhookValidator = new WebhookValidator(
+  process.env.HASIVU_WEBHOOK_SECRET
+);
 
 // Middleware for authentication
 const authenticateUser = async (req, res, next) => {
@@ -1060,7 +1198,7 @@ app.post('/api/orders', authenticateUser, async (req, res) => {
   try {
     const order = await api.orders.create({
       ...req.body,
-      userId: req.user.id
+      userId: req.user.id,
     });
 
     res.status(201).json(order);
@@ -1071,25 +1209,29 @@ app.post('/api/orders', authenticateUser, async (req, res) => {
 });
 
 // Payment webhook handler
-app.post('/webhooks/hasivu', express.raw({ type: 'application/json' }), (req, res) => {
-  const signature = req.headers['x-hasivu-signature'];
-  
-  if (!webhookValidator.isValid(req.body, signature)) {
-    return res.status(401).send('Invalid signature');
+app.post(
+  '/webhooks/hasivu',
+  express.raw({ type: 'application/json' }),
+  (req, res) => {
+    const signature = req.headers['x-hasivu-signature'];
+
+    if (!webhookValidator.isValid(req.body, signature)) {
+      return res.status(401).send('Invalid signature');
+    }
+
+    const event = JSON.parse(req.body.toString());
+
+    // Process webhook event
+    processWebhookEvent(event)
+      .then(() => res.status(200).send('OK'))
+      .catch(error => {
+        console.error('Webhook processing failed:', error);
+        res.status(500).send('Internal Server Error');
+      });
   }
+);
 
-  const event = JSON.parse(req.body.toString());
-  
-  // Process webhook event
-  processWebhookEvent(event)
-    .then(() => res.status(200).send('OK'))
-    .catch(error => {
-      console.error('Webhook processing failed:', error);
-      res.status(500).send('Internal Server Error');
-    });
-});
-
-const processWebhookEvent = async (event) => {
+const processWebhookEvent = async event => {
   switch (event.type) {
     case 'payment.success':
       await handlePaymentSuccess(event.data);
@@ -1105,13 +1247,13 @@ const processWebhookEvent = async (event) => {
   }
 };
 
-const handlePaymentSuccess = async (paymentData) => {
+const handlePaymentSuccess = async paymentData => {
   // Update order status
   await api.orders.update(paymentData.orderId, {
     status: 'paid',
-    paymentId: paymentData.id
+    paymentId: paymentData.id,
   });
-  
+
   // Send confirmation email
   // await sendPaymentConfirmation(paymentData);
 };
@@ -1130,23 +1272,23 @@ const Queue = require('bull');
 
 const api = new HasivuAPI({
   baseURL: process.env.HASIVU_API_URL,
-  apiKey: process.env.HASIVU_API_KEY
+  apiKey: process.env.HASIVU_API_KEY,
 });
 
 const paymentQueue = new Queue('payment processing', process.env.REDIS_URL);
 
 // Process payment orders
-paymentQueue.process('create-payment', async (job) => {
+paymentQueue.process('create-payment', async job => {
   const { orderId, userId, amount } = job.data;
-  
+
   try {
     const paymentOrder = await api.payments.createOrder({
       userId,
       orderId,
       amount,
-      currency: 'INR'
+      currency: 'INR',
     });
-    
+
     return paymentOrder;
   } catch (error) {
     console.error('Payment order creation failed:', error);
@@ -1155,9 +1297,9 @@ paymentQueue.process('create-payment', async (job) => {
 });
 
 // Process subscription billing
-paymentQueue.process('process-subscription-billing', async (job) => {
+paymentQueue.process('process-subscription-billing', async job => {
   const { subscriptionId } = job.data;
-  
+
   try {
     const result = await api.subscriptions.processBilling(subscriptionId);
     return result;
@@ -1173,13 +1315,13 @@ const cron = require('node-cron');
 // Process daily subscription billing
 cron.schedule('0 9 * * *', async () => {
   console.log('Processing daily subscription billing...');
-  
+
   try {
     const dueSubscriptions = await api.subscriptions.getDueBilling();
-    
+
     for (const subscription of dueSubscriptions) {
       await paymentQueue.add('process-subscription-billing', {
-        subscriptionId: subscription.id
+        subscriptionId: subscription.id,
       });
     }
   } catch (error) {
@@ -1196,13 +1338,25 @@ module.exports = { paymentQueue };
 
 ```typescript
 // Error hierarchy
+interface ErrorDetails {
+  field?: string;
+  value?: unknown;
+  [key: string]: unknown;
+}
+
 class HasivuAPIError extends Error {
   public status: number;
   public code: string;
-  public details?: any;
+  public details?: ErrorDetails; // Replaced 'any' with ErrorDetails interface
   public requestId?: string;
 
-  constructor(message: string, status: number, code: string, details?: any) {
+  constructor(
+    message: string,
+    status: number,
+    code: string,
+    details?: ErrorDetails
+  ) {
+    // Replaced 'any' with ErrorDetails
     super(message);
     this.name = 'HasivuAPIError';
     this.status = status;
@@ -1212,7 +1366,8 @@ class HasivuAPIError extends Error {
 }
 
 class ValidationError extends HasivuAPIError {
-  constructor(message: string, details: any) {
+  constructor(message: string, details: ErrorDetails) {
+    // Replaced 'any' with ErrorDetails
     super(message, 400, 'VALIDATION_ERROR', details);
     this.name = 'ValidationError';
   }
@@ -1226,7 +1381,8 @@ class AuthenticationError extends HasivuAPIError {
 }
 
 class PaymentError extends HasivuAPIError {
-  constructor(message: string, details?: any) {
+  constructor(message: string, details?: ErrorDetails) {
+    // Replaced 'any' with ErrorDetails
     super(message, 402, 'PAYMENT_FAILED', details);
     this.name = 'PaymentError';
   }
@@ -1247,48 +1403,49 @@ class RateLimitError extends HasivuAPIError {
 
 ```typescript
 // Global error handler
-const handleAPIError = (error: any) => {
+const handleAPIError = (error: unknown) => {
+  // Replaced 'any' with 'unknown' for better type safety
   if (error instanceof HasivuAPIError) {
     switch (error.constructor) {
       case ValidationError:
         return {
           type: 'validation',
           message: 'Please check your input data',
-          details: error.details
+          details: error.details,
         };
-      
+
       case AuthenticationError:
         // Redirect to login
         window.location.href = '/login';
         return { type: 'auth', message: 'Please log in again' };
-      
+
       case PaymentError:
         return {
           type: 'payment',
           message: 'Payment failed. Please try again.',
-          details: error.details
+          details: error.details,
         };
-      
+
       case RateLimitError:
         return {
           type: 'rateLimit',
           message: `Too many requests. Please wait ${error.retryAfter} seconds.`,
-          retryAfter: error.retryAfter
+          retryAfter: error.retryAfter,
         };
-      
+
       default:
         return {
           type: 'api',
           message: error.message,
-          status: error.status
+          status: error.status,
         };
     }
   }
-  
+
   // Network or other errors
   return {
     type: 'network',
-    message: 'Network error. Please check your connection.'
+    message: 'Network error. Please check your connection.',
   };
 };
 
@@ -1299,35 +1456,40 @@ const withRetry = async <T>(
   baseDelay: number = 1000
 ): Promise<T> => {
   let lastError: Error;
-  
+
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       return await operation();
     } catch (error) {
       lastError = error;
-      
+
       // Don't retry client errors or validation errors
       if (error instanceof HasivuAPIError && error.status < 500) {
         throw error;
       }
-      
+
       if (attempt < maxAttempts) {
         const delay = baseDelay * Math.pow(2, attempt - 1);
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
   }
-  
+
   throw lastError;
 };
 
 // Usage
-const createOrderWithRetry = async (orderData: any) => {
-  return withRetry(
-    () => api.orders.create(orderData),
-    3,
-    1000
-  );
+const createOrderWithRetry = async (orderData: {
+  items: Array<{
+    menuItemId: string;
+    quantity: number;
+    specialInstructions?: string;
+  }>;
+  deliveryDate: string;
+  specialRequests?: string;
+}) => {
+  // Replaced 'any' with proper order data type
+  return withRetry(() => api.orders.create(orderData), 3, 1000);
 };
 ```
 
@@ -1349,7 +1511,7 @@ class TokenManager {
   private loadTokensFromStorage() {
     this.accessToken = localStorage.getItem('hasivu_access_token');
     this.refreshToken = localStorage.getItem('hasivu_refresh_token');
-    
+
     const expiresAt = localStorage.getItem('hasivu_token_expires_at');
     if (expiresAt) {
       this.tokenExpiresAt = new Date(expiresAt);
@@ -1364,7 +1526,10 @@ class TokenManager {
       localStorage.setItem('hasivu_refresh_token', this.refreshToken);
     }
     if (this.tokenExpiresAt) {
-      localStorage.setItem('hasivu_token_expires_at', this.tokenExpiresAt.toISOString());
+      localStorage.setItem(
+        'hasivu_token_expires_at',
+        this.tokenExpiresAt.toISOString()
+      );
     }
   }
 
@@ -1375,7 +1540,10 @@ class TokenManager {
     }
 
     // If token is still valid (with 5-minute buffer), return it
-    if (this.tokenExpiresAt && this.tokenExpiresAt.getTime() > Date.now() + 5 * 60 * 1000) {
+    if (
+      this.tokenExpiresAt &&
+      this.tokenExpiresAt.getTime() > Date.now() + 5 * 60 * 1000
+    ) {
       return this.accessToken;
     }
 
@@ -1386,7 +1554,7 @@ class TokenManager {
 
     // Refresh the token
     this.refreshPromise = this.refreshAccessToken();
-    
+
     try {
       return await this.refreshPromise;
     } finally {
@@ -1401,15 +1569,15 @@ class TokenManager {
 
     try {
       const response = await this.api.auth.refresh({
-        refreshToken: this.refreshToken
+        refreshToken: this.refreshToken,
       });
 
       this.accessToken = response.accessToken;
       this.tokenExpiresAt = new Date(Date.now() + response.expiresIn * 1000);
-      
+
       this.saveTokensToStorage();
       this.api.setAccessToken(this.accessToken);
-      
+
       return this.accessToken;
     } catch (error) {
       // Refresh failed, clear tokens
@@ -1422,7 +1590,7 @@ class TokenManager {
     this.accessToken = accessToken;
     this.refreshToken = refreshToken;
     this.tokenExpiresAt = new Date(Date.now() + expiresIn * 1000);
-    
+
     this.saveTokensToStorage();
     this.api.setAccessToken(this.accessToken);
   }
@@ -1431,11 +1599,11 @@ class TokenManager {
     this.accessToken = null;
     this.refreshToken = null;
     this.tokenExpiresAt = null;
-    
+
     localStorage.removeItem('hasivu_access_token');
     localStorage.removeItem('hasivu_refresh_token');
     localStorage.removeItem('hasivu_token_expires_at');
-    
+
     this.api.clearAccessToken();
   }
 }
@@ -1449,7 +1617,7 @@ import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { HasivuAPI } from '@hasivu/api-sdk';
 
 interface AuthState {
-  user: any | null;
+  user: User | null; // Replaced 'any' with User type
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
@@ -1457,7 +1625,7 @@ interface AuthState {
 
 type AuthAction =
   | { type: 'LOGIN_START' }
-  | { type: 'LOGIN_SUCCESS'; payload: any }
+  | { type: 'LOGIN_SUCCESS'; payload: User } // Replaced 'any' with User type
   | { type: 'LOGIN_FAILURE'; payload: string }
   | { type: 'LOGOUT' }
   | { type: 'CLEAR_ERROR' };
@@ -1466,36 +1634,36 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
   switch (action.type) {
     case 'LOGIN_START':
       return { ...state, isLoading: true, error: null };
-    
+
     case 'LOGIN_SUCCESS':
       return {
         ...state,
         isLoading: false,
         isAuthenticated: true,
         user: action.payload,
-        error: null
+        error: null,
       };
-    
+
     case 'LOGIN_FAILURE':
       return {
         ...state,
         isLoading: false,
         isAuthenticated: false,
         user: null,
-        error: action.payload
+        error: action.payload,
       };
-    
+
     case 'LOGOUT':
       return {
         ...state,
         isAuthenticated: false,
         user: null,
-        error: null
+        error: null,
       };
-    
+
     case 'CLEAR_ERROR':
       return { ...state, error: null };
-    
+
     default:
       return state;
   }
@@ -1522,12 +1690,15 @@ interface AuthProviderProps {
   api: HasivuAPI;
 }
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children, api }) => {
+export const AuthProvider: React.FC<AuthProviderProps> = ({
+  children,
+  api,
+}) => {
   const [state, dispatch] = useReducer(authReducer, {
     user: null,
     isAuthenticated: false,
     isLoading: false,
-    error: null
+    error: null,
   });
 
   useEffect(() => {
@@ -1547,7 +1718,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, api }) => 
 
   const login = async (email: string, password: string) => {
     dispatch({ type: 'LOGIN_START' });
-    
+
     try {
       const response = await api.auth.login({ email, password });
       dispatch({ type: 'LOGIN_SUCCESS', payload: response.user });
@@ -1570,14 +1741,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, api }) => 
     ...state,
     login,
     logout,
-    clearError
+    clearError,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 ```
 
@@ -1587,29 +1754,38 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, api }) => 
 
 ```typescript
 // Always handle errors gracefully
-const createOrder = async (orderData: any) => {
+const createOrder = async (orderData: {
+  items: Array<{
+    menuItemId: string;
+    quantity: number;
+    specialInstructions?: string;
+  }>;
+  deliveryDate: string;
+  specialRequests?: string;
+}) => {
+  // Replaced 'any' with proper order data type
   try {
     const order = await api.orders.create(orderData);
     return { success: true, data: order };
   } catch (error) {
     if (error instanceof ValidationError) {
-      return { 
-        success: false, 
+      return {
+        success: false,
         error: 'Please check your input data',
-        details: error.details 
+        details: error.details,
       };
     }
-    
+
     if (error instanceof PaymentError) {
-      return { 
-        success: false, 
-        error: 'Payment processing failed. Please try again.' 
+      return {
+        success: false,
+        error: 'Payment processing failed. Please try again.',
       };
     }
-    
-    return { 
-      success: false, 
-      error: 'An unexpected error occurred. Please try again.' 
+
+    return {
+      success: false,
+      error: 'An unexpected error occurred. Please try again.',
     };
   }
 };
@@ -1623,7 +1799,7 @@ const cache = new Map();
 
 const getCachedMenuItems = async (schoolId: string) => {
   const cacheKey = `menu_items_${schoolId}`;
-  
+
   if (cache.has(cacheKey)) {
     const { data, timestamp } = cache.get(cacheKey);
     // Cache for 5 minutes
@@ -1631,10 +1807,10 @@ const getCachedMenuItems = async (schoolId: string) => {
       return data;
     }
   }
-  
+
   const menuItems = await api.menus.getMenuItems({ schoolId });
   cache.set(cacheKey, { data: menuItems, timestamp: Date.now() });
-  
+
   return menuItems;
 };
 
@@ -1643,9 +1819,9 @@ const getBulkData = async (schoolId: string) => {
   const [menuItems, subscriptionPlans, analytics] = await Promise.all([
     api.menus.getMenuItems({ schoolId }),
     api.subscriptions.getPlans({ schoolId }),
-    api.analytics.getPaymentDashboard({ schoolId })
+    api.analytics.getPaymentDashboard({ schoolId }),
   ]);
-  
+
   return { menuItems, subscriptionPlans, analytics };
 };
 ```
@@ -1654,21 +1830,32 @@ const getBulkData = async (schoolId: string) => {
 
 ```typescript
 // Validate input on client side
-const validateOrderData = (orderData: any) => {
+const validateOrderData = (orderData: {
+  items: Array<{
+    menuItemId: string;
+    quantity: number;
+    specialInstructions?: string;
+  }>;
+  deliveryDate: string;
+  specialRequests?: string;
+}) => {
+  // Replaced 'any' with proper order data type
   const errors: string[] = [];
-  
+
   if (!orderData.items || !Array.isArray(orderData.items)) {
     errors.push('Items are required');
   }
-  
-  if (orderData.items.some((item: any) => !item.menuItemId)) {
+
+  if (orderData.items.some(item => !item.menuItemId)) {
+    // Removed redundant 'any' type annotation
     errors.push('All items must have a menu item ID');
   }
-  
-  if (orderData.items.some((item: any) => item.quantity <= 0)) {
+
+  if (orderData.items.some(item => item.quantity <= 0)) {
+    // Removed redundant 'any' type annotation
     errors.push('All items must have a positive quantity');
   }
-  
+
   return { isValid: errors.length === 0, errors };
 };
 
@@ -1685,10 +1872,15 @@ const sanitizeInput = (input: string) => {
 
 ```typescript
 // Log API calls for debugging
-const logAPICall = (method: string, endpoint: string, data?: any) => {
+const logAPICall = (
+  method: string,
+  endpoint: string,
+  data?: Record<string, unknown>
+) => {
+  // Replaced 'any' with Record<string, unknown>
   console.log(`API Call: ${method} ${endpoint}`, {
     timestamp: new Date().toISOString(),
-    data: data ? JSON.stringify(data, null, 2) : null
+    data: data ? JSON.stringify(data, null, 2) : null,
   });
 };
 
@@ -1698,16 +1890,19 @@ const withPerformanceTracking = async <T>(
   operationName: string
 ): Promise<T> => {
   const startTime = performance.now();
-  
+
   try {
     const result = await operation();
     const endTime = performance.now();
-    
+
     console.log(`${operationName} completed in ${endTime - startTime}ms`);
     return result;
   } catch (error) {
     const endTime = performance.now();
-    console.error(`${operationName} failed after ${endTime - startTime}ms:`, error);
+    console.error(
+      `${operationName} failed after ${endTime - startTime}ms:`,
+      error
+    );
     throw error;
   }
 };
@@ -1722,19 +1917,32 @@ const withPerformanceTracking = async <T>(
 class OrderService {
   constructor(private api: HasivuAPI) {}
 
-  async completeOrder(orderData: any, paymentMethodId?: string) {
+  async completeOrder(
+    orderData: {
+      userId: string;
+      items: Array<{
+        menuItemId: string;
+        quantity: number;
+        specialInstructions?: string;
+      }>;
+      deliveryDate: string;
+      specialRequests?: string;
+    },
+    paymentMethodId?: string
+  ) {
+    // Replaced 'any' with proper order data type
     try {
       // 1. Create order
       const order = await this.api.orders.create(orderData);
-      
+
       // 2. Create payment order
       const paymentOrder = await this.api.payments.createOrder({
         userId: orderData.userId,
         orderId: order.id,
         amount: order.totalAmount,
-        currency: 'INR'
+        currency: 'INR',
       });
-      
+
       // 3. Process payment (example with saved payment method)
       let paymentResult;
       if (paymentMethodId) {
@@ -1745,42 +1953,46 @@ class OrderService {
       } else {
         paymentResult = await this.processNewPayment(paymentOrder);
       }
-      
+
       // 4. Update order status
       if (paymentResult.success) {
         await this.api.orders.update(order.id, {
           status: 'confirmed',
-          paymentId: paymentResult.paymentId
+          paymentId: paymentResult.paymentId,
         });
       }
-      
+
       return {
         success: paymentResult.success,
         order,
-        payment: paymentResult
+        payment: paymentResult,
       };
-      
     } catch (error) {
       console.error('Order completion failed:', error);
       throw error;
     }
   }
 
-  private async processStoredPayment(paymentOrder: any, paymentMethodId: string) {
+  private async processStoredPayment(
+    paymentOrder: PaymentOrder,
+    paymentMethodId: string
+  ) {
+    // Replaced 'any' with PaymentOrder
     // Implementation depends on your stored payment method handling
     // This is a simplified example
     return {
       success: true,
-      paymentId: process.env.API_CLIENT_SDK_GUIDE_PASSWORD_16
+      paymentId: 'payment-id-placeholder',
     };
   }
 
-  private async processNewPayment(paymentOrder: any) {
+  private async processNewPayment(paymentOrder: PaymentOrder) {
+    // Replaced 'any' with PaymentOrder
     // Return payment order for frontend to handle with Razorpay
     return {
       success: false,
       requiresUserAction: true,
-      paymentOrder
+      paymentOrder,
     };
   }
 }
@@ -1796,45 +2008,48 @@ class SubscriptionService {
     try {
       // Get plan details
       const plan = await this.api.subscriptions.getPlan(planId);
-      
+
       // Create subscription with trial if applicable
       const subscriptionData = {
         subscriptionPlanId: planId,
         studentId: studentId,
-        startDate: new Date().toISOString().split('T')[0]
+        startDate: new Date().toISOString().split('T')[0],
       };
-      
+
       if (plan.trialPeriodDays > 0) {
         subscriptionData.isTrialActive = true;
         subscriptionData.trialEndDate = new Date(
           Date.now() + plan.trialPeriodDays * 24 * 60 * 60 * 1000
-        ).toISOString().split('T')[0];
+        )
+          .toISOString()
+          .split('T')[0];
       }
-      
-      const subscription = await this.api.subscriptions.create(subscriptionData);
-      
+
+      const subscription =
+        await this.api.subscriptions.create(subscriptionData);
+
       // If not in trial, create immediate payment
       if (!subscriptionData.isTrialActive) {
         await this.processSubscriptionPayment(subscription);
       }
-      
+
       return subscription;
-      
     } catch (error) {
       console.error('Subscription creation failed:', error);
       throw error;
     }
   }
 
-  async processSubscriptionPayment(subscription: any) {
+  async processSubscriptionPayment(subscription: Subscription) {
+    // Replaced 'any' with Subscription
     const paymentOrder = await this.api.payments.createOrder({
-      userId: subscription.userId,
+      userId: subscription.userId || 'user-id', // Assuming subscription has userId
       subscriptionId: subscription.id,
-      amount: subscription.billingAmount,
+      amount: subscription.billingAmount || 0,
       currency: 'INR',
-      description: `Subscription payment - ${subscription.subscriptionPlan?.name}`
+      description: `Subscription payment - Plan ID: ${subscription.subscriptionPlanId}`,
     });
-    
+
     return paymentOrder;
   }
 
@@ -1842,23 +2057,22 @@ class SubscriptionService {
     try {
       // Get subscription details
       const subscription = await this.api.subscriptions.get(subscriptionId);
-      
+
       // Retry payment
       const retryResult = await this.api.payments.retry({
         subscriptionId: subscriptionId,
-        retryMethod: 'auto'
+        retryMethod: 'auto',
       });
-      
+
       // If retry fails, pause subscription after grace period
       if (!retryResult.success) {
         await this.api.subscriptions.update(subscriptionId, {
           status: 'suspended',
-          suspendedAt: new Date().toISOString()
+          suspendedAt: new Date().toISOString(),
         });
       }
-      
+
       return retryResult;
-      
     } catch (error) {
       console.error('Failed payment handling failed:', error);
       throw error;
@@ -1877,13 +2091,19 @@ class AnalyticsDashboard {
 
   constructor(
     private api: HasivuAPI,
-    private onDataUpdate: (data: any) => void
+    private onDataUpdate: (data: {
+      payments: unknown;
+      subscriptions: unknown;
+      orders: Order[];
+      deliveries: unknown;
+      lastUpdated: Date;
+    }) => void // Replaced 'any' with proper dashboard data type
   ) {}
 
   async start(schoolId: string) {
     // Initial load
     await this.updateData(schoolId);
-    
+
     // Set up periodic updates
     this.intervalId = setInterval(() => {
       this.updateData(schoolId);
@@ -1920,7 +2140,7 @@ class AnalyticsDashboard {
       };
 
       this.onDataUpdate(dashboardData);
-      
+
     } catch (error) {
       console.error('Dashboard data update failed:', error);
     }
@@ -1930,7 +2150,13 @@ class AnalyticsDashboard {
 // Usage in React
 const Dashboard: React.FC<{ schoolId: string }> = ({ schoolId }) => {
   const { api } = useHasivu();
-  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [dashboardData, setDashboardData] = useState<{
+    payments: unknown;
+    subscriptions: unknown;
+    orders: Order[];
+    deliveries: unknown;
+    lastUpdated: Date;
+  } | null>(null); // Replaced 'any' with proper dashboard data type
 
   useEffect(() => {
     const dashboard = new AnalyticsDashboard(api, setDashboardData);
@@ -1950,23 +2176,23 @@ const Dashboard: React.FC<{ schoolId: string }> = ({ schoolId }) => {
           <h3>Total Revenue</h3>
           <p>₹{dashboardData.payments.totalPayments.toFixed(2)}</p>
         </div>
-        
+
         <div className="stat-card">
           <h3>Active Subscriptions</h3>
           <p>{dashboardData.subscriptions.activeSubscriptions}</p>
         </div>
-        
+
         <div className="stat-card">
           <h3>Today's Orders</h3>
           <p>{dashboardData.orders.length}</p>
         </div>
-        
+
         <div className="stat-card">
           <h3>Delivery Rate</h3>
           <p>{(dashboardData.deliveries.deliveryRate * 100).toFixed(1)}%</p>
         </div>
       </div>
-      
+
       <div className="last-updated">
         Last updated: {dashboardData.lastUpdated.toLocaleTimeString()}
       </div>

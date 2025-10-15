@@ -1,0 +1,475 @@
+/**
+ * HASIVU Platform - Currency Settings Component
+ *
+ * A comprehensive settings interface for managing currency preferences,
+ * exchange rates, and display options. Demonstrates the full capabilities
+ * of the currency handling system.
+ */
+
+'use client';
+
+import React from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Separator } from '@/components/ui/separator';
+import { Label } from '@/components/ui/label';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  RefreshCw,
+  DollarSign,
+  Euro,
+  IndianRupee,
+  Clock,
+  AlertTriangle,
+  CheckCircle,
+  Settings,
+} from 'lucide-react';
+import { useCurrency, useCurrencyFormatter } from '@/hooks/use-currency';
+import {
+  CURRENCY_CONFIGS as _CURRENCY_CONFIGS,
+  type SupportedCurrency,
+} from '@/utils/formatCurrency';
+
+// ============================================================================
+// Types and Interfaces
+// ============================================================================
+
+export interface CurrencySettingsProps {
+  className?: string;
+}
+
+// ============================================================================
+// Currency Icon Mapping
+// ============================================================================
+
+const CurrencyIcons = {
+  INR: IndianRupee,
+  USD: DollarSign,
+  EUR: Euro,
+} as const;
+
+// ============================================================================
+// Sample Data for Demonstration
+// ============================================================================
+
+const SAMPLE_AMOUNTS = [
+  { label: 'Meal Price', amount: 150, description: 'Typical school meal' },
+  { label: 'Daily Budget', amount: 500, description: 'Student daily spending' },
+  { label: 'Monthly Fee', amount: 15000, description: 'School meal plan' },
+  { label: 'Large Amount', amount: 1500000, description: 'Demonstration of abbreviation' },
+];
+
+// ============================================================================
+// Main Component
+// ============================================================================
+
+export const CurrencySettings: React.FC<CurrencySettingsProps> = ({ className }) => {
+  const {
+    state,
+    format,
+    formatAbbreviated,
+    formatRange,
+    formatChange,
+    updatePreferences,
+    setPrimaryCurrency,
+    setDisplayCurrency,
+    refreshRates,
+    toggleAutoUpdate,
+    getSupportedCurrencies,
+  } = useCurrency();
+
+  const { format: formatINR } = useCurrencyFormatter('INR');
+  const { format: formatUSD } = useCurrencyFormatter('USD');
+  const { format: formatEUR } = useCurrencyFormatter('EUR');
+
+  const supportedCurrencies = getSupportedCurrencies();
+
+  // ============================================================================
+  // Event Handlers
+  // ============================================================================
+
+  const handlePrimaryCurrencyChange = (currency: string) => {
+    setPrimaryCurrency(currency as SupportedCurrency);
+  };
+
+  const handleDisplayCurrencyChange = (currency: string) => {
+    setDisplayCurrency(currency as SupportedCurrency);
+  };
+
+  const handleAutoUpdateToggle = (enabled: boolean) => {
+    toggleAutoUpdate(enabled);
+  };
+
+  const handleAbbreviatedFormatToggle = (enabled: boolean) => {
+    updatePreferences({ useAbbreviatedFormat: enabled });
+  };
+
+  const handleAlternateCurrencyToggle = (enabled: boolean) => {
+    updatePreferences({ showAlternateCurrency: enabled });
+  };
+
+  const handleRefreshRates = async () => {
+    await refreshRates();
+  };
+
+  // ============================================================================
+  // Helper Functions
+  // ============================================================================
+
+  const getSourceBadgeVariant = (source: string) => {
+    switch (source) {
+      case 'api':
+        return 'default';
+      case 'cache':
+        return 'secondary';
+      case 'fallback':
+        return 'destructive';
+      default:
+        return 'outline';
+    }
+  };
+
+  const getSourceLabel = (source: string) => {
+    switch (source) {
+      case 'api':
+        return 'Live Data';
+      case 'cache':
+        return 'Cached';
+      case 'fallback':
+        return 'Offline Mode';
+      default:
+        return 'Unknown';
+    }
+  };
+
+  // ============================================================================
+  // Render Methods
+  // ============================================================================
+
+  const renderCurrencySelector = (
+    value: SupportedCurrency,
+    onChange: (value: string) => void,
+    label: string
+  ) => (
+    <div className="space-y-2">
+      <Label className="text-sm font-medium">{label}</Label>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {Object.entries(supportedCurrencies).map(([code, config]) => {
+            const IconComponent = CurrencyIcons[code as SupportedCurrency];
+            return (
+              <SelectItem key={code} value={code}>
+                <div className="flex items-center gap-2">
+                  <IconComponent className="h-4 w-4" />
+                  <span>
+                    {config.symbol} {config.name}
+                  </span>
+                </div>
+              </SelectItem>
+            );
+          })}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+
+  const renderExchangeRateStatus = () => {
+    // Show skeleton loading when data is being fetched
+    if (state.isLoading) {
+      return (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-4 w-4 rounded-full" />
+              <Skeleton className="h-4 w-32" />
+            </div>
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-6 w-20 rounded-full" />
+              <Skeleton className="h-8 w-8 rounded" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-4 w-4 rounded-full" />
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-4 w-16" />
+            </div>
+
+            <div className="space-y-1">
+              <Skeleton className="h-4 w-40" />
+              <Skeleton className="h-4 w-40" />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (!state.exchangeRates) {
+      return (
+        <Alert>
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            Exchange rates are not available. Some conversion features may be limited.
+          </AlertDescription>
+        </Alert>
+      );
+    }
+
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <CheckCircle className="h-4 w-4 text-green-500" />
+            <span className="text-sm font-medium">Exchange Rates</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge variant={getSourceBadgeVariant(state.exchangeRates.source)}>
+              {getSourceLabel(state.exchangeRates.source)}
+            </Badge>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefreshRates}
+              disabled={state.isLoading}
+            >
+              <RefreshCw className={`h-4 w-4 ${state.isLoading ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4 text-muted-foreground" />
+            <span className="text-muted-foreground">Last updated:</span>
+            <span>{state.rateAge}</span>
+          </div>
+
+          {state.exchangeRates && (
+            <div className="space-y-1">
+              <div>1 INR = ${state.exchangeRates.rates.USD.toFixed(4)} USD</div>
+              <div>1 INR = €{state.exchangeRates.rates.EUR.toFixed(4)} EUR</div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderFormatPreview = () => (
+    <div className="space-y-4">
+      <h4 className="font-medium">Format Preview</h4>
+      <div className="space-y-3">
+        {SAMPLE_AMOUNTS.map((sample, index) => {
+          const formatted = format(sample.amount);
+          const abbreviated = formatAbbreviated(sample.amount);
+
+          return (
+            <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+              <div>
+                <div className="font-medium">{sample.label}</div>
+                <div className="text-sm text-muted-foreground">{sample.description}</div>
+              </div>
+              <div className="text-right">
+                <div className="font-mono">{formatted}</div>
+                <div className="text-xs text-muted-foreground">Abbreviated: {abbreviated}</div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  const renderCurrencyComparison = () => (
+    <div className="space-y-4">
+      <h4 className="font-medium">Currency Comparison</h4>
+      <div className="grid grid-cols-1 gap-4">
+        {SAMPLE_AMOUNTS.slice(0, 2).map((sample, index) => (
+          <div key={index} className="p-4 border rounded-lg">
+            <div className="font-medium mb-2">{sample.label}</div>
+            <div className="grid grid-cols-3 gap-4 text-sm">
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-1 mb-1">
+                  <IndianRupee className="h-4 w-4" />
+                  <span className="font-medium">INR</span>
+                </div>
+                <div className="font-mono">{formatINR(sample.amount)}</div>
+              </div>
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-1 mb-1">
+                  <DollarSign className="h-4 w-4" />
+                  <span className="font-medium">USD</span>
+                </div>
+                <div className="font-mono">{formatUSD(sample.amount * 0.012)}</div>
+              </div>
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-1 mb-1">
+                  <Euro className="h-4 w-4" />
+                  <span className="font-medium">EUR</span>
+                </div>
+                <div className="font-mono">{formatEUR(sample.amount * 0.011)}</div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  // ============================================================================
+  // Main Render
+  // ============================================================================
+
+  return (
+    <div className={`space-y-6 ${className}`}>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Settings className="h-5 w-5" />
+            Currency Settings
+          </CardTitle>
+          <CardDescription>
+            Configure your currency preferences and display options for the HASIVU platform.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Currency Selection */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {renderCurrencySelector(
+              state.preferences.primaryCurrency,
+              handlePrimaryCurrencyChange,
+              'Primary Currency'
+            )}
+            {renderCurrencySelector(
+              state.preferences.displayCurrency,
+              handleDisplayCurrencyChange,
+              'Display Currency'
+            )}
+          </div>
+
+          <Separator />
+
+          {/* Display Options */}
+          <div className="space-y-4">
+            <h3 className="font-medium">Display Options</h3>
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Abbreviated Format</Label>
+                  <div className="text-sm text-muted-foreground">
+                    Show large amounts with K, L, Cr abbreviations
+                  </div>
+                </div>
+                <Switch
+                  checked={state.preferences.useAbbreviatedFormat}
+                  onCheckedChange={handleAbbreviatedFormatToggle}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Show Alternate Currency</Label>
+                  <div className="text-sm text-muted-foreground">
+                    Display amounts in both primary and display currency
+                  </div>
+                </div>
+                <Switch
+                  checked={state.preferences.showAlternateCurrency}
+                  onCheckedChange={handleAlternateCurrencyToggle}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Auto-Update Rates</Label>
+                  <div className="text-sm text-muted-foreground">
+                    Automatically fetch latest exchange rates
+                  </div>
+                </div>
+                <Switch
+                  checked={state.preferences.autoUpdateRates}
+                  onCheckedChange={handleAutoUpdateToggle}
+                />
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Exchange Rate Status */}
+          {renderExchangeRateStatus()}
+
+          {state.error && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>{state.error}</AlertDescription>
+            </Alert>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Format Preview */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Format Preview</CardTitle>
+          <CardDescription>
+            See how amounts will be displayed with your current settings.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>{renderFormatPreview()}</CardContent>
+      </Card>
+
+      {/* Currency Comparison */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Currency Comparison</CardTitle>
+          <CardDescription>Compare sample amounts across all supported currencies.</CardDescription>
+        </CardHeader>
+        <CardContent>{renderCurrencyComparison()}</CardContent>
+      </Card>
+
+      {/* Additional Examples */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Advanced Formatting Examples</CardTitle>
+          <CardDescription>Examples of specialized currency formatting functions.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Range Formatting</Label>
+              <div className="p-3 border rounded font-mono">{formatRange(100, 500)}</div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Change Formatting</Label>
+              <div className="space-y-1">
+                <div className="p-2 border rounded font-mono text-green-600">
+                  {formatChange(50)}
+                </div>
+                <div className="p-2 border rounded font-mono text-red-600">{formatChange(-25)}</div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default CurrencySettings;

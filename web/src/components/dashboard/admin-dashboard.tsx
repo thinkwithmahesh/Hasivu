@@ -1,24 +1,46 @@
-"use client"
+'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
-} from "@/components/ui/table";
-import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  LineChart, Line, PieChart, Pie, Cell, Area, AreaChart
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  Area,
+  AreaChart,
 } from 'recharts';
-import { 
-  Users, DollarSign, TrendingUp, ChefHat, AlertCircle,
-  CheckCircle2, Clock, Filter, Download, School
+import {
+  Users,
+  DollarSign,
+  TrendingUp,
+  ChefHat,
+  AlertCircle,
+  CheckCircle2,
+  Clock,
+  Filter,
+  Download,
+  School,
 } from 'lucide-react';
 import { cn, formatCurrency, formatDate } from '@/lib/utils';
-import { MealOrder, Student, SchoolAnalytics, NutritionalInfo } from './types';
+import { MealOrder, SchoolAnalytics, PopularMeal, MealItem } from './types';
 
 interface AdminDashboardProps {
   className?: string;
@@ -38,11 +60,11 @@ const mockSchoolAnalytics: SchoolAnalytics = {
     { name: 'Sandwich Combo', orders: 250, revenue: 10000 },
   ],
   nutritionCompliance: 92,
-  wasteReduction: 15
+  wasteReduction: 15,
 };
 
-const mockRecentOrders: (MealOrder & { 
-  checked?: boolean; 
+const mockRecentOrders: (MealOrder & {
+  checked?: boolean;
   estimatedTime?: string;
   kitchenNotes?: string;
 })[] = [
@@ -54,15 +76,23 @@ const mockRecentOrders: (MealOrder & {
     section: 'A',
     mealType: 'lunch',
     items: [
-      { 
-        id: '1', 
-        name: 'Vegetable Biryani', 
-        category: 'main', 
-        price: 45, 
-        quantity: 1, 
-        nutritionalInfo: { calories: 420, protein: 12, carbs: 65, fat: 15, fiber: 6, sodium: 650, sugar: 8 }, 
-        isVegetarian: true 
-      }
+      {
+        id: '1',
+        name: 'Vegetable Biryani',
+        category: 'main',
+        price: 45,
+        quantity: 1,
+        nutritionalInfo: {
+          calories: 420,
+          protein: 12,
+          carbs: 65,
+          fat: 15,
+          fiber: 6,
+          sodium: 650,
+          sugar: 8,
+        },
+        isVegetarian: true,
+      },
     ],
     status: 'pending',
     orderDate: '2024-01-12',
@@ -70,7 +100,7 @@ const mockRecentOrders: (MealOrder & {
     priority: 'high',
     checked: false,
     estimatedTime: '15 min',
-    kitchenNotes: 'Extra vegetables requested'
+    kitchenNotes: 'Extra vegetables requested',
   },
   {
     id: '2',
@@ -80,22 +110,30 @@ const mockRecentOrders: (MealOrder & {
     section: 'B',
     mealType: 'lunch',
     items: [
-      { 
-        id: '2', 
-        name: 'Dal Rice Bowl', 
-        category: 'main', 
-        price: 40, 
-        quantity: 1, 
-        nutritionalInfo: { calories: 380, protein: 14, carbs: 60, fat: 12, fiber: 8, sodium: 580, sugar: 5 }, 
-        isVegetarian: true 
-      }
+      {
+        id: '2',
+        name: 'Dal Rice Bowl',
+        category: 'main',
+        price: 40,
+        quantity: 1,
+        nutritionalInfo: {
+          calories: 380,
+          protein: 14,
+          carbs: 60,
+          fat: 12,
+          fiber: 8,
+          sodium: 580,
+          sugar: 5,
+        },
+        isVegetarian: true,
+      },
     ],
     status: 'preparing',
     orderDate: '2024-01-12',
     totalAmount: 40,
     priority: 'medium',
     checked: false,
-    estimatedTime: '10 min'
+    estimatedTime: '10 min',
   },
   {
     id: '3',
@@ -105,21 +143,29 @@ const mockRecentOrders: (MealOrder & {
     section: 'A',
     mealType: 'snack',
     items: [
-      { 
-        id: '3', 
-        name: 'Fruit Salad', 
-        category: 'dessert', 
-        price: 30, 
-        quantity: 2, 
-        nutritionalInfo: { calories: 120, protein: 2, carbs: 25, fat: 1, fiber: 4, sodium: 10, sugar: 20 }, 
-        isVegetarian: true 
-      }
+      {
+        id: '3',
+        name: 'Fruit Salad',
+        category: 'dessert',
+        price: 30,
+        quantity: 2,
+        nutritionalInfo: {
+          calories: 120,
+          protein: 2,
+          carbs: 25,
+          fat: 1,
+          fiber: 4,
+          sodium: 10,
+          sugar: 20,
+        },
+        isVegetarian: true,
+      },
     ],
     status: 'ready',
     orderDate: '2024-01-12',
     totalAmount: 60,
     priority: 'low',
-    checked: false
+    checked: false,
   },
   {
     id: '4',
@@ -129,22 +175,30 @@ const mockRecentOrders: (MealOrder & {
     section: 'C',
     mealType: 'breakfast',
     items: [
-      { 
-        id: '4', 
-        name: 'Healthy Breakfast Bowl', 
-        category: 'main', 
-        price: 35, 
-        quantity: 1, 
-        nutritionalInfo: { calories: 320, protein: 15, carbs: 45, fat: 10, fiber: 8, sodium: 400, sugar: 12 }, 
-        isVegetarian: true 
-      }
+      {
+        id: '4',
+        name: 'Healthy Breakfast Bowl',
+        category: 'main',
+        price: 35,
+        quantity: 1,
+        nutritionalInfo: {
+          calories: 320,
+          protein: 15,
+          carbs: 45,
+          fat: 10,
+          fiber: 8,
+          sodium: 400,
+          sugar: 12,
+        },
+        isVegetarian: true,
+      },
     ],
     status: 'completed',
     orderDate: '2024-01-12',
     totalAmount: 35,
     priority: 'medium',
-    checked: true
-  }
+    checked: true,
+  },
 ];
 
 const mockRevenueData = [
@@ -153,7 +207,7 @@ const mockRevenueData = [
   { month: 'Sep', revenue: 145000, orders: 3200 },
   { month: 'Oct', revenue: 138000, orders: 3100 },
   { month: 'Nov', revenue: 152000, orders: 3350 },
-  { month: 'Dec', revenue: 156750, orders: 3450 }
+  { month: 'Dec', revenue: 156750, orders: 3450 },
 ];
 
 const mockNutritionReports = [
@@ -163,7 +217,7 @@ const mockNutritionReports = [
     averageCalories: 1650,
     proteinGoal: 88,
     nutritionScore: 85,
-    compliance: 92
+    compliance: 92,
   },
   {
     class: '7th Grade',
@@ -171,7 +225,7 @@ const mockNutritionReports = [
     averageCalories: 1720,
     proteinGoal: 90,
     nutritionScore: 89,
-    compliance: 94
+    compliance: 94,
   },
   {
     class: '8th Grade',
@@ -179,7 +233,7 @@ const mockNutritionReports = [
     averageCalories: 1800,
     proteinGoal: 95,
     nutritionScore: 91,
-    compliance: 96
+    compliance: 96,
   },
   {
     class: '9th Grade',
@@ -187,7 +241,7 @@ const mockNutritionReports = [
     averageCalories: 1900,
     proteinGoal: 98,
     nutritionScore: 87,
-    compliance: 89
+    compliance: 89,
   },
   {
     class: '10th Grade',
@@ -195,8 +249,8 @@ const mockNutritionReports = [
     averageCalories: 1950,
     proteinGoal: 100,
     nutritionScore: 93,
-    compliance: 95
-  }
+    compliance: 95,
+  },
 ];
 
 const mockOperationalMetrics = {
@@ -214,7 +268,7 @@ const COLORS = {
   success: '#4CAF50',
   warning: '#FFC107',
   error: '#F44336',
-  info: '#2196F3'
+  info: '#2196F3',
 };
 
 export function AdminDashboard({ className }: AdminDashboardProps) {
@@ -237,30 +291,38 @@ export function AdminDashboard({ className }: AdminDashboardProps) {
     } else {
       setSelectedOrders(selectedOrders.filter(id => id !== orderId));
     }
-    
-    setOrders(orders.map(order => 
-      order.id === orderId ? { ...order, checked } : order
-    ));
+
+    setOrders(orders.map(order => (order.id === orderId ? { ...order, checked } : order)));
   };
 
   const handleSelectAll = (checked: boolean) => {
-    const visibleOrderIds = orders.filter(order => order.status !== 'completed').map(order => order.id);
+    const visibleOrderIds = orders
+      .filter(order => order.status !== 'completed')
+      .map(order => order.id);
     setSelectedOrders(checked ? visibleOrderIds : []);
-    setOrders(orders.map(order => ({ ...order, checked: checked && order.status !== 'completed' })));
+    setOrders(
+      orders.map(order => ({ ...order, checked: checked && order.status !== 'completed' }))
+    );
   };
 
-  const revenueGrowth = mockRevenueData.length > 1 ? 
-    ((mockRevenueData[mockRevenueData.length - 1].revenue - mockRevenueData[mockRevenueData.length - 2].revenue) / 
-     mockRevenueData[mockRevenueData.length - 2].revenue * 100) : 0;
+  const revenueGrowth =
+    mockRevenueData.length > 1
+      ? ((mockRevenueData[mockRevenueData.length - 1].revenue -
+          mockRevenueData[mockRevenueData.length - 2].revenue) /
+          mockRevenueData[mockRevenueData.length - 2].revenue) *
+        100
+      : 0;
 
-  const popularMealsData = mockSchoolAnalytics.popularMeals.map((meal, index) => ({
-    ...meal,
-    fill: `hsl(${120 + index * 60}, 70%, 50%)`
-  }));
+  const popularMealsData = mockSchoolAnalytics.popularMeals.map(
+    (meal: PopularMeal, index: number) => ({
+      ...meal,
+      fill: `hsl(${120 + index * 60}, 70%, 50%)`,
+    })
+  );
 
   if (isLoading) {
     return (
-      <div className={cn("space-y-6", className)}>
+      <div className={cn('space-y-6', className)}>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <Card key={i}>
@@ -279,7 +341,7 @@ export function AdminDashboard({ className }: AdminDashboardProps) {
   }
 
   return (
-    <div className={cn("space-y-6", className)}>
+    <div className={cn('space-y-6', className)}>
       {/* Header */}
       <div className="bg-gradient-to-r from-primary-500 to-primary-600 rounded-lg p-6 text-white">
         <div className="flex items-center justify-between">
@@ -290,7 +352,9 @@ export function AdminDashboard({ className }: AdminDashboardProps) {
           <div className="flex items-center gap-4">
             <div className="text-right">
               <p className="text-sm text-primary-100">This Month</p>
-              <p className="text-2xl font-bold">{formatCurrency(mockSchoolAnalytics.totalRevenue)}</p>
+              <p className="text-2xl font-bold">
+                {formatCurrency(mockSchoolAnalytics.totalRevenue)}
+              </p>
             </div>
             <School className="h-8 w-8 text-primary-200" />
           </div>
@@ -305,10 +369,10 @@ export function AdminDashboard({ className }: AdminDashboardProps) {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockSchoolAnalytics.totalStudents.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">
-              Active in meal program
-            </p>
+            <div className="text-2xl font-bold">
+              {mockSchoolAnalytics.totalStudents.toLocaleString()}
+            </div>
+            <p className="text-xs text-muted-foreground">Active in meal program</p>
           </CardContent>
         </Card>
 
@@ -321,11 +385,11 @@ export function AdminDashboard({ className }: AdminDashboardProps) {
             <div className="text-2xl font-bold">
               {formatCurrency(mockSchoolAnalytics.totalRevenue)}
             </div>
-            <p className={cn(
-              "text-xs",
-              revenueGrowth >= 0 ? "text-success-600" : "text-error-600"
-            )}>
-              {revenueGrowth >= 0 ? '+' : ''}{revenueGrowth.toFixed(1)}% from last month
+            <p
+              className={cn('text-xs', revenueGrowth >= 0 ? 'text-success-600' : 'text-error-600')}
+            >
+              {revenueGrowth >= 0 ? '+' : ''}
+              {revenueGrowth.toFixed(1)}% from last month
             </p>
           </CardContent>
         </Card>
@@ -336,7 +400,9 @@ export function AdminDashboard({ className }: AdminDashboardProps) {
             <ChefHat className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockSchoolAnalytics.totalOrders.toLocaleString()}</div>
+            <div className="text-2xl font-bold">
+              {mockSchoolAnalytics.totalOrders.toLocaleString()}
+            </div>
             <p className="text-xs text-muted-foreground">
               Avg {formatCurrency(mockSchoolAnalytics.averageOrderValue)} per order
             </p>
@@ -352,10 +418,7 @@ export function AdminDashboard({ className }: AdminDashboardProps) {
             <div className="text-2xl font-bold text-success-600">
               {mockSchoolAnalytics.nutritionCompliance}%
             </div>
-            <Progress 
-              value={mockSchoolAnalytics.nutritionCompliance} 
-              className="mt-2"
-            />
+            <Progress value={mockSchoolAnalytics.nutritionCompliance} className="mt-2" />
           </CardContent>
         </Card>
       </div>
@@ -384,17 +447,17 @@ export function AdminDashboard({ className }: AdminDashboardProps) {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="month" />
                     <YAxis />
-                    <Tooltip 
+                    <Tooltip
                       formatter={(value, name) => [
                         name === 'revenue' ? formatCurrency(Number(value)) : value,
-                        name === 'revenue' ? 'Revenue' : 'Orders'
+                        name === 'revenue' ? 'Revenue' : 'Orders',
                       ]}
                     />
-                    <Area 
-                      type="monotone" 
-                      dataKey="revenue" 
-                      stroke={COLORS.primary} 
-                      fill={COLORS.primary} 
+                    <Area
+                      type="monotone"
+                      dataKey="revenue"
+                      stroke={COLORS.primary}
+                      fill={COLORS.primary}
                       fillOpacity={0.6}
                       name="revenue"
                     />
@@ -415,7 +478,7 @@ export function AdminDashboard({ className }: AdminDashboardProps) {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis type="number" />
                     <YAxis dataKey="name" type="category" width={100} />
-                    <Tooltip formatter={(value) => [value, 'Orders']} />
+                    <Tooltip formatter={value => [value, 'Orders']} />
                     <Bar dataKey="orders" fill={COLORS.primary} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -448,9 +511,7 @@ export function AdminDashboard({ className }: AdminDashboardProps) {
                 <div className="text-2xl font-bold text-info-600">
                   {mockOperationalMetrics.orderFulfillmentTime} min
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Target: &lt; 15 min
-                </p>
+                <p className="text-xs text-muted-foreground mt-1">Target: &lt; 15 min</p>
               </CardContent>
             </Card>
 
@@ -477,9 +538,7 @@ export function AdminDashboard({ className }: AdminDashboardProps) {
                 <div className="text-2xl font-bold text-success-600">
                   {mockOperationalMetrics.wasteReduction}%
                 </div>
-                <p className="text-xs text-success-600 mt-1">
-                  vs last month
-                </p>
+                <p className="text-xs text-success-600 mt-1">vs last month</p>
               </CardContent>
             </Card>
           </div>
@@ -497,9 +556,7 @@ export function AdminDashboard({ className }: AdminDashboardProps) {
                   </span>
                 </div>
               </CardTitle>
-              <CardDescription>
-                Manage and track meal orders across the school
-              </CardDescription>
+              <CardDescription>Manage and track meal orders across the school</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="rounded-md border">
@@ -508,7 +565,10 @@ export function AdminDashboard({ className }: AdminDashboardProps) {
                     <TableRow>
                       <TableHead className="w-12">
                         <Checkbox
-                          checked={selectedOrders.length === orders.filter(o => o.status !== 'completed').length}
+                          checked={
+                            selectedOrders.length ===
+                            orders.filter(o => o.status !== 'completed').length
+                          }
                           onCheckedChange={handleSelectAll}
                         />
                       </TableHead>
@@ -523,33 +583,33 @@ export function AdminDashboard({ className }: AdminDashboardProps) {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {orders.map((order) => (
+                    {orders.map(order => (
                       <TableRow key={order.id}>
                         <TableCell>
                           <Checkbox
                             checked={order.checked || false}
-                            onCheckedChange={(checked) => handleOrderSelect(order.id, !!checked)}
+                            onCheckedChange={checked => handleOrderSelect(order.id, !!checked)}
                             disabled={order.status === 'completed'}
                           />
                         </TableCell>
-                        <TableCell className="font-medium">
-                          {order.studentName}
-                        </TableCell>
+                        <TableCell className="font-medium">{order.studentName}</TableCell>
                         <TableCell>{order.class}</TableCell>
                         <TableCell className="capitalize">{order.mealType}</TableCell>
                         <TableCell>
                           <div className="max-w-32 truncate">
-                            {order.items.map(item => item.name).join(', ')}
+                            {order.items.map((item: MealItem) => item.name).join(', ')}
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className={cn(
-                            "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
-                            order.status === 'pending' && "bg-info-100 text-info-800",
-                            order.status === 'preparing' && "bg-warning-100 text-warning-800",
-                            order.status === 'ready' && "bg-success-100 text-success-800",
-                            order.status === 'completed' && "bg-gray-100 text-gray-800"
-                          )}>
+                          <div
+                            className={cn(
+                              'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
+                              order.status === 'pending' && 'bg-info-100 text-info-800',
+                              order.status === 'preparing' && 'bg-warning-100 text-warning-800',
+                              order.status === 'ready' && 'bg-success-100 text-success-800',
+                              order.status === 'completed' && 'bg-gray-100 text-gray-800'
+                            )}
+                          >
                             {order.status === 'pending' && <Clock className="w-3 h-3 mr-1" />}
                             {order.status === 'preparing' && <ChefHat className="w-3 h-3 mr-1" />}
                             {order.status === 'ready' && <CheckCircle2 className="w-3 h-3 mr-1" />}
@@ -561,12 +621,14 @@ export function AdminDashboard({ className }: AdminDashboardProps) {
                         </TableCell>
                         <TableCell>{formatCurrency(order.totalAmount)}</TableCell>
                         <TableCell>
-                          <div className={cn(
-                            "inline-flex items-center px-2 py-1 rounded text-xs font-medium",
-                            order.priority === 'high' && "bg-error-100 text-error-700",
-                            order.priority === 'medium' && "bg-warning-100 text-warning-700",
-                            order.priority === 'low' && "bg-success-100 text-success-700"
-                          )}>
+                          <div
+                            className={cn(
+                              'inline-flex items-center px-2 py-1 rounded text-xs font-medium',
+                              order.priority === 'high' && 'bg-error-100 text-error-700',
+                              order.priority === 'medium' && 'bg-warning-100 text-warning-700',
+                              order.priority === 'low' && 'bg-success-100 text-success-700'
+                            )}
+                          >
                             {order.priority === 'high' && <AlertCircle className="w-3 h-3 mr-1" />}
                             <span className="capitalize">{order.priority}</span>
                           </div>
@@ -576,7 +638,7 @@ export function AdminDashboard({ className }: AdminDashboardProps) {
                   </TableBody>
                 </Table>
               </div>
-              
+
               {selectedOrders.length > 0 && (
                 <div className="flex items-center justify-between mt-4 p-3 bg-blue-50 rounded-lg">
                   <span className="text-sm text-blue-800">
@@ -605,23 +667,30 @@ export function AdminDashboard({ className }: AdminDashboardProps) {
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={[
-                    { time: '7:00', breakfast: 45, lunch: 0, snack: 0 },
-                    { time: '8:00', breakfast: 120, lunch: 0, snack: 0 },
-                    { time: '9:00', breakfast: 80, lunch: 0, snack: 15 },
-                    { time: '10:00', breakfast: 20, lunch: 0, snack: 45 },
-                    { time: '11:00', breakfast: 5, lunch: 30, snack: 25 },
-                    { time: '12:00', breakfast: 0, lunch: 200, snack: 10 },
-                    { time: '13:00', breakfast: 0, lunch: 350, snack: 5 },
-                    { time: '14:00', breakfast: 0, lunch: 180, snack: 20 },
-                    { time: '15:00', breakfast: 0, lunch: 45, snack: 60 },
-                    { time: '16:00', breakfast: 0, lunch: 10, snack: 80 }
-                  ]}>
+                  <LineChart
+                    data={[
+                      { time: '7:00', breakfast: 45, lunch: 0, snack: 0 },
+                      { time: '8:00', breakfast: 120, lunch: 0, snack: 0 },
+                      { time: '9:00', breakfast: 80, lunch: 0, snack: 15 },
+                      { time: '10:00', breakfast: 20, lunch: 0, snack: 45 },
+                      { time: '11:00', breakfast: 5, lunch: 30, snack: 25 },
+                      { time: '12:00', breakfast: 0, lunch: 200, snack: 10 },
+                      { time: '13:00', breakfast: 0, lunch: 350, snack: 5 },
+                      { time: '14:00', breakfast: 0, lunch: 180, snack: 20 },
+                      { time: '15:00', breakfast: 0, lunch: 45, snack: 60 },
+                      { time: '16:00', breakfast: 0, lunch: 10, snack: 80 },
+                    ]}
+                  >
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="time" />
                     <YAxis />
                     <Tooltip />
-                    <Line type="monotone" dataKey="breakfast" stroke={COLORS.warning} name="Breakfast" />
+                    <Line
+                      type="monotone"
+                      dataKey="breakfast"
+                      stroke={COLORS.warning}
+                      name="Breakfast"
+                    />
                     <Line type="monotone" dataKey="lunch" stroke={COLORS.primary} name="Lunch" />
                     <Line type="monotone" dataKey="snack" stroke={COLORS.info} name="Snack" />
                   </LineChart>
@@ -649,20 +718,20 @@ export function AdminDashboard({ className }: AdminDashboardProps) {
                     <p className="text-sm text-muted-foreground">Avg Order Value</p>
                   </div>
                 </div>
-                
+
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm">Lunch Orders</span>
                     <span className="text-sm font-medium">65%</span>
                   </div>
                   <Progress value={65} className="h-2" />
-                  
+
                   <div className="flex items-center justify-between">
                     <span className="text-sm">Breakfast Orders</span>
                     <span className="text-sm font-medium">25%</span>
                   </div>
                   <Progress value={25} className="h-2" />
-                  
+
                   <div className="flex items-center justify-between">
                     <span className="text-sm">Snack Orders</span>
                     <span className="text-sm font-medium">10%</span>
@@ -694,7 +763,7 @@ export function AdminDashboard({ className }: AdminDashboardProps) {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {mockNutritionReports.map((report) => (
+                    {mockNutritionReports.map(report => (
                       <TableRow key={report.class}>
                         <TableCell className="font-medium">{report.class}</TableCell>
                         <TableCell>{report.students}</TableCell>
@@ -706,24 +775,32 @@ export function AdminDashboard({ className }: AdminDashboardProps) {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className={cn(
-                            "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
-                            report.nutritionScore >= 90 && "bg-success-100 text-success-800",
-                            report.nutritionScore >= 80 && report.nutritionScore < 90 && "bg-warning-100 text-warning-800",
-                            report.nutritionScore < 80 && "bg-error-100 text-error-800"
-                          )}>
+                          <div
+                            className={cn(
+                              'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
+                              report.nutritionScore >= 90 && 'bg-success-100 text-success-800',
+                              report.nutritionScore >= 80 &&
+                                report.nutritionScore < 90 &&
+                                'bg-warning-100 text-warning-800',
+                              report.nutritionScore < 80 && 'bg-error-100 text-error-800'
+                            )}
+                          >
                             {report.nutritionScore}/100
                           </div>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-2">
                             <Progress value={report.compliance} className="flex-1" />
-                            <span className={cn(
-                              "text-sm font-medium",
-                              report.compliance >= 95 && "text-success-600",
-                              report.compliance >= 85 && report.compliance < 95 && "text-warning-600",
-                              report.compliance < 85 && "text-error-600"
-                            )}>
+                            <span
+                              className={cn(
+                                'text-sm font-medium',
+                                report.compliance >= 95 && 'text-success-600',
+                                report.compliance >= 85 &&
+                                  report.compliance < 95 &&
+                                  'text-warning-600',
+                                report.compliance < 85 && 'text-error-600'
+                              )}
+                            >
                               {report.compliance}%
                             </span>
                           </div>
@@ -753,7 +830,7 @@ export function AdminDashboard({ className }: AdminDashboardProps) {
                     </span>
                   </div>
                   <Progress value={mockOperationalMetrics.kitchenEfficiency} />
-                  
+
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">Energy Consumption</span>
                     <span className="text-sm text-info-600 font-bold">
@@ -761,7 +838,7 @@ export function AdminDashboard({ className }: AdminDashboardProps) {
                     </span>
                   </div>
                   <Progress value={mockOperationalMetrics.energyConsumption} />
-                  
+
                   <div className="grid grid-cols-2 gap-4 mt-4">
                     <div className="text-center p-3 bg-blue-50 rounded-lg">
                       <p className="text-lg font-bold text-blue-600">
@@ -793,7 +870,7 @@ export function AdminDashboard({ className }: AdminDashboardProps) {
                   </div>
                   <span className="text-xs text-muted-foreground">CSV</span>
                 </button>
-                
+
                 <button className="w-full flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
                   <div className="flex items-center gap-2">
                     <Download className="h-4 w-4" />
@@ -801,7 +878,7 @@ export function AdminDashboard({ className }: AdminDashboardProps) {
                   </div>
                   <span className="text-xs text-muted-foreground">PDF</span>
                 </button>
-                
+
                 <button className="w-full flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
                   <div className="flex items-center gap-2">
                     <Download className="h-4 w-4" />
@@ -809,7 +886,7 @@ export function AdminDashboard({ className }: AdminDashboardProps) {
                   </div>
                   <span className="text-xs text-muted-foreground">XLSX</span>
                 </button>
-                
+
                 <button className="w-full flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
                   <div className="flex items-center gap-2">
                     <Download className="h-4 w-4" />

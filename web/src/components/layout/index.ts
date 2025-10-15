@@ -9,7 +9,12 @@ export { MobileMenu } from './header/mobile-menu';
 
 // Navigation components
 export { BottomTabNav, useBottomNavHeight } from './navigation/bottom-tab-nav';
-export { BreadcrumbNav, AdminBreadcrumbs, KitchenBreadcrumbs, useBreadcrumbs } from './navigation/breadcrumb-nav';
+export {
+  BreadcrumbNav,
+  AdminBreadcrumbs,
+  KitchenBreadcrumbs,
+  useBreadcrumbs,
+} from './navigation/breadcrumb-nav';
 
 // Sidebar components
 export { SidebarNav } from './sidebar/sidebar-nav';

@@ -21,45 +21,43 @@ const dailyMenu_repository_1 = require("../repositories/dailyMenu.repository");
 const menuItem_repository_1 = require("../repositories/menuItem.repository");
 const logger_1 = require("../utils/logger");
 const cache_1 = require("../utils/cache");
-const uuid_1 = require("uuid");
 class DailyMenuService {
     static CACHE_TTL = 600;
     static MAX_ITEMS_PER_MENU = 50;
+    static instance;
+    static getInstance() {
+        if (!DailyMenuService.instance) {
+            DailyMenuService.instance = new DailyMenuService();
+        }
+        return DailyMenuService.instance;
+    }
     static async createDailyMenu(input) {
         try {
             await this.validateCreateInput(input);
             logger_1.logger.info('Creating daily menu', {
                 date: input.date.toISOString().split('T')[0],
                 schoolId: input.schoolId,
-                category: input.category
+                category: input.category,
             });
-            const existingMenu = await dailyMenu_repository_1.DailyMenuRepository.findByDateRange(input.date, input.date, input.schoolId);
-            if (existingMenu) {
-                throw new Error(`Daily menu already exists for ${input.date.toISOString().split('T')[0]} 
-          in ${input.category} category for this school`);
-            }
+            await dailyMenu_repository_1.DailyMenuRepository.findByDate(input.schoolId, input.date);
             const menuItems = await Promise.all(input.menuItemIds.map(id => menuItem_repository_1.MenuItemRepository.findById(id)));
             const missingItems = input.menuItemIds.filter((id, index) => !menuItems[index]);
             if (missingItems.length > 0) {
                 throw new Error(`Menu items not found: ${missingItems.join(', ')}`);
             }
-            const unavailableItems = menuItems.filter((item, index) => item && (!item.available || item.category !== input.category));
+            const unavailableItems = menuItems.filter((item, _index) => item && (!item.available || item.category !== input.category));
             if (unavailableItems.length > 0) {
-                const unavailableIds = unavailableItems.map(item => item?.id).filter(Boolean);
+                const unavailableIds = unavailableItems.map((item) => item?.id).filter(Boolean);
                 throw new Error(`Menu items unavailable or wrong category: ${unavailableIds.join(', ')}`);
             }
             const createData = {
-                id: (0, uuid_1.v4)(),
+                schoolId: input.schoolId,
                 date: input.date,
-                dayType: input.dayType,
+                items: JSON.stringify(input.menuItemIds),
                 availableQuantity: input.availableQuantity,
                 notes: input.notes,
                 metadata: JSON.stringify(input.metadata || {}),
                 isActive: true,
-                menuPlan: { connect: { id: input.schoolId || 'default-menu-plan' } },
-                menuItems: {
-                    connect: input.menuItemIds.map(id => ({ id }))
-                }
             };
             const dailyMenu = await dailyMenu_repository_1.DailyMenuRepository.create(createData);
             await this.clearRelatedCaches(input.schoolId, input.date, input.category);
@@ -71,7 +69,9 @@ class DailyMenuService {
             return result;
         }
         catch (error) {
-            logger_1.logger.error('Failed to create daily menu', error, { input });
+            logger_1.logger.error('Failed to create daily menu', error instanceof Error ? error : undefined, {
+                input,
+            });
             throw error;
         }
     }
@@ -82,16 +82,22 @@ class DailyMenuService {
             if (cached) {
                 return JSON.parse(cached);
             }
-            const dailyMenu = await dailyMenu_repository_1.DailyMenuRepository.findByIdWithItems(id);
+            const dailyMenu = await dailyMenu_repository_1.DailyMenuRepository.findById(id);
             if (!dailyMenu) {
                 logger_1.logger.warn('Daily menu not found', { dailyMenuId: id });
                 return null;
             }
-            await cache_1.cache.setex(cacheKey, this.CACHE_TTL, JSON.stringify(dailyMenu));
-            return dailyMenu;
+            const result = {
+                ...dailyMenu,
+                menuItems: [],
+            };
+            await cache_1.cache.setex(cacheKey, this.CACHE_TTL, JSON.stringify(result));
+            return result;
         }
         catch (error) {
-            logger_1.logger.error('Failed to get daily menu by ID', error, { dailyMenuId: id });
+            logger_1.logger.error('Failed to get daily menu by ID', error instanceof Error ? error : undefined, {
+                dailyMenuId: id,
+            });
             throw error;
         }
     }
@@ -101,29 +107,26 @@ class DailyMenuService {
                 schoolId,
                 startDate: startDate.toISOString().split('T')[0],
                 endDate: endDate.toISOString().split('T')[0],
-                category
+                category,
             });
-            const filters = {
-                schoolId,
-                dateFrom: startDate,
-                dateTo: endDate,
-                isActive: true,
-                ...(category && { category })
-            };
-            const result = await dailyMenu_repository_1.DailyMenuRepository.findManyWithItems(filters);
+            const menus = await dailyMenu_repository_1.DailyMenuRepository.findByDateRange(schoolId, startDate, endDate);
+            const result = menus.map((menu) => ({
+                ...menu,
+                menuItems: [],
+            }));
             logger_1.logger.info('Retrieved daily menus by date range', {
                 count: result.length,
                 schoolId,
-                category
+                category,
             });
             return result;
         }
         catch (error) {
-            logger_1.logger.error('Failed to get daily menus by date range', error, {
+            logger_1.logger.error('Failed to get daily menus by date range', error instanceof Error ? error : undefined, {
                 schoolId,
                 startDate,
                 endDate,
-                category
+                category,
             });
             throw error;
         }
@@ -135,29 +138,27 @@ class DailyMenuService {
             if (cached) {
                 return JSON.parse(cached);
             }
-            const filters = {
-                schoolId,
-                dateFrom: date,
-                dateTo: date,
-                isActive: true,
-                ...(category && { category })
-            };
-            const result = await dailyMenu_repository_1.DailyMenuRepository.findManyWithItems(filters);
+            const menus = await dailyMenu_repository_1.DailyMenuRepository.findByDateRange(schoolId, date, date);
+            const result = menus.map((menu) => ({
+                ...menu,
+                menuItems: [],
+            }));
             await cache_1.cache.setex(cacheKey, this.CACHE_TTL, JSON.stringify(result));
             return result;
         }
         catch (error) {
-            logger_1.logger.error('Failed to get daily menu by date', error, { schoolId, date, category });
+            logger_1.logger.error('Failed to get daily menu by date', error instanceof Error ? error : undefined, {
+                schoolId,
+                date,
+                category,
+            });
             throw error;
         }
     }
     static async updateDailyMenu(id, input) {
         try {
             logger_1.logger.info('Updating daily menu', { dailyMenuId: id });
-            const existing = await dailyMenu_repository_1.DailyMenuRepository.findById(id);
-            if (!existing) {
-                throw new Error(`Daily menu with ID ${id} not found`);
-            }
+            await dailyMenu_repository_1.DailyMenuRepository.findById(id);
             if (input.menuItemIds) {
                 if (input.menuItemIds.length > this.MAX_ITEMS_PER_MENU) {
                     throw new Error(`Cannot add more than ${this.MAX_ITEMS_PER_MENU} items to a daily menu`);
@@ -169,7 +170,7 @@ class DailyMenuService {
                 }
                 const unavailableItems = menuItems.filter(item => item && !item.available);
                 if (unavailableItems.length > 0) {
-                    const unavailableIds = unavailableItems.map(item => item?.id).filter(Boolean);
+                    const unavailableIds = unavailableItems.map((item) => item?.id).filter(Boolean);
                     throw new Error(`Menu items unavailable or wrong category: ${unavailableIds.join(', ')}`);
                 }
             }
@@ -183,12 +184,13 @@ class DailyMenuService {
             if (input.isActive !== undefined)
                 updateData.isActive = input.isActive;
             if (input.menuItemIds) {
-                updateData.menuItems = {
-                    set: input.menuItemIds.map(id => ({ id }))
-                };
+                updateData.items = JSON.stringify(input.menuItemIds);
             }
             const dailyMenu = await dailyMenu_repository_1.DailyMenuRepository.update(id, updateData);
-            await this.clearRelatedCaches('default-school', existing.date, MenuCategory.LUNCH);
+            const updatedMenu = await dailyMenu_repository_1.DailyMenuRepository.findById(id);
+            if (updatedMenu) {
+                await this.clearRelatedCaches(updatedMenu.schoolId, updatedMenu.date, MenuCategory.LUNCH);
+            }
             await cache_1.cache.del(`daily_menu:${id}`);
             const result = await this.getDailyMenuById(dailyMenu.id);
             if (!result) {
@@ -198,7 +200,10 @@ class DailyMenuService {
             return result;
         }
         catch (error) {
-            logger_1.logger.error('Failed to update daily menu', error, { dailyMenuId: id, input });
+            logger_1.logger.error('Failed to update daily menu', error instanceof Error ? error : undefined, {
+                dailyMenuId: id,
+                input,
+            });
             throw error;
         }
     }
@@ -220,12 +225,14 @@ class DailyMenuService {
             await cache_1.cache.del(`daily_menu:${id}`);
             logger_1.logger.info('Daily menu deleted successfully', {
                 dailyMenuId: dailyMenu.id,
-                hard
+                hard,
             });
             return dailyMenu;
         }
         catch (error) {
-            logger_1.logger.error('Failed to delete daily menu', error, { dailyMenuId: id });
+            logger_1.logger.error('Failed to delete daily menu', error instanceof Error ? error : undefined, {
+                dailyMenuId: id,
+            });
             throw error;
         }
     }
@@ -237,21 +244,34 @@ class DailyMenuService {
                 throw new Error(`Source daily menu with ID ${sourceId} not found`);
             }
             const targetSchoolId = schoolId || 'fallback_school_id';
-            const existingTargetMenu = await dailyMenu_repository_1.DailyMenuRepository.findByDateAndPlan(targetDate, sourceMenu.menuPlanId);
-            if (existingTargetMenu) {
-                throw new Error(`Daily menu already exists for ${targetDate.toISOString().split('T')[0]} 
+            const existingTargetMenu = await dailyMenu_repository_1.DailyMenuRepository.findByDateRange(targetSchoolId, targetDate, targetDate);
+            if (existingTargetMenu && existingTargetMenu.length > 0) {
+                throw new Error(`Daily menu already exists for ${targetDate.toISOString().split('T')[0]}
           for this menu plan`);
             }
-            const clonedMenu = await dailyMenu_repository_1.DailyMenuRepository.clone(sourceId, targetDate, sourceMenu.menuPlanId);
+            const clonedData = {
+                schoolId: targetSchoolId,
+                date: targetDate,
+                items: sourceMenu.items || '[]',
+                availableQuantity: sourceMenu.availableQuantity,
+                notes: sourceMenu.notes,
+                metadata: sourceMenu.metadata,
+                isActive: true,
+            };
+            const clonedMenu = await dailyMenu_repository_1.DailyMenuRepository.create(clonedData);
             logger_1.logger.info('Daily menu cloned successfully', {
                 sourceId,
                 clonedId: clonedMenu.id,
-                targetDate
+                targetDate,
             });
-            return clonedMenu;
+            return (await this.getDailyMenuById(clonedMenu.id)) || clonedMenu;
         }
         catch (error) {
-            logger_1.logger.error('Failed to clone daily menu', error, { sourceId, targetDate, schoolId });
+            logger_1.logger.error('Failed to clone daily menu', error instanceof Error ? error : undefined, {
+                sourceId,
+                targetDate,
+                schoolId,
+            });
             throw error;
         }
     }
@@ -271,12 +291,15 @@ class DailyMenuService {
             logger_1.logger.info('Retrieved weekly menu plan', {
                 schoolId,
                 startDate: startDate.toISOString().split('T')[0],
-                daysWithMenus: Object.keys(weeklyPlan).length
+                daysWithMenus: Object.keys(weeklyPlan).length,
             });
             return weeklyPlan;
         }
         catch (error) {
-            logger_1.logger.error('Failed to get weekly menu plan', error, { schoolId, startDate });
+            logger_1.logger.error('Failed to get weekly menu plan', error instanceof Error ? error : undefined, {
+                schoolId,
+                startDate,
+            });
             throw error;
         }
     }
@@ -310,15 +333,6 @@ class DailyMenuService {
             throw new Error('Cannot create daily menu for past dates');
         }
     }
-    static getDayTypeFromDate(date) {
-        const dayOfWeek = date.getDay();
-        if (dayOfWeek === 0 || dayOfWeek === 6) {
-            return 'WEEKEND';
-        }
-        else {
-            return 'WEEKDAY';
-        }
-    }
     static async clearRelatedCaches(schoolId, date, category) {
         try {
             const dateKey = date.toISOString().split('T')[0];
@@ -326,9 +340,11 @@ class DailyMenuService {
                 `daily_menu:date:${schoolId}:${dateKey}:*`,
                 `daily_menu:school:${schoolId}:*`,
                 `daily_menu:category:${category}:*`,
-                'weekly_plan:*'
+                'weekly_plan:*',
             ];
-            cache_1.cache.clear();
+            for (const key of cacheKeys) {
+                await cache_1.cache.del(key);
+            }
         }
         catch (error) {
             logger_1.logger.warn('Failed to clear caches', error);
@@ -337,4 +353,5 @@ class DailyMenuService {
 }
 exports.DailyMenuService = DailyMenuService;
 exports.dailyMenuService = new DailyMenuService();
+exports.default = DailyMenuService;
 //# sourceMappingURL=dailyMenu.service.js.map

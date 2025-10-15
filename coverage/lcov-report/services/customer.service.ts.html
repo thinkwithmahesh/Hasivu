@@ -32,7 +32,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/52</span>
+                <span class='fraction'>0/64</span>
             </div>
         
             
@@ -926,10 +926,10 @@
  * Handles customer management, relationships, and business operations
  */
 &nbsp;
-import { User, Prisma } from '@prisma/client';
-import { DatabaseService } from '../shared/database.service';
-import { Logger } from '../utils/logger';
-import { ValidationError, NotFoundError, ConflictError, BusinessLogicError } from '../utils/errors';
+import { Prisma } from '@prisma/client';
+import { DatabaseService } from './database.service';
+import { logger } from '../utils/logger';
+import { NotFoundError, BusinessLogicError } from '../utils/errors';
 &nbsp;
 export interface CustomerProfile {
   id: string;
@@ -991,7 +991,7 @@ export interface CustomerSearchFilters {
 export class CustomerService {
   private static instance: CustomerService;
   private <span class="cstat-no" title="statement not covered" >db = DatabaseService.getInstance();</span>
-  private <span class="cstat-no" title="statement not covered" >logger = Logger.getInstance();</span>
+  private <span class="cstat-no" title="statement not covered" >logger = logger;</span>
 &nbsp;
 <span class="fstat-no" title="function not covered" >  private constructor() {}</span>
 &nbsp;
@@ -1007,7 +1007,7 @@ export class CustomerService {
    */
 <span class="fstat-no" title="function not covered" >  async </span>getCustomerProfile(userId: string): Promise&lt;CustomerProfile | null&gt; {
 <span class="cstat-no" title="statement not covered" >    try {</span>
-      const user = <span class="cstat-no" title="statement not covered" >await this.db.getPrismaClient().user.findUnique({</span>
+      const user = <span class="cstat-no" title="statement not covered" >await this.db.client.user.findUnique({</span>
         where: { id: userId },
         include: {
           children: {
@@ -1033,8 +1033,8 @@ export class CustomerService {
       }
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      return this.mapToCustomerProfile(user);</span>
-    } catch (error) {
-<span class="cstat-no" title="statement not covered" >      this.logger.error('Error fetching customer profile', { userId, error });</span>
+    } catch (error: unknown) {
+<span class="cstat-no" title="statement not covered" >      this.logger.error('Error fetching customer profile', error instanceof Error ? error : undefined, { userId });</span>
 <span class="cstat-no" title="statement not covered" >      throw error;</span>
     }
   }
@@ -1047,7 +1047,7 @@ export class CustomerService {
     preferences: Partial&lt;CustomerProfile['preferences']&gt;
   ): Promise&lt;CustomerProfile&gt; {
 <span class="cstat-no" title="statement not covered" >    try {</span>
-      const user = <span class="cstat-no" title="statement not covered" >await this.db.getPrismaClient().user.findUnique({</span>
+      const user = <span class="cstat-no" title="statement not covered" >await this.db.client.user.findUnique({</span>
         where: { id: userId }
       });
 &nbsp;
@@ -1055,7 +1055,7 @@ export class CustomerService {
 <span class="cstat-no" title="statement not covered" >        throw new NotFoundError('Customer', userId);</span>
       }
 &nbsp;
-      const updatedUser = <span class="cstat-no" title="statement not covered" >await this.db.getPrismaClient().user.update({</span>
+      const updatedUser = <span class="cstat-no" title="statement not covered" >await this.db.client.user.update({</span>
         where: { id: userId },
         data: {
           preferences: {
@@ -1084,8 +1084,8 @@ export class CustomerService {
       });
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      return this.mapToCustomerProfile(updatedUser);</span>
-    } catch (error) {
-<span class="cstat-no" title="statement not covered" >      this.logger.error('Error updating customer preferences', { userId, preferences, error });</span>
+    } catch (error: unknown) {
+<span class="cstat-no" title="statement not covered" >      this.logger.error('Error updating customer preferences', error instanceof Error ? error : undefined, { userId, preferences });</span>
 <span class="cstat-no" title="statement not covered" >      throw error;</span>
     }
   }
@@ -1095,7 +1095,7 @@ export class CustomerService {
    */
 <span class="fstat-no" title="function not covered" >  async </span>addChild(userId: string, childData: Omit&lt;ChildProfile, 'id'&gt;): Promise&lt;ChildProfile&gt; {
 <span class="cstat-no" title="statement not covered" >    try {</span>
-      const customer = <span class="cstat-no" title="statement not covered" >await this.db.getPrismaClient().user.findUnique({</span>
+      const customer = <span class="cstat-no" title="statement not covered" >await this.db.client.user.findUnique({</span>
         where: { id: userId }
       });
 &nbsp;
@@ -1107,7 +1107,7 @@ export class CustomerService {
 <span class="cstat-no" title="statement not covered" >        throw new BusinessLogicError('Only parent users can add children', 'role_restriction');</span>
       }
 &nbsp;
-      const child = <span class="cstat-no" title="statement not covered" >await this.db.getPrismaClient().user.create({</span>
+      const child = <span class="cstat-no" title="statement not covered" >await this.db.client.user.create({</span>
         data: {
           email: `child_${Date.now()}@${childData.schoolId}.edu`,
           firstName: childData.name,
@@ -1128,8 +1128,8 @@ export class CustomerService {
       });
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      return this.mapToChildProfile(child);</span>
-    } catch (error) {
-<span class="cstat-no" title="statement not covered" >      this.logger.error('Error adding child to customer', { userId, childData, error });</span>
+    } catch (error: unknown) {
+<span class="cstat-no" title="statement not covered" >      this.logger.error('Error adding child to customer', error instanceof Error ? error : undefined, { userId, childData });</span>
 <span class="cstat-no" title="statement not covered" >      throw error;</span>
     }
   }
@@ -1139,7 +1139,7 @@ export class CustomerService {
    */
 <span class="fstat-no" title="function not covered" >  async </span>getCustomerMetrics(userId: string): Promise&lt;CustomerMetrics&gt; {
 <span class="cstat-no" title="statement not covered" >    try {</span>
-      const orders = <span class="cstat-no" title="statement not covered" >await this.db.getPrismaClient().order.findMany({</span>
+      const orders = <span class="cstat-no" title="statement not covered" >await this.db.client.order.findMany({</span>
         where: { userId },
         include: {
           orderItems: {
@@ -1151,16 +1151,16 @@ export class CustomerService {
       });
 &nbsp;
       const totalOrders = <span class="cstat-no" title="statement not covered" >orders.length;</span>
-      const totalSpent = <span class="cstat-no" title="statement not covered" >orders.reduce(<span class="fstat-no" title="function not covered" >(s</span>um, order) =&gt; <span class="cstat-no" title="statement not covered" >sum + order.totalAmount,</span> 0);</span>
+      const totalSpent = <span class="cstat-no" title="statement not covered" >orders.reduce(<span class="fstat-no" title="function not covered" >(s</span>um: number, order: any) =&gt; <span class="cstat-no" title="statement not covered" >sum + order.totalAmount,</span> 0);</span>
       const averageOrderValue = <span class="cstat-no" title="statement not covered" >totalOrders &gt; 0 ? totalSpent / totalOrders : 0;</span>
-      
-      const lastOrder = <span class="cstat-no" title="statement not covered" >orders.sort(<span class="fstat-no" title="function not covered" >(a</span>, b) =&gt; </span>
+&nbsp;
+      const lastOrder = <span class="cstat-no" title="statement not covered" >orders.sort(<span class="fstat-no" title="function not covered" >(a</span>: any, b: any) =&gt;</span>
 <span class="cstat-no" title="statement not covered" >        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()</span>
       )[0];
-      
+&nbsp;
       const itemFrequency: { [key: string]: number } = <span class="cstat-no" title="statement not covered" >{};</span>
-<span class="cstat-no" title="statement not covered" >      orders.forEach(<span class="fstat-no" title="function not covered" >order </span>=&gt; {</span>
-<span class="cstat-no" title="statement not covered" >        order.orderItems.forEach(<span class="fstat-no" title="function not covered" >item </span>=&gt; {</span>
+<span class="cstat-no" title="statement not covered" >      orders.forEach(<span class="fstat-no" title="function not covered" >(o</span>rder: any) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >        order.orderItems.forEach(<span class="fstat-no" title="function not covered" >(i</span>tem: any) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >          <span class="missing-if-branch" title="if path not taken" >I</span>if (item.menuItem) {</span>
 <span class="cstat-no" title="statement not covered" >            itemFrequency[item.menuItem.name] = (itemFrequency[item.menuItem.name] || 0) + item.quantity;</span>
           }
@@ -1179,8 +1179,8 @@ export class CustomerService {
         lastOrderDate: lastOrder?.createdAt,
         favoriteItems
       };
-    } catch (error) {
-<span class="cstat-no" title="statement not covered" >      this.logger.error('Error fetching customer metrics', { userId, error });</span>
+    } catch (error: unknown) {
+<span class="cstat-no" title="statement not covered" >      this.logger.error('Error fetching customer metrics', error instanceof Error ? error : undefined, { userId });</span>
 <span class="cstat-no" title="statement not covered" >      throw error;</span>
     }
   }
@@ -1220,7 +1220,7 @@ export class CustomerService {
       };
 &nbsp;
       const [users, total] = <span class="cstat-no" title="statement not covered" >await Promise.all([</span>
-        this.db.getPrismaClient().user.findMany({
+        this.db.client.user.findMany({
           where: whereClause,
           include: {
             children: {
@@ -1243,14 +1243,14 @@ export class CustomerService {
           take: limit,
           orderBy: { createdAt: 'desc' }
         }),
-        this.db.getPrismaClient().user.count({ where: whereClause })
+        this.db.client.user.count({ where: whereClause })
       ]);
 &nbsp;
-      const customers = <span class="cstat-no" title="statement not covered" >users.map(<span class="fstat-no" title="function not covered" >user </span>=&gt; <span class="cstat-no" title="statement not covered" >this.mapToCustomerProfile(user))</span>;</span>
+      const customers = <span class="cstat-no" title="statement not covered" >users.map(<span class="fstat-no" title="function not covered" >(u</span>ser: any) =&gt; <span class="cstat-no" title="statement not covered" >this.mapToCustomerProfile(user))</span>;</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      return { customers, total };</span>
-    } catch (error) {
-<span class="cstat-no" title="statement not covered" >      this.logger.error('Error searching customers', { filters, error });</span>
+    } catch (error: unknown) {
+<span class="cstat-no" title="statement not covered" >      this.logger.error('Error searching customers', error instanceof Error ? error : undefined, { filters });</span>
 <span class="cstat-no" title="statement not covered" >      throw error;</span>
     }
   }
@@ -1260,7 +1260,7 @@ export class CustomerService {
    */
 <span class="fstat-no" title="function not covered" >  async </span>deactivateCustomer(userId: string, reason: string): Promise&lt;void&gt; {
 <span class="cstat-no" title="statement not covered" >    try {</span>
-<span class="cstat-no" title="statement not covered" >      await this.db.getPrismaClient().$transaction(<span class="fstat-no" title="function not covered" >async </span>(tx) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >      await this.db.client.$transaction(<span class="fstat-no" title="function not covered" >async </span>(tx: any) =&gt; {</span>
         // Update user status
 <span class="cstat-no" title="statement not covered" >        await tx.user.update({</span>
           where: { id: userId },
@@ -1296,8 +1296,8 @@ export class CustomerService {
       });
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      this.logger.info('Customer account deactivated', { userId, reason });</span>
-    } catch (error) {
-<span class="cstat-no" title="statement not covered" >      this.logger.error('Error deactivating customer', { userId, reason, error });</span>
+    } catch (error: unknown) {
+<span class="cstat-no" title="statement not covered" >      this.logger.error('Error deactivating customer', error instanceof Error ? error : undefined, { userId, reason });</span>
 <span class="cstat-no" title="statement not covered" >      throw error;</span>
     }
   }
@@ -1357,7 +1357,7 @@ export class CustomerService {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-09-03T01:56:53.416Z
+                at 2025-10-06T16:03:47.957Z
             </div>
         <script src="../prettify.js"></script>
         <script>

@@ -71,10 +71,10 @@ class PushNotificationService {
         }
         catch (error) {
             logger_1.logger.error('Push notification service initialization failed', {
-                error: error.message,
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
                 stack: error.stack
             });
-            throw new PushServiceError(`Push notification service initialization failed: ${error.message}`, 'INIT_FAILED', false, error);
+            throw new PushServiceError(`Push notification service initialization failed: ${error instanceof Error ? error.message : String(error)}`, 'INIT_FAILED', false, error);
         }
     }
     loadDefaultTemplates() {
@@ -177,7 +177,7 @@ class PushNotificationService {
         }
         catch (error) {
             logger_1.logger.error('Failed to register device token', {
-                error: error.message,
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
                 userId: registration.userId,
                 platform: registration.platform
             });
@@ -280,7 +280,7 @@ class PushNotificationService {
             const isRetryable = this.isRetryableError(error);
             logger_1.logger.warn('Push notification failed', {
                 deviceToken: deviceToken.substring(0, 20) + '...',
-                error: error.message,
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
                 errorCode: error.code,
                 retryable: isRetryable
             });
@@ -290,7 +290,7 @@ class PushNotificationService {
             }
             return {
                 success: false,
-                error: error.message,
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
                 deviceToken,
                 timestamp: Date.now(),
                 retryable: isRetryable
@@ -397,11 +397,11 @@ class PushNotificationService {
         }
         catch (error) {
             logger_1.logger.error('Batch push notification failed', {
-                error: error.message,
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
                 tokenCount: request.deviceTokens.length,
                 templateId: request.templateId
             });
-            throw new PushServiceError(`Batch push notification failed: ${error.message}`, 'BATCH_SEND_FAILED', true, error);
+            throw new PushServiceError(`Batch push notification failed: ${error instanceof Error ? error.message : String(error)}`, 'BATCH_SEND_FAILED', true, error);
         }
     }
     async sendToTopic(request) {
@@ -464,10 +464,10 @@ class PushNotificationService {
         catch (error) {
             logger_1.logger.error('Topic push notification failed', {
                 topic: request.topic,
-                error: error.message,
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
                 errorCode: error.code
             });
-            throw new PushServiceError(`Topic push notification failed: ${error.message}`, 'TOPIC_SEND_FAILED', this.isRetryableError(error), error);
+            throw new PushServiceError(`Topic push notification failed: ${error instanceof Error ? error.message : String(error)}`, 'TOPIC_SEND_FAILED', this.isRetryableError(error), error);
         }
     }
     async subscribeToTopic(deviceTokens, topic) {
@@ -491,9 +491,9 @@ class PushNotificationService {
             logger_1.logger.error('Failed to subscribe devices to topic', {
                 topic,
                 deviceCount: deviceTokens.length,
-                error: error.message
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
             });
-            throw new PushServiceError(`Failed to subscribe to topic: ${error.message}`, 'TOPIC_SUBSCRIBE_FAILED', true, error);
+            throw new PushServiceError(`Failed to subscribe to topic: ${error instanceof Error ? error.message : String(error)}`, 'TOPIC_SUBSCRIBE_FAILED', true, error);
         }
     }
     async unsubscribeFromTopic(deviceTokens, topic) {
@@ -511,9 +511,9 @@ class PushNotificationService {
             logger_1.logger.error('Failed to unsubscribe devices from topic', {
                 topic,
                 deviceCount: deviceTokens.length,
-                error: error.message
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
             });
-            throw new PushServiceError(`Failed to unsubscribe from topic: ${error.message}`, 'TOPIC_UNSUBSCRIBE_FAILED', true, error);
+            throw new PushServiceError(`Failed to unsubscribe from topic: ${error instanceof Error ? error.message : String(error)}`, 'TOPIC_UNSUBSCRIBE_FAILED', true, error);
         }
     }
     async applyTemplate(templateId, variables) {
@@ -641,7 +641,7 @@ class PushNotificationService {
                     templatesLoaded: 0,
                     registeredDevices: 0
                 },
-                error: error.message
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
             };
         }
     }

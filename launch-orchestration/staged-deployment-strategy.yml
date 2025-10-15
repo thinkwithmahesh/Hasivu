@@ -5,17 +5,17 @@ apiVersion: deployment/v1
 kind: DeploymentStrategy
 metadata:
   name: epic-5-staged-deployment
-  epic: "5"
-  system: "payment-processing"
-  deployment_type: "blue-green"
+  epic: '5'
+  system: 'payment-processing'
+  deployment_type: 'blue-green'
 
 spec:
-  strategy: "blue-green"
+  strategy: 'blue-green'
   stages:
     - development
     - staging
     - production
-  
+
   # Deployment Pipeline Configuration
   pipeline:
     pre_deployment_checks:
@@ -23,13 +23,13 @@ spec:
       - dependency_audit
       - configuration_validation
       - infrastructure_readiness
-    
+
     deployment_gates:
       - automated_testing
       - performance_validation
       - security_verification
       - business_acceptance
-    
+
     post_deployment_validation:
       - smoke_testing
       - integration_testing
@@ -39,257 +39,256 @@ spec:
   # Environment Configuration
   environments:
     development:
-      name: "hasivu-dev"
+      name: 'hasivu-dev'
       auto_deploy: true
       approval_required: false
       traffic_allocation:
         blue: 100%
         green: 0%
-      validation_duration: "30m"
+      validation_duration: '30m'
       rollback_threshold:
-        error_rate: ">5%"
-        response_time: ">10s"
-    
+        error_rate: '>5%'
+        response_time: '>10s'
+
     staging:
-      name: "hasivu-staging"
+      name: 'hasivu-staging'
       auto_deploy: false
       approval_required: true
       traffic_allocation:
         blue: 50%
         green: 50%
-      validation_duration: "2h"
+      validation_duration: '2h'
       rollback_threshold:
-        error_rate: ">2%"
-        response_time: ">5s"
-      
+        error_rate: '>2%'
+        response_time: '>5s'
+
     production:
-      name: "hasivu-production"
+      name: 'hasivu-production'
       auto_deploy: false
       approval_required: true
       approvers:
-        - "platform-lead"
-        - "product-owner"
-        - "tech-lead"
+        - 'platform-lead'
+        - 'product-owner'
+        - 'tech-lead'
       traffic_allocation:
         initial:
           blue: 95%
           green: 5%
         progressive:
-          - time: "1h"
+          - time: '1h'
             blue: 80%
             green: 20%
-          - time: "4h"
+          - time: '4h'
             blue: 50%
             green: 50%
-          - time: "12h"
+          - time: '12h'
             blue: 20%
             green: 80%
-          - time: "24h"
+          - time: '24h'
             blue: 0%
             green: 100%
-      validation_duration: "24h"
+      validation_duration: '24h'
       rollback_threshold:
-        error_rate: ">1%"
-        response_time: ">3s"
-        success_rate: "<99%"
+        error_rate: '>1%'
+        response_time: '>3s'
+        success_rate: '<99%'
 
   # Feature Flag Configuration
   feature_flags:
     # Story 5.1: Advanced Payment Features
     advanced_payment_methods:
-      enabled_environments: ["development", "staging"]
-      production_rollout: "gradual"
+      enabled_environments: ['development', 'staging']
+      production_rollout: 'gradual'
       rollout_percentage: 10
       targeting:
-        user_segments: ["beta_users", "premium_customers"]
-      
+        user_segments: ['beta_users', 'premium_customers']
+
     payment_retry_automation:
-      enabled_environments: ["development", "staging", "production"]
-      production_rollout: "immediate"
+      enabled_environments: ['development', 'staging', 'production']
+      production_rollout: 'immediate'
       rollout_percentage: 100
-      
+
     payment_reconciliation:
-      enabled_environments: ["development", "staging"]
-      production_rollout: "manual"
+      enabled_environments: ['development', 'staging']
+      production_rollout: 'manual'
       rollout_percentage: 0
       approval_required: true
-      
+
     payment_analytics_dashboard:
-      enabled_environments: ["development", "staging", "production"]
-      production_rollout: "gradual"
+      enabled_environments: ['development', 'staging', 'production']
+      production_rollout: 'gradual'
       rollout_percentage: 25
-      
+
     # Story 5.2: Subscription Billing
     subscription_billing_automation:
-      enabled_environments: ["development", "staging"]
-      production_rollout: "manual"
+      enabled_environments: ['development', 'staging']
+      production_rollout: 'manual'
       rollout_percentage: 0
       validation_required: true
-      
+
     dunning_management:
-      enabled_environments: ["development", "staging"]
-      production_rollout: "gradual"
+      enabled_environments: ['development', 'staging']
+      production_rollout: 'gradual'
       rollout_percentage: 5
       targeting:
-        customer_segments: ["high_value", "enterprise"]
-        
+        customer_segments: ['high_value', 'enterprise']
+
     subscription_analytics:
-      enabled_environments: ["development", "staging", "production"]
-      production_rollout: "immediate"
+      enabled_environments: ['development', 'staging', 'production']
+      production_rollout: 'immediate'
       rollout_percentage: 100
-      
+
     # Story 5.3: Invoice Generation
     automated_invoice_generation:
-      enabled_environments: ["development", "staging"]
-      production_rollout: "gradual"
+      enabled_environments: ['development', 'staging']
+      production_rollout: 'gradual'
       rollout_percentage: 20
-      
+
     pdf_invoice_templates:
-      enabled_environments: ["development", "staging", "production"]
-      production_rollout: "immediate"
+      enabled_environments: ['development', 'staging', 'production']
+      production_rollout: 'immediate'
       rollout_percentage: 100
-      
+
     invoice_email_automation:
-      enabled_environments: ["development", "staging"]
-      production_rollout: "manual"
+      enabled_environments: ['development', 'staging']
+      production_rollout: 'manual'
       rollout_percentage: 0
-      
+
     # Story 5.4: AI Analytics
     ml_fraud_detection:
-      enabled_environments: ["development", "staging"]
-      production_rollout: "gradual"
+      enabled_environments: ['development', 'staging']
+      production_rollout: 'gradual'
       rollout_percentage: 15
       shadow_mode: true
-      
+
     predictive_analytics:
-      enabled_environments: ["development", "staging"]
-      production_rollout: "manual"
+      enabled_environments: ['development', 'staging']
+      production_rollout: 'manual'
       rollout_percentage: 0
       shadow_mode: true
-      
+
     churn_prediction:
-      enabled_environments: ["development", "staging", "production"]
-      production_rollout: "gradual"
+      enabled_environments: ['development', 'staging', 'production']
+      production_rollout: 'gradual'
       rollout_percentage: 30
       shadow_mode: true
 
   # Deployment Phases
   deployment_phases:
-    
     # Phase 1: Core Payment Functions
     phase_1:
-      name: "Core Payment Processing"
-      duration: "1h"
+      name: 'Core Payment Processing'
+      duration: '1h'
       functions:
-        - "payments-create-order"
-        - "payments-verify"
-        - "payments-webhook-handler"
-        - "payments-status"
+        - 'payments-create-order'
+        - 'payments-verify'
+        - 'payments-webhook-handler'
+        - 'payments-status'
       success_criteria:
-        - payment_success_rate: ">99%"
-        - api_response_time: "<2s"
-        - error_rate: "<0.1%"
+        - payment_success_rate: '>99%'
+        - api_response_time: '<2s'
+        - error_rate: '<0.1%'
       rollback_triggers:
-        - payment_failure_rate: ">2%"
-        - critical_error_count: ">5"
-        - webhook_validation_failure: ">1%"
-    
-    # Phase 2: Advanced Payment Features  
+        - payment_failure_rate: '>2%'
+        - critical_error_count: '>5'
+        - webhook_validation_failure: '>1%'
+
+    # Phase 2: Advanced Payment Features
     phase_2:
-      name: "Advanced Payment Features"
-      duration: "2h"
-      depends_on: ["phase_1"]
+      name: 'Advanced Payment Features'
+      duration: '2h'
+      depends_on: ['phase_1']
       functions:
-        - "payments-manage-methods"
-        - "payments-advanced"
-        - "payments-retry"
-        - "payments-analytics"
+        - 'payments-manage-methods'
+        - 'payments-advanced'
+        - 'payments-retry'
+        - 'payments-analytics'
       success_criteria:
-        - advanced_payment_success_rate: ">98%"
-        - retry_mechanism_effectiveness: ">95%"
-        - analytics_data_accuracy: ">99%"
+        - advanced_payment_success_rate: '>98%'
+        - retry_mechanism_effectiveness: '>95%'
+        - analytics_data_accuracy: '>99%'
       rollback_triggers:
-        - advanced_payment_failure: ">3%"
-        - retry_loop_detected: ">0"
-        - analytics_data_corruption: ">0%"
-    
+        - advanced_payment_failure: '>3%'
+        - retry_loop_detected: '>0'
+        - analytics_data_corruption: '>0%'
+
     # Phase 3: Subscription System
     phase_3:
-      name: "Subscription Billing System"
-      duration: "4h"
-      depends_on: ["phase_1", "phase_2"]
+      name: 'Subscription Billing System'
+      duration: '4h'
+      depends_on: ['phase_1', 'phase_2']
       functions:
-        - "subscription-management"
-        - "billing-automation"
-        - "subscription-plans"
-        - "dunning-management"
-        - "subscription-analytics"
+        - 'subscription-management'
+        - 'billing-automation'
+        - 'subscription-plans'
+        - 'dunning-management'
+        - 'subscription-analytics'
       success_criteria:
-        - subscription_billing_success: ">99%"
-        - dunning_effectiveness: ">90%"
-        - plan_management_accuracy: ">99%"
+        - subscription_billing_success: '>99%'
+        - dunning_effectiveness: '>90%'
+        - plan_management_accuracy: '>99%'
       rollback_triggers:
-        - subscription_billing_failure: ">1%"
-        - dunning_email_failure: ">5%"
-        - plan_pricing_error: ">0%"
-    
+        - subscription_billing_failure: '>1%'
+        - dunning_email_failure: '>5%'
+        - plan_pricing_error: '>0%'
+
     # Phase 4: Invoice System
     phase_4:
-      name: "Automated Invoice Generation"
-      duration: "3h"
-      depends_on: ["phase_1", "phase_3"]
+      name: 'Automated Invoice Generation'
+      duration: '3h'
+      depends_on: ['phase_1', 'phase_3']
       functions:
-        - "invoice-generator"
-        - "pdf-generator"
-        - "invoice-templates"
-        - "invoice-mailer"
-        - "invoice-analytics"
+        - 'invoice-generator'
+        - 'pdf-generator'
+        - 'invoice-templates'
+        - 'invoice-mailer'
+        - 'invoice-analytics'
       success_criteria:
-        - invoice_generation_success: ">99%"
-        - pdf_creation_time: "<30s"
-        - email_delivery_success: ">95%"
+        - invoice_generation_success: '>99%'
+        - pdf_creation_time: '<30s'
+        - email_delivery_success: '>95%'
       rollback_triggers:
-        - invoice_generation_failure: ">2%"
-        - pdf_corruption: ">0%"
-        - email_delivery_failure: ">10%"
-    
+        - invoice_generation_failure: '>2%'
+        - pdf_corruption: '>0%'
+        - email_delivery_failure: '>10%'
+
     # Phase 5: AI/ML Analytics
     phase_5:
-      name: "AI-Powered Analytics"
-      duration: "6h"
-      depends_on: ["phase_1", "phase_2", "phase_3", "phase_4"]
+      name: 'AI-Powered Analytics'
+      duration: '6h'
+      depends_on: ['phase_1', 'phase_2', 'phase_3', 'phase_4']
       functions:
-        - "ml-payment-insights"
-        - "advanced-payment-intelligence"
+        - 'ml-payment-insights'
+        - 'advanced-payment-intelligence'
       success_criteria:
-        - ml_model_accuracy: ">95%"
-        - fraud_detection_precision: ">98%"
-        - analytics_processing_time: "<60s"
+        - ml_model_accuracy: '>95%'
+        - fraud_detection_precision: '>98%'
+        - analytics_processing_time: '<60s'
       rollback_triggers:
-        - ml_model_failure: ">0%"
-        - fraud_false_positive_rate: ">2%"
-        - analytics_timeout: ">5%"
+        - ml_model_failure: '>0%'
+        - fraud_false_positive_rate: '>2%'
+        - analytics_timeout: '>5%'
 
   # Traffic Management
   traffic_management:
     canary_deployment:
       initial_traffic: 5%
       increment_percentage: 15%
-      increment_interval: "1h"
+      increment_interval: '1h'
       max_traffic: 100%
-      
+
     load_balancing:
-      algorithm: "weighted_round_robin"
-      health_check_interval: "30s"
+      algorithm: 'weighted_round_robin'
+      health_check_interval: '30s'
       unhealthy_threshold: 3
       healthy_threshold: 2
-      
+
     geographic_rollout:
       regions:
-        - name: "ap-south-1"
+        - name: 'ap-south-1'
           traffic_percentage: 100%
           rollout_order: 1
-        - name: "ap-southeast-1"
+        - name: 'ap-southeast-1'
           traffic_percentage: 0%
           rollout_order: 2
 
@@ -301,13 +300,13 @@ spec:
       - error_rate
       - transaction_volume
       - revenue_impact
-      
+
     business_metrics:
       - customer_satisfaction
       - conversion_rate
       - average_order_value
       - churn_rate
-      
+
     technical_metrics:
       - lambda_duration
       - memory_utilization
@@ -317,21 +316,21 @@ spec:
   # Rollback Strategy
   rollback:
     automatic_triggers:
-      - error_rate: ">1%"
-      - response_time: ">5s"
-      - success_rate: "<99%"
-      - business_metric_decline: ">10%"
-      
+      - error_rate: '>1%'
+      - response_time: '>5s'
+      - success_rate: '<99%'
+      - business_metric_decline: '>10%'
+
     rollback_procedures:
-      - immediate_traffic_redirect: "<1m"
-      - function_version_rollback: "<2m"
-      - database_state_verification: "<5m"
-      - notification_stakeholders: "immediate"
-      
+      - immediate_traffic_redirect: '<1m'
+      - function_version_rollback: '<2m'
+      - database_state_verification: '<5m'
+      - notification_stakeholders: 'immediate'
+
     rollback_validation:
-      - system_health_check: "5m"
-      - payment_flow_verification: "10m"
-      - business_metrics_recovery: "30m"
+      - system_health_check: '5m'
+      - payment_flow_verification: '10m'
+      - business_metrics_recovery: '30m'
 
   # Approval Workflow
   approval_workflow:
@@ -341,15 +340,15 @@ spec:
         - all_tests_pass: true
         - security_scan_clean: true
         - code_review_approved: true
-        
+
     staging_to_production:
       automated: false
       approvers:
-        - role: "platform_lead"
+        - role: 'platform_lead'
           required: true
-        - role: "product_owner"
+        - role: 'product_owner'
           required: true
-        - role: "security_lead"
+        - role: 'security_lead'
           required: true
       conditions:
         - staging_validation_complete: true
@@ -360,44 +359,44 @@ spec:
   # Communication Plan
   communication:
     channels:
-      - slack: "#deployment-notifications"
-      - email: "platform@hasivu.com"
-      - pagerduty: "deployment-team"
-      
+      - slack: '#deployment-notifications'
+      - email: 'platform@hasivu.com'
+      - pagerduty: 'deployment-team'
+
     notifications:
       deployment_start:
-        - slack_message: "Epic 5 deployment initiated - Phase {phase_name}"
-        - email_subject: "Production Deployment: Epic 5 Phase {phase_number}"
-        
+        - slack_message: 'Epic 5 deployment initiated - Phase {phase_name}'
+        - email_subject: 'Production Deployment: Epic 5 Phase {phase_number}'
+
       deployment_success:
-        - slack_message: "✅ Epic 5 Phase {phase_name} deployed successfully"
-        - email_subject: "Success: Epic 5 Phase {phase_number} Production Deployment"
-        
+        - slack_message: '✅ Epic 5 Phase {phase_name} deployed successfully'
+        - email_subject: 'Success: Epic 5 Phase {phase_number} Production Deployment'
+
       deployment_failure:
-        - slack_message: "🚨 Epic 5 deployment failure - Phase {phase_name}"
-        - pagerduty_alert: "high"
-        - email_subject: "URGENT: Epic 5 Deployment Failure"
-        
+        - slack_message: '🚨 Epic 5 deployment failure - Phase {phase_name}'
+        - pagerduty_alert: 'high'
+        - email_subject: 'URGENT: Epic 5 Deployment Failure'
+
       rollback_initiated:
-        - slack_message: "⚠️ Epic 5 rollback initiated - Phase {phase_name}"
-        - pagerduty_alert: "critical"
-        - email_subject: "CRITICAL: Epic 5 Rollback in Progress"
+        - slack_message: '⚠️ Epic 5 rollback initiated - Phase {phase_name}'
+        - pagerduty_alert: 'critical'
+        - email_subject: 'CRITICAL: Epic 5 Rollback in Progress'
 
 # Success Metrics & Validation
 success_metrics:
   technical:
-    payment_success_rate: ">99%"
-    api_response_time: "<2s"
-    system_uptime: ">99.9%"
-    error_rate: "<0.1%"
-    
+    payment_success_rate: '>99%'
+    api_response_time: '<2s'
+    system_uptime: '>99.9%'
+    error_rate: '<0.1%'
+
   business:
-    revenue_impact: "+15% to +25%"
-    customer_satisfaction: ">95%"
-    operational_efficiency: "+40%"
-    support_ticket_reduction: "-30%"
-    
+    revenue_impact: '+15% to +25%'
+    customer_satisfaction: '>95%'
+    operational_efficiency: '+40%'
+    support_ticket_reduction: '-30%'
+
   user_experience:
-    payment_completion_time: "<30s"
-    mobile_payment_success: ">98%"
-    payment_method_diversity: "+20%"
+    payment_completion_time: '<30s'
+    mobile_payment_success: '>98%'
+    payment_method_diversity: '+20%'

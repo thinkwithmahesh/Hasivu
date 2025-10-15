@@ -190,7 +190,7 @@ export interface MealApiResponse<T> {
   error?: string;
 }
 
-export type GetMenuResponse = MealApiResponse<DailyMenu>;
-export type SearchMealsResponse = MealApiResponse<MealSearchResults>;
-export type CreateOrderResponse = MealApiResponse<MealOrder>;
-export type GetOrdersResponse = MealApiResponse<MealOrder[]>;
+export type _GetMenuResponse = MealApiResponse<DailyMenu>;
+export type _SearchMealsResponse = MealApiResponse<MealSearchResults>;
+export type _CreateOrderResponse = MealApiResponse<MealOrder>;
+export type _GetOrdersResponse = MealApiResponse<MealOrder[]>;

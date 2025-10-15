@@ -11,10 +11,10 @@ provider:
   runtime: nodejs18.x
   region: ${opt:region, 'ap-south-1'}
   stage: ${opt:stage, 'dev'}
-  memorySize: 512
+  memorySize: 1024 # Increased default for better performance
   timeout: 30
   architecture: arm64
-  
+
   environment:
     NODE_ENV: ${self:provider.stage}
     DATABASE_URL: ${ssm:/hasivu/${self:provider.stage}/database-url}
@@ -31,7 +31,7 @@ provider:
     NOTIFICATION_TOPIC_ARN: ${cf:hasivu-${self:provider.stage}-messaging.NotificationTopicArn}
     RETRY_QUEUE_URL: ${cf:hasivu-${self:provider.stage}-queues.RetryQueueUrl}
     MAX_RETRY_ATTEMPTS: 3
-    
+
   iam:
     role:
       statements:
@@ -41,31 +41,31 @@ provider:
             - ssm:GetParameters
             - secretsmanager:GetSecretValue
           Resource:
-            - "arn:aws:ssm:${aws:region}:${aws:accountId}:parameter/hasivu/${self:provider.stage}/*"
-            - "arn:aws:secretsmanager:${aws:region}:${aws:accountId}:secret:hasivu/${self:provider.stage}/*"
+            - 'arn:aws:ssm:${aws:region}:${aws:accountId}:parameter/hasivu/${self:provider.stage}/*'
+            - 'arn:aws:secretsmanager:${aws:region}:${aws:accountId}:secret:hasivu/${self:provider.stage}/*'
         - Effect: Allow
           Action:
             - s3:GetObject
             - s3:PutObject
             - s3:DeleteObject
-          Resource: "arn:aws:s3:::hasivu-${self:provider.stage}-uploads/*"
+          Resource: 'arn:aws:s3:::hasivu-${self:provider.stage}-uploads/*'
         - Effect: Allow
           Action:
             - cognito-idp:AdminCreateUser
             - cognito-idp:AdminSetUserPassword
             - cognito-idp:AdminUpdateUserAttributes
-          Resource: "arn:aws:cognito-idp:${aws:region}:${aws:accountId}:userpool/*"
+          Resource: 'arn:aws:cognito-idp:${aws:region}:${aws:accountId}:userpool/*'
         - Effect: Allow
           Action:
             - ses:SendEmail
             - ses:SendRawEmail
-          Resource: "*"
+          Resource: '*'
         - Effect: Allow
           Action:
             - logs:CreateLogGroup
             - logs:CreateLogStream
             - logs:PutLogEvents
-          Resource: "*"
+          Resource: '*'
         - Effect: Allow
           Action:
             - dynamodb:GetItem
@@ -75,20 +75,20 @@ provider:
             - dynamodb:Query
             - dynamodb:Scan
           Resource:
-            - "arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/payment-webhook-idempotency-${self:provider.stage}"
+            - 'arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/payment-webhook-idempotency-${self:provider.stage}'
         - Effect: Allow
           Action:
             - sqs:SendMessage
             - sqs:ReceiveMessage
             - sqs:DeleteMessage
           Resource:
-            - "arn:aws:sqs:${aws:region}:${aws:accountId}:payment-retry-queue-${self:provider.stage}"
-            - "arn:aws:sqs:${aws:region}:${aws:accountId}:payment-dlq-${self:provider.stage}"
+            - 'arn:aws:sqs:${aws:region}:${aws:accountId}:payment-retry-queue-${self:provider.stage}'
+            - 'arn:aws:sqs:${aws:region}:${aws:accountId}:payment-dlq-${self:provider.stage}'
         - Effect: Allow
           Action:
             - sns:Publish
           Resource:
-            - "arn:aws:sns:${aws:region}:${aws:accountId}:payment-notifications-${self:provider.stage}"
+            - 'arn:aws:sns:${aws:region}:${aws:accountId}:payment-notifications-${self:provider.stage}'
 
   apiGateway:
     restApiId: ${ssm:/hasivu/${self:provider.stage}/api-gateway-id, ''}
@@ -126,6 +126,7 @@ functions:
   # Health Check - Public endpoint
   health:
     handler: src/functions/health/health-check.healthCheckHandler
+    memorySize: 256 # Reduced for simple health checks
     events:
       - http:
           path: /health
@@ -282,7 +283,7 @@ functions:
   payments-analytics:
     handler: src/functions/payments/payment-analytics.paymentAnalyticsHandler
     timeout: 120
-    memorySize: 1024
+    memorySize: 2048 # Increased for complex analytics processing
     events:
       - http:
           path: /payments/analytics/dashboard
@@ -320,7 +321,7 @@ functions:
   subscription-analytics:
     handler: src/functions/payments/subscription-analytics.handler
     timeout: 120
-    memorySize: 2048
+    memorySize: 3072 # Increased for heavy analytics processing
     events:
       - http:
           path: /subscription-analytics
@@ -350,10 +351,11 @@ functions:
     environment:
       FUNCTION_NAME: subscription-analytics
 
-  # RFID FUNCTIONS - ALL REQUIRE AUTHENTICATION  
+  # RFID FUNCTIONS - ALL REQUIRE AUTHENTICATION
   # QA FIX: All RFID endpoints now require authentication
   rfid-delivery-verification:
     handler: src/functions/rfid/delivery-verification.deliveryVerificationHandler
+    memorySize: 512 # Standard allocation for RFID operations
     events:
       - http:
           path: /rfid/verify-delivery
@@ -601,17 +603,17 @@ resources:
       Value: !Ref PaymentWebhookIdempotencyTable
       Export:
         Name: hasivu-${self:provider.stage}-payment-idempotency-table
-        
+
     PaymentRetryQueueUrl:
       Value: !Ref PaymentRetryQueue
       Export:
         Name: hasivu-${self:provider.stage}-payment-retry-queue-url
-        
+
     PaymentDeadLetterQueueUrl:
       Value: !Ref PaymentDeadLetterQueue
       Export:
         Name: hasivu-${self:provider.stage}-payment-dlq-url
-        
+
     PaymentNotificationsTopicArn:
       Value: !Ref PaymentNotificationsTopic
       Export:

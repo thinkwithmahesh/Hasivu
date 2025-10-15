@@ -110,7 +110,7 @@ const getMenuItemByIdHandler = async (event, context) => {
             validationService.validateUUID(menuItemId, 'Menu item ID');
         }
         catch (error) {
-            logger.warn('Invalid menu item ID format', { requestId, menuItemId, error: error.message });
+            logger.warn('Invalid menu item ID format', { requestId, menuItemId, error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) });
             return (0, response_utils_1.createErrorResponse)('Invalid menu item ID format', 400, 'INVALID_MENU_ITEM_ID');
         }
         logger.info('Processing get menu item by ID request', { requestId, menuItemId });
@@ -169,7 +169,7 @@ const getMenuItemByIdHandler = async (event, context) => {
         logger.error('Get menu item by ID request failed', {
             requestId,
             menuItemId: event.pathParameters?.id,
-            error: error.message,
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
             duration: `${duration}ms`
         });
         return (0, response_utils_1.handleError)(error, 'Failed to retrieve menu item');
@@ -216,7 +216,7 @@ const getMenuItemVariantsHandler = async (event, context) => {
             searchPattern,
             menuItemId
         ]);
-        const variants = variantsResult.rows.map(row => ({
+        const variants = variantsResult.rows.map((row) => ({
             id: row.id,
             name: row.name,
             description: row.description,
@@ -258,7 +258,7 @@ const getMenuItemVariantsHandler = async (event, context) => {
         logger.error('Get menu item variants request failed', {
             requestId,
             menuItemId: event.pathParameters?.id,
-            error: error.message,
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
             duration: `${duration}ms`
         });
         return (0, response_utils_1.handleError)(error, 'Failed to retrieve menu item variants');

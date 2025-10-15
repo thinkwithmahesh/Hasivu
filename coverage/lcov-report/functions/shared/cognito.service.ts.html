@@ -608,9 +608,7 @@
 <a name='L543'></a><a href='#L543'>543</a>
 <a name='L544'></a><a href='#L544'>544</a>
 <a name='L545'></a><a href='#L545'>545</a>
-<a name='L546'></a><a href='#L546'>546</a>
-<a name='L547'></a><a href='#L547'>547</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L546'></a><a href='#L546'>546</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1167,7 +1165,6 @@ import {
   ConfirmSignUpCommand,
   ResendConfirmationCodeCommand,
   InitiateAuthCommand,
-  RevokeTokenCommand,
   GlobalSignOutCommand,
   GetUserCommand,
   UpdateUserAttributesCommand,
@@ -1309,7 +1306,7 @@ class CognitoServiceClass {
         userSub: response.UserSub!,
         isConfirmed: !!response.UserConfirmed // AWS returns UserConfirmed
       };
-    } catch (error) {
+    } catch (error: unknown) {
 <span class="cstat-no" title="statement not covered" >      throw this.handleCognitoError(error);</span>
     }
   }
@@ -1327,7 +1324,7 @@ class CognitoServiceClass {
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      await this.client.send(command);</span>
 <span class="cstat-no" title="statement not covered" >      logger.integration('Cognito confirmSignUp operation completed successfully', { email });</span>
-    } catch (error) {
+    } catch (error: unknown) {
 <span class="cstat-no" title="statement not covered" >      throw this.handleCognitoError(error);</span>
     }
   }
@@ -1344,7 +1341,7 @@ class CognitoServiceClass {
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      await this.client.send(command);</span>
 <span class="cstat-no" title="statement not covered" >      logger.integration('Cognito resendConfirmationCode operation completed successfully', { email });</span>
-    } catch (error) {
+    } catch (error: unknown) {
 <span class="cstat-no" title="statement not covered" >      throw this.handleCognitoError(error);</span>
     }
   }
@@ -1388,7 +1385,7 @@ class CognitoServiceClass {
       });
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      return authResult;</span>
-    } catch (error) {
+    } catch (error: unknown) {
 <span class="cstat-no" title="statement not covered" >      throw this.handleCognitoError(error);</span>
     }
   }
@@ -1416,7 +1413,7 @@ class CognitoServiceClass {
         idToken: authResult.idToken,
         user
       };
-    } catch (error) {
+    } catch (error: unknown) {
 <span class="cstat-no" title="statement not covered" >      throw this.handleCognitoError(error);</span>
     }
   }
@@ -1449,7 +1446,7 @@ class CognitoServiceClass {
 <span class="cstat-no" title="statement not covered" >      logger.integration('Cognito refreshToken operation completed successfully', { tokenRefreshed: true });</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      return result;</span>
-    } catch (error) {
+    } catch (error: unknown) {
 <span class="cstat-no" title="statement not covered" >      throw this.handleCognitoError(error);</span>
     }
   }
@@ -1465,7 +1462,7 @@ class CognitoServiceClass {
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      await this.client.send(command);</span>
 <span class="cstat-no" title="statement not covered" >      logger.integration('Cognito signOut operation completed successfully');</span>
-    } catch (error) {
+    } catch (error: unknown) {
 <span class="cstat-no" title="statement not covered" >      throw this.handleCognitoError(error);</span>
     }
   }
@@ -1521,7 +1518,7 @@ class CognitoServiceClass {
 <span class="cstat-no" title="statement not covered" >      logger.integration('Cognito getUser operation completed successfully', { userSub: attributes.sub });</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      return { user: attributes };</span>
-    } catch (error) {
+    } catch (error: unknown) {
 <span class="cstat-no" title="statement not covered" >      throw this.handleCognitoError(error);</span>
     }
   }
@@ -1533,8 +1530,8 @@ class CognitoServiceClass {
 <span class="cstat-no" title="statement not covered" >    try {</span>
       const { user } = <span class="cstat-no" title="statement not covered" >await this.getUser(accessToken);</span>
 <span class="cstat-no" title="statement not covered" >      return user;</span>
-    } catch (error) {
-<span class="cstat-no" title="statement not covered" >      throw new CognitoServiceError('Invalid or expired access token', error);</span>
+    } catch (error: unknown) {
+<span class="cstat-no" title="statement not covered" >      throw new CognitoServiceError('Invalid or expired access token', 'InvalidToken', 401);</span>
     }
   }
 &nbsp;
@@ -1581,7 +1578,7 @@ class CognitoServiceClass {
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      await this.client.send(command);</span>
 <span class="cstat-no" title="statement not covered" >      logger.integration('Cognito updateUserAttributes operation completed successfully', { attributesUpdated: userAttributes.length });</span>
-    } catch (error) {
+    } catch (error: unknown) {
 <span class="cstat-no" title="statement not covered" >      throw this.handleCognitoError(error);</span>
     }
   }
@@ -1603,7 +1600,7 @@ class CognitoServiceClass {
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      await this.client.send(command);</span>
 <span class="cstat-no" title="statement not covered" >      logger.integration('Cognito changePassword operation completed successfully');</span>
-    } catch (error) {
+    } catch (error: unknown) {
 <span class="cstat-no" title="statement not covered" >      throw this.handleCognitoError(error);</span>
     }
   }
@@ -1620,7 +1617,7 @@ class CognitoServiceClass {
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      await this.client.send(command);</span>
 <span class="cstat-no" title="statement not covered" >      logger.integration('Cognito forgotPassword operation completed successfully', { email });</span>
-    } catch (error) {
+    } catch (error: unknown) {
 <span class="cstat-no" title="statement not covered" >      throw this.handleCognitoError(error);</span>
     }
   }
@@ -1643,7 +1640,7 @@ class CognitoServiceClass {
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      await this.client.send(command);</span>
 <span class="cstat-no" title="statement not covered" >      logger.integration('Cognito confirmForgotPassword operation completed successfully', { email });</span>
-    } catch (error) {
+    } catch (error: unknown) {
 <span class="cstat-no" title="statement not covered" >      throw this.handleCognitoError(error);</span>
     }
   }
@@ -1656,7 +1653,7 @@ class CognitoServiceClass {
       const base64Payload = <span class="cstat-no" title="statement not covered" >token.split('.')[1];</span>
       const payload = <span class="cstat-no" title="statement not covered" >Buffer.from(base64Payload, 'base64').toString();</span>
 <span class="cstat-no" title="statement not covered" >      return JSON.parse(payload);</span>
-    } catch (error) {
+    } catch (error: unknown) {
 <span class="cstat-no" title="statement not covered" >      throw new CognitoServiceError('Invalid token format', 'InvalidToken', 400);</span>
     }
   }
@@ -1692,7 +1689,7 @@ class CognitoServiceClass {
       case 'TooManyRequestsException':
 <span class="cstat-no" title="statement not covered" >        return new CognitoServiceError('Too many requests', 'TooManyRequests', 429);</span>
       default:
-<span class="cstat-no" title="statement not covered" >        logger.error('Unhandled Cognito error', { error: errorName, message: errorMessage });</span>
+<span class="cstat-no" title="statement not covered" >        logger.error('Unhandled Cognito error', new Error(errorMessage), { errorName, errorMessage });</span>
 <span class="cstat-no" title="statement not covered" >        return new CognitoServiceError(errorMessage, errorName, 500);</span>
     }
   }
@@ -1708,7 +1705,7 @@ export default CognitoServiceClass;</pre></td></tr></table></pre>
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-09-03T01:56:53.416Z
+                at 2025-10-06T16:03:47.957Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

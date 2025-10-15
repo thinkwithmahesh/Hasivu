@@ -1,0 +1,1109 @@
+/**
+ * HASIVU Platform - RFID Hardware Abstraction Layer
+ * Multi-vendor RFID reader support: Zebra, Impinj, Honeywell
+ * Story 2.2: Hardware Integration Layer
+ */
+import { EventEmitter } from 'events';
+import { logger } from '../../utils/logger';
+import RedisService from '../redis.service';
+
+/**
+ * RFID hardware vendor types
+ */
+export enum RFIDVendor {
+  ZEBRA = 'zebra',
+  IMPINJ = 'impinj',
+  HONEYWELL = 'honeywell',
+  GENERIC = 'generic'
+}
+
+/**
+ * RFID reader connection configuration
+ */
+export interface RFIDReaderConfig {
+  id: string;
+  vendor: RFIDVendor;
+  model: string;
+  ipAddress: string;
+  port: number;
+  apiKey?: string;
+  username?: string;
+  password?: string;
+  connectionTimeout: number;
+  readTimeout: number;
+  powerLevel?: number;
+  frequency?: number;
+  metadata?: Record<string, any>;
+}
+
+/**
+ * RFID scan result interface
+ */
+export interface RFIDScanResult {
+  success: boolean;
+  cardId: string;
+  cardData?: string;
+  signalStrength: number;
+  timestamp: Date;
+  readerId: string;
+  antenna?: number;
+  metadata?: Record<string, any>;
+  error?: {
+    code: string;
+    message: string;
+    details?: any;
+  };
+}
+
+/**
+ * RFID reader status interface
+ */
+export interface RFIDReaderStatus {
+  readerId: string;
+  isOnline: boolean;
+  lastHeartbeat: Date;
+  connectionQuality: 'excellent' | 'good' | 'fair' | 'poor';
+  temperature?: number;
+  uptime?: number;
+  scanCount?: number;
+  errorCount?: number;
+  metadata?: Record<string, any>;
+}
+
+/**
+ * Abstract RFID reader driver interface
+ */
+export abstract class RFIDReaderDriver extends EventEmitter {
+  protected config: RFIDReaderConfig;
+  protected isConnected: boolean = false;
+  protected lastError?: Error;
+
+  constructor(config: RFIDReaderConfig) {
+    super();
+    this.config = config;
+  }
+
+  /**
+   * Connect to RFID reader
+   */
+  abstract connect(): Promise<boolean>;
+
+  /**
+   * Disconnect from RFID reader
+   */
+  abstract disconnect(): Promise<void>;
+
+  /**
+   * Scan for RFID cards
+   */
+  abstract scan(timeout?: number): Promise<RFIDScanResult>;
+
+  /**
+   * Get reader status
+   */
+  abstract getStatus(): Promise<RFIDReaderStatus>;
+
+  /**
+   * Test connection and functionality
+   */
+  abstract testConnection(): Promise<boolean>;
+
+  /**
+   * Configure reader settings
+   */
+  abstract configure(settings: Record<string, any>): Promise<boolean>;
+
+  /**
+   * Get basic reader info
+   */
+  getConfig(): RFIDReaderConfig {
+    return { ...this.config };
+  }
+
+  isReaderConnected(): boolean {
+    return this.isConnected;
+  }
+
+  getLastError(): Error | undefined {
+    return this.lastError;
+  }
+}
+
+/**
+ * Zebra RFID Reader Driver
+ */
+export class ZebraRFIDDriver extends RFIDReaderDriver {
+  async connect(): Promise<boolean> {
+    try {
+      logger.info('Connecting to Zebra RFID reader', {
+        readerId: this.config.id,
+        ipAddress: this.config.ipAddress
+      });
+
+      // Zebra FX series connection logic
+      const response = await this.makeRequest('/cloud/localRestAccess', 'GET');
+
+      if (response.success) {
+        this.isConnected = true;
+        this.emit('connected', this.config.id);
+        return true;
+      }
+
+      throw new Error('Failed to establish connection with Zebra reader');
+
+    } catch (error: unknown) {
+      this.lastError = error as Error;
+      logger.error('Failed to connect to Zebra RFID reader', error, {
+        readerId: this.config.id,
+        ipAddress: this.config.ipAddress
+      });
+      return false;
+    }
+  }
+
+  async disconnect(): Promise<void> {
+    this.isConnected = false;
+    this.emit('disconnected', this.config.id);
+    logger.info('Disconnected from Zebra RFID reader', { readerId: this.config.id });
+  }
+
+  async scan(timeout: number = 5000): Promise<RFIDScanResult> {
+    if (!this.isConnected) {
+      throw new Error('Reader not connected');
+    }
+
+    try {
+      // Start Zebra inventory scan
+      const scanResponse = await this.makeRequest('/cloud/inventory/start', 'PUT', {
+        duration: timeout
+      });
+
+      if (!scanResponse.success) {
+        throw new Error('Failed to start inventory scan');
+      }
+
+      // Wait for scan results
+      await new Promise(resolve => setTimeout(resolve, timeout));
+
+      // Get scan results
+      const resultsResponse = await this.makeRequest('/cloud/inventory', 'GET');
+
+      if (resultsResponse.data?.TagData?.length > 0) {
+        const tagData = resultsResponse.data.TagData[0];
+
+        return {
+          success: true,
+          cardId: tagData.TagId,
+          cardData: tagData.TagData,
+          signalStrength: tagData.PeakRSSI || 0,
+          timestamp: new Date(),
+          readerId: this.config.id,
+          antenna: tagData.AntennaID,
+          metadata: {
+            vendor: RFIDVendor.ZEBRA,
+            epc: tagData.TagId,
+            rssi: tagData.PeakRSSI,
+            readCount: tagData.ReadCount
+          }
+        };
+      }
+
+      return {
+        success: false,
+        cardId: '',
+        signalStrength: 0,
+        timestamp: new Date(),
+        readerId: this.config.id,
+        error: {
+          code: 'NO_TAGS_FOUND',
+          message: 'No RFID tags detected'
+        }
+      };
+
+    } catch (error: unknown) {
+      logger.error('Zebra RFID scan failed', error, { readerId: this.config.id });
+      return {
+        success: false,
+        cardId: '',
+        signalStrength: 0,
+        timestamp: new Date(),
+        readerId: this.config.id,
+        error: {
+          code: 'SCAN_ERROR',
+          message: error instanceof Error ? (error instanceof Error ? error.message : String(error)) : 'Unknown scan error',
+          details: error
+        }
+      };
+    }
+  }
+
+  async getStatus(): Promise<RFIDReaderStatus> {
+    try {
+      const statusResponse = await this.makeRequest('/cloud/status', 'GET');
+
+      return {
+        readerId: this.config.id,
+        isOnline: this.isConnected && statusResponse.success,
+        lastHeartbeat: new Date(),
+        connectionQuality: this.assessConnectionQuality(statusResponse.data),
+        temperature: statusResponse.data?.Temperature,
+        uptime: statusResponse.data?.Uptime,
+        metadata: {
+          vendor: RFIDVendor.ZEBRA,
+          firmwareVersion: statusResponse.data?.FirmwareVersion,
+          serialNumber: statusResponse.data?.SerialNumber
+        }
+      };
+    } catch (error: unknown) {
+      logger.error('Failed to get Zebra reader status', error, { readerId: this.config.id });
+      return {
+        readerId: this.config.id,
+        isOnline: false,
+        lastHeartbeat: new Date(),
+        connectionQuality: 'poor'
+      };
+    }
+  }
+
+  async testConnection(): Promise<boolean> {
+    try {
+      const response = await this.makeRequest('/cloud/status', 'GET');
+      return response.success;
+    } catch (error: unknown) {
+      return false;
+    }
+  }
+
+  async configure(settings: Record<string, any>): Promise<boolean> {
+    try {
+      // Configure Zebra reader settings
+      const configResponse = await this.makeRequest('/cloud/config', 'PUT', settings);
+      return configResponse.success;
+    } catch (error: unknown) {
+      logger.error('Failed to configure Zebra reader', error, { readerId: this.config.id });
+      return false;
+    }
+  }
+
+  private async makeRequest(endpoint: string, method: string, data?: any): Promise<any> {
+    const url = `http://${this.config.ipAddress}:${this.config.port}${endpoint}`;
+
+    const options: RequestInit = {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(this.config.username && this.config.password && {
+          'Authorization': `Basic ${Buffer.from(`${this.config.username}:${this.config.password}`).toString('base64')}`
+        })
+      },
+      signal: AbortSignal.timeout(this.config.connectionTimeout),
+      ...(data && { body: JSON.stringify(data) })
+    };
+
+    const response = await fetch(url, options);
+    const responseData = await response.json();
+
+    return {
+      success: response.ok,
+      data: responseData,
+      status: response.status
+    };
+  }
+
+  private assessConnectionQuality(statusData: any): 'excellent' | 'good' | 'fair' | 'poor' {
+    // Simple heuristic based on available status data
+    if (!statusData) return 'poor';
+
+    const temperature = statusData.Temperature || 25;
+    const hasErrors = statusData.ErrorCount > 0;
+
+    if (!hasErrors && temperature < 40) return 'excellent';
+    if (!hasErrors && temperature < 50) return 'good';
+    if (temperature < 60) return 'fair';
+    return 'poor';
+  }
+}
+
+/**
+ * Impinj RFID Reader Driver
+ */
+export class ImpinjRFIDDriver extends RFIDReaderDriver {
+  async connect(): Promise<boolean> {
+    try {
+      logger.info('Connecting to Impinj RFID reader', {
+        readerId: this.config.id,
+        ipAddress: this.config.ipAddress
+      });
+
+      // Impinj Speedway connection via LLRP
+      const response = await this.makeRequest('/api/v1/status', 'GET');
+
+      if (response.success) {
+        this.isConnected = true;
+        this.emit('connected', this.config.id);
+        return true;
+      }
+
+      throw new Error('Failed to establish connection with Impinj reader');
+
+    } catch (error: unknown) {
+      this.lastError = error as Error;
+      logger.error('Failed to connect to Impinj RFID reader', error, {
+        readerId: this.config.id,
+        ipAddress: this.config.ipAddress
+      });
+      return false;
+    }
+  }
+
+  async disconnect(): Promise<void> {
+    this.isConnected = false;
+    this.emit('disconnected', this.config.id);
+    logger.info('Disconnected from Impinj RFID reader', { readerId: this.config.id });
+  }
+
+  async scan(timeout: number = 5000): Promise<RFIDScanResult> {
+    if (!this.isConnected) {
+      throw new Error('Reader not connected');
+    }
+
+    try {
+      // Impinj inventory operation
+      const scanResponse = await this.makeRequest('/api/v1/inventory', 'POST', {
+        duration_ms: timeout,
+        antenna_configs: [{ antenna_id: 1, enabled: true }]
+      });
+
+      if (scanResponse.data?.tags?.length > 0) {
+        const tagData = scanResponse.data.tags[0];
+
+        return {
+          success: true,
+          cardId: tagData.epc,
+          cardData: tagData.user_data,
+          signalStrength: tagData.rssi || 0,
+          timestamp: new Date(tagData.timestamp),
+          readerId: this.config.id,
+          antenna: tagData.antenna_id,
+          metadata: {
+            vendor: RFIDVendor.IMPINJ,
+            epc: tagData.epc,
+            rssi: tagData.rssi,
+            phase: tagData.phase,
+            doppler_frequency: tagData.doppler_frequency
+          }
+        };
+      }
+
+      return {
+        success: false,
+        cardId: '',
+        signalStrength: 0,
+        timestamp: new Date(),
+        readerId: this.config.id,
+        error: {
+          code: 'NO_TAGS_FOUND',
+          message: 'No RFID tags detected'
+        }
+      };
+
+    } catch (error: unknown) {
+      logger.error('Impinj RFID scan failed', error, { readerId: this.config.id });
+      return {
+        success: false,
+        cardId: '',
+        signalStrength: 0,
+        timestamp: new Date(),
+        readerId: this.config.id,
+        error: {
+          code: 'SCAN_ERROR',
+          message: error instanceof Error ? (error instanceof Error ? error.message : String(error)) : 'Unknown scan error',
+          details: error
+        }
+      };
+    }
+  }
+
+  async getStatus(): Promise<RFIDReaderStatus> {
+    try {
+      const statusResponse = await this.makeRequest('/api/v1/status', 'GET');
+
+      return {
+        readerId: this.config.id,
+        isOnline: this.isConnected && statusResponse.success,
+        lastHeartbeat: new Date(),
+        connectionQuality: this.assessConnectionQuality(statusResponse.data),
+        temperature: statusResponse.data?.temperature_c,
+        uptime: statusResponse.data?.uptime_ms,
+        metadata: {
+          vendor: RFIDVendor.IMPINJ,
+          firmwareVersion: statusResponse.data?.firmware_version,
+          serialNumber: statusResponse.data?.serial_number,
+          model: statusResponse.data?.model
+        }
+      };
+    } catch (error: unknown) {
+      logger.error('Failed to get Impinj reader status', error, { readerId: this.config.id });
+      return {
+        readerId: this.config.id,
+        isOnline: false,
+        lastHeartbeat: new Date(),
+        connectionQuality: 'poor'
+      };
+    }
+  }
+
+  async testConnection(): Promise<boolean> {
+    try {
+      const response = await this.makeRequest('/api/v1/status', 'GET');
+      return response.success;
+    } catch (error: unknown) {
+      return false;
+    }
+  }
+
+  async configure(settings: Record<string, any>): Promise<boolean> {
+    try {
+      const configResponse = await this.makeRequest('/api/v1/config', 'PUT', settings);
+      return configResponse.success;
+    } catch (error: unknown) {
+      logger.error('Failed to configure Impinj reader', error, { readerId: this.config.id });
+      return false;
+    }
+  }
+
+  private async makeRequest(endpoint: string, method: string, data?: any): Promise<any> {
+    const url = `http://${this.config.ipAddress}:${this.config.port}${endpoint}`;
+
+    const options: RequestInit = {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(this.config.apiKey && {
+          'Authorization': `Bearer ${this.config.apiKey}`
+        })
+      },
+      signal: AbortSignal.timeout(this.config.connectionTimeout),
+      ...(data && { body: JSON.stringify(data) })
+    };
+
+    const response = await fetch(url, options);
+    const responseData = await response.json();
+
+    return {
+      success: response.ok,
+      data: responseData,
+      status: response.status
+    };
+  }
+
+  private assessConnectionQuality(statusData: any): 'excellent' | 'good' | 'fair' | 'poor' {
+    if (!statusData) return 'poor';
+
+    const temperature = statusData.temperature_c || 25;
+    const hasErrors = statusData.error_count > 0;
+
+    if (!hasErrors && temperature < 35) return 'excellent';
+    if (!hasErrors && temperature < 45) return 'good';
+    if (temperature < 55) return 'fair';
+    return 'poor';
+  }
+}
+
+/**
+ * Honeywell RFID Reader Driver
+ */
+export class HoneywellRFIDDriver extends RFIDReaderDriver {
+  async connect(): Promise<boolean> {
+    try {
+      logger.info('Connecting to Honeywell RFID reader', {
+        readerId: this.config.id,
+        ipAddress: this.config.ipAddress
+      });
+
+      // Honeywell reader connection logic
+      const response = await this.makeRequest('/reader/status', 'GET');
+
+      if (response.success) {
+        this.isConnected = true;
+        this.emit('connected', this.config.id);
+        return true;
+      }
+
+      throw new Error('Failed to establish connection with Honeywell reader');
+
+    } catch (error: unknown) {
+      this.lastError = error as Error;
+      logger.error('Failed to connect to Honeywell RFID reader', error, {
+        readerId: this.config.id,
+        ipAddress: this.config.ipAddress
+      });
+      return false;
+    }
+  }
+
+  async disconnect(): Promise<void> {
+    this.isConnected = false;
+    this.emit('disconnected', this.config.id);
+    logger.info('Disconnected from Honeywell RFID reader', { readerId: this.config.id });
+  }
+
+  async scan(timeout: number = 5000): Promise<RFIDScanResult> {
+    if (!this.isConnected) {
+      throw new Error('Reader not connected');
+    }
+
+    try {
+      // Honeywell scan operation
+      const scanResponse = await this.makeRequest('/reader/scan', 'POST', {
+        scan_duration: timeout,
+        power_level: this.config.powerLevel || 30
+      });
+
+      if (scanResponse.data?.results?.length > 0) {
+        const tagData = scanResponse.data.results[0];
+
+        return {
+          success: true,
+          cardId: tagData.epc_hex,
+          cardData: tagData.user_memory,
+          signalStrength: tagData.rssi_dbm || 0,
+          timestamp: new Date(tagData.timestamp),
+          readerId: this.config.id,
+          antenna: tagData.antenna_port,
+          metadata: {
+            vendor: RFIDVendor.HONEYWELL,
+            epc: tagData.epc_hex,
+            rssi: tagData.rssi_dbm,
+            read_count: tagData.read_count,
+            frequency: tagData.frequency_mhz
+          }
+        };
+      }
+
+      return {
+        success: false,
+        cardId: '',
+        signalStrength: 0,
+        timestamp: new Date(),
+        readerId: this.config.id,
+        error: {
+          code: 'NO_TAGS_FOUND',
+          message: 'No RFID tags detected'
+        }
+      };
+
+    } catch (error: unknown) {
+      logger.error('Honeywell RFID scan failed', error, { readerId: this.config.id });
+      return {
+        success: false,
+        cardId: '',
+        signalStrength: 0,
+        timestamp: new Date(),
+        readerId: this.config.id,
+        error: {
+          code: 'SCAN_ERROR',
+          message: error instanceof Error ? (error instanceof Error ? error.message : String(error)) : 'Unknown scan error',
+          details: error
+        }
+      };
+    }
+  }
+
+  async getStatus(): Promise<RFIDReaderStatus> {
+    try {
+      const statusResponse = await this.makeRequest('/reader/status', 'GET');
+
+      return {
+        readerId: this.config.id,
+        isOnline: this.isConnected && statusResponse.success,
+        lastHeartbeat: new Date(),
+        connectionQuality: this.assessConnectionQuality(statusResponse.data),
+        temperature: statusResponse.data?.temperature_celsius,
+        uptime: statusResponse.data?.uptime_seconds,
+        metadata: {
+          vendor: RFIDVendor.HONEYWELL,
+          firmwareVersion: statusResponse.data?.firmware_version,
+          serialNumber: statusResponse.data?.serial_number,
+          deviceType: statusResponse.data?.device_type
+        }
+      };
+    } catch (error: unknown) {
+      logger.error('Failed to get Honeywell reader status', error, { readerId: this.config.id });
+      return {
+        readerId: this.config.id,
+        isOnline: false,
+        lastHeartbeat: new Date(),
+        connectionQuality: 'poor'
+      };
+    }
+  }
+
+  async testConnection(): Promise<boolean> {
+    try {
+      const response = await this.makeRequest('/reader/status', 'GET');
+      return response.success;
+    } catch (error: unknown) {
+      return false;
+    }
+  }
+
+  async configure(settings: Record<string, any>): Promise<boolean> {
+    try {
+      const configResponse = await this.makeRequest('/reader/configure', 'POST', settings);
+      return configResponse.success;
+    } catch (error: unknown) {
+      logger.error('Failed to configure Honeywell reader', error, { readerId: this.config.id });
+      return false;
+    }
+  }
+
+  private async makeRequest(endpoint: string, method: string, data?: any): Promise<any> {
+    const url = `http://${this.config.ipAddress}:${this.config.port}${endpoint}`;
+
+    const options: RequestInit = {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(this.config.username && this.config.password && {
+          'Authorization': `Basic ${Buffer.from(`${this.config.username}:${this.config.password}`).toString('base64')}`
+        })
+      },
+      signal: AbortSignal.timeout(this.config.connectionTimeout),
+      ...(data && { body: JSON.stringify(data) })
+    };
+
+    const response = await fetch(url, options);
+    const responseData = await response.json();
+
+    return {
+      success: response.ok,
+      data: responseData,
+      status: response.status
+    };
+  }
+
+  private assessConnectionQuality(statusData: any): 'excellent' | 'good' | 'fair' | 'poor' {
+    if (!statusData) return 'poor';
+
+    const temperature = statusData.temperature_celsius || 25;
+    const hasErrors = statusData.error_count > 0;
+
+    if (!hasErrors && temperature < 40) return 'excellent';
+    if (!hasErrors && temperature < 50) return 'good';
+    if (temperature < 60) return 'fair';
+    return 'poor';
+  }
+}
+
+/**
+ * Generic RFID Reader Driver for unknown vendors
+ */
+export class GenericRFIDDriver extends RFIDReaderDriver {
+  async connect(): Promise<boolean> {
+    try {
+      logger.info('Connecting to Generic RFID reader', {
+        readerId: this.config.id,
+        ipAddress: this.config.ipAddress
+      });
+
+      // Generic connection attempt
+      const response = await this.makeRequest('/status', 'GET');
+
+      if (response.success) {
+        this.isConnected = true;
+        this.emit('connected', this.config.id);
+        return true;
+      }
+
+      throw new Error('Failed to establish connection with generic reader');
+
+    } catch (error: unknown) {
+      this.lastError = error as Error;
+      logger.error('Failed to connect to Generic RFID reader', error, {
+        readerId: this.config.id,
+        ipAddress: this.config.ipAddress
+      });
+      return false;
+    }
+  }
+
+  async disconnect(): Promise<void> {
+    this.isConnected = false;
+    this.emit('disconnected', this.config.id);
+    logger.info('Disconnected from Generic RFID reader', { readerId: this.config.id });
+  }
+
+  async scan(timeout: number = 5000): Promise<RFIDScanResult> {
+    if (!this.isConnected) {
+      throw new Error('Reader not connected');
+    }
+
+    try {
+      // Generic scan operation
+      const scanResponse = await this.makeRequest('/scan', 'POST', {
+        timeout: timeout
+      });
+
+      if (scanResponse.data?.cards?.length > 0) {
+        const cardData = scanResponse.data.cards[0];
+
+        return {
+          success: true,
+          cardId: cardData.id,
+          cardData: cardData.data,
+          signalStrength: cardData.signal || 0,
+          timestamp: new Date(),
+          readerId: this.config.id,
+          metadata: {
+            vendor: RFIDVendor.GENERIC,
+            raw_data: cardData
+          }
+        };
+      }
+
+      return {
+        success: false,
+        cardId: '',
+        signalStrength: 0,
+        timestamp: new Date(),
+        readerId: this.config.id,
+        error: {
+          code: 'NO_TAGS_FOUND',
+          message: 'No RFID tags detected'
+        }
+      };
+
+    } catch (error: unknown) {
+      logger.error('Generic RFID scan failed', error, { readerId: this.config.id });
+      return {
+        success: false,
+        cardId: '',
+        signalStrength: 0,
+        timestamp: new Date(),
+        readerId: this.config.id,
+        error: {
+          code: 'SCAN_ERROR',
+          message: error instanceof Error ? (error instanceof Error ? error.message : String(error)) : 'Unknown scan error',
+          details: error
+        }
+      };
+    }
+  }
+
+  async getStatus(): Promise<RFIDReaderStatus> {
+    try {
+      const statusResponse = await this.makeRequest('/status', 'GET');
+
+      return {
+        readerId: this.config.id,
+        isOnline: this.isConnected && statusResponse.success,
+        lastHeartbeat: new Date(),
+        connectionQuality: this.isConnected ? 'good' : 'poor',
+        metadata: {
+          vendor: RFIDVendor.GENERIC,
+          rawStatus: statusResponse.data
+        }
+      };
+    } catch (error: unknown) {
+      logger.error('Failed to get Generic reader status', error, { readerId: this.config.id });
+      return {
+        readerId: this.config.id,
+        isOnline: false,
+        lastHeartbeat: new Date(),
+        connectionQuality: 'poor'
+      };
+    }
+  }
+
+  async testConnection(): Promise<boolean> {
+    try {
+      const response = await this.makeRequest('/status', 'GET');
+      return response.success;
+    } catch (error: unknown) {
+      return false;
+    }
+  }
+
+  async configure(settings: Record<string, any>): Promise<boolean> {
+    try {
+      const configResponse = await this.makeRequest('/config', 'POST', settings);
+      return configResponse.success;
+    } catch (error: unknown) {
+      logger.error('Failed to configure Generic reader', error, { readerId: this.config.id });
+      return false;
+    }
+  }
+
+  private async makeRequest(endpoint: string, method: string, data?: any): Promise<any> {
+    const url = `http://${this.config.ipAddress}:${this.config.port}${endpoint}`;
+
+    const options: RequestInit = {
+      method,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      signal: AbortSignal.timeout(this.config.connectionTimeout),
+      ...(data && { body: JSON.stringify(data) })
+    };
+
+    const response = await fetch(url, options);
+    const responseData = response.ok ? await response.json() : null;
+
+    return {
+      success: response.ok,
+      data: responseData,
+      status: response.status
+    };
+  }
+}
+
+/**
+ * RFID Hardware Abstraction Service
+ * Central manager for all RFID readers
+ */
+export class RFIDHardwareAbstractionService {
+  private static instance: RFIDHardwareAbstractionService;
+  private readers: Map<string, RFIDReaderDriver> = new Map();
+  private connectionPool: Map<string, number> = new Map();
+  private redis: any;
+
+  private constructor() {
+    this.redis = RedisService;
+  }
+
+  public static getInstance(): RFIDHardwareAbstractionService {
+    if (!RFIDHardwareAbstractionService.instance) {
+      RFIDHardwareAbstractionService.instance = new RFIDHardwareAbstractionService();
+    }
+    return RFIDHardwareAbstractionService.instance;
+  }
+
+  /**
+   * Create driver factory for different vendors
+   */
+  createDriver(config: RFIDReaderConfig): RFIDReaderDriver {
+    switch (config.vendor) {
+      case RFIDVendor.ZEBRA:
+        return new ZebraRFIDDriver(config);
+      case RFIDVendor.IMPINJ:
+        return new ImpinjRFIDDriver(config);
+      case RFIDVendor.HONEYWELL:
+        return new HoneywellRFIDDriver(config);
+      case RFIDVendor.GENERIC:
+      default:
+        return new GenericRFIDDriver(config);
+    }
+  }
+
+  /**
+   * Add RFID reader to the system
+   */
+  async addReader(config: RFIDReaderConfig): Promise<boolean> {
+    try {
+      const driver = this.createDriver(config);
+
+      // Set up event listeners
+      driver.on('connected', (readerId) => {
+        logger.info('RFID reader connected', { readerId });
+        this.updateConnectionPool(readerId, 1);
+      });
+
+      driver.on('disconnected', (readerId) => {
+        logger.info('RFID reader disconnected', { readerId });
+        this.updateConnectionPool(readerId, -1);
+      });
+
+      this.readers.set(config.id, driver);
+
+      // Cache reader configuration
+      await this.redis.setex(
+        `rfid:reader:config:${config.id}`,
+        3600,
+        JSON.stringify(config)
+      );
+
+      logger.info('RFID reader added to abstraction layer', {
+        readerId: config.id,
+        vendor: config.vendor,
+        model: config.model
+      });
+
+      return true;
+
+    } catch (error: unknown) {
+      logger.error('Failed to add RFID reader', error, { config });
+      return false;
+    }
+  }
+
+  /**
+   * Connect to all registered readers
+   */
+  async connectAllReaders(): Promise<{ connected: string[]; failed: string[] }> {
+    const connected: string[] = [];
+    const failed: string[] = [];
+
+    for (const [readerId, driver] of this.readers) {
+      try {
+        const isConnected = await driver.connect();
+        if (isConnected) {
+          connected.push(readerId);
+        } else {
+          failed.push(readerId);
+        }
+      } catch (error: unknown) {
+        logger.error('Failed to connect to reader', error, { readerId });
+        failed.push(readerId);
+      }
+    }
+
+    logger.info('Reader connection results', { connected, failed });
+    return { connected, failed };
+  }
+
+  /**
+   * Scan for RFID cards using specific reader
+   */
+  async scanReader(readerId: string, timeout?: number): Promise<RFIDScanResult> {
+    const driver = this.readers.get(readerId);
+
+    if (!driver) {
+      throw new Error(`RFID reader not found: ${readerId}`);
+    }
+
+    if (!driver.isReaderConnected()) {
+      // Attempt to reconnect
+      const connected = await driver.connect();
+      if (!connected) {
+        throw new Error(`RFID reader not connected: ${readerId}`);
+      }
+    }
+
+    return await driver.scan(timeout);
+  }
+
+  /**
+   * Scan all connected readers in parallel
+   */
+  async scanAllReaders(timeout: number = 3000): Promise<RFIDScanResult[]> {
+    const scanPromises: Promise<RFIDScanResult>[] = [];
+
+    for (const [readerId, driver] of this.readers) {
+      if (driver.isReaderConnected()) {
+        scanPromises.push(driver.scan(timeout));
+      }
+    }
+
+    return await Promise.all(scanPromises);
+  }
+
+  /**
+   * Get status of all readers
+   */
+  async getAllReaderStatus(): Promise<RFIDReaderStatus[]> {
+    const statusPromises: Promise<RFIDReaderStatus>[] = [];
+
+    for (const [readerId, driver] of this.readers) {
+      statusPromises.push(driver.getStatus());
+    }
+
+    return await Promise.all(statusPromises);
+  }
+
+  /**
+   * Get specific reader status
+   */
+  async getReaderStatus(readerId: string): Promise<RFIDReaderStatus | null> {
+    const driver = this.readers.get(readerId);
+
+    if (!driver) {
+      return null;
+    }
+
+    return await driver.getStatus();
+  }
+
+  /**
+   * Disconnect all readers
+   */
+  async disconnectAllReaders(): Promise<void> {
+    const disconnectPromises: Promise<void>[] = [];
+
+    for (const [readerId, driver] of this.readers) {
+      disconnectPromises.push(driver.disconnect());
+    }
+
+    await Promise.all(disconnectPromises);
+    this.connectionPool.clear();
+  }
+
+  /**
+   * Remove reader from system
+   */
+  async removeReader(readerId: string): Promise<boolean> {
+    const driver = this.readers.get(readerId);
+
+    if (driver) {
+      await driver.disconnect();
+      this.readers.delete(readerId);
+      this.connectionPool.delete(readerId);
+
+      // Remove from cache
+      await this.redis.del(`rfid:reader:config:${readerId}`);
+
+      logger.info('RFID reader removed from abstraction layer', { readerId });
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Get all registered readers
+   */
+  getRegisteredReaders(): RFIDReaderConfig[] {
+    return Array.from(this.readers.values()).map(driver => driver.getConfig());
+  }
+
+  /**
+   * Test connection to specific reader
+   */
+  async testReaderConnection(readerId: string): Promise<boolean> {
+    const driver = this.readers.get(readerId);
+
+    if (!driver) {
+      return false;
+    }
+
+    return await driver.testConnection();
+  }
+
+  /**
+   * Configure reader settings
+   */
+  async configureReader(readerId: string, settings: Record<string, any>): Promise<boolean> {
+    const driver = this.readers.get(readerId);
+
+    if (!driver) {
+      return false;
+    }
+
+    return await driver.configure(settings);
+  }
+
+  private updateConnectionPool(readerId: string, delta: number): void {
+    const current = this.connectionPool.get(readerId) || 0;
+    this.connectionPool.set(readerId, Math.max(0, current + delta));
+  }
+
+  /**
+   * Get connection pool statistics
+   */
+  getConnectionPoolStats(): Record<string, number> {
+    return Object.fromEntries(this.connectionPool);
+  }
+}
+
+// Export singleton instance
+export const rfidHardwareService = RFIDHardwareAbstractionService.getInstance();

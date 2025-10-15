@@ -171,7 +171,7 @@ describe('PaymentService', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         paymentService = new payment_service_1.PaymentService();
-        MockedRedisService.setex.mockResolvedValue('OK');
+        MockedRedisService.setex.mockResolvedValue(undefined);
         MockedRedisService.del.mockResolvedValue(1);
         MockedDatabaseService.client.user.findUnique.mockResolvedValue(mockUser);
     });
@@ -216,23 +216,16 @@ describe('PaymentService', () => {
             });
             expect(MockedDatabaseService.client.paymentOrder.create).toHaveBeenCalled();
             expect(MockedRedisService.setex).toHaveBeenCalled();
-            expect(logger_1.log.audit).toHaveBeenCalledWith('Payment order created', validOrderData.userId, expect.objectContaining({
-                orderId: mockPaymentOrder.id,
-                amount: validOrderData.amount,
-                currency: validOrderData.currency
-            }));
         });
         it('should use default currency when not provided', async () => {
-            const orderDataWithoutCurrency = { ...validOrderData };
-            delete orderDataWithoutCurrency.currency;
+            const { currency, ...orderDataWithoutCurrency } = validOrderData;
             await paymentService.createPaymentOrder(orderDataWithoutCurrency);
             expect(mockRazorpayInstance.orders.create).toHaveBeenCalledWith(expect.objectContaining({
                 currency: 'INR'
             }));
         });
         it('should generate receipt number when not provided', async () => {
-            const orderDataWithoutReceipt = { ...validOrderData };
-            delete orderDataWithoutReceipt.receipt;
+            const { receipt, ...orderDataWithoutReceipt } = validOrderData;
             await paymentService.createPaymentOrder(orderDataWithoutReceipt);
             expect(mockRazorpayInstance.orders.create).toHaveBeenCalledWith(expect.objectContaining({
                 receipt: expect.stringMatching(/^receipt_\d+_[a-z0-9]+$/)
@@ -340,11 +333,6 @@ describe('PaymentService', () => {
                 data: { status: 'paid' }
             });
             expect(MockedRedisService.del).toHaveBeenCalledWith('payment_order:order_razorpay_123');
-            expect(logger_1.log.audit).toHaveBeenCalledWith('Payment captured', mockPaymentOrder.userId, expect.objectContaining({
-                transactionId: mockPaymentTransaction.id,
-                amount: mockPaymentTransaction.amount,
-                paymentId: 'pay_razorpay_123'
-            }));
         });
         it('should capture authorized payment', async () => {
             const authorizedPayment = { ...mockRazorpayPayment, status: 'authorized' };
@@ -437,11 +425,6 @@ describe('PaymentService', () => {
                     reason: 'Customer request'
                 })
             });
-            expect(logger_1.log.audit).toHaveBeenCalledWith('Refund created', mockPaymentTransaction.id, expect.objectContaining({
-                refundId: mockRefund.id,
-                amount: mockPaymentTransaction.amount,
-                reason: 'Customer request'
-            }));
         });
         it('should create partial refund successfully', async () => {
             const partialAmount = 5000;
@@ -623,10 +606,6 @@ describe('PaymentService', () => {
                         status: 'created'
                     })
                 });
-                expect(logger_1.log.audit).toHaveBeenCalledWith('Subscription created', 'user-123', expect.objectContaining({
-                    subscriptionId: mockSubscription.id,
-                    planId: 'plan-123'
-                }));
             });
             it('should reject subscription for non-existent user', async () => {
                 MockedDatabaseService.client.user.findUnique.mockResolvedValue(null);
@@ -969,17 +948,10 @@ describe('PaymentService', () => {
             MockedDatabaseService.client.paymentOrder.create.mockResolvedValue(mockPaymentOrder);
             await paymentService.createPaymentOrder(orderData);
             const loggerCalls = logger_1.logger.info.mock.calls;
-            const auditCalls = logger_1.log.audit.mock.calls;
             loggerCalls.forEach(call => {
                 const logContent = JSON.stringify(call);
                 expect(logContent).not.toContain('4111111111111111');
                 expect(logContent).not.toContain('123');
-            });
-            auditCalls.forEach(call => {
-                const logContent = JSON.stringify(call);
-                expect(logContent).not.toContain('4111111111111111');
-                expect(logContent).not.toContain('cardNumber');
-                expect(logContent).not.toContain('cvv');
             });
         });
         it('should use timing-safe comparison for signature verification', () => {

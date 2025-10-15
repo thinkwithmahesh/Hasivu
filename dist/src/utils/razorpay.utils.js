@@ -24,7 +24,7 @@ exports.PAYMENT_STATUS = {
     FAILED: 'failed',
     CANCELLED: 'cancelled'
 };
-exports.SUPPORTED_CURRENCIES = ['INR', 'USD', 'EUR'];
+exports.SUPPORTED_CURRENCIES = ['INR', 'EUR'];
 exports.RECEIPT_PREFIX = {
     ORDER: 'ORD_',
     PAYMENT: 'PAY_',
@@ -32,7 +32,6 @@ exports.RECEIPT_PREFIX = {
 };
 exports.AMOUNT_LIMITS = {
     INR: { min: 100, max: 1500000000 },
-    USD: { min: 100, max: 200000000 },
     EUR: { min: 100, max: 200000000 }
 };
 function generateReceiptNumber(prefix = exports.RECEIPT_PREFIX.ORDER) {
@@ -42,7 +41,7 @@ function generateReceiptNumber(prefix = exports.RECEIPT_PREFIX.ORDER) {
         return `${prefix}${timestamp}_${random}`;
     }
     catch (error) {
-        logger_1.logger.error('Failed to generate receipt number:', error);
+        logger_1.logger.error('Failed to generate receipt number:', { error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) });
         throw new Error('Receipt generation failed');
     }
 }
@@ -78,7 +77,7 @@ function validatePaymentAmount(amount, currency) {
         };
     }
     catch (error) {
-        logger_1.logger.error('Amount validation failed:', error);
+        logger_1.logger.error('Amount validation failed:', { error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) });
         return {
             valid: false,
             error: 'Amount validation error'
@@ -92,7 +91,7 @@ function generatePaymentSignature(orderId, paymentId, secret) {
         return crypto_1.default.createHmac('sha256', secret).update(payload).digest('hex');
     }
     catch (error) {
-        logger_1.logger.error('Payment signature generation failed:', error);
+        logger_1.logger.error('Payment signature generation failed:', { error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) });
         throw new Error('Signature generation failed');
     }
 }
@@ -103,7 +102,7 @@ function verifyPaymentSignature(orderId, paymentId, signature, secret) {
         return crypto_1.default.timingSafeEqual(Buffer.from(signature, 'hex'), Buffer.from(expectedSignature, 'hex'));
     }
     catch (error) {
-        logger_1.logger.error('Payment signature verification failed:', error);
+        logger_1.logger.error('Payment signature verification failed:', { error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) });
         return false;
     }
 }
@@ -114,7 +113,7 @@ function verifyWebhookSignature(payload, signature, secret) {
         return crypto_1.default.timingSafeEqual(Buffer.from(signature, 'hex'), Buffer.from(expectedSignature, 'hex'));
     }
     catch (error) {
-        logger_1.logger.error('Webhook signature verification failed:', error);
+        logger_1.logger.error('Webhook signature verification failed:', { error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) });
         return false;
     }
 }
@@ -130,12 +129,12 @@ function formatAmount(amount, currency) {
         return formatter.format(value);
     }
     catch (error) {
-        logger_1.logger.error('Amount formatting failed:', error);
+        logger_1.logger.error('Amount formatting failed:', { error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) });
         return `${currency} ${amount / 100}`;
     }
 }
 exports.formatAmount = formatAmount;
-function parseAmount(formattedAmount, currency) {
+function parseAmount(formattedAmount, _currency) {
     try {
         const cleaned = formattedAmount.replace(/[^\d.,]/g, '');
         const value = parseFloat(cleaned.replace(',', ''));
@@ -145,7 +144,7 @@ function parseAmount(formattedAmount, currency) {
         return Math.round(value * 100);
     }
     catch (error) {
-        logger_1.logger.error('Amount parsing failed:', error);
+        logger_1.logger.error('Amount parsing failed:', { error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) });
         throw new Error('Invalid amount format');
     }
 }
@@ -207,7 +206,7 @@ function calculatePaymentAnalytics(payments, startDate, endDate) {
         };
     }
     catch (error) {
-        logger_1.logger.error('Payment analytics calculation failed:', error);
+        logger_1.logger.error('Payment analytics calculation failed:', { error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) });
         throw new Error('Analytics calculation failed');
     }
 }

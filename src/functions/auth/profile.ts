@@ -1,160 +1,56 @@
 /**
- * User Profile Lambda Function
- * Retrieves authenticated user's profile information
+ * Get Profile Function
+ * Lambda function to get user profile
  */
-import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
-import { DatabaseService } from '../../services/database.service';
-import { logger } from '../../utils/logger';
-import { createSuccessResponse, createErrorResponse, handleError } from '../shared/response.utils';
 
-// Initialize database client
-const db = DatabaseService.client;
+import { APIGatewayProxyResult } from 'aws-lambda';
+import { authService } from '../../services/auth.service';
+import { createSuccessResponse, createErrorResponse } from '../shared/response.utils';
 
-// Common Lambda response helper
-const createResponse = (statusCode: number, body: any, headers: Record<string, string> = {}): APIGatewayProxyResult => ({
-  statusCode,
-  headers: {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
-    'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
-    ...headers
-  },
-  body: JSON.stringify(body)
-});
+export interface ProfileRequest {
+  userId: string;
+}
 
-
-/**
- * Get User Profile Lambda Function Handler
- * Retrieves authenticated user's profile information
- */
-export const getUserProfileHandler = async (
-  event: APIGatewayProxyEvent,
-  context: Context
-): Promise<APIGatewayProxyResult> => {
-  const startTime = Date.now();
-  
+export const handler = async (event: any, _context: any): Promise<APIGatewayProxyResult> => {
   try {
-    logger.info('Profile handler starting', { 
-      requestId: context.awsRequestId,
-      cognitoUserId: event.requestContext.authorizer?.claims?.sub 
-    });
+    const userId = event.pathParameters?.userId || event.userId;
 
-    // Get Cognito user ID from the event
-    const cognitoUserId = event.requestContext.authorizer?.claims?.sub;
-    
-    if (!cognitoUserId) {
-      return createResponse(401, { error: 'Unauthorized - No user ID found' });
+    // Validate input
+    if (!userId) {
+      return createErrorResponse('VALIDATION_ERROR', 'User ID is required', 400);
     }
 
-    // Get user from database
-    const user = await db.user.findFirst({
-      where: { cognitoUserId },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        phone: true,
-        role: true,
-        schoolId: true,
-        parentId: true,
-        isActive: true,
-        createdAt: true,
-        updatedAt: true
-      }
-    });
+    // Get user profile
+    const user = await authService.getUserById(userId);
 
     if (!user) {
-      return createResponse(404, { error: 'User not found' });
+      return createErrorResponse('USER_NOT_FOUND', 'User not found', 404);
     }
 
-    // Get school information
-    const school = user.schoolId ? await db.school.findUnique({
-      where: { id: user.schoolId },
-      select: {
-        id: true,
-        name: true,
-        address: true,
-        city: true,
-        state: true,
-        postalCode: true
-      }
-    }) : null;
-
-    // Get additional role-specific information
-    let roleSpecificInfo = null;
-    if (user.role === 'student') {
-      // Student-specific info would come from User table or related tables
-      // For now, we'll skip this since studentProfile doesn't exist in schema
-      roleSpecificInfo = {
-        parentId: user.parentId
-        // class, section, rollNumber would need to be added to User model or separate table
-      };
-    }
-
-    // Get recent orders for students
-    let recentOrders = null;
-    if (user.role === 'student' && roleSpecificInfo) {
-      recentOrders = await db.order.findMany({
-        where: { studentId: user.id },
-        select: {
-          id: true,
-          totalAmount: true,
-          status: true,
-          createdAt: true,
-          orderItems: {
-            select: {
-              quantity: true,
-              menuItem: {
-                select: {
-                  name: true,
-                  price: true
-                }
-              }
-            }
-          }
-        },
-        orderBy: { createdAt: 'desc' },
-        take: 5 // Last 5 orders
-      });
-    }
-
-    // Get notification preferences (using WhatsApp messages as notifications for now)
-    const notifications = await db.whatsAppMessage.count({
-      where: { 
-        userId: user.id,
-        status: 'sent'
-      }
-    });
-
-    const duration = Date.now() - startTime;
-    logger.info('Profile handler completed successfully', { 
-      statusCode: 200, 
-      duration,
-      requestId: context.awsRequestId 
-    });
-    logger.info('Profile retrieved successfully', { 
-      userId: user.id, 
-      email: user.email,
-      duration 
-    });
-
-    return createResponse(200, {
-      user: {
-        ...user,
-        school,
-        roleSpecificInfo,
-        ...(recentOrders && { recentOrders }),
-        notificationCount: notifications
-      }
-    });
-
+    // Return user profile (exclude password hash)
+    return createSuccessResponse(
+      {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        role: user.role,
+        phone: user.phone,
+        schoolId: user.schoolId,
+        createdAt: user.createdAt,
+      },
+      200
+    );
   } catch (error) {
-    logger.error('Get profile Lambda function error', {
-      error: error instanceof Error ? error.message : String(error),
-      requestId: context.awsRequestId
-    });
-    return createResponse(500, { error: 'Internal server error' });
+    return createErrorResponse(
+      'PROFILE_FETCH_FAILED',
+      error instanceof Error ? error.message : 'Failed to fetch profile',
+      500
+    );
   }
 };
+
+// Export handler as profileHandler for tests
+export const profileHandler = handler;
+
+export default handler;

@@ -1,0 +1,2455 @@
+{
+  "/Users/mahesha/Downloads/hasivu-platform/serverless.yml": {
+    "versionFramework": "4.21.0",
+    "servicePath": "/Users/mahesha/Downloads/hasivu-platform/serverless.yml",
+    "serviceConfigFileName": "serverless.yml",
+    "service": {
+      "service": "hasivu-platform",
+      "frameworkVersion": "4",
+      "provider": {
+        "name": "aws",
+        "runtime": "nodejs18.x",
+        "region": "ap-south-1",
+        "stage": "${opt:stage, 'dev'}",
+        "memorySize": 512,
+        "timeout": 30,
+        "architecture": "arm64",
+        "environment": {
+          "NODE_ENV": "${self:provider.stage}",
+          "DATABASE_URL": "${ssm:/hasivu/${self:provider.stage}/database-url}",
+          "AWS_COGNITO_USER_POOL_ID": "${ssm:/hasivu/${self:provider.stage}/cognito-user-pool-id}",
+          "AWS_COGNITO_CLIENT_ID": "${ssm:/hasivu/${self:provider.stage}/cognito-client-id}",
+          "RAZORPAY_KEY_ID": "${ssm:/hasivu/${self:provider.stage}/razorpay-key-id}",
+          "RAZORPAY_KEY_SECRET": "<REDACTED>",
+          "RAZORPAY_WEBHOOK_SECRET": "<REDACTED>",
+          "WHATSAPP_ACCESS_TOKEN": "<REDACTED>",
+          "FIREBASE_SERVER_KEY": "${ssm:/hasivu/${self:provider.stage}/firebase-server-key~true}",
+          "PUSH_NOTIFICATION_TOPIC_ARN": "${cf:hasivu-${self:provider.stage}-messaging.PushNotificationTopicArn}",
+          "S3_BUCKET_NAME": "hasivu-${self:provider.stage}-uploads",
+          "JWT_SECRET": "<REDACTED>",
+          "IDEMPOTENCY_TABLE": "payment-webhook-idempotency-${self:provider.stage}",
+          "DEAD_LETTER_QUEUE_URL": "${cf:hasivu-${self:provider.stage}-queues.DeadLetterQueueUrl}",
+          "NOTIFICATION_TOPIC_ARN": "${cf:hasivu-${self:provider.stage}-messaging.NotificationTopicArn}",
+          "RETRY_QUEUE_URL": "${cf:hasivu-${self:provider.stage}-queues.RetryQueueUrl}",
+          "MAX_RETRY_ATTEMPTS": 3
+        },
+        "iam": {
+          "role": {
+            "statements": [
+              {
+                "Effect": "Allow",
+                "Action": [
+                  "ssm:GetParameter",
+                  "ssm:GetParameters",
+                  "secretsmanager:GetSecretValue"
+                ],
+                "Resource": [
+                  "arn:aws:ssm:${aws:region}:${aws:accountId}:parameter/hasivu/${self:provider.stage}/*",
+                  "arn:aws:secretsmanager:${aws:region}:${aws:accountId}:secret:hasivu/${self:provider.stage}/*"
+                ]
+              },
+              {
+                "Effect": "Allow",
+                "Action": [
+                  "s3:GetObject",
+                  "s3:PutObject",
+                  "s3:DeleteObject"
+                ],
+                "Resource": "arn:aws:s3:::hasivu-${self:provider.stage}-uploads/*"
+              },
+              {
+                "Effect": "Allow",
+                "Action": [
+                  "cognito-idp:AdminCreateUser",
+                  "cognito-idp:AdminSetUserPassword",
+                  "cognito-idp:AdminUpdateUserAttributes"
+                ],
+                "Resource": "arn:aws:cognito-idp:${aws:region}:${aws:accountId}:userpool/*"
+              },
+              {
+                "Effect": "Allow",
+                "Action": [
+                  "ses:SendEmail",
+                  "ses:SendRawEmail"
+                ],
+                "Resource": "*"
+              },
+              {
+                "Effect": "Allow",
+                "Action": [
+                  "logs:CreateLogGroup",
+                  "logs:CreateLogStream",
+                  "logs:PutLogEvents"
+                ],
+                "Resource": "*"
+              },
+              {
+                "Effect": "Allow",
+                "Action": [
+                  "dynamodb:GetItem",
+                  "dynamodb:PutItem",
+                  "dynamodb:UpdateItem",
+                  "dynamodb:DeleteItem",
+                  "dynamodb:Query",
+                  "dynamodb:Scan"
+                ],
+                "Resource": [
+                  "arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/payment-webhook-idempotency-${self:provider.stage}"
+                ]
+              },
+              {
+                "Effect": "Allow",
+                "Action": [
+                  "sqs:SendMessage",
+                  "sqs:ReceiveMessage",
+                  "sqs:DeleteMessage"
+                ],
+                "Resource": [
+                  "arn:aws:sqs:${aws:region}:${aws:accountId}:payment-retry-queue-${self:provider.stage}",
+                  "arn:aws:sqs:${aws:region}:${aws:accountId}:payment-dlq-${self:provider.stage}"
+                ]
+              },
+              {
+                "Effect": "Allow",
+                "Action": [
+                  "sns:Publish",
+                  "sns:CreatePlatformEndpoint",
+                  "sns:DeleteEndpoint",
+                  "sns:GetEndpointAttributes",
+                  "sns:SetEndpointAttributes"
+                ],
+                "Resource": [
+                  "arn:aws:sns:${aws:region}:${aws:accountId}:payment-notifications-${self:provider.stage}",
+                  "arn:aws:sns:${aws:region}:${aws:accountId}:push-notifications-${self:provider.stage}",
+                  "arn:aws:sns:${aws:region}:${aws:accountId}:app/*"
+                ]
+              },
+              {
+                "Effect": "Allow",
+                "Action": [
+                  "s3:GetObject",
+                  "s3:PutObject"
+                ],
+                "Resource": [
+                  "arn:aws:s3:::hasivu-${self:provider.stage}-ml-models/*",
+                  "arn:aws:s3:::hasivu-${self:provider.stage}-invoice-templates/*",
+                  "arn:aws:s3:::hasivu-${self:provider.stage}-invoices/*",
+                  "arn:aws:s3:::hasivu-${self:provider.stage}-analytics/*"
+                ]
+              },
+              {
+                "Effect": "Allow",
+                "Action": [
+                  "sagemaker:InvokeEndpoint"
+                ],
+                "Resource": [
+                  "arn:aws:sagemaker:${aws:region}:${aws:accountId}:endpoint/*"
+                ]
+              }
+            ]
+          }
+        },
+        "apiGateway": {
+          "restApiId": "${ssm:/hasivu/${self:provider.stage}/api-gateway-id, ''}",
+          "restApiRootResourceId": "${ssm:/hasivu/${self:provider.stage}/api-gateway-root-id, ''}",
+          "throttle": {
+            "rateLimit": 1000,
+            "burstLimit": 2000
+          },
+          "metrics": true,
+          "logs": {
+            "restApi": true,
+            "level": "INFO"
+          },
+          "cors": {
+            "origin": "*",
+            "headers": [
+              "Content-Type",
+              "X-Amz-Date",
+              "Authorization",
+              "X-Api-Key",
+              "X-Amz-Security-Token",
+              "X-Amz-User-Agent"
+            ],
+            "allowCredentials": "<REDACTED>"
+          }
+        },
+        "logs": {
+          "restApi": true,
+          "level": "INFO"
+        },
+        "tracing": {
+          "lambda": true,
+          "apiGateway": true
+        }
+      },
+      "plugins": [
+        "serverless-plugin-typescript",
+        "serverless-offline",
+        "serverless-plugin-warmup",
+        "serverless-plugin-split-stacks",
+        "serverless-associate-waf"
+      ],
+      "custom": {
+        "warmup": {
+          "enabled": true,
+          "prewarm": true,
+          "concurrency": 5
+        },
+        "splitStacks": {
+          "perFunction": false,
+          "perType": true
+        },
+        "associateWaf": {
+          "name": "hasivu-${self:provider.stage}-waf",
+          "version": "V2"
+        }
+      },
+      "functions": {
+        "health": {
+          "handler": "src/functions/health/health-check.healthCheckHandler",
+          "events": [
+            {
+              "http": {
+                "path": "/health",
+                "method": "get",
+                "cors": true
+              }
+            }
+          ],
+          "warmup": {
+            "enabled": true
+          },
+          "environment": {
+            "FUNCTION_NAME": "health"
+          }
+        },
+        "auth-login": {
+          "handler": "src/functions/auth/login.loginHandler",
+          "events": [
+            {
+              "http": {
+                "path": "/auth/login",
+                "method": "post",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "auth-login"
+          }
+        },
+        "auth-register": {
+          "handler": "src/functions/auth/register.registerHandler",
+          "events": [
+            {
+              "http": {
+                "path": "/auth/register",
+                "method": "post",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "auth-register"
+          }
+        },
+        "auth-verify-email": {
+          "handler": "src/functions/auth/verify-email.verifyEmailHandler",
+          "events": [
+            {
+              "http": {
+                "path": "/auth/verify-email",
+                "method": "post",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "auth-verify-email"
+          }
+        },
+        "auth-refresh-token": "<REDACTED>",
+        "auth-forgot-password": "<REDACTED>",
+        "auth-logout": {
+          "handler": "src/functions/auth/logout.logoutHandler",
+          "events": [
+            {
+              "http": {
+                "path": "/auth/logout",
+                "method": "post",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "auth-logout"
+          }
+        },
+        "users-list": {
+          "handler": "src/functions/users/getUsers.getUsersHandler",
+          "events": [
+            {
+              "http": {
+                "path": "/api/v1/users",
+                "method": "get",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "users-list"
+          }
+        },
+        "users-get": {
+          "handler": "src/functions/users/getUserById.getUserByIdHandler",
+          "events": [
+            {
+              "http": {
+                "path": "/api/v1/users/{id}",
+                "method": "get",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "users-get"
+          }
+        },
+        "users-update": {
+          "handler": "src/functions/users/updateUser.updateUserHandler",
+          "events": [
+            {
+              "http": {
+                "path": "/api/v1/users/{id}",
+                "method": "put",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "users-update"
+          }
+        },
+        "users-bulk-import": {
+          "handler": "src/functions/users/bulkImport.bulkImportUsersHandler",
+          "timeout": 60,
+          "memorySize": 1024,
+          "events": [
+            {
+              "http": {
+                "path": "/api/v1/users/bulk-import",
+                "method": "post",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "users-bulk-import"
+          }
+        },
+        "users-manage-children": {
+          "handler": "src/functions/users/manageChildren.manageChildrenHandler",
+          "events": [
+            {
+              "http": {
+                "path": "/api/v1/users/{id}/children",
+                "method": "post",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "users-manage-children"
+          }
+        },
+        "payments-create-order": {
+          "handler": "src/functions/payments/create-order.createOrderHandler",
+          "events": [
+            {
+              "http": {
+                "path": "/payments/orders",
+                "method": "post",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "payments-create-order"
+          }
+        },
+        "payments-verify": {
+          "handler": "src/functions/payments/verify-payment.verifyPaymentHandler",
+          "events": [
+            {
+              "http": {
+                "path": "/payments/verify",
+                "method": "post",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "payments-verify"
+          }
+        },
+        "payments-webhook": {
+          "handler": "src/functions/payments/webhook.webhookHandler",
+          "events": [
+            {
+              "http": {
+                "path": "/payments/webhook",
+                "method": "post",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "payments-webhook"
+          }
+        },
+        "payments-refund": {
+          "handler": "src/functions/payments/refund.refundHandler",
+          "events": [
+            {
+              "http": {
+                "path": "/payments/refund",
+                "method": "post",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "payments-refund"
+          }
+        },
+        "payments-status": {
+          "handler": "src/functions/payments/payment-status.paymentStatusHandler",
+          "events": [
+            {
+              "http": {
+                "path": "/payments/status/{orderId}",
+                "method": "get",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "payments-status"
+          }
+        },
+        "payments-manage-methods": {
+          "handler": "src/functions/payments/manage-payment-methods.managePaymentMethodsHandler",
+          "events": [
+            {
+              "http": {
+                "path": "/payments/methods",
+                "method": "get",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/payments/methods",
+                "method": "post",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/payments/methods/{methodId}",
+                "method": "put",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/payments/methods/{methodId}",
+                "method": "delete",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "payments-manage-methods"
+          }
+        },
+        "payments-advanced": {
+          "handler": "src/functions/payments/advanced-payment.advancedPaymentHandler",
+          "timeout": 60,
+          "events": [
+            {
+              "http": {
+                "path": "/payments/advanced/create",
+                "method": "post",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/payments/advanced/validate",
+                "method": "post",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/payments/advanced/installment",
+                "method": "post",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/payments/advanced/{paymentId}",
+                "method": "get",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "payments-advanced"
+          }
+        },
+        "payments-retry": {
+          "handler": "src/functions/payments/payment-retry.paymentRetryHandler",
+          "timeout": 60,
+          "events": [
+            {
+              "http": {
+                "path": "/payments/retry",
+                "method": "post",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/payments/retry/schedule",
+                "method": "post",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/payments/retry/process-scheduled",
+                "method": "post",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/payments/retry/{paymentId}",
+                "method": "get",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/payments/retry/{retryId}",
+                "method": "delete",
+                "cors": true
+              }
+            },
+            {
+              "schedule": {
+                "rate": "rate(15 minutes)",
+                "input": {
+                  "action": "process-scheduled-retries"
+                }
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "payments-retry"
+          }
+        },
+        "payments-reconciliation": {
+          "handler": "src/functions/payments/reconciliation.reconciliationHandler",
+          "timeout": 300,
+          "memorySize": 1024,
+          "events": [
+            {
+              "http": {
+                "path": "/payments/reconciliation/generate",
+                "method": "post",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/payments/reconciliation/manual-adjustment",
+                "method": "post",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/payments/reconciliation/auto-reconcile",
+                "method": "post",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/payments/reconciliation/{recordId}",
+                "method": "get",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/payments/reconciliation/{recordId}",
+                "method": "put",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/payments/reconciliation",
+                "method": "get",
+                "cors": true
+              }
+            },
+            {
+              "schedule": {
+                "rate": "cron(0 2 * * ? *)",
+                "input": {
+                  "action": "auto-reconciliation"
+                }
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "payments-reconciliation"
+          }
+        },
+        "payments-analytics": {
+          "handler": "src/functions/payments/payment-analytics.paymentAnalyticsHandler",
+          "timeout": 120,
+          "memorySize": 1024,
+          "events": [
+            {
+              "http": {
+                "path": "/payments/analytics/dashboard",
+                "method": "get",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/payments/analytics/trends",
+                "method": "get",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/payments/analytics/failure-analysis",
+                "method": "get",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/payments/analytics/customer-behavior",
+                "method": "get",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/payments/analytics/{schoolId}",
+                "method": "get",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/payments/analytics/generate-report",
+                "method": "post",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/payments/analytics/update-behavior",
+                "method": "post",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "payments-analytics"
+          }
+        },
+        "payments-webhook-handler": {
+          "handler": "src/functions/payments/webhook-handler.webhookHandlerLambda",
+          "timeout": 30,
+          "events": [
+            {
+              "http": {
+                "path": "/payments/webhooks/razorpay",
+                "method": "post",
+                "cors": false
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "payments-webhook-handler"
+          }
+        },
+        "subscription-management": {
+          "handler": "src/functions/payments/subscription-management.handler",
+          "timeout": 60,
+          "memorySize": 1024,
+          "events": [
+            {
+              "http": {
+                "path": "/subscriptions",
+                "method": "post",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/subscriptions/{id}",
+                "method": "put",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/subscriptions/{id}/pause",
+                "method": "post",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/subscriptions/{id}/resume",
+                "method": "post",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/subscriptions/{id}/cancel",
+                "method": "post",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/subscriptions/{id}",
+                "method": "get",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/subscriptions",
+                "method": "get",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "subscription-management"
+          }
+        },
+        "billing-automation": {
+          "handler": "src/functions/payments/billing-automation.handler",
+          "timeout": 300,
+          "memorySize": 1024,
+          "events": [
+            {
+              "http": {
+                "path": "/billing/process",
+                "method": "post",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/billing/process/{id}",
+                "method": "post",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/billing/status",
+                "method": "get",
+                "cors": true
+              }
+            },
+            {
+              "schedule": {
+                "rate": "rate(1 hour)",
+                "enabled": true,
+                "input": {
+                  "action": "automated-billing"
+                }
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "billing-automation",
+            "MAX_PAYMENT_RETRIES": "${self:provider.environment.MAX_RETRY_ATTEMPTS}",
+            "PAYMENT_GRACE_PERIOD_DAYS": 7
+          }
+        },
+        "subscription-plans": {
+          "handler": "src/functions/payments/subscription-plans.handler",
+          "timeout": 60,
+          "memorySize": 512,
+          "events": [
+            {
+              "http": {
+                "path": "/subscription-plans",
+                "method": "post",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/subscription-plans/{id}",
+                "method": "put",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/subscription-plans/{id}",
+                "method": "get",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/subscription-plans",
+                "method": "get",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/subscription-plans/compare",
+                "method": "post",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/subscription-plans/{id}",
+                "method": "delete",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/subscription-plans/{id}/analytics",
+                "method": "get",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/subscription-plans/analytics",
+                "method": "get",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "subscription-plans"
+          }
+        },
+        "dunning-management": {
+          "handler": "src/functions/payments/dunning-management.handler",
+          "timeout": 180,
+          "memorySize": 1024,
+          "events": [
+            {
+              "http": {
+                "path": "/dunning/process",
+                "method": "post",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/payments/{paymentId}/retry",
+                "method": "post",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/dunning/status",
+                "method": "get",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/payments/{paymentId}/retry-history",
+                "method": "get",
+                "cors": true
+              }
+            },
+            {
+              "schedule": {
+                "rate": "rate(6 hours)",
+                "enabled": true,
+                "input": {
+                  "action": "automated-dunning"
+                }
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "dunning-management",
+            "MAX_PAYMENT_RETRIES": "${self:provider.environment.MAX_RETRY_ATTEMPTS}",
+            "PAYMENT_GRACE_PERIOD_DAYS": 7,
+            "DUNNING_EMAIL_ENABLED": true,
+            "DUNNING_SMS_ENABLED": false
+          }
+        },
+        "subscription-analytics": {
+          "handler": "src/functions/payments/subscription-analytics.handler",
+          "timeout": 120,
+          "memorySize": 2048,
+          "events": [
+            {
+              "http": {
+                "path": "/subscription-analytics",
+                "method": "get",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/subscription-analytics/dashboard",
+                "method": "get",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/subscription-analytics/cohort",
+                "method": "post",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/subscription-analytics/revenue",
+                "method": "get",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/subscription-analytics/churn",
+                "method": "get",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/subscription-analytics/clv",
+                "method": "get",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "subscription-analytics"
+          }
+        },
+        "orders-create": {
+          "handler": "src/functions/orders/create-order.createOrderHandler",
+          "events": [
+            {
+              "http": {
+                "path": "/orders",
+                "method": "post",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "orders-create"
+          }
+        },
+        "orders-get": {
+          "handler": "src/functions/orders/get-order.getOrderHandler",
+          "events": [
+            {
+              "http": {
+                "path": "/orders/{orderId}",
+                "method": "get",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "orders-get"
+          }
+        },
+        "orders-update": {
+          "handler": "src/functions/orders/update-order.updateOrderHandler",
+          "events": [
+            {
+              "http": {
+                "path": "/orders/{orderId}",
+                "method": "put",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "orders-update"
+          }
+        },
+        "orders-list": {
+          "handler": "src/functions/orders/list-orders.listOrdersHandler",
+          "events": [
+            {
+              "http": {
+                "path": "/orders",
+                "method": "get",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "orders-list"
+          }
+        },
+        "orders-history": {
+          "handler": "src/functions/orders/order-history.orderHistoryHandler",
+          "events": [
+            {
+              "http": {
+                "path": "/orders/history/{userId}",
+                "method": "get",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "orders-history"
+          }
+        },
+        "menus-create-plan": {
+          "handler": "src/functions/menus/create-plan.createMenuPlanHandler",
+          "events": [
+            {
+              "http": {
+                "path": "/menus/plans",
+                "method": "post",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "menus-create-plan"
+          }
+        },
+        "menus-get-plan": {
+          "handler": "src/functions/menus/get-plan.getMenuPlanHandler",
+          "events": [
+            {
+              "http": {
+                "path": "/menus/plans/{planId}",
+                "method": "get",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "menus-get-plan"
+          }
+        },
+        "menus-update-plan": {
+          "handler": "src/functions/menus/update-plan.updateMenuPlanHandler",
+          "events": [
+            {
+              "http": {
+                "path": "/menus/plans/{planId}",
+                "method": "put",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "menus-update-plan"
+          }
+        },
+        "menus-list-plans": {
+          "handler": "src/functions/menus/list-plans.listMenuPlansHandler",
+          "events": [
+            {
+              "http": {
+                "path": "/menus/plans",
+                "method": "get",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "menus-list-plans"
+          }
+        },
+        "menus-approve": {
+          "handler": "src/functions/menus/approve-menu.approveMenuHandler",
+          "events": [
+            {
+              "http": {
+                "path": "/menus/approve/{planId}",
+                "method": "post",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "menus-approve"
+          }
+        },
+        "menus-daily": {
+          "handler": "src/functions/menus/daily-menu.dailyMenuHandler",
+          "events": [
+            {
+              "http": {
+                "path": "/menus/daily",
+                "method": "get",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "menus-daily"
+          }
+        },
+        "invoice-generator": {
+          "handler": "src/functions/payments/invoice-generator.handler",
+          "timeout": 180,
+          "memorySize": 1024,
+          "events": [
+            {
+              "http": {
+                "path": "/invoices/generate",
+                "method": "post",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/invoices/{id}/regenerate",
+                "method": "post",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/invoices/batch-generate",
+                "method": "post",
+                "cors": true
+              }
+            },
+            {
+              "schedule": {
+                "rate": "cron(0 1 1 * ? *)",
+                "enabled": true,
+                "input": {
+                  "action": "generate-monthly-invoices"
+                }
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "invoice-generator",
+            "PDF_GENERATOR_URL": "${cf:hasivu-${self:provider.stage}-pdf.PdfGeneratorUrl}",
+            "INVOICE_TEMPLATE_BUCKET": "hasivu-${self:provider.stage}-invoice-templates"
+          }
+        },
+        "pdf-generator": {
+          "handler": "src/functions/payments/pdf-generator.handler",
+          "timeout": 120,
+          "memorySize": 1024,
+          "events": [
+            {
+              "http": {
+                "path": "/pdf/generate",
+                "method": "post",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/pdf/invoice/{id}",
+                "method": "get",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/pdf/bulk-download",
+                "method": "post",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "pdf-generator",
+            "PDF_TEMPLATES_BUCKET": "hasivu-${self:provider.stage}-invoice-templates",
+            "PDF_OUTPUT_BUCKET": "hasivu-${self:provider.stage}-invoices"
+          }
+        },
+        "invoice-templates": {
+          "handler": "src/functions/payments/invoice-templates.handler",
+          "timeout": 60,
+          "memorySize": 512,
+          "events": [
+            {
+              "http": {
+                "path": "/invoice-templates",
+                "method": "post",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/invoice-templates/{id}",
+                "method": "put",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/invoice-templates/{id}",
+                "method": "get",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/invoice-templates",
+                "method": "get",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/invoice-templates/{id}",
+                "method": "delete",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "invoice-templates",
+            "TEMPLATE_STORAGE_BUCKET": "hasivu-${self:provider.stage}-invoice-templates"
+          }
+        },
+        "invoice-mailer": {
+          "handler": "src/functions/payments/invoice-mailer.handler",
+          "timeout": 180,
+          "memorySize": 1024,
+          "events": [
+            {
+              "http": {
+                "path": "/invoices/email",
+                "method": "post",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/invoices/email/batch",
+                "method": "post",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/invoices/email/schedule",
+                "method": "post",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/invoices/email/status",
+                "method": "get",
+                "cors": true
+              }
+            },
+            {
+              "schedule": {
+                "rate": "rate(1 hour)",
+                "enabled": true,
+                "input": {
+                  "action": "send-scheduled-invoices"
+                }
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "invoice-mailer",
+            "EMAIL_TEMPLATE_BUCKET": "hasivu-${self:provider.stage}-invoice-templates",
+            "INVOICE_BUCKET": "hasivu-${self:provider.stage}-invoices"
+          }
+        },
+        "invoice-analytics": {
+          "handler": "src/functions/payments/invoice-analytics.handler",
+          "timeout": 120,
+          "memorySize": 1024,
+          "events": [
+            {
+              "http": {
+                "path": "/invoice-analytics/dashboard",
+                "method": "get",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/invoice-analytics/payment-status",
+                "method": "get",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/invoice-analytics/overdue",
+                "method": "get",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/invoice-analytics/collections",
+                "method": "get",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/invoice-analytics/generate-report",
+                "method": "post",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "invoice-analytics",
+            "ANALYTICS_DATA_BUCKET": "hasivu-${self:provider.stage}-analytics"
+          }
+        },
+        "ml-payment-insights": {
+          "handler": "src/functions/payments/ml-payment-insights.mlPaymentInsightsHandler",
+          "timeout": 180,
+          "memorySize": 2048,
+          "events": [
+            {
+              "http": {
+                "path": "/ml-insights/predictive",
+                "method": "get",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/ml-insights/anomaly",
+                "method": "get",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/ml-insights/churn",
+                "method": "get",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/ml-insights/revenue-forecast",
+                "method": "get",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/ml-insights",
+                "method": "get",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/ml-insights/train-model",
+                "method": "post",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/ml-insights/generate-insights",
+                "method": "post",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "ml-payment-insights",
+            "ML_MODEL_BUCKET": "hasivu-${self:provider.stage}-ml-models",
+            "ML_TRAINING_ENABLED": true
+          }
+        },
+        "advanced-payment-intelligence": {
+          "handler": "src/functions/payments/advanced-payment-intelligence.advancedPaymentIntelligenceHandler",
+          "timeout": 180,
+          "memorySize": 2048,
+          "events": [
+            {
+              "http": {
+                "path": "/intelligence/pattern-recognition",
+                "method": "get",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/intelligence/fraud-detection",
+                "method": "get",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/intelligence/optimization",
+                "method": "get",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/intelligence/behavioral-analysis",
+                "method": "get",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/intelligence",
+                "method": "get",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/intelligence/analyze-transaction",
+                "method": "post",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/intelligence/generate-intelligence-report",
+                "method": "post",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/intelligence/update-intelligence-models",
+                "method": "post",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "advanced-payment-intelligence",
+            "FRAUD_DETECTION_THRESHOLD": 0.7,
+            "PATTERN_RECOGNITION_SENSITIVITY": 0.8,
+            "INTELLIGENCE_MODEL_VERSION": 2
+          }
+        },
+        "rfid-manage-readers": {
+          "handler": "src/functions/rfid/manage-readers.manageRfidReadersHandler",
+          "events": [
+            {
+              "http": {
+                "path": "/rfid/readers",
+                "method": "post",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/rfid/readers/{readerId}",
+                "method": "put",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/rfid/readers",
+                "method": "get",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "rfid-manage-readers"
+          }
+        },
+        "rfid-verify-card": {
+          "handler": "src/functions/rfid/verify-card.verifyRfidCardHandler",
+          "events": [
+            {
+              "http": {
+                "path": "/rfid/verify",
+                "method": "post",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "rfid-verify-card"
+          }
+        },
+        "rfid-bulk-import-cards": {
+          "handler": "src/functions/rfid/bulk-import-cards.bulkImportCardsHandler",
+          "timeout": 60,
+          "memorySize": 1024,
+          "events": [
+            {
+              "http": {
+                "path": "/rfid/cards/bulk-import",
+                "method": "post",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "rfid-bulk-import-cards"
+          }
+        },
+        "mobile-parent-notifications": {
+          "handler": "src/functions/mobile/parent-notifications.parentNotificationsHandler",
+          "events": [
+            {
+              "http": {
+                "path": "/api/v1/mobile/notifications/send",
+                "method": "post",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/api/v1/mobile/notifications/{parentId}",
+                "method": "get",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/api/v1/mobile/notifications/{notificationId}/read",
+                "method": "put",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "mobile-parent-notifications"
+          }
+        },
+        "mobile-delivery-tracking": {
+          "handler": "src/functions/mobile/delivery-tracking.deliveryTrackingHandler",
+          "events": [
+            {
+              "http": {
+                "path": "/api/v1/mobile/tracking/orders/{orderId}",
+                "method": "get",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/api/v1/mobile/tracking/student/{studentId}",
+                "method": "get",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "mobile-delivery-tracking"
+          }
+        },
+        "mobile-device-registration": {
+          "handler": "src/functions/mobile/device-registration.deviceRegistrationHandler",
+          "events": [
+            {
+              "http": {
+                "path": "/api/v1/mobile/devices/register",
+                "method": "post",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/api/v1/mobile/devices/{deviceId}",
+                "method": "put",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/api/v1/mobile/devices/{deviceId}",
+                "method": "delete",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/api/v1/mobile/devices",
+                "method": "get",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "mobile-device-registration"
+          }
+        },
+        "rfid-test-connection": {
+          "handler": "src/functions/rfid/manage-readers.testRfidReaderHandler",
+          "events": [
+            {
+              "http": {
+                "path": "/rfid/readers/{readerId}/test",
+                "method": "post",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "rfid-test-connection"
+          }
+        },
+        "rfid-card-registration": {
+          "handler": "src/functions/rfid/card-registration.cardRegistrationHandler",
+          "events": [
+            {
+              "http": {
+                "path": "/rfid/cards",
+                "method": "post",
+                "cors": true
+              }
+            },
+            {
+              "http": {
+                "path": "/rfid/cards/{cardId}",
+                "method": "put",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "rfid-card-registration"
+          }
+        },
+        "rfid-delivery-verification": {
+          "handler": "src/functions/rfid/delivery-verification.deliveryVerificationHandler",
+          "events": [
+            {
+              "http": {
+                "path": "/rfid/verify-delivery",
+                "method": "post",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "rfid-delivery-verification"
+          }
+        },
+        "rfid-bulk-verification": {
+          "handler": "src/functions/rfid/bulk-verification.bulkVerificationHandler",
+          "events": [
+            {
+              "http": {
+                "path": "/rfid/verify-bulk",
+                "method": "post",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "rfid-bulk-verification"
+          }
+        },
+        "rfid-mobile-tracking": {
+          "handler": "src/functions/rfid/mobile-tracking.mobileTrackingHandler",
+          "events": [
+            {
+              "http": {
+                "path": "/rfid/tracking/{studentId}",
+                "method": "get",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "rfid-mobile-tracking"
+          }
+        },
+        "rfid-parent-dashboard": {
+          "handler": "src/functions/rfid/parent-dashboard.parentDashboardHandler",
+          "events": [
+            {
+              "http": {
+                "path": "/rfid/parent/{parentId}/dashboard",
+                "method": "get",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "rfid-parent-dashboard"
+          }
+        },
+        "rfid-delivery-history": {
+          "handler": "src/functions/rfid/delivery-history.deliveryHistoryHandler",
+          "events": [
+            {
+              "http": {
+                "path": "/rfid/delivery-history",
+                "method": "get",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "rfid-delivery-history"
+          }
+        },
+        "monitoring-status": {
+          "handler": "src/functions/health/status.getStatusHandler",
+          "events": [
+            {
+              "http": {
+                "path": "/status",
+                "method": "get",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "monitoring-status"
+          }
+        },
+        "monitoring-dashboard": {
+          "handler": "src/functions/monitoring/dashboard.monitoringDashboardHandler",
+          "events": [
+            {
+              "http": {
+                "path": "/monitoring/dashboard",
+                "method": "get",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "monitoring-dashboard"
+          }
+        },
+        "monitoring-health": {
+          "handler": "src/functions/monitoring/dashboard.serviceHealthHandler",
+          "events": [
+            {
+              "http": {
+                "path": "/monitoring/health/{service}",
+                "method": "get",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "monitoring-health"
+          }
+        },
+        "monitoring-metrics": {
+          "handler": "src/functions/monitoring/dashboard.systemMetricsHandler",
+          "events": [
+            {
+              "http": {
+                "path": "/monitoring/metrics",
+                "method": "get",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "monitoring-metrics"
+          }
+        },
+        "monitoring-performance": {
+          "handler": "src/functions/monitoring/dashboard.performanceMetricsHandler",
+          "events": [
+            {
+              "http": {
+                "path": "/monitoring/performance",
+                "method": "get",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "monitoring-performance"
+          }
+        },
+        "monitoring-business": {
+          "handler": "src/functions/monitoring/dashboard.businessMetricsHandler",
+          "events": [
+            {
+              "http": {
+                "path": "/monitoring/business",
+                "method": "get",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "monitoring-business"
+          }
+        },
+        "monitoring-alerts": {
+          "handler": "src/functions/monitoring/dashboard.alertsHandler",
+          "events": [
+            {
+              "http": {
+                "path": "/monitoring/alerts",
+                "method": "get",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "monitoring-alerts"
+          }
+        },
+        "monitoring-recommendations": {
+          "handler": "src/functions/monitoring/dashboard.recommendationsHandler",
+          "events": [
+            {
+              "http": {
+                "path": "/monitoring/recommendations",
+                "method": "get",
+                "cors": true
+              }
+            }
+          ],
+          "environment": {
+            "FUNCTION_NAME": "monitoring-recommendations"
+          }
+        }
+      },
+      "resources": {
+        "Resources": {
+          "S3BucketUploads": {
+            "Type": "AWS::S3::Bucket",
+            "Properties": {
+              "BucketName": "hasivu-${self:provider.stage}-uploads",
+              "PublicAccessBlockConfiguration": {
+                "BlockPublicAcls": true,
+                "BlockPublicPolicy": true,
+                "IgnorePublicAcls": true,
+                "RestrictPublicBuckets": true
+              },
+              "BucketEncryption": {
+                "ServerSideEncryptionConfiguration": [
+                  {
+                    "ServerSideEncryptionByDefault": {
+                      "SSEAlgorithm": "AES256"
+                    }
+                  }
+                ]
+              },
+              "VersioningConfiguration": {
+                "Status": "Enabled"
+              },
+              "LifecycleConfiguration": {
+                "Rules": [
+                  {
+                    "Status": "Enabled",
+                    "ExpirationInDays": 365,
+                    "NoncurrentVersionExpirationInDays": 30
+                  }
+                ]
+              }
+            }
+          },
+          "S3BucketMLModels": {
+            "Type": "AWS::S3::Bucket",
+            "Properties": {
+              "BucketName": "hasivu-${self:provider.stage}-ml-models",
+              "PublicAccessBlockConfiguration": {
+                "BlockPublicAcls": true,
+                "BlockPublicPolicy": true,
+                "IgnorePublicAcls": true,
+                "RestrictPublicBuckets": true
+              },
+              "BucketEncryption": {
+                "ServerSideEncryptionConfiguration": [
+                  {
+                    "ServerSideEncryptionByDefault": {
+                      "SSEAlgorithm": "AES256"
+                    }
+                  }
+                ]
+              },
+              "VersioningConfiguration": {
+                "Status": "Enabled"
+              },
+              "LifecycleConfiguration": {
+                "Rules": [
+                  {
+                    "Status": "Enabled",
+                    "ExpirationInDays": 180,
+                    "NoncurrentVersionExpirationInDays": 30
+                  }
+                ]
+              }
+            }
+          },
+          "S3BucketInvoiceTemplates": {
+            "Type": "AWS::S3::Bucket",
+            "Properties": {
+              "BucketName": "hasivu-${self:provider.stage}-invoice-templates",
+              "PublicAccessBlockConfiguration": {
+                "BlockPublicAcls": true,
+                "BlockPublicPolicy": true,
+                "IgnorePublicAcls": true,
+                "RestrictPublicBuckets": true
+              },
+              "BucketEncryption": {
+                "ServerSideEncryptionConfiguration": [
+                  {
+                    "ServerSideEncryptionByDefault": {
+                      "SSEAlgorithm": "AES256"
+                    }
+                  }
+                ]
+              },
+              "VersioningConfiguration": {
+                "Status": "Enabled"
+              }
+            }
+          },
+          "S3BucketInvoices": {
+            "Type": "AWS::S3::Bucket",
+            "Properties": {
+              "BucketName": "hasivu-${self:provider.stage}-invoices",
+              "PublicAccessBlockConfiguration": {
+                "BlockPublicAcls": true,
+                "BlockPublicPolicy": true,
+                "IgnorePublicAcls": true,
+                "RestrictPublicBuckets": true
+              },
+              "BucketEncryption": {
+                "ServerSideEncryptionConfiguration": [
+                  {
+                    "ServerSideEncryptionByDefault": {
+                      "SSEAlgorithm": "AES256"
+                    }
+                  }
+                ]
+              },
+              "VersioningConfiguration": {
+                "Status": "Enabled"
+              },
+              "LifecycleConfiguration": {
+                "Rules": [
+                  {
+                    "Status": "Enabled",
+                    "ExpirationInDays": 2555,
+                    "NoncurrentVersionExpirationInDays": 90
+                  }
+                ]
+              }
+            }
+          },
+          "S3BucketAnalytics": {
+            "Type": "AWS::S3::Bucket",
+            "Properties": {
+              "BucketName": "hasivu-${self:provider.stage}-analytics",
+              "PublicAccessBlockConfiguration": {
+                "BlockPublicAcls": true,
+                "BlockPublicPolicy": true,
+                "IgnorePublicAcls": true,
+                "RestrictPublicBuckets": true
+              },
+              "BucketEncryption": {
+                "ServerSideEncryptionConfiguration": [
+                  {
+                    "ServerSideEncryptionByDefault": {
+                      "SSEAlgorithm": "AES256"
+                    }
+                  }
+                ]
+              },
+              "VersioningConfiguration": {
+                "Status": "Enabled"
+              },
+              "LifecycleConfiguration": {
+                "Rules": [
+                  {
+                    "Status": "Enabled",
+                    "ExpirationInDays": 1095,
+                    "NoncurrentVersionExpirationInDays": 30
+                  }
+                ]
+              }
+            }
+          },
+          "HealthLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/hasivu-${self:provider.stage}-health",
+              "RetentionInDays": 30
+            }
+          },
+          "WebACL": {
+            "Type": "AWS::WAFv2::WebACL",
+            "Properties": {
+              "Name": "hasivu-${self:provider.stage}-waf",
+              "Scope": "REGIONAL",
+              "DefaultAction": {
+                "Allow": {}
+              },
+              "Rules": [
+                {
+                  "Name": "RateLimitRule",
+                  "Priority": 1,
+                  "Statement": {
+                    "RateBasedStatement": {
+                      "Limit": 2000,
+                      "AggregateKeyType": "IP"
+                    }
+                  },
+                  "Action": {
+                    "Block": {}
+                  },
+                  "VisibilityConfig": {
+                    "SampledRequestsEnabled": true,
+                    "CloudWatchMetricsEnabled": true,
+                    "MetricName": "RateLimitRule"
+                  }
+                },
+                {
+                  "Name": "GeoBlockRule",
+                  "Priority": 2,
+                  "Statement": {
+                    "GeoMatchStatement": {
+                      "CountryCodes": [
+                        "IN"
+                      ]
+                    }
+                  },
+                  "Action": {
+                    "Allow": {}
+                  },
+                  "VisibilityConfig": {
+                    "SampledRequestsEnabled": true,
+                    "CloudWatchMetricsEnabled": true,
+                    "MetricName": "GeoBlockRule"
+                  }
+                }
+              ],
+              "VisibilityConfig": {
+                "SampledRequestsEnabled": true,
+                "CloudWatchMetricsEnabled": true,
+                "MetricName": "hasivu-${self:provider.stage}-waf"
+              }
+            }
+          },
+          "PaymentWebhookIdempotencyTable": {
+            "Type": "AWS::DynamoDB::Table",
+            "Properties": {
+              "TableName": "payment-webhook-idempotency-${self:provider.stage}",
+              "BillingMode": "PAY_PER_REQUEST",
+              "AttributeDefinitions": [
+                {
+                  "AttributeName": "webhookId",
+                  "AttributeType": "S"
+                }
+              ],
+              "KeySchema": [
+                {
+                  "AttributeName": "webhookId",
+                  "KeyType": "HASH"
+                }
+              ],
+              "TimeToLiveSpecification": {
+                "AttributeName": "ttl",
+                "Enabled": true
+              },
+              "StreamSpecification": {
+                "StreamViewType": "NEW_AND_OLD_IMAGES"
+              }
+            }
+          },
+          "PaymentDeadLetterQueue": {
+            "Type": "AWS::SQS::Queue",
+            "Properties": {
+              "QueueName": "payment-dlq-${self:provider.stage}",
+              "MessageRetentionPeriod": 1209600,
+              "VisibilityTimeoutSeconds": 300
+            }
+          },
+          "PaymentRetryQueue": {
+            "Type": "AWS::SQS::Queue",
+            "Properties": {
+              "QueueName": "payment-retry-queue-${self:provider.stage}",
+              "VisibilityTimeoutSeconds": 60,
+              "MessageRetentionPeriod": 1209600,
+              "RedrivePolicy": {
+                "deadLetterTargetArn": {
+                  "Fn::GetAtt": [
+                    "PaymentDeadLetterQueue",
+                    "Arn"
+                  ]
+                },
+                "maxReceiveCount": 3
+              }
+            }
+          },
+          "PaymentNotificationsTopic": {
+            "Type": "AWS::SNS::Topic",
+            "Properties": {
+              "TopicName": "payment-notifications-${self:provider.stage}",
+              "DisplayName": "Payment Notifications",
+              "FifoTopic": false
+            }
+          },
+          "PushNotificationsTopic": {
+            "Type": "AWS::SNS::Topic",
+            "Properties": {
+              "TopicName": "push-notifications-${self:provider.stage}",
+              "DisplayName": "Mobile Push Notifications",
+              "FifoTopic": false
+            }
+          },
+          "CloudWatchDashboard": {
+            "Type": "AWS::CloudWatch::Dashboard",
+            "Properties": {
+              "DashboardName": "hasivu-${self:provider.stage}-metrics",
+              "DashboardBody": "{\n  \"widgets\": [\n    {\n      \"type\": \"metric\",\n      \"properties\": {\n        \"metrics\": [\n          [ \"AWS/Lambda\", \"Duration\", \"FunctionName\", \"hasivu-${self:provider.stage}-health\" ],\n          [ \".\", \"Errors\", \".\", \".\" ],\n          [ \".\", \"Invocations\", \".\", \".\" ]\n        ],\n        \"period\": 300,\n        \"stat\": \"Average\",\n        \"region\": \"${aws:region}\",\n        \"title\": \"Lambda Metrics\"\n      }\n    },\n    {\n      \"type\": \"metric\",\n      \"properties\": {\n        \"metrics\": [\n          [ \"AWS/ApiGateway\", \"Count\", \"ApiName\", \"hasivu-${self:provider.stage}\" ],\n          [ \".\", \"Latency\", \".\", \".\" ],\n          [ \".\", \"4XXError\", \".\", \".\" ],\n          [ \".\", \"5XXError\", \".\", \".\" ]\n        ],\n        \"period\": 300,\n        \"stat\": \"Sum\",\n        \"region\": \"${aws:region}\",\n        \"title\": \"API Gateway Metrics\"\n      }\n    },\n    {\n      \"type\": \"metric\",\n      \"properties\": {\n        \"metrics\": [\n          [ \"AWS/Lambda\", \"Duration\", \"FunctionName\", \"hasivu-${self:provider.stage}-payments-advanced\" ],\n          [ \".\", \"Errors\", \".\", \".\" ],\n          [ \".\", \"Invocations\", \".\", \".\" ],\n          [ \".\", \"Duration\", \"FunctionName\", \"hasivu-${self:provider.stage}-payments-webhook-handler\" ],\n          [ \".\", \"Errors\", \".\", \".\" ],\n          [ \".\", \"Invocations\", \".\", \".\" ]\n        ],\n        \"period\": 300,\n        \"stat\": \"Average\",\n        \"region\": \"${aws:region}\",\n        \"title\": \"Payment System Metrics\"\n      }\n    },\n    {\n      \"type\": \"metric\",\n      \"properties\": {\n        \"metrics\": [\n          [ \"AWS/SQS\", \"NumberOfMessagesSent\", \"QueueName\", \"payment-retry-queue-${self:provider.stage}\" ],\n          [ \".\", \"NumberOfMessagesReceived\", \".\", \".\" ],\n          [ \".\", \"NumberOfMessagesSent\", \"QueueName\", \"payment-dlq-${self:provider.stage}\" ]\n        ],\n        \"period\": 300,\n        \"stat\": \"Sum\",\n        \"region\": \"${aws:region}\",\n        \"title\": \"Payment Queue Metrics\"\n      }\n    }\n  ]\n}\n"
+            }
+          }
+        },
+        "Outputs": {
+          "ApiGatewayRestApiId": {
+            "Value": {
+              "Ref": "ApiGatewayRestApi"
+            },
+            "Export": {
+              "Name": "hasivu-${self:provider.stage}-api-gateway-id"
+            }
+          },
+          "ApiGatewayRestApiRootResourceId": {
+            "Value": {
+              "Fn::GetAtt": [
+                "ApiGatewayRestApi",
+                "RootResourceId"
+              ]
+            },
+            "Export": {
+              "Name": "hasivu-${self:provider.stage}-api-gateway-root-id"
+            }
+          },
+          "S3BucketName": {
+            "Value": {
+              "Ref": "S3BucketUploads"
+            },
+            "Export": {
+              "Name": "hasivu-${self:provider.stage}-s3-bucket-name"
+            }
+          },
+          "PaymentIdempotencyTableName": {
+            "Value": {
+              "Ref": "PaymentWebhookIdempotencyTable"
+            },
+            "Export": {
+              "Name": "hasivu-${self:provider.stage}-payment-idempotency-table"
+            }
+          },
+          "PaymentRetryQueueUrl": {
+            "Value": {
+              "Ref": "PaymentRetryQueue"
+            },
+            "Export": {
+              "Name": "hasivu-${self:provider.stage}-payment-retry-queue-url"
+            }
+          },
+          "PaymentDeadLetterQueueUrl": {
+            "Value": {
+              "Ref": "PaymentDeadLetterQueue"
+            },
+            "Export": {
+              "Name": "hasivu-${self:provider.stage}-payment-dlq-url"
+            }
+          },
+          "PaymentNotificationsTopicArn": {
+            "Value": {
+              "Ref": "PaymentNotificationsTopic"
+            },
+            "Export": {
+              "Name": "hasivu-${self:provider.stage}-payment-notifications-topic"
+            }
+          },
+          "PushNotificationsTopicArn": {
+            "Value": {
+              "Ref": "PushNotificationsTopic"
+            },
+            "Export": {
+              "Name": "hasivu-${self:provider.stage}-push-notifications-topic"
+            }
+          },
+          "MLModelsBucketName": {
+            "Value": {
+              "Ref": "S3BucketMLModels"
+            },
+            "Export": {
+              "Name": "hasivu-${self:provider.stage}-ml-models-bucket-name"
+            }
+          },
+          "InvoiceTemplatesBucketName": {
+            "Value": {
+              "Ref": "S3BucketInvoiceTemplates"
+            },
+            "Export": {
+              "Name": "hasivu-${self:provider.stage}-invoice-templates-bucket-name"
+            }
+          },
+          "InvoicesBucketName": {
+            "Value": {
+              "Ref": "S3BucketInvoices"
+            },
+            "Export": {
+              "Name": "hasivu-${self:provider.stage}-invoices-bucket-name"
+            }
+          },
+          "AnalyticsBucketName": {
+            "Value": {
+              "Ref": "S3BucketAnalytics"
+            },
+            "Export": {
+              "Name": "hasivu-${self:provider.stage}-analytics-bucket-name"
+            }
+          }
+        }
+      }
+    },
+    "provider": {
+      "name": "aws",
+      "runtime": "nodejs18.x",
+      "region": "ap-south-1",
+      "stage": "${opt:stage, 'dev'}",
+      "memorySize": 512,
+      "timeout": 30,
+      "architecture": "arm64",
+      "environment": {
+        "NODE_ENV": "${self:provider.stage}",
+        "DATABASE_URL": "${ssm:/hasivu/${self:provider.stage}/database-url}",
+        "AWS_COGNITO_USER_POOL_ID": "${ssm:/hasivu/${self:provider.stage}/cognito-user-pool-id}",
+        "AWS_COGNITO_CLIENT_ID": "${ssm:/hasivu/${self:provider.stage}/cognito-client-id}",
+        "RAZORPAY_KEY_ID": "${ssm:/hasivu/${self:provider.stage}/razorpay-key-id}",
+        "RAZORPAY_KEY_SECRET": "<REDACTED>",
+        "RAZORPAY_WEBHOOK_SECRET": "<REDACTED>",
+        "WHATSAPP_ACCESS_TOKEN": "<REDACTED>",
+        "FIREBASE_SERVER_KEY": "${ssm:/hasivu/${self:provider.stage}/firebase-server-key~true}",
+        "PUSH_NOTIFICATION_TOPIC_ARN": "${cf:hasivu-${self:provider.stage}-messaging.PushNotificationTopicArn}",
+        "S3_BUCKET_NAME": "hasivu-${self:provider.stage}-uploads",
+        "JWT_SECRET": "<REDACTED>",
+        "IDEMPOTENCY_TABLE": "payment-webhook-idempotency-${self:provider.stage}",
+        "DEAD_LETTER_QUEUE_URL": "${cf:hasivu-${self:provider.stage}-queues.DeadLetterQueueUrl}",
+        "NOTIFICATION_TOPIC_ARN": "${cf:hasivu-${self:provider.stage}-messaging.NotificationTopicArn}",
+        "RETRY_QUEUE_URL": "${cf:hasivu-${self:provider.stage}-queues.RetryQueueUrl}",
+        "MAX_RETRY_ATTEMPTS": 3
+      },
+      "iam": {
+        "role": {
+          "statements": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "ssm:GetParameter",
+                "ssm:GetParameters",
+                "secretsmanager:GetSecretValue"
+              ],
+              "Resource": [
+                "arn:aws:ssm:${aws:region}:${aws:accountId}:parameter/hasivu/${self:provider.stage}/*",
+                "arn:aws:secretsmanager:${aws:region}:${aws:accountId}:secret:hasivu/${self:provider.stage}/*"
+              ]
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObject",
+                "s3:PutObject",
+                "s3:DeleteObject"
+              ],
+              "Resource": "arn:aws:s3:::hasivu-${self:provider.stage}-uploads/*"
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                "cognito-idp:AdminCreateUser",
+                "cognito-idp:AdminSetUserPassword",
+                "cognito-idp:AdminUpdateUserAttributes"
+              ],
+              "Resource": "arn:aws:cognito-idp:${aws:region}:${aws:accountId}:userpool/*"
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                "ses:SendEmail",
+                "ses:SendRawEmail"
+              ],
+              "Resource": "*"
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+              ],
+              "Resource": "*"
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                "dynamodb:GetItem",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem",
+                "dynamodb:Query",
+                "dynamodb:Scan"
+              ],
+              "Resource": [
+                "arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/payment-webhook-idempotency-${self:provider.stage}"
+              ]
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                "sqs:SendMessage",
+                "sqs:ReceiveMessage",
+                "sqs:DeleteMessage"
+              ],
+              "Resource": [
+                "arn:aws:sqs:${aws:region}:${aws:accountId}:payment-retry-queue-${self:provider.stage}",
+                "arn:aws:sqs:${aws:region}:${aws:accountId}:payment-dlq-${self:provider.stage}"
+              ]
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                "sns:Publish",
+                "sns:CreatePlatformEndpoint",
+                "sns:DeleteEndpoint",
+                "sns:GetEndpointAttributes",
+                "sns:SetEndpointAttributes"
+              ],
+              "Resource": [
+                "arn:aws:sns:${aws:region}:${aws:accountId}:payment-notifications-${self:provider.stage}",
+                "arn:aws:sns:${aws:region}:${aws:accountId}:push-notifications-${self:provider.stage}",
+                "arn:aws:sns:${aws:region}:${aws:accountId}:app/*"
+              ]
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObject",
+                "s3:PutObject"
+              ],
+              "Resource": [
+                "arn:aws:s3:::hasivu-${self:provider.stage}-ml-models/*",
+                "arn:aws:s3:::hasivu-${self:provider.stage}-invoice-templates/*",
+                "arn:aws:s3:::hasivu-${self:provider.stage}-invoices/*",
+                "arn:aws:s3:::hasivu-${self:provider.stage}-analytics/*"
+              ]
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                "sagemaker:InvokeEndpoint"
+              ],
+              "Resource": [
+                "arn:aws:sagemaker:${aws:region}:${aws:accountId}:endpoint/*"
+              ]
+            }
+          ]
+        }
+      },
+      "apiGateway": {
+        "restApiId": "${ssm:/hasivu/${self:provider.stage}/api-gateway-id, ''}",
+        "restApiRootResourceId": "${ssm:/hasivu/${self:provider.stage}/api-gateway-root-id, ''}",
+        "throttle": {
+          "rateLimit": 1000,
+          "burstLimit": 2000
+        },
+        "metrics": true,
+        "logs": {
+          "restApi": true,
+          "level": "INFO"
+        },
+        "cors": {
+          "origin": "*",
+          "headers": [
+            "Content-Type",
+            "X-Amz-Date",
+            "Authorization",
+            "X-Api-Key",
+            "X-Amz-Security-Token",
+            "X-Amz-User-Agent"
+          ],
+          "allowCredentials": "<REDACTED>"
+        }
+      },
+      "logs": {
+        "restApi": true,
+        "level": "INFO"
+      },
+      "tracing": {
+        "lambda": true,
+        "apiGateway": true
+      }
+    },
+    "error": {
+      "message": "You must sign in or use a license key with Serverless Framework V.4 and later versions. Please use \"serverless login\".",
+      "stack": "Error: You must sign in or use a license key with Serverless Framework V.4 and later versions. Please use \"serverless login\".\n    at Authentication.getAuthenticatedData (file:///Users/mahesha/.serverless/releases/4.21.0/package/dist/sf-core.js:708:10911)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async Authentication.authenticate (file:///Users/mahesha/.serverless/releases/4.21.0/package/dist/sf-core.js:710:22530)\n    at async TraditionalRunner.resolveVariablesAndAuthenticate (file:///Users/mahesha/.serverless/releases/4.21.0/package/dist/sf-core.js:715:1458)\n    at async TraditionalRunner.run (file:///Users/mahesha/.serverless/releases/4.21.0/package/dist/sf-core.js:1334:27914)\n    at async route (file:///Users/mahesha/.serverless/releases/4.21.0/package/dist/sf-core.js:1509:2878)\n    at async Object.run (file:///Users/mahesha/.serverless/releases/4.21.0/package/dist/sf-core.js:1510:3755)\n    at async run2 (file:///Users/mahesha/.serverless/releases/4.21.0/package/dist/sf-core.js:1510:4909)"
+    },
+    "serviceRawFile": "service: hasivu-platform\n\nframeworkVersion: '4'\n\nprovider:\n  name: aws\n  runtime: nodejs18.x\n  region: ${opt:region, 'ap-south-1'}\n  stage: ${opt:stage, 'dev'}\n  memorySize: 512\n  timeout: 30\n  architecture: arm64\n  \n  environment:\n    NODE_ENV: ${self:provider.stage}\n    DATABASE_URL: ${ssm:/hasivu/${self:provider.stage}/database-url}\n    AWS_COGNITO_USER_POOL_ID: ${ssm:/hasivu/${self:provider.stage}/cognito-user-pool-id}\n    AWS_COGNITO_CLIENT_ID: ${ssm:/hasivu/${self:provider.stage}/cognito-client-id}\n    RAZORPAY_KEY_ID: ${ssm:/hasivu/${self:provider.stage}/razorpay-key-id}\n    RAZORPAY_KEY_SECRET: ${ssm:/hasivu/${self:provider.stage}/razorpay-key-secret}\n    RAZORPAY_WEBHOOK_SECRET: ${ssm:/hasivu/${self:provider.stage}/razorpay-webhook-secret}\n    WHATSAPP_ACCESS_TOKEN: ${ssm:/hasivu/${self:provider.stage}/whatsapp-access-token}\n    FIREBASE_SERVER_KEY: ${ssm:/hasivu/${self:provider.stage}/firebase-server-key~true}\n    PUSH_NOTIFICATION_TOPIC_ARN: ${cf:hasivu-${self:provider.stage}-messaging.PushNotificationTopicArn}\n    S3_BUCKET_NAME: hasivu-${self:provider.stage}-uploads\n    JWT_SECRET: ${ssm:/hasivu/${self:provider.stage}/jwt-secret~true}\n    IDEMPOTENCY_TABLE: payment-webhook-idempotency-${self:provider.stage}\n    DEAD_LETTER_QUEUE_URL: ${cf:hasivu-${self:provider.stage}-queues.DeadLetterQueueUrl}\n    NOTIFICATION_TOPIC_ARN: ${cf:hasivu-${self:provider.stage}-messaging.NotificationTopicArn}\n    RETRY_QUEUE_URL: ${cf:hasivu-${self:provider.stage}-queues.RetryQueueUrl}\n    MAX_RETRY_ATTEMPTS: 3\n    \n  iam:\n    role:\n      statements:\n        - Effect: Allow\n          Action:\n            - ssm:GetParameter\n            - ssm:GetParameters\n            - secretsmanager:GetSecretValue\n          Resource:\n            - \"arn:aws:ssm:${aws:region}:${aws:accountId}:parameter/hasivu/${self:provider.stage}/*\"\n            - \"arn:aws:secretsmanager:${aws:region}:${aws:accountId}:secret:hasivu/${self:provider.stage}/*\"\n        - Effect: Allow\n          Action:\n            - s3:GetObject\n            - s3:PutObject\n            - s3:DeleteObject\n          Resource: \"arn:aws:s3:::hasivu-${self:provider.stage}-uploads/*\"\n        - Effect: Allow\n          Action:\n            - cognito-idp:AdminCreateUser\n            - cognito-idp:AdminSetUserPassword\n            - cognito-idp:AdminUpdateUserAttributes\n          Resource: \"arn:aws:cognito-idp:${aws:region}:${aws:accountId}:userpool/*\"\n        - Effect: Allow\n          Action:\n            - ses:SendEmail\n            - ses:SendRawEmail\n          Resource: \"*\"\n        - Effect: Allow\n          Action:\n            - logs:CreateLogGroup\n            - logs:CreateLogStream\n            - logs:PutLogEvents\n          Resource: \"*\"\n        - Effect: Allow\n          Action:\n            - dynamodb:GetItem\n            - dynamodb:PutItem\n            - dynamodb:UpdateItem\n            - dynamodb:DeleteItem\n            - dynamodb:Query\n            - dynamodb:Scan\n          Resource:\n            - \"arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/payment-webhook-idempotency-${self:provider.stage}\"\n        - Effect: Allow\n          Action:\n            - sqs:SendMessage\n            - sqs:ReceiveMessage\n            - sqs:DeleteMessage\n          Resource:\n            - \"arn:aws:sqs:${aws:region}:${aws:accountId}:payment-retry-queue-${self:provider.stage}\"\n            - \"arn:aws:sqs:${aws:region}:${aws:accountId}:payment-dlq-${self:provider.stage}\"\n        - Effect: Allow\n          Action:\n            - sns:Publish\n            - sns:CreatePlatformEndpoint\n            - sns:DeleteEndpoint\n            - sns:GetEndpointAttributes\n            - sns:SetEndpointAttributes\n          Resource:\n            - \"arn:aws:sns:${aws:region}:${aws:accountId}:payment-notifications-${self:provider.stage}\"\n            - \"arn:aws:sns:${aws:region}:${aws:accountId}:push-notifications-${self:provider.stage}\"\n            - \"arn:aws:sns:${aws:region}:${aws:accountId}:app/*\"\n        - Effect: Allow\n          Action:\n            - s3:GetObject\n            - s3:PutObject\n          Resource:\n            - \"arn:aws:s3:::hasivu-${self:provider.stage}-ml-models/*\"\n            - \"arn:aws:s3:::hasivu-${self:provider.stage}-invoice-templates/*\"\n            - \"arn:aws:s3:::hasivu-${self:provider.stage}-invoices/*\"\n            - \"arn:aws:s3:::hasivu-${self:provider.stage}-analytics/*\"\n        - Effect: Allow\n          Action:\n            - sagemaker:InvokeEndpoint\n          Resource:\n            - \"arn:aws:sagemaker:${aws:region}:${aws:accountId}:endpoint/*\"\n\n  apiGateway:\n    restApiId: ${ssm:/hasivu/${self:provider.stage}/api-gateway-id, ''}\n    restApiRootResourceId: ${ssm:/hasivu/${self:provider.stage}/api-gateway-root-id, ''}\n    throttle:\n      rateLimit: 1000\n      burstLimit: 2000\n    metrics: true\n    logs:\n      restApi: true\n      level: INFO\n    cors:\n      origin: '*'\n      headers:\n        - Content-Type\n        - X-Amz-Date\n        - Authorization\n        - X-Api-Key\n        - X-Amz-Security-Token\n        - X-Amz-User-Agent\n      allowCredentials: false\n\n  logs:\n    restApi: true\n    level: INFO\n    \n  tracing:\n    lambda: true\n    apiGateway: true\n\nplugins:\n  - serverless-plugin-typescript\n  - serverless-offline\n  - serverless-plugin-warmup\n  - serverless-plugin-split-stacks\n  - serverless-associate-waf\n\ncustom:\n  warmup:\n    enabled: true\n    prewarm: true\n    concurrency: 5\n    \n  splitStacks:\n    perFunction: false\n    perType: true\n    \n  associateWaf:\n    name: hasivu-${self:provider.stage}-waf\n    version: V2\n\nfunctions:\n  # Health Check\n  health:\n    handler: src/functions/health/health-check.healthCheckHandler\n    events:\n      - http:\n          path: /health\n          method: get\n          cors: true\n    warmup:\n      enabled: true\n    environment:\n      FUNCTION_NAME: health\n\n  # Authentication Functions\n  auth-login:\n    handler: src/functions/auth/login.loginHandler\n    events:\n      - http:\n          path: /auth/login\n          method: post\n          cors: true\n    environment:\n      FUNCTION_NAME: auth-login\n\n  auth-register:\n    handler: src/functions/auth/register.registerHandler\n    events:\n      - http:\n          path: /auth/register\n          method: post\n          cors: true\n    environment:\n      FUNCTION_NAME: auth-register\n\n  auth-verify-email:\n    handler: src/functions/auth/verify-email.verifyEmailHandler\n    events:\n      - http:\n          path: /auth/verify-email\n          method: post\n          cors: true\n    environment:\n      FUNCTION_NAME: auth-verify-email\n\n  auth-refresh-token:\n    handler: src/functions/auth/refresh-token.refreshTokenHandler\n    events:\n      - http:\n          path: /auth/refresh\n          method: post\n          cors: true\n    environment:\n      FUNCTION_NAME: auth-refresh-token\n\n  auth-forgot-password:\n    handler: src/functions/auth/forgot-password.forgotPasswordHandler\n    events:\n      - http:\n          path: /auth/forgot-password\n          method: post\n          cors: true\n    environment:\n      FUNCTION_NAME: auth-forgot-password\n\n  auth-logout:\n    handler: src/functions/auth/logout.logoutHandler\n    events:\n      - http:\n          path: /auth/logout\n          method: post\n          cors: true\n    environment:\n      FUNCTION_NAME: auth-logout\n\n  # User Management Functions - Story 1.3 Core User Management\n  users-list:\n    handler: src/functions/users/getUsers.getUsersHandler\n    events:\n      - http:\n          path: /api/v1/users\n          method: get\n          cors: true\n    environment:\n      FUNCTION_NAME: users-list\n\n  users-get:\n    handler: src/functions/users/getUserById.getUserByIdHandler\n    events:\n      - http:\n          path: /api/v1/users/{id}\n          method: get\n          cors: true\n    environment:\n      FUNCTION_NAME: users-get\n\n  users-update:\n    handler: src/functions/users/updateUser.updateUserHandler\n    events:\n      - http:\n          path: /api/v1/users/{id}\n          method: put\n          cors: true\n    environment:\n      FUNCTION_NAME: users-update\n\n  users-bulk-import:\n    handler: src/functions/users/bulkImport.bulkImportUsersHandler\n    timeout: 60\n    memorySize: 1024\n    events:\n      - http:\n          path: /api/v1/users/bulk-import\n          method: post\n          cors: true\n    environment:\n      FUNCTION_NAME: users-bulk-import\n\n  users-manage-children:\n    handler: src/functions/users/manageChildren.manageChildrenHandler\n    events:\n      - http:\n          path: /api/v1/users/{id}/children\n          method: post\n          cors: true\n    environment:\n      FUNCTION_NAME: users-manage-children\n\n  # Payment Functions\n  payments-create-order:\n    handler: src/functions/payments/create-order.createOrderHandler\n    events:\n      - http:\n          path: /payments/orders\n          method: post\n          cors: true\n    environment:\n      FUNCTION_NAME: payments-create-order\n\n  payments-verify:\n    handler: src/functions/payments/verify-payment.verifyPaymentHandler\n    events:\n      - http:\n          path: /payments/verify\n          method: post\n          cors: true\n    environment:\n      FUNCTION_NAME: payments-verify\n\n  payments-webhook:\n    handler: src/functions/payments/webhook.webhookHandler\n    events:\n      - http:\n          path: /payments/webhook\n          method: post\n          cors: true\n    environment:\n      FUNCTION_NAME: payments-webhook\n\n  payments-refund:\n    handler: src/functions/payments/refund.refundHandler\n    events:\n      - http:\n          path: /payments/refund\n          method: post\n          cors: true\n    environment:\n      FUNCTION_NAME: payments-refund\n\n  payments-status:\n    handler: src/functions/payments/payment-status.paymentStatusHandler\n    events:\n      - http:\n          path: /payments/status/{orderId}\n          method: get\n          cors: true\n    environment:\n      FUNCTION_NAME: payments-status\n\n  # Epic 5 Story 5.1: Advanced Payment Features\n  payments-manage-methods:\n    handler: src/functions/payments/manage-payment-methods.managePaymentMethodsHandler\n    events:\n      - http:\n          path: /payments/methods\n          method: get\n          cors: true\n      - http:\n          path: /payments/methods\n          method: post\n          cors: true\n      - http:\n          path: /payments/methods/{methodId}\n          method: put\n          cors: true\n      - http:\n          path: /payments/methods/{methodId}\n          method: delete\n          cors: true\n    environment:\n      FUNCTION_NAME: payments-manage-methods\n\n  payments-advanced:\n    handler: src/functions/payments/advanced-payment.advancedPaymentHandler\n    timeout: 60\n    events:\n      - http:\n          path: /payments/advanced/create\n          method: post\n          cors: true\n      - http:\n          path: /payments/advanced/validate\n          method: post\n          cors: true\n      - http:\n          path: /payments/advanced/installment\n          method: post\n          cors: true\n      - http:\n          path: /payments/advanced/{paymentId}\n          method: get\n          cors: true\n    environment:\n      FUNCTION_NAME: payments-advanced\n\n  payments-retry:\n    handler: src/functions/payments/payment-retry.paymentRetryHandler\n    timeout: 60\n    events:\n      - http:\n          path: /payments/retry\n          method: post\n          cors: true\n      - http:\n          path: /payments/retry/schedule\n          method: post\n          cors: true\n      - http:\n          path: /payments/retry/process-scheduled\n          method: post\n          cors: true\n      - http:\n          path: /payments/retry/{paymentId}\n          method: get\n          cors: true\n      - http:\n          path: /payments/retry/{retryId}\n          method: delete\n          cors: true\n      - schedule:\n          rate: rate(15 minutes)\n          input:\n            action: process-scheduled-retries\n    environment:\n      FUNCTION_NAME: payments-retry\n\n  payments-reconciliation:\n    handler: src/functions/payments/reconciliation.reconciliationHandler\n    timeout: 300\n    memorySize: 1024\n    events:\n      - http:\n          path: /payments/reconciliation/generate\n          method: post\n          cors: true\n      - http:\n          path: /payments/reconciliation/manual-adjustment\n          method: post\n          cors: true\n      - http:\n          path: /payments/reconciliation/auto-reconcile\n          method: post\n          cors: true\n      - http:\n          path: /payments/reconciliation/{recordId}\n          method: get\n          cors: true\n      - http:\n          path: /payments/reconciliation/{recordId}\n          method: put\n          cors: true\n      - http:\n          path: /payments/reconciliation\n          method: get\n          cors: true\n      - schedule:\n          rate: cron(0 2 * * ? *)\n          input:\n            action: auto-reconciliation\n    environment:\n      FUNCTION_NAME: payments-reconciliation\n\n  payments-analytics:\n    handler: src/functions/payments/payment-analytics.paymentAnalyticsHandler\n    timeout: 120\n    memorySize: 1024\n    events:\n      - http:\n          path: /payments/analytics/dashboard\n          method: get\n          cors: true\n      - http:\n          path: /payments/analytics/trends\n          method: get\n          cors: true\n      - http:\n          path: /payments/analytics/failure-analysis\n          method: get\n          cors: true\n      - http:\n          path: /payments/analytics/customer-behavior\n          method: get\n          cors: true\n      - http:\n          path: /payments/analytics/{schoolId}\n          method: get\n          cors: true\n      - http:\n          path: /payments/analytics/generate-report\n          method: post\n          cors: true\n      - http:\n          path: /payments/analytics/update-behavior\n          method: post\n          cors: true\n    environment:\n      FUNCTION_NAME: payments-analytics\n\n  payments-webhook-handler:\n    handler: src/functions/payments/webhook-handler.webhookHandlerLambda\n    timeout: 30\n    events:\n      - http:\n          path: /payments/webhooks/razorpay\n          method: post\n          cors: false\n    environment:\n      FUNCTION_NAME: payments-webhook-handler\n\n  # Epic 5 Story 5.2: Subscription Billing Management\n  subscription-management:\n    handler: src/functions/payments/subscription-management.handler\n    timeout: 60\n    memorySize: 1024\n    events:\n      - http:\n          path: /subscriptions\n          method: post\n          cors: true\n      - http:\n          path: /subscriptions/{id}\n          method: put\n          cors: true\n      - http:\n          path: /subscriptions/{id}/pause\n          method: post\n          cors: true\n      - http:\n          path: /subscriptions/{id}/resume\n          method: post\n          cors: true\n      - http:\n          path: /subscriptions/{id}/cancel\n          method: post\n          cors: true\n      - http:\n          path: /subscriptions/{id}\n          method: get\n          cors: true\n      - http:\n          path: /subscriptions\n          method: get\n          cors: true\n    environment:\n      FUNCTION_NAME: subscription-management\n\n  billing-automation:\n    handler: src/functions/payments/billing-automation.handler\n    timeout: 300\n    memorySize: 1024\n    events:\n      - http:\n          path: /billing/process\n          method: post\n          cors: true\n      - http:\n          path: /billing/process/{id}\n          method: post\n          cors: true\n      - http:\n          path: /billing/status\n          method: get\n          cors: true\n      - schedule:\n          rate: rate(1 hour)\n          enabled: true\n          input:\n            action: automated-billing\n    environment:\n      FUNCTION_NAME: billing-automation\n      MAX_PAYMENT_RETRIES: ${self:provider.environment.MAX_RETRY_ATTEMPTS}\n      PAYMENT_GRACE_PERIOD_DAYS: 7\n\n  subscription-plans:\n    handler: src/functions/payments/subscription-plans.handler\n    timeout: 60\n    memorySize: 512\n    events:\n      - http:\n          path: /subscription-plans\n          method: post\n          cors: true\n      - http:\n          path: /subscription-plans/{id}\n          method: put\n          cors: true\n      - http:\n          path: /subscription-plans/{id}\n          method: get\n          cors: true\n      - http:\n          path: /subscription-plans\n          method: get\n          cors: true\n      - http:\n          path: /subscription-plans/compare\n          method: post\n          cors: true\n      - http:\n          path: /subscription-plans/{id}\n          method: delete\n          cors: true\n      - http:\n          path: /subscription-plans/{id}/analytics\n          method: get\n          cors: true\n      - http:\n          path: /subscription-plans/analytics\n          method: get\n          cors: true\n    environment:\n      FUNCTION_NAME: subscription-plans\n\n  dunning-management:\n    handler: src/functions/payments/dunning-management.handler\n    timeout: 180\n    memorySize: 1024\n    events:\n      - http:\n          path: /dunning/process\n          method: post\n          cors: true\n      - http:\n          path: /payments/{paymentId}/retry\n          method: post\n          cors: true\n      - http:\n          path: /dunning/status\n          method: get\n          cors: true\n      - http:\n          path: /payments/{paymentId}/retry-history\n          method: get\n          cors: true\n      - schedule:\n          rate: rate(6 hours)\n          enabled: true\n          input:\n            action: automated-dunning\n    environment:\n      FUNCTION_NAME: dunning-management\n      MAX_PAYMENT_RETRIES: ${self:provider.environment.MAX_RETRY_ATTEMPTS}\n      PAYMENT_GRACE_PERIOD_DAYS: 7\n      DUNNING_EMAIL_ENABLED: true\n      DUNNING_SMS_ENABLED: false\n\n  subscription-analytics:\n    handler: src/functions/payments/subscription-analytics.handler\n    timeout: 120\n    memorySize: 2048\n    events:\n      - http:\n          path: /subscription-analytics\n          method: get\n          cors: true\n      - http:\n          path: /subscription-analytics/dashboard\n          method: get\n          cors: true\n      - http:\n          path: /subscription-analytics/cohort\n          method: post\n          cors: true\n      - http:\n          path: /subscription-analytics/revenue\n          method: get\n          cors: true\n      - http:\n          path: /subscription-analytics/churn\n          method: get\n          cors: true\n      - http:\n          path: /subscription-analytics/clv\n          method: get\n          cors: true\n    environment:\n      FUNCTION_NAME: subscription-analytics\n\n  # Order Functions\n  orders-create:\n    handler: src/functions/orders/create-order.createOrderHandler\n    events:\n      - http:\n          path: /orders\n          method: post\n          cors: true\n    environment:\n      FUNCTION_NAME: orders-create\n\n  orders-get:\n    handler: src/functions/orders/get-order.getOrderHandler\n    events:\n      - http:\n          path: /orders/{orderId}\n          method: get\n          cors: true\n    environment:\n      FUNCTION_NAME: orders-get\n\n  orders-update:\n    handler: src/functions/orders/update-order.updateOrderHandler\n    events:\n      - http:\n          path: /orders/{orderId}\n          method: put\n          cors: true\n    environment:\n      FUNCTION_NAME: orders-update\n\n  orders-list:\n    handler: src/functions/orders/list-orders.listOrdersHandler\n    events:\n      - http:\n          path: /orders\n          method: get\n          cors: true\n    environment:\n      FUNCTION_NAME: orders-list\n\n  orders-history:\n    handler: src/functions/orders/order-history.orderHistoryHandler\n    events:\n      - http:\n          path: /orders/history/{userId}\n          method: get\n          cors: true\n    environment:\n      FUNCTION_NAME: orders-history\n\n  # Menu Functions\n  menus-create-plan:\n    handler: src/functions/menus/create-plan.createMenuPlanHandler\n    events:\n      - http:\n          path: /menus/plans\n          method: post\n          cors: true\n    environment:\n      FUNCTION_NAME: menus-create-plan\n\n  menus-get-plan:\n    handler: src/functions/menus/get-plan.getMenuPlanHandler\n    events:\n      - http:\n          path: /menus/plans/{planId}\n          method: get\n          cors: true\n    environment:\n      FUNCTION_NAME: menus-get-plan\n\n  menus-update-plan:\n    handler: src/functions/menus/update-plan.updateMenuPlanHandler\n    events:\n      - http:\n          path: /menus/plans/{planId}\n          method: put\n          cors: true\n    environment:\n      FUNCTION_NAME: menus-update-plan\n\n  menus-list-plans:\n    handler: src/functions/menus/list-plans.listMenuPlansHandler\n    events:\n      - http:\n          path: /menus/plans\n          method: get\n          cors: true\n    environment:\n      FUNCTION_NAME: menus-list-plans\n\n  menus-approve:\n    handler: src/functions/menus/approve-menu.approveMenuHandler\n    events:\n      - http:\n          path: /menus/approve/{planId}\n          method: post\n          cors: true\n    environment:\n      FUNCTION_NAME: menus-approve\n\n  menus-daily:\n    handler: src/functions/menus/daily-menu.dailyMenuHandler\n    events:\n      - http:\n          path: /menus/daily\n          method: get\n          cors: true\n    environment:\n      FUNCTION_NAME: menus-daily\n\n  # Epic 5 Story 5.3: Automated Invoice Generation\n  invoice-generator:\n    handler: src/functions/payments/invoice-generator.handler\n    timeout: 180\n    memorySize: 1024\n    events:\n      - http:\n          path: /invoices/generate\n          method: post\n          cors: true\n      - http:\n          path: /invoices/{id}/regenerate\n          method: post\n          cors: true\n      - http:\n          path: /invoices/batch-generate\n          method: post\n          cors: true\n      - schedule:\n          rate: cron(0 1 1 * ? *)\n          enabled: true\n          input:\n            action: generate-monthly-invoices\n    environment:\n      FUNCTION_NAME: invoice-generator\n      PDF_GENERATOR_URL: ${cf:hasivu-${self:provider.stage}-pdf.PdfGeneratorUrl}\n      INVOICE_TEMPLATE_BUCKET: hasivu-${self:provider.stage}-invoice-templates\n\n  pdf-generator:\n    handler: src/functions/payments/pdf-generator.handler\n    timeout: 120\n    memorySize: 1024\n    events:\n      - http:\n          path: /pdf/generate\n          method: post\n          cors: true\n      - http:\n          path: /pdf/invoice/{id}\n          method: get\n          cors: true\n      - http:\n          path: /pdf/bulk-download\n          method: post\n          cors: true\n    environment:\n      FUNCTION_NAME: pdf-generator\n      PDF_TEMPLATES_BUCKET: hasivu-${self:provider.stage}-invoice-templates\n      PDF_OUTPUT_BUCKET: hasivu-${self:provider.stage}-invoices\n\n  invoice-templates:\n    handler: src/functions/payments/invoice-templates.handler\n    timeout: 60\n    memorySize: 512\n    events:\n      - http:\n          path: /invoice-templates\n          method: post\n          cors: true\n      - http:\n          path: /invoice-templates/{id}\n          method: put\n          cors: true\n      - http:\n          path: /invoice-templates/{id}\n          method: get\n          cors: true\n      - http:\n          path: /invoice-templates\n          method: get\n          cors: true\n      - http:\n          path: /invoice-templates/{id}\n          method: delete\n          cors: true\n    environment:\n      FUNCTION_NAME: invoice-templates\n      TEMPLATE_STORAGE_BUCKET: hasivu-${self:provider.stage}-invoice-templates\n\n  invoice-mailer:\n    handler: src/functions/payments/invoice-mailer.handler\n    timeout: 180\n    memorySize: 1024\n    events:\n      - http:\n          path: /invoices/email\n          method: post\n          cors: true\n      - http:\n          path: /invoices/email/batch\n          method: post\n          cors: true\n      - http:\n          path: /invoices/email/schedule\n          method: post\n          cors: true\n      - http:\n          path: /invoices/email/status\n          method: get\n          cors: true\n      - schedule:\n          rate: rate(1 hour)\n          enabled: true\n          input:\n            action: send-scheduled-invoices\n    environment:\n      FUNCTION_NAME: invoice-mailer\n      EMAIL_TEMPLATE_BUCKET: hasivu-${self:provider.stage}-invoice-templates\n      INVOICE_BUCKET: hasivu-${self:provider.stage}-invoices\n\n  invoice-analytics:\n    handler: src/functions/payments/invoice-analytics.handler\n    timeout: 120\n    memorySize: 1024\n    events:\n      - http:\n          path: /invoice-analytics/dashboard\n          method: get\n          cors: true\n      - http:\n          path: /invoice-analytics/payment-status\n          method: get\n          cors: true\n      - http:\n          path: /invoice-analytics/overdue\n          method: get\n          cors: true\n      - http:\n          path: /invoice-analytics/collections\n          method: get\n          cors: true\n      - http:\n          path: /invoice-analytics/generate-report\n          method: post\n          cors: true\n    environment:\n      FUNCTION_NAME: invoice-analytics\n      ANALYTICS_DATA_BUCKET: hasivu-${self:provider.stage}-analytics\n\n  # Epic 5 Story 5.4: AI-Powered Payment Analytics & Reporting\n  ml-payment-insights:\n    handler: src/functions/payments/ml-payment-insights.mlPaymentInsightsHandler\n    timeout: 180\n    memorySize: 2048\n    events:\n      - http:\n          path: /ml-insights/predictive\n          method: get\n          cors: true\n      - http:\n          path: /ml-insights/anomaly\n          method: get\n          cors: true\n      - http:\n          path: /ml-insights/churn\n          method: get\n          cors: true\n      - http:\n          path: /ml-insights/revenue-forecast\n          method: get\n          cors: true\n      - http:\n          path: /ml-insights\n          method: get\n          cors: true\n      - http:\n          path: /ml-insights/train-model\n          method: post\n          cors: true\n      - http:\n          path: /ml-insights/generate-insights\n          method: post\n          cors: true\n    environment:\n      FUNCTION_NAME: ml-payment-insights\n      ML_MODEL_BUCKET: hasivu-${self:provider.stage}-ml-models\n      ML_TRAINING_ENABLED: true\n\n  advanced-payment-intelligence:\n    handler: src/functions/payments/advanced-payment-intelligence.advancedPaymentIntelligenceHandler\n    timeout: 180\n    memorySize: 2048\n    events:\n      - http:\n          path: /intelligence/pattern-recognition\n          method: get\n          cors: true\n      - http:\n          path: /intelligence/fraud-detection\n          method: get\n          cors: true\n      - http:\n          path: /intelligence/optimization\n          method: get\n          cors: true\n      - http:\n          path: /intelligence/behavioral-analysis\n          method: get\n          cors: true\n      - http:\n          path: /intelligence\n          method: get\n          cors: true\n      - http:\n          path: /intelligence/analyze-transaction\n          method: post\n          cors: true\n      - http:\n          path: /intelligence/generate-intelligence-report\n          method: post\n          cors: true\n      - http:\n          path: /intelligence/update-intelligence-models\n          method: post\n          cors: true\n    environment:\n      FUNCTION_NAME: advanced-payment-intelligence\n      FRAUD_DETECTION_THRESHOLD: 0.7\n      PATTERN_RECOGNITION_SENSITIVITY: 0.8\n      INTELLIGENCE_MODEL_VERSION: 2.0\n\n  # RFID Functions\n  rfid-manage-readers:\n    handler: src/functions/rfid/manage-readers.manageRfidReadersHandler\n    events:\n      - http:\n          path: /rfid/readers\n          method: post\n          cors: true\n      - http:\n          path: /rfid/readers/{readerId}\n          method: put\n          cors: true\n      - http:\n          path: /rfid/readers\n          method: get\n          cors: true\n    environment:\n      FUNCTION_NAME: rfid-manage-readers\n\n  rfid-verify-card:\n    handler: src/functions/rfid/verify-card.verifyRfidCardHandler\n    events:\n      - http:\n          path: /rfid/verify\n          method: post\n          cors: true\n    environment:\n      FUNCTION_NAME: rfid-verify-card\n\n  rfid-bulk-import-cards:\n    handler: src/functions/rfid/bulk-import-cards.bulkImportCardsHandler\n    timeout: 60\n    memorySize: 1024\n    events:\n      - http:\n          path: /rfid/cards/bulk-import\n          method: post\n          cors: true\n    environment:\n      FUNCTION_NAME: rfid-bulk-import-cards\n\n  # Mobile Integration Functions - Story 2.4: Parent Mobile Integration\n  mobile-parent-notifications:\n    handler: src/functions/mobile/parent-notifications.parentNotificationsHandler\n    events:\n      - http:\n          path: /api/v1/mobile/notifications/send\n          method: post\n          cors: true\n      - http:\n          path: /api/v1/mobile/notifications/{parentId}\n          method: get\n          cors: true\n      - http:\n          path: /api/v1/mobile/notifications/{notificationId}/read\n          method: put\n          cors: true\n    environment:\n      FUNCTION_NAME: mobile-parent-notifications\n\n  mobile-delivery-tracking:\n    handler: src/functions/mobile/delivery-tracking.deliveryTrackingHandler\n    events:\n      - http:\n          path: /api/v1/mobile/tracking/orders/{orderId}\n          method: get\n          cors: true\n      - http:\n          path: /api/v1/mobile/tracking/student/{studentId}\n          method: get\n          cors: true\n    environment:\n      FUNCTION_NAME: mobile-delivery-tracking\n\n  mobile-device-registration:\n    handler: src/functions/mobile/device-registration.deviceRegistrationHandler\n    events:\n      - http:\n          path: /api/v1/mobile/devices/register\n          method: post\n          cors: true\n      - http:\n          path: /api/v1/mobile/devices/{deviceId}\n          method: put\n          cors: true\n      - http:\n          path: /api/v1/mobile/devices/{deviceId}\n          method: delete\n          cors: true\n      - http:\n          path: /api/v1/mobile/devices\n          method: get\n          cors: true\n    environment:\n      FUNCTION_NAME: mobile-device-registration\n\n  rfid-test-connection:\n    handler: src/functions/rfid/manage-readers.testRfidReaderHandler\n    events:\n      - http:\n          path: /rfid/readers/{readerId}/test\n          method: post\n          cors: true\n    environment:\n      FUNCTION_NAME: rfid-test-connection\n\n  rfid-card-registration:\n    handler: src/functions/rfid/card-registration.cardRegistrationHandler\n    events:\n      - http:\n          path: /rfid/cards\n          method: post\n          cors: true\n      - http:\n          path: /rfid/cards/{cardId}\n          method: put\n          cors: true\n    environment:\n      FUNCTION_NAME: rfid-card-registration\n\n  rfid-delivery-verification:\n    handler: src/functions/rfid/delivery-verification.deliveryVerificationHandler\n    events:\n      - http:\n          path: /rfid/verify-delivery\n          method: post\n          cors: true\n    environment:\n      FUNCTION_NAME: rfid-delivery-verification\n\n  rfid-bulk-verification:\n    handler: src/functions/rfid/bulk-verification.bulkVerificationHandler\n    events:\n      - http:\n          path: /rfid/verify-bulk\n          method: post\n          cors: true\n    environment:\n      FUNCTION_NAME: rfid-bulk-verification\n\n  rfid-mobile-tracking:\n    handler: src/functions/rfid/mobile-tracking.mobileTrackingHandler\n    events:\n      - http:\n          path: /rfid/tracking/{studentId}\n          method: get\n          cors: true\n    environment:\n      FUNCTION_NAME: rfid-mobile-tracking\n\n  rfid-parent-dashboard:\n    handler: src/functions/rfid/parent-dashboard.parentDashboardHandler\n    events:\n      - http:\n          path: /rfid/parent/{parentId}/dashboard\n          method: get\n          cors: true\n    environment:\n      FUNCTION_NAME: rfid-parent-dashboard\n\n  rfid-delivery-history:\n    handler: src/functions/rfid/delivery-history.deliveryHistoryHandler\n    events:\n      - http:\n          path: /rfid/delivery-history\n          method: get\n          cors: true\n    environment:\n      FUNCTION_NAME: rfid-delivery-history\n\n  # System Monitoring Functions\n  monitoring-status:\n    handler: src/functions/health/status.getStatusHandler\n    events:\n      - http:\n          path: /status\n          method: get\n          cors: true\n    environment:\n      FUNCTION_NAME: monitoring-status\n\n  monitoring-dashboard:\n    handler: src/functions/monitoring/dashboard.monitoringDashboardHandler\n    events:\n      - http:\n          path: /monitoring/dashboard\n          method: get\n          cors: true\n    environment:\n      FUNCTION_NAME: monitoring-dashboard\n\n  monitoring-health:\n    handler: src/functions/monitoring/dashboard.serviceHealthHandler\n    events:\n      - http:\n          path: /monitoring/health/{service}\n          method: get\n          cors: true\n    environment:\n      FUNCTION_NAME: monitoring-health\n\n  monitoring-metrics:\n    handler: src/functions/monitoring/dashboard.systemMetricsHandler\n    events:\n      - http:\n          path: /monitoring/metrics\n          method: get\n          cors: true\n    environment:\n      FUNCTION_NAME: monitoring-metrics\n\n  monitoring-performance:\n    handler: src/functions/monitoring/dashboard.performanceMetricsHandler\n    events:\n      - http:\n          path: /monitoring/performance\n          method: get\n          cors: true\n    environment:\n      FUNCTION_NAME: monitoring-performance\n\n  monitoring-business:\n    handler: src/functions/monitoring/dashboard.businessMetricsHandler\n    events:\n      - http:\n          path: /monitoring/business\n          method: get\n          cors: true\n    environment:\n      FUNCTION_NAME: monitoring-business\n\n  monitoring-alerts:\n    handler: src/functions/monitoring/dashboard.alertsHandler\n    events:\n      - http:\n          path: /monitoring/alerts\n          method: get\n          cors: true\n    environment:\n      FUNCTION_NAME: monitoring-alerts\n\n  monitoring-recommendations:\n    handler: src/functions/monitoring/dashboard.recommendationsHandler\n    events:\n      - http:\n          path: /monitoring/recommendations\n          method: get\n          cors: true\n    environment:\n      FUNCTION_NAME: monitoring-recommendations\n\nresources:\n  Resources:\n    # S3 Bucket for uploads\n    S3BucketUploads:\n      Type: AWS::S3::Bucket\n      Properties:\n        BucketName: hasivu-${self:provider.stage}-uploads\n        PublicAccessBlockConfiguration:\n          BlockPublicAcls: true\n          BlockPublicPolicy: true\n          IgnorePublicAcls: true\n          RestrictPublicBuckets: true\n        BucketEncryption:\n          ServerSideEncryptionConfiguration:\n            - ServerSideEncryptionByDefault:\n                SSEAlgorithm: AES256\n        VersioningConfiguration:\n          Status: Enabled\n        LifecycleConfiguration:\n          Rules:\n            - Status: Enabled\n              ExpirationInDays: 365\n              NoncurrentVersionExpirationInDays: 30\n\n    # S3 Bucket for ML models\n    S3BucketMLModels:\n      Type: AWS::S3::Bucket\n      Properties:\n        BucketName: hasivu-${self:provider.stage}-ml-models\n        PublicAccessBlockConfiguration:\n          BlockPublicAcls: true\n          BlockPublicPolicy: true\n          IgnorePublicAcls: true\n          RestrictPublicBuckets: true\n        BucketEncryption:\n          ServerSideEncryptionConfiguration:\n            - ServerSideEncryptionByDefault:\n                SSEAlgorithm: AES256\n        VersioningConfiguration:\n          Status: Enabled\n        LifecycleConfiguration:\n          Rules:\n            - Status: Enabled\n              ExpirationInDays: 180\n              NoncurrentVersionExpirationInDays: 30\n\n    # S3 Bucket for invoice templates\n    S3BucketInvoiceTemplates:\n      Type: AWS::S3::Bucket\n      Properties:\n        BucketName: hasivu-${self:provider.stage}-invoice-templates\n        PublicAccessBlockConfiguration:\n          BlockPublicAcls: true\n          BlockPublicPolicy: true\n          IgnorePublicAcls: true\n          RestrictPublicBuckets: true\n        BucketEncryption:\n          ServerSideEncryptionConfiguration:\n            - ServerSideEncryptionByDefault:\n                SSEAlgorithm: AES256\n        VersioningConfiguration:\n          Status: Enabled\n\n    # S3 Bucket for generated invoices\n    S3BucketInvoices:\n      Type: AWS::S3::Bucket\n      Properties:\n        BucketName: hasivu-${self:provider.stage}-invoices\n        PublicAccessBlockConfiguration:\n          BlockPublicAcls: true\n          BlockPublicPolicy: true\n          IgnorePublicAcls: true\n          RestrictPublicBuckets: true\n        BucketEncryption:\n          ServerSideEncryptionConfiguration:\n            - ServerSideEncryptionByDefault:\n                SSEAlgorithm: AES256\n        VersioningConfiguration:\n          Status: Enabled\n        LifecycleConfiguration:\n          Rules:\n            - Status: Enabled\n              ExpirationInDays: 2555  # 7 years for tax compliance\n              NoncurrentVersionExpirationInDays: 90\n\n    # S3 Bucket for analytics data\n    S3BucketAnalytics:\n      Type: AWS::S3::Bucket\n      Properties:\n        BucketName: hasivu-${self:provider.stage}-analytics\n        PublicAccessBlockConfiguration:\n          BlockPublicAcls: true\n          BlockPublicPolicy: true\n          IgnorePublicAcls: true\n          RestrictPublicBuckets: true\n        BucketEncryption:\n          ServerSideEncryptionConfiguration:\n            - ServerSideEncryptionByDefault:\n                SSEAlgorithm: AES256\n        VersioningConfiguration:\n          Status: Enabled\n        LifecycleConfiguration:\n          Rules:\n            - Status: Enabled\n              ExpirationInDays: 1095  # 3 years\n              NoncurrentVersionExpirationInDays: 30\n\n    # CloudWatch Log Groups\n    HealthLogGroup:\n      Type: AWS::Logs::LogGroup\n      Properties:\n        LogGroupName: /aws/lambda/hasivu-${self:provider.stage}-health\n        RetentionInDays: 30\n\n    # WAF for API Gateway\n    WebACL:\n      Type: AWS::WAFv2::WebACL\n      Properties:\n        Name: hasivu-${self:provider.stage}-waf\n        Scope: REGIONAL\n        DefaultAction:\n          Allow: {}\n        Rules:\n          - Name: RateLimitRule\n            Priority: 1\n            Statement:\n              RateBasedStatement:\n                Limit: 2000\n                AggregateKeyType: IP\n            Action:\n              Block: {}\n            VisibilityConfig:\n              SampledRequestsEnabled: true\n              CloudWatchMetricsEnabled: true\n              MetricName: RateLimitRule\n          - Name: GeoBlockRule\n            Priority: 2\n            Statement:\n              GeoMatchStatement:\n                CountryCodes: [IN]\n            Action:\n              Allow: {}\n            VisibilityConfig:\n              SampledRequestsEnabled: true\n              CloudWatchMetricsEnabled: true\n              MetricName: GeoBlockRule\n        VisibilityConfig:\n          SampledRequestsEnabled: true\n          CloudWatchMetricsEnabled: true\n          MetricName: hasivu-${self:provider.stage}-waf\n\n    # Epic 5 Payment System Resources\n    \n    # DynamoDB table for webhook idempotency\n    PaymentWebhookIdempotencyTable:\n      Type: AWS::DynamoDB::Table\n      Properties:\n        TableName: payment-webhook-idempotency-${self:provider.stage}\n        BillingMode: PAY_PER_REQUEST\n        AttributeDefinitions:\n          - AttributeName: webhookId\n            AttributeType: S\n        KeySchema:\n          - AttributeName: webhookId\n            KeyType: HASH\n        TimeToLiveSpecification:\n          AttributeName: ttl\n          Enabled: true\n        StreamSpecification:\n          StreamViewType: NEW_AND_OLD_IMAGES\n\n    # SQS Dead Letter Queue for failed payments\n    PaymentDeadLetterQueue:\n      Type: AWS::SQS::Queue\n      Properties:\n        QueueName: payment-dlq-${self:provider.stage}\n        MessageRetentionPeriod: 1209600 # 14 days\n        VisibilityTimeoutSeconds: 300\n\n    # SQS Retry Queue for payment retries\n    PaymentRetryQueue:\n      Type: AWS::SQS::Queue\n      Properties:\n        QueueName: payment-retry-queue-${self:provider.stage}\n        VisibilityTimeoutSeconds: 60\n        MessageRetentionPeriod: 1209600 # 14 days\n        RedrivePolicy:\n          deadLetterTargetArn: !GetAtt PaymentDeadLetterQueue.Arn\n          maxReceiveCount: 3\n\n    # SNS Topic for payment notifications\n    PaymentNotificationsTopic:\n      Type: AWS::SNS::Topic\n      Properties:\n        TopicName: payment-notifications-${self:provider.stage}\n        DisplayName: Payment Notifications\n        FifoTopic: false\n\n    # SNS Topic for mobile push notifications\n    PushNotificationsTopic:\n      Type: AWS::SNS::Topic\n      Properties:\n        TopicName: push-notifications-${self:provider.stage}\n        DisplayName: Mobile Push Notifications\n        FifoTopic: false\n\n    # CloudWatch Dashboard\n    CloudWatchDashboard:\n      Type: AWS::CloudWatch::Dashboard\n      Properties:\n        DashboardName: hasivu-${self:provider.stage}-metrics\n        DashboardBody: |\n          {\n            \"widgets\": [\n              {\n                \"type\": \"metric\",\n                \"properties\": {\n                  \"metrics\": [\n                    [ \"AWS/Lambda\", \"Duration\", \"FunctionName\", \"hasivu-${self:provider.stage}-health\" ],\n                    [ \".\", \"Errors\", \".\", \".\" ],\n                    [ \".\", \"Invocations\", \".\", \".\" ]\n                  ],\n                  \"period\": 300,\n                  \"stat\": \"Average\",\n                  \"region\": \"${aws:region}\",\n                  \"title\": \"Lambda Metrics\"\n                }\n              },\n              {\n                \"type\": \"metric\",\n                \"properties\": {\n                  \"metrics\": [\n                    [ \"AWS/ApiGateway\", \"Count\", \"ApiName\", \"hasivu-${self:provider.stage}\" ],\n                    [ \".\", \"Latency\", \".\", \".\" ],\n                    [ \".\", \"4XXError\", \".\", \".\" ],\n                    [ \".\", \"5XXError\", \".\", \".\" ]\n                  ],\n                  \"period\": 300,\n                  \"stat\": \"Sum\",\n                  \"region\": \"${aws:region}\",\n                  \"title\": \"API Gateway Metrics\"\n                }\n              },\n              {\n                \"type\": \"metric\",\n                \"properties\": {\n                  \"metrics\": [\n                    [ \"AWS/Lambda\", \"Duration\", \"FunctionName\", \"hasivu-${self:provider.stage}-payments-advanced\" ],\n                    [ \".\", \"Errors\", \".\", \".\" ],\n                    [ \".\", \"Invocations\", \".\", \".\" ],\n                    [ \".\", \"Duration\", \"FunctionName\", \"hasivu-${self:provider.stage}-payments-webhook-handler\" ],\n                    [ \".\", \"Errors\", \".\", \".\" ],\n                    [ \".\", \"Invocations\", \".\", \".\" ]\n                  ],\n                  \"period\": 300,\n                  \"stat\": \"Average\",\n                  \"region\": \"${aws:region}\",\n                  \"title\": \"Payment System Metrics\"\n                }\n              },\n              {\n                \"type\": \"metric\",\n                \"properties\": {\n                  \"metrics\": [\n                    [ \"AWS/SQS\", \"NumberOfMessagesSent\", \"QueueName\", \"payment-retry-queue-${self:provider.stage}\" ],\n                    [ \".\", \"NumberOfMessagesReceived\", \".\", \".\" ],\n                    [ \".\", \"NumberOfMessagesSent\", \"QueueName\", \"payment-dlq-${self:provider.stage}\" ]\n                  ],\n                  \"period\": 300,\n                  \"stat\": \"Sum\",\n                  \"region\": \"${aws:region}\",\n                  \"title\": \"Payment Queue Metrics\"\n                }\n              }\n            ]\n          }\n\n  Outputs:\n    ApiGatewayRestApiId:\n      Value: !Ref ApiGatewayRestApi\n      Export:\n        Name: hasivu-${self:provider.stage}-api-gateway-id\n        \n    ApiGatewayRestApiRootResourceId:\n      Value: !GetAtt ApiGatewayRestApi.RootResourceId\n      Export:\n        Name: hasivu-${self:provider.stage}-api-gateway-root-id\n        \n    S3BucketName:\n      Value: !Ref S3BucketUploads\n      Export:\n        Name: hasivu-${self:provider.stage}-s3-bucket-name\n        \n    # Epic 5 Payment System Outputs\n    PaymentIdempotencyTableName:\n      Value: !Ref PaymentWebhookIdempotencyTable\n      Export:\n        Name: hasivu-${self:provider.stage}-payment-idempotency-table\n        \n    PaymentRetryQueueUrl:\n      Value: !Ref PaymentRetryQueue\n      Export:\n        Name: hasivu-${self:provider.stage}-payment-retry-queue-url\n        \n    PaymentDeadLetterQueueUrl:\n      Value: !Ref PaymentDeadLetterQueue\n      Export:\n        Name: hasivu-${self:provider.stage}-payment-dlq-url\n        \n    PaymentNotificationsTopicArn:\n      Value: !Ref PaymentNotificationsTopic\n      Export:\n        Name: hasivu-${self:provider.stage}-payment-notifications-topic\n\n    PushNotificationsTopicArn:\n      Value: !Ref PushNotificationsTopic\n      Export:\n        Name: hasivu-${self:provider.stage}-push-notifications-topic\n        \n    # Epic 5 Story 5.4: ML Models Bucket\n    MLModelsBucketName:\n      Value: !Ref S3BucketMLModels\n      Export:\n        Name: hasivu-${self:provider.stage}-ml-models-bucket-name\n        \n    # Epic 5 Story 5.3: Invoice System Buckets\n    InvoiceTemplatesBucketName:\n      Value: !Ref S3BucketInvoiceTemplates\n      Export:\n        Name: hasivu-${self:provider.stage}-invoice-templates-bucket-name\n        \n    InvoicesBucketName:\n      Value: !Ref S3BucketInvoices\n      Export:\n        Name: hasivu-${self:provider.stage}-invoices-bucket-name\n        \n    AnalyticsBucketName:\n      Value: !Ref S3BucketAnalytics\n      Export:\n        Name: hasivu-${self:provider.stage}-analytics-bucket-name",
+    "command": [
+      "print"
+    ],
+    "options": {
+      "config": "serverless.yml",
+      "stage": "dev"
+    },
+    "serviceProviderAwsCfStackId": null,
+    "serviceProviderAwsCfStackCreated": null,
+    "serviceProviderAwsCfStackUpdated": null,
+    "serviceProviderAwsCfStackStatus": null,
+    "serviceProviderAwsCfStackOutputs": null
+  }
+}

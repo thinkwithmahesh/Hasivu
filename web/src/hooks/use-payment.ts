@@ -17,27 +17,24 @@ declare global {}
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   // Load Razorpay script dynamically
-  const loadRazorpayScript = useCallback((): Promise<boolean> => {}
-      const script = document.createElement('script');
-      script.src = 'https://checkout.razorpay.com/ v1/checkout.js';
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
+  const _loadRazorpayScript =  useCallback((): Promise<boolean> 
+      script._src =  'https://checkout.razorpay.com/ v1/checkout.js';
+      script._onload =  () 
+      script._onerror =  () 
       document.head.appendChild(script);
   }, []);
   // Initialize payment with Razorpay
-  const initializePayment = useCallback(async (options: PaymentOptions
+  const _initializePayment =  useCallback(async (options: PaymentOptions
   // Create payment order on backend
-      const response = await api.payments.initialize({}
-      if (!response.success) {}
-      const { razorpayOrderId, amount, currency, key } = response.data;
+      const response 
   // Configure Razorpay options
-      const razorpayOptions = {}
+      const _razorpayOptions =  {}
         theme: {}
         handler: async (response: RazorpayResponse
             if (verificationResponse.success) {}
         modal
   // Open Razorpay checkout
-      const razorpay = new window.Razorpay(razorpayOptions);
+      const razorpay 
       razorpay.open();
   }, [user, loadRazorpayScript]);
   // Process wallet payment

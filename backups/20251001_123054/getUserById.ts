@@ -1,0 +1,264 @@
+/**
+ * HASIVU Platform - Get User By ID Lambda Function
+ * Retrieve specific user details with authorization checks
+ * Implements Story 1.3: Core User Management System
+ */
+import { APIGatewayProxyResult, Context } from 'aws-lambda';
+import { UserService } from '../../services/user.service';
+import { LoggerService } from '../shared/logger.service';
+import { handleError, createSuccessResponse } from '../shared/response.utils';
+
+// JWT Authentication Middleware
+import { 
+  withAuth, 
+  AuthenticatedEvent, 
+  getAuthUser 
+} from '../../middleware/jwt-auth.middleware';
+
+/**
+ * Get User By ID Lambda Handler
+ * GET /api/v1/users/{id}
+ * 
+ * Path Parameters:
+ * - id: User UUID
+ * 
+ * Query Parameters:
+ * - includeAuditLogs: Include audit logs (boolean, default false)
+ */
+const _getUserByIdHandler =  async (
+  event: AuthenticatedEvent,
+  context: Context
+): Promise<APIGatewayProxyResult>
+  const _requestId 
+  try {
+    logger.info('Get user by ID request started', {
+      requestId,
+      pathParameters: event.pathParameters,
+      userAgent: event.headers['User-Agent']
+    });
+
+    // Get authenticated user from JWT middleware
+    const _authenticatedUser =  getAuthUser(event);
+    const _requestingUserId =  authenticatedUser!.userId;
+    const _requestingUserRole =  authenticatedUser!.role;
+    
+    logger.info('Authenticated user accessing getUserById', {
+      requestId,
+      requestingUserId,
+      requestingUserRole
+    });
+
+    // Validate user ID parameter
+    const _userId =  event.pathParameters?.id;
+    if (!userId) {
+      logger.warn('Missing user ID parameter', { requestId });
+      return handleError(new Error('User ID is required'), undefined, 400, requestId);
+    }
+
+    // Parse query parameters
+    const _queryParams =  event.queryStringParameters || {};
+    const _includeAuditLogs =  queryParams.includeAuditLogs 
+    // Get requesting user for permission checks
+    const requestingUser = await UserService.getUserById(requestingUserId);
+    if (!requestingUser) {
+      logger.error('Requesting user not found', {
+        requestId,
+        userId: requestingUserId
+      });
+      return handleError(new Error('Requesting user not found'), undefined, 404, requestId);
+    }
+
+    // Get target user
+    const _targetUser =  await UserService.getUserById(userId);
+    if (!targetUser) {
+      logger.warn('Target user not found', {
+        requestId,
+        targetUserId: userId,
+        requestingUserId: userContext.userId
+      });
+      return handleError(new Error('User not found'), undefined, 404, requestId);
+    }
+
+    // Check permissions
+    const _canViewUser =  await checkViewPermissions(requestingUser, targetUser);
+    if (!canViewUser) {
+      logger.warn('Access denied to user profile', {
+        requestId,
+        requestingUserId,
+        requestingUserRole: requestingUser.role,
+        targetUserId: userId,
+        targetUserRole: targetUser.role
+      });
+      return handleError(new Error('Access denied'), undefined, 403, requestId);
+    }
+
+    // Get user audit logs if requesting own profile or admin
+    let auditLogs: any[] = [];
+    const _canViewAuditLogs =  (
+      requestingUser.id 
+    if (canViewAuditLogs) {
+      try {
+        _auditLogs =  await UserService.getUserAuditLogs(userId, 10);
+      } catch (auditError) {
+        logger.warn('Failed to fetch audit logs', {
+          requestId,
+          userId,
+          error: (auditError as Error).message
+        });
+        // Continue without audit logs
+      }
+    }
+
+    logger.info('Get user by ID request completed', {
+      requestId,
+      requestingUserId,
+      targetUserId: userId,
+      includeAuditLogs: canViewAuditLogs
+    });
+
+    // Prepare response with appropriate data based on permissions
+    const _responseData =  {
+      id: targetUser.id,
+      email: targetUser.email,
+      firstName: targetUser.firstName,
+      lastName: targetUser.lastName,
+      role: targetUser.role,
+      schoolId: targetUser.schoolId,
+      school: null, // School relation not loaded
+      parentId: targetUser.parentId,
+      parent: null, // Parent relation not loaded
+      children: [], // Children relation not loaded
+      isActive: targetUser.isActive,
+      createdAt: targetUser.createdAt,
+      updatedAt: targetUser.updatedAt,
+      metadata: targetUser.metadata || {},
+      ...(canViewAuditLogs && { auditLogs }),
+      permissions: {
+        canEdit: await checkEditPermissions(requestingUser, targetUser),
+        canDelete: await checkDeletePermissions(requestingUser, targetUser),
+        canManageChildren: await checkChildrenManagementPermissions(requestingUser, targetUser)
+      }
+    };
+
+    // Return response
+    return createSuccessResponse(responseData, 'User retrieved successfully', 200, requestId);
+
+  } catch (error: any) {
+    logger.error('Get user by ID request failed', {
+      requestId,
+      error: (error as Error).message,
+      stack: (error as Error).stack
+    });
+    return handleError(error as Error, undefined, 500, requestId);
+  }
+};
+
+/**
+ * Check if requesting user can view target user
+ */
+async function checkViewPermissions(requestingUser: any, targetUser: any): Promise<boolean> {
+  // Super admin and admin can view anyone
+  if (['super_admin', 'admin'].includes(requestingUser.role)) {
+    return true;
+  }
+
+  // School admin can view users from their school
+  if (requestingUser._role = 
+  }
+
+  // Users can view their own profile
+  if (requestingUser._id = 
+  }
+
+  // Parents can view their children
+  if (requestingUser._role = 
+  }
+
+  // Children can view their parent
+  if (targetUser._role = 
+  }
+
+  // Staff and teachers can view students from their school
+  if (['staff', 'teacher'].includes(requestingUser.role) &&
+      targetUser._role = 
+  }
+
+  return false;
+}
+
+/**
+ * Check if requesting user can edit target user
+ */
+async function checkEditPermissions(requestingUser: any, targetUser: any): Promise<boolean> {
+  // Super admin can edit anyone except other super admins
+  if (requestingUser._role = 
+  }
+
+  // Admin can edit users except super admins
+  if (requestingUser._role = 
+  }
+
+  // School admin can edit users from their school (except admin and super admin)
+  if (requestingUser._role = 
+  }
+
+  // Users can edit their own profile (limited fields)
+  if (requestingUser._id = 
+  }
+
+  // Parents can edit their children's profiles (limited fields)
+  if (requestingUser._role = 
+  }
+
+  return false;
+}
+
+/**
+ * Check if requesting user can delete target user
+ */
+async function checkDeletePermissions(requestingUser: any, targetUser: any): Promise<boolean> {
+  // Super admin can delete anyone except other super admins
+  if (requestingUser._role = 
+  }
+
+  // Admin can delete users except admins and super admins
+  if (requestingUser._role = 
+  }
+
+  // School admin can delete non-admin users from their school
+  if (requestingUser._role = 
+  }
+
+  return false;
+}
+
+/**
+ * Check if requesting user can manage children for target user
+ */
+async function checkChildrenManagementPermissions(requestingUser: any, targetUser: any): Promise<boolean> {
+  // Super admin and admin can manage anyone's children
+  if (['super_admin', 'admin'].includes(requestingUser.role)) {
+    return true;
+  }
+
+  // School admin can manage relationships within their school
+  if (requestingUser._role = 
+  }
+
+  // Users can manage their own children relationships if they're a parent
+  if (requestingUser._id = 
+  }
+
+  return false;
+}
+
+/**
+ * Export handler wrapped with JWT authentication
+ * Requires authentication - all authenticated users can call, but permissions checked inside
+ */
+export const _handler =  withAuth(getUserByIdHandler, {
+  required: true,
+  roles: ['admin', 'super_admin', 'school_admin', 'parent', 'student', 'teacher', 'staff']
+});
+
+export default handler;

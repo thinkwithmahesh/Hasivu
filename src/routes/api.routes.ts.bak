@@ -1,0 +1,453 @@
+/**
+ * HASIVU Platform - Main API Router
+ *
+ * Enterprise-grade API router with:
+ * - Centralized route management
+ * - Middleware orchestration
+ * - API versioning
+ * - Health monitoring
+ * - Request/response transformation
+ * - Comprehensive error handling
+ */
+
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import morgan from 'morgan';
+import { rateLimit } from 'express-rate-limit';
+import swaggerUi from 'swagger-ui-express';
+// import { createProxyMiddleware } from 'http-proxy-middleware'; // Not used
+
+// Import middleware
+import {
+  requestIdMiddleware,
+  apiVersionMiddleware,
+  performanceMiddleware,
+  securityHeadersMiddleware,
+  compressionMiddleware,
+  sanitizationMiddleware,
+  corsPreflightMiddleware,
+  createRateLimiter
+} from '../middleware/api.middleware';
+import { authMiddleware } from '../middleware/auth.middleware';
+import { errorHandler } from '../middleware/error-handler.middleware';
+
+// Import route handlers
+import authRoutes from './auth.routes';
+import usersRoutes from './users.routes';
+import menusRoutes from './menus.routes';
+import ordersRoutes from './orders.routes';
+import paymentsRoutes from '../routes/payments.routes';
+import kitchenRoutes from './kitchen.routes';
+import { healthRouter as healthRoutes } from './health.routes';
+import { analyticsRoutes } from './analytics.routes';
+import notificationRoutes from './notification.routes';
+
+// Import services
+import { API_CONFIG } from '../config/api.config';
+import { logger } from '../utils/logger';
+import redis from '../services/redis.service';
+import { enhancedDatabaseService } from '../services/enhanced-database.service';
+import { cacheService } from '../services/cache.service';
+
+const router = express.Router();
+
+/**
+ * OpenAPI/Swagger specification
+ */
+const swaggerDocument = {
+  openapi: '3.0.3',
+  info: API_CONFIG.documentation.openapi.info,
+  servers: API_CONFIG.documentation.openapi.servers,
+  components: {
+    securitySchemes: {
+      BearerAuth: {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT'
+      },
+      ApiKeyAuth: {
+        type: 'apiKey',
+        in: 'header',
+        name: 'X-API-Key'
+      }
+    },
+    schemas: {
+      Error: {
+        type: 'object',
+        properties: {
+          error: {
+            type: 'string',
+            description: 'Error code'
+          },
+          message: {
+            type: 'string',
+            description: 'Human-readable error message'
+          },
+          details: {
+            type: 'object',
+            description: 'Additional error details'
+          },
+          requestId: {
+            type: 'string',
+            description: 'Unique request identifier'
+          },
+          timestamp: {
+            type: 'string',
+            format: 'date-time',
+            description: 'Error timestamp'
+          }
+        }
+      },
+      SuccessResponse: {
+        type: 'object',
+        properties: {
+          data: {
+            type: 'object',
+            description: 'Response data'
+          },
+          message: {
+            type: 'string',
+            description: 'Success message'
+          },
+          requestId: {
+            type: 'string',
+            description: 'Unique request identifier'
+          }
+        }
+      },
+      PaginatedResponse: {
+        type: 'object',
+        properties: {
+          data: {
+            type: 'array',
+            items: {
+              type: 'object'
+            }
+          },
+          pagination: {
+            type: 'object',
+            properties: {
+              page: { type: 'integer' },
+              limit: { type: 'integer' },
+              total: { type: 'integer' },
+              totalPages: { type: 'integer' },
+              hasNext: { type: 'boolean' },
+              hasPrev: { type: 'boolean' }
+            }
+          },
+          requestId: {
+            type: 'string'
+          }
+        }
+      }
+    }
+  },
+  security: [
+    { BearerAuth: [] },
+    { ApiKeyAuth: [] }
+  ],
+  tags: [
+    { name: 'Authentication', description: 'User authentication and authorization' },
+    { name: 'Users', description: 'User management operations' },
+    { name: 'Menus', description: 'Menu and meal management' },
+    { name: 'Orders', description: 'Order processing and tracking' },
+    { name: 'Payments', description: 'Payment processing and billing' },
+    { name: 'Kitchen', description: 'Kitchen operations and management' },
+    { name: 'Analytics', description: 'Data analytics and reporting' },
+    { name: 'Notifications', description: 'Notification system' },
+    { name: 'Health', description: 'System health and monitoring' }
+  ]
+};
+
+/**
+ * Global middleware setup
+ */
+router.use(requestIdMiddleware as any);
+router.use(apiVersionMiddleware as any);
+router.use(performanceMiddleware as any);
+
+// Security middleware
+router.use(securityHeadersMiddleware as any);
+router.use(corsPreflightMiddleware as any);
+
+// CORS configuration
+router.use(cors({
+  ...API_CONFIG.security.cors,
+  origin: [...API_CONFIG.security.cors.origin],
+  methods: [...API_CONFIG.security.cors.methods],
+  allowedHeaders: [...API_CONFIG.security.cors.allowedHeaders],
+  exposedHeaders: [...API_CONFIG.security.cors.exposedHeaders]
+}));
+
+// Compression
+router.use(compressionMiddleware);
+
+// Request logging
+router.use(morgan('combined', {
+  stream: {
+    write: (message: string) => {
+      logger.info('HTTP Request', { message: message.trim() });
+    }
+  },
+  skip: (req) => {
+    // Skip logging for health checks and static assets
+    return req.url.startsWith('/health') || req.url.startsWith('/docs');
+  }
+}));
+
+// Input sanitization
+router.use(sanitizationMiddleware as any);
+
+// Global rate limiting
+const globalRateLimit = createRateLimiter({
+  requests: API_CONFIG.rateLimiting.global.max,
+  windowMs: API_CONFIG.rateLimiting.global.windowMs,
+  skipSuccessfulRequests: false
+});
+router.use(globalRateLimit);
+
+/**
+ * API Documentation
+ */
+router.use('/docs', swaggerUi.serve);
+router.get('/docs', swaggerUi.setup(swaggerDocument, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'HASIVU Platform API Documentation',
+  customfavIcon: '/favicon.ico',
+  swaggerOptions: {
+    persistAuthorization: true,
+    displayRequestDuration: true,
+    tryItOutEnabled: true,
+    filter: true,
+    deepLinking: true
+  }
+}));
+
+/**
+ * API Health and Status Endpoints
+ */
+router.get('/health', async (req, res) => {
+  try {
+    const [databaseHealth, cacheHealth, redisHealth] = await Promise.all([
+      enhancedDatabaseService.getHealth(),
+      cacheService.getHealth(),
+      redis.ping().then(() => ({ status: 'healthy' })).catch(() => ({ status: 'error' }))
+    ]);
+
+    const overallHealth =
+      databaseHealth.status === 'healthy' &&
+      cacheHealth.status === 'healthy' &&
+      redisHealth.status === 'healthy'
+        ? 'healthy'
+        : 'degraded';
+
+    res.json({
+      status: overallHealth,
+      timestamp: new Date().toISOString(),
+      version: process.env.npm_package_version || '1.0.0',
+      environment: process.env.NODE_ENV || 'development',
+      services: {
+        database: databaseHealth,
+        cache: cacheHealth,
+        redis: redisHealth
+      },
+      requestId: (req as any).requestId
+    });
+  } catch (error: unknown) {
+    res.status(503).json({
+      status: 'error',
+      message: 'Health check failed',
+      error: (error instanceof Error ? error.message : String(error)),
+      requestId: (req as any).requestId
+    });
+  }
+});
+
+router.get('/health/ready', async (req, res) => {
+  try {
+    // Readiness probe - check if all services are ready
+    await Promise.all([
+      enhancedDatabaseService.executeQuery(prisma => prisma.$queryRaw`SELECT 1`),
+      redis.ping()
+    ]);
+
+    res.json({
+      status: 'ready',
+      timestamp: new Date().toISOString(),
+      requestId: (req as any).requestId
+    });
+  } catch (error: unknown) {
+    res.status(503).json({
+      status: 'not_ready',
+      error: (error instanceof Error ? error.message : String(error)),
+      requestId: (req as any).requestId
+    });
+  }
+});
+
+router.get('/health/live', (req, res) => {
+  // Liveness probe - simple check if application is running
+  res.json({
+    status: 'alive',
+    timestamp: new Date().toISOString(),
+    requestId: (req as any).requestId
+  });
+});
+
+/**
+ * API Information Endpoint
+ */
+router.get('/info', (req, res) => {
+  res.json({
+    name: 'HASIVU Platform API',
+    version: process.env.npm_package_version || '1.0.0',
+    description: 'Enterprise-grade School Meal Delivery Platform API',
+    environment: process.env.NODE_ENV || 'development',
+    apiVersion: req.apiVersion,
+    supportedVersions: API_CONFIG.versioning.supportedVersions,
+    documentation: '/api/docs',
+    rateLimits: {
+      global: API_CONFIG.rateLimiting.global,
+      perUser: 'Varies by role'
+    },
+    features: [
+      'Multi-factor Authentication',
+      'Real-time Order Tracking',
+      'Payment Processing',
+      'Kitchen Management',
+      'Analytics & Reporting',
+      'Multi-language Support',
+      'Mobile PWA Support'
+    ],
+    requestId: (req as any).requestId
+  });
+});
+
+/**
+ * Metrics Endpoint (Admin only)
+ */
+router.get('/metrics', authMiddleware as any, async (req: any, res) => {
+  if (!['admin', 'super_admin'].includes(req.user?.role)) {
+    return res.status(403).json({
+      error: 'FORBIDDEN',
+      message: 'Access denied',
+      requestId: req.requestId
+    });
+  }
+
+  try {
+    const [databaseHealth, cacheStats] = await Promise.all([
+      enhancedDatabaseService.getHealth(),
+      cacheService.getStats()
+    ]);
+
+    res.json({
+      timestamp: new Date().toISOString(),
+      database: {
+        status: databaseHealth.status,
+        connections: databaseHealth.connections,
+        performance: databaseHealth.performance
+      },
+      cache: cacheStats,
+      api: {
+        totalRequests: 0, // globalRateLimit.totalHits || 0,
+        averageResponseTime: 0, // Would be calculated from performance middleware
+        errorRate: 0 // Would be calculated from error tracking
+      },
+      system: {
+        uptime: process.uptime(),
+        memory: process.memoryUsage(),
+        cpu: process.cpuUsage()
+      },
+      requestId: req.requestId
+    });
+  } catch (error: unknown) {
+    res.status(500).json({
+      error: 'METRICS_ERROR',
+      message: 'Failed to retrieve metrics',
+      requestId: req.requestId
+    });
+  }
+});
+
+/**
+ * API Route Mounting
+ * All routes are prefixed with /api/{version}
+ */
+
+// Authentication routes (no auth required)
+router.use('/auth', authRoutes);
+
+// Protected routes requiring authentication
+router.use('/users', usersRoutes);
+router.use('/menus', menusRoutes);
+router.use('/orders', ordersRoutes);
+router.use('/payments', paymentsRoutes);
+router.use('/kitchen', kitchenRoutes);
+router.use('/analytics', analyticsRoutes);
+router.use('/notifications', notificationRoutes);
+
+// System routes
+router.use('/system', healthRoutes);
+
+/**
+ * GraphQL Endpoint (if enabled)
+ */
+if (API_CONFIG.graphql.enabled) {
+  // GraphQL setup would go here
+  // This is a placeholder for GraphQL integration
+  router.use('/graphql', (req, res) => {
+    res.json({
+      message: 'GraphQL endpoint - implementation pending',
+      endpoint: API_CONFIG.graphql.endpoint,
+      introspection: API_CONFIG.graphql.introspection
+    });
+  });
+}
+
+/**
+ * WebSocket Upgrade Handler
+ */
+router.use('/ws', (req, res) => {
+  res.json({
+    message: 'WebSocket endpoint - upgrade to WebSocket protocol required',
+    protocols: ['wss'],
+    endpoints: [
+      '/ws/orders',
+      '/ws/kitchen',
+      '/ws/notifications'
+    ]
+  });
+});
+
+/**
+ * API Not Found Handler
+ */
+router.use('*', (req, res) => {
+  res.status(404).json({
+    error: 'NOT_FOUND',
+    message: `API endpoint not found: ${req.method} ${req.originalUrl}`,
+    suggestion: 'Check the API documentation at /api/docs',
+    requestId: (req as any).requestId,
+    timestamp: new Date().toISOString()
+  });
+});
+
+/**
+ * Global Error Handler
+ */
+router.use(errorHandler as any);
+
+/**
+ * Export router with metadata
+ */
+export default router;
+
+export const apiInfo = {
+  version: API_CONFIG.versioning.defaultVersion,
+  supportedVersions: API_CONFIG.versioning.supportedVersions,
+  rateLimits: API_CONFIG.rateLimiting,
+  security: API_CONFIG.security,
+  documentation: swaggerDocument
+};

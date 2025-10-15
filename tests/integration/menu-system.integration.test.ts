@@ -125,10 +125,10 @@ describe('Menu System Integration Tests', () => {
       // Arrange
       const mockDbClient = DatabaseService.client;
       (mockDbClient.menuItem.create as jest.Mock).mockResolvedValue(mockMenuItem);
-      (MenuItemRepository.nameExists as any) = jest.fn().mockResolvedValue(false);
+      (mockDbClient.menuItem.findFirst as jest.Mock).mockResolvedValue(null);
 
       // Act
-      const result = await MenuItemService.createMenuItem(createInput);
+      const result = await MenuItemService.create(createInput);
 
       // Assert
       expect(result).toEqual(mockMenuItem);
@@ -152,10 +152,11 @@ describe('Menu System Integration Tests', () => {
 
     it('should throw error for duplicate menu item name in same school', async () => {
       // Arrange
-      (MenuItemRepository.nameExists as any) = jest.fn().mockResolvedValue(true);
+      const mockDbClient = DatabaseService.client;
+      (mockDbClient.menuItem.findFirst as jest.Mock).mockResolvedValue(mockMenuItem);
 
       // Act & Assert
-      await expect(MenuItemService.createMenuItem(createInput)).rejects.toThrow(
+      await expect(MenuItemService.create(createInput)).rejects.toThrow(
         'A menu item with this name already exists in this school'
       );
     });
@@ -165,7 +166,7 @@ describe('Menu System Integration Tests', () => {
       const invalidInput = { ...createInput, name: '' };
 
       // Act & Assert
-      await expect(MenuItemService.createMenuItem(invalidInput)).rejects.toThrow();
+      await expect(MenuItemService.create(invalidInput)).rejects.toThrow();
     });
 
     it('should validate price constraints', async () => {
@@ -173,7 +174,7 @@ describe('Menu System Integration Tests', () => {
       const invalidPriceInput = { ...createInput, price: 15000 };
 
       // Act & Assert
-      await expect(MenuItemService.createMenuItem(invalidPriceInput)).rejects.toThrow(
+      await expect(MenuItemService.create(invalidPriceInput)).rejects.toThrow(
         'Price cannot exceed ₹10,000'
       );
     });
@@ -191,10 +192,10 @@ describe('Menu System Integration Tests', () => {
       const mockDbClient = DatabaseService.client;
       const expectedItem = { ...mockMenuItem, ...minimalInput, available: true, featured: false };
       (mockDbClient.menuItem.create as jest.Mock).mockResolvedValue(expectedItem);
-      (MenuItemRepository.nameExists as any) = jest.fn().mockResolvedValue(false);
+      (mockDbClient.menuItem.findFirst as jest.Mock).mockResolvedValue(null);
 
       // Act
-      const result = await MenuItemService.createMenuItem(minimalInput);
+      const result = await MenuItemService.create(minimalInput);
 
       // Assert
       expect(result.available).toBe(true);
@@ -216,7 +217,7 @@ describe('Menu System Integration Tests', () => {
       };
 
       // Act & Assert
-      await expect(MenuItemService.createMenuItem(invalidNutritionalInput)).rejects.toThrow(
+      await expect(MenuItemService.create(invalidNutritionalInput)).rejects.toThrow(
         'Invalid nutritional information format'
       );
     });
@@ -229,7 +230,7 @@ describe('Menu System Integration Tests', () => {
       };
 
       // Act & Assert
-      await expect(MenuItemService.createMenuItem(invalidAllergensInput)).rejects.toThrow(
+      await expect(MenuItemService.create(invalidAllergensInput)).rejects.toThrow(
         'Invalid allergens format'
       );
     });
@@ -242,7 +243,7 @@ describe('Menu System Integration Tests', () => {
       (mockDbClient.menuItem.findUnique as jest.Mock).mockResolvedValue(mockMenuItem);
 
       // Act
-      const result = await MenuItemService.getMenuItemById('menu-item-123');
+      const result = await MenuItemService.findById('menu-item-123');
 
       // Assert
       expect(result).toEqual(mockMenuItem);
@@ -261,80 +262,47 @@ describe('Menu System Integration Tests', () => {
       (mockDbClient.menuItem.findUnique as jest.Mock).mockResolvedValue(null);
 
       // Act
-      const result = await MenuItemService.getMenuItemById('non-existent');
+      const result = await MenuItemService.findById('non-existent');
 
       // Assert
       expect(result).toBeNull();
     });
 
-    it('should get menu items with filters and pagination', async () => {
+    it('should get menu items by school', async () => {
       // Arrange
       const mockDbClient = DatabaseService.client;
       (mockDbClient.menuItem.findMany as jest.Mock).mockResolvedValue(mockMenuItems);
-      (mockDbClient.menuItem.count as jest.Mock).mockResolvedValue(1);
-      
-      const filters = { category: MenuCategory.BREAKFAST, available: true };
-      const pagination = { page: 1, limit: 10 };
 
       // Act
-      const result = await MenuItemService.getMenuItems(filters, pagination);
+      const result = await MenuItemService.findBySchool('school-123', false);
 
       // Assert
-      expect(result).toEqual({
-        items: mockMenuItems,
-        total: 1,
-        page: 1,
-        limit: 10,
-        totalPages: 1
-      });
+      expect(result).toEqual(mockMenuItems);
       expect(mockDbClient.menuItem.findMany).toHaveBeenCalledWith({
-        where: expect.objectContaining({
-          category: MenuCategory.BREAKFAST,
-          available: true
-        }),
-        include: expect.objectContaining({
-          school: true,
-          vendor: true
-        }),
-        orderBy: { name: 'asc' },
-        skip: 0,
-        take: 10
+        where: {
+          schoolId: 'school-123'
+        },
+        orderBy: { name: 'asc' }
       });
     });
 
-    it('should handle complex filtering combinations', async () => {
+    it('should get menu items by category', async () => {
       // Arrange
       const mockDbClient = DatabaseService.client;
       (mockDbClient.menuItem.findMany as jest.Mock).mockResolvedValue(mockMenuItems);
-      (mockDbClient.menuItem.count as jest.Mock).mockResolvedValue(1);
-      
-      const complexFilters = {
-        category: MenuCategory.BREAKFAST,
-        available: true,
-        featured: true,
-        priceMin: 50,
-        priceMax: 100,
-        schoolId: 'school-123',
-        vendorId: 'vendor-456'
-      };
 
       // Act
-      const result = await MenuItemService.getMenuItems(complexFilters, { page: 1, limit: 20 });
+      const result = await MenuItemService.findByCategory('school-123', MenuCategory.BREAKFAST);
 
       // Assert
+      expect(result).toEqual(mockMenuItems);
       expect(mockDbClient.menuItem.findMany).toHaveBeenCalledWith({
-        where: expect.objectContaining({
-          category: MenuCategory.BREAKFAST,
-          available: true,
-          featured: true,
-          price: { gte: 50, lte: 100 },
+        where: {
           schoolId: 'school-123',
-          vendorId: 'vendor-456'
-        }),
-        include: expect.any(Object),
-        orderBy: { name: 'asc' },
-        skip: 0,
-        take: 20
+          category: MenuCategory.BREAKFAST,
+          available: true
+        },
+        orderBy: { name: 'asc' }
       });
     });
   });
@@ -344,95 +312,57 @@ describe('Menu System Integration Tests', () => {
       // Arrange
       const mockDbClient = DatabaseService.client;
       (mockDbClient.menuItem.findMany as jest.Mock).mockResolvedValue(mockMenuItems);
-      (mockDbClient.menuItem.count as jest.Mock).mockResolvedValue(1);
 
       // Act
-      const result = await MenuItemService.searchMenuItems(
-        'dosa',
-        { category: MenuCategory.BREAKFAST },
-        { page: 1, limit: 20 }
-      );
+      const result = await MenuItemService.search('school-123', 'dosa');
 
       // Assert
-      expect(result).toEqual({
-        items: mockMenuItems,
-        total: 1,
-        page: 1,
-        limit: 20,
-        totalPages: 1
-      });
+      expect(result).toEqual(mockMenuItems);
       expect(mockDbClient.menuItem.findMany).toHaveBeenCalledWith({
         where: {
-          AND: [
-            {
-              OR: [
-                { name: { contains: 'dosa', mode: 'insensitive' } },
-                { description: { contains: 'dosa', mode: 'insensitive' } },
-                { tags: { contains: 'dosa', mode: 'insensitive' } }
-              ]
-            },
-            { category: MenuCategory.BREAKFAST },
-            { available: true }
+          schoolId: 'school-123',
+          available: true,
+          OR: [
+            { name: { contains: 'dosa' } },
+            { description: { contains: 'dosa' } }
           ]
         },
-        include: expect.objectContaining({
-          school: true,
-          vendor: true
-        }),
-        orderBy: [
-          { featured: 'desc' },
-          { name: 'asc' }
-        ],
-        skip: 0,
-        take: 20
+        orderBy: { name: 'asc' }
       });
     });
 
-    it('should throw error for empty search term', async () => {
-      // Act & Assert
-      await expect(MenuItemService.searchMenuItems('', {}, {})).rejects.toThrow(
-        'Search term is required'
-      );
+    it('should return empty array for empty search term', async () => {
+      // Arrange
+      const mockDbClient = DatabaseService.client;
+      (mockDbClient.menuItem.findMany as jest.Mock).mockResolvedValue([]);
+
+      // Act
+      const result = await MenuItemService.search('school-123', '');
+
+      // Assert
+      expect(result).toEqual([]);
     });
 
-    it('should handle search with advanced filters', async () => {
+    it('should handle search with query', async () => {
       // Arrange
       const mockDbClient = DatabaseService.client;
       (mockDbClient.menuItem.findMany as jest.Mock).mockResolvedValue(mockMenuItems);
-      (mockDbClient.menuItem.count as jest.Mock).mockResolvedValue(1);
-
-      const advancedFilters = {
-        category: MenuCategory.BREAKFAST,
-        priceMax: 100,
-        allergens: ['gluten-free'],
-        tags: ['vegetarian']
-      };
 
       // Act
-      const result = await MenuItemService.searchMenuItems('healthy', advancedFilters, { page: 1, limit: 10 });
+      const result = await MenuItemService.search('school-123', 'healthy');
 
       // Assert
+      expect(result).toEqual(mockMenuItems);
       expect(mockDbClient.menuItem.findMany).toHaveBeenCalledWith({
         where: {
-          AND: [
-            {
-              OR: [
-                { name: { contains: 'healthy', mode: 'insensitive' } },
-                { description: { contains: 'healthy', mode: 'insensitive' } },
-                { tags: { contains: 'healthy', mode: 'insensitive' } }
-              ]
-            },
-            { category: MenuCategory.BREAKFAST },
-            { price: { lte: 100 } },
-            { allergens: { contains: 'gluten-free', mode: 'insensitive' } },
-            { tags: { contains: 'vegetarian', mode: 'insensitive' } },
-            { available: true }
+          schoolId: 'school-123',
+          available: true,
+          OR: [
+            { name: { contains: 'healthy' } },
+            { description: { contains: 'healthy' } }
           ]
         },
-        include: expect.any(Object),
-        orderBy: expect.any(Array),
-        skip: 0,
-        take: 10
+        orderBy: { name: 'asc' }
       });
     });
   });

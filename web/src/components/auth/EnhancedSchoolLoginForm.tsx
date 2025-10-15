@@ -1,12 +1,24 @@
-"use client"
+'use client';
 
-import * as React from "react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { Eye, EyeOff, Loader2, Mail, Lock, LogIn, School, Users, Shield, ChefHat, GraduationCap } from "lucide-react"
-import Link from "next/link"
+import * as React from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import {
+  Eye,
+  EyeOff,
+  Loader2,
+  Mail,
+  Lock,
+  LogIn,
+  School,
+  Users,
+  Shield,
+  ChefHat,
+  GraduationCap,
+} from 'lucide-react';
+import Link from 'next/link';
 
-import { Button } from "@/components/ui/button"
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -14,9 +26,9 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Form,
   FormControl,
@@ -24,55 +36,55 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
-import { Separator } from "@/components/ui/separator"
-import { Badge } from "@/components/ui/badge"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+} from '@/components/ui/form';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
-import { enhancedLoginSchema, detectRoleFromEmail, type EnhancedLoginFormData } from "./schemas"
+import { enhancedLoginSchema, detectRoleFromEmail, type EnhancedLoginFormData } from './schemas';
 
 interface EnhancedSchoolLoginFormProps {
-  onSubmit: (data: EnhancedLoginFormData) => Promise<void>
-  onSocialLogin?: (provider: "google" | "microsoft") => Promise<void>
-  isLoading?: boolean
-  error?: string | null
-  showRememberMe?: boolean
-  showSocialLogin?: boolean
-  className?: string
+  onSubmit: (data: EnhancedLoginFormData) => Promise<void>;
+  onSocialLogin?: (provider: 'google' | 'microsoft') => Promise<void>;
+  isLoading?: boolean;
+  error?: string | null;
+  showRememberMe?: boolean;
+  showSocialLogin?: boolean;
+  className?: string;
 }
 
 const ROLE_CONFIG = {
   student: {
     icon: GraduationCap,
-    label: "Student",
-    color: "bg-blue-100 text-blue-800 border-blue-200",
-    description: "Access meal ordering and account management"
+    label: 'Student',
+    color: 'bg-blue-100 text-blue-800 border-blue-200',
+    description: 'Access meal ordering and account management',
   },
   parent: {
     icon: Users,
-    label: "Parent/Guardian", 
-    color: "bg-green-100 text-green-800 border-green-200",
-    description: "Manage children's accounts and meal preferences"
+    label: 'Parent/Guardian',
+    color: 'bg-green-100 text-green-800 border-green-200',
+    description: "Manage children's accounts and meal preferences",
   },
   admin: {
     icon: Shield,
-    label: "Administrator",
-    color: "bg-purple-100 text-purple-800 border-purple-200", 
-    description: "Full system administration access"
+    label: 'Administrator',
+    color: 'bg-purple-100 text-purple-800 border-purple-200',
+    description: 'Full system administration access',
   },
   kitchen: {
     icon: ChefHat,
-    label: "Kitchen Staff",
-    color: "bg-orange-100 text-orange-800 border-orange-200",
-    description: "Meal preparation and order management"
+    label: 'Kitchen Staff',
+    color: 'bg-orange-100 text-orange-800 border-orange-200',
+    description: 'Meal preparation and order management',
   },
   teacher: {
     icon: School,
-    label: "Teacher/Staff",
-    color: "bg-indigo-100 text-indigo-800 border-indigo-200",
-    description: "Educational staff portal access"
-  }
-}
+    label: 'Teacher/Staff',
+    color: 'bg-indigo-100 text-indigo-800 border-indigo-200',
+    description: 'Educational staff portal access',
+  },
+};
 
 export function EnhancedSchoolLoginForm({
   onSubmit,
@@ -81,66 +93,66 @@ export function EnhancedSchoolLoginForm({
   error,
   showRememberMe = true,
   showSocialLogin = true,
-  className
+  className,
 }: EnhancedSchoolLoginFormProps) {
-  const [showPassword, setShowPassword] = React.useState(false)
-  const [detectedRole, setDetectedRole] = React.useState<string | null>(null)
-  const [emailValidated, setEmailValidated] = React.useState(false)
+  const [showPassword, setShowPassword] = React.useState(false);
+  const [detectedRole, setDetectedRole] = React.useState<string | null>(null);
+  const [emailValidated, setEmailValidated] = React.useState(false);
 
   const form = useForm<EnhancedLoginFormData>({
     resolver: zodResolver(enhancedLoginSchema),
     defaultValues: {
-      email: "",
-      password: "",
+      email: '',
+      password: '',
       rememberMe: false,
-      detectedRole: undefined
+      detectedRole: undefined,
     },
-  })
+  });
 
-  const watchEmail = form.watch("email")
+  const watchEmail = form.watch('email');
 
   // Role detection on email change
   React.useEffect(() => {
-    if (watchEmail && watchEmail.includes("@hasivu.edu")) {
-      const role = detectRoleFromEmail(watchEmail)
-      setDetectedRole(role)
-      setEmailValidated(true)
-      
+    if (watchEmail && watchEmail.includes('@hasivu.edu')) {
+      const role = detectRoleFromEmail(watchEmail);
+      setDetectedRole(role);
+      setEmailValidated(true);
+
       if (role) {
-        form.setValue("detectedRole", role as any)
+        form.setValue('detectedRole', role as any);
       }
     } else {
-      setDetectedRole(null)
-      setEmailValidated(false)
-      form.setValue("detectedRole", undefined)
+      setDetectedRole(null);
+      setEmailValidated(false);
+      form.setValue('detectedRole', undefined);
     }
-  }, [watchEmail, form])
+  }, [watchEmail, form]);
 
   const handleSubmit = async (data: EnhancedLoginFormData) => {
     try {
-      await onSubmit(data)
+      await onSubmit(data);
     } catch (error) {
-      console.error("Login error:", error)
+      // Error handled silently
     }
-  }
+  };
 
-  const handleSocialLogin = async (provider: "google" | "microsoft") => {
+  const handleSocialLogin = async (provider: 'google' | 'microsoft') => {
     if (onSocialLogin) {
       try {
-        await onSocialLogin(provider)
+        await onSocialLogin(provider);
       } catch (error) {
-        console.error(`${provider} login error:`, error)
+        // Error handled silently
       }
     }
-  }
+  };
 
   const renderRoleBadge = () => {
-    if (!detectedRole || !emailValidated) return null
-    
-    const config = ROLE_CONFIG[detectedRole as keyof typeof ROLE_CONFIG]
-    if (!config) return null
+    if (!detectedRole || !emailValidated) return null;
 
-    const IconComponent = config.icon
+    const config = ROLE_CONFIG[detectedRole as keyof typeof ROLE_CONFIG];
+    if (!config) return null;
+
+    const IconComponent = config.icon;
 
     return (
       <div className="mt-2 p-3 rounded-lg border bg-slate-50">
@@ -152,8 +164,8 @@ export function EnhancedSchoolLoginForm({
         </div>
         <p className="text-xs text-gray-600">{config.description}</p>
       </div>
-    )
-  }
+    );
+  };
 
   return (
     <Card className={className} aria-label="HASIVU School Login">
@@ -162,9 +174,7 @@ export function EnhancedSchoolLoginForm({
           <div className="flex items-center space-x-2">
             <School className="h-8 w-8 text-primary-600" />
             <div className="text-left">
-              <CardTitle className="text-2xl font-bold text-primary-600">
-                HASIVU Platform
-              </CardTitle>
+              <CardTitle className="text-2xl font-bold text-primary-600">HASIVU Platform</CardTitle>
               <p className="text-sm text-gray-500">School Meal Management</p>
             </div>
           </div>
@@ -173,7 +183,7 @@ export function EnhancedSchoolLoginForm({
           Sign in with your school email address to continue
         </CardDescription>
       </CardHeader>
-      
+
       <CardContent className="space-y-4">
         {error && (
           <Alert variant="destructive">
@@ -224,7 +234,7 @@ export function EnhancedSchoolLoginForm({
                       <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                       <Input
                         {...field}
-                        type={showPassword ? "text" : "password"}
+                        type={showPassword ? 'text' : 'password'}
                         placeholder="Enter your password"
                         className="pl-10 pr-10"
                         autoComplete="current-password"
@@ -234,7 +244,7 @@ export function EnhancedSchoolLoginForm({
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
                         className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none focus:text-gray-600"
-                        aria-label={showPassword ? "Hide password" : "Show password"}
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
                       >
                         {showPassword ? (
                           <EyeOff className="h-4 w-4" />
@@ -266,14 +276,12 @@ export function EnhancedSchoolLoginForm({
                         />
                       </FormControl>
                       <div className="space-y-1 leading-none">
-                        <Label className="text-sm text-gray-600">
-                          Keep me signed in
-                        </Label>
+                        <Label className="text-sm text-gray-600">Keep me signed in</Label>
                       </div>
                     </FormItem>
                   )}
                 />
-                
+
                 <Link
                   href="/auth/forgot-password"
                   className="text-sm text-primary-600 hover:text-primary-500 focus:outline-none focus:underline"
@@ -318,7 +326,7 @@ export function EnhancedSchoolLoginForm({
             <div className="grid grid-cols-2 gap-3">
               <Button
                 variant="outline"
-                onClick={() => handleSocialLogin("google")}
+                onClick={() => handleSocialLogin('google')}
                 disabled={isLoading}
                 className="border-gray-300 text-gray-700 hover:bg-gray-50"
               >
@@ -345,12 +353,12 @@ export function EnhancedSchoolLoginForm({
 
               <Button
                 variant="outline"
-                onClick={() => handleSocialLogin("microsoft")}
+                onClick={() => handleSocialLogin('microsoft')}
                 disabled={isLoading}
                 className="border-gray-300 text-gray-700 hover:bg-gray-50"
               >
                 <svg className="h-4 w-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M11.4 24H0V12.6h11.4V24zM24 24H12.6V12.6H24V24zM11.4 11.4H0V0h11.4v11.4zM24 11.4H12.6V0H24v11.4z"/>
+                  <path d="M11.4 24H0V12.6h11.4V24zM24 24H12.6V12.6H24V24zM11.4 11.4H0V0h11.4v11.4zM24 11.4H12.6V0H24v11.4z" />
                 </svg>
                 Microsoft
               </Button>
@@ -362,8 +370,8 @@ export function EnhancedSchoolLoginForm({
         <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
           <h4 className="font-medium text-blue-900 mb-2">New to HASIVU Platform?</h4>
           <ul className="text-sm text-blue-800 space-y-1">
-            <li>• Students: Use format student.{"{ID}"}@hasivu.edu</li>
-            <li>• Parents: Use format parent.{"{name}"}@hasivu.edu</li>
+            <li>• Students: Use format student.{'{ID}'}@hasivu.edu</li>
+            <li>• Parents: Use format parent.{'{name}'}@hasivu.edu</li>
             <li>• Staff: Use your assigned school email address</li>
           </ul>
         </div>
@@ -371,7 +379,7 @@ export function EnhancedSchoolLoginForm({
 
       <CardFooter className="flex flex-col space-y-2 text-center text-sm text-gray-600">
         <p>
-          Don't have an account?{" "}
+          Don't have an account?{' '}
           <Link
             href="/auth/register"
             className="text-primary-600 hover:text-primary-500 font-medium focus:outline-none focus:underline"
@@ -380,12 +388,12 @@ export function EnhancedSchoolLoginForm({
           </Link>
         </p>
         <p className="text-xs text-gray-500">
-          Need help? Contact{" "}
+          Need help? Contact{' '}
           <a href="mailto:support@hasivu.edu" className="text-primary-600 hover:underline">
             support@hasivu.edu
           </a>
         </p>
       </CardFooter>
     </Card>
-  )
+  );
 }

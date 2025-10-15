@@ -135,7 +135,7 @@ describe('RFIDService', () => {
     };
     beforeEach(() => {
         jest.clearAllMocks();
-        rfid_service_1.RFIDService.verificationCache = new Map();
+        rfid_service_1.RfidService.verificationCache = new Map();
     });
     describe('Card Registration', () => {
         describe('registerCard', () => {
@@ -154,7 +154,7 @@ describe('RFIDService', () => {
                 cache_1.cache.setex.mockResolvedValue('OK');
             });
             it('should register a new RFID card successfully', async () => {
-                const result = await rfid_service_1.RFIDService.registerCard(validCardInput);
+                const result = await rfid_service_1.RfidService.getInstance().registerCard(validCardInput);
                 expect(result.success).toBe(true);
                 expect(result.data).toEqual(mockRFIDCard);
                 expect(MockedDatabaseService.client.rFIDCard.create).toHaveBeenCalledWith({
@@ -172,28 +172,28 @@ describe('RFIDService', () => {
             });
             it('should reject invalid card number format', async () => {
                 const invalidInput = { ...validCardInput, cardNumber: '123' };
-                const result = await rfid_service_1.RFIDService.registerCard(invalidInput);
+                const result = await rfid_service_1.RfidService.getInstance().registerCard(invalidInput);
                 expect(result.success).toBe(false);
                 expect(result.error?.code).toBe('INVALID_CARD_FORMAT');
                 expect(MockedDatabaseService.client.rFIDCard.create).not.toHaveBeenCalled();
             });
             it('should reject duplicate card number', async () => {
                 MockedDatabaseService.client.rFIDCard.findUnique.mockResolvedValue(mockRFIDCard);
-                const result = await rfid_service_1.RFIDService.registerCard(validCardInput);
+                const result = await rfid_service_1.RfidService.getInstance().registerCard(validCardInput);
                 expect(result.success).toBe(false);
                 expect(result.error?.code).toBe('CARD_ALREADY_EXISTS');
                 expect(result.error?.details?.existingCardId).toBe('card-id-123');
             });
             it('should reject non-existent student', async () => {
                 MockedDatabaseService.client.user.findUnique.mockResolvedValue(null);
-                const result = await rfid_service_1.RFIDService.registerCard(validCardInput);
+                const result = await rfid_service_1.RfidService.getInstance().registerCard(validCardInput);
                 expect(result.success).toBe(false);
                 expect(result.error?.code).toBe('STUDENT_NOT_FOUND');
             });
             it('should reject student from different school', async () => {
                 const differentSchoolUser = { ...mockUser, schoolId: 'different-school-123' };
                 MockedDatabaseService.client.user.findUnique.mockResolvedValue(differentSchoolUser);
-                const result = await rfid_service_1.RFIDService.registerCard(validCardInput);
+                const result = await rfid_service_1.RfidService.getInstance().registerCard(validCardInput);
                 expect(result.success).toBe(false);
                 expect(result.error?.code).toBe('SCHOOL_MISMATCH');
                 expect(result.error?.details?.studentSchool).toBe('different-school-123');
@@ -202,14 +202,14 @@ describe('RFIDService', () => {
             it('should reject student who already has active card', async () => {
                 const existingCard = { ...mockRFIDCard, cardNumber: 'EXISTING123' };
                 MockedDatabaseService.client.rFIDCard.findFirst.mockResolvedValue(existingCard);
-                const result = await rfid_service_1.RFIDService.registerCard(validCardInput);
+                const result = await rfid_service_1.RfidService.getInstance().registerCard(validCardInput);
                 expect(result.success).toBe(false);
                 expect(result.error?.code).toBe('STUDENT_HAS_ACTIVE_CARD');
                 expect(result.error?.details?.existingCardNumber).toBe('EXISTING123');
             });
             it('should handle database errors gracefully', async () => {
                 MockedDatabaseService.client.rFIDCard.create.mockRejectedValue(new Error('Database error'));
-                const result = await rfid_service_1.RFIDService.registerCard(validCardInput);
+                const result = await rfid_service_1.RfidService.getInstance().registerCard(validCardInput);
                 expect(result.success).toBe(false);
                 expect(result.error?.code).toBe('CARD_REGISTRATION_FAILED');
                 expect(logger_1.logger.error).toHaveBeenCalledWith('Failed to register RFID card', expect.any(Error), { input: validCardInput });
@@ -237,7 +237,7 @@ describe('RFIDService', () => {
                 cache_1.cache.setex.mockResolvedValue('OK');
             });
             it('should verify delivery successfully with all validations', async () => {
-                const result = await rfid_service_1.RFIDService.verifyDelivery(validVerificationInput);
+                const result = await rfid_service_1.RfidService.getInstance().verifyDelivery(validVerificationInput);
                 expect(result.success).toBe(true);
                 expect(result.data).toMatchObject({
                     success: true,
@@ -264,9 +264,8 @@ describe('RFIDService', () => {
                 });
             });
             it('should verify delivery without order ID', async () => {
-                const inputWithoutOrder = { ...validVerificationInput };
-                delete inputWithoutOrder.orderId;
-                const result = await rfid_service_1.RFIDService.verifyDelivery(inputWithoutOrder);
+                const { orderId, ...inputWithoutOrder } = validVerificationInput;
+                const result = await rfid_service_1.RfidService.getInstance().verifyDelivery(inputWithoutOrder);
                 expect(result.success).toBe(true);
                 expect(result.data?.orderInfo).toBeUndefined();
                 expect(MockedDatabaseService.client.deliveryVerification.create).toHaveBeenCalledWith({
@@ -277,7 +276,7 @@ describe('RFIDService', () => {
             });
             it('should reject verification with non-existent reader', async () => {
                 MockedDatabaseService.client.rFIDReader.findUnique.mockResolvedValue(null);
-                const result = await rfid_service_1.RFIDService.verifyDelivery(validVerificationInput);
+                const result = await rfid_service_1.RfidService.getInstance().verifyDelivery(validVerificationInput);
                 expect(result.success).toBe(false);
                 expect(result.error?.code).toBe('READER_NOT_FOUND');
                 expect(result.error?.details?.readerId).toBe('reader-123');
@@ -285,14 +284,14 @@ describe('RFIDService', () => {
             it('should reject verification with offline reader', async () => {
                 const offlineReader = { ...mockRFIDReader, status: 'offline' };
                 MockedDatabaseService.client.rFIDReader.findUnique.mockResolvedValue(offlineReader);
-                const result = await rfid_service_1.RFIDService.verifyDelivery(validVerificationInput);
+                const result = await rfid_service_1.RfidService.getInstance().verifyDelivery(validVerificationInput);
                 expect(result.success).toBe(false);
                 expect(result.error?.code).toBe('READER_OFFLINE');
                 expect(result.error?.details?.status).toBe('offline');
             });
             it('should reject verification with non-existent card', async () => {
                 MockedDatabaseService.client.rFIDCard.findUnique.mockResolvedValue(null);
-                const result = await rfid_service_1.RFIDService.verifyDelivery(validVerificationInput);
+                const result = await rfid_service_1.RfidService.getInstance().verifyDelivery(validVerificationInput);
                 expect(result.success).toBe(false);
                 expect(result.error?.code).toBe('CARD_NOT_FOUND');
                 expect(result.error?.details?.cardNumber).toBe('RFID12345678');
@@ -300,7 +299,7 @@ describe('RFIDService', () => {
             it('should reject verification with inactive card', async () => {
                 const inactiveCard = { ...mockRFIDCard, isActive: false };
                 MockedDatabaseService.client.rFIDCard.findUnique.mockResolvedValue(inactiveCard);
-                const result = await rfid_service_1.RFIDService.verifyDelivery(validVerificationInput);
+                const result = await rfid_service_1.RfidService.getInstance().verifyDelivery(validVerificationInput);
                 expect(result.success).toBe(false);
                 expect(result.error?.code).toBe('CARD_INACTIVE');
                 expect(result.error?.details?.isActive).toBe(false);
@@ -311,7 +310,7 @@ describe('RFIDService', () => {
                     expiryDate: new Date(Date.now() - 24 * 60 * 60 * 1000)
                 };
                 MockedDatabaseService.client.rFIDCard.findUnique.mockResolvedValue(expiredCard);
-                const result = await rfid_service_1.RFIDService.verifyDelivery(validVerificationInput);
+                const result = await rfid_service_1.RfidService.getInstance().verifyDelivery(validVerificationInput);
                 expect(result.success).toBe(false);
                 expect(result.error?.code).toBe('CARD_EXPIRED');
                 expect(result.error?.details?.expiryDate).toEqual(expiredCard.expiryDate);
@@ -319,7 +318,7 @@ describe('RFIDService', () => {
             it('should reject verification with school mismatch', async () => {
                 const differentSchoolReader = { ...mockRFIDReader, schoolId: 'different-school-123' };
                 MockedDatabaseService.client.rFIDReader.findUnique.mockResolvedValue(differentSchoolReader);
-                const result = await rfid_service_1.RFIDService.verifyDelivery(validVerificationInput);
+                const result = await rfid_service_1.RfidService.getInstance().verifyDelivery(validVerificationInput);
                 expect(result.success).toBe(false);
                 expect(result.error?.code).toBe('SCHOOL_MISMATCH');
                 expect(result.error?.details?.cardSchool).toBe('school-123');
@@ -327,7 +326,7 @@ describe('RFIDService', () => {
             });
             it('should reject verification with non-existent order', async () => {
                 MockedDatabaseService.client.order.findUnique.mockResolvedValue(null);
-                const result = await rfid_service_1.RFIDService.verifyDelivery(validVerificationInput);
+                const result = await rfid_service_1.RfidService.getInstance().verifyDelivery(validVerificationInput);
                 expect(result.success).toBe(false);
                 expect(result.error?.code).toBe('ORDER_NOT_FOUND');
                 expect(result.error?.details?.orderId).toBe('order-123');
@@ -335,7 +334,7 @@ describe('RFIDService', () => {
             it('should reject verification with order-student mismatch', async () => {
                 const differentStudentOrder = { ...mockOrder, studentId: 'different-student-123' };
                 MockedDatabaseService.client.order.findUnique.mockResolvedValue(differentStudentOrder);
-                const result = await rfid_service_1.RFIDService.verifyDelivery(validVerificationInput);
+                const result = await rfid_service_1.RfidService.getInstance().verifyDelivery(validVerificationInput);
                 expect(result.success).toBe(false);
                 expect(result.error?.code).toBe('ORDER_STUDENT_MISMATCH');
                 expect(result.error?.details?.orderStudentId).toBe('different-student-123');
@@ -343,22 +342,22 @@ describe('RFIDService', () => {
             });
             it('should assess signal quality correctly', async () => {
                 const excellentInput = { ...validVerificationInput, signalStrength: 90, readDuration: 300 };
-                let result = await rfid_service_1.RFIDService.verifyDelivery(excellentInput);
+                let result = await rfid_service_1.RfidService.getInstance().verifyDelivery(excellentInput);
                 expect(result.data?.signalQuality).toBe('excellent');
                 const goodInput = { ...validVerificationInput, signalStrength: 70, readDuration: 800 };
-                result = await rfid_service_1.RFIDService.verifyDelivery(goodInput);
+                result = await rfid_service_1.RfidService.getInstance().verifyDelivery(goodInput);
                 expect(result.data?.signalQuality).toBe('good');
                 const fairInput = { ...validVerificationInput, signalStrength: 50, readDuration: 1500 };
-                result = await rfid_service_1.RFIDService.verifyDelivery(fairInput);
+                result = await rfid_service_1.RfidService.getInstance().verifyDelivery(fairInput);
                 expect(result.data?.signalQuality).toBe('fair');
                 const poorInput = { ...validVerificationInput, signalStrength: 30, readDuration: 3000 };
-                result = await rfid_service_1.RFIDService.verifyDelivery(poorInput);
+                result = await rfid_service_1.RfidService.getInstance().verifyDelivery(poorInput);
                 expect(result.data?.signalQuality).toBe('poor');
             });
             it('should use cached reader data when available', async () => {
                 const cachedReader = JSON.stringify(mockRFIDReader);
                 cache_1.cache.get.mockResolvedValueOnce(cachedReader);
-                await rfid_service_1.RFIDService.verifyDelivery(validVerificationInput);
+                await rfid_service_1.RfidService.getInstance().verifyDelivery(validVerificationInput);
                 expect(cache_1.cache.get).toHaveBeenCalledWith('rfid_reader:reader-123');
                 expect(MockedDatabaseService.client.rFIDReader.findUnique).not.toHaveBeenCalled();
             });
@@ -367,20 +366,20 @@ describe('RFIDService', () => {
                 cache_1.cache.get
                     .mockResolvedValueOnce(null)
                     .mockResolvedValueOnce(cachedCard);
-                await rfid_service_1.RFIDService.verifyDelivery(validVerificationInput);
+                await rfid_service_1.RfidService.getInstance().verifyDelivery(validVerificationInput);
                 expect(cache_1.cache.get).toHaveBeenCalledWith('rfid_card:RFID12345678');
                 expect(MockedDatabaseService.client.rFIDCard.findUnique).not.toHaveBeenCalled();
             });
             it('should handle verification cache management', async () => {
-                const result = await rfid_service_1.RFIDService.verifyDelivery(validVerificationInput);
+                const result = await rfid_service_1.RfidService.getInstance().verifyDelivery(validVerificationInput);
                 expect(result.success).toBe(true);
                 expect(cache_1.cache.setex).toHaveBeenCalledWith('verification:verification-123', 86400, expect.stringContaining('RFID12345678'));
-                const verificationCache = rfid_service_1.RFIDService.verificationCache;
+                const { verificationCache } = rfid_service_1.RfidService;
                 expect(verificationCache.size).toBe(1);
             });
             it('should handle database errors gracefully', async () => {
                 MockedDatabaseService.client.deliveryVerification.create.mockRejectedValue(new Error('Database error'));
-                const result = await rfid_service_1.RFIDService.verifyDelivery(validVerificationInput);
+                const result = await rfid_service_1.RfidService.getInstance().verifyDelivery(validVerificationInput);
                 expect(result.success).toBe(false);
                 expect(result.error?.code).toBe('VERIFICATION_FAILED');
                 expect(logger_1.logger.error).toHaveBeenCalledWith('Failed to verify RFID delivery', expect.any(Error), { input: validVerificationInput });
@@ -405,7 +404,7 @@ describe('RFIDService', () => {
                 cache_1.cache.del.mockResolvedValue(1);
             });
             it('should update reader status successfully', async () => {
-                const result = await rfid_service_1.RFIDService.updateReaderStatus(statusUpdateInput);
+                const result = await rfid_service_1.RfidService.getInstance().updateReaderStatus(statusUpdateInput);
                 expect(result.success).toBe(true);
                 expect(result.data?.status).toBe('maintenance');
                 expect(result.data?.location).toBe('Updated Location');
@@ -422,9 +421,8 @@ describe('RFIDService', () => {
                 expect(cache_1.cache.del).toHaveBeenCalledWith('rfid_reader:reader-123');
             });
             it('should update reader status without changing location', async () => {
-                const inputWithoutLocation = { ...statusUpdateInput };
-                delete inputWithoutLocation.location;
-                const result = await rfid_service_1.RFIDService.updateReaderStatus(inputWithoutLocation);
+                const { location, ...inputWithoutLocation } = statusUpdateInput;
+                const result = await rfid_service_1.RfidService.getInstance().updateReaderStatus(inputWithoutLocation);
                 expect(result.success).toBe(true);
                 expect(MockedDatabaseService.client.rFIDReader.update).toHaveBeenCalledWith({
                     where: { id: 'reader-123' },
@@ -435,14 +433,14 @@ describe('RFIDService', () => {
             });
             it('should reject update for non-existent reader', async () => {
                 MockedDatabaseService.client.rFIDReader.findUnique.mockResolvedValue(null);
-                const result = await rfid_service_1.RFIDService.updateReaderStatus(statusUpdateInput);
+                const result = await rfid_service_1.RfidService.getInstance().updateReaderStatus(statusUpdateInput);
                 expect(result.success).toBe(false);
                 expect(result.error?.code).toBe('READER_NOT_FOUND');
                 expect(MockedDatabaseService.client.rFIDReader.update).not.toHaveBeenCalled();
             });
             it('should handle database errors gracefully', async () => {
                 MockedDatabaseService.client.rFIDReader.update.mockRejectedValue(new Error('Database error'));
-                const result = await rfid_service_1.RFIDService.updateReaderStatus(statusUpdateInput);
+                const result = await rfid_service_1.RfidService.getInstance().updateReaderStatus(statusUpdateInput);
                 expect(result.success).toBe(false);
                 expect(result.error?.code).toBe('READER_UPDATE_FAILED');
                 expect(logger_1.logger.error).toHaveBeenCalledWith('Failed to update reader status', expect.any(Error), { input: statusUpdateInput });
@@ -465,7 +463,7 @@ describe('RFIDService', () => {
             });
             it('should get verification history with default pagination', async () => {
                 const query = {};
-                const result = await rfid_service_1.RFIDService.getVerificationHistory(query);
+                const result = await rfid_service_1.RfidService.getInstance().getVerificationHistory(query);
                 expect(result.success).toBe(true);
                 expect(result.data?.verifications).toEqual(mockVerifications);
                 expect(result.data?.pagination).toEqual({
@@ -477,7 +475,7 @@ describe('RFIDService', () => {
             });
             it('should filter by card number', async () => {
                 const query = { cardNumber: 'RFID12345678' };
-                await rfid_service_1.RFIDService.getVerificationHistory(query);
+                await rfid_service_1.RfidService.getInstance().getVerificationHistory(query);
                 expect(MockedDatabaseService.client.deliveryVerification.findMany).toHaveBeenCalledWith({
                     where: { rfidCard: { cardNumber: 'RFID12345678' } },
                     include: expect.any(Object),
@@ -496,7 +494,7 @@ describe('RFIDService', () => {
                     startDate: new Date('2024-01-01'),
                     endDate: new Date('2024-12-31')
                 };
-                await rfid_service_1.RFIDService.getVerificationHistory(query);
+                await rfid_service_1.RfidService.getInstance().getVerificationHistory(query);
                 expect(MockedDatabaseService.client.deliveryVerification.findMany).toHaveBeenCalledWith({
                     where: {
                         rfidCard: {
@@ -519,7 +517,7 @@ describe('RFIDService', () => {
             });
             it('should handle custom pagination', async () => {
                 const query = { page: 2, limit: 10 };
-                await rfid_service_1.RFIDService.getVerificationHistory(query);
+                await rfid_service_1.RfidService.getInstance().getVerificationHistory(query);
                 expect(MockedDatabaseService.client.deliveryVerification.findMany).toHaveBeenCalledWith({
                     where: {},
                     include: expect.any(Object),
@@ -530,7 +528,7 @@ describe('RFIDService', () => {
             });
             it('should limit maximum page size to 100', async () => {
                 const query = { limit: 200 };
-                await rfid_service_1.RFIDService.getVerificationHistory(query);
+                await rfid_service_1.RfidService.getInstance().getVerificationHistory(query);
                 expect(MockedDatabaseService.client.deliveryVerification.findMany).toHaveBeenCalledWith({
                     where: {},
                     include: expect.any(Object),
@@ -541,7 +539,7 @@ describe('RFIDService', () => {
             });
             it('should handle database errors gracefully', async () => {
                 MockedDatabaseService.client.deliveryVerification.findMany.mockRejectedValue(new Error('Database error'));
-                const result = await rfid_service_1.RFIDService.getVerificationHistory({});
+                const result = await rfid_service_1.RfidService.getInstance().getVerificationHistory({});
                 expect(result.success).toBe(false);
                 expect(result.error?.code).toBe('HISTORY_FETCH_FAILED');
             });
@@ -562,7 +560,7 @@ describe('RFIDService', () => {
                 cache_1.cache.del.mockResolvedValue(1);
             });
             it('should deactivate card successfully', async () => {
-                const result = await rfid_service_1.RFIDService.deactivateCard(cardId, reason);
+                const result = await rfid_service_1.RfidService.getInstance().deactivateCard(cardId, reason);
                 expect(result.success).toBe(true);
                 expect(result.data?.isActive).toBe(false);
                 expect(result.data?.deactivationReason).toBe(reason);
@@ -579,14 +577,14 @@ describe('RFIDService', () => {
             });
             it('should reject deactivation of non-existent card', async () => {
                 MockedDatabaseService.client.rFIDCard.findUnique.mockResolvedValue(null);
-                const result = await rfid_service_1.RFIDService.deactivateCard(cardId, reason);
+                const result = await rfid_service_1.RfidService.getInstance().deactivateCard(cardId, reason);
                 expect(result.success).toBe(false);
                 expect(result.error?.code).toBe('CARD_NOT_FOUND');
                 expect(MockedDatabaseService.client.rFIDCard.update).not.toHaveBeenCalled();
             });
             it('should handle database errors gracefully', async () => {
                 MockedDatabaseService.client.rFIDCard.update.mockRejectedValue(new Error('Database error'));
-                const result = await rfid_service_1.RFIDService.deactivateCard(cardId, reason);
+                const result = await rfid_service_1.RfidService.getInstance().deactivateCard(cardId, reason);
                 expect(result.success).toBe(false);
                 expect(result.error?.code).toBe('CARD_DEACTIVATION_FAILED');
                 expect(logger_1.logger.error).toHaveBeenCalledWith('Failed to deactivate RFID card', expect.any(Error), { cardId, reason });
@@ -602,7 +600,7 @@ describe('RFIDService', () => {
                 ]
             };
             beforeEach(() => {
-                const registerCardSpy = jest.spyOn(rfid_service_1.RFIDService, 'registerCard');
+                const registerCardSpy = jest.spyOn(rfid_service_1.RfidService.prototype, 'registerCard');
                 registerCardSpy
                     .mockResolvedValueOnce({ success: true, data: { ...mockRFIDCard, cardNumber: 'CARD001' } })
                     .mockResolvedValueOnce({ success: true, data: { ...mockRFIDCard, cardNumber: 'CARD002' } })
@@ -612,7 +610,7 @@ describe('RFIDService', () => {
                 });
             });
             it('should process bulk registration with mixed results', async () => {
-                const result = await rfid_service_1.RFIDService.bulkRegisterCards(bulkInput);
+                const result = await rfid_service_1.RfidService.getInstance().bulkRegisterCards(bulkInput);
                 expect(result.success).toBe(true);
                 expect(result.data?.successful).toHaveLength(2);
                 expect(result.data?.failed).toHaveLength(1);
@@ -652,7 +650,7 @@ describe('RFIDService', () => {
                 MockedDatabaseService.client.deliveryVerification.groupBy.mockResolvedValue(mockAnalyticsData);
             });
             it('should get card analytics successfully', async () => {
-                const result = await rfid_service_1.RFIDService.getCardAnalytics(analyticsQuery);
+                const result = await rfid_service_1.RfidService.getInstance().getCardAnalytics(analyticsQuery);
                 expect(result.success).toBe(true);
                 expect(result.data?.totalVerifications).toBe(2);
                 expect(result.data?.uniqueCards).toBe(2);
@@ -665,7 +663,7 @@ describe('RFIDService', () => {
                 });
             });
             it('should filter analytics by school', async () => {
-                await rfid_service_1.RFIDService.getCardAnalytics(analyticsQuery);
+                await rfid_service_1.RfidService.getInstance().getCardAnalytics(analyticsQuery);
                 expect(MockedDatabaseService.client.deliveryVerification.groupBy).toHaveBeenCalledWith({
                     by: ['rfidCardId'],
                     where: {
@@ -681,9 +679,8 @@ describe('RFIDService', () => {
                 });
             });
             it('should get analytics without school filter', async () => {
-                const queryWithoutSchool = { ...analyticsQuery };
-                delete queryWithoutSchool.schoolId;
-                await rfid_service_1.RFIDService.getCardAnalytics(queryWithoutSchool);
+                const { schoolId, ...queryWithoutSchool } = analyticsQuery;
+                await rfid_service_1.RfidService.getInstance().getCardAnalytics(queryWithoutSchool);
                 expect(MockedDatabaseService.client.deliveryVerification.groupBy).toHaveBeenCalledWith({
                     by: ['rfidCardId'],
                     where: {
@@ -699,7 +696,7 @@ describe('RFIDService', () => {
             });
             it('should handle analytics errors gracefully', async () => {
                 MockedDatabaseService.client.deliveryVerification.groupBy.mockRejectedValue(new Error('Analytics error'));
-                const result = await rfid_service_1.RFIDService.getCardAnalytics(analyticsQuery);
+                const result = await rfid_service_1.RfidService.getInstance().getCardAnalytics(analyticsQuery);
                 expect(result.success).toBe(false);
                 expect(result.error?.code).toBe('ANALYTICS_FAILED');
                 expect(logger_1.logger.error).toHaveBeenCalledWith('Failed to get card analytics', expect.any(Error), { query: analyticsQuery });
@@ -716,7 +713,7 @@ describe('RFIDService', () => {
                     'TEST12345'
                 ];
                 validNumbers.forEach(cardNumber => {
-                    const isValid = rfid_service_1.RFIDService.isValidCardNumber(cardNumber);
+                    const isValid = rfid_service_1.RfidService.isValidCardNumber(cardNumber);
                     expect(isValid).toBe(true);
                 });
             });
@@ -730,19 +727,19 @@ describe('RFIDService', () => {
                     'CARD 123'
                 ];
                 invalidNumbers.forEach(cardNumber => {
-                    const isValid = rfid_service_1.RFIDService.isValidCardNumber(cardNumber);
+                    const isValid = rfid_service_1.RfidService.isValidCardNumber(cardNumber);
                     expect(isValid).toBe(false);
                 });
             });
         });
         describe('Signal quality assessment', () => {
             it('should assess signal quality correctly', () => {
-                expect(rfid_service_1.RFIDService.assessSignalQuality(85, 400)).toBe('excellent');
-                expect(rfid_service_1.RFIDService.assessSignalQuality(70, 800)).toBe('good');
-                expect(rfid_service_1.RFIDService.assessSignalQuality(50, 1500)).toBe('fair');
-                expect(rfid_service_1.RFIDService.assessSignalQuality(30, 3000)).toBe('poor');
-                expect(rfid_service_1.RFIDService.assessSignalQuality(90, 2500)).toBe('poor');
-                expect(rfid_service_1.RFIDService.assessSignalQuality(20, 200)).toBe('poor');
+                expect(rfid_service_1.RfidService.assessSignalQuality(85, 400)).toBe('excellent');
+                expect(rfid_service_1.RfidService.assessSignalQuality(70, 800)).toBe('good');
+                expect(rfid_service_1.RfidService.assessSignalQuality(50, 1500)).toBe('fair');
+                expect(rfid_service_1.RfidService.assessSignalQuality(30, 3000)).toBe('poor');
+                expect(rfid_service_1.RfidService.assessSignalQuality(90, 2500)).toBe('poor');
+                expect(rfid_service_1.RfidService.assessSignalQuality(20, 200)).toBe('poor');
             });
         });
     });
@@ -754,7 +751,7 @@ describe('RFIDService', () => {
         });
         it('should cache and retrieve reader data', async () => {
             MockedDatabaseService.client.rFIDReader.findUnique.mockResolvedValue(mockRFIDReader);
-            const reader1 = await rfid_service_1.RFIDService.getReaderById('reader-123');
+            const reader1 = await rfid_service_1.RfidService.getReaderById('reader-123');
             expect(MockedDatabaseService.client.rFIDReader.findUnique).toHaveBeenCalledWith({
                 where: { id: 'reader-123' }
             });
@@ -762,14 +759,14 @@ describe('RFIDService', () => {
             expect(reader1).toEqual(mockRFIDReader);
             cache_1.cache.get.mockResolvedValue(JSON.stringify(mockRFIDReader));
             jest.clearAllMocks();
-            const reader2 = await rfid_service_1.RFIDService.getReaderById('reader-123');
+            const reader2 = await rfid_service_1.RfidService.getReaderById('reader-123');
             expect(MockedDatabaseService.client.rFIDReader.findUnique).not.toHaveBeenCalled();
             const expectedReader = JSON.parse(JSON.stringify(mockRFIDReader));
             expect(reader2).toEqual(expectedReader);
         });
         it('should cache and retrieve card data', async () => {
             MockedDatabaseService.client.rFIDCard.findUnique.mockResolvedValue(mockRFIDCard);
-            const card1 = await rfid_service_1.RFIDService.getCardByNumber('RFID12345678');
+            const card1 = await rfid_service_1.RfidService.getCardByNumber('RFID12345678');
             expect(MockedDatabaseService.client.rFIDCard.findUnique).toHaveBeenCalledWith({
                 where: { cardNumber: 'RFID12345678' },
                 include: {
@@ -788,7 +785,7 @@ describe('RFIDService', () => {
             expect(card1).toEqual(mockRFIDCard);
             cache_1.cache.get.mockResolvedValue(JSON.stringify(mockRFIDCard));
             jest.clearAllMocks();
-            const card2 = await rfid_service_1.RFIDService.getCardByNumber('RFID12345678');
+            const card2 = await rfid_service_1.RfidService.getCardByNumber('RFID12345678');
             expect(MockedDatabaseService.client.rFIDCard.findUnique).not.toHaveBeenCalled();
             const expectedCard = JSON.parse(JSON.stringify(mockRFIDCard));
             expect(card2).toEqual(expectedCard);
@@ -796,13 +793,13 @@ describe('RFIDService', () => {
         it('should clear card cache on deactivation', async () => {
             MockedDatabaseService.client.rFIDCard.findUnique.mockResolvedValue(mockRFIDCard);
             MockedDatabaseService.client.rFIDCard.update.mockResolvedValue({ ...mockRFIDCard, isActive: false });
-            await rfid_service_1.RFIDService.deactivateCard('card-id-123', 'Test reason');
+            await rfid_service_1.RfidService.getInstance().deactivateCard('card-id-123', 'Test reason');
             expect(cache_1.cache.del).toHaveBeenCalledWith('rfid_card:RFID12345678');
         });
         it('should clear reader cache on status update', async () => {
             MockedDatabaseService.client.rFIDReader.findUnique.mockResolvedValue(mockRFIDReader);
             MockedDatabaseService.client.rFIDReader.update.mockResolvedValue({ ...mockRFIDReader, status: 'offline' });
-            await rfid_service_1.RFIDService.updateReaderStatus({ readerId: 'reader-123', status: 'offline' });
+            await rfid_service_1.RfidService.getInstance().updateReaderStatus({ readerId: 'reader-123', status: 'offline' });
             expect(cache_1.cache.del).toHaveBeenCalledWith('rfid_reader:reader-123');
         });
     });

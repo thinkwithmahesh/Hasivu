@@ -3,14 +3,12 @@
  * Tests mobile drawer functionality, touch gestures, animations, and accessibility
  */
 
-import React from 'react'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
-import { axe, toHaveNoViolations } from 'jest-axe'
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { axe, toHaveNoViolations } from 'jest-axe';
 import {
   Drawer,
-  DrawerPortal,
-  DrawerOverlay,
   DrawerTrigger,
   DrawerClose,
   DrawerContent,
@@ -18,9 +16,9 @@ import {
   DrawerFooter,
   DrawerTitle,
   DrawerDescription,
-} from '../drawer'
+} from '../drawer';
 
-expect.extend(toHaveNoViolations)
+expect.extend(toHaveNoViolations);
 
 describe('Drawer Component Suite', () => {
   // Mock meal ordering data for testing
@@ -36,16 +34,16 @@ describe('Drawer Component Suite', () => {
       carbs: 75,
       fat: 18,
     },
-  }
+  };
 
-  const MealOrderDrawer = ({ 
-    open, 
+  const MealOrderDrawer = ({
+    open,
     onOpenChange,
-    meal = mockMeal 
-  }: { 
-    open: boolean
-    onOpenChange: (open: boolean) => void
-    meal?: typeof mockMeal 
+    meal = mockMeal,
+  }: {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    meal?: typeof mockMeal;
   }) => (
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerTrigger asChild>
@@ -76,16 +74,14 @@ describe('Drawer Component Suite', () => {
                 Add to Cart
               </button>
               <DrawerClose asChild>
-                <button className="px-4 py-2 border rounded">
-                  Cancel
-                </button>
+                <button className="px-4 py-2 border rounded">Cancel</button>
               </DrawerClose>
             </div>
           </div>
         </div>
       </DrawerContent>
     </Drawer>
-  )
+  );
 
   describe('Drawer Root Component', () => {
     it('renders without crashing', () => {
@@ -96,10 +92,10 @@ describe('Drawer Component Suite', () => {
             <DrawerTitle>Test</DrawerTitle>
           </DrawerContent>
         </Drawer>
-      )
-      
-      expect(screen.getByText('Open')).toBeInTheDocument()
-    })
+      );
+
+      expect(screen.getByText('Open')).toBeInTheDocument();
+    });
 
     it('supports shouldScaleBackground prop', () => {
       render(
@@ -109,10 +105,10 @@ describe('Drawer Component Suite', () => {
             <DrawerTitle>Test</DrawerTitle>
           </DrawerContent>
         </Drawer>
-      )
-      
-      expect(screen.getByText('Open')).toBeInTheDocument()
-    })
+      );
+
+      expect(screen.getByText('Open')).toBeInTheDocument();
+    });
 
     it('passes through additional props', () => {
       render(
@@ -122,17 +118,17 @@ describe('Drawer Component Suite', () => {
             <DrawerTitle>Test</DrawerTitle>
           </DrawerContent>
         </Drawer>
-      )
-      
-      const trigger = screen.getByText('Open')
-      expect(trigger).toBeInTheDocument()
-    })
-  })
+      );
+
+      const trigger = screen.getByText('Open');
+      expect(trigger).toBeInTheDocument();
+    });
+  });
 
   describe('DrawerTrigger Component', () => {
     it('opens drawer when clicked', async () => {
-      const user = userEvent.setup()
-      
+      const user = userEvent.setup();
+
       render(
         <Drawer>
           <DrawerTrigger>Open Drawer</DrawerTrigger>
@@ -140,19 +136,19 @@ describe('Drawer Component Suite', () => {
             <DrawerTitle>Drawer Content</DrawerTitle>
           </DrawerContent>
         </Drawer>
-      )
-      
-      const trigger = screen.getByText('Open Drawer')
-      await user.click(trigger)
-      
+      );
+
+      const trigger = screen.getByText('Open Drawer');
+      await user.click(trigger);
+
       await waitFor(() => {
-        expect(screen.getByText('Drawer Content')).toBeInTheDocument()
-      })
-    })
+        expect(screen.getByText('Drawer Content')).toBeInTheDocument();
+      });
+    });
 
     it('supports asChild prop', async () => {
-      const user = userEvent.setup()
-      
+      const user = userEvent.setup();
+
       render(
         <Drawer>
           <DrawerTrigger asChild>
@@ -162,15 +158,15 @@ describe('Drawer Component Suite', () => {
             <DrawerTitle>Drawer Content</DrawerTitle>
           </DrawerContent>
         </Drawer>
-      )
-      
-      const customButton = screen.getByRole('button', { name: 'Custom Button' })
-      await user.click(customButton)
-      
+      );
+
+      const customButton = screen.getByRole('button', { name: 'Custom Button' });
+      await user.click(customButton);
+
       await waitFor(() => {
-        expect(screen.getByText('Drawer Content')).toBeInTheDocument()
-      })
-    })
+        expect(screen.getByText('Drawer Content')).toBeInTheDocument();
+      });
+    });
 
     it('handles touch events on mobile', async () => {
       render(
@@ -180,24 +176,24 @@ describe('Drawer Component Suite', () => {
             <DrawerTitle>Mobile Drawer</DrawerTitle>
           </DrawerContent>
         </Drawer>
-      )
-      
-      const trigger = screen.getByText('Touch to Open')
-      
+      );
+
+      const trigger = screen.getByText('Touch to Open');
+
       // Simulate touch events
-      fireEvent.touchStart(trigger)
-      fireEvent.touchEnd(trigger)
-      
+      fireEvent.touchStart(trigger);
+      fireEvent.touchEnd(trigger);
+
       await waitFor(() => {
-        expect(screen.getByText('Mobile Drawer')).toBeInTheDocument()
-      })
-    })
-  })
+        expect(screen.getByText('Mobile Drawer')).toBeInTheDocument();
+      });
+    });
+  });
 
   describe('DrawerContent Component', () => {
     it('renders content with proper structure', async () => {
-      const user = userEvent.setup()
-      
+      const user = userEvent.setup();
+
       render(
         <Drawer>
           <DrawerTrigger>Open</DrawerTrigger>
@@ -212,24 +208,24 @@ describe('Drawer Component Suite', () => {
             </DrawerFooter>
           </DrawerContent>
         </Drawer>
-      )
-      
-      await user.click(screen.getByText('Open'))
-      
+      );
+
+      await user.click(screen.getByText('Open'));
+
       await waitFor(() => {
-        const content = screen.getByTestId('drawer-content')
-        expect(content).toBeInTheDocument()
-        expect(content).toHaveClass('fixed', 'inset-x-0', 'bottom-0')
-        
+        const content = screen.getByTestId('drawer-content');
+        expect(content).toBeInTheDocument();
+        expect(content).toHaveClass('fixed', 'inset-x-0', 'bottom-0');
+
         // Check for drag handle
-        const dragHandle = content.querySelector('.h-2.w-\\[100px\\]')
-        expect(dragHandle).toBeInTheDocument()
-      })
-    })
+        const dragHandle = content.querySelector('.h-2.w-\\[100px\\]');
+        expect(dragHandle).toBeInTheDocument();
+      });
+    });
 
     it('supports custom className', async () => {
-      const user = userEvent.setup()
-      
+      const user = userEvent.setup();
+
       render(
         <Drawer>
           <DrawerTrigger>Open</DrawerTrigger>
@@ -237,19 +233,19 @@ describe('Drawer Component Suite', () => {
             <DrawerTitle>Test</DrawerTitle>
           </DrawerContent>
         </Drawer>
-      )
-      
-      await user.click(screen.getByText('Open'))
-      
+      );
+
+      await user.click(screen.getByText('Open'));
+
       await waitFor(() => {
-        const content = screen.getByRole('dialog')
-        expect(content).toHaveClass('custom-drawer')
-      })
-    })
+        const content = screen.getByRole('dialog');
+        expect(content).toHaveClass('custom-drawer');
+      });
+    });
 
     it('includes overlay background', async () => {
-      const user = userEvent.setup()
-      
+      const user = userEvent.setup();
+
       render(
         <Drawer>
           <DrawerTrigger>Open</DrawerTrigger>
@@ -257,22 +253,22 @@ describe('Drawer Component Suite', () => {
             <DrawerTitle>Test</DrawerTitle>
           </DrawerContent>
         </Drawer>
-      )
-      
-      await user.click(screen.getByText('Open'))
-      
+      );
+
+      await user.click(screen.getByText('Open'));
+
       await waitFor(() => {
         // Overlay should be present with proper styling
-        const overlay = document.querySelector('.fixed.inset-0.z-50.bg-black\\/80')
-        expect(overlay).toBeInTheDocument()
-      })
-    })
-  })
+        const overlay = document.querySelector('.fixed.inset-0.z-50.bg-black\\/80');
+        expect(overlay).toBeInTheDocument();
+      });
+    });
+  });
 
   describe('DrawerHeader Component', () => {
     it('renders header content with proper styling', async () => {
-      const user = userEvent.setup()
-      
+      const user = userEvent.setup();
+
       render(
         <Drawer>
           <DrawerTrigger>Open</DrawerTrigger>
@@ -283,21 +279,21 @@ describe('Drawer Component Suite', () => {
             </DrawerHeader>
           </DrawerContent>
         </Drawer>
-      )
-      
-      await user.click(screen.getByText('Open'))
-      
+      );
+
+      await user.click(screen.getByText('Open'));
+
       await waitFor(() => {
-        const header = screen.getByTestId('drawer-header')
-        expect(header).toHaveClass('grid', 'gap-1.5', 'p-4', 'text-center')
-        expect(screen.getByText('Header Title')).toBeInTheDocument()
-        expect(screen.getByText('Header Description')).toBeInTheDocument()
-      })
-    })
+        const header = screen.getByTestId('drawer-header');
+        expect(header).toHaveClass('grid', 'gap-1.5', 'p-4', 'text-center');
+        expect(screen.getByText('Header Title')).toBeInTheDocument();
+        expect(screen.getByText('Header Description')).toBeInTheDocument();
+      });
+    });
 
     it('supports custom className', async () => {
-      const user = userEvent.setup()
-      
+      const user = userEvent.setup();
+
       render(
         <Drawer>
           <DrawerTrigger>Open</DrawerTrigger>
@@ -307,21 +303,21 @@ describe('Drawer Component Suite', () => {
             </DrawerHeader>
           </DrawerContent>
         </Drawer>
-      )
-      
-      await user.click(screen.getByText('Open'))
-      
+      );
+
+      await user.click(screen.getByText('Open'));
+
       await waitFor(() => {
-        const header = screen.getByText('Title').closest('.custom-header')
-        expect(header).toBeInTheDocument()
-      })
-    })
-  })
+        const header = screen.getByText('Title').closest('.custom-header');
+        expect(header).toBeInTheDocument();
+      });
+    });
+  });
 
   describe('DrawerFooter Component', () => {
     it('renders footer content with proper styling', async () => {
-      const user = userEvent.setup()
-      
+      const user = userEvent.setup();
+
       render(
         <Drawer>
           <DrawerTrigger>Open</DrawerTrigger>
@@ -333,21 +329,21 @@ describe('Drawer Component Suite', () => {
             </DrawerFooter>
           </DrawerContent>
         </Drawer>
-      )
-      
-      await user.click(screen.getByText('Open'))
-      
+      );
+
+      await user.click(screen.getByText('Open'));
+
       await waitFor(() => {
-        const footer = screen.getByTestId('drawer-footer')
-        expect(footer).toHaveClass('mt-auto', 'flex', 'flex-col', 'gap-2', 'p-4')
-        expect(screen.getByText('Primary Action')).toBeInTheDocument()
-        expect(screen.getByText('Secondary Action')).toBeInTheDocument()
-      })
-    })
+        const footer = screen.getByTestId('drawer-footer');
+        expect(footer).toHaveClass('mt-auto', 'flex', 'flex-col', 'gap-2', 'p-4');
+        expect(screen.getByText('Primary Action')).toBeInTheDocument();
+        expect(screen.getByText('Secondary Action')).toBeInTheDocument();
+      });
+    });
 
     it('supports custom className', async () => {
-      const user = userEvent.setup()
-      
+      const user = userEvent.setup();
+
       render(
         <Drawer>
           <DrawerTrigger>Open</DrawerTrigger>
@@ -358,44 +354,42 @@ describe('Drawer Component Suite', () => {
             </DrawerFooter>
           </DrawerContent>
         </Drawer>
-      )
-      
-      await user.click(screen.getByText('Open'))
-      
+      );
+
+      await user.click(screen.getByText('Open'));
+
       await waitFor(() => {
-        const footer = screen.getByText('Action').closest('.custom-footer')
-        expect(footer).toBeInTheDocument()
-      })
-    })
-  })
+        const footer = screen.getByText('Action').closest('.custom-footer');
+        expect(footer).toBeInTheDocument();
+      });
+    });
+  });
 
   describe('DrawerTitle Component', () => {
     it('renders title with proper styling', async () => {
-      const user = userEvent.setup()
-      
+      const user = userEvent.setup();
+
       render(
         <Drawer>
           <DrawerTrigger>Open</DrawerTrigger>
           <DrawerContent>
-            <DrawerTitle data-testid="drawer-title">
-              Important Title
-            </DrawerTitle>
+            <DrawerTitle data-testid="drawer-title">Important Title</DrawerTitle>
           </DrawerContent>
         </Drawer>
-      )
-      
-      await user.click(screen.getByText('Open'))
-      
+      );
+
+      await user.click(screen.getByText('Open'));
+
       await waitFor(() => {
-        const title = screen.getByTestId('drawer-title')
-        expect(title).toHaveClass('text-lg', 'font-semibold', 'leading-none', 'tracking-tight')
-        expect(title).toHaveTextContent('Important Title')
-      })
-    })
+        const title = screen.getByTestId('drawer-title');
+        expect(title).toHaveClass('text-lg', 'font-semibold', 'leading-none', 'tracking-tight');
+        expect(title).toHaveTextContent('Important Title');
+      });
+    });
 
     it('supports custom className', async () => {
-      const user = userEvent.setup()
-      
+      const user = userEvent.setup();
+
       render(
         <Drawer>
           <DrawerTrigger>Open</DrawerTrigger>
@@ -403,21 +397,21 @@ describe('Drawer Component Suite', () => {
             <DrawerTitle className="custom-title">Custom Title</DrawerTitle>
           </DrawerContent>
         </Drawer>
-      )
-      
-      await user.click(screen.getByText('Open'))
-      
+      );
+
+      await user.click(screen.getByText('Open'));
+
       await waitFor(() => {
-        const title = screen.getByText('Custom Title')
-        expect(title).toHaveClass('custom-title')
-      })
-    })
-  })
+        const title = screen.getByText('Custom Title');
+        expect(title).toHaveClass('custom-title');
+      });
+    });
+  });
 
   describe('DrawerDescription Component', () => {
     it('renders description with proper styling', async () => {
-      const user = userEvent.setup()
-      
+      const user = userEvent.setup();
+
       render(
         <Drawer>
           <DrawerTrigger>Open</DrawerTrigger>
@@ -428,45 +422,45 @@ describe('Drawer Component Suite', () => {
             </DrawerDescription>
           </DrawerContent>
         </Drawer>
-      )
-      
-      await user.click(screen.getByText('Open'))
-      
+      );
+
+      await user.click(screen.getByText('Open'));
+
       await waitFor(() => {
-        const description = screen.getByTestId('drawer-description')
-        expect(description).toHaveClass('text-sm', 'text-muted-foreground')
-        expect(description).toHaveTextContent('This is a detailed description of the drawer content.')
-      })
-    })
+        const description = screen.getByTestId('drawer-description');
+        expect(description).toHaveClass('text-sm', 'text-muted-foreground');
+        expect(description).toHaveTextContent(
+          'This is a detailed description of the drawer content.'
+        );
+      });
+    });
 
     it('supports custom className', async () => {
-      const user = userEvent.setup()
-      
+      const user = userEvent.setup();
+
       render(
         <Drawer>
           <DrawerTrigger>Open</DrawerTrigger>
           <DrawerContent>
             <DrawerTitle>Title</DrawerTitle>
-            <DrawerDescription className="custom-description">
-              Custom Description
-            </DrawerDescription>
+            <DrawerDescription className="custom-description">Custom Description</DrawerDescription>
           </DrawerContent>
         </Drawer>
-      )
-      
-      await user.click(screen.getByText('Open'))
-      
+      );
+
+      await user.click(screen.getByText('Open'));
+
       await waitFor(() => {
-        const description = screen.getByText('Custom Description')
-        expect(description).toHaveClass('custom-description')
-      })
-    })
-  })
+        const description = screen.getByText('Custom Description');
+        expect(description).toHaveClass('custom-description');
+      });
+    });
+  });
 
   describe('DrawerClose Component', () => {
     it('closes drawer when clicked', async () => {
-      const user = userEvent.setup()
-      
+      const user = userEvent.setup();
+
       render(
         <Drawer>
           <DrawerTrigger>Open</DrawerTrigger>
@@ -475,26 +469,26 @@ describe('Drawer Component Suite', () => {
             <DrawerClose>Close Drawer</DrawerClose>
           </DrawerContent>
         </Drawer>
-      )
-      
+      );
+
       // Open drawer
-      await user.click(screen.getByText('Open'))
-      
+      await user.click(screen.getByText('Open'));
+
       await waitFor(() => {
-        expect(screen.getByText('Test Drawer')).toBeInTheDocument()
-      })
-      
+        expect(screen.getByText('Test Drawer')).toBeInTheDocument();
+      });
+
       // Close drawer
-      await user.click(screen.getByText('Close Drawer'))
-      
+      await user.click(screen.getByText('Close Drawer'));
+
       await waitFor(() => {
-        expect(screen.queryByText('Test Drawer')).not.toBeInTheDocument()
-      })
-    })
+        expect(screen.queryByText('Test Drawer')).not.toBeInTheDocument();
+      });
+    });
 
     it('supports asChild prop', async () => {
-      const user = userEvent.setup()
-      
+      const user = userEvent.setup();
+
       render(
         <Drawer>
           <DrawerTrigger>Open</DrawerTrigger>
@@ -507,27 +501,27 @@ describe('Drawer Component Suite', () => {
             </DrawerClose>
           </DrawerContent>
         </Drawer>
-      )
-      
-      await user.click(screen.getByText('Open'))
-      
+      );
+
+      await user.click(screen.getByText('Open'));
+
       await waitFor(() => {
-        expect(screen.getByText('Test Drawer')).toBeInTheDocument()
-      })
-      
-      const customCloseBtn = screen.getByRole('button', { name: 'Custom Close' })
-      await user.click(customCloseBtn)
-      
+        expect(screen.getByText('Test Drawer')).toBeInTheDocument();
+      });
+
+      const customCloseBtn = screen.getByRole('button', { name: 'Custom Close' });
+      await user.click(customCloseBtn);
+
       await waitFor(() => {
-        expect(screen.queryByText('Test Drawer')).not.toBeInTheDocument()
-      })
-    })
-  })
+        expect(screen.queryByText('Test Drawer')).not.toBeInTheDocument();
+      });
+    });
+  });
 
   describe('Touch and Gesture Support', () => {
     it('supports drag-to-close gesture', async () => {
-      const user = userEvent.setup()
-      
+      const user = userEvent.setup();
+
       render(
         <Drawer>
           <DrawerTrigger>Open</DrawerTrigger>
@@ -535,51 +529,49 @@ describe('Drawer Component Suite', () => {
             <DrawerTitle>Draggable Drawer</DrawerTitle>
           </DrawerContent>
         </Drawer>
-      )
-      
-      await user.click(screen.getByText('Open'))
-      
+      );
+
+      await user.click(screen.getByText('Open'));
+
       await waitFor(() => {
-        const content = screen.getByTestId('drawer-content')
-        expect(content).toBeInTheDocument()
-        
+        const content = screen.getByTestId('drawer-content');
+        expect(content).toBeInTheDocument();
+
         // Simulate drag down gesture
         fireEvent.touchStart(content, {
           touches: [{ clientY: 100 }],
-        })
+        });
         fireEvent.touchMove(content, {
           touches: [{ clientY: 300 }],
-        })
-        fireEvent.touchEnd(content)
-        
+        });
+        fireEvent.touchEnd(content);
+
         // Drawer should handle drag gesture
-        expect(content).toBeInTheDocument()
-      })
-    })
+        expect(content).toBeInTheDocument();
+      });
+    });
 
     it('handles touch events on mobile devices', async () => {
-      const user = userEvent.setup()
-      
-      render(
-        <MealOrderDrawer open={false} onOpenChange={() => {}} />
-      )
-      
-      const trigger = screen.getByText(`Order ${mockMeal.name}`)
-      
+      const _user = userEvent.setup();
+
+      render(<MealOrderDrawer open={false} onOpenChange={() => {}} />);
+
+      const trigger = screen.getByText(`Order ${mockMeal.name}`);
+
       // Simulate mobile touch
       fireEvent.touchStart(trigger, {
         touches: [{ clientX: 100, clientY: 100 }],
-      })
-      fireEvent.touchEnd(trigger)
-      
+      });
+      fireEvent.touchEnd(trigger);
+
       await waitFor(() => {
-        expect(screen.getByText(mockMeal.name)).toBeInTheDocument()
-      })
-    })
+        expect(screen.getByText(mockMeal.name)).toBeInTheDocument();
+      });
+    });
 
     it('supports swipe gestures for navigation', async () => {
-      const user = userEvent.setup()
-      
+      const user = userEvent.setup();
+
       render(
         <Drawer>
           <DrawerTrigger>Open</DrawerTrigger>
@@ -590,40 +582,40 @@ describe('Drawer Component Suite', () => {
             </div>
           </DrawerContent>
         </Drawer>
-      )
-      
-      await user.click(screen.getByText('Open'))
-      
+      );
+
+      await user.click(screen.getByText('Open'));
+
       await waitFor(() => {
-        const content = screen.getByTestId('swipeable-content')
-        
+        const content = screen.getByTestId('swipeable-content');
+
         // Simulate swipe down
         fireEvent.touchStart(content, {
           touches: [{ clientY: 200 }],
-        })
+        });
         fireEvent.touchMove(content, {
           touches: [{ clientY: 400 }],
-        })
-        fireEvent.touchEnd(content)
-        
-        expect(content).toBeInTheDocument()
-      })
-    })
+        });
+        fireEvent.touchEnd(content);
+
+        expect(content).toBeInTheDocument();
+      });
+    });
 
     it('handles pull-to-refresh gesture', async () => {
-      const user = userEvent.setup()
-      const onRefresh = jest.fn()
-      
+      const user = userEvent.setup();
+      const onRefresh = jest.fn();
+
       render(
         <Drawer>
           <DrawerTrigger>Open</DrawerTrigger>
           <DrawerContent>
             <DrawerTitle>Refreshable Content</DrawerTitle>
-            <div 
+            <div
               data-testid="refreshable-area"
-              onTouchStart={(e) => {
+              onTouchStart={e => {
                 if (e.touches[0].clientY < 50) {
-                  onRefresh()
+                  onRefresh();
                 }
               }}
             >
@@ -631,77 +623,77 @@ describe('Drawer Component Suite', () => {
             </div>
           </DrawerContent>
         </Drawer>
-      )
-      
-      await user.click(screen.getByText('Open'))
-      
+      );
+
+      await user.click(screen.getByText('Open'));
+
       await waitFor(() => {
-        const refreshArea = screen.getByTestId('refreshable-area')
-        
+        const refreshArea = screen.getByTestId('refreshable-area');
+
         // Simulate pull down from top
         fireEvent.touchStart(refreshArea, {
           touches: [{ clientY: 30 }],
-        })
-        
-        expect(onRefresh).toHaveBeenCalled()
-      })
-    })
-  })
+        });
+
+        expect(onRefresh).toHaveBeenCalled();
+      });
+    });
+  });
 
   describe('Meal Ordering Integration', () => {
     it('displays meal information correctly', async () => {
-      const user = userEvent.setup()
-      
-      render(<MealOrderDrawer open={false} onOpenChange={() => {}} />)
-      
-      await user.click(screen.getByText(`Order ${mockMeal.name}`))
-      
+      const user = userEvent.setup();
+
+      render(<MealOrderDrawer open={false} onOpenChange={() => {}} />);
+
+      await user.click(screen.getByText(`Order ${mockMeal.name}`));
+
       await waitFor(() => {
-        expect(screen.getByText(mockMeal.name)).toBeInTheDocument()
-        expect(screen.getByText(mockMeal.description)).toBeInTheDocument()
-        expect(screen.getByText(`₹${mockMeal.price}`)).toBeInTheDocument()
-        expect(screen.getByText(`Calories: ${mockMeal.nutrition.calories}`)).toBeInTheDocument()
-      })
-    })
+        expect(screen.getByText(mockMeal.name)).toBeInTheDocument();
+        expect(screen.getByText(mockMeal.description)).toBeInTheDocument();
+        expect(screen.getByText(`₹${mockMeal.price}`)).toBeInTheDocument();
+        expect(screen.getByText(`Calories: ${mockMeal.nutrition.calories}`)).toBeInTheDocument();
+      });
+    });
 
     it('handles add to cart action', async () => {
-      const user = userEvent.setup()
-      const onOpenChange = jest.fn()
-      
-      render(<MealOrderDrawer open={false} onOpenChange={onOpenChange} />)
-      
-      await user.click(screen.getByText(`Order ${mockMeal.name}`))
-      
+      const user = userEvent.setup();
+      const onOpenChange = jest.fn();
+
+      render(<MealOrderDrawer open={false} onOpenChange={onOpenChange} />);
+
+      await user.click(screen.getByText(`Order ${mockMeal.name}`));
+
       await waitFor(() => {
-        const addToCartBtn = screen.getByText('Add to Cart')
-        expect(addToCartBtn).toBeInTheDocument()
-      })
-    })
+        const addToCartBtn = screen.getByText('Add to Cart');
+        expect(addToCartBtn).toBeInTheDocument();
+      });
+    });
 
     it('handles cancel action', async () => {
-      const user = userEvent.setup()
-      const onOpenChange = jest.fn()
-      
-      render(<MealOrderDrawer open={false} onOpenChange={onOpenChange} />)
-      
-      await user.click(screen.getByText(`Order ${mockMeal.name}`))
-      
+      const user = userEvent.setup();
+      const onOpenChange = jest.fn();
+
+      render(<MealOrderDrawer open={false} onOpenChange={onOpenChange} />);
+
+      await user.click(screen.getByText(`Order ${mockMeal.name}`));
+
       await waitFor(() => {
-        expect(screen.getByText(mockMeal.name)).toBeInTheDocument()
-      })
-      
-      await user.click(screen.getByText('Cancel'))
-      
+        expect(screen.getByText(mockMeal.name)).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByText('Cancel'));
+
       await waitFor(() => {
-        expect(onOpenChange).toHaveBeenCalledWith(false)
-      })
-    })
-  })
+        expect(onOpenChange).toHaveBeenCalledWith(false);
+      });
+    });
+  });
 
   describe('Accessibility', () => {
     it('meets WCAG accessibility guidelines', async () => {
-      const user = userEvent.setup()
-      
+      const user = userEvent.setup();
+
       const { container } = render(
         <Drawer>
           <DrawerTrigger>Open Accessible Drawer</DrawerTrigger>
@@ -716,44 +708,42 @@ describe('Drawer Component Suite', () => {
             </DrawerFooter>
           </DrawerContent>
         </Drawer>
-      )
-      
-      await user.click(screen.getByText('Open Accessible Drawer'))
-      
+      );
+
+      await user.click(screen.getByText('Open Accessible Drawer'));
+
       await waitFor(async () => {
-        const results = await axe(container)
-        expect(results).toHaveNoViolations()
-      })
-    })
+        const results = await axe(container);
+        expect(results).toHaveNoViolations();
+      });
+    });
 
     it('provides proper ARIA labels and roles', async () => {
-      const user = userEvent.setup()
-      
+      const user = userEvent.setup();
+
       render(
         <Drawer>
-          <DrawerTrigger aria-label="Open meal ordering drawer">
-            Order Now
-          </DrawerTrigger>
+          <DrawerTrigger aria-label="Open meal ordering drawer">Order Now</DrawerTrigger>
           <DrawerContent>
             <DrawerTitle>Meal Selection</DrawerTitle>
             <DrawerDescription>Choose your preferred meal options</DrawerDescription>
           </DrawerContent>
         </Drawer>
-      )
-      
-      const trigger = screen.getByLabelText('Open meal ordering drawer')
-      await user.click(trigger)
-      
+      );
+
+      const trigger = screen.getByLabelText('Open meal ordering drawer');
+      await user.click(trigger);
+
       await waitFor(() => {
-        const dialog = screen.getByRole('dialog')
-        expect(dialog).toBeInTheDocument()
-        expect(screen.getByText('Meal Selection')).toBeInTheDocument()
-      })
-    })
+        const dialog = screen.getByRole('dialog');
+        expect(dialog).toBeInTheDocument();
+        expect(screen.getByText('Meal Selection')).toBeInTheDocument();
+      });
+    });
 
     it('supports keyboard navigation', async () => {
-      const user = userEvent.setup()
-      
+      const user = userEvent.setup();
+
       render(
         <Drawer>
           <DrawerTrigger>Open</DrawerTrigger>
@@ -766,29 +756,29 @@ describe('Drawer Component Suite', () => {
             </div>
           </DrawerContent>
         </Drawer>
-      )
-      
-      const trigger = screen.getByText('Open')
-      await user.click(trigger)
-      
+      );
+
+      const trigger = screen.getByText('Open');
+      await user.click(trigger);
+
       await waitFor(() => {
-        expect(screen.getByText('Keyboard Navigation Test')).toBeInTheDocument()
-      })
-      
+        expect(screen.getByText('Keyboard Navigation Test')).toBeInTheDocument();
+      });
+
       // Tab through elements
-      await user.keyboard('{Tab}')
-      expect(screen.getByText('First Button')).toHaveFocus()
-      
-      await user.keyboard('{Tab}')
-      expect(screen.getByText('Second Button')).toHaveFocus()
-      
-      await user.keyboard('{Tab}')
-      expect(screen.getByText('Close')).toHaveFocus()
-    })
+      await user.keyboard('{Tab}');
+      expect(screen.getByText('First Button')).toHaveFocus();
+
+      await user.keyboard('{Tab}');
+      expect(screen.getByText('Second Button')).toHaveFocus();
+
+      await user.keyboard('{Tab}');
+      expect(screen.getByText('Close')).toHaveFocus();
+    });
 
     it('handles escape key to close', async () => {
-      const user = userEvent.setup()
-      
+      const user = userEvent.setup();
+
       render(
         <Drawer>
           <DrawerTrigger>Open</DrawerTrigger>
@@ -796,24 +786,24 @@ describe('Drawer Component Suite', () => {
             <DrawerTitle>Escape to Close</DrawerTitle>
           </DrawerContent>
         </Drawer>
-      )
-      
-      await user.click(screen.getByText('Open'))
-      
+      );
+
+      await user.click(screen.getByText('Open'));
+
       await waitFor(() => {
-        expect(screen.getByText('Escape to Close')).toBeInTheDocument()
-      })
-      
-      await user.keyboard('{Escape}')
-      
+        expect(screen.getByText('Escape to Close')).toBeInTheDocument();
+      });
+
+      await user.keyboard('{Escape}');
+
       await waitFor(() => {
-        expect(screen.queryByText('Escape to Close')).not.toBeInTheDocument()
-      })
-    })
+        expect(screen.queryByText('Escape to Close')).not.toBeInTheDocument();
+      });
+    });
 
     it('maintains focus when opened', async () => {
-      const user = userEvent.setup()
-      
+      const user = userEvent.setup();
+
       render(
         <Drawer>
           <DrawerTrigger>Open Focus Test</DrawerTrigger>
@@ -822,24 +812,24 @@ describe('Drawer Component Suite', () => {
             <button>Focusable Element</button>
           </DrawerContent>
         </Drawer>
-      )
-      
-      const trigger = screen.getByText('Open Focus Test')
-      await user.click(trigger)
-      
+      );
+
+      const trigger = screen.getByText('Open Focus Test');
+      await user.click(trigger);
+
       await waitFor(() => {
         // Focus should be managed properly when drawer opens
-        const focusableElement = screen.getByText('Focusable Element')
-        expect(focusableElement).toBeInTheDocument()
-      })
-    })
-  })
+        const focusableElement = screen.getByText('Focusable Element');
+        expect(focusableElement).toBeInTheDocument();
+      });
+    });
+  });
 
   describe('Performance and Edge Cases', () => {
     it('handles rapid open/close operations', async () => {
-      const user = userEvent.setup()
-      const onOpenChange = jest.fn()
-      
+      const user = userEvent.setup();
+      const onOpenChange = jest.fn();
+
       render(
         <Drawer onOpenChange={onOpenChange}>
           <DrawerTrigger>Toggle</DrawerTrigger>
@@ -848,25 +838,25 @@ describe('Drawer Component Suite', () => {
             <DrawerClose>Close</DrawerClose>
           </DrawerContent>
         </Drawer>
-      )
-      
-      const trigger = screen.getByText('Toggle')
-      
+      );
+
+      const trigger = screen.getByText('Toggle');
+
       // Rapid clicks
-      await user.click(trigger)
-      await user.click(screen.getByText('Close'))
-      await user.click(trigger)
-      await user.click(screen.getByText('Close'))
-      
+      await user.click(trigger);
+      await user.click(screen.getByText('Close'));
+      await user.click(trigger);
+      await user.click(screen.getByText('Close'));
+
       // Should handle rapid operations gracefully
-      expect(onOpenChange).toHaveBeenCalled()
-    })
+      expect(onOpenChange).toHaveBeenCalled();
+    });
 
     it('handles content overflow gracefully', async () => {
-      const user = userEvent.setup()
-      
-      const longContent = Array.from({ length: 100 }, (_, i) => `Line ${i + 1}`).join('\n')
-      
+      const user = userEvent.setup();
+
+      const longContent = Array.from({ length: 100 }, (_, i) => `Line ${i + 1}`).join('\n');
+
       render(
         <Drawer>
           <DrawerTrigger>Open Long Content</DrawerTrigger>
@@ -877,21 +867,21 @@ describe('Drawer Component Suite', () => {
             </div>
           </DrawerContent>
         </Drawer>
-      )
-      
-      await user.click(screen.getByText('Open Long Content'))
-      
+      );
+
+      await user.click(screen.getByText('Open Long Content'));
+
       await waitFor(() => {
-        const content = screen.getByTestId('overflow-content')
-        expect(content).toBeInTheDocument()
+        const content = screen.getByTestId('overflow-content');
+        expect(content).toBeInTheDocument();
         // Should handle overflow with proper scrolling
-        expect(content).toHaveClass('overflow-hidden')
-      })
-    })
+        expect(content).toHaveClass('overflow-hidden');
+      });
+    });
 
     it('prevents background scroll when opened', async () => {
-      const user = userEvent.setup()
-      
+      const user = userEvent.setup();
+
       render(
         <>
           <div style={{ height: '200vh' }}>Background Content</div>
@@ -902,19 +892,19 @@ describe('Drawer Component Suite', () => {
             </DrawerContent>
           </Drawer>
         </>
-      )
-      
-      await user.click(screen.getByText('Open'))
-      
+      );
+
+      await user.click(screen.getByText('Open'));
+
       await waitFor(() => {
         // Background scrolling should be prevented
-        expect(document.body.style.overflow).toBe('hidden')
-      })
-    })
+        expect(document.body.style.overflow).toBe('hidden');
+      });
+    });
 
     it('handles animation interruptions', async () => {
-      const user = userEvent.setup()
-      
+      const user = userEvent.setup();
+
       render(
         <Drawer>
           <DrawerTrigger>Open</DrawerTrigger>
@@ -923,20 +913,20 @@ describe('Drawer Component Suite', () => {
             <DrawerClose>Close</DrawerClose>
           </DrawerContent>
         </Drawer>
-      )
-      
-      const trigger = screen.getByText('Open')
-      
+      );
+
+      const trigger = screen.getByText('Open');
+
       // Open and immediately try to close during animation
-      await user.click(trigger)
+      await user.click(trigger);
       // Don't wait for animation to complete
-      const closeBtn = screen.getByText('Close')
-      await user.click(closeBtn)
-      
+      const closeBtn = screen.getByText('Close');
+      await user.click(closeBtn);
+
       // Should handle animation interruption gracefully
       await waitFor(() => {
-        expect(screen.queryByText('Animation Test')).not.toBeInTheDocument()
-      })
-    })
-  })
-})
+        expect(screen.queryByText('Animation Test')).not.toBeInTheDocument();
+      });
+    });
+  });
+});

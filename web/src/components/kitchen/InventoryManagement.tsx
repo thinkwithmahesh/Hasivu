@@ -1,45 +1,39 @@
-"use client";
+'use client';
 
 import React, { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   Package,
   AlertTriangle,
   TrendingUp,
-  TrendingDown,
   ShoppingCart,
-  Truck,
-  Calendar,
   DollarSign,
-  BarChart3,
-  Search,
   Filter,
   Plus,
   Edit,
-  Trash2,
-  RefreshCw,
   Download,
   Upload,
   Eye,
   Clock,
   CheckCircle,
   XCircle,
-  AlertCircle,
-  Zap,
-  Users,
-  Target,
-  Activity,
-  Loader2
+  Loader2,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 
@@ -49,7 +43,7 @@ import {
   usePurchaseOrders,
   useInventorySuppliers,
   useInventoryMetrics,
-  useInventoryMutations
+  useInventoryMutations,
 } from '@/hooks/useApiIntegration';
 
 // TypeScript interfaces for Inventory Management
@@ -122,27 +116,38 @@ interface InventoryMetrics {
   costSavings: number;
 }
 
-
 // Utility functions
 const getStockStatusColor = (status: InventoryItem['status']) => {
   switch (status) {
-    case 'in_stock': return 'bg-green-100 text-green-800 border-green-200';
-    case 'low_stock': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-    case 'out_of_stock': return 'bg-red-100 text-red-800 border-red-200';
-    case 'expired': return 'bg-red-100 text-red-800 border-red-200';
-    case 'ordered': return 'bg-blue-100 text-blue-800 border-blue-200';
-    default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    case 'in_stock':
+      return 'bg-green-100 text-green-800 border-green-200';
+    case 'low_stock':
+      return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+    case 'out_of_stock':
+      return 'bg-red-100 text-red-800 border-red-200';
+    case 'expired':
+      return 'bg-red-100 text-red-800 border-red-200';
+    case 'ordered':
+      return 'bg-blue-100 text-blue-800 border-blue-200';
+    default:
+      return 'bg-gray-100 text-gray-800 border-gray-200';
   }
 };
 
 const getOrderStatusColor = (status: PurchaseOrder['status']) => {
   switch (status) {
-    case 'draft': return 'bg-gray-100 text-gray-800 border-gray-200';
-    case 'sent': return 'bg-blue-100 text-blue-800 border-blue-200';
-    case 'confirmed': return 'bg-green-100 text-green-800 border-green-200';
-    case 'delivered': return 'bg-purple-100 text-purple-800 border-purple-200';
-    case 'cancelled': return 'bg-red-100 text-red-800 border-red-200';
-    default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    case 'draft':
+      return 'bg-gray-100 text-gray-800 border-gray-200';
+    case 'sent':
+      return 'bg-blue-100 text-blue-800 border-blue-200';
+    case 'confirmed':
+      return 'bg-green-100 text-green-800 border-green-200';
+    case 'delivered':
+      return 'bg-purple-100 text-purple-800 border-purple-200';
+    case 'cancelled':
+      return 'bg-red-100 text-red-800 border-red-200';
+    default:
+      return 'bg-gray-100 text-gray-800 border-gray-200';
   }
 };
 
@@ -154,7 +159,13 @@ const getDaysUntilExpiry = (expiryDate: string) => {
 };
 
 // Inventory Item Card Component
-const InventoryItemCard = ({ item, onReorder }: { item: InventoryItem; onReorder: (item: InventoryItem) => void }) => {
+const InventoryItemCard = ({
+  item,
+  onReorder,
+}: {
+  item: InventoryItem;
+  onReorder: (item: InventoryItem) => void;
+}) => {
   const stockPercentage = (item.currentStock / item.maxStock) * 100;
   const isExpiringSoon = item.expiryDate && getDaysUntilExpiry(item.expiryDate) <= 3;
 
@@ -164,15 +175,13 @@ const InventoryItemCard = ({ item, onReorder }: { item: InventoryItem; onReorder
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center space-x-3">
             {item.image && (
-              <img 
-                src={item.image} 
-                alt={item.name}
-                className="w-12 h-12 rounded-lg object-cover"
-              />
+              <img src={item.image} alt={item.name} className="w-12 h-12 rounded-lg object-cover" />
             )}
             <div>
               <h3 className="font-semibold text-gray-900">{item.name}</h3>
-              <p className="text-sm text-gray-600">{item.category} • {item.subcategory}</p>
+              <p className="text-sm text-gray-600">
+                {item.category} • {item.subcategory}
+              </p>
               <p className="text-xs text-gray-500">{item.sku}</p>
             </div>
           </div>
@@ -185,10 +194,15 @@ const InventoryItemCard = ({ item, onReorder }: { item: InventoryItem; onReorder
         <div className="mb-4">
           <div className="flex items-center justify-between text-sm mb-2">
             <span className="text-gray-600">Stock Level</span>
-            <span className={`font-semibold ${
-              item.status === 'low_stock' ? 'text-orange-600' : 
-              item.status === 'out_of_stock' ? 'text-red-600' : 'text-gray-900'
-            }`}>
+            <span
+              className={`font-semibold ${
+                item.status === 'low_stock'
+                  ? 'text-orange-600'
+                  : item.status === 'out_of_stock'
+                    ? 'text-red-600'
+                    : 'text-gray-900'
+              }`}
+            >
               {item.currentStock} {item.unit}
             </span>
           </div>
@@ -207,14 +221,14 @@ const InventoryItemCard = ({ item, onReorder }: { item: InventoryItem; onReorder
               <span className="text-xs text-yellow-800">Low stock - reorder needed</span>
             </div>
           )}
-          
+
           {item.status === 'out_of_stock' && (
             <div className="flex items-center p-2 bg-red-50 border border-red-200 rounded">
               <XCircle className="w-4 h-4 text-red-600 mr-2" />
               <span className="text-xs text-red-800">Out of stock</span>
             </div>
           )}
-          
+
           {isExpiringSoon && (
             <div className="flex items-center p-2 bg-orange-50 border border-orange-200 rounded">
               <Clock className="w-4 h-4 text-orange-600 mr-2" />
@@ -237,13 +251,17 @@ const InventoryItemCard = ({ item, onReorder }: { item: InventoryItem; onReorder
           </div>
           <div>
             <p className="text-gray-600">Usage Rate</p>
-            <p className="font-semibold">{item.usageRate}/{item.unit}/day</p>
+            <p className="font-semibold">
+              {item.usageRate}/{item.unit}/day
+            </p>
           </div>
           <div>
             <p className="text-gray-600">Days Left</p>
-            <p className={`font-semibold ${
-              item.daysUntilEmpty <= 3 ? 'text-red-600' : 'text-gray-900'
-            }`}>
+            <p
+              className={`font-semibold ${
+                item.daysUntilEmpty <= 3 ? 'text-red-600' : 'text-gray-900'
+              }`}
+            >
               {item.daysUntilEmpty} days
             </p>
           </div>
@@ -255,7 +273,10 @@ const InventoryItemCard = ({ item, onReorder }: { item: InventoryItem; onReorder
             <Avatar className="w-5 h-5">
               <AvatarImage src={item.supplier.avatar} alt={item.supplier.name} />
               <AvatarFallback className="text-xs">
-                {item.supplier.name.split(' ').map(n => n[0]).join('')}
+                {item.supplier.name
+                  .split(' ')
+                  .map(n => n[0])
+                  .join('')}
               </AvatarFallback>
             </Avatar>
             <span>{item.supplier.name}</span>
@@ -270,7 +291,12 @@ const InventoryItemCard = ({ item, onReorder }: { item: InventoryItem; onReorder
             Edit
           </Button>
           {(item.status === 'low_stock' || item.status === 'out_of_stock') && (
-            <Button size="sm" className="flex-1" onClick={() => onReorder(item)} data-testid={`reorder-button-${item.id}`}>
+            <Button
+              size="sm"
+              className="flex-1"
+              onClick={() => onReorder(item)}
+              data-testid={`reorder-button-${item.id}`}
+            >
               <ShoppingCart className="w-3 h-3 mr-1" />
               Reorder
             </Button>
@@ -282,9 +308,17 @@ const InventoryItemCard = ({ item, onReorder }: { item: InventoryItem; onReorder
 };
 
 // Purchase Order Card Component
-const PurchaseOrderCard = ({ order, onMarkDelivered }: { order: PurchaseOrder; onMarkDelivered: (order: PurchaseOrder) => void }) => {
+const PurchaseOrderCard = ({
+  order,
+  onMarkDelivered,
+}: {
+  order: PurchaseOrder;
+  onMarkDelivered: (order: PurchaseOrder) => void;
+}) => {
   const expectedDelivery = new Date(order.expectedDelivery);
-  const daysPending = Math.ceil((expectedDelivery.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+  const daysPending = Math.ceil(
+    (expectedDelivery.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+  );
 
   return (
     <Card className="hover:shadow-lg transition-shadow">
@@ -296,7 +330,10 @@ const PurchaseOrderCard = ({ order, onMarkDelivered }: { order: PurchaseOrder; o
               <Avatar className="w-6 h-6">
                 <AvatarImage src={order.supplier.avatar} alt={order.supplier.name} />
                 <AvatarFallback className="text-xs">
-                  {order.supplier.name.split(' ').map(n => n[0]).join('')}
+                  {order.supplier.name
+                    .split(' ')
+                    .map(n => n[0])
+                    .join('')}
                 </AvatarFallback>
               </Avatar>
               <p className="text-sm text-gray-600">{order.supplier.name}</p>
@@ -310,8 +347,13 @@ const PurchaseOrderCard = ({ order, onMarkDelivered }: { order: PurchaseOrder; o
         {/* Order Items */}
         <div className="space-y-2 mb-4">
           {order.items.map((item, index) => (
-            <div key={index} className="flex items-center justify-between text-sm p-2 bg-gray-50 rounded">
-              <span>{item.quantity} x {item.itemName}</span>
+            <div
+              key={index}
+              className="flex items-center justify-between text-sm p-2 bg-gray-50 rounded"
+            >
+              <span>
+                {item.quantity} x {item.itemName}
+              </span>
               <span className="font-semibold">Rs.{item.totalPrice}</span>
             </div>
           ))}
@@ -321,9 +363,7 @@ const PurchaseOrderCard = ({ order, onMarkDelivered }: { order: PurchaseOrder; o
         <div className="grid grid-cols-2 gap-3 text-sm mb-4">
           <div>
             <p className="text-gray-600">Order Date</p>
-            <p className="font-semibold">
-              {new Date(order.orderDate).toLocaleDateString()}
-            </p>
+            <p className="font-semibold">{new Date(order.orderDate).toLocaleDateString()}</p>
           </div>
           <div>
             <p className="text-gray-600">Expected Delivery</p>
@@ -357,7 +397,12 @@ const PurchaseOrderCard = ({ order, onMarkDelivered }: { order: PurchaseOrder; o
             View Details
           </Button>
           {order.status === 'sent' && (
-            <Button size="sm" variant="outline" onClick={() => onMarkDelivered(order)} data-testid={`mark-delivered-button-${order.id}`}>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onMarkDelivered(order)}
+              data-testid={`mark-delivered-button-${order.id}`}
+            >
               <CheckCircle className="w-3 h-3 mr-1" />
               Mark Delivered
             </Button>
@@ -377,7 +422,10 @@ const SupplierCard = ({ supplier }: { supplier: Supplier }) => {
           <Avatar className="w-12 h-12">
             <AvatarImage src={supplier.avatar} alt={supplier.name} />
             <AvatarFallback>
-              {supplier.name.split(' ').map(n => n[0]).join('')}
+              {supplier.name
+                .split(' ')
+                .map(n => n[0])
+                .join('')}
             </AvatarFallback>
           </Avatar>
           <div>
@@ -396,7 +444,7 @@ const SupplierCard = ({ supplier }: { supplier: Supplier }) => {
                 <span className="font-semibold">{supplier.rating}</span>
                 <div className="flex">
                   {[...Array(5)].map((_, i) => (
-                    <div 
+                    <div
                       key={i}
                       className={`w-3 h-3 rounded-full mr-1 ${
                         i < Math.floor(supplier.rating) ? 'bg-yellow-400' : 'bg-gray-200'
@@ -451,33 +499,60 @@ export const InventoryManagement: React.FC = () => {
   const { toast } = useToast();
 
   // Live data from backend
-  const { data: inventoryData, loading: itemsLoading, error: itemsError, refetch: refetchItems } = useInventoryItems();
-  const { data: suppliersData, loading: suppliersLoading, error: suppliersError } = useInventorySuppliers();
-  const { data: purchaseOrdersData, loading: poLoading, error: poError, refetch: refetchPO } = usePurchaseOrders();
-  const { data: metricsData, loading: metricsLoading, error: metricsError } = useInventoryMetrics();
-  const { createPurchaseOrder, updatePurchaseOrderStatus, updateStock, loading: invMutLoading } = useInventoryMutations();
+  const {
+    data: inventoryData,
+    loading: _itemsLoading,
+    error: _itemsError,
+    refetch: refetchItems,
+  } = useInventoryItems();
+  const {
+    data: suppliersData,
+    loading: _suppliersLoading,
+    error: _suppliersError,
+  } = useInventorySuppliers();
+  const {
+    data: purchaseOrdersData,
+    loading: _poLoading,
+    error: _poError,
+    refetch: refetchPO,
+  } = usePurchaseOrders();
+  const {
+    data: metricsData,
+    loading: _metricsLoading,
+    error: _metricsError,
+  } = useInventoryMetrics();
+  const {
+    createPurchaseOrder,
+    updatePurchaseOrderStatus,
+    updateStock,
+    loading: invMutLoading,
+  } = useInventoryMutations();
 
   const inventory: any[] = inventoryData || [];
   const suppliers: any[] = suppliersData || [];
   const purchaseOrders: any[] = purchaseOrdersData || [];
-  const metrics: InventoryMetrics = metricsData || {
-    totalItems: inventory.length,
-    totalValue: inventory.reduce((sum, it: any) => sum + (it.totalValue || 0), 0),
-    lowStockItems: inventory.filter((it: any) => it.status === 'low_stock').length,
-    expiringSoonItems: 0,
-    outOfStockItems: inventory.filter((it: any) => it.status === 'out_of_stock').length,
-    averageStockLevel: 0,
-    monthlyConsumption: 0,
-    costSavings: 0,
-  } as any;
+  const metrics: InventoryMetrics =
+    metricsData ||
+    ({
+      totalItems: inventory.length,
+      totalValue: inventory.reduce((sum, it: any) => sum + (it.totalValue || 0), 0),
+      lowStockItems: inventory.filter((it: any) => it.status === 'low_stock').length,
+      expiringSoonItems: 0,
+      outOfStockItems: inventory.filter((it: any) => it.status === 'out_of_stock').length,
+      averageStockLevel: 0,
+      monthlyConsumption: 0,
+      costSavings: 0,
+    } as any);
 
   // Filter inventory items
   const filteredInventory = useMemo(() => {
     return inventory.filter((item: any) => {
-      const matchesSearch = (item.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      const matchesSearch =
+        (item.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         (item.category || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         (item.sku || '').toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategory = filterCategory === 'all' || (item.category || '').toLowerCase() === filterCategory;
+      const matchesCategory =
+        filterCategory === 'all' || (item.category || '').toLowerCase() === filterCategory;
       return matchesSearch && matchesCategory;
     });
   }, [inventory, searchTerm, filterCategory]);
@@ -496,8 +571,8 @@ export const InventoryManagement: React.FC = () => {
       await createPurchaseOrder({
         supplierId: selectedItem.supplier?.id,
         items: [
-          { itemId: selectedItem.id, quantity: reorderQty, unitPrice: selectedItem.costPerUnit }
-        ]
+          { itemId: selectedItem.id, quantity: reorderQty, unitPrice: selectedItem.costPerUnit },
+        ],
       });
       toast({ title: 'Reorder Created', description: `${selectedItem.name} x ${reorderQty}` });
       setReorderOpen(false);
@@ -519,7 +594,11 @@ export const InventoryManagement: React.FC = () => {
       toast({ title: 'Order Marked Delivered', description: order.orderNumber });
       await Promise.all([refetchItems(), refetchPO?.()]);
     } catch (e) {
-      toast({ title: 'Update Failed', description: 'Could not mark as delivered.', variant: 'destructive' });
+      toast({
+        title: 'Update Failed',
+        description: 'Could not mark as delivered.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -529,8 +608,12 @@ export const InventoryManagement: React.FC = () => {
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900" data-testid="inventory-header">Inventory Management</h1>
-            <p className="text-gray-600">Track stock levels, manage suppliers, and automate reorders</p>
+            <h1 className="text-3xl font-bold text-gray-900" data-testid="inventory-header">
+              Inventory Management
+            </h1>
+            <p className="text-gray-600">
+              Track stock levels, manage suppliers, and automate reorders
+            </p>
           </div>
           <div className="flex items-center space-x-3">
             <Button variant="outline">
@@ -563,7 +646,7 @@ export const InventoryManagement: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center">
@@ -571,13 +654,15 @@ export const InventoryManagement: React.FC = () => {
                   <DollarSign className="w-6 h-6 text-green-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-2xl font-bold">Rs.{(metrics.totalValue ?? 0).toLocaleString()}</p>
+                  <p className="text-2xl font-bold">
+                    Rs.{(metrics.totalValue ?? 0).toLocaleString()}
+                  </p>
                   <p className="text-gray-600">Total Value</p>
                 </div>
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center">
@@ -591,7 +676,7 @@ export const InventoryManagement: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center">
@@ -599,7 +684,9 @@ export const InventoryManagement: React.FC = () => {
                   <TrendingUp className="w-6 h-6 text-orange-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-2xl font-bold">Rs.{(metrics.costSavings ?? 0).toLocaleString()}</p>
+                  <p className="text-2xl font-bold">
+                    Rs.{(metrics.costSavings ?? 0).toLocaleString()}
+                  </p>
                   <p className="text-gray-600">Monthly Savings</p>
                 </div>
               </div>
@@ -623,14 +710,14 @@ export const InventoryManagement: React.FC = () => {
                 <Input
                   placeholder="Search items by name, category, or SKU..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={e => setSearchTerm(e.target.value)}
                   className="w-full"
                 />
               </div>
-              <select 
+              <select
                 className="px-3 py-2 border border-gray-200 rounded-md"
                 value={filterCategory}
-                onChange={(e) => setFilterCategory(e.target.value)}
+                onChange={e => setFilterCategory(e.target.value)}
               >
                 <option value="all">All Categories</option>
                 <option value="grains">Grains</option>
@@ -645,7 +732,9 @@ export const InventoryManagement: React.FC = () => {
             </div>
 
             {(itemsError || metricsError) && (
-              <div className="p-3 rounded bg-red-50 border border-red-200 text-red-800">Failed to load inventory data.</div>
+              <div className="p-3 rounded bg-red-50 border border-red-200 text-red-800">
+                Failed to load inventory data.
+              </div>
             )}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredInventory.map((item: any) => (
@@ -659,11 +748,17 @@ export const InventoryManagement: React.FC = () => {
           {/* Purchase Orders Tab */}
           <TabsContent value="orders" className="space-y-6">
             {poError && (
-              <div className="p-3 rounded bg-red-50 border border-red-200 text-red-800">Failed to load purchase orders.</div>
+              <div className="p-3 rounded bg-red-50 border border-red-200 text-red-800">
+                Failed to load purchase orders.
+              </div>
             )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {(purchaseOrders || []).map((order: any) => (
-                <PurchaseOrderCard key={order.id} order={order as any} onMarkDelivered={markDelivered} />
+                <PurchaseOrderCard
+                  key={order.id}
+                  order={order as any}
+                  onMarkDelivered={markDelivered}
+                />
               ))}
             </div>
           </TabsContent>
@@ -671,7 +766,9 @@ export const InventoryManagement: React.FC = () => {
           {/* Suppliers Tab */}
           <TabsContent value="suppliers" className="space-y-6">
             {suppliersError && (
-              <div className="p-3 rounded bg-red-50 border border-red-200 text-red-800">Failed to load suppliers.</div>
+              <div className="p-3 rounded bg-red-50 border border-red-200 text-red-800">
+                Failed to load suppliers.
+              </div>
             )}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {(suppliers || []).map((supplier: any) => (
@@ -691,9 +788,7 @@ export const InventoryManagement: React.FC = () => {
                   <div className="text-3xl font-bold text-blue-600 mb-2">
                     Rs.{(metrics.monthlyConsumption ?? 0).toLocaleString()}
                   </div>
-                  <p className="text-sm text-gray-600">
-                    +8.5% from last month
-                  </p>
+                  <p className="text-sm text-gray-600">+8.5% from last month</p>
                 </CardContent>
               </Card>
 
@@ -703,12 +798,10 @@ export const InventoryManagement: React.FC = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold text-green-600 mb-2">
-                    {(metrics.averageStockLevel ?? 0)}%
+                    {metrics.averageStockLevel ?? 0}%
                   </div>
                   <Progress value={metrics.averageStockLevel ?? 0} className="mb-2" />
-                  <p className="text-sm text-gray-600">
-                    Optimal stock maintenance
-                  </p>
+                  <p className="text-sm text-gray-600">Optimal stock maintenance</p>
                 </CardContent>
               </Card>
             </div>
@@ -721,9 +814,7 @@ export const InventoryManagement: React.FC = () => {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Create Purchase Order</DialogTitle>
-            <DialogDescription>
-              Reorder stock for {selectedItem?.name}
-            </DialogDescription>
+            <DialogDescription>Reorder stock for {selectedItem?.name}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-1">
@@ -738,7 +829,7 @@ export const InventoryManagement: React.FC = () => {
                 type="number"
                 min={1}
                 value={reorderQty}
-                onChange={(e) => setReorderQty(parseInt(e.target.value || '0', 10))}
+                onChange={e => setReorderQty(parseInt(e.target.value || '0', 10))}
                 data-testid="reorder-qty-input"
               />
             </div>

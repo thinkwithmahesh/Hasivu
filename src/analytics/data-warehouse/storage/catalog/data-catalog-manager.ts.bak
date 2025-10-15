@@ -1,0 +1,900 @@
+/**
+ * Data Catalog Manager - Real-world Implementation
+ * Manages data discovery, metadata, and catalog operations
+ */
+
+import { logger } from '../../../../utils/logger';
+import {
+  DataLakeDataset,
+  StorageLocation,
+  StorageFormat,
+  DataGovernancePolicy,
+  DataLineage
+} from '../../types/data-lake-types';
+
+export interface CatalogEntry {
+  id: string;
+  dataset: DataLakeDataset;
+  discoverable: boolean;
+  tags: string[];
+  owner: string;
+  steward?: string;
+  classification: 'public' | 'internal' | 'confidential' | 'restricted';
+  lastCrawled: Date;
+  popularity: number;
+  qualityScore: number;
+  governancePolicies: string[];
+  name: string;
+  description: string;
+  schema?: any;
+  format: StorageFormat;
+  createdAt: Date;
+  updatedAt: Date;
+  lastAccessedAt?: Date;
+  version: string;
+  lineage?: DataLineage;
+  size: number;
+}
+
+export interface CatalogSearchFilter {
+  query?: string;
+  tags?: string[];
+  owner?: string;
+  classification?: string[];
+  format?: StorageFormat[];
+  dateRange?: {
+    start: Date;
+    end: Date;
+  };
+  qualityThreshold?: number;
+}
+
+export interface CatalogStats {
+  totalDatasets: number;
+  totalSize: number;
+  formatDistribution: Record<StorageFormat, number>;
+  classificationDistribution: Record<string, number>;
+  popularDatasets: CatalogEntry[];
+  recentDatasets: CatalogEntry[];
+  qualityDistribution: {
+    high: number;
+    medium: number;
+    low: number;
+  };
+}
+
+export class DataCatalogManager {
+  private catalog: Map<string, CatalogEntry> = new Map();
+  private searchIndex: Map<string, Set<string>> = new Map();
+  private tagIndex: Map<string, Set<string>> = new Map();
+
+  constructor() {
+    logger.info('DataCatalogManager initialized');
+  }
+
+  async initialize(): Promise<void> {
+    logger.info('Initializing Data Catalog Manager');
+
+    try {
+      // Load existing catalog entries
+      await this.loadCatalog();
+
+      // Build search indexes
+      await this.buildSearchIndexes();
+
+      // Start background tasks
+      this.startBackgroundTasks();
+
+      logger.info('Data Catalog Manager initialization complete');
+    } catch (error: unknown) {
+      logger.error('Failed to initialize Data Catalog Manager', { error });
+      throw new Error(`Catalog initialization failed: ${(error instanceof Error ? error.message : String(error))}`);
+    }
+  }
+
+  async registerDataset(dataset: DataLakeDataset, metadata: {
+    owner: string;
+    steward?: string;
+    classification?: 'public' | 'internal' | 'confidential' | 'restricted';
+    tags?: string[];
+    discoverable?: boolean;
+  }): Promise<CatalogEntry> {
+    try {
+      logger.info('Registering dataset in catalog', {
+        datasetId: dataset.id,
+        owner: metadata.owner
+      });
+
+      const entry: CatalogEntry = {
+        id: `catalog_${dataset.id}_${Date.now()}`,
+        dataset,
+        discoverable: metadata.discoverable !== false,
+        tags: metadata.tags || [],
+        owner: metadata.owner,
+        steward: metadata.steward,
+        classification: metadata.classification || 'internal',
+        lastCrawled: new Date(),
+        popularity: 0,
+        qualityScore: await this.calculateQualityScore(dataset),
+        governancePolicies: [],
+        name: dataset.name,
+        description: dataset.description || '',
+        format: dataset.format || 'parquet',
+        createdAt: dataset.createdAt || new Date(),
+        updatedAt: new Date(),
+        lastAccessedAt: new Date(),
+        version: typeof dataset.version === 'string' ? dataset.version : dataset.version?.version || '1.0.0',
+        lineage: undefined,
+        size: dataset.size || 0
+      };
+
+      // Store in catalog
+      this.catalog.set(dataset.id, entry);
+
+      // Update search indexes
+      await this.updateSearchIndexes(entry);
+
+      // Apply default governance policies
+      await this.applyGovernancePolicies(entry);
+
+      logger.info('Dataset registered successfully', {
+        datasetId: dataset.id,
+        catalogId: entry.id,
+        qualityScore: entry.qualityScore
+      });
+
+      return entry;
+
+    } catch (error: unknown) {
+      logger.error('Failed to register dataset', { datasetId: dataset.id, error });
+      throw new Error(`Dataset registration failed: ${(error instanceof Error ? error.message : String(error))}`);
+    }
+  }
+
+  async updateDataset(datasetId: string, updates: Partial<CatalogEntry>): Promise<CatalogEntry> {
+    try {
+      const entry = this.catalog.get(datasetId);
+      if (!entry) {
+        throw new Error(`Dataset not found in catalog: ${datasetId}`);
+      }
+
+      // Update entry
+      const updatedEntry: CatalogEntry = {
+        ...entry,
+        ...updates,
+        lastCrawled: new Date()
+      };
+
+      this.catalog.set(datasetId, updatedEntry);
+
+      // Update search indexes
+      await this.updateSearchIndexes(updatedEntry);
+
+      logger.info('Dataset updated in catalog', {
+        datasetId,
+        catalogId: updatedEntry.id
+      });
+
+      return updatedEntry;
+
+    } catch (error: unknown) {
+      logger.error('Failed to update dataset', { datasetId, error });
+      throw new Error(`Dataset update failed: ${(error instanceof Error ? error.message : String(error))}`);
+    }
+  }
+
+  async removeDataset(datasetId: string): Promise<void> {
+    try {
+      logger.info('Removing dataset from catalog', { datasetId });
+
+      const entry = this.catalog.get(datasetId);
+      if (!entry) {
+        logger.warn('Dataset not found in catalog', { datasetId });
+        return;
+      }
+
+      // Remove from catalog
+      this.catalog.delete(datasetId);
+
+      // Remove from search indexes
+      await this.removeFromSearchIndexes(entry);
+
+      logger.info('Dataset removed from catalog', { datasetId });
+
+    } catch (error: unknown) {
+      logger.error('Failed to remove dataset', { datasetId, error });
+      throw new Error(`Dataset removal failed: ${(error instanceof Error ? error.message : String(error))}`);
+    }
+  }
+
+  async searchDatasets(filter: CatalogSearchFilter): Promise<CatalogEntry[]> {
+    try {
+      logger.debug('Searching datasets', { filter });
+
+      let results = Array.from(this.catalog.values());
+
+      // Apply discoverable filter
+      results = results.filter(entry => entry.discoverable);
+
+      // Apply text search
+      if (filter.query) {
+        const queryTerms = filter.query.toLowerCase().split(' ');
+        results = results.filter(entry => {
+          const searchText = [
+            entry.dataset.name,
+            entry.dataset.description,
+            ...entry.tags
+          ].join(' ').toLowerCase();
+
+          return queryTerms.every(term => searchText.includes(term));
+        });
+      }
+
+      // Apply tag filter
+      if (filter.tags && filter.tags.length > 0) {
+        results = results.filter(entry =>
+          filter.tags!.every(tag => entry.tags.includes(tag))
+        );
+      }
+
+      // Apply owner filter
+      if (filter.owner) {
+        results = results.filter(entry =>
+          entry.owner === filter.owner || entry.steward === filter.owner
+        );
+      }
+
+      // Apply classification filter
+      if (filter.classification && filter.classification.length > 0) {
+        results = results.filter(entry =>
+          filter.classification!.includes(entry.classification)
+        );
+      }
+
+      // Apply format filter
+      if (filter.format && filter.format.length > 0) {
+        results = results.filter(entry =>
+          filter.format!.includes(entry.dataset.format)
+        );
+      }
+
+      // Apply date range filter
+      if (filter.dateRange) {
+        results = results.filter(entry => {
+          const createdAt = entry.dataset.createdAt;
+          return createdAt >= filter.dateRange!.start && createdAt <= filter.dateRange!.end;
+        });
+      }
+
+      // Apply quality threshold filter
+      if (filter.qualityThreshold !== undefined) {
+        results = results.filter(entry => entry.qualityScore >= filter.qualityThreshold!);
+      }
+
+      // Sort by relevance (popularity + quality)
+      results.sort((a, b) => {
+        const scoreA = a.popularity * 0.6 + a.qualityScore * 0.4;
+        const scoreB = b.popularity * 0.6 + b.qualityScore * 0.4;
+        return scoreB - scoreA;
+      });
+
+      logger.debug('Dataset search completed', {
+        totalResults: results.length,
+        filter
+      });
+
+      return results;
+
+    } catch (error: unknown) {
+      logger.error('Failed to search datasets', { filter, error });
+      throw new Error(`Dataset search failed: ${(error instanceof Error ? error.message : String(error))}`);
+    }
+  }
+
+  async getDataset(datasetId: string): Promise<CatalogEntry | null> {
+    try {
+      const entry = this.catalog.get(datasetId);
+      if (entry) {
+        // Increment popularity
+        entry.popularity++;
+        this.catalog.set(datasetId, entry);
+      }
+      return entry || null;
+    } catch (error: unknown) {
+      logger.error('Failed to get dataset', { datasetId, error });
+      throw new Error(`Dataset retrieval failed: ${(error instanceof Error ? error.message : String(error))}`);
+    }
+  }
+
+  async getRelatedDatasets(datasetId: string, limit: number = 10): Promise<CatalogEntry[]> {
+    try {
+      const sourceEntry = this.catalog.get(datasetId);
+      if (!sourceEntry) {
+        return [];
+      }
+
+      const allEntries = Array.from(this.catalog.values())
+        .filter(entry => entry.dataset.id !== datasetId && entry.discoverable);
+
+      // Calculate similarity scores
+      const scored = allEntries.map(entry => ({
+        entry,
+        score: this.calculateSimilarity(sourceEntry, entry)
+      }));
+
+      // Sort by similarity and return top results
+      return scored
+        .sort((a, b) => b.score - a.score)
+        .slice(0, limit)
+        .map((item: any) => item.entry);
+
+    } catch (error: unknown) {
+      logger.error('Failed to get related datasets', { datasetId, error });
+      throw new Error(`Related datasets retrieval failed: ${(error instanceof Error ? error.message : String(error))}`);
+    }
+  }
+
+  async getDatasetLineage(datasetId: string): Promise<{
+    upstream: CatalogEntry[];
+    downstream: CatalogEntry[];
+  }> {
+    try {
+      // In a real implementation, this would trace actual data lineage
+      // For now, return mock data based on related datasets
+      const related = await this.getRelatedDatasets(datasetId, 5);
+
+      return {
+        upstream: related.slice(0, 2),
+        downstream: related.slice(2, 4)
+      };
+
+    } catch (error: unknown) {
+      logger.error('Failed to get dataset lineage', { datasetId, error });
+      throw new Error(`Lineage retrieval failed: ${(error instanceof Error ? error.message : String(error))}`);
+    }
+  }
+
+  async getCatalogStats(): Promise<CatalogStats> {
+    try {
+      const entries = Array.from(this.catalog.values());
+
+      const formatDistribution: Record<StorageFormat, number> = {} as any;
+      const classificationDistribution: Record<string, number> = {};
+      let totalSize = 0;
+
+      entries.forEach(entry => {
+        // Format distribution
+        formatDistribution[entry.dataset.format] = (formatDistribution[entry.dataset.format] || 0) + 1;
+
+        // Classification distribution
+        classificationDistribution[entry.classification] = (classificationDistribution[entry.classification] || 0) + 1;
+
+        // Total size
+        totalSize += entry.dataset.size || 0;
+      });
+
+      // Quality distribution
+      const qualityDistribution = {
+        high: entries.filter(e => e.qualityScore >= 0.8).length,
+        medium: entries.filter(e => e.qualityScore >= 0.5 && e.qualityScore < 0.8).length,
+        low: entries.filter(e => e.qualityScore < 0.5).length
+      };
+
+      // Popular datasets (top 10 by popularity)
+      const popularDatasets = entries
+        .sort((a, b) => b.popularity - a.popularity)
+        .slice(0, 10);
+
+      // Recent datasets (last 10 by creation date)
+      const recentDatasets = entries
+        .sort((a, b) => b.dataset.createdAt.getTime() - a.dataset.createdAt.getTime())
+        .slice(0, 10);
+
+      return {
+        totalDatasets: entries.length,
+        totalSize,
+        formatDistribution,
+        classificationDistribution,
+        popularDatasets,
+        recentDatasets,
+        qualityDistribution
+      };
+
+    } catch (error: unknown) {
+      logger.error('Failed to get catalog stats', { error });
+      throw new Error(`Catalog stats retrieval failed: ${(error instanceof Error ? error.message : String(error))}`);
+    }
+  }
+
+  async tagDataset(datasetId: string, tags: string[]): Promise<void> {
+    try {
+      const entry = this.catalog.get(datasetId);
+      if (!entry) {
+        throw new Error(`Dataset not found: ${datasetId}`);
+      }
+
+      // Add new tags
+      const newTags = Array.from(new Set([...entry.tags, ...tags]));
+      entry.tags = newTags;
+
+      this.catalog.set(datasetId, entry);
+
+      // Update tag index
+      tags.forEach(tag => {
+        if (!this.tagIndex.has(tag)) {
+          this.tagIndex.set(tag, new Set());
+        }
+        this.tagIndex.get(tag)!.add(datasetId);
+      });
+
+      logger.info('Dataset tagged successfully', {
+        datasetId,
+        newTags: tags,
+        totalTags: newTags.length
+      });
+
+    } catch (error: unknown) {
+      logger.error('Failed to tag dataset', { datasetId, tags, error });
+      throw new Error(`Dataset tagging failed: ${(error instanceof Error ? error.message : String(error))}`);
+    }
+  }
+
+  async getTagSuggestions(datasetId: string): Promise<string[]> {
+    try {
+      const entry = this.catalog.get(datasetId);
+      if (!entry) {
+        return [];
+      }
+
+      // Find similar datasets and suggest their tags
+      const relatedDatasets = await this.getRelatedDatasets(datasetId, 10);
+      const allTags = relatedDatasets.flatMap(dataset => dataset.tags);
+
+      // Count tag frequency and filter out existing tags
+      const tagCounts = new Map<string, number>();
+      allTags.forEach(tag => {
+        if (!entry.tags.includes(tag)) {
+          tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
+        }
+      });
+
+      // Return top suggestions
+      return Array.from(tagCounts.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10)
+        .map(([tag]) => tag);
+
+    } catch (error: unknown) {
+      logger.error('Failed to get tag suggestions', { datasetId, error });
+      return [];
+    }
+  }
+
+  private async loadCatalog(): Promise<void> {
+    // In real implementation, would load from persistent storage
+    logger.debug('Loading catalog from storage');
+  }
+
+  private async buildSearchIndexes(): Promise<void> {
+    logger.debug('Building search indexes');
+
+    this.searchIndex.clear();
+    this.tagIndex.clear();
+
+    this.catalog.forEach((entry, datasetId) => {
+      this.updateSearchIndexesSync(entry);
+    });
+  }
+
+  private async updateSearchIndexes(entry: CatalogEntry): Promise<void> {
+    this.updateSearchIndexesSync(entry);
+  }
+
+  private updateSearchIndexesSync(entry: CatalogEntry): void {
+    const datasetId = entry.dataset.id;
+
+    // Build text search index
+    const searchTerms = [
+      entry.dataset.name,
+      entry.dataset.description || '',
+      ...entry.tags,
+      entry.owner,
+      entry.steward || ''
+    ];
+
+    searchTerms.forEach(term => {
+      if (term) {
+        const normalizedTerm = term.toLowerCase();
+        if (!this.searchIndex.has(normalizedTerm)) {
+          this.searchIndex.set(normalizedTerm, new Set());
+        }
+        this.searchIndex.get(normalizedTerm)!.add(datasetId);
+      }
+    });
+
+    // Build tag index
+    entry.tags.forEach(tag => {
+      if (!this.tagIndex.has(tag)) {
+        this.tagIndex.set(tag, new Set());
+      }
+      this.tagIndex.get(tag)!.add(datasetId);
+    });
+  }
+
+  private async removeFromSearchIndexes(entry: CatalogEntry): Promise<void> {
+    const datasetId = entry.dataset.id;
+
+    // Remove from search index
+    this.searchIndex.forEach((datasetSet, term) => {
+      datasetSet.delete(datasetId);
+      if (datasetSet.size === 0) {
+        this.searchIndex.delete(term);
+      }
+    });
+
+    // Remove from tag index
+    this.tagIndex.forEach((datasetSet, tag) => {
+      datasetSet.delete(datasetId);
+      if (datasetSet.size === 0) {
+        this.tagIndex.delete(tag);
+      }
+    });
+  }
+
+  private async calculateQualityScore(dataset: DataLakeDataset): Promise<number> {
+    let score = 0;
+
+    // Base score factors
+    if (dataset.name && dataset.name.length > 0) score += 0.2;
+    if (dataset.description && dataset.description.length > 10) score += 0.3;
+    if (dataset.schema) score += 0.2;
+    if (dataset.size && dataset.size > 0) score += 0.1;
+    if (dataset.lastModified) score += 0.1;
+
+    // Schema quality (if available)
+    if (dataset.schema) {
+      // Add points for well-defined schema
+      score += 0.1;
+    }
+
+    return Math.min(score, 1.0);
+  }
+
+  private calculateSimilarity(entry1: CatalogEntry, entry2: CatalogEntry): number {
+    let similarity = 0;
+
+    // Tag similarity
+    const commonTags = entry1.tags.filter(tag => entry2.tags.includes(tag));
+    const totalTags = new Set([...entry1.tags, ...entry2.tags]).size;
+    if (totalTags > 0) {
+      similarity += (commonTags.length / totalTags) * 0.4;
+    }
+
+    // Format similarity
+    if (entry1.dataset.format === entry2.dataset.format) {
+      similarity += 0.2;
+    }
+
+    // Owner/steward similarity
+    if (entry1.owner === entry2.owner || entry1.steward === entry2.steward) {
+      similarity += 0.2;
+    }
+
+    // Classification similarity
+    if (entry1.classification === entry2.classification) {
+      similarity += 0.1;
+    }
+
+    // Name similarity (basic string comparison)
+    const name1 = entry1.dataset.name.toLowerCase();
+    const name2 = entry2.dataset.name.toLowerCase();
+    if (name1.includes(name2) || name2.includes(name1)) {
+      similarity += 0.1;
+    }
+
+    return similarity;
+  }
+
+  private async applyGovernancePolicies(entry: CatalogEntry): Promise<void> {
+    // Apply default governance policies based on classification
+    const defaultPolicies: Record<string, string[]> = {
+      'public': ['data_retention_7_years'],
+      'internal': ['data_retention_5_years', 'access_logging'],
+      'confidential': ['data_retention_3_years', 'access_logging', 'encryption_required'],
+      'restricted': ['data_retention_1_year', 'access_logging', 'encryption_required', 'approval_required']
+    };
+
+    entry.governancePolicies = defaultPolicies[entry.classification] || [];
+  }
+
+  private startBackgroundTasks(): void {
+    // Start periodic tasks like crawling, quality scoring updates, etc.
+    setInterval(() => {
+      this.updateQualityScores();
+    }, 24 * 60 * 60 * 1000); // Daily
+
+    setInterval(() => {
+      this.optimizeIndexes();
+    }, 7 * 24 * 60 * 60 * 1000); // Weekly
+  }
+
+  private async updateQualityScores(): Promise<void> {
+    try {
+      for (const [datasetId, entry] of Array.from(this.catalog)) {
+        const newScore = await this.calculateQualityScore(entry.dataset);
+        if (Math.abs(newScore - entry.qualityScore) > 0.1) {
+          entry.qualityScore = newScore;
+          this.catalog.set(datasetId, entry);
+        }
+      }
+    } catch (error: unknown) {
+      logger.error('Failed to update quality scores', { error });
+    }
+  }
+
+  private async optimizeIndexes(): Promise<void> {
+    try {
+      logger.info('Optimizing catalog indexes');
+      await this.buildSearchIndexes();
+      logger.info('Catalog indexes optimized');
+    } catch (error: unknown) {
+      logger.error('Failed to optimize indexes', { error });
+    }
+  }
+
+  async search(
+    query: string,
+    filters?: {
+      tags?: string[];
+      format?: string;
+      createdAfter?: Date;
+      createdBefore?: Date;
+    }
+  ): Promise<CatalogEntry[]> {
+    try {
+      logger.debug('Searching catalog', { query, filters });
+
+      const searchTerms = query.toLowerCase().split(' ').filter(term => term.length > 0);
+      const results: CatalogEntry[] = [];
+
+      // Search through all catalog entries
+      for (const [datasetId, entry] of this.catalog) {
+        let matchScore = 0;
+
+        // Text matching
+        const searchableText = [
+          entry.name,
+          entry.description,
+          ...(entry.tags || []),
+          entry.schema?.name || ''
+        ].join(' ').toLowerCase();
+
+        searchTerms.forEach(term => {
+          if (searchableText.includes(term)) {
+            matchScore += 1;
+          }
+        });
+
+        // Apply filters
+        let passesFilters = true;
+
+        if (filters?.tags && filters.tags.length > 0) {
+          const entryTags = entry.tags || [];
+          const hasMatchingTag = filters.tags.some(tag => entryTags.includes(tag));
+          if (!hasMatchingTag) {
+            passesFilters = false;
+          }
+        }
+
+        if (filters?.format && entry.format !== filters.format) {
+          passesFilters = false;
+        }
+
+        if (filters?.createdAfter && entry.createdAt < filters.createdAfter) {
+          passesFilters = false;
+        }
+
+        if (filters?.createdBefore && entry.createdAt > filters.createdBefore) {
+          passesFilters = false;
+        }
+
+        // Include if has match score and passes filters
+        if (matchScore > 0 && passesFilters) {
+          results.push(entry);
+        }
+      }
+
+      // Sort by relevance (match score)
+      results.sort((a, b) => {
+        const aScore = this.calculateRelevanceScore(a, searchTerms);
+        const bScore = this.calculateRelevanceScore(b, searchTerms);
+        return bScore - aScore;
+      });
+
+      logger.debug('Catalog search completed', {
+        query,
+        resultCount: results.length
+      });
+
+      return results;
+
+    } catch (error: unknown) {
+      logger.error('Failed to search catalog', { query, filters, error });
+      throw new Error(`Catalog search failed: ${(error instanceof Error ? error.message : String(error))}`);
+    }
+  }
+
+  async getLineage(datasetId: string): Promise<DataLineage | null> {
+    try {
+      logger.debug('Getting data lineage', { datasetId });
+
+      const entry = this.catalog.get(datasetId);
+      if (!entry) {
+        return null;
+      }
+
+      const lineage: DataLineage = {
+        datasetId,
+        source: datasetId,
+        upstream: entry.lineage?.upstream || [],
+        downstream: entry.lineage?.downstream || [],
+        transformations: entry.lineage?.transformations || [],
+        dependencies: this.findDependencies(datasetId),
+        impact: {
+          upstreamCount: 0,
+          downstreamCount: 0,
+          criticalityScore: 0.5,
+          businessImpact: 'medium',
+          affectedSystems: [],
+          affectedUsers: [],
+          affectedDatasets: [],
+          estimatedRecords: 0,
+          recoveryTime: 60
+        }
+      };
+
+      logger.debug('Data lineage retrieved', {
+        datasetId,
+        dependencyCount: lineage.dependencies.length,
+        transformationCount: lineage.transformations.length
+      });
+
+      return lineage;
+
+    } catch (error: unknown) {
+      logger.error('Failed to get data lineage', { datasetId, error });
+      throw new Error(`Lineage retrieval failed: ${(error instanceof Error ? error.message : String(error))}`);
+    }
+  }
+
+  async getStatistics(): Promise<{
+    totalDatasets: number;
+    totalSize: number;
+    formatDistribution: Record<string, number>;
+    tagDistribution: Record<string, number>;
+    averageDatasetSize: number;
+    recentActivity: {
+      created: number;
+      updated: number;
+      accessed: number;
+    };
+  }> {
+    try {
+      logger.debug('Calculating catalog statistics');
+
+      const stats = {
+        totalDatasets: this.catalog.size,
+        totalSize: 0,
+        formatDistribution: {} as Record<string, number>,
+        tagDistribution: {} as Record<string, number>,
+        averageDatasetSize: 0,
+        recentActivity: {
+          created: 0,
+          updated: 0,
+          accessed: 0
+        }
+      };
+
+      const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+      for (const [_, entry] of this.catalog) {
+        // Size statistics
+        stats.totalSize += entry.size || 0;
+
+        // Format distribution
+        const format = entry.format || 'unknown';
+        stats.formatDistribution[format] = (stats.formatDistribution[format] || 0) + 1;
+
+        // Tag distribution
+        (entry.tags || []).forEach(tag => {
+          stats.tagDistribution[tag] = (stats.tagDistribution[tag] || 0) + 1;
+        });
+
+        // Recent activity
+        if (entry.createdAt > oneWeekAgo) {
+          stats.recentActivity.created++;
+        }
+        if (entry.updatedAt > oneWeekAgo) {
+          stats.recentActivity.updated++;
+        }
+        if (entry.lastAccessedAt && entry.lastAccessedAt > oneWeekAgo) {
+          stats.recentActivity.accessed++;
+        }
+      }
+
+      stats.averageDatasetSize = stats.totalDatasets > 0
+        ? stats.totalSize / stats.totalDatasets
+        : 0;
+
+      logger.debug('Catalog statistics calculated', {
+        totalDatasets: stats.totalDatasets,
+        totalSize: stats.totalSize,
+        averageSize: stats.averageDatasetSize
+      });
+
+      return stats;
+
+    } catch (error: unknown) {
+      logger.error('Failed to get catalog statistics', { error });
+      throw new Error(`Statistics calculation failed: ${(error instanceof Error ? error.message : String(error))}`);
+    }
+  }
+
+  private calculateRelevanceScore(entry: CatalogEntry, searchTerms: string[]): number {
+    let score = 0;
+    const searchableText = [
+      entry.name,
+      entry.description,
+      ...(entry.tags || [])
+    ].join(' ').toLowerCase();
+
+    searchTerms.forEach(term => {
+      // Exact match in name gets highest score
+      if (entry.name.toLowerCase().includes(term)) {
+        score += 10;
+      }
+      // Match in description gets medium score
+      if (entry.description?.toLowerCase().includes(term)) {
+        score += 5;
+      }
+      // Match in tags gets lower score
+      if ((entry.tags || []).some(tag => tag.toLowerCase().includes(term))) {
+        score += 3;
+      }
+    });
+
+    return score;
+  }
+
+  private findDependencies(datasetId: string): DataLineage['dependencies'] {
+    const dependencies: DataLineage['dependencies'] = [];
+
+    // Search through all entries to find dependencies
+    for (const [id, entry] of this.catalog) {
+      if (id !== datasetId && entry.lineage?.dependencies?.some(dep => dep.sourceId === datasetId || dep.targetId === datasetId)) {
+        dependencies.push({
+          sourceId: id,
+          targetId: datasetId,
+          type: 'hard',
+          description: `Dependency from ${id} to ${datasetId}`,
+          lastValidated: new Date()
+        });
+      }
+    }
+
+    return dependencies;
+  }
+
+  async shutdown(): Promise<void> {
+    logger.info('Shutting down Data Catalog Manager');
+
+    // Clear indexes and catalog
+    this.catalog.clear();
+    this.searchIndex.clear();
+    this.tagIndex.clear();
+
+    logger.info('Data Catalog Manager shutdown complete');
+  }
+}
+
+export default DataCatalogManager;

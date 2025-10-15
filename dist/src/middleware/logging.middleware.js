@@ -40,7 +40,7 @@ const loggingMiddleware = (req, res, next) => {
     }
     catch (error) {
         logger_1.logger.error('Logging middleware error', {
-            error: error instanceof Error ? error.message : 'Unknown error',
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error',
             stack: error instanceof Error ? error.stack : undefined,
             requestId: req.requestId
         });
@@ -66,7 +66,7 @@ const requestLogger = (req, res, next) => {
     }
     catch (error) {
         logger_1.logger.error('Request logger error', {
-            error: error instanceof Error ? error.message : 'Unknown error',
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error',
             requestId: req.requestId
         });
         next(error);
@@ -93,7 +93,7 @@ const auditLogger = (req, res, next) => {
     }
     catch (error) {
         logger_1.logger.error('Audit logger error', {
-            error: error instanceof Error ? error.message : 'Unknown error',
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error',
             requestId: req.requestId
         });
         next(error);
@@ -104,7 +104,7 @@ const errorLogger = (error, req, res, next) => {
     const errorDetails = {
         requestId: req.requestId,
         error: {
-            message: error.message,
+            message: error instanceof Error ? error.message : String(error),
             stack: error.stack,
             name: error.name,
             code: error.code

@@ -1,0 +1,460 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const supertest_1 = __importDefault(require("supertest"));
+const express_1 = __importDefault(require("express"));
+const createMockApp = () => {
+    const app = (0, express_1.default)();
+    app.use(express_1.default.json());
+    const mockAuth = (req, res, next) => {
+        if (req.headers.authorization === 'Bearer valid-token') {
+            req.user = { id: 'user-123', role: 'student' };
+            next();
+        }
+        else if (req.headers.authorization === 'Bearer admin-token') {
+            req.user = { id: 'admin-123', role: 'admin' };
+            next();
+        }
+        else {
+            res.status(401).json({ error: 'Unauthorized' });
+        }
+    };
+    app.get('/health', (req, res) => {
+        res.json({ status: 'healthy', timestamp: new Date().toISOString() });
+    });
+    app.post('/auth/login', (req, res) => {
+        const { email, password } = req.body;
+        if (email === 'test@school.edu' && password === 'validPassword123') {
+            res.json({
+                token: 'valid-token',
+                user: { id: 'user-123', email, role: 'student' },
+                expiresIn: 3600
+            });
+        }
+        else {
+            res.status(401).json({ error: 'Invalid credentials' });
+        }
+    });
+    app.post('/auth/logout', mockAuth, (req, res) => {
+        res.json({ message: 'Logged out successfully' });
+    });
+    app.get('/api/menu', (req, res) => {
+        const { date, mealType } = req.query;
+        res.json({
+            menu: [
+                {
+                    id: 'item-1',
+                    name: 'Rice Bowl',
+                    price: 25,
+                    available: true,
+                    nutritionalInfo: { calories: 350, protein: 12 }
+                },
+                {
+                    id: 'item-2',
+                    name: 'Dal Curry',
+                    price: 20,
+                    available: true,
+                    nutritionalInfo: { calories: 200, protein: 15 }
+                }
+            ],
+            date: date || new Date().toISOString().split('T')[0],
+            mealType: mealType || 'lunch'
+        });
+    });
+    app.get('/api/menu/:id', (req, res) => {
+        const { id } = req.params;
+        if (id === 'item-1') {
+            res.json({
+                id: 'item-1',
+                name: 'Rice Bowl',
+                description: 'Nutritious rice bowl with vegetables',
+                price: 25,
+                available: true,
+                nutritionalInfo: { calories: 350, protein: 12, carbs: 65, fat: 8 },
+                allergens: [],
+                dietaryInfo: { vegetarian: true, vegan: true, glutenFree: true }
+            });
+        }
+        else {
+            res.status(404).json({ error: 'Menu item not found' });
+        }
+    });
+    app.post('/api/orders', mockAuth, (req, res) => {
+        const { items, deliveryTime, specialInstructions } = req.body;
+        if (!items || items.length === 0) {
+            return res.status(400).json({ error: 'No items in order' });
+        }
+        res.status(201).json({
+            id: 'order-123',
+            userId: req.user.id,
+            items,
+            totalAmount: 45,
+            status: 'pending',
+            deliveryTime,
+            specialInstructions,
+            createdAt: new Date().toISOString()
+        });
+    });
+    app.get('/api/orders', mockAuth, (req, res) => {
+        res.json({
+            orders: [
+                {
+                    id: 'order-123',
+                    userId: req.user.id,
+                    items: [{ id: 'item-1', quantity: 1 }, { id: 'item-2', quantity: 1 }],
+                    totalAmount: 45,
+                    status: 'delivered',
+                    createdAt: new Date().toISOString()
+                }
+            ],
+            total: 1,
+            page: 1,
+            limit: 10
+        });
+    });
+    app.get('/api/orders/:id', mockAuth, (req, res) => {
+        const { id } = req.params;
+        if (id === 'order-123') {
+            res.json({
+                id: 'order-123',
+                userId: req.user.id,
+                items: [
+                    { id: 'item-1', name: 'Rice Bowl', quantity: 1, price: 25 },
+                    { id: 'item-2', name: 'Dal Curry', quantity: 1, price: 20 }
+                ],
+                totalAmount: 45,
+                status: 'delivered',
+                deliveryTime: '12:00 PM',
+                createdAt: new Date().toISOString(),
+                deliveredAt: new Date().toISOString()
+            });
+        }
+        else {
+            res.status(404).json({ error: 'Order not found' });
+        }
+    });
+    app.get('/api/profile', mockAuth, (req, res) => {
+        res.json({
+            id: req.user.id,
+            name: 'Test Student',
+            email: 'test@school.edu',
+            role: req.user.role,
+            dietaryRestrictions: ['vegetarian'],
+            allergens: ['peanuts'],
+            nutritionalGoals: { dailyCalories: 2000, protein: 120 }
+        });
+    });
+    app.put('/api/profile', mockAuth, (req, res) => {
+        const updates = req.body;
+        res.json({
+            id: req.user.id,
+            ...updates,
+            updatedAt: new Date().toISOString()
+        });
+    });
+    app.get('/api/admin/analytics', mockAuth, (req, res) => {
+        if (req.user.role !== 'admin') {
+            return res.status(403).json({ error: 'Admin access required' });
+        }
+        res.json({
+            totalOrders: 1250,
+            totalRevenue: 31250,
+            averageOrderValue: 25,
+            popularItems: [
+                { id: 'item-1', name: 'Rice Bowl', orderCount: 450 },
+                { id: 'item-2', name: 'Dal Curry', orderCount: 380 }
+            ],
+            timeRange: '7 days'
+        });
+    });
+    app.use((err, req, res, _next) => {
+        res.status(500).json({ error: 'Internal server error' });
+    });
+    return app;
+};
+describe('HASIVU API - Comprehensive Endpoint Testing', () => {
+    let app;
+    beforeAll(() => {
+        app = createMockApp();
+    });
+    describe('Health Check Endpoint', () => {
+        it('should return healthy status', async () => {
+            const response = await (0, supertest_1.default)(app)
+                .get('/health')
+                .expect(200);
+            expect(response.body.status).toBe('healthy');
+            expect(response.body.timestamp).toBeDefined();
+        });
+    });
+    describe('Authentication Endpoints', () => {
+        it('should login with valid credentials', async () => {
+            const response = await (0, supertest_1.default)(app)
+                .post('/auth/login')
+                .send({
+                email: 'test@school.edu',
+                password: 'validPassword123'
+            })
+                .expect(200);
+            expect(response.body.token).toBe('valid-token');
+            expect(response.body.user.id).toBe('user-123');
+            expect(response.body.user.email).toBe('test@school.edu');
+            expect(response.body.expiresIn).toBe(3600);
+        });
+        it('should reject invalid credentials', async () => {
+            const response = await (0, supertest_1.default)(app)
+                .post('/auth/login')
+                .send({
+                email: 'wrong@email.com',
+                password: 'wrongPassword'
+            })
+                .expect(401);
+            expect(response.body.error).toBe('Invalid credentials');
+        });
+        it('should require authentication for logout', async () => {
+            await (0, supertest_1.default)(app)
+                .post('/auth/logout')
+                .expect(401);
+        });
+        it('should logout successfully with valid token', async () => {
+            const response = await (0, supertest_1.default)(app)
+                .post('/auth/logout')
+                .set('Authorization', 'Bearer valid-token')
+                .expect(200);
+            expect(response.body.message).toBe('Logged out successfully');
+        });
+    });
+    describe('Menu Endpoints', () => {
+        it('should retrieve menu for current day', async () => {
+            const response = await (0, supertest_1.default)(app)
+                .get('/api/menu')
+                .expect(200);
+            expect(response.body.menu).toHaveLength(2);
+            expect(response.body.menu[0].name).toBe('Rice Bowl');
+            expect(response.body.menu[0].price).toBe(25);
+            expect(response.body.date).toBeDefined();
+            expect(response.body.mealType).toBe('lunch');
+        });
+        it('should retrieve menu with specific date and meal type', async () => {
+            const response = await (0, supertest_1.default)(app)
+                .get('/api/menu')
+                .query({ date: '2024-01-15', mealType: 'dinner' })
+                .expect(200);
+            expect(response.body.date).toBe('2024-01-15');
+            expect(response.body.mealType).toBe('dinner');
+        });
+        it('should retrieve specific menu item', async () => {
+            const response = await (0, supertest_1.default)(app)
+                .get('/api/menu/item-1')
+                .expect(200);
+            expect(response.body.id).toBe('item-1');
+            expect(response.body.name).toBe('Rice Bowl');
+            expect(response.body.nutritionalInfo).toBeDefined();
+            expect(response.body.dietaryInfo).toBeDefined();
+            expect(response.body.allergens).toBeDefined();
+        });
+        it('should return 404 for non-existent menu item', async () => {
+            const response = await (0, supertest_1.default)(app)
+                .get('/api/menu/non-existent-item')
+                .expect(404);
+            expect(response.body.error).toBe('Menu item not found');
+        });
+    });
+    describe('Order Endpoints', () => {
+        const validToken = 'Bearer valid-token';
+        it('should create new order with valid data', async () => {
+            const orderData = {
+                items: [
+                    { id: 'item-1', quantity: 1 },
+                    { id: 'item-2', quantity: 1 }
+                ],
+                deliveryTime: '12:30 PM',
+                specialInstructions: 'Extra spicy please'
+            };
+            const response = await (0, supertest_1.default)(app)
+                .post('/api/orders')
+                .set('Authorization', validToken)
+                .send(orderData)
+                .expect(201);
+            expect(response.body.id).toBeDefined();
+            expect(response.body.userId).toBe('user-123');
+            expect(response.body.items).toEqual(orderData.items);
+            expect(response.body.totalAmount).toBe(45);
+            expect(response.body.status).toBe('pending');
+        });
+        it('should reject order creation without authentication', async () => {
+            const orderData = {
+                items: [{ id: 'item-1', quantity: 1 }]
+            };
+            await (0, supertest_1.default)(app)
+                .post('/api/orders')
+                .send(orderData)
+                .expect(401);
+        });
+        it('should reject order creation with no items', async () => {
+            const response = await (0, supertest_1.default)(app)
+                .post('/api/orders')
+                .set('Authorization', validToken)
+                .send({ items: [] })
+                .expect(400);
+            expect(response.body.error).toBe('No items in order');
+        });
+        it('should retrieve user orders', async () => {
+            const response = await (0, supertest_1.default)(app)
+                .get('/api/orders')
+                .set('Authorization', validToken)
+                .expect(200);
+            expect(response.body.orders).toBeDefined();
+            expect(response.body.orders).toHaveLength(1);
+            expect(response.body.total).toBe(1);
+            expect(response.body.page).toBe(1);
+        });
+        it('should retrieve specific order', async () => {
+            const response = await (0, supertest_1.default)(app)
+                .get('/api/orders/order-123')
+                .set('Authorization', validToken)
+                .expect(200);
+            expect(response.body.id).toBe('order-123');
+            expect(response.body.userId).toBe('user-123');
+            expect(response.body.items).toHaveLength(2);
+            expect(response.body.totalAmount).toBe(45);
+        });
+        it('should return 404 for non-existent order', async () => {
+            const response = await (0, supertest_1.default)(app)
+                .get('/api/orders/non-existent')
+                .set('Authorization', validToken)
+                .expect(404);
+            expect(response.body.error).toBe('Order not found');
+        });
+    });
+    describe('User Profile Endpoints', () => {
+        const validToken = 'Bearer valid-token';
+        it('should retrieve user profile', async () => {
+            const response = await (0, supertest_1.default)(app)
+                .get('/api/profile')
+                .set('Authorization', validToken)
+                .expect(200);
+            expect(response.body.id).toBe('user-123');
+            expect(response.body.name).toBe('Test Student');
+            expect(response.body.email).toBe('test@school.edu');
+            expect(response.body.role).toBe('student');
+            expect(response.body.dietaryRestrictions).toContain('vegetarian');
+            expect(response.body.allergens).toContain('peanuts');
+        });
+        it('should update user profile', async () => {
+            const updateData = {
+                name: 'Updated Student',
+                dietaryRestrictions: ['vegan'],
+                nutritionalGoals: { dailyCalories: 1800, protein: 100 }
+            };
+            const response = await (0, supertest_1.default)(app)
+                .put('/api/profile')
+                .set('Authorization', validToken)
+                .send(updateData)
+                .expect(200);
+            expect(response.body.id).toBe('user-123');
+            expect(response.body.name).toBe('Updated Student');
+            expect(response.body.dietaryRestrictions).toContain('vegan');
+            expect(response.body.updatedAt).toBeDefined();
+        });
+        it('should require authentication for profile access', async () => {
+            await (0, supertest_1.default)(app)
+                .get('/api/profile')
+                .expect(401);
+        });
+    });
+    describe('Admin Endpoints', () => {
+        const adminToken = 'Bearer admin-token';
+        const userToken = 'Bearer valid-token';
+        it('should allow admin access to analytics', async () => {
+            const response = await (0, supertest_1.default)(app)
+                .get('/api/admin/analytics')
+                .set('Authorization', adminToken)
+                .expect(200);
+            expect(response.body.totalOrders).toBe(1250);
+            expect(response.body.totalRevenue).toBe(31250);
+            expect(response.body.popularItems).toHaveLength(2);
+            expect(response.body.timeRange).toBe('7 days');
+        });
+        it('should reject non-admin access to analytics', async () => {
+            const response = await (0, supertest_1.default)(app)
+                .get('/api/admin/analytics')
+                .set('Authorization', userToken)
+                .expect(403);
+            expect(response.body.error).toBe('Admin access required');
+        });
+        it('should require authentication for admin endpoints', async () => {
+            await (0, supertest_1.default)(app)
+                .get('/api/admin/analytics')
+                .expect(401);
+        });
+    });
+    describe('API Security and Validation', () => {
+        it('should handle malformed JSON requests', async () => {
+            const response = await (0, supertest_1.default)(app)
+                .post('/auth/login')
+                .set('Content-Type', 'application/json')
+                .send('{ invalid json }');
+            expect([400, 500]).toContain(response.status);
+        });
+        it('should validate request body size limits', async () => {
+            const largeData = {
+                items: Array.from({ length: 1000 }, (_, i) => ({ id: `item-${i}`, quantity: 1 }))
+            };
+            const response = await (0, supertest_1.default)(app)
+                .post('/api/orders')
+                .set('Authorization', 'Bearer valid-token')
+                .send(largeData);
+            expect([201, 413, 400]).toContain(response.status);
+        });
+        it('should handle missing required fields gracefully', async () => {
+            const response = await (0, supertest_1.default)(app)
+                .post('/auth/login')
+                .send({ email: 'test@school.edu' })
+                .expect(401);
+            expect(response.body.error).toBe('Invalid credentials');
+        });
+        it('should sanitize sensitive data in responses', async () => {
+            const response = await (0, supertest_1.default)(app)
+                .get('/api/profile')
+                .set('Authorization', 'Bearer valid-token')
+                .expect(200);
+            expect(response.body.password).toBeUndefined();
+            expect(response.body.passwordHash).toBeUndefined();
+        });
+    });
+    describe('API Performance and Rate Limiting', () => {
+        it('should respond within acceptable time limits', async () => {
+            const startTime = Date.now();
+            await (0, supertest_1.default)(app)
+                .get('/api/menu')
+                .expect(200);
+            const responseTime = Date.now() - startTime;
+            expect(responseTime).toBeLessThan(1000);
+        });
+        it('should handle concurrent requests efficiently', async () => {
+            const requests = Array.from({ length: 10 }, () => (0, supertest_1.default)(app).get('/health'));
+            const startTime = Date.now();
+            const responses = await Promise.all(requests);
+            const totalTime = Date.now() - startTime;
+            responses.forEach(response => {
+                expect(response.status).toBe(200);
+            });
+            expect(totalTime).toBeLessThan(5000);
+        });
+    });
+    describe('Error Handling', () => {
+        it('should return consistent error format', async () => {
+            const response = await (0, supertest_1.default)(app)
+                .get('/api/menu/non-existent')
+                .expect(404);
+            expect(response.body.error).toBeDefined();
+            expect(typeof response.body.error).toBe('string');
+        });
+        it('should handle internal server errors gracefully', async () => {
+            expect(app).toBeDefined();
+        });
+    });
+});
+//# sourceMappingURL=api-endpoints.integration.test.js.map

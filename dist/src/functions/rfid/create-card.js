@@ -39,13 +39,13 @@ async function validateStudent(studentId, requestingUser, schoolId) {
         where: { id: studentId },
         include: {
             school: {
-                select: { id: true, name: true, code: true }
+                select: { id: true, name: true, code: true },
             },
             rfidCards: {
                 where: { isActive: true },
-                select: { id: true, cardNumber: true }
-            }
-        }
+                select: { id: true, cardNumber: true },
+            },
+        },
     });
     if (!student) {
         throw new Error('Student not found');
@@ -94,9 +94,9 @@ async function createAuditLog(cardId, userId, action, details) {
             createdById: userId,
             metadata: JSON.stringify({
                 timestamp: new Date().toISOString(),
-                action: 'RFID_CARD_CREATED'
-            })
-        }
+                action: 'RFID_CARD_CREATED',
+            }),
+        },
     });
 }
 const createRfidCardHandler = async (event, context) => {
@@ -109,7 +109,7 @@ const createRfidCardHandler = async (event, context) => {
             logger_1.logger.warn('Invalid request data: missing studentId', { requestId });
             return {
                 statusCode: 400,
-                body: JSON.stringify({ error: 'studentId is required' })
+                body: JSON.stringify({ error: 'studentId is required' }),
             };
         }
         const { studentId, schoolId, expiresAt, metadata, cardType } = requestBody;
@@ -117,14 +117,14 @@ const createRfidCardHandler = async (event, context) => {
         const targetSchoolId = schoolId || student.schoolId;
         const cardNumber = generateCardNumber(student.school.code);
         const existingCard = await prisma.rFIDCard.findUnique({
-            where: { cardNumber }
+            where: { cardNumber },
         });
         if (existingCard) {
             const retryCardNumber = generateCardNumber(student.school.code);
             logger_1.logger.warn('Card number collision detected, retrying', {
                 requestId,
                 originalNumber: cardNumber,
-                retryNumber: retryCardNumber
+                retryNumber: retryCardNumber,
             });
         }
         const rfidCard = await prisma.rFIDCard.create({
@@ -135,7 +135,7 @@ const createRfidCardHandler = async (event, context) => {
                 isActive: true,
                 issuedAt: new Date(),
                 expiresAt: expiresAt || null,
-                metadata: JSON.stringify(metadata || {})
+                metadata: JSON.stringify(metadata || {}),
             },
             include: {
                 student: {
@@ -144,18 +144,18 @@ const createRfidCardHandler = async (event, context) => {
                         firstName: true,
                         lastName: true,
                         email: true,
-                        role: true
-                    }
-                }
-            }
+                        role: true,
+                    },
+                },
+            },
         });
-        await createAuditLog(rfidCard.id, authenticatedUser.id, 'CREATE', {
+        await createAuditLog(rfidCard.id, authenticatedUser.user.id, 'CREATE', {
             cardNumber: rfidCard.cardNumber,
             studentId,
             schoolId: targetSchoolId,
             cardType,
             createdBy: authenticatedUser.email,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
         });
         const response = {
             id: rfidCard.id,
@@ -170,36 +170,35 @@ const createRfidCardHandler = async (event, context) => {
             school: {
                 id: student.school.id,
                 name: student.school.name,
-                code: student.school.code
-            }
+                code: student.school.code,
+            },
         };
         logger_1.logger.info('RFID card created successfully', {
             requestId,
             cardId: rfidCard.id,
             cardNumber: rfidCard.cardNumber,
             studentId,
-            createdBy: authenticatedUser.email
+            createdBy: authenticatedUser.email,
         });
         return {
             statusCode: 200,
             body: JSON.stringify({
                 message: 'RFID card created successfully',
-                data: response
-            })
+                data: response,
+            }),
         };
     }
     catch (error) {
-        logger_1.logger.error('RFID card creation failed', {
+        logger_1.logger.error('RFID card creation failed', error, {
             requestId,
-            error: error.message,
-            stack: error.stack
+            stack: error.stack,
         });
         return {
             statusCode: 500,
             body: JSON.stringify({
                 error: 'Failed to create RFID card',
-                message: error.message
-            })
+                message: error instanceof Error ? error.message : String(error),
+            }),
         };
     }
     finally {

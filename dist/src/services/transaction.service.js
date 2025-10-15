@@ -129,7 +129,7 @@ class TransactionService {
                         logger_1.logger.warn(`Retryable error in transaction ${transactionId}, attempt ${retryCount}`, {
                             transactionId,
                             retryCount,
-                            error: error.message
+                            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
                         });
                         const retryDelay = Math.min(500 * Math.pow(2, retryCount - 1), 2000);
                         await this.delay(retryDelay);
@@ -139,7 +139,7 @@ class TransactionService {
                     logger_1.logger.error(`Transaction ${transactionId} failed after ${retryCount} attempts`, {
                         transactionId,
                         retryCount,
-                        error: error.message,
+                        error: error.message || String(error),
                         stack: error.stack
                     });
                     throw error;
@@ -199,7 +199,7 @@ class TransactionService {
                 logger_1.logger.error(`Error acquiring distributed lock ${lockKey}`, {
                     lockKey,
                     attempt,
-                    error: error.message
+                    error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
                 });
                 if (attempt < maxRetries - 1) {
                     await this.delay(retryDelay);
@@ -230,7 +230,7 @@ class TransactionService {
             logger_1.logger.error(`Error releasing distributed lock ${lock.key}`, {
                 lockKey: lock.key,
                 token: lock.token,
-                error: error.message
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
             });
             return false;
         }
@@ -276,7 +276,7 @@ class TransactionService {
         }
     }
     isDeadlockError(error) {
-        const errorMessage = error.message?.toLowerCase() || '';
+        const errorMessage = error instanceof Error ? error.message : String(error)?.toLowerCase() || '';
         return errorMessage.includes('deadlock') ||
             errorMessage.includes('lock timeout') ||
             error.code === '40P01';
@@ -290,7 +290,7 @@ class TransactionService {
             'retry',
             'unavailable'
         ];
-        const errorMessage = error.message?.toLowerCase() || '';
+        const errorMessage = error instanceof Error ? error.message : String(error)?.toLowerCase() || '';
         return retryableErrors.some(keyword => errorMessage.includes(keyword));
     }
     calculateMetrics(context, startTime) {

@@ -19,10 +19,7 @@ interface SkeletonProps {
 
 export const Skeleton: React.FC<SkeletonProps> = ({ className, children }) => (
   <div
-    className={cn(
-      'animate-pulse rounded-md bg-gray-200',
-      className
-    )}
+    className={cn('animate-pulse rounded-md bg-gray-200', className)}
     role="status"
     aria-label="Loading content"
   >
@@ -59,29 +56,25 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   size = 'md',
   variant = 'default',
   className,
-  text
+  text,
 }) => {
   const sizeClasses = {
     sm: 'h-4 w-4',
     md: 'h-6 w-6',
     lg: 'h-8 w-8',
-    xl: 'h-12 w-12'
+    xl: 'h-12 w-12',
   };
 
   const variantClasses = {
     default: 'text-gray-600',
     primary: 'text-primary',
-    secondary: 'text-secondary'
+    secondary: 'text-secondary',
   };
 
   return (
     <div className={cn('flex flex-col items-center justify-center space-y-2', className)}>
-      <Loader2 
-        className={cn(
-          'animate-spin',
-          sizeClasses[size],
-          variantClasses[variant]
-        )}
+      <Loader2
+        className={cn('animate-spin', sizeClasses[size], variantClasses[variant])}
         aria-hidden="true"
       />
       {text && (
@@ -101,7 +94,7 @@ export const PageLoader: React.FC<{ text?: string }> = ({ text = 'Loading HASIVU
       <div className="mx-auto w-20 h-20 bg-gradient-to-r from-blue-500 to-green-500 rounded-full flex items-center justify-center">
         <Utensils className="w-10 h-10 text-white" />
       </div>
-      
+
       {/* Loading animation */}
       <div className="space-y-4">
         <LoadingSpinner size="lg" variant="primary" />
@@ -110,7 +103,7 @@ export const PageLoader: React.FC<{ text?: string }> = ({ text = 'Loading HASIVU
           <p className="text-gray-600">Preparing your school meal experience</p>
         </div>
       </div>
-      
+
       {/* Progress indicators */}
       <div className="flex justify-center space-x-1">
         {[...Array(3)].map((_, i) => (
@@ -123,7 +116,7 @@ export const PageLoader: React.FC<{ text?: string }> = ({ text = 'Loading HASIVU
               i === 2 && 'animation-delay-150'
             )}
             style={{
-              animationDelay: `${i * 0.15}s`
+              animationDelay: `${i * 0.15}s`,
             }}
           />
         ))}
@@ -159,7 +152,7 @@ export const StatsSkeleton: React.FC = () => (
       { icon: DollarSign, label: 'Revenue' },
       { icon: Users, label: 'Students' },
       { icon: TrendingUp, label: 'Orders' },
-      { icon: Clock, label: 'Avg Time' }
+      { icon: Clock, label: 'Avg Time' },
     ].map((stat, index) => (
       <Card key={index}>
         <CardContent className="p-6">
@@ -184,10 +177,7 @@ interface TableSkeletonProps {
   columns?: number;
 }
 
-export const TableSkeleton: React.FC<TableSkeletonProps> = ({ 
-  rows = 5, 
-  columns = 4 
-}) => (
+export const TableSkeleton: React.FC<TableSkeletonProps> = ({ rows = 5, columns = 4 }) => (
   <div className="w-full overflow-hidden">
     {/* Table header */}
     <div className="border-b border-gray-200 pb-3 mb-3">
@@ -197,17 +187,17 @@ export const TableSkeleton: React.FC<TableSkeletonProps> = ({
         ))}
       </div>
     </div>
-    
+
     {/* Table rows */}
     <div className="space-y-3">
       {[...Array(rows)].map((_, rowIndex) => (
         <div key={rowIndex} className="flex space-x-4">
           {[...Array(columns)].map((_, colIndex) => (
-            <Skeleton 
-              key={colIndex} 
+            <Skeleton
+              key={colIndex}
               className={cn(
                 'h-4 flex-1',
-                colIndex === 0 && 'w-8 h-8 rounded-full', // Avatar column
+                colIndex === 0 && 'w-8 h-8 rounded-full' // Avatar column
               )}
             />
           ))}
@@ -304,7 +294,7 @@ interface ListSkeletonProps {
 export const ListSkeleton: React.FC<ListSkeletonProps> = ({
   items = 5,
   showAvatar = false,
-  lines = 2
+  lines = 2,
 }) => (
   <div className="space-y-3">
     {[...Array(items)].map((_, i) => (
@@ -312,13 +302,7 @@ export const ListSkeleton: React.FC<ListSkeletonProps> = ({
         {showAvatar && <Skeleton className="w-10 h-10 rounded-full" />}
         <div className="flex-1 space-y-2">
           {[...Array(lines)].map((_, lineIndex) => (
-            <Skeleton 
-              key={lineIndex} 
-              className={cn(
-                'h-4',
-                lineIndex === 0 ? 'w-3/4' : 'w-1/2'
-              )} 
-            />
+            <Skeleton key={lineIndex} className={cn('h-4', lineIndex === 0 ? 'w-3/4' : 'w-1/2')} />
           ))}
         </div>
       </div>
@@ -336,7 +320,7 @@ interface LoadingOverlayProps {
 export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
   isLoading,
   text = 'Loading...',
-  children
+  children,
 }) => (
   <div className="relative">
     {children}
@@ -364,5 +348,5 @@ export {
   PageLoader,
   LoadingSpinner,
   Skeleton,
-  ShimmerSkeleton
+  ShimmerSkeleton,
 };

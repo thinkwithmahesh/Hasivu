@@ -1,0 +1,813 @@
+src/functions/analytics/executive-dashboard-engine.ts(708,60): error TS2339: Property 'quantity' does not exist on type '{ user: { role: string; status: string; id: string; schoolId: string; metadata: string; createdAt: Date; updatedAt: Date; email: string; firstName: string; lastName: string; phone: string; ... 17 more ...; deviceTokens: string; }; } & { ...; }'.
+src/functions/analytics/revenue-optimization-analyzer.ts(1693,36): error TS2339: Property 'reduce' does not exist on type 'unknown'.
+src/functions/analytics/revenue-optimization-analyzer.ts(1701,31): error TS2339: Property 'length' does not exist on type 'unknown'.
+src/functions/analytics/revenue-optimization-analyzer.ts(1702,41): error TS2339: Property 'length' does not exist on type 'unknown'.
+src/functions/analytics/revenue-optimization-analyzer.ts(1706,37): error TS2339: Property 'length' does not exist on type 'unknown'.
+src/functions/analytics/revenue-optimization-analyzer.ts(1707,46): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'any[]'.
+  Type '{}' is missing the following properties from type 'any[]': length, pop, push, concat, and 29 more.
+src/functions/analytics/revenue-optimization-analyzer.ts(1711,49): error TS2339: Property 'length' does not exist on type 'unknown'.
+src/functions/analytics/revenue-optimization-analyzer.ts(2400,13): error TS2554: Expected 1-3 arguments, but got 4.
+src/functions/auth/logout.ts(136,29): error TS2552: Cannot find name 'jwtService'. Did you mean 'JWTService'?
+src/functions/auth/logout.ts(174,15): error TS2552: Cannot find name 'jwtService'. Did you mean 'JWTService'?
+src/functions/auth/logout.ts(227,14): error TS2323: Cannot redeclare exported variable 'logoutAllHandler'.
+src/functions/auth/logout.ts(257,25): error TS2552: Cannot find name 'jwtService'. Did you mean 'JWTService'?
+src/functions/auth/logout.ts(301,10): error TS2323: Cannot redeclare exported variable 'logoutAllHandler'.
+src/functions/auth/logout.ts(301,10): error TS2484: Export declaration conflicts with exported declaration of 'logoutAllHandler'.
+src/functions/enterprise/cross-school-analytics.ts(780,19): error TS2345: Argument of type 'string' is not assignable to parameter of type 'Date'.
+src/functions/enterprise/cross-school-analytics.ts(786,19): error TS2345: Argument of type 'string[]' is not assignable to parameter of type 'Date'.
+  Type 'string[]' is missing the following properties from type 'Date': toDateString, toTimeString, toLocaleDateString, toLocaleTimeString, and 37 more.
+src/functions/enterprise/enterprise-billing-consolidation.ts(854,7): error TS2322: Type 'string' is not assignable to type '"CANCELLED" | "PENDING" | "COMPLETED" | "FAILED"'.
+src/functions/epic-7-2-parent-dashboard/child-progress-analytics.ts(21,10): error TS2440: Import declaration conflicts with local declaration of 'logger'.
+src/functions/epic-7-2-parent-dashboard/child-progress-analytics.ts(29,16): error TS2304: Cannot find name 'LoggerService'.
+src/functions/epic-7-2-parent-dashboard/child-progress-analytics.ts(30,12): error TS2552: Cannot find name 'LambdaDatabaseService'. Did you mean 'DatabaseService'?
+src/functions/epic-7-2-parent-dashboard/child-progress-analytics.ts(1645,58): error TS2345: Argument of type 'AuthenticationResult' is not assignable to parameter of type 'AuthenticatedUser'.
+  Property 'id' is optional in type 'AuthenticationResult' but required in type 'AuthenticatedUser'.
+src/functions/epic-7-2-parent-dashboard/child-progress-analytics.ts(1647,57): error TS2345: Argument of type 'AuthenticationResult' is not assignable to parameter of type 'AuthenticatedUser'.
+src/functions/epic-7-2-parent-dashboard/child-progress-analytics.ts(1649,61): error TS2345: Argument of type 'AuthenticationResult' is not assignable to parameter of type 'AuthenticatedUser'.
+src/functions/epic-7-2-parent-dashboard/child-progress-analytics.ts(1651,74): error TS2554: Expected 1-3 arguments, but got 5.
+src/functions/epic-7-2-parent-dashboard/child-progress-analytics.ts(1663,88): error TS2554: Expected 1-2 arguments, but got 4.
+src/functions/epic-7-2-parent-dashboard/child-progress-analytics.ts(1707,7): error TS2554: Expected 1-2 arguments, but got 4.
+src/functions/epic-7-2-parent-dashboard/child-progress-analytics.ts(1765,7): error TS2554: Expected 1-2 arguments, but got 4.
+src/functions/epic-7-2-parent-dashboard/child-progress-analytics.ts(1822,7): error TS2554: Expected 1-2 arguments, but got 4.
+src/functions/epic-7-2-parent-dashboard/dashboard-customization.ts(23,10): error TS2724: '"../../shared/database.service"' has no exported member named 'LambdaDatabaseService'. Did you mean 'DatabaseService'?
+src/functions/epic-7-2-parent-dashboard/dashboard-customization.ts(823,13): error TS2322: Type '"summary"' is not assignable to type '"detailed" | "simple" | "compact"'.
+src/functions/epic-7-2-parent-dashboard/dashboard-customization.ts(1345,9): error TS2698: Spread types may only be created from object types.
+src/functions/epic-7-2-parent-dashboard/dashboard-customization.ts(1634,61): error TS2345: Argument of type 'AuthenticationResult' is not assignable to parameter of type 'AuthenticatedUser'.
+src/functions/epic-7-2-parent-dashboard/dashboard-customization.ts(1636,64): error TS2345: Argument of type 'AuthenticationResult' is not assignable to parameter of type 'AuthenticatedUser'.
+src/functions/epic-7-2-parent-dashboard/dashboard-customization.ts(1638,66): error TS2345: Argument of type 'AuthenticationResult' is not assignable to parameter of type 'AuthenticatedUser'.
+src/functions/epic-7-2-parent-dashboard/dashboard-customization.ts(1640,65): error TS2345: Argument of type 'AuthenticationResult' is not assignable to parameter of type 'AuthenticatedUser'.
+src/functions/epic-7-2-parent-dashboard/dashboard-customization.ts(1642,74): error TS2554: Expected 1-3 arguments, but got 5.
+src/functions/epic-7-2-parent-dashboard/dashboard-customization.ts(1654,93): error TS2554: Expected 1-2 arguments, but got 4.
+src/functions/epic-7-2-parent-dashboard/dashboard-customization.ts(1707,7): error TS2554: Expected 1-2 arguments, but got 4.
+src/functions/epic-7-2-parent-dashboard/dashboard-customization.ts(1758,7): error TS2554: Expected 1-2 arguments, but got 4.
+src/functions/epic-7-2-parent-dashboard/dashboard-customization.ts(1809,7): error TS2554: Expected 1-2 arguments, but got 4.
+src/functions/epic-7-2-parent-dashboard/dashboard-customization.ts(1861,7): error TS2554: Expected 1-2 arguments, but got 4.
+src/functions/epic-7-2-parent-dashboard/engagement-intelligence.ts(22,10): error TS2724: '"../../shared/database.service"' has no exported member named 'LambdaDatabaseService'. Did you mean 'DatabaseService'?
+src/functions/epic-7-2-parent-dashboard/engagement-intelligence.ts(1436,69): error TS2345: Argument of type 'AuthenticationResult' is not assignable to parameter of type 'AuthenticatedUser'.
+src/functions/epic-7-2-parent-dashboard/engagement-intelligence.ts(1438,68): error TS2345: Argument of type 'AuthenticationResult' is not assignable to parameter of type 'AuthenticatedUser'.
+src/functions/epic-7-2-parent-dashboard/engagement-intelligence.ts(1440,61): error TS2345: Argument of type 'AuthenticationResult' is not assignable to parameter of type 'AuthenticatedUser'.
+src/functions/epic-7-2-parent-dashboard/engagement-intelligence.ts(1442,74): error TS2554: Expected 1-3 arguments, but got 5.
+src/functions/epic-7-2-parent-dashboard/engagement-intelligence.ts(1454,93): error TS2554: Expected 1-2 arguments, but got 4.
+src/functions/epic-7-2-parent-dashboard/engagement-intelligence.ts(1490,7): error TS2554: Expected 1-2 arguments, but got 4.
+src/functions/epic-7-2-parent-dashboard/engagement-intelligence.ts(1533,7): error TS2554: Expected 1-2 arguments, but got 4.
+src/functions/epic-7-2-parent-dashboard/engagement-intelligence.ts(1592,7): error TS2554: Expected 1-2 arguments, but got 4.
+src/functions/epic-7-2-parent-dashboard/parent-dashboard-orchestrator.ts(20,10): error TS2724: '"../../shared/database.service"' has no exported member named 'LambdaDatabaseService'. Did you mean 'DatabaseService'?
+src/functions/epic-7-2-parent-dashboard/parent-dashboard-orchestrator.ts(98,16): error TS2304: Cannot find name 'ChildPreferences'.
+src/functions/epic-7-2-parent-dashboard/parent-dashboard-orchestrator.ts(99,17): error TS2304: Cannot find name 'AlertSummary'.
+src/functions/epic-7-2-parent-dashboard/parent-dashboard-orchestrator.ts(925,98): error TS2339: Property 'value' does not exist on type 'PromiseSettledResult<any>'.
+  Property 'value' does not exist on type 'PromiseRejectedResult'.
+src/functions/epic-7-2-parent-dashboard/parent-dashboard-orchestrator.ts(926,107): error TS2339: Property 'value' does not exist on type 'PromiseSettledResult<any>'.
+  Property 'value' does not exist on type 'PromiseRejectedResult'.
+src/functions/epic-7-2-parent-dashboard/parent-dashboard-orchestrator.ts(927,109): error TS2339: Property 'value' does not exist on type 'PromiseSettledResult<any>'.
+  Property 'value' does not exist on type 'PromiseRejectedResult'.
+src/functions/epic-7-2-parent-dashboard/parent-dashboard-orchestrator.ts(928,112): error TS2339: Property 'value' does not exist on type 'PromiseSettledResult<any>'.
+  Property 'value' does not exist on type 'PromiseRejectedResult'.
+src/functions/epic-7-2-parent-dashboard/parent-dashboard-orchestrator.ts(933,39): error TS2339: Property 'value' does not exist on type 'PromiseSettledResult<any>'.
+  Property 'value' does not exist on type 'PromiseRejectedResult'.
+src/functions/epic-7-2-parent-dashboard/parent-dashboard-orchestrator.ts(1132,59): error TS2345: Argument of type 'AuthenticationResult' is not assignable to parameter of type 'AuthenticatedUser'.
+src/functions/epic-7-2-parent-dashboard/parent-dashboard-orchestrator.ts(1134,62): error TS2345: Argument of type 'AuthenticationResult' is not assignable to parameter of type 'AuthenticatedUser'.
+src/functions/epic-7-2-parent-dashboard/parent-dashboard-orchestrator.ts(1136,74): error TS2554: Expected 1-3 arguments, but got 5.
+src/functions/epic-7-2-parent-dashboard/parent-dashboard-orchestrator.ts(1148,79): error TS2554: Expected 1-2 arguments, but got 4.
+src/functions/epic-7-2-parent-dashboard/parent-dashboard-orchestrator.ts(1199,7): error TS2554: Expected 1-2 arguments, but got 4.
+src/functions/epic-7-2-parent-dashboard/parent-dashboard-orchestrator.ts(1235,11): error TS2554: Expected 1-2 arguments, but got 4.
+src/functions/epic-7-2-parent-dashboard/parent-dashboard-orchestrator.ts(1263,11): error TS2554: Expected 1-2 arguments, but got 4.
+src/functions/epic-7-2-parent-dashboard/parent-dashboard-orchestrator.ts(1268,70): error TS2554: Expected 1-3 arguments, but got 5.
+src/functions/epic-7-2-parent-dashboard/personalized-insights-engine.ts(21,10): error TS2724: '"../../shared/database.service"' has no exported member named 'LambdaDatabaseService'. Did you mean 'DatabaseService'?
+src/functions/epic-7-2-parent-dashboard/personalized-insights-engine.ts(1180,63): error TS2345: Argument of type 'AuthenticationResult' is not assignable to parameter of type 'AuthenticatedUser'.
+src/functions/epic-7-2-parent-dashboard/personalized-insights-engine.ts(1182,63): error TS2345: Argument of type 'AuthenticationResult' is not assignable to parameter of type 'AuthenticatedUser'.
+src/functions/epic-7-2-parent-dashboard/personalized-insights-engine.ts(1184,74): error TS2554: Expected 1-3 arguments, but got 5.
+src/functions/epic-7-2-parent-dashboard/personalized-insights-engine.ts(1196,78): error TS2554: Expected 1-2 arguments, but got 4.
+src/functions/epic-7-2-parent-dashboard/personalized-insights-engine.ts(1236,7): error TS2554: Expected 1-2 arguments, but got 4.
+src/functions/epic-7-2-parent-dashboard/personalized-insights-engine.ts(1280,7): error TS2554: Expected 1-2 arguments, but got 4.
+src/functions/rfid/photo-verification.ts(147,25): error TS2339: Property 'user' does not exist on type 'AuthenticatedUser'.
+src/functions/rfid/photo-verification.ts(148,23): error TS2339: Property 'user' does not exist on type 'AuthenticatedUser'.
+src/functions/rfid/photo-verification.ts(157,48): error TS2339: Property 'user' does not exist on type 'AuthenticatedUser'.
+src/functions/rfid/photo-verification.ts(385,13): error TS2698: Spread types may only be created from object types.
+src/functions/rfid/photo-verification.ts(472,77): error TS2345: Argument of type 'AuthenticationResult' is not assignable to parameter of type 'AuthenticatedUser'.
+src/functions/rfid/photo-verification.ts(610,77): error TS2345: Argument of type 'AuthenticationResult' is not assignable to parameter of type 'AuthenticatedUser'.
+src/functions/rfid/photo-verification.ts(710,77): error TS2345: Argument of type 'AuthenticationResult' is not assignable to parameter of type 'AuthenticatedUser'.
+src/functions/vendor/ai-procurement-engine.ts(20,24): error TS2307: Cannot find module '../utils/logger' or its corresponding type declarations.
+src/functions/vendor/ai-procurement-engine.ts(21,31): error TS2307: Cannot find module '../database/multi-tenant-prisma' or its corresponding type declarations.
+src/functions/vendor/ai-procurement-engine.ts(22,34): error TS2307: Cannot find module '../monitoring/metrics-collector' or its corresponding type declarations.
+src/functions/vendor/ai-procurement-engine.ts(23,33): error TS2307: Cannot find module '../security/security-manager' or its corresponding type declarations.
+src/functions/vendor/ai-procurement-engine.ts(24,37): error TS2307: Cannot find module '../security/compliance-validator' or its corresponding type declarations.
+src/functions/vendor/ai-procurement-engine.ts(460,51): error TS2345: Argument of type '{ schoolId: string; tenantId: string; productCategories: string[]; deliveryRadius: number; budgetRange: [number?, number?, ...unknown[]]; qualityRequirements: { category: string; standard: string; minimumScore: number; mandatory: boolean; }[]; certificationRequirements: string[]; deliverySchedule: { ...; }; volumeRe...' is not assignable to parameter of type 'VendorMatchingCriteria'.
+  Types of property 'budgetRange' are incompatible.
+    Type '[number?, number?, ...unknown[]]' is not assignable to type '[number, number]'.
+      Target requires 2 element(s) but source may have fewer.
+src/functions/vendor/ai-procurement-engine.ts(474,81): error TS2345: Argument of type '{ schoolId: string; tenantId: string; productCategories: string[]; deliveryRadius: number; budgetRange: [number?, number?, ...unknown[]]; qualityRequirements: { category: string; standard: string; minimumScore: number; mandatory: boolean; }[]; certificationRequirements: string[]; deliverySchedule: { ...; }; volumeRe...' is not assignable to parameter of type 'VendorMatchingCriteria'.
+src/functions/vendor/ai-procurement-engine.ts(480,66): error TS2339: Property 'compositeScore' does not exist on type 'VendorMatch'.
+src/functions/vendor/ai-procurement-engine.ts(480,85): error TS2339: Property 'compositeScore' does not exist on type 'VendorMatch'.
+src/functions/vendor/ai-procurement-engine.ts(489,9): error TS2345: Argument of type '{ schoolId: string; tenantId: string; productCategories: string[]; deliveryRadius: number; budgetRange: [number?, number?, ...unknown[]]; qualityRequirements: { category: string; standard: string; minimumScore: number; mandatory: boolean; }[]; certificationRequirements: string[]; deliverySchedule: { ...; }; volumeRe...' is not assignable to parameter of type 'VendorMatchingCriteria'.
+src/functions/vendor/ai-procurement-engine.ts(494,71): error TS2345: Argument of type '{ schoolId: string; tenantId: string; productCategories: string[]; deliveryRadius: number; budgetRange: [number?, number?, ...unknown[]]; qualityRequirements: { category: string; standard: string; minimumScore: number; mandatory: boolean; }[]; certificationRequirements: string[]; deliverySchedule: { ...; }; volumeRe...' is not assignable to parameter of type 'VendorMatchingCriteria'.
+src/functions/vendor/ai-procurement-engine.ts(528,19): error TS2304: Cannot find name 'validatedCriteria'.
+src/functions/vendor/ai-procurement-engine.ts(658,42): error TS2551: Property 'generateForecastRecommendations' does not exist on type 'AIProcurementEngine'. Did you mean 'generateMatchingRecommendations'?
+src/functions/vendor/ai-procurement-engine.ts(665,32): error TS2339: Property 'identifyForecastRisks' does not exist on type 'AIProcurementEngine'.
+src/functions/vendor/ai-procurement-engine.ts(760,41): error TS2339: Property 'collectCurrentPricing' does not exist on type 'AIProcurementEngine'.
+src/functions/vendor/ai-procurement-engine.ts(768,37): error TS2339: Property 'collectMarketIntelligence' does not exist on type 'AIProcurementEngine'.
+src/functions/vendor/ai-procurement-engine.ts(774,41): error TS2339: Property 'analyzeVendorPricing' does not exist on type 'AIProcurementEngine'.
+src/functions/vendor/ai-procurement-engine.ts(794,41): error TS2551: Property 'optimizeProductPricing' does not exist on type 'AIProcurementEngine'. Did you mean 'optimizePricing'?
+src/functions/vendor/ai-procurement-engine.ts(807,45): error TS2339: Property 'generateImplementationPlan' does not exist on type 'AIProcurementEngine'.
+src/functions/vendor/ai-procurement-engine.ts(813,35): error TS2339: Property 'assessOptimizationRisk' does not exist on type 'AIProcurementEngine'.
+src/functions/vendor/ai-procurement-engine.ts(916,41): error TS2339: Property 'analyzeAndGenerateSpecifications' does not exist on type 'AIProcurementEngine'.
+src/functions/vendor/ai-procurement-engine.ts(923,45): error TS2339: Property 'generateEvaluationCriteria' does not exist on type 'AIProcurementEngine'.
+src/functions/vendor/ai-procurement-engine.ts(935,45): error TS2339: Property 'generateTermsAndConditions' does not exist on type 'AIProcurementEngine'.
+src/functions/vendor/ai-procurement-engine.ts(959,45): error TS2339: Property 'getRecommendedVendorsForRFP' does not exist on type 'AIProcurementEngine'.
+src/functions/vendor/ai-procurement-engine.ts(973,27): error TS2345: Argument of type '{ schoolId: string; tenantId: string; requirements: { category: string; specifications: { attribute: string; requirement: string; mandatory: boolean; weight: number; }[]; quantity: { minimum: number; maximum: number; preferred: number; unit: string; frequency: string; }; deliveryRequirements: { ...; }[]; qualityStan...' is not assignable to parameter of type 'RFPRequest'.
+  Type '{ schoolId: string; tenantId: string; requirements: { category: string; specifications: { attribute: string; requirement: string; mandatory: boolean; weight: number; }[]; quantity: { minimum: number; maximum: number; preferred: number; unit: string; frequency: string; }; deliveryRequirements: { ...; }[]; qualityStan...' is missing the following properties from type 'RFPRequest': rfpId, generatedAt, status
+src/functions/vendor/ai-procurement-engine.ts(998,9): error TS2322: Type '{ schoolId: string; tenantId: string; requirements: { category: string; specifications: { attribute: string; requirement: string; mandatory: boolean; weight: number; }[]; quantity: { minimum: number; maximum: number; preferred: number; unit: string; frequency: string; }; deliveryRequirements: { ...; }[]; qualityStan...' is not assignable to type 'RFPRequest'.
+src/integration/vendor-marketplace-integration.ts(17,24): error TS2307: Cannot find module '../lib/logger' or its corresponding type declarations.
+src/integration/vendor-marketplace-integration.ts(44,17): error TS2554: Expected 2-3 arguments, but got 1.
+src/integration/vendor-marketplace-integration.ts(46,15): error TS2554: Expected 2-3 arguments, but got 1.
+src/integration/vendor-marketplace-integration.ts(54,11): error TS2554: Expected 2-3 arguments, but got 1.
+src/integration/vendor-marketplace-integration.ts(196,69): error TS2339: Property 'success' does not exist on type '{ data: any; servicesInvolved: string[]; }'.
+src/integration/vendor-marketplace-integration.ts(197,53): error TS2559: Type 'number' has no properties in common with type 'CacheOptions'.
+src/integration/vendor-marketplace-integration.ts(356,93): error TS2345: Argument of type 'unknown' is not assignable to parameter of type '{ schoolId: string; categoryId: string; itemType: string; quantity: number; urgency: "high" | "critical" | "medium" | "low"; budget: { min: number; max: number; currency: string; }; qualitySpecs: { ...; }; deliveryRequirements: { ...; }; sustainabilityRequirements: { ...; }; riskTolerance: "moderate" | ... 1 more .....'.
+  Type '{}' is missing the following properties from type '{ schoolId: string; categoryId: string; itemType: string; quantity: number; urgency: "high" | "critical" | "medium" | "low"; budget: { min: number; max: number; currency: string; }; qualitySpecs: { ...; }; deliveryRequirements: { ...; }; sustainabilityRequirements: { ...; }; riskTolerance: "moderate" | ... 1 more .....': schoolId, categoryId, itemType, quantity, and 7 more.
+src/integration/vendor-marketplace-integration.ts(391,73): error TS2345: Argument of type 'unknown' is not assignable to parameter of type '{ schoolId: string; procurementId: string; template: "maintenance" | "standard" | "services" | "food_service" | "equipment"; urgency: "emergency" | "standard" | "expedited"; evaluationCriteria: { ...; }; customRequirements?: string[]; complianceRequirements?: string[]; }'.
+  Type '{}' is missing the following properties from type '{ schoolId: string; procurementId: string; template: "maintenance" | "standard" | "services" | "food_service" | "equipment"; urgency: "emergency" | "standard" | "expedited"; evaluationCriteria: { ...; }; customRequirements?: string[]; complianceRequirements?: string[]; }': schoolId, procurementId, template, urgency, evaluationCriteria
+src/integration/vendor-marketplace-integration.ts(403,31): error TS2345: Argument of type '{ eventType: string; source: string; data: { requestId: string; schoolId: string; rfpId: any; }; priority: "medium"; }' is not assignable to parameter of type 'Omit<{ eventId: string; eventType: string; source: string; data: Record<any, unknown>; timestamp: string; priority: "high" | "critical" | "medium" | "low"; retryCount: number; maxRetries: number; target?: string; }, "timestamp" | "eventId">'.
+  Type '{ eventType: string; source: string; data: { requestId: string; schoolId: string; rfpId: any; }; priority: "medium"; }' is missing the following properties from type 'Omit<{ eventId: string; eventType: string; source: string; data: Record<any, unknown>; timestamp: string; priority: "high" | "critical" | "medium" | "low"; retryCount: number; maxRetries: number; target?: string; }, "timestamp" | "eventId">': maxRetries, retryCount
+src/integration/vendor-marketplace-integration.ts(409,23): error TS2339: Property 'procurementId' does not exist on type 'unknown'.
+src/integration/vendor-marketplace-integration.ts(425,83): error TS2345: Argument of type 'unknown' is not assignable to parameter of type '{ orderId: string; schoolId: string; orderType: "bulk" | "urgent" | "standard" | "special"; items: { itemId: string; quantity: number; urgency: "high" | "critical" | "medium" | "low"; specifications?: Record<...>; qualityRequirements?: string[]; }[]; deliveryRequirements: { ...; }; budgetConstraints: { ...; }; quali...'.
+  Type '{}' is missing the following properties from type '{ orderId: string; schoolId: string; orderType: "bulk" | "urgent" | "standard" | "special"; items: { itemId: string; quantity: number; urgency: "high" | "critical" | "medium" | "low"; specifications?: Record<...>; qualityRequirements?: string[]; }[]; deliveryRequirements: { ...; }; budgetConstraints: { ...; }; quali...': orderId, schoolId, orderType, items, and 4 more.
+src/integration/vendor-marketplace-integration.ts(431,31): error TS2345: Argument of type '{ eventType: string; source: string; data: { requestId: string; schoolId: string; orchestrationId: string; vendorCount: number; }; priority: "high"; }' is not assignable to parameter of type 'Omit<{ eventId: string; eventType: string; source: string; data: Record<any, unknown>; timestamp: string; priority: "high" | "critical" | "medium" | "low"; retryCount: number; maxRetries: number; target?: string; }, "timestamp" | "eventId">'.
+  Type '{ eventType: string; source: string; data: { requestId: string; schoolId: string; orchestrationId: string; vendorCount: number; }; priority: "high"; }' is missing the following properties from type 'Omit<{ eventId: string; eventType: string; source: string; data: Record<any, unknown>; timestamp: string; priority: "high" | "critical" | "medium" | "low"; retryCount: number; maxRetries: number; target?: string; }, "timestamp" | "eventId">': maxRetries, retryCount
+src/integration/vendor-marketplace-integration.ts(454,61): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string'.
+src/integration/vendor-marketplace-integration.ts(457,67): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string'.
+src/integration/vendor-marketplace-integration.ts(470,86): error TS2345: Argument of type 'unknown' is not assignable to parameter of type '{ inspectionId: string; orderId: string; vendorId: string; items: { itemId: string; quantity: number; qualityStandards: string[]; batchNumber?: string; expiryDate?: string; }[]; inspectionType: "visual" | "automated" | "hybrid" | "laboratory"; qualityChecks: { ...; }[]; samplingStrategy: { ...; }; documentation: { ....'.
+  Type '{}' is missing the following properties from type '{ inspectionId: string; orderId: string; vendorId: string; items: { itemId: string; quantity: number; qualityStandards: string[]; batchNumber?: string; expiryDate?: string; }[]; inspectionType: "visual" | "automated" | "hybrid" | "laboratory"; qualityChecks: { ...; }[]; samplingStrategy: { ...; }; documentation: { ....': inspectionId, orderId, vendorId, items, and 4 more.
+src/integration/vendor-marketplace-integration.ts(474,24): error TS2339: Property 'vendorId' does not exist on type 'unknown'.
+src/integration/vendor-marketplace-integration.ts(479,31): error TS2345: Argument of type '{ eventType: string; source: string; data: { requestId: string; inspectionId: any; vendorId: any; overallScore: number; }; priority: "critical" | "medium"; }' is not assignable to parameter of type 'Omit<{ eventId: string; eventType: string; source: string; data: Record<any, unknown>; timestamp: string; priority: "high" | "critical" | "medium" | "low"; retryCount: number; maxRetries: number; target?: string; }, "timestamp" | "eventId">'.
+  Type '{ eventType: string; source: string; data: { requestId: string; inspectionId: any; vendorId: any; overallScore: number; }; priority: "critical" | "medium"; }' is missing the following properties from type 'Omit<{ eventId: string; eventType: string; source: string; data: Record<any, unknown>; timestamp: string; priority: "high" | "critical" | "medium" | "low"; retryCount: number; maxRetries: number; target?: string; }, "timestamp" | "eventId">': maxRetries, retryCount
+src/integration/vendor-marketplace-integration.ts(484,40): error TS2339: Property 'inspectionId' does not exist on type 'unknown'.
+src/integration/vendor-marketplace-integration.ts(485,36): error TS2339: Property 'vendorId' does not exist on type 'unknown'.
+src/integration/vendor-marketplace-integration.ts(501,68): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string'.
+src/integration/vendor-marketplace-integration.ts(503,7): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string'.
+src/integration/vendor-marketplace-integration.ts(508,72): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string'.
+src/integration/vendor-marketplace-integration.ts(531,85): error TS2345: Argument of type 'unknown' is not assignable to parameter of type '{ trackingId: string; orderId: string; vendorId: string; items: { itemId: string; quantity: number; sourceLocation: string; transportMethod: string; packagingType: string; }[]; carbonFootprint: { ...; }; sustainability: { ...; }; wasteMetrics: { ...; }; socialImpact: { ...; }; }'.
+  Type '{}' is missing the following properties from type '{ trackingId: string; orderId: string; vendorId: string; items: { itemId: string; quantity: number; sourceLocation: string; transportMethod: string; packagingType: string; }[]; carbonFootprint: { ...; }; sustainability: { ...; }; wasteMetrics: { ...; }; socialImpact: { ...; }; }': trackingId, orderId, vendorId, items, and 4 more.
+src/integration/vendor-marketplace-integration.ts(550,81): error TS2345: Argument of type 'unknown' is not assignable to parameter of type '{ schoolId: string; itemId: string; currentStock: number; safetyStockLevel: number; reorderPoint: number; maxStockLevel: number; demandPatterns: { averageDailyUsage: number; seasonalFactors: { ...; }[]; trendDirection: "stable" | ... 1 more ... | "decreasing"; volatility: number; }; supplierInfo: { ...; }; qualityRe...'.
+  Type '{}' is missing the following properties from type '{ schoolId: string; itemId: string; currentStock: number; safetyStockLevel: number; reorderPoint: number; maxStockLevel: number; demandPatterns: { averageDailyUsage: number; seasonalFactors: { ...; }[]; trendDirection: "stable" | ... 1 more ... | "decreasing"; volatility: number; }; supplierInfo: { ...; }; qualityRe...': schoolId, itemId, currentStock, safetyStockLevel, and 5 more.
+src/integration/vendor-marketplace-integration.ts(577,22): error TS2339: Property 'schoolId' does not exist on type 'unknown'.
+src/integration/vendor-marketplace-integration.ts(578,22): error TS2339: Property 'timeframe' does not exist on type 'unknown'.
+src/integration/vendor-marketplace-integration.ts(582,22): error TS2339: Property 'vendorIds' does not exist on type 'unknown'.
+src/integration/vendor-marketplace-integration.ts(583,22): error TS2339: Property 'timeframe' does not exist on type 'unknown'.
+src/integration/vendor-marketplace-integration.ts(609,24): error TS2339: Property 'vendorIds' does not exist on type 'unknown'.
+src/integration/vendor-marketplace-integration.ts(623,24): error TS2339: Property 'schoolId' does not exist on type 'unknown'.
+src/integration/vendor-marketplace-integration.ts(624,24): error TS2339: Property 'categories' does not exist on type 'unknown'.
+src/integration/vendor-marketplace-integration.ts(866,33): error TS2345: Argument of type '{ eventType: string; source: string; data: any; priority: "high" | "critical"; }' is not assignable to parameter of type 'Omit<{ eventId: string; eventType: string; source: string; data: Record<any, unknown>; timestamp: string; priority: "high" | "critical" | "medium" | "low"; retryCount: number; maxRetries: number; target?: string; }, "timestamp" | "eventId">'.
+  Type '{ eventType: string; source: string; data: any; priority: "high" | "critical"; }' is missing the following properties from type 'Omit<{ eventId: string; eventType: string; source: string; data: Record<any, unknown>; timestamp: string; priority: "high" | "critical" | "medium" | "low"; retryCount: number; maxRetries: number; target?: string; }, "timestamp" | "eventId">': maxRetries, retryCount
+src/integration/vendor-marketplace-integration.ts(875,33): error TS2345: Argument of type '{ eventType: string; source: string; data: any; priority: "medium"; }' is not assignable to parameter of type 'Omit<{ eventId: string; eventType: string; source: string; data: Record<any, unknown>; timestamp: string; priority: "high" | "critical" | "medium" | "low"; retryCount: number; maxRetries: number; target?: string; }, "timestamp" | "eventId">'.
+  Type '{ eventType: string; source: string; data: any; priority: "medium"; }' is missing the following properties from type 'Omit<{ eventId: string; eventType: string; source: string; data: Record<any, unknown>; timestamp: string; priority: "high" | "critical" | "medium" | "low"; retryCount: number; maxRetries: number; target?: string; }, "timestamp" | "eventId">': maxRetries, retryCount
+src/integration/vendor-marketplace-orchestrator.ts(21,34): error TS2307: Cannot find module '../monitoring/metrics-collector' or its corresponding type declarations.
+src/integration/vendor-marketplace-orchestrator.ts(22,33): error TS2307: Cannot find module '../security/security-manager' or its corresponding type declarations.
+src/integration/vendor-marketplace-orchestrator.ts(23,31): error TS2307: Cannot find module '../database/multi-tenant-prisma' or its corresponding type declarations.
+src/integration/vendor-marketplace-orchestrator.ts(24,37): error TS2307: Cannot find module '../vendor/ai-procurement-engine' or its corresponding type declarations.
+src/integration/vendor-marketplace-orchestrator.ts(25,42): error TS2307: Cannot find module '../vendor/vendor-intelligence-system' or its corresponding type declarations.
+src/integration/vendor-marketplace-orchestrator.ts(26,39): error TS2307: Cannot find module '../supply-chain/supply-chain-automation' or its corresponding type declarations.
+src/integration/vendor-marketplace-orchestrator.ts(27,34): error TS2307: Cannot find module '../realtime/websocket-manager' or its corresponding type declarations.
+src/integration/vendor-marketplace-orchestrator.ts(28,30): error TS2307: Cannot find module '../cache/cache-manager' or its corresponding type declarations.
+src/integration/vendor-marketplace-orchestrator.ts(29,30): error TS2307: Cannot find module '../queue/queue-manager' or its corresponding type declarations.
+src/integration/vendor-marketplace-orchestrator.ts(30,31): error TS2307: Cannot find module '../monitoring/health-monitor' or its corresponding type declarations.
+src/integration/vendor-marketplace-orchestrator.ts(495,13): error TS2322: Type '"critical"' is not assignable to type '"healthy"'.
+src/integration/vendor-marketplace-orchestrator.ts(497,13): error TS2322: Type '"degraded"' is not assignable to type '"healthy"'.
+src/integration/vendor-marketplace-orchestrator.ts(508,11): error TS2322: Type '"critical"' is not assignable to type '"healthy"'.
+src/integration/vendor-marketplace-orchestrator.ts(524,11): error TS2367: This comparison appears to be unintentional because the types '"healthy"' and '"critical"' have no overlap.
+src/integration/vendor-marketplace-orchestrator.ts(524,43): error TS2367: This comparison appears to be unintentional because the types '"healthy"' and '"degraded"' have no overlap.
+src/middleware/api.middleware.ts(19,23): error TS2307: Cannot find module 'jsdom' or its corresponding type declarations.
+src/middleware/api.middleware.ts(87,57): error TS2345: Argument of type 'string' is not assignable to parameter of type '"v1" | "v2"'.
+src/middleware/api.middleware.ts(91,7): error TS2345: Argument of type 'string' is not assignable to parameter of type 'boolean'.
+src/middleware/api.middleware.ts(248,9): error TS2322: Type 'unknown' is not assignable to type 'ParsedQs'.
+  Index signature for type 'string' is missing in type '{}'.
+src/middleware/api.middleware.ts(253,9): error TS2322: Type 'unknown' is not assignable to type 'ParamsDictionary'.
+  Index signature for type 'string' is missing in type '{}'.
+src/middleware/api.middleware.ts(259,40): error TS2339: Property 'errors' does not exist on type 'ZodError<unknown>'.
+src/middleware/api.middleware.ts(276,11): error TS2554: Expected 1-3 arguments, but got 4.
+src/middleware/api.middleware.ts(295,49): error TS2339: Property 'call' does not exist on type 'RedisService'.
+src/middleware/api.middleware.ts(339,5): error TS2353: Object literal may only specify known properties, and 'onLimitReached' does not exist in type 'Partial<Options>'.
+src/middleware/api.middleware.ts(417,9): error TS2345: Argument of type 'string' is not assignable to parameter of type 'boolean'.
+src/middleware/api.middleware.ts(465,9): error TS2339: Property 'zadd' does not exist on type 'RedisService'.
+src/middleware/api.middleware.ts(493,3): error TS1205: Re-exporting a type when 'isolatedModules' is enabled requires using 'export type'.
+src/middleware/api.middleware.ts(493,3): error TS2484: Export declaration conflicts with exported declaration of 'APIRequest'.
+src/middleware/api.middleware.ts(494,3): error TS1205: Re-exporting a type when 'isolatedModules' is enabled requires using 'export type'.
+src/middleware/api.middleware.ts(494,3): error TS2484: Export declaration conflicts with exported declaration of 'APIResponse'.
+src/repositories/menuItem.repository.ts(113,13): error TS2353: Object literal may only specify known properties, and 'mode' does not exist in type 'StringFilter<"MenuItem">'.
+src/repositories/menuItem.repository.ts(225,43): error TS2353: Object literal may only specify known properties, and 'mode' does not exist in type 'StringFilter<"MenuItem">'.
+src/repositories/menuItem.repository.ts(226,50): error TS2353: Object literal may only specify known properties, and 'mode' does not exist in type 'StringNullableFilter<"MenuItem">'.
+src/repositories/menuItem.repository.ts(295,38): error TS2353: Object literal may only specify known properties, and 'mode' does not exist in type 'StringFilter<"MenuItem">'.
+src/repositories/menuItem.repository.ts(296,45): error TS2353: Object literal may only specify known properties, and 'mode' does not exist in type 'StringNullableFilter<"MenuItem">'.
+src/repositories/user.repository.ts(289,51): error TS2322: Type '({ OR: ({ email: { contains: string; mode: any; }; } | { firstName: { contains: string; mode: any; }; } | { lastName: { contains: string; mode: any; }; })[]; } | { schoolId: string; } | { role: string; } | { isActive: boolean; } | { ...; } | { ...; } | { ...; })[]' is not assignable to type 'UserWhereInput | UserWhereInput[]'.
+  Type '({ OR: ({ email: { contains: string; mode: any; }; } | { firstName: { contains: string; mode: any; }; } | { lastName: { contains: string; mode: any; }; })[]; } | { schoolId: string; } | { role: string; } | { isActive: boolean; } | { ...; } | { ...; } | { ...; })[]' is not assignable to type 'UserWhereInput[]'.
+    Type '{ OR: ({ email: { contains: string; mode: any; }; } | { firstName: { contains: string; mode: any; }; } | { lastName: { contains: string; mode: any; }; })[]; } | { schoolId: string; } | { role: string; } | { isActive: boolean; } | { ...; } | { ...; } | { ...; }' is not assignable to type 'UserWhereInput'.
+      Type '{ OR: ({ email: { contains: string; mode: any; }; } | { firstName: { contains: string; mode: any; }; } | { lastName: { contains: string; mode: any; }; })[]; }' is not assignable to type 'UserWhereInput'.
+        Types of property 'OR' are incompatible.
+          Type '({ email: { contains: string; mode: any; }; } | { firstName: { contains: string; mode: any; }; } | { lastName: { contains: string; mode: any; }; })[]' is not assignable to type 'UserWhereInput[]'.
+            Type '{ email: { contains: string; mode: any; }; } | { firstName: { contains: string; mode: any; }; } | { lastName: { contains: string; mode: any; }; }' is not assignable to type 'UserWhereInput'.
+              Type '{ email: { contains: string; mode: any; }; }' is not assignable to type 'UserWhereInput'.
+                Types of property 'email' are incompatible.
+                  Object literal may only specify known properties, and 'mode' does not exist in type 'StringFilter<"User">'.
+src/repositories/user.repository.ts(289,64): error TS2339: Property 'QueryMode' does not exist on type 'typeof Prisma'.
+src/repositories/user.repository.ts(290,68): error TS2339: Property 'QueryMode' does not exist on type 'typeof Prisma'.
+src/repositories/user.repository.ts(291,67): error TS2339: Property 'QueryMode' does not exist on type 'typeof Prisma'.
+src/repositories/user.repository.ts(394,60): error TS2339: Property 'ReadCommitted' does not exist on type '{ Serializable: "Serializable"; }'.
+src/routes/api.routes.ts(19,39): error TS2307: Cannot find module 'http-proxy-middleware' or its corresponding type declarations.
+src/routes/api.routes.ts(42,8): error TS1192: Module '"/Users/mahesha/Downloads/hasivu-platform/src/routes/health.routes"' has no default export.
+src/routes/api.routes.ts(43,8): error TS2613: Module '"/Users/mahesha/Downloads/hasivu-platform/src/routes/analytics.routes"' has no default export. Did you mean to use 'import { analyticsRoutes } from "/Users/mahesha/Downloads/hasivu-platform/src/routes/analytics.routes"' instead?
+src/routes/api.routes.ts(175,17): error TS2345: Argument of type '{ readonly origin: string[]; readonly credentials: true; readonly optionsSuccessStatus: 200; readonly methods: readonly ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]; readonly allowedHeaders: readonly [...]; readonly exposedHeaders: readonly [...]; }' is not assignable to parameter of type 'CorsOptions | CorsOptionsDelegate<Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>>'.
+  Type '{ readonly origin: string[]; readonly credentials: true; readonly optionsSuccessStatus: 200; readonly methods: readonly ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]; readonly allowedHeaders: readonly [...]; readonly exposedHeaders: readonly [...]; }' is not assignable to type 'CorsOptions'.
+    Types of property 'methods' are incompatible.
+      Type 'readonly ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]' is not assignable to type 'string | string[]'.
+        The type 'readonly ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]' is 'readonly' and cannot be assigned to the mutable type 'string[]'.
+src/routes/api.routes.ts(197,43): error TS2345: Argument of type '{ readonly max: 10000; readonly windowMs: 60000; readonly message: { readonly error: "Too many requests from this IP, please try again later"; readonly retryAfter: 60; }; }' is not assignable to parameter of type '{ requests: number; windowMs: number; skipSuccessfulRequests?: boolean; }'.
+  Property 'requests' is missing in type '{ readonly max: 10000; readonly windowMs: 60000; readonly message: { readonly error: "Too many requests from this IP, please try again later"; readonly retryAfter: 60; }; }' but required in type '{ requests: number; windowMs: number; skipSuccessfulRequests?: boolean; }'.
+src/routes/api.routes.ts(245,22): error TS2339: Property 'requestId' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>>'.
+src/routes/api.routes.ts(252,22): error TS2339: Property 'requestId' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>>'.
+src/routes/api.routes.ts(268,22): error TS2339: Property 'requestId' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>>'.
+src/routes/api.routes.ts(274,22): error TS2339: Property 'requestId' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>>'.
+src/routes/api.routes.ts(284,20): error TS2339: Property 'requestId' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>>'.
+src/routes/api.routes.ts(313,20): error TS2339: Property 'requestId' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>>'.
+src/routes/api.routes.ts(344,40): error TS2339: Property 'totalHits' does not exist on type 'RateLimitRequestHandler'.
+src/routes/api.routes.ts(422,20): error TS2339: Property 'requestId' does not exist on type 'Request<{}, any, any, ParsedQs, Record<string, any>>'.
+src/routes/cross-school-analytics.routes.ts(188,7): error TS2554: Expected 1-3 arguments, but got 4.
+src/routes/cross-school-analytics.routes.ts(268,56): error TS2576: Property 'generateCrossSchoolBenchmark' does not exist on type 'CrossSchoolAnalyticsService'. Did you mean to access the static member 'CrossSchoolAnalyticsService.generateCrossSchoolBenchmark' instead?
+src/routes/cross-school-analytics.routes.ts(340,56): error TS2576: Property 'generateNutritionIntelligence' does not exist on type 'CrossSchoolAnalyticsService'. Did you mean to access the static member 'CrossSchoolAnalyticsService.generateNutritionIntelligence' instead?
+src/routes/cross-school-analytics.routes.ts(412,56): error TS2576: Property 'generateOperationalExcellence' does not exist on type 'CrossSchoolAnalyticsService'. Did you mean to access the static member 'CrossSchoolAnalyticsService.generateOperationalExcellence' instead?
+src/routes/cross-school-analytics.routes.ts(482,56): error TS2576: Property 'generatePredictiveInsights' does not exist on type 'CrossSchoolAnalyticsService'. Did you mean to access the static member 'CrossSchoolAnalyticsService.generatePredictiveInsights' instead?
+src/routes/cross-school-analytics.routes.ts(552,56): error TS2576: Property 'trainFederatedModel' does not exist on type 'CrossSchoolAnalyticsService'. Did you mean to access the static member 'CrossSchoolAnalyticsService.trainFederatedModel' instead?
+src/routes/cross-school-analytics.routes.ts(616,56): error TS2576: Property 'getRealtimePerformanceMetrics' does not exist on type 'CrossSchoolAnalyticsService'. Did you mean to access the static member 'CrossSchoolAnalyticsService.getRealtimePerformanceMetrics' instead?
+src/routes/menus.routes.ts(27,10): error TS2305: Module '"../utils/errors"' has no exported member 'CustomError'.
+src/routes/menus.routes.ts(185,9): error TS2322: Type 'APIResponse' is not assignable to type 'void'.
+src/routes/menus.routes.ts(202,40): error TS2339: Property 'findMenuItems' does not exist on type 'MenuService'.
+src/routes/menus.routes.ts(212,57): error TS2339: Property 'checkAvailability' does not exist on type 'MenuService'.
+src/routes/menus.routes.ts(213,57): error TS2551: Property 'calculateNutritionScore' does not exist on type 'NutritionService'. Did you mean 'calculateMealNutrition'?
+src/routes/menus.routes.ts(219,54): error TS2339: Property 'estimateDeliveryTime' does not exist on type 'MenuService'.
+src/routes/menus.routes.ts(236,40): error TS2339: Property 'getAvailableFilters' does not exist on type 'MenuService'.
+src/routes/menus.routes.ts(242,50): error TS2559: Type '600' has no properties in common with type 'CacheOptions'.
+src/routes/menus.routes.ts(276,9): error TS2322: Type 'APIResponse' is not assignable to type 'void'.
+src/routes/menus.routes.ts(279,42): error TS2339: Property 'findById' does not exist on type 'MenuService'.
+src/routes/menus.routes.ts(292,21): error TS2339: Property 'checkAvailability' does not exist on type 'MenuService'.
+src/routes/menus.routes.ts(293,26): error TS2551: Property 'calculateNutritionScore' does not exist on type 'NutritionService'. Did you mean 'calculateMealNutrition'?
+src/routes/menus.routes.ts(294,21): error TS2339: Property 'getItemReviews' does not exist on type 'MenuService'.
+src/routes/menus.routes.ts(295,21): error TS2339: Property 'findSimilarItems' does not exist on type 'MenuService'.
+src/routes/menus.routes.ts(296,21): error TS2339: Property 'getPreparationInfo' does not exist on type 'MenuService'.
+src/routes/menus.routes.ts(306,53): error TS2339: Property 'generateInsights' does not exist on type 'NutritionService'.
+src/routes/menus.routes.ts(307,45): error TS2339: Property 'generateAllergenWarnings' does not exist on type 'MenuService'.
+src/routes/menus.routes.ts(316,50): error TS2559: Type '900' has no properties in common with type 'CacheOptions'.
+src/routes/menus.routes.ts(345,58): error TS2339: Property 'validateNutritionData' does not exist on type 'NutritionService'.
+src/routes/menus.routes.ts(355,46): error TS2339: Property 'findDuplicateItem' does not exist on type 'MenuService'.
+src/routes/menus.routes.ts(367,48): error TS2551: Property 'calculateNutritionScore' does not exist on type 'NutritionService'. Did you mean 'calculateMealNutrition'?
+src/routes/menus.routes.ts(373,47): error TS2339: Property 'generateInsights' does not exist on type 'NutritionService'.
+src/routes/menus.routes.ts(374,25): error TS2339: Property 'storeItemInsights' does not exist on type 'MenuService'.
+src/routes/menus.routes.ts(393,19): error TS2339: Property 'generateRecommendations' does not exist on type 'MenuService'.
+src/routes/menus.routes.ts(441,46): error TS2339: Property 'findById' does not exist on type 'MenuService'.
+src/routes/menus.routes.ts(448,60): error TS2339: Property 'validateNutritionData' does not exist on type 'NutritionService'.
+src/routes/menus.routes.ts(458,60): error TS2551: Property 'calculateNutritionScore' does not exist on type 'NutritionService'. Did you mean 'calculateMealNutrition'?
+src/routes/menus.routes.ts(469,49): error TS2339: Property 'generateInsights' does not exist on type 'NutritionService'.
+src/routes/menus.routes.ts(470,27): error TS2339: Property 'storeItemInsights' does not exist on type 'MenuService'.
+src/routes/menus.routes.ts(535,9): error TS2322: Type 'APIResponse' is not assignable to type 'void'.
+src/routes/menus.routes.ts(538,43): error TS2339: Property 'getDailyMenu' does not exist on type 'MenuService'.
+src/routes/menus.routes.ts(551,55): error TS2339: Property 'checkAvailability' does not exist on type 'MenuService'.
+src/routes/menus.routes.ts(552,56): error TS2339: Property 'estimateDeliveryTime' does not exist on type 'MenuService'.
+src/routes/menus.routes.ts(563,57): error TS2551: Property 'calculateDailyNutrition' does not exist on type 'NutritionService'. Did you mean 'calculateMealNutrition'?
+src/routes/menus.routes.ts(571,50): error TS2559: Type '1800' has no properties in common with type 'CacheOptions'.
+src/routes/menus.routes.ts(610,48): error TS2339: Property 'validateMenuItems' does not exist on type 'MenuService'.
+src/routes/menus.routes.ts(620,46): error TS2339: Property 'findPlan' does not exist on type 'MenuService'.
+src/routes/menus.routes.ts(635,55): error TS2551: Property 'calculatePlanNutrition' does not exist on type 'NutritionService'. Did you mean 'calculateMealNutrition'?
+src/routes/menus.routes.ts(639,57): error TS2339: Property 'validateNutritionTargets' does not exist on type 'NutritionService'.
+src/routes/menus.routes.ts(652,41): error TS2339: Property 'createMenuPlan' does not exist on type 'MenuService'.
+src/routes/menus.routes.ts(676,19): error TS2339: Property 'notifyMenuUpdate' does not exist on type 'MenuService'.
+src/routes/menus.routes.ts(722,42): error TS2339: Property 'findById' does not exist on type 'MenuService'.
+src/routes/menus.routes.ts(727,47): error TS2339: Property 'getDetailedAnalysis' does not exist on type 'NutritionService'.
+src/routes/menus.routes.ts(728,28): error TS2339: Property 'age' does not exist on type '{ id: string; role: string; permissions?: string[]; sessionId?: string; schoolId?: string; }'.
+src/routes/menus.routes.ts(729,44): error TS2339: Property 'dietaryRestrictions' does not exist on type '{ id: string; role: string; permissions?: string[]; sessionId?: string; schoolId?: string; }'.
+src/routes/ml/predictive-analytics.route.ts(14,32): error TS2307: Cannot find module '../../middleware/role.middleware' or its corresponding type declarations.
+src/routes/ml/predictive-analytics.route.ts(15,38): error TS2307: Cannot find module '../../middleware/school-access.middleware' or its corresponding type declarations.
+src/routes/orders.routes.ts(558,9): error TS2561: Object literal may only specify known properties, but 'paymentMethod' does not exist in type '{ orderId?: string; amount: number; currency?: string; paymentMethodId?: string; notes?: Record<string, any>; userId?: string; userRole?: string; }'. Did you mean to write 'paymentMethodId'?
+src/routes/orders.routes.ts(566,36): error TS2551: Property 'paymentId' does not exist on type '{ success: boolean; payment?: any; message?: string; }'. Did you mean 'payment'?
+src/routes/orders.routes.ts(574,35): error TS2576: Property 'sendOrderConfirmation' does not exist on type 'NotificationService'. Did you mean to access the static member 'NotificationService.sendOrderConfirmation' instead?
+src/routes/orders.routes.ts(598,44): error TS2339: Property 'error' does not exist on type '{ success: boolean; payment?: any; message?: string; }'.
+src/routes/orders.routes.ts(736,35): error TS2339: Property 'sendStatusUpdate' does not exist on type 'NotificationService'.
+src/routes/orders.routes.ts(855,33): error TS2339: Property 'sendOrderCancellation' does not exist on type 'NotificationService'.
+src/routes/payments.routes.ts(32,10): error TS2305: Module '"../utils/errors"' has no exported member 'CustomError'.
+src/routes/payments.routes.ts(97,15): error TS2554: Expected 2-3 arguments, but got 1.
+src/routes/payments.routes.ts(105,21): error TS2554: Expected 2-3 arguments, but got 1.
+src/routes/payments.routes.ts(128,21): error TS2554: Expected 2-3 arguments, but got 1.
+src/routes/payments.routes.ts(137,21): error TS2554: Expected 2-3 arguments, but got 1.
+src/routes/payments.routes.ts(207,53): error TS2339: Property 'getUserPaymentIds' does not exist on type 'PaymentService'.
+src/routes/payments.routes.ts(239,43): error TS2339: Property 'findMany' does not exist on type 'PaymentService'.
+src/routes/payments.routes.ts(302,54): error TS2339: Property 'analyzePayment' does not exist on type 'FraudDetectionService'.
+src/routes/payments.routes.ts(333,68): error TS2339: Property 'requiresAdditionalAuth' does not exist on type 'FraudDetectionService'.
+src/routes/payments.routes.ts(335,11): error TS2322: Type 'APIResponse' is not assignable to type 'void'.
+src/routes/payments.routes.ts(345,52): error TS2551: Property 'validatePaymentOrder' does not exist on type 'PaymentService'. Did you mean 'validatePaymentMethod'?
+src/routes/payments.routes.ts(359,51): error TS2339: Property 'checkDuplicatePayment' does not exist on type 'PaymentService'.
+src/routes/payments.routes.ts(373,48): error TS2339: Property 'initiatePayment' does not exist on type 'PaymentService'.
+src/routes/payments.routes.ts(381,50): error TS2551: Property 'createPaymentRecord' does not exist on type 'PaymentService'. Did you mean 'createPaymentOrder'?
+src/routes/payments.routes.ts(449,49): error TS2554: Expected 3 arguments, but got 1.
+src/routes/payments.routes.ts(456,25): error TS2339: Property 'isValid' does not exist on type 'boolean'.
+src/routes/payments.routes.ts(474,44): error TS2339: Property 'findById' does not exist on type 'PaymentService'.
+src/routes/payments.routes.ts(480,46): error TS2339: Property 'canUserVerifyPayment' does not exist on type 'PaymentService'.
+src/routes/payments.routes.ts(490,47): error TS2551: Property 'completePayment' does not exist on type 'PaymentService'. Did you mean 'createPayment'?
+src/routes/payments.routes.ts(497,30): error TS2339: Property 'updateOrderAfterPayment' does not exist on type 'PaymentService'.
+src/routes/payments.routes.ts(504,35): error TS2339: Property 'sendPaymentSuccess' does not exist on type 'NotificationService'.
+src/routes/payments.routes.ts(573,44): error TS2339: Property 'findById' does not exist on type 'PaymentService'.
+src/routes/payments.routes.ts(579,53): error TS2339: Property 'validateRefund' does not exist on type 'PaymentService'.
+src/routes/payments.routes.ts(609,30): error TS2339: Property 'updateOrderAfterRefund' does not exist on type 'PaymentService'.
+src/routes/payments.routes.ts(616,35): error TS2339: Property 'sendRefundNotification' does not exist on type 'NotificationService'.
+src/routes/payments.routes.ts(685,40): error TS2339: Property 'validatePromoCode' does not exist on type 'WalletService'.
+src/routes/payments.routes.ts(699,47): error TS2339: Property 'initiateTopup' does not exist on type 'WalletService'.
+src/routes/payments.routes.ts(759,46): error TS2339: Property 'getWalletInfo' does not exist on type 'WalletService'.
+src/routes/payments.routes.ts(792,59): error TS2339: Property 'canParentSubscribeForStudent' does not exist on type 'SubscriptionService'.
+src/routes/payments.routes.ts(812,54): error TS2554: Expected 2 arguments, but got 1.
+src/routes/users.routes.ts(26,10): error TS2305: Module '"../utils/errors"' has no exported member 'CustomError'.
+src/routes/users.routes.ts(52,15): error TS2554: Expected 2-3 arguments, but got 1.
+src/routes/users.routes.ts(53,18): error TS2554: Expected 2-3 arguments, but got 1.
+src/routes/users.routes.ts(66,18): error TS2554: Expected 2-3 arguments, but got 1.
+src/routes/users.routes.ts(67,15): error TS2554: Expected 2-3 arguments, but got 1.
+src/routes/users.routes.ts(128,9): error TS2322: Type 'APIResponse' is not assignable to type 'void'.
+src/routes/users.routes.ts(167,40): error TS2339: Property 'findMany' does not exist on type 'UserService'.
+src/routes/users.routes.ts(192,50): error TS2559: Type '300' has no properties in common with type 'CacheOptions'.
+src/routes/users.routes.ts(235,9): error TS2322: Type 'APIResponse' is not assignable to type 'void'.
+src/routes/users.routes.ts(239,45): error TS2339: Property 'canUserAccess' does not exist on type 'UserService'.
+src/routes/users.routes.ts(248,38): error TS2339: Property 'findById' does not exist on type 'UserService'.
+src/routes/users.routes.ts(270,47): error TS2339: Property 'getStudentDetails' does not exist on type 'UserService'.
+src/routes/users.routes.ts(273,44): error TS2339: Property 'getParentChildren' does not exist on type 'UserService'.
+src/routes/users.routes.ts(283,50): error TS2559: Type '600' has no properties in common with type 'CacheOptions'.
+src/routes/users.routes.ts(344,42): error TS2339: Property 'findById' does not exist on type 'UserService'.
+src/routes/users.routes.ts(364,46): error TS2339: Property 'findByEmail' does not exist on type 'UserService'.
+src/routes/users.routes.ts(374,41): error TS2339: Property 'create' does not exist on type 'UserService'.
+src/routes/users.routes.ts(404,19): error TS2339: Property 'sendWelcomeNotification' does not exist on type 'UserService'.
+src/routes/users.routes.ts(454,43): error TS2339: Property 'canUserAccess' does not exist on type 'UserService'.
+src/routes/users.routes.ts(464,46): error TS2339: Property 'findById' does not exist on type 'UserService'.
+src/routes/users.routes.ts(482,45): error TS2339: Property 'update' does not exist on type 'UserService'.
+src/routes/users.routes.ts(559,46): error TS2339: Property 'findById' does not exist on type 'UserService'.
+src/routes/users.routes.ts(586,46): error TS2339: Property 'checkDependencies' does not exist on type 'UserService'.
+src/routes/users.routes.ts(604,25): error TS2339: Property 'softDelete' does not exist on type 'UserService'.
+src/routes/users.routes.ts(668,40): error TS2339: Property 'linkParentChild' does not exist on type 'UserService'.
+src/routes/users.routes.ts(724,41): error TS2576: Property 'searchUsers' does not exist on type 'UserService'. Did you mean to access the static member 'UserService.searchUsers' instead?
+src/routes/vendor-marketplace.ts(304,16): error TS2393: Duplicate function implementation.
+src/routes/vendor-marketplace.ts(458,16): error TS2393: Duplicate function implementation.
+src/routes/vendor-marketplace.ts(470,16): error TS2393: Duplicate function implementation.
+src/routes/vendor-marketplace.ts(482,16): error TS2393: Duplicate function implementation.
+src/routes/vendor-marketplace.ts(494,16): error TS2393: Duplicate function implementation.
+src/routes/vendor-marketplace.ts(813,26): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+src/routes/vendor-marketplace.ts(814,28): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+src/routes/vendor-marketplace.ts(839,21): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+src/routes/vendor-marketplace.ts(864,46): error TS2551: Property 'getQualityInspection' does not exist on type 'VendorMarketplaceService'. Did you mean 'processQualityInspection'?
+src/routes/vendor-marketplace.ts(963,3): error TS2554: Expected 3 arguments, but got 1.
+src/routes/vendor-marketplace.ts(963,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type 'void' is not assignable to parameter of type 'RequestHandlerParams<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+src/routes/vendor-marketplace.ts(968,26): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+src/routes/vendor-marketplace.ts(969,28): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+src/routes/vendor-marketplace.ts(986,21): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+src/routes/vendor-marketplace.ts(1003,3): error TS2554: Expected 3 arguments, but got 1.
+src/routes/vendor-marketplace.ts(1003,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type 'void' is not assignable to parameter of type 'RequestHandlerParams<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+src/routes/vendor-marketplace.ts(1007,26): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+src/routes/vendor-marketplace.ts(1008,28): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+src/routes/vendor-marketplace.ts(1046,21): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+src/routes/vendor-marketplace.ts(1066,3): error TS2554: Expected 3 arguments, but got 1.
+src/routes/vendor-marketplace.ts(1066,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type 'void' is not assignable to parameter of type 'RequestHandlerParams<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+src/routes/vendor-marketplace.ts(1070,26): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+src/routes/vendor-marketplace.ts(1071,28): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+src/routes/vendor-marketplace.ts(1110,21): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+src/routes/vendor-marketplace.ts(1126,3): error TS2554: Expected 3 arguments, but got 1.
+src/routes/vendor-marketplace.ts(1126,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type 'void' is not assignable to parameter of type 'RequestHandlerParams<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+src/routes/vendor-marketplace.ts(1129,26): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+src/routes/vendor-marketplace.ts(1130,28): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+src/routes/vendor-marketplace.ts(1150,21): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+src/routes/vendor-marketplace.ts(1166,3): error TS2554: Expected 3 arguments, but got 1.
+src/routes/vendor-marketplace.ts(1166,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type 'void' is not assignable to parameter of type 'RequestHandlerParams<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+src/routes/vendor-marketplace.ts(1169,26): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+src/routes/vendor-marketplace.ts(1170,28): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+src/routes/vendor-marketplace.ts(1190,21): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+src/routes/vendor-marketplace.ts(1205,16): error TS2393: Duplicate function implementation.
+src/routes/vendor-marketplace.ts(1217,16): error TS2393: Duplicate function implementation.
+src/routes/vendor-marketplace.ts(1230,16): error TS2393: Duplicate function implementation.
+src/routes/vendor-marketplace.ts(1249,16): error TS2393: Duplicate function implementation.
+src/routes/vendor-marketplace.ts(1278,16): error TS2393: Duplicate function implementation.
+src/services/audit.service.ts(170,9): error TS2739: Type '{}' is missing the following properties from type '{ entries: AuditLogEntry[]; total: number; hasMore: boolean; }': entries, total, hasMore
+src/services/audit.service.ts(204,17): error TS2353: Object literal may only specify known properties, and 'targetUserId' does not exist in type 'AuditLogSelect<DefaultArgs>'.
+src/services/audit.service.ts(224,9): error TS2345: Argument of type '{ useCache: true; cacheTTL: number; }' is not assignable to parameter of type 'QueryOptimization'.
+  Property 'useReadReplica' is missing in type '{ useCache: true; cacheTTL: number; }' but required in type 'QueryOptimization'.
+src/services/audit.service.ts(228,25): error TS2339: Property 'entries' does not exist on type 'unknown'.
+src/services/audit.service.ts(229,23): error TS2339: Property 'total' does not exist on type 'unknown'.
+src/services/audit.service.ts(230,25): error TS2339: Property 'total' does not exist on type 'unknown'.
+src/services/audit.service.ts(259,9): error TS2740: Type '{}' is missing the following properties from type 'AuditSummary': totalEvents, timeRange, categoryCounts, severityCounts, and 4 more.
+src/services/audit.service.ts(288,13): error TS2615: Type of property 'AND' circularly references itself in mapped type '{ [K in keyof { AND?: AuditLogScalarWhereWithAggregatesInput | AuditLogScalarWhereWithAggregatesInput[]; ... 12 more ...; createdAt?: string | ... 1 more ... | DateTimeWithAggregatesFilter<...>; }]: Or<...> extends 1 ? { ...; }[K] extends infer TK ? GetHavingFields<...> : never : {} extends FieldPaths<...> ? never :...'.
+src/services/audit.service.ts(288,13): error TS2615: Type of property 'NOT' circularly references itself in mapped type '{ [K in keyof { AND?: AuditLogScalarWhereWithAggregatesInput | AuditLogScalarWhereWithAggregatesInput[]; ... 12 more ...; createdAt?: string | ... 1 more ... | DateTimeWithAggregatesFilter<...>; }]: Or<...> extends 1 ? { ...; }[K] extends infer TK ? GetHavingFields<...> : never : {} extends FieldPaths<...> ? never :...'.
+src/services/audit.service.ts(288,13): error TS2615: Type of property 'OR' circularly references itself in mapped type '{ [K in keyof { AND?: AuditLogScalarWhereWithAggregatesInput | AuditLogScalarWhereWithAggregatesInput[]; ... 12 more ...; createdAt?: string | ... 1 more ... | DateTimeWithAggregatesFilter<...>; }]: Or<...> extends 1 ? { ...; }[K] extends infer TK ? GetHavingFields<...> : never : {} extends FieldPaths<...> ? never :...'.
+src/services/audit.service.ts(289,15): error TS2322: Type '"category"[]' is not assignable to type 'AuditLogScalarFieldEnum | AuditLogScalarFieldEnum[]'.
+  Type '"category"[]' is not assignable to type 'AuditLogScalarFieldEnum[]'.
+    Type '"category"' is not assignable to type 'AuditLogScalarFieldEnum'.
+src/services/audit.service.ts(291,25): error TS2353: Object literal may only specify known properties, and 'category' does not exist in type 'AuditLogCountAggregateInputType'.
+src/services/audit.service.ts(296,15): error TS2322: Type '"severity"[]' is not assignable to type 'AuditLogScalarFieldEnum | AuditLogScalarFieldEnum[]'.
+  Type '"severity"[]' is not assignable to type 'AuditLogScalarFieldEnum[]'.
+    Type '"severity"' is not assignable to type 'AuditLogScalarFieldEnum'.
+src/services/audit.service.ts(298,25): error TS2353: Object literal may only specify known properties, and 'severity' does not exist in type 'AuditLogCountAggregateInputType'.
+src/services/audit.service.ts(306,23): error TS2353: Object literal may only specify known properties, and 'timestamp' does not exist in type 'AuditLogMaxAggregateInputType'.
+src/services/audit.service.ts(331,51): error TS2345: Argument of type '`Error: Field "${any}" used in "having" needs to be provided in "by".` | [Error, "Field ", any, " in \"having\" needs to be provided in \"by\""]' is not assignable to parameter of type 'any[]'.
+  Type '`Error: Field "${any}" used in "having" needs to be provided in "by".`' is not assignable to type 'any[]'.
+src/services/audit.service.ts(332,51): error TS2345: Argument of type '`Error: Field "${any}" used in "having" needs to be provided in "by".` | [Error, "Field ", any, " in \"having\" needs to be provided in \"by\""]' is not assignable to parameter of type 'any[]'.
+  Type '`Error: Field "${any}" used in "having" needs to be provided in "by".`' is not assignable to type 'any[]'.
+src/services/audit.service.ts(333,57): error TS2345: Argument of type '`Error: Field "${any}" used in "having" needs to be provided in "by".` | [Error, "Field ", any, " in \"having\" needs to be provided in \"by\""]' is not assignable to parameter of type 'any[]'.
+  Type '`Error: Field "${any}" used in "having" needs to be provided in "by".`' is not assignable to type 'any[]'.
+src/services/audit.service.ts(339,9): error TS2345: Argument of type '{ useCache: true; cacheTTL: number; }' is not assignable to parameter of type 'QueryOptimization'.
+  Property 'useReadReplica' is missing in type '{ useCache: true; cacheTTL: number; }' but required in type 'QueryOptimization'.
+src/services/audit.service.ts(345,7): error TS2322: Type 'unknown' is not assignable to type 'AuditSummary'.
+src/services/audit.service.ts(418,17): error TS2353: Object literal may only specify known properties, and 'severity' does not exist in type 'AuditLogWhereInput'.
+src/services/audit.service.ts(534,17): error TS2322: Type '{ metadata: string; id?: string; action: string; userId: string; targetUserId?: string; resource?: string; resourceId?: string; ipAddress?: string; userAgent?: string; sessionId?: string; timestamp?: Date; ... 4 more ...; risk_score?: number; }[]' is not assignable to type 'AuditLogCreateManyInput | AuditLogCreateManyInput[]'.
+  Type '{ metadata: string; id?: string; action: string; userId: string; targetUserId?: string; resource?: string; resourceId?: string; ipAddress?: string; userAgent?: string; sessionId?: string; timestamp?: Date; ... 4 more ...; risk_score?: number; }[]' is not assignable to type 'AuditLogCreateManyInput[]'.
+    Type '{ metadata: string; id?: string; action: string; userId: string; targetUserId?: string; resource?: string; resourceId?: string; ipAddress?: string; userAgent?: string; sessionId?: string; timestamp?: Date; ... 4 more ...; risk_score?: number; }' is missing the following properties from type 'AuditLogCreateManyInput': entityType, entityId, createdById
+src/services/cache.service.ts(16,38): error TS2307: Cannot find module 'lz4' or its corresponding type declarations.
+src/services/cache.service.ts(17,10): error TS2614: Module '"./redis.service"' has no exported member 'redis'. Did you mean to use 'import redis from "./redis.service"' instead?
+src/services/enhanced-database.service.ts(17,10): error TS2614: Module '"./redis.service"' has no exported member 'redis'. Did you mean to use 'import redis from "./redis.service"' instead?
+src/services/enhanced-database.service.ts(18,10): error TS2305: Module '"../utils/errors"' has no exported member 'CustomError'.
+src/services/enhanced-database.service.ts(136,21): error TS2345: Argument of type 'string' is not assignable to parameter of type 'never'.
+src/services/enhanced-database.service.ts(140,21): error TS2345: Argument of type 'string' is not assignable to parameter of type 'never'.
+src/services/enhanced-database.service.ts(144,21): error TS2345: Argument of type 'string' is not assignable to parameter of type 'never'.
+src/services/enhanced-database.service.ts(207,5): error TS2739: Type '{}' is missing the following properties from type 'QueryOptimization': useCache, useReadReplica
+src/services/enhanced-database.service.ts(297,81): error TS2339: Property 'ReadCommitted' does not exist on type '{ Serializable: "Serializable"; }'.
+src/services/health-monitor.service.ts(712,32): error TS2339: Property 'getStats' does not exist on type 'typeof RedisService'.
+src/services/kitchen.service.ts(17,9): error TS2393: Duplicate function implementation.
+src/services/kitchen.service.ts(46,9): error TS2393: Duplicate function implementation.
+src/services/metrics-collection.service.ts(444,41): error TS2339: Property 'getHealth' does not exist on type 'typeof RedisService'.
+src/services/metrics-collection.service.ts(445,34): error TS2339: Property 'getStats' does not exist on type 'typeof RedisService'.
+src/services/ml/automl.service.ts(230,19): error TS2673: Constructor of class 'MLflowService' is private and only accessible within the class declaration.
+src/services/ml/automl.service.ts(231,26): error TS2673: Constructor of class 'ModelArtifactService' is private and only accessible within the class declaration.
+src/services/ml/automl.service.ts(247,24): error TS2339: Property 'initialize' does not exist on type 'CacheService'.
+src/services/ml/automl.service.ts(249,32): error TS2339: Property 'initialize' does not exist on type 'ModelArtifactService'.
+src/services/ml/automl.service.ts(278,37): error TS2339: Property 'initializeExperiment' does not exist on type 'AutoMLService'.
+src/services/ml/automl.service.ts(315,38): error TS2339: Property 'analyzeDataCharacteristics' does not exist on type 'AutoMLService'.
+src/services/ml/automl.service.ts(321,46): error TS2339: Property 'selectAlgorithmCandidates' does not exist on type 'AutoMLService'.
+src/services/ml/automl.service.ts(330,29): error TS2339: Property 'optimizeAlgorithmConfig' does not exist on type 'AutoMLService'.
+src/services/ml/automl.service.ts(339,37): error TS2339: Property 'selectBestConfiguration' does not exist on type 'AutoMLService'.
+src/services/ml/automl.service.ts(373,38): error TS2551: Property 'defineNASSearchSpace' does not exist on type 'AutoMLService'. Did you mean 'defineSearchSpace'?
+src/services/ml/automl.service.ts(391,18): error TS2551: Property 'executeNeuralArchitectureSearch' does not exist on type 'AutoMLService'. Did you mean 'performNeuralArchitectureSearch'?
+src/services/ml/automl.service.ts(419,37): error TS2339: Property 'loadBaseModels' does not exist on type 'AutoMLService'.
+src/services/ml/automl.service.ts(422,43): error TS2339: Property 'calculateDiversityMetrics' does not exist on type 'AutoMLService'.
+src/services/ml/automl.service.ts(428,41): error TS2339: Property 'optimizeEnsembleWeights' does not exist on type 'AutoMLService'.
+src/services/ml/automl.service.ts(453,49): error TS2339: Property 'trainMetaLearner' does not exist on type 'AutoMLService'.
+src/services/ml/automl.service.ts(463,46): error TS2551: Property 'evaluateEnsemble' does not exist on type 'AutoMLService'. Did you mean 'createEnsemble'?
+src/services/ml/automl.service.ts(497,18): error TS2551: Property 'updateExperimentResults' does not exist on type 'AutoMLService'. Did you mean 'getExperimentResults'?
+src/services/ml/automl.service.ts(553,18): error TS2339: Property 'initializeOptimizer' does not exist on type 'AutoMLService'.
+src/services/ml/automl.service.ts(605,51): error TS2339: Property 'splitData' does not exist on type 'AutoMLService'.
+src/services/ml/automl.service.ts(611,36): error TS2339: Property 'initializeHyperparameterOptimizer' does not exist on type 'AutoMLService'.
+src/services/ml/automl.service.ts(617,42): error TS2339: Property 'suggestTrial' does not exist on type 'AutoMLService'.
+src/services/ml/automl.service.ts(620,36): error TS2339: Property 'executeTrial' does not exist on type 'AutoMLService'.
+src/services/ml/automl.service.ts(637,22): error TS2339: Property 'updateLeaderboard' does not exist on type 'AutoMLService'.
+src/services/ml/automl.service.ts(640,26): error TS2339: Property 'shouldStop' does not exist on type 'AutoMLService'.
+src/services/ml/automl.service.ts(651,40): error TS2551: Property 'generateExperimentInsights' does not exist on type 'AutoMLService'. Did you mean 'generateExperimentId'?
+src/services/ml/automl.service.ts(658,18): error TS2551: Property 'saveExperimentResults' does not exist on type 'AutoMLService'. Did you mean 'getExperimentResults'?
+src/services/ml/explainability.service.ts(236,24): error TS2339: Property 'initialize' does not exist on type 'CacheService'.
+src/services/ml/explainability.service.ts(326,51): error TS2551: Property 'generateLIMEExplanation' does not exist on type 'ExplainabilityService'. Did you mean 'generateExplanation'?
+src/services/ml/explainability.service.ts(356,9): error TS2322: Type '{ id: string; description: string; feature_changes: Record<string, { original: any; modified: any; change_magnitude: number; }>; predicted_outcome: any; confidence: number; feasibility: { ...; }; actionability: { ...; }; }[]' is not assignable to type '{ scenario: string; changed_features: Record<string, any>; predicted_outcome: any; probability: number; feasibility: number; }[]'.
+  Type '{ id: string; description: string; feature_changes: Record<string, { original: any; modified: any; change_magnitude: number; }>; predicted_outcome: any; confidence: number; feasibility: { ...; }; actionability: { ...; }; }' is missing the following properties from type '{ scenario: string; changed_features: Record<string, any>; predicted_outcome: any; probability: number; feasibility: number; }': scenario, changed_features, probability
+src/services/ml/explainability.service.ts(361,48): error TS2339: Property 'generateBiasAnalysis' does not exist on type 'ExplainabilityService'.
+src/services/ml/explainability.service.ts(412,27): error TS2551: Property 'calculateDefaultUncertainty' does not exist on type 'ExplainabilityService'. Did you mean 'calculateUncertainty'?
+src/services/ml/explainability.service.ts(416,34): error TS2339: Property 'convertFeaturesToTensor' does not exist on type 'ExplainabilityService'.
+src/services/ml/explainability.service.ts(427,46): error TS2339: Property 'calculateConfidenceIntervals' does not exist on type 'ExplainabilityService'.
+src/services/ml/explainability.service.ts(434,45): error TS2339: Property 'identifyUncertaintySources' does not exist on type 'ExplainabilityService'.
+src/services/ml/explainability.service.ts(441,48): error TS2339: Property 'assessPredictionReliability' does not exist on type 'ExplainabilityService'.
+src/services/ml/explainability.service.ts(489,39): error TS2339: Property 'groupByProtectedAttributes' does not exist on type 'ExplainabilityService'.
+src/services/ml/explainability.service.ts(492,42): error TS2339: Property 'calculateFairnessMetrics' does not exist on type 'ExplainabilityService'.
+src/services/ml/explainability.service.ts(495,53): error TS2339: Property 'analyzeProtectedAttributes' does not exist on type 'ExplainabilityService'.
+src/services/ml/explainability.service.ts(501,42): error TS2339: Property 'generateBiasMitigationRecommendations' does not exist on type 'ExplainabilityService'.
+src/services/ml/explainability.service.ts(507,43): error TS2339: Property 'checkBiasCompliance' does not exist on type 'ExplainabilityService'.
+src/services/ml/explainability.service.ts(512,37): error TS2339: Property 'calculateOverallBiasScore' does not exist on type 'ExplainabilityService'.
+src/services/ml/explainability.service.ts(542,42): error TS2339: Property 'generateCounterfactualInstances' does not exist on type 'ExplainabilityService'.
+src/services/ml/explainability.service.ts(551,42): error TS2339: Property 'assessCounterfactualFeasibility' does not exist on type 'ExplainabilityService'.
+src/services/ml/explainability.service.ts(552,44): error TS2339: Property 'assessCounterfactualActionability' does not exist on type 'ExplainabilityService'.
+src/services/ml/explainability.service.ts(563,46): error TS2339: Property 'performSensitivityAnalysis' does not exist on type 'ExplainabilityService'.
+src/services/ml/explainability.service.ts(605,34): error TS2551: Property 'generateExplanationSummary' does not exist on type 'ExplainabilityService'. Did you mean 'generateExplanation'?
+src/services/ml/explainability.service.ts(608,37): error TS2339: Property 'extractKeyFactors' does not exist on type 'ExplainabilityService'.
+src/services/ml/explainability.service.ts(611,36): error TS2339: Property 'generateReasoning' does not exist on type 'ExplainabilityService'.
+src/services/ml/explainability.service.ts(614,42): error TS2339: Property 'generateRecommendations' does not exist on type 'ExplainabilityService'.
+src/services/ml/explainability.service.ts(617,34): error TS2339: Property 'generateCaveats' does not exist on type 'ExplainabilityService'.
+src/services/ml/explainability.service.ts(698,41): error TS2339: Property 'getBiasDetectionModelPaths' does not exist on type 'ExplainabilityService'.
+src/services/ml/explainability.service.ts(715,48): error TS2551: Property 'getUncertaintyModelPaths' does not exist on type 'ExplainabilityService'. Did you mean 'uncertaintyModels'?
+src/services/ml/explainability.service.ts(743,36): error TS2339: Property 'calculateFeatureImportances' does not exist on type 'ExplainabilityService'.
+src/services/ml/explainability.service.ts(749,25): error TS2339: Property 'getFeatureDescription' does not exist on type 'ExplainabilityService'.
+src/services/ml/explainability.service.ts(770,35): error TS2339: Property 'calculateSHAPValues' does not exist on type 'ExplainabilityService'.
+src/services/ml/feature-engineering.service.ts(24,10): error TS2724: '"../circuit-breaker.service"' has no exported member named 'CircuitBreakerService'. Did you mean 'CircuitBreaker'?
+src/services/ml/feature-engineering.service.ts(194,22): error TS2769: No overload matches this call.
+  Overload 1 of 8, '(options: RedisOptions): Redis', gave the following error.
+    Object literal may only specify known properties, and 'retryDelayOnFailover' does not exist in type 'RedisOptions'.
+  Overload 2 of 8, '(port: number): Redis', gave the following error.
+    Argument of type '{ host: string; port: number; password: string; db: number; retryDelayOnFailover: number; enableReadyCheck: boolean; maxRetriesPerRequest: number; }' is not assignable to parameter of type 'number'.
+  Overload 3 of 8, '(path: string): Redis', gave the following error.
+    Argument of type '{ host: string; port: number; password: string; db: number; retryDelayOnFailover: number; enableReadyCheck: boolean; maxRetriesPerRequest: number; }' is not assignable to parameter of type 'string'.
+src/services/ml/feature-engineering.service.ts(232,24): error TS2339: Property 'initialize' does not exist on type 'CacheService'.
+src/services/ml/feature-engineering.service.ts(277,20): error TS2339: Property 'validateInputData' does not exist on type 'FeatureEngineeringService'.
+src/services/ml/feature-engineering.service.ts(311,20): error TS2339: Property 'cacheFeatures' does not exist on type 'FeatureEngineeringService'.
+src/services/ml/feature-engineering.service.ts(315,18): error TS2551: Property 'updateFeatureStore' does not exist on type 'FeatureEngineeringService'. Did you mean 'featureStores'?
+src/services/ml/feature-engineering.service.ts(318,18): error TS2339: Property 'recordFeatureUsage' does not exist on type 'FeatureEngineeringService'.
+src/services/ml/feature-engineering.service.ts(349,43): error TS2339: Property 'getPreprocessConfig' does not exist on type 'FeatureEngineeringService'.
+src/services/ml/feature-engineering.service.ts(352,44): error TS2339: Property 'applyPreprocessing' does not exist on type 'FeatureEngineeringService'.
+src/services/ml/feature-engineering.service.ts(355,27): error TS2339: Property 'convertToTensor' does not exist on type 'FeatureEngineeringService'.
+src/services/ml/feature-engineering.service.ts(410,18): error TS2551: Property 'initializeDriftDetectionModels' does not exist on type 'FeatureEngineeringService'. Did you mean 'driftDetectionModels'?
+src/services/ml/feature-engineering.service.ts(436,38): error TS2339: Property 'getFeatureDataForQuality' does not exist on type 'FeatureEngineeringService'.
+src/services/ml/feature-engineering.service.ts(439,42): error TS2339: Property 'analyzeDataQuality' does not exist on type 'FeatureEngineeringService'.
+src/services/ml/feature-engineering.service.ts(442,40): error TS2339: Property 'analyzeDrift' does not exist on type 'FeatureEngineeringService'.
+src/services/ml/feature-engineering.service.ts(445,33): error TS2339: Property 'identifyQualityIssues' does not exist on type 'FeatureEngineeringService'.
+src/services/ml/feature-engineering.service.ts(450,29): error TS2339: Property 'calculateOverallQualityScore' does not exist on type 'FeatureEngineeringService'.
+src/services/ml/feature-engineering.service.ts(492,35): error TS2339: Property 'buildUpstreamLineage' does not exist on type 'FeatureEngineeringService'.
+src/services/ml/feature-engineering.service.ts(495,37): error TS2339: Property 'buildDownstreamLineage' does not exist on type 'FeatureEngineeringService'.
+src/services/ml/feature-engineering.service.ts(498,43): error TS2339: Property 'buildComputationGraph' does not exist on type 'FeatureEngineeringService'.
+src/services/ml/feature-engineering.service.ts(531,36): error TS2339: Property 'shouldProcessBuffer' does not exist on type 'FeatureEngineeringService'.
+src/services/ml/feature-engineering.service.ts(534,22): error TS2339: Property 'processBatch' does not exist on type 'FeatureEngineeringService'.
+src/services/ml/feature-engineering.service.ts(542,20): error TS2339: Property 'processBatch' does not exist on type 'FeatureEngineeringService'.
+src/services/ml/feature-engineering.service.ts(562,20): error TS2551: Property 'reloadFeatureDefinition' does not exist on type 'FeatureEngineeringService'. Did you mean 'loadFeatureDefinitions'?
+src/services/ml/feature-engineering.service.ts(566,18): error TS2551: Property 'updateTransformationCache' does not exist on type 'FeatureEngineeringService'. Did you mean 'transformationCache'?
+src/services/ml/feature-engineering.service.ts(569,18): error TS2339: Property 'invalidateRelatedCaches' does not exist on type 'FeatureEngineeringService'.
+src/services/ml/feature-engineering.service.ts(632,37): error TS2339: Property 'getTransformationModelPaths' does not exist on type 'FeatureEngineeringService'.
+src/services/ml/feature-engineering.service.ts(655,18): error TS2339: Property 'cleanupFeatureStores' does not exist on type 'FeatureEngineeringService'.
+src/services/ml/feature-engineering.service.ts(660,18): error TS2551: Property 'optimizeTransformationCache' does not exist on type 'FeatureEngineeringService'. Did you mean 'transformationCache'?
+src/services/ml/feature-engineering.service.ts(700,24): error TS2339: Property 'applyTransformation' does not exist on type 'FeatureEngineeringService'.
+src/services/ml/feature-engineering.service.ts(718,26): error TS2339: Property 'applyCategoricalEncoding' does not exist on type 'FeatureEngineeringService'.
+src/services/ml/feature-engineering.service.ts(733,32): error TS2339: Property 'getFeatureStatistics' does not exist on type 'FeatureEngineeringService'.
+src/services/ml/feature-engineering.service.ts(737,32): error TS2339: Property 'getFeatureStatistics' does not exist on type 'FeatureEngineeringService'.
+src/services/ml/feature-engineering.service.ts(753,25): error TS2339: Property 'generateTextEmbedding' does not exist on type 'FeatureEngineeringService'.
+src/services/ml/feature-engineering.service.ts(803,23): error TS2339: Property 'executeComputation' does not exist on type 'FeatureEngineeringService'.
+src/services/ml/federated-learning.service.ts(25,10): error TS2724: '"../circuit-breaker.service"' has no exported member named 'CircuitBreakerService'. Did you mean 'CircuitBreaker'?
+src/services/ml/federated-learning.service.ts(164,26): error TS2673: Constructor of class 'ModelArtifactService' is private and only accessible within the class declaration.
+src/services/ml/federated-learning.service.ts(199,24): error TS2339: Property 'initialize' does not exist on type 'CacheService'.
+src/services/ml/federated-learning.service.ts(200,32): error TS2339: Property 'initialize' does not exist on type 'ModelArtifactService'.
+src/services/ml/federated-learning.service.ts(258,18): error TS2551: Property 'saveParticipant' does not exist on type 'FederatedLearningService'. Did you mean 'participants'?
+src/services/ml/federated-learning.service.ts(261,18): error TS2551: Property 'initializeParticipantPrivacyBudget' does not exist on type 'FederatedLearningService'. Did you mean 'initializePrivacyBudgets'?
+src/services/ml/federated-learning.service.ts(267,18): error TS2339: Property 'announceParticipation' does not exist on type 'FederatedLearningService'.
+src/services/ml/federated-learning.service.ts(337,18): error TS2339: Property 'initializeGlobalModel' does not exist on type 'FederatedLearningService'.
+src/services/ml/federated-learning.service.ts(340,18): error TS2339: Property 'distributeTrainingTasks' does not exist on type 'FederatedLearningService'.
+src/services/ml/federated-learning.service.ts(344,20): error TS2339: Property 'handleRoundTimeout' does not exist on type 'FederatedLearningService'.
+src/services/ml/federated-learning.service.ts(399,43): error TS2339: Property 'encryptWeights' does not exist on type 'FederatedLearningService'.
+src/services/ml/federated-learning.service.ts(402,18): error TS2339: Property 'storeLocalWeights' does not exist on type 'FederatedLearningService'.
+src/services/ml/federated-learning.service.ts(405,18): error TS2339: Property 'updateContributionScore' does not exist on type 'FederatedLearningService'.
+src/services/ml/federated-learning.service.ts(408,38): error TS2339: Property 'getSubmissionCount' does not exist on type 'FederatedLearningService'.
+src/services/ml/federated-learning.service.ts(410,20): error TS2339: Property 'startAggregation' does not exist on type 'FederatedLearningService'.
+src/services/ml/federated-learning.service.ts(442,39): error TS2339: Property 'retrieveLocalWeights' does not exist on type 'FederatedLearningService'.
+src/services/ml/federated-learning.service.ts(445,43): error TS2339: Property 'decryptWeights' does not exist on type 'FederatedLearningService'.
+src/services/ml/federated-learning.service.ts(448,41): error TS2339: Property 'filterByzantineWeights' does not exist on type 'FederatedLearningService'.
+src/services/ml/federated-learning.service.ts(457,42): error TS2339: Property 'federatedProx' does not exist on type 'FederatedLearningService'.
+src/services/ml/federated-learning.service.ts(460,42): error TS2339: Property 'scaffold' does not exist on type 'FederatedLearningService'.
+src/services/ml/federated-learning.service.ts(463,42): error TS2339: Property 'federatedOptimization' does not exist on type 'FederatedLearningService'.
+src/services/ml/federated-learning.service.ts(470,51): error TS2339: Property 'addGlobalPrivacyNoise' does not exist on type 'FederatedLearningService'.
+src/services/ml/federated-learning.service.ts(476,18): error TS2551: Property 'updatePrivacyBudget' does not exist on type 'FederatedLearningService'. Did you mean 'privacyBudgets'?
+src/services/ml/federated-learning.service.ts(479,44): error TS2339: Property 'generateVerificationProof' does not exist on type 'FederatedLearningService'.
+src/services/ml/federated-learning.service.ts(496,41): error TS2339: Property 'validateByzantineTolerance' does not exist on type 'FederatedLearningService'.
+src/services/ml/federated-learning.service.ts(506,18): error TS2339: Property 'calculateRoundMetrics' does not exist on type 'FederatedLearningService'.
+src/services/ml/federated-learning.service.ts(509,18): error TS2339: Property 'distributeGlobalModel' does not exist on type 'FederatedLearningService'.
+src/services/ml/federated-learning.service.ts(547,47): error TS2339: Property 'getEligibleParticipants' does not exist on type 'FederatedLearningService'.
+src/services/ml/federated-learning.service.ts(560,36): error TS2339: Property 'generatePrivateInsight' does not exist on type 'FederatedLearningService'.
+src/services/ml/federated-learning.service.ts(603,49): error TS2339: Property 'calculateRemainingPrivacyBudget' does not exist on type 'FederatedLearningService'.
+src/services/ml/federated-learning.service.ts(605,38): error TS2339: Property 'getTotalModelsTrained' does not exist on type 'FederatedLearningService'.
+src/services/ml/federated-learning.service.ts(607,46): error TS2339: Property 'getLastRoundCompletion' does not exist on type 'FederatedLearningService'.
+src/services/ml/federated-learning.service.ts(609,37): error TS2339: Property 'assessFederationHealth' does not exist on type 'FederatedLearningService'.
+src/services/ml/federated-learning.service.ts(636,36): error TS2339: Property 'getParticipantIdBySchool' does not exist on type 'FederatedLearningService'.
+src/services/ml/federated-learning.service.ts(640,27): error TS2551: Property 'getGlobalPrivacyMetrics' does not exist on type 'FederatedLearningService'. Did you mean 'getPrivacyMetrics'?
+src/services/ml/federated-learning.service.ts(679,25): error TS2339: Property 'waitForRoundCompletion' does not exist on type 'FederatedLearningService'.
+src/services/ml/federated-learning.service.ts(741,41): error TS2551: Property 'loadPrivacyBudget' does not exist on type 'FederatedLearningService'. Did you mean 'privacyBudgets'?
+src/services/ml/federated-learning.service.ts(749,18): error TS2339: Property 'monitorParticipantHealth' does not exist on type 'FederatedLearningService'.
+src/services/ml/federated-learning.service.ts(754,18): error TS2551: Property 'monitorPrivacyBudgets' does not exist on type 'FederatedLearningService'. Did you mean 'privacyBudgets'?
+src/services/ml/federated-learning.service.ts(759,18): error TS2339: Property 'handleStaleRounds' does not exist on type 'FederatedLearningService'.
+src/services/ml/ml-base.service.ts(335,9): error TS2322: Type 'number' is not assignable to type 'string'.
+src/services/ml/ml-base.service.ts(336,9): error TS2322: Type 'number' is not assignable to type 'string'.
+src/services/ml/ml-base.service.ts(337,9): error TS2322: Type 'number' is not assignable to type 'string'.
+src/services/ml/ml-base.service.ts(347,43): error TS2345: Argument of type 'ModelMetrics' is not assignable to parameter of type 'Record<string, number>'.
+  Index signature for type 'string' is missing in type 'ModelMetrics'.
+src/services/ml/ml-base.service.ts(484,48): error TS2345: Argument of type '"staging" | "production"' is not assignable to parameter of type '"Staging" | "Production"'.
+  Type '"staging"' is not assignable to type '"Staging" | "Production"'. Did you mean '"Staging"'?
+src/services/ml/mlflow.service.ts(440,11): error TS2367: This comparison appears to be unintentional because the types '"Staging" | "Production"' and '"None"' have no overlap.
+src/services/ml/model-artifact.service.ts(167,49): error TS2345: Argument of type 'Promise<string>' is not assignable to parameter of type 'string'.
+src/services/ml/model-artifact.service.ts(309,16): error TS2393: Duplicate function implementation.
+src/services/ml/model-artifact.service.ts(450,30): error TS2556: A spread argument must either have a tuple type or be passed to a rest parameter.
+src/services/ml/model-artifact.service.ts(518,11): error TS2393: Duplicate function implementation.
+src/services/ml/model-artifact.service.ts(658,36): error TS2345: Argument of type 'string' is not assignable to parameter of type 'TemplateStringsArray | Sql'.
+src/services/ml/model-monitoring.service.ts(23,10): error TS2724: '"../circuit-breaker.service"' has no exported member named 'CircuitBreakerService'. Did you mean 'CircuitBreaker'?
+src/services/ml/model-monitoring.service.ts(256,24): error TS2339: Property 'initialize' does not exist on type 'CacheService'.
+src/services/ml/model-monitoring.service.ts(265,18): error TS2551: Property 'loadPerformanceBaselines' does not exist on type 'ModelMonitoringService'. Did you mean 'performanceBaselines'?
+src/services/ml/model-monitoring.service.ts(268,18): error TS2551: Property 'loadActiveExperiments' does not exist on type 'ModelMonitoringService'. Did you mean 'activeExperiments'?
+src/services/ml/model-monitoring.service.ts(314,18): error TS2551: Property 'saveMonitoringConfig' does not exist on type 'ModelMonitoringService'. Did you mean 'monitoringConfigs'?
+src/services/ml/model-monitoring.service.ts(317,18): error TS2339: Property 'initializeModelHealth' does not exist on type 'ModelMonitoringService'.
+src/services/ml/model-monitoring.service.ts(323,18): error TS2551: Property 'createPerformanceBaseline' does not exist on type 'ModelMonitoringService'. Did you mean 'performanceBaselines'?
+src/services/ml/model-monitoring.service.ts(375,31): error TS2339: Property 'getRecentPredictionData' does not exist on type 'ModelMonitoringService'.
+src/services/ml/model-monitoring.service.ts(389,18): error TS2339: Property 'storeDriftResult' does not exist on type 'ModelMonitoringService'.
+src/services/ml/model-monitoring.service.ts(393,20): error TS2339: Property 'handleDriftDetected' does not exist on type 'ModelMonitoringService'.
+src/services/ml/model-monitoring.service.ts(423,18): error TS2339: Property 'storePredictionLog' does not exist on type 'ModelMonitoringService'.
+src/services/ml/model-monitoring.service.ts(434,18): error TS2339: Property 'updateRealTimeMetrics' does not exist on type 'ModelMonitoringService'.
+src/services/ml/model-monitoring.service.ts(480,41): error TS2339: Property 'getLatestDriftResults' does not exist on type 'ModelMonitoringService'.
+src/services/ml/model-monitoring.service.ts(518,31): error TS2339: Property 'generatePipelineId' does not exist on type 'ModelMonitoringService'.
+src/services/ml/model-monitoring.service.ts(540,18): error TS2551: Property 'saveRetrainingPipeline' does not exist on type 'ModelMonitoringService'. Did you mean 'retrainingPipelines'?
+src/services/ml/model-monitoring.service.ts(544,20): error TS2551: Property 'executeRetrainingPipeline' does not exist on type 'ModelMonitoringService'. Did you mean 'retrainingPipelines'?
+src/services/ml/model-monitoring.service.ts(548,18): error TS2339: Property 'sendRetrainingNotification' does not exist on type 'ModelMonitoringService'.
+src/services/ml/model-monitoring.service.ts(584,29): error TS2339: Property 'checkRegulationCompliance' does not exist on type 'ModelMonitoringService'.
+src/services/ml/model-monitoring.service.ts(589,37): error TS2339: Property 'getModelAuditTrail' does not exist on type 'ModelMonitoringService'.
+src/services/ml/model-monitoring.service.ts(592,38): error TS2339: Property 'getModelDataLineage' does not exist on type 'ModelMonitoringService'.
+src/services/ml/model-monitoring.service.ts(595,44): error TS2339: Property 'getPrivacyAssessment' does not exist on type 'ModelMonitoringService'.
+src/services/ml/model-monitoring.service.ts(608,18): error TS2339: Property 'storeComplianceReport' does not exist on type 'ModelMonitoringService'.
+src/services/ml/model-monitoring.service.ts(651,42): error TS2339: Property 'getDriftModelPaths' does not exist on type 'ModelMonitoringService'.
+src/services/ml/model-monitoring.service.ts(700,33): error TS2339: Property 'assessModelHealth' does not exist on type 'ModelMonitoringService'.
+src/services/ml/model-monitoring.service.ts(707,20): error TS2339: Property 'triggerHealthAlert' does not exist on type 'ModelMonitoringService'.
+src/services/ml/model-monitoring.service.ts(712,20): error TS2339: Property 'checkRetrainingTriggers' does not exist on type 'ModelMonitoringService'.
+src/services/ml/model-monitoring.service.ts(726,20): error TS2339: Property 'performGlobalHealthAssessment' does not exist on type 'ModelMonitoringService'.
+src/services/ml/predictive-analytics.service.ts(29,10): error TS2724: '"../circuit-breaker.service"' has no exported member named 'CircuitBreakerService'. Did you mean 'CircuitBreaker'?
+src/services/ml/predictive-analytics.service.ts(145,21): error TS2673: Constructor of class 'MLflowService' is private and only accessible within the class declaration.
+src/services/ml/predictive-analytics.service.ts(146,28): error TS2673: Constructor of class 'ModelArtifactService' is private and only accessible within the class declaration.
+src/services/ml/predictive-analytics.service.ts(223,32): error TS2339: Property 'initialize' does not exist on type 'ModelArtifactService'.
+src/services/ml/predictive-analytics.service.ts(296,71): error TS2345: Argument of type '{ modelType: "operational_efficiency" | "demand_forecasting" | "financial" | "student_behavior" | "supply_chain" | "health_outcome"; features: Record<string, any>; prediction: PredictionServiceResponse; schoolId: string; }' is not assignable to parameter of type 'ExplanationRequest'.
+  Type '{ modelType: "operational_efficiency" | "demand_forecasting" | "financial" | "student_behavior" | "supply_chain" | "health_outcome"; features: Record<string, any>; prediction: PredictionServiceResponse; schoolId: string; }' is missing the following properties from type 'ExplanationRequest': explanationType, audience, detailLevel, includeUncertainty, includeBiasAnalysis
+src/services/ml/predictive-analytics.service.ts(310,11): error TS2353: Object literal may only specify known properties, and 'recommendationType' does not exist in type '{ prediction: any; modelType: string; schoolId: string; userType: "admin" | "parent" | "student" | "kitchen_staff"; }'.
+src/services/ml/predictive-analytics.service.ts(387,48): error TS2345: Argument of type '{ modelType: string; config: ModelConfig; training_data_size: number; training_timestamp: string; }' is not assignable to parameter of type '"Staging" | "Production"'.
+src/services/ml/predictive-analytics.service.ts(400,9): error TS2353: Object literal may only specify known properties, and 'performance_thresholds' does not exist in type 'Partial<ModelMonitoringConfig>'.
+src/services/ml/predictive-analytics.service.ts(514,49): error TS2345: Argument of type '{ modelType: string; currentModelId: string; newModelId: string; trafficSplit: number; }' is not assignable to parameter of type 'ABTestConfig'.
+  Type '{ modelType: string; currentModelId: string; newModelId: string; trafficSplit: number; }' is missing the following properties from type 'ABTestConfig': metrics, duration, successCriteria
+src/services/ml/predictive-analytics.service.ts(556,7): error TS2322: Type 'Recommendation[]' is not assignable to type '{ type: string; title: string; description: string; impact_score: number; confidence: number; actions: { action: string; parameters: Record<string, any>; }[]; explanation: string; }[]'.
+  Type 'Recommendation' is not assignable to type '{ type: string; title: string; description: string; impact_score: number; confidence: number; actions: { action: string; parameters: Record<string, any>; }[]; explanation: string; }'.
+    Types of property 'explanation' are incompatible.
+      Type '{ reasoning: string; factors: { factor: string; weight: number; contribution: number; }[]; personalizations: { aspect: string; value: string; confidence: number; }[]; }' is not assignable to type 'string'.
+src/services/ml/predictive-analytics.service.ts(581,49): error TS2339: Property 'getAvailableModels' does not exist on type 'ModelArtifactService'.
+src/services/ml/predictive-analytics.service.ts(627,51): error TS2345: Argument of type '{ enabled: boolean; min_participants: number; max_participants: number; rounds: number; privacy_budget: { epsilon: number; delta: number; }; aggregation_method: "fedavg" | "fedprox" | "scaffold"; schoolId: string; }' is not assignable to parameter of type '{ schoolId: string; capabilities: { modelTypes: string[]; dataSize: number; computeCapacity: "high" | "medium" | "low"; privacyLevel: "basic" | "maximum" | "enhanced"; }; privacyPreferences: { ...; }; }'.
+  Type '{ enabled: boolean; min_participants: number; max_participants: number; rounds: number; privacy_budget: { epsilon: number; delta: number; }; aggregation_method: "fedavg" | "fedprox" | "scaffold"; schoolId: string; }' is missing the following properties from type '{ schoolId: string; capabilities: { modelTypes: string[]; dataSize: number; computeCapacity: "high" | "medium" | "low"; privacyLevel: "basic" | "maximum" | "enhanced"; }; privacyPreferences: { ...; }; }': capabilities, privacyPreferences
+src/services/ml/predictive-analytics.service.ts(669,5): error TS2739: Type 'UncertaintyQuantification' is missing the following properties from type '{ lower_bound: number; upper_bound: number; std_deviation: number; }': lower_bound, upper_bound, std_deviation
+src/services/ml/predictive-analytics.service.ts(674,30): error TS2339: Property 'getModelMetadata' does not exist on type 'MLflowService'.
+src/services/ml/realtime-prediction.service.ts(23,10): error TS2724: '"../circuit-breaker.service"' has no exported member named 'CircuitBreakerService'. Did you mean 'CircuitBreaker'?
+src/services/ml/realtime-prediction.service.ts(159,22): error TS2769: No overload matches this call.
+  Overload 1 of 8, '(options: RedisOptions): Redis', gave the following error.
+    Object literal may only specify known properties, and 'retryDelayOnFailover' does not exist in type 'RedisOptions'.
+  Overload 2 of 8, '(port: number): Redis', gave the following error.
+    Argument of type '{ host: string; port: number; password: string; db: number; retryDelayOnFailover: number; enableReadyCheck: boolean; maxRetriesPerRequest: number; }' is not assignable to parameter of type 'number'.
+  Overload 3 of 8, '(path: string): Redis', gave the following error.
+    Argument of type '{ host: string; port: number; password: string; db: number; retryDelayOnFailover: number; enableReadyCheck: boolean; maxRetriesPerRequest: number; }' is not assignable to parameter of type 'string'.
+src/services/ml/realtime-prediction.service.ts(176,26): error TS2673: Constructor of class 'ModelArtifactService' is private and only accessible within the class declaration.
+src/services/ml/realtime-prediction.service.ts(206,24): error TS2339: Property 'initialize' does not exist on type 'CacheService'.
+src/services/ml/realtime-prediction.service.ts(207,32): error TS2339: Property 'initialize' does not exist on type 'ModelArtifactService'.
+src/services/ml/realtime-prediction.service.ts(407,36): error TS2339: Property 'partition' does not exist on type 'KafkaMessage'.
+  Property 'partition' does not exist on type 'MessageSetEntry'.
+src/services/ml/realtime-prediction.service.ts(480,56): error TS2339: Property 'getPreviousVersion' does not exist on type 'ModelArtifactService'.
+src/services/ml/realtime-prediction.service.ts(528,49): error TS2339: Property 'getAvailableModels' does not exist on type 'ModelArtifactService'.
+src/services/ml/realtime-prediction.service.ts(564,49): error TS2339: Property 'getModelMetadata' does not exist on type 'ModelArtifactService'.
+src/services/ml/recommendation-engine.service.ts(23,10): error TS2724: '"../circuit-breaker.service"' has no exported member named 'CircuitBreakerService'. Did you mean 'CircuitBreaker'?
+src/services/ml/recommendation-engine.service.ts(278,24): error TS2339: Property 'initialize' does not exist on type 'CacheService'.
+src/services/ml/recommendation-engine.service.ts(312,18): error TS2339: Property 'validateRecommendationRequest' does not exist on type 'RecommendationEngineService'.
+src/services/ml/recommendation-engine.service.ts(315,29): error TS2339: Property 'generateCacheKey' does not exist on type 'RecommendationEngineService'.
+src/services/ml/recommendation-engine.service.ts(317,26): error TS2339: Property 'isCacheValid' does not exist on type 'RecommendationEngineService'.
+src/services/ml/recommendation-engine.service.ts(333,53): error TS2339: Property 'applyDiversityFilters' does not exist on type 'RecommendationEngineService'.
+src/services/ml/recommendation-engine.service.ts(340,47): error TS2339: Property 'rankAndSelectRecommendations' does not exist on type 'RecommendationEngineService'.
+src/services/ml/recommendation-engine.service.ts(347,20): error TS2339: Property 'addExplanations' does not exist on type 'RecommendationEngineService'.
+src/services/ml/recommendation-engine.service.ts(351,18): error TS2339: Property 'updateRecommendationMetadata' does not exist on type 'RecommendationEngineService'.
+src/services/ml/recommendation-engine.service.ts(357,18): error TS2339: Property 'logRecommendationGeneration' does not exist on type 'RecommendationEngineService'.
+src/services/ml/recommendation-engine.service.ts(390,42): error TS2551: Property 'generateContextualRecommendations' does not exist on type 'RecommendationEngineService'. Did you mean 'generateContentBasedRecommendations'?
+src/services/ml/recommendation-engine.service.ts(393,29): error TS2339: Property 'determinePriority' does not exist on type 'RecommendationEngineService'.
+src/services/ml/recommendation-engine.service.ts(427,18): error TS2339: Property 'updateBehaviorPatterns' does not exist on type 'RecommendationEngineService'.
+src/services/ml/recommendation-engine.service.ts(430,18): error TS2339: Property 'updateImplicitPreferences' does not exist on type 'RecommendationEngineService'.
+src/services/ml/recommendation-engine.service.ts(433,18): error TS2339: Property 'updateUserEmbedding' does not exist on type 'RecommendationEngineService'.
+src/services/ml/recommendation-engine.service.ts(437,18): error TS2551: Property 'saveUserProfile' does not exist on type 'RecommendationEngineService'. Did you mean 'getUserProfile'?
+src/services/ml/recommendation-engine.service.ts(440,18): error TS2339: Property 'invalidateUserRecommendationCache' does not exist on type 'RecommendationEngineService'.
+src/services/ml/recommendation-engine.service.ts(488,38): error TS2339: Property 'evaluateModelPerformance' does not exist on type 'RecommendationEngineService'.
+src/services/ml/recommendation-engine.service.ts(491,16): error TS2339: Property 'isModelPerformanceSatisfactory' does not exist on type 'RecommendationEngineService'.
+src/services/ml/recommendation-engine.service.ts(492,20): error TS2339: Property 'deployModel' does not exist on type 'RecommendationEngineService'.
+src/services/ml/recommendation-engine.service.ts(535,37): error TS2339: Property 'calculateEngagementMetrics' does not exist on type 'RecommendationEngineService'.
+src/services/ml/recommendation-engine.service.ts(538,36): error TS2339: Property 'calculateDiversityMetrics' does not exist on type 'RecommendationEngineService'.
+src/services/ml/recommendation-engine.service.ts(541,38): error TS2339: Property 'calculatePerformanceMetrics' does not exist on type 'RecommendationEngineService'.
+src/services/ml/recommendation-engine.service.ts(544,41): error TS2339: Property 'calculateBusinessImpactMetrics' does not exist on type 'RecommendationEngineService'.
+src/services/ml/recommendation-engine.service.ts(630,46): error TS2551: Property 'loadCollaborativeModels' does not exist on type 'RecommendationEngineService'. Did you mean 'collaborativeModels'?
+src/services/ml/recommendation-engine.service.ts(636,40): error TS2551: Property 'loadContentBasedModels' does not exist on type 'RecommendationEngineService'. Did you mean 'contentBasedModels'?
+src/services/ml/recommendation-engine.service.ts(642,39): error TS2551: Property 'loadHybridModels' does not exist on type 'RecommendationEngineService'. Did you mean 'hybridModels'?
+src/services/ml/recommendation-engine.service.ts(657,18): error TS2339: Property 'updateUserEmbeddings' does not exist on type 'RecommendationEngineService'.
+src/services/ml/recommendation-engine.service.ts(662,18): error TS2339: Property 'scheduleModelRetraining' does not exist on type 'RecommendationEngineService'.
+src/services/ml/recommendation-engine.service.ts(667,18): error TS2551: Property 'cleanupRecommendationCache' does not exist on type 'RecommendationEngineService'. Did you mean 'recommendationCache'?
+src/services/ml/recommendation-engine.service.ts(676,28): error TS2551: Property 'createNewUserProfile' does not exist on type 'RecommendationEngineService'. Did you mean 'getUserProfile'?
+src/services/ml/recommendation-engine.service.ts(693,23): error TS2551: Property 'generateDemographicRecommendations' does not exist on type 'RecommendationEngineService'. Did you mean 'generateRecommendations'?
+src/services/ml/recommendation-engine.service.ts(706,30): error TS2551: Property 'getHybridModel' does not exist on type 'RecommendationEngineService'. Did you mean 'hybridModels'?
+src/services/ml/recommendation-engine.service.ts(707,23): error TS2339: Property 'combineRecommendations' does not exist on type 'RecommendationEngineService'.
+src/services/ml/recommendation-engine.service.ts(717,24): error TS2551: Property 'getCollaborativeModel' does not exist on type 'RecommendationEngineService'. Did you mean 'collaborativeModels'?
+src/services/ml/recommendation-engine.service.ts(729,23): error TS2339: Property 'convertScoresToRecommendations' does not exist on type 'RecommendationEngineService'.
+src/services/ml/recommendation-engine.service.ts(740,24): error TS2551: Property 'getContentBasedModel' does not exist on type 'RecommendationEngineService'. Did you mean 'contentBasedModels'?
+src/services/ml/recommendation-engine.service.ts(744,34): error TS2339: Property 'extractUserPreferences' does not exist on type 'RecommendationEngineService'.
+src/services/ml/recommendation-engine.service.ts(745,37): error TS2339: Property 'calculateContentSimilarities' does not exist on type 'RecommendationEngineService'.
+src/services/ml/recommendation-engine.service.ts(748,23): error TS2339: Property 'convertScoresToRecommendations' does not exist on type 'RecommendationEngineService'.
+src/services/ml/recommendation-engine.service.ts(764,27): error TS2551: Property 'generateMenuOptimizationRecommendations' does not exist on type 'RecommendationEngineService'. Did you mean 'generateMealRecommendations'?
+src/services/ml/recommendation-engine.service.ts(766,27): error TS2551: Property 'generateVendorRecommendations' does not exist on type 'RecommendationEngineService'. Did you mean 'generateRecommendations'?
+src/services/ml/recommendation-engine.service.ts(768,27): error TS2551: Property 'generateBudgetRecommendations' does not exist on type 'RecommendationEngineService'. Did you mean 'generateRecommendations'?
+src/services/ml/recommendation-engine.service.ts(770,27): error TS2551: Property 'generateOperationalRecommendations' does not exist on type 'RecommendationEngineService'. Did you mean 'generateMealRecommendations'?
+src/services/ml/recommendation-engine.service.ts(772,27): error TS2339: Property 'generateParentEngagementRecommendations' does not exist on type 'RecommendationEngineService'.
+src/services/ml/student-behavior.service.ts(489,7): error TS2322: Type 'string' is not assignable to type 'ActivationIdentifier'.
+src/services/ml/student-behavior.service.ts(591,42): error TS2345: Argument of type '{ modelType: ModelType.STUDENT_BEHAVIOR; }' is not assignable to parameter of type 'ModelConfig'.
+  Type '{ modelType: ModelType.STUDENT_BEHAVIOR; }' is missing the following properties from type 'ModelConfig': architecture, hyperparameters, features, targetColumn, and 2 more.
+src/services/monitoring-dashboard.service.ts(292,46): error TS2339: Property 'getHealth' does not exist on type 'typeof RedisService'.
+src/services/notification/real-time-delivery.service.ts(13,43): error TS2307: Cannot find module '@aws-sdk/client-sns' or its corresponding type declarations.
+src/services/performance.service.ts(1304,20): error TS2339: Property 'sadd' does not exist on type 'typeof RedisService'.
+src/services/rfid/unified-api.service.ts(493,55): error TS2345: Argument of type '{ cardNumber: string; studentId: string; schoolId: string; metadata: Record<string, any>; }' is not assignable to parameter of type 'RegisterRFIDCardInput'.
+  Property 'cardType' is missing in type '{ cardNumber: string; studentId: string; schoolId: string; metadata: Record<string, any>; }' but required in type 'RegisterRFIDCardInput'.
+src/services/rfid/unified-api.service.ts(727,55): error TS2339: Property 'getInstance' does not exist on type 'typeof NotificationService'.
+src/services/vendor-marketplace.service.ts(161,9): error TS2739: Type '{}' is missing the following properties from type '{ vendors: VendorMatchResult[]; searchMetadata: { totalVendors: number; searchTime: number; algorithm: string; filtersApplied: string[]; }; }': vendors, searchMetadata
+src/services/vendor-marketplace.service.ts(493,26): error TS2339: Property 'findMany' does not exist on type 'DatabaseService'.
+src/services/vendor-marketplace.service.ts(641,19): error TS2339: Property 'create' does not exist on type 'DatabaseService'.
+src/services/vendor-marketplace.service.ts(653,26): error TS2339: Property 'findOne' does not exist on type 'DatabaseService'.
+src/services/vendor-marketplace.service.ts(725,19): error TS2339: Property 'create' does not exist on type 'DatabaseService'.
+src/services/vendor-marketplace.service.ts(752,39): error TS2339: Property 'findOne' does not exist on type 'DatabaseService'.
+src/services/vendor-marketplace.service.ts(787,26): error TS2339: Property 'findMany' does not exist on type 'DatabaseService'.
+src/services/vendor-marketplace.service.ts(795,26): error TS2339: Property 'create' does not exist on type 'DatabaseService'.
+src/services/vendor-marketplace.service.ts(806,21): error TS2339: Property 'create' does not exist on type 'DatabaseService'.
+src/services/vendor-marketplace.service.ts(819,9): error TS2353: Object literal may only specify known properties, and 'to' does not exist in type '{ userId: string; type: string; priority: string; title: string; body: string; data?: any; }'.
+src/services/vendor-marketplace.service.ts(837,26): error TS2339: Property 'findOne' does not exist on type 'DatabaseService'.
+src/services/vendor-marketplace.service.ts(868,35): error TS2339: Property 'findOne' does not exist on type 'DatabaseService'.
+src/services/vendor-marketplace.service.ts(892,35): error TS2339: Property 'findOne' does not exist on type 'DatabaseService'.
+src/services/vendor-marketplace.service.ts(901,37): error TS2339: Property 'findOne' does not exist on type 'DatabaseService'.
+src/services/vendor-marketplace.service.ts(942,34): error TS2339: Property 'findMany' does not exist on type 'DatabaseService'.
+src/services/vendor-marketplace.service.ts(1007,26): error TS2339: Property 'findOne' does not exist on type 'DatabaseService'.
+src/services/vendor-marketplace.service.ts(1014,26): error TS2339: Property 'findMany' does not exist on type 'DatabaseService'.
+src/services/vendor-marketplace.service.ts(1055,21): error TS2339: Property 'create' does not exist on type 'DatabaseService'.
+src/services/vendor-marketplace.service.ts(1125,21): error TS2339: Property 'create' does not exist on type 'DatabaseService'.
+src/services/vendor-marketplace.service.ts(1247,26): error TS2339: Property 'findOne' does not exist on type 'DatabaseService'.
+src/services/vendor-marketplace.service.ts(1285,33): error TS2339: Property 'findOne' does not exist on type 'DatabaseService'.
+src/services/vendor-marketplace.service.ts(1292,35): error TS2339: Property 'findMany' does not exist on type 'DatabaseService'.
+src/services/vendor-marketplace.service.ts(1330,42): error TS2339: Property 'findOne' does not exist on type 'DatabaseService'.
+src/services/vendor-marketplace.service.ts(1331,37): error TS2339: Property 'findMany' does not exist on type 'DatabaseService'.
+src/services/vendor/vendor-intelligence.service.ts(435,27): error TS2339: Property 'overallScore' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(441,88): error TS2339: Property 'overallScore' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(446,38): error TS2339: Property 'overallScore' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(453,27): error TS2339: Property 'deliveryReliability' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(459,75): error TS2339: Property 'deliveryReliability' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(464,38): error TS2339: Property 'deliveryReliability' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(471,27): error TS2339: Property 'qualityScore' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(477,68): error TS2339: Property 'qualityScore' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(482,38): error TS2339: Property 'qualityScore' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(525,27): error TS2339: Property 'averagePaymentDays' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(531,77): error TS2339: Property 'averagePaymentDays' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(536,38): error TS2339: Property 'averagePaymentDays' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(597,44): error TS2339: Property 'riskAssessment' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(670,20): error TS2339: Property 'name' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(671,34): error TS2339: Property 'registration_number' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(672,21): error TS2339: Property 'tax_id' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(673,28): error TS2339: Property 'business_type' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(674,31): error TS2339: Property 'established_date' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(675,67): error TS2339: Property 'established_date' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(676,28): error TS2339: Property 'headquarters' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(677,39): error TS2339: Property 'service_areas' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(678,23): error TS2339: Property 'website' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(680,32): error TS2339: Property 'primary_contact' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(681,23): error TS2339: Property 'email' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(682,23): error TS2339: Property 'phone' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(683,34): error TS2339: Property 'emergency_contact' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(700,44): error TS2339: Property 'categories' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(701,49): error TS2339: Property 'specializations' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(703,36): error TS2339: Property 'daily_volume' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(704,38): error TS2339: Property 'monthly_volume' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(705,37): error TS2339: Property 'peak_capacity' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(706,42): error TS2339: Property 'scalability_factor' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(714,50): error TS2339: Property 'quality_standards' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(715,49): error TS2339: Property 'technology_stack' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(734,16): error TS2339: Property 'quality_score' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(735,16): error TS2339: Property 'delivery_reliability' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(736,16): error TS2339: Property 'communication_score' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(737,16): error TS2339: Property 'innovation_score' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(738,16): error TS2339: Property 'sustainability_score' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(739,16): error TS2339: Property 'compliance_score' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(748,42): error TS2339: Property 'quality_score' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(749,49): error TS2339: Property 'delivery_reliability' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(750,48): error TS2339: Property 'communication_score' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(751,45): error TS2339: Property 'innovation_score' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(752,49): error TS2339: Property 'sustainability_score' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(753,45): error TS2339: Property 'compliance_score' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(778,32): error TS2339: Property 'credit_rating' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(779,38): error TS2339: Property 'stability_rating' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(780,29): error TS2339: Property 'risk_level' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(782,28): error TS2339: Property 'cash_flow_status' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(783,27): error TS2339: Property 'cash_flow_trend' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(784,27): error TS2339: Property 'cash_flow_score' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(786,37): error TS2339: Property 'debt_to_equity_ratio' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(787,34): error TS2339: Property 'liquidity_ratio' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(789,56): error TS2339: Property 'avg_payment_days' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(790,53): error TS2339: Property 'late_payment_rate' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(791,49): error TS2339: Property 'dispute_rate' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(819,27): error TS2339: Property 'overall_status' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(828,39): error TS2339: Property 'current' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(829,39): error TS2339: Property 'expired' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(830,39): error TS2339: Property 'pending' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(833,28): error TS2339: Property 'compliance_score' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(834,41): error TS2339: Property 'risk_factors' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(835,49): error TS2339: Property 'recommendations' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(856,37): error TS2339: Property 'competitive_ranking' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(857,30): error TS2339: Property 'market_share_percentage' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(858,49): error TS2339: Property 'unique_selling_points' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(864,34): error TS2339: Property 'pricing_position' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(1082,24): error TS2339: Property 'total_orders' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(1083,28): error TS2339: Property 'completed_orders' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(1084,28): error TS2339: Property 'cancelled_orders' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(1085,31): error TS2339: Property 'average_order_value' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(1086,29): error TS2339: Property 'total_order_value' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(1089,33): error TS2339: Property 'on_time_delivery' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(1090,31): error TS2339: Property 'quality_score' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(1091,39): error TS2339: Property 'customer_satisfaction' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(1092,38): error TS2339: Property 'issue_resolution_time' does not exist on type 'unknown'.
+src/services/vendor/vendor-intelligence.service.ts(1095,26): error TS2339: Property 'total_order_value' does not exist on type 'unknown'.
+src/types/auth.types.ts(6,15): error TS2300: Duplicate identifier 'UserProfile'.
+src/types/auth.types.ts(47,15): error TS2300: Duplicate identifier 'UserProfile'.

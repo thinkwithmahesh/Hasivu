@@ -339,8 +339,10 @@ class BusinessMetricsDashboardService {
             case 'day':
                 return new Date(date.getFullYear(), date.getMonth(), date.getDate()).toISOString();
             case 'week':
-                const week = new Date(date);
-                week.setDate(date.getDate() - date.getDay());
+                {
+                    const week = new Date(date);
+                    week.setDate(date.getDate() - date.getDay());
+                }
                 return new Date(week.getFullYear(), week.getMonth(), week.getDate()).toISOString();
             case 'month':
                 return new Date(date.getFullYear(), date.getMonth(), 1).toISOString();

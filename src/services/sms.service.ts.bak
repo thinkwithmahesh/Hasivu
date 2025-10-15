@@ -1,0 +1,407 @@
+/**
+ * HASIVU Platform - SMS Service
+ * Twilio SMS integration for transactional messaging
+ * Comprehensive SMS delivery with tracking and analytics
+ */
+import twilio from 'twilio';
+import { DatabaseService } from './database.service';
+import { logger } from '@/utils/logger';
+import { config } from '@/config/environment';
+
+/**
+ * SMS message status
+ */
+export type SMSMessageStatus = 'queued' | 'sent' | 'delivered' | 'failed';
+
+/**
+ * SMS message interface
+ */
+export interface SMSMessage {
+  id: string;
+  to: string;
+  from: string;
+  body: string;
+  status: SMSMessageStatus;
+  messageSid?: string;
+  timestamp: Date;
+  deliveredAt?: Date;
+  failedAt?: Date;
+  errorCode?: string;
+  errorMessage?: string;
+  retryCount: number;
+  businessData?: Record<string, any>;
+  cost?: number;
+}
+
+/**
+ * SMS service configuration
+ */
+export interface SMSServiceConfig {
+  accountSid: string;
+  authToken: string;
+  phoneNumber: string;
+  apiVersion: string;
+  retryCount: number;
+  retryDelay: number;
+  rateLimitPerSecond: number;
+}
+
+/**
+ * Message delivery metrics
+ */
+export interface SMSDeliveryMetrics {
+  totalSent: number;
+  totalDelivered: number;
+  totalFailed: number;
+  deliveryRate: number;
+  averageDeliveryTime: number;
+  failureReasons: Record<string, number>;
+  totalCost: number;
+}
+
+/**
+ * SMS service class for Twilio integration
+ */
+export class SMSService {
+  private static instance: SMSService;
+  private client: twilio.Twilio;
+  private prisma: any;
+  private accountSid: string;
+  private authToken: string;
+  private phoneNumber: string;
+  private rateLimitKey = 'sms:rate_limit';
+
+  private constructor() {
+    this.accountSid = config.notifications.sms.apiKey || process.env.TWILIO_ACCOUNT_SID || '';
+    this.authToken = process.env.TWILIO_AUTH_TOKEN || '';
+    this.phoneNumber = process.env.TWILIO_PHONE_NUMBER || '';
+
+    if (!this.accountSid || !this.authToken || !this.phoneNumber) {
+      logger.warn('SMS service not configured - Twilio credentials missing');
+    }
+
+    this.client = twilio(this.accountSid, this.authToken);
+    this.prisma = typeof DatabaseService.getInstance === 'function' && typeof (DatabaseService.getInstance() as any).getPrismaClient === 'function'
+      ? (DatabaseService.getInstance() as any).getPrismaClient()
+      : (DatabaseService as any).client;
+  }
+
+  /**
+   * Get singleton instance
+   */
+  public static getInstance(): SMSService {
+    if (!SMSService.instance) {
+      SMSService.instance = new SMSService();
+    }
+    return SMSService.instance;
+  }
+
+  /**
+   * Send an SMS message
+   */
+  public async sendMessage(
+    to: string,
+    body: string,
+    options: {
+      businessData?: Record<string, any>;
+    } = {}
+  ): Promise<SMSMessage> {
+    try {
+      // Check rate limit
+      await this.checkRateLimit();
+
+      // Normalize phone number
+      const normalizedTo = this.normalizePhoneNumber(to);
+
+      logger.info('Sending SMS message', {
+        to: normalizedTo,
+        bodyLength: body.length
+      });
+
+      // Send message via Twilio
+      const message = await this.client.messages.create({
+        body,
+        from: this.phoneNumber,
+        to: normalizedTo
+      });
+
+      // Create message record
+      const smsMessage: SMSMessage = {
+        id: message.sid,
+        to: normalizedTo,
+        from: this.phoneNumber,
+        body,
+        status: 'sent',
+        messageSid: message.sid,
+        timestamp: new Date(),
+        retryCount: 0,
+        businessData: options.businessData,
+        cost: parseFloat(message.price || '0')
+      };
+
+      // Store message in database
+      await this.storeMessage(smsMessage);
+
+      logger.info('SMS message sent successfully', {
+        messageId: message.sid,
+        to: normalizedTo
+      });
+
+      return smsMessage;
+
+    } catch (error: unknown) {
+      logger.error('Failed to send SMS message', {
+        to,
+        error: (error instanceof Error ? error.message : String(error)),
+        stack: (error instanceof Error ? error.stack : undefined)
+      });
+
+      // Create failed message record
+      const failedMessage: SMSMessage = {
+        id: `failed_${Date.now()}_${Math.random()}`,
+        to: this.normalizePhoneNumber(to),
+        from: this.phoneNumber,
+        body,
+        status: 'failed',
+        timestamp: new Date(),
+        retryCount: 0,
+        errorMessage: (error instanceof Error ? error.message : String(error)),
+        businessData: options.businessData
+      };
+
+      await this.storeMessage(failedMessage);
+      throw error;
+    }
+  }
+
+  /**
+   * Send bulk SMS messages
+   */
+  public async sendBulkMessages(
+    messages: Array<{ to: string; body: string; businessData?: Record<string, any> }>
+  ): Promise<SMSMessage[]> {
+    const results: SMSMessage[] = [];
+
+    for (const message of messages) {
+      try {
+        const result = await this.sendMessage(message.to, message.body, {
+          businessData: message.businessData
+        });
+        results.push(result);
+
+        // Small delay between messages to respect rate limits
+        await new Promise(resolve => setTimeout(resolve, 100));
+      } catch (error: unknown) {
+        logger.error('Failed to send bulk SMS message', {
+          to: message.to,
+          error: (error instanceof Error ? error.message : String(error))
+        });
+      }
+    }
+
+    return results;
+  }
+
+  /**
+   * Handle Twilio webhook for status updates
+   */
+  public async handleStatusWebhook(
+    messageSid: string,
+    messageStatus: string,
+    errorCode?: string,
+    errorMessage?: string
+  ): Promise<void> {
+    try {
+      const status = this.mapTwilioStatus(messageStatus);
+
+      const updateData: any = {
+        status
+      };
+
+      if (status === 'delivered') {
+        updateData.deliveredAt = new Date();
+      } else if (status === 'failed') {
+        updateData.failedAt = new Date();
+        updateData.errorCode = errorCode;
+        updateData.errorMessage = errorMessage;
+      }
+
+      await this.prisma.smsMessage.update({
+        where: { messageSid },
+        data: updateData
+      });
+
+      logger.debug('Updated SMS message status', {
+        messageSid,
+        status,
+        errorCode
+      });
+    } catch (error: unknown) {
+      logger.error('Failed to update SMS message status', {
+        messageSid,
+        error: (error instanceof Error ? error.message : String(error))
+      });
+    }
+  }
+
+  /**
+   * Get delivery metrics
+   */
+  public async getDeliveryMetrics(
+    startDate: Date,
+    endDate: Date
+  ): Promise<SMSDeliveryMetrics> {
+    try {
+      const messages = await this.prisma.smsMessage.findMany({
+        where: {
+          timestamp: {
+            gte: startDate,
+            lte: endDate
+          }
+        }
+      });
+
+      const totalSent = messages.length;
+      const totalDelivered = messages.filter((m: any) => m.status === 'delivered').length;
+      const totalFailed = messages.filter((m: any) => m.status === 'failed').length;
+
+      const deliveryRate = totalSent > 0 ? (totalDelivered / totalSent) * 100 : 0;
+
+      // Calculate average delivery time
+      const deliveredMessages = messages.filter((m: any) => m.deliveredAt);
+      const averageDeliveryTime = deliveredMessages.length > 0
+        ? deliveredMessages.reduce((sum: number, m: any) =>
+            sum + (m.deliveredAt!.getTime() - m.timestamp.getTime()), 0
+          ) / deliveredMessages.length
+        : 0;
+
+      // Analyze failure reasons
+      const failureReasons: Record<string, number> = {};
+      messages.filter((m: any) => m.status === 'failed' && m.errorMessage).forEach((m: any) => {
+        const reason = m.errorMessage!;
+        failureReasons[reason] = (failureReasons[reason] || 0) + 1;
+      });
+
+      // Calculate total cost
+      const totalCost = messages.reduce((sum: number, m: any) => sum + (m.cost || 0), 0);
+
+      return {
+        totalSent,
+        totalDelivered,
+        totalFailed,
+        deliveryRate: Math.round(deliveryRate * 100) / 100,
+        averageDeliveryTime: Math.round(averageDeliveryTime),
+        failureReasons,
+        totalCost: Math.round(totalCost * 100) / 100
+      };
+    } catch (error: unknown) {
+      logger.error('Failed to get SMS delivery metrics', { error: (error instanceof Error ? error.message : String(error)) });
+      throw error;
+    }
+  }
+
+  /**
+   * Check rate limit before making API calls
+   */
+  private async checkRateLimit(): Promise<void> {
+    // Implementation for rate limiting using Redis
+    // For now, just add a small delay
+    await new Promise(resolve => setTimeout(resolve, 50));
+  }
+
+  /**
+   * Normalize phone number to international format
+   */
+  private normalizePhoneNumber(phoneNumber: string): string {
+    // Remove all non-digit characters
+    const digits = phoneNumber.replace(/\D/g, '');
+
+    // Add country code if missing (assuming India +91)
+    if (digits.length === 10) {
+      return `+91${digits}`;
+    }
+
+    // Add + prefix if missing
+    if (!digits.startsWith('+')) {
+      return `+${digits}`;
+    }
+
+    return digits;
+  }
+
+  /**
+   * Map Twilio status to internal status
+   */
+  private mapTwilioStatus(twilioStatus: string): SMSMessageStatus {
+    switch (twilioStatus.toLowerCase()) {
+      case 'queued':
+      case 'accepted':
+      case 'sending':
+        return 'queued';
+      case 'sent':
+        return 'sent';
+      case 'delivered':
+        return 'delivered';
+      case 'failed':
+      case 'undelivered':
+        return 'failed';
+      default:
+        return 'failed';
+    }
+  }
+
+  /**
+   * Store message in database
+   */
+  private async storeMessage(message: SMSMessage): Promise<void> {
+    try {
+      await this.prisma.smsMessage.create({
+        data: {
+          id: message.id,
+          to: message.to,
+          from: message.from,
+          body: message.body,
+          status: message.status,
+          messageSid: message.messageSid,
+          timestamp: message.timestamp,
+          deliveredAt: message.deliveredAt,
+          failedAt: message.failedAt,
+          errorCode: message.errorCode,
+          errorMessage: message.errorMessage,
+          retryCount: message.retryCount,
+          businessData: message.businessData ? JSON.stringify(message.businessData) : null,
+          cost: message.cost
+        }
+      });
+    } catch (error: unknown) {
+      logger.error('Failed to store SMS message', {
+        messageId: message.id,
+        error: (error instanceof Error ? error.message : String(error))
+      });
+    }
+  }
+
+  /**
+   * Get service configuration
+   */
+  public getConfiguration(): SMSServiceConfig {
+    return {
+      accountSid: '[REDACTED]',
+      authToken: '[REDACTED]',
+      phoneNumber: this.phoneNumber,
+      apiVersion: '2010-04-01',
+      retryCount: 3,
+      retryDelay: 1000,
+      rateLimitPerSecond: 10
+    };
+  }
+
+  /**
+   * Check if service is configured
+   */
+  public isConfigured(): boolean {
+    return !!(this.accountSid && this.authToken && this.phoneNumber);
+  }
+}
+
+export default SMSService;

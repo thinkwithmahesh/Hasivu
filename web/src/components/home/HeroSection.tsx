@@ -5,15 +5,7 @@
  */
 
 import React from 'react';
-import {
-  Box,
-  Typography,
-  Button,
-  Container,
-  Grid,
-  Stack,
-  alpha,
-} from '@mui/material';
+import { Box, Typography, Button, Container, Grid, Stack, alpha } from '@mui/material';
 import { ArrowForward, Restaurant, School, Security } from '@mui/icons-material';
 
 /**
@@ -33,8 +25,8 @@ export interface HeroSectionProps {
  */
 export const HeroSection: React.FC<HeroSectionProps> = ({
   showCTA = true,
-  headline = "Smart School Food Delivery with RFID Verification",
-  subheadline = "Revolutionary platform connecting parents, schools, and students through secure, real-time food delivery tracking and seamless payment integration.",
+  headline = 'Smart School Food Delivery with RFID Verification',
+  subheadline = 'Revolutionary platform connecting parents, schools, and students through secure, real-time food delivery tracking and seamless payment integration.',
 }) => {
   return (
     <Box
@@ -94,11 +86,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               </Typography>
 
               {showCTA && (
-                <Stack
-                  direction={{ xs: 'column', sm: 'row' }}
-                  spacing={2}
-                  sx={{ mb: 4 }}
-                >
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 4 }}>
                   <Button
                     variant="contained"
                     size="large"
@@ -121,7 +109,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   >
                     Get Started
                   </Button>
-                  
+
                   <Button
                     variant="outlined"
                     size="large"

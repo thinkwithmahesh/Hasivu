@@ -1,0 +1,1737 @@
+[
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/analytics/data-warehouse/integration/gateway/api-gateway.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/analytics/data-warehouse/integration/health/health-monitor.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/analytics/data-warehouse/integration/mesh/service-mesh-manager.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/analytics/data-warehouse/integration/streaming/event-stream-manager.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/analytics/data-warehouse/integration/sync/data-synchronizer.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/analytics/data-warehouse/security/access/access-control-engine.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/analytics/data-warehouse/security/audit/audit-trail-manager.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/analytics/data-warehouse/security/classification/data-classification-engine.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/analytics/data-warehouse/security/cls/column-level-security-manager.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/analytics/data-warehouse/security/coppa/coppa-compliance-manager.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/analytics/data-warehouse/security/gdpr/gdpr-compliance-manager.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/analytics/data-warehouse/security/masking/data-masking-engine.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/analytics/data-warehouse/security/privacy/privacy-preserving-analytics.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/analytics/data-warehouse/security/rls/row-level-security-manager.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/analytics/data-warehouse/security/threats/threat-detection-engine.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/analytics/data-warehouse/security/zerotrust/zero-trust-manager.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/analytics/data-warehouse/types/data-lake-types.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/analytics/data-warehouse/types/etl-types.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/analytics/data-warehouse/types/integration-types.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/analytics/data-warehouse/types/security-types.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/analytics/data-warehouse/types/storage-types.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/analytics/data-warehouse/types/warehouse-types.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/config/environment.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/config/razorpay.config.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/container/ServiceContainer.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/functions/auth/change-password.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/functions/auth/login.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/functions/auth/logout.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/functions/auth/profile.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/functions/auth/refresh.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/functions/auth/register.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/functions/auth/update-profile.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/functions/rfid/create-card.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/functions/rfid/delivery-verification.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/functions/rfid/verify-card.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/functions/shared/cognito.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/functions/shared/database.service.ts",
+    "messages": [],
+    "suppressedMessages": [
+      {
+        "ruleId": "no-var",
+        "severity": 2,
+        "message": "Unexpected var, use let or const instead.",
+        "line": 12,
+        "column": 3,
+        "nodeType": "VariableDeclaration",
+        "messageId": "unexpectedVar",
+        "endLine": 12,
+        "endColumn": 44,
+        "suppressions": [{ "kind": "directive", "justification": "" }]
+      }
+    ],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/functions/shared/logger.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/functions/shared/response.utils.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/functions/shared/validation.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/interfaces/repository.interfaces.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/lib/security/security.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/repositories/dailyMenu.repository.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/repositories/menuItem.repository.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/repositories/menuPlan.repository.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/repositories/order.repository.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/repositories/orderItem.repository.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/repositories/paymentOrder.repository.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/repositories/user.repository.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/routes/auth.routes.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/routes/rfid.routes.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/__mocks__/redis.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/analytics.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/analytics/analytics-calculators.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/analytics/cohort-analysis.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/analytics/dashboard-generation.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/analytics/metric-tracking.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/analytics/predictive-analytics.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/analytics/query-execution.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/analytics/report-generation.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/analytics/types.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/audit.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/auth.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/cache.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/cognito.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/customer.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/dailyMenu.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/database-performance.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/database.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/fraud-detection.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/inventory.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/invoice.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/kitchen.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/logger.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/logging.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/menu.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/menuItem.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/menuPlan.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/ml/automl.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/ml/explainability.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/ml/feature-engineering.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/ml/federated-learning.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/ml/model-monitoring.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/monitoring-dashboard.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/notification.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/nutrition.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/nutritional-compliance.types.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/order.service.enhanced.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/order.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/payment-analytics.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/payment.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/paymentGateway.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/performance.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/production.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/quality-control.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/redis.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/rfid.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/school.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/staff-management.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/subscription.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/user.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/validation.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/wallet.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/services/websocket.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/shared/logger.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/shared/middleware/lambda-auth.middleware.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/shared/response.utils.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/shared/utils/logger.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/shared/validation.service.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/types/analytics.types.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/types/api.types.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/types/csv-parser.d.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/types/index.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/types/menu.types.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/types/ml.types.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/types/modules.d.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/types/nutrition.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/utils/__mocks__/cache.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/utils/__mocks__/logger.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/utils/cache.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/utils/errors.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/utils/logger.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  },
+  {
+    "filePath": "/Users/mahesha/Downloads/hasivu-platform/src/utils/secure-regex.ts",
+    "messages": [],
+    "suppressedMessages": [],
+    "errorCount": 0,
+    "fatalErrorCount": 0,
+    "warningCount": 0,
+    "fixableErrorCount": 0,
+    "fixableWarningCount": 0,
+    "usedDeprecatedRules": [
+      { "ruleId": "no-extra-semi", "replacedBy": [] },
+      { "ruleId": "no-mixed-spaces-and-tabs", "replacedBy": [] }
+    ]
+  }
+]

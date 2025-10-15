@@ -1,0 +1,939 @@
+/**
+ * HASIVU Platform - WhatsApp Business API Service
+ * WhatsApp message delivery service with template support
+ * Comprehensive integration with Meta WhatsApp Business API
+ */
+import axios, { AxiosInstance } from 'axios';
+import { DatabaseService } from './database.service';
+import { RedisService } from './redis.service';
+import { logger, log } from '@/utils/logger';
+import { config } from '@/config/environment';
+
+/**
+ * WhatsApp message types
+ */
+export type WhatsAppMessageType = 'text' | 'template' | 'media' | 'interactive' | 'location';
+
+/**
+ * WhatsApp message status
+ */
+export type WhatsAppMessageStatus = 'queued' | 'sent' | 'delivered' | 'read' | 'failed';
+
+/**
+ * WhatsApp template component types
+ */
+export type TemplateComponentType = 'HEADER' | 'BODY' | 'FOOTER' | 'BUTTONS';
+
+/**
+ * WhatsApp button types
+ */
+export type ButtonType = 'QUICK_REPLY' | 'URL' | 'PHONE_NUMBER';
+
+/**
+ * WhatsApp template interface
+ */
+export interface WhatsAppTemplate {
+  name: string;
+  language: string;
+  components?: Array<{
+    type: TemplateComponentType;
+    parameters?: Array<{
+      type: 'text' | 'currency' | 'date_time' | 'image' | 'document' | 'video';
+      text?: string;
+      currency?: {
+        fallback_value: string;
+        code: string;
+        amount_1000: number;
+      };
+      date_time?: {
+        fallback_value: string;
+      };
+      image?: {
+        link: string;
+      };
+      document?: {
+        link: string;
+        filename?: string;
+      };
+      video?: {
+        link: string;
+      };
+    }>;
+    sub_type?: 'quick_reply' | 'url' | 'phone_number';
+    index?: number;
+    buttons?: Array<{
+      type: ButtonType;
+      text: string;
+      url?: string;
+      phone_number?: string;
+    }>;
+  }>;
+}
+
+/**
+ * WhatsApp message request interface
+ */
+export interface WhatsAppMessageRequest {
+  messaging_product: 'whatsapp';
+  recipient_type?: 'individual';
+  to: string;
+  type: WhatsAppMessageType;
+  text?: {
+    preview_url?: boolean;
+    body: string;
+  };
+  template?: WhatsAppTemplate;
+  image?: {
+    link?: string;
+    id?: string;
+    caption?: string;
+  };
+  audio?: {
+    link?: string;
+    id?: string;
+  };
+  video?: {
+    link?: string;
+    id?: string;
+    caption?: string;
+  };
+  document?: {
+    link?: string;
+    id?: string;
+    caption?: string;
+    filename?: string;
+  };
+  location?: {
+    longitude: number;
+    latitude: number;
+    name?: string;
+    address?: string;
+  };
+  interactive?: {
+    type: 'button' | 'list';
+    header?: {
+      type: 'text' | 'image' | 'video' | 'document';
+      text?: string;
+      image?: { link: string };
+      video?: { link: string };
+      document?: { link: string; filename?: string };
+    };
+    body: {
+      text: string;
+    };
+    footer?: {
+      text: string;
+    };
+    action: {
+      buttons?: Array<{
+        type: 'reply';
+        reply: {
+          id: string;
+          title: string;
+        };
+      }>;
+      button?: string;
+      sections?: Array<{
+        title?: string;
+        rows: Array<{
+          id: string;
+          title: string;
+          description?: string;
+        }>;
+      }>;
+    };
+  };
+  context?: {
+    message_id: string;
+  };
+  biz_opaque_callback_data?: string;
+}
+
+/**
+ * WhatsApp message interface
+ */
+export interface WhatsAppMessage {
+  id: string;
+  to: string;
+  type: WhatsAppMessageType;
+  status: WhatsAppMessageStatus;
+  template?: WhatsAppTemplate;
+  content?: string;
+  mediaUrl?: string;
+  timestamp: Date;
+  deliveredAt?: Date;
+  readAt?: Date;
+  errorMessage?: string;
+  retryCount: number;
+  businessData?: Record<string, any>;
+  context?: {
+    messageId?: string;
+    from?: string;
+    conversationId?: string;
+  };
+}
+
+/**
+ * WhatsApp webhook event interface
+ */
+export interface WhatsAppWebhookEvent {
+  object: 'whatsapp_business_account';
+  entry: Array<{
+    id: string;
+    changes: Array<{
+      value: {
+        messaging_product: 'whatsapp';
+        metadata: {
+          display_phone_number: string;
+          phone_number_id: string;
+        };
+        contacts?: Array<{
+          profile: {
+            name: string;
+          };
+          wa_id: string;
+        }>;
+        messages?: Array<{
+          from: string;
+          id: string;
+          timestamp: string;
+          text?: {
+            body: string;
+          };
+          type: string;
+          context?: {
+            from: string;
+            id: string;
+          };
+        }>;
+        statuses?: Array<{
+          id: string;
+          status: WhatsAppMessageStatus;
+          timestamp: string;
+          recipient_id: string;
+          conversation?: {
+            id: string;
+            expiration_timestamp?: string;
+            origin?: {
+              type: string;
+            };
+          };
+          pricing?: {
+            billable: boolean;
+            pricing_model: string;
+            category: string;
+          };
+          errors?: Array<{
+            code: number;
+            title: string;
+            message?: string;
+            error_data?: {
+              details: string;
+            };
+          }>;
+        }>;
+      };
+      field: string;
+    }>;
+  }>;
+}
+
+/**
+ * WhatsApp API response interface
+ */
+export interface WhatsAppApiResponse {
+  messaging_product: 'whatsapp';
+  contacts: Array<{
+    input: string;
+    wa_id: string;
+  }>;
+  messages: Array<{
+    id: string;
+    message_status?: WhatsAppMessageStatus;
+  }>;
+}
+
+/**
+ * WhatsApp service configuration
+ */
+export interface WhatsAppServiceConfig {
+  accessToken: string;
+  phoneNumberId: string;
+  businessAccountId: string;
+  webhookVerifyToken: string;
+  webhookUrl: string;
+  apiVersion: string;
+  baseUrl: string;
+  retryCount: number;
+  retryDelay: number;
+  rateLimitPerMinute: number;
+}
+
+/**
+ * Message delivery metrics
+ */
+export interface MessageDeliveryMetrics {
+  totalSent: number;
+  totalDelivered: number;
+  totalRead: number;
+  totalFailed: number;
+  deliveryRate: number;
+  readRate: number;
+  averageDeliveryTime: number;
+  failureReasons: Record<string, number>;
+}
+
+/**
+ * WhatsApp service class for business messaging
+ */
+export class WhatsAppService {
+  private static instance: WhatsAppService;
+  private client: AxiosInstance;
+  private prisma: any;
+  private redisService: typeof RedisService;
+  private accessToken: string;
+  private phoneNumberId: string;
+  private businessAccountId: string;
+  private rateLimitKey = 'whatsapp:rate_limit';
+  private messageQueue = 'whatsapp:message_queue';
+
+  private constructor() {
+    this.accessToken = config.whatsapp.accessToken;
+    this.phoneNumberId = config.whatsapp.phoneNumberId;
+    this.businessAccountId = config.whatsapp.businessAccountId;
+    this.prisma = typeof DatabaseService.getInstance === 'function' && typeof (DatabaseService.getInstance() as any).getPrismaClient === 'function'
+      ? (DatabaseService.getInstance() as any).getPrismaClient()
+      : (DatabaseService as any).client;
+    this.redisService = RedisService;
+
+    this.client = axios.create({
+      baseURL: `https://graph.facebook.com/v${(config.whatsapp as any).apiVersion || '18.0'}`,
+      headers: {
+        'Authorization': `Bearer ${this.accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      timeout: 30000
+    });
+
+    this.setupInterceptors();
+  }
+
+  /**
+   * Get singleton instance
+   */
+  public static getInstance(): WhatsAppService {
+    if (!WhatsAppService.instance) {
+      WhatsAppService.instance = new WhatsAppService();
+    }
+    return WhatsAppService.instance;
+  }
+
+  /**
+   * Setup request and response interceptors
+   */
+  private setupInterceptors(): void {
+    this.client.interceptors.request.use(
+      async (config) => {
+        // Rate limiting check
+        await this.checkRateLimit();
+        
+        logger.debug('WhatsApp API request', {
+          url: config.url,
+          method: config.method,
+          headers: { ...config.headers, Authorization: '[REDACTED]' }
+        });
+        
+        return config;
+      },
+      (error) => {
+        logger.error('WhatsApp API request error', { error: error instanceof Error ? error.message : String(error) });
+        return Promise.reject(error);
+      }
+    );
+
+    this.client.interceptors.response.use(
+      (response) => {
+        logger.debug('WhatsApp API response', {
+          status: response.status,
+          data: response.data
+        });
+        return response;
+      },
+      (error) => {
+        logger.error('WhatsApp API response error', {
+          status: error.response?.status,
+          data: error.response?.data,
+          message: error.message
+        });
+        return Promise.reject(error);
+      }
+    );
+  }
+
+  /**
+   * Check rate limit before making API calls
+   */
+  private async checkRateLimit(): Promise<void> {
+    const currentCount = await this.redisService.get(this.rateLimitKey);
+    const limit = (config.whatsapp as any).rateLimitPerMinute || 1000;
+
+    if (currentCount && parseInt(currentCount) >= limit) {
+      throw new Error('WhatsApp API rate limit exceeded. Please try again later.');
+    }
+
+    await this.redisService.incr(this.rateLimitKey);
+    await this.redisService.expire(this.rateLimitKey, 60); // 1 minute window
+  }
+
+  /**
+   * Send a WhatsApp message
+   */
+  public async sendMessage(
+    to: string,
+    type: WhatsAppMessageType,
+    content: any,
+    options: {
+      template?: WhatsAppTemplate;
+      context?: { messageId: string };
+      businessData?: Record<string, any>;
+    } = {}
+  ): Promise<WhatsAppMessage> {
+    try {
+      // Normalize phone number
+      const normalizedTo = this.normalizePhoneNumber(to);
+      
+      // Build message request
+      const messageRequest: WhatsAppMessageRequest = {
+        messaging_product: 'whatsapp',
+        to: normalizedTo,
+        type,
+        ...this.buildMessageContent(type, content, options)
+      };
+
+      // Add context if provided
+      if (options.context?.messageId) {
+        messageRequest.context = {
+          message_id: options.context.messageId
+        };
+      }
+
+      logger.info('Sending WhatsApp message', {
+        to: normalizedTo,
+        type,
+        hasTemplate: !!options.template
+      });
+
+      // Send message via API
+      const response = await this.client.post(`/${this.phoneNumberId}/messages`, messageRequest);
+
+      const apiResponse: WhatsAppApiResponse = response.data;
+      const messageId = apiResponse.messages[0]?.id;
+
+      if (!messageId) {
+        throw new Error('No message ID returned from WhatsApp API');
+      }
+
+      // Create message record
+      const message: WhatsAppMessage = {
+        id: messageId,
+        to: normalizedTo,
+        type,
+        status: 'sent',
+        template: options.template,
+        content: type === 'text' ? content.body : JSON.stringify(content),
+        timestamp: new Date(),
+        retryCount: 0,
+        businessData: options.businessData,
+        context: options.context
+      };
+
+      // Store message in database
+      await this.storeMessage(message);
+
+      // Queue for delivery tracking
+      await this.queueMessageForTracking(messageId);
+
+      logger.info('WhatsApp message sent successfully', {
+        messageId,
+        to: normalizedTo,
+        type
+      });
+
+      return message;
+
+    } catch (error: unknown) {
+      logger.error('Failed to send WhatsApp message', {
+        to,
+        type,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error.stack
+      });
+
+      // Create failed message record
+      const failedMessage: WhatsAppMessage = {
+        id: `failed_${Date.now()}_${Math.random()}`,
+        to: this.normalizePhoneNumber(to),
+        type,
+        status: 'failed',
+        template: options.template,
+        content: type === 'text' ? content.body : JSON.stringify(content),
+        timestamp: new Date(),
+        retryCount: 0,
+        errorMessage: error.message,
+        businessData: options.businessData,
+        context: options.context
+      };
+
+      await this.storeMessage(failedMessage);
+      throw error;
+    }
+  }
+
+  /**
+   * Send a text message
+   */
+  public async sendTextMessage(
+    to: string,
+    text: string,
+    options: { previewUrl?: boolean; context?: { messageId: string } } = {}
+  ): Promise<WhatsAppMessage> {
+    return this.sendMessage(to, 'text', {
+      body: text,
+      preview_url: options.previewUrl || false
+    }, options);
+  }
+
+  /**
+   * Send a template message
+   */
+  public async sendTemplateMessage(
+    to: string,
+    template: WhatsAppTemplate,
+    businessData?: Record<string, any>
+  ): Promise<WhatsAppMessage> {
+    return this.sendMessage(to, 'template', null, {
+      template,
+      businessData
+    });
+  }
+
+  /**
+   * Send media message (image, video, document, audio)
+   */
+  public async sendMediaMessage(
+    to: string,
+    mediaType: 'image' | 'video' | 'document' | 'audio',
+    mediaUrl: string,
+    options: { caption?: string; filename?: string } = {}
+  ): Promise<WhatsAppMessage> {
+    const mediaContent: any = {
+      link: mediaUrl
+    };
+
+    if (options.caption) {
+      mediaContent.caption = options.caption;
+    }
+
+    if (options.filename && mediaType === 'document') {
+      mediaContent.filename = options.filename;
+    }
+
+    return this.sendMessage(to, 'media', { [mediaType]: mediaContent });
+  }
+
+  /**
+   * Send interactive message with buttons
+   */
+  public async sendInteractiveMessage(
+    to: string,
+    body: string,
+    buttons: Array<{ id: string; title: string }>,
+    options: { header?: string; footer?: string } = {}
+  ): Promise<WhatsAppMessage> {
+    const interactive = {
+      type: 'button',
+      body: { text: body },
+      action: {
+        buttons: buttons.map(button => ({
+          type: 'reply',
+          reply: {
+            id: button.id,
+            title: button.title
+          }
+        }))
+      }
+    };
+
+    if (options.header) {
+      interactive['header'] = {
+        type: 'text',
+        text: options.header
+      };
+    }
+
+    if (options.footer) {
+      interactive['footer'] = {
+        text: options.footer
+      };
+    }
+
+    return this.sendMessage(to, 'interactive', interactive);
+  }
+
+  /**
+   * Build message content based on type
+   */
+  private buildMessageContent(
+    type: WhatsAppMessageType,
+    content: any,
+    options: any
+  ): Partial<WhatsAppMessageRequest> {
+    switch (type) {
+      case 'text':
+        return { text: content };
+      
+      case 'template':
+        return { template: options.template };
+      
+      case 'media':
+        return content;
+      
+      case 'interactive':
+        return { interactive: content };
+      
+      case 'location':
+        return { location: content };
+      
+      default:
+        throw new Error(`Unsupported message type: ${type}`);
+    }
+  }
+
+  /**
+   * Normalize phone number to WhatsApp format
+   */
+  private normalizePhoneNumber(phoneNumber: string): string {
+    // Remove all non-digit characters
+    const digits = phoneNumber.replace(/\D/g, '');
+    
+    // Add country code if missing (assuming India +91)
+    if (digits.length === 10) {
+      return `91${digits}`;
+    }
+    
+    return digits;
+  }
+
+  /**
+   * Store message in database
+   */
+  private async storeMessage(message: WhatsAppMessage): Promise<void> {
+    try {
+      await this.prisma.whatsAppMessage.create({
+        data: {
+          id: message.id,
+          to: message.to,
+          type: message.type,
+          status: message.status,
+          template: message.template ? JSON.stringify(message.template) : null,
+          content: message.content,
+          mediaUrl: message.mediaUrl,
+          timestamp: message.timestamp,
+          deliveredAt: message.deliveredAt,
+          readAt: message.readAt,
+          errorMessage: message.errorMessage,
+          retryCount: message.retryCount,
+          businessData: message.businessData ? JSON.stringify(message.businessData) : null,
+          context: message.context ? JSON.stringify(message.context) : null
+        }
+      });
+    } catch (error: unknown) {
+      logger.error('Failed to store WhatsApp message', {
+        messageId: message.id,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  }
+
+  /**
+   * Queue message for delivery tracking
+   */
+  private async queueMessageForTracking(messageId: string): Promise<void> {
+    try {
+      if (typeof (this.redisService as any).lpush === 'function') {
+        await (this.redisService as any).lpush(this.messageQueue, messageId);
+      } else {
+        logger.debug('Redis lpush method not available, skipping message queue');
+      }
+    } catch (error: unknown) {
+      logger.error('Failed to queue message for tracking', {
+        messageId,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  }
+
+  /**
+   * Handle webhook events
+   */
+  public async handleWebhook(event: WhatsAppWebhookEvent): Promise<void> {
+    try {
+      logger.info('Processing WhatsApp webhook event', {
+        entries: event.entry.length
+      });
+
+      for (const entry of event.entry) {
+        for (const change of entry.changes) {
+          if (change.field === 'messages') {
+            await this.processMessageChanges(change.value);
+          }
+        }
+      }
+    } catch (error: unknown) {
+      logger.error('Failed to process WhatsApp webhook', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error.stack
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Process message status changes
+   */
+  private async processMessageChanges(value: any): Promise<void> {
+    // Process status updates
+    if (value.statuses) {
+      for (const status of value.statuses) {
+        await this.updateMessageStatus(status.id, status.status, {
+          timestamp: new Date(parseInt(status.timestamp) * 1000),
+          conversation: status.conversation,
+          pricing: status.pricing,
+          errors: status.errors
+        });
+      }
+    }
+
+    // Process incoming messages
+    if (value.messages) {
+      for (const message of value.messages) {
+        await this.processIncomingMessage(message, value.contacts);
+      }
+    }
+  }
+
+  /**
+   * Update message status
+   */
+  private async updateMessageStatus(
+    messageId: string,
+    status: WhatsAppMessageStatus,
+    metadata: any
+  ): Promise<void> {
+    try {
+      const updateData: any = { status };
+
+      if (status === 'delivered') {
+        updateData.deliveredAt = metadata.timestamp;
+      } else if (status === 'read') {
+        updateData.readAt = metadata.timestamp;
+      } else if (status === 'failed' && metadata.errors) {
+        updateData.errorMessage = metadata.errors.map((e: any) => e.title).join(', ');
+      }
+
+      await this.prisma.whatsAppMessage.update({
+        where: { id: messageId },
+        data: updateData
+      });
+
+      logger.debug('Updated message status', {
+        messageId,
+        status,
+        timestamp: metadata.timestamp
+      });
+    } catch (error: unknown) {
+      logger.error('Failed to update message status', {
+        messageId,
+        status,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  }
+
+  /**
+   * Process incoming message
+   */
+  private async processIncomingMessage(message: any, contacts: any[]): Promise<void> {
+    try {
+      const contact = contacts?.find(c => c.wa_id === message.from);
+      
+      logger.info('Received incoming WhatsApp message', {
+        messageId: message.id,
+        from: message.from,
+        type: message.type,
+        contactName: contact?.profile?.name
+      });
+
+      // Store incoming message
+      await this.prisma.whatsAppIncomingMessage.create({
+        data: {
+          id: message.id,
+          from: message.from,
+          type: message.type,
+          content: message.text?.body || JSON.stringify(message),
+          timestamp: new Date(parseInt(message.timestamp) * 1000),
+          contactName: contact?.profile?.name,
+          context: message.context ? JSON.stringify(message.context) : null
+        }
+      });
+
+      // Trigger automated responses if configured
+      await this.triggerAutomatedResponse(message, contact);
+
+    } catch (error: unknown) {
+      logger.error('Failed to process incoming message', {
+        messageId: message.id,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  }
+
+  /**
+   * Trigger automated responses
+   */
+  private async triggerAutomatedResponse(message: any, contact: any): Promise<void> {
+    // Implementation for automated responses based on business logic
+    // This could include welcome messages, order confirmations, etc.
+    
+    if (message.text?.body?.toLowerCase().includes('help')) {
+      await this.sendTextMessage(
+        message.from,
+        'Thank you for contacting HASIVU. How can we help you today?'
+      );
+    }
+  }
+
+  /**
+   * Get message templates
+   */
+  public async getMessageTemplates(): Promise<any[]> {
+    try {
+      const response = await this.client.get(`/${this.businessAccountId}/message_templates`);
+      return response.data.data || [];
+    } catch (error: unknown) {
+      logger.error('Failed to get message templates', { error: error instanceof Error ? error.message : String(error) });
+      throw error;
+    }
+  }
+
+  /**
+   * Get delivery metrics
+   */
+  public async getDeliveryMetrics(
+    startDate: Date,
+    endDate: Date
+  ): Promise<MessageDeliveryMetrics> {
+    try {
+      const messages = await this.prisma.whatsAppMessage.findMany({
+        where: {
+          timestamp: {
+            gte: startDate,
+            lte: endDate
+          }
+        }
+      });
+
+      const totalSent = messages.length;
+      const totalDelivered = messages.filter(m => m.status === 'delivered' || m.status === 'read').length;
+      const totalRead = messages.filter(m => m.status === 'read').length;
+      const totalFailed = messages.filter(m => m.status === 'failed').length;
+
+      const deliveryRate = totalSent > 0 ? (totalDelivered / totalSent) * 100 : 0;
+      const readRate = totalDelivered > 0 ? (totalRead / totalDelivered) * 100 : 0;
+
+      // Calculate average delivery time
+      const deliveredMessages = messages.filter(m => m.deliveredAt);
+      const averageDeliveryTime = deliveredMessages.length > 0
+        ? deliveredMessages.reduce((sum, m) => 
+            sum + (m.deliveredAt!.getTime() - m.timestamp.getTime()), 0
+          ) / deliveredMessages.length
+        : 0;
+
+      // Analyze failure reasons
+      const failureReasons: Record<string, number> = {};
+      messages.filter(m => m.status === 'failed' && m.errorMessage).forEach(m => {
+        const reason = m.errorMessage!;
+        failureReasons[reason] = (failureReasons[reason] || 0) + 1;
+      });
+
+      return {
+        totalSent,
+        totalDelivered,
+        totalRead,
+        totalFailed,
+        deliveryRate: Math.round(deliveryRate * 100) / 100,
+        readRate: Math.round(readRate * 100) / 100,
+        averageDeliveryTime: Math.round(averageDeliveryTime),
+        failureReasons
+      };
+    } catch (error: unknown) {
+      logger.error('Failed to get delivery metrics', { error: error instanceof Error ? error.message : String(error) });
+      throw error;
+    }
+  }
+
+  /**
+   * Verify webhook signature
+   */
+  public verifyWebhookSignature(body: string, signature: string): boolean {
+    try {
+      const crypto = require('crypto');
+      const expectedSignature = crypto
+        .createHmac('sha256', config.whatsapp.webhookVerifyToken)
+        .update(body)
+        .digest('hex');
+      
+      return `sha256=${expectedSignature}` === signature;
+    } catch (error: unknown) {
+      logger.error('Failed to verify webhook signature', { error: error instanceof Error ? error.message : String(error) });
+      return false;
+    }
+  }
+
+  /**
+   * Get webhook verification challenge
+   */
+  public handleWebhookVerification(
+    mode: string,
+    token: string,
+    challenge: string
+  ): string | null {
+    if (mode === 'subscribe' && token === config.whatsapp.webhookVerifyToken) {
+      logger.info('WhatsApp webhook verified successfully');
+      return challenge;
+    }
+    
+    logger.warn('WhatsApp webhook verification failed', { mode, token });
+    return null;
+  }
+
+  /**
+   * Get service configuration
+   */
+  public getConfiguration(): WhatsAppServiceConfig {
+    return {
+      accessToken: '[REDACTED]',
+      phoneNumberId: this.phoneNumberId,
+      businessAccountId: this.businessAccountId,
+      webhookVerifyToken: '[REDACTED]',
+      webhookUrl: `${config.server.baseUrl}/api/v1/webhooks/whatsapp`,
+      apiVersion: (config.whatsapp as any).apiVersion || '18.0',
+      baseUrl: `https://graph.facebook.com/v${(config.whatsapp as any).apiVersion || '18.0'}`,
+      retryCount: (config.whatsapp as any).retryCount || 3,
+      retryDelay: (config.whatsapp as any).retryDelay || 1000,
+      rateLimitPerMinute: (config.whatsapp as any).rateLimitPerMinute || 1000
+    };
+  }
+}
+
+export default WhatsAppService;

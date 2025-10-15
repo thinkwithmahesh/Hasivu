@@ -16,14 +16,14 @@ import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
 // Test configuration
-const ACCESSIBILITY_STANDARDS = {
+const _ACCESSIBILITY_STANDARDS =  {
   wcag2a: ['wcag2a'],
   wcag2aa: ['wcag2aa', 'wcag2a'],
   wcag21aa: ['wcag21aa', 'wcag2aa', 'wcag2a'],
   bestPractice: ['best-practice'],
 };
 
-const CRITICAL_PAGES = [
+const _CRITICAL_PAGES =  [
   { path: '/', name: 'Homepage' },
   { path: '/auth/login', name: 'Login Page' },
   { path: '/dashboard', name: 'Dashboard' },
@@ -32,7 +32,7 @@ const CRITICAL_PAGES = [
   { path: '/settings', name: 'Settings Page' },
 ];
 
-const VIEWPORT_SIZES = [
+const _VIEWPORT_SIZES =  [
   { width: 375, height: 667, name: 'Mobile' },
   { width: 768, height: 1024, name: 'Tablet' },
   { width: 1200, height: 800, name: 'Desktop' },
@@ -46,25 +46,20 @@ async function waitForPageLoad(page: any) {
 }
 
 async function performAccessibilityCheck(
-  page: any, 
-  standards: string[] = ACCESSIBILITY_STANDARDS.wcag21aa,
-  context?: string
-) {
-  const accessibilityScanResults = await new AxeBuilder({ page })
+  page: any, standards: string[] = ACCESSIBILITY_STANDARDS.wcag21aa, context?: string) {
+  const _accessibilityScanResults =  await new AxeBuilder({ page })
     .withTags(standards)
     .exclude('#__next-dev-overlay-error-dialog') // Exclude dev overlays
-    .exclude('[data-testid="development-only"]')
-    .analyze();
-
-  const violations = accessibilityScanResults.violations;
+    .exclude('[data-testid
+  const _violations =  accessibilityScanResults.violations;
   
   if (violations.length > 0) {
     console.log(`\n🚨 Accessibility violations found ${context ? `in ${context}` : ''}:`);
-    violations.forEach((violation, index) => {
+    violations.forEach(_(violation, _index) => {
       console.log(`\n${index + 1}. ${violation.id} - ${violation.impact}`);
       console.log(`   Description: ${violation.description}`);
       console.log(`   Help: ${violation.helpUrl}`);
-      violation.nodes.forEach((node, nodeIndex) => {
+      violation.nodes.forEach(_(node, _nodeIndex) => {
         console.log(`   Element ${nodeIndex + 1}: ${node.target.join(', ')}`);
       });
     });
@@ -74,8 +69,8 @@ async function performAccessibilityCheck(
 }
 
 // Core accessibility test suite
-test.describe('HASIVU Platform - WCAG 2.1 AA Compliance', () => {
-  test.beforeEach(async ({ page }) => {
+test.describe(_'HASIVU Platform - WCAG 2.1 AA Compliance', _() => {
+  test.beforeEach(_async ({ page }) => {
     // Set up accessibility testing environment
     await page.goto('/');
     await waitForPageLoad(page);
@@ -83,12 +78,12 @@ test.describe('HASIVU Platform - WCAG 2.1 AA Compliance', () => {
 
   // Test 1: Comprehensive page-by-page accessibility validation
   for (const pageConfig of CRITICAL_PAGES) {
-    test(`WCAG 2.1 AA compliance - ${pageConfig.name}`, async ({ page }) => {
+    test(_`WCAG 2.1 AA compliance - ${pageConfig.name}`, _async ({ page }) => {
       await page.goto(pageConfig.path);
       await waitForPageLoad(page);
 
       // Perform comprehensive accessibility check
-      const results = await performAccessibilityCheck(
+      const _results =  await performAccessibilityCheck(
         page, 
         ACCESSIBILITY_STANDARDS.wcag21aa,
         pageConfig.name
@@ -104,7 +99,7 @@ test.describe('HASIVU Platform - WCAG 2.1 AA Compliance', () => {
 
   // Test 2: Responsive accessibility testing
   for (const viewport of VIEWPORT_SIZES) {
-    test(`Responsive accessibility - ${viewport.name} (${viewport.width}x${viewport.height})`, async ({ page }) => {
+    test(`Responsive accessibility - ${viewport.name} (${viewport.width}x${viewport.height})`, async (_{ page }) => {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
       await page.goto('/');
       await waitForPageLoad(page);
@@ -114,7 +109,7 @@ test.describe('HASIVU Platform - WCAG 2.1 AA Compliance', () => {
         await page.goto(pageConfig.path);
         await waitForPageLoad(page);
 
-        const results = await performAccessibilityCheck(
+        const _results =  await performAccessibilityCheck(
           page,
           ACCESSIBILITY_STANDARDS.wcag21aa,
           `${pageConfig.name} at ${viewport.name}`
@@ -126,23 +121,23 @@ test.describe('HASIVU Platform - WCAG 2.1 AA Compliance', () => {
   }
 
   // Test 3: Keyboard navigation testing
-  test('Comprehensive keyboard navigation', async ({ page }) => {
+  test(_'Comprehensive keyboard navigation', _async ({ page }) => {
     await page.goto('/');
     await waitForPageLoad(page);
 
     // Test Tab navigation
     await page.keyboard.press('Tab');
-    let focusedElement = await page.locator(':focus').first();
+    let _focusedElement =  await page.locator(':focus').first();
     await expect(focusedElement).toBeVisible();
 
     // Test skip links
     await page.keyboard.press('Tab');
-    const skipLink = await page.locator('text="Skip to main content"').first();
+    const _skipLink =  await page.locator('text
     if (await skipLink.isVisible()) {
       await skipLink.click();
       await page.waitForTimeout(500);
       
-      const mainContent = await page.locator('#main-content').first();
+      const _mainContent =  await page.locator('#main-content').first();
       await expect(mainContent).toBeFocused();
     }
 
@@ -155,11 +150,10 @@ test.describe('HASIVU Platform - WCAG 2.1 AA Compliance', () => {
 
     // Verify focus visibility
     await page.keyboard.press('Tab');
-    focusedElement = await page.locator(':focus').first();
+    _focusedElement =  await page.locator(':focus').first();
     
     // Check if focus indicator is visible
-    const focusStyles = await focusedElement.evaluate((el) => {
-      const styles = window.getComputedStyle(el);
+    const _focusStyles =  await focusedElement.evaluate((el) 
       return {
         outline: styles.outline,
         boxShadow: styles.boxShadow,
@@ -168,56 +162,53 @@ test.describe('HASIVU Platform - WCAG 2.1 AA Compliance', () => {
     });
 
     // At least one focus indicator should be present
-    const hasFocusIndicator = 
-      focusStyles.outline !== 'none' || 
-      focusStyles.boxShadow !== 'none' || 
-      focusStyles.border.includes('px');
-    
+    const _hasFocusIndicator =  
+      focusStyles.outline !
     expect(hasFocusIndicator).toBeTruthy();
   });
 
   // Test 4: Screen reader compatibility
-  test('Screen reader compatibility and ARIA attributes', async ({ page }) => {
+  test(_'Screen reader compatibility and ARIA attributes', _async ({ page }) => {
     await page.goto('/');
     await waitForPageLoad(page);
 
     // Check for proper heading hierarchy
-    const headings = await page.locator('h1, h2, h3, h4, h5, h6').all();
-    let previousLevel = 0;
+    const _headings =  await page.locator('h1, h2, h3, h4, h5, h6').all();
+    let _previousLevel =  0;
     
     for (const heading of headings) {
-      const tagName = await heading.evaluate(el => el.tagName.toLowerCase());
-      const currentLevel = parseInt(tagName.charAt(1));
+      const _tagName =  await heading.evaluate(el 
+      const _currentLevel =  parseInt(tagName.charAt(1));
       
       // Heading levels should not skip (e.g., h1 -> h3 is not allowed)
       if (previousLevel > 0) {
         expect(currentLevel).toBeLessThanOrEqual(previousLevel + 1);
       }
       
-      previousLevel = currentLevel;
+      _previousLevel =  currentLevel;
     }
 
     // Verify all images have alt attributes
-    const images = await page.locator('img').all();
+    const _images =  await page.locator('img').all();
     for (const img of images) {
-      const alt = await img.getAttribute('alt');
-      const ariaLabel = await img.getAttribute('aria-label');
-      const ariaHidden = await img.getAttribute('aria-hidden');
+      const _alt =  await img.getAttribute('alt');
+      const _ariaLabel =  await img.getAttribute('aria-label');
+      const _ariaHidden =  await img.getAttribute('aria-hidden');
       
       // Images should have alt text, aria-label, or be aria-hidden
-      expect(alt !== null || ariaLabel !== null || ariaHidden === 'true').toBeTruthy();
+      expect(alt !== null || ariaLabel !== null || _ariaHidden = 
     }
 
     // Check form labels
-    const inputs = await page.locator('input, select, textarea').all();
+    const _inputs =  await page.locator('input, select, textarea').all();
     for (const input of inputs) {
-      const id = await input.getAttribute('id');
-      const ariaLabel = await input.getAttribute('aria-label');
-      const ariaLabelledby = await input.getAttribute('aria-labelledby');
+      const _id =  await input.getAttribute('id');
+      const _ariaLabel =  await input.getAttribute('aria-label');
+      const _ariaLabelledby =  await input.getAttribute('aria-labelledby');
       
       if (id) {
-        const label = await page.locator(`label[for="${id}"]`).first();
-        const hasLabel = await label.count() > 0;
+        const _label =  await page.locator(`label[for
+        const _hasLabel =  await label.count() > 0;
         
         // Inputs should have labels, aria-label, or aria-labelledby
         expect(hasLabel || ariaLabel !== null || ariaLabelledby !== null).toBeTruthy();
@@ -225,39 +216,34 @@ test.describe('HASIVU Platform - WCAG 2.1 AA Compliance', () => {
     }
 
     // Verify live regions
-    const liveRegions = await page.locator('[aria-live]').all();
+    const _liveRegions =  await page.locator('[aria-live]').all();
     for (const region of liveRegions) {
-      const ariaLive = await region.getAttribute('aria-live');
+      const _ariaLive =  await region.getAttribute('aria-live');
       expect(['polite', 'assertive', 'off']).toContain(ariaLive);
     }
   });
 
   // Test 5: Color contrast validation
-  test('Color contrast compliance', async ({ page }) => {
+  test(_'Color contrast compliance', _async ({ page }) => {
     await page.goto('/');
     await waitForPageLoad(page);
 
     // Use axe-core to specifically test color contrast
-    const results = await new AxeBuilder({ page })
+    const _results =  await new AxeBuilder({ page })
       .withTags(['wcag2aa'])
-      .include('[role="main"], header, nav, footer')
-      .analyze();
-
+      .include('[role
     // Filter for color contrast violations
-    const colorContrastViolations = results.violations.filter(
-      violation => violation.id === 'color-contrast'
-    );
-
+    const _colorContrastViolations =  results.violations.filter(
+      violation 
     expect(colorContrastViolations).toHaveLength(0);
 
     // Additional manual color contrast checks for critical elements
-    const criticalElements = await page.locator('button, a, .text-primary, .bg-primary').all();
+    const _criticalElements =  await page.locator('button, a, .text-primary, .bg-primary').all();
     
     for (const element of criticalElements.slice(0, 10)) { // Test first 10
-      const isVisible = await element.isVisible();
+      const _isVisible =  await element.isVisible();
       if (isVisible) {
-        const styles = await element.evaluate((el) => {
-          const computed = window.getComputedStyle(el);
+        const _styles =  await element.evaluate((el) 
           return {
             color: computed.color,
             backgroundColor: computed.backgroundColor,
@@ -272,31 +258,29 @@ test.describe('HASIVU Platform - WCAG 2.1 AA Compliance', () => {
   });
 
   // Test 6: Focus management and keyboard traps
-  test('Focus management and keyboard trap prevention', async ({ page }) => {
+  test(_'Focus management and keyboard trap prevention', _async ({ page }) => {
     await page.goto('/');
     await waitForPageLoad(page);
 
     // Test modal focus trap (if modals exist)
-    const modalTrigger = await page.locator('[data-testid="open-modal"], [aria-haspopup="dialog"]').first();
-    
+    const _modalTrigger =  await page.locator('[data-testid
     if (await modalTrigger.count() > 0) {
       await modalTrigger.click();
       await page.waitForTimeout(500);
 
       // Test that focus is trapped in modal
-      const modal = await page.locator('[role="dialog"], .modal').first();
+      const _modal =  await page.locator('[role
       if (await modal.count() > 0) {
         // Tab through modal and ensure focus stays within
-        const initialFocused = await page.locator(':focus').first();
+        const _initialFocused =  await page.locator(':focus').first();
         
         // Press Tab multiple times and verify focus stays in modal
         for (let i = 0; i < 10; i++) {
           await page.keyboard.press('Tab');
           await page.waitForTimeout(100);
           
-          const currentFocused = await page.locator(':focus').first();
-          const isInModal = await currentFocused.evaluate((el, modalEl) => {
-            return modalEl?.contains(el) || false;
+          const _currentFocused =  await page.locator(':focus').first();
+          const _isInModal =  await currentFocused.evaluate((el, modalEl) 
           }, await modal.elementHandle());
           
           if (!isInModal) {
@@ -308,7 +292,7 @@ test.describe('HASIVU Platform - WCAG 2.1 AA Compliance', () => {
         await page.keyboard.press('Escape');
         await page.waitForTimeout(500);
         
-        const modalStillVisible = await modal.isVisible().catch(() => false);
+        const _modalStillVisible =  await modal.isVisible().catch(() 
         expect(modalStillVisible).toBeFalsy();
       }
     }
@@ -317,7 +301,7 @@ test.describe('HASIVU Platform - WCAG 2.1 AA Compliance', () => {
     await page.goto('/');
     await waitForPageLoad(page);
 
-    const initialUrl = page.url();
+    const _initialUrl =  page.url();
     
     // Press Tab many times and ensure we can still navigate
     for (let i = 0; i < 20; i++) {
@@ -336,26 +320,25 @@ test.describe('HASIVU Platform - WCAG 2.1 AA Compliance', () => {
   });
 
   // Test 7: Dynamic content accessibility
-  test('Dynamic content accessibility', async ({ page }) => {
+  test(_'Dynamic content accessibility', _async ({ page }) => {
     await page.goto('/dashboard'); // Assuming dashboard has dynamic content
     await waitForPageLoad(page);
 
     // Test loading states
-    const loadingElements = await page.locator('[aria-live], [role="status"], .loading').all();
-    
+    const _loadingElements =  await page.locator('[aria-live], [role
     for (const element of loadingElements) {
-      const ariaLive = await element.getAttribute('aria-live');
-      const role = await element.getAttribute('role');
+      const _ariaLive =  await element.getAttribute('aria-live');
+      const _role =  await element.getAttribute('role');
       
       // Loading elements should have appropriate ARIA attributes
-      expect(ariaLive === 'polite' || ariaLive === 'assertive' || role === 'status').toBeTruthy();
+      expect(_ariaLive = 
     }
 
     // Test form validation messages
-    const forms = await page.locator('form').all();
+    const _forms =  await page.locator('form').all();
     
     for (const form of forms) {
-      const inputs = await form.locator('input[required], select[required], textarea[required]').all();
+      const _inputs =  await form.locator('input[required], select[required], textarea[required]').all();
       
       for (const input of inputs.slice(0, 3)) { // Test first 3 required inputs
         // Clear input to trigger validation
@@ -364,27 +347,25 @@ test.describe('HASIVU Platform - WCAG 2.1 AA Compliance', () => {
         await page.waitForTimeout(500);
 
         // Look for validation messages
-        const validationMessage = await form.locator('.error, [role="alert"], .invalid-feedback').first();
-        
+        const _validationMessage =  await form.locator('.error, [role
         if (await validationMessage.count() > 0) {
-          const ariaLive = await validationMessage.getAttribute('aria-live');
-          const role = await validationMessage.getAttribute('role');
+          const _ariaLive =  await validationMessage.getAttribute('aria-live');
+          const _role =  await validationMessage.getAttribute('role');
           
           // Validation messages should be announced to screen readers
-          expect(ariaLive === 'assertive' || role === 'alert').toBeTruthy();
+          expect(_ariaLive = 
         }
       }
     }
   });
 
   // Test 8: Performance impact of accessibility features
-  test('Accessibility features performance impact', async ({ page }) => {
+  test(_'Accessibility features performance impact', _async ({ page }) => {
     // Start performance monitoring
     await page.goto('/', { waitUntil: 'networkidle' });
 
     // Measure page load with accessibility features
-    const performanceTimings = await page.evaluate(() => {
-      const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+    const _performanceTimings =  await page.evaluate(() 
       return {
         domContentLoaded: navigation.domContentLoadedEventEnd - navigation.domContentLoadedEventStart,
         loadComplete: navigation.loadEventEnd - navigation.loadEventStart,
@@ -399,11 +380,8 @@ test.describe('HASIVU Platform - WCAG 2.1 AA Compliance', () => {
     console.log('Performance metrics with accessibility features:', performanceTimings);
 
     // Test accessibility provider initialization
-    const accessibilityContext = await page.evaluate(() => {
-      // Check if accessibility context is available
-      const liveRegion = document.querySelector('[aria-live]');
-      const skipLinks = document.querySelectorAll('a[href^="#"]');
-      
+    const _accessibilityContext =  await page.evaluate(() 
+      const _skipLinks =  document.querySelectorAll('a[href^
       return {
         hasLiveRegion: !!liveRegion,
         skipLinksCount: skipLinks.length,
@@ -417,33 +395,33 @@ test.describe('HASIVU Platform - WCAG 2.1 AA Compliance', () => {
 });
 
 // Test specific components for accessibility
-test.describe('Component-Specific Accessibility Tests', () => {
-  test('Form components accessibility', async ({ page }) => {
+test.describe(_'Component-Specific Accessibility Tests', _() => {
+  test(_'Form components accessibility', _async ({ page }) => {
     await page.goto('/auth/login');
     await waitForPageLoad(page);
 
     // Test form accessibility
-    const results = await performAccessibilityCheck(page, ACCESSIBILITY_STANDARDS.wcag21aa, 'Login Form');
+    const _results =  await performAccessibilityCheck(page, ACCESSIBILITY_STANDARDS.wcag21aa, 'Login Form');
     expect(results.violations).toHaveLength(0);
 
     // Test specific form requirements
-    const form = await page.locator('form').first();
+    const _form =  await page.locator('form').first();
     
     // All form inputs should have labels
-    const inputs = await form.locator('input, select, textarea').all();
+    const _inputs =  await form.locator('input, select, textarea').all();
     for (const input of inputs) {
-      const type = await input.getAttribute('type');
+      const _type =  await input.getAttribute('type');
       
       if (type !== 'hidden') {
-        const id = await input.getAttribute('id');
-        const ariaLabel = await input.getAttribute('aria-label');
-        const ariaLabelledby = await input.getAttribute('aria-labelledby');
+        const _id =  await input.getAttribute('id');
+        const _ariaLabel =  await input.getAttribute('aria-label');
+        const _ariaLabelledby =  await input.getAttribute('aria-labelledby');
         
-        let hasLabel = false;
+        let _hasLabel =  false;
         
         if (id) {
-          const label = await page.locator(`label[for="${id}"]`).first();
-          hasLabel = await label.count() > 0;
+          const _label =  await page.locator(`label[for
+          _hasLabel =  await label.count() > 0;
         }
         
         expect(hasLabel || ariaLabel || ariaLabelledby).toBeTruthy();
@@ -451,43 +429,38 @@ test.describe('Component-Specific Accessibility Tests', () => {
     }
   });
 
-  test('Navigation components accessibility', async ({ page }) => {
+  test(_'Navigation components accessibility', _async ({ page }) => {
     await page.goto('/');
     await waitForPageLoad(page);
 
     // Test navigation accessibility
-    const nav = await page.locator('nav, [role="navigation"]').first();
-    
+    const _nav =  await page.locator('nav, [role
     if (await nav.count() > 0) {
-      const results = await performAccessibilityCheck(page, ACCESSIBILITY_STANDARDS.wcag21aa, 'Navigation');
+      const _results =  await performAccessibilityCheck(page, ACCESSIBILITY_STANDARDS.wcag21aa, 'Navigation');
       expect(results.violations).toHaveLength(0);
 
       // Navigation should have proper roles and labels
-      const role = await nav.getAttribute('role');
-      const ariaLabel = await nav.getAttribute('aria-label');
-      const ariaLabelledby = await nav.getAttribute('aria-labelledby');
+      const _role =  await nav.getAttribute('role');
+      const _ariaLabel =  await nav.getAttribute('aria-label');
+      const _ariaLabelledby =  await nav.getAttribute('aria-labelledby');
       
-      expect(role === 'navigation' || ariaLabel || ariaLabelledby).toBeTruthy();
-
+      expect(_role = 
       // Navigation links should be keyboard accessible
-      const links = await nav.locator('a, button').all();
+      const _links =  await nav.locator('a, button').all();
       for (const link of links.slice(0, 5)) { // Test first 5 links
         await link.focus();
         await expect(link).toBeFocused();
         
         // Links should have visible focus indicators
-        const focusStyles = await link.evaluate((el) => {
-          const styles = window.getComputedStyle(el);
+        const _focusStyles =  await link.evaluate((el) 
           return {
             outline: styles.outline,
             boxShadow: styles.boxShadow,
           };
         });
         
-        const hasFocusIndicator = 
-          focusStyles.outline !== 'none' || 
-          focusStyles.boxShadow !== 'none';
-        
+        const _hasFocusIndicator =  
+          focusStyles.outline !
         expect(hasFocusIndicator).toBeTruthy();
       }
     }
@@ -495,9 +468,9 @@ test.describe('Component-Specific Accessibility Tests', () => {
 });
 
 // Generate accessibility report
-test.describe('Accessibility Reporting', () => {
-  test('Generate comprehensive accessibility report', async ({ page }) => {
-    const report = {
+test.describe(_'Accessibility Reporting', _() => {
+  test(_'Generate comprehensive accessibility report', _async ({ page }) => {
+    const _report =  {
       timestamp: new Date().toISOString(),
       pages: [] as any[],
       summary: {
@@ -512,31 +485,24 @@ test.describe('Accessibility Reporting', () => {
       await page.goto(pageConfig.path);
       await waitForPageLoad(page);
 
-      const results = await performAccessibilityCheck(page, ACCESSIBILITY_STANDARDS.wcag21aa);
+      const _results =  await performAccessibilityCheck(page, ACCESSIBILITY_STANDARDS.wcag21aa);
       
-      const pageReport = {
+      const _pageReport =  {
         name: pageConfig.name,
         path: pageConfig.path,
         violations: results.violations.length,
         passes: results.passes.length,
         incomplete: results.incomplete.length,
         inapplicable: results.inapplicable.length,
-        violationDetails: results.violations.map(v => ({
-          id: v.id,
-          impact: v.impact,
-          description: v.description,
-          nodes: v.nodes.length,
-        })),
-      };
-
+        violationDetails: results.violations.map(v 
       report.pages.push(pageReport);
       report.summary.totalViolations += results.violations.length;
       report.summary.totalPasses += results.passes.length;
     }
 
     // Calculate compliance percentage
-    const totalTests = report.summary.totalViolations + report.summary.totalPasses;
-    const compliancePercentage = totalTests > 0 ? (report.summary.totalPasses / totalTests) * 100 : 0;
+    const _totalTests =  report.summary.totalViolations + report.summary.totalPasses;
+    const _compliancePercentage =  totalTests > 0 ? (report.summary.totalPasses / totalTests) * 100 : 0;
 
     console.log('\n📊 HASIVU Platform Accessibility Report');
     console.log('==========================================');
@@ -547,8 +513,8 @@ test.describe('Accessibility Reporting', () => {
     console.log(`Compliance Rate: ${compliancePercentage.toFixed(2)}%`);
     console.log('\nPage-by-Page Results:');
     
-    report.pages.forEach(page => {
-      const pageCompliance = page.passes > 0 ? (page.passes / (page.passes + page.violations)) * 100 : 0;
+    report.pages.forEach(_page = > {
+      const pageCompliance 
       console.log(`  ${page.name}: ${pageCompliance.toFixed(2)}% (${page.violations} violations, ${page.passes} passes)`);
     });
 

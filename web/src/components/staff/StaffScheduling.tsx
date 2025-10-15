@@ -1,25 +1,21 @@
-"use client";
+'use client';
 
 import React, { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   Calendar,
   Clock,
   Users,
   Plus,
-  Edit2,
-  Trash2,
   ChevronLeft,
   ChevronRight,
   AlertTriangle,
   CheckCircle,
   XCircle,
   Loader2,
-  User,
-  MapPin,
   Coffee,
   Moon,
-  Sun
+  Sun,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -27,8 +23,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 
@@ -76,7 +86,7 @@ const shiftTemplates: Shift[] = [
     endTime: '14:00',
     days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
     isActive: true,
-    color: 'bg-yellow-100 text-yellow-800 border-yellow-200'
+    color: 'bg-yellow-100 text-yellow-800 border-yellow-200',
   },
   {
     id: 'afternoon',
@@ -85,7 +95,7 @@ const shiftTemplates: Shift[] = [
     endTime: '22:00',
     days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
     isActive: true,
-    color: 'bg-blue-100 text-blue-800 border-blue-200'
+    color: 'bg-blue-100 text-blue-800 border-blue-200',
   },
   {
     id: 'night',
@@ -94,7 +104,7 @@ const shiftTemplates: Shift[] = [
     endTime: '06:00',
     days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
     isActive: true,
-    color: 'bg-purple-100 text-purple-800 border-purple-200'
+    color: 'bg-purple-100 text-purple-800 border-purple-200',
   },
   {
     id: 'weekend',
@@ -103,8 +113,8 @@ const shiftTemplates: Shift[] = [
     endTime: '16:00',
     days: ['saturday', 'sunday'],
     isActive: true,
-    color: 'bg-green-100 text-green-800 border-green-200'
-  }
+    color: 'bg-green-100 text-green-800 border-green-200',
+  },
 ];
 
 const getShiftIcon = (shiftId: string) => {
@@ -160,13 +170,13 @@ const ScheduleStatusBadge = ({ status }: { status: Schedule['status'] }) => {
   );
 };
 
-const CalendarView = ({ 
-  schedules, 
+const CalendarView = ({
+  schedules,
   staffMembers,
   currentWeek,
   onScheduleClick,
-  onCreateSchedule 
-}: { 
+  onCreateSchedule,
+}: {
   schedules: Schedule[];
   staffMembers: any[];
   currentWeek: Date;
@@ -177,7 +187,7 @@ const CalendarView = ({
     const days = [];
     const startOfWeek = new Date(currentWeek);
     startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
-    
+
     for (let i = 0; i < 7; i++) {
       const day = new Date(startOfWeek);
       day.setDate(startOfWeek.getDate() + i);
@@ -188,9 +198,7 @@ const CalendarView = ({
 
   const getSchedulesForDay = (date: Date, staffId: string) => {
     const dateStr = date.toISOString().split('T')[0];
-    return schedules.filter(s => 
-      s.date === dateStr && s.staffId === staffId
-    );
+    return schedules.filter(s => s.date === dateStr && s.staffId === staffId);
   };
 
   return (
@@ -200,7 +208,10 @@ const CalendarView = ({
           <tr>
             <th className="text-left p-3 border-b font-medium text-gray-700">Staff</th>
             {weekDays.map((day, index) => (
-              <th key={index} className="text-center p-3 border-b border-l font-medium text-gray-700 min-w-[120px]">
+              <th
+                key={index}
+                className="text-center p-3 border-b border-l font-medium text-gray-700 min-w-[120px]"
+              >
                 <div>{day.toLocaleDateString('en-US', { weekday: 'short' })}</div>
                 <div className="text-sm text-gray-500">
                   {day.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
@@ -217,7 +228,10 @@ const CalendarView = ({
                   <Avatar className="w-8 h-8">
                     <AvatarImage src={staff.avatar} alt={staff.name} />
                     <AvatarFallback>
-                      {staff.name.split(' ').map(n => n[0]).join('')}
+                      {staff.name
+                        .split(' ')
+                        .map(n => n[0])
+                        .join('')}
                     </AvatarFallback>
                   </Avatar>
                   <div>
@@ -229,13 +243,11 @@ const CalendarView = ({
               {weekDays.map((day, dayIndex) => {
                 const daySchedules = getSchedulesForDay(day, staff.id);
                 const isToday = day.toDateString() === new Date().toDateString();
-                
+
                 return (
-                  <td 
-                    key={dayIndex} 
-                    className={`p-2 border-b border-l ${
-                      isToday ? 'bg-blue-50/50' : ''
-                    }`}
+                  <td
+                    key={dayIndex}
+                    className={`p-2 border-b border-l ${isToday ? 'bg-blue-50/50' : ''}`}
                   >
                     <div className="space-y-1 min-h-[80px]">
                       {daySchedules.map(schedule => {
@@ -272,7 +284,9 @@ const CalendarView = ({
                           variant="ghost"
                           size="sm"
                           className="w-full h-full opacity-0 hover:opacity-100 transition-opacity"
-                          onClick={() => onCreateSchedule(day.toISOString().split('T')[0], staff.id)}
+                          onClick={() =>
+                            onCreateSchedule(day.toISOString().split('T')[0], staff.id)
+                          }
                         >
                           <Plus className="w-3 h-3" />
                         </Button>
@@ -289,12 +303,12 @@ const CalendarView = ({
   );
 };
 
-const CreateScheduleDialog = ({ 
+const CreateScheduleDialog = ({
   onCreateSchedule,
   staffMembers,
   initialDate,
-  initialStaffId
-}: { 
+  initialStaffId,
+}: {
   onCreateSchedule: (schedule: Partial<Schedule>) => void;
   staffMembers: any[];
   initialDate?: string;
@@ -306,7 +320,7 @@ const CreateScheduleDialog = ({
     date: initialDate || new Date().toISOString().split('T')[0],
     shiftId: 'morning',
     status: 'scheduled',
-    notes: ''
+    notes: '',
   });
 
   const handleSubmit = () => {
@@ -318,7 +332,7 @@ const CreateScheduleDialog = ({
         date: new Date().toISOString().split('T')[0],
         shiftId: 'morning',
         status: 'scheduled',
-        notes: ''
+        notes: '',
       });
     }
   };
@@ -334,22 +348,20 @@ const CreateScheduleDialog = ({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Create Schedule</DialogTitle>
-          <DialogDescription>
-            Add a new schedule for a staff member
-          </DialogDescription>
+          <DialogDescription>Add a new schedule for a staff member</DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="space-y-2">
             <Label htmlFor="staff">Staff Member</Label>
             <Select
               value={scheduleData.staffId}
-              onValueChange={(value) => setScheduleData({ ...scheduleData, staffId: value })}
+              onValueChange={value => setScheduleData({ ...scheduleData, staffId: value })}
             >
               <SelectTrigger id="staff" data-testid="schedule-staff-select">
                 <SelectValue placeholder="Select staff member" />
               </SelectTrigger>
               <SelectContent>
-                {staffMembers.map((staff) => (
+                {staffMembers.map(staff => (
                   <SelectItem key={staff.id} value={staff.id}>
                     {staff.name} - {staff.role}
                   </SelectItem>
@@ -364,7 +376,7 @@ const CreateScheduleDialog = ({
               id="date"
               type="date"
               value={scheduleData.date}
-              onChange={(e) => setScheduleData({ ...scheduleData, date: e.target.value })}
+              onChange={e => setScheduleData({ ...scheduleData, date: e.target.value })}
               data-testid="schedule-date-input"
             />
           </div>
@@ -373,13 +385,13 @@ const CreateScheduleDialog = ({
             <Label htmlFor="shift">Shift</Label>
             <Select
               value={scheduleData.shiftId}
-              onValueChange={(value) => setScheduleData({ ...scheduleData, shiftId: value })}
+              onValueChange={value => setScheduleData({ ...scheduleData, shiftId: value })}
             >
               <SelectTrigger id="shift" data-testid="schedule-shift-select">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {shiftTemplates.map((shift) => (
+                {shiftTemplates.map(shift => (
                   <SelectItem key={shift.id} value={shift.id}>
                     <div className="flex items-center gap-2">
                       {getShiftIcon(shift.id)}
@@ -400,7 +412,7 @@ const CreateScheduleDialog = ({
               id="notes"
               placeholder="Any special notes..."
               value={scheduleData.notes}
-              onChange={(e) => setScheduleData({ ...scheduleData, notes: e.target.value })}
+              onChange={e => setScheduleData({ ...scheduleData, notes: e.target.value })}
               data-testid="schedule-notes-input"
             />
           </div>
@@ -421,24 +433,40 @@ const CreateScheduleDialog = ({
 export default function StaffScheduling() {
   const { toast } = useToast();
   const [currentWeek, setCurrentWeek] = useState(new Date());
-  const [viewMode, setViewMode] = useState<'week' | 'day'>('week');
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
 
   // Fetch data from backend
-  const { data: schedulesData, loading: schedulesLoading, error: schedulesError, refetch: refetchSchedules } = useStaffSchedules({
-    startDate: new Date(currentWeek.getFullYear(), currentWeek.getMonth(), currentWeek.getDate() - currentWeek.getDay()).toISOString(),
-    endDate: new Date(currentWeek.getFullYear(), currentWeek.getMonth(), currentWeek.getDate() - currentWeek.getDay() + 6).toISOString()
+  const {
+    data: schedulesData,
+    loading: schedulesLoading,
+    error: schedulesError,
+    refetch: refetchSchedules,
+  } = useStaffSchedules({
+    startDate: new Date(
+      currentWeek.getFullYear(),
+      currentWeek.getMonth(),
+      currentWeek.getDate() - currentWeek.getDay()
+    ).toISOString(),
+    endDate: new Date(
+      currentWeek.getFullYear(),
+      currentWeek.getMonth(),
+      currentWeek.getDate() - currentWeek.getDay() + 6
+    ).toISOString(),
   });
   const { data: staffData, loading: staffLoading } = useStaffMembers();
-  const { createSchedule, loading: mutationLoading } = useStaffMutations();
+  const { createSchedule } = useStaffMutations();
 
   // WebSocket for real-time updates
   const { isConnected } = useWebSocket({
-    onMessage: (event: string, data: any) => {
-      if (event === 'schedule.updated' || event === 'schedule.created' || event === 'schedule.deleted') {
+    onMessage: (event: string, _data: any) => {
+      if (
+        event === 'schedule.updated' ||
+        event === 'schedule.created' ||
+        event === 'schedule.deleted'
+      ) {
         refetchSchedules();
       }
-    }
+    },
   });
 
   // Process schedules data
@@ -453,7 +481,7 @@ export default function StaffScheduling() {
     const confirmed = schedules.filter(s => s.status === 'confirmed').length;
     const absent = schedules.filter(s => s.status === 'absent').length;
     const completed = schedules.filter(s => s.status === 'completed').length;
-    
+
     const totalHours = schedules.reduce((sum, s) => {
       if (s.hoursWorked) return sum + s.hoursWorked;
       const shift = shiftTemplates.find(sh => sh.id === s.shiftId);
@@ -471,7 +499,8 @@ export default function StaffScheduling() {
       absent,
       completed,
       totalHours,
-      attendanceRate: totalScheduled > 0 ? Math.round(((confirmed + completed) / totalScheduled) * 100) : 0
+      attendanceRate:
+        totalScheduled > 0 ? Math.round(((confirmed + completed) / totalScheduled) * 100) : 0,
     };
   }, [schedules]);
 
@@ -479,15 +508,15 @@ export default function StaffScheduling() {
     try {
       await createSchedule(scheduleData);
       toast({
-        title: "Schedule Created",
-        description: "The schedule has been created successfully.",
+        title: 'Schedule Created',
+        description: 'The schedule has been created successfully.',
       });
       refetchSchedules();
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to create schedule. Please try again.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to create schedule. Please try again.',
+        variant: 'destructive',
       });
     }
   };
@@ -508,7 +537,7 @@ export default function StaffScheduling() {
       staffId,
       date,
       shiftId: 'morning',
-      status: 'scheduled'
+      status: 'scheduled',
     });
   };
 
@@ -522,29 +551,21 @@ export default function StaffScheduling() {
             <p className="text-gray-600">Manage staff shifts and schedules</p>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => handleWeekChange('prev')}
-            >
+            <Button variant="outline" size="icon" onClick={() => handleWeekChange('prev')}>
               <ChevronLeft className="w-4 h-4" />
             </Button>
             <div className="px-4 py-2 bg-gray-100 rounded">
               <span className="font-medium">
-                {currentWeek.toLocaleDateString('en-US', { 
-                  month: 'long', 
-                  year: 'numeric' 
+                {currentWeek.toLocaleDateString('en-US', {
+                  month: 'long',
+                  year: 'numeric',
                 })}
               </span>
             </div>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => handleWeekChange('next')}
-            >
+            <Button variant="outline" size="icon" onClick={() => handleWeekChange('next')}>
               <ChevronRight className="w-4 h-4" />
             </Button>
-            <CreateScheduleDialog 
+            <CreateScheduleDialog
               onCreateSchedule={handleCreateSchedule}
               staffMembers={staffData || []}
             />
@@ -555,9 +576,7 @@ export default function StaffScheduling() {
         <Card>
           <CardHeader>
             <CardTitle>Weekly Schedule</CardTitle>
-            <CardDescription>
-              Loading schedules...
-            </CardDescription>
+            <CardDescription>Loading schedules...</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-center h-48">
@@ -579,29 +598,21 @@ export default function StaffScheduling() {
             <p className="text-gray-600">Manage staff shifts and schedules</p>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => handleWeekChange('prev')}
-            >
+            <Button variant="outline" size="icon" onClick={() => handleWeekChange('prev')}>
               <ChevronLeft className="w-4 h-4" />
             </Button>
             <div className="px-4 py-2 bg-gray-100 rounded">
               <span className="font-medium">
-                {currentWeek.toLocaleDateString('en-US', { 
-                  month: 'long', 
-                  year: 'numeric' 
+                {currentWeek.toLocaleDateString('en-US', {
+                  month: 'long',
+                  year: 'numeric',
                 })}
               </span>
             </div>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => handleWeekChange('next')}
-            >
+            <Button variant="outline" size="icon" onClick={() => handleWeekChange('next')}>
               <ChevronRight className="w-4 h-4" />
             </Button>
-            <CreateScheduleDialog 
+            <CreateScheduleDialog
               onCreateSchedule={handleCreateSchedule}
               staffMembers={staffData || []}
             />
@@ -629,29 +640,21 @@ export default function StaffScheduling() {
           <p className="text-gray-600">Manage staff shifts and schedules</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => handleWeekChange('prev')}
-          >
+          <Button variant="outline" size="icon" onClick={() => handleWeekChange('prev')}>
             <ChevronLeft className="w-4 h-4" />
           </Button>
           <div className="px-4 py-2 bg-gray-100 rounded">
             <span className="font-medium">
-              {currentWeek.toLocaleDateString('en-US', { 
-                month: 'long', 
-                year: 'numeric' 
+              {currentWeek.toLocaleDateString('en-US', {
+                month: 'long',
+                year: 'numeric',
               })}
             </span>
           </div>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => handleWeekChange('next')}
-          >
+          <Button variant="outline" size="icon" onClick={() => handleWeekChange('next')}>
             <ChevronRight className="w-4 h-4" />
           </Button>
-          <CreateScheduleDialog 
+          <CreateScheduleDialog
             onCreateSchedule={handleCreateSchedule}
             staffMembers={staffData || []}
           />
@@ -754,7 +757,9 @@ export default function StaffScheduling() {
               >
                 {getShiftIcon(shift.id)}
                 <span className="font-medium">{shift.name}</span>
-                <span className="text-xs">({shift.startTime} - {shift.endTime})</span>
+                <span className="text-xs">
+                  ({shift.startTime} - {shift.endTime})
+                </span>
               </div>
             ))}
           </div>

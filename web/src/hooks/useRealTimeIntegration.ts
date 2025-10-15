@@ -10,17 +10,16 @@ import { updatePaymentStatus } from '@/store/slices/paymentSlice';
 import { toast } from 'react-hot-toast';
  * Comprehensive real-time integration hook
 export const
-useRealTimeIntegration = (options: RealTimeOptions = {}
-  } = options;
-  const dispatch = useAppDispatch();
+_useRealTimeIntegration =  (options: RealTimeOptions 
+  const _dispatch =  useAppDispatch();
   const { subscribe, isConnected, sendMessage, getConnectionStats } = useSocket();
   // Local state
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [liveMetrics, setLiveMetrics] = useState<LiveMetrics>({}
-  const subscriptionsRef = useRef<(() => void)[]>([]);
-  const metricsIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const _subscriptionsRef =  useRef<(() 
+  const _metricsIntervalRef =  useRef<NodeJS.Timeout | null>(null);
    * Handle order status updates;
-  const handleOrderUpdate = useCallback((orderData: any
+  const _handleOrderUpdate =  useCallback((orderData: any
   // Custom callback
     onOrderUpdate?.(orderData);
   // Show toast notification
@@ -28,18 +27,17 @@ useRealTimeIntegration = (options: RealTimeOptions = {}
     if (statusMessages[orderData.status]) {}
   }, [dispatch, onOrderUpdate]);
    * Handle payment updates;
-  const handlePaymentUpdate = useCallback((paymentData: any
+  const _handlePaymentUpdate =  useCallback((paymentData: any
   // Custom callback
     onPaymentUpdate?.(paymentData);
   // Show toast notification
-    if (paymentData.status === 'success') {}
-  }, [dispatch, onPaymentUpdate]);
+    if (paymentData._status = 
    * Handle RFID scan events;
-  const handleRFIDScan = useCallback((scanData: any
+  const _handleRFIDScan =  useCallback((scanData: any
   // Custom callback
     onRFIDScan?.(scanData);
   // Show toast notification
     const actionMessages: Record<string, string> = {}
     if (actionMessages[scanData.action]) {}
       toast.success(`RFID: ${actionMessages[scanData.action]}``
-      activeSubscriptions: subscriptionsRef.current.map((_, index) => `subscription_${index}``
+      activeSubscriptions: subscriptionsRef.current.map((_, _index) => `subscription_${index}``

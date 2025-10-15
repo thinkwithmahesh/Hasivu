@@ -20,7 +20,7 @@ Resources:
   # =====================================================
   # EXECUTIVE DASHBOARD (C-Level Overview)
   # =====================================================
-  
+
   ExecutiveDashboard:
     Type: AWS::CloudWatch::Dashboard
     Properties:
@@ -174,7 +174,7 @@ Resources:
   # =====================================================
   # OPERATIONS DASHBOARD (DevOps Team)
   # =====================================================
-  
+
   OperationsDashboard:
     Type: AWS::CloudWatch::Dashboard
     Properties:
@@ -357,7 +357,7 @@ Resources:
   # =====================================================
   # BUSINESS DASHBOARD (Product & Business Teams)
   # =====================================================
-  
+
   BusinessDashboard:
     Type: AWS::CloudWatch::Dashboard
     Properties:
@@ -522,7 +522,7 @@ Resources:
   # =====================================================
   # SECURITY DASHBOARD (Security Team)
   # =====================================================
-  
+
   SecurityDashboard:
     Type: AWS::CloudWatch::Dashboard
     Properties:
@@ -646,7 +646,7 @@ Outputs:
     Value: !Sub 'https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${ProjectName}-${Environment}-executive-overview'
 
   OperationsDashboardUrl:
-    Description: URL for Operations Dashboard  
+    Description: URL for Operations Dashboard
     Value: !Sub 'https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${ProjectName}-${Environment}-operations'
 
   BusinessDashboardUrl:

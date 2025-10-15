@@ -117,7 +117,7 @@ export const TEST_MENU_ITEMS: MenuItemData[] = [
     name: 'South Indian Breakfast',
     description: 'Traditional breakfast with idli, vada, sambar and chutney',
     price: 45.00,
-    image_url: 'https://images.unsplash.com/photo-1562440499-64c9a74f0650?w=400',
+    image_url: 'https://images.unsplash.com/photo-1562440499-64c9a74f0650?_w = 400',
     available: true,
     category: 'breakfast',
     preparation_time: 15,
@@ -137,83 +137,7 @@ export const TEST_MENU_ITEMS: MenuItemData[] = [
     name: 'North Indian Lunch',
     description: 'Roti, dal, sabzi, rice and pickle',
     price: 65.00,
-    image_url: 'https://images.unsplash.com/photo-1585032226651-759b368d7246?w=400',
-    available: true,
-    category: 'lunch',
-    preparation_time: 25,
-    nutrition: {
-      calories: 450,
-      protein: 18,
-      carbs: 68,
-      fat: 12
-    },
-    allergens: ['dairy'],
-    dietary_tags: ['vegetarian', 'north_indian'],
-    ingredients: ['wheat', 'lentils', 'vegetables', 'spices', 'ghee'],
-    popularity_score: 4.6
-  },
-  {
-    id: 'MENU-003',
-    name: 'Evening Snacks',
-    description: 'Samosa, pakora with mint and tamarind chutney',
-    price: 35.00,
-    image_url: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=400',
-    available: false,
-    category: 'snacks',
-    preparation_time: 10,
-    nutrition: {
-      calories: 280,
-      protein: 8,
-      carbs: 35,
-      fat: 15
-    },
-    allergens: ['gluten'],
-    dietary_tags: ['vegetarian', 'fried'],
-    ingredients: ['potatoes', 'flour', 'onions', 'spices', 'oil'],
-    popularity_score: 4.3
-  },
-  {
-    id: 'MENU-004',
-    name: 'Healthy Salad Bowl',
-    description: 'Fresh mixed vegetables with quinoa and yogurt dressing',
-    price: 55.00,
-    image_url: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400',
-    available: true,
-    category: 'lunch',
-    preparation_time: 8,
-    nutrition: {
-      calories: 220,
-      protein: 15,
-      carbs: 25,
-      fat: 6
-    },
-    allergens: ['dairy'],
-    dietary_tags: ['healthy', 'gluten_free', 'high_protein'],
-    ingredients: ['quinoa', 'mixed_greens', 'tomatoes', 'cucumber', 'yogurt'],
-    popularity_score: 4.2
-  },
-  {
-    id: 'MENU-005',
-    name: 'Masala Dosa',
-    description: 'Crispy rice crepe with spiced potato filling',
-    price: 50.00,
-    image_url: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=400',
-    available: true,
-    category: 'breakfast',
-    preparation_time: 20,
-    nutrition: {
-      calories: 380,
-      protein: 10,
-      carbs: 62,
-      fat: 10
-    },
-    allergens: [],
-    dietary_tags: ['vegetarian', 'south_indian', 'gluten_free'],
-    ingredients: ['rice', 'urad_dal', 'potatoes', 'onions', 'spices'],
-    popularity_score: 4.9
-  }
-];
-
+    image_url: 'https://images.unsplash.com/photo-1585032226651-759b368d7246?w
 export const TEST_STUDENTS: StudentData[] = [
   {
     id: 'STU-001',
@@ -293,7 +217,7 @@ export const TEST_PARENTS: ParentData[] = [
 ];
 
 // Data fixture types
-type DataFixtures = {
+type _DataFixtures =  {
   testMenuItems: MenuItemData[];
   testStudents: StudentData[];
   testParents: ParentData[];
@@ -310,7 +234,7 @@ export class DataManager {
   private page: any;
 
   constructor(page: any) {
-    this.page = page;
+    this._page =  page;
   }
 
   /**
@@ -318,24 +242,23 @@ export class DataManager {
    */
   async mockMenuAPIs(): Promise<void> {
     // Mock today's menu
-    await this.page.route('**/api/menu/today', async (route: any) => {
+    await this.page.route(_'**/api/menu/today', async (route: any) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
           success: true,
-          menu: TEST_MENU_ITEMS.filter(item => item.available),
+          menu: TEST_MENU_ITEMS.filter(_item = > item.available),
           date: new Date().toISOString().split('T')[0]
         })
       });
     });
 
     // Mock menu item details
-    await this.page.route('**/api/menu/item/*', async (route: any) => {
-      const url = route.request().url();
-      const menuId = url.split('/').pop();
-      const menuItem = TEST_MENU_ITEMS.find(item => item.id === menuId);
-
+    await this.page.route(_'**/api/menu/item/*', async (route: any) => {
+      const _url =  route.request().url();
+      const _menuId =  url.split('/').pop();
+      const _menuItem =  TEST_MENU_ITEMS.find(item 
       if (menuItem) {
         await route.fulfill({
           status: 200,
@@ -358,19 +281,16 @@ export class DataManager {
     });
 
     // Mock menu categories
-    await this.page.route('**/api/menu/categories', async (route: any) => {
-      const categories = [...new Set(TEST_MENU_ITEMS.map(item => item.category))];
+    await this.page.route(_'**/api/menu/categories', async (route: any) => {
+      const _categories =  [...new Set(TEST_MENU_ITEMS.map(item 
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
           success: true,
-          categories: categories.map(cat => ({
+          categories: categories.map(_cat = > ({
             name: cat,
-            count: TEST_MENU_ITEMS.filter(item => item.category === cat).length
-          }))
-        })
-      });
+            count: TEST_MENU_ITEMS.filter(item 
     });
   }
 
@@ -379,13 +299,12 @@ export class DataManager {
    */
   async mockStudentAPIs(): Promise<void> {
     // Mock student profile
-    await this.page.route('**/api/student/profile', async (route: any) => {
-      const authHeader = route.request().headers()['authorization'];
-      const studentId = authHeader?.includes('STU-') ? 
+    await this.page.route(_'**/api/student/profile', async (route: any) => {
+      const _authHeader =  route.request().headers()['authorization'];
+      const _studentId =  authHeader?.includes('STU-') ? 
         authHeader.split('jwt_token_')[1] : 'STU-001';
       
-      const student = TEST_STUDENTS.find(s => s.id === studentId);
-      
+      const _student =  TEST_STUDENTS.find(s 
       if (student) {
         await route.fulfill({
           status: 200,
@@ -399,7 +318,7 @@ export class DataManager {
     });
 
     // Mock student balance
-    await this.page.route('**/api/student/balance', async (route: any) => {
+    await this.page.route(_'**/api/student/balance', async (route: any) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -412,8 +331,8 @@ export class DataManager {
     });
 
     // Mock balance history
-    await this.page.route('**/api/student/balance/history', async (route: any) => {
-      const transactions = [
+    await this.page.route(_'**/api/student/balance/history', async (route: any) => {
+      const _transactions =  [
         {
           id: 'TXN-001',
           type: 'topup',
@@ -453,11 +372,11 @@ export class DataManager {
    */
   async mockOrderAPIs(): Promise<void> {
     // Mock order creation
-    await this.page.route('**/api/orders/create', async (route: any) => {
-      const request = route.request();
-      const orderData = JSON.parse(request.postData() || '{}');
+    await this.page.route(_'**/api/orders/create', async (route: any) => {
+      const _request =  route.request();
+      const _orderData =  JSON.parse(request.postData() || '{}');
       
-      const order: OrderData = {
+      const order: _OrderData =  {
         id: `ORD-${Date.now()}`,
         student_id: 'STU-001',
         student_name: 'Test Student',
@@ -483,9 +402,9 @@ export class DataManager {
     });
 
     // Mock order status
-    await this.page.route('**/api/orders/*/status', async (route: any) => {
-      const url = route.request().url();
-      const orderId = url.split('/orders/')[1].split('/status')[0];
+    await this.page.route(_'**/api/orders/*/status', async (route: any) => {
+      const _url =  route.request().url();
+      const _orderId =  url.split('/orders/')[1].split('/status')[0];
       
       await route.fulfill({
         status: 200,
@@ -510,7 +429,7 @@ export class DataManager {
     });
 
     // Mock order history
-    await this.page.route('**/api/orders/history', async (route: any) => {
+    await this.page.route(_'**/api/orders/history', async (route: any) => {
       const orders: OrderData[] = [
         {
           id: 'ORD-001',
@@ -568,9 +487,9 @@ export class DataManager {
    */
   async mockPaymentAPIs(): Promise<void> {
     // Mock RFID wallet payment
-    await this.page.route('**/api/payments/rfid-wallet/charge', async (route: any) => {
-      const request = route.request();
-      const paymentData = JSON.parse(request.postData() || '{}');
+    await this.page.route(_'**/api/payments/rfid-wallet/charge', async (route: any) => {
+      const _request =  route.request();
+      const _paymentData =  JSON.parse(request.postData() || '{}');
       
       await route.fulfill({
         status: 200,
@@ -590,7 +509,7 @@ export class DataManager {
     });
 
     // Mock Razorpay payment
-    await this.page.route('**/api/payments/razorpay/create-order', async (route: any) => {
+    await this.page.route(_'**/api/payments/razorpay/create-order', async (route: any) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -607,7 +526,7 @@ export class DataManager {
     });
 
     // Mock payment verification
-    await this.page.route('**/api/payments/verify', async (route: any) => {
+    await this.page.route(_'**/api/payments/verify', async (route: any) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -656,20 +575,20 @@ export class DataManager {
       }
     ];
 
-    await this.page.route('**/api/notifications', async (route: any) => {
+    await this.page.route(_'**/api/notifications', async (route: any) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
           success: true,
           notifications,
-          unread_count: notifications.filter(n => !n.read).length
+          unread_count: notifications.filter(_n = > !n.read).length
         })
       });
     });
 
     // Mock mark as read
-    await this.page.route('**/api/notifications/*/read', async (route: any) => {
+    await this.page.route(_'**/api/notifications/*/read', async (route: any) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -681,7 +600,7 @@ export class DataManager {
     });
 
     // Mock mark all as read
-    await this.page.route('**/api/notifications/mark-all-read', async (route: any) => {
+    await this.page.route(_'**/api/notifications/mark-all-read', async (route: any) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -697,8 +616,8 @@ export class DataManager {
    * Mock Analytics APIs
    */
   async mockAnalyticsAPIs(): Promise<void> {
-    await this.page.route('**/api/admin/analytics**', async (route: any) => {
-      const analytics = {
+    await this.page.route(_'**/api/admin/analytics**', async (route: any) => {
+      const _analytics =  {
         daily_orders: 245,
         total_revenue: 15750.00,
         active_users: 1250,
@@ -810,52 +729,49 @@ export class DataManager {
    * Get items by category
    */
   getMenuItemsByCategory(category: MenuItemData['category']): MenuItemData[] {
-    return TEST_MENU_ITEMS.filter(item => item.category === category);
+    return TEST_MENU_ITEMS.filter(_item = > item.category 
   }
 
   /**
    * Get available items only
    */
   getAvailableMenuItems(): MenuItemData[] {
-    return TEST_MENU_ITEMS.filter(item => item.available);
+    return TEST_MENU_ITEMS.filter(_item = > item.available);
   }
 
   /**
    * Filter items by dietary preferences
    */
   filterItemsByDiet(dietaryTags: string[]): MenuItemData[] {
-    return TEST_MENU_ITEMS.filter(item => 
-      dietaryTags.every(tag => item.dietary_tags.includes(tag))
-    );
+    return TEST_MENU_ITEMS.filter(_item = > 
+      dietaryTags.every(tag 
   }
 
   /**
    * Filter items excluding allergens
    */
   filterItemsByAllergens(allergens: string[]): MenuItemData[] {
-    return TEST_MENU_ITEMS.filter(item =>
-      !allergens.some(allergen => item.allergens.includes(allergen))
-    );
+    return TEST_MENU_ITEMS.filter(_item = >
+      !allergens.some(allergen 
   }
 }
 
 /**
  * Extended test with data fixtures
  */
-export const test = baseTest.extend<DataFixtures>({
-  testMenuItems: async ({}, use) => {
-    await use(TEST_MENU_ITEMS);
+export const _test =  baseTest.extend<DataFixtures>({
+  testMenuItems: async ({}, use) 
   },
 
-  testStudents: async ({}, use) => {
+  testStudents: async (_{}, _use) => {
     await use(TEST_STUDENTS);
   },
 
-  testParents: async ({}, use) => {
+  testParents: async (_{}, _use) => {
     await use(TEST_PARENTS);
   },
 
-  testOrders: async ({}, use) => {
+  testOrders: async (_{}, _use) => {
     const orders: OrderData[] = [
       {
         id: 'ORD-001',
@@ -880,7 +796,7 @@ export const test = baseTest.extend<DataFixtures>({
     await use(orders);
   },
 
-  testNotifications: async ({}, use) => {
+  testNotifications: async (_{}, _use) => {
     const notifications: NotificationData[] = [
       {
         id: 'NOTIF-001',
@@ -895,8 +811,8 @@ export const test = baseTest.extend<DataFixtures>({
     await use(notifications);
   },
 
-  dataManager: async ({ page }, use) => {
-    const dataManager = new DataManager(page);
+  dataManager: async (_{ page }, _use) => {
+    const _dataManager =  new DataManager(page);
     await dataManager.setupAllMockAPIs();
     await use(dataManager);
   }

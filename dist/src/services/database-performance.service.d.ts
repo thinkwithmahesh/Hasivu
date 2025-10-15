@@ -1,113 +1,75 @@
-/// <reference types="node" />
-import { EventEmitter } from 'events';
-export interface DatabasePerformanceMetrics {
-    status: 'healthy' | 'degraded' | 'unhealthy';
-    responseTime: number;
+export interface QueryMetrics {
+    query: string;
+    executionTime: number;
+    timestamp: Date;
+    success: boolean;
+    error?: string;
+}
+export interface PerformanceReport {
+    slowQueries: QueryMetrics[];
+    averageQueryTime: number;
+    totalQueries: number;
+    failedQueries: number;
+    recommendations: string[];
+}
+export interface PerformanceMetrics {
+    status: 'healthy' | 'warning' | 'critical';
     performance: {
         avgQueryTime: number;
-        slowQueries: number;
         connectionPoolUsage: number;
         indexEfficiency: number;
         queriesPerSecond: number;
-        cacheHitRatio: number;
-    };
-    connections: {
-        active: number;
-        idle: number;
-        total: number;
-        maxConnections: number;
-        queueLength: number;
-        acquireTimeout: number;
     };
     slowQueries: Array<{
         query: string;
         duration: number;
         timestamp: Date;
-        parameters?: any;
     }>;
-    indexAnalysis: {
-        missingIndexes: Array<{
-            table: string;
-            columns: string[];
-            usage: number;
-            impact: 'high' | 'medium' | 'low';
-        }>;
-        redundantIndexes: Array<{
-            table: string;
-            indexName: string;
-            reason: string;
-        }>;
-        indexUsageStats: Array<{
-            table: string;
-            indexName: string;
-            usage: number;
-            scans: number;
-            seeks: number;
-        }>;
-    };
-    tableMetrics: Array<{
-        name: string;
-        rowCount: number;
-        tableSize: number;
-        indexSize: number;
-        avgQueryTime: number;
-        mostCommonQueries: string[];
-    }>;
-    errors: string[];
+    issues: string[];
 }
-export interface QueryOptimizationRecommendation {
-    queryPattern: string;
-    table: string;
+export interface OptimizationRecommendation {
+    priority: 'high' | 'medium' | 'low';
     issue: string;
     recommendation: string;
-    priority: 'high' | 'medium' | 'low';
-    estimatedImprovement: string;
-    implementationSteps: string[];
+    impact: string;
 }
-export declare class DatabasePerformanceService extends EventEmitter {
+export interface OptimizationResult {
+    applied: number;
+    skipped: number;
+    errors: string[];
+    optimizations: Array<{
+        type: string;
+        description: string;
+        success: boolean;
+    }>;
+}
+export declare class DatabasePerformanceService {
+    private static instance;
     private prisma;
     private queryMetrics;
-    private recentQueries;
-    private connectionStats;
-    private performanceHistory;
     private readonly SLOW_QUERY_THRESHOLD;
-    private readonly MAX_RECENT_QUERIES;
-    private readonly PERFORMANCE_HISTORY_LIMIT;
-    private monitoringInterval?;
-    constructor();
-    private initializePrismaClient;
-    private setupQueryListeners;
-    private setupPerformanceMonitoring;
-    private startContinuousMonitoring;
-    getPerformanceMetrics(): Promise<DatabasePerformanceMetrics>;
-    private getConnectionStatistics;
-    private getTableMetrics;
-    private getIndexAnalysis;
-    private identifyMissingIndexes;
-    getOptimizationRecommendations(): Promise<QueryOptimizationRecommendation[]>;
-    applyAutomaticOptimizations(): Promise<{
-        applied: string[];
-        failed: string[];
-        recommendations: QueryOptimizationRecommendation[];
+    private constructor();
+    static getInstance(): DatabasePerformanceService;
+    trackQuery(query: string, executeFn: () => Promise<any>): Promise<any>;
+    getSlowQueries(threshold?: number): QueryMetrics[];
+    getAverageQueryTime(): number;
+    getFailedQueries(): QueryMetrics[];
+    generateReport(): PerformanceReport;
+    analyzeTablePerformance(tableName: string): Promise<{
+        rowCount: number;
+        estimatedSize: string;
+        recommendations: string[];
     }>;
-    private updateQueryMetrics;
-    private trackSlowQuery;
-    private addRecentQuery;
-    private calculateAverageQueryTime;
-    private calculateQueriesPerSecond;
-    private calculateIndexEfficiency;
-    private getCacheHitRatio;
-    private getSlowQueries;
-    private determineHealthStatus;
-    private updateConnectionStats;
-    private emitPerformanceMetrics;
-    private addToPerformanceHistory;
-    private checkForOptimizationOpportunities;
-    private extractQueryPattern;
-    private extractTableName;
-    private getTableAverageQueryTime;
-    private getTableCommonQueries;
-    disconnect(): Promise<void>;
+    suggestIndexes(): Promise<string[]>;
+    clearMetrics(): void;
+    healthCheck(): Promise<{
+        healthy: boolean;
+        latency?: number;
+    }>;
+    getPerformanceMetrics(): Promise<PerformanceMetrics>;
+    getOptimizationRecommendations(): Promise<OptimizationRecommendation[]>;
+    applyAutomaticOptimizations(): Promise<OptimizationResult>;
 }
 export declare const databasePerformanceService: DatabasePerformanceService;
+export default DatabasePerformanceService;
 //# sourceMappingURL=database-performance.service.d.ts.map

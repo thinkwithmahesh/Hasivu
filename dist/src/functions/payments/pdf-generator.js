@@ -574,7 +574,7 @@ async function generateSinglePdf(request, userId, schoolId, requestId) {
             requestId,
             userId,
             invoiceId: request.invoiceId,
-            error: error instanceof Error ? error.message : 'Unknown error'
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error'
         });
         throw error;
     }
@@ -594,8 +594,12 @@ async function generateBulkPdfs(request, userId, schoolId, requestId) {
                     invoiceId,
                     templateOptions: {
                         ...request.templateOptions,
-                        includePaymentTerms: request.templateOptions.includePaymentTerms ?? true,
-                        includeNotes: request.templateOptions.includeNotes ?? true
+                        fontFamily: request.templateOptions?.fontFamily || 'Arial',
+                        includeSchoolHeader: request.templateOptions?.includeSchoolHeader ?? true,
+                        includeWatermark: request.templateOptions?.includeWatermark ?? false,
+                        includePaymentTerms: request.templateOptions?.includePaymentTerms ?? true,
+                        includeNotes: request.templateOptions?.includeNotes ?? true,
+                        language: request.templateOptions?.language || 'en'
                     },
                     deliveryOptions: {
                         storageType: request.deliveryOptions?.storageType || 's3',
@@ -610,7 +614,7 @@ async function generateBulkPdfs(request, userId, schoolId, requestId) {
             catch (error) {
                 results.failed.push({
                     invoiceId,
-                    error: error instanceof Error ? error.message : 'Unknown error'
+                    error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error'
                 });
             }
         }
@@ -648,7 +652,7 @@ async function generateBulkPdfs(request, userId, schoolId, requestId) {
             requestId,
             userId,
             totalRequested: request.invoiceIds.length,
-            error: error instanceof Error ? error.message : 'Unknown error'
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error'
         });
         throw error;
     }
@@ -717,7 +721,7 @@ async function downloadPdf(request, userId, schoolId, requestId) {
             requestId,
             userId,
             invoiceId: request.invoiceId,
-            error: error instanceof Error ? error.message : 'Unknown error'
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error'
         });
         throw error;
     }
@@ -739,7 +743,7 @@ const pdfGeneratorHandler = async (event, context) => {
         const pathParameters = event.pathParameters || {};
         let result;
         switch (event.httpMethod) {
-            case 'POST':
+            case 'POST': {
                 if (!event.body) {
                     return (0, response_utils_1.createErrorResponse)(400, 'Request body required', undefined, 'MISSING_BODY', requestId);
                 }
@@ -753,6 +757,7 @@ const pdfGeneratorHandler = async (event, context) => {
                     result = await generateSinglePdf(pdfRequest, userId, schoolId, requestId);
                 }
                 break;
+            }
             case 'GET':
                 if (pathParameters.invoiceId && event.path?.includes('/download')) {
                     const downloadRequest = {
@@ -779,27 +784,27 @@ const pdfGeneratorHandler = async (event, context) => {
             success: true
         });
         const statusCode = event.httpMethod === 'POST' ? 201 : 200;
-        return (0, response_utils_1.createSuccessResponse)(statusCode, 'PDF operation completed successfully', result, requestId);
+        return (0, response_utils_1.createSuccessResponse)(result, 'PDF operation completed successfully', statusCode, requestId);
     }
     catch (error) {
         const duration = Date.now() - startTime;
         logger.error('PDF generator request failed', {
             requestId,
             method: event.httpMethod,
-            error: error instanceof Error ? error.message : 'Unknown error',
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error',
             duration
         });
         if (error instanceof Error) {
-            if (error.message.includes('Authentication required')) {
+            if (error instanceof Error ? error.message : String(error).includes('Authentication required')) {
                 return (0, response_utils_1.createErrorResponse)(401, 'Authentication required', undefined, 'AUTHENTICATION_REQUIRED', requestId);
             }
-            if (error.message.includes('Insufficient permissions')) {
+            if (error instanceof Error ? error.message : String(error).includes('Insufficient permissions')) {
                 return (0, response_utils_1.createErrorResponse)(403, 'Insufficient permissions for PDF generation', undefined, 'ACCESS_DENIED', requestId);
             }
-            if (error.message.includes('Access denied')) {
+            if (error instanceof Error ? error.message : String(error).includes('Access denied')) {
                 return (0, response_utils_1.createErrorResponse)(403, 'Access denied', undefined, 'ACCESS_DENIED', requestId);
             }
-            if (error.message.includes('not found')) {
+            if (error instanceof Error ? error.message : String(error).includes('not found')) {
                 return (0, response_utils_1.createErrorResponse)(404, 'Invoice not found', undefined, 'NOT_FOUND', requestId);
             }
         }

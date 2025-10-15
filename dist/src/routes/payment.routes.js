@@ -32,13 +32,13 @@ const handleValidationErrors = (req, res, next) => {
 };
 router.use(request_logger_middleware_1.default);
 router.use(rateLimiter_middleware_1.generalRateLimit);
-router.post('/orders', auth_middleware_1.authMiddleware, [
+(router.post('/orders', auth_middleware_1.authMiddleware, [
     (0, express_validator_1.body)('amount')
         .isFloat({ min: 1 })
         .withMessage('Amount must be a positive number'),
     (0, express_validator_1.body)('currency')
-        .isIn(['INR', 'USD'])
-        .withMessage('Currency must be INR or USD'),
+        .isIn(['INR'])
+        .withMessage('Currency must be INR'),
     (0, express_validator_1.body)('orderId')
         .optional()
         .isUUID()
@@ -100,8 +100,8 @@ router.post('/orders', auth_middleware_1.authMiddleware, [
         logger_1.logger.error('Create payment order error:', error);
         next(error);
     }
-});
-router.post('/verify', auth_middleware_1.authMiddleware, [
+}));
+(router.post('/verify', auth_middleware_1.authMiddleware, [
     (0, express_validator_1.body)('razorpay_payment_id')
         .isString()
         .notEmpty()
@@ -130,8 +130,8 @@ router.post('/verify', auth_middleware_1.authMiddleware, [
         logger_1.logger.error('Payment verification error:', error);
         next(error);
     }
-});
-router.post('/refunds', auth_middleware_1.authMiddleware, [
+}));
+(router.post('/refunds', auth_middleware_1.authMiddleware, [
     (0, express_validator_1.body)('paymentId')
         .isString()
         .notEmpty()
@@ -164,8 +164,8 @@ router.post('/refunds', auth_middleware_1.authMiddleware, [
         logger_1.logger.error('Create refund error:', error);
         next(error);
     }
-});
-router.post('/subscriptions', auth_middleware_1.authMiddleware, [
+}));
+(router.post('/subscriptions', auth_middleware_1.authMiddleware, [
     (0, express_validator_1.body)('planId')
         .isString()
         .notEmpty()
@@ -206,8 +206,8 @@ router.post('/subscriptions', auth_middleware_1.authMiddleware, [
         logger_1.logger.error('Create subscription error:', error);
         next(error);
     }
-});
-router.get('/transactions', auth_middleware_1.authMiddleware, [
+}));
+(router.get('/transactions', auth_middleware_1.authMiddleware, [
     (0, express_validator_1.query)('status')
         .optional()
         .isIn(['created', 'authorized', 'captured', 'refunded', 'failed'])
@@ -263,8 +263,8 @@ router.get('/transactions', auth_middleware_1.authMiddleware, [
         logger_1.logger.error('Get transaction history error:', error);
         next(error);
     }
-});
-router.get('/orders/:orderId', auth_middleware_1.authMiddleware, [
+}));
+(router.get('/orders/:orderId', auth_middleware_1.authMiddleware, [
     (0, express_validator_1.param)('orderId')
         .isString()
         .notEmpty()
@@ -301,8 +301,8 @@ router.get('/orders/:orderId', auth_middleware_1.authMiddleware, [
         logger_1.logger.error('Get payment order error:', error);
         next(error);
     }
-});
-router.post('/webhook', async (req, res, next) => {
+}));
+(router.post('/webhook', async (req, res, next) => {
     try {
         const payload = req.body;
         const signature = req.get('X-Razorpay-Signature');
@@ -331,8 +331,8 @@ router.post('/webhook', async (req, res, next) => {
             version: '1.0'
         });
     }
-});
-router.get('/subscriptions/:subscriptionId', auth_middleware_1.authMiddleware, [
+}));
+(router.get('/subscriptions/:subscriptionId', auth_middleware_1.authMiddleware, [
     (0, express_validator_1.param)('subscriptionId')
         .isString()
         .notEmpty()
@@ -369,8 +369,8 @@ router.get('/subscriptions/:subscriptionId', auth_middleware_1.authMiddleware, [
         logger_1.logger.error('Get subscription error:', error);
         next(error);
     }
-});
-router.post('/subscriptions/:subscriptionId/cancel', auth_middleware_1.authMiddleware, [
+}));
+(router.post('/subscriptions/:subscriptionId/cancel', auth_middleware_1.authMiddleware, [
     (0, express_validator_1.param)('subscriptionId')
         .isString()
         .notEmpty()
@@ -400,8 +400,8 @@ router.post('/subscriptions/:subscriptionId/cancel', auth_middleware_1.authMiddl
         logger_1.logger.error('Cancel subscription error:', error);
         next(error);
     }
-});
-router.get('/analytics', auth_middleware_1.authMiddleware, [
+}));
+(router.get('/analytics', auth_middleware_1.authMiddleware, [
     (0, express_validator_1.query)('period')
         .optional()
         .isIn(['7d', '30d', '90d', '1y'])
@@ -430,6 +430,6 @@ router.get('/analytics', auth_middleware_1.authMiddleware, [
         logger_1.logger.error('Get payment analytics error:', error);
         next(error);
     }
-});
+}));
 exports.default = router;
 //# sourceMappingURL=payment.routes.js.map

@@ -18,7 +18,7 @@ export function createEmotionSsrCache(): EmotionCache {}
 export function extractCriticalStyles(cache: EmotionCache): string {}
  * Default emotion cache instance
  * Pre-configured cache for common usage patterns;
-export const defaultEmotionCache = createEmotionCache();
+export const _defaultEmotionCache =  createEmotionCache();
  * Type definitions for emotion cache utilities;
  * Advanced emotion cache configuration
  * For custom styling requirements or performance optimizations;
@@ -28,11 +28,11 @@ export function createCustomEmotionCache(config: Partial<EmotionCacheConfig>): E
   return createCache({ ...defaultConfig, ...config });
  * Emotion cache utilities for development
  * Debugging helpers and development-specific configurations;
-export const emotionDevUtils = {}
+export const _emotionDevUtils =  {}
    * Clear emotion cache
    * Useful for hot reloading and development;
   clearCache: (cache: EmotionCache
-      cache.inserted = {};
-      cache.registered = {};
+      cache._inserted =  {};
+      cache._registered =  {};
  * Export types for external usage;
 export type { EmotionCache };

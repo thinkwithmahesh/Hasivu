@@ -1,41 +1,28 @@
-"use client";
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Play, 
-  Shield, 
-  Zap, 
-  CheckCircle, 
-  Star, 
-  ArrowRight, 
+import { motion } from 'framer-motion';
+import {
+  Play,
+  Shield,
+  Zap,
+  CheckCircle,
+  Star,
+  ArrowRight,
   Calendar,
   Users,
   TrendingUp,
-  Smartphone,
   ChefHat,
   CreditCard,
   Lock,
   Award,
-  Globe,
-  Target,
-  Clock,
-  Bell,
-  Heart,
-  Utensils,
-  MapPin,
-  Phone,
-  Mail
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { BentoGrid, BentoGridItem } from '@/components/magicui/bento-grid';
-import { Marquee } from '@/components/magicui/marquee';
 import { NumberTicker } from '@/components/magicui/number-ticker';
-import { BackgroundBeams } from '@/components/magicui/background-beams';
 
 // Enhanced TypeScript interfaces
 interface School {
@@ -82,7 +69,7 @@ const useLiveStats = () => {
     schools: 100,
     orders: 2300000,
     accuracy: 99.7,
-    satisfaction: 4.9
+    satisfaction: 4.9,
   });
 
   useEffect(() => {
@@ -101,120 +88,126 @@ const useLiveStats = () => {
 };
 
 // Bangalore schools data
-const bangaloreSchools: School[] = [
+const _bangaloreSchools: School[] = [
   {
-    name: "Delhi Public School Bangalore East",
-    logo: "🏫",
-    students: "12,000",
-    location: "Whitefield",
-    rating: 4.8
+    name: 'Delhi Public School Bangalore East',
+    logo: '🏫',
+    students: '12,000',
+    location: 'Whitefield',
+    rating: 4.8,
   },
   {
-    name: "National Public School Koramangala",
-    logo: "🎓",
-    students: "6,200",
-    location: "Koramangala",
-    rating: 4.9
+    name: 'National Public School Koramangala',
+    logo: '🎓',
+    students: '6,200',
+    location: 'Koramangala',
+    rating: 4.9,
   },
   {
-    name: "Sarvodaya Vidyalaya",
-    logo: "📚",
-    students: "8,500",
-    location: "Jayanagar",
-    rating: 4.7
+    name: 'Sarvodaya Vidyalaya',
+    logo: '📚',
+    students: '8,500',
+    location: 'Jayanagar',
+    rating: 4.7,
   },
   {
-    name: "Greenwood High International",
-    logo: "🌟",
-    students: "4,800",
-    location: "HSR Layout",
-    rating: 4.8
+    name: 'Greenwood High International',
+    logo: '🌟',
+    students: '4,800',
+    location: 'HSR Layout',
+    rating: 4.8,
   },
   {
-    name: "Ryan International School",
-    logo: "🏆",
-    students: "9,200",
-    location: "Kundalahalli",
-    rating: 4.6
-  }
+    name: 'Ryan International School',
+    logo: '🏆',
+    students: '9,200',
+    location: 'Kundalahalli',
+    rating: 4.6,
+  },
 ];
 
 // Parent testimonials with real scenarios
 const parentTestimonials: Testimonial[] = [
   {
-    id: "1",
-    quote: "HASIVU transformed our family's lunch routine. My daughter Priya gets authentic Karnataka meals at school, and I can track her nutrition intake in real-time. The RFID system means no more lost lunch money!",
-    author: "Shalini Krishnamurthy",
-    title: "Working Mother",
-    school: "DPS Bangalore East",
-    avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=64&h=64&fit=crop&crop=face",
+    id: '1',
+    quote:
+      "HASIVU transformed our family's lunch routine. My daughter Priya gets authentic Karnataka meals at school, and I can track her nutrition intake in real-time. The RFID system means no more lost lunch money!",
+    author: 'Shalini Krishnamurthy',
+    title: 'Working Mother',
+    school: 'DPS Bangalore East',
+    avatar:
+      'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=64&h=64&fit=crop&crop=face',
     rating: 5,
     children: 2,
-    verified: true
+    verified: true,
   },
   {
-    id: "2", 
-    quote: "As a parent of two kids in different classes, managing their meal preferences was a nightmare. HASIVU's AI recommendations ensure both my children eat balanced meals. The fraud detection saved us ₹15,000 last year!",
-    author: "Rajesh Kumar Sharma",
-    title: "IT Professional",
-    school: "NPS Koramangala",
-    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=64&h=64&fit=crop&crop=face",
+    id: '2',
+    quote:
+      "As a parent of two kids in different classes, managing their meal preferences was a nightmare. HASIVU's AI recommendations ensure both my children eat balanced meals. The fraud detection saved us ₹15,000 last year!",
+    author: 'Rajesh Kumar Sharma',
+    title: 'IT Professional',
+    school: 'NPS Koramangala',
+    avatar:
+      'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=64&h=64&fit=crop&crop=face',
     rating: 5,
     children: 2,
-    verified: true
+    verified: true,
   },
   {
-    id: "3",
-    quote: "My son has food allergies, and HASIVU's smart filtering ensures he only sees safe meal options. The instant notifications when he gets his meal give me peace of mind during my busy workday.",
-    author: "Dr. Meera Reddy",
-    title: "Pediatrician",
-    school: "Greenwood High",
-    avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=64&h=64&fit=crop&crop=face",
+    id: '3',
+    quote:
+      "My son has food allergies, and HASIVU's smart filtering ensures he only sees safe meal options. The instant notifications when he gets his meal give me peace of mind during my busy workday.",
+    author: 'Dr. Meera Reddy',
+    title: 'Pediatrician',
+    school: 'Greenwood High',
+    avatar:
+      'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=64&h=64&fit=crop&crop=face',
     rating: 5,
     children: 1,
-    verified: true
-  }
+    verified: true,
+  },
 ];
 
 // Feature set with Bangalore-specific benefits
-const platformFeatures: Feature[] = [
+const _platformFeatures: Feature[] = [
   {
-    title: "AI Fraud Protection",
-    description: "99.7% accuracy in detecting payment anomalies with real-time behavioral analysis",
+    title: 'AI Fraud Protection',
+    description: '99.7% accuracy in detecting payment anomalies with real-time behavioral analysis',
     icon: Shield,
-    stats: "₹2.3M Protected",
-    color: "text-hasivu-blue-600",
-    gradient: "from-hasivu-blue-100 to-hasivu-blue-200"
+    stats: '₹2.3M Protected',
+    color: 'text-hasivu-blue-600',
+    gradient: 'from-hasivu-blue-100 to-hasivu-blue-200',
   },
   {
-    title: "RFID Meal Verification", 
-    description: "Instant confirmation when your child receives their meal with photo proof",
+    title: 'RFID Meal Verification',
+    description: 'Instant confirmation when your child receives their meal with photo proof',
     icon: Zap,
-    stats: "99.9% Accuracy",
-    color: "text-hasivu-orange-600", 
-    gradient: "from-hasivu-orange-100 to-hasivu-orange-200"
+    stats: '99.9% Accuracy',
+    color: 'text-hasivu-orange-600',
+    gradient: 'from-hasivu-orange-100 to-hasivu-orange-200',
   },
   {
-    title: "Predictive Nutrition AI",
+    title: 'Predictive Nutrition AI',
     description: "ML-powered meal recommendations based on your child's growth patterns",
     icon: TrendingUp,
-    stats: "94% Satisfaction",
-    color: "text-hasivu-green-600",
-    gradient: "from-hasivu-green-100 to-hasivu-green-200"
+    stats: '94% Satisfaction',
+    color: 'text-hasivu-green-600',
+    gradient: 'from-hasivu-green-100 to-hasivu-green-200',
   },
   {
-    title: "Bangalore Menu Curation",
-    description: "Authentic South Indian, North Indian, and cosmopolitan options for every taste",
+    title: 'Bangalore Menu Curation',
+    description: 'Authentic South Indian, North Indian, and cosmopolitan options for every taste',
     icon: ChefHat,
-    stats: "150+ Daily Options",
-    color: "text-purple-600",
-    gradient: "from-purple-100 to-purple-200"
-  }
+    stats: '150+ Daily Options',
+    color: 'text-purple-600',
+    gradient: 'from-purple-100 to-purple-200',
+  },
 ];
 
 // Navigation component
 const Navigation = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [_isMenuOpen, _setIsMenuOpen] = useState(false);
 
   return (
     <header className="fixed top-0 w-full z-50 bg-slate-900/80 backdrop-blur-xl border-b border-white/10 shadow-2xl">
@@ -236,34 +229,57 @@ const Navigation = () => {
           </Link>
 
           <div className="hidden md:flex items-center space-x-8">
-            <Link href="#features" className="text-gray-300 hover:text-emerald-400 transition-colors font-medium">
+            <Link
+              href="#features"
+              className="text-gray-300 hover:text-emerald-400 transition-colors font-medium"
+            >
               Features
             </Link>
-            <Link href="#schools" className="text-gray-300 hover:text-cyan-400 transition-colors font-medium">
+            <Link
+              href="#schools"
+              className="text-gray-300 hover:text-cyan-400 transition-colors font-medium"
+            >
               Schools
             </Link>
-            <Link href="#testimonials" className="text-gray-300 hover:text-purple-400 transition-colors font-medium">
+            <Link
+              href="#testimonials"
+              className="text-gray-300 hover:text-purple-400 transition-colors font-medium"
+            >
               Parents
             </Link>
-            <Link href="#contact" className="text-gray-300 hover:text-pink-400 transition-colors font-medium">
+            <Link
+              href="#contact"
+              className="text-gray-300 hover:text-pink-400 transition-colors font-medium"
+            >
               Contact
             </Link>
           </div>
 
           <div className="hidden md:flex items-center space-x-4">
             <Link href="/auth/login">
-              <Button variant="outline" size="sm" className="border-white/20 text-gray-300 hover:bg-white/10 backdrop-blur-sm rounded-xl">
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-white/20 text-gray-300 hover:bg-white/10 backdrop-blur-sm rounded-xl"
+              >
                 Parent Login
               </Button>
             </Link>
             <Link href="/dashboard">
-              <Button variant="outline" size="sm" className="border-emerald-400/30 text-emerald-400 hover:bg-emerald-400/10 backdrop-blur-sm rounded-xl">
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-emerald-400/30 text-emerald-400 hover:bg-emerald-400/10 backdrop-blur-sm rounded-xl"
+              >
                 <Users className="w-4 h-4 mr-2" />
                 Dashboard
               </Button>
             </Link>
             <Link href="/demo">
-              <Button size="sm" className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all rounded-xl">
+              <Button
+                size="sm"
+                className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all rounded-xl"
+              >
                 <Calendar className="w-4 h-4 mr-2" />
                 Book Demo
               </Button>
@@ -284,21 +300,21 @@ const HeroSection = () => {
       {/* Modern gradient background with mesh */}
       <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900"></div>
       <div className="absolute inset-0 bg-gradient-to-tr from-emerald-500/10 via-blue-500/10 to-purple-500/10"></div>
-      
+
       {/* Animated mesh background */}
       <div className="absolute inset-0 opacity-30">
         <div className="absolute top-0 -left-4 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl animate-blob"></div>
         <div className="absolute top-0 -right-4 w-72 h-72 bg-yellow-300 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
         <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
       </div>
-      
+
       {/* Floating elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-white/20 rounded-full animate-ping"></div>
         <div className="absolute top-1/3 right-1/4 w-1 h-1 bg-emerald-400/40 rounded-full animate-pulse"></div>
         <div className="absolute bottom-1/4 left-1/3 w-3 h-3 bg-blue-400/30 rounded-full animate-bounce"></div>
       </div>
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="text-center">
           <motion.div
@@ -310,7 +326,7 @@ const HeroSection = () => {
             <Badge className="mb-6 bg-white/10 backdrop-blur-sm text-white border border-white/20 text-sm px-6 py-3 rounded-full">
               ✨ Trusted by 50,000+ Bangalore Families
             </Badge>
-            
+
             <h1 className="text-5xl md:text-6xl lg:text-7xl font-black text-white mb-8 leading-tight">
               India's Most
               <span className="block bg-gradient-to-r from-emerald-400 via-cyan-400 to-purple-400 bg-clip-text text-transparent">
@@ -320,10 +336,10 @@ const HeroSection = () => {
                 Food Platform
               </span>
             </h1>
-            
+
             <p className="text-xl md:text-2xl text-gray-300 mb-10 max-w-4xl mx-auto leading-relaxed">
-              AI-powered meal management with RFID verification, real-time parent notifications, 
-              and authentic Indian cuisine designed specifically for Bangalore schools.
+              AI-powered meal management with RFID verification, real-time parent notifications, and
+              authentic Indian cuisine designed specifically for Bangalore schools.
             </p>
           </motion.div>
 
@@ -335,19 +351,47 @@ const HeroSection = () => {
             className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-12 max-w-4xl mx-auto"
           >
             {[
-              { value: liveStats.students, suffix: '+', label: 'Students Fed Daily', color: 'text-emerald-400' },
-              { value: liveStats.schools, suffix: '+', label: 'Partner Schools', color: 'text-cyan-400' },
-              { value: liveStats.orders / 1000000, suffix: 'M+', label: 'Meals Delivered', color: 'text-purple-400', decimals: 1 },
-              { value: liveStats.accuracy, suffix: '%', label: 'RFID Accuracy', color: 'text-pink-400' },
-              { value: liveStats.satisfaction, suffix: '★', label: 'Parent Rating', color: 'text-yellow-400' }
+              {
+                value: liveStats.students,
+                suffix: '+',
+                label: 'Students Fed Daily',
+                color: 'text-emerald-400',
+              },
+              {
+                value: liveStats.schools,
+                suffix: '+',
+                label: 'Partner Schools',
+                color: 'text-cyan-400',
+              },
+              {
+                value: liveStats.orders / 1000000,
+                suffix: 'M+',
+                label: 'Meals Delivered',
+                color: 'text-purple-400',
+                decimals: 1,
+              },
+              {
+                value: liveStats.accuracy,
+                suffix: '%',
+                label: 'RFID Accuracy',
+                color: 'text-pink-400',
+              },
+              {
+                value: liveStats.satisfaction,
+                suffix: '★',
+                label: 'Parent Rating',
+                color: 'text-yellow-400',
+              },
             ].map((stat, index) => (
               <motion.div
                 key={index}
                 className="text-center group cursor-pointer p-4 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 transition-all duration-300"
                 whileHover={{ scale: 1.05, y: -5 }}
-                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
               >
-                <div className={`text-3xl md:text-4xl font-black mb-2 ${stat.color} group-hover:scale-110 transition-all duration-300`}>
+                <div
+                  className={`text-3xl md:text-4xl font-black mb-2 ${stat.color} group-hover:scale-110 transition-all duration-300`}
+                >
                   <NumberTicker value={stat.value} className="inline" />
                   {stat.suffix}
                 </div>
@@ -364,8 +408,8 @@ const HeroSection = () => {
             transition={{ delay: 0.6, duration: 0.8 }}
           >
             <Link href="/dashboard">
-              <Button 
-                size="xl" 
+              <Button
+                size="xl"
                 className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white px-12 py-4 text-lg shadow-2xl shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all transform hover:scale-105 group font-bold rounded-2xl backdrop-blur-sm"
               >
                 <Users className="mr-3 h-6 w-6 group-hover:scale-110 transition-transform" />
@@ -373,10 +417,10 @@ const HeroSection = () => {
                 <ArrowRight className="ml-3 h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
-            
+
             <Link href="/school/demo">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="xl"
                 className="border-2 border-white/20 hover:border-white/40 px-12 py-4 text-lg bg-white/10 backdrop-blur-md text-white hover:bg-white/20 transition-all group font-bold rounded-2xl"
               >
@@ -444,7 +488,8 @@ const TestimonialSection = () => {
               Bangalore Parents Love HASIVU
             </h2>
             <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-              Join thousands of families who trust HASIVU with their children's nutrition and meal management
+              Join thousands of families who trust HASIVU with their children's nutrition and meal
+              management
             </p>
           </motion.div>
         </div>
@@ -468,7 +513,7 @@ const TestimonialSection = () => {
                 "{parentTestimonials[selectedTestimonial].quote}"
               </blockquote>
               <div className="flex items-center justify-center">
-                <img 
+                <img
                   src={parentTestimonials[selectedTestimonial].avatar}
                   alt={parentTestimonials[selectedTestimonial].author}
                   className="w-16 h-16 rounded-full border-4 border-white shadow-lg mr-6"
@@ -486,9 +531,12 @@ const TestimonialSection = () => {
                     )}
                   </div>
                   <p className="text-gray-300">{parentTestimonials[selectedTestimonial].title}</p>
-                  <p className="text-gray-400 text-sm">{parentTestimonials[selectedTestimonial].school}</p>
+                  <p className="text-gray-400 text-sm">
+                    {parentTestimonials[selectedTestimonial].school}
+                  </p>
                   <p className="text-emerald-400 text-sm font-medium">
-                    {parentTestimonials[selectedTestimonial].children} child{parentTestimonials[selectedTestimonial].children > 1 ? 'ren' : ''}
+                    {parentTestimonials[selectedTestimonial].children} child
+                    {parentTestimonials[selectedTestimonial].children > 1 ? 'ren' : ''}
                   </p>
                 </div>
               </div>
@@ -503,8 +551,8 @@ const TestimonialSection = () => {
               key={index}
               onClick={() => setSelectedTestimonial(index)}
               className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                index === selectedTestimonial 
-                  ? 'bg-emerald-500 scale-125 shadow-lg shadow-emerald-500/50' 
+                index === selectedTestimonial
+                  ? 'bg-emerald-500 scale-125 shadow-lg shadow-emerald-500/50'
                   : 'bg-white/30 hover:bg-white/50 backdrop-blur-sm'
               }`}
               aria-label={`View testimonial ${index + 1}`}
@@ -523,7 +571,7 @@ export const ProductionLandingPage: React.FC = () => {
       <Navigation />
       <HeroSection />
       <TestimonialSection />
-      
+
       {/* More sections to be added in next parts */}
     </div>
   );

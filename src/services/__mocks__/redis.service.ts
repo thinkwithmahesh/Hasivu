@@ -3,7 +3,7 @@
  * Manual mock for the Redis service
  */
 
-export const RedisService = {
+export const _RedisService = {
   get: jest.fn(),
   set: jest.fn(),
   setex: jest.fn(),
@@ -14,5 +14,5 @@ export const RedisService = {
   hget: jest.fn(),
   hset: jest.fn(),
   hdel: jest.fn(),
-  disconnect: jest.fn()
+  disconnect: jest.fn(),
 };

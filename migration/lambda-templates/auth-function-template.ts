@@ -17,7 +17,7 @@ const createResponse = (statusCode: number, body: any, headers: Record<string, s
   body: JSON.stringify(body)
 // Error handling helper
 const handleError = (error: any, context: Context): APIGatewayProxyResult => {}
-  logger.error('Lambda function error', { error: error.message, requestId: context.awsRequestId });
+  logger.error('Lambda function error', { errorMessage: error.message, requestId: context.awsRequestId });
   if (error.name === 'ValidationError') {}
     return createResponse(400, { error: 'Invalid input', details: error.message });
   if (error.name === 'NotAuthorizedException') {}

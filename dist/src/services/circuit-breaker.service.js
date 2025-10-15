@@ -81,7 +81,7 @@ class CircuitBreaker {
                 }, this.config.requestTimeout);
                 this.requestQueue.set(requestId, {
                     resolve: () => clearTimeout(timeout),
-                    reject: () => clearTimeout(timeout),
+                    reject: (_error) => clearTimeout(timeout),
                     timeout
                 });
             });
@@ -117,7 +117,7 @@ class CircuitBreaker {
         this.failureCount++;
         this.lastFailureTime = Date.now();
         this.recordMetric(false);
-        logger_1.logger.warn(`Circuit breaker '${this.config.name}' - Failure (${responseTime}ms): ${error.message}`);
+        logger_1.logger.warn(`Circuit breaker '${this.config.name}' - Failure (${responseTime}ms): ${error instanceof Error ? error.message : String(error)}`);
         if (this.shouldOpenCircuit()) {
             this.openCircuit();
         }

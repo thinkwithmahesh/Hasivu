@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createCircuitBreakerError = exports.createAuthorizationError = exports.createServiceUnavailableError = exports.createNotFoundError = exports.createValidationError = exports.notFoundHandler = exports.asyncHandler = exports.errorHandler = exports.ErrorType = void 0;
-const logger_1 = require("../utils/logger");
+const logger_service_1 = require("../shared/logger.service");
 var ErrorType;
 (function (ErrorType) {
     ErrorType["VALIDATION"] = "validation";
@@ -20,69 +20,69 @@ const ERROR_PATTERNS = {
     [ErrorType.VALIDATION]: {
         statusCode: 400,
         includeDetails: true,
-        logLevel: 'warn'
+        logLevel: 'warn',
     },
     [ErrorType.AUTHENTICATION]: {
         statusCode: 401,
         includeDetails: false,
-        logLevel: 'warn'
+        logLevel: 'warn',
     },
     [ErrorType.AUTHORIZATION]: {
         statusCode: 403,
         includeDetails: false,
-        logLevel: 'warn'
+        logLevel: 'warn',
     },
     [ErrorType.NOT_FOUND]: {
         statusCode: 404,
         includeDetails: false,
-        logLevel: 'info'
+        logLevel: 'info',
     },
     [ErrorType.RATE_LIMIT]: {
         statusCode: 429,
         includeDetails: false,
         logLevel: 'warn',
-        includeRetryAfter: true
+        includeRetryAfter: true,
     },
     [ErrorType.SERVICE_UNAVAILABLE]: {
         statusCode: 503,
         includeDetails: false,
         logLevel: 'error',
-        includeRetryAfter: true
+        includeRetryAfter: true,
     },
     [ErrorType.DATABASE]: {
         statusCode: 500,
         includeDetails: false,
-        logLevel: 'error'
+        logLevel: 'error',
     },
     [ErrorType.EXTERNAL_SERVICE]: {
         statusCode: 502,
         includeDetails: false,
         logLevel: 'error',
-        includeRetryAfter: true
+        includeRetryAfter: true,
     },
     [ErrorType.TIMEOUT]: {
         statusCode: 408,
         includeDetails: false,
         logLevel: 'warn',
-        includeRetryAfter: true
+        includeRetryAfter: true,
     },
     [ErrorType.INTERNAL]: {
         statusCode: 500,
         includeDetails: false,
-        logLevel: 'error'
+        logLevel: 'error',
     },
     [ErrorType.CIRCUIT_BREAKER]: {
         statusCode: 503,
         includeDetails: false,
         logLevel: 'warn',
-        includeRetryAfter: true
-    }
+        includeRetryAfter: true,
+    },
 };
 const errorHandler = (error, req, res, next) => {
     const requestId = generateRequestId();
     const errorType = classifyError(error);
     const pattern = ERROR_PATTERNS[errorType];
-    const statusCode = pattern.statusCode;
+    const { statusCode } = pattern;
     const degradedServices = getDegradedServices();
     const errorResponse = {
         error: errorType,
@@ -92,7 +92,7 @@ const errorHandler = (error, req, res, next) => {
         requestId,
         ...(degradedServices.length > 0 && { degradedServices }),
         ...(shouldIncludeDetails(errorType) && { details: getErrorDetails(error) }),
-        ...(shouldIncludeRetryAfter(errorType, error) && { retryAfter: getRetryAfter(error) })
+        ...(shouldIncludeRetryAfter(errorType, error) && { retryAfter: getRetryAfter(error) }),
     };
     logError(error, errorType, req, requestId);
     res.status(statusCode).json(errorResponse);
@@ -155,7 +155,7 @@ function getErrorMessage(error, errorType) {
         [ErrorType.EXTERNAL_SERVICE]: 'External service unavailable',
         [ErrorType.TIMEOUT]: 'Request timeout',
         [ErrorType.INTERNAL]: 'Internal server error',
-        [ErrorType.CIRCUIT_BREAKER]: 'Service circuit breaker activated'
+        [ErrorType.CIRCUIT_BREAKER]: 'Service circuit breaker activated',
     };
     if (errorType === ErrorType.VALIDATION && error.message) {
         return error.message;
@@ -180,7 +180,7 @@ function getErrorDetails(error) {
         return {
             stack: error.stack,
             name: error.name,
-            code: error.code
+            code: error.code,
         };
     }
     return undefined;
@@ -193,11 +193,17 @@ function getRetryAfter(error) {
     if (error.retryAfter)
         return error.retryAfter;
     const defaultRetryAfter = {
+        [ErrorType.VALIDATION]: 0,
+        [ErrorType.AUTHENTICATION]: 0,
+        [ErrorType.AUTHORIZATION]: 0,
+        [ErrorType.NOT_FOUND]: 0,
         [ErrorType.RATE_LIMIT]: 60,
         [ErrorType.SERVICE_UNAVAILABLE]: 300,
+        [ErrorType.DATABASE]: 60,
         [ErrorType.EXTERNAL_SERVICE]: 120,
         [ErrorType.TIMEOUT]: 30,
-        [ErrorType.CIRCUIT_BREAKER]: 180
+        [ErrorType.INTERNAL]: 60,
+        [ErrorType.CIRCUIT_BREAKER]: 180,
     };
     return defaultRetryAfter[classifyError(error)] || 60;
 }
@@ -206,7 +212,7 @@ function getDegradedServices() {
 }
 function logError(error, errorType, req, requestId) {
     const pattern = ERROR_PATTERNS[errorType];
-    const logLevel = pattern.logLevel;
+    const { logLevel } = pattern;
     const logData = {
         requestId,
         errorType,
@@ -217,20 +223,20 @@ function logError(error, errorType, req, requestId) {
         ip: req.ip,
         timestamp: new Date().toISOString(),
         ...(error.stack && { stack: error.stack }),
-        ...(error.code && { code: error.code })
+        ...(error.code && { code: error.code }),
     };
     switch (logLevel) {
         case 'error':
-            logger_1.logger.error('Application error occurred', logData);
+            logger_service_1.logger.error('Application error occurred', undefined, logData);
             break;
         case 'warn':
-            logger_1.logger.warn('Application warning occurred', logData);
+            logger_service_1.logger.warn('Application warning occurred', logData);
             break;
         case 'info':
-            logger_1.logger.info('Application info event', logData);
+            logger_service_1.logger.info('Application info event', logData);
             break;
         default:
-            logger_1.logger.error('Unknown error level', logData);
+            logger_service_1.logger.error('Unknown error level', undefined, logData);
     }
 }
 function createValidationError(message, details) {

@@ -1,0 +1,419 @@
+/**
+ * Shopping Cart Sidebar Component
+ * 
+ * FIXES: CRITICAL-010 (Shopping Cart Not Implemented) - UI Component
+ * 
+ * Production-ready shopping cart UI with:
+ * - Slide-out sidebar/drawer
+ * - Cart item list with images
+ * - Quantity controls (1-10)
+ * - Remove item functionality
+ * - Cart summary with totals
+ * - Empty cart state
+ * - Proceed to checkout
+ * - Mobile responsive
+ * - WCAG 2.1 accessible
+ * 
+ * Integrates with: shopping-cart-context.tsx
+ */
+
+"use client";
+
+import React, { useMemo } from 'react';
+import Image from 'next/image';
+import { 
+  X, 
+  Plus, 
+  Minus, 
+  Trash2, 
+  ShoppingCart,
+  ArrowRight,
+  Calendar,
+  User,
+  AlertCircle
+} from 'lucide-react';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
+import { useShoppingCart } from '@/contexts/shopping-cart-context';
+
+// ============================================================================
+// Types
+// ============================================================================
+
+interface ShoppingCartSidebarProps {
+  /** Optional trigger element (defaults to cart button) */
+  trigger?: React.ReactNode;
+  /** Callback when checkout is clicked */
+  onCheckout?: () => void;
+  /** Optional className */
+  className?: string;
+  /** Show cart badge on trigger */
+  showBadge?: boolean;
+}
+
+// ============================================================================
+// Component
+// ============================================================================
+
+export const ShoppingCartSidebar: React.FC<ShoppingCartSidebarProps> = ({
+  trigger,
+  onCheckout,
+  className,
+  showBadge = true,
+}) => {
+  const {
+    items,
+    updateQuantity,
+    removeItem,
+    clearCart,
+    getCartSummary,
+    getTotalItems,
+  } = useShoppingCart();
+
+  const totalItems = getTotalItems();
+  const summary = useMemo(() => getCartSummary(), [getCartSummary]);
+
+  // ============================================================================
+  // Handlers
+  // ============================================================================
+
+  const handleQuantityChange = (itemId: string, newQuantity: number) => {
+    if (newQuantity < 1 || newQuantity > 10) return;
+    updateQuantity(itemId, newQuantity);
+  };
+
+  const handleRemoveItem = (itemId: string) => {
+    removeItem(itemId);
+  };
+
+  const handleCheckout = () => {
+    if (onCheckout) {
+      onCheckout();
+    }
+  };
+
+  // ============================================================================
+  // Format Currency
+  // ============================================================================
+
+  const formatCurrency = (amount: number): string => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      minimumFractionDigits: 2,
+    }).format(amount);
+  };
+
+  // ============================================================================
+  // Default Trigger
+  // ============================================================================
+
+  const defaultTrigger = (
+    <Button
+      variant="outline"
+      size="icon"
+      className={cn("relative", className)}
+      aria-label={`Shopping cart with ${totalItems} items`}
+    >
+      <ShoppingCart className="h-5 w-5" />
+      {showBadge && totalItems > 0 && (
+        <Badge
+          variant="destructive"
+          className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs"
+        >
+          {totalItems}
+        </Badge>
+      )}
+    </Button>
+  );
+
+  // ============================================================================
+  // Render
+  // ============================================================================
+
+  return (
+    <Sheet>
+      <SheetTrigger asChild>
+        {trigger || defaultTrigger}
+      </SheetTrigger>
+
+      <SheetContent 
+        side="right" 
+        className="w-full sm:max-w-lg flex flex-col p-0"
+        aria-label="Shopping cart"
+      >
+        {/* Header */}
+        <SheetHeader className="px-6 py-4 border-b bg-gray-50">
+          <div className="flex items-center justify-between">
+            <div>
+              <SheetTitle className="text-xl font-bold flex items-center gap-2">
+                <ShoppingCart className="h-5 w-5" />
+                Shopping Cart
+              </SheetTitle>
+              <SheetDescription className="text-sm text-gray-600 mt-1">
+                {totalItems > 0 
+                  ? `${totalItems} ${totalItems === 1 ? 'item' : 'items'} in your cart`
+                  : 'Your cart is empty'}
+              </SheetDescription>
+            </div>
+            {items.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearCart}
+                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                Clear All
+              </Button>
+            )}
+          </div>
+        </SheetHeader>
+
+        {/* Cart Items */}
+        {items.length === 0 ? (
+          <EmptyCartState />
+        ) : (
+          <>
+            <ScrollArea className="flex-1 px-6 py-4">
+              <div className="space-y-4">
+                {items.map((item) => (
+                  <CartItem
+                    key={item.id}
+                    item={item}
+                    onQuantityChange={handleQuantityChange}
+                    onRemove={handleRemoveItem}
+                    formatCurrency={formatCurrency}
+                  />
+                ))}
+              </div>
+            </ScrollArea>
+
+            {/* Footer - Cart Summary */}
+            <div className="border-t bg-gray-50 px-6 py-4 space-y-4">
+              {/* Summary Lines */}
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between text-gray-600">
+                  <span>Subtotal</span>
+                  <span className="font-medium">{formatCurrency(summary.subtotal)}</span>
+                </div>
+                <div className="flex justify-between text-gray-600">
+                  <span>Tax (GST {summary.taxRate}%)</span>
+                  <span className="font-medium">{formatCurrency(summary.tax)}</span>
+                </div>
+                {summary.discount > 0 && (
+                  <div className="flex justify-between text-green-600">
+                    <span>Discount</span>
+                    <span className="font-medium">-{formatCurrency(summary.discount)}</span>
+                  </div>
+                )}
+                <Separator />
+                <div className="flex justify-between text-lg font-bold text-gray-900">
+                  <span>Total</span>
+                  <span>{formatCurrency(summary.total)}</span>
+                </div>
+              </div>
+
+              {/* Checkout Button */}
+              <Button
+                onClick={handleCheckout}
+                className="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-6 text-base"
+                size="lg"
+              >
+                Proceed to Checkout
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+
+              {/* Info Text */}
+              <p className="text-xs text-center text-gray-500">
+                <AlertCircle className="inline h-3 w-3 mr-1" />
+                Prices and availability subject to change
+              </p>
+            </div>
+          </>
+        )}
+      </SheetContent>
+    </Sheet>
+  );
+};
+
+// ============================================================================
+// Cart Item Component
+// ============================================================================
+
+interface CartItemProps {
+  item: any;
+  onQuantityChange: (itemId: string, quantity: number) => void;
+  onRemove: (itemId: string) => void;
+  formatCurrency: (amount: number) => string;
+}
+
+const CartItem: React.FC<CartItemProps> = ({
+  item,
+  onQuantityChange,
+  onRemove,
+  formatCurrency,
+}) => {
+  const itemTotal = item.price * item.quantity;
+
+  return (
+    <div 
+      className="flex gap-4 p-3 rounded-lg border bg-white hover:shadow-sm transition-shadow"
+      data-testid="cart-item"
+    >
+      {/* Item Image */}
+      <div className="relative h-20 w-20 flex-shrink-0 rounded-md overflow-hidden bg-gray-100">
+        {item.image ? (
+          <Image
+            src={item.image}
+            alt={item.name}
+            fill
+            className="object-cover"
+            sizes="80px"
+          />
+        ) : (
+          <div className="h-full w-full flex items-center justify-center text-4xl">
+            🍽️
+          </div>
+        )}
+      </div>
+
+      {/* Item Details */}
+      <div className="flex-1 min-w-0">
+        {/* Name and Remove */}
+        <div className="flex items-start justify-between gap-2 mb-2">
+          <div className="flex-1 min-w-0">
+            <h4 className="font-semibold text-gray-900 text-sm line-clamp-1">
+              {item.name}
+            </h4>
+            {item.deliveryDate && (
+              <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
+                <Calendar className="h-3 w-3" />
+                <span>
+                  {new Date(item.deliveryDate).toLocaleDateString('en-IN', {
+                    month: 'short',
+                    day: 'numeric',
+                  })}
+                </span>
+              </div>
+            )}
+            {item.studentId && (
+              <div className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
+                <User className="h-3 w-3" />
+                <span className="truncate">{item.studentName || `Student ${item.studentId.slice(0, 8)}`}</span>
+              </div>
+            )}
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onRemove(item.id)}
+            className="h-6 w-6 text-gray-400 hover:text-red-600 hover:bg-red-50 flex-shrink-0"
+            aria-label="Remove item"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {/* Customizations */}
+        {item.customizations && item.customizations.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-2">
+            {item.customizations.slice(0, 2).map((custom: string, idx: number) => (
+              <Badge key={idx} variant="secondary" className="text-xs">
+                {custom}
+              </Badge>
+            ))}
+            {item.customizations.length > 2 && (
+              <Badge variant="secondary" className="text-xs">
+                +{item.customizations.length - 2} more
+              </Badge>
+            )}
+          </div>
+        )}
+
+        {/* Price and Quantity Controls */}
+        <div className="flex items-center justify-between">
+          {/* Quantity Controls */}
+          <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onQuantityChange(item.id, item.quantity - 1)}
+              disabled={item.quantity <= 1}
+              className="h-7 w-7 hover:bg-gray-200"
+              aria-label="Decrease quantity"
+            >
+              <Minus className="h-3 w-3" />
+            </Button>
+            <span className="w-8 text-center font-medium text-sm">
+              {item.quantity}
+            </span>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onQuantityChange(item.id, item.quantity + 1)}
+              disabled={item.quantity >= 10}
+              className="h-7 w-7 hover:bg-gray-200"
+              aria-label="Increase quantity"
+            >
+              <Plus className="h-3 w-3" />
+            </Button>
+          </div>
+
+          {/* Price */}
+          <div className="text-right">
+            <div className="font-bold text-gray-900">
+              {formatCurrency(itemTotal)}
+            </div>
+            {item.quantity > 1 && (
+              <div className="text-xs text-gray-500">
+                {formatCurrency(item.price)} each
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
+// Empty Cart State
+// ============================================================================
+
+const EmptyCartState: React.FC = () => {
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+      <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+        <ShoppingCart className="h-12 w-12 text-gray-400" />
+      </div>
+      <h3 className="text-lg font-semibold text-gray-900 mb-2">
+        Your cart is empty
+      </h3>
+      <p className="text-sm text-gray-600 max-w-sm mb-6">
+        Start adding delicious meals to your cart and they'll appear here.
+      </p>
+      <Button variant="outline" asChild>
+        <a href="/menu">
+          Browse Menu
+        </a>
+      </Button>
+    </div>
+  );
+};
+
+// ============================================================================
+// Export
+// ============================================================================
+
+export default ShoppingCartSidebar;

@@ -1,5 +1,5 @@
-import { type ClassValue, clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { type ClassValue, clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 
 /**
  * Combines clsx and tailwind-merge for optimal class merging
@@ -22,14 +22,17 @@ export function formatCurrency(value: number, currency = 'INR'): string {
 /**
  * Format date values
  */
-export function formatDate(date: Date | string, format: 'short' | 'medium' | 'long' = 'medium'): string {
+export function formatDate(
+  date: Date | string,
+  format: 'short' | 'medium' | 'long' = 'medium'
+): string {
   const dateObj = new Date(date);
   const options = {
     short: { month: 'short', day: 'numeric' },
     medium: { month: 'short', day: 'numeric', year: 'numeric' },
-    long: { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }
+    long: { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' },
   }[format] as Intl.DateTimeFormatOptions;
-  
+
   return new Intl.DateTimeFormat('en-IN', options).format(dateObj);
 }
 

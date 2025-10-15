@@ -174,9 +174,9 @@ export interface DeviceInfo {
 /**
  * User roles in the platform
  */
-export type UserRole = 
+export type UserRole =
   | 'super_admin'
-  | 'school_admin' 
+  | 'school_admin'
   | 'teacher'
   | 'student'
   | 'parent'
@@ -187,12 +187,7 @@ export type UserRole =
 /**
  * User account status
  */
-export type UserStatus = 
-  | 'active' 
-  | 'inactive' 
-  | 'suspended' 
-  | 'pending_verification' 
-  | 'deleted';
+export type UserStatus = 'active' | 'inactive' | 'suspended' | 'pending_verification' | 'deleted';
 
 /**
  * Complete user profile information
@@ -310,7 +305,13 @@ export interface School {
   updatedAt: string;
 }
 
-export type SchoolType = 'primary' | 'secondary' | 'high_school' | 'college' | 'university' | 'mixed';
+export type SchoolType =
+  | 'primary'
+  | 'secondary'
+  | 'high_school'
+  | 'college'
+  | 'university'
+  | 'mixed';
 export type SchoolStatus = 'active' | 'inactive' | 'suspended' | 'trial' | 'expired';
 
 /**
@@ -435,9 +436,18 @@ export interface MenuItem {
   updatedAt: string;
 }
 
-export type FoodCategory = 
-  | 'appetizer' | 'main_course' | 'side_dish' | 'dessert' | 'beverage' 
-  | 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'salad' | 'soup';
+export type FoodCategory =
+  | 'appetizer'
+  | 'main_course'
+  | 'side_dish'
+  | 'dessert'
+  | 'beverage'
+  | 'breakfast'
+  | 'lunch'
+  | 'dinner'
+  | 'snack'
+  | 'salad'
+  | 'soup';
 
 export type FoodType = 'vegetarian' | 'non_vegetarian' | 'vegan' | 'jain';
 export type ItemStatus = 'active' | 'inactive' | 'out_of_stock' | 'seasonal' | 'discontinued';
@@ -572,9 +582,15 @@ export interface Order {
   metadata: Record<string, any>;
 }
 
-export type OrderStatus = 
-  | 'pending' | 'confirmed' | 'preparing' | 'ready' | 'delivered' 
-  | 'cancelled' | 'refunded' | 'failed';
+export type OrderStatus =
+  | 'pending'
+  | 'confirmed'
+  | 'preparing'
+  | 'ready'
+  | 'delivered'
+  | 'cancelled'
+  | 'refunded'
+  | 'failed';
 
 /**
  * Order item details
@@ -651,9 +667,21 @@ export interface OrderTimestamps {
 // =============================================================================
 
 export type PaymentMethodType = 'card' | 'upi' | 'wallet' | 'bank_account' | 'rfid' | 'cash';
-export type PaymentStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled' | 'refunded';
+export type PaymentStatus =
+  | 'pending'
+  | 'processing'
+  | 'completed'
+  | 'failed'
+  | 'cancelled'
+  | 'refunded';
 export type RefundStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
-export type SubscriptionStatus = 'active' | 'inactive' | 'cancelled' | 'expired' | 'trial' | 'suspended';
+export type SubscriptionStatus =
+  | 'active'
+  | 'inactive'
+  | 'cancelled'
+  | 'expired'
+  | 'trial'
+  | 'suspended';
 export type BillingCycle = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
 
 /**
@@ -814,9 +842,16 @@ export interface RfidTransaction {
   metadata: Record<string, any>;
 }
 
-export type RfidTransactionType = 
-  | 'payment' | 'recharge' | 'refund' | 'attendance_in' | 'attendance_out' 
-  | 'access_granted' | 'access_denied' | 'library_checkout' | 'library_return';
+export type RfidTransactionType =
+  | 'payment'
+  | 'recharge'
+  | 'refund'
+  | 'attendance_in'
+  | 'attendance_out'
+  | 'access_granted'
+  | 'access_denied'
+  | 'library_checkout'
+  | 'library_return';
 
 // =============================================================================
 // NOTIFICATION SYSTEM TYPES
@@ -853,9 +888,16 @@ export interface NotificationTemplate {
   updatedAt: string;
 }
 
-export type NotificationCategory = 
-  | 'order' | 'payment' | 'attendance' | 'academic' | 'emergency' 
-  | 'promotional' | 'system' | 'reminder' | 'announcement';
+export type NotificationCategory =
+  | 'order'
+  | 'payment'
+  | 'attendance'
+  | 'academic'
+  | 'emergency'
+  | 'promotional'
+  | 'system'
+  | 'reminder'
+  | 'announcement';
 
 export interface NotificationCondition {
   field: string;
@@ -1158,9 +1200,15 @@ export interface Alert {
   metadata: Record<string, any>;
 }
 
-export type AlertType = 
-  | 'system' | 'database' | 'api' | 'payment' | 'security' 
-  | 'performance' | 'storage' | 'network';
+export type AlertType =
+  | 'system'
+  | 'database'
+  | 'api'
+  | 'payment'
+  | 'security'
+  | 'performance'
+  | 'storage'
+  | 'network';
 
 export type AlertSeverity = 'info' | 'warning' | 'error' | 'critical';
 
@@ -1216,11 +1264,14 @@ export interface PerformanceMetrics {
       connections: number;
     };
   };
-  externalServices: Record<string, {
-    status: 'healthy' | 'degraded' | 'unhealthy';
-    responseTime: number;
-    uptime: number;
-  }>;
+  externalServices: Record<
+    string,
+    {
+      status: 'healthy' | 'degraded' | 'unhealthy';
+      responseTime: number;
+      uptime: number;
+    }
+  >;
 }
 
 /**
@@ -1357,7 +1408,7 @@ export interface ApiResponseObject extends Response {
   sendSuccess: <T>(data?: T, message?: string) => Response;
   sendError: (error: ApiError | string, statusCode?: number) => Response;
   sendValidationError: (errors: ValidationError[]) => Response;
-  sendPaginated: <T>(data: T[], pagination: any) => Response;
+  sendPaginatedResponse: <T>(data: T[], pagination: any) => Response;
 }
 
 /**
@@ -1417,4 +1468,3 @@ export interface QueryResult<T> {
 
 // Re-export all types for convenience (this is just documentation)
 // Individual exports are already available throughout the file
-

@@ -33,13 +33,13 @@ jest.mock('../../../../src/shared/response.utils', () => ({
         statusCode: 200,
         body: JSON.stringify(data)
     })),
-    createErrorResponse: jest.fn((message, statusCode, errorCode) => ({
+    createErrorResponse: jest.fn((code, message, statusCode, details) => ({
         statusCode,
-        body: JSON.stringify({ error: message, errorCode })
+        body: JSON.stringify({ error: message, errorCode: code })
     })),
     handleError: jest.fn((error, message) => ({
         statusCode: 500,
-        body: JSON.stringify({ error: message })
+        body: JSON.stringify({ error: message || (error instanceof Error ? error.message : 'An error occurred') })
     }))
 }));
 jest.mock('../../../../src/shared/logger.service', () => ({
@@ -185,8 +185,10 @@ describe('RFID Delivery Verification Lambda Function', () => {
             mockPrisma.order.findFirst.mockResolvedValue(mockOrder);
         });
         it('should verify delivery successfully with all components', async () => {
-            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            const result = await (0, delivery_verification_1.handler)(validEvent, mockContext);
             expect(result.statusCode).toBe(200);
+            const responseBody = JSON.parse(result.body);
+            expect(responseBody.message).toContain('Delivery verified for');
             expect(authenticateLambda).toHaveBeenCalledWith(validEvent);
             expect(mockPrisma.rFIDCard.findFirst).toHaveBeenCalledWith({
                 where: {
@@ -268,7 +270,7 @@ describe('RFID Delivery Verification Lambda Function', () => {
             };
             const todayOrder = { ...mockOrder, id: 'today-order-123' };
             mockPrisma.order.findFirst.mockResolvedValue(todayOrder);
-            await (0, delivery_verification_1.deliveryVerificationHandler)(eventWithoutOrderId, mockContext);
+            await (0, delivery_verification_1.handler)(eventWithoutOrderId, mockContext);
             expect(mockPrisma.order.findFirst).toHaveBeenCalledWith({
                 where: {
                     studentId: 'student-123',
@@ -295,7 +297,7 @@ describe('RFID Delivery Verification Lambda Function', () => {
                     location: {}
                 })
             };
-            await (0, delivery_verification_1.deliveryVerificationHandler)(minimalEvent, mockContext);
+            await (0, delivery_verification_1.handler)(minimalEvent, mockContext);
             expect(createSuccessResponse).toHaveBeenCalledWith({
                 message: 'Delivery verified for John Doe',
                 data: expect.objectContaining({
@@ -310,13 +312,13 @@ describe('RFID Delivery Verification Lambda Function', () => {
     describe('HTTP Method Validation', () => {
         it('should reject non-POST requests', async () => {
             const getEvent = { ...validEvent, httpMethod: 'GET' };
-            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(getEvent, mockContext);
+            const result = await (0, delivery_verification_1.handler)(getEvent, mockContext);
             expect(result.statusCode).toBe(405);
-            expect(createErrorResponse).toHaveBeenCalledWith('Method not allowed', 405, 'METHOD_NOT_ALLOWED');
+            expect(createErrorResponse).toHaveBeenCalledWith(405, 'Method not allowed', undefined, 'METHOD_NOT_ALLOWED');
         });
         it('should reject PUT requests', async () => {
             const putEvent = { ...validEvent, httpMethod: 'PUT' };
-            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(putEvent, mockContext);
+            const result = await (0, delivery_verification_1.handler)(putEvent, mockContext);
             expect(result.statusCode).toBe(405);
         });
     });
@@ -326,7 +328,7 @@ describe('RFID Delivery Verification Lambda Function', () => {
         });
         it('should reject unauthenticated requests', async () => {
             authenticateLambda.mockRejectedValue(new Error('Invalid token'));
-            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            const result = await (0, delivery_verification_1.handler)(validEvent, mockContext);
             expect(handleError).toHaveBeenCalledWith(expect.any(Error), 'Failed to verify delivery');
         });
         it('should allow super_admin to verify anywhere', async () => {
@@ -337,7 +339,7 @@ describe('RFID Delivery Verification Lambda Function', () => {
             });
             mockPrisma.rFIDReader.findUnique.mockResolvedValue(mockRFIDReader);
             mockPrisma.order.findFirst.mockResolvedValue(mockOrder);
-            await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            await (0, delivery_verification_1.handler)(validEvent, mockContext);
             expect(mockPrisma.$transaction).toHaveBeenCalled();
         });
         it('should allow admin to verify anywhere', async () => {
@@ -348,7 +350,7 @@ describe('RFID Delivery Verification Lambda Function', () => {
             });
             mockPrisma.rFIDReader.findUnique.mockResolvedValue(mockRFIDReader);
             mockPrisma.order.findFirst.mockResolvedValue(mockOrder);
-            await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            await (0, delivery_verification_1.handler)(validEvent, mockContext);
             expect(mockPrisma.$transaction).toHaveBeenCalled();
         });
         it('should reject staff from different schools', async () => {
@@ -357,7 +359,7 @@ describe('RFID Delivery Verification Lambda Function', () => {
                 role: 'staff',
                 schoolId: 'different-school-123'
             });
-            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            const result = await (0, delivery_verification_1.handler)(validEvent, mockContext);
             expect(createErrorResponse).toHaveBeenCalledWith('Insufficient permissions to perform delivery verification', 403, 'UNAUTHORIZED');
         });
         it('should reject students attempting verification', async () => {
@@ -365,19 +367,19 @@ describe('RFID Delivery Verification Lambda Function', () => {
                 ...mockAuthenticatedUser,
                 role: 'student'
             });
-            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            const result = await (0, delivery_verification_1.handler)(validEvent, mockContext);
             expect(createErrorResponse).toHaveBeenCalledWith('Insufficient permissions to perform delivery verification', 403, 'UNAUTHORIZED');
         });
     });
     describe('Input Validation', () => {
         it('should reject missing request body', async () => {
             const eventWithoutBody = { ...validEvent, body: null };
-            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(eventWithoutBody, mockContext);
+            const result = await (0, delivery_verification_1.handler)(eventWithoutBody, mockContext);
             expect(createErrorResponse).toHaveBeenCalledWith('Invalid request data', 400, 'VALIDATION_ERROR');
         });
         it('should reject invalid JSON body', async () => {
             const eventWithInvalidJson = { ...validEvent, body: '{ invalid json' };
-            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(eventWithInvalidJson, mockContext);
+            const result = await (0, delivery_verification_1.handler)(eventWithInvalidJson, mockContext);
             expect(handleError).toHaveBeenCalledWith(expect.any(Error), 'Failed to verify delivery');
         });
         it('should reject missing cardId', async () => {
@@ -388,7 +390,7 @@ describe('RFID Delivery Verification Lambda Function', () => {
                     location: { venue: 'Main Cafeteria' }
                 })
             };
-            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(eventMissingCardId, mockContext);
+            const result = await (0, delivery_verification_1.handler)(eventMissingCardId, mockContext);
             expect(createErrorResponse).toHaveBeenCalledWith('Invalid request data', 400, 'VALIDATION_ERROR');
         });
         it('should reject missing readerId', async () => {
@@ -399,7 +401,7 @@ describe('RFID Delivery Verification Lambda Function', () => {
                     location: { venue: 'Main Cafeteria' }
                 })
             };
-            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(eventMissingReaderId, mockContext);
+            const result = await (0, delivery_verification_1.handler)(eventMissingReaderId, mockContext);
             expect(createErrorResponse).toHaveBeenCalledWith('Invalid request data', 400, 'VALIDATION_ERROR');
         });
         it('should reject missing location', async () => {
@@ -410,7 +412,7 @@ describe('RFID Delivery Verification Lambda Function', () => {
                     readerId: 'reader-123'
                 })
             };
-            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(eventMissingLocation, mockContext);
+            const result = await (0, delivery_verification_1.handler)(eventMissingLocation, mockContext);
             expect(createErrorResponse).toHaveBeenCalledWith('Invalid request data', 400, 'VALIDATION_ERROR');
         });
         it('should reject invalid readerId format', async () => {
@@ -422,7 +424,7 @@ describe('RFID Delivery Verification Lambda Function', () => {
                     location: { venue: 'Main Cafeteria' }
                 })
             };
-            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(eventInvalidReaderId, mockContext);
+            const result = await (0, delivery_verification_1.handler)(eventInvalidReaderId, mockContext);
             expect(createErrorResponse).toHaveBeenCalledWith('Invalid request data', 400, 'VALIDATION_ERROR');
         });
     });
@@ -433,7 +435,7 @@ describe('RFID Delivery Verification Lambda Function', () => {
         });
         it('should reject non-existent card', async () => {
             mockPrisma.rFIDCard.findFirst.mockResolvedValue(null);
-            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            const result = await (0, delivery_verification_1.handler)(validEvent, mockContext);
             expect(handleError).toHaveBeenCalledWith(expect.objectContaining({ message: 'RFID card not found' }), 'Failed to verify delivery');
         });
         it('should reject inactive card', async () => {
@@ -441,7 +443,7 @@ describe('RFID Delivery Verification Lambda Function', () => {
                 ...mockRFIDCard,
                 isActive: false
             });
-            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            const result = await (0, delivery_verification_1.handler)(validEvent, mockContext);
             expect(handleError).toHaveBeenCalledWith(expect.objectContaining({ message: 'RFID card is inactive' }), 'Failed to verify delivery');
         });
         it('should reject expired card', async () => {
@@ -449,7 +451,7 @@ describe('RFID Delivery Verification Lambda Function', () => {
                 ...mockRFIDCard,
                 expiresAt: new Date('2020-01-01T00:00:00Z')
             });
-            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            const result = await (0, delivery_verification_1.handler)(validEvent, mockContext);
             expect(handleError).toHaveBeenCalledWith(expect.objectContaining({ message: 'RFID card has expired' }), 'Failed to verify delivery');
         });
         it('should reject card with inactive student', async () => {
@@ -460,7 +462,7 @@ describe('RFID Delivery Verification Lambda Function', () => {
                     isActive: false
                 }
             });
-            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            const result = await (0, delivery_verification_1.handler)(validEvent, mockContext);
             expect(handleError).toHaveBeenCalledWith(expect.objectContaining({ message: 'Student account is inactive' }), 'Failed to verify delivery');
         });
         it('should reject card with inactive school', async () => {
@@ -471,7 +473,7 @@ describe('RFID Delivery Verification Lambda Function', () => {
                     isActive: false
                 }
             });
-            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            const result = await (0, delivery_verification_1.handler)(validEvent, mockContext);
             expect(handleError).toHaveBeenCalledWith(expect.objectContaining({ message: 'School is inactive' }), 'Failed to verify delivery');
         });
     });
@@ -482,7 +484,7 @@ describe('RFID Delivery Verification Lambda Function', () => {
         });
         it('should reject non-existent reader', async () => {
             mockPrisma.rFIDReader.findUnique.mockResolvedValue(null);
-            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            const result = await (0, delivery_verification_1.handler)(validEvent, mockContext);
             expect(handleError).toHaveBeenCalledWith(expect.objectContaining({ message: 'RFID reader not found' }), 'Failed to verify delivery');
         });
         it('should reject inactive reader', async () => {
@@ -490,7 +492,7 @@ describe('RFID Delivery Verification Lambda Function', () => {
                 ...mockRFIDReader,
                 isActive: false
             });
-            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            const result = await (0, delivery_verification_1.handler)(validEvent, mockContext);
             expect(handleError).toHaveBeenCalledWith(expect.objectContaining({ message: 'RFID reader is inactive' }), 'Failed to verify delivery');
         });
         it('should reject reader from different school', async () => {
@@ -498,7 +500,7 @@ describe('RFID Delivery Verification Lambda Function', () => {
                 ...mockRFIDReader,
                 schoolId: 'different-school-123'
             });
-            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            const result = await (0, delivery_verification_1.handler)(validEvent, mockContext);
             expect(createErrorResponse).toHaveBeenCalledWith('RFID reader does not belong to student\'s school', 403, 'SCHOOL_MISMATCH');
         });
         it('should warn about stale heartbeat but allow verification', async () => {
@@ -507,7 +509,7 @@ describe('RFID Delivery Verification Lambda Function', () => {
                 ...mockRFIDReader,
                 lastHeartbeat: staleHeartbeat
             });
-            await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            await (0, delivery_verification_1.handler)(validEvent, mockContext);
             expect(mockPrisma.$transaction).toHaveBeenCalled();
         });
     });
@@ -518,7 +520,7 @@ describe('RFID Delivery Verification Lambda Function', () => {
         });
         it('should reject non-existent order', async () => {
             mockPrisma.order.findFirst.mockResolvedValue(null);
-            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            const result = await (0, delivery_verification_1.handler)(validEvent, mockContext);
             expect(handleError).toHaveBeenCalledWith(expect.objectContaining({ message: 'Order not found or not eligible for delivery' }), 'Failed to verify delivery');
         });
         it('should reject order with invalid status', async () => {
@@ -526,7 +528,7 @@ describe('RFID Delivery Verification Lambda Function', () => {
                 ...mockOrder,
                 status: 'cancelled'
             });
-            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            const result = await (0, delivery_verification_1.handler)(validEvent, mockContext);
             expect(handleError).toHaveBeenCalledWith(expect.objectContaining({ message: 'Order cannot be delivered. Current status: cancelled' }), 'Failed to verify delivery');
         });
         it('should reject unpaid order', async () => {
@@ -534,7 +536,7 @@ describe('RFID Delivery Verification Lambda Function', () => {
                 ...mockOrder,
                 paymentStatus: 'pending'
             });
-            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            const result = await (0, delivery_verification_1.handler)(validEvent, mockContext);
             expect(handleError).toHaveBeenCalledWith(expect.objectContaining({ message: 'Order payment not confirmed. Payment status: pending' }), 'Failed to verify delivery');
         });
         it('should allow delivered order status', async () => {
@@ -542,7 +544,7 @@ describe('RFID Delivery Verification Lambda Function', () => {
                 ...mockOrder,
                 status: 'ready'
             });
-            await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            await (0, delivery_verification_1.handler)(validEvent, mockContext);
             expect(mockPrisma.$transaction).toHaveBeenCalled();
         });
     });
@@ -554,7 +556,7 @@ describe('RFID Delivery Verification Lambda Function', () => {
         });
         it('should handle transaction rollback on verification creation failure', async () => {
             mockPrisma.$transaction.mockRejectedValue(new Error('Verification creation failed'));
-            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            const result = await (0, delivery_verification_1.handler)(validEvent, mockContext);
             expect(handleError).toHaveBeenCalledWith(expect.any(Error), 'Failed to verify delivery');
         });
         it('should handle order status update failure gracefully', async () => {
@@ -575,7 +577,7 @@ describe('RFID Delivery Verification Lambda Function', () => {
                 };
                 return await callback(txMock);
             });
-            const result = await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            const result = await (0, delivery_verification_1.handler)(validEvent, mockContext);
             expect(handleError).toHaveBeenCalledWith(expect.any(Error), 'Failed to verify delivery');
         });
         it('should handle reader update failure gracefully', async () => {
@@ -597,19 +599,19 @@ describe('RFID Delivery Verification Lambda Function', () => {
                 };
                 return await callback(txMock);
             });
-            await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            await (0, delivery_verification_1.handler)(validEvent, mockContext);
             expect(createSuccessResponse).toHaveBeenCalled();
         });
         it('should ensure database disconnection on success', async () => {
             mockPrisma.rFIDCard.findFirst.mockResolvedValue(mockRFIDCard);
             mockPrisma.rFIDReader.findUnique.mockResolvedValue(mockRFIDReader);
             mockPrisma.order.findFirst.mockResolvedValue(mockOrder);
-            await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            await (0, delivery_verification_1.handler)(validEvent, mockContext);
             expect(mockPrisma.$disconnect).toHaveBeenCalled();
         });
         it('should ensure database disconnection on error', async () => {
             mockPrisma.rFIDCard.findFirst.mockRejectedValue(new Error('Database error'));
-            await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            await (0, delivery_verification_1.handler)(validEvent, mockContext);
             expect(mockPrisma.$disconnect).toHaveBeenCalled();
         });
     });
@@ -620,7 +622,7 @@ describe('RFID Delivery Verification Lambda Function', () => {
             mockPrisma.order.findFirst.mockResolvedValue(mockOrder);
         });
         it('should return properly formatted success response', async () => {
-            await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            await (0, delivery_verification_1.handler)(validEvent, mockContext);
             expect(createSuccessResponse).toHaveBeenCalledWith({
                 message: 'Delivery verified for John Doe',
                 data: expect.objectContaining({
@@ -668,7 +670,7 @@ describe('RFID Delivery Verification Lambda Function', () => {
                 ...mockRFIDCard,
                 expiresAt: null
             });
-            await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            await (0, delivery_verification_1.handler)(validEvent, mockContext);
             expect(createSuccessResponse).toHaveBeenCalled();
         });
         it('should handle missing reader heartbeat', async () => {
@@ -676,7 +678,7 @@ describe('RFID Delivery Verification Lambda Function', () => {
                 ...mockRFIDReader,
                 lastHeartbeat: null
             });
-            await (0, delivery_verification_1.deliveryVerificationHandler)(validEvent, mockContext);
+            await (0, delivery_verification_1.handler)(validEvent, mockContext);
             expect(createSuccessResponse).toHaveBeenCalled();
         });
         it('should handle complex location data', async () => {
@@ -693,7 +695,7 @@ describe('RFID Delivery Verification Lambda Function', () => {
                     }
                 })
             };
-            await (0, delivery_verification_1.deliveryVerificationHandler)(complexLocationEvent, mockContext);
+            await (0, delivery_verification_1.handler)(complexLocationEvent, mockContext);
             expect(createSuccessResponse).toHaveBeenCalledWith({
                 message: 'Delivery verified for John Doe',
                 data: expect.objectContaining({

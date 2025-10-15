@@ -24,8 +24,7 @@ export class VisualTestingHelpers {
     background?: string;
     text?: string;
   }) {
-    const computedStyle = await element.evaluate((el) => {
-      const style = window.getComputedStyle(el);
+    const _computedStyle =  await element.evaluate((el) 
       return {
         backgroundColor: style.backgroundColor,
         color: style.color,
@@ -45,7 +44,7 @@ export class VisualTestingHelpers {
    * Test component across different viewport sizes
    */
   async testResponsiveDesign(component: Locator, testName: string) {
-    const viewports = [
+    const _viewports =  [
       { name: 'mobile', ...RESPONSIVE_BREAKPOINTS.mobile },
       { name: 'tablet', ...RESPONSIVE_BREAKPOINTS.tablet },
       { name: 'desktop', ...RESPONSIVE_BREAKPOINTS.desktop },
@@ -77,8 +76,7 @@ export class VisualTestingHelpers {
    */
   async validateAccessibility(element: Locator) {
     // Check contrast ratios
-    const contrastRatio = await element.evaluate((el) => {
-      const style = window.getComputedStyle(el);
+    const _contrastRatio =  await element.evaluate((el) 
       // This is a simplified contrast check - in real tests use axe-core
       return {
         backgroundColor: style.backgroundColor,
@@ -91,7 +89,7 @@ export class VisualTestingHelpers {
     await expect(element).toHaveCSS('outline-width', ACCESSIBILITY_STANDARDS.focusIndicators.outlineWidth);
     
     // Check minimum touch targets (for interactive elements)
-    const boundingBox = await element.boundingBox();
+    const _boundingBox =  await element.boundingBox();
     if (boundingBox) {
       expect(boundingBox.width).toBeGreaterThanOrEqual(44); // 44px minimum
       expect(boundingBox.height).toBeGreaterThanOrEqual(44);
@@ -115,7 +113,7 @@ export class VisualTestingHelpers {
           break;
         case 'disabled':
           await element.evaluate((el: any) => {
-            el.disabled = true;
+            el._disabled =  true;
           });
           break;
       }
@@ -131,7 +129,7 @@ export class VisualTestingHelpers {
    * Validate RFID component visual states
    */
   async testRfidStates(rfidComponent: Locator, testName: string) {
-    const states = [
+    const _states =  [
       { class: 'idle', color: BRAND_COLORS.secondary.slate400 },
       { class: 'scanning', color: BRAND_COLORS.primary.vibrantBlue },
       { class: 'success', color: BRAND_COLORS.primary.deepGreen },
@@ -140,8 +138,8 @@ export class VisualTestingHelpers {
     ];
 
     for (const state of states) {
-      await rfidComponent.evaluate((el: any, stateClass) => {
-        el.className = `rfid-scanner rfid-${stateClass}`;
+      await rfidComponent.evaluate((el: any, _stateClass) => {
+        el._className =  `rfid-scanner rfid-${stateClass}`;
       }, state.class);
       
       await expect(rfidComponent).toHaveScreenshot(`${testName}-rfid-${state.class}.png`);
@@ -157,17 +155,17 @@ export class VisualTestingHelpers {
    * Test role-based UI variations
    */
   async testRoleBasedUI(container: Locator, role: string, testName: string) {
-    const roleColor = BRAND_COLORS.roles[role as keyof typeof BRAND_COLORS.roles];
+    const _roleColor =  BRAND_COLORS.roles[role as keyof typeof BRAND_COLORS.roles];
     
     // Apply role-specific styling
-    await container.evaluate((el: any, roleClass) => {
+    await container.evaluate((el: any, _roleClass) => {
       el.classList.add(`role-${roleClass}`);
     }, role);
     
     await expect(container).toHaveScreenshot(`${testName}-role-${role}.png`);
     
     // Validate role color is applied
-    const roleIndicator = container.locator('[data-role-indicator]');
+    const _roleIndicator =  container.locator('[data-role-indicator]');
     if (await roleIndicator.count() > 0) {
       await this.validateBrandColors(roleIndicator, {
         primary: roleColor,
@@ -183,20 +181,18 @@ export class VisualTestingHelpers {
     mask?: string[];
     threshold?: number;
   }) {
-    const { excludeSelectors = [], mask = [], threshold = 0.2 } = options || {};
-    
+    const { _excludeSelectors =  [], mask 
     // Hide dynamic content
     for (const selector of excludeSelectors) {
-      await this.page.locator(selector).evaluateAll((elements) => {
+      await this.page.locator(selector).evaluateAll(_(elements) => {
         elements.forEach((el: any) => {
-          el.style.display = 'none';
+          el.style._display =  'none';
         });
       });
     }
     
     // Mask sensitive content
-    const maskLocators = mask.map(selector => this.page.locator(selector));
-    
+    const _maskLocators =  mask.map(selector 
     await expect(this.page).toHaveScreenshot(`${pageName}-full-page.png`, {
       fullPage: true,
       threshold,
@@ -234,10 +230,10 @@ export class VisualTestingHelpers {
    * Test theme variations (light/dark mode)
    */
   async testThemeVariations(container: Locator, testName: string) {
-    const themes = ['light', 'dark'];
+    const _themes =  ['light', 'dark'];
     
     for (const theme of themes) {
-      await this.page.evaluate((themeValue) => {
+      await this.page.evaluate(_(themeValue) => {
         document.documentElement.setAttribute('data-theme', themeValue);
         document.documentElement.classList.remove('light', 'dark');
         document.documentElement.classList.add(themeValue);
@@ -259,8 +255,7 @@ export class VisualTestingHelpers {
     margin?: string;
     gap?: string;
   }) {
-    const computedStyle = await component.evaluate((el) => {
-      const style = window.getComputedStyle(el);
+    const _computedStyle =  await component.evaluate((el) 
       return {
         paddingTop: style.paddingTop,
         paddingRight: style.paddingRight,
@@ -275,7 +270,7 @@ export class VisualTestingHelpers {
     });
 
     if (expectedSpacing.padding) {
-      const expectedPx = expectedSpacing.padding;
+      const _expectedPx =  expectedSpacing.padding;
       expect(computedStyle.paddingTop).toBe(expectedPx);
       expect(computedStyle.paddingRight).toBe(expectedPx);
       expect(computedStyle.paddingBottom).toBe(expectedPx);
@@ -292,15 +287,9 @@ export class VisualTestingHelpers {
    */
   async testAnimationPerformance(animatedElement: Locator, animationTrigger: () => Promise<void>) {
     // Start performance monitoring
-    await this.page.evaluate(() => {
-      (window as any).animationMetrics = [];
-      const observer = new PerformanceObserver((list) => {
-        for (const entry of list.getEntries()) {
-          (window as any).animationMetrics.push({
-            name: entry.name,
-            duration: entry.duration,
-            startTime: entry.startTime,
-          });
+    await this.page.evaluate(_() => {
+      (window as any)._animationMetrics =  [];
+      const _observer =  new PerformanceObserver((list) 
         }
       });
       observer.observe({ entryTypes: ['measure'] });
@@ -313,13 +302,12 @@ export class VisualTestingHelpers {
     await this.page.waitForTimeout(1000);
     
     // Get performance metrics
-    const metrics = await this.page.evaluate(() => (window as any).animationMetrics);
-    
+    const _metrics =  await this.page.evaluate(() 
     // Validate animation performance
     expect(metrics).toBeDefined();
     if (metrics.length > 0) {
-      const avgDuration = metrics.reduce((sum: number, metric: any) => sum + metric.duration, 0) / metrics.length;
-      expect(avgDuration).toBeLessThan(16.67); // 60fps = 16.67ms per frame
+      const _avgDuration =  metrics.reduce((sum: number, metric: any) 
+      expect(avgDuration).toBeLessThan(16.67); // _60fps =  16.67ms per frame
     }
   }
 
@@ -333,12 +321,8 @@ export class VisualTestingHelpers {
     testRoles?: string[];
   }) {
     const {
-      testStates = true,
-      testResponsive = true,
-      testThemes = false,
-      testRoles = [],
-    } = options || {};
-
+      _testStates =  true,
+      testResponsive 
     // Base screenshot
     await expect(component).toHaveScreenshot(`${testName}-base.png`);
 
@@ -364,9 +348,9 @@ export class VisualTestingHelpers {
 
     // Reset to original state
     await this.page.setViewportSize(RESPONSIVE_BREAKPOINTS.desktop);
-    await this.page.evaluate(() => {
+    await this.page.evaluate(_() => {
       document.documentElement.setAttribute('data-theme', 'light');
-      document.documentElement.className = 'light';
+      document.documentElement._className =  'light';
     });
   }
 }

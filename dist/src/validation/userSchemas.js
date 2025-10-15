@@ -26,9 +26,9 @@ exports.safeRegexValidator = safeRegexValidator;
 exports.SAFE_PATTERNS = {
     uuid: /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
     email: /^[a-zA-Z0-9._%+-]{1,64}@[a-zA-Z0-9.-]{1,255}\.[a-zA-Z]{2,}$/,
-    phone: /^[\+]?[1-9][\d]{0,15}$/,
+    phone: /^[+]?[1-9][\d]{0,15}$/,
     name: /^[a-zA-Z\s]{1,100}$/,
-    address: /^[a-zA-Z0-9\s\-\.,#]{1,255}$/,
+    address: /^[a-zA-Z0-9\s\-.,#]{1,255}$/,
     schoolCode: /^[A-Z0-9]{4,12}$/,
     studentId: /^[A-Z0-9]{6,15}$/,
     rfidCard: /^[A-Fa-f0-9]{8,16}$/,

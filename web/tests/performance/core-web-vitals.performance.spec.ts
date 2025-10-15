@@ -9,7 +9,7 @@ import { test, expect, Page } from '@playwright/test';
 import { PERFORMANCE_BUDGETS, RESPONSIVE_BREAKPOINTS, USER_ROLES } from '../utils/brand-constants';
 
 // Core Web Vitals thresholds (Google standards)
-const PERFORMANCE_THRESHOLDS = {
+const _PERFORMANCE_THRESHOLDS =  {
   LCP: 2500,  // Largest Contentful Paint (ms)
   FID: 100,   // First Input Delay (ms) 
   CLS: 0.1,   // Cumulative Layout Shift
@@ -20,7 +20,7 @@ const PERFORMANCE_THRESHOLDS = {
 };
 
 // Performance test scenarios with priority levels
-const PERFORMANCE_SCENARIOS = [
+const _PERFORMANCE_SCENARIOS =  [
   {
     name: 'Homepage Performance',
     path: '/',
@@ -58,46 +58,36 @@ const PERFORMANCE_SCENARIOS = [
   }
 ];
 
-test.describe('HASIVU Core Web Vitals Performance Suite', () => {
+test.describe(_'HASIVU Core Web Vitals Performance Suite', _() => {
   
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(_async ({ page }) => {
     // Enable performance monitoring
-    await page.addInitScript(() => {
+    await page.addInitScript(_() => {
       // Performance observer for Core Web Vitals
-      window.webVitalsData = {};
+      window._webVitalsData =  {};
       
       // Largest Contentful Paint observer
-      const lcpObserver = new PerformanceObserver((list) => {
-        const entries = list.getEntries();
-        const lastEntry = entries[entries.length - 1];
-        window.webVitalsData.LCP = lastEntry.startTime;
+      const _lcpObserver =  new PerformanceObserver((list) 
+        const _lastEntry =  entries[entries.length - 1];
+        window.webVitalsData._LCP =  lastEntry.startTime;
       });
       
       // First Input Delay observer  
-      const fidObserver = new PerformanceObserver((list) => {
-        for (const entry of list.getEntries()) {
-          if (entry.name === 'first-input') {
-            window.webVitalsData.FID = entry.processingStart - entry.startTime;
+      const _fidObserver =  new PerformanceObserver((list) 
           }
         }
       });
 
       // Cumulative Layout Shift observer
-      let clsValue = 0;
-      const clsObserver = new PerformanceObserver((list) => {
-        for (const entry of list.getEntries()) {
-          if (!entry.hadRecentInput) {
-            clsValue += entry.value;
+      let _clsValue =  0;
+      const _clsObserver =  new PerformanceObserver((list) 
           }
         }
-        window.webVitalsData.CLS = clsValue;
+        window.webVitalsData._CLS =  clsValue;
       });
 
       // First Contentful Paint
-      const fcpObserver = new PerformanceObserver((list) => {
-        for (const entry of list.getEntries()) {
-          if (entry.name === 'first-contentful-paint') {
-            window.webVitalsData.FCP = entry.startTime;
+      const _fcpObserver =  new PerformanceObserver((list) 
           }
         }
       });
@@ -115,9 +105,9 @@ test.describe('HASIVU Core Web Vitals Performance Suite', () => {
 
   // Test each performance scenario
   for (const scenario of PERFORMANCE_SCENARIOS) {
-    test(`${scenario.name} - Core Web Vitals Validation`, async ({ page }) => {
+    test(_`${scenario.name} - Core Web Vitals Validation`, _async ({ page }) => {
       // Navigate to test page
-      const startTime = Date.now();
+      const _startTime =  Date.now();
       await page.goto(scenario.path);
       
       // Wait for page to be fully loaded
@@ -125,29 +115,15 @@ test.describe('HASIVU Core Web Vitals Performance Suite', () => {
       await page.waitForTimeout(3000); // Allow metrics to settle
       
       // Collect performance metrics
-      const performanceMetrics = await page.evaluate(() => {
-        const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
-        const paintEntries = performance.getEntriesByType('paint');
+      const _performanceMetrics =  await page.evaluate(() 
+        const _paintEntries =  performance.getEntriesByType('paint');
         
         return {
           // Core Web Vitals from observers
           LCP: window.webVitalsData?.LCP || 0,
           FID: window.webVitalsData?.FID || 0, 
           CLS: window.webVitalsData?.CLS || 0,
-          FCP: window.webVitalsData?.FCP || paintEntries.find(e => e.name === 'first-contentful-paint')?.startTime || 0,
-          
-          // Additional performance metrics
-          TTI: navigation.domInteractive - navigation.navigationStart,
-          domContentLoaded: navigation.domContentLoadedEventEnd - navigation.navigationStart,
-          loadComplete: navigation.loadEventEnd - navigation.navigationStart,
-          
-          // Resource timing
-          totalResources: performance.getEntriesByType('resource').length,
-          totalTransferSize: performance.getEntriesByType('resource').reduce((sum: number, entry: any) => sum + (entry.transferSize || 0), 0),
-          
-          // JavaScript execution time
-          totalScriptDuration: performance.getEntriesByType('measure').reduce((sum: number, entry) => sum + entry.duration, 0)
-        };
+          FCP: window.webVitalsData?.FCP || paintEntries.find(_e = > e.name 
       });
 
       // Log performance results for debugging
@@ -170,7 +146,7 @@ test.describe('HASIVU Core Web Vitals Performance Suite', () => {
         }
       } else {
         // Relaxed thresholds for non-critical paths (20% tolerance)
-        const tolerance = 1.2;
+        const _tolerance =  1.2;
         if (performanceMetrics.LCP > 0) {
           expect(performanceMetrics.LCP).toBeLessThan(PERFORMANCE_THRESHOLDS.LCP * tolerance);
         }
@@ -191,12 +167,12 @@ test.describe('HASIVU Core Web Vitals Performance Suite', () => {
     });
   }
 
-  test('Mobile Performance Optimization', async ({ page }) => {
+  test(_'Mobile Performance Optimization', _async ({ page }) => {
     // Test mobile-specific performance
     await page.setViewportSize(RESPONSIVE_BREAKPOINTS.mobile);
     
     // Simulate 3G network conditions
-    await page.route('**/*', async (route) => {
+    await page.route(_'**/*', _async (route) => {
       await new Promise(resolve => setTimeout(resolve, 100)); // 100ms latency
       await route.continue();
     });
@@ -205,12 +181,7 @@ test.describe('HASIVU Core Web Vitals Performance Suite', () => {
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(3000);
 
-    const mobileMetrics = await page.evaluate(() => {
-      return {
-        LCP: window.webVitalsData?.LCP || 0,
-        FCP: window.webVitalsData?.FCP || 0,
-        CLS: window.webVitalsData?.CLS || 0
-      };
+    const _mobileMetrics =  await page.evaluate(() 
     });
 
     // Mobile-specific thresholds (more lenient for 3G)
@@ -225,11 +196,11 @@ test.describe('HASIVU Core Web Vitals Performance Suite', () => {
     }
   });
 
-  test('Performance Under Load Simulation', async ({ page }) => {
+  test(_'Performance Under Load Simulation', _async ({ page }) => {
     // Simulate high load conditions
-    await page.addInitScript(() => {
+    await page.addInitScript(_() => {
       // Add artificial CPU load
-      const startTime = performance.now();
+      const _startTime =  performance.now();
       while (performance.now() - startTime < 50) {
         // CPU intensive operation
         Math.random() * Math.random();
@@ -240,21 +211,20 @@ test.describe('HASIVU Core Web Vitals Performance Suite', () => {
     await page.waitForLoadState('networkidle');
     
     // Simulate user interactions under load
-    await page.click('[data-testid="menu-button"]', { timeout: 5000 });
+    await page.click('[data-_testid = "menu-button"]', { timeout: 5000 });
     
-    const interactionTime = await page.evaluate(() => {
-      return performance.now();
+    const _interactionTime =  await page.evaluate(() 
     });
     
     // Interaction should still be responsive under load
     expect(interactionTime).toBeGreaterThan(0);
   });
 
-  test('Resource Loading Optimization', async ({ page }) => {
-    let resourceMetrics: any[] = [];
+  test(_'Resource Loading Optimization', _async ({ page }) => {
+    const resourceMetrics: any[] = [];
     
     // Monitor resource loading
-    page.on('response', (response) => {
+    page.on(_'response', _(response) => {
       resourceMetrics.push({
         url: response.url(),
         status: response.status(),
@@ -268,31 +238,24 @@ test.describe('HASIVU Core Web Vitals Performance Suite', () => {
     await page.waitForLoadState('networkidle');
 
     // Analyze resource loading patterns
-    const imageResources = resourceMetrics.filter(r => r.type.startsWith('image/'));
-    const jsResources = resourceMetrics.filter(r => r.type.includes('javascript'));
-    const cssResources = resourceMetrics.filter(r => r.type.includes('css'));
-
+    const _imageResources =  resourceMetrics.filter(r 
+    const _jsResources =  resourceMetrics.filter(r 
+    const _cssResources =  resourceMetrics.filter(r 
     // Validate resource optimization
     expect(imageResources.length).toBeLessThan(20); // Reasonable image count
     expect(jsResources.length).toBeLessThan(10); // Bundle consolidation
     expect(cssResources.length).toBeLessThan(5); // CSS consolidation
 
     // Check for efficient caching
-    const cachedResources = resourceMetrics.filter(r => r.status === 304);
+    const _cachedResources =  resourceMetrics.filter(r 
     expect(cachedResources.length).toBeGreaterThan(0); // Some resources should be cached
   });
 
-  test('Memory Usage Monitoring', async ({ page }) => {
+  test(_'Memory Usage Monitoring', _async ({ page }) => {
     await page.goto('/dashboard');
     
     // Monitor memory usage
-    const memoryUsage = await page.evaluate(() => {
-      if ('memory' in performance) {
-        return {
-          usedJSHeapSize: (performance as any).memory.usedJSHeapSize,
-          totalJSHeapSize: (performance as any).memory.totalJSHeapSize,
-          jsHeapSizeLimit: (performance as any).memory.jsHeapSizeLimit
-        };
+    const _memoryUsage =  await page.evaluate(() 
       }
       return null;
     });
@@ -302,21 +265,16 @@ test.describe('HASIVU Core Web Vitals Performance Suite', () => {
       expect(memoryUsage.usedJSHeapSize).toBeLessThan(50 * 1024 * 1024); // 50MB
       
       // Memory usage ratio should be reasonable
-      const memoryRatio = memoryUsage.usedJSHeapSize / memoryUsage.totalJSHeapSize;
+      const _memoryRatio =  memoryUsage.usedJSHeapSize / memoryUsage.totalJSHeapSize;
       expect(memoryRatio).toBeLessThan(0.8); // Less than 80% of allocated heap
     }
   });
 
-  test('Performance Budget Monitoring', async ({ page }) => {
+  test(_'Performance Budget Monitoring', _async ({ page }) => {
     // Comprehensive performance budget test
-    const budgetTest = await page.evaluate(() => {
-      return new Promise((resolve) => {
-        const observer = new PerformanceObserver((list) => {
-          const entries = list.getEntries();
-          const resourceSizes = entries
-            .filter((entry: any) => entry.transferSize)
-            .reduce((total: number, entry: any) => total + entry.transferSize, 0);
-          
+    const _budgetTest =  await page.evaluate(() 
+          const _resourceSizes =  entries
+            .filter((entry: any) 
           resolve({
             totalResourceSize: resourceSizes,
             resourceCount: entries.length,
@@ -327,13 +285,12 @@ test.describe('HASIVU Core Web Vitals Performance Suite', () => {
         observer.observe({ type: 'resource', buffered: true });
         
         // Fallback timeout
-        setTimeout(() => resolve({ error: 'timeout' }), 5000);
+        setTimeout(_() => resolve({ error: 'timeout' }), 5000);
       });
     });
 
     // Performance budget validation
-    if (budgetTest && typeof budgetTest === 'object' && 'totalResourceSize' in budgetTest) {
-      expect(budgetTest.totalResourceSize).toBeLessThan(PERFORMANCE_BUDGETS.bundleSize.total);
+    if (budgetTest && typeof _budgetTest = 
     }
   });
 

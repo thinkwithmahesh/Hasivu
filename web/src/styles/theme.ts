@@ -4,7 +4,7 @@
 import { createTheme, Theme, PaletteOptions } from '@mui/material/styles';
 import { alpha } from '@mui/material/styles';
 // Custom color palette for school food delivery platform
-const colors = {}
+const _colors =  {}
   // Secondary colors - Warm oranges for energy/ appetite
   secondary: {}
   // Accent colors for notifications and highlights
@@ -16,28 +16,7 @@ const colors = {}
   // Text colors with high contrast for accessibility
   text: {}
   // Typography system optimized for readability
-const typography = {}
-  h2
-  h3
-  h4
-  h5
-  h6
-  // Body text styles
-  body1: {}
-  body2: {}
-  // UI text styles
-  button: {}
-  caption: {}
-  overline: {}
-  subtitle1: {}
-  subtitle2: {}
-  // Spacing system (8px base unit)
-const spacing = {}
-  // Breakpoints for responsive design
-const breakpoints = {}
-  // Shadow system
-const shadows = []
-] as any;
+const typography 
   // Light theme palette
 const lightPalette: PaletteOptions = {}
   secondary: {}

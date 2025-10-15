@@ -1,23 +1,22 @@
  * Demo data for HASIVU Platform dashboards
  * This file contains comprehensive mock data for testing all dashboard functionalities
-export const demoSchool = {}
+export const _demoSchool =  {}
   // Student demo data
-export const demoStudents = []
-];
+export const demoStudents 
   // Parent demo data
-export const demoParents = []
+export const _demoParents =  []
     ]
 ];
   // Admin demo data
-export const demoAdmins = []
+export const _demoAdmins =  []
 ];
   // Kitchen staff demo data
-export const demoKitchenStaff = []
+export const _demoKitchenStaff =  []
 ];
   // Meal categories and items
-export const demoMealCategories = []
+export const _demoMealCategories =  []
 ];
-export const demoMealItems = []
+export const _demoMealItems =  []
     ingredients: ['Basmati Rice', 'Mixed Vegetables', 'Spices', 'Ghee'],
     preparationTime: 15,
     isPopular: true
@@ -26,24 +25,23 @@ export const demoMealItems = []
     isPopular: true
 ];
   // Order statuses and types
-export const orderStatuses = []
+export const _orderStatuses =  []
 ] as const;
-export const orderPriorities = []
+export const _orderPriorities =  []
 ] as const;
   // Nutrition targets by age group
-export const nutritionTargets = {}
+export const _nutritionTargets =  {}
   '9-13': {}
   '14-18': {}
   // Kitchen stations configuration
-export const kitchenStations = []
-];
+export const kitchenStations 
   // Achievement categories and badges
-export const achievementCategories = []
+export const _achievementCategories =  []
 ] as const;
-export const demoAchievements = []
+export const _demoAchievements =  []
 ];
   // Helper functions for demo data
-export const getCurrentDate = () => new Date().toISOString().split('T')[0];
+export const _getCurrentDate =  () 
 export const getRandomElement = <T>(array: T[]): T => {}
 // TODO: Refactor this function - it may be too long
 export const

@@ -1,0 +1,190 @@
+/**
+ * HASIVU Platform - Metric Tracking Module
+ * Core functionality for tracking and storing analytics metrics
+ */
+
+import { DatabaseService } from '../database.service';
+import { RedisService } from '../redis.service';
+import { logger } from '../../utils/logger';
+import { cache } from '../../utils/cache';
+import { v4 as uuidv4 } from 'uuid';
+import { AnalyticsMetric, ServiceResponse, MetricType } from './types';
+
+export class MetricTrackingService {
+  private static readonly CACHE_TTL = 3600; // 1 hour
+  private static readonly REALTIME_TTL = 60; // 1 minute
+
+  private static readonly METRIC_DEFINITIONS: Record<string, { type: string; description: string }> = {
+    // Order metrics
+    'orders.total': { type: 'counter', description: 'Total number of orders' },
+    'orders.value': { type: 'counter', description: 'Total order value' },
+    'orders.avg_value': { type: 'gauge', description: 'Average order value' },
+    'orders.completion_rate': { type: 'gauge', description: 'Order completion rate' },
+    'orders.cancellation_rate': { type: 'gauge', description: 'Order cancellation rate' },
+
+    // User metrics
+    'users.total': { type: 'gauge', description: 'Total active users' },
+    'users.new': { type: 'counter', description: 'New user registrations' },
+    'users.retention': { type: 'gauge', description: 'User retention rate' },
+    'users.engagement': { type: 'gauge', description: 'User engagement score' },
+    'users.churn_rate': { type: 'gauge', description: 'User churn rate' },
+
+    // School metrics
+    'schools.total': { type: 'gauge', description: 'Total active schools' },
+    'schools.orders_per_school': { type: 'gauge', description: 'Average orders per school' },
+    'schools.revenue_per_school': { type: 'gauge', description: 'Average revenue per school' },
+    'schools.active_students': { type: 'gauge', description: 'Active students count' },
+
+    // Payment metrics
+    'payments.success_rate': { type: 'gauge', description: 'Payment success rate' },
+    'payments.avg_processing_time': { type: 'gauge', description: 'Average payment processing time' },
+    'payments.failed_count': { type: 'counter', description: 'Failed payment attempts' },
+    'payments.refund_rate': { type: 'gauge', description: 'Payment refund rate' },
+
+    // RFID metrics
+    'rfid.verifications': { type: 'counter', description: 'RFID verification count' },
+    'rfid.success_rate': { type: 'gauge', description: 'RFID verification success rate' },
+    'rfid.avg_scan_time': { type: 'gauge', description: 'Average RFID scan time' },
+    'rfid.unique_cards': { type: 'gauge', description: 'Unique RFID cards scanned' },
+
+    // Notification metrics
+    'notifications.sent': { type: 'counter', description: 'Notifications sent' },
+    'notifications.delivery_rate': { type: 'gauge', description: 'Notification delivery rate' },
+    'notifications.engagement_rate': { type: 'gauge', description: 'Notification engagement rate' },
+    'notifications.unsubscribe_rate': { type: 'gauge', description: 'Notification unsubscribe rate' },
+
+    // System metrics
+    'system.response_time': { type: 'histogram', description: 'API response time' },
+    'system.error_rate': { type: 'gauge', description: 'System error rate' },
+    'system.uptime': { type: 'gauge', description: 'System uptime percentage' },
+    'system.concurrent_users': { type: 'gauge', description: 'Concurrent active users' }
+  };
+
+  /**
+   * Initialize metric tracking service
+   */
+  public static async initialize(): Promise<void> {
+    try {
+      // Set up metric tracking tables if they don't exist
+      // In production, this would ensure proper database schema
+      logger.info('Metric tracking service initialized successfully');
+    } catch (error: unknown) {
+      logger.error('Failed to initialize metric tracking service', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Track metric with dimensions and metadata
+   */
+  public static async trackMetric(
+    name: string,
+    value: number,
+    dimensions: Record<string, string> = {},
+    metadata?: Record<string, any>
+  ): Promise<ServiceResponse<AnalyticsMetric>> {
+    try {
+      if (!this.METRIC_DEFINITIONS[name]) {
+        return {
+          success: false,
+          error: {
+            message: `Unknown metric: ${name}`,
+            code: 'UNKNOWN_METRIC'
+          }
+        };
+      }
+
+      const metric: AnalyticsMetric = {
+        id: uuidv4(),
+        name,
+        type: this.METRIC_DEFINITIONS[name].type as MetricType,
+        value,
+        dimensions,
+        timestamp: new Date(),
+        metadata
+      };
+
+      // Store metric in database
+      await this.storeMetric(metric);
+
+      // Update real-time cache
+      await this.updateRealtimeMetric(metric);
+
+      logger.debug('Metric tracked successfully', { name, value, dimensions });
+
+      return {
+        success: true,
+        data: metric
+      };
+    } catch (error: unknown) {
+      logger.error('Failed to track metric', error, { name, value, dimensions });
+      return {
+        success: false,
+        error: {
+          message: 'Failed to track metric',
+          code: 'METRIC_TRACKING_FAILED',
+          details: error
+        }
+      };
+    }
+  }
+
+  /**
+   * Store metric in database
+   */
+  private static async storeMetric(metric: AnalyticsMetric): Promise<void> {
+    // In production, store in a time-series database or analytics table
+    // For now, we'll log the metric
+    logger.debug('Storing metric', metric);
+  }
+
+  /**
+   * Update real-time metric cache
+   */
+  private static async updateRealtimeMetric(metric: AnalyticsMetric): Promise<void> {
+    const cacheKey = `realtime:${metric.name}`;
+    const current = await cache.get(cacheKey);
+
+    let newValue = metric.value;
+    if (current && this.METRIC_DEFINITIONS[metric.name].type === 'counter') {
+      newValue += parseFloat(current);
+    }
+
+    await cache.setex(cacheKey, this.REALTIME_TTL, newValue.toString());
+  }
+
+  /**
+   * Get real-time metrics for live dashboard
+   */
+  public static async getRealtimeMetrics(): Promise<Record<string, any>> {
+    try {
+      const metrics = [
+        'orders.total',
+        'users.total',
+        'payments.success_rate',
+        'system.response_time',
+        'system.concurrent_users'
+      ];
+
+      const realtimeData: Record<string, any> = {};
+
+      for (const metric of metrics) {
+        const cacheKey = `realtime:${metric}`;
+        const value = await cache.get(cacheKey);
+        realtimeData[metric] = value ? JSON.parse(value) : null;
+      }
+
+      return realtimeData;
+    } catch (error: unknown) {
+      logger.error('Failed to get realtime metrics', error);
+      return {};
+    }
+  }
+
+  /**
+   * Get metric definitions
+   */
+  public static getMetricDefinitions() {
+    return this.METRIC_DEFINITIONS;
+  }
+}

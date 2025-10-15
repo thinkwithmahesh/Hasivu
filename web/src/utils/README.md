@@ -7,31 +7,37 @@ Comprehensive utility functions for the HASIVU school food delivery platform fro
 ### Core Utilities
 
 #### `createEmotionCache.ts`
+
 - **Purpose**: Emotion.js SSR cache creation for Material-UI
 - **Key Functions**: `createEmotionCache()`, `createEmotionSsrCache()`, `defaultEmotionCache`
 - **Usage**: Ensures consistent styling across SSR and client-side rendering
 
 #### `formatters.ts`
+
 - **Purpose**: Data formatting utilities for dates, currency, time, and platform-specific data
 - **Key Objects**: `currencyFormatter`, `dateFormatter`, `timeFormatter`, `numberFormatter`, `hasivuFormatter`
 - **Features**: Indian currency formatting, RFID formatting, phone number formatting
 
 #### `validators.ts`
+
 - **Purpose**: Form validation schemas using Yup for consistent validation
 - **Key Objects**: `authValidation`, `profileValidation`, `paymentValidation`, `orderValidation`
 - **Features**: Authentication, payments, RFID, school registration validation
 
 #### `api.ts`
+
 - **Purpose**: Centralized API client with authentication, retry logic, and error handling
 - **Key Objects**: `apiClient`, `api`, `API_CONFIG`
 - **Features**: Token refresh, request/response interceptors, file uploads
 
 #### `constants.ts`
+
 - **Purpose**: Application constants, enums, and configuration
 - **Key Objects**: `APP_CONFIG`, `USER_ROLES`, `ORDER_STATUS`, `PAYMENT_METHODS`
 - **Features**: Type-safe constants, role-permission mapping, business configuration
 
 #### `helpers.ts`
+
 - **Purpose**: General-purpose utility functions
 - **Key Objects**: `stringUtils`, `arrayUtils`, `objectUtils`, `dateUtils`, `permissionUtils`
 - **Features**: String manipulation, array operations, permission checking, storage utilities
@@ -39,11 +45,13 @@ Comprehensive utility functions for the HASIVU school food delivery platform fro
 ### Advanced Utilities
 
 #### `notifications.ts`
+
 - **Purpose**: Push notifications and browser notification management
 - **Key Objects**: `notificationManager`, `notificationTemplates`, `notificationUtils`
 - **Features**: Service worker integration, push subscriptions, predefined templates
 
 #### `analytics.ts`
+
 - **Purpose**: Event tracking and performance monitoring
 - **Key Objects**: `analyticsManager`, `analytics`
 - **Features**: Google Analytics, Mixpanel, custom endpoints, e-commerce tracking
@@ -64,7 +72,10 @@ import { utils } from '@/utils';
 // Usage examples
 const price = currencyFormatter.format(1250); // ₹1,250.00
 const date = dateFormatter.formatRelative(new Date()); // "2 hours ago"
-const hasPermission = permissionUtils.hasPermission(USER_ROLES.PARENT, PERMISSIONS.ORDER_CREATE);
+const hasPermission = permissionUtils.hasPermission(
+  USER_ROLES.PARENT,
+  PERMISSIONS.ORDER_CREATE
+);
 
 // API calls
 const orders = await api.orders.getAll();
@@ -97,7 +108,7 @@ import type {
   ApiResponse,
   ApiError,
   NotificationConfig,
-  AnalyticsEventData
+  AnalyticsEventData,
 } from '@/utils';
 ```
 

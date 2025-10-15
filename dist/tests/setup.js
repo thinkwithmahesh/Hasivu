@@ -7,8 +7,8 @@ process.env.JWT_SECRET = 'test-jwt-secret-key-for-testing-only-minimum-64-charac
 process.env.JWT_REFRESH_SECRET = 'test-jwt-refresh-secret-key-for-testing-only-minimum-64-characters-required-for-security-validation';
 process.env.DATABASE_URL = 'postgresql://postgres:password@localhost:5432/hasivu_test';
 process.env.REDIS_URL = 'redis://localhost:6379/1';
-process.env.SKIP_DATABASE_TESTS = 'true';
-process.env.SKIP_REDIS_TESTS = 'true';
+process.env.SKIP_DATABASE_TESTS = 'false';
+process.env.SKIP_REDIS_TESTS = 'false';
 process.env.RAZORPAY_KEY_ID = 'test_key_id';
 process.env.RAZORPAY_KEY_SECRET = 'test_key_secret';
 process.env.AWS_ACCESS_KEY_ID = 'test_access_key';
@@ -16,9 +16,9 @@ process.env.AWS_SECRET_ACCESS_KEY = 'test_secret_key';
 process.env.AWS_REGION = 'us-east-1';
 process.env.COGNITO_USER_POOL_ID = 'test_pool_id';
 process.env.COGNITO_CLIENT_ID = 'test_client_id';
+setupGlobalMocks();
 beforeAll(async () => {
     await setupTestDatabase();
-    setupGlobalMocks();
 });
 afterAll(async () => {
     await cleanupTestDatabase();

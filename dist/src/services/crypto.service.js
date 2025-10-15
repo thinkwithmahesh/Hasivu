@@ -59,7 +59,7 @@ class CryptoService {
         }
         catch (error) {
             logger_1.logger.error('Failed to initialize crypto service', error);
-            return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+            return { success: false, error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error' };
         }
     }
     async cleanup() {
@@ -70,7 +70,7 @@ class CryptoService {
         }
         catch (error) {
             logger_1.logger.error('Failed to cleanup crypto service', error);
-            return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+            return { success: false, error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error' };
         }
     }
     async hashPassword(password, options = {}) {
@@ -83,12 +83,16 @@ class CryptoService {
                     hash = await bcrypt.hash(password, saltRounds);
                     break;
                 case 'sha256':
-                    const salt = crypto.randomBytes(16).toString('hex');
-                    hash = crypto.createHash('sha256').update(password + salt).digest('hex') + ':' + salt;
+                    {
+                        const salt = crypto.randomBytes(16).toString('hex');
+                        hash = crypto.createHash('sha256').update(password + salt).digest('hex') + ':' + salt;
+                    }
                     break;
                 case 'sha512':
-                    const salt512 = crypto.randomBytes(16).toString('hex');
-                    hash = crypto.createHash('sha512').update(password + salt512).digest('hex') + ':' + salt512;
+                    {
+                        const salt512 = crypto.randomBytes(16).toString('hex');
+                        hash = crypto.createHash('sha512').update(password + salt512).digest('hex') + ':' + salt512;
+                    }
                     break;
                 default:
                     throw new Error(`Unsupported hash algorithm: ${algorithm}`);
@@ -97,7 +101,7 @@ class CryptoService {
         }
         catch (error) {
             logger_1.logger.error('Password hashing failed', error);
-            return { success: false, error: error instanceof Error ? error.message : 'Hashing failed' };
+            return { success: false, error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Hashing failed' };
         }
     }
     async verifyPassword(password, hash) {
@@ -126,7 +130,7 @@ class CryptoService {
         }
         catch (error) {
             logger_1.logger.error('Salt generation failed', error);
-            return { success: false, error: error instanceof Error ? error.message : 'Salt generation failed' };
+            return { success: false, error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Salt generation failed' };
         }
     }
     async encrypt(data, keyVersion) {
@@ -162,7 +166,7 @@ class CryptoService {
         }
         catch (error) {
             logger_1.logger.error('Data encryption failed', error);
-            return { success: false, error: error instanceof Error ? error.message : 'Encryption failed' };
+            return { success: false, error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Encryption failed' };
         }
     }
     async decrypt(encryptedData, key, iv, authTag) {
@@ -206,7 +210,7 @@ class CryptoService {
         }
         catch (error) {
             logger_1.logger.error('Data decryption failed', error);
-            return { success: false, error: error instanceof Error ? error.message : 'Decryption failed' };
+            return { success: false, error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Decryption failed' };
         }
     }
     async generateKeyPair(keySize = 2048) {
@@ -231,7 +235,7 @@ class CryptoService {
         }
         catch (error) {
             logger_1.logger.error('Key pair generation failed', error);
-            return { success: false, error: error instanceof Error ? error.message : 'Key generation failed' };
+            return { success: false, error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Key generation failed' };
         }
     }
     async signData(data, privateKey) {
@@ -248,7 +252,7 @@ class CryptoService {
         }
         catch (error) {
             logger_1.logger.error('Data signing failed', error);
-            return { success: false, error: error instanceof Error ? error.message : 'Signing failed' };
+            return { success: false, error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Signing failed' };
         }
     }
     async verifySignature(data, signature, publicKey) {
@@ -270,7 +274,7 @@ class CryptoService {
         }
         catch (error) {
             logger_1.logger.error('Token generation failed', error);
-            return { success: false, error: error instanceof Error ? error.message : 'Token generation failed' };
+            return { success: false, error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Token generation failed' };
         }
     }
     async generateHMAC(data, secret, algorithm = 'sha256') {
@@ -282,7 +286,7 @@ class CryptoService {
         }
         catch (error) {
             logger_1.logger.error('HMAC generation failed', error);
-            return { success: false, error: error instanceof Error ? error.message : 'HMAC generation failed' };
+            return { success: false, error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'HMAC generation failed' };
         }
     }
     async rotateEncryptionKeys() {
@@ -306,7 +310,7 @@ class CryptoService {
             logger_1.logger.error('Failed to rotate encryption keys', error);
             return {
                 success: false,
-                error: error instanceof Error ? error.message : 'Key rotation failed'
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Key rotation failed'
             };
         }
     }
@@ -328,7 +332,7 @@ class CryptoService {
             logger_1.logger.error('Secure random generation failed', error);
             return {
                 success: false,
-                error: error instanceof Error ? error.message : 'Random generation failed'
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Random generation failed'
             };
         }
     }
@@ -355,7 +359,7 @@ class CryptoService {
             logger_1.logger.error('Hashing failed', error);
             return {
                 success: false,
-                error: error instanceof Error ? error.message : 'Hashing failed'
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Hashing failed'
             };
         }
     }
@@ -377,7 +381,7 @@ class CryptoService {
             logger_1.logger.error('Key derivation failed', error);
             return {
                 success: false,
-                error: error instanceof Error ? error.message : 'Key derivation failed'
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Key derivation failed'
             };
         }
     }

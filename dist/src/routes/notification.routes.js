@@ -142,6 +142,10 @@ router.get('/', auth_middleware_1.authMiddleware, [
         .withMessage('Limit must be between 1 and 100')
 ], handleValidationErrors, async (req, res, next) => {
     try {
+        if (!req.user) {
+            res.status(401).json({ error: 'User not authenticated' });
+            return;
+        }
         const notifications = await notification_service_1.NotificationService.getUserNotifications(req.user.id, {
             status: req.query.status,
             priority: req.query.priority,
@@ -166,6 +170,10 @@ router.get('/:id', auth_middleware_1.authMiddleware, [
         .withMessage('Invalid notification ID')
 ], handleValidationErrors, async (req, res, next) => {
     try {
+        if (!req.user) {
+            res.status(401).json({ error: 'User not authenticated' });
+            return;
+        }
         const notifications = await notification_service_1.NotificationService.getUserNotifications(req.user.id, { limit: 1000 });
         const notification = notifications.data?.notifications.find(n => n.id === req.params.id);
         if (!notification) {
@@ -212,6 +220,7 @@ router.put('/:id/status', auth_middleware_1.authMiddleware, [
 router.get('/templates', auth_middleware_1.authMiddleware, [
     (0, express_validator_1.query)('type')
         .optional()
+        .isString()
         .withMessage('Invalid template type'),
     (0, express_validator_1.query)('channel')
         .optional()
@@ -249,6 +258,10 @@ router.get('/analytics', auth_middleware_1.authMiddleware, [
         .withMessage('Invalid channel filter')
 ], handleValidationErrors, async (req, res, next) => {
     try {
+        if (!req.user) {
+            res.status(401).json({ error: 'User not authenticated' });
+            return;
+        }
         const analytics = await notification_service_1.NotificationService.getNotificationAnalytics({
             startDate: req.query.dateFrom ? new Date(req.query.dateFrom) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
             endDate: req.query.dateTo ? new Date(req.query.dateTo) : new Date(),

@@ -41,7 +41,7 @@ class CostMonitoringService {
             const report = {
                 period,
                 totalCost,
-                currency: 'USD',
+                currency: 'INR',
                 breakdown: costBreakdown,
                 trends: costTrends,
                 budgets: budgetStatuses,
@@ -89,7 +89,7 @@ class CostMonitoringService {
                             breakdown.push({
                                 service: serviceName,
                                 amount,
-                                currency: group.Metrics?.BlendedCost?.Unit || 'USD',
+                                currency: group.Metrics?.BlendedCost?.Unit || 'INR',
                                 percentage: 0,
                                 trend: await this.calculateServiceTrend(serviceName, startDate, endDate),
                                 details: {
@@ -168,7 +168,7 @@ class CostMonitoringService {
             if (!result.ResultsByTime || result.ResultsByTime.length < 7) {
                 return this.getDefaultTrends();
             }
-            const dailyCosts = result.ResultsByTime.map(item => parseFloat(item.Total?.BlendedCost?.Amount || '0'));
+            const dailyCosts = result.ResultsByTime.map((item) => parseFloat(item.Total?.BlendedCost?.Amount || '0'));
             const dailyGrowth = this.calculateGrowthRate(dailyCosts.slice(-2));
             const weeklyGrowth = this.calculateGrowthRate([
                 dailyCosts.slice(-14, -7).reduce((a, b) => a + b, 0),

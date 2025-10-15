@@ -10,7 +10,7 @@ import Head from 'next/head';
 import { SessionProvider } from 'next-auth/react';
 import { Provider as ReduxProvider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { ThemeProvider, createTheme as _createTheme } from '@mui/material/styles';
 import { CssBaseline, GlobalStyles } from '@mui/material';
 import { CacheProvider, EmotionCache } from '@emotion/react';
 import { Toaster } from 'react-hot-toast';
@@ -68,7 +68,10 @@ export default function MyApp({
           name="description"
           content="Revolutionary school food delivery platform with RFID verification, real-time tracking, and seamless payment integration."
         />
-        <meta name="keywords" content="school food, delivery, RFID, education, nutrition, parents" />
+        <meta
+          name="keywords"
+          content="school food, delivery, RFID, education, nutrition, parents"
+        />
         <meta name="author" content="HASIVU Team" />
         <meta name="robots" content="index, follow" />
         <meta name="language" content="English" />
@@ -169,75 +172,78 @@ export default function MyApp({
 
       <ErrorBoundary>
         <ReduxProvider store={store}>
-          <PersistGate loading={<LoadingScreen message="Restoring session..." />} persistor={persistor}>
+          <PersistGate
+            loading={<LoadingScreen message="Restoring session..." />}
+            persistor={persistor}
+          >
             <SessionProvider session={session}>
               <ThemeProvider theme={theme}>
                 <CssBaseline />
                 <GlobalStyles styles={globalStyles} />
-                
+
                 <ProgressBarProvider>
                   <AuthProvider>
                     <SocketProvider>
                       {/* Main app component */}
                       <Component {...pageProps} />
-                    
-                    {/* Global toast notifications */}
-                    <Toaster
-                      position="top-right"
-                      reverseOrder={false}
-                      gutter={8}
-                      containerClassName=""
-                      containerStyle={{}}
-                      toastOptions={{
-                        // Default options
-                        className: '',
-                        duration: 4000,
-                        style: {
-                          background: '#fff',
-                          color: '#333',
-                          borderRadius: '8px',
-                          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-                          fontSize: '14px',
-                          fontWeight: '500',
-                          padding: '12px 16px',
-                        },
-                        
-                        // Success toasts
-                        success: {
-                          duration: 3000,
+
+                      {/* Global toast notifications */}
+                      <Toaster
+                        position="top-right"
+                        reverseOrder={false}
+                        gutter={8}
+                        containerClassName=""
+                        containerStyle={{}}
+                        toastOptions={{
+                          // Default options
+                          className: '',
+                          duration: 4000,
                           style: {
-                            background: '#4CAF50',
-                            color: '#fff',
+                            background: '#fff',
+                            color: '#333',
+                            borderRadius: '8px',
+                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                            fontSize: '14px',
+                            fontWeight: '500',
+                            padding: '12px 16px',
                           },
-                          iconTheme: {
-                            primary: '#fff',
-                            secondary: '#4CAF50',
+
+                          // Success toasts
+                          success: {
+                            duration: 3000,
+                            style: {
+                              background: '#4CAF50',
+                              color: '#fff',
+                            },
+                            iconTheme: {
+                              primary: '#fff',
+                              secondary: '#4CAF50',
+                            },
                           },
-                        },
-                        
-                        // Error toasts
-                        error: {
-                          duration: 5000,
-                          style: {
-                            background: '#F44336',
-                            color: '#fff',
+
+                          // Error toasts
+                          error: {
+                            duration: 5000,
+                            style: {
+                              background: '#F44336',
+                              color: '#fff',
+                            },
+                            iconTheme: {
+                              primary: '#fff',
+                              secondary: '#F44336',
+                            },
                           },
-                          iconTheme: {
-                            primary: '#fff',
-                            secondary: '#F44336',
+
+                          // Loading toasts
+                          loading: {
+                            duration: Infinity,
+                            style: {
+                              background: '#2196F3',
+                              color: '#fff',
+                            },
                           },
-                        },
-                        
-                        // Loading toasts
-                        loading: {
-                          duration: Infinity,
-                          style: {
-                            background: '#2196F3',
-                            color: '#fff',
-                          },
-                        },
-                      }}
-                    />
+                        }}
+                      />
                     </SocketProvider>
                   </AuthProvider>
                 </ProgressBarProvider>

@@ -57,7 +57,7 @@ class RetryService {
         const startTime = Date.now();
         const errors = [];
         const delaySequence = [];
-        let lastError;
+        let lastError = new Error('Unknown error');
         for (let attempt = 1; attempt <= config.maxAttempts; attempt++) {
             try {
                 logger_1.logger.debug(`Attempting operation '${operationName}' (attempt ${attempt}/${config.maxAttempts})`);
@@ -154,13 +154,13 @@ class RetryService {
                 return true;
             }
         }
-        if (error.message?.includes('connection') ||
-            error.message?.includes('timeout') ||
-            error.message?.includes('ECONNRESET')) {
+        if (error instanceof Error ? error.message : String(error)?.includes('connection') ||
+            error instanceof Error ? error.message : String(error)?.includes('timeout') ||
+            error instanceof Error ? error.message : String(error)?.includes('ECONNRESET')) {
             return true;
         }
-        if (error.message?.includes('Redis') ||
-            error.message?.includes('READONLY')) {
+        if (error instanceof Error ? error.message : String(error)?.includes('Redis') ||
+            error instanceof Error ? error.message : String(error)?.includes('READONLY')) {
             return true;
         }
         if (error.code === 'EMFILE' ||

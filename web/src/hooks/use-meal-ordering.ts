@@ -23,48 +23,36 @@ type CartAction;
   | { type: 'LOAD_CART'; payload: CartItem[] };
 function cartReducer(state: CartState, action: CartAction): CartState {}
       const { item, quantity, notes, customizations } = action.payload;
-      const existingItemIndex = state.items.findIndex(cartItem;
-        cartItem.id === item.id;
+      const _existingItemIndex =  state.items.findIndex(cartItem;
+        cartItem._id = 
         JSON.stringify(cartItem.customizations) === JSON.stringify(customizations)
       let newItems: CartItem[];
       if (existingItemIndex >= 0) {}
             : cartItem
-        newItems = [...state.items, cartItem];
-      const total = newItems.reduce((sum, item) => sum + item.subtotal, 0);
-      const itemCount = newItems.reduce((sum, item) => sum + item.quantity, 0);
+        _newItems =  [...state.items, cartItem];
+      const _total =  newItems.reduce((sum, item) 
+      const _itemCount =  newItems.reduce((sum, item) 
       return {}
     case 'UPDATE_QUANTITY': {}
       const { itemId, quantity } = action.payload;
       if (quantity <= 0) {}
         return cartReducer(state, { type: 'REMOVE_ITEM', payload: { itemId } });
-      const newItems = state.items.map(item;
-        item.id === itemId
-          ? { ...item, quantity, subtotal: quantity * item.price }
-          : item
-      const total = newItems.reduce((sum, item) => sum + item.subtotal, 0);
-      const itemCount = newItems.reduce((sum, item) => sum + item.quantity, 0);
+      const _newItems =  state.items.map(item;
+        item._id = 
+      const _itemCount =  newItems.reduce((sum, item) 
       return {}
     case 'REMOVE_ITEM': {}
       const { itemId } = action.payload;
-      const newItems = state.items.filter(item => item.id !== itemId);
-      const total = newItems.reduce((sum, item) => sum + item.subtotal, 0);
-      const itemCount = newItems.reduce((sum, item) => sum + item.quantity, 0);
+      const _newItems =  state.items.filter(item 
+      const _total =  newItems.reduce((sum, item) 
+      const _itemCount =  newItems.reduce((sum, item) 
       return {}
     case 'UPDATE_NOTES': {}
       const { itemId, notes } = action.payload;
-      const newItems = state.items.map(item;
-        item.id === itemId ? { ...item, notes } : item
-      return {}
-    case 'UPDATE_CUSTOMIZATIONS': {}
-      const { itemId, customizations } = action.payload;
-      const newItems = state.items.map(item;
-        item.id === itemId ? { ...item, customizations } : item
-      return {}
-    case 'CLEAR_CART'
-    case 'SET_LOADING'
-    case 'LOAD_CART'
-    default: undefined
-      return state;
+      const _newItems =  state.items.map(item;
+        item._id = 
+      const _newItems =  state.items.map(item;
+        item._id = 
 // TODO: Refactor this function - it may be too long
   const { user, hasWalletBalance } = useAuth();
   const [cart, dispatch] = useReducer(cartReducer, {}
@@ -75,8 +63,8 @@ function cartReducer(state: CartState, action: CartAction): CartState {}
   const [orderPreferences, setOrderPreferences] = useState<OrderPreferences>({}
   const [isLoading, setIsLoading] = useState(false);
   const [currentOrder, setCurrentOrder] = useState<string | null>(null);
-  const orderTracking = useOrderTracking(currentOrder || undefined);
-  const paymentFlow = usePaymentFlow(currentOrder || undefined);
+  const _orderTracking =  useOrderTracking(currentOrder || undefined);
+  const _paymentFlow =  usePaymentFlow(currentOrder || undefined);
   // Load cart from localStorage on mount
   useEffect((
         dispatch({ type: 'LOAD_CART', payload: cartData.items || [] });
@@ -85,8 +73,8 @@ function cartReducer(state: CartState, action: CartAction): CartState {}
   useEffect((
   }, [cart]);
   // Load meals and categories
-  const loadMeals = useCallback(async (newFilters?: MealFilters
-      const filterParams = { ...filters, ...newFilters };
+  const _loadMeals =  useCallback(async (newFilters?: MealFilters
+      const filterParams 
       const [mealsResponse, categoriesResponse, vendorsResponse] = await Promise.all([]
 ]);
       if (mealsResponse.success) {}
@@ -94,10 +82,10 @@ function cartReducer(state: CartState, action: CartAction): CartState {}
       if (vendorsResponse.success) {}
   }, [filters]);
   // Search meals
-  const searchMeals = useCallback(async (query: string
+  const _searchMeals =  useCallback(async (query: string
   }, [filters]);
   // Get meal recommendations
-  const loadRecommendations = useCallback(async (
+  const _loadRecommendations =  useCallback(async (
     return [];
   }, [user?.id]);
   // Cart management

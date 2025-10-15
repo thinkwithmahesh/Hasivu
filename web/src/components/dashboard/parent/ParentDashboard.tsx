@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
+import { useSelector as _useSelector, useDispatch as _useDispatch } from 'react-redux';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
   CardTitle,
   Button,
   Badge,
@@ -18,18 +18,18 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui';
-import { 
-  ShoppingCart, 
-  Clock, 
-  CreditCard, 
-  Bell, 
-  User, 
+import {
+  ShoppingCart,
+  Clock,
+  CreditCard,
+  Bell,
+  User,
   TrendingUp,
   Calendar,
   AlertCircle,
   CheckCircle,
   Plus,
-  RefreshCw
+  RefreshCw,
 } from 'lucide-react';
 import { Child, Order, DashboardAnalytics } from '@/types/dashboard';
 
@@ -49,11 +49,11 @@ interface DashboardOverviewProps {
   onQuickAction: (action: string, data?: any) => void;
 }
 
-const DashboardOverview: React.FC<DashboardOverviewProps> = ({ 
-  children, 
-  recentOrders, 
+const DashboardOverview: React.FC<DashboardOverviewProps> = ({
+  children,
+  recentOrders,
   analytics,
-  onQuickAction 
+  onQuickAction,
 }) => {
   const getStatusColor = (status: Order['status']) => {
     const colors = {
@@ -133,7 +133,9 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Avg Order Value</p>
-                <p className="text-2xl font-bold">₹{analytics?.averageOrderValue?.toFixed(2) || '0.00'}</p>
+                <p className="text-2xl font-bold">
+                  ₹{analytics?.averageOrderValue?.toFixed(2) || '0.00'}
+                </p>
               </div>
               <TrendingUp className="h-8 w-8 text-orange-600" />
             </div>
@@ -155,12 +157,13 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {children.slice(0, 6).map((child) => (
+            {children.slice(0, 6).map(child => (
               <div key={child.id} className="flex items-center space-x-3 p-3 border rounded-lg">
                 <Avatar>
                   <AvatarImage src={child.avatar} alt={child.firstName} />
                   <AvatarFallback>
-                    {child.firstName[0]}{child.lastName[0]}
+                    {child.firstName[0]}
+                    {child.lastName[0]}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
@@ -217,21 +220,24 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             </div>
           ) : (
             <div className="space-y-4">
-              {recentOrders.slice(0, 5).map((order) => {
+              {recentOrders.slice(0, 5).map(order => {
                 const child = children.find(c => c.id === order.childId);
                 return (
-                  <div key={order.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div
+                    key={order.id}
+                    className="flex items-center justify-between p-4 border rounded-lg"
+                  >
                     <div className="flex items-center space-x-4">
-                      <div className="flex-shrink-0">
-                        {getStatusIcon(order.status)}
-                      </div>
+                      <div className="flex-shrink-0">{getStatusIcon(order.status)}</div>
                       <div>
                         <p className="font-medium">Order #{order.id.slice(-8)}</p>
                         <p className="text-sm text-gray-600">
-                          {child?.firstName} {child?.lastName} • {order.items.length} item{order.items.length !== 1 ? 's' : ''}
+                          {child?.firstName} {child?.lastName} • {order.items.length} item
+                          {order.items.length !== 1 ? 's' : ''}
                         </p>
                         <p className="text-xs text-gray-500">
-                          {new Date(order.createdAt).toLocaleDateString()} • ₹{order.totalAmount.toFixed(2)}
+                          {new Date(order.createdAt).toLocaleDateString()} • ₹
+                          {order.totalAmount.toFixed(2)}
                         </p>
                       </div>
                     </div>
@@ -328,7 +334,6 @@ export const ParentDashboard: React.FC = () => {
         // dispatch(fetchRecentOrders());
         // dispatch(fetchAnalytics());
       } catch (error) {
-        console.error('Failed to load dashboard data:', error);
       } finally {
         setIsLoading(false);
       }
@@ -358,7 +363,6 @@ export const ParentDashboard: React.FC = () => {
         // Refresh orders data
         break;
       default:
-        console.log('Unknown action:', action, data);
     }
   };
 
@@ -383,9 +387,7 @@ export const ParentDashboard: React.FC = () => {
             Notifications
           </Button>
           <Avatar>
-            <AvatarFallback>
-              P
-            </AvatarFallback>
+            <AvatarFallback>P</AvatarFallback>
           </Avatar>
         </div>
       </div>
@@ -412,57 +414,27 @@ export const ParentDashboard: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="children">
-          <ChildManagement 
-            children={children}
-            onAddChild={() => console.log('Add child')}
-            onEditChild={(id) => console.log('Edit child', id)}
-            onDeleteChild={(id) => console.log('Delete child', id)}
-          />
+          <ChildManagement children={children} />
         </TabsContent>
 
-        <TabsContent value="orders">
-          <OrderHistory 
-            orders={recentOrders}
-            onViewOrder={(id) => console.log('View order', id)}
-          />
-        </TabsContent>
+        <TabsContent value="orders"></TabsContent>
 
-        <TabsContent value="tracking">
-          <OrderTracking 
-            currentOrder={null}
-            onRefresh={() => console.log('Refresh tracking')}
-          />
-        </TabsContent>
+        <TabsContent value="tracking"></TabsContent>
 
         <TabsContent value="payments">
-          <PaymentMethods 
-            paymentMethods={[]}
-            onAddPaymentMethod={() => console.log('Add payment method')}
-            onRemovePaymentMethod={(id) => console.log('Remove payment method', id)}
-          />
+          <PaymentMethods paymentMethods={[]} />
         </TabsContent>
 
         <TabsContent value="notifications">
-          <NotificationCenter 
-            notifications={[]}
-            onMarkAsRead={(id) => console.log('Mark as read', id)}
-            onClearAll={() => console.log('Clear all notifications')}
-          />
+          <NotificationCenter notifications={[]} />
         </TabsContent>
 
         <TabsContent value="subscriptions">
-          <SubscriptionManagement 
-            subscription={null}
-            onChangePlan={() => console.log('Change plan')}
-            onCancelSubscription={() => console.log('Cancel subscription')}
-          />
+          <SubscriptionManagement subscription={null} />
         </TabsContent>
 
         <TabsContent value="nutrition">
-          <NutritionDashboard 
-            nutritionData={null}
-            onDownloadReport={() => console.log('Download report')}
-          />
+          <NutritionDashboard nutritionData={null} />
         </TabsContent>
       </Tabs>
     </div>

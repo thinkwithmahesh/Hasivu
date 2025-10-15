@@ -3,12 +3,8 @@
  * Comprehensive payment analytics with real-time insights and trends
  * Implements: GET /analytics/payments/dashboard
  */
-import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
-import { DatabaseService } from '@/services/database.service';
 import { RedisService } from '@/services/redis.service';
 import { logger } from '@/utils/logger';
-import { createSuccessResponse, createErrorResponse, handleError } from '@/shared/response.utils';
-import { config } from '@/config/environment';
 
 /**
  * Payment analytics dashboard interface
@@ -161,7 +157,7 @@ export class PaymentAnalyticsService {
 
       // Generate cache key
       const cacheKey = `payment_analytics:${period}:${schoolId || 'all'}`;
-      
+
       // Try to get from cache first
       const cached = await RedisService.get(cacheKey);
       if (cached) {
@@ -173,21 +169,15 @@ export class PaymentAnalyticsService {
       const dateRange = this.generateDateRange(period);
 
       // Get all dashboard data in parallel
-      const [
-        metrics,
-        trends,
-        breakdowns,
-        topPerformers,
-        alerts,
-        recommendations
-      ] = await Promise.all([
-        this.getPaymentMetrics(dateRange, schoolId),
-        this.getPaymentTrends(dateRange, schoolId),
-        this.getPaymentBreakdowns(dateRange, schoolId),
-        this.getTopPerformers(dateRange, schoolId),
-        this.generateAlerts(dateRange, schoolId),
-        this.generateRecommendations(dateRange, schoolId)
-      ]);
+      const [metrics, trends, breakdowns, topPerformers, alerts, recommendations] =
+        await Promise.all([
+          this.getPaymentMetrics(dateRange, schoolId),
+          this.getPaymentTrends(dateRange, schoolId),
+          this.getPaymentBreakdowns(dateRange, schoolId),
+          this.getTopPerformers(dateRange, schoolId),
+          this.generateAlerts(dateRange, schoolId),
+          this.generateRecommendations(dateRange, schoolId),
+        ]);
 
       const dashboard: PaymentAnalyticsDashboard = {
         metrics,
@@ -195,7 +185,7 @@ export class PaymentAnalyticsService {
         breakdowns,
         topPerformers,
         alerts,
-        recommendations
+        recommendations,
       };
 
       // Cache the result
@@ -205,13 +195,15 @@ export class PaymentAnalyticsService {
       logger.info('Payment analytics dashboard data generated successfully', {
         period,
         schoolId: schoolId || 'all',
-        duration: duration
+        duration,
       });
 
       return dashboard;
-
     } catch (error) {
-      logger.error('Error generating payment analytics dashboard data', error);
+      logger.error(
+        'Error generating payment analytics dashboard data',
+        error instanceof Error ? error : new Error(String(error))
+      );
       throw error;
     }
   }
@@ -248,20 +240,20 @@ export class PaymentAnalyticsService {
    * Get payment metrics for the specified period
    */
   private async getPaymentMetrics(
-    dateRange: { startDate: Date; endDate: Date },
-    schoolId?: string
+    _dateRange: { startDate: Date; endDate: Date },
+    _schoolId?: string
   ): Promise<PaymentMetrics> {
     // This would typically query the database for payment metrics
     // For now, returning mock data structure
     return {
       totalPayments: 1250,
-      totalRevenue: 185750.00,
-      avgOrderValue: 148.60,
+      totalRevenue: 185750.0,
+      avgOrderValue: 148.6,
       paymentSuccessRate: 97.2,
       refundRate: 2.1,
       chargebackRate: 0.3,
       newCustomers: 89,
-      returningCustomers: 156
+      returningCustomers: 156,
     };
   }
 
@@ -269,8 +261,8 @@ export class PaymentAnalyticsService {
    * Get payment trends for the specified period
    */
   private async getPaymentTrends(
-    dateRange: { startDate: Date; endDate: Date },
-    schoolId?: string
+    _dateRange: { startDate: Date; endDate: Date },
+    _schoolId?: string
   ): Promise<PaymentTrends> {
     // This would typically query the database for trend data
     // For now, returning mock data structure
@@ -278,7 +270,7 @@ export class PaymentAnalyticsService {
       revenue: [],
       volume: [],
       successRate: [],
-      avgOrderValue: []
+      avgOrderValue: [],
     };
   }
 
@@ -286,15 +278,15 @@ export class PaymentAnalyticsService {
    * Get payment breakdowns for the specified period
    */
   private async getPaymentBreakdowns(
-    dateRange: { startDate: Date; endDate: Date },
-    schoolId?: string
+    _dateRange: { startDate: Date; endDate: Date },
+    _schoolId?: string
   ): Promise<PaymentBreakdowns> {
     // This would typically query the database for breakdown data
     // For now, returning mock data structure
     return {
       byMethod: [],
       bySchool: [],
-      byTimeOfDay: []
+      byTimeOfDay: [],
     };
   }
 
@@ -302,15 +294,15 @@ export class PaymentAnalyticsService {
    * Get top performers for the specified period
    */
   private async getTopPerformers(
-    dateRange: { startDate: Date; endDate: Date },
-    schoolId?: string
+    _dateRange: { startDate: Date; endDate: Date },
+    _schoolId?: string
   ): Promise<TopPerformers> {
     // This would typically query the database for top performer data
     // For now, returning mock data structure
     return {
       schools: [],
       paymentMethods: [],
-      products: []
+      products: [],
     };
   }
 
@@ -318,8 +310,8 @@ export class PaymentAnalyticsService {
    * Generate alerts based on payment data analysis
    */
   private async generateAlerts(
-    dateRange: { startDate: Date; endDate: Date },
-    schoolId?: string
+    _dateRange: { startDate: Date; endDate: Date },
+    _schoolId?: string
   ): Promise<PaymentAlert[]> {
     // This would typically analyze payment data for anomalies
     // For now, returning empty array
@@ -330,8 +322,8 @@ export class PaymentAnalyticsService {
    * Generate recommendations based on payment analysis
    */
   private async generateRecommendations(
-    dateRange: { startDate: Date; endDate: Date },
-    schoolId?: string
+    _dateRange: { startDate: Date; endDate: Date },
+    _schoolId?: string
   ): Promise<PaymentRecommendation[]> {
     // This would typically analyze payment data for optimization opportunities
     // For now, returning empty array

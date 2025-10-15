@@ -1,0 +1,1232 @@
+/**
+ * HASIVU Platform - Vendor Intelligence Platform
+ *
+ * Epic 2 Story 5: Vendor Marketplace & Supply Chain
+ * Real-time vendor monitoring and intelligence system
+ *
+ * Features:
+ * - Real-time vendor scoring with multi-dimensional performance metrics
+ * - Automated vendor monitoring with quality and delivery tracking
+ * - Financial health assessment with early warning systems
+ * - Compliance monitoring with regulatory requirement tracking
+ * - Competitive analysis with market positioning insights
+ */
+
+import { z } from 'zod';
+import { logger } from '../../utils/logger';
+import { DatabaseService } from '../database.service';
+import { CacheService } from '../cache.service';
+import { NotificationService } from '../notification.service';
+import { EventEmitter } from 'events';
+
+// =====================================================
+// SCHEMAS AND TYPES
+// =====================================================
+
+const VendorProfileSchema = z.object({
+  vendorId: z.string(),
+  basicInfo: z.object({
+    name: z.string(),
+    registrationNumber: z.string(),
+    taxId: z.string(),
+    businessType: z.enum(['corporation', 'llc', 'partnership', 'sole_proprietorship']),
+    establishedDate: z.string(),
+    yearsInBusiness: z.number(),
+    headquarters: z.string(),
+    serviceAreas: z.array(z.string()),
+    website: z.string().url().optional(),
+    contactInfo: z.object({
+      primaryContact: z.string(),
+      email: z.string().email(),
+      phone: z.string(),
+      emergencyContact: z.string().optional()
+    })
+  }),
+  capabilities: z.object({
+    categories: z.array(z.string()),
+    specializations: z.array(z.string()),
+    capacity: z.object({
+      dailyVolume: z.number(),
+      monthlyVolume: z.number(),
+      peakCapacity: z.number(),
+      scalabilityFactor: z.number()
+    }),
+    certifications: z.array(z.object({
+      name: z.string(),
+      issuedBy: z.string(),
+      validUntil: z.string(),
+      status: z.enum(['active', 'expired', 'pending'])
+    })),
+    qualityStandards: z.array(z.string()),
+    technologyStack: z.array(z.string()).optional()
+  }),
+  performance: z.object({
+    overallScore: z.number().min(0).max(100),
+    metrics: z.object({
+      qualityScore: z.number().min(0).max(100),
+      deliveryReliability: z.number().min(0).max(100),
+      communicationScore: z.number().min(0).max(100),
+      innovationScore: z.number().min(0).max(100),
+      sustainabilityScore: z.number().min(0).max(100),
+      complianceScore: z.number().min(0).max(100)
+    }),
+    trends: z.object({
+      overall: z.enum(['improving', 'declining', 'stable']),
+      periods: z.array(z.object({
+        period: z.string(),
+        score: z.number(),
+        trend: z.enum(['up', 'down', 'stable'])
+      }))
+    })
+  }),
+  financialHealth: z.object({
+    creditRating: z.enum(['AAA', 'AA', 'A', 'BBB', 'BB', 'B', 'CCC', 'CC', 'C', 'D']),
+    financialStability: z.enum(['excellent', 'good', 'fair', 'poor', 'critical']),
+    riskLevel: z.enum(['low', 'medium', 'high', 'critical']),
+    cashFlow: z.object({
+      status: z.enum(['positive', 'negative', 'volatile']),
+      trend: z.enum(['improving', 'declining', 'stable']),
+      score: z.number().min(0).max(100)
+    }),
+    debtToEquityRatio: z.number().optional(),
+    liquidityRatio: z.number().optional(),
+    paymentHistory: z.object({
+      averagePaymentDays: z.number(),
+      latePaymentRate: z.number(),
+      disputeRate: z.number()
+    })
+  }),
+  compliance: z.object({
+    status: z.enum(['compliant', 'minor_issues', 'major_issues', 'critical']),
+    regulations: z.array(z.object({
+      name: z.string(),
+      status: z.enum(['compliant', 'non_compliant', 'pending']),
+      lastAuditDate: z.string(),
+      nextAuditDate: z.string(),
+      issues: z.array(z.string()).optional()
+    })),
+    certificationStatus: z.object({
+      current: z.number(),
+      expired: z.number(),
+      pending: z.number()
+    }),
+    riskAssessment: z.object({
+      score: z.number().min(0).max(100),
+      factors: z.array(z.string()),
+      recommendations: z.array(z.string())
+    })
+  }),
+  marketPosition: z.object({
+    competitiveRanking: z.number(),
+    marketShare: z.number().min(0).max(100),
+    uniqueSellingPoints: z.array(z.string()),
+    competitorComparison: z.array(z.object({
+      competitorId: z.string(),
+      strengthComparison: z.record(z.string(), z.number()),
+      recommendedStrategy: z.string()
+    })),
+    pricingPosition: z.enum(['premium', 'competitive', 'budget', 'discount'])
+  })
+});
+
+const MonitoringAlertSchema = z.object({
+  id: z.string(),
+  vendorId: z.string(),
+  type: z.enum(['performance', 'financial', 'compliance', 'quality', 'delivery']),
+  severity: z.enum(['info', 'warning', 'critical', 'emergency']),
+  title: z.string(),
+  description: z.string(),
+  metrics: z.record(z.string(), z.unknown()),
+  threshold: z.object({
+    metric: z.string(),
+    threshold: z.number(),
+    current: z.number(),
+    direction: z.enum(['above', 'below'])
+  }),
+  recommendedActions: z.array(z.string()),
+  escalationRequired: z.boolean(),
+  createdAt: z.string(),
+  resolvedAt: z.string().optional()
+});
+
+const VendorAnalyticsSchema = z.object({
+  vendorId: z.string(),
+  period: z.enum(['daily', 'weekly', 'monthly', 'quarterly']),
+  metrics: z.object({
+    orders: z.object({
+      total: z.number(),
+      completed: z.number(),
+      cancelled: z.number(),
+      averageValue: z.number(),
+      totalValue: z.number()
+    }),
+    performance: z.object({
+      onTimeDelivery: z.number(),
+      qualityScore: z.number(),
+      customerSatisfaction: z.number(),
+      issueResolutionTime: z.number()
+    }),
+    financial: z.object({
+      revenue: z.number(),
+      profitability: z.number(),
+      paymentSpeed: z.number(),
+      costEfficiency: z.number()
+    }),
+    sustainability: z.object({
+      carbonFootprint: z.number(),
+      wasteReduction: z.number(),
+      localSourcing: z.number(),
+      sustainablePractices: z.number()
+    })
+  }),
+  comparisons: z.object({
+    industryAverage: z.record(z.string(), z.number()),
+    previousPeriod: z.record(z.string(), z.number()),
+    topPerformers: z.record(z.string(), z.number())
+  }),
+  insights: z.object({
+    strengths: z.array(z.string()),
+    improvements: z.array(z.string()),
+    opportunities: z.array(z.string()),
+    risks: z.array(z.string())
+  })
+});
+
+type VendorProfile = z.infer<typeof VendorProfileSchema>;
+type MonitoringAlert = z.infer<typeof MonitoringAlertSchema>;
+type VendorAnalytics = z.infer<typeof VendorAnalyticsSchema>;
+
+// =====================================================
+// VENDOR INTELLIGENCE SERVICE
+// =====================================================
+
+export class VendorIntelligenceService extends EventEmitter {
+  private db: DatabaseService;
+  private cache: CacheService;
+  private notifications: NotificationService;
+
+  // Monitoring configurations
+  private monitoringConfig = {
+    intervals: {
+      realtime: 60000,    // 1 minute
+      hourly: 3600000,    // 1 hour
+      daily: 86400000,    // 24 hours
+      weekly: 604800000   // 7 days
+    },
+    thresholds: {
+      performance: {
+        critical: 60,
+        warning: 75,
+        good: 85
+      },
+      financial: {
+        critical: 40,
+        warning: 60,
+        good: 80
+      },
+      compliance: {
+        critical: 70,
+        warning: 85,
+        good: 95
+      }
+    },
+    alerting: {
+      escalation_levels: ['team', 'manager', 'director', 'c_suite'],
+      notification_channels: ['email', 'sms', 'slack', 'dashboard']
+    }
+  };
+
+  constructor(
+    db: DatabaseService,
+    cache: CacheService,
+    notifications: NotificationService
+  ) {
+    super();
+    this.db = db;
+    this.cache = cache;
+    this.notifications = notifications;
+
+    // Start monitoring processes
+    this.initializeMonitoring();
+  }
+
+  // =====================================================
+  // VENDOR PROFILE MANAGEMENT
+  // =====================================================
+
+  /**
+   * Get comprehensive vendor profile with intelligence
+   */
+  async getVendorProfile(vendorId: string): Promise<VendorProfile> {
+    const startTime = Date.now();
+
+    try {
+      const cacheKey = `vendor_profile_${vendorId}`;
+      const cached = await this.cache.get<VendorProfile>(cacheKey);
+      if (cached) return cached;
+
+      // Get basic vendor information
+      const basicInfo = await this.getVendorBasicInfo(vendorId);
+
+      // Get capabilities and certifications
+      const capabilities = await this.getVendorCapabilities(vendorId);
+
+      // Calculate performance metrics
+      const performance = await this.calculatePerformanceMetrics(vendorId);
+
+      // Assess financial health
+      const financialHealth = await this.assessFinancialHealth(vendorId);
+
+      // Check compliance status
+      const compliance = await this.assessComplianceStatus(vendorId);
+
+      // Analyze market position
+      const marketPosition = await this.analyzeMarketPosition(vendorId);
+
+      const profile: VendorProfile = {
+        vendorId,
+        basicInfo,
+        capabilities,
+        performance,
+        financialHealth,
+        compliance,
+        marketPosition
+      };
+
+      // Cache for 30 minutes
+      await this.cache.set(cacheKey, profile, { ttl: 1800 });
+
+      // Log performance
+      const executionTime = Date.now() - startTime;
+      logger.info('Vendor profile generated', {
+        vendorId,
+        executionTime,
+        profileSize: JSON.stringify(profile).length
+      });
+
+      return profile;
+
+    } catch (error: unknown) {
+      logger.error('Error getting vendor profile', {
+        error: error instanceof Error ? (error instanceof Error ? error.message : String(error)) : 'Unknown error',
+        vendorId,
+        executionTime: Date.now() - startTime
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Update vendor profile with real-time data
+   */
+  async updateVendorProfile(
+    vendorId: string,
+    updates: Partial<VendorProfile>
+  ): Promise<VendorProfile> {
+    try {
+      // Validate updates
+      const currentProfile = await this.getVendorProfile(vendorId);
+      const updatedProfile = { ...currentProfile, ...updates };
+
+      // Store updates in database
+      await this.storeVendorProfileUpdate(vendorId, updates);
+
+      // Invalidate cache
+      await this.cache.delete(`vendor_profile_${vendorId}`);
+
+      // Emit profile update event
+      this.emit('vendor_profile_updated', { vendorId, updates });
+
+      // Check for alert conditions
+      await this.checkAlertConditions(vendorId, updatedProfile);
+
+      return updatedProfile;
+
+    } catch (error: unknown) {
+      logger.error('Error updating vendor profile', { error, vendorId, updates });
+      throw error;
+    }
+  }
+
+  /**
+   * Get vendor analytics for specified period
+   */
+  async getVendorAnalytics(
+    vendorId: string,
+    period: 'daily' | 'weekly' | 'monthly' | 'quarterly',
+    startDate?: string,
+    endDate?: string
+  ): Promise<VendorAnalytics> {
+    try {
+      const cacheKey = `vendor_analytics_${vendorId}_${period}_${startDate}_${endDate}`;
+      const cached = await this.cache.get<VendorAnalytics>(cacheKey);
+      if (cached) return cached;
+
+      // Calculate metrics for the period
+      const metrics = await this.calculatePeriodMetrics(vendorId, period, startDate, endDate);
+
+      // Get comparison data
+      const comparisons = await this.getComparisonData(vendorId, period);
+
+      // Generate insights
+      const insights = await this.generateVendorInsights(vendorId, metrics, comparisons);
+
+      const analytics: VendorAnalytics = {
+        vendorId,
+        period,
+        metrics,
+        comparisons,
+        insights
+      };
+
+      // Cache for 1 hour
+      await this.cache.set(cacheKey, analytics, { ttl: 3600 });
+
+      return analytics;
+
+    } catch (error: unknown) {
+      logger.error('Error getting vendor analytics', { error, vendorId, period });
+      throw error;
+    }
+  }
+
+  // =====================================================
+  // REAL-TIME MONITORING
+  // =====================================================
+
+  /**
+   * Initialize real-time monitoring systems
+   */
+  private initializeMonitoring(): void {
+    // Real-time performance monitoring
+    setInterval(() => {
+      this.monitorVendorPerformance();
+    }, this.monitoringConfig.intervals.realtime);
+
+    // Hourly financial health checks
+    setInterval(() => {
+      this.monitorFinancialHealth();
+    }, this.monitoringConfig.intervals.hourly);
+
+    // Daily compliance monitoring
+    setInterval(() => {
+      this.monitorCompliance();
+    }, this.monitoringConfig.intervals.daily);
+
+    // Weekly competitive analysis
+    setInterval(() => {
+      this.updateCompetitiveAnalysis();
+    }, this.monitoringConfig.intervals.weekly);
+
+    logger.info('Vendor intelligence monitoring initialized');
+  }
+
+  /**
+   * Monitor vendor performance in real-time
+   */
+  private async monitorVendorPerformance(): Promise<void> {
+    try {
+      const activeVendors = await this.getActiveVendors();
+
+      for (const vendor of activeVendors) {
+        const recentMetrics = await this.getRecentPerformanceMetrics(vendor.id);
+
+        const metrics = recentMetrics as any;
+
+        // Check performance thresholds
+        if (metrics.overallScore < this.monitoringConfig.thresholds.performance.critical) {
+          await this.createAlert({
+            vendorId: vendor.id,
+            type: 'performance',
+            severity: 'critical',
+            title: 'Critical Performance Drop',
+            description: `Vendor ${vendor.name} performance dropped to ${metrics.overallScore}%`,
+            metrics: metrics as Record<string, unknown>,
+            threshold: {
+              metric: 'overallScore',
+              threshold: this.monitoringConfig.thresholds.performance.critical,
+              current: metrics.overallScore,
+              direction: 'below'
+            }
+          });
+        }
+
+        // Check delivery reliability
+        if (metrics.deliveryReliability < 80) {
+          await this.createAlert({
+            vendorId: vendor.id,
+            type: 'delivery',
+            severity: 'warning',
+            title: 'Delivery Reliability Issue',
+            description: `Delivery reliability dropped to ${metrics.deliveryReliability}%`,
+            metrics: metrics as Record<string, unknown>,
+            threshold: {
+              metric: 'deliveryReliability',
+              threshold: 80,
+              current: metrics.deliveryReliability,
+              direction: 'below'
+            }
+          });
+        }
+
+        // Check quality scores
+        if (metrics.qualityScore < 75) {
+          await this.createAlert({
+            vendorId: vendor.id,
+            type: 'quality',
+            severity: 'warning',
+            title: 'Quality Score Decline',
+            description: `Quality score dropped to ${metrics.qualityScore}%`,
+            metrics: metrics as Record<string, unknown>,
+            threshold: {
+              metric: 'qualityScore',
+              threshold: 75,
+              current: metrics.qualityScore,
+              direction: 'below'
+            }
+          });
+        }
+      }
+
+    } catch (error: unknown) {
+      logger.error('Error monitoring vendor performance', { error });
+    }
+  }
+
+  /**
+   * Monitor financial health indicators
+   */
+  private async monitorFinancialHealth(): Promise<void> {
+    try {
+      const vendors = await this.getVendorsForFinancialMonitoring();
+
+      for (const vendor of vendors) {
+        const financialData = await this.getLatestFinancialData(vendor.id) as any;
+
+        // Check for financial distress signals
+        const riskScore = this.calculateFinancialRiskScore(financialData);
+
+        if (riskScore > 70) {
+          await this.createAlert({
+            vendorId: vendor.id,
+            type: 'financial',
+            severity: 'critical',
+            title: 'Financial Health Warning',
+            description: `High financial risk detected (score: ${riskScore})`,
+            metrics: financialData as Record<string, unknown>,
+            threshold: {
+              metric: 'financialRisk',
+              threshold: 70,
+              current: riskScore,
+              direction: 'above'
+            }
+          });
+        }
+
+        // Monitor payment patterns
+        if (financialData.averagePaymentDays > 45) {
+          await this.createAlert({
+            vendorId: vendor.id,
+            type: 'financial',
+            severity: 'warning',
+            title: 'Payment Delay Pattern',
+            description: `Average payment time increased to ${financialData.averagePaymentDays} days`,
+            metrics: financialData as Record<string, unknown>,
+            threshold: {
+              metric: 'averagePaymentDays',
+              threshold: 45,
+              current: financialData.averagePaymentDays,
+              direction: 'above'
+            }
+          });
+        }
+      }
+
+    } catch (error: unknown) {
+      logger.error('Error monitoring financial health', { error });
+    }
+  }
+
+  /**
+   * Monitor compliance status
+   */
+  private async monitorCompliance(): Promise<void> {
+    try {
+      const vendors = await this.getVendorsForComplianceMonitoring();
+
+      for (const vendor of vendors) {
+        const compliance = await this.getComplianceStatus(vendor.id) as any;
+
+        // Check for expired certifications
+        const expiredCerts = await this.getExpiredCertifications(vendor.id);
+        if (expiredCerts.length > 0) {
+          await this.createAlert({
+            vendorId: vendor.id,
+            type: 'compliance',
+            severity: 'critical',
+            title: 'Expired Certifications',
+            description: `${expiredCerts.length} certifications have expired`,
+            metrics: { expiredCertifications: expiredCerts },
+            threshold: {
+              metric: 'expiredCertifications',
+              threshold: 0,
+              current: expiredCerts.length,
+              direction: 'above'
+            }
+          });
+        }
+
+        // Check for approaching expiration dates
+        const expiringSoon = await this.getCertificationsExpiringSoon(vendor.id, 30);
+        if (expiringSoon.length > 0) {
+          await this.createAlert({
+            vendorId: vendor.id,
+            type: 'compliance',
+            severity: 'warning',
+            title: 'Certifications Expiring Soon',
+            description: `${expiringSoon.length} certifications expire within 30 days`,
+            metrics: { expiringSoon },
+            threshold: {
+              metric: 'certificationRenewal',
+              threshold: 30,
+              current: expiringSoon.length,
+              direction: 'above'
+            }
+          });
+        }
+
+        // Monitor regulatory compliance
+        const complianceScore = compliance.riskAssessment.score;
+        if (complianceScore < this.monitoringConfig.thresholds.compliance.critical) {
+          await this.createAlert({
+            vendorId: vendor.id,
+            type: 'compliance',
+            severity: 'critical',
+            title: 'Compliance Risk Alert',
+            description: `Compliance score dropped to ${complianceScore}%`,
+            metrics: compliance as Record<string, unknown>,
+            threshold: {
+              metric: 'complianceScore',
+              threshold: this.monitoringConfig.thresholds.compliance.critical,
+              current: complianceScore,
+              direction: 'below'
+            }
+          });
+        }
+      }
+
+    } catch (error: unknown) {
+      logger.error('Error monitoring compliance', { error });
+    }
+  }
+
+  /**
+   * Create monitoring alert
+   */
+  private async createAlert(alertData: Omit<MonitoringAlert, 'id' | 'createdAt' | 'recommendedActions' | 'escalationRequired'>): Promise<void> {
+    try {
+      const alert: MonitoringAlert = {
+        id: `alert_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        ...alertData,
+        recommendedActions: this.generateRecommendedActions(alertData),
+        escalationRequired: this.shouldEscalate(alertData),
+        createdAt: new Date().toISOString()
+      };
+
+      // Store alert in database
+      await this.storeAlert(alert);
+
+      // Send notifications
+      await this.sendAlertNotifications(alert);
+
+      // Emit alert event
+      this.emit('alert_created', alert);
+
+      logger.warn('Vendor monitoring alert created', {
+        alertId: alert.id,
+        vendorId: alert.vendorId,
+        type: alert.type,
+        severity: alert.severity
+      });
+
+    } catch (error: unknown) {
+      logger.error('Error creating alert', { error, alertData });
+    }
+  }
+
+  // =====================================================
+  // DATA RETRIEVAL METHODS
+  // =====================================================
+
+  private async getVendorBasicInfo(vendorId: string) {
+    const vendor = await this.db.query(`
+      SELECT * FROM vendors
+      WHERE id = ? AND is_active = true
+    `, [vendorId]) as any;
+    return vendor.rows[0];
+
+    if (!vendor) {
+      throw new Error(`Vendor ${vendorId} not found`);
+    }
+
+    return {
+      name: vendor.name,
+      registrationNumber: vendor.registration_number,
+      taxId: vendor.tax_id,
+      businessType: vendor.business_type as any,
+      establishedDate: vendor.established_date,
+      yearsInBusiness: new Date().getFullYear() - new Date(vendor.established_date).getFullYear(),
+      headquarters: vendor.headquarters,
+      serviceAreas: JSON.parse(vendor.service_areas || '[]'),
+      website: vendor.website,
+      contactInfo: {
+        primaryContact: vendor.primary_contact,
+        email: vendor.email,
+        phone: vendor.phone,
+        emergencyContact: vendor.emergency_contact
+      }
+    };
+  }
+
+  private async getVendorCapabilities(vendorId: string) {
+    const capabilities = await this.db.query(`
+      SELECT * FROM vendor_capabilities
+      WHERE vendor_id = ?
+    `, [vendorId]) as any;
+    const capabilitiesData = capabilities.rows[0];
+
+    const certifications = await this.db.query(`
+      SELECT * FROM vendor_certifications
+      WHERE vendor_id = ? AND status = 'active'
+    `, [vendorId]) as any;
+
+    return {
+      categories: JSON.parse(capabilitiesData?.categories || '[]'),
+      specializations: JSON.parse(capabilitiesData?.specializations || '[]'),
+      capacity: {
+        dailyVolume: capabilitiesData?.daily_volume || 0,
+        monthlyVolume: capabilitiesData?.monthly_volume || 0,
+        peakCapacity: capabilitiesData?.peak_capacity || 0,
+        scalabilityFactor: capabilitiesData?.scalability_factor || 1.0
+      },
+      certifications: certifications.rows.map((cert: any) => ({
+        name: cert.name,
+        issuedBy: cert.issued_by,
+        validUntil: cert.valid_until,
+        status: cert.status
+      })),
+      qualityStandards: JSON.parse(capabilitiesData?.quality_standards || '[]'),
+      technologyStack: JSON.parse(capabilitiesData?.technology_stack || '[]')
+    };
+  }
+
+  private async calculatePerformanceMetrics(vendorId: string) {
+    const metrics = await this.db.query(`
+      SELECT
+        AVG(quality_score) as quality_score,
+        AVG(delivery_reliability_score) as delivery_reliability,
+        AVG(communication_score) as communication_score,
+        AVG(innovation_score) as innovation_score,
+        AVG(sustainability_score) as sustainability_score,
+        AVG(compliance_score) as compliance_score
+      FROM vendor_performance_metrics
+      WHERE vendor_id = ?
+      AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+    `, [vendorId]) as any;
+    const metricsData = metrics.rows[0];
+
+    const overallScore = (
+      (metricsData.quality_score || 0) +
+      (metricsData.delivery_reliability || 0) +
+      (metricsData.communication_score || 0) +
+      (metricsData.innovation_score || 0) +
+      (metricsData.sustainability_score || 0) +
+      (metricsData.compliance_score || 0)
+    ) / 6;
+
+    // Get performance trends
+    const trends = await this.getPerformanceTrends(vendorId);
+
+    return {
+      overallScore: Math.round(overallScore),
+      metrics: {
+        qualityScore: Math.round(metricsData.quality_score || 0),
+        deliveryReliability: Math.round(metricsData.delivery_reliability || 0),
+        communicationScore: Math.round(metricsData.communication_score || 0),
+        innovationScore: Math.round(metricsData.innovation_score || 0),
+        sustainabilityScore: Math.round(metricsData.sustainability_score || 0),
+        complianceScore: Math.round(metricsData.compliance_score || 0)
+      },
+      trends
+    };
+  }
+
+  private async assessFinancialHealth(vendorId: string) {
+    const financial = await this.db.query(`
+      SELECT * FROM vendor_financial_health
+      WHERE vendor_id = ?
+      ORDER BY assessment_date DESC
+      LIMIT 1
+    `, [vendorId]) as any;
+
+    const paymentHistory = await this.db.query(`
+      SELECT
+        AVG(payment_days) as avg_payment_days,
+        SUM(CASE WHEN payment_days > 30 THEN 1 ELSE 0 END) * 100.0 / COUNT(*) as late_payment_rate,
+        COUNT(CASE WHEN status = 'disputed' THEN 1 END) * 100.0 / COUNT(*) as dispute_rate
+      FROM vendor_payments
+      WHERE vendor_id = ?
+      AND created_at >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
+    `, [vendorId]) as any;
+
+    return {
+      creditRating: financial?.credit_rating || 'B',
+      financialStability: financial?.stability_rating || 'fair',
+      riskLevel: financial?.risk_level || 'medium',
+      cashFlow: {
+        status: financial?.cash_flow_status || 'positive',
+        trend: financial?.cash_flow_trend || 'stable',
+        score: financial?.cash_flow_score || 70
+      },
+      debtToEquityRatio: financial?.debt_to_equity_ratio,
+      liquidityRatio: financial?.liquidity_ratio,
+      paymentHistory: {
+        averagePaymentDays: Math.round(paymentHistory?.avg_payment_days || 30),
+        latePaymentRate: Math.round(paymentHistory?.late_payment_rate || 0),
+        disputeRate: Math.round(paymentHistory?.dispute_rate || 0)
+      }
+    };
+  }
+
+  private async assessComplianceStatus(vendorId: string) {
+    const compliance = await this.db.query(`
+      SELECT * FROM vendor_compliance_status
+      WHERE vendor_id = ?
+      ORDER BY assessment_date DESC
+      LIMIT 1
+    `, [vendorId]) as any;
+
+    const regulations = await this.db.query(`
+      SELECT * FROM vendor_regulation_compliance
+      WHERE vendor_id = ?
+    `, [vendorId]) as any[];
+
+    const certificationCounts = await this.db.query(`
+      SELECT
+        COUNT(CASE WHEN status = 'active' THEN 1 END) as current,
+        COUNT(CASE WHEN status = 'expired' THEN 1 END) as expired,
+        COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending
+      FROM vendor_certifications
+      WHERE vendor_id = ?
+    `, [vendorId]) as any;
+
+    return {
+      status: compliance?.overall_status || 'compliant',
+      regulations: regulations.map((reg: any) => ({
+        name: reg.regulation_name,
+        status: reg.compliance_status,
+        lastAuditDate: reg.last_audit_date,
+        nextAuditDate: reg.next_audit_date,
+        issues: JSON.parse(reg.issues || '[]')
+      })),
+      certificationStatus: {
+        current: certificationCounts?.current || 0,
+        expired: certificationCounts?.expired || 0,
+        pending: certificationCounts?.pending || 0
+      },
+      riskAssessment: {
+        score: compliance?.compliance_score || 85,
+        factors: JSON.parse(compliance?.risk_factors || '[]'),
+        recommendations: JSON.parse(compliance?.recommendations || '[]')
+      }
+    };
+  }
+
+  private async analyzeMarketPosition(vendorId: string) {
+    const position = await this.db.query(`
+      SELECT * FROM vendor_market_analysis
+      WHERE vendor_id = ?
+      ORDER BY analysis_date DESC
+      LIMIT 1
+    `, [vendorId]) as any;
+
+    const competitors = await this.db.query(`
+      SELECT * FROM vendor_competitor_analysis
+      WHERE vendor_id = ?
+      ORDER BY competitive_score DESC
+      LIMIT 5
+    `, [vendorId]) as any[];
+
+    return {
+      competitiveRanking: position?.competitive_ranking || 0,
+      marketShare: position?.market_share_percentage || 0,
+      uniqueSellingPoints: JSON.parse(position?.unique_selling_points || '[]'),
+      competitorComparison: competitors.map((comp: any) => ({
+        competitorId: comp.competitor_id,
+        strengthComparison: JSON.parse(comp.strength_comparison || '{}'),
+        recommendedStrategy: comp.recommended_strategy
+      })),
+      pricingPosition: position?.pricing_position || 'competitive'
+    };
+  }
+
+  // =====================================================
+  // HELPER METHODS
+  // =====================================================
+
+  private async getActiveVendors() {
+    return await this.db.query(`
+      SELECT id, name FROM vendors
+      WHERE is_active = true
+    `) as any[];
+  }
+
+  private async getRecentPerformanceMetrics(vendorId: string) {
+    return await this.db.query(`
+      SELECT * FROM vendor_performance_metrics
+      WHERE vendor_id = ?
+      ORDER BY created_at DESC
+      LIMIT 1
+    `, [vendorId]) as any;
+  }
+
+  private async getPerformanceTrends(vendorId: string) {
+    const trends = await this.db.query(`
+      SELECT
+        DATE(created_at) as period,
+        AVG(overall_score) as score
+      FROM vendor_performance_metrics
+      WHERE vendor_id = ?
+      AND created_at >= DATE_SUB(NOW(), INTERVAL 90 DAY)
+      GROUP BY DATE(created_at)
+      ORDER BY period
+    `, [vendorId]);
+
+    // Determine overall trend
+    let overall: 'improving' | 'declining' | 'stable' = 'stable';
+    if (trends.length >= 2) {
+      const recent = trends.slice(-7).reduce((sum, t) => sum + t.score, 0) / 7;
+      const earlier = trends.slice(-14, -7).reduce((sum, t) => sum + t.score, 0) / 7;
+      const change = (recent - earlier) / earlier;
+
+      if (change > 0.05) overall = 'improving';
+      else if (change < -0.05) overall = 'declining';
+    }
+
+    return {
+      overall,
+      periods: trends.map((t: any) => ({
+        period: t.period,
+        score: Math.round(t.score),
+        trend: 'stable' as const // Simplified - would calculate actual trend
+      }))
+    };
+  }
+
+  private calculateFinancialRiskScore(financialData: any): number {
+    let riskScore = 0;
+
+    // Payment history risk
+    if (financialData.averagePaymentDays > 45) riskScore += 20;
+    if (financialData.latePaymentRate > 10) riskScore += 15;
+    if (financialData.disputeRate > 5) riskScore += 10;
+
+    // Cash flow risk
+    if (financialData.cashFlowStatus === 'negative') riskScore += 25;
+    if (financialData.cashFlowTrend === 'declining') riskScore += 15;
+
+    // Liquidity risk
+    if (financialData.liquidityRatio && financialData.liquidityRatio < 1.0) riskScore += 20;
+
+    // Debt risk
+    if (financialData.debtToEquityRatio && financialData.debtToEquityRatio > 2.0) riskScore += 15;
+
+    return Math.min(100, riskScore);
+  }
+
+  private generateRecommendedActions(alertData: any): string[] {
+    const actions = [];
+
+    switch (alertData.type) {
+      case 'performance':
+        actions.push('Review recent order performance');
+        actions.push('Schedule vendor meeting to discuss issues');
+        actions.push('Consider performance improvement plan');
+        break;
+      case 'financial':
+        actions.push('Review payment terms and history');
+        actions.push('Consider credit limit adjustment');
+        actions.push('Evaluate vendor financial stability');
+        break;
+      case 'compliance':
+        actions.push('Request updated certification documentation');
+        actions.push('Schedule compliance audit');
+        actions.push('Review regulatory requirements');
+        break;
+      case 'quality':
+        actions.push('Increase quality inspection frequency');
+        actions.push('Review quality standards with vendor');
+        actions.push('Consider quality improvement training');
+        break;
+      case 'delivery':
+        actions.push('Review delivery schedules and constraints');
+        actions.push('Evaluate logistics optimization opportunities');
+        actions.push('Consider backup delivery options');
+        break;
+    }
+
+    return actions;
+  }
+
+  private shouldEscalate(alertData: any): boolean {
+    return alertData.severity === 'critical' || alertData.severity === 'emergency';
+  }
+
+  private async storeAlert(alert: MonitoringAlert): Promise<void> {
+    await this.db.query(`
+      INSERT INTO vendor_monitoring_alerts (
+        id, vendor_id, type, severity, title, description,
+        metrics, threshold_config, recommended_actions,
+        escalation_required, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+      alert.id,
+      alert.vendorId,
+      alert.type,
+      alert.severity,
+      alert.title,
+      alert.description,
+      JSON.stringify(alert.metrics),
+      JSON.stringify(alert.threshold),
+      JSON.stringify(alert.recommendedActions),
+      alert.escalationRequired,
+      alert.createdAt
+    ]);
+  }
+
+  private async sendAlertNotifications(alert: MonitoringAlert): Promise<void> {
+    // Send to appropriate stakeholders based on severity
+    const recipients = await this.getAlertRecipients(alert);
+
+    for (const recipient of recipients) {
+      await NotificationService.sendNotification({
+        recipientId: recipient.id,
+        recipientType: 'user',
+        channels: ['push', 'email'],
+        priority: alert.severity === 'critical' ? 'high' : 'normal',
+        title: alert.title,
+        body: alert.description,
+        data: {
+          alertId: alert.id,
+          vendorId: alert.vendorId,
+          alertType: alert.type,
+          severity: alert.severity,
+          recommendedActions: alert.recommendedActions
+        }
+      });
+    }
+  }
+
+  private async getAlertRecipients(alert: MonitoringAlert) {
+    // Get recipients based on alert severity and type
+    return await this.db.query(`
+      SELECT DISTINCT u.id, u.email
+      FROM users u
+      JOIN user_alert_subscriptions uas ON u.id = uas.user_id
+      WHERE uas.alert_type = ?
+      AND uas.severity_level <= ?
+      AND u.is_active = true
+    `, [alert.type, this.getSeverityLevel(alert.severity)]);
+  }
+
+  private getSeverityLevel(severity: string): number {
+    const levels = { info: 1, warning: 2, critical: 3, emergency: 4 };
+    return levels[severity as keyof typeof levels] || 1;
+  }
+
+  private async storeVendorProfileUpdate(vendorId: string, updates: any): Promise<void> {
+    await this.db.query(`
+      INSERT INTO vendor_profile_updates (
+        vendor_id, updates, updated_at
+      ) VALUES (?, ?, NOW())
+    `, [vendorId, JSON.stringify(updates)]);
+  }
+
+  private async checkAlertConditions(vendorId: string, profile: VendorProfile): Promise<void> {
+    // Check if any metrics have crossed alert thresholds
+    // This would implement specific business rules for alert generation
+  }
+
+  private async calculatePeriodMetrics(
+    vendorId: string,
+    period: string,
+    startDate?: string,
+    endDate?: string
+  ) {
+    // Calculate comprehensive metrics for the specified period
+    const metrics = await this.db.query(`
+      SELECT
+        COUNT(o.id) as total_orders,
+        COUNT(CASE WHEN o.status = 'completed' THEN 1 END) as completed_orders,
+        COUNT(CASE WHEN o.status = 'cancelled' THEN 1 END) as cancelled_orders,
+        AVG(o.total_amount) as average_order_value,
+        SUM(o.total_amount) as total_order_value,
+        AVG(vm.delivery_score) as on_time_delivery,
+        AVG(vm.quality_score) as quality_score,
+        AVG(vm.satisfaction_score) as customer_satisfaction,
+        AVG(vm.resolution_time) as issue_resolution_time
+      FROM vendors v
+      LEFT JOIN orders o ON v.id = o.vendor_id
+      LEFT JOIN vendor_metrics vm ON v.id = vm.vendor_id
+      WHERE v.id = ?
+      ${startDate ? 'AND o.created_at >= ?' : ''}
+      ${endDate ? 'AND o.created_at <= ?' : ''}
+    `, [vendorId, startDate, endDate].filter(Boolean)) as any;
+
+    return {
+      orders: {
+        total: metrics.total_orders || 0,
+        completed: metrics.completed_orders || 0,
+        cancelled: metrics.cancelled_orders || 0,
+        averageValue: metrics.average_order_value || 0,
+        totalValue: metrics.total_order_value || 0
+      },
+      performance: {
+        onTimeDelivery: metrics.on_time_delivery || 0,
+        qualityScore: metrics.quality_score || 0,
+        customerSatisfaction: metrics.customer_satisfaction || 0,
+        issueResolutionTime: metrics.issue_resolution_time || 0
+      },
+      financial: {
+        revenue: metrics.total_order_value || 0,
+        profitability: 0, // Would calculate based on cost data
+        paymentSpeed: 0,  // Would calculate based on payment data
+        costEfficiency: 0 // Would calculate based on operational data
+      },
+      sustainability: {
+        carbonFootprint: 0,  // Would get from sustainability tracking
+        wasteReduction: 0,   // Would get from waste metrics
+        localSourcing: 0,    // Would get from sourcing data
+        sustainablePractices: 0 // Would get from practice assessments
+      }
+    };
+  }
+
+  private async getComparisonData(vendorId: string, period: string) {
+    // Get industry averages, previous period data, and top performer data
+    return {
+      industryAverage: {
+        onTimeDelivery: 85,
+        qualityScore: 82,
+        customerSatisfaction: 78
+      },
+      previousPeriod: {
+        onTimeDelivery: 0, // Would calculate from previous period
+        qualityScore: 0,
+        customerSatisfaction: 0
+      },
+      topPerformers: {
+        onTimeDelivery: 95,
+        qualityScore: 92,
+        customerSatisfaction: 90
+      }
+    };
+  }
+
+  private async generateVendorInsights(vendorId: string, metrics: any, comparisons: any) {
+    const insights = {
+      strengths: [] as string[],
+      improvements: [] as string[],
+      opportunities: [] as string[],
+      risks: [] as string[]
+    };
+
+    // Analyze strengths
+    if (metrics.performance.onTimeDelivery > comparisons.industryAverage.onTimeDelivery) {
+      insights.strengths.push('Excellent delivery performance');
+    }
+    if (metrics.performance.qualityScore > comparisons.industryAverage.qualityScore) {
+      insights.strengths.push('Above-average quality standards');
+    }
+
+    // Identify improvement areas
+    if (metrics.performance.customerSatisfaction < comparisons.industryAverage.customerSatisfaction) {
+      insights.improvements.push('Customer satisfaction below industry average');
+    }
+    if (metrics.performance.issueResolutionTime > 24) {
+      insights.improvements.push('Issue resolution time needs improvement');
+    }
+
+    // Identify opportunities
+    if (metrics.orders.total > 0 && metrics.orders.cancelled / metrics.orders.total < 0.05) {
+      insights.opportunities.push('Low cancellation rate indicates growth potential');
+    }
+
+    // Identify risks
+    if (metrics.orders.cancelled / metrics.orders.total > 0.1) {
+      insights.risks.push('High cancellation rate indicates potential issues');
+    }
+
+    return insights;
+  }
+
+  // Additional monitoring methods...
+  private async getVendorsForFinancialMonitoring() {
+    return await this.db.query(`
+      SELECT id, name FROM vendors
+      WHERE is_active = true
+      AND financial_monitoring_enabled = true
+    `) as any[];
+  }
+
+  private async getLatestFinancialData(vendorId: string) {
+    return await this.db.query(`
+      SELECT * FROM vendor_financial_metrics
+      WHERE vendor_id = ?
+      ORDER BY assessment_date DESC
+      LIMIT 1
+    `, [vendorId]) as any;
+  }
+
+  private async getVendorsForComplianceMonitoring() {
+    return await this.db.query(`
+      SELECT id, name FROM vendors
+      WHERE is_active = true
+      AND compliance_monitoring_enabled = true
+    `) as any[];
+  }
+
+  private async getComplianceStatus(vendorId: string) {
+    return await this.db.query(`
+      SELECT * FROM vendor_compliance_summary
+      WHERE vendor_id = ?
+      ORDER BY assessment_date DESC
+      LIMIT 1
+    `, [vendorId]) as any;
+  }
+
+  private async getExpiredCertifications(vendorId: string) {
+    return await this.db.query(`
+      SELECT * FROM vendor_certifications
+      WHERE vendor_id = ?
+      AND valid_until < NOW()
+      AND status = 'expired'
+    `, [vendorId]) as any[];
+  }
+
+  private async getCertificationsExpiringSoon(vendorId: string, days: number) {
+    return await this.db.query(`
+      SELECT * FROM vendor_certifications
+      WHERE vendor_id = ?
+      AND valid_until BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL ? DAY)
+      AND status = 'active'
+    `, [vendorId, days]) as any[];
+  }
+
+  private async updateCompetitiveAnalysis(): Promise<void> {
+    // Update competitive analysis for all vendors
+    logger.info('Updating competitive analysis');
+  }
+}
+
+export default VendorIntelligenceService;

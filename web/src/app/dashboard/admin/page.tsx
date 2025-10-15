@@ -1,8 +1,8 @@
-"use client"
+'use client';
 
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute"
-import { UserRole, Permission } from "@/types/auth"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { UserRole, Permission } from '@/types/auth';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function AdminDashboard() {
   return (
@@ -27,7 +27,7 @@ export default function AdminDashboard() {
               </p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -36,12 +36,10 @@ export default function AdminDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-600">
-                Configure meal options, pricing, and availability
-              </p>
+              <p className="text-gray-600">Configure meal options, pricing, and availability</p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -58,5 +56,5 @@ export default function AdminDashboard() {
         </div>
       </div>
     </ProtectedRoute>
-  )
+  );
 }

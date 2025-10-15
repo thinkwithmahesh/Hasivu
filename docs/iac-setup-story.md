@@ -85,6 +85,7 @@ so that **all environments can be consistently provisioned, updated, and managed
 **Disaster Recovery:** Complete infrastructure recreation possible from code
 
 ### Dependencies
+
 - **Requires:** Basic AWS account setup and permissions
 - **Enables:** Reliable deployment pipeline for all subsequent development
 - **Integrates:** With monitoring, security, and application deployment procedures

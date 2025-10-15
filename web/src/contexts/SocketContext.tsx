@@ -4,14 +4,22 @@
  * Handles orders, notifications, RFID events, and system updates
  */
 
-import React, { createContext, useContext, useEffect, useCallback, useRef, ReactNode, useState } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useCallback,
+  useRef,
+  ReactNode,
+  useState,
+} from 'react';
 import { toast } from 'react-hot-toast';
 import { useAuth } from './AuthContext';
 import { useAppDispatch } from '@/store';
 import { updateOrder, addOrder } from '@/store/slices/orderSlice';
 
 // WebSocket message types
-export type SocketEventType = 
+export type SocketEventType =
   | 'order_status_update'
   | 'new_order'
   | 'order_cancelled'
@@ -40,7 +48,14 @@ export interface SocketMessage {
 // Order status update payload
 export interface OrderStatusUpdate {
   orderId: string;
-  status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'out_for_delivery' | 'delivered' | 'cancelled';
+  status:
+    | 'pending'
+    | 'confirmed'
+    | 'preparing'
+    | 'ready'
+    | 'out_for_delivery'
+    | 'delivered'
+    | 'cancelled';
   estimatedTime?: number;
   message?: string;
   kitchen_notes?: string;
@@ -75,7 +90,12 @@ export interface NotificationPayload {
 }
 
 // Connection states
-export type ConnectionState = 'connecting' | 'connected' | 'disconnected' | 'reconnecting' | 'error';
+export type ConnectionState =
+  | 'connecting'
+  | 'connected'
+  | 'disconnected'
+  | 'reconnecting'
+  | 'error';
 
 // Socket context interface
 export interface SocketContextType {
@@ -89,17 +109,17 @@ export interface SocketContextType {
   connect: () => void;
   disconnect: () => void;
   reconnect: () => void;
-  
+
   // Messaging methods
   sendMessage: (type: SocketEventType, payload: any) => void;
   subscribe: (eventType: SocketEventType, callback: (data: any) => void) => () => void;
-  
+
   // Room management
   joinRoom: (roomId: string) => void;
   leaveRoom: (roomId: string) => void;
   joinSchoolRoom: () => void;
   joinUserRoom: () => void;
-  
+
   // Utility methods
   getConnectionStats: () => ConnectionStats;
   clearReconnectAttempts: () => void;
@@ -133,14 +153,14 @@ const SOCKET_CONFIG = {
 export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user, token, isAuthenticated } = useAuth();
   const dispatch = useAppDispatch();
-  
+
   // Socket state
   const [isConnected, setIsConnected] = useState(false);
   const [connectionState, setConnectionState] = useState<ConnectionState>('disconnected');
   const [lastConnected, setLastConnected] = useState<Date | undefined>();
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
   const [totalReconnects, setTotalReconnects] = useState(0);
-  
+
   // Refs for socket and timers
   const socketRef = useRef<WebSocket | null>(null);
   const reconnectTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -175,7 +195,7 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     if (heartbeatTimerRef.current) {
       clearInterval(heartbeatTimerRef.current);
     }
-    
+
     heartbeatTimerRef.current = setInterval(() => {
       if (socketRef.current?.readyState === WebSocket.OPEN) {
         const pingTime = Date.now();
@@ -189,9 +209,11 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
    */
   const connect = useCallback(() => {
     if (!isAuthenticated || !token) return;
-    
-    if (socketRef.current?.readyState === WebSocket.OPEN || 
-        socketRef.current?.readyState === WebSocket.CONNECTING) {
+
+    if (
+      socketRef.current?.readyState === WebSocket.OPEN ||
+      socketRef.current?.readyState === WebSocket.CONNECTING
+    ) {
       return;
     }
 
@@ -220,48 +242,45 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         setLastConnected(new Date());
         setReconnectAttempts(0);
         startHeartbeat();
-        
+
         // Join relevant rooms
         joinUserRoom();
         if (user?.schoolId) {
           joinSchoolRoom();
         }
-        
+
         toast.success('Connected to real-time updates');
       };
 
       // Message received
-      socketRef.current.onmessage = (event) => {
+      socketRef.current.onmessage = event => {
         try {
           const message: SocketMessage = JSON.parse(event.data);
           handleMessage(message);
         } catch (error) {
-          console.error('Failed to parse socket message:', error);
+          // Error handled silently
         }
       };
 
       // Connection closed
-      socketRef.current.onclose = (event) => {
+      socketRef.current.onclose = event => {
         setIsConnected(false);
         setConnectionState('disconnected');
         clearTimers();
-        
+
         if (!event.wasClean && isAuthenticated) {
           handleReconnect();
         }
       };
 
       // Connection error
-      socketRef.current.onerror = (error) => {
-        console.error('WebSocket error:', error);
+      socketRef.current.onerror = error => {
         setConnectionState('error');
         if (isConnected) {
           toast.error('Connection lost. Attempting to reconnect...');
         }
       };
-
     } catch (error) {
-      console.error('Failed to create WebSocket connection:', error);
       setConnectionState('error');
       handleReconnect();
     }
@@ -272,12 +291,12 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
    */
   const disconnect = useCallback(() => {
     clearTimers();
-    
+
     if (socketRef.current) {
       socketRef.current.close(1000, 'User disconnected');
       socketRef.current = null;
     }
-    
+
     setIsConnected(false);
     setConnectionState('disconnected');
   }, [clearTimers]);
@@ -296,9 +315,12 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     setReconnectAttempts(prev => prev + 1);
     setTotalReconnects(prev => prev + 1);
 
-    reconnectTimerRef.current = setTimeout(() => {
-      connect();
-    }, SOCKET_CONFIG.reconnectInterval * Math.pow(1.5, reconnectAttempts));
+    reconnectTimerRef.current = setTimeout(
+      () => {
+        connect();
+      },
+      SOCKET_CONFIG.reconnectInterval * Math.pow(1.5, reconnectAttempts)
+    );
   }, [reconnectAttempts, connect]);
 
   /**
@@ -313,26 +335,28 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   /**
    * Send message through WebSocket
    */
-  const sendMessage = useCallback((type: SocketEventType, payload: any) => {
-    if (socketRef.current?.readyState !== WebSocket.OPEN) {
-      console.warn('Cannot send message: WebSocket not connected');
-      return;
-    }
+  const sendMessage = useCallback(
+    (type: SocketEventType, payload: any) => {
+      if (socketRef.current?.readyState !== WebSocket.OPEN) {
+        return;
+      }
 
-    const message: SocketMessage = {
-      type,
-      payload,
-      timestamp: Date.now(),
-      userId: user?.id,
-      schoolId: user?.schoolId,
-    };
+      const message: SocketMessage = {
+        type,
+        payload,
+        timestamp: Date.now(),
+        userId: user?.id,
+        schoolId: user?.schoolId,
+      };
 
-    try {
-      socketRef.current.send(JSON.stringify(message));
-    } catch (error) {
-      console.error('Failed to send WebSocket message:', error);
-    }
-  }, [user?.id, user?.schoolId]);
+      try {
+        socketRef.current.send(JSON.stringify(message));
+      } catch (error) {
+        // Error handled silently
+      }
+    },
+    [user?.id, user?.schoolId]
+  );
 
   /**
    * Subscribe to specific event types
@@ -341,9 +365,9 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     if (!subscriptionsRef.current.has(eventType)) {
       subscriptionsRef.current.set(eventType, new Set());
     }
-    
+
     subscriptionsRef.current.get(eventType)!.add(callback);
-    
+
     // Return unsubscribe function
     return () => {
       const callbacks = subscriptionsRef.current.get(eventType);
@@ -359,66 +383,75 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   /**
    * Handle incoming messages
    */
-  const handleMessage = useCallback((message: SocketMessage) => {
-    // Calculate latency for pong messages
-    if (message.type === 'pong' && message.payload?.timestamp) {
-      latencyRef.current = Date.now() - message.payload.timestamp;
-    }
+  const handleMessage = useCallback(
+    (message: SocketMessage) => {
+      // Calculate latency for pong messages
+      if (message.type === 'pong' && message.payload?.timestamp) {
+        latencyRef.current = Date.now() - message.payload.timestamp;
+      }
 
-    // Handle specific message types
-    switch (message.type) {
-      case 'order_status_update':
-        handleOrderStatusUpdate(message.payload as OrderStatusUpdate);
-        break;
-      case 'new_order':
-        dispatch(addOrder(message.payload));
-        toast.success('New order received!');
-        break;
-      case 'notification':
-        handleNotification(message.payload as NotificationPayload);
-        break;
-      case 'rfid_scan':
-        handleRFIDScan(message.payload as RFIDScanEvent);
-        break;
-      default:
-        // Generic handling for subscribed events
-        const callbacks = subscriptionsRef.current.get(message.type);
-        if (callbacks) {
-          callbacks.forEach(callback => {
-            try {
-              callback(message.payload);
-            } catch (error) {
-              console.error(`Error in socket callback for ${message.type}:`, error);
-            }
-          });
+      // Handle specific message types
+      switch (message.type) {
+        case 'order_status_update':
+          handleOrderStatusUpdate(message.payload as OrderStatusUpdate);
+          break;
+        case 'new_order':
+          dispatch(addOrder(message.payload));
+          toast.success('New order received!');
+          break;
+        case 'notification':
+          handleNotification(message.payload as NotificationPayload);
+          break;
+        case 'rfid_scan':
+          handleRFIDScan(message.payload as RFIDScanEvent);
+          break;
+        default: {
+          // Generic handling for subscribed events
+          const callbacks = subscriptionsRef.current.get(message.type);
+          if (callbacks) {
+            callbacks.forEach(callback => {
+              try {
+                callback(message.payload);
+              } catch (error) {
+                // Error handled silently
+              }
+            });
+          }
         }
-    }
-  }, [dispatch]);
+      }
+    },
+    [dispatch]
+  );
 
   /**
    * Handle order status updates
    */
-  const handleOrderStatusUpdate = useCallback((update: OrderStatusUpdate) => {
-    dispatch(updateOrder({ 
-      id: update.orderId, 
-      status: update.status,
-      estimatedTime: update.estimatedTime,
-    } as any));
-    
-    const statusMessages = {
-      confirmed: 'Your order has been confirmed!',
-      preparing: 'Your order is being prepared',
-      ready: 'Your order is ready for pickup!',
-      out_for_delivery: 'Your order is on the way!',
-      delivered: 'Your order has been delivered!',
-      cancelled: 'Your order has been cancelled',
-    };
-    
-    const message = statusMessages[update.status];
-    if (message) {
-      toast.success(message);
-    }
-  }, [dispatch]);
+  const handleOrderStatusUpdate = useCallback(
+    (update: OrderStatusUpdate) => {
+      dispatch(
+        updateOrder({
+          id: update.orderId,
+          status: update.status,
+          estimatedTime: update.estimatedTime,
+        } as any)
+      );
+
+      const statusMessages = {
+        confirmed: 'Your order has been confirmed!',
+        preparing: 'Your order is being prepared',
+        ready: 'Your order is ready for pickup!',
+        out_for_delivery: 'Your order is on the way!',
+        delivered: 'Your order has been delivered!',
+        cancelled: 'Your order has been cancelled',
+      };
+
+      const message = statusMessages[update.status];
+      if (message) {
+        toast.success(message);
+      }
+    },
+    [dispatch]
+  );
 
   /**
    * Handle notifications
@@ -455,7 +488,7 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       entry: 'Entry recorded',
       exit: 'Exit recorded',
     };
-    
+
     const message = actions[scan.action];
     if (message) {
       toast.success(`RFID: ${message}`);
@@ -483,16 +516,22 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   /**
    * Join specific room
    */
-  const joinRoom = useCallback((roomId: string) => {
-    sendMessage('join_room', { room: roomId });
-  }, [sendMessage]);
+  const joinRoom = useCallback(
+    (roomId: string) => {
+      sendMessage('join_room', { room: roomId });
+    },
+    [sendMessage]
+  );
 
   /**
    * Leave specific room
    */
-  const leaveRoom = useCallback((roomId: string) => {
-    sendMessage('leave_room', { room: roomId });
-  }, [sendMessage]);
+  const leaveRoom = useCallback(
+    (roomId: string) => {
+      sendMessage('leave_room', { room: roomId });
+    },
+    [sendMessage]
+  );
 
   /**
    * Get connection statistics
@@ -523,7 +562,7 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     } else {
       disconnect();
     }
-    
+
     return () => {
       disconnect();
     };
@@ -585,9 +624,12 @@ export const useSocketConnection = () => {
   return { isConnected, connectionState, reconnect };
 };
 
-export const useSocketSubscription = (eventType: SocketEventType, callback: (data: any) => void) => {
+export const useSocketSubscription = (
+  eventType: SocketEventType,
+  callback: (data: any) => void
+) => {
   const { subscribe } = useSocket();
-  
+
   useEffect(() => {
     const unsubscribe = subscribe(eventType, callback);
     return unsubscribe;
@@ -596,15 +638,17 @@ export const useSocketSubscription = (eventType: SocketEventType, callback: (dat
 
 export const useRealTimeOrders = () => {
   const dispatch = useAppDispatch();
-  
+
   useSocketSubscription('order_status_update', (update: OrderStatusUpdate) => {
-    dispatch(updateOrder({ 
-      id: update.orderId, 
-      status: update.status,
-      estimatedTime: update.estimatedTime,
-    } as any));
+    dispatch(
+      updateOrder({
+        id: update.orderId,
+        status: update.status,
+        estimatedTime: update.estimatedTime,
+      } as any)
+    );
   });
-  
+
   useSocketSubscription('new_order', (order: any) => {
     dispatch(addOrder(order));
   });

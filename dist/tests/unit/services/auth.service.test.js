@@ -98,7 +98,7 @@ expect.extend({
                 'exp' in decoded;
             return {
                 message: () => `expected ${received} to be a valid JWT token`,
-                pass: isValid
+                pass: !!isValid
             };
         }
         catch {
@@ -114,11 +114,11 @@ describe('AuthService', () => {
     let mockUser;
     beforeEach(() => {
         jest.clearAllMocks();
-        authService = new auth_service_1.AuthService();
+        authService = auth_service_1.AuthService.getInstance();
         mockUser = createMockUser();
         MockedRedisService.get.mockResolvedValue(null);
         MockedRedisService.set.mockResolvedValue('OK');
-        MockedRedisService.setex.mockResolvedValue('OK');
+        MockedRedisService.setex.mockResolvedValue(undefined);
         MockedRedisService.del.mockResolvedValue(1);
         MockedRedisService.exists.mockResolvedValue(1);
     });
@@ -355,21 +355,21 @@ describe('AuthService', () => {
             it('should authenticate user successfully', async () => {
                 MockedRedisService.get.mockResolvedValue(null);
                 const result = await authService.authenticate(validCredentials);
-                expect(result.user.id).toBe(mockUser.id);
-                expect(result.user.email).toBe(mockUser.email);
-                expect(result.user.role).toBe(mockUser.role);
-                expect(result.tokens.accessToken).toBeDefined();
-                expect(typeof result.tokens.accessToken).toBe('string');
-                expect(result.tokens.refreshToken).toBeDefined();
-                expect(typeof result.tokens.refreshToken).toBe('string');
-                expect(result.sessionId).toBeDefined();
-                expect(result.tokens.expiresIn).toBe(3600);
+                expect(result?.user?.id).toBe(mockUser.id);
+                expect(result?.user?.email).toBe(mockUser.email);
+                expect(result?.user?.role).toBe(mockUser.role);
+                expect(result?.tokens?.accessToken).toBeDefined();
+                expect(typeof result?.tokens?.accessToken).toBe('string');
+                expect(result?.tokens?.refreshToken).toBeDefined();
+                expect(typeof result?.tokens?.refreshToken).toBe('string');
+                expect(result?.sessionId).toBeDefined();
+                expect(result?.tokens?.expiresIn).toBe(3600);
             });
             it('should generate longer-lived tokens for remember me', async () => {
                 MockedRedisService.get.mockResolvedValue(null);
                 const credentialsWithRememberMe = { ...validCredentials, rememberMe: true };
                 const result = await authService.authenticate(credentialsWithRememberMe);
-                expect(result.tokens.expiresIn).toBe(30 * 24 * 3600);
+                expect(result?.tokens?.expiresIn).toBe(30 * 24 * 3600);
             });
             it('should reject invalid email', async () => {
                 MockedDatabaseService.client.user.findUnique.mockResolvedValue(null);
@@ -546,11 +546,11 @@ describe('AuthService', () => {
                 password: 'AdminPass123!'
             };
             const result = await authService.authenticate(credentials);
-            expect(result.user.permissions).toContain('manage_users');
-            expect(result.user.permissions).toContain('manage_settings');
-            expect(result.user.permissions).toContain('read');
-            expect(result.user.permissions).toContain('write');
-            expect(result.user.permissions).toContain('delete');
+            expect(result?.user?.permissions).toContain('manage_users');
+            expect(result?.user?.permissions).toContain('manage_settings');
+            expect(result?.user?.permissions).toContain('read');
+            expect(result?.user?.permissions).toContain('write');
+            expect(result?.user?.permissions).toContain('delete');
         });
         it('should get parent permissions', async () => {
             const parentUser = createMockUser({ role: UserRole.PARENT });
@@ -561,11 +561,11 @@ describe('AuthService', () => {
                 password: 'ParentPass123!'
             };
             const result = await authService.authenticate(credentials);
-            expect(result.user.permissions).toContain('order_food');
-            expect(result.user.permissions).toContain('view_reports');
-            expect(result.user.permissions).toContain('read');
-            expect(result.user.permissions).toContain('write');
-            expect(result.user.permissions).not.toContain('manage_users');
+            expect(result?.user?.permissions).toContain('order_food');
+            expect(result?.user?.permissions).toContain('view_reports');
+            expect(result?.user?.permissions).toContain('read');
+            expect(result?.user?.permissions).toContain('write');
+            expect(result?.user?.permissions).not.toContain('manage_users');
         });
         it('should get student permissions', async () => {
             const studentUser = createMockUser({ role: UserRole.STUDENT });
@@ -576,10 +576,10 @@ describe('AuthService', () => {
                 password: 'StudentPass123!'
             };
             const result = await authService.authenticate(credentials);
-            expect(result.user.permissions).toContain('read');
-            expect(result.user.permissions).toContain('view_orders');
-            expect(result.user.permissions).not.toContain('write');
-            expect(result.user.permissions).not.toContain('manage_users');
+            expect(result?.user?.permissions).toContain('read');
+            expect(result?.user?.permissions).toContain('view_orders');
+            expect(result?.user?.permissions).not.toContain('write');
+            expect(result?.user?.permissions).not.toContain('manage_users');
         });
         it('should get school permissions', async () => {
             const schoolUser = createMockUser({ role: UserRole.SCHOOL });
@@ -590,10 +590,10 @@ describe('AuthService', () => {
                 password: 'SchoolPass123!'
             };
             const result = await authService.authenticate(credentials);
-            expect(result.user.permissions).toContain('manage_menus');
-            expect(result.user.permissions).toContain('view_analytics');
-            expect(result.user.permissions).toContain('read');
-            expect(result.user.permissions).toContain('write');
+            expect(result?.user?.permissions).toContain('manage_menus');
+            expect(result?.user?.permissions).toContain('view_analytics');
+            expect(result?.user?.permissions).toContain('read');
+            expect(result?.user?.permissions).toContain('write');
         });
         it('should default to student permissions for unknown roles', async () => {
             const unknownRoleUser = createMockUser({ role: 'UNKNOWN_ROLE' });
@@ -604,7 +604,7 @@ describe('AuthService', () => {
                 password: 'UnknownPass123!'
             };
             const result = await authService.authenticate(credentials);
-            expect(result.user.permissions).toEqual(['read', 'view_orders']);
+            expect(result?.user?.permissions).toEqual(['read', 'view_orders']);
         });
     });
     describe('Error Handling', () => {
@@ -641,7 +641,7 @@ describe('AuthService', () => {
     });
     describe('Service Configuration', () => {
         it('should validate JWT secrets on initialization', () => {
-            expect(() => new auth_service_1.AuthService()).not.toThrow();
+            expect(() => auth_service_1.AuthService.getInstance()).not.toThrow();
         });
         it('should throw error for missing JWT secrets', () => {
             class TestAuthService {

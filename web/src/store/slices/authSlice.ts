@@ -37,16 +37,19 @@ export interface AuthState {
 // Async thunks for API integration
 export const loginUser = createAsyncThunk(
   'auth/loginUser',
-  async (credentials: { email: string; password: string; rememberMe?: boolean }, { rejectWithValue }) => {
+  async (
+    credentials: { email: string; password: string; rememberMe?: boolean },
+    { rejectWithValue }
+  ) => {
     try {
       const response = await apiClient.login(credentials);
-      
+
       if (response.success && response.user) {
         return {
           user: response.user,
           token: response.tokens?.accessToken || null,
           refreshToken: response.tokens?.refreshToken || null,
-          message: response.message
+          message: response.message,
         };
       } else {
         return rejectWithValue(response.error || 'Login failed');
@@ -62,7 +65,7 @@ export const refreshToken = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await apiClient.refreshToken();
-      
+
       if (response.success) {
         return {
           token: response.accessToken,
@@ -79,13 +82,12 @@ export const refreshToken = createAsyncThunk(
 
 export const logoutUser = createAsyncThunk(
   'auth/logoutUser',
-  async (_, { rejectWithValue }) => {
+  async (_, { rejectWithValue: _rejectWithValue }) => {
     try {
       await apiClient.logout();
       return true;
     } catch (error) {
       // Even if API call fails, we should clear local state
-      console.error('Logout API error:', error);
       return true;
     }
   }
@@ -96,7 +98,7 @@ export const getCurrentUser = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await apiClient.getCurrentUser();
-      
+
       if (response.success && response.data?.user) {
         return response.data.user;
       } else {
@@ -124,10 +126,10 @@ const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    clearError: (state) => {
+    clearError: state => {
       state.error = null;
     },
-    updateLastActivity: (state) => {
+    updateLastActivity: state => {
       state.lastActivity = Date.now();
     },
     updateUserProfile: (state, action: PayloadAction<Partial<User>>) => {
@@ -135,7 +137,7 @@ const authSlice = createSlice({
         state.user = { ...state.user, ...action.payload };
       }
     },
-    clearAuth: (state) => {
+    clearAuth: state => {
       state.user = null;
       state.token = null;
       state.refreshToken = null;
@@ -147,10 +149,10 @@ const authSlice = createSlice({
       state.isLoading = action.payload;
     },
   },
-  extraReducers: (builder) => {
+  extraReducers: builder => {
     // Login
     builder
-      .addCase(loginUser.pending, (state) => {
+      .addCase(loginUser.pending, state => {
         state.isLoading = true;
         state.error = null;
       })
@@ -174,7 +176,7 @@ const authSlice = createSlice({
 
     // Token refresh
     builder
-      .addCase(refreshToken.pending, (state) => {
+      .addCase(refreshToken.pending, state => {
         state.isLoading = true;
       })
       .addCase(refreshToken.fulfilled, (state, action) => {
@@ -184,7 +186,7 @@ const authSlice = createSlice({
         state.lastActivity = Date.now();
         state.error = null;
       })
-      .addCase(refreshToken.rejected, (state) => {
+      .addCase(refreshToken.rejected, state => {
         state.isLoading = false;
         state.user = null;
         state.token = null;
@@ -195,10 +197,10 @@ const authSlice = createSlice({
 
     // Logout
     builder
-      .addCase(logoutUser.pending, (state) => {
+      .addCase(logoutUser.pending, state => {
         state.isLoading = true;
       })
-      .addCase(logoutUser.fulfilled, (state) => {
+      .addCase(logoutUser.fulfilled, state => {
         state.user = null;
         state.token = null;
         state.refreshToken = null;
@@ -206,7 +208,7 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.error = null;
       })
-      .addCase(logoutUser.rejected, (state) => {
+      .addCase(logoutUser.rejected, state => {
         // Even if logout fails, clear local state
         state.user = null;
         state.token = null;
@@ -218,7 +220,7 @@ const authSlice = createSlice({
 
     // Get current user
     builder
-      .addCase(getCurrentUser.pending, (state) => {
+      .addCase(getCurrentUser.pending, state => {
         state.isLoading = true;
       })
       .addCase(getCurrentUser.fulfilled, (state, action) => {
@@ -236,12 +238,7 @@ const authSlice = createSlice({
   },
 });
 
-export const {
-  clearError,
-  updateLastActivity,
-  updateUserProfile,
-  clearAuth,
-  setLoading
-} = authSlice.actions;
+export const { clearError, updateLastActivity, updateUserProfile, clearAuth, setLoading } =
+  authSlice.actions;
 
 export default authSlice.reducer;

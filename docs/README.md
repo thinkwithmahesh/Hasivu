@@ -17,14 +17,14 @@ The Product Requirements Documentation has been sharded into focused, maintainab
 
 ### Quick Start by Role
 
-| Role | Start Here | Key Documents |
-|------|------------|---------------|
-| **Product Manager** | [Goals & Background](prd/01-goals-background.md) | All foundation docs + Epic overviews |
-| **Tech Lead** | [Technical Assumptions](prd/04-technical-assumptions.md) | Technical specs + Epic 1 |
-| **Frontend Developer** | [UI Design Goals](prd/03-ui-design-goals.md) | Epic 3 (Parent Experience) |
-| **Backend Developer** | [Requirements](prd/02-requirements.md) | Epic 1 (Foundation) + Epic 4/5 |
-| **UX Designer** | [UI Design Goals](prd/03-ui-design-goals.md) | Epic 3 + Accessibility requirements |
-| **QA Engineer** | [Requirements](prd/02-requirements.md) | Quality validation checklist |
+| Role                   | Start Here                                               | Key Documents                        |
+| ---------------------- | -------------------------------------------------------- | ------------------------------------ |
+| **Product Manager**    | [Goals & Background](prd/01-goals-background.md)         | All foundation docs + Epic overviews |
+| **Tech Lead**          | [Technical Assumptions](prd/04-technical-assumptions.md) | Technical specs + Epic 1             |
+| **Frontend Developer** | [UI Design Goals](prd/03-ui-design-goals.md)             | Epic 3 (Parent Experience)           |
+| **Backend Developer**  | [Requirements](prd/02-requirements.md)                   | Epic 1 (Foundation) + Epic 4/5       |
+| **UX Designer**        | [UI Design Goals](prd/03-ui-design-goals.md)             | Epic 3 + Accessibility requirements  |
+| **QA Engineer**        | [Requirements](prd/02-requirements.md)                   | Quality validation checklist         |
 
 ## 🏗️ Architecture Documentation
 
@@ -35,15 +35,18 @@ The Product Requirements Documentation has been sharded into focused, maintainab
 ## 📖 Project Documentation
 
 ### Project Brief and Scope
+
 - **[Project Brief](brief.md)** - Original project definition and scope
 - **[MVP Scope Refinement](mvp-scope-refinement.md)** - Refined MVP requirements
 
 ### Enhancement Documents
+
 - **[Monitoring Strategy](enhanced-monitoring-strategy.md)** - Comprehensive monitoring approach
 - **[Testing Infrastructure](testing-infrastructure-enhancement.md)** - Testing strategy and tools
 - **[Technical Debt Management](technical-debt-management.md)** - Technical debt strategy
 
 ### External Integrations
+
 - **[External Service Setup](external-service-setup-epic.md)** - Third-party service integration
 
 ## 📚 Detailed Stories
@@ -51,39 +54,46 @@ The Product Requirements Documentation has been sharded into focused, maintainab
 The **[stories/](stories/)** directory contains detailed implementation guides for individual user stories:
 
 ### Epic 1: Foundation
+
 - [1.1 Project Setup & Infrastructure](stories/1.1.project-setup-infrastructure.md)
 - [1.2 User Authentication & Authorization](stories/1.2.user-authentication-authorization.md)
 - [1.3 Core User Management](stories/1.3.core-user-management.md)
 - [1.4 API Gateway & Service Foundation](stories/1.4.api-gateway-service-foundation.md)
 
 ### Epic 2: Menu Management
+
 - [2.1 Product Catalog Foundation](stories/2.1.product-catalog-foundation.md)
 - [2.2 Menu Planning & Scheduling](stories/2.2.menu-planning-scheduling.md)
 - [2.3 Nutritional Information Management](stories/2.3.nutritional-information-management.md)
 
 ### Epic 3: Parent Ordering
+
 - [3.1 Menu Discovery & Browsing](stories/3.1.menu-discovery-browsing.md)
 - [3.2 Shopping Cart & Order Management](stories/3.2.shopping-cart-order-management.md)
 - [3.3 Saved Preferences & Quick Reordering](stories/3.3.saved-preferences-quick-reordering.md)
 - [3.4 Order Review & Checkout](stories/3.4.order-review-checkout.md)
 
 ### Epic 4: RFID Verification
+
 - [4.1 RFID Hardware Integration](stories/4.1.rfid-hardware-integration-foundation.md)
 - [4.2 Student RFID Card Management](stories/4.2.student-rfid-card-management.md)
 - [4.3 Real-time Delivery Verification](stories/4.3.real-time-delivery-verification.md)
 - [4.4 Order Tracking & Status Management](stories/4.4.order-tracking-status-management.md)
 
 ### Epic 5: Payment Processing
+
 - [5.1 Payment Gateway Integration](stories/5.1.payment-gateway-integration.md)
 - [5.2 Billing & Invoice Management](stories/5.2.billing-invoice-management.md)
 - [5.3 Subscription & Recurring Payments](stories/5.3.subscription-recurring-payments.md)
 
 ### Epic 6: Notifications
+
 - [6.1 Notification Infrastructure](stories/6.1.notification-infrastructure.md)
 - [6.2 WhatsApp Business API Integration](stories/6.2.whatsapp-business-api-integration.md)
 - [6.3 In-App Notification System](stories/6.3.in-app-notification-system.md)
 
 ### Epic 7: Advanced Features
+
 - [7.1 Analytics Dashboard & Reporting](stories/7.1.analytics-dashboard-reporting.md)
 
 ## 🔄 Documentation Maintenance
@@ -95,21 +105,21 @@ graph TD
     A[Goals & Background] --> B[Requirements]
     A --> C[UI Design Goals]
     A --> D[Technical Assumptions]
-    
+
     B --> E[Epic 1: Foundation]
     B --> F[Epic 2: Menu Management]
     B --> G[Epic 3: Parent Ordering]
-    
+
     E --> F
     E --> G
     F --> G
-    
+
     G --> H[Epic 4: RFID]
     G --> I[Epic 5: Payment]
-    
+
     H --> J[Epic 6: Notifications]
     I --> J
-    
+
     E --> K[Epic 7: Advanced Features]
     F --> K
     G --> K
@@ -127,30 +137,33 @@ graph TD
 
 ### Ownership and Reviews
 
-| Document Type | Primary Owner | Review Frequency |
-|---------------|---------------|------------------|
-| Goals & Background | Product Manager | Quarterly |
-| Requirements | Product Manager + Tech Lead | Sprint Planning |
-| UI Design Goals | UX Lead | Design Reviews |
-| Technical Assumptions | Tech Lead | Architecture Reviews |
-| Epic Documents | Epic Owner | Sprint Planning |
-| Story Documents | Feature Lead | Story Grooming |
+| Document Type         | Primary Owner               | Review Frequency     |
+| --------------------- | --------------------------- | -------------------- |
+| Goals & Background    | Product Manager             | Quarterly            |
+| Requirements          | Product Manager + Tech Lead | Sprint Planning      |
+| UI Design Goals       | UX Lead                     | Design Reviews       |
+| Technical Assumptions | Tech Lead                   | Architecture Reviews |
+| Epic Documents        | Epic Owner                  | Sprint Planning      |
+| Story Documents       | Feature Lead                | Story Grooming       |
 
 ## 🚀 Getting Started
 
 ### For New Team Members
+
 1. **Read**: [Project Brief](brief.md) for context
 2. **Review**: [Goals & Background](prd/01-goals-background.md) for business objectives
 3. **Understand**: [Requirements](prd/02-requirements.md) for functional specifications
 4. **Study**: Role-specific documents (see Quick Start table above)
 
 ### For Development Teams
+
 1. **Architecture**: Start with [Technical Assumptions](prd/04-technical-assumptions.md)
 2. **Epic Planning**: Review [Epic Overview](prd/epics/README.md)
 3. **Implementation**: Use detailed story documents for development
 4. **Quality**: Follow [Quality Validation](prd/workflows/checklist-validation.md)
 
 ### For Stakeholders
+
 1. **Business Case**: [Goals & Background](prd/01-goals-background.md)
 2. **User Experience**: [UI Design Goals](prd/03-ui-design-goals.md)
 3. **Timeline**: [Epic Overview](prd/epics/README.md)

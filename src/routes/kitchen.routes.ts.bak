@@ -1,0 +1,743 @@
+/**
+ * HASIVU Platform - Kitchen Management API Routes
+ *
+ * Enterprise-grade kitchen operations management:
+ * - Order queue management
+ * - Inventory tracking
+ * - Production scheduling
+ * - Quality control
+ * - Staff management
+ * - Real-time operations monitoring
+ */
+
+import express, { Request, Response } from 'express';
+import { z } from 'zod';
+import {
+  APIRequest,
+  APIResponse,
+  validateRequest,
+  paginationMiddleware,
+  createRateLimiter
+} from '../middleware/api.middleware';
+import { authMiddleware, requireRole } from '../middleware/auth.middleware';
+import { KitchenService } from '../services/kitchen.service';
+import { InventoryService } from '../services/inventory.service';
+import { QualityControlService } from '../services/quality-control.service';
+import { ProductionService } from '../services/production.service';
+import { StaffManagementService } from '../services/staff-management.service';
+import { CacheService } from '../services/cache.service';
+import { AuditService } from '../services/audit.service';
+import { NotificationService } from '../services/notification.service';
+import { WebSocketService } from '../services/websocket.service';
+import { logger } from '../utils/logger';
+import { AppError } from '../utils/errors';
+
+const router = express.Router();
+const kitchenService = new KitchenService();
+const inventoryService = new InventoryService();
+const qualityControlService = new QualityControlService();
+const productionService = new ProductionService();
+const staffManagementService = new StaffManagementService();
+const cacheService = new CacheService();
+const auditService = new AuditService();
+const notificationService = new NotificationService();
+const wsService = new WebSocketService();
+
+// Rate limiters
+const readRateLimit = createRateLimiter({ requests: 200, windowMs: 60000 });
+const writeRateLimit = createRateLimiter({ requests: 100, windowMs: 60000 });
+const operationsRateLimit = createRateLimiter({ requests: 300, windowMs: 60000 });
+
+// Validation Schemas
+const orderUpdateSchema = z.object({
+  orderId: z.string().uuid('Invalid order ID'),
+  status: z.enum([
+    'received',
+    'preparing',
+    'cooking',
+    'quality_check',
+    'packaging',
+    'ready',
+    'dispatched'
+  ]),
+  estimatedCompletionTime: z.string().datetime().optional(),
+  notes: z.string().max(500).optional(),
+  qualityChecks: z.array(z.object({
+    checkType: z.enum(['temperature', 'appearance', 'taste', 'freshness', 'hygiene']),
+    status: z.enum(['pass', 'fail', 'pending']),
+    notes: z.string().max(200).optional(),
+    checkedBy: z.string().uuid().optional()
+  })).optional()
+});
+
+const inventoryUpdateSchema = z.object({
+  itemId: z.string().uuid('Invalid item ID'),
+  operation: z.enum(['add', 'consume', 'adjust', 'expire', 'waste']),
+  quantity: z.number().min(0, 'Quantity must be non-negative'),
+  unit: z.enum(['kg', 'g', 'l', 'ml', 'pieces', 'packets']),
+  reason: z.string().max(200).optional(),
+  batchNumber: z.string().optional(),
+  expiryDate: z.string().datetime().optional(),
+  cost: z.number().min(0).optional(),
+  supplierId: z.string().uuid().optional()
+});
+
+const productionPlanSchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format (YYYY-MM-DD)'),
+  mealType: z.enum(['breakfast', 'lunch', 'dinner', 'snack']),
+  items: z.array(z.object({
+    menuItemId: z.string().uuid('Invalid menu item ID'),
+    plannedQuantity: z.number().min(1, 'Planned quantity must be at least 1'),
+    startTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/),
+    estimatedDuration: z.number().min(15, 'Duration must be at least 15 minutes'),
+    assignedStaff: z.array(z.string().uuid()).optional(),
+    requiredEquipment: z.array(z.string()).optional(),
+    specialInstructions: z.string().max(300).optional()
+  })).min(1, 'At least one item is required'),
+  totalCapacity: z.number().min(1),
+  notes: z.string().max(500).optional()
+});
+
+const qualityCheckSchema = z.object({
+  orderId: z.string().uuid('Invalid order ID').optional(),
+  batchId: z.string().uuid('Invalid batch ID').optional(),
+  itemId: z.string().uuid('Invalid item ID'),
+  checkType: z.enum(['temperature', 'appearance', 'taste', 'freshness', 'hygiene', 'packaging']),
+  result: z.enum(['pass', 'fail']),
+  temperature: z.number().optional(),
+  notes: z.string().max(300).optional(),
+  images: z.array(z.string().url()).optional(),
+  corrective_action: z.string().max(500).optional()
+});
+
+const staffScheduleSchema = z.object({
+  staffId: z.string().uuid('Invalid staff ID'),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  shift: z.enum(['morning', 'afternoon', 'evening', 'night']),
+  startTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/),
+  endTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/),
+  role: z.enum(['chef', 'sous_chef', 'cook', 'prep_cook', 'dishwasher', 'cleaner']),
+  assignedStations: z.array(z.string()).optional(),
+  notes: z.string().max(200).optional()
+});
+
+const kitchenQuerySchema = z.object({
+  page: z.string().regex(/^\d+$/).optional(),
+  limit: z.string().regex(/^\d+$/).optional(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  status: z.string().optional(),
+  mealType: z.enum(['breakfast', 'lunch', 'dinner', 'snack']).optional(),
+  priority: z.enum(['low', 'medium', 'high', 'urgent']).optional(),
+  sortBy: z.enum(['createdAt', 'deliveryTime', 'priority']).optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional()
+});
+
+/**
+ * GET /api/v1/kitchen/dashboard
+ * Kitchen operations dashboard with real-time data
+ */
+router.get('/dashboard',
+  readRateLimit,
+  authMiddleware,
+  requireRole(['kitchen_staff', 'chef', 'school_admin', 'admin']),
+  async (req: APIRequest, res: APIResponse): Promise<void> => {
+    try {
+      const currentUser = req.user!;
+
+      const cacheKey = `kitchen:dashboard:${currentUser.schoolId}:${new Date().toISOString().split('T')[0]}`;
+      let cached = await cacheService.get(cacheKey);
+      if (cached) {
+        res.json(cached);
+        return;
+      }
+
+      // Get comprehensive kitchen dashboard data
+      const [
+        orderQueue,
+        productionSchedule,
+        inventoryAlerts,
+        qualityMetrics,
+        staffStatus,
+        equipmentStatus,
+        performanceMetrics
+      ] = await Promise.all([
+        kitchenService.getOrderQueue(currentUser.schoolId),
+        productionService.getTodaySchedule(currentUser.schoolId),
+        inventoryService.getCriticalAlerts(currentUser.schoolId),
+        qualityControlService.getTodayMetrics(currentUser.schoolId),
+        staffManagementService.getCurrentStaffStatus(currentUser.schoolId),
+        kitchenService.getEquipmentStatus(currentUser.schoolId),
+        kitchenService.getPerformanceMetrics(currentUser.schoolId)
+      ]);
+
+      const dashboardData = {
+        orderQueue: {
+          total: orderQueue.length,
+          byStatus: orderQueue.reduce((acc: any, order: any) => {
+            acc[order.status] = (acc[order.status] || 0) + 1;
+            return acc;
+          }, {}),
+          urgent: orderQueue.filter((order: any) => order.priority === 'urgent').length,
+          delayed: orderQueue.filter((order: any) => order.isDelayed).length
+        },
+
+        production: {
+          todaySchedule: productionSchedule,
+          completionRate: productionSchedule.completionRate,
+          onTimeRate: productionSchedule.onTimeRate,
+          nextMeal: productionSchedule.nextMeal
+        },
+
+        inventory: {
+          criticalItems: inventoryAlerts.critical.length,
+          lowStockItems: inventoryAlerts.low.length,
+          nearExpiryItems: inventoryAlerts.nearExpiry.length,
+          totalAlerts: inventoryAlerts.total
+        },
+
+        quality: {
+          todayScore: qualityMetrics.averageScore,
+          passRate: qualityMetrics.passRate,
+          failedChecks: qualityMetrics.failedChecks,
+          totalChecks: qualityMetrics.totalChecks
+        },
+
+        staff: {
+          present: staffStatus.present,
+          absent: staffStatus.absent,
+          onBreak: staffStatus.onBreak,
+          efficiency: staffStatus.averageEfficiency
+        },
+
+        equipment: {
+          operational: equipmentStatus.operational,
+          maintenance: equipmentStatus.maintenance,
+          outOfOrder: equipmentStatus.outOfOrder,
+          utilizationRate: equipmentStatus.utilizationRate
+        },
+
+        performance: {
+          ordersCompleted: performanceMetrics.ordersCompleted,
+          averagePreparationTime: performanceMetrics.avgPreparationTime,
+          customerSatisfaction: performanceMetrics.customerSatisfaction,
+          efficiency: performanceMetrics.efficiency
+        },
+
+        alerts: [
+          ...inventoryAlerts.critical.map((item: any) => ({
+            type: 'inventory',
+            severity: 'high',
+            message: `Critical: ${item.name} is out of stock`,
+            action: 'Order immediately'
+          })),
+          ...qualityMetrics.recentFailures.map((check: any) => ({
+            type: 'quality',
+            severity: 'medium',
+            message: `Quality check failed: ${check.itemName}`,
+            action: 'Review preparation process'
+          }))
+        ],
+
+        lastUpdated: new Date()
+      };
+
+      // Cache for 2 minutes (real-time data)
+      await cacheService.set(cacheKey, { data: dashboardData, requestId: req.requestId }, { ttl: 120 });
+
+      res.json({
+        data: dashboardData,
+        requestId: req.requestId
+      });
+    } catch (error: unknown) {
+      logger.error('Failed to get kitchen dashboard', {
+        error: (error instanceof Error ? error.message : String(error)),
+        requestId: req.requestId,
+        userId: req.user?.id,
+        schoolId: req.user?.schoolId
+      });
+      throw error;
+    }
+  }
+);
+
+/**
+ * GET /api/v1/kitchen/orders
+ * Get kitchen order queue with filtering
+ */
+router.get('/orders',
+  readRateLimit,
+  authMiddleware,
+  requireRole(['kitchen_staff', 'chef', 'school_admin', 'admin']),
+  paginationMiddleware,
+  validateRequest({ query: kitchenQuerySchema }),
+  async (req: APIRequest, res: APIResponse): Promise<void> => {
+    try {
+      const currentUser = req.user!;
+      const {
+        date = new Date().toISOString().split('T')[0],
+        status,
+        mealType,
+        priority,
+        sortBy = 'deliveryTime',
+        sortOrder = 'asc'
+      } = req.query as any;
+
+      const { page, limit, offset } = req.pagination!;
+
+      const orders = await kitchenService.getOrderQueue(currentUser.schoolId, {
+        date,
+        status,
+        mealType,
+        priority,
+        pagination: { page, limit, offset },
+        sort: { field: sortBy, order: sortOrder }
+      });
+
+      // Enrich orders with real-time preparation data
+      const enrichedOrders = await Promise.all(
+        orders.data.map(async (order: any) => {
+          const [
+            preparationStatus,
+            ingredientAvailability,
+            estimatedTime
+          ] = await Promise.all([
+            kitchenService.getPreparationStatus(order.id),
+            inventoryService.checkIngredientAvailability(order.items),
+            kitchenService.estimatePreparationTime(order.items, currentUser.schoolId)
+          ]);
+
+          return {
+            ...order,
+            preparationStatus,
+            ingredientAvailability,
+            estimatedTime,
+            canStart: preparationStatus.canStart && ingredientAvailability.allAvailable
+          };
+        })
+      );
+
+      res.json({
+        data: enrichedOrders,
+        pagination: {
+          page,
+          limit,
+          total: orders.total,
+          totalPages: Math.ceil(orders.total / limit),
+          hasNext: page < Math.ceil(orders.total / limit),
+          hasPrev: page > 1
+        },
+        summary: {
+          totalOrders: orders.total,
+          statusCounts: orders.statusCounts,
+          priorityCounts: orders.priorityCounts,
+          avgPreparationTime: orders.avgPreparationTime
+        },
+        requestId: req.requestId
+      });
+    } catch (error: unknown) {
+      logger.error('Failed to get kitchen orders', {
+        error: (error instanceof Error ? error.message : String(error)),
+        requestId: req.requestId,
+        userId: req.user?.id,
+        query: req.query
+      });
+      throw error;
+    }
+  }
+);
+
+/**
+ * PUT /api/v1/kitchen/orders/:orderId/status
+ * Update order preparation status
+ */
+router.put('/orders/:orderId/status',
+  operationsRateLimit,
+  authMiddleware,
+  requireRole(['kitchen_staff', 'chef']),
+  validateRequest({
+    params: z.object({ orderId: z.string().uuid() }),
+    body: orderUpdateSchema
+  }),
+  async (req: APIRequest, res: APIResponse): Promise<void> => {
+    try {
+      const { orderId } = req.params;
+      const updateData = req.body;
+      const currentUser = req.user!;
+
+      // Validate order belongs to user's kitchen
+      const order = await kitchenService.getOrder(orderId);
+      if (!order || order.schoolId !== currentUser.schoolId) {
+        throw new AppError('Order not found or access denied', 404);
+      }
+
+      // Validate status transition
+      const canTransition = await kitchenService.canTransitionStatus(
+        order.kitchenStatus,
+        updateData.status
+      );
+
+      if (!canTransition.allowed) {
+        throw new AppError(
+          `Cannot transition from ${order.kitchenStatus} to ${updateData.status}: ${canTransition.reason}`,
+          400,
+          true
+        );
+      }
+
+      // Update order status with automatic actions
+      const updateResult = await kitchenService.updateOrderStatus(orderId, {
+        ...updateData,
+        updatedBy: currentUser.id,
+        timestamp: new Date()
+      });
+
+      // Handle status-specific actions
+      switch (updateData.status) {
+        case 'preparing':
+          // Start preparation timer, reserve ingredients
+          await Promise.all([
+            kitchenService.startPreparationTimer(orderId),
+            inventoryService.reserveIngredients(orderId)
+          ]);
+          break;
+
+        case 'quality_check':
+          // Initiate quality control process
+          await qualityControlService.initiateCheck(orderId, updateData.qualityChecks);
+          break;
+
+        case 'ready':
+          // Notify delivery team, update customer
+          await Promise.all([
+            NotificationService.notifyDeliveryTeam(orderId),
+            NotificationService.notifyCustomer(orderId, 'ready_for_pickup')
+          ]);
+          break;
+
+        case 'dispatched':
+          // Update delivery tracking
+          await kitchenService.markDispatched(orderId, currentUser.id);
+          break;
+      }
+
+      // Real-time updates
+      wsService.emitToKitchen(currentUser.schoolId!, 'order.status.updated', {
+        orderId,
+        status: updateData.status,
+        updatedBy: currentUser.id,
+        timestamp: new Date()
+      });
+
+      wsService.emitToUser(order.customerId, 'order.kitchen.update', {
+        orderId,
+        status: updateData.status,
+        estimatedTime: updateData.estimatedCompletionTime
+      });
+
+      // Audit log
+      auditService.log({
+        action: 'kitchen.order.status.update',
+        userId: currentUser.id,
+        metadata: {
+          orderId,
+          previousStatus: order.kitchenStatus,
+          newStatus: updateData.status,
+          schoolId: currentUser.schoolId,
+          requestId: req.requestId
+        }
+      });
+
+      logger.info('Order status updated successfully', {
+        orderId,
+        previousStatus: order.kitchenStatus,
+        newStatus: updateData.status,
+        updatedBy: currentUser.id,
+        requestId: req.requestId
+      });
+
+      res.json({
+        data: updateResult,
+        message: 'Order status updated successfully',
+        requestId: req.requestId
+      });
+    } catch (error: unknown) {
+      logger.error('Failed to update order status', {
+        error: (error instanceof Error ? error.message : String(error)),
+        requestId: req.requestId,
+        orderId: req.params.orderId,
+        updateData: req.body,
+        userId: req.user?.id
+      });
+      throw error;
+    }
+  }
+);
+
+/**
+ * GET /api/v1/kitchen/inventory
+ * Get kitchen inventory status
+ */
+router.get('/inventory',
+  readRateLimit,
+  authMiddleware,
+  requireRole(['kitchen_staff', 'chef', 'school_admin', 'admin']),
+  paginationMiddleware,
+  async (req: APIRequest, res: APIResponse): Promise<void> => {
+    try {
+      const currentUser = req.user!;
+      const { page, limit, offset } = req.pagination!;
+
+      const inventory = await inventoryService.getKitchenInventory(currentUser.schoolId!, {
+        pagination: { page, limit, offset },
+        includeAlerts: true,
+        includeCosts: ['admin', 'school_admin'].includes(currentUser.role)
+      });
+
+      res.json({
+        data: inventory.items,
+        pagination: {
+          page,
+          limit,
+          total: inventory.total,
+          totalPages: Math.ceil(inventory.total / limit),
+          hasNext: page < Math.ceil(inventory.total / limit),
+          hasPrev: page > 1
+        },
+        summary: {
+          totalItems: inventory.total,
+          lowStockItems: inventory.lowStock,
+          nearExpiryItems: inventory.nearExpiry,
+          totalValue: inventory.totalValue,
+          alerts: inventory.alerts
+        },
+        requestId: req.requestId
+      });
+    } catch (error: unknown) {
+      logger.error('Failed to get kitchen inventory', {
+        error: (error instanceof Error ? error.message : String(error)),
+        requestId: req.requestId,
+        userId: req.user?.id,
+        schoolId: req.user?.schoolId
+      });
+      throw error;
+    }
+  }
+);
+
+/**
+ * POST /api/v1/kitchen/inventory/update
+ * Update inventory levels
+ */
+router.post('/inventory/update',
+  writeRateLimit,
+  authMiddleware,
+  requireRole(['kitchen_staff', 'chef', 'inventory_manager']),
+  validateRequest({ body: inventoryUpdateSchema }),
+  async (req: APIRequest, res: APIResponse): Promise<void> => {
+    try {
+      const updateData = req.body;
+      const currentUser = req.user!;
+
+      const updateResult = await inventoryService.updateInventory({
+        ...updateData,
+        schoolId: currentUser.schoolId,
+        updatedBy: currentUser.id
+      });
+
+      // Send alerts if levels are critical
+      if (updateResult.alertsGenerated?.length > 0) {
+        await NotificationService.sendInventoryAlerts(
+          updateResult.alertsGenerated,
+          currentUser.schoolId!
+        );
+      }
+
+      // Real-time update
+      wsService.emitToKitchen(currentUser.schoolId!, 'inventory.updated', {
+        itemId: updateData.itemId,
+        operation: updateData.operation,
+        newLevel: updateResult.newQuantity,
+        alerts: updateResult.alertsGenerated
+      });
+
+      // Audit log
+      auditService.log({
+        action: 'kitchen.inventory.update',
+        userId: currentUser.id,
+        metadata: {
+          itemId: updateData.itemId,
+          operation: updateData.operation,
+          quantity: updateData.quantity,
+          reason: updateData.reason,
+          requestId: req.requestId
+        }
+      });
+
+      res.json({
+        data: updateResult,
+        message: 'Inventory updated successfully',
+        requestId: req.requestId
+      });
+    } catch (error: unknown) {
+      logger.error('Failed to update inventory', {
+        error: (error instanceof Error ? error.message : String(error)),
+        requestId: req.requestId,
+        updateData: req.body,
+        userId: req.user?.id
+      });
+      throw error;
+    }
+  }
+);
+
+/**
+ * POST /api/v1/kitchen/production/plan
+ * Create production plan
+ */
+router.post('/production/plan',
+  writeRateLimit,
+  authMiddleware,
+  requireRole(['chef', 'kitchen_manager', 'school_admin']),
+  validateRequest({ body: productionPlanSchema }),
+  async (req: APIRequest, res: APIResponse): Promise<void> => {
+    try {
+      const planData = req.body;
+      const currentUser = req.user!;
+
+      // Validate resource availability
+      const resourceValidation = await productionService.validateResources({
+        ...planData,
+        schoolId: currentUser.schoolId
+      });
+
+      if (!resourceValidation.isValid) {
+        throw new AppError(
+          `Resource validation failed: ${resourceValidation.errors.join(', ')}`,
+          400,
+          true
+        );
+      }
+
+      const productionPlan = await productionService.createPlan({
+        ...planData,
+        schoolId: currentUser.schoolId,
+        createdBy: currentUser.id
+      });
+
+      // Notify assigned staff
+      if (planData.items.some((item: any) => item.assignedStaff?.length > 0)) {
+        const assignedStaff = planData.items
+          .flatMap((item: any) => item.assignedStaff || [])
+          .filter((staff: any, index: number, arr: any[]) => arr.indexOf(staff) === index);
+
+        await NotificationService.notifyProductionAssignment(
+          assignedStaff,
+          productionPlan.id
+        );
+      }
+
+      // Audit log
+      auditService.log({
+        action: 'kitchen.production.plan.create',
+        userId: currentUser.id,
+        metadata: {
+          planId: productionPlan.id,
+          date: planData.date,
+          mealType: planData.mealType,
+          itemCount: planData.items.length,
+          totalCapacity: planData.totalCapacity,
+          requestId: req.requestId
+        }
+      });
+
+      res.status(201).json({
+        data: productionPlan,
+        message: 'Production plan created successfully',
+        requestId: req.requestId
+      });
+    } catch (error: unknown) {
+      logger.error('Failed to create production plan', {
+        error: (error instanceof Error ? error.message : String(error)),
+        requestId: req.requestId,
+        planData: req.body,
+        userId: req.user?.id
+      });
+      throw error;
+    }
+  }
+);
+
+/**
+ * POST /api/v1/kitchen/quality/check
+ * Submit quality control check
+ */
+router.post('/quality/check',
+  operationsRateLimit,
+  authMiddleware,
+  requireRole(['kitchen_staff', 'chef', 'quality_inspector']),
+  validateRequest({ body: qualityCheckSchema }),
+  async (req: APIRequest, res: APIResponse): Promise<void> => {
+    try {
+      const checkData = req.body;
+      const currentUser = req.user!;
+
+      const qualityCheck = await qualityControlService.submitCheck({
+        ...checkData,
+        checkedBy: currentUser.id,
+        schoolId: currentUser.schoolId
+      });
+
+      // Handle failed quality checks
+      if (checkData.result === 'fail') {
+        await qualityControlService.handleFailedCheck(qualityCheck.id, {
+          correctiveAction: checkData.corrective_action,
+          notifyManager: true
+        });
+      }
+
+      // Update quality metrics
+      await qualityControlService.updateMetrics(currentUser.schoolId!, {
+        checkType: checkData.checkType,
+        result: checkData.result
+      });
+
+      // Real-time update
+      wsService.emitToKitchen(currentUser.schoolId!, 'quality.check.submitted', {
+        checkId: qualityCheck.id,
+        itemId: checkData.itemId,
+        result: checkData.result,
+        checkedBy: currentUser.id
+      });
+
+      // Audit log
+      auditService.log({
+        action: 'kitchen.quality.check.submit',
+        userId: currentUser.id,
+        metadata: {
+          checkId: qualityCheck.id,
+          itemId: checkData.itemId,
+          checkType: checkData.checkType,
+          result: checkData.result,
+          orderId: checkData.orderId,
+          requestId: req.requestId
+        }
+      });
+
+      res.status(201).json({
+        data: qualityCheck,
+        message: 'Quality check submitted successfully',
+        requestId: req.requestId
+      });
+    } catch (error: unknown) {
+      logger.error('Failed to submit quality check', {
+        error: (error instanceof Error ? error.message : String(error)),
+        requestId: req.requestId,
+        checkData: req.body,
+        userId: req.user?.id
+      });
+      throw error;
+    }
+  }
+);
+
+export default router;

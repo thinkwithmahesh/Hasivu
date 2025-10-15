@@ -107,7 +107,7 @@ const invoiceTemplatesHandler = async (event, context) => {
                         })
                     };
                 }
-            case 'POST':
+            case 'POST': {
                 if (!event.body) {
                     return {
                         statusCode: 400,
@@ -188,7 +188,8 @@ const invoiceTemplatesHandler = async (event, context) => {
                         }
                     })
                 };
-            case 'PUT':
+            }
+            case 'PUT': {
                 if (!pathParameters.templateId) {
                     return {
                         statusCode: 400,
@@ -296,7 +297,8 @@ const invoiceTemplatesHandler = async (event, context) => {
                         }
                     })
                 };
-            case 'DELETE':
+            }
+            case 'DELETE': {
                 if (!pathParameters.templateId) {
                     return {
                         statusCode: 400,
@@ -316,7 +318,8 @@ const invoiceTemplatesHandler = async (event, context) => {
                         message: 'Template deleted successfully'
                     })
                 };
-            default:
+            }
+            default: {
                 return {
                     statusCode: 405,
                     body: JSON.stringify({
@@ -324,6 +327,7 @@ const invoiceTemplatesHandler = async (event, context) => {
                         code: 'METHOD_NOT_ALLOWED'
                     })
                 };
+            }
         }
     }
     catch (error) {

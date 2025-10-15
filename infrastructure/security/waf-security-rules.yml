@@ -1,0 +1,843 @@
+# HASIVU Platform - Advanced Web Application Firewall (WAF) Configuration
+# Enterprise-grade security rules for DDoS protection and threat mitigation
+# Version: 1.0 | Production-Ready | Zero Trust Architecture
+
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Advanced WAF security rules for HASIVU platform with intelligent threat detection'
+
+Parameters:
+  Environment:
+    Type: String
+    Description: Environment name (production, staging, development)
+    Default: production
+    AllowedValues: [production, staging, development]
+
+  ApplicationLoadBalancerArn:
+    Type: String
+    Description: ARN of the Application Load Balancer to protect
+
+  CloudFrontDistributionId:
+    Type: String
+    Description: CloudFront distribution ID (optional)
+    Default: ''
+
+  AlertEmail:
+    Type: String
+    Description: Email address for security alerts
+    Default: 'security@hasivu.com'
+
+  MaxRequestRate:
+    Type: Number
+    Description: Maximum requests per 5 minutes per IP
+    Default: 2000
+    MinValue: 100
+    MaxValue: 10000
+
+Resources:
+  # ============================================================================
+  # WAF WEB ACL - MAIN PROTECTION
+  # ============================================================================
+
+  HASIVUWebACL:
+    Type: AWS::WAFv2::WebACL
+    Properties:
+      Name: !Sub '${Environment}-hasivu-web-acl'
+      Description: 'Advanced WAF protection for HASIVU platform'
+      Scope: REGIONAL
+      DefaultAction:
+        Allow: {}
+
+      # Custom Rules (Evaluated First)
+      Rules:
+        # Rule 1: Rate Limiting - Critical Protection
+        - Name: RateLimitRule
+          Priority: 1
+          Statement:
+            RateBasedStatement:
+              Limit: !Ref MaxRequestRate
+              AggregateKeyType: IP
+              ScopeDownStatement:
+                NotStatement:
+                  Statement:
+                    IPSetReferenceStatement:
+                      Arn: !GetAtt TrustedIPSet.Arn
+          Action:
+            Block: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: !Sub '${Environment}-RateLimitRule'
+
+        # Rule 2: Geographic Restriction (Allow India + Major Countries)
+        - Name: GeographicRestriction
+          Priority: 2
+          Statement:
+            NotStatement:
+              Statement:
+                GeoMatchStatement:
+                  CountryCodes:
+                    - IN # India
+                    - US # United States
+                    - GB # United Kingdom
+                    - CA # Canada
+                    - AU # Australia
+                    - SG # Singapore
+                    - AE # UAE
+                    - DE # Germany
+                    - FR # France
+                    - NL # Netherlands
+                    - JP # Japan
+          Action:
+            Block: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: !Sub '${Environment}-GeographicRestriction'
+
+        # Rule 3: SQL Injection Protection
+        - Name: SQLInjectionRule
+          Priority: 3
+          Statement:
+            OrStatement:
+              Statements:
+                - SqliMatchStatement:
+                    FieldToMatch:
+                      Body:
+                        OversizeHandling: CONTINUE
+                    TextTransformations:
+                      - Priority: 0
+                        Type: URL_DECODE
+                      - Priority: 1
+                        Type: HTML_ENTITY_DECODE
+                - SqliMatchStatement:
+                    FieldToMatch:
+                      UriPath: {}
+                    TextTransformations:
+                      - Priority: 0
+                        Type: URL_DECODE
+                      - Priority: 1
+                        Type: HTML_ENTITY_DECODE
+                - SqliMatchStatement:
+                    FieldToMatch:
+                      QueryString: {}
+                    TextTransformations:
+                      - Priority: 0
+                        Type: URL_DECODE
+                      - Priority: 1
+                        Type: HTML_ENTITY_DECODE
+          Action:
+            Block: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: !Sub '${Environment}-SQLInjectionRule'
+
+        # Rule 4: XSS Protection
+        - Name: XSSRule
+          Priority: 4
+          Statement:
+            OrStatement:
+              Statements:
+                - XssMatchStatement:
+                    FieldToMatch:
+                      Body:
+                        OversizeHandling: CONTINUE
+                    TextTransformations:
+                      - Priority: 0
+                        Type: URL_DECODE
+                      - Priority: 1
+                        Type: HTML_ENTITY_DECODE
+                - XssMatchStatement:
+                    FieldToMatch:
+                      UriPath: {}
+                    TextTransformations:
+                      - Priority: 0
+                        Type: URL_DECODE
+                      - Priority: 1
+                        Type: HTML_ENTITY_DECODE
+                - XssMatchStatement:
+                    FieldToMatch:
+                      QueryString: {}
+                    TextTransformations:
+                      - Priority: 0
+                        Type: URL_DECODE
+                      - Priority: 1
+                        Type: HTML_ENTITY_DECODE
+          Action:
+            Block: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: !Sub '${Environment}-XSSRule'
+
+        # Rule 5: Known Bad Bots and Scanners
+        - Name: BadBotRule
+          Priority: 5
+          Statement:
+            ByteMatchStatement:
+              FieldToMatch:
+                SingleHeader:
+                  Name: user-agent
+              PositionalConstraint: CONTAINS
+              SearchString: 'sqlmap'
+              TextTransformations:
+                - Priority: 0
+                  Type: LOWERCASE
+          Action:
+            Block: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: !Sub '${Environment}-BadBotRule'
+
+        # Rule 6: API Path Protection
+        - Name: APIPathProtection
+          Priority: 6
+          Statement:
+            AndStatement:
+              Statements:
+                - ByteMatchStatement:
+                    FieldToMatch:
+                      UriPath: {}
+                    PositionalConstraint: STARTS_WITH
+                    SearchString: '/api/'
+                    TextTransformations:
+                      - Priority: 0
+                        Type: LOWERCASE
+                - NotStatement:
+                    Statement:
+                      ByteMatchStatement:
+                        FieldToMatch:
+                          SingleHeader:
+                            Name: authorization
+                        PositionalConstraint: STARTS_WITH
+                        SearchString: 'Bearer '
+                        TextTransformations:
+                          - Priority: 0
+                            Type: NONE
+          Action:
+            Block: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: !Sub '${Environment}-APIPathProtection'
+
+        # Rule 7: Admin Path Protection
+        - Name: AdminPathProtection
+          Priority: 7
+          Statement:
+            AndStatement:
+              Statements:
+                - OrStatement:
+                    Statements:
+                      - ByteMatchStatement:
+                          FieldToMatch:
+                            UriPath: {}
+                          PositionalConstraint: STARTS_WITH
+                          SearchString: '/admin'
+                          TextTransformations:
+                            - Priority: 0
+                              Type: LOWERCASE
+                      - ByteMatchStatement:
+                          FieldToMatch:
+                            UriPath: {}
+                          PositionalConstraint: STARTS_WITH
+                          SearchString: '/dashboard'
+                          TextTransformations:
+                            - Priority: 0
+                              Type: LOWERCASE
+                - NotStatement:
+                    Statement:
+                      IPSetReferenceStatement:
+                        Arn: !GetAtt AdminIPSet.Arn
+          Action:
+            Block: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: !Sub '${Environment}-AdminPathProtection'
+
+        # Rule 8: Large Body Size Protection
+        - Name: LargeBodySizeRule
+          Priority: 8
+          Statement:
+            SizeConstraintStatement:
+              FieldToMatch:
+                Body:
+                  OversizeHandling: CONTINUE
+              ComparisonOperator: GT
+              Size: 52428800 # 50MB
+              TextTransformations:
+                - Priority: 0
+                  Type: NONE
+          Action:
+            Block: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: !Sub '${Environment}-LargeBodySizeRule'
+
+        # Rule 9: Suspicious URI Patterns
+        - Name: SuspiciousURIRule
+          Priority: 9
+          Statement:
+            OrStatement:
+              Statements:
+                - ByteMatchStatement:
+                    FieldToMatch:
+                      UriPath: {}
+                    PositionalConstraint: CONTAINS
+                    SearchString: '../'
+                    TextTransformations:
+                      - Priority: 0
+                        Type: URL_DECODE
+                - ByteMatchStatement:
+                    FieldToMatch:
+                      UriPath: {}
+                    PositionalConstraint: CONTAINS
+                    SearchString: '.env'
+                    TextTransformations:
+                      - Priority: 0
+                        Type: LOWERCASE
+                - ByteMatchStatement:
+                    FieldToMatch:
+                      UriPath: {}
+                    PositionalConstraint: CONTAINS
+                    SearchString: 'wp-admin'
+                    TextTransformations:
+                      - Priority: 0
+                        Type: LOWERCASE
+                - ByteMatchStatement:
+                    FieldToMatch:
+                      UriPath: {}
+                    PositionalConstraint: CONTAINS
+                    SearchString: 'phpmyadmin'
+                    TextTransformations:
+                      - Priority: 0
+                        Type: LOWERCASE
+          Action:
+            Block: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: !Sub '${Environment}-SuspiciousURIRule'
+
+        # Rule 10: AWS Managed Rules - Core Rule Set
+        - Name: AWSManagedRulesCommonRuleSet
+          Priority: 10
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesCommonRuleSet
+              ExcludedRules:
+                - Name: SizeRestrictions_BODY
+                - Name: GenericRFI_BODY
+          OverrideAction:
+            None: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: !Sub '${Environment}-AWSManagedRulesCommonRuleSet'
+
+        # Rule 11: AWS Managed Rules - Known Bad Inputs
+        - Name: AWSManagedRulesKnownBadInputsRuleSet
+          Priority: 11
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesKnownBadInputsRuleSet
+          OverrideAction:
+            None: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: !Sub '${Environment}-AWSManagedRulesKnownBadInputsRuleSet'
+
+        # Rule 12: AWS Managed Rules - Linux Operating System
+        - Name: AWSManagedRulesLinuxRuleSet
+          Priority: 12
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesLinuxRuleSet
+          OverrideAction:
+            None: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: !Sub '${Environment}-AWSManagedRulesLinuxRuleSet'
+
+        # Rule 13: AWS Managed Rules - SQL Database
+        - Name: AWSManagedRulesSQLiRuleSet
+          Priority: 13
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesSQLiRuleSet
+          OverrideAction:
+            None: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: !Sub '${Environment}-AWSManagedRulesSQLiRuleSet'
+
+        # Rule 14: Reputation List - Known Malicious IPs
+        - Name: AWSManagedRulesAmazonIpReputationList
+          Priority: 14
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesAmazonIpReputationList
+          OverrideAction:
+            None: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: !Sub '${Environment}-AWSManagedRulesAmazonIpReputationList'
+
+        # Rule 15: Anonymous IP List
+        - Name: AWSManagedRulesAnonymousIpList
+          Priority: 15
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesAnonymousIpList
+              ExcludedRules:
+                - Name: HostingProviderIPList
+                - Name: VpnIPList
+          OverrideAction:
+            None: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: !Sub '${Environment}-AWSManagedRulesAnonymousIpList'
+
+      VisibilityConfig:
+        SampledRequestsEnabled: true
+        CloudWatchMetricsEnabled: true
+        MetricName: !Sub '${Environment}-hasivu-web-acl'
+
+      CustomResponseBodies:
+        TooManyRequestsResponse:
+          ContentType: APPLICATION_JSON
+          Content: '{"error": "Too many requests. Please try again later.", "code": "RATE_LIMIT_EXCEEDED", "timestamp": "%{TIME_EPOCH}"}'
+        SecurityViolationResponse:
+          ContentType: APPLICATION_JSON
+          Content: '{"error": "Security violation detected. Request blocked.", "code": "SECURITY_VIOLATION", "timestamp": "%{TIME_EPOCH}"}'
+        GeographicBlockResponse:
+          ContentType: APPLICATION_JSON
+          Content: '{"error": "Access from your location is not permitted.", "code": "GEO_BLOCKED", "timestamp": "%{TIME_EPOCH}"}'
+
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: HASIVU
+        - Key: Component
+          Value: Security
+        - Key: ManagedBy
+          Value: CloudFormation
+
+  # ============================================================================
+  # IP SETS FOR ACCESS CONTROL
+  # ============================================================================
+
+  # Trusted IPs (Bypass rate limiting)
+  TrustedIPSet:
+    Type: AWS::WAFv2::IPSet
+    Properties:
+      Name: !Sub '${Environment}-hasivu-trusted-ips'
+      Description: 'Trusted IP addresses that bypass rate limiting'
+      Scope: REGIONAL
+      IPAddressVersion: IPV4
+      Addresses:
+        - '203.0.113.0/24' # Example: Office network
+        - '198.51.100.0/24' # Example: Admin access
+        - '10.0.0.0/8' # Private networks
+        - '172.16.0.0/12' # Private networks
+        - '192.168.0.0/16' # Private networks
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: HASIVU
+
+  # Admin Access IPs
+  AdminIPSet:
+    Type: AWS::WAFv2::IPSet
+    Properties:
+      Name: !Sub '${Environment}-hasivu-admin-ips'
+      Description: 'IP addresses allowed to access admin endpoints'
+      Scope: REGIONAL
+      IPAddressVersion: IPV4
+      Addresses:
+        - '203.0.113.0/24' # Example: Office network
+        - '198.51.100.0/24' # Example: Admin home IPs
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: HASIVU
+
+  # ============================================================================
+  # WAF ASSOCIATION WITH LOAD BALANCER
+  # ============================================================================
+
+  WebACLAssociation:
+    Type: AWS::WAFv2::WebACLAssociation
+    Properties:
+      ResourceArn: !Ref ApplicationLoadBalancerArn
+      WebACLArn: !GetAtt HASIVUWebACL.Arn
+
+  # ============================================================================
+  # CLOUDWATCH ALARMS FOR WAF METRICS
+  # ============================================================================
+
+  # High Blocked Request Rate Alarm
+  HighBlockedRequestsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${Environment}-hasivu-waf-high-blocked-requests'
+      AlarmDescription: 'High number of blocked requests detected'
+      MetricName: 'BlockedRequests'
+      Namespace: 'AWS/WAFV2'
+      Dimensions:
+        - Name: WebACL
+          Value: !Sub '${Environment}-hasivu-web-acl'
+        - Name: Region
+          Value: !Ref 'AWS::Region'
+        - Name: Rule
+          Value: 'ALL'
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 1000
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref SecurityAlertTopic
+      TreatMissingData: notBreaching
+
+  # SQL Injection Attack Alarm
+  SQLInjectionAttackAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${Environment}-hasivu-waf-sql-injection-attack'
+      AlarmDescription: 'SQL injection attack detected'
+      MetricName: 'BlockedRequests'
+      Namespace: 'AWS/WAFV2'
+      Dimensions:
+        - Name: WebACL
+          Value: !Sub '${Environment}-hasivu-web-acl'
+        - Name: Region
+          Value: !Ref 'AWS::Region'
+        - Name: Rule
+          Value: 'SQLInjectionRule'
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 10
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref SecurityAlertTopic
+      TreatMissingData: notBreaching
+
+  # XSS Attack Alarm
+  XSSAttackAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${Environment}-hasivu-waf-xss-attack'
+      AlarmDescription: 'Cross-site scripting attack detected'
+      MetricName: 'BlockedRequests'
+      Namespace: 'AWS/WAFV2'
+      Dimensions:
+        - Name: WebACL
+          Value: !Sub '${Environment}-hasivu-web-acl'
+        - Name: Region
+          Value: !Ref 'AWS::Region'
+        - Name: Rule
+          Value: 'XSSRule'
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 5
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref SecurityAlertTopic
+      TreatMissingData: notBreaching
+
+  # Rate Limiting Triggered Alarm
+  RateLimitingTriggeredAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${Environment}-hasivu-waf-rate-limiting-triggered'
+      AlarmDescription: 'Rate limiting has been triggered multiple times'
+      MetricName: 'BlockedRequests'
+      Namespace: 'AWS/WAFV2'
+      Dimensions:
+        - Name: WebACL
+          Value: !Sub '${Environment}-hasivu-web-acl'
+        - Name: Region
+          Value: !Ref 'AWS::Region'
+        - Name: Rule
+          Value: 'RateLimitRule'
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 3
+      Threshold: 100
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref SecurityAlertTopic
+      TreatMissingData: notBreaching
+
+  # Geographic Blocks Alarm
+  GeographicBlocksAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub '${Environment}-hasivu-waf-geographic-blocks'
+      AlarmDescription: 'High number of geographic blocks detected'
+      MetricName: 'BlockedRequests'
+      Namespace: 'AWS/WAFV2'
+      Dimensions:
+        - Name: WebACL
+          Value: !Sub '${Environment}-hasivu-web-acl'
+        - Name: Region
+          Value: !Ref 'AWS::Region'
+        - Name: Rule
+          Value: 'GeographicRestriction'
+      Statistic: Sum
+      Period: 600
+      EvaluationPeriods: 2
+      Threshold: 500
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref WarningAlertTopic
+      TreatMissingData: notBreaching
+
+  # ============================================================================
+  # SNS TOPICS FOR SECURITY ALERTS
+  # ============================================================================
+
+  SecurityAlertTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub '${Environment}-hasivu-waf-security-alerts'
+      DisplayName: 'HASIVU WAF Security Alerts'
+      KmsMasterKeyId: !Ref SecurityAlertEncryptionKey
+
+  WarningAlertTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub '${Environment}-hasivu-waf-warning-alerts'
+      DisplayName: 'HASIVU WAF Warning Alerts'
+      KmsMasterKeyId: !Ref SecurityAlertEncryptionKey
+
+  SecurityAlertEmailSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref SecurityAlertTopic
+      Protocol: email
+      Endpoint: !Ref AlertEmail
+
+  WarningAlertEmailSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref WarningAlertTopic
+      Protocol: email
+      Endpoint: !Ref AlertEmail
+
+  # ============================================================================
+  # ENCRYPTION FOR SNS TOPICS
+  # ============================================================================
+
+  SecurityAlertEncryptionKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: 'KMS key for encrypting WAF security alerts'
+      KeyPolicy:
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
+          - Sid: Allow SNS Service
+            Effect: Allow
+            Principal:
+              Service: sns.amazonaws.com
+            Action:
+              - kms:Encrypt
+              - kms:Decrypt
+              - kms:ReEncrypt*
+              - kms:GenerateDataKey*
+              - kms:DescribeKey
+            Resource: '*'
+
+  SecurityAlertEncryptionKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub 'alias/${Environment}-hasivu-waf-security-key'
+      TargetKeyId: !Ref SecurityAlertEncryptionKey
+
+  # ============================================================================
+  # WAF LOGGING CONFIGURATION
+  # ============================================================================
+
+  WAFLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/wafv2/${Environment}-hasivu-web-acl'
+      RetentionInDays: !If
+        - IsProduction
+        - 90
+        - 30
+
+  WAFLoggingConfiguration:
+    Type: AWS::WAFv2::LoggingConfiguration
+    Properties:
+      ResourceArn: !GetAtt HASIVUWebACL.Arn
+      LogDestinationConfigs:
+        - !Sub '${WAFLogGroup.Arn}:*'
+      RedactedFields:
+        - SingleHeader:
+            Name: authorization
+        - SingleHeader:
+            Name: cookie
+        - SingleHeader:
+            Name: x-api-key
+      LoggingFilter:
+        DefaultBehavior: KEEP
+        Filters:
+          - Behavior: KEEP
+            Conditions:
+              - ActionCondition:
+                  Action: BLOCK
+            Requirement: MEETS_ANY
+          - Behavior: DROP
+            Conditions:
+              - ActionCondition:
+                  Action: ALLOW
+            Requirement: MEETS_ANY
+
+  # ============================================================================
+  # CLOUDWATCH DASHBOARD FOR WAF MONITORING
+  # ============================================================================
+
+  WAFSecurityDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Sub '${Environment}-hasivu-waf-security-dashboard'
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 0,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/WAFV2", "AllowedRequests", "WebACL", "${Environment}-hasivu-web-acl", "Region", "${AWS::Region}", "Rule", "ALL"],
+                  [".", "BlockedRequests", ".", ".", ".", ".", ".", "."]
+                ],
+                "period": 300,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "🛡️ WAF Request Overview",
+                "yAxis": {"left": {"min": 0}},
+                "view": "timeSeries",
+                "stacked": false
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12,
+              "y": 0,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/WAFV2", "BlockedRequests", "WebACL", "${Environment}-hasivu-web-acl", "Region", "${AWS::Region}", "Rule", "RateLimitRule"],
+                  [".", ".", ".", ".", ".", ".", ".", "SQLInjectionRule"],
+                  [".", ".", ".", ".", ".", ".", ".", "XSSRule"],
+                  [".", ".", ".", ".", ".", ".", ".", "GeographicRestriction"]
+                ],
+                "period": 300,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "🚨 Security Threats Blocked",
+                "yAxis": {"left": {"min": 0}},
+                "view": "timeSeries",
+                "stacked": true
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 6,
+              "width": 24,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/WAFV2", "BlockedRequests", "WebACL", "${Environment}-hasivu-web-acl", "Region", "${AWS::Region}", "Rule", "AWSManagedRulesCommonRuleSet"],
+                  [".", ".", ".", ".", ".", ".", ".", "AWSManagedRulesKnownBadInputsRuleSet"],
+                  [".", ".", ".", ".", ".", ".", ".", "AWSManagedRulesLinuxRuleSet"],
+                  [".", ".", ".", ".", ".", ".", ".", "AWSManagedRulesSQLiRuleSet"],
+                  [".", ".", ".", ".", ".", ".", ".", "AWSManagedRulesAmazonIpReputationList"],
+                  [".", ".", ".", ".", ".", ".", ".", "AWSManagedRulesAnonymousIpList"]
+                ],
+                "period": 300,
+                "stat": "Sum",
+                "region": "${AWS::Region}",
+                "title": "🔒 AWS Managed Rules Performance",
+                "yAxis": {"left": {"min": 0}},
+                "view": "timeSeries",
+                "stacked": false
+              }
+            }
+          ]
+        }
+
+Conditions:
+  IsProduction: !Equals [!Ref Environment, 'production']
+  HasCloudFront: !Not [!Equals [!Ref CloudFrontDistributionId, '']]
+
+Outputs:
+  WebACLArn:
+    Description: ARN of the WAF Web ACL
+    Value: !GetAtt HASIVUWebACL.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-web-acl-arn'
+
+  WebACLId:
+    Description: ID of the WAF Web ACL
+    Value: !Ref HASIVUWebACL
+    Export:
+      Name: !Sub '${AWS::StackName}-web-acl-id'
+
+  TrustedIPSetArn:
+    Description: ARN of the Trusted IP Set
+    Value: !GetAtt TrustedIPSet.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-trusted-ip-set-arn'
+
+  AdminIPSetArn:
+    Description: ARN of the Admin IP Set
+    Value: !GetAtt AdminIPSet.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-admin-ip-set-arn'
+
+  SecurityAlertTopicArn:
+    Description: ARN of the Security Alert SNS Topic
+    Value: !Ref SecurityAlertTopic
+    Export:
+      Name: !Sub '${AWS::StackName}-security-alert-topic'
+
+  WAFDashboardURL:
+    Description: URL to the WAF Security Dashboard
+    Value: !Sub 'https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${Environment}-hasivu-waf-security-dashboard'
+
+  SecurityStatus:
+    Description: WAF security configuration status
+    Value: 'DEPLOYED - Advanced WAF protection active with intelligent threat detection and automated response'

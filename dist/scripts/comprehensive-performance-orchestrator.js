@@ -84,7 +84,7 @@ class ComprehensivePerformanceOrchestrator {
             this.results.database = {
                 metrics,
                 recommendations,
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
             };
             console.log(`  ✅ Database analysis completed`);
             console.log(`     Status: ${metrics.status}`);
@@ -95,7 +95,7 @@ class ComprehensivePerformanceOrchestrator {
         }
         catch (error) {
             console.error('  ❌ Database analysis failed:', error);
-            this.log(`Database analysis failed: ${error.message}`);
+            this.log(`Database analysis failed: ${error instanceof Error ? error.message : String(error)}`);
             throw error;
         }
     }
@@ -109,8 +109,8 @@ class ComprehensivePerformanceOrchestrator {
                 env: {
                     ...process.env,
                     STAGE: this.config.environment,
-                    AWS_REGION: process.env.AWS_REGION || 'ap-south-1'
-                }
+                    AWS_REGION: process.env.AWS_REGION || 'ap-south-1',
+                },
             });
             if (stderr) {
                 console.warn('  ⚠️ Lambda analyzer warnings:', stderr);
@@ -132,13 +132,13 @@ class ComprehensivePerformanceOrchestrator {
         }
         catch (error) {
             console.error('  ❌ Lambda analysis failed:', error);
-            this.log(`Lambda analysis failed: ${error.message}`);
+            this.log(`Lambda analysis failed: ${error instanceof Error ? error.message : String(error)}`);
             this.results.lambda = {
                 summary: {
                     totalFunctions: 0,
                     avgColdStartDuration: 0,
-                    criticalIssues: 0
-                }
+                    criticalIssues: 0,
+                },
             };
         }
     }
@@ -158,7 +158,7 @@ class ComprehensivePerformanceOrchestrator {
                 concurrentUsers: this.config.concurrentUsers,
                 testDuration: this.config.testDuration,
                 rampUpTime: Math.ceil(this.config.testDuration * 0.1),
-                environment: this.config.environment
+                environment: this.config.environment,
             };
             const testSuite = new RealTimePerformanceTestSuite(testConfig);
             await testSuite.runComprehensiveTests();
@@ -181,7 +181,7 @@ class ComprehensivePerformanceOrchestrator {
         }
         catch (error) {
             console.error('  ❌ Real-time testing failed:', error);
-            this.log(`Real-time testing failed: ${error.message}`);
+            this.log(`Real-time testing failed: ${error instanceof Error ? error.message : String(error)}`);
             this.results.realTime = {};
         }
     }
@@ -191,48 +191,37 @@ class ComprehensivePerformanceOrchestrator {
         try {
             this.log('Starting optimization application...');
             const optimizations = {
-                applied: [],
-                failed: [],
-                recommendations: []
+                applied: 0,
+                skipped: 0,
+                errors: [],
+                optimizations: [],
             };
             if (this.results.database && this.results.database.recommendations) {
                 console.log('  🗄️ Applying database optimizations...');
                 try {
                     const { databasePerformanceService } = await Promise.resolve().then(() => __importStar(require('../src/services/database-performance.service')));
                     const dbOptimizations = await databasePerformanceService.applyAutomaticOptimizations();
-                    optimizations.applied.push(...dbOptimizations.applied);
-                    optimizations.failed.push(...dbOptimizations.failed);
-                    optimizations.recommendations.push(...dbOptimizations.recommendations);
-                    console.log(`     ✅ Applied ${dbOptimizations.applied.length} database optimizations`);
+                    optimizations.applied += dbOptimizations.applied;
+                    optimizations.skipped += dbOptimizations.skipped;
+                    optimizations.errors.push(...dbOptimizations.errors);
+                    optimizations.optimizations.push(...dbOptimizations.optimizations);
+                    console.log(`     ✅ Applied ${dbOptimizations.applied} database optimizations`);
                 }
                 catch (error) {
-                    console.warn(`     ⚠️ Database optimization failed: ${error.message}`);
+                    console.warn(`     ⚠️ Database optimization failed: ${error instanceof Error ? error.message : String(error)}`);
                 }
-            }
-            if (this.results.lambda && this.results.lambda.recommendations) {
-                console.log('  ⚡ Generating Lambda optimization recommendations...');
-                for (const rec of this.results.lambda.recommendations.slice(0, 5)) {
-                    optimizations.recommendations.push({
-                        queryPattern: 'Lambda Function',
-                        table: rec.functions?.join(', ') || 'Multiple functions',
-                        issue: rec.description,
-                        recommendation: rec.action,
-                        priority: rec.priority,
-                        estimatedImprovement: rec.impact,
-                        implementationSteps: [`Implement: ${rec.action}`]
-                    });
-                }
-                console.log(`     📝 Generated ${optimizations.recommendations.length} Lambda recommendations`);
             }
             this.results.optimization = optimizations;
             console.log('  ✅ Optimization phase completed');
-            console.log(`     Applied: ${optimizations.applied.length}`);
-            console.log(`     Recommendations: ${optimizations.recommendations.length}`);
-            this.log(`Optimization phase completed: ${optimizations.applied.length} applied, ${optimizations.recommendations.length} recommendations`);
+            console.log(`     Applied: ${optimizations.applied}`);
+            console.log(`     Skipped: ${optimizations.skipped}`);
+            console.log(`     Errors: ${optimizations.errors.length}`);
+            console.log(`     Total optimizations: ${optimizations.optimizations.length}`);
+            this.log(`Optimization phase completed: ${optimizations.applied} applied, ${optimizations.skipped} skipped, ${optimizations.errors.length} errors`);
         }
         catch (error) {
             console.error('  ❌ Optimization application failed:', error);
-            this.log(`Optimization application failed: ${error.message}`);
+            this.log(`Optimization application failed: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
     async generateComprehensiveReport() {
@@ -246,15 +235,16 @@ class ComprehensivePerformanceOrchestrator {
                 environment: this.config.environment,
                 testConfiguration: {
                     concurrentUsers: this.config.concurrentUsers,
-                    testDuration: this.config.testDuration
+                    testDuration: this.config.testDuration,
                 },
-                ...this.results
+                ...this.results,
             };
             const resultsPath = './performance-analysis-results/combined-results.json';
             await fs.mkdir('./performance-analysis-results', { recursive: true });
             await fs.writeFile(resultsPath, JSON.stringify(combinedResults, null, 2));
             console.log('  📊 Generating benchmark report...');
-            const PerformanceBenchmarkReporter = (await Promise.resolve().then(() => __importStar(require('./performance-benchmark-reporter')))).default;
+            const PerformanceBenchmarkReporter = (await Promise.resolve().then(() => __importStar(require('./performance-benchmark-reporter'))))
+                .default;
             const reporter = new PerformanceBenchmarkReporter();
             await reporter.generateBenchmarkReport(resultsPath);
             console.log('  ✅ Comprehensive report generated');
@@ -262,7 +252,7 @@ class ComprehensivePerformanceOrchestrator {
         }
         catch (error) {
             console.error('  ❌ Report generation failed:', error);
-            this.log(`Report generation failed: ${error.message}`);
+            this.log(`Report generation failed: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
     async generateOrchestrationReport() {
@@ -288,7 +278,7 @@ class ComprehensivePerformanceOrchestrator {
             testsExecuted,
             results: this.results,
             summary,
-            nextSteps: this.generateNextSteps(summary)
+            nextSteps: this.generateNextSteps(summary),
         };
         if (this.config.saveResults) {
             await this.saveOrchestrationReport(report);
@@ -324,28 +314,29 @@ class ComprehensivePerformanceOrchestrator {
             scoreCount++;
         }
         if (this.results.optimization) {
-            optimizationsApplied = this.results.optimization.applied?.length || 0;
-            recommendationsGenerated += this.results.optimization.recommendations?.length || 0;
+            optimizationsApplied = this.results.optimization.applied || 0;
+            recommendationsGenerated +=
+                this.results.optimization.optimizations?.filter(o => o.success).length || 0;
         }
         const finalScore = scoreCount > 0 ? Math.round(overallScore / scoreCount) : 0;
-        const readinessLevel = Math.max(0, finalScore - (criticalIssues * 10));
+        const readinessLevel = Math.max(0, finalScore - criticalIssues * 10);
         return {
             overallScore: finalScore,
             readinessLevel: Math.min(100, readinessLevel),
             criticalIssues,
             optimizationsApplied,
-            recommendationsGenerated
+            recommendationsGenerated,
         };
     }
     calculateLambdaScore(summary) {
         let score = 100;
-        if (summary.avgColdStartDuration > 3000)
+        if (summary.avgColdStartDuration && summary.avgColdStartDuration > 3000)
             score -= 30;
-        else if (summary.avgColdStartDuration > 1500)
+        else if (summary.avgColdStartDuration && summary.avgColdStartDuration > 1500)
             score -= 15;
-        if (summary.avgExecutionDuration > 5000)
+        if (summary.avgExecutionDuration && summary.avgExecutionDuration > 5000)
             score -= 20;
-        else if (summary.avgExecutionDuration > 2000)
+        else if (summary.avgExecutionDuration && summary.avgExecutionDuration > 2000)
             score -= 10;
         if (summary.criticalIssues > 5)
             score -= 25;
@@ -356,7 +347,8 @@ class ComprehensivePerformanceOrchestrator {
     calculateRealtimeScore(realTime) {
         let score = 100;
         if (realTime.api && realTime.api.length > 0) {
-            const avgResponse = realTime.api.reduce((sum, api) => sum + api.averageResponseTime, 0) / realTime.api.length;
+            const avgResponse = realTime.api.reduce((sum, api) => sum + api.averageResponseTime, 0) /
+                realTime.api.length;
             const avgError = realTime.api.reduce((sum, api) => sum + api.errorRate, 0) / realTime.api.length;
             if (avgResponse > 500)
                 score -= 20;
@@ -480,7 +472,7 @@ const configurations = {
         concurrentUsers: 10,
         testDuration: 60,
         enableOptimizations: true,
-        saveResults: true
+        saveResults: true,
     },
     staging: {
         environment: 'staging',
@@ -491,7 +483,7 @@ const configurations = {
         concurrentUsers: 50,
         testDuration: 300,
         enableOptimizations: false,
-        saveResults: true
+        saveResults: true,
     },
     production: {
         environment: 'production',
@@ -502,7 +494,7 @@ const configurations = {
         concurrentUsers: 100,
         testDuration: 600,
         enableOptimizations: false,
-        saveResults: true
+        saveResults: true,
     },
     quick: {
         environment: 'development',
@@ -513,8 +505,8 @@ const configurations = {
         concurrentUsers: 5,
         testDuration: 30,
         enableOptimizations: false,
-        saveResults: true
-    }
+        saveResults: true,
+    },
 };
 async function main() {
     const configName = process.argv[2] || 'development';

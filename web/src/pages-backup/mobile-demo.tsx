@@ -1,15 +1,15 @@
-import React, { useState, useCallback } from 'react'
-import Head from 'next/head'
-import { GetServerSideProps } from 'next'
-import MobileLayout from '@/components/mobile/MobileLayout'
-import { MealCardSkeleton, ProgressiveLoadingSkeleton } from '@/components/mobile/LoadingSkeleton'
-import VirtualScrollList, { VirtualListItem } from '@/components/mobile/VirtualScrollList'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import useMobileLayout from '@/hooks/useMobileLayout'
-import { cn } from '@/lib/utils'
+import React, { useState, useCallback } from 'react';
+import Head from 'next/head';
+import { GetServerSideProps } from 'next';
+import MobileLayout from '@/components/mobile/MobileLayout';
+import { MealCardSkeleton, ProgressiveLoadingSkeleton } from '@/components/mobile/LoadingSkeleton';
+import VirtualScrollList, { VirtualListItem } from '@/components/mobile/VirtualScrollList';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import useMobileLayout from '@/hooks/useMobileLayout';
+import { _cn } from '@/lib/utils';
 import {
   Smartphone,
   Tablet,
@@ -23,12 +23,12 @@ import {
   Eye,
   TouchIcon as Touch,
   Layers,
-  Palette,
-  Box,
+  _Palette,
+  _Box,
   List,
   Grid3x3,
-  Navigation
-} from 'lucide-react'
+  Navigation,
+} from 'lucide-react';
 
 // Mock data for demonstrations
 const mockMeals = Array.from({ length: 100 }, (_, i) => ({
@@ -41,29 +41,29 @@ const mockMeals = Array.from({ length: 100 }, (_, i) => ({
   isVeg: Math.random() > 0.3,
   preparationTime: Math.floor(Math.random() * 30) + 5,
   imageUrl: `/api/placeholder/300/200?meal=${i}`,
-}))
+}));
 
 const mockUser = {
   name: 'Alex Student',
   email: 'alex@school.edu',
   avatar: '/api/placeholder/40/40?user=1',
-  id: 'student-123'
-}
+  id: 'student-123',
+};
 
 interface FeatureCardProps {
-  icon: React.ElementType
-  title: string
-  description: string
-  status: 'implemented' | 'demo' | 'planned'
-  onDemo?: () => void
+  icon: React.ElementType;
+  title: string;
+  description: string;
+  status: 'implemented' | 'demo' | 'planned';
+  onDemo?: () => void;
 }
 
-const FeatureCard: React.FC<FeatureCardProps> = ({ 
-  icon: Icon, 
-  title, 
-  description, 
-  status, 
-  onDemo 
+const FeatureCard: React.FC<FeatureCardProps> = ({
+  icon: Icon,
+  title,
+  description,
+  status,
+  onDemo,
 }) => {
   return (
     <Card className="h-full">
@@ -75,8 +75,10 @@ const FeatureCard: React.FC<FeatureCardProps> = ({
             </div>
             <div>
               <CardTitle className="text-sm">{title}</CardTitle>
-              <Badge 
-                variant={status === 'implemented' ? 'default' : status === 'demo' ? 'secondary' : 'outline'}
+              <Badge
+                variant={
+                  status === 'implemented' ? 'default' : status === 'demo' ? 'secondary' : 'outline'
+                }
                 className="text-xs mt-1"
               >
                 {status}
@@ -94,12 +96,12 @@ const FeatureCard: React.FC<FeatureCardProps> = ({
         )}
       </CardContent>
     </Card>
-  )
-}
+  );
+};
 
 const MobileDemoPage: React.FC = () => {
-  const [selectedTab, setSelectedTab] = useState('overview')
-  const [demoResults, setDemoResults] = useState<string[]>([])
+  const [selectedTab, setSelectedTab] = useState('overview');
+  const [demoResults, setDemoResults] = useState<string[]>([]);
   const {
     isMobile,
     isTablet,
@@ -110,60 +112,62 @@ const MobileDemoPage: React.FC = () => {
     vibrate,
     shareContent,
     enableFullscreen,
-    requestWakeLock
-  } = useMobileLayout()
+    requestWakeLock,
+  } = useMobileLayout();
 
   const addDemoResult = useCallback((result: string) => {
-    setDemoResults(prev => [result, ...prev.slice(0, 4)])
-  }, [])
+    setDemoResults(prev => [result, ...prev.slice(0, 4)]);
+  }, []);
 
   const handleVibrationDemo = useCallback(() => {
-    const success = vibrate([200, 100, 200, 100, 200])
-    addDemoResult(success ? 'Vibration pattern executed' : 'Vibration not supported')
-  }, [vibrate, addDemoResult])
+    const success = vibrate([200, 100, 200, 100, 200]);
+    addDemoResult(success ? 'Vibration pattern executed' : 'Vibration not supported');
+  }, [vibrate, addDemoResult]);
 
   const handleShareDemo = useCallback(async () => {
     try {
       await shareContent({
         title: 'HASIVU Mobile Demo',
         text: 'Check out this awesome mobile food ordering platform!',
-        url: window.location.href
-      })
-      addDemoResult('Content shared successfully')
+        url: window.location.href,
+      });
+      addDemoResult('Content shared successfully');
     } catch (error) {
-      addDemoResult('Share failed or cancelled')
+      addDemoResult('Share failed or cancelled');
     }
-  }, [shareContent, addDemoResult])
+  }, [shareContent, addDemoResult]);
 
   const handleFullscreenDemo = useCallback(async () => {
     try {
-      await enableFullscreen()
-      addDemoResult('Fullscreen mode enabled')
+      await enableFullscreen();
+      addDemoResult('Fullscreen mode enabled');
     } catch (error) {
-      addDemoResult('Fullscreen not supported')
+      addDemoResult('Fullscreen not supported');
     }
-  }, [enableFullscreen, addDemoResult])
+  }, [enableFullscreen, addDemoResult]);
 
   const handleWakeLockDemo = useCallback(async () => {
     try {
-      const wakeLock = await requestWakeLock()
-      addDemoResult(wakeLock ? 'Wake lock acquired' : 'Wake lock not supported')
+      const wakeLock = await requestWakeLock();
+      addDemoResult(wakeLock ? 'Wake lock acquired' : 'Wake lock not supported');
     } catch (error) {
-      addDemoResult('Wake lock failed')
+      addDemoResult('Wake lock failed');
     }
-  }, [requestWakeLock, addDemoResult])
+  }, [requestWakeLock, addDemoResult]);
 
   const features = [
     {
       icon: Smartphone,
       title: 'Bottom Navigation',
-      description: 'Touch-friendly bottom navigation with haptic feedback and role-based menu items.',
+      description:
+        'Touch-friendly bottom navigation with haptic feedback and role-based menu items.',
       status: 'implemented' as const,
     },
     {
       icon: Navigation,
       title: 'Hamburger Menu',
-      description: 'Slide-out navigation with user profile, quick actions, and contextual menu items.',
+      description:
+        'Slide-out navigation with user profile, quick actions, and contextual menu items.',
       status: 'implemented' as const,
     },
     {
@@ -201,7 +205,8 @@ const MobileDemoPage: React.FC = () => {
     {
       icon: Zap,
       title: 'Push Notifications',
-      description: 'Real-time notifications for order updates, payment reminders, and menu changes.',
+      description:
+        'Real-time notifications for order updates, payment reminders, and menu changes.',
       status: 'implemented' as const,
     },
     {
@@ -213,7 +218,8 @@ const MobileDemoPage: React.FC = () => {
     {
       icon: Eye,
       title: 'Loading Skeletons',
-      description: 'Progressive loading states and skeleton screens for better perceived performance.',
+      description:
+        'Progressive loading states and skeleton screens for better perceived performance.',
       status: 'implemented' as const,
     },
     {
@@ -236,21 +242,19 @@ const MobileDemoPage: React.FC = () => {
       status: 'demo' as const,
       onDemo: handleWakeLockDemo,
     },
-  ]
+  ];
 
   return (
     <>
       <Head>
         <title>Mobile Demo - HASIVU Platform</title>
-        <meta name="description" content="Interactive demo of HASIVU mobile features and PWA capabilities" />
+        <meta
+          name="description"
+          content="Interactive demo of HASIVU mobile features and PWA capabilities"
+        />
       </Head>
 
-      <MobileLayout
-        userRole="student"
-        user={mockUser}
-        showBottomNav={true}
-        showHeader={true}
-      >
+      <MobileLayout userRole="student" user={mockUser} showBottomNav={true} showHeader={true}>
         <div className="p-4 space-y-6">
           {/* Device Info Banner */}
           <Card className="bg-gradient-to-r from-primary/10 to-primary/5">
@@ -264,11 +268,12 @@ const MobileDemoPage: React.FC = () => {
                     Device: {isMobile ? 'Mobile' : isTablet ? 'Tablet' : 'Desktop'}
                   </h3>
                   <p className="text-xs text-muted-foreground">
-                    {screenSize.width} × {screenSize.height} • {orientation} • {isTouchDevice ? 'Touch' : 'Mouse'}
+                    {screenSize.width} × {screenSize.height} • {orientation} •{' '}
+                    {isTouchDevice ? 'Touch' : 'Mouse'}
                   </p>
                 </div>
               </div>
-              
+
               {demoResults.length > 0 && (
                 <div className="mt-3 pt-3 border-t">
                   <p className="text-xs font-medium mb-2">Recent Demo Results:</p>
@@ -287,10 +292,18 @@ const MobileDemoPage: React.FC = () => {
           {/* Feature Tabs */}
           <Tabs value={selectedTab} onValueChange={setSelectedTab}>
             <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="overview" className="text-xs">Overview</TabsTrigger>
-              <TabsTrigger value="components" className="text-xs">Components</TabsTrigger>
-              <TabsTrigger value="performance" className="text-xs">Performance</TabsTrigger>
-              <TabsTrigger value="pwa" className="text-xs">PWA</TabsTrigger>
+              <TabsTrigger value="overview" className="text-xs">
+                Overview
+              </TabsTrigger>
+              <TabsTrigger value="components" className="text-xs">
+                Components
+              </TabsTrigger>
+              <TabsTrigger value="performance" className="text-xs">
+                Performance
+              </TabsTrigger>
+              <TabsTrigger value="pwa" className="text-xs">
+                PWA
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="space-y-4">
@@ -317,7 +330,7 @@ const MobileDemoPage: React.FC = () => {
                       initialCount={2}
                       maxCount={4}
                       loadingDelay={800}
-                      renderItem={(index) => <MealCardSkeleton key={index} className="mb-4" />}
+                      renderItem={index => <MealCardSkeleton key={index} className="mb-4" />}
                     />
                   </div>
                 </CardContent>
@@ -347,14 +360,12 @@ const MobileDemoPage: React.FC = () => {
                       items={mockMeals}
                       itemHeight={80}
                       containerHeight={300}
-                      keyExtractor={(item) => item.id}
+                      keyExtractor={item => item.id}
                       renderItem={(meal, index) => (
                         <VirtualListItem key={meal.id} className="border-b last:border-b-0">
                           <div className="flex items-center space-x-3 p-3">
                             <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                              <span className="text-sm font-medium text-primary">
-                                {index + 1}
-                              </span>
+                              <span className="text-sm font-medium text-primary">{index + 1}</span>
                             </div>
                             <div className="flex-1 min-w-0">
                               <h4 className="font-medium text-sm truncate">{meal.name}</h4>
@@ -365,9 +376,7 @@ const MobileDemoPage: React.FC = () => {
                                 <Badge variant="outline" className="text-xs">
                                   {meal.isVeg ? '🌱 Veg' : '🍖 Non-Veg'}
                                 </Badge>
-                                <span className="text-xs text-muted-foreground">
-                                  ₹{meal.price}
-                                </span>
+                                <span className="text-xs text-muted-foreground">₹{meal.price}</span>
                               </div>
                             </div>
                           </div>
@@ -403,7 +412,7 @@ const MobileDemoPage: React.FC = () => {
                         </p>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-start space-x-3">
                       <div className="w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-xs font-medium">
                         2
@@ -415,7 +424,7 @@ const MobileDemoPage: React.FC = () => {
                         </p>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-start space-x-3">
                       <div className="w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-xs font-medium">
                         3
@@ -435,14 +444,14 @@ const MobileDemoPage: React.FC = () => {
         </div>
       </MobileLayout>
     </>
-  )
-}
+  );
+};
 
-export const getServerSideProps: GetServerSideProps = async (context) => {
+export const getServerSideProps: GetServerSideProps = async _context => {
   // Add any server-side data fetching here
   return {
-    props: {}
-  }
-}
+    props: {},
+  };
+};
 
-export default MobileDemoPage
+export default MobileDemoPage;

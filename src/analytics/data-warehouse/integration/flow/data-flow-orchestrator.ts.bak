@@ -1,0 +1,1957 @@
+/**
+ * Data Flow Orchestrator
+ * 
+ * Manages and orchestrates complex data flows between multiple systems
+ * with real-time monitoring, error handling, and performance optimization
+ * 
+ * @author HASIVU Development Team
+ * @version 1.0.0
+ */
+
+import { logger } from '../../../../shared/utils/logger';
+import { EventEmitter } from 'events';
+// Import base ExecutionMetrics and extend it
+import { ExecutionMetrics as BaseExecutionMetrics } from '../../types/etl-types';
+import { DataFlowDefinition, DataFlow } from '../../types/integration-types';
+
+// Flow-specific type definitions
+export interface OrchestratorConfig {
+  maxConcurrentFlows: number;
+  enableScheduling: boolean;
+  metricsInterval: number;
+  healthCheckInterval: number;
+  metricsEnabled: boolean;
+}
+
+export interface FlowMetrics {
+  totalFlows: number;
+  activeFlows: number;
+  completedFlows: number;
+  failedFlows: number;
+  totalRecordsProcessed: number;
+  averageThroughput: number;
+}
+
+export interface Checkpoint {
+  id: string;
+  phase: string;
+  resourceId: string;
+  startTime: Date;
+  endTime?: Date;
+  status: 'running' | 'completed' | 'failed';
+}
+
+export interface FlowError {
+  phase: 'extraction' | 'transformation' | 'loading' | 'execution';
+  sourceId?: string;
+  targetId?: string;
+  error: string;
+  timestamp: Date;
+  retryable: boolean;
+}
+
+export interface DataFlowConfig {
+  id: string;
+  name: string;
+  description: string;
+  source: SourceConnection;
+  target: TargetConnection;
+  transformations: TransformationRule[];
+  enabled: boolean;
+  schedule?: CronSchedule;
+  metadata?: Record<string, any>;
+  executionPolicy: ExecutionPolicy;
+  sourceConnections: SourceConnection[];
+  targetConnections: TargetConnection[];
+}
+
+export interface SourceConnection {
+  id: string;
+  type: 'database' | 'api' | 'file' | 'stream' | 'queue';
+  config: ConnectionParameters;
+  schema: DataSchema;
+  filters: DataFilter[];
+  partitioning: PartitioningStrategy;
+  errorHandling?: ErrorHandlingStrategy;
+}
+
+export interface TargetConnection {
+  id: string;
+  type: 'database' | 'api' | 'file' | 'stream' | 'queue';
+  config: ConnectionParameters;
+  schema: DataSchema;
+  writeMode: 'append' | 'overwrite' | 'upsert' | 'merge';
+  partitioning: PartitioningStrategy;
+  errorHandling?: ErrorHandlingStrategy;
+}
+
+export interface TransformationRule {
+  id: string;
+  name: string;
+  type: 'map' | 'filter' | 'aggregate' | 'join' | 'split' | 'enrich';
+  expression: string;
+  parameters: Record<string, any>;
+  validation: ValidationRule[];
+  errorHandling: ErrorHandlingStrategy;
+}
+
+export interface ExtractedData {
+  sourceId: string;
+  data: any[] | undefined;
+  schema: DataSchema;
+  recordCount: number;
+}
+
+export interface TransformedData {
+  sourceId: string;
+  data: any[] | undefined;
+  transformations: string[];
+  recordCount: number;
+}
+
+// Flow-specific execution metrics extending the base
+export interface FlowExecutionMetrics extends BaseExecutionMetrics {
+  extractionTime: number;
+  transformationTime: number;
+  loadTime: number;
+  totalTime: number;
+  memoryUsage: number;
+  cpuUsage: number;
+}
+
+// Additional type definitions
+export interface RetryConfiguration {
+  maxAttempts: number;
+  backoffStrategy: 'linear' | 'exponential' | 'fixed';
+  initialDelay: number;
+  maxDelay: number;
+  multiplier?: number;
+}
+
+export interface MonitoringConfig {
+  enabled: boolean;
+  metricsInterval: number;
+  alertThresholds: {
+    errorRate: number;
+    throughputMin: number;
+    latencyMax: number;
+  };
+}
+
+export interface SecurityConfig {
+  encryption: boolean;
+  authentication: {
+    enabled: boolean;
+    type: 'api_key' | 'oauth' | 'jwt';
+  };
+  accessControl: {
+    enabled: boolean;
+    roles: string[];
+  };
+}
+
+export interface ConnectionParameters {
+  endpoint: string;
+  host?: string;
+  port?: number;
+  database?: string;
+  username?: string;
+  password?: string;
+  query?: string;
+  method?: string;
+  headers?: Record<string, string>;
+  authentication?: any;
+  filePath?: string;
+  format?: string;
+  encoding?: string;
+  streamType?: string;
+  topic?: string;
+  brokers?: string[];
+  consumerGroup?: string;
+  batchSize?: number;
+  queueType?: string;
+  queueName?: string;
+  connectionString?: string;
+  table?: string;
+  writeMode?: string;
+  streamName?: string;
+  region?: string;
+  queueUrl?: string;
+  credentials?: {
+    username?: string;
+    password?: string;
+    apiKey?: string;
+    token?: string;
+  };
+  timeout: number;
+  retryPolicy: RetryConfiguration;
+}
+
+export interface DataSchema {
+  format: 'json' | 'xml' | 'csv' | 'avro' | 'parquet';
+  fields: {
+    name: string;
+    type: string;
+    required: boolean;
+    description?: string;
+  }[];
+}
+
+export interface DataFilter {
+  field: string;
+  operator: 'eq' | 'ne' | 'gt' | 'gte' | 'lt' | 'lte' | 'in' | 'like';
+  value: any;
+  logicalOperator?: 'and' | 'or';
+}
+
+export interface PartitioningStrategy {
+  enabled: boolean;
+  type: 'time' | 'hash' | 'range';
+  column: string;
+  buckets?: number;
+  interval?: string;
+}
+
+export interface ValidationRule {
+  id: string;
+  name: string;
+  type: 'not_null' | 'unique' | 'range' | 'pattern';
+  field: string;
+  condition: string;
+  parameters?: any;
+  message: string;
+  severity: 'error' | 'warning';
+}
+
+export interface ErrorHandlingStrategy {
+  onError: 'skip' | 'retry' | 'fail' | 'quarantine';
+  maxRetries: number;
+  retryDelay: number;
+  quarantineLocation?: string;
+}
+
+export interface CronSchedule {
+  expression: string;
+  timezone?: string;
+}
+
+export interface TriggerCondition {
+  type: 'data_available' | 'time_based' | 'event';
+  condition: string;
+  parameters?: any;
+}
+
+export interface ParallelismConfig {
+  enabled: boolean;
+  maxParallel: number;
+  partitioningStrategy: 'round_robin' | 'key_based' | 'size_based';
+}
+
+export interface ResourceLimits {
+  maxMemory: string;
+  maxCpu: string;
+  timeout: number;
+  diskSpace: string;
+}
+
+export interface DataTransformation {
+  id: string;
+  name: string;
+  type: 'map' | 'filter' | 'aggregate' | 'join' | 'split' | 'enrich';
+  expression: string;
+  parameters: Record<string, any>;
+  validation: ValidationRule[];
+  errorHandling: ErrorHandlingStrategy;
+}
+
+export interface ExecutionPolicy {
+  type: 'batch' | 'streaming' | 'micro_batch';
+  schedule?: CronSchedule;
+  triggers: TriggerCondition[];
+  parallelism: ParallelismConfig;
+  resourceLimits: ResourceLimits;
+}
+
+export interface DataFlowExecution {
+  id: string;
+  flowId: string;
+  status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
+  startTime: Date;
+  endTime?: Date;
+  processedRecords: number;
+  errorCount: number;
+  throughput: number; // records/second
+  metrics: FlowExecutionMetrics;
+  checkpoints: Checkpoint[];
+  errors: FlowError[];
+}
+
+export class DataFlowOrchestrator extends EventEmitter {
+  private flows: Map<string, DataFlowConfig> = new Map();
+  private executions: Map<string, DataFlowExecution> = new Map();
+  private activeFlows: Set<string> = new Set();
+  private metrics: FlowMetrics = {
+    totalFlows: 0,
+    activeFlows: 0,
+    completedFlows: 0,
+    failedFlows: 0,
+    totalRecordsProcessed: 0,
+    averageThroughput: 0
+  };
+  private schedulerInterval?: NodeJS.Timeout;
+
+  constructor(private config: OrchestratorConfig) {
+    super();
+    this.initializeOrchestrator();
+  }
+
+  private async initializeOrchestrator(): Promise<void> {
+    logger.info('Initializing Data Flow Orchestrator', {
+      maxConcurrentFlows: this.config.maxConcurrentFlows,
+      enableScheduling: this.config.enableScheduling
+    });
+
+    if (this.config.enableScheduling) {
+      this.startScheduler();
+    }
+
+    this.setupMetricsCollection();
+    this.setupHealthMonitoring();
+  }
+
+  /**
+   * Start the flow scheduler for automated execution
+   */
+  private startScheduler(): void {
+    if (this.schedulerInterval) {
+      clearInterval(this.schedulerInterval);
+    }
+
+    this.schedulerInterval = setInterval(async () => {
+      try {
+        await this.processScheduledFlows();
+      } catch (error: unknown) {
+        logger.error('Scheduler error', { error });
+      }
+    }, 60000); // Check every minute
+
+    logger.info('Data flow scheduler started');
+  }
+
+  /**
+   * Process flows that are due for scheduled execution
+   */
+  private async processScheduledFlows(): Promise<void> {
+    const now = new Date();
+    
+    for (const [flowId, flow] of Array.from(this.flows)) {
+      if (this.shouldExecuteScheduledFlow(flow, now)) {
+        try {
+          await this.executeFlow(flowId);
+          logger.info('Scheduled flow executed', { flowId, flowName: flow.name });
+        } catch (error: unknown) {
+          logger.error('Failed to execute scheduled flow', { flowId, error });
+        }
+      }
+    }
+  }
+
+  /**
+   * Check if a flow should be executed based on its schedule
+   */
+  private shouldExecuteScheduledFlow(flow: DataFlowConfig, now: Date): boolean {
+    if (!flow.executionPolicy.schedule || !flow.executionPolicy.schedule.expression) {
+      return false;
+    }
+
+    // Simple cron-like schedule checking - in production, use a proper cron library
+    // This is a simplified implementation for demonstration
+    const scheduleMinutes = this.parseCronExpression(flow.executionPolicy.schedule.expression);
+    const currentMinutes = now.getMinutes();
+    
+    return scheduleMinutes.includes(currentMinutes);
+  }
+
+  /**
+   * Parse cron expression (simplified implementation)
+   */
+  private parseCronExpression(expression: string): number[] {
+    // Very basic cron parsing - in production, use a proper cron library like 'node-cron'
+    const parts = expression.split(' ');
+    if (parts.length >= 1) {
+      const minutes = parts[0];
+      if (minutes === '*') {
+        return Array.from({ length: 60 }, (_, i) => i);
+      } else if (minutes.includes('/')) {
+        const [start, interval] = minutes.split('/').map(Number);
+        const result = [];
+        for (let i = start; i < 60; i += interval) {
+          result.push(i);
+        }
+        return result;
+      } else if (!isNaN(Number(minutes))) {
+        return [Number(minutes)];
+      }
+    }
+    return [];
+  }
+
+  /**
+   * Setup metrics collection for monitoring
+   */
+  private setupMetricsCollection(): void {
+    if (!this.config.metricsEnabled) {
+      return;
+    }
+
+    // Collect metrics every 30 seconds
+    setInterval(() => {
+      this.collectFlowMetrics();
+    }, 30000);
+
+    logger.info('Metrics collection setup completed');
+  }
+
+  /**
+   * Collect flow execution metrics
+   */
+  private collectFlowMetrics(): void {
+    this.metrics.totalFlows = this.flows.size;
+    this.metrics.activeFlows = this.activeFlows.size;
+    
+    // Calculate average throughput
+    let totalThroughput = 0;
+    let completedExecutions = 0;
+    
+    for (const execution of Array.from(this.executions.values())) {
+      if (execution.status === 'completed' && execution.throughput > 0) {
+        totalThroughput += execution.throughput;
+        completedExecutions++;
+      }
+    }
+    
+    this.metrics.averageThroughput = completedExecutions > 0 ? totalThroughput / completedExecutions : 0;
+    
+    logger.debug('Flow metrics collected', this.metrics);
+  }
+
+  /**
+   * Setup health monitoring
+   */
+  private setupHealthMonitoring(): void {
+    // Monitor health every minute
+    setInterval(() => {
+      this.performHealthCheck();
+    }, this.config.healthCheckInterval || 60000);
+
+    logger.info('Health monitoring setup completed');
+  }
+
+  /**
+   * Perform health check on the orchestrator
+   */
+  private performHealthCheck(): void {
+    const unhealthyFlows = [];
+    const now = Date.now();
+    
+    // Check for stuck executions
+    for (const execution of Array.from(this.executions.values())) {
+      if (execution.status === 'running') {
+        const duration = now - execution.startTime.getTime();
+        if (duration > 300000) { // 5 minutes
+          unhealthyFlows.push(execution.id);
+        }
+      }
+    }
+    
+    if (unhealthyFlows.length > 0) {
+      logger.warn('Detected stuck executions', { executionIds: unhealthyFlows });
+    }
+    
+    // Emit health status
+    this.emit('healthCheck', {
+      healthy: unhealthyFlows.length === 0,
+      activeFlows: this.activeFlows.size,
+      totalExecutions: this.executions.size,
+      stuckExecutions: unhealthyFlows.length
+    });
+  }
+
+  /**
+   * Register a new data flow configuration
+   */
+  async registerFlow(flowConfig: DataFlowConfig): Promise<void> {
+    try {
+      // Validate flow configuration
+      await this.validateFlowConfig(flowConfig);
+      
+      // Store flow configuration
+      this.flows.set(flowConfig.id, flowConfig);
+      this.metrics.totalFlows++;
+      
+      logger.info('Data flow registered successfully', {
+        flowId: flowConfig.id,
+        flowName: flowConfig.name,
+        sourceCount: flowConfig.sourceConnections.length,
+        targetCount: flowConfig.targetConnections.length
+      });
+      
+      this.emit('flowRegistered', flowConfig);
+    } catch (error: unknown) {
+      logger.error('Failed to register data flow', {
+        flowId: flowConfig.id,
+        error: (error as Error).message
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Execute a data flow
+   */
+  async executeFlow(flowId: string, parameters?: Record<string, any>): Promise<string> {
+    const flow = this.flows.get(flowId);
+    if (!flow) {
+      throw new Error(`Data flow not found: ${flowId}`);
+    }
+
+    // Check if we've reached the concurrent flow limit
+    if (this.activeFlows.size >= this.config.maxConcurrentFlows) {
+      throw new Error('Maximum concurrent flows limit reached');
+    }
+
+    const executionId = this.generateExecutionId();
+    const execution: DataFlowExecution = {
+      id: executionId,
+      flowId,
+      status: 'pending',
+      startTime: new Date(),
+      processedRecords: 0,
+      errorCount: 0,
+      throughput: 0,
+      metrics: this.initializeExecutionMetrics(),
+      checkpoints: [],
+      errors: []
+    };
+
+    this.executions.set(executionId, execution);
+    this.activeFlows.add(flowId);
+    this.metrics.activeFlows++;
+
+    // Execute flow asynchronously
+    this.executeFlowAsync(execution, flow, parameters || {});
+
+    logger.info('Data flow execution started', {
+      executionId,
+      flowId,
+      flowName: flow.name
+    });
+
+    return executionId;
+  }
+
+  /**
+   * Execute flow asynchronously with full error handling and monitoring
+   */
+  private async executeFlowAsync(
+    execution: DataFlowExecution,
+    flow: DataFlowConfig,
+    parameters: Record<string, any>
+  ): Promise<void> {
+    try {
+      execution.status = 'running';
+      this.emit('executionStarted', execution);
+
+      // Phase 1: Data Extraction
+      const extractedData = await this.extractData(flow.sourceConnections, execution);
+      
+      // Phase 2: Data Transformation
+      const transformedData = await this.transformData(extractedData, flow.transformations, execution);
+      
+      // Phase 3: Data Loading
+      await this.loadData(transformedData, flow.targetConnections, execution);
+      
+      // Complete execution
+      execution.status = 'completed';
+      execution.endTime = new Date();
+      execution.throughput = this.calculateThroughput(execution);
+      
+      this.metrics.completedFlows++;
+      this.metrics.totalRecordsProcessed += execution.processedRecords;
+      this.updateAverageThroughput();
+      
+      logger.info('Data flow execution completed successfully', {
+        executionId: execution.id,
+        flowId: flow.id,
+        processedRecords: execution.processedRecords,
+        duration: execution.endTime.getTime() - execution.startTime.getTime(),
+        throughput: execution.throughput
+      });
+      
+      this.emit('executionCompleted', execution);
+    } catch (error: unknown) {
+      await this.handleExecutionError(execution, flow, error as Error);
+    } finally {
+      this.activeFlows.delete(flow.id);
+      this.metrics.activeFlows--;
+    }
+  }
+
+  /**
+   * Extract data from source connections
+   */
+  private async extractData(
+    sources: SourceConnection[],
+    execution: DataFlowExecution
+  ): Promise<ExtractedData[]> {
+    const results: ExtractedData[] = [];
+    
+    for (const source of sources) {
+      try {
+        const checkpoint = this.createCheckpoint('extraction', source.id);
+        execution.checkpoints.push(checkpoint);
+        
+        let data: any[] | undefined;
+        
+        switch (source.type) {
+          case 'database':
+            data = await this.extractFromDatabase(source);
+            break;
+          case 'api':
+            data = await this.extractFromAPI(source);
+            break;
+          case 'file':
+            data = await this.extractFromFile(source);
+            break;
+          case 'stream':
+            data = await this.extractFromStream(source);
+            break;
+          case 'queue':
+            data = await this.extractFromQueue(source);
+            break;
+          default:
+            throw new Error(`Unsupported source type: ${source.type}`);
+        }
+        
+        // Apply filters
+        const filteredData = this.applyFilters(data, source.filters);
+
+        results.push({
+          sourceId: source.id,
+          data: filteredData,
+          schema: source.schema,
+          recordCount: filteredData?.length || 0
+        });
+
+        execution.processedRecords += filteredData?.length || 0;
+        checkpoint.endTime = new Date();
+        checkpoint.status = 'completed';
+        
+      } catch (error: unknown) {
+        const flowError: FlowError = {
+          phase: 'extraction',
+          sourceId: source.id,
+          error: (error as Error).message,
+          timestamp: new Date(),
+          retryable: this.isRetryableError(error as Error)
+        };
+        
+        execution.errors.push(flowError);
+        execution.errorCount++;
+        
+        if (!this.shouldContinueOnError(source, error as Error)) {
+          throw error;
+        }
+      }
+    }
+    
+    return results;
+  }
+
+  /**
+   * Transform extracted data according to transformation rules
+   */
+  private async transformData(
+    extractedData: ExtractedData[],
+    rules: TransformationRule[],
+    execution: DataFlowExecution
+  ): Promise<TransformedData[]> {
+    const results: TransformedData[] = [];
+    
+    for (const data of extractedData) {
+      try {
+        const checkpoint = this.createCheckpoint('transformation', data.sourceId);
+        execution.checkpoints.push(checkpoint);
+        
+        let transformedRecords = data.data;
+        
+        // Apply each transformation rule
+        for (const rule of rules) {
+          transformedRecords = await this.applyTransformationRule(transformedRecords, rule);
+        }
+        
+        // Validate transformed data
+        const validatedRecords = this.validateTransformedData(transformedRecords, rules);
+        
+        results.push({
+          sourceId: data.sourceId,
+          data: validatedRecords,
+          transformations: rules.map(r => r.id),
+          recordCount: validatedRecords?.length || 0
+        });
+        
+        checkpoint.endTime = new Date();
+        checkpoint.status = 'completed';
+        
+      } catch (error: unknown) {
+        const flowError: FlowError = {
+          phase: 'transformation',
+          sourceId: data.sourceId,
+          error: (error as Error).message,
+          timestamp: new Date(),
+          retryable: this.isRetryableError(error as Error)
+        };
+        
+        execution.errors.push(flowError);
+        execution.errorCount++;
+        
+        throw error;
+      }
+    }
+    
+    return results;
+  }
+
+  /**
+   * Load transformed data to target connections
+   */
+  private async loadData(
+    transformedData: TransformedData[],
+    targets: TargetConnection[],
+    execution: DataFlowExecution
+  ): Promise<void> {
+    for (const target of targets) {
+      try {
+        const checkpoint = this.createCheckpoint('loading', target.id);
+        execution.checkpoints.push(checkpoint);
+        
+        for (const data of transformedData) {
+          switch (target.type) {
+            case 'database':
+              await this.loadToDatabase(data.data, target);
+              break;
+            case 'api':
+              await this.loadToAPI(data.data, target);
+              break;
+            case 'file':
+              await this.loadToFile(data.data, target);
+              break;
+            case 'stream':
+              await this.loadToStream(data.data, target);
+              break;
+            case 'queue':
+              await this.loadToQueue(data.data, target);
+              break;
+            default:
+              throw new Error(`Unsupported target type: ${target.type}`);
+          }
+        }
+        
+        checkpoint.endTime = new Date();
+        checkpoint.status = 'completed';
+        
+      } catch (error: unknown) {
+        const flowError: FlowError = {
+          phase: 'loading',
+          targetId: target.id,
+          error: (error as Error).message,
+          timestamp: new Date(),
+          retryable: this.isRetryableError(error as Error)
+        };
+        
+        execution.errors.push(flowError);
+        execution.errorCount++;
+        
+        throw error;
+      }
+    }
+  }
+
+  /**
+   * Extract data from database source
+   */
+  private async extractFromDatabase(source: SourceConnection): Promise<any[]> {
+    const { host, port, database, username, password, query } = source.config;
+    
+    // Implementation would use appropriate database driver
+    // For PostgreSQL, MySQL, etc.
+    logger.info('Extracting data from database', {
+      sourceId: source.id,
+      database,
+      host
+    });
+    
+    // Simulated database extraction - replace with actual implementation
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        // This would be replaced with actual database query
+        const mockData = Array.from({ length: 1000 }, (_, i) => ({
+          id: i + 1,
+          timestamp: new Date(),
+          value: Math.random() * 100
+        }));
+        resolve(mockData);
+      }, 100);
+    });
+  }
+
+  /**
+   * Extract data from API source
+   */
+  private async extractFromAPI(source: SourceConnection): Promise<any[]> {
+    const { endpoint, method, headers, authentication } = source.config;
+    
+    logger.info('Extracting data from API', {
+      sourceId: source.id,
+      endpoint,
+      method
+    });
+    
+    // Implementation would use HTTP client
+    const axios = require('axios');
+    
+    try {
+      const config: any = {
+        method: method || 'GET',
+        url: endpoint,
+        headers: headers || {},
+        timeout: 30000
+      };
+      
+      if (authentication) {
+        if (authentication.type === 'bearer') {
+          config.headers.Authorization = `Bearer ${authentication.token}`;
+        } else if (authentication.type === 'basic') {
+          config.auth = {
+            username: authentication.username,
+            password: authentication.password
+          };
+        }
+      }
+      
+      const response = await axios(config);
+      return Array.isArray(response.data) ? response.data : [response.data];
+    } catch (error: unknown) {
+      logger.error('API extraction failed', {
+        sourceId: source.id,
+        endpoint,
+        error: (error as Error).message
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Extract data from file source
+   */
+  private async extractFromFile(source: SourceConnection): Promise<any[]> {
+    const { filePath, format, encoding } = source.config;
+    
+    logger.info('Extracting data from file', {
+      sourceId: source.id,
+      filePath,
+      format
+    });
+    
+    const fs = require('fs').promises;
+    const path = require('path');
+    
+    try {
+      const fileContent = await fs.readFile(filePath, encoding || 'utf8');
+      
+      switch (format) {
+        case 'json':
+          const jsonData = JSON.parse(fileContent);
+          return Array.isArray(jsonData) ? jsonData : [jsonData];
+        
+        case 'csv':
+          const csv = require('csv-parser');
+          const results: any[] | undefined = [];
+          
+          return new Promise((resolve, reject) => {
+            require('stream').Readable.from([fileContent])
+              .pipe(csv())
+              .on('data', (data: any) => results.push(data))
+              .on('end', () => resolve(results))
+              .on('error', reject);
+          });
+        
+        case 'xml':
+          const xml2js = require('xml2js');
+          const parser = new xml2js.Parser();
+          const result = await parser.parseStringPromise(fileContent);
+          return [result];
+        
+        default:
+          throw new Error(`Unsupported file format: ${format}`);
+      }
+    } catch (error: unknown) {
+      logger.error('File extraction failed', {
+        sourceId: source.id,
+        filePath,
+        error: (error as Error).message
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Extract data from stream source
+   */
+  private async extractFromStream(source: SourceConnection): Promise<any[]> {
+    const { streamType, topic, brokers, consumerGroup } = source.config;
+    
+    logger.info('Extracting data from stream', {
+      sourceId: source.id,
+      streamType,
+      topic
+    });
+    
+    // Implementation would depend on stream type (Kafka, Kinesis, etc.)
+    if (streamType === 'kafka') {
+      const kafka = require('kafkajs');
+      
+      const client = kafka({
+        clientId: `data-flow-${source.id}`,
+        brokers: brokers || ['localhost:9092']
+      });
+      
+      const consumer = client.consumer({ groupId: consumerGroup || 'data-flow' });
+      
+      await consumer.connect();
+      await consumer.subscribe({ topic });
+      
+      const messages: any[] | undefined = [];
+      
+      return new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          consumer.disconnect();
+          resolve(messages);
+        }, 10000); // 10 second timeout
+        
+        consumer.run({
+          eachMessage: async ({ message }: any) => {
+            try {
+              const data = JSON.parse(message.value?.toString() || '{}');
+              messages.push(data);
+              
+              if (messages.length >= (source.config.batchSize || 100)) {
+                clearTimeout(timeout);
+                await consumer.disconnect();
+                resolve(messages);
+              }
+            } catch (error: unknown) {
+              logger.error('Error processing stream message', { error });
+            }
+          }
+        }).catch(reject);
+      });
+    }
+    
+    throw new Error(`Unsupported stream type: ${streamType}`);
+  }
+
+  /**
+   * Extract data from queue source
+   */
+  private async extractFromQueue(source: SourceConnection): Promise<any[]> {
+    const { queueType, queueName, connectionString } = source.config;
+    
+    logger.info('Extracting data from queue', {
+      sourceId: source.id,
+      queueType,
+      queueName
+    });
+    
+    if (queueType === 'rabbitmq') {
+      const amqp = require('amqplib');
+      
+      try {
+        const connection = await amqp.connect(connectionString);
+        const channel = await connection.createChannel();
+        
+        await channel.assertQueue(queueName, { durable: true });
+        
+        const messages: any[] | undefined = [];
+        const batchSize = source.config.batchSize || 100;
+        
+        for (let i = 0; i < batchSize; i++) {
+          const message = await channel.get(queueName, { noAck: true });
+          if (message) {
+            const data = JSON.parse(message.content.toString());
+            messages.push(data);
+          } else {
+            break; // No more messages
+          }
+        }
+        
+        await connection.close();
+        return messages;
+      } catch (error: unknown) {
+        logger.error('Queue extraction failed', {
+          sourceId: source.id,
+          queueName,
+          error: (error as Error).message
+        });
+        throw error;
+      }
+    }
+    
+    throw new Error(`Unsupported queue type: ${queueType}`);
+  }
+
+  // Additional helper methods and implementations continue...
+  
+  private validateFlowConfig(config: DataFlowConfig): Promise<void> {
+    // Implement comprehensive configuration validation
+    return Promise.resolve();
+  }
+  
+  private generateExecutionId(): string {
+    return `exec_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+  
+  private initializeExecutionMetrics(): FlowExecutionMetrics {
+    return {
+      // Base metrics from BaseExecutionMetrics
+      recordsProcessed: 0,
+      recordsSkipped: 0,
+      recordsFailed: 0,
+      bytesProcessed: 0,
+      throughputRecordsPerSec: 0,
+      // Flow-specific metrics
+      extractionTime: 0,
+      transformationTime: 0,
+      loadTime: 0,
+      totalTime: 0,
+      memoryUsage: 0,
+      cpuUsage: 0
+    };
+  }
+  
+  private createCheckpoint(phase: string, resourceId: string): Checkpoint {
+    return {
+      id: `cp_${Date.now()}_${resourceId}`,
+      phase,
+      resourceId,
+      startTime: new Date(),
+      status: 'running'
+    };
+  }
+  
+  /**
+   * Calculate execution throughput
+   */
+  private calculateThroughput(execution: DataFlowExecution): number {
+    if (!execution.endTime) {
+      return 0;
+    }
+    
+    const durationSeconds = (execution.endTime.getTime() - execution.startTime.getTime()) / 1000;
+    return durationSeconds > 0 ? execution.processedRecords / durationSeconds : 0;
+  }
+
+  /**
+   * Update average throughput metrics
+   */
+  private updateAverageThroughput(): void {
+    let totalThroughput = 0;
+    let completedCount = 0;
+    
+    for (const execution of Array.from(this.executions.values())) {
+      if (execution.status === 'completed' && execution.throughput > 0) {
+        totalThroughput += execution.throughput;
+        completedCount++;
+      }
+    }
+    
+    this.metrics.averageThroughput = completedCount > 0 ? totalThroughput / completedCount : 0;
+  }
+
+  /**
+   * Handle execution errors with retry logic
+   */
+  private async handleExecutionError(
+    execution: DataFlowExecution,
+    flow: DataFlowConfig,
+    error: Error
+  ): Promise<void> {
+    execution.status = 'failed';
+    execution.endTime = new Date();
+    
+    const flowError: FlowError = {
+      phase: 'execution',
+      error: (error instanceof Error ? error.message : String(error)),
+      timestamp: new Date(),
+      retryable: this.isRetryableError(error)
+    };
+    
+    execution.errors.push(flowError);
+    execution.errorCount++;
+    this.metrics.failedFlows++;
+    
+    logger.error('Flow execution failed', {
+      executionId: execution.id,
+      flowId: flow.id,
+      error: (error instanceof Error ? error.message : String(error)),
+      retryable: flowError.retryable
+    });
+    
+    // Implement retry logic if the error is retryable
+    if (flowError.retryable && flow.executionPolicy.resourceLimits.timeout > 0) {
+      // Could implement exponential backoff retry here
+      logger.info('Error is retryable, but retry logic not implemented in this demo');
+    }
+    
+    this.emit('executionFailed', { execution, flow, error });
+  }
+
+  /**
+   * Apply data filters to extracted data
+   */
+  private applyFilters(data: any[] | undefined, filters: DataFilter[]): any[] | undefined {
+    if (!filters || filters.length === 0) {
+      return data;
+    }
+
+    if (!data) {
+      return data;
+    }
+
+    return data.filter(record => {
+      return filters.every(filter => {
+        const value = record[filter.field];
+        
+        switch (filter.operator) {
+          case 'eq':
+            return value === filter.value;
+          case 'ne':
+            return value !== filter.value;
+          case 'gt':
+            return value > filter.value;
+          case 'gte':
+            return value >= filter.value;
+          case 'lt':
+            return value < filter.value;
+          case 'lte':
+            return value <= filter.value;
+          case 'in':
+            return Array.isArray(filter.value) && filter.value.includes(value);
+          case 'like':
+            return typeof value === 'string' && value.includes(filter.value);
+          default:
+            return true;
+        }
+      });
+    });
+  }
+
+  /**
+   * Apply transformation rule to data
+   */
+  private async applyTransformationRule(data: any[] | undefined, rule: TransformationRule): Promise<any[]> {
+    logger.debug('Applying transformation rule', {
+      ruleId: rule.id,
+      ruleType: rule.type,
+      recordCount: data?.length || 0
+    });
+
+    if (!data) {
+      return [];
+    }
+    
+    switch (rule.type) {
+      case 'map':
+        return this.applyMapTransformation(data, rule);
+      case 'filter':
+        return this.applyFilterTransformation(data, rule);
+      case 'aggregate':
+        return this.applyAggregateTransformation(data, rule);
+      case 'join':
+        return this.applyJoinTransformation(data, rule);
+      case 'split':
+        return this.applySplitTransformation(data, rule);
+      case 'enrich':
+        return this.applyEnrichTransformation(data, rule);
+      default:
+        logger.warn('Unsupported transformation type', { type: rule.type });
+        return data;
+    }
+  }
+
+  /**
+   * Apply map transformation
+   */
+  private applyMapTransformation(data: any[] | undefined, rule: TransformationRule): any[] {
+    if (!data) {
+      return [];
+    }
+
+    if (!rule.expression) {
+      return data;
+    }
+
+    try {
+      // In a real implementation, you'd use a secure expression evaluator
+      // This is a simplified demo implementation
+      return data.map(record => {
+        const result = { ...record };
+        
+        // Simple field mapping based on rule parameters
+        if (rule.parameters) {
+          Object.entries(rule.parameters).forEach(([targetField, sourceField]) => {
+            if (typeof sourceField === 'string' && record[sourceField] !== undefined) {
+              result[targetField] = record[sourceField];
+            }
+          });
+        }
+        
+        return result;
+      });
+    } catch (error: unknown) {
+      logger.error('Map transformation failed', { ruleId: rule.id, error });
+      return data;
+    }
+  }
+
+  /**
+   * Apply filter transformation
+   */
+  private applyFilterTransformation(data: any[] | undefined, rule: TransformationRule): any[] {
+    if (!data) {
+      return [];
+    }
+
+    if (!rule.parameters || !rule.parameters.conditions) {
+      return data;
+    }
+
+    const conditions = rule.parameters.conditions as DataFilter[];
+    return this.applyFilters(data, conditions) || [];
+  }
+
+  /**
+   * Apply aggregate transformation
+   */
+  private applyAggregateTransformation(data: any[] | undefined, rule: TransformationRule): any[] {
+    if (!data) {
+      return [];
+    }
+
+    if (!rule.parameters || !rule.parameters.groupBy) {
+      return data;
+    }
+
+    const groupBy = rule.parameters.groupBy as string[];
+    const aggregations = rule.parameters.aggregations || [];
+
+    // Group data by specified fields
+    const grouped = new Map<string, any[]>();
+
+    data.forEach(record => {
+      const key = groupBy.map(field => record[field]).join('|');
+      if (!grouped.has(key)) {
+        grouped.set(key, []);
+      }
+      grouped.get(key)!.push(record);
+    });
+    
+    // Apply aggregations to each group
+    return Array.from(grouped.entries()).map(([key, records]) => {
+      const result: any = {};
+      
+      // Include group-by fields
+      groupBy.forEach((field, index) => {
+        result[field] = key.split('|')[index];
+      });
+      
+      // Apply aggregation functions
+      aggregations.forEach((agg: any) => {
+        const values = records.map(r => r[agg.field]).filter(v => v != null);
+        
+        switch (agg.function) {
+          case 'count':
+            result[agg.alias] = records.length;
+            break;
+          case 'sum':
+            result[agg.alias] = values.reduce((sum, val) => sum + (Number(val) || 0), 0);
+            break;
+          case 'avg':
+            const sum = values.reduce((s, val) => s + (Number(val) || 0), 0);
+            result[agg.alias] = values.length > 0 ? sum / values.length : 0;
+            break;
+          case 'min':
+            result[agg.alias] = values.length > 0 ? Math.min(...values.map(Number)) : null;
+            break;
+          case 'max':
+            result[agg.alias] = values.length > 0 ? Math.max(...values.map(Number)) : null;
+            break;
+        }
+      });
+      
+      return result;
+    });
+  }
+
+  /**
+   * Apply join transformation (simplified implementation)
+   */
+  private applyJoinTransformation(data: any[] | undefined, rule: TransformationRule): any[] {
+    if (!data) {
+      return [];
+    }
+
+    // This would be a complex join implementation in practice
+    // For now, return original data
+    logger.info('Join transformation not fully implemented in demo');
+    return data;
+  }
+
+  /**
+   * Apply split transformation
+   */
+  private applySplitTransformation(data: any[] | undefined, rule: TransformationRule): any[] {
+    if (!data) {
+      return [];
+    }
+
+    // Split records based on rule parameters
+    if (!rule.parameters || !rule.parameters.splitField) {
+      return data;
+    }
+
+    const splitField = rule.parameters.splitField as string;
+    const separator = rule.parameters.separator as string || ',';
+
+    const result: any[] = [];
+
+    data.forEach(record => {
+      const value = record[splitField];
+      if (typeof value === 'string') {
+        const parts = value.split(separator);
+        parts.forEach(part => {
+          result.push({
+            ...record,
+            [splitField]: part.trim()
+          });
+        });
+      } else {
+        result.push(record);
+      }
+    });
+    
+    return result;
+  }
+
+  /**
+   * Apply enrich transformation
+   */
+  private applyEnrichTransformation(data: any[] | undefined, rule: TransformationRule): any[] {
+    if (!data) {
+      return [];
+    }
+
+    // Add enrichment fields based on rule parameters
+    if (!rule.parameters) {
+      return data;
+    }
+
+    return data.map(record => {
+      const enriched = { ...record };
+      
+      // Add timestamp if requested
+      if (rule.parameters.addTimestamp) {
+        enriched.enriched_at = new Date().toISOString();
+      }
+      
+      // Add computed fields
+      if (rule.parameters.computedFields) {
+        Object.entries(rule.parameters.computedFields).forEach(([field, expression]) => {
+          // Simple computed field implementation
+          if (typeof expression === 'string' && expression.includes('+')) {
+            const [field1, field2] = expression.split('+').map(s => s.trim());
+            enriched[field] = (Number(record[field1]) || 0) + (Number(record[field2]) || 0);
+          }
+        });
+      }
+      
+      return enriched;
+    });
+  }
+
+  /**
+   * Validate transformed data
+   */
+  private validateTransformedData(data: any[] | undefined, rules: TransformationRule[]): any[] {
+    if (!data) {
+      return [];
+    }
+
+    // Apply validation rules to transformed data
+    const validData: any[] = [];
+
+    data.forEach(record => {
+      let isValid = true;
+      
+      rules.forEach(rule => {
+        if (rule.validation && rule.validation.length > 0) {
+          rule.validation.forEach(validation => {
+            if (!this.validateRecord(record, validation)) {
+              isValid = false;
+              logger.warn('Record validation failed', {
+                ruleId: rule.id,
+                validation: validation.type,
+                record: record
+              });
+            }
+          });
+        }
+      });
+      
+      if (isValid) {
+        validData.push(record);
+      }
+    });
+    
+    return validData;
+  }
+
+  /**
+   * Validate individual record against validation rule
+   */
+  private validateRecord(record: any, validation: ValidationRule): boolean {
+    switch (validation.type) {
+      case 'not_null':
+        return record[validation.field] != null;
+      case 'unique':
+        // This would require keeping track of seen values in practice
+        return true;
+      case 'range':
+        const value = Number(record[validation.field]);
+        const min = validation.parameters?.min || Number.MIN_SAFE_INTEGER;
+        const max = validation.parameters?.max || Number.MAX_SAFE_INTEGER;
+        return value >= min && value <= max;
+      case 'pattern':
+        const pattern = new RegExp(validation.parameters?.pattern || '.*');
+        return pattern.test(String(record[validation.field]));
+      default:
+        return true;
+    }
+  }
+
+  /**
+   * Check if an error is retryable
+   */
+  private isRetryableError(error: Error): boolean {
+    // Define which errors are retryable
+    const retryableErrors = [
+      'ECONNRESET',
+      'ETIMEDOUT',
+      'ENOTFOUND',
+      'ECONNREFUSED',
+      'NETWORK_ERROR',
+      'TEMPORARY_FAILURE'
+    ];
+    
+    return retryableErrors.some(retryable => 
+      (error instanceof Error ? error.message : String(error)).includes(retryable) || error.name.includes(retryable)
+    );
+  }
+
+  /**
+   * Check if execution should continue on error
+   */
+  private shouldContinueOnError(connection: SourceConnection | TargetConnection, error: Error): boolean {
+    // Check error handling strategy
+    const strategy = connection.errorHandling?.onError || 'fail';
+    
+    switch (strategy) {
+      case 'skip':
+        return true;
+      case 'retry':
+        return this.isRetryableError(error);
+      case 'fail':
+      case 'quarantine':
+      default:
+        return false;
+    }
+  }
+
+  /**
+   * Load data to database target
+   */
+  private async loadToDatabase(data: any[] | undefined, target: TargetConnection): Promise<void> {
+    if (!data) {
+      logger.info('No data to load to database', { targetId: target.id });
+      return;
+    }
+
+    const { host, port, database, table, writeMode } = target.config;
+
+    logger.info('Loading data to database', {
+      targetId: target.id,
+      database,
+      table,
+      recordCount: data.length,
+      writeMode
+    });
+
+    // In a real implementation, this would use appropriate database driver
+    // For PostgreSQL, MySQL, etc.
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        logger.info('Database load completed', {
+          targetId: target.id,
+          recordsLoaded: data.length
+        });
+        resolve();
+      }, 200);
+    });
+  }
+
+  /**
+   * Load data to API target
+   */
+  private async loadToAPI(data: any[] | undefined, target: TargetConnection): Promise<void> {
+    if (!data) {
+      logger.info('No data to load to API', { targetId: target.id });
+      return;
+    }
+
+    const { endpoint, method, headers } = target.config;
+
+    logger.info('Loading data to API', {
+      targetId: target.id,
+      endpoint,
+      method: method || 'POST',
+      recordCount: data.length
+    });
+
+    try {
+      // Simulate API calls in batches
+      const batchSize = target.config.batchSize || 100;
+      const batches = [];
+
+      for (let i = 0; i < data.length; i += batchSize) {
+        batches.push(data.slice(i, i + batchSize));
+      }
+
+      for (const batch of batches) {
+        await this.sendBatchToAPI(batch, target);
+
+        // Small delay between batches to avoid overwhelming the API
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
+      logger.info('API load completed', {
+        targetId: target.id,
+        batchCount: batches.length,
+        recordsLoaded: data.length
+      });
+    } catch (error: unknown) {
+      logger.error('API load failed', {
+        targetId: target.id,
+        error: (error as Error).message
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Send batch of data to API endpoint
+   */
+  private async sendBatchToAPI(batch: any[] | undefined, target: TargetConnection): Promise<void> {
+    // Simulate HTTP request
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        // Simulate occasional API failures
+        if (Math.random() < 0.05) { // 5% failure rate
+          reject(new Error('API_TEMPORARY_FAILURE'));
+        } else {
+          resolve();
+        }
+      }, 50);
+    });
+  }
+
+  /**
+   * Load data to file target
+   */
+  private async loadToFile(data: any[] | undefined, target: TargetConnection): Promise<void> {
+    if (!data) {
+      logger.info('No data to load to file', { targetId: target.id });
+      return;
+    }
+
+    const { filePath, format } = target.config;
+
+    logger.info('Loading data to file', {
+      targetId: target.id,
+      filePath,
+      format: format || 'json',
+      recordCount: data.length
+    });
+
+    try {
+      let content: string;
+
+      switch (format) {
+        case 'csv':
+          content = this.convertToCSV(data);
+          break;
+        case 'json':
+        default:
+          content = JSON.stringify(data, null, 2);
+          break;
+      }
+
+      // In a real implementation, this would write to the file system
+      // For now, just simulate the file write
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      logger.info('File load completed', {
+        targetId: target.id,
+        filePath,
+        recordsLoaded: data.length,
+        fileSize: content.length
+      });
+    } catch (error: unknown) {
+      logger.error('File load failed', {
+        targetId: target.id,
+        error: (error as Error).message
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Convert data to CSV format
+   */
+  private convertToCSV(data: any[] | undefined): string {
+    if (!data || data.length === 0) {
+      return '';
+    }
+
+    const headers = Object.keys(data[0]);
+    const csvRows = [headers.join(',')];
+
+    data.forEach(row => {
+      const values = headers.map(header => {
+        const value = row[header];
+        // Escape commas and quotes in CSV
+        if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
+          return `"${value.replace(/"/g, '""')}"`;
+        }
+        return value;
+      });
+      csvRows.push(values.join(','));
+    });
+
+    return csvRows.join('\n');
+  }
+
+  /**
+   * Load data to stream target
+   */
+  private async loadToStream(data: any[] | undefined, target: TargetConnection): Promise<void> {
+    if (!data) {
+      logger.info('No data to load to stream', { targetId: target.id });
+      return;
+    }
+
+    const { streamType, topic, brokers } = target.config;
+
+    logger.info('Loading data to stream', {
+      targetId: target.id,
+      streamType,
+      topic,
+      recordCount: data.length
+    });
+
+    switch (streamType) {
+      case 'kafka':
+        await this.loadToKafkaStream(data, target);
+        break;
+      case 'kinesis':
+        await this.loadToKinesisStream(data, target);
+        break;
+      default:
+        throw new Error(`Unsupported stream type: ${streamType}`);
+    }
+  }
+
+  /**
+   * Load data to Kafka stream
+   */
+  private async loadToKafkaStream(data: any[] | undefined, target: TargetConnection): Promise<void> {
+    if (!data) {
+      logger.info('No data to load to Kafka stream', { targetId: target.id });
+      return;
+    }
+
+    const { topic, brokers } = target.config;
+
+    try {
+      // In a real implementation, this would use kafkajs or similar
+      logger.info('Kafka stream load simulation', {
+        targetId: target.id,
+        topic,
+        brokers,
+        recordCount: data.length
+      });
+
+      // Simulate streaming data to Kafka
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      logger.info('Kafka stream load completed', {
+        targetId: target.id,
+        recordsStreamed: data.length
+      });
+    } catch (error: unknown) {
+      logger.error('Kafka stream load failed', {
+        targetId: target.id,
+        error: (error as Error).message
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Load data to Kinesis stream
+   */
+  private async loadToKinesisStream(data: any[] | undefined, target: TargetConnection): Promise<void> {
+    if (!data) {
+      logger.info('No data to load to Kinesis stream', { targetId: target.id });
+      return;
+    }
+
+    const { streamName, region } = target.config;
+
+    try {
+      logger.info('Kinesis stream load simulation', {
+        targetId: target.id,
+        streamName,
+        region,
+        recordCount: data.length
+      });
+
+      // Simulate streaming data to Kinesis
+      await new Promise(resolve => setTimeout(resolve, 250));
+
+      logger.info('Kinesis stream load completed', {
+        targetId: target.id,
+        recordsStreamed: data.length
+      });
+    } catch (error: unknown) {
+      logger.error('Kinesis stream load failed', {
+        targetId: target.id,
+        error: (error as Error).message
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Load data to queue target
+   */
+  private async loadToQueue(data: any[] | undefined, target: TargetConnection): Promise<void> {
+    if (!data) {
+      logger.info('No data to load to queue', { targetId: target.id });
+      return;
+    }
+
+    const { queueType, queueName, connectionString } = target.config;
+
+    logger.info('Loading data to queue', {
+      targetId: target.id,
+      queueType,
+      queueName,
+      recordCount: data.length
+    });
+
+    switch (queueType) {
+      case 'rabbitmq':
+        await this.loadToRabbitMQQueue(data, target);
+        break;
+      case 'sqs':
+        await this.loadToSQSQueue(data, target);
+        break;
+      default:
+        throw new Error(`Unsupported queue type: ${queueType}`);
+    }
+  }
+
+  /**
+   * Load data to RabbitMQ queue
+   */
+  private async loadToRabbitMQQueue(data: any[] | undefined, target: TargetConnection): Promise<void> {
+    if (!data) {
+      logger.info('No data to load to RabbitMQ queue', { targetId: target.id });
+      return;
+    }
+
+    const { queueName, connectionString } = target.config;
+
+    try {
+      logger.info('RabbitMQ queue load simulation', {
+        targetId: target.id,
+        queueName,
+        recordCount: data.length
+      });
+
+      // In a real implementation, this would use amqplib
+      // Simulate sending messages to RabbitMQ
+      await new Promise(resolve => setTimeout(resolve, 200));
+
+      logger.info('RabbitMQ queue load completed', {
+        targetId: target.id,
+        messagesQueued: data.length
+      });
+    } catch (error: unknown) {
+      logger.error('RabbitMQ queue load failed', {
+        targetId: target.id,
+        error: (error as Error).message
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Load data to SQS queue
+   */
+  private async loadToSQSQueue(data: any[] | undefined, target: TargetConnection): Promise<void> {
+    if (!data) {
+      logger.info('No data to load to SQS queue', { targetId: target.id });
+      return;
+    }
+
+    const { queueUrl, region } = target.config;
+
+    try {
+      logger.info('SQS queue load simulation', {
+        targetId: target.id,
+        queueUrl,
+        region,
+        recordCount: data.length
+      });
+
+      // In a real implementation, this would use AWS SDK
+      // Simulate sending messages to SQS
+      await new Promise(resolve => setTimeout(resolve, 150));
+
+      logger.info('SQS queue load completed', {
+        targetId: target.id,
+        messagesQueued: data.length
+      });
+    } catch (error: unknown) {
+      logger.error('SQS queue load failed', {
+        targetId: target.id,
+        error: (error as Error).message
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Get flow execution status
+   */
+  public getExecutionStatus(executionId: string): DataFlowExecution | undefined {
+    return this.executions.get(executionId);
+  }
+
+  /**
+   * Get all executions for a flow
+   */
+  public getFlowExecutions(flowId: string): DataFlowExecution[] {
+    return Array.from(this.executions.values()).filter(exec => exec.flowId === flowId);
+  }
+
+  /**
+   * Get current metrics
+   */
+  public getMetrics(): FlowMetrics {
+    return { ...this.metrics };
+  }
+
+  /**
+   * Stop a running execution
+   */
+  public async stopExecution(executionId: string): Promise<void> {
+    const execution = this.executions.get(executionId);
+    if (execution && execution.status === 'running') {
+      execution.status = 'cancelled';
+      execution.endTime = new Date();
+      
+      logger.info('Execution stopped', { executionId });
+      this.emit('executionStopped', execution);
+    }
+  }
+
+  /**
+   * Clean up completed executions
+   */
+  public cleanupCompletedExecutions(maxAge: number = 24 * 60 * 60 * 1000): void {
+    const cutoffTime = Date.now() - maxAge;
+    const toDelete: string[] = [];
+    
+    for (const [id, execution] of Array.from(this.executions.entries())) {
+      if (execution.endTime && execution.endTime.getTime() < cutoffTime) {
+        toDelete.push(id);
+      }
+    }
+    
+    toDelete.forEach(id => this.executions.delete(id));
+    
+    if (toDelete.length > 0) {
+      logger.info('Cleaned up completed executions', { count: toDelete.length });
+    }
+  }
+
+  /**
+   * Shutdown the orchestrator
+   */
+  public async shutdown(): Promise<void> {
+    if (this.schedulerInterval) {
+      clearInterval(this.schedulerInterval);
+    }
+    
+    // Wait for active flows to complete or force stop them
+    const activeExecutions = Array.from(this.executions.values())
+      .filter(exec => exec.status === 'running');
+    
+    if (activeExecutions.length > 0) {
+      logger.info('Waiting for active executions to complete', {
+        count: activeExecutions.length
+      });
+      
+      // Give them 30 seconds to complete, then force stop
+      await new Promise(resolve => setTimeout(resolve, 30000));
+      
+      for (const execution of activeExecutions) {
+        if (execution.status === 'running') {
+          await this.stopExecution(execution.id);
+        }
+      }
+    }
+    
+    this.flows.clear();
+    this.executions.clear();
+    this.activeFlows.clear();
+    
+    logger.info('Data Flow Orchestrator shut down complete');
+  }
+}
+
+// All necessary types are defined above or imported from the respective modules
+
+export default DataFlowOrchestrator;

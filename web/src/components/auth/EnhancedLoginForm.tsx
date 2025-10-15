@@ -19,7 +19,14 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSocket } from '@/hooks/useSocket';
 import { cn } from '@/lib/utils';
@@ -80,20 +87,18 @@ export function EnhancedLoginForm({
     try {
       clearError();
       const result = await login(data);
-      
+
       setIsSuccess(true);
       onLoginSuccess?.(result.user);
-      
+
       // Small delay to show success state
       setTimeout(() => {
-        const redirectUrl = redirectTo || router.query.redirect as string || '/dashboard';
+        const redirectUrl = redirectTo || (router.query.redirect as string) || '/dashboard';
         router.push(redirectUrl);
       }, 1000);
-      
     } catch (error: any) {
       // Error is handled by AuthContext and displayed via error state
-      console.error('Login failed:', error);
-      
+
       // Reset form on certain errors
       if (error?.code === 'INVALID_CREDENTIALS') {
         form.reset({
@@ -111,7 +116,6 @@ export function EnhancedLoginForm({
 
   const handleSocialLogin = async (provider: 'google' | 'facebook') => {
     // TODO: Implement social login when backend supports it
-    console.log(`Social login with ${provider} - not yet implemented`);
   };
 
   return (
@@ -120,9 +124,7 @@ export function EnhancedLoginForm({
         <div className="mx-auto w-16 h-16 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center mb-4 shadow-lg">
           <LogIn className="w-8 h-8 text-white" />
         </div>
-        <CardTitle className="text-2xl font-bold text-gray-900">
-          Welcome Back to HASIVU
-        </CardTitle>
+        <CardTitle className="text-2xl font-bold text-gray-900">Welcome Back to HASIVU</CardTitle>
         <CardDescription className="text-gray-600">
           Sign in to order delicious school meals and track your orders in real-time
         </CardDescription>
@@ -158,10 +160,7 @@ export function EnhancedLoginForm({
               {error.includes('credentials') && (
                 <div className="mt-2 text-sm">
                   Please check your email and password, or{' '}
-                  <Link
-                    href="/auth/forgot-password"
-                    className="underline hover:no-underline"
-                  >
+                  <Link href="/auth/forgot-password" className="underline hover:no-underline">
                     reset your password
                   </Link>
                 </div>
@@ -178,9 +177,7 @@ export function EnhancedLoginForm({
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-sm font-medium text-gray-700">
-                    Email Address
-                  </FormLabel>
+                  <FormLabel className="text-sm font-medium text-gray-700">Email Address</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -211,9 +208,7 @@ export function EnhancedLoginForm({
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-sm font-medium text-gray-700">
-                    Password
-                  </FormLabel>
+                  <FormLabel className="text-sm font-medium text-gray-700">Password</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -289,8 +284,8 @@ export function EnhancedLoginForm({
               type="submit"
               className={cn(
                 'w-full h-12 text-base font-medium transition-all duration-200',
-                isSuccess 
-                  ? 'bg-green-600 hover:bg-green-600' 
+                isSuccess
+                  ? 'bg-green-600 hover:bg-green-600'
                   : 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600'
               )}
               disabled={isLoading || isSuccess || !form.formState.isValid}
@@ -330,7 +325,7 @@ export function EnhancedLoginForm({
             <div className="grid grid-cols-2 gap-3">
               <Button
                 variant="outline"
-                onClick={() => handleSocialLogin("google")}
+                onClick={() => handleSocialLogin('google')}
                 disabled={isLoading || isSuccess}
                 className="h-11 border-gray-300 text-gray-700 hover:bg-gray-50"
               >
@@ -357,7 +352,7 @@ export function EnhancedLoginForm({
 
               <Button
                 variant="outline"
-                onClick={() => handleSocialLogin("facebook")}
+                onClick={() => handleSocialLogin('facebook')}
                 disabled={isLoading || isSuccess}
                 className="h-11 border-gray-300 text-gray-700 hover:bg-gray-50"
               >
@@ -398,7 +393,7 @@ export function EnhancedLoginForm({
                 Privacy Policy
               </Link>
             </p>
-            
+
             {/* Security and Features Indicators */}
             <div className="flex items-center justify-center space-x-4 text-xs text-gray-500">
               <div className="flex items-center space-x-1">
@@ -406,10 +401,12 @@ export function EnhancedLoginForm({
                 <span>Secure Login</span>
               </div>
               <div className="flex items-center space-x-1">
-                <div className={cn(
-                  'w-2 h-2 rounded-full',
-                  connectionState === 'connected' ? 'bg-green-500' : 'bg-yellow-500'
-                )}></div>
+                <div
+                  className={cn(
+                    'w-2 h-2 rounded-full',
+                    connectionState === 'connected' ? 'bg-green-500' : 'bg-yellow-500'
+                  )}
+                ></div>
                 <span>Real-time Orders</span>
               </div>
               <div className="flex items-center space-x-1">

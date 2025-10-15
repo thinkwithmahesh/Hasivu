@@ -16,10 +16,10 @@ import { test, expect, Page } from '@playwright/test';
  * - Refund and cancellation flows
  */
 
-test.describe('P0 Critical Order Lifecycle Tests @critical @p0 @orders', () => {
+test.describe(_'P0 Critical Order Lifecycle Tests @critical @p0 @orders', _() => {
   
   // Test data setup
-  const testUser = {
+  const _testUser =  {
     student: {
       id: 'STU-001',
       email: 'student@hasivu.test',
@@ -42,7 +42,7 @@ test.describe('P0 Critical Order Lifecycle Tests @critical @p0 @orders', () => {
     }
   };
 
-  const testMenu = {
+  const _testMenu =  {
     breakfast: {
       id: 'MENU-001',
       name: 'South Indian Breakfast',
@@ -57,31 +57,16 @@ test.describe('P0 Critical Order Lifecycle Tests @critical @p0 @orders', () => {
     }
   };
 
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(_async ({ page }) => {
     // Mock authentication API
-    await page.route('**/auth/login', async route => {
-      const request = route.request();
-      const postData = JSON.parse(request.postData() || '{}');
+    await page.route('**/auth/login', async _route = > {
+      const request 
+      const _postData =  JSON.parse(request.postData() || '{}');
       
       let responseData;
-      if (postData.role === 'student') {
-        responseData = {
-          success: true,
-          user: testUser.student,
-          token: 'mock-student-jwt-token'
-        };
-      } else if (postData.role === 'parent') {
-        responseData = {
-          success: true,
-          user: testUser.parent,
-          token: 'mock-parent-jwt-token'
-        };
-      } else if (postData.role === 'kitchen') {
-        responseData = {
-          success: true,
-          user: testUser.kitchen,
-          token: 'mock-kitchen-jwt-token'
-        };
+      if (postData._role = 
+      } else if (postData._role = 
+      } else if (postData._role = 
       }
       
       await route.fulfill({
@@ -92,7 +77,7 @@ test.describe('P0 Critical Order Lifecycle Tests @critical @p0 @orders', () => {
     });
 
     // Mock menu API
-    await page.route('**/api/menu/today', async route => {
+    await page.route('**/api/menu/today', async _route = > {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -105,54 +90,54 @@ test.describe('P0 Critical Order Lifecycle Tests @critical @p0 @orders', () => {
     });
   });
 
-  test.describe('Complete Order Flow - Student Initiated', () => {
+  test.describe(_'Complete Order Flow - Student Initiated', _() => {
     
-    test('student complete order lifecycle @p0 @smoke @student', async ({ page }) => {
+    test(_'student complete order lifecycle @p0 @smoke @student', _async ({ page }) => {
       // 1. STUDENT LOGIN
       await page.goto('/auth/login');
-      await page.locator('[data-testid="role-tab-student"]').click();
-      await page.locator('[data-testid="email-input"]').fill(testUser.student.email);
-      await page.locator('[data-testid="password-input"]').fill('password123');
-      await page.locator('[data-testid="login-button"]').click();
+      await page.locator('[data-_testid = "role-tab-student"]').click();
+      await page.locator('[data-_testid = "email-input"]').fill(testUser.student.email);
+      await page.locator('[data-_testid = "password-input"]').fill('password123');
+      await page.locator('[data-_testid = "login-button"]').click();
       
       // Wait for dashboard
-      await expect(page.locator('[data-testid="student-dashboard"]')).toBeVisible();
-      await expect(page.locator('[data-testid="meal-balance"]')).toContainText('₹150.00');
+      await expect(page.locator('[data-_testid = "student-dashboard"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "meal-balance"]')).toContainText('₹150.00');
 
       // 2. ORDER CREATION - Browse menu and create order
-      await page.click('[data-testid="order-meal-button"]');
-      await expect(page.locator('[data-testid="today-menu"]')).toBeVisible();
+      await page.click('[data-_testid = "order-meal-button"]');
+      await expect(page.locator('[data-_testid = "today-menu"]')).toBeVisible();
       
       // Select breakfast
-      const breakfastCard = page.locator('[data-testid="menu-card-MENU-001"]');
+      const _breakfastCard =  page.locator('[data-testid
       await expect(breakfastCard).toBeVisible();
-      await expect(breakfastCard.locator('[data-testid="menu-name"]')).toContainText('South Indian Breakfast');
-      await expect(breakfastCard.locator('[data-testid="menu-price"]')).toContainText('₹45.00');
+      await expect(breakfastCard.locator('[data-_testid = "menu-name"]')).toContainText('South Indian Breakfast');
+      await expect(breakfastCard.locator('[data-_testid = "menu-price"]')).toContainText('₹45.00');
       
-      await breakfastCard.locator('[data-testid="add-to-cart-button"]').click();
+      await breakfastCard.locator('[data-_testid = "add-to-cart-button"]').click();
       
       // Customize order
-      await expect(page.locator('[data-testid="customization-modal"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "customization-modal"]')).toBeVisible();
       await page.locator('[data-testid="idli-quantity"]').fill('4'); // Extra idli
-      await page.locator('[data-testid="spice-level-medium"]').check();
-      await page.locator('[data-testid="special-instructions"]').fill('Extra sambar please');
-      await page.locator('[data-testid="confirm-customization"]').click();
+      await page.locator('[data-_testid = "spice-level-medium"]').check();
+      await page.locator('[data-_testid = "special-instructions"]').fill('Extra sambar please');
+      await page.locator('[data-_testid = "confirm-customization"]').click();
       
       // Verify cart
-      await expect(page.locator('[data-testid="cart-items"]')).toContainText('1');
+      await expect(page.locator('[data-_testid = "cart-items"]')).toContainText('1');
       await expect(page.locator('[data-testid="cart-total"]')).toContainText('₹50.00'); // +₹5 for extra idli
       
-      await page.click('[data-testid="proceed-to-checkout"]');
+      await page.click('[data-_testid = "proceed-to-checkout"]');
 
       // 3. PAYMENT PROCESSING
-      await expect(page.locator('[data-testid="checkout-page"]')).toBeVisible();
-      await expect(page.locator('[data-testid="order-summary"]')).toContainText('South Indian Breakfast');
-      await expect(page.locator('[data-testid="total-amount"]')).toContainText('₹50.00');
+      await expect(page.locator('[data-_testid = "checkout-page"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "order-summary"]')).toContainText('South Indian Breakfast');
+      await expect(page.locator('[data-_testid = "total-amount"]')).toContainText('₹50.00');
       
       // Mock order creation API
-      await page.route('**/api/orders/create', async route => {
-        const request = route.request();
-        const orderData = JSON.parse(request.postData() || '{}');
+      await page.route('**/api/orders/create', async _route = > {
+        const request 
+        const _orderData =  JSON.parse(request.postData() || '{}');
         
         await route.fulfill({
           status: 200,
@@ -178,7 +163,7 @@ test.describe('P0 Critical Order Lifecycle Tests @critical @p0 @orders', () => {
       });
       
       // Mock RFID wallet payment
-      await page.route('**/api/payments/rfid-wallet/charge', async route => {
+      await page.route('**/api/payments/rfid-wallet/charge', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -195,20 +180,20 @@ test.describe('P0 Critical Order Lifecycle Tests @critical @p0 @orders', () => {
       });
       
       // Select RFID wallet payment
-      await page.locator('[data-testid="payment-method-rfid"]').check();
-      await page.locator('[data-testid="confirm-payment-button"]').click();
+      await page.locator('[data-_testid = "payment-method-rfid"]').check();
+      await page.locator('[data-_testid = "confirm-payment-button"]').click();
       
       // Verify payment success
-      await expect(page.locator('[data-testid="payment-success"]')).toBeVisible();
-      await expect(page.locator('[data-testid="order-id"]')).toContainText('ORD-12345');
-      await expect(page.locator('[data-testid="updated-balance"]')).toContainText('₹100.00');
+      await expect(page.locator('[data-_testid = "payment-success"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "order-id"]')).toContainText('ORD-12345');
+      await expect(page.locator('[data-_testid = "updated-balance"]')).toContainText('₹100.00');
       
       // 4. ORDER CONFIRMATION & TRACKING
-      await page.click('[data-testid="track-order-button"]');
-      await expect(page.locator('[data-testid="order-tracking"]')).toBeVisible();
+      await page.click('[data-_testid = "track-order-button"]');
+      await expect(page.locator('[data-_testid = "order-tracking"]')).toBeVisible();
       
       // Mock order status API for real-time tracking
-      await page.route('**/api/orders/ORD-12345/status', async route => {
+      await page.route('**/api/orders/ORD-12345/status', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -233,30 +218,30 @@ test.describe('P0 Critical Order Lifecycle Tests @critical @p0 @orders', () => {
       });
       
       // Verify order status
-      await expect(page.locator('[data-testid="order-status"]')).toContainText('confirmed');
-      await expect(page.locator('[data-testid="estimated-delivery"]')).toContainText('25');
-      await expect(page.locator('[data-testid="stage-payment_confirmed"]')).toHaveClass(/completed/);
-      await expect(page.locator('[data-testid="stage-kitchen_accepted"]')).toHaveClass(/pending/);
+      await expect(page.locator('[data-_testid = "order-status"]')).toContainText('confirmed');
+      await expect(page.locator('[data-_testid = "estimated-delivery"]')).toContainText('25');
+      await expect(page.locator('[data-_testid = "stage-payment_confirmed"]')).toHaveClass(/completed/);
+      await expect(page.locator('[data-_testid = "stage-kitchen_accepted"]')).toHaveClass(/pending/);
       
       // Store order ID for kitchen workflow test
-      await page.evaluate(() => {
+      await page.evaluate(_() => {
         sessionStorage.setItem('test_order_id', 'ORD-12345');
       });
     });
 
-    test('kitchen fulfillment workflow @p0 @kitchen @fulfillment', async ({ page }) => {
+    test(_'kitchen fulfillment workflow @p0 @kitchen @fulfillment', _async ({ page }) => {
       // 5. KITCHEN FULFILLMENT WORKFLOW
       await page.goto('/auth/login');
-      await page.locator('[data-testid="role-tab-kitchen"]').click();
-      await page.locator('[data-testid="email-input"]').fill(testUser.kitchen.email);
-      await page.locator('[data-testid="password-input"]').fill('password123');
-      await page.locator('[data-testid="login-button"]').click();
+      await page.locator('[data-_testid = "role-tab-kitchen"]').click();
+      await page.locator('[data-_testid = "email-input"]').fill(testUser.kitchen.email);
+      await page.locator('[data-_testid = "password-input"]').fill('password123');
+      await page.locator('[data-_testid = "login-button"]').click();
       
       // Wait for kitchen dashboard
-      await expect(page.locator('[data-testid="kitchen-dashboard"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "kitchen-dashboard"]')).toBeVisible();
       
       // Mock pending orders API
-      await page.route('**/api/kitchen/orders/pending', async route => {
+      await page.route('**/api/kitchen/orders/pending', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -286,17 +271,17 @@ test.describe('P0 Critical Order Lifecycle Tests @critical @p0 @orders', () => {
       });
       
       // View pending orders
-      await expect(page.locator('[data-testid="pending-orders-count"]')).toContainText('1');
-      await page.click('[data-testid="pending-orders-tab"]');
+      await expect(page.locator('[data-_testid = "pending-orders-count"]')).toContainText('1');
+      await page.click('[data-_testid = "pending-orders-tab"]');
       
       // Find and accept order
-      const orderCard = page.locator('[data-testid="order-card-ORD-12345"]');
+      const _orderCard =  page.locator('[data-testid
       await expect(orderCard).toBeVisible();
-      await expect(orderCard.locator('[data-testid="student-name"]')).toContainText(testUser.student.name);
-      await expect(orderCard.locator('[data-testid="special-instructions"]')).toContainText('Extra sambar please');
+      await expect(orderCard.locator('[data-_testid = "student-name"]')).toContainText(testUser.student.name);
+      await expect(orderCard.locator('[data-_testid = "special-instructions"]')).toContainText('Extra sambar please');
       
       // Mock kitchen acceptance API
-      await page.route('**/api/kitchen/orders/ORD-12345/accept', async route => {
+      await page.route('**/api/kitchen/orders/ORD-12345/accept', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -312,11 +297,11 @@ test.describe('P0 Critical Order Lifecycle Tests @critical @p0 @orders', () => {
         });
       });
       
-      await orderCard.locator('[data-testid="accept-order-button"]').click();
-      await expect(page.locator('[data-testid="order-accepted-toast"]')).toBeVisible();
+      await orderCard.locator('[data-_testid = "accept-order-button"]').click();
+      await expect(page.locator('[data-_testid = "order-accepted-toast"]')).toBeVisible();
       
       // Mark as preparing
-      await page.route('**/api/kitchen/orders/ORD-12345/prepare', async route => {
+      await page.route('**/api/kitchen/orders/ORD-12345/prepare', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -331,11 +316,11 @@ test.describe('P0 Critical Order Lifecycle Tests @critical @p0 @orders', () => {
         });
       });
       
-      await orderCard.locator('[data-testid="start-preparation-button"]').click();
-      await expect(orderCard.locator('[data-testid="order-status"]')).toContainText('Preparing');
+      await orderCard.locator('[data-_testid = "start-preparation-button"]').click();
+      await expect(orderCard.locator('[data-_testid = "order-status"]')).toContainText('Preparing');
       
       // Mark as ready for pickup
-      await page.route('**/api/kitchen/orders/ORD-12345/ready', async route => {
+      await page.route('**/api/kitchen/orders/ORD-12345/ready', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -351,67 +336,54 @@ test.describe('P0 Critical Order Lifecycle Tests @critical @p0 @orders', () => {
         });
       });
       
-      await orderCard.locator('[data-testid="mark-ready-button"]').click();
-      await expect(page.locator('[data-testid="order-ready-toast"]')).toBeVisible();
-      await expect(page.locator('[data-testid="pickup-code"]')).toContainText('1234');
+      await orderCard.locator('[data-_testid = "mark-ready-button"]').click();
+      await expect(page.locator('[data-_testid = "order-ready-toast"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "pickup-code"]')).toContainText('1234');
     });
 
-    test('delivery and completion flow @p0 @delivery @completion', async ({ page }) => {
+    test(_'delivery and completion flow @p0 @delivery @completion', _async ({ page }) => {
       // 6. DELIVERY & COMPLETION FLOW
       // Student checks order status and picks up
       await page.goto('/auth/login');
-      await page.locator('[data-testid="role-tab-student"]').click();
-      await page.locator('[data-testid="email-input"]').fill(testUser.student.email);
-      await page.locator('[data-testid="password-input"]').fill('password123');
-      await page.locator('[data-testid="login-button"]').click();
+      await page.locator('[data-_testid = "role-tab-student"]').click();
+      await page.locator('[data-_testid = "email-input"]').fill(testUser.student.email);
+      await page.locator('[data-_testid = "password-input"]').fill('password123');
+      await page.locator('[data-_testid = "login-button"]').click();
       
-      await expect(page.locator('[data-testid="student-dashboard"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "student-dashboard"]')).toBeVisible();
       
       // Check order notification
-      await expect(page.locator('[data-testid="order-ready-notification"]')).toBeVisible();
-      await expect(page.locator('[data-testid="pickup-code-display"]')).toContainText('1234');
+      await expect(page.locator('[data-_testid = "order-ready-notification"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "pickup-code-display"]')).toContainText('1234');
       
       // Go to pickup location (simulate RFID scan)
-      await page.click('[data-testid="pickup-order-button"]');
+      await page.click('[data-_testid = "pickup-order-button"]');
       
       // Mock RFID scan for pickup
-      await page.route('**/api/orders/pickup/rfid-scan', async route => {
-        const request = route.request();
-        const scanData = JSON.parse(request.postData() || '{}');
+      await page.route('**/api/orders/pickup/rfid-scan', async _route = > {
+        const request 
+        const _scanData =  JSON.parse(request.postData() || '{}');
         
-        if (scanData.rfid_card === testUser.student.rfid_card && scanData.pickup_code === '1234') {
-          await route.fulfill({
-            status: 200,
-            contentType: 'application/json',
-            body: JSON.stringify({
-              success: true,
-              order: {
-                id: 'ORD-12345',
-                status: 'delivered',
-                delivered_at: new Date().toISOString(),
-                delivered_to: testUser.student.id
-              }
-            })
-          });
+        if (scanData._rfid_card = 
         }
       });
       
       // Simulate RFID scan
-      await page.locator('[data-testid="rfid-card-input"]').fill(testUser.student.rfid_card);
-      await page.locator('[data-testid="pickup-code-input"]').fill('1234');
-      await page.locator('[data-testid="confirm-pickup-button"]').click();
+      await page.locator('[data-_testid = "rfid-card-input"]').fill(testUser.student.rfid_card);
+      await page.locator('[data-_testid = "pickup-code-input"]').fill('1234');
+      await page.locator('[data-_testid = "confirm-pickup-button"]').click();
       
       // Verify successful pickup
-      await expect(page.locator('[data-testid="pickup-success"]')).toBeVisible();
-      await expect(page.locator('[data-testid="order-status"]')).toContainText('Delivered');
+      await expect(page.locator('[data-_testid = "pickup-success"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "order-status"]')).toContainText('Delivered');
       
       // 7. POST-DELIVERY RATING & FEEDBACK
-      await expect(page.locator('[data-testid="rating-modal"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "rating-modal"]')).toBeVisible();
       
       // Mock rating submission
-      await page.route('**/api/orders/ORD-12345/rate', async route => {
-        const request = route.request();
-        const ratingData = JSON.parse(request.postData() || '{}');
+      await page.route('**/api/orders/ORD-12345/rate', async _route = > {
+        const request 
+        const _ratingData =  JSON.parse(request.postData() || '{}');
         
         await route.fulfill({
           status: 200,
@@ -430,43 +402,43 @@ test.describe('P0 Critical Order Lifecycle Tests @critical @p0 @orders', () => {
       
       // Submit rating
       await page.locator('[data-testid="star-4"]').click(); // 4-star rating
-      await page.locator('[data-testid="feedback-input"]').fill('Food was delicious, arrived on time!');
-      await page.locator('[data-testid="submit-rating-button"]').click();
+      await page.locator('[data-_testid = "feedback-input"]').fill('Food was delicious, arrived on time!');
+      await page.locator('[data-_testid = "submit-rating-button"]').click();
       
-      await expect(page.locator('[data-testid="rating-success"]')).toBeVisible();
-      await expect(page.locator('[data-testid="order-complete-message"]')).toContainText('Thank you for your feedback!');
+      await expect(page.locator('[data-_testid = "rating-success"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "order-complete-message"]')).toContainText('Thank you for your feedback!');
     });
   });
 
-  test.describe('Parent-Initiated Order Flow', () => {
+  test.describe(_'Parent-Initiated Order Flow', _() => {
     
-    test('parent creates order for child @p0 @parent @proxy-order', async ({ page }) => {
+    test(_'parent creates order for child @p0 @parent @proxy-order', _async ({ page }) => {
       // Parent login and order creation for child
       await page.goto('/auth/login');
-      await page.locator('[data-testid="role-tab-parent"]').click();
-      await page.locator('[data-testid="email-input"]').fill(testUser.parent.email);
-      await page.locator('[data-testid="password-input"]').fill('password123');
-      await page.locator('[data-testid="login-button"]').click();
+      await page.locator('[data-_testid = "role-tab-parent"]').click();
+      await page.locator('[data-_testid = "email-input"]').fill(testUser.parent.email);
+      await page.locator('[data-_testid = "password-input"]').fill('password123');
+      await page.locator('[data-_testid = "login-button"]').click();
       
-      await expect(page.locator('[data-testid="parent-dashboard"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "parent-dashboard"]')).toBeVisible();
       
       // Select child
-      await page.locator('[data-testid="child-selector"]').selectOption(testUser.student.id);
-      await expect(page.locator('[data-testid="selected-child"]')).toContainText(testUser.student.name);
+      await page.locator('[data-_testid = "child-selector"]').selectOption(testUser.student.id);
+      await expect(page.locator('[data-_testid = "selected-child"]')).toContainText(testUser.student.name);
       await expect(page.locator('[data-testid="child-meal-balance"]')).toContainText('₹100.00'); // After previous order
       
       // Create order for child
-      await page.click('[data-testid="order-for-child-button"]');
-      await expect(page.locator('[data-testid="proxy-order-header"]')).toContainText(`Ordering for ${testUser.student.name}`);
+      await page.click('[data-_testid = "order-for-child-button"]');
+      await expect(page.locator('[data-_testid = "proxy-order-header"]')).toContainText(`Ordering for ${testUser.student.name}`);
       
       // Rest of order flow similar to student flow but with parent payment
-      const breakfastCard = page.locator('[data-testid="menu-card-MENU-001"]');
-      await breakfastCard.locator('[data-testid="add-to-cart-button"]').click();
-      await page.locator('[data-testid="confirm-customization"]').click();
-      await page.click('[data-testid="proceed-to-checkout"]');
+      const _breakfastCard =  page.locator('[data-testid
+      await breakfastCard.locator('[data-_testid = "add-to-cart-button"]').click();
+      await page.locator('[data-_testid = "confirm-customization"]').click();
+      await page.click('[data-_testid = "proceed-to-checkout"]');
       
       // Mock parent wallet payment
-      await page.route('**/api/payments/parent-wallet/charge', async route => {
+      await page.route('**/api/payments/parent-wallet/charge', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -482,35 +454,35 @@ test.describe('P0 Critical Order Lifecycle Tests @critical @p0 @orders', () => {
         });
       });
       
-      await page.locator('[data-testid="payment-method-parent-wallet"]').check();
-      await page.locator('[data-testid="confirm-payment-button"]').click();
+      await page.locator('[data-_testid = "payment-method-parent-wallet"]').check();
+      await page.locator('[data-_testid = "confirm-payment-button"]').click();
       
-      await expect(page.locator('[data-testid="payment-success"]')).toBeVisible();
-      await expect(page.locator('[data-testid="parent-balance"]')).toContainText('₹455.00');
+      await expect(page.locator('[data-_testid = "payment-success"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "parent-balance"]')).toContainText('₹455.00');
       
       // Verify child notification
-      await expect(page.locator('[data-testid="child-notification-sent"]')).toContainText('Notification sent to Test Student');
+      await expect(page.locator('[data-_testid = "child-notification-sent"]')).toContainText('Notification sent to Test Student');
     });
   });
 
-  test.describe('Order Failure & Edge Cases', () => {
+  test.describe(_'Order Failure & Edge Cases', _() => {
     
-    test('payment failure handling @p0 @error-handling @payment-failure', async ({ page }) => {
+    test(_'payment failure handling @p0 @error-handling @payment-failure', _async ({ page }) => {
       await page.goto('/auth/login');
-      await page.locator('[data-testid="role-tab-student"]').click();
-      await page.locator('[data-testid="email-input"]').fill(testUser.student.email);
-      await page.locator('[data-testid="password-input"]').fill('password123');
-      await page.locator('[data-testid="login-button"]').click();
+      await page.locator('[data-_testid = "role-tab-student"]').click();
+      await page.locator('[data-_testid = "email-input"]').fill(testUser.student.email);
+      await page.locator('[data-_testid = "password-input"]').fill('password123');
+      await page.locator('[data-_testid = "login-button"]').click();
       
       // Create order
-      await page.click('[data-testid="order-meal-button"]');
-      const breakfastCard = page.locator('[data-testid="menu-card-MENU-001"]');
-      await breakfastCard.locator('[data-testid="add-to-cart-button"]').click();
-      await page.locator('[data-testid="confirm-customization"]').click();
-      await page.click('[data-testid="proceed-to-checkout"]');
+      await page.click('[data-_testid = "order-meal-button"]');
+      const _breakfastCard =  page.locator('[data-testid
+      await breakfastCard.locator('[data-_testid = "add-to-cart-button"]').click();
+      await page.locator('[data-_testid = "confirm-customization"]').click();
+      await page.click('[data-_testid = "proceed-to-checkout"]');
       
       // Mock payment failure
-      await page.route('**/api/payments/rfid-wallet/charge', async route => {
+      await page.route('**/api/payments/rfid-wallet/charge', async _route = > {
         await route.fulfill({
           status: 400,
           contentType: 'application/json',
@@ -524,29 +496,29 @@ test.describe('P0 Critical Order Lifecycle Tests @critical @p0 @orders', () => {
         });
       });
       
-      await page.locator('[data-testid="payment-method-rfid"]').check();
-      await page.locator('[data-testid="confirm-payment-button"]').click();
+      await page.locator('[data-_testid = "payment-method-rfid"]').check();
+      await page.locator('[data-_testid = "confirm-payment-button"]').click();
       
       // Verify error handling
-      await expect(page.locator('[data-testid="payment-error"]')).toBeVisible();
-      await expect(page.locator('[data-testid="error-message"]')).toContainText('Insufficient balance');
-      await expect(page.locator('[data-testid="current-balance"]')).toContainText('₹30.00');
-      await expect(page.locator('[data-testid="top-up-suggestion"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "payment-error"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "error-message"]')).toContainText('Insufficient balance');
+      await expect(page.locator('[data-_testid = "current-balance"]')).toContainText('₹30.00');
+      await expect(page.locator('[data-_testid = "top-up-suggestion"]')).toBeVisible();
       
       // Test alternative payment method suggestion
-      await expect(page.locator('[data-testid="alternative-payment-options"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "alternative-payment-options"]')).toBeVisible();
     });
 
-    test('order cancellation flow @p0 @cancellation @refund', async ({ page }) => {
+    test(_'order cancellation flow @p0 @cancellation @refund', _async ({ page }) => {
       // Test order cancellation before kitchen acceptance
       await page.goto('/auth/login');
-      await page.locator('[data-testid="role-tab-student"]').click();
-      await page.locator('[data-testid="email-input"]').fill(testUser.student.email);
-      await page.locator('[data-testid="password-input"]').fill('password123');
-      await page.locator('[data-testid="login-button"]').click();
+      await page.locator('[data-_testid = "role-tab-student"]').click();
+      await page.locator('[data-_testid = "email-input"]').fill(testUser.student.email);
+      await page.locator('[data-_testid = "password-input"]').fill('password123');
+      await page.locator('[data-_testid = "login-button"]').click();
       
       // Mock active order
-      await page.route('**/api/orders/active', async route => {
+      await page.route('**/api/orders/active', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -567,12 +539,12 @@ test.describe('P0 Critical Order Lifecycle Tests @critical @p0 @orders', () => {
         });
       });
       
-      await page.click('[data-testid="my-orders"]');
-      await expect(page.locator('[data-testid="order-CANCEL-123"]')).toBeVisible();
-      await expect(page.locator('[data-testid="cancel-order-button-CANCEL-123"]')).toBeVisible();
+      await page.click('[data-_testid = "my-orders"]');
+      await expect(page.locator('[data-_testid = "order-CANCEL-123"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "cancel-order-button-CANCEL-123"]')).toBeVisible();
       
       // Mock cancellation API
-      await page.route('**/api/orders/ORD-CANCEL-123/cancel', async route => {
+      await page.route('**/api/orders/ORD-CANCEL-123/cancel', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -589,24 +561,24 @@ test.describe('P0 Critical Order Lifecycle Tests @critical @p0 @orders', () => {
         });
       });
       
-      await page.click('[data-testid="cancel-order-button-CANCEL-123"]');
-      await page.click('[data-testid="confirm-cancellation"]');
+      await page.click('[data-_testid = "cancel-order-button-CANCEL-123"]');
+      await page.click('[data-_testid = "confirm-cancellation"]');
       
-      await expect(page.locator('[data-testid="cancellation-success"]')).toBeVisible();
-      await expect(page.locator('[data-testid="refund-amount"]')).toContainText('₹45.00');
-      await expect(page.locator('[data-testid="refund-timeline"]')).toContainText('2-3 business days');
+      await expect(page.locator('[data-_testid = "cancellation-success"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "refund-amount"]')).toContainText('₹45.00');
+      await expect(page.locator('[data-_testid = "refund-timeline"]')).toContainText('2-3 business days');
     });
 
-    test('kitchen capacity overflow handling @p0 @capacity @queue', async ({ page }) => {
+    test(_'kitchen capacity overflow handling @p0 @capacity @queue', _async ({ page }) => {
       // Test behavior when kitchen is at capacity
       await page.goto('/auth/login');
-      await page.locator('[data-testid="role-tab-student"]').click();
-      await page.locator('[data-testid="email-input"]').fill(testUser.student.email);
-      await page.locator('[data-testid="password-input"]').fill('password123');
-      await page.locator('[data-testid="login-button"]').click();
+      await page.locator('[data-_testid = "role-tab-student"]').click();
+      await page.locator('[data-_testid = "email-input"]').fill(testUser.student.email);
+      await page.locator('[data-_testid = "password-input"]').fill('password123');
+      await page.locator('[data-_testid = "login-button"]').click();
       
       // Mock kitchen capacity check
-      await page.route('**/api/kitchen/capacity/check', async route => {
+      await page.route('**/api/kitchen/capacity/check', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -621,46 +593,46 @@ test.describe('P0 Critical Order Lifecycle Tests @critical @p0 @orders', () => {
         });
       });
       
-      await page.click('[data-testid="order-meal-button"]');
+      await page.click('[data-_testid = "order-meal-button"]');
       
       // Verify capacity warning
-      await expect(page.locator('[data-testid="capacity-warning"]')).toBeVisible();
-      await expect(page.locator('[data-testid="estimated-wait"]')).toContainText('45 minutes');
-      await expect(page.locator('[data-testid="queue-option"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "capacity-warning"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "estimated-wait"]')).toContainText('45 minutes');
+      await expect(page.locator('[data-_testid = "queue-option"]')).toBeVisible();
       
       // Test queue joining
-      await page.click('[data-testid="join-queue-button"]');
-      await expect(page.locator('[data-testid="queue-confirmation"]')).toBeVisible();
+      await page.click('[data-_testid = "join-queue-button"]');
+      await expect(page.locator('[data-_testid = "queue-confirmation"]')).toBeVisible();
     });
   });
 
-  test.describe('Multi-User Coordination', () => {
+  test.describe(_'Multi-User Coordination', _() => {
     
-    test('parent-student order coordination @p0 @coordination @notifications', async ({ page, browser }) => {
+    test(_'parent-student order coordination @p0 @coordination @notifications', _async ({ page, _browser }) => {
       // Test simultaneous parent and student actions
-      const studentContext = await browser.newContext();
-      const studentPage = await studentContext.newPage();
+      const _studentContext =  await browser.newContext();
+      const _studentPage =  await studentContext.newPage();
       
       // Parent creates order for student
       await page.goto('/auth/login');
-      await page.locator('[data-testid="role-tab-parent"]').click();
-      await page.locator('[data-testid="email-input"]').fill(testUser.parent.email);
-      await page.locator('[data-testid="password-input"]').fill('password123');
-      await page.locator('[data-testid="login-button"]').click();
+      await page.locator('[data-_testid = "role-tab-parent"]').click();
+      await page.locator('[data-_testid = "email-input"]').fill(testUser.parent.email);
+      await page.locator('[data-_testid = "password-input"]').fill('password123');
+      await page.locator('[data-_testid = "login-button"]').click();
       
       // Student logs in simultaneously
       await studentPage.goto('/auth/login');
-      await studentPage.locator('[data-testid="role-tab-student"]').click();
-      await studentPage.locator('[data-testid="email-input"]').fill(testUser.student.email);
-      await studentPage.locator('[data-testid="password-input"]').fill('password123');
-      await studentPage.locator('[data-testid="login-button"]').click();
+      await studentPage.locator('[data-_testid = "role-tab-student"]').click();
+      await studentPage.locator('[data-_testid = "email-input"]').fill(testUser.student.email);
+      await studentPage.locator('[data-_testid = "password-input"]').fill('password123');
+      await studentPage.locator('[data-_testid = "login-button"]').click();
       
       // Parent creates order
-      await page.locator('[data-testid="child-selector"]').selectOption(testUser.student.id);
-      await page.click('[data-testid="order-for-child-button"]');
+      await page.locator('[data-_testid = "child-selector"]').selectOption(testUser.student.id);
+      await page.click('[data-_testid = "order-for-child-button"]');
       
       // Mock real-time notification
-      await studentPage.route('**/api/notifications/realtime', async route => {
+      await studentPage.route('**/api/notifications/realtime', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -677,30 +649,30 @@ test.describe('P0 Critical Order Lifecycle Tests @critical @p0 @orders', () => {
       });
       
       // Complete parent order
-      const breakfastCard = page.locator('[data-testid="menu-card-MENU-001"]');
-      await breakfastCard.locator('[data-testid="add-to-cart-button"]').click();
-      await page.locator('[data-testid="confirm-customization"]').click();
-      await page.click('[data-testid="proceed-to-checkout"]');
-      await page.locator('[data-testid="payment-method-parent-wallet"]').check();
-      await page.locator('[data-testid="confirm-payment-button"]').click();
+      const _breakfastCard =  page.locator('[data-testid
+      await breakfastCard.locator('[data-_testid = "add-to-cart-button"]').click();
+      await page.locator('[data-_testid = "confirm-customization"]').click();
+      await page.click('[data-_testid = "proceed-to-checkout"]');
+      await page.locator('[data-_testid = "payment-method-parent-wallet"]').check();
+      await page.locator('[data-_testid = "confirm-payment-button"]').click();
       
       // Verify student receives notification
-      await expect(studentPage.locator('[data-testid="parent-order-notification"]')).toBeVisible();
-      await expect(studentPage.locator('[data-testid="notification-message"]')).toContainText('Your parent has ordered lunch for you');
+      await expect(studentPage.locator('[data-_testid = "parent-order-notification"]')).toBeVisible();
+      await expect(studentPage.locator('[data-_testid = "notification-message"]')).toContainText('Your parent has ordered lunch for you');
       
       await studentContext.close();
     });
   });
 
-  test.describe('Performance & Load Testing', () => {
+  test.describe(_'Performance & Load Testing', _() => {
     
-    test('order system under load @p0 @performance @load', async ({ page }) => {
+    test(_'order system under load @p0 @performance @load', _async ({ page }) => {
       // Simulate peak ordering time performance
       await page.goto('/auth/login');
-      await page.locator('[data-testid="role-tab-student"]').click();
-      await page.locator('[data-testid="email-input"]').fill(testUser.student.email);
-      await page.locator('[data-testid="password-input"]').fill('password123');
-      await page.locator('[data-testid="login-button"]').click();
+      await page.locator('[data-_testid = "role-tab-student"]').click();
+      await page.locator('[data-_testid = "email-input"]').fill(testUser.student.email);
+      await page.locator('[data-_testid = "password-input"]').fill('password123');
+      await page.locator('[data-_testid = "login-button"]').click();
       
       // Mock slower API responses (peak load simulation)
       await page.route('**/api/menu/today', async route => {
@@ -717,17 +689,17 @@ test.describe('P0 Critical Order Lifecycle Tests @critical @p0 @orders', () => {
         });
       });
       
-      const startTime = Date.now();
-      await page.click('[data-testid="order-meal-button"]');
-      await expect(page.locator('[data-testid="today-menu"]')).toBeVisible({ timeout: 10000 });
-      const endTime = Date.now();
+      const _startTime =  Date.now();
+      await page.click('[data-_testid = "order-meal-button"]');
+      await expect(page.locator('[data-_testid = "today-menu"]')).toBeVisible({ timeout: 10000 });
+      const _endTime =  Date.now();
       
       // Verify acceptable load times
-      const loadTime = endTime - startTime;
+      const _loadTime =  endTime - startTime;
       expect(loadTime).toBeLessThan(5000); // Max 5 seconds under load
       
       // Check for load indicators
-      await expect(page.locator('[data-testid="high-traffic-notice"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "high-traffic-notice"]')).toBeVisible();
     });
   });
 });

@@ -116,6 +116,7 @@ model School {
   orders          Order[] @relation("SchoolOrders")
   menuItems       MenuItem[]
   menuPlans       MenuPlan[]
+  dailyMenus      DailyMenu[]
   rfidReaders     RFIDReader[]
   
   // Epic 5 Relations - Payment Processing & Billing
@@ -456,29 +457,32 @@ model MenuPlan {
 
 model DailyMenu {
   id           String        @id @default(uuid())
+  schoolId     String        @map("school_id")
   menuPlanId   String        @map("menu_plan_id")
   date         DateTime      @unique
   dayType      String        @default("WEEKDAY") @map("day_type")
-  
+
   // Menu configuration
   specialEventInfo String?    @map("special_event_info")
   availableQuantity Int?      @map("available_quantity")
-  
+
   // Status and workflow
   isActive     Boolean       @default(true) @map("is_active")
   isPublished  Boolean       @default(false) @map("is_published")
   publishedAt  DateTime?     @map("published_at")
-  
+
   // Metadata
-  notes        String?       
+  notes        String?
   metadata     String        @default("{}")
   createdAt    DateTime      @default(now()) @map("created_at")
   updatedAt    DateTime      @default(now()) @updatedAt @map("updated_at")
 
   // Relations
+  school       School        @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   menuPlan     MenuPlan      @relation(fields: [menuPlanId], references: [id], onDelete: Cascade)
   menuItems    MenuItemSlot[]
-  
+
+  @@index([schoolId])
   @@index([menuPlanId])
   @@index([date])
   @@index([dayType])

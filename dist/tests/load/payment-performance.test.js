@@ -110,7 +110,7 @@ class PerformanceTracker {
         paymentGatewayService = paymentGateway_service_1.PaymentGatewayService.getInstance();
         notificationService = notification_service_1.NotificationService;
         analyticsService = analytics_service_1.AnalyticsService;
-        rfidService = rfid_service_1.RFIDService;
+        rfidService = rfid_service_1.RfidService;
         customerService = customer_service_1.CustomerService.getInstance();
         orderService = order_service_1.OrderService;
         paymentService = new payment_service_1.PaymentService();
@@ -134,11 +134,12 @@ class PerformanceTracker {
             const result = await payment_service_1.PaymentService.processPayment({
                 orderId: testData.id,
                 amount: testData.totalAmount,
-                paymentMethodId: 'card',
+                currency: 'INR',
+                paymentMethod: 'card',
             });
             const processingTime = perf_hooks_1.performance.now() - startTime;
             (0, globals_1.expect)(result.success).toBe(true);
-            (0, globals_1.expect)(result.payment?.id).toBeDefined();
+            (0, globals_1.expect)(result.data?.paymentId).toBeDefined();
             (0, globals_1.expect)(processingTime).toBeLessThan(LOAD_TEST_CONFIG.PERFORMANCE_THRESHOLDS.PAYMENT_PROCESSING_MS);
         });
         (0, globals_1.it)('should handle payment failures gracefully with minimal overhead', async () => {
@@ -148,11 +149,12 @@ class PerformanceTracker {
             const result = await payment_service_1.PaymentService.processPayment({
                 orderId: testData.id,
                 amount: testData.totalAmount,
-                paymentMethodId: 'card'
+                currency: 'INR',
+                paymentMethod: 'card'
             });
             const processingTime = perf_hooks_1.performance.now() - startTime;
             (0, globals_1.expect)(result.success).toBe(false);
-            (0, globals_1.expect)(result.message).toBeDefined();
+            (0, globals_1.expect)(result.error?.message).toBeDefined();
             (0, globals_1.expect)(processingTime).toBeLessThan(LOAD_TEST_CONFIG.PERFORMANCE_THRESHOLDS.PAYMENT_PROCESSING_MS);
         });
         (0, globals_1.it)('should perform database operations within acceptable limits', async () => {
@@ -186,7 +188,8 @@ class PerformanceTracker {
                         const result = await payment_service_1.PaymentService.processPayment({
                             orderId: order.id,
                             amount: order.totalAmount,
-                            paymentMethodId: 'card',
+                            currency: 'INR',
+                            paymentMethod: 'card',
                         });
                         const responseTime = perf_hooks_1.performance.now() - startTime;
                         performanceTracker.recordTransaction(responseTime, result.success);
@@ -214,17 +217,18 @@ class PerformanceTracker {
                 return payment_service_1.PaymentService.processPayment({
                     orderId: order.id,
                     amount: testAmount,
-                    paymentMethodId: 'card',
+                    currency: 'INR',
+                    paymentMethod: 'card',
                 });
             });
             const results = await Promise.all(paymentPromises);
             const successfulPayments = results.filter(r => r.success);
             (0, globals_1.expect)(successfulPayments.length).toBe(concurrentTransactions);
-            const transactionIds = successfulPayments.map(p => p.payment?.id);
+            const transactionIds = successfulPayments.map(p => p.data?.paymentId);
             const uniqueIds = new Set(transactionIds);
             (0, globals_1.expect)(uniqueIds.size).toBe(concurrentTransactions);
             for (const result of successfulPayments) {
-                const paymentRecord = await paymentService.getPaymentOrder(result.payment?.id);
+                const paymentRecord = await paymentService.getPaymentOrder(result.data.paymentId);
                 (0, globals_1.expect)(paymentRecord).toBeDefined();
                 (0, globals_1.expect)(paymentRecord.amount).toBe(testAmount);
                 (0, globals_1.expect)(paymentRecord.status).toBe('completed');
@@ -247,7 +251,8 @@ class PerformanceTracker {
                 const result = await payment_service_1.PaymentService.processPayment({
                     orderId: testData.id,
                     amount: testData.totalAmount,
-                    paymentMethodId: method,
+                    currency: 'INR',
+                    paymentMethod: method,
                     ...(method === 'card' && {}),
                     ...(method === 'card' && {
                         rfidTag: 'RFID123456789'
@@ -273,7 +278,8 @@ class PerformanceTracker {
             const result = await payment_service_1.PaymentService.processPayment({
                 orderId: testData.id,
                 amount: testData.totalAmount,
-                paymentMethodId: 'card',
+                currency: 'INR',
+                paymentMethod: 'card',
             });
             const processingTime = perf_hooks_1.performance.now() - startTime;
             (0, globals_1.expect)(result).toBeDefined();
@@ -290,7 +296,8 @@ class PerformanceTracker {
                 const result = await payment_service_1.PaymentService.processPayment({
                     orderId: order.id,
                     amount: order.totalAmount,
-                    paymentMethodId: 'card',
+                    currency: 'INR',
+                    paymentMethod: 'card',
                 });
                 const responseTime = perf_hooks_1.performance.now() - startTime;
                 performanceTracker.recordTransaction(responseTime, result.success);
@@ -376,7 +383,8 @@ class PerformanceTracker {
                     await payment_service_1.PaymentService.processPayment({
                         orderId: order.id,
                         amount: order.totalAmount,
-                        paymentMethodId: 'card',
+                        currency: 'INR',
+                        paymentMethod: 'card',
                     });
                     memoryReadings.push(process.memoryUsage().heapUsed);
                     await new Promise(resolve => setTimeout(resolve, requestInterval));
@@ -399,7 +407,8 @@ class PerformanceTracker {
                     return payment_service_1.PaymentService.processPayment({
                         orderId: order.id,
                         amount: 25.99,
-                        paymentMethodId: 'card',
+                        currency: 'INR',
+                        paymentMethod: 'card',
                     });
                 })();
                 connectionPromises.push(promise);
@@ -435,7 +444,8 @@ class PerformanceTracker {
                     const paymentResult = await payment_service_1.PaymentService.processPayment({
                         orderId: order.data?.id,
                         amount: order.data?.totalAmount,
-                        paymentMethodId: 'card',
+                        currency: 'INR',
+                        paymentMethod: 'card',
                     });
                     await order_service_1.OrderService.updateOrderStatus(order.data?.id, order_service_2.OrderStatus.CONFIRMED);
                     const responseTime = perf_hooks_1.performance.now() - startTime;
@@ -491,7 +501,8 @@ class PerformanceTracker {
                             const payment = await payment_service_1.PaymentService.processPayment({
                                 orderId: order.data?.id,
                                 amount: order.data?.totalAmount,
-                                paymentMethodId: paymentMethod,
+                                currency: 'INR',
+                                paymentMethod,
                                 ...(paymentMethod === 'card' && {})
                             });
                             const responseTime = perf_hooks_1.performance.now() - requestStartTime;
@@ -529,7 +540,8 @@ class PerformanceTracker {
                     const result = await payment_service_1.PaymentService.processPayment({
                         orderId: order.id,
                         amount: order.totalAmount,
-                        paymentMethodId: 'card',
+                        currency: 'INR',
+                        paymentMethod: 'card',
                     });
                     const responseTime = perf_hooks_1.performance.now() - startTime;
                     runTracker.recordTransaction(responseTime, result.success);

@@ -29,7 +29,6 @@ export interface TransactionOptions {
 export declare class DatabaseManager {
     private static instance;
     private prisma;
-    private logger;
     private config;
     private startTime;
     private metrics;
@@ -53,5 +52,8 @@ export declare class DatabaseManager {
     restoreBackup(backupName: string): Promise<void>;
     getConfig(): Omit<DatabaseConfig, 'url'>;
     isReady(): boolean;
+    getPrismaClient(): PrismaClient;
 }
+export declare function getPrismaClient(): PrismaClient;
+export declare const prisma: PrismaClient<Prisma.PrismaClientOptions, never, import(".prisma/client/runtime/library").DefaultArgs>;
 //# sourceMappingURL=DatabaseManager.d.ts.map

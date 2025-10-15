@@ -1,180 +1,141 @@
 /**
- * Response utilities for Lambda functions
- * Provides standardized HTTP response helpers for AWS Lambda API Gateway
+ * Response Utilities
+ * Standardized response helpers for Lambda functions
  */
 
-import { APIGatewayProxyResult } from 'aws-lambda';
-
-/**
- * Standard response structure
- */
-interface StandardResponse {
-  data?: any;
-  message?: string;
-  error?: string;
-  code?: string;
-  timestamp?: string;
-  requestId?: string;
-  pagination?: {
-    page: number;
-    limit: number;
-    total: number;
-    pages: number;
-    hasNext?: boolean;
-    hasPrev?: boolean;
+export interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  error?: {
+    code: string;
+    message: string;
+    details?: any;
   };
-  service?: string;
+  meta?: {
+    timestamp: string;
+    requestId?: string;
+  };
+}
+
+export function successResponse<T>(
+  data: T,
+  statusCode: number = 200
+): {
+  statusCode: number;
+  body: string;
+  headers: { [key: string]: string };
+} {
+  const response: ApiResponse<T> = {
+    success: true,
+    data,
+    meta: {
+      timestamp: new Date().toISOString(),
+    },
+  };
+
+  return {
+    statusCode,
+    headers: {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Credentials': 'true',
+    },
+    body: JSON.stringify(response),
+  };
+}
+
+export function errorResponse(
+  code: string,
+  message: string,
+  statusCode: number = 400,
+  details?: any
+): {
+  statusCode: number;
+  body: string;
+  headers: { [key: string]: string };
+} {
+  const response: ApiResponse = {
+    success: false,
+    error: {
+      code,
+      message,
+      details,
+    },
+    meta: {
+      timestamp: new Date().toISOString(),
+    },
+  };
+
+  return {
+    statusCode,
+    headers: {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Credentials': 'true',
+    },
+    body: JSON.stringify(response),
+  };
+}
+
+export function validationErrorResponse(
+  message: string,
+  details?: any
+): {
+  statusCode: number;
+  body: string;
+  headers: { [key: string]: string };
+} {
+  return errorResponse('VALIDATION_ERROR', message, 400, details);
+}
+
+export function notFoundResponse(resource: string = 'Resource'): {
+  statusCode: number;
+  body: string;
+  headers: { [key: string]: string };
+} {
+  return errorResponse('NOT_FOUND', `${resource} not found`, 404);
+}
+
+export function unauthorizedResponse(message: string = 'Unauthorized'): {
+  statusCode: number;
+  body: string;
+  headers: { [key: string]: string };
+} {
+  return errorResponse('UNAUTHORIZED', message, 401);
+}
+
+export function serverErrorResponse(error: Error): {
+  statusCode: number;
+  body: string;
+  headers: { [key: string]: string };
+} {
+  return errorResponse(
+    'INTERNAL_SERVER_ERROR',
+    error.message || 'An unexpected error occurred',
+    500,
+    process.env.NODE_ENV === 'development' ? { stack: error.stack } : undefined
+  );
 }
 
 /**
- * Create standard CORS headers
+ * Handle error and return appropriate response
  */
-const getCorsHeaders = (): Record<string, string> => ({
-  'Content-Type': 'application/json',
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
-  'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
-  'X-Content-Type-Options': 'nosniff',
-  'X-Frame-Options': 'DENY',
-  'X-XSS-Protection': '1; mode=block'
-});
+export function handleError(
+  error: Error | any,
+  message?: string,
+  statusCode?: number,
+  requestId?: string
+): {
+  statusCode: number;
+  body: string;
+  headers: { [key: string]: string };
+} {
+  if (error instanceof Error) {
+    return serverErrorResponse(error);
+  }
+  return errorResponse('UNKNOWN_ERROR', message || 'An unknown error occurred', statusCode || 500);
+}
 
-/**
- * Create a successful response
- */
-export const createSuccessResponse = (
-  response: StandardResponse,
-  statusCode: number = 200
-): APIGatewayProxyResult => {
-  const body: StandardResponse = {
-    ...response,
-    timestamp: new Date().toISOString()
-  };
-
-  return {
-    statusCode,
-    headers: getCorsHeaders(),
-    body: JSON.stringify(body)
-  };
-};
-
-/**
- * Create an error response
- */
-export const createErrorResponse = (
-  message: string,
-  statusCode: number = 400,
-  code?: string
-): APIGatewayProxyResult => {
-  const body: StandardResponse = {
-    error: message,
-    code: code,
-    timestamp: new Date().toISOString()
-  };
-
-  return {
-    statusCode,
-    headers: getCorsHeaders(),
-    body: JSON.stringify(body)
-  };
-};
-
-/**
- * Create a validation error response
- */
-export const createValidationErrorResponse = (
-  errors: string[],
-  statusCode: number = 400
-): APIGatewayProxyResult => {
-  const body: StandardResponse = {
-    error: 'Validation failed',
-    code: 'VALIDATION_ERROR',
-    data: {
-      errors: errors
-    },
-    timestamp: new Date().toISOString()
-  };
-
-  return {
-    statusCode,
-    headers: getCorsHeaders(),
-    body: JSON.stringify(body)
-  };
-};
-
-/**
- * Create an unauthorized response
- */
-export const createUnauthorizedResponse = (
-  message: string = 'Unauthorized'
-): APIGatewayProxyResult => {
-  return createErrorResponse(message, 401, 'UNAUTHORIZED');
-};
-
-/**
- * Create a forbidden response
- */
-export const createForbiddenResponse = (
-  message: string = 'Forbidden'
-): APIGatewayProxyResult => {
-  return createErrorResponse(message, 403, 'FORBIDDEN');
-};
-
-/**
- * Create a not found response
- */
-export const createNotFoundResponse = (
-  resource: string = 'Resource'
-): APIGatewayProxyResult => {
-  return createErrorResponse(`${resource} not found`, 404, 'NOT_FOUND');
-};
-
-/**
- * Create a method not allowed response
- */
-export const createMethodNotAllowedResponse = (
-  method: string
-): APIGatewayProxyResult => {
-  return createErrorResponse(`Method ${method} not allowed`, 405, 'METHOD_NOT_ALLOWED');
-};
-
-/**
- * Create a conflict response
- */
-export const createConflictResponse = (
-  message: string
-): APIGatewayProxyResult => {
-  return createErrorResponse(message, 409, 'CONFLICT');
-};
-
-/**
- * Create a too many requests response
- */
-export const createTooManyRequestsResponse = (
-  message: string = 'Too many requests'
-): APIGatewayProxyResult => {
-  return createErrorResponse(message, 429, 'TOO_MANY_REQUESTS');
-};
-
-/**
- * Create an internal server error response
- */
-export const createInternalServerErrorResponse = (
-  message: string = 'Internal server error'
-): APIGatewayProxyResult => {
-  return createErrorResponse(message, 500, 'INTERNAL_SERVER_ERROR');
-};
-
-/**
- * Generic error handler for Lambda functions
- */
-export const handleError = (
-  error: any,
-  defaultMessage: string = 'An error occurred'
-): APIGatewayProxyResult => {
-  const message = error instanceof Error ? error.message : defaultMessage;
-  const statusCode = error.statusCode || error.status || 500;
-  const code = error.code || 'INTERNAL_SERVER_ERROR';
-
-  return createErrorResponse(message, statusCode, code);
-};
+// Aliases for compatibility
+export const createSuccessResponse = successResponse;
+export const createErrorResponse = errorResponse;

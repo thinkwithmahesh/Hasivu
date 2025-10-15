@@ -287,25 +287,25 @@ describe('PerformanceService', () => {
                 }
             };
             redis_service_1.RedisService.get.mockResolvedValue(JSON.stringify(mockTrendsData));
-            const trends = await performance_service_1.PerformanceService.getPerformanceTrends('cpuUsage', { start: Date.now() - 86400000, end: Date.now() });
+            const trends = await performance_service_1.PerformanceService.getPerformanceTrends('cpuUsage', { start: new Date(Date.now() - 86400000), end: new Date(Date.now()) });
             expect(trends).toHaveLength(5);
-            expect(trends.map(t => t.metric)).toEqual([
+            expect(trends.map((t) => t.metric)).toEqual([
                 'responseTime',
                 'errorRate',
                 'requestsPerMinute',
                 'memoryUsage',
                 'cpuUsage'
             ]);
-            const responseTimeTrend = trends.find(t => t.metric === 'responseTime');
+            const responseTimeTrend = trends.find((t) => t.metric === 'responseTime');
             expect(responseTimeTrend).toBeDefined();
             expect(responseTimeTrend.data).toHaveLength(2);
             expect(responseTimeTrend.trend).toBeOneOf(['improving', 'degrading', 'stable']);
         });
         it('should handle empty trends data', async () => {
             redis_service_1.RedisService.get.mockResolvedValue('{}');
-            const trends = await performance_service_1.PerformanceService.getPerformanceTrends('cpuUsage', { start: Date.now() - 86400000, end: Date.now() });
+            const trends = await performance_service_1.PerformanceService.getPerformanceTrends('cpuUsage', { start: new Date(Date.now() - 86400000), end: new Date(Date.now()) });
             expect(trends).toHaveLength(5);
-            trends.forEach(trend => {
+            trends.forEach((trend) => {
                 expect(trend.data).toEqual([]);
                 expect(trend.trend).toBe('stable');
             });
@@ -317,15 +317,15 @@ describe('PerformanceService', () => {
                 '3': { avgResponseTime: 200 }
             };
             redis_service_1.RedisService.get.mockResolvedValue(JSON.stringify(improvingTrend));
-            const trends = await performance_service_1.PerformanceService.getPerformanceTrends('cpuUsage', { start: Date.now() - 86400000, end: Date.now() });
-            const responseTimeTrend = trends.find(t => t.metric === 'responseTime');
+            const trends = await performance_service_1.PerformanceService.getPerformanceTrends('cpuUsage', { start: new Date(Date.now() - 86400000), end: new Date(Date.now()) });
+            const responseTimeTrend = trends.find((t) => t.metric === 'responseTime');
             expect(responseTimeTrend.trend).toBe('improving');
         });
         it('should support different time periods', async () => {
             redis_service_1.RedisService.get.mockResolvedValue('{}');
-            await performance_service_1.PerformanceService.getPerformanceTrends('cpuUsage', { start: Date.now() - 3600000, end: Date.now() });
+            await performance_service_1.PerformanceService.getPerformanceTrends('cpuUsage', { start: new Date(Date.now() - 3600000), end: new Date(Date.now()) });
             expect(redis_service_1.RedisService.get).toHaveBeenCalledWith('performance:trends:1h');
-            await performance_service_1.PerformanceService.getPerformanceTrends('cpuUsage', { start: Date.now() - 604800000, end: Date.now() });
+            await performance_service_1.PerformanceService.getPerformanceTrends('cpuUsage', { start: new Date(Date.now() - 604800000), end: new Date(Date.now()) });
             expect(redis_service_1.RedisService.get).toHaveBeenCalledWith('performance:trends:7d');
         });
     });
@@ -390,7 +390,7 @@ describe('PerformanceService', () => {
             redis_service_1.RedisService.get.mockRejectedValue(new Error('Redis connection failed'));
             const healthStatus = await performance_service_1.PerformanceService.getHealthStatus();
             expect(healthStatus.status).toBe('critical');
-            expect(healthStatus.alerts.some(alert => alert.severity === 'critical')).toBe(true);
+            expect(healthStatus.alerts.some((alert) => alert.severity === 'critical')).toBe(true);
         });
         it('should include system uptime in health status', async () => {
             mockDatabaseService.getConnectionPoolStatus.mockReturnValue({
@@ -421,7 +421,7 @@ describe('PerformanceService', () => {
             redis_service_1.RedisService.get.mockResolvedValue('{}');
             redis_service_1.RedisService.set.mockResolvedValue(true);
             const healthStatus = await performance_service_1.PerformanceService.getHealthStatus();
-            expect(healthStatus.alerts.some(alert => alert.severity === 'critical')).toBe(true);
+            expect(healthStatus.alerts.some((alert) => alert.severity === 'critical')).toBe(true);
             expect(healthStatus.status).toBe('critical');
         });
     });

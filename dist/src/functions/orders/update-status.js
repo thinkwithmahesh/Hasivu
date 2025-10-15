@@ -3,25 +3,25 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.handler = void 0;
 const logger_1 = require("@/utils/logger");
 const response_utils_1 = require("@/shared/response.utils");
-const database_service_1 = require("@/services/database.service");
+const database_service_1 = require("@/shared/database.service");
 const uuid_1 = require("uuid");
 const ORDER_STATUS_TRANSITIONS = {
-    'pending': ['confirmed', 'cancelled'],
-    'confirmed': ['preparing', 'cancelled'],
-    'preparing': ['ready', 'cancelled'],
-    'ready': ['delivered', 'cancelled'],
-    'delivered': ['completed'],
-    'completed': [],
-    'cancelled': []
+    pending: ['confirmed', 'cancelled'],
+    confirmed: ['preparing', 'cancelled'],
+    preparing: ['ready', 'cancelled'],
+    ready: ['delivered', 'cancelled'],
+    delivered: ['completed'],
+    completed: [],
+    cancelled: [],
 };
 const STATUS_DESCRIPTIONS = {
-    'pending': 'Order is pending confirmation',
-    'confirmed': 'Order has been confirmed and payment processed',
-    'preparing': 'Order is being prepared in the kitchen',
-    'ready': 'Order is ready for delivery',
-    'delivered': 'Order has been delivered to the student',
-    'completed': 'Order has been completed successfully',
-    'cancelled': 'Order has been cancelled'
+    pending: 'Order is pending confirmation',
+    confirmed: 'Order has been confirmed and payment processed',
+    preparing: 'Order is being prepared in the kitchen',
+    ready: 'Order is ready for delivery',
+    delivered: 'Order has been delivered to the student',
+    completed: 'Order has been completed successfully',
+    cancelled: 'Order has been cancelled',
 };
 async function validateOrderAccess(orderId, userId) {
     const database = database_service_1.DatabaseService.getInstance();
@@ -80,7 +80,7 @@ async function createStatusHistory(orderId, status, notes, updatedBy) {
             status,
             notes,
             updatedBy,
-            error: error instanceof Error ? error.message : 'Unknown error'
+            errorMessage: error instanceof Error ? error.message : 'Unknown error',
         });
         return {
             id: historyId,
@@ -88,7 +88,7 @@ async function createStatusHistory(orderId, status, notes, updatedBy) {
             status,
             notes,
             updatedBy,
-            createdAt: new Date()
+            createdAt: new Date(),
         };
     }
 }
@@ -123,7 +123,7 @@ async function updatePaymentStatusIfNeeded(orderId, newStatus) {
         catch (error) {
             logger_1.logger.warn('Failed to update payment status', {
                 orderId,
-                error: error instanceof Error ? error.message : 'Unknown error'
+                error: error instanceof Error ? error.message : 'Unknown error',
             });
         }
     }
@@ -136,14 +136,13 @@ async function sendStatusNotification(orderId, orderNumber, newStatus, studentNa
             orderNumber,
             newStatus,
             studentName,
-            message: statusMessage
+            message: statusMessage,
         });
     }
     catch (error) {
-        logger_1.logger.error('Failed to send status notification', {
-            error: error instanceof Error ? error.message : 'Unknown error',
+        logger_1.logger.error('Failed to send status notification', error instanceof Error ? error : undefined, {
             orderId,
-            newStatus
+            newStatus,
         });
     }
 }
@@ -152,26 +151,26 @@ const handler = async (event, context) => {
     logger_1.logger.logFunctionStart('updateOrderStatusHandler', { event, context });
     try {
         if (event.httpMethod !== 'PUT') {
-            return (0, response_utils_1.createErrorResponse)('Method not allowed', 405, 'METHOD_NOT_ALLOWED');
+            return (0, response_utils_1.createErrorResponse)('METHOD_NOT_ALLOWED', 'Method not allowed', 405);
         }
         const orderId = event.pathParameters?.orderId;
         if (!orderId) {
-            return (0, response_utils_1.createErrorResponse)('Missing orderId in path parameters', 400, 'MISSING_ORDER_ID');
+            return (0, response_utils_1.createErrorResponse)('MISSING_ORDER_ID', 'Missing orderId in path parameters', 400);
         }
         const body = JSON.parse(event.body || '{}');
         logger_1.logger.info('Processing order status update request', { orderId, body });
         const { status, notes, reason } = body;
         if (!status) {
-            return (0, response_utils_1.createErrorResponse)('Missing required field: status', 400, 'MISSING_STATUS');
+            return (0, response_utils_1.createErrorResponse)('MISSING_STATUS', 'Missing required field: status', 400);
         }
         const userId = event.requestContext?.authorizer?.userId || event.headers?.['x-user-id'];
         if (!userId) {
-            return (0, response_utils_1.createErrorResponse)('User authentication required', 401, 'AUTHENTICATION_REQUIRED');
+            return (0, response_utils_1.createErrorResponse)('AUTHENTICATION_REQUIRED', 'User authentication required', 401);
         }
         const order = await validateOrderAccess(orderId, userId);
         const currentStatus = order.status;
         if (currentStatus === status) {
-            return (0, response_utils_1.createErrorResponse)(`Order is already in '${status}' status`, 400, 'STATUS_UNCHANGED');
+            return (0, response_utils_1.createErrorResponse)('STATUS_UNCHANGED', `Order is already in '${status}' status`, 400);
         }
         validateStatusTransition(currentStatus, status);
         const database = database_service_1.DatabaseService.getInstance();
@@ -190,28 +189,28 @@ const handler = async (event, context) => {
             const statusHistory = await getStatusHistory(orderId);
             await sendStatusNotification(orderId, order.orderNumber, status, `${order.firstName} ${order.lastName}`);
             const response = {
-                orderId: orderId,
+                orderId,
                 orderNumber: order.orderNumber,
                 previousStatus: currentStatus,
                 newStatus: status,
-                statusHistory: statusHistory,
+                statusHistory,
                 updatedBy: userId,
-                updatedAt: updatedOrder.updatedAt
+                updatedAt: updatedOrder.updatedAt,
             };
             const duration = Date.now() - startTime;
-            logger_1.logger.logFunctionEnd("handler", { statusCode: 200, duration });
+            logger_1.logger.logFunctionEnd('handler', { statusCode: 200, duration });
             logger_1.logger.info('Order status updated successfully', {
-                orderId: orderId,
+                orderId,
                 orderNumber: order.orderNumber,
                 previousStatus: currentStatus,
                 newStatus: status,
-                updatedBy: userId
+                updatedBy: userId,
             });
             return (0, response_utils_1.createSuccessResponse)({
                 data: {
-                    orderStatus: response
+                    orderStatus: response,
                 },
-                message: `Order status updated from '${currentStatus}' to '${status}'`
+                message: `Order status updated from '${currentStatus}' to '${status}'`,
             });
         }
         catch (transactionError) {
@@ -221,7 +220,7 @@ const handler = async (event, context) => {
     }
     catch (error) {
         const duration = Date.now() - startTime;
-        logger_1.logger.logFunctionEnd("handler", { statusCode: 500, duration });
+        logger_1.logger.logFunctionEnd('handler', { statusCode: 500, duration });
         return (0, response_utils_1.handleError)(error, 'Failed to update order status');
     }
 };

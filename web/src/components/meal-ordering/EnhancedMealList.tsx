@@ -3,59 +3,53 @@
  * Uses ScrollArea for smooth scrolling of meal items with nutritional previews
  */
 
-"use client"
+'use client';
 
-import React, { useState, useMemo, useCallback } from 'react'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card'
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
-import { Slider } from '@/components/ui/slider'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { 
-  Search, 
-  Filter, 
-  Star, 
-  Clock, 
-  Users, 
-  Leaf, 
+import React, { useState, useMemo, useCallback } from 'react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Slider } from '@/components/ui/slider';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, _CardDescription, _CardHeader, _CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Search,
+  Filter,
+  Star,
+  Clock,
+  Users,
+  Leaf,
   AlertTriangle,
   Plus,
   Minus,
-  Info,
+  _Info,
   Heart,
-  Utensils
-} from 'lucide-react'
-import { toast } from 'sonner'
+  Utensils,
+} from 'lucide-react';
+import { toast } from 'sonner';
 
-import type { 
-  MealItem, 
-  StudentInfo, 
-  DietaryPreference, 
-  SpiceLevel,
-  MealType 
-} from './types'
+import type { MealItem, StudentInfo, DietaryPreference, SpiceLevel, MealType } from './types';
 
 interface EnhancedMealListProps {
-  meals: MealItem[]
-  student: StudentInfo
-  onAddToCart: (meal: MealItem, quantity: number) => void
-  onViewDetails: (meal: MealItem) => void
-  cartItems: { [mealId: string]: number }
-  className?: string
+  meals: MealItem[];
+  student: StudentInfo;
+  onAddToCart: (meal: MealItem, quantity: number) => void;
+  onViewDetails: (meal: MealItem) => void;
+  cartItems: { [mealId: string]: number };
+  className?: string;
 }
 
 interface FilterOptions {
-  priceRange: [number, number]
-  dietaryPreferences: DietaryPreference[]
-  spiceLevel: SpiceLevel[]
-  categories: MealType[]
-  maxCalories?: number
-  isGlutenFree?: boolean
-  isDiabeticFriendly?: boolean
-  showAvailableOnly: boolean
+  priceRange: [number, number];
+  dietaryPreferences: DietaryPreference[];
+  spiceLevel: SpiceLevel[];
+  categories: MealType[];
+  maxCalories?: number;
+  isGlutenFree?: boolean;
+  isDiabeticFriendly?: boolean;
+  showAvailableOnly: boolean;
 }
 
 const DIETARY_ICONS: Record<DietaryPreference, { icon: React.ReactNode; color: string }> = {
@@ -63,113 +57,122 @@ const DIETARY_ICONS: Record<DietaryPreference, { icon: React.ReactNode; color: s
   vegan: { icon: <Leaf className="w-3 h-3" />, color: 'bg-green-200 text-green-900' },
   'non-vegetarian': { icon: <Utensils className="w-3 h-3" />, color: 'bg-red-100 text-red-800' },
   jain: { icon: <Heart className="w-3 h-3" />, color: 'bg-orange-100 text-orange-800' },
-  eggetarian: { icon: <Utensils className="w-3 h-3" />, color: 'bg-yellow-100 text-yellow-800' }
-}
+  eggetarian: { icon: <Utensils className="w-3 h-3" />, color: 'bg-yellow-100 text-yellow-800' },
+};
 
 const SPICE_LEVEL_COLORS: Record<SpiceLevel, string> = {
   mild: 'bg-green-100 text-green-800',
   medium: 'bg-yellow-100 text-yellow-800',
   spicy: 'bg-orange-100 text-orange-800',
-  'very-spicy': 'bg-red-100 text-red-800'
-}
+  'very-spicy': 'bg-red-100 text-red-800',
+};
 
-export function EnhancedMealList({ 
-  meals, 
-  student, 
-  onAddToCart, 
-  onViewDetails,
+export function EnhancedMealList({
+  meals,
+  _student,
+  onAddToCart,
+  _onViewDetails,
   cartItems,
-  className 
+  className,
 }: EnhancedMealListProps) {
-  const [searchTerm, setSearchTerm] = useState('')
-  const [showFilters, setShowFilters] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<FilterOptions>({
     priceRange: [0, 500],
     dietaryPreferences: [],
     spiceLevel: [],
     categories: [],
-    showAvailableOnly: true
-  })
+    showAvailableOnly: true,
+  });
 
   // Calculate price range from available meals
   const priceRange = useMemo(() => {
-    const prices = meals.map(meal => meal.price)
-    return [Math.min(...prices), Math.max(...prices)]
-  }, [meals])
+    const prices = meals.map(meal => meal.price);
+    return [Math.min(...prices), Math.max(...prices)];
+  }, [meals]);
 
   // Filter meals based on search and filters
   const filteredMeals = useMemo(() => {
     return meals.filter(meal => {
       // Search filter
-      if (searchTerm && !meal.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-          !meal.description.toLowerCase().includes(searchTerm.toLowerCase()) &&
-          !meal.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))) {
-        return false
+      if (
+        searchTerm &&
+        !meal.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+        !meal.description.toLowerCase().includes(searchTerm.toLowerCase()) &&
+        !meal.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+      ) {
+        return false;
       }
 
       // Price range filter
       if (meal.price < filters.priceRange[0] || meal.price > filters.priceRange[1]) {
-        return false
+        return false;
       }
 
       // Dietary preference filter
-      if (filters.dietaryPreferences.length > 0 && 
-          !filters.dietaryPreferences.includes(meal.dietaryType)) {
-        return false
+      if (
+        filters.dietaryPreferences.length > 0 &&
+        !filters.dietaryPreferences.includes(meal.dietaryType)
+      ) {
+        return false;
       }
 
       // Spice level filter
-      if (filters.spiceLevel.length > 0 && 
-          !filters.spiceLevel.includes(meal.spiceLevel)) {
-        return false
+      if (filters.spiceLevel.length > 0 && !filters.spiceLevel.includes(meal.spiceLevel)) {
+        return false;
       }
 
       // Category filter
-      if (filters.categories.length > 0 && 
-          !filters.categories.includes(meal.category)) {
-        return false
+      if (filters.categories.length > 0 && !filters.categories.includes(meal.category)) {
+        return false;
       }
 
       // Availability filter
       if (filters.showAvailableOnly && !meal.isAvailable) {
-        return false
+        return false;
       }
 
       // Calorie filter
       if (filters.maxCalories && meal.nutritionalInfo.calories > filters.maxCalories) {
-        return false
+        return false;
       }
 
       // Dietary restrictions
       if (filters.isGlutenFree && !meal.isGlutenFree) {
-        return false
+        return false;
       }
 
       if (filters.isDiabeticFriendly && !meal.isDiabeticFriendly) {
-        return false
+        return false;
       }
 
-      return true
-    })
-  }, [meals, searchTerm, filters])
+      return true;
+    });
+  }, [meals, searchTerm, filters]);
 
-  const handleAddToCart = useCallback((meal: MealItem) => {
-    const currentQuantity = cartItems[meal.id] || 0
-    if (currentQuantity < meal.maxQuantityPerStudent) {
-      onAddToCart(meal, 1)
-      toast.success(`${meal.name} added to cart`)
-    } else {
-      toast.error(`Maximum ${meal.maxQuantityPerStudent} allowed per student`)
-    }
-  }, [cartItems, onAddToCart])
+  const handleAddToCart = useCallback(
+    (meal: MealItem) => {
+      const currentQuantity = cartItems[meal.id] || 0;
+      if (currentQuantity < meal.maxQuantityPerStudent) {
+        onAddToCart(meal, 1);
+        toast.success(`${meal.name} added to cart`);
+      } else {
+        toast.error(`Maximum ${meal.maxQuantityPerStudent} allowed per student`);
+      }
+    },
+    [cartItems, onAddToCart]
+  );
 
-  const handleRemoveFromCart = useCallback((meal: MealItem) => {
-    const currentQuantity = cartItems[meal.id] || 0
-    if (currentQuantity > 0) {
-      onAddToCart(meal, -1)
-      toast.success(`${meal.name} removed from cart`)
-    }
-  }, [cartItems, onAddToCart])
+  const handleRemoveFromCart = useCallback(
+    (meal: MealItem) => {
+      const currentQuantity = cartItems[meal.id] || 0;
+      if (currentQuantity > 0) {
+        onAddToCart(meal, -1);
+        toast.success(`${meal.name} removed from cart`);
+      }
+    },
+    [cartItems, onAddToCart]
+  );
 
   const NutritionalPreview = ({ meal }: { meal: MealItem }) => (
     <div className="space-y-2">
@@ -179,7 +182,7 @@ export function EnhancedMealList({
           ₹{meal.price}
         </Badge>
       </div>
-      
+
       <div className="grid grid-cols-2 gap-2 text-xs">
         <div className="space-y-1">
           <div className="flex justify-between">
@@ -220,24 +223,26 @@ export function EnhancedMealList({
         </div>
       )}
     </div>
-  )
+  );
 
   const MealCard = ({ meal }: { meal: MealItem }) => {
-    const cartQuantity = cartItems[meal.id] || 0
-    const isInCart = cartQuantity > 0
-    const canAddMore = cartQuantity < meal.maxQuantityPerStudent
-    const isAvailable = meal.isAvailable
+    const cartQuantity = cartItems[meal.id] || 0;
+    const isInCart = cartQuantity > 0;
+    const canAddMore = cartQuantity < meal.maxQuantityPerStudent;
+    const { isAvailable } = meal;
 
     return (
-      <Card className={`group transition-all duration-200 hover:shadow-md ${
-        !isAvailable ? 'opacity-60' : ''
-      }`}>
+      <Card
+        className={`group transition-all duration-200 hover:shadow-md ${
+          !isAvailable ? 'opacity-60' : ''
+        }`}
+      >
         <CardContent className="p-4">
           <div className="flex items-start gap-3">
             {/* Meal Image */}
             <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-              <img 
-                src={meal.imageUrl} 
+              <img
+                src={meal.imageUrl}
                 alt={meal.name}
                 className="w-full h-full object-cover"
                 loading="lazy"
@@ -262,36 +267,37 @@ export function EnhancedMealList({
                     <NutritionalPreview meal={meal} />
                   </HoverCardContent>
                 </HoverCard>
-                
+
                 <div className="flex items-center gap-1 text-xs text-gray-500">
                   <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
                   <span>{meal.rating.toFixed(1)}</span>
                 </div>
               </div>
 
-              <p className="text-xs text-gray-600 line-clamp-2 mb-2">
-                {meal.description}
-              </p>
+              <p className="text-xs text-gray-600 line-clamp-2 mb-2">{meal.description}</p>
 
               {/* Tags and Dietary Info */}
               <div className="flex items-center gap-1 mb-2 flex-wrap">
-                <Badge 
-                  variant="outline" 
+                <Badge
+                  variant="outline"
                   className={`text-xs px-1.5 py-0.5 ${DIETARY_ICONS[meal.dietaryType].color}`}
                 >
                   {DIETARY_ICONS[meal.dietaryType].icon}
                   <span className="ml-1 capitalize">{meal.dietaryType}</span>
                 </Badge>
-                
-                <Badge 
-                  variant="outline" 
+
+                <Badge
+                  variant="outline"
                   className={`text-xs px-1.5 py-0.5 ${SPICE_LEVEL_COLORS[meal.spiceLevel]}`}
                 >
                   {meal.spiceLevel}
                 </Badge>
 
                 {meal.isGlutenFree && (
-                  <Badge variant="outline" className="text-xs px-1.5 py-0.5 bg-blue-100 text-blue-800">
+                  <Badge
+                    variant="outline"
+                    className="text-xs px-1.5 py-0.5 bg-blue-100 text-blue-800"
+                  >
                     Gluten Free
                   </Badge>
                 )}
@@ -302,7 +308,9 @@ export function EnhancedMealList({
                 <div className="flex items-center gap-2">
                   <span className="font-semibold text-primary-600">₹{meal.price}</span>
                   {meal.originalPrice && meal.originalPrice > meal.price && (
-                    <span className="text-xs text-gray-500 line-through">₹{meal.originalPrice}</span>
+                    <span className="text-xs text-gray-500 line-through">
+                      ₹{meal.originalPrice}
+                    </span>
                   )}
                   <div className="flex items-center gap-1 text-xs text-gray-500">
                     <Clock className="w-3 h-3" />
@@ -353,8 +361,8 @@ export function EnhancedMealList({
           </div>
         </CardContent>
       </Card>
-    )
-  }
+    );
+  };
 
   return (
     <div className={className}>
@@ -366,7 +374,7 @@ export function EnhancedMealList({
             <Input
               placeholder="Search meals, ingredients, or tags..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={e => setSearchTerm(e.target.value)}
               className="pl-10 text-mobile-optimized"
             />
           </div>
@@ -383,10 +391,10 @@ export function EnhancedMealList({
 
         {/* Quick Filter Toggles */}
         <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-          <ToggleGroup 
-            type="multiple" 
+          <ToggleGroup
+            type="multiple"
             value={filters.dietaryPreferences}
-            onValueChange={(values) => 
+            onValueChange={values =>
               setFilters(prev => ({ ...prev, dietaryPreferences: values as DietaryPreference[] }))
             }
             className="flex-shrink-0"
@@ -409,9 +417,9 @@ export function EnhancedMealList({
 
           <ToggleGroup
             type="single"
-            value={filters.showAvailableOnly ? "available" : ""}
-            onValueChange={(value) => 
-              setFilters(prev => ({ ...prev, showAvailableOnly: value === "available" }))
+            value={filters.showAvailableOnly ? 'available' : ''}
+            onValueChange={value =>
+              setFilters(prev => ({ ...prev, showAvailableOnly: value === 'available' }))
             }
           >
             <ToggleGroupItem value="available" size="sm">
@@ -429,7 +437,7 @@ export function EnhancedMealList({
               </label>
               <Slider
                 value={filters.priceRange}
-                onValueChange={(value) => 
+                onValueChange={value =>
                   setFilters(prev => ({ ...prev, priceRange: value as [number, number] }))
                 }
                 max={priceRange[1]}
@@ -441,17 +449,25 @@ export function EnhancedMealList({
 
             <div>
               <label className="text-sm font-medium mb-2 block">Spice Level</label>
-              <ToggleGroup 
-                type="multiple" 
+              <ToggleGroup
+                type="multiple"
                 value={filters.spiceLevel}
-                onValueChange={(values) => 
+                onValueChange={values =>
                   setFilters(prev => ({ ...prev, spiceLevel: values as SpiceLevel[] }))
                 }
               >
-                <ToggleGroupItem value="mild" size="sm">Mild</ToggleGroupItem>
-                <ToggleGroupItem value="medium" size="sm">Medium</ToggleGroupItem>
-                <ToggleGroupItem value="spicy" size="sm">Spicy</ToggleGroupItem>
-                <ToggleGroupItem value="very-spicy" size="sm">Very Spicy</ToggleGroupItem>
+                <ToggleGroupItem value="mild" size="sm">
+                  Mild
+                </ToggleGroupItem>
+                <ToggleGroupItem value="medium" size="sm">
+                  Medium
+                </ToggleGroupItem>
+                <ToggleGroupItem value="spicy" size="sm">
+                  Spicy
+                </ToggleGroupItem>
+                <ToggleGroupItem value="very-spicy" size="sm">
+                  Very Spicy
+                </ToggleGroupItem>
               </ToggleGroup>
             </div>
 
@@ -459,13 +475,15 @@ export function EnhancedMealList({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setFilters({
-                  priceRange: priceRange as [number, number],
-                  dietaryPreferences: [],
-                  spiceLevel: [],
-                  categories: [],
-                  showAvailableOnly: true
-                })}
+                onClick={() =>
+                  setFilters({
+                    priceRange: priceRange as [number, number],
+                    dietaryPreferences: [],
+                    spiceLevel: [],
+                    categories: [],
+                    showAvailableOnly: true,
+                  })
+                }
               >
                 Clear Filters
               </Button>
@@ -477,18 +495,14 @@ export function EnhancedMealList({
       {/* Results Info */}
       <div className="flex items-center justify-between mb-3 text-sm text-gray-600">
         <span>{filteredMeals.length} meals found</span>
-        {searchTerm && (
-          <span>for "{searchTerm}"</span>
-        )}
+        {searchTerm && <span>for "{searchTerm}"</span>}
       </div>
 
       {/* Meals List */}
       <ScrollArea className="h-[calc(100vh-300px)] pr-4">
         <div className="space-y-3">
           {filteredMeals.length > 0 ? (
-            filteredMeals.map((meal) => (
-              <MealCard key={meal.id} meal={meal} />
-            ))
+            filteredMeals.map(meal => <MealCard key={meal.id} meal={meal} />)
           ) : (
             <Card className="p-8 text-center">
               <div className="text-gray-500">
@@ -501,7 +515,7 @@ export function EnhancedMealList({
         </div>
       </ScrollArea>
     </div>
-  )
+  );
 }
 
-export default EnhancedMealList
+export default EnhancedMealList;

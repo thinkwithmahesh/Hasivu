@@ -11,95 +11,92 @@ const bedrockClient = new client_bedrock_runtime_1.BedrockRuntimeClient({ region
 const sageMakerClient = new client_sagemaker_runtime_1.SageMakerRuntimeClient({ region: 'us-east-1' });
 const TrendAnalysisRequestSchema = zod_1.z.object({
     schoolId: zod_1.z.string().min(1),
-    ageGroups: zod_1.z.array(zod_1.z.object({
+    ageGroups: zod_1.z
+        .array(zod_1.z.object({
         min: zod_1.z.number().min(0).max(18),
-        max: zod_1.z.number().min(0).max(18)
-    })).optional(),
+        max: zod_1.z.number().min(0).max(18),
+    }))
+        .optional(),
     timeframe: zod_1.z.object({
         startDate: zod_1.z.string(),
         endDate: zod_1.z.string(),
-        granularity: zod_1.z.enum(['daily', 'weekly', 'monthly'])
+        granularity: zod_1.z.enum(['daily', 'weekly', 'monthly']),
     }),
     focusAreas: zod_1.z.array(zod_1.z.enum(['nutrition', 'growth', 'preferences', 'health', 'behavior', 'seasonal'])),
     comparisonMetrics: zod_1.z.array(zod_1.z.string()).optional(),
     outputFormat: zod_1.z.enum(['summary', 'detailed', 'executive']).default('summary'),
     includeVisualizations: zod_1.z.boolean().default(true),
-    includePredictions: zod_1.z.boolean().default(false)
+    includePredictions: zod_1.z.boolean().default(false),
 });
 async function fetchNutritionalData(schoolId, startDate, endDate, ageGroups) {
-    try {
-        const data = [];
-        const intakeResult = await dynamoDbClient.send(new lib_dynamodb_1.QueryCommand({
-            TableName: process.env.NUTRITION_TABLE_NAME || 'NutritionIntake',
-            KeyConditionExpression: 'schoolId = :schoolId',
-            FilterExpression: '#timestamp BETWEEN :startDate AND :endDate',
-            ExpressionAttributeNames: {
-                '#timestamp': 'timestamp'
-            },
-            ExpressionAttributeValues: {
-                ':schoolId': schoolId,
-                ':startDate': startDate,
-                ':endDate': endDate
-            }
-        }));
-        data.push(...(intakeResult.Items || []));
-        const mealPlanResult = await dynamoDbClient.send(new lib_dynamodb_1.QueryCommand({
-            TableName: process.env.MEAL_PLANS_TABLE_NAME || 'MealPlans',
-            KeyConditionExpression: 'schoolId = :schoolId',
-            FilterExpression: '#dateServed BETWEEN :startDate AND :endDate',
-            ExpressionAttributeNames: {
-                '#dateServed': 'dateServed'
-            },
-            ExpressionAttributeValues: {
-                ':schoolId': schoolId,
-                ':startDate': startDate,
-                ':endDate': endDate
-            }
-        }));
-        const mealPlanData = mealPlanResult.Items || [];
-        const enrichedData = data.map(point => {
-            const mealPlan = mealPlanData.find(mp => mp.dateServed === point.timestamp.split('T')[0] &&
-                mp.mealType === point.mealType);
-            return {
-                ...point,
-                plannedNutrition: mealPlan?.nutritionalValues || null,
-                variance: mealPlan ? calculateNutritionalVariance(point.nutritionalValues, mealPlan.nutritionalValues) : null
-            };
+    const data = [];
+    const intakeResult = await dynamoDbClient.send(new lib_dynamodb_1.QueryCommand({
+        TableName: process.env.NUTRITION_TABLE_NAME || 'NutritionIntake',
+        KeyConditionExpression: 'schoolId = :schoolId',
+        FilterExpression: '#timestamp BETWEEN :startDate AND :endDate',
+        ExpressionAttributeNames: {
+            '#timestamp': 'timestamp',
+        },
+        ExpressionAttributeValues: {
+            ':schoolId': schoolId,
+            ':startDate': startDate,
+            ':endDate': endDate,
+        },
+    }));
+    data.push(...(intakeResult.Items || []));
+    const mealPlanResult = await dynamoDbClient.send(new lib_dynamodb_1.QueryCommand({
+        TableName: process.env.MEAL_PLANS_TABLE_NAME || 'MealPlans',
+        KeyConditionExpression: 'schoolId = :schoolId',
+        FilterExpression: '#dateServed BETWEEN :startDate AND :endDate',
+        ExpressionAttributeNames: {
+            '#dateServed': 'dateServed',
+        },
+        ExpressionAttributeValues: {
+            ':schoolId': schoolId,
+            ':startDate': startDate,
+            ':endDate': endDate,
+        },
+    }));
+    const mealPlanData = mealPlanResult.Items || [];
+    const enrichedData = data.map(point => {
+        const mealPlan = mealPlanData.find(mp => mp.dateServed === point.timestamp.split('T')[0] && mp.mealType === point.mealType);
+        return {
+            ...point,
+            plannedNutrition: mealPlan?.nutritionalValues || null,
+            variance: mealPlan
+                ? calculateNutritionalVariance(point.nutritionalValues, mealPlan.nutritionalValues)
+                : null,
+        };
+    });
+    const healthResult = await dynamoDbClient.send(new lib_dynamodb_1.ScanCommand({
+        TableName: process.env.CHILD_HEALTH_TABLE_NAME || 'ChildHealth',
+        FilterExpression: 'schoolId = :schoolId',
+        ExpressionAttributeValues: {
+            ':schoolId': schoolId,
+        },
+    }));
+    const healthData = healthResult.Items || [];
+    let filteredData = enrichedData;
+    if (ageGroups && ageGroups.length > 0) {
+        filteredData = enrichedData.filter(point => {
+            return ageGroups.some(group => point.demographicInfo.age >= group.min && point.demographicInfo.age <= group.max);
         });
-        const healthResult = await dynamoDbClient.send(new lib_dynamodb_1.ScanCommand({
-            TableName: process.env.CHILD_HEALTH_TABLE_NAME || 'ChildHealth',
-            FilterExpression: 'schoolId = :schoolId',
-            ExpressionAttributeValues: {
-                ':schoolId': schoolId
-            }
-        }));
-        const healthData = healthResult.Items || [];
-        let filteredData = enrichedData;
-        if (ageGroups && ageGroups.length > 0) {
-            filteredData = enrichedData.filter(point => {
-                return ageGroups.some(group => point.demographicInfo.age >= group.min &&
-                    point.demographicInfo.age <= group.max);
-            });
-        }
-        const dataWithHealthInfo = filteredData.map(point => {
-            const healthInfo = healthData.find(h => h.studentId === point.studentId);
-            return {
-                ...point,
-                healthMetrics: healthInfo ? {
+    }
+    const dataWithHealthInfo = filteredData.map(point => {
+        const healthInfo = healthData.find(h => h.studentId === point.studentId);
+        return {
+            ...point,
+            healthMetrics: healthInfo
+                ? {
                     height: healthInfo.height,
                     weight: healthInfo.weight,
                     bmi: healthInfo.bmi,
-                    growthPercentile: healthInfo.growthPercentile
-                } : null
-            };
-        });
-        console.log(`Fetched ${dataWithHealthInfo.length} nutritional data points for trend analysis`);
-        return dataWithHealthInfo;
-    }
-    catch (error) {
-        console.error('Error fetching nutritional data:', error);
-        throw error;
-    }
+                    growthPercentile: healthInfo.growthPercentile,
+                }
+                : null,
+        };
+    });
+    return dataWithHealthInfo;
 }
 function calculateNutritionalVariance(actual, planned) {
     const variance = {};
@@ -156,34 +153,36 @@ Expected JSON structure:
             body: JSON.stringify({
                 anthropic_version: 'bedrock-2023-05-31',
                 max_tokens: 4000,
-                messages: [{
+                messages: [
+                    {
                         role: 'user',
-                        content: prompt
-                    }]
-            })
+                        content: prompt,
+                    },
+                ],
+            }),
         });
         const response = await bedrockClient.send(command);
         const responseBody = JSON.parse(new TextDecoder().decode(response.body));
-        console.log(`AI trend analysis completed for ${analysisId}`);
         return JSON.parse(responseBody.content[0].text);
     }
     catch (error) {
-        console.error('Error in AI trend analysis:', error);
         return {
             trendAnalysis: {
                 nutritionalTrends: { error: 'AI analysis failed, using statistical fallback' },
                 behavioralPatterns: {},
-                seasonalInfluences: {}
+                seasonalInfluences: {},
             },
             keyFindings: ['AI analysis unavailable - manual review recommended'],
-            recommendations: [{
+            recommendations: [
+                {
                     priority: 'high',
                     category: 'system',
                     action: 'Review AI analysis configuration',
-                    expectedImpact: 'Restored comprehensive trend insights'
-                }],
+                    expectedImpact: 'Restored comprehensive trend insights',
+                },
+            ],
             riskFactors: [],
-            confidenceScores: { overall: 0.3 }
+            confidenceScores: { overall: 0.3 },
         };
     }
 }
@@ -215,7 +214,7 @@ function calculateTrendStatistics(dataPoints) {
         min,
         max,
         trend,
-        changePercentage
+        changePercentage,
     };
 }
 function performStatisticalAnalysis(data) {
@@ -250,9 +249,9 @@ function performStatisticalAnalysis(data) {
                 median: stats.median,
                 standardDeviation: stats.standardDeviation,
                 min: stats.min,
-                max: stats.max
+                max: stats.max,
             },
-            demographics: calculateDemographicBreakdown(data, component)
+            demographics: calculateDemographicBreakdown(data, component),
         };
     });
     return {
@@ -261,35 +260,35 @@ function performStatisticalAnalysis(data) {
             macronutrients: {
                 protein: nutritionalTrends.protein,
                 carbohydrates: nutritionalTrends.carbohydrates,
-                fat: nutritionalTrends.fat
+                fat: nutritionalTrends.fat,
             },
-            micronutrients: {}
+            micronutrients: {},
         },
         growthPatterns: {
-            correlations: calculateNutritionHealthCorrelations(data)
+            correlations: calculateNutritionHealthCorrelations(data),
         },
         behavioralPatterns: {
             acceptanceRates: calculateAcceptanceRates(data),
-            preferenceShifts: calculatePreferenceShifts(data)
+            preferenceShifts: calculatePreferenceShifts(data),
         },
         seasonalInfluences: {
             seasonalTrends: calculateSeasonalTrends(data),
-            climaticCorrelations: []
-        }
+            climaticCorrelations: [],
+        },
     };
 }
 function calculateDemographicBreakdown(data, component) {
     const ageGroups = {};
     const genderDistribution = {};
     data.forEach(point => {
-        const ageGroup = point.demographicInfo.age < 6 ? 'under-6' :
-            point.demographicInfo.age < 12 ? '6-11' : '12-18';
+        const ageGroup = point.demographicInfo.age < 6 ? 'under-6' : point.demographicInfo.age < 12 ? '6-11' : '12-18';
         if (!ageGroups[ageGroup])
             ageGroups[ageGroup] = 0;
         if (!genderDistribution[point.demographicInfo.gender])
             genderDistribution[point.demographicInfo.gender] = 0;
         ageGroups[ageGroup] += point.nutritionalValues[component] || 0;
-        genderDistribution[point.demographicInfo.gender] += point.nutritionalValues[component] || 0;
+        genderDistribution[point.demographicInfo.gender] +=
+            point.nutritionalValues[component] || 0;
     });
     return { ageGroups, genderDistribution };
 }
@@ -322,12 +321,13 @@ function calculatePreferenceShifts(data) {
             else {
                 preferenceTracking[preference].push({
                     date: point.timestamp.split('T')[0],
-                    count: 1
+                    count: 1,
                 });
             }
         });
     });
-    return Object.keys(preferenceTracking).map(foodItem => {
+    return Object.keys(preferenceTracking)
+        .map(foodItem => {
         const dataPoints = preferenceTracking[foodItem];
         const values = dataPoints.map(dp => dp.count);
         if (values.length < 2) {
@@ -340,23 +340,32 @@ function calculatePreferenceShifts(data) {
         const change = ((secondAvg - firstAvg) / firstAvg) * 100;
         return {
             foodItem,
-            trend: Math.abs(change) < 5 ? 'stable' : change > 0 ? 'increasing' : 'decreasing',
-            magnitude: Math.abs(change)
+            trend: Math.abs(change) < 5
+                ? 'stable'
+                : change > 0
+                    ? 'increasing'
+                    : 'decreasing',
+            magnitude: Math.abs(change),
         };
-    }).filter(shift => shift.magnitude > 0);
+    })
+        .filter(shift => shift.magnitude > 0);
 }
 function calculateSeasonalTrends(data) {
     const seasonalData = {
         spring: [],
         summer: [],
         fall: [],
-        winter: []
+        winter: [],
     };
     data.forEach(point => {
         const month = new Date(point.timestamp).getMonth() + 1;
-        const season = month >= 3 && month <= 5 ? 'spring' :
-            month >= 6 && month <= 8 ? 'summer' :
-                month >= 9 && month <= 11 ? 'fall' : 'winter';
+        const season = month >= 3 && month <= 5
+            ? 'spring'
+            : month >= 6 && month <= 8
+                ? 'summer'
+                : month >= 9 && month <= 11
+                    ? 'fall'
+                    : 'winter';
         seasonalData[season].push(point);
     });
     const seasonalTrends = {};
@@ -364,10 +373,11 @@ function calculateSeasonalTrends(data) {
         const seasonData = seasonalData[season];
         if (seasonData.length === 0)
             return;
-        const avgCalories = seasonData.reduce((sum, point) => sum + point.nutritionalValues.calories, 0) / seasonData.length;
+        const avgCalories = seasonData.reduce((sum, point) => sum + point.nutritionalValues.calories, 0) /
+            seasonData.length;
         const timeSeriesPoints = seasonData.map(point => ({
             date: point.timestamp.split('T')[0],
-            value: point.nutritionalValues.calories
+            value: point.nutritionalValues.calories,
         }));
         const stats = calculateTrendStatistics(timeSeriesPoints);
         seasonalTrends[season] = {
@@ -382,9 +392,9 @@ function calculateSeasonalTrends(data) {
                 median: stats.median,
                 standardDeviation: stats.standardDeviation,
                 min: stats.min,
-                max: stats.max
+                max: stats.max,
             },
-            demographics: calculateDemographicBreakdown(seasonData, 'calories')
+            demographics: calculateDemographicBreakdown(seasonData, 'calories'),
         };
     });
     return seasonalTrends;
@@ -402,7 +412,7 @@ function calculateNutritionHealthCorrelations(data) {
         metric1: 'calorie_intake',
         metric2: 'bmi',
         correlation: calorieCorrelation,
-        significance: Math.abs(calorieCorrelation) > 0.3 ? 'significant' : 'low'
+        significance: Math.abs(calorieCorrelation) > 0.3 ? 'significant' : 'low',
     });
     return correlations;
 }
@@ -424,47 +434,46 @@ function generatePredictiveInsights(trendData) {
     const scenarios = [];
     if (trendData.nutritionalTrends.calories) {
         const caloriesTrend = trendData.nutritionalTrends.calories;
-        const predictedCalories = caloriesTrend.current + (caloriesTrend.changePercentage / 100 * caloriesTrend.current);
+        const predictedCalories = caloriesTrend.current + (caloriesTrend.changePercentage / 100) * caloriesTrend.current;
         predictions.push({
             metric: 'daily_calories',
             predictedValue: Math.round(predictedCalories),
             confidence: caloriesTrend.significance === 'high' ? 0.8 : 0.6,
-            timeHorizon: '30_days'
+            timeHorizon: '30_days',
         });
         if (caloriesTrend.trend === 'decreasing' && Math.abs(caloriesTrend.changePercentage) > 15) {
             scenarios.push({
                 name: 'declining_nutrition_intake',
                 description: 'Continued decline in caloric intake may lead to nutritional deficiencies',
                 probability: 0.7,
-                impact: 'high'
+                impact: 'high',
             });
         }
     }
     return {
         shortTermPredictions: predictions,
-        scenarios
+        scenarios,
     };
 }
 function generateRecommendations(analysis) {
     const recommendations = [];
-    const nutritionalTrends = analysis.nutritionalTrends;
+    const { nutritionalTrends } = analysis;
     if (nutritionalTrends.calories && nutritionalTrends.calories.trend === 'decreasing') {
         recommendations.push({
             priority: 'high',
             category: 'nutrition_intervention',
             action: 'Implement calorie enhancement program with appealing meal options',
-            expectedImpact: 'Increase daily caloric intake by 10-15% within 4 weeks'
+            expectedImpact: 'Increase daily caloric intake by 10-15% within 4 weeks',
         });
     }
     if (analysis.behavioralPatterns.acceptanceRates) {
-        const lowAcceptanceRates = Object.entries(analysis.behavioralPatterns.acceptanceRates)
-            .filter(([_, rate]) => rate < 70);
+        const lowAcceptanceRates = Object.entries(analysis.behavioralPatterns.acceptanceRates).filter(([_, rate]) => rate < 70);
         if (lowAcceptanceRates.length > 0) {
             recommendations.push({
                 priority: 'medium',
                 category: 'menu_optimization',
                 action: `Redesign meal options with low acceptance rates: ${lowAcceptanceRates.map(([meal, _]) => meal).join(', ')}`,
-                expectedImpact: 'Improve meal acceptance rates by 20-30%'
+                expectedImpact: 'Improve meal acceptance rates by 20-30%',
             });
         }
     }
@@ -478,13 +487,15 @@ function generateVisualizations(analysis) {
             title: 'Daily Calorie Intake Trends',
             data: {
                 labels: analysis.nutritionalTrends.calories.dataPoints.map((dp) => dp.date),
-                datasets: [{
+                datasets: [
+                    {
                         label: 'Calories',
                         data: analysis.nutritionalTrends.calories.dataPoints.map((dp) => dp.value),
                         borderColor: 'rgb(75, 192, 192)',
-                        tension: 0.1
-                    }]
-            }
+                        tension: 0.1,
+                    },
+                ],
+            },
         });
     }
     if (analysis.behavioralPatterns.acceptanceRates) {
@@ -494,53 +505,45 @@ function generateVisualizations(analysis) {
             title: 'Meal Acceptance Rates by Type',
             data: {
                 labels: Object.keys(acceptanceData),
-                datasets: [{
+                datasets: [
+                    {
                         data: Object.values(acceptanceData),
-                        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0']
-                    }]
-            }
+                        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'],
+                    },
+                ],
+            },
         });
     }
     return { chartConfigs };
 }
 async function storeAnalysisResults(analysisId, results) {
-    try {
-        await dynamoDbClient.send(new lib_dynamodb_1.PutCommand({
-            TableName: process.env.TREND_ANALYSIS_TABLE_NAME || 'NutritionalTrendAnalysis',
-            Item: {
-                analysisId,
-                ...results,
-                createdAt: new Date().toISOString(),
-                ttl: Math.floor(Date.now() / 1000) + (90 * 24 * 60 * 60)
-            }
-        }));
-        console.log(`Stored trend analysis results: ${analysisId}`);
-    }
-    catch (error) {
-        console.error('Error storing analysis results:', error);
-        throw error;
-    }
+    await dynamoDbClient.send(new lib_dynamodb_1.PutCommand({
+        TableName: process.env.TREND_ANALYSIS_TABLE_NAME || 'NutritionalTrendAnalysis',
+        Item: {
+            ...results,
+            createdAt: new Date().toISOString(),
+            ttl: Math.floor(Date.now() / 1000) + 90 * 24 * 60 * 60,
+        },
+    }));
 }
 const handler = async (event) => {
-    console.log('Nutritional Trend Analyzer - Event received:', JSON.stringify(event, null, 2));
     try {
         const body = event.body ? JSON.parse(event.body) : {};
         const validatedData = TrendAnalysisRequestSchema.parse(body);
         const analysisId = `trend_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        console.log(`Starting trend analysis: ${analysisId}`);
         const nutritionalData = await fetchNutritionalData(validatedData.schoolId, validatedData.timeframe.startDate, validatedData.timeframe.endDate, validatedData.ageGroups);
         if (nutritionalData.length === 0) {
             return {
                 statusCode: 404,
                 headers: {
                     'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*'
+                    'Access-Control-Allow-Origin': '*',
                 },
                 body: JSON.stringify({
                     success: false,
                     error: 'No nutritional data found for the specified criteria',
-                    analysisId
-                })
+                    analysisId,
+                }),
             };
         }
         const statisticalAnalysis = performStatisticalAnalysis(nutritionalData);
@@ -550,13 +553,13 @@ const handler = async (event) => {
                 aiInsights = await analyzeTrendsWithAI(nutritionalData, validatedData.focusAreas, analysisId);
             }
             catch (error) {
-                console.warn('AI analysis failed, continuing with statistical analysis only:', error);
             }
         }
         const predictiveInsights = generatePredictiveInsights(statisticalAnalysis);
         const recommendations = generateRecommendations(statisticalAnalysis);
-        const visualizations = validatedData.includeVisualizations ?
-            generateVisualizations(statisticalAnalysis) : { chartConfigs: [] };
+        const visualizations = validatedData.includeVisualizations
+            ? generateVisualizations(statisticalAnalysis)
+            : { chartConfigs: [] };
         const results = {
             analysisId,
             timestamp: new Date().toISOString(),
@@ -565,20 +568,20 @@ const handler = async (event) => {
                 endDate: validatedData.timeframe.endDate,
                 totalDays: Math.ceil((new Date(validatedData.timeframe.endDate).getTime() -
                     new Date(validatedData.timeframe.startDate).getTime()) /
-                    (1000 * 60 * 60 * 24))
+                    (1000 * 60 * 60 * 24)),
             },
             trendAnalysis: statisticalAnalysis,
             comparativeAnalysis: {
                 benchmarkComparison: {},
-                peerGroupAnalysis: []
+                peerGroupAnalysis: [],
             },
             predictiveInsights,
             aiInsights: aiInsights || {
                 keyFindings: ['Statistical analysis completed - AI insights unavailable'],
                 recommendations,
-                riskFactors: []
+                riskFactors: [],
             },
-            visualizations
+            visualizations,
         };
         await storeAnalysisResults(analysisId, results);
         let responseData;
@@ -589,8 +592,10 @@ const handler = async (event) => {
                 recommendations: results.aiInsights.recommendations.slice(0, 3),
                 trends: {
                     calories: statisticalAnalysis.nutritionalTrends.calories?.trend || 'unknown',
-                    overallHealth: statisticalAnalysis.nutritionalTrends.calories?.trend === 'increasing' ? 'improving' : 'concerning'
-                }
+                    overallHealth: statisticalAnalysis.nutritionalTrends.calories?.trend === 'increasing'
+                        ? 'improving'
+                        : 'concerning',
+                },
             };
         }
         else {
@@ -600,7 +605,7 @@ const handler = async (event) => {
             statusCode: 200,
             headers: {
                 'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
+                'Access-Control-Allow-Origin': '*',
             },
             body: JSON.stringify({
                 success: true,
@@ -608,38 +613,37 @@ const handler = async (event) => {
                 metadata: {
                     dataPoints: nutritionalData.length,
                     analysisType: validatedData.focusAreas,
-                    processingTime: Date.now() - parseInt(analysisId.split('_')[1])
-                }
-            })
+                    processingTime: Date.now() - parseInt(analysisId.split('_')[1]),
+                },
+            }),
         };
     }
     catch (error) {
-        console.error('Error in nutritional trend analyzer:', error);
         if (error instanceof zod_1.z.ZodError) {
             return {
                 statusCode: 400,
                 headers: {
                     'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*'
+                    'Access-Control-Allow-Origin': '*',
                 },
                 body: JSON.stringify({
                     success: false,
                     error: 'Invalid request data',
-                    details: error.issues
-                })
+                    details: error.issues,
+                }),
             };
         }
         return {
             statusCode: 500,
             headers: {
                 'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
+                'Access-Control-Allow-Origin': '*',
             },
             body: JSON.stringify({
                 success: false,
                 error: 'Internal server error',
-                message: error instanceof Error ? error.message : 'Unknown error'
-            })
+                message: error instanceof Error ? error.message : 'Unknown error',
+            }),
         };
     }
 };

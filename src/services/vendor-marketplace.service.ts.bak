@@ -1,0 +1,1445 @@
+/**
+ * HASIVU Platform - Vendor Marketplace Service
+ *
+ * Comprehensive service for vendor marketplace operations including:
+ * - AI-powered vendor search and matching
+ * - RFP generation and management
+ * - Order orchestration and tracking
+ * - Quality control automation
+ * - Sustainability tracking
+ * - Analytics and insights
+ */
+
+import { logger } from '../utils/logger';
+import { DatabaseService } from './database.service';
+import { CacheService } from './cache.service';
+import { NotificationService } from './notification.service';
+
+export interface VendorSearchCriteria {
+  schoolId: string;
+  categoryId: string;
+  itemType: string;
+  quantity: number;
+  urgency: 'low' | 'medium' | 'high' | 'critical';
+  budget: {
+    min: number;
+    max: number;
+    currency: string;
+  };
+  qualitySpecs: {
+    certifications?: string[];
+    standards?: string[];
+    customRequirements?: string;
+  };
+  deliveryRequirements: {
+    location: string;
+    preferredDate: string;
+    maxDeliveryTime: number;
+    specialHandling?: string[];
+  };
+  sustainabilityRequirements: {
+    organicRequired: boolean;
+    localPreferred: boolean;
+    carbonFootprintLimit?: number;
+    packagingRequirements?: string[];
+  };
+  riskTolerance: 'conservative' | 'moderate' | 'aggressive';
+  diversificationRequired: boolean;
+}
+
+export interface VendorMatchResult {
+  vendorId: string;
+  vendorName: string;
+  matchScore: number;
+  priceEstimate: number;
+  deliveryTime: number;
+  qualityRating: number;
+  sustainabilityScore: number;
+  riskScore: number;
+  capabilities: string[];
+  certifications: string[];
+  location: {
+    address: string;
+    distance: number;
+  };
+  businessMetrics: {
+    onTimeDelivery: number;
+    qualityScore: number;
+    customerSatisfaction: number;
+    priceCompetitiveness: number;
+  };
+}
+
+export interface RFPConfig {
+  schoolId: string;
+  procurementId: string;
+  template: 'standard' | 'food_service' | 'equipment' | 'services' | 'maintenance';
+  urgency: 'standard' | 'expedited' | 'emergency';
+  evaluationCriteria: {
+    price_weight: number;
+    quality_weight: number;
+    delivery_weight: number;
+    sustainability_weight: number;
+    innovation_weight: number;
+  };
+  customRequirements?: string[];
+  complianceRequirements?: string[];
+}
+
+export interface OrderConfig {
+  orderId: string;
+  schoolId: string;
+  orderType: 'standard' | 'urgent' | 'bulk' | 'special';
+  items: Array<{
+    itemId: string;
+    quantity: number;
+    specifications?: Record<string, any>;
+    urgency: 'low' | 'medium' | 'high' | 'critical';
+    qualityRequirements?: string[];
+  }>;
+  deliveryRequirements: {
+    location: string;
+    preferredDate: string;
+    timeWindow: {
+      start: string;
+      end: string;
+    };
+    specialInstructions?: string;
+    contactPerson: string;
+    alternateContacts?: string[];
+  };
+  budgetConstraints: {
+    maxBudget: number;
+    currency: string;
+    paymentTerms?: string;
+  };
+  qualityStandards: {
+    inspectionRequired: boolean;
+    certificationRequirements?: string[];
+    customQualityChecks?: string[];
+  };
+  sustainabilityRequirements: {
+    carbonFootprintLimit?: number;
+    localSourcingPreferred: boolean;
+    organicRequired: boolean;
+    packagingRequirements?: string[];
+  };
+}
+
+export class VendorMarketplaceService {
+  private db: DatabaseService;
+  private cache: CacheService;
+  private notifications: NotificationService;
+
+  constructor() {
+    this.db = DatabaseService.getInstance();
+    this.cache = new CacheService();
+    this.notifications = new NotificationService();
+  }
+
+  /**
+   * AI-powered vendor search and matching
+   */
+  async searchAndMatchVendors(criteria: VendorSearchCriteria, userId: string): Promise<{
+    vendors: VendorMatchResult[];
+    searchMetadata: {
+      totalVendors: number;
+      searchTime: number;
+      algorithm: string;
+      filtersApplied: string[];
+    };
+  }> {
+    const startTime = Date.now();
+
+    try {
+      // Cache key for vendor search results
+      const cacheKey = `vendor_search:${JSON.stringify(criteria)}`;
+      const cached = await this.cache.get(cacheKey);
+
+      if (cached) {
+        logger.info('Returning cached vendor search results', { userId, cacheKey });
+        return cached as {
+          vendors: VendorMatchResult[];
+          searchMetadata: {
+            totalVendors: number;
+            searchTime: number;
+            algorithm: string;
+            filtersApplied: string[];
+          };
+        };
+      }
+
+      // Build vendor search query based on criteria
+      const vendors = await this.findMatchingVendors(criteria);
+
+      // Apply AI-powered matching algorithm
+      const rankedVendors = await this.rankVendorsByMatchScore(vendors, criteria);
+
+      // Apply risk assessment
+      const riskAssessedVendors = await this.assessVendorRisks(rankedVendors, criteria.riskTolerance);
+
+      // Apply diversification if required
+      const finalVendors = criteria.diversificationRequired
+        ? await this.applyDiversificationFilter(riskAssessedVendors, criteria)
+        : riskAssessedVendors.slice(0, 10); // Top 10 matches
+
+      const result = {
+        vendors: finalVendors,
+        searchMetadata: {
+          totalVendors: vendors.length,
+          searchTime: Date.now() - startTime,
+          algorithm: 'AI_POWERED_MULTI_CRITERIA',
+          filtersApplied: this.getAppliedFilters(criteria)
+        }
+      };
+
+      // Cache results for 15 minutes
+      await this.cache.set(cacheKey, result, { ttl: 900 });
+
+      // Log search activity
+      await this.logVendorSearch(userId, criteria, result);
+
+      return result;
+
+    } catch (error: unknown) {
+      logger.error('Vendor search failed', {
+        error: error instanceof Error ? (error instanceof Error ? error.message : String(error)) : 'Unknown error',
+        userId,
+        criteria
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Generate automated RFP with AI assistance
+   */
+  async generateRFP(config: RFPConfig, criteria: VendorSearchCriteria, userId: string): Promise<{
+    rfpDocument: {
+      id: string;
+      title: string;
+      sections: Array<{
+        title: string;
+        content: string;
+        requirements: string[];
+      }>;
+      timeline: {
+        issueDate: string;
+        submissionDeadline: string;
+        evaluationPeriod: string;
+        awardDate: string;
+      };
+      evaluationCriteria: Record<string, number>;
+    };
+    metadata: {
+      template: string;
+      generationTime: number;
+      aiAssisted: boolean;
+    };
+  }> {
+    const startTime = Date.now();
+
+    try {
+      // Generate RFP ID
+      const rfpId = `RFP_${config.schoolId}_${Date.now()}`;
+
+      // Load RFP template
+      const template = await this.loadRFPTemplate(config.template);
+
+      // Generate RFP sections with AI assistance
+      const sections = await this.generateRFPSections(template, criteria, config);
+
+      // Calculate timeline based on urgency
+      const timeline = this.calculateRFPTimeline(config.urgency);
+
+      // Validate evaluation criteria weights sum to 1
+      const totalWeight = Object.values(config.evaluationCriteria).reduce((sum, weight) => sum + weight, 0);
+      if (Math.abs(totalWeight - 1.0) > 0.01) {
+        throw new Error('Evaluation criteria weights must sum to 1.0');
+      }
+
+      const rfpDocument = {
+        id: rfpId,
+        title: `Request for Proposal - ${criteria.itemType} for ${config.schoolId}`,
+        sections,
+        timeline,
+        evaluationCriteria: config.evaluationCriteria
+      };
+
+      // Store RFP in database
+      await this.storeRFP(rfpDocument, config, userId);
+
+      return {
+        rfpDocument,
+        metadata: {
+          template: config.template,
+          generationTime: Date.now() - startTime,
+          aiAssisted: true
+        }
+      };
+
+    } catch (error: unknown) {
+      logger.error('RFP generation failed', {
+        error: error instanceof Error ? (error instanceof Error ? error.message : String(error)) : 'Unknown error',
+        userId,
+        config
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Place and orchestrate order with real-time tracking
+   */
+  async placeOrder(orderConfig: OrderConfig, userId: string): Promise<{
+    orderId: string;
+    status: string;
+    timeline: {
+      orderPlaced: string;
+      estimatedDelivery: string;
+      trackingAvailable: boolean;
+    };
+    vendors: Array<{
+      vendorId: string;
+      items: string[];
+      estimatedDelivery: string;
+    }>;
+  }> {
+    try {
+      // Validate order configuration
+      await this.validateOrderConfig(orderConfig);
+
+      // Check inventory availability
+      const availability = await this.checkInventoryAvailability(orderConfig.items, orderConfig.schoolId);
+      if (!availability.allAvailable) {
+        throw new Error(`Items not available: ${availability.unavailableItems.join(', ')}`);
+      }
+
+      // Split order among optimal vendors
+      const vendorAssignments = await this.optimizeVendorAssignment(orderConfig);
+
+      // Create order records
+      const order = await this.createOrderRecord(orderConfig, vendorAssignments, userId);
+
+      // Initialize tracking
+      await this.initializeOrderTracking(order.orderId, vendorAssignments);
+
+      // Send notifications to vendors
+      await this.notifyVendorsOfNewOrder(vendorAssignments, orderConfig);
+
+      return {
+        orderId: order.orderId,
+        status: 'CONFIRMED',
+        timeline: {
+          orderPlaced: new Date().toISOString(),
+          estimatedDelivery: await this.calculateEstimatedDelivery(vendorAssignments),
+          trackingAvailable: true
+        },
+        vendors: vendorAssignments.map(assignment => ({
+          vendorId: assignment.vendorId,
+          items: assignment.items.map((item: any) => item.itemId),
+          estimatedDelivery: assignment.estimatedDelivery
+        }))
+      };
+
+    } catch (error: unknown) {
+      logger.error('Order placement failed', {
+        error: error instanceof Error ? (error instanceof Error ? error.message : String(error)) : 'Unknown error',
+        userId,
+        orderConfig
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Get comprehensive vendor profile and analytics
+   */
+  async getVendorProfile(vendorId: string, analysisType: 'basic' | 'comprehensive' | 'risk_assessment' = 'comprehensive'): Promise<{
+    vendor: {
+      id: string;
+      name: string;
+      category: string[];
+      location: {
+        address: string;
+        coordinates: { lat: number; lng: number };
+      };
+      contact: {
+        primaryContact: string;
+        phone: string;
+        email: string;
+      };
+      businessInfo: {
+        established: string;
+        employees: number;
+        annualRevenue: number;
+        certifications: string[];
+      };
+    };
+    analytics: {
+      performanceMetrics: {
+        onTimeDelivery: number;
+        qualityScore: number;
+        customerSatisfaction: number;
+        priceCompetitiveness: number;
+      };
+      riskAssessment: {
+        overallRisk: 'LOW' | 'MEDIUM' | 'HIGH';
+        factors: Array<{
+          category: string;
+          risk: string;
+          impact: string;
+          mitigation: string;
+        }>;
+      };
+      sustainabilityMetrics: {
+        carbonFootprint: number;
+        sustainabilityRating: number;
+        certifications: string[];
+      };
+      financialHealth: {
+        creditRating: string;
+        paymentHistory: number;
+        businessStability: number;
+      };
+    };
+  }> {
+    try {
+      // Get basic vendor information
+      const vendor = await this.getVendorById(vendorId);
+      if (!vendor) {
+        throw new Error(`Vendor ${vendorId} not found`);
+      }
+
+      // Get analytics based on analysis type
+      let analytics;
+      switch (analysisType) {
+        case 'basic':
+          analytics = await this.getBasicVendorAnalytics(vendorId);
+          break;
+        case 'risk_assessment':
+          analytics = await this.getRiskAssessmentAnalytics(vendorId);
+          break;
+        case 'comprehensive':
+        default:
+          analytics = await this.getComprehensiveVendorAnalytics(vendorId);
+          break;
+      }
+
+      return { vendor, analytics };
+
+    } catch (error: unknown) {
+      logger.error('Failed to get vendor profile', {
+        error: error instanceof Error ? (error instanceof Error ? error.message : String(error)) : 'Unknown error',
+        vendorId,
+        analysisType
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Real-time analytics dashboard data
+   */
+  async getAnalyticsDashboard(filters: {
+    timeframe: 'realtime' | 'hourly' | 'daily' | 'weekly' | 'monthly';
+    metrics?: string[];
+    vendorIds?: string[];
+    categories?: string[];
+    startDate?: string;
+    endDate?: string;
+  }): Promise<{
+    widgets: Array<{
+      id: string;
+      type: string;
+      title: string;
+      data: any;
+      lastUpdated: string;
+    }>;
+    metrics: {
+      totalOrders: number;
+      totalValue: number;
+      averageDeliveryTime: number;
+      qualityScore: number;
+      vendorPerformance: number;
+      sustainabilityScore: number;
+    };
+  }> {
+    try {
+      const timeRange = this.calculateTimeRange(filters.timeframe, filters.startDate, filters.endDate);
+
+      // Get core metrics
+      const metrics = await this.getCoreMetrics(timeRange, filters);
+
+      // Generate dashboard widgets
+      const widgets = await this.generateDashboardWidgets(filters, timeRange);
+
+      return {
+        widgets,
+        metrics
+      };
+
+    } catch (error: unknown) {
+      logger.error('Failed to get analytics dashboard', {
+        error: error instanceof Error ? (error instanceof Error ? error.message : String(error)) : 'Unknown error',
+        filters
+      });
+      throw error;
+    }
+  }
+
+  // Private helper methods
+  private async findMatchingVendors(criteria: VendorSearchCriteria): Promise<any[]> {
+    // Implementation for finding matching vendors from database
+    // Note: This is a simplified implementation as vendor model may not exist in current schema
+    // In production, this would query a vendor table with proper filtering
+    try {
+      // For now, return mock data - in production this would query actual vendor data
+      return [
+        {
+          id: 'vendor_1',
+          name: 'Sample Vendor',
+          categories: [criteria.categoryId],
+          location: criteria.deliveryRequirements.location,
+          active: true,
+          verified: true,
+          qualityRating: 4.5,
+          sustainabilityScore: 0.8,
+          riskScore: 0.2,
+          capabilities: ['food_service'],
+          certifications: ['FSSAI'],
+          address: 'Sample Address',
+          averageDeliveryTime: 2,
+          priceRange: { min: 50, max: 200 }
+        }
+      ];
+    } catch (error: unknown) {
+      logger.error('Failed to find matching vendors', error);
+      return [];
+    }
+  }
+
+  private async rankVendorsByMatchScore(vendors: any[] | undefined, criteria: VendorSearchCriteria): Promise<VendorMatchResult[]> {
+    // AI-powered ranking algorithm
+    return vendors.map(vendor => {
+      const matchScore = this.calculateMatchScore(vendor, criteria);
+      return {
+        vendorId: vendor.id,
+        vendorName: vendor.name,
+        matchScore,
+        priceEstimate: this.estimatePrice(vendor, criteria),
+        deliveryTime: this.estimateDeliveryTime(vendor, criteria),
+        qualityRating: vendor.qualityRating || 0,
+        sustainabilityScore: vendor.sustainabilityScore || 0,
+        riskScore: vendor.riskScore || 0,
+        capabilities: vendor.capabilities || [],
+        certifications: vendor.certifications || [],
+        location: {
+          address: vendor.address,
+          distance: this.calculateDistance(vendor.location, criteria.deliveryRequirements.location)
+        },
+        businessMetrics: {
+          onTimeDelivery: vendor.onTimeDelivery || 0,
+          qualityScore: vendor.qualityScore || 0,
+          customerSatisfaction: vendor.customerSatisfaction || 0,
+          priceCompetitiveness: vendor.priceCompetitiveness || 0
+        }
+      };
+    }).sort((a, b) => b.matchScore - a.matchScore);
+  }
+
+  private calculateMatchScore(vendor: any, criteria: VendorSearchCriteria): number {
+    // Multi-criteria scoring algorithm
+    let score = 0;
+
+    // Price score (30%)
+    const priceScore = this.calculatePriceScore(vendor, criteria.budget);
+    score += priceScore * 0.3;
+
+    // Quality score (25%)
+    score += (vendor.qualityRating || 0) * 0.25;
+
+    // Delivery score (20%)
+    const deliveryScore = this.calculateDeliveryScore(vendor, criteria.deliveryRequirements);
+    score += deliveryScore * 0.2;
+
+    // Sustainability score (15%)
+    score += (vendor.sustainabilityScore || 0) * 0.15;
+
+    // Risk score (10%)
+    const riskScore = 1 - (vendor.riskScore || 0);
+    score += riskScore * 0.1;
+
+    return Math.min(Math.max(score, 0), 1);
+  }
+
+  private calculatePriceScore(vendor: any, budget: { min: number; max: number }): number {
+    if (!vendor.priceRange) return 0.5;
+
+    const avgPrice = (vendor.priceRange.min + vendor.priceRange.max) / 2;
+    const budgetMid = (budget.min + budget.max) / 2;
+
+    if (avgPrice <= budgetMid) {
+      return 1 - (avgPrice / budgetMid) * 0.3;
+    } else {
+      return Math.max(0, 1 - ((avgPrice - budgetMid) / budgetMid));
+    }
+  }
+
+  private calculateDeliveryScore(vendor: any, requirements: any): number {
+    if (!vendor.averageDeliveryTime) return 0.5;
+
+    const deliveryRatio = vendor.averageDeliveryTime / requirements.maxDeliveryTime;
+    return Math.max(0, 1 - deliveryRatio);
+  }
+
+  private calculateDistance(location1: any, location2: any): number {
+    // Haversine formula for calculating distance
+    const R = 6371; // Earth's radius in km
+    const dLat = this.deg2rad(location2.lat - location1.lat);
+    const dLon = this.deg2rad(location2.lng - location1.lng);
+
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(this.deg2rad(location1.lat)) * Math.cos(this.deg2rad(location2.lat)) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  }
+
+  private deg2rad(deg: number): number {
+    return deg * (Math.PI/180);
+  }
+
+  private getAppliedFilters(criteria: VendorSearchCriteria): string[] {
+    const filters = [];
+
+    if (criteria.budget.max > 0) filters.push('budget');
+    if (criteria.sustainabilityRequirements.organicRequired) filters.push('organic');
+    if (criteria.sustainabilityRequirements.localPreferred) filters.push('local_sourcing');
+    if (criteria.qualitySpecs.certifications?.length) filters.push('certifications');
+    if (criteria.urgency !== 'low') filters.push('urgency');
+
+    return filters;
+  }
+
+  private async assessVendorRisks(vendors: VendorMatchResult[], riskTolerance: string): Promise<VendorMatchResult[]> {
+    // Filter vendors based on risk tolerance
+    const riskThresholds = {
+      conservative: 0.3,
+      moderate: 0.6,
+      aggressive: 1.0
+    };
+
+    const threshold = riskThresholds[riskTolerance as keyof typeof riskThresholds];
+    return vendors.filter(vendor => vendor.riskScore <= threshold);
+  }
+
+  private async applyDiversificationFilter(vendors: VendorMatchResult[], criteria: VendorSearchCriteria): Promise<VendorMatchResult[]> {
+    // Ensure vendor diversification to reduce supply chain risk
+    const diversified: VendorMatchResult[] = [];
+    const usedCategories = new Set<string>();
+    const maxVendorsPerCategory = 2;
+
+    for (const vendor of vendors) {
+      const vendorData = await this.getVendorById(vendor.vendorId);
+      const primaryCategory = vendorData?.categories?.[0];
+
+      if (!primaryCategory) continue;
+
+      const categoryCount = diversified.filter(v =>
+        v.vendorId === vendor.vendorId // This needs vendor category info
+      ).length;
+
+      if (categoryCount < maxVendorsPerCategory) {
+        diversified.push(vendor);
+        usedCategories.add(primaryCategory);
+      }
+
+      if (diversified.length >= 8) break; // Max 8 diversified vendors
+    }
+
+    return diversified;
+  }
+
+  private async logVendorSearch(userId: string, criteria: VendorSearchCriteria, result: any): Promise<void> {
+    // Log search activity for analytics and audit
+    // Mock implementation - in production this would create a database record
+    logger.info('Vendor search logged', {
+      userId,
+      schoolId: criteria.schoolId,
+      resultsCount: result.vendors.length,
+      searchTime: result.searchMetadata.searchTime
+    });
+  }
+
+  private async loadRFPTemplate(template: string): Promise<any> {
+    // Load RFP template from database or file system
+    // Mock implementation - in production this would load from database
+    return {
+      name: template,
+      sections: [
+        { title: 'Executive Summary', content: 'Template content for executive summary' },
+        { title: 'Requirements', content: 'Template content for requirements' },
+        { title: 'Evaluation Criteria', content: 'Template content for evaluation' }
+      ]
+    };
+  }
+
+  private async generateRFPSections(template: any, criteria: VendorSearchCriteria, config: RFPConfig): Promise<any[]> {
+    // Generate RFP sections with AI assistance
+    const sections = [];
+
+    // Overview section
+    sections.push({
+      title: 'Project Overview',
+      content: `This RFP is for the procurement of ${criteria.itemType} for ${criteria.schoolId}. The requirement is for ${criteria.quantity} units with ${criteria.urgency} urgency.`,
+      requirements: []
+    });
+
+    // Requirements section
+    sections.push({
+      title: 'Technical Requirements',
+      content: 'Vendors must meet the following technical specifications:',
+      requirements: [
+        ...criteria.qualitySpecs.standards || [],
+        ...criteria.qualitySpecs.certifications || [],
+        criteria.qualitySpecs.customRequirements || ''
+      ].filter(Boolean)
+    });
+
+    // Sustainability section
+    if (criteria.sustainabilityRequirements.organicRequired || criteria.sustainabilityRequirements.localPreferred) {
+      sections.push({
+        title: 'Sustainability Requirements',
+        content: 'The following sustainability criteria must be met:',
+        requirements: [
+          criteria.sustainabilityRequirements.organicRequired ? 'Organic certification required' : '',
+          criteria.sustainabilityRequirements.localPreferred ? 'Local sourcing preferred' : '',
+          criteria.sustainabilityRequirements.carbonFootprintLimit ?
+            `Maximum carbon footprint: ${criteria.sustainabilityRequirements.carbonFootprintLimit} kg CO2e` : ''
+        ].filter(Boolean)
+      });
+    }
+
+    return sections;
+  }
+
+  private calculateRFPTimeline(urgency: string): any {
+    const now = new Date();
+    let submissionDays, evaluationDays, awardDays;
+
+    switch (urgency) {
+      case 'emergency':
+        submissionDays = 3;
+        evaluationDays = 2;
+        awardDays = 1;
+        break;
+      case 'expedited':
+        submissionDays = 7;
+        evaluationDays = 5;
+        awardDays = 3;
+        break;
+      default:
+        submissionDays = 14;
+        evaluationDays = 10;
+        awardDays = 5;
+    }
+
+    return {
+      issueDate: now.toISOString(),
+      submissionDeadline: new Date(now.getTime() + submissionDays * 24 * 60 * 60 * 1000).toISOString(),
+      evaluationPeriod: `${evaluationDays} business days`,
+      awardDate: new Date(now.getTime() + (submissionDays + evaluationDays + awardDays) * 24 * 60 * 60 * 1000).toISOString()
+    };
+  }
+
+  private async storeRFP(rfpDocument: any, config: RFPConfig, userId: string): Promise<void> {
+    // Mock implementation - in production this would create a database record
+    logger.info('RFP stored', {
+      rfpId: rfpDocument.id,
+      userId,
+      status: 'PUBLISHED'
+    });
+  }
+
+  private async validateOrderConfig(orderConfig: OrderConfig): Promise<void> {
+    // Validate order configuration
+    if (orderConfig.items.length === 0) {
+      throw new Error('Order must contain at least one item');
+    }
+
+    if (orderConfig.budgetConstraints.maxBudget <= 0) {
+      throw new Error('Budget must be greater than zero');
+    }
+
+    // Additional validations...
+  }
+
+  private async checkInventoryAvailability(items: any[] | undefined, schoolId: string): Promise<{ allAvailable: boolean; unavailableItems: string[] }> {
+    // Check if all items are available
+    // Mock implementation - in production this would check actual inventory
+    const unavailableItems: string[] = [];
+
+    for (const item of items) {
+      // Simulate inventory check - assume all items are available for now
+      const isAvailable = Math.random() > 0.1; // 90% availability rate
+      if (!isAvailable) {
+        unavailableItems.push(item.itemId);
+      }
+    }
+
+    return {
+      allAvailable: unavailableItems.length === 0,
+      unavailableItems
+    };
+  }
+
+  private async optimizeVendorAssignment(orderConfig: OrderConfig): Promise<any[]> {
+    // Optimize vendor assignment for order items
+    const assignments = [];
+
+    for (const item of orderConfig.items) {
+      const bestVendors = await this.findBestVendorsForItem(item, orderConfig);
+      assignments.push({
+        vendorId: bestVendors[0].id,
+        items: [item],
+        estimatedDelivery: bestVendors[0].estimatedDelivery
+      });
+    }
+
+    return assignments;
+  }
+
+  private async findBestVendorsForItem(item: any, orderConfig: OrderConfig): Promise<any[]> {
+    // Find best vendors for specific item
+    // Mock implementation - in production this would query actual vendor data
+    return [
+      {
+        id: 'vendor_1',
+        name: 'Best Vendor for Item',
+        rating: 4.5,
+        estimatedDelivery: 2,
+        price: 150
+      }
+    ];
+  }
+
+  private async createOrderRecord(orderConfig: OrderConfig, vendorAssignments: any[] | undefined, userId: string): Promise<any> {
+    // Mock implementation - in production this would create a database record
+    const orderId = `ORDER_${Date.now()}`;
+    return {
+      ...orderConfig,
+      orderId,
+      vendorAssignments,
+      createdBy: userId,
+      status: 'CONFIRMED',
+      createdAt: new Date()
+    };
+  }
+
+  private async initializeOrderTracking(orderId: string, vendorAssignments: any[] | undefined): Promise<void> {
+    // Mock implementation - in production this would create database records
+    for (const assignment of vendorAssignments) {
+      logger.info('Order tracking initialized', {
+        orderId,
+        vendorId: assignment.vendorId,
+        status: 'CONFIRMED',
+        estimatedDelivery: assignment.estimatedDelivery
+      });
+    }
+  }
+
+  private async notifyVendorsOfNewOrder(vendorAssignments: any[] | undefined, orderConfig: OrderConfig): Promise<void> {
+    for (const assignment of vendorAssignments) {
+      await NotificationService.sendNotification({
+        recipientId: assignment.vendorId,
+        recipientType: 'admin',
+        priority: 'high',
+        title: `New Order: ${orderConfig.orderId}`,
+        body: `You have been assigned a new order`,
+        data: {
+          orderId: orderConfig.orderId,
+          items: assignment.items,
+          deliveryDate: assignment.estimatedDelivery
+        }
+      });
+    }
+  }
+
+  private async calculateEstimatedDelivery(vendorAssignments: any[] | undefined): Promise<string> {
+    const latestDelivery = Math.max(...vendorAssignments.map(a => new Date(a.estimatedDelivery).getTime()));
+    return new Date(latestDelivery).toISOString();
+  }
+
+  private async getVendorById(vendorId: string): Promise<any> {
+    // Mock implementation - in production this would query actual vendor data
+    return {
+      id: vendorId,
+      name: 'Sample Vendor',
+      categories: ['food_service'],
+      location: { lat: 0, lng: 0 },
+      active: true,
+      verified: true,
+      qualityRating: 4.5,
+      sustainabilityScore: 0.8,
+      riskScore: 0.2,
+      capabilities: ['food_service'],
+      certifications: ['FSSAI'],
+      address: 'Sample Address',
+      averageDeliveryTime: 2,
+      priceRange: { min: 50, max: 200 }
+    };
+  }
+
+  private async getBasicVendorAnalytics(vendorId: string): Promise<any> {
+    return {
+      performanceMetrics: await this.getPerformanceMetrics(vendorId),
+      riskAssessment: { overallRisk: 'LOW' as const, factors: [] },
+      sustainabilityMetrics: { carbonFootprint: 0, sustainabilityRating: 0, certifications: [] },
+      financialHealth: { creditRating: 'A', paymentHistory: 0, businessStability: 0 }
+    };
+  }
+
+  private async getRiskAssessmentAnalytics(vendorId: string): Promise<any> {
+    return {
+      performanceMetrics: await this.getPerformanceMetrics(vendorId),
+      riskAssessment: await this.assessVendorRisk(vendorId),
+      sustainabilityMetrics: { carbonFootprint: 0, sustainabilityRating: 0, certifications: [] },
+      financialHealth: await this.getFinancialHealth(vendorId)
+    };
+  }
+
+  private async getComprehensiveVendorAnalytics(vendorId: string): Promise<any> {
+    return {
+      performanceMetrics: await this.getPerformanceMetrics(vendorId),
+      riskAssessment: await this.assessVendorRisk(vendorId),
+      sustainabilityMetrics: await this.getSustainabilityMetrics(vendorId),
+      financialHealth: await this.getFinancialHealth(vendorId)
+    };
+  }
+
+  private async getPerformanceMetrics(vendorId: string): Promise<any> {
+    // Mock implementation - in production this would query actual metrics
+    return {
+      onTimeDelivery: 0.95,
+      qualityScore: 4.2,
+      customerSatisfaction: 4.5,
+      priceCompetitiveness: 3.8
+    };
+  }
+
+  private async assessVendorRisk(vendorId: string): Promise<any> {
+    return {
+      overallRisk: 'MEDIUM' as const,
+      factors: [
+        {
+          category: 'Financial',
+          risk: 'Medium',
+          impact: 'Moderate',
+          mitigation: 'Regular credit monitoring'
+        }
+      ]
+    };
+  }
+
+  private async getSustainabilityMetrics(vendorId: string): Promise<any> {
+    // Mock implementation - in production this would query actual sustainability data
+    return {
+      carbonFootprint: 150,
+      sustainabilityRating: 3.5,
+      certifications: ['ISO14001', 'Green Business']
+    };
+  }
+
+  private async getFinancialHealth(vendorId: string): Promise<any> {
+    // Mock implementation - in production this would query actual financial data
+    return {
+      creditRating: 'A-',
+      paymentHistory: 0.98,
+      businessStability: 4.2
+    };
+  }
+
+  private calculateTimeRange(timeframe: string, startDate?: string, endDate?: string): { start: Date; end: Date } {
+    const now = new Date();
+    let start: Date, end: Date = now;
+
+    if (startDate && endDate) {
+      start = new Date(startDate);
+      end = new Date(endDate);
+    } else {
+      switch (timeframe) {
+        case 'realtime':
+          start = new Date(now.getTime() - 60 * 60 * 1000); // Last hour
+          break;
+        case 'hourly':
+          start = new Date(now.getTime() - 24 * 60 * 60 * 1000); // Last 24 hours
+          break;
+        case 'daily':
+          start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000); // Last 7 days
+          break;
+        case 'weekly':
+          start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); // Last 30 days
+          break;
+        case 'monthly':
+          start = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000); // Last year
+          break;
+        default:
+          start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      }
+    }
+
+    return { start, end };
+  }
+
+  private async getCoreMetrics(timeRange: { start: Date; end: Date }, filters: any): Promise<any> {
+    // Mock implementation - in production this would query actual order data
+    return {
+      totalOrders: 150,
+      totalValue: 45000,
+      averageDeliveryTime: 2.5,
+      qualityScore: 0.85,
+      vendorPerformance: 0.90,
+      sustainabilityScore: 0.75
+    };
+  }
+
+  private async generateDashboardWidgets(filters: any, timeRange: any): Promise<any[]> {
+    return [
+      {
+        id: 'orders-summary',
+        type: 'summary-card',
+        title: 'Orders Summary',
+        data: await this.getCoreMetrics(timeRange, filters),
+        lastUpdated: new Date().toISOString()
+      },
+      {
+        id: 'vendor-performance',
+        type: 'chart',
+        title: 'Vendor Performance',
+        data: {
+          labels: ['On-Time', 'Quality', 'Price', 'Service'],
+          values: [90, 85, 80, 88]
+        },
+        lastUpdated: new Date().toISOString()
+      }
+    ];
+  }
+
+  private estimatePrice(vendor: any, criteria: VendorSearchCriteria): number {
+    // Price estimation algorithm
+    const basePrice = vendor.basePrice || 100;
+    const quantityMultiplier = Math.log10(criteria.quantity) / 2;
+    const urgencyMultiplier = criteria.urgency === 'critical' ? 1.5 : criteria.urgency === 'high' ? 1.2 : 1.0;
+
+    return Math.round(basePrice * (1 + quantityMultiplier) * urgencyMultiplier);
+  }
+
+  private estimateDeliveryTime(vendor: any, criteria: VendorSearchCriteria): number {
+    const baseDeliveryTime = vendor.averageDeliveryTime || 3;
+    const urgencyMultiplier = criteria.urgency === 'critical' ? 0.5 : criteria.urgency === 'high' ? 0.7 : 1.0;
+
+    return Math.max(1, Math.round(baseDeliveryTime * urgencyMultiplier));
+  }
+
+   /**
+    * Get RFP by ID with school validation
+    */
+   async getRFPById(rfpId: string, schoolId?: string): Promise<any> {
+     // Mock implementation - in production this would query actual RFP data
+     return {
+       id: rfpId,
+       title: 'Sample RFP',
+       status: 'PUBLISHED',
+       schoolId: schoolId || 'school_1',
+       createdAt: new Date()
+     };
+   }
+
+   /**
+    * Get RFP submissions
+    */
+   async getRFPSubmissions(rfpId: string): Promise<any[]> {
+     // Mock implementation - in production this would query actual submission data
+     return [
+       {
+         id: 'submission_1',
+         rfpId,
+         vendorId: 'vendor_1',
+         submittedAt: new Date(),
+         status: 'SUBMITTED'
+       }
+     ];
+   }
+
+  /**
+   * Process quality inspection with computer vision
+   */
+  async processQualityInspection(inspectionConfig: any, userId: string): Promise<{
+    inspectionId: string;
+    results: Array<{
+      itemId: string;
+      passed: boolean;
+      score: number;
+      issues: string[];
+      recommendations: string[];
+    }>;
+    overallQuality: {
+      score: number;
+      grade: string;
+      certification: boolean;
+    };
+  }> {
+    try {
+      const inspectionId = `INSP_${Date.now()}`;
+      const results = [];
+
+      for (const item of inspectionConfig.items) {
+        const itemResult = await this.inspectItem(item, inspectionConfig.qualityChecks);
+        results.push(itemResult);
+      }
+
+      const overallScore = results.reduce((sum, result) => sum + result.score, 0) / results.length;
+      const overallQuality = {
+        score: overallScore,
+        grade: this.getQualityGrade(overallScore),
+        certification: overallScore >= 0.8
+      };
+
+      // Store inspection results
+      // Mock implementation - in production this would create a database record
+      logger.info('Quality inspection stored', {
+        inspectionId,
+        orderId: inspectionConfig.orderId,
+        vendorId: inspectionConfig.vendorId,
+        overallScore: overallQuality.score
+      });
+
+      return {
+        inspectionId,
+        results,
+        overallQuality
+      };
+
+    } catch (error: unknown) {
+      logger.error('Quality inspection failed', {
+        error: error instanceof Error ? (error instanceof Error ? error.message : String(error)) : 'Unknown error',
+        inspectionConfig,
+        userId
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Track sustainability metrics
+   */
+  async trackSustainabilityMetrics(sustainabilityData: any, userId: string): Promise<{
+    trackingId: string;
+    carbonFootprint: {
+      total: number;
+      breakdown: Record<string, number>;
+      offsetCredits: number;
+      netImpact: number;
+    };
+    sustainabilityScore: number;
+    certifications: string[];
+    recommendations: string[];
+  }> {
+    try {
+      const trackingId = `SUST_${Date.now()}`;
+
+      // Calculate carbon footprint
+      const carbonFootprint = {
+        total: sustainabilityData.carbonFootprint.total,
+        breakdown: {
+          production: sustainabilityData.carbonFootprint.production,
+          transportation: sustainabilityData.carbonFootprint.transportation,
+          packaging: sustainabilityData.carbonFootprint.packaging
+        },
+        offsetCredits: sustainabilityData.carbonFootprint.offsetCredits || 0,
+        netImpact: sustainabilityData.carbonFootprint.total - (sustainabilityData.carbonFootprint.offsetCredits || 0)
+      };
+
+      // Calculate sustainability score
+      const sustainabilityScore = this.calculateSustainabilityScore(sustainabilityData.sustainability);
+
+      // Extract certifications
+      const certifications = [];
+      if (sustainabilityData.sustainability.organicCertified) certifications.push('ORGANIC');
+      if (sustainabilityData.sustainability.fairTrade) certifications.push('FAIR_TRADE');
+      if (sustainabilityData.sustainability.sustainablePackaging) certifications.push('SUSTAINABLE_PACKAGING');
+      if (sustainabilityData.sustainability.renewableEnergy) certifications.push('RENEWABLE_ENERGY');
+
+      // Generate recommendations
+      const recommendations = this.generateSustainabilityRecommendations(sustainabilityData);
+
+      // Store sustainability tracking data
+      // Mock implementation - in production this would create a database record
+      logger.info('Sustainability tracking stored', {
+        trackingId,
+        sustainabilityScore,
+        carbonFootprint: carbonFootprint.total
+      });
+
+      return {
+        trackingId,
+        carbonFootprint,
+        sustainabilityScore,
+        certifications,
+        recommendations
+      };
+
+    } catch (error: unknown) {
+      logger.error('Sustainability tracking failed', {
+        error: error instanceof Error ? (error instanceof Error ? error.message : String(error)) : 'Unknown error',
+        sustainabilityData,
+        userId
+      });
+      throw error;
+    }
+  }
+
+  // Private helper methods for quality inspection
+  private async inspectItem(item: any, qualityChecks: any[] | undefined): Promise<any> {
+    const itemResult = {
+      itemId: item.itemId,
+      passed: true,
+      score: 0,
+      issues: [] as string[],
+      recommendations: [] as string[]
+    };
+
+    let totalScore = 0;
+    let checkCount = 0;
+
+    for (const check of qualityChecks) {
+      const checkResult = await this.performQualityCheck(item, check);
+      totalScore += checkResult.score;
+      checkCount++;
+
+      if (!checkResult.passed) {
+        itemResult.passed = false;
+        itemResult.issues.push(checkResult.issue);
+        itemResult.recommendations.push(checkResult.recommendation);
+      }
+    }
+
+    itemResult.score = checkCount > 0 ? totalScore / checkCount : 0;
+    return itemResult;
+  }
+
+  private async performQualityCheck(item: any, check: any): Promise<any> {
+    // Simulate quality check logic
+    const passed = Math.random() > 0.2; // 80% pass rate
+    const score = passed ? 0.85 + Math.random() * 0.15 : 0.3 + Math.random() * 0.4;
+
+    return {
+      passed,
+      score,
+      issue: passed ? null : `${check.checkType} failed for item ${item.itemId}`,
+      recommendation: passed ? null : `Improve ${check.checkType} standards`
+    };
+  }
+
+  private getQualityGrade(score: number): string {
+    if (score >= 0.9) return 'A+';
+    if (score >= 0.85) return 'A';
+    if (score >= 0.8) return 'B+';
+    if (score >= 0.75) return 'B';
+    if (score >= 0.7) return 'C+';
+    if (score >= 0.65) return 'C';
+    return 'D';
+  }
+
+  private calculateSustainabilityScore(sustainability: any): number {
+    let score = 0;
+    let factors = 0;
+
+    if (sustainability.organicCertified) { score += 0.25; factors++; }
+    if (sustainability.locallySourced) { score += 0.2; factors++; }
+    if (sustainability.fairTrade) { score += 0.15; factors++; }
+    if (sustainability.sustainablePackaging) { score += 0.2; factors++; }
+    if (sustainability.renewableEnergy) { score += 0.2; factors++; }
+
+    return factors > 0 ? score / factors * 5 : 0; // Scale to 0-5
+  }
+
+  private generateSustainabilityRecommendations(data: any): string[] {
+    const recommendations = [];
+
+    if (!data.sustainability.organicCertified) {
+      recommendations.push('Consider sourcing organic certified products');
+    }
+    if (!data.sustainability.locallySourced) {
+      recommendations.push('Prioritize local suppliers to reduce transportation emissions');
+    }
+    if (!data.sustainability.sustainablePackaging) {
+      recommendations.push('Switch to sustainable packaging materials');
+    }
+    if (data.carbonFootprint.total > 1000) {
+      recommendations.push('High carbon footprint detected - consider carbon offset programs');
+    }
+    if (data.wasteMetrics.recyclablePercentage < 0.5) {
+      recommendations.push('Improve recyclable packaging percentage');
+    }
+
+    return recommendations;
+  }
+
+   /**
+    * Get order by ID
+    */
+   async getOrderById(orderId: string): Promise<any> {
+     // Mock implementation - in production this would query actual order data
+     return {
+       id: orderId,
+       status: 'CONFIRMED',
+       createdAt: new Date(),
+       deliveryAddress: 'Sample Address',
+       specialInstructions: 'Handle with care'
+     };
+   }
+
+   /**
+    * Get order tracking information
+    */
+   async getOrderTracking(orderId: string, userId: string): Promise<{
+     orderId: string;
+     status: string;
+     timeline: Array<{
+       stage: string;
+       status: 'completed' | 'in_progress' | 'pending';
+       timestamp?: Date;
+       details: string;
+     }>;
+     vendors: Array<{
+       vendorId: string;
+       name: string;
+       status: string;
+       items: Array<{
+         itemId: string;
+         name: string;
+         quantity: number;
+         status: string;
+         tracking?: {
+           trackingNumber: string;
+           carrier: string;
+           estimatedDelivery: Date;
+           currentLocation: string;
+         };
+       }>;
+     }>;
+     deliveryInfo: {
+       estimatedDelivery: Date;
+       deliveryAddress: string;
+       specialInstructions?: string;
+     };
+   }> {
+     // Mock implementation - in production this would query actual order and vendor data
+     const order = {
+       id: orderId,
+       status: 'CONFIRMED',
+       createdAt: new Date(),
+       confirmedAt: new Date(),
+       shippedAt: undefined,
+       deliveredAt: undefined,
+       estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+       deliveryAddress: 'Sample Address',
+       specialInstructions: 'Handle with care'
+     };
+
+     if (!order) {
+       throw new Error('Order not found');
+     }
+
+     // Get vendor information for this order
+     const vendors = [
+       {
+         orderId,
+         vendorId: 'vendor_1',
+         status: 'CONFIRMED'
+       }
+     ];
+
+    // Get tracking timeline
+    const timeline = [
+      {
+        stage: 'Order Placed',
+        status: 'completed' as const,
+        timestamp: order.createdAt,
+        details: 'Order successfully placed and confirmed'
+      },
+      {
+        stage: 'Vendor Confirmation',
+        status: order.status === 'confirmed' ? 'completed' as const : 'in_progress' as const,
+        timestamp: order.confirmedAt,
+        details: 'Awaiting vendor confirmation of order details'
+      },
+      {
+        stage: 'Processing',
+        status: order.status === 'processing' ? 'in_progress' as const : 'pending' as const,
+        details: 'Order items are being prepared for shipment'
+      },
+      {
+        stage: 'Shipped',
+        status: order.status === 'shipped' ? 'completed' as const : 'pending' as const,
+        timestamp: order.shippedAt,
+        details: 'Order has been shipped and is in transit'
+      },
+      {
+        stage: 'Delivered',
+        status: order.status === 'delivered' ? 'completed' as const : 'pending' as const,
+        timestamp: order.deliveredAt,
+        details: 'Order has been successfully delivered'
+      }
+    ];
+
+    // Get vendor details with items
+    const vendorDetails = await Promise.all(
+      vendors.map(async (vendor: any) => {
+        // Mock implementation - in production this would query actual vendor and item data
+        const vendorInfo = { name: 'Sample Vendor' };
+        const items = [
+          {
+            itemId: 'item_1',
+            name: 'Sample Item',
+            quantity: 1,
+            status: 'CONFIRMED'
+          }
+        ];
+
+        return {
+          vendorId: vendor.vendorId,
+          name: vendorInfo?.name || 'Unknown Vendor',
+          status: vendor.status,
+          items: items.map((item: any) => ({
+            itemId: item.itemId,
+            name: item.name,
+            quantity: item.quantity,
+            status: item.status,
+            tracking: item.trackingNumber ? {
+              trackingNumber: item.trackingNumber,
+              carrier: item.carrier || 'Unknown',
+              estimatedDelivery: item.estimatedDelivery,
+              currentLocation: item.currentLocation || 'In transit'
+            } : undefined
+          }))
+        };
+      })
+    );
+
+    return {
+      orderId,
+      status: order.status,
+      timeline,
+      vendors: vendorDetails,
+      deliveryInfo: {
+        estimatedDelivery: order.estimatedDelivery || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        deliveryAddress: order.deliveryAddress,
+        specialInstructions: order.specialInstructions
+      }
+    };
+  }
+}

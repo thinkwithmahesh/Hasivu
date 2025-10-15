@@ -1,0 +1,120 @@
+🏃 Starting HASIVU Authentication Performance Benchmark
+
+1️⃣  Testing individual user role logins...
+   student: 207.68ms ✅
+   parent: 166.44ms ✅
+   admin: 155.35ms ✅
+   kitchen: 124.29ms ✅
+   vendor: 198.35ms ✅
+
+2️⃣  Testing token validation performance...
+   student: 5.79ms ✅
+   parent: 21.09ms ✅
+   admin: 23.19ms ✅
+   kitchen: 22.13ms ✅
+   vendor: 24.25ms ❌
+
+3️⃣  Testing session lookup performance...
+   student: 15.24ms ✅
+   parent: 14.45ms ✅
+   admin: 9.11ms ✅
+   kitchen: 17.07ms ✅
+   vendor: 1.16ms ✅
+
+🗃️  Testing caching effectiveness...
+   🎯 Cache miss time: 15.03ms
+   ⚡ Cache hit time: 0.00ms
+   📈 Performance improvement: 100.0%
+
+5️⃣  Testing concurrent login capacity...
+
+🚀 Testing 1 concurrent logins...
+   ✅ Success: 1/1 (100.0%)
+   ⏱️  Total time: 157.21ms
+   📊 Avg time per login: 157.21ms
+
+🚀 Testing 5 concurrent logins...
+   ✅ Success: 5/5 (100.0%)
+   ⏱️  Total time: 209.27ms
+   📊 Avg time per login: 41.85ms
+
+🚀 Testing 10 concurrent logins...
+   ✅ Success: 9/10 (90.0%)
+   ⏱️  Total time: 226.27ms
+   📊 Avg time per login: 22.63ms
+
+🚀 Testing 25 concurrent logins...
+   ✅ Success: 23/25 (92.0%)
+   ⏱️  Total time: 222.92ms
+   📊 Avg time per login: 8.92ms
+
+🚀 Testing 50 concurrent logins...
+   ✅ Success: 47/50 (94.0%)
+   ⏱️  Total time: 231.16ms
+   📊 Avg time per login: 4.62ms
+
+🚀 Testing 100 concurrent logins...
+   ✅ Success: 96/100 (96.0%)
+   ⏱️  Total time: 234.50ms
+   📊 Avg time per login: 2.34ms
+
+
+📊 AUTHENTICATION PERFORMANCE REPORT
+================================================================================
+
+🔐 LOGIN PERFORMANCE:
+   Average: 169.49ms
+   Median: 170.34ms
+   95th percentile: 218.83ms
+   99th percentile: 231.21ms
+   Min/Max: 99.18ms / 234.72ms
+   🎯 Target (<500ms): ✅ PASS
+
+🎫 TOKEN VALIDATION PERFORMANCE:
+   Average: 19.29ms
+   95th percentile: 24.25ms
+   🎯 Target (<50ms): ✅ PASS
+
+👤 SESSION LOOKUP PERFORMANCE:
+   Average: 10.30ms
+   95th percentile: 17.07ms
+   🎯 Target (<100ms): ✅ PASS
+
+💾 MEMORY USAGE:
+   Current heap: 8.79MB
+   Peak heap: 8.79MB
+   Average heap: 8.52MB
+   🎯 Target (<100MB): ✅ PASS
+
+❌ ERROR RATES:
+   login: 5.10% (10/196)
+   tokenValidation: 20.00% (1/5)
+   sessionLookup: 0.00% (0/7)
+
+🚦 CONCURRENCY PERFORMANCE:
+   1 users: 100.0% success, 157.21ms avg
+   5 users: 100.0% success, 41.85ms avg
+   10 users: 90.0% success, 22.63ms avg
+   25 users: 92.0% success, 8.92ms avg
+   50 users: 94.0% success, 4.62ms avg
+   100 users: 96.0% success, 2.34ms avg
+
+🗃️  CACHING EFFECTIVENESS:
+   Performance improvement: 100.0%
+   Cache hit time: 0.00ms
+   Cache miss time: 15.03ms
+
+🎯 OVERALL PERFORMANCE SCORE:
+   95.0/100 - A
+   Excellent performance - Production ready
+
+💡 OPTIMIZATION RECOMMENDATIONS:
+   1. Investigate login failures - implement better error handling and retry logic
+   2. Investigate tokenValidation failures - implement better error handling and retry logic
+   3. Implement comprehensive monitoring and alerting for auth performance
+   4. Add performance budgets and regression testing to CI/CD pipeline
+   5. Consider implementing authentication microservice for better scaling
+
+================================================================================
+
+📄 Full report saved to: /Users/mahesha/Downloads/hasivu-platform/web/auth-performance-report-1757754014685.json

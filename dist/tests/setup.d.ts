@@ -1,7 +1,4 @@
 declare global {
-    var jest: typeof import('@jest/globals').jest;
-}
-declare global {
     namespace jest {
         interface Matchers<R> {
             toBeValidEmail(): R;

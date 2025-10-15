@@ -8,17 +8,17 @@ interface ChildManagementProps {
   onDeleteChild?: (childId: string) => void;
 }
 
-export const ChildManagement: React.FC<ChildManagementProps> = ({ 
-  children = [],
+export const ChildManagement: React.FC<ChildManagementProps> = ({
+  children: _children = [],
   onAddChild,
-  onEditChild,
-  onDeleteChild
+  onEditChild: _onEditChild,
+  onDeleteChild: _onDeleteChild,
 }) => {
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold">Child Management</h2>
-        <button 
+        <button
           onClick={onAddChild}
           className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
         >

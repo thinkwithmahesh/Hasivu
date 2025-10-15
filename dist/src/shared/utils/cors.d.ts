@@ -51,7 +51,7 @@ export declare class CorsError extends Error {
         message: string;
         code: string;
         statusCode: number;
-        origin: string;
+        origin: string | undefined;
         timestamp: string;
     };
 }

@@ -5,7 +5,7 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
-import { logger } from '../utils/logger';
+import { logger } from '../shared/logger.service';
 import { config } from '../config/environment';
 
 /**
@@ -48,7 +48,7 @@ export const ErrorCodes = {
   DATABASE_ERROR: 'DATABASE_ERROR',
   EXTERNAL_API_ERROR: 'EXTERNAL_API_ERROR',
   CONFIGURATION_ERROR: 'CONFIGURATION_ERROR',
-  INTERNAL_ERROR: 'INTERNAL_ERROR'
+  INTERNAL_ERROR: 'INTERNAL_ERROR',
 } as const;
 
 /**
@@ -109,7 +109,9 @@ export function createRateLimitError(message: string = 'Too many requests'): App
 /**
  * Create service unavailable error
  */
-export function createServiceUnavailableError(message: string = 'Service temporarily unavailable'): AppError {
+export function createServiceUnavailableError(
+  message: string = 'Service temporarily unavailable'
+): AppError {
   return createError(ErrorCodes.SERVICE_UNAVAILABLE, message, 503);
 }
 
@@ -143,7 +145,7 @@ export const errorHandler = (
   const isProduction = config.server.nodeEnv === 'production';
 
   // Generate request ID
-  const requestId = req.headers['x-request-id'] as string || generateRequestId();
+  const requestId = (req.headers['x-request-id'] as string) || generateRequestId();
 
   // Log error details
   logError(err, req, requestId);
@@ -157,8 +159,8 @@ export const errorHandler = (
       timestamp: new Date().toISOString(),
       requestId,
       path: req.path,
-      ...(shouldIncludeDetails(statusCode, isProduction) && { details: err.details })
-    }
+      ...(shouldIncludeDetails(statusCode, isProduction) && { details: err.details }),
+    },
   };
 
   // Send error response
@@ -168,11 +170,7 @@ export const errorHandler = (
 /**
  * 404 Not Found handler
  */
-export const notFoundHandler = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void => {
+export const notFoundHandler = (req: Request, res: Response, next: NextFunction): void => {
   const error = createNotFoundError('Route', `${req.method} ${req.originalUrl}`);
   next(error);
 };
@@ -212,7 +210,7 @@ function logError(err: AppError, req: Request, requestId: string): void {
       code: err.code,
       statusCode: err.statusCode,
       stack: err.stack,
-      details: err.details
+      details: err.details,
     },
     request: {
       method: req.method,
@@ -222,9 +220,9 @@ function logError(err: AppError, req: Request, requestId: string): void {
       query: req.query,
       params: req.params,
       ip: req.ip,
-      userAgent: req.get('User-Agent')
+      userAgent: req.get('User-Agent'),
     },
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   };
 
   // Log based on error severity
@@ -233,18 +231,16 @@ function logError(err: AppError, req: Request, requestId: string): void {
     logger.warn('Client error occurred', logData);
   } else {
     // Server errors (5xx) - log as error
-    logger.error('Server error occurred', logData);
+    logger.error('Server error occurred', undefined, {
+      errorMessage: logData instanceof Error ? logData.message : String(logData),
+    });
   }
 }
 
 /**
  * Validation error middleware
  */
-export const validationErrorHandler = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void => {
+export const validationErrorHandler = (req: Request, res: Response, next: NextFunction): void => {
   // This would typically be used with express-validator
   // For now, it's a placeholder that just calls next
   next();
@@ -257,12 +253,9 @@ export const transformDatabaseError = (error: any): AppError => {
   // Transform different database errors to standard format
   if (error.code === 'P2002') {
     // Prisma unique constraint violation
-    return createError(
-      ErrorCodes.DUPLICATE_RESOURCE,
-      'Resource already exists',
-      409,
-      { field: error.meta?.target }
-    );
+    return createError(ErrorCodes.DUPLICATE_RESOURCE, 'Resource already exists', 409, {
+      field: error.meta?.target,
+    });
   }
 
   if (error.code === 'P2025') {
@@ -282,7 +275,7 @@ export const transformDatabaseError = (error: any): AppError => {
   // Generic database error
   return createDatabaseError('Database operation failed', {
     originalError: error.message,
-    code: error.code
+    code: error.code,
   });
 };
 
@@ -290,11 +283,8 @@ export const transformDatabaseError = (error: any): AppError => {
  * Express error handler for uncaught exceptions
  */
 export const uncaughtExceptionHandler = (error: Error): void => {
-  logger.error('Uncaught Exception', {
-    name: error.name,
-    message: error.message,
-    stack: error.stack,
-    timestamp: new Date().toISOString()
+  logger.error('Uncaught Exception', error, {
+    timestamp: new Date().toISOString(),
   });
 
   // Graceful shutdown
@@ -305,12 +295,14 @@ export const uncaughtExceptionHandler = (error: Error): void => {
  * Express error handler for unhandled promise rejections
  */
 export const unhandledRejectionHandler = (reason: any, promise: Promise<any>): void => {
-  logger.error('Unhandled Promise Rejection', {
-    reason: reason.toString(),
-    stack: reason.stack,
-    promise: promise.toString(),
-    timestamp: new Date().toISOString()
-  });
+  logger.error(
+    'Unhandled Promise Rejection',
+    reason instanceof Error ? reason : new Error(String(reason)),
+    {
+      promise: promise.toString(),
+      timestamp: new Date().toISOString(),
+    }
+  );
 
   // Graceful shutdown
   process.exit(1);

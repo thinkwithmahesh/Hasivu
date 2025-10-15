@@ -71,6 +71,7 @@ export declare class HealthMonitorService {
     private startTime;
     private redis;
     private gracefulDegradation;
+    private customHealthChecks?;
     constructor(config: HealthMonitorConfig);
     private validateConfig;
     start(): void;
@@ -98,6 +99,7 @@ export declare class HealthMonitorService {
     private getRedisMemoryUsage;
     static createDefaultConfig(): HealthMonitorConfig;
     static createProductionConfig(): HealthMonitorConfig;
+    registerHealthCheck(name: string, checkFn: () => Promise<HealthCheckResult>): void;
     getSystemHealth(): SystemHealthSummary;
 }
 export default HealthMonitorService;

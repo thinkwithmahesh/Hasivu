@@ -45,7 +45,7 @@ class RealTimePerformanceTestSuite {
             webSocket: {},
             redis: {},
             rfid: {},
-            summary: {}
+            summary: {},
         };
     }
     async runComprehensiveTests() {
@@ -59,13 +59,13 @@ class RealTimePerformanceTestSuite {
                 this.testAPIEndpoints(),
                 this.testWebSocketPerformance(),
                 this.testRedisPerformance(),
-                this.testRFIDVerificationPerformance()
+                this.testRFIDVerificationPerformance(),
             ]);
             this.generatePerformanceReport();
             await this.saveTestResults();
         }
         catch (error) {
-            logger_1.logger.error('Performance test suite failed', { error });
+            logger_1.logger.error('Performance test suite failed', error);
             throw error;
         }
         finally {
@@ -82,7 +82,7 @@ class RealTimePerformanceTestSuite {
             { path: '/payments/verify', method: 'POST', weight: 4 },
             { path: '/rfid/verify-delivery', method: 'POST', weight: 3 },
             { path: '/users/profile', method: 'GET', weight: 2 },
-            { path: '/menus/daily', method: 'GET', weight: 4 }
+            { path: '/menus/daily', method: 'GET', weight: 4 },
         ];
         for (const endpoint of endpoints) {
             const metrics = await this.testEndpoint(endpoint);
@@ -140,14 +140,14 @@ class RealTimePerformanceTestSuite {
             requestsPerSecond: requestsToMake / totalTime,
             errorRate: (failedRequests / requestsToMake) * 100,
             concurrentConnections: this.config.concurrentUsers,
-            statusCodes
+            statusCodes,
         };
     }
     async makeAPIRequest(path, method) {
         const url = `${this.config.baseUrl}${path}`;
         const headers = {
             'Content-Type': 'application/json',
-            'User-Agent': 'HASIVU-Performance-Test/1.0'
+            'User-Agent': 'HASIVU-Performance-Test/1.0',
         };
         if (path !== '/health') {
             headers['Authorization'] = 'Bearer mock-test-token';
@@ -158,26 +158,26 @@ class RealTimePerformanceTestSuite {
                 case '/auth/login':
                     body = JSON.stringify({
                         email: 'test@hasivu.com',
-                        password: 'test123'
+                        password: 'test123',
                     });
                     break;
                 case '/orders':
                     body = JSON.stringify({
                         studentId: 'student-123',
-                        items: [{ menuItemId: 'item-1', quantity: 1 }]
+                        items: [{ menuItemId: 'item-1', quantity: 1 }],
                     });
                     break;
                 case '/payments/verify':
                     body = JSON.stringify({
                         paymentId: 'pay-123',
-                        orderId: 'order-123'
+                        orderId: 'order-123',
                     });
                     break;
                 case '/rfid/verify-delivery':
                     body = JSON.stringify({
                         cardNumber: 'CARD123456',
                         readerId: 'reader-1',
-                        orderId: 'order-123'
+                        orderId: 'order-123',
                     });
                     break;
             }
@@ -186,7 +186,7 @@ class RealTimePerformanceTestSuite {
             method,
             headers,
             body,
-            signal: AbortSignal.timeout(30000)
+            signal: AbortSignal.timeout(30000),
         });
     }
     async testWebSocketPerformance() {
@@ -195,7 +195,7 @@ class RealTimePerformanceTestSuite {
         const connectionTimes = [];
         const latencies = [];
         let messagesExchanged = 0;
-        let reconnections = 0;
+        const reconnections = 0;
         let successfulConnections = 0;
         let failedConnections = 0;
         const connectionPromises = Array.from({ length: this.config.concurrentUsers }, async (_, index) => {
@@ -231,13 +231,13 @@ class RealTimePerformanceTestSuite {
             p99ResponseTime: latencies.sort((a, b) => a - b)[Math.floor(latencies.length * 0.99)] || 0,
             minResponseTime: Math.min(...latencies),
             maxResponseTime: Math.max(...latencies),
-            requestsPerSecond: messagesExchanged / (this.config.testDuration),
+            requestsPerSecond: messagesExchanged / this.config.testDuration,
             errorRate: (failedConnections / this.config.concurrentUsers) * 100,
             concurrentConnections: successfulConnections,
             messagesExchanged,
             averageLatency: latencies.reduce((a, b) => a + b, 0) / latencies.length,
             connectionEstablishmentTime: connectionTimes.reduce((a, b) => a + b, 0) / connectionTimes.length,
-            reconnections
+            reconnections,
         };
         console.log(`  WebSocket connections: ${successfulConnections}/${this.config.concurrentUsers}`);
         console.log(`  Average latency: ${this.testResults.webSocket.averageLatency.toFixed(2)}ms`);
@@ -266,7 +266,7 @@ class RealTimePerformanceTestSuite {
             const latency = await this.sendWebSocketMessage(ws, {
                 type: 'ping',
                 timestamp: Date.now(),
-                sequenceId: i
+                sequenceId: i,
             });
             latencies.push(latency);
         }
@@ -308,7 +308,7 @@ class RealTimePerformanceTestSuite {
         const testValue = JSON.stringify({
             id: 'test-data',
             timestamp: Date.now(),
-            data: 'x'.repeat(1024)
+            data: 'x'.repeat(1024),
         });
         try {
             console.log('  Populating cache...');
@@ -363,7 +363,7 @@ class RealTimePerformanceTestSuite {
                 averageGetTime: getTimes.reduce((a, b) => a + b, 0) / getTimes.length,
                 averageSetTime: setTimes.reduce((a, b) => a + b, 0) / setTimes.length,
                 keyspaceSize,
-                memoryUsage
+                memoryUsage,
             };
             console.log(`  Cache hit ratio: ${this.testResults.redis.cacheHitRatio.toFixed(2)}%`);
             console.log(`  Average GET time: ${this.testResults.redis.averageGetTime.toFixed(2)}ms`);
@@ -379,7 +379,7 @@ class RealTimePerformanceTestSuite {
         const verificationTimes = [];
         let successfulVerifications = 0;
         let failedVerifications = 0;
-        let cardRegistrations = 0;
+        const cardRegistrations = 0;
         console.log('  Testing individual verifications...');
         const individualPromises = Array.from({ length: this.config.concurrentUsers * 5 }, async (_, index) => {
             try {
@@ -431,7 +431,7 @@ class RealTimePerformanceTestSuite {
             verificationsPerSecond: successfulVerifications / ((endTime - startTime) / 1000),
             bulkVerificationTime: bulkEnd - bulkStart,
             cardRegistrations,
-            readerConnections: 5
+            readerConnections: 5,
         };
         console.log(`  Verifications per second: ${this.testResults.rfid.verificationsPerSecond.toFixed(2)}`);
         console.log(`  Bulk verification time: ${this.testResults.rfid.bulkVerificationTime.toFixed(2)}ms`);
@@ -450,7 +450,11 @@ class RealTimePerformanceTestSuite {
         console.log(`   ${wsStatus} Connections: ${this.testResults.webSocket.successfulRequests}/${this.testResults.webSocket.totalRequests}`);
         console.log(`      Latency: ${this.testResults.webSocket.averageLatency?.toFixed(2)}ms | Messages: ${this.testResults.webSocket.messagesExchanged}`);
         console.log('\n⚡ REDIS CACHE:');
-        const redisStatus = this.testResults.redis.cacheHitRatio > 90 ? '✅' : this.testResults.redis.cacheHitRatio > 70 ? '⚠️' : '❌';
+        const redisStatus = this.testResults.redis.cacheHitRatio > 90
+            ? '✅'
+            : this.testResults.redis.cacheHitRatio > 70
+                ? '⚠️'
+                : '❌';
         console.log(`   ${redisStatus} Hit Ratio: ${this.testResults.redis.cacheHitRatio?.toFixed(2)}%`);
         console.log(`      GET: ${this.testResults.redis.averageGetTime?.toFixed(2)}ms | SET: ${this.testResults.redis.averageSetTime?.toFixed(2)}ms`);
         console.log('\n📡 RFID VERIFICATION:');
@@ -463,8 +467,10 @@ class RealTimePerformanceTestSuite {
     }
     calculateOverallGrade() {
         let score = 100;
-        const apiErrors = this.testResults.api.reduce((sum, api) => sum + api.errorRate, 0) / this.testResults.api.length;
-        const apiAvgTime = this.testResults.api.reduce((sum, api) => sum + api.averageResponseTime, 0) / this.testResults.api.length;
+        const apiErrors = this.testResults.api.reduce((sum, api) => sum + api.errorRate, 0) /
+            this.testResults.api.length;
+        const apiAvgTime = this.testResults.api.reduce((sum, api) => sum + api.averageResponseTime, 0) /
+            this.testResults.api.length;
         if (apiErrors > 5)
             score -= 30;
         else if (apiErrors > 1)
@@ -548,7 +554,7 @@ const configs = {
         concurrentUsers: 10,
         testDuration: 60,
         rampUpTime: 10,
-        environment: 'development'
+        environment: 'development',
     },
     staging: {
         baseUrl: process.env.STAGING_API_URL || 'https://staging-api.hasivu.com',
@@ -557,7 +563,7 @@ const configs = {
         concurrentUsers: 50,
         testDuration: 300,
         rampUpTime: 30,
-        environment: 'staging'
+        environment: 'staging',
     },
     production: {
         baseUrl: process.env.PRODUCTION_API_URL || 'https://api.hasivu.com',
@@ -566,8 +572,8 @@ const configs = {
         concurrentUsers: 100,
         testDuration: 600,
         rampUpTime: 60,
-        environment: 'production'
-    }
+        environment: 'production',
+    },
 };
 async function main() {
     const environment = (process.env.TEST_ENVIRONMENT || 'development');

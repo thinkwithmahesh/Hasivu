@@ -8,7 +8,11 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda
 import { PrismaClient } from '@prisma/client';
 import { LoggerService } from '../shared/logger.service';
 import { createSuccessResponse, createErrorResponse, handleError } from '../shared/response.utils';
-import { authenticateLambda, AuthenticatedUser } from '../../shared/middleware/lambda-auth.middleware';
+import {
+  authenticateLambda,
+  AuthenticatedUser,
+  AuthenticatedEvent,
+} from '../../shared/middleware/lambda-auth.middleware';
 
 // Initialize database client
 const prisma = new PrismaClient();
@@ -78,8 +82,8 @@ async function getRfidCardDetails(cardNumber: string): Promise<any> {
           lastName: true,
           email: true,
           role: true,
-          isActive: true
-        }
+          isActive: true,
+        },
       },
       deliveryVerifications: {
         orderBy: { verifiedAt: 'desc' },
@@ -89,12 +93,12 @@ async function getRfidCardDetails(cardNumber: string): Promise<any> {
             select: {
               id: true,
               name: true,
-              location: true
-            }
-          }
-        }
-      }
-    }
+              location: true,
+            },
+          },
+        },
+      },
+    },
   });
 
   if (!card) {
@@ -114,36 +118,36 @@ async function getUsageStatistics(cardId: string): Promise<any> {
 
   // Get total verifications count
   const totalVerifications = await prisma.deliveryVerification.count({
-    where: { cardId }
+    where: { cardId },
   });
 
   // Get monthly verifications count
   const verificationsThisMonth = await prisma.deliveryVerification.count({
     where: {
       cardId,
-      verifiedAt: { gte: oneMonthAgo }
-    }
+      verifiedAt: { gte: oneMonthAgo },
+    },
   });
 
   // Get weekly verifications count
   const verificationsThisWeek = await prisma.deliveryVerification.count({
     where: {
       cardId,
-      verifiedAt: { gte: oneWeekAgo }
-    }
+      verifiedAt: { gte: oneWeekAgo },
+    },
   });
 
   // Get first and last verification timestamps
   const lastVerification = await prisma.deliveryVerification.findFirst({
     where: { cardId },
     orderBy: { verifiedAt: 'desc' },
-    select: { verifiedAt: true }
+    select: { verifiedAt: true },
   });
 
   const firstVerification = await prisma.deliveryVerification.findFirst({
     where: { cardId },
     orderBy: { verifiedAt: 'asc' },
-    select: { verifiedAt: true }
+    select: { verifiedAt: true },
   });
 
   // Calculate days since first use
@@ -152,9 +156,8 @@ async function getUsageStatistics(cardId: string): Promise<any> {
     : null;
 
   // Calculate average verifications per day
-  const averageVerificationsPerDay = daysSinceFirstUse && daysSinceFirstUse > 0
-    ? totalVerifications / daysSinceFirstUse
-    : 0;
+  const averageVerificationsPerDay =
+    daysSinceFirstUse && daysSinceFirstUse > 0 ? totalVerifications / daysSinceFirstUse : 0;
 
   return {
     totalVerifications,
@@ -163,7 +166,7 @@ async function getUsageStatistics(cardId: string): Promise<any> {
     lastVerification: lastVerification?.verifiedAt || null,
     firstVerification: firstVerification?.verifiedAt || null,
     daysSinceFirstUse,
-    averageVerificationsPerDay: Math.round(averageVerificationsPerDay * 100) / 100
+    averageVerificationsPerDay: Math.round(averageVerificationsPerDay * 100) / 100,
   };
 }
 
@@ -172,39 +175,39 @@ async function getUsageStatistics(cardId: string): Promise<any> {
  */
 function canViewCard(requestingUser: AuthenticatedUser, card: any): boolean {
   const userRole = requestingUser.role;
-  
+
   // Super admin and admin can view any card
   if (['super_admin', 'admin'].includes(userRole)) {
     return true;
   }
-  
+
   // School admin can view cards in their school
   if (userRole === 'school_admin' && requestingUser.schoolId === card.schoolId) {
     return true;
   }
-  
+
   // Staff can view cards in their school
   if (userRole === 'staff' && requestingUser.schoolId === card.schoolId) {
     return true;
   }
-  
+
   // Teachers can view cards for students in their school
   if (userRole === 'teacher' && requestingUser.schoolId === card.schoolId) {
     return true;
   }
-  
+
   // Parents can view cards for their children
   if (userRole === 'parent') {
     // Check if the card belongs to one of their children
     // This would need to be verified through parent-child relationships
     return requestingUser.schoolId === card.schoolId; // Simplified check
   }
-  
+
   // Students can view their own card
   if (userRole === 'student' && requestingUser.id === card.studentId) {
     return true;
   }
-  
+
   return false;
 }
 
@@ -215,15 +218,15 @@ function determineCardStatus(card: any): 'active' | 'expired' | 'deactivated' | 
   if (!card.isActive || card.deactivatedAt) {
     return 'deactivated';
   }
-  
+
   if (!card.student.isActive) {
     return 'inactive';
   }
-  
+
   if (card.expiresAt && card.expiresAt <= new Date()) {
     return 'expired';
   }
-  
+
   return 'active';
 }
 
@@ -243,15 +246,15 @@ async function createAccessAuditLog(
       changes: JSON.stringify({
         cardNumber,
         accessedBy: userId,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       }),
       userId,
       createdById: userId,
       metadata: JSON.stringify({
         action: 'RFID_CARD_ACCESSED',
-        timestamp: new Date().toISOString()
-      })
-    }
+        timestamp: new Date().toISOString(),
+      }),
+    },
   });
 }
 
@@ -265,75 +268,79 @@ export const getRfidCardHandler = async (
 ): Promise<APIGatewayProxyResult> => {
   const logger = LoggerService.getInstance();
   const requestId = context.awsRequestId;
-  
+
   try {
     logger.info('Get RFID card request started', { requestId });
-    
+
     // Authenticate request
     const authenticatedUser = await authenticateLambda(event);
-    
+
     // Extract card number from path parameters
     const cardNumber = event.pathParameters?.cardNumber;
     if (!cardNumber) {
       logger.warn('Missing card number parameter', { requestId });
-      return createErrorResponse(400, 'Card number is required');
+      return createErrorResponse('VALIDATION_ERROR', 'Card number is required', 400);
     }
-    
+
     // Validate card number format (basic validation)
     if (!/^RFID-[A-Z0-9-]+$/.test(cardNumber)) {
       logger.warn('Invalid card number format', { requestId, cardNumber });
-      return createErrorResponse(400, 'Invalid card number format');
+      return createErrorResponse('VALIDATION_ERROR', 'Invalid card number format', 400);
     }
-    
+
     // Get RFID card details
     const card = await getRfidCardDetails(cardNumber);
-    
+
     // Authorization check
     if (!canViewCard(authenticatedUser.user!, card)) {
       logger.warn('Unauthorized card access attempt', {
         requestId,
         userId: authenticatedUser.user?.id,
         cardNumber,
-        userRole: authenticatedUser.user?.role
+        userRole: authenticatedUser.user?.role,
       });
-      return createErrorResponse(403, 'Insufficient permissions to view this RFID card');
+      return createErrorResponse(
+        'FORBIDDEN',
+        'Insufficient permissions to view this RFID card',
+        403
+      );
     }
-    
+
     // Get usage statistics
     const statistics = await getUsageStatistics(card.id);
-    
+
     // Parse metadata safely
     let metadata = {};
     try {
       metadata = JSON.parse(card.metadata);
-    } catch (error) {
+    } catch (error: unknown) {
       logger.warn('Failed to parse card metadata', { cardId: card.id, metadata: card.metadata });
       metadata = {};
     }
-    
+
     // Format recent verifications
     const recentVerifications = card.deliveryVerifications.map((verification: any) => {
       let verificationData = {};
       try {
         verificationData = JSON.parse(verification.verificationData || '{}');
-      } catch (error) {
+      } catch (error: unknown) {
         logger.warn('Failed to parse verification data', { verificationId: verification.id });
         verificationData = {};
       }
-      
+
       return {
         id: verification.id,
         verifiedAt: verification.verifiedAt,
         status: verification.status,
         location: verification.location,
         orderId: verification.orderId,
-        reader: verification.reader
+        reader: verification.reader,
       };
     });
-    
+
     // Determine card status
     const cardStatus = determineCardStatus(card);
-    
+
     // Create response
     const response: RFIDCardDetailedResponse = {
       id: card.id,
@@ -351,32 +358,33 @@ export const getRfidCardHandler = async (
       student: card.student,
       school: card.school,
       statistics,
-      recentVerifications
+      recentVerifications,
     };
-    
+
     // Create audit log for access
-    await createAccessAuditLog(card.id, authenticatedUser.id, cardNumber);
-    
+    await createAccessAuditLog(card.id, authenticatedUser.userId!, cardNumber);
+
     logger.info('RFID card retrieved successfully', {
       requestId,
       cardId: card.id,
       cardNumber,
       accessedBy: authenticatedUser.email,
-      cardStatus
+      cardStatus,
     });
-    
+
     return createSuccessResponse({
       message: 'RFID card retrieved successfully',
-      data: response
+      data: response,
     });
-    
   } catch (error: any) {
-    logger.error('Failed to retrieve RFID card', {
-      requestId,
-      error: error.message,
-      stack: error.stack
-    });
-    
+    logger.error(
+      'Failed to retrieve RFID card',
+      error instanceof Error ? error : new Error(String(error)),
+      {
+        requestId,
+      }
+    );
+
     return handleError(error, 'Failed to retrieve RFID card');
   } finally {
     await prisma.$disconnect();

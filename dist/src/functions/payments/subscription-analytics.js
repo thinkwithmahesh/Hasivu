@@ -68,7 +68,7 @@ async function getSubscriptionAnalytics(event) {
             statusCode: 500,
             body: JSON.stringify({
                 error: 'Internal server error',
-                message: error instanceof Error ? error.message : 'Unknown error'
+                message: error instanceof Error ? error.message : String(error)
             })
         };
     }
@@ -111,7 +111,7 @@ async function getSubscriptionDashboard(event) {
             statusCode: 500,
             body: JSON.stringify({
                 error: 'Internal server error',
-                message: error instanceof Error ? error.message : 'Unknown error'
+                message: error instanceof Error ? error.message : String(error)
             })
         };
     }
@@ -153,7 +153,7 @@ async function getCohortAnalysis(event) {
             statusCode: 500,
             body: JSON.stringify({
                 error: 'Internal server error',
-                message: error instanceof Error ? error.message : 'Unknown error'
+                message: error instanceof Error ? error.message : String(error)
             })
         };
     }
@@ -195,7 +195,7 @@ async function getRevenueAnalysis(event) {
             statusCode: 500,
             body: JSON.stringify({
                 error: 'Internal server error',
-                message: error instanceof Error ? error.message : 'Unknown error'
+                message: error instanceof Error ? error.message : String(error)
             })
         };
     }
@@ -235,7 +235,7 @@ async function getChurnAnalysis(event) {
             statusCode: 500,
             body: JSON.stringify({
                 error: 'Internal server error',
-                message: error instanceof Error ? error.message : 'Unknown error'
+                message: error instanceof Error ? error.message : String(error)
             })
         };
     }
@@ -275,7 +275,7 @@ async function getCustomerLifetimeValue(event) {
             statusCode: 500,
             body: JSON.stringify({
                 error: 'Internal server error',
-                message: error instanceof Error ? error.message : 'Unknown error'
+                message: error instanceof Error ? error.message : String(error)
             })
         };
     }
@@ -457,14 +457,6 @@ async function generateCohortAnalysis(schoolId, startDate, endDate, cohortType, 
         },
         orderBy: { createdAt: 'asc' }
     });
-    const subscriptionIds = subscriptions.map(s => s.id);
-    const payments = await prisma.payment.findMany({
-        where: {
-            subscriptionId: { in: subscriptionIds },
-            status: 'completed'
-        },
-        orderBy: { createdAt: 'asc' }
-    });
     const cohorts = {};
     subscriptions.forEach(subscription => {
         const cohortKey = getCohortKey(subscription.createdAt, cohortType);
@@ -533,7 +525,7 @@ async function generateRevenueAnalysis(schoolId, period, breakdown, includeProje
 async function generateChurnAnalysis(schoolId) {
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-    const [allSubscriptions, cancelledSubscriptions, newSubscriptions] = await Promise.all([
+    const [allSubscriptions, cancelledSubscriptions] = await Promise.all([
         prisma.subscription.findMany({
             where: {
                 subscriptionPlan: { schoolId },
@@ -545,13 +537,6 @@ async function generateChurnAnalysis(schoolId) {
                 subscriptionPlan: { schoolId },
                 status: 'cancelled',
                 endDate: { gte: sixMonthsAgo, not: null }
-            },
-            include: { subscriptionPlan: true }
-        }),
-        prisma.subscription.findMany({
-            where: {
-                subscriptionPlan: { schoolId },
-                createdAt: { gte: sixMonthsAgo }
             },
             include: { subscriptionPlan: true }
         })
@@ -745,15 +730,17 @@ function getPeriodKey(date, period) {
     switch (period) {
         case 'daily':
             return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-        case 'weekly':
+        case 'weekly': {
             const weekStart = new Date(d);
             weekStart.setDate(d.getDate() - d.getDay());
             return `${weekStart.getFullYear()}-W${Math.ceil(weekStart.getDate() / 7)}`;
+        }
         case 'monthly':
             return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-        case 'quarterly':
+        case 'quarterly': {
             const quarter = Math.ceil((d.getMonth() + 1) / 3);
             return `${d.getFullYear()}-Q${quarter}`;
+        }
         default:
             return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
     }
@@ -820,7 +807,7 @@ function isActiveInPeriod(subscription, cohortStart, period, cohortType) {
     const subEnd = subscription.cancelledAt || new Date();
     return subStart <= periodEnd && subEnd >= periodStart;
 }
-const handler = async (event, context) => {
+const handler = async (event) => {
     const { httpMethod, path } = event;
     try {
         switch (`${httpMethod}:${path}`) {
@@ -849,7 +836,7 @@ const handler = async (event, context) => {
             statusCode: 500,
             body: JSON.stringify({
                 error: 'Internal server error',
-                message: error instanceof Error ? error.message : 'Unknown error'
+                message: error instanceof Error ? error.message : String(error)
             })
         };
     }

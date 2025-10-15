@@ -9,6 +9,8 @@ const logger_1 = require("../shared/utils/logger");
 const environment_1 = require("../config/environment");
 const perf_hooks_1 = require("perf_hooks");
 const trace_events_1 = require("trace_events");
+const http_1 = require("http");
+const https_1 = require("https");
 const logger = logger_1.LoggerService.getInstance();
 class LoadTestSuite {
     static instance;
@@ -48,8 +50,8 @@ class LoadTestSuite {
                 'User-Agent': 'HASIVU-Load-Test-Suite/1.0',
                 'Accept': 'application/json'
             },
-            httpAgent: require('http').globalAgent,
-            httpsAgent: require('https').globalAgent
+            httpAgent: http_1.globalAgent,
+            httpsAgent: https_1.globalAgent
         });
         this.client.defaults.httpAgent.keepAlive = true;
         this.client.defaults.httpAgent.keepAliveMsecs = 30000;
@@ -103,7 +105,7 @@ class LoadTestSuite {
                 responseTime,
                 statusCode: error.response?.status || 0,
                 success: false,
-                error: error.message,
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
                 dataTransferred: 0,
                 userId: error.config?.userId || 0,
                 retryCount: error.config?.retryCount || 0
@@ -220,7 +222,7 @@ class LoadTestSuite {
             }
             this.stopResourceMonitoring();
             logger.error(`Load test failed: ${testName}`, {
-                error: error.message,
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
                 duration: `${this.testEndTime - this.testStartTime}ms`,
                 requestsCompleted: this.metrics.length
             });
@@ -243,7 +245,6 @@ class LoadTestSuite {
     async executeLoadTest() {
         const testDurationMs = this.config.duration * 1000;
         const rampUpTimeMs = this.config.rampUpTime * 1000;
-        const rampDownTimeMs = this.config.rampDownTime * 1000;
         const userPromises = [];
         for (let i = 0; i < this.config.maxConcurrentUsers; i++) {
             const startDelay = (i / this.config.maxConcurrentUsers) * rampUpTimeMs;
@@ -306,7 +307,7 @@ class LoadTestSuite {
             catch (error) {
                 if (!isWarmup) {
                     logger.debug(`Virtual user ${userId} request failed`, {
-                        error: error.message,
+                        error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
                         endpoint: user?.currentEndpoint
                     });
                 }
@@ -668,7 +669,7 @@ class LoadTestSuite {
             });
         }
         endpointMetrics.forEach((endpointMetric, endpointKey) => {
-            const [method, endpoint] = endpointKey.split(' ', 2);
+            const [, endpoint] = endpointKey.split(' ', 2);
             if (endpointMetric.errorRate > this.config.targets.errorRate * 1.5) {
                 bottlenecks.push({
                     type: 'error-rate',
@@ -747,7 +748,7 @@ class LoadTestSuite {
     exportResults(result, format = 'json') {
         switch (format) {
             case 'json':
-                return JSON.stringify(result, (key, value) => {
+                return JSON.stringify(result, (_key, value) => {
                     if (value instanceof Map) {
                         return Object.fromEntries(value);
                     }
@@ -884,7 +885,7 @@ class LoadTestSuite {
                 </tr>
             </thead>
             <tbody>
-                ${Array.from(result.endpointMetrics.entries()).map(([key, metrics]) => `
+                ${Array.from(result.endpointMetrics.entries()).map(([_key, metrics]) => `
                     <tr>
                         <td>${metrics.endpoint}</td>
                         <td>${metrics.method}</td>
@@ -910,7 +911,7 @@ class LoadTestSuite {
 </body>
 </html>`;
     }
-    generateCsvReport(result) {
+    generateCsvReport(_result) {
         const headers = [
             'timestamp',
             'endpoint',
@@ -933,7 +934,7 @@ class LoadTestSuite {
             metric.userId,
             metric.retryCount
         ]);
-        return [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+        return [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
     }
     getCurrentMetrics() {
         return this.metrics;
@@ -960,7 +961,7 @@ class LoadTestSuite {
             }
             catch (error) {
                 logger.warn('Target connectivity check failed', {
-                    error: error instanceof Error ? error.message : 'Unknown error'
+                    error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error'
                 });
             }
             const memUsage = process.memoryUsage();
@@ -979,7 +980,7 @@ class LoadTestSuite {
         }
         catch (error) {
             logger.error('Load testing environment health check failed', {
-                error: error.message
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
             });
             return {
                 status: 'unhealthy',
@@ -989,7 +990,7 @@ class LoadTestSuite {
                     resourceAvailability: false,
                     configurationValid: false
                 },
-                error: error.message
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
             };
         }
     }

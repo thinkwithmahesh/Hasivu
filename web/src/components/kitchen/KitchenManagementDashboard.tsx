@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -12,15 +12,10 @@ import {
   Timer,
   Utensils,
   TrendingUp,
-  Bell,
   Settings,
-  BarChart3,
-  Calendar,
   MapPin,
   User,
   Star,
-  Activity,
-  Zap,
   ShoppingCart,
   Eye,
   MoreHorizontal,
@@ -28,7 +23,7 @@ import {
   Search,
   RefreshCw,
   Plus,
-  Loader2
+  Loader2,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -49,7 +44,7 @@ import {
   useInventoryItems,
   useLowStockAlerts,
   useWebSocketSubscription,
-  useWebSocketConnection
+  useWebSocketConnection,
 } from '@/hooks/useApiIntegration';
 
 // TypeScript interfaces for Kitchen Management
@@ -126,8 +121,23 @@ const mockOrders: Order[] = [
     studentName: 'Priya Sharma',
     studentId: 'STU-001',
     items: [
-      { id: 'ITM-001', name: 'Masala Dosa', quantity: 1, category: 'Main', allergens: [], preparationTime: 12, image: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=100&h=100&fit=crop' },
-      { id: 'ITM-002', name: 'Coconut Chutney', quantity: 1, category: 'Side', allergens: ['coconut'], preparationTime: 3 }
+      {
+        id: 'ITM-001',
+        name: 'Masala Dosa',
+        quantity: 1,
+        category: 'Main',
+        allergens: [],
+        preparationTime: 12,
+        image: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=100&h=100&fit=crop',
+      },
+      {
+        id: 'ITM-002',
+        name: 'Coconut Chutney',
+        quantity: 1,
+        category: 'Side',
+        allergens: ['coconut'],
+        preparationTime: 3,
+      },
     ],
     status: 'preparing',
     priority: 'high',
@@ -135,7 +145,7 @@ const mockOrders: Order[] = [
     estimatedTime: 15,
     assignedStaff: 'Rajesh Kumar',
     location: 'Main Cafeteria',
-    totalAmount: 125
+    totalAmount: 125,
   },
   {
     id: 'ORD-002',
@@ -143,15 +153,29 @@ const mockOrders: Order[] = [
     studentName: 'Arjun Patel',
     studentId: 'STU-002',
     items: [
-      { id: 'ITM-003', name: 'Chicken Biryani', quantity: 1, category: 'Main', allergens: [], preparationTime: 25 },
-      { id: 'ITM-004', name: 'Raita', quantity: 1, category: 'Side', allergens: ['dairy'], preparationTime: 5 }
+      {
+        id: 'ITM-003',
+        name: 'Chicken Biryani',
+        quantity: 1,
+        category: 'Main',
+        allergens: [],
+        preparationTime: 25,
+      },
+      {
+        id: 'ITM-004',
+        name: 'Raita',
+        quantity: 1,
+        category: 'Side',
+        allergens: ['dairy'],
+        preparationTime: 5,
+      },
     ],
     status: 'pending',
     priority: 'medium',
     orderTime: '2024-01-15T12:20:00Z',
     estimatedTime: 30,
     location: 'South Wing',
-    totalAmount: 180
+    totalAmount: 180,
   },
   {
     id: 'ORD-003',
@@ -159,7 +183,14 @@ const mockOrders: Order[] = [
     studentName: 'Meera Singh',
     studentId: 'STU-003',
     items: [
-      { id: 'ITM-005', name: 'Vegetable Pulao', quantity: 1, category: 'Main', allergens: [], preparationTime: 20 }
+      {
+        id: 'ITM-005',
+        name: 'Vegetable Pulao',
+        quantity: 1,
+        category: 'Main',
+        allergens: [],
+        preparationTime: 20,
+      },
     ],
     status: 'ready',
     priority: 'low',
@@ -168,8 +199,8 @@ const mockOrders: Order[] = [
     actualTime: 18,
     assignedStaff: 'Sunita Devi',
     location: 'Main Cafeteria',
-    totalAmount: 95
-  }
+    totalAmount: 95,
+  },
 ];
 
 const mockStaff: KitchenStaff[] = [
@@ -177,43 +208,81 @@ const mockStaff: KitchenStaff[] = [
     id: 'STF-001',
     name: 'Rajesh Kumar',
     role: 'chef',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face',
+    avatar:
+      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face',
     status: 'active',
     currentTask: 'Preparing Masala Dosa (#12341)',
     efficiency: 92,
     hoursWorked: 6.5,
     tasksCompleted: 23,
-    shift: 'Morning (8:00 AM - 4:00 PM)'
+    shift: 'Morning (8:00 AM - 4:00 PM)',
   },
   {
     id: 'STF-002',
     name: 'Sunita Devi',
     role: 'assistant',
-    avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face',
+    avatar:
+      'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face',
     status: 'active',
     currentTask: 'Cleaning Station 3',
     efficiency: 88,
     hoursWorked: 7.2,
     tasksCompleted: 31,
-    shift: 'Morning (7:00 AM - 3:00 PM)'
+    shift: 'Morning (7:00 AM - 3:00 PM)',
   },
   {
     id: 'STF-003',
     name: 'Mohammed Ali',
     role: 'prep',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
+    avatar:
+      'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
     status: 'break',
     efficiency: 85,
     hoursWorked: 4.0,
     tasksCompleted: 18,
-    shift: 'Afternoon (12:00 PM - 8:00 PM)'
-  }
+    shift: 'Afternoon (12:00 PM - 8:00 PM)',
+  },
 ];
 
 const mockInventory: InventoryItem[] = [
-  { id: 'INV-001', name: 'Rice', category: 'Grains', currentStock: 25, minStock: 20, maxStock: 100, unit: 'kg', supplier: 'ABC Grains Ltd', lastUpdated: '2024-01-15T10:30:00Z', costPerUnit: 45 },
-  { id: 'INV-002', name: 'Chicken', category: 'Protein', currentStock: 8, minStock: 15, maxStock: 50, unit: 'kg', supplier: 'Fresh Meat Co', lastUpdated: '2024-01-15T09:15:00Z', expiryDate: '2024-01-17', costPerUnit: 280 },
-  { id: 'INV-003', name: 'Tomatoes', category: 'Vegetables', currentStock: 12, minStock: 10, maxStock: 30, unit: 'kg', supplier: 'Green Farms', lastUpdated: '2024-01-15T11:00:00Z', expiryDate: '2024-01-18', costPerUnit: 35 }
+  {
+    id: 'INV-001',
+    name: 'Rice',
+    category: 'Grains',
+    currentStock: 25,
+    minStock: 20,
+    maxStock: 100,
+    unit: 'kg',
+    supplier: 'ABC Grains Ltd',
+    lastUpdated: '2024-01-15T10:30:00Z',
+    costPerUnit: 45,
+  },
+  {
+    id: 'INV-002',
+    name: 'Chicken',
+    category: 'Protein',
+    currentStock: 8,
+    minStock: 15,
+    maxStock: 50,
+    unit: 'kg',
+    supplier: 'Fresh Meat Co',
+    lastUpdated: '2024-01-15T09:15:00Z',
+    expiryDate: '2024-01-17',
+    costPerUnit: 280,
+  },
+  {
+    id: 'INV-003',
+    name: 'Tomatoes',
+    category: 'Vegetables',
+    currentStock: 12,
+    minStock: 10,
+    maxStock: 30,
+    unit: 'kg',
+    supplier: 'Green Farms',
+    lastUpdated: '2024-01-15T11:00:00Z',
+    expiryDate: '2024-01-18',
+    costPerUnit: 35,
+  },
 ];
 
 const mockMetrics: KitchenMetrics = {
@@ -224,27 +293,37 @@ const mockMetrics: KitchenMetrics = {
   dailyRevenue: 15420,
   customerSatisfaction: 4.6,
   lowStockItems: 3,
-  activeStaff: 8
+  activeStaff: 8,
 };
 
 // Order Status Colors
 const getStatusColor = (status: Order['status']) => {
   switch (status) {
-    case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-    case 'preparing': return 'bg-blue-100 text-blue-800 border-blue-200';
-    case 'ready': return 'bg-green-100 text-green-800 border-green-200';
-    case 'completed': return 'bg-gray-100 text-gray-800 border-gray-200';
-    case 'cancelled': return 'bg-red-100 text-red-800 border-red-200';
-    default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    case 'pending':
+      return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+    case 'preparing':
+      return 'bg-blue-100 text-blue-800 border-blue-200';
+    case 'ready':
+      return 'bg-green-100 text-green-800 border-green-200';
+    case 'completed':
+      return 'bg-gray-100 text-gray-800 border-gray-200';
+    case 'cancelled':
+      return 'bg-red-100 text-red-800 border-red-200';
+    default:
+      return 'bg-gray-100 text-gray-800 border-gray-200';
   }
 };
 
 const getPriorityColor = (priority: Order['priority']) => {
   switch (priority) {
-    case 'high': return 'bg-red-500';
-    case 'medium': return 'bg-yellow-500';
-    case 'low': return 'bg-green-500';
-    default: return 'bg-gray-500';
+    case 'high':
+      return 'bg-red-500';
+    case 'medium':
+      return 'bg-yellow-500';
+    case 'low':
+      return 'bg-green-500';
+    default:
+      return 'bg-gray-500';
   }
 };
 
@@ -278,15 +357,15 @@ const OrderCard = ({ order }: { order: Order }) => {
             <p className="text-sm text-gray-600">{order.studentName}</p>
           </div>
         </div>
-        <Badge className={`${getStatusColor(order.status)} border`}>
-          {order.status}
-        </Badge>
+        <Badge className={`${getStatusColor(order.status)} border`}>{order.status}</Badge>
       </div>
 
       <div className="space-y-2 mb-4">
-        {order.items.map((item) => (
+        {order.items.map(item => (
           <div key={item.id} className="flex items-center justify-between text-sm">
-            <span className="flex-1">{item.quantity}x {item.name}</span>
+            <span className="flex-1">
+              {item.quantity}x {item.name}
+            </span>
             <span className="text-gray-500">{item.preparationTime}min</span>
           </div>
         ))}
@@ -301,9 +380,7 @@ const OrderCard = ({ order }: { order: Order }) => {
           <MapPin className="w-3 h-3 mr-1" />
           {order.location}
         </span>
-        <span className="font-semibold text-gray-900">
-          Rs.{order.totalAmount}
-        </span>
+        <span className="font-semibold text-gray-900">Rs.{order.totalAmount}</span>
       </div>
 
       {order.assignedStaff && (
@@ -336,20 +413,29 @@ const OrderCard = ({ order }: { order: Order }) => {
 const StaffCard = ({ staff }: { staff: KitchenStaff }) => {
   const getStatusColor = (status: KitchenStaff['status']) => {
     switch (status) {
-      case 'active': return 'bg-green-500';
-      case 'break': return 'bg-yellow-500';
-      case 'offline': return 'bg-red-500';
-      default: return 'bg-gray-500';
+      case 'active':
+        return 'bg-green-500';
+      case 'break':
+        return 'bg-yellow-500';
+      case 'offline':
+        return 'bg-red-500';
+      default:
+        return 'bg-gray-500';
     }
   };
 
   const getRoleIcon = (role: KitchenStaff['role']) => {
     switch (role) {
-      case 'chef': return <ChefHat className="w-4 h-4" />;
-      case 'assistant': return <Users className="w-4 h-4" />;
-      case 'prep': return <Utensils className="w-4 h-4" />;
-      case 'manager': return <Settings className="w-4 h-4" />;
-      default: return <User className="w-4 h-4" />;
+      case 'chef':
+        return <ChefHat className="w-4 h-4" />;
+      case 'assistant':
+        return <Users className="w-4 h-4" />;
+      case 'prep':
+        return <Utensils className="w-4 h-4" />;
+      case 'manager':
+        return <Settings className="w-4 h-4" />;
+      default:
+        return <User className="w-4 h-4" />;
     }
   };
 
@@ -360,16 +446,21 @@ const StaffCard = ({ staff }: { staff: KitchenStaff }) => {
           <div className="relative">
             <Avatar className="w-12 h-12">
               <AvatarImage src={staff.avatar} alt={staff.name} />
-              <AvatarFallback>{staff.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+              <AvatarFallback>
+                {staff.name
+                  .split(' ')
+                  .map(n => n[0])
+                  .join('')}
+              </AvatarFallback>
             </Avatar>
-            <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${getStatusColor(staff.status)}`} />
+            <div
+              className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${getStatusColor(staff.status)}`}
+            />
           </div>
           <div className="flex-1">
             <div className="flex items-center space-x-2">
               <h3 className="font-semibold">{staff.name}</h3>
-              <div className="text-gray-500">
-                {getRoleIcon(staff.role)}
-              </div>
+              <div className="text-gray-500">{getRoleIcon(staff.role)}</div>
             </div>
             <p className="text-sm text-gray-600 capitalize">{staff.role}</p>
           </div>
@@ -417,14 +508,18 @@ const InventoryAlert = ({ item }: { item: InventoryItem }) => {
   const stockPercentage = (item.currentStock / item.maxStock) * 100;
 
   return (
-    <div className={`flex items-center justify-between p-3 rounded-lg border ${
-      isLowStock ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'
-    }`}>
+    <div
+      className={`flex items-center justify-between p-3 rounded-lg border ${
+        isLowStock ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'
+      }`}
+    >
       <div className="flex items-center space-x-3">
         {isLowStock && <AlertTriangle className="w-5 h-5 text-red-500" />}
         <div>
           <h4 className="font-medium">{item.name}</h4>
-          <p className="text-sm text-gray-600">{item.category} • {item.supplier}</p>
+          <p className="text-sm text-gray-600">
+            {item.category} • {item.supplier}
+          </p>
         </div>
       </div>
       <div className="text-right">
@@ -434,7 +529,9 @@ const InventoryAlert = ({ item }: { item: InventoryItem }) => {
           </span>
           <Progress value={stockPercentage} className="w-16 h-2" />
         </div>
-        <p className="text-xs text-gray-500">Min: {item.minStock} {item.unit}</p>
+        <p className="text-xs text-gray-500">
+          Min: {item.minStock} {item.unit}
+        </p>
       </div>
     </div>
   );
@@ -443,50 +540,75 @@ const InventoryAlert = ({ item }: { item: InventoryItem }) => {
 // Main Kitchen Management Dashboard
 export const KitchenManagementDashboard: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState('orders');
-  const [orderFilters, setOrderFilters] = useState({});
-  const [staffFilters, setStaffFilters] = useState({});
-  const [inventoryFilters, setInventoryFilters] = useState({});
+  const [orderFilters, _setOrderFilters] = useState({});
+  const [staffFilters, _setStaffFilters] = useState({});
+  const [inventoryFilters, _setInventoryFilters] = useState({});
 
   // API Integration hooks
-  const { data: orders, loading: ordersLoading, error: ordersError, refetch: refetchOrders } = useKitchenOrders(orderFilters);
+  const {
+    data: orders,
+    loading: ordersLoading,
+    error: ordersError,
+    refetch: refetchOrders,
+  } = useKitchenOrders(orderFilters);
   const { data: metrics, loading: metricsLoading } = useKitchenMetrics('today');
-  const { data: staff, loading: staffLoading } = useStaffMembers(staffFilters);
-  const { data: inventory, loading: inventoryLoading } = useInventoryItems(inventoryFilters);
-  const { data: lowStockAlerts, loading: alertsLoading } = useLowStockAlerts();
-  const { updateOrderStatus, assignOrder, loading: mutationLoading, error: mutationError } = useOrderMutations();
+  const { data: staff, loading: _staffLoading } = useStaffMembers(staffFilters);
+  const { data: inventory, loading: _inventoryLoading } = useInventoryItems(inventoryFilters);
+  const { data: _lowStockAlerts, loading: _alertsLoading } = useLowStockAlerts();
+  const {
+    updateOrderStatus,
+    assignOrder,
+    loading: mutationLoading,
+    error: mutationError,
+  } = useOrderMutations();
   const { connected: wsConnected } = useWebSocketConnection();
 
   // Real-time updates via WebSocket
-  useWebSocketSubscription('order_update', useCallback((orderData: any) => {
-    toast.success(`Order ${orderData.orderNumber} status updated to ${orderData.status}`);
-    refetchOrders();
-  }, [refetchOrders]));
+  useWebSocketSubscription(
+    'order_update',
+    useCallback(
+      (orderData: any) => {
+        toast.success(`Order ${orderData.orderNumber} status updated to ${orderData.status}`);
+        refetchOrders();
+      },
+      [refetchOrders]
+    )
+  );
 
-  useWebSocketSubscription('kitchen_alert', useCallback((alertData: any) => {
-    toast.error(alertData.message);
-  }, []));
+  useWebSocketSubscription(
+    'kitchen_alert',
+    useCallback((alertData: any) => {
+      toast.error(alertData.message);
+    }, [])
+  );
 
   // Handle order status updates
-  const handleOrderStatusUpdate = useCallback(async (orderId: string, newStatus: string) => {
-    try {
-      await updateOrderStatus(orderId, newStatus);
-      toast.success('Order status updated successfully');
-      refetchOrders();
-    } catch (error) {
-      toast.error('Failed to update order status');
-    }
-  }, [updateOrderStatus, refetchOrders]);
+  const _handleOrderStatusUpdate = useCallback(
+    async (orderId: string, newStatus: string) => {
+      try {
+        await updateOrderStatus(orderId, newStatus);
+        toast.success('Order status updated successfully');
+        refetchOrders();
+      } catch (error) {
+        toast.error('Failed to update order status');
+      }
+    },
+    [updateOrderStatus, refetchOrders]
+  );
 
   // Handle order assignment
-  const handleOrderAssignment = useCallback(async (orderId: string, staffId: string) => {
-    try {
-      await assignOrder(orderId, staffId);
-      toast.success('Order assigned successfully');
-      refetchOrders();
-    } catch (error) {
-      toast.error('Failed to assign order');
-    }
-  }, [assignOrder, refetchOrders]);
+  const _handleOrderAssignment = useCallback(
+    async (orderId: string, staffId: string) => {
+      try {
+        await assignOrder(orderId, staffId);
+        toast.success('Order assigned successfully');
+        refetchOrders();
+      } catch (error) {
+        toast.error('Failed to assign order');
+      }
+    },
+    [assignOrder, refetchOrders]
+  );
 
   // Use fallback data if API calls fail or data is not available
   const ordersData = orders || mockOrders;
@@ -520,24 +642,20 @@ export const KitchenManagementDashboard: React.FC = () => {
         {hasError && (
           <Alert className="border-red-200 bg-red-50">
             <AlertTriangle className="h-4 w-4 text-red-600" />
-            <AlertDescription className="text-red-800">
-              {hasError}
-            </AlertDescription>
+            <AlertDescription className="text-red-800">{hasError}</AlertDescription>
           </Alert>
         )}
 
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900" data-testid="kitchen-header">Kitchen Management</h1>
+            <h1 className="text-3xl font-bold text-gray-900" data-testid="kitchen-header">
+              Kitchen Management
+            </h1>
             <p className="text-gray-600">Real-time order tracking and kitchen operations</p>
           </div>
           <div className="flex items-center space-x-3">
-            <Button 
-              variant="outline" 
-              onClick={() => refetchOrders()}
-              disabled={isLoading}
-            >
+            <Button variant="outline" onClick={() => refetchOrders()} disabled={isLoading}>
               {isLoading ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               ) : (
@@ -575,7 +693,7 @@ export const KitchenManagementDashboard: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center">
@@ -589,7 +707,7 @@ export const KitchenManagementDashboard: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center">
@@ -603,7 +721,7 @@ export const KitchenManagementDashboard: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center">
@@ -642,7 +760,7 @@ export const KitchenManagementDashboard: React.FC = () => {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <AnimatePresence>
-                    {pendingOrders.map((order) => (
+                    {pendingOrders.map(order => (
                       <OrderCard key={order.id} order={order} />
                     ))}
                   </AnimatePresence>
@@ -660,7 +778,7 @@ export const KitchenManagementDashboard: React.FC = () => {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <AnimatePresence>
-                    {preparingOrders.map((order) => (
+                    {preparingOrders.map(order => (
                       <OrderCard key={order.id} order={order} />
                     ))}
                   </AnimatePresence>
@@ -678,7 +796,7 @@ export const KitchenManagementDashboard: React.FC = () => {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <AnimatePresence>
-                    {readyOrders.map((order) => (
+                    {readyOrders.map(order => (
                       <OrderCard key={order.id} order={order} />
                     ))}
                   </AnimatePresence>
@@ -690,7 +808,7 @@ export const KitchenManagementDashboard: React.FC = () => {
           {/* Staff Tab */}
           <TabsContent value="staff" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {staffData.map((member) => (
+              {staffData.map(member => (
                 <StaffCard key={member.id} staff={member} />
               ))}
             </div>
@@ -708,9 +826,11 @@ export const KitchenManagementDashboard: React.FC = () => {
                   <CardDescription>Items that need restocking</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {inventoryData.filter(item => item.currentStock <= item.minStock).map((item) => (
-                    <InventoryAlert key={item.id} item={item} />
-                  ))}
+                  {inventoryData
+                    .filter(item => item.currentStock <= item.minStock)
+                    .map(item => (
+                      <InventoryAlert key={item.id} item={item} />
+                    ))}
                 </CardContent>
               </Card>
 
@@ -723,7 +843,7 @@ export const KitchenManagementDashboard: React.FC = () => {
                   <CardDescription>Current stock levels</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {inventoryData.map((item) => (
+                  {inventoryData.map(item => (
                     <InventoryAlert key={item.id} item={item} />
                   ))}
                 </CardContent>
@@ -742,9 +862,7 @@ export const KitchenManagementDashboard: React.FC = () => {
                   <div className="text-3xl font-bold text-green-600 mb-2">
                     Rs.{metricsData.dailyRevenue.toLocaleString()}
                   </div>
-                  <p className="text-sm text-gray-600">
-                    +12.5% from yesterday
-                  </p>
+                  <p className="text-sm text-gray-600">+12.5% from yesterday</p>
                 </CardContent>
               </Card>
 
@@ -759,9 +877,7 @@ export const KitchenManagementDashboard: React.FC = () => {
                     </div>
                     <Star className="w-6 h-6 text-yellow-500 ml-1 fill-current" />
                   </div>
-                  <p className="text-sm text-gray-600">
-                    Based on {245} reviews today
-                  </p>
+                  <p className="text-sm text-gray-600">Based on {245} reviews today</p>
                 </CardContent>
               </Card>
             </div>

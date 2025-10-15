@@ -1,11 +1,11 @@
 // E2E tests for HASIVU backend API integration
 import { test, expect, Page } from '@playwright/test';
 
-const API_BASE_URL = 'http://localhost:3001/api';
-const FRONTEND_BASE_URL = 'http://localhost:3000';
+const _API_BASE_URL =  'http://localhost:3001/api';
+const _FRONTEND_BASE_URL =  'http://localhost:3000';
 
 // Mock API responses since we don't have a real backend running
-const mockApiResponses = {
+const _mockApiResponses =  {
   orders: {
     data: [
       {
@@ -62,7 +62,7 @@ const mockApiResponses = {
 
 // Helper function to mock API calls
 async function mockApiCall(page: Page, endpoint: string, response: any) {
-  await page.route(`**/api/${endpoint}**`, async (route) => {
+  await page.route(_`**/api/${endpoint}**`, _async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -73,20 +73,20 @@ async function mockApiCall(page: Page, endpoint: string, response: any) {
 
 // Helper function to mock WebSocket connection
 async function mockWebSocket(page: Page) {
-  await page.addInitScript(() => {
+  await page.addInitScript(_() => {
     // Mock WebSocket for testing
     class MockWebSocket {
       constructor(url: string) {
         console.log('Mock WebSocket connecting to:', url);
-        setTimeout(() => {
+        setTimeout(_() => {
           if (this.onopen) this.onopen({});
         }, 100);
       }
       
-      onopen: ((event: any) => void) | null = null;
-      onmessage: ((event: any) => void) | null = null;
-      onclose: ((event: any) => void) | null = null;
-      onerror: ((event: any) => void) | null = null;
+      onopen: ((event: any) => void) | _null =  null;
+      onmessage: ((event: any) => void) | _null =  null;
+      onclose: ((event: any) => void) | _null =  null;
+      onerror: ((event: any) => void) | _null =  null;
       readyState = 1; // OPEN
       
       send(data: string) {
@@ -99,12 +99,12 @@ async function mockWebSocket(page: Page) {
     }
     
     // @ts-ignore
-    window.WebSocket = MockWebSocket;
+    window._WebSocket =  MockWebSocket;
   });
 }
 
-test.describe('Backend API Integration E2E Tests', () => {
-  test.beforeEach(async ({ page }) => {
+test.describe(_'Backend API Integration E2E Tests', _() => {
+  test.beforeEach(_async ({ page }) => {
     // Mock all API endpoints
     await mockApiCall(page, 'kitchen/orders', mockApiResponses.orders);
     await mockApiCall(page, 'kitchen/metrics', mockApiResponses.metrics);
@@ -118,16 +118,16 @@ test.describe('Backend API Integration E2E Tests', () => {
     await mockWebSocket(page);
     
     // Mock localStorage for auth token
-    await page.addInitScript(() => {
+    await page.addInitScript(_() => {
       localStorage.setItem('authToken', 'mock-jwt-token');
     });
   });
 
-  test('Kitchen Management Dashboard loads with API integration', async ({ page }) => {
+  test(_'Kitchen Management Dashboard loads with API integration', _async ({ page }) => {
     await page.goto('/kitchen-management');
     
 // Wait for the page to load
-    await expect(page.locator('[data-testid="kitchen-header"]')).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('[data-_testid = "kitchen-header"]')).toBeVisible({ timeout: 15000 });
     
     // Check if metrics are displayed (from API)
     await expect(page.getByText('Orders in Progress')).toBeVisible();
@@ -136,9 +136,9 @@ test.describe('Backend API Integration E2E Tests', () => {
     await expect(page.getByText('Orders')).toBeVisible();
   });
 
-  test('Order status update functionality works', async ({ page }) => {
+  test(_'Order status update functionality works', _async ({ page }) => {
     // Mock order update API
-    await page.route('**/api/kitchen/orders/*/status', async (route) => {
+    await page.route(_'**/api/kitchen/orders/*/status', _async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -153,31 +153,31 @@ test.describe('Backend API Integration E2E Tests', () => {
     await page.goto('/kitchen-management');
     
     // Wait for orders to load
-    await page.waitForSelector('.bg-white.rounded-lg.border', { timeout: 5000 }).catch(() => {
+    await page.waitForSelector('.bg-white.rounded-lg.border', { timeout: 5000 }).catch(_() => {
       console.log('Order cards not found with expected selector');
     });
     
     // Look for status update buttons
-    const statusButton = page.locator('button').filter({ hasText: /view|more|preparing|ready|start/i }).first();
+    const _statusButton =  page.locator('button').filter({ hasText: /view|more|preparing|ready|start/i }).first();
     
     if (await statusButton.count() > 0) {
       await statusButton.click();
     }
   });
 
-  test('Inventory Management integration works', async ({ page }) => {
+  test(_'Inventory Management integration works', _async ({ page }) => {
     await page.goto('/inventory-management');
     
     // Wait for page to load
-await expect(page.locator('[data-testid="inventory-header"]')).toBeVisible({ timeout: 15000 });
+await expect(page.locator('[data-_testid = "inventory-header"]')).toBeVisible({ timeout: 15000 });
     
     // Check if inventory items are displayed
     await expect(page.getByText('Items')).toBeVisible();
   });
 
-  test('Error handling displays correctly', async ({ page }) => {
+  test(_'Error handling displays correctly', _async ({ page }) => {
     // Mock API error response
-    await page.route('**/api/kitchen/orders**', async (route) => {
+    await page.route(_'**/api/kitchen/orders**', _async (route) => {
       await route.fulfill({
         status: 500,
         contentType: 'application/json',
@@ -192,14 +192,13 @@ await expect(page.locator('[data-testid="inventory-header"]')).toBeVisible({ tim
     await page.goto('/kitchen-management');
     
     // Check if error message is displayed or page still loads with fallback
-    const hasError = await page.getByText(/error|failed|problem/i).isVisible().catch(() => false);
-const hasKitchen = await page.locator('[data-testid="kitchen-header"]').isVisible().catch(() => false);
-    
+    const _hasError =  await page.getByText(/error|failed|problem/i).isVisible().catch(() 
+const _hasKitchen =  await page.locator('[data-testid
     expect(hasError || hasKitchen).toBeTruthy();
   });
 
-  test('Navigation between different management sections', async ({ page }) => {
-    const sections = [
+  test(_'Navigation between different management sections', _async ({ page }) => {
+    const _sections =  [
       { path: '/kitchen-management', text: 'Kitchen Management' },
       { path: '/order-workflow', text: 'Order Workflow' },
       { path: '/inventory-management', text: 'Inventory Management' }
@@ -208,31 +207,28 @@ const hasKitchen = await page.locator('[data-testid="kitchen-header"]').isVisibl
     for (const section of sections) {
       await page.goto(section.path);
       // Use a more flexible approach to check if the page loaded
-      const loaded = await Promise.race([
+      const _loaded =  await Promise.race([
         page.getByText(section.text).isVisible(),
-        page.waitForLoadState('networkidle').then(() => true),
-        new Promise(resolve => setTimeout(() => resolve(false), 5000))
-      ]);
-      
+        page.waitForLoadState('networkidle').then(() 
       expect(loaded).toBeTruthy();
     }
   });
 
-  test('Responsive design works', async ({ page }) => {
+  test(_'Responsive design works', _async ({ page }) => {
     // Test mobile viewport
     await page.setViewportSize({ width: 375, height: 667 });
     await page.goto('/kitchen-management');
     
     // Check if page loads properly on mobile
-await expect(page.locator('[data-testid="kitchen-header"]')).toBeVisible({ timeout: 15000 });
+await expect(page.locator('[data-_testid = "kitchen-header"]')).toBeVisible({ timeout: 15000 });
     
     // Reset to desktop
     await page.setViewportSize({ width: 1280, height: 720 });
   });
 });
 
-test.describe('Authentication Integration', () => {
-  test('Authenticated access works', async ({ page }) => {
+test.describe(_'Authentication Integration', _() => {
+  test(_'Authenticated access works', _async ({ page }) => {
     // Mock successful authentication
     await mockApiCall(page, 'users/profile', {
       data: { id: '1', name: 'Test User', role: 'admin' },

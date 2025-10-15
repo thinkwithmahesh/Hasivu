@@ -5,14 +5,7 @@
  */
 
 import React, { useState } from 'react';
-import {
-  Box,
-  Button,
-  Stack,
-  Typography,
-  Container,
-  Paper,
-} from '@mui/material';
+import { Box, Button, Stack, Typography, Container, Paper } from '@mui/material';
 import {
   LoadingScreen,
   ErrorBoundary,
@@ -28,9 +21,7 @@ const ErrorThrowingComponent: React.FC<{ shouldThrow: boolean }> = ({ shouldThro
     throw new Error('Test error thrown for ErrorBoundary demonstration');
   }
   return (
-    <Typography color="success.main">
-      ✅ No errors - ErrorBoundary is working correctly!
-    </Typography>
+    <Typography color="success.main">✅ No errors - ErrorBoundary is working correctly!</Typography>
   );
 };
 
@@ -39,10 +30,10 @@ const ErrorThrowingComponent: React.FC<{ shouldThrow: boolean }> = ({ shouldThro
  */
 const ProgressBarDemo: React.FC = () => {
   const progressBar = useProgressBar();
-  
+
   const handleStartProgress = () => {
     progressBar.start(3000); // 3 second simulation
-    
+
     // Simulate finishing after delay
     setTimeout(() => {
       progressBar.finish();
@@ -81,8 +72,8 @@ const ProgressBarDemo: React.FC = () => {
         </Button>
       </Stack>
       <Typography variant="body2" color="text.secondary">
-        Current progress: {Math.round(progressBar.progress)}% | 
-        Visible: {progressBar.isVisible ? 'Yes' : 'No'}
+        Current progress: {Math.round(progressBar.progress)}% | Visible:{' '}
+        {progressBar.isVisible ? 'Yes' : 'No'}
       </Typography>
     </Stack>
   );
@@ -101,7 +92,7 @@ const ComponentTest: React.FC = () => {
     setLoadingProgress(0);
 
     const interval = setInterval(() => {
-      setLoadingProgress((prev) => {
+      setLoadingProgress(prev => {
         if (prev >= 100) {
           clearInterval(interval);
           setTimeout(() => setShowLoadingScreen(false), 1000);
@@ -126,7 +117,7 @@ const ComponentTest: React.FC = () => {
         <Typography variant="h3" gutterBottom align="center">
           HASIVU Common Components Test
         </Typography>
-        
+
         <Typography variant="body1" paragraph align="center" color="text.secondary">
           This page demonstrates all the common components working together.
         </Typography>
@@ -137,21 +128,14 @@ const ComponentTest: React.FC = () => {
             <Typography variant="h5" gutterBottom>
               🔄 LoadingScreen Component
             </Typography>
-            
+
             <Stack spacing={2}>
               <Stack direction="row" spacing={2} flexWrap="wrap">
-                <Button 
-                  variant="contained" 
-                  onClick={simulateLoading}
-                  disabled={showLoadingScreen}
-                >
+                <Button variant="contained" onClick={simulateLoading} disabled={showLoadingScreen}>
                   {showLoadingScreen ? 'Loading...' : 'Test Loading Screen'}
                 </Button>
-                
-                <Button 
-                  variant="outlined"
-                  onClick={() => setShowLoadingScreen(!showLoadingScreen)}
-                >
+
+                <Button variant="outlined" onClick={() => setShowLoadingScreen(!showLoadingScreen)}>
                   Toggle Loading Screen
                 </Button>
               </Stack>
@@ -179,22 +163,19 @@ const ComponentTest: React.FC = () => {
             <Typography variant="h5" gutterBottom>
               🛡️ ErrorBoundary Component
             </Typography>
-            
+
             <Stack spacing={2}>
               <Stack direction="row" spacing={2} flexWrap="wrap">
-                <Button 
-                  variant="contained" 
+                <Button
+                  variant="contained"
                   color="error"
                   onClick={() => setThrowError(true)}
                   disabled={throwError}
                 >
                   {throwError ? 'Error Thrown' : 'Test Error Boundary'}
                 </Button>
-                
-                <Button 
-                  variant="outlined"
-                  onClick={resetErrorBoundary}
-                >
+
+                <Button variant="outlined" onClick={resetErrorBoundary}>
                   Reset Error State
                 </Button>
               </Stack>
@@ -203,13 +184,11 @@ const ComponentTest: React.FC = () => {
                 showDetails={true}
                 showRetry={true}
                 errorMessages={{
-                  title: "Test Error Boundary",
-                  description: "This is a controlled error for testing purposes.",
-                  actionText: "Try Again"
+                  title: 'Test Error Boundary',
+                  description: 'This is a controlled error for testing purposes.',
+                  actionText: 'Try Again',
                 }}
-                onError={(error, errorInfo) => {
-                  console.log('ErrorBoundary caught error:', { error, errorInfo });
-                }}
+                onError={(error, errorInfo) => {}}
               >
                 <ErrorThrowingComponent shouldThrow={throwError} />
               </ErrorBoundary>
@@ -229,11 +208,11 @@ const ComponentTest: React.FC = () => {
             <Typography variant="h6" gutterBottom color="success.dark">
               ✅ Integration Status
             </Typography>
-            
+
             <Typography variant="body1" paragraph>
               All HASIVU common components have been successfully integrated:
             </Typography>
-            
+
             <Box component="ul" sx={{ color: 'success.dark' }}>
               <li>LoadingScreen - ✅ Working with animations and progress tracking</li>
               <li>ErrorBoundary - ✅ Catching errors with user-friendly fallbacks</li>

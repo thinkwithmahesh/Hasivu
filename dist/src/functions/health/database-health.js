@@ -51,7 +51,7 @@ const databaseHealthHandler = async (event, context) => {
     catch (error) {
         const duration = Date.now() - startTime;
         logger.error('Database health check failed', {
-            error: error instanceof Error ? error.message : 'Unknown error',
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error',
             duration,
             requestId: context.awsRequestId
         });
@@ -79,7 +79,7 @@ async function runDatabaseTests() {
             name: 'connection_test',
             status: 'failed',
             responseTime: 0,
-            error: error instanceof Error ? error.message : 'Unknown connection error'
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown connection error'
         });
     }
     try {
@@ -96,7 +96,7 @@ async function runDatabaseTests() {
             name: 'version_check',
             status: 'failed',
             responseTime: 0,
-            error: error instanceof Error ? error.message : 'Version check failed'
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Version check failed'
         });
     }
     try {
@@ -122,7 +122,7 @@ async function runDatabaseTests() {
             name: 'read_test',
             status: 'failed',
             responseTime: 0,
-            error: error instanceof Error ? error.message : 'Read test failed'
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Read test failed'
         });
     }
     try {
@@ -141,7 +141,7 @@ async function runDatabaseTests() {
             name: 'transaction_test',
             status: 'failed',
             responseTime: 0,
-            error: error instanceof Error ? error.message : 'Transaction test failed'
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Transaction test failed'
         });
     }
     return tests;

@@ -1,50 +1,44 @@
 'use client';
 
-import React, { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { cn } from '@/lib/utils'
-import { useMobileLayout } from '@/hooks/useMobileLayout'
-import BottomNavigation from './BottomNavigation'
-import MobileNavSheet from './MobileNavSheet'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import {
-  Bell,
-  Search,
-  WifiOff,
-  Zap,
-  X
-} from 'lucide-react'
+import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
+import { useMobileLayout } from '@/hooks/useMobileLayout';
+import BottomNavigation from './BottomNavigation';
+import MobileNavSheet from './MobileNavSheet';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Bell, Search, WifiOff, Zap, X } from 'lucide-react';
 
 interface MobileLayoutProps {
-  children: React.ReactNode
-  userRole?: 'student' | 'parent' | 'admin'
+  children: React.ReactNode;
+  userRole?: 'student' | 'parent' | 'admin';
   user?: {
-    name: string
-    email: string
-    avatar?: string
-    id: string
-  }
-  showBottomNav?: boolean
-  showHeader?: boolean
-  className?: string
-  onLogout?: () => void
+    name: string;
+    email: string;
+    avatar?: string;
+    id: string;
+  };
+  showBottomNav?: boolean;
+  showHeader?: boolean;
+  className?: string;
+  onLogout?: () => void;
 }
 
 interface OfflineBannerProps {
-  isOnline: boolean
-  onRetry: () => void
+  isOnline: boolean;
+  onRetry: () => void;
 }
 
 const OfflineBanner: React.FC<OfflineBannerProps> = ({ isOnline, onRetry }) => {
-  const [showBanner, setShowBanner] = useState(false)
+  const [showBanner, setShowBanner] = useState(false);
 
   useEffect(() => {
-    setShowBanner(!isOnline)
-  }, [isOnline])
+    setShowBanner(!isOnline);
+  }, [isOnline]);
 
-  if (!showBanner) return null
+  if (!showBanner) return null;
 
   return (
     <div className="fixed top-0 left-0 right-0 z-50 bg-orange-500 text-white p-2 safe-area-pt animate-slide-down">
@@ -73,12 +67,12 @@ const OfflineBanner: React.FC<OfflineBannerProps> = ({ isOnline, onRetry }) => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
 interface PWAInstallPromptProps {
-  onInstall: () => void
-  onDismiss: () => void
+  onInstall: () => void;
+  onDismiss: () => void;
 }
 
 const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ onInstall, onDismiss }) => {
@@ -103,19 +97,14 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ onInstall, onDismis
               </Button>
             </div>
           </div>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={onDismiss}
-            className="h-6 w-6 p-0"
-          >
+          <Button size="sm" variant="ghost" onClick={onDismiss} className="h-6 w-6 p-0">
             <X className="h-3 w-3" />
           </Button>
         </div>
       </div>
     </Card>
-  )
-}
+  );
+};
 
 export const MobileLayout: React.FC<MobileLayoutProps> = ({
   children,
@@ -124,109 +113,106 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({
   showBottomNav = true,
   showHeader = true,
   className,
-  onLogout
+  onLogout,
 }) => {
-  const router = useRouter()
-  const { isMobile, isTablet, isDesktop, safeArea } = useMobileLayout()
-  const [isOnline, setIsOnline] = useState(true)
-  const [showInstallPrompt, setShowInstallPrompt] = useState(false)
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
-  const [notificationCount, setNotificationCount] = useState(3)
+  const router = useRouter();
+  const { isMobile, isTablet, isDesktop, safeArea } = useMobileLayout();
+  const [isOnline, setIsOnline] = useState(true);
+  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [notificationCount, setNotificationCount] = useState(3);
 
   // Handle PWA install prompt
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault()
-      setDeferredPrompt(e)
-      
+      e.preventDefault();
+      setDeferredPrompt(e);
+
       // Show install prompt after a delay if on mobile
       if (isMobile) {
         setTimeout(() => {
-          setShowInstallPrompt(true)
-        }, 3000)
+          setShowInstallPrompt(true);
+        }, 3000);
       }
-    }
+    };
 
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
     return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
-    }
-  }, [isMobile])
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, [isMobile]);
 
   // Handle online/offline status
   useEffect(() => {
-    const handleOnline = () => setIsOnline(true)
-    const handleOffline = () => setIsOnline(false)
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
 
-    setIsOnline(navigator.onLine)
-    window.addEventListener('online', handleOnline)
-    window.addEventListener('offline', handleOffline)
+    setIsOnline(navigator.onLine);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
 
     return () => {
-      window.removeEventListener('online', handleOnline)
-      window.removeEventListener('offline', handleOffline)
-    }
-  }, [])
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   // Handle PWA installation
   const handleInstallApp = async () => {
     if (deferredPrompt) {
-      deferredPrompt.prompt()
-      const { outcome } = await deferredPrompt.userChoice
-      
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+
       if (outcome === 'accepted') {
-        console.log('PWA installed')
       }
-      
-      setDeferredPrompt(null)
+
+      setDeferredPrompt(null);
     }
-    setShowInstallPrompt(false)
-  }
+    setShowInstallPrompt(false);
+  };
 
   const handleRetryConnection = () => {
     // Simple connectivity check
     fetch('/api/v1/health', { method: 'HEAD' })
       .then(() => {
-        setIsOnline(true)
+        setIsOnline(true);
       })
-      .catch(() => {
-        console.log('Still offline')
-      })
-  }
+      .catch(() => {});
+  };
 
   const handleSearch = () => {
-    router.push('/search')
-  }
+    router.push('/search');
+  };
 
   const handleNotifications = () => {
-    router.push(`/${userRole}/notifications`)
-  }
+    router.push(`/${userRole}/notifications`);
+  };
 
   return (
-    <div className={cn(
-      "min-h-screen bg-gray-50",
-      "safe-area-p", // Use safe area padding
-      isMobile && "pb-16", // Account for bottom navigation
-      className
-    )}>
+    <div
+      className={cn(
+        'min-h-screen bg-gray-50',
+        'safe-area-p', // Use safe area padding
+        isMobile && 'pb-16', // Account for bottom navigation
+        className
+      )}
+    >
       {/* Offline Banner */}
       <OfflineBanner isOnline={isOnline} onRetry={handleRetryConnection} />
 
       {/* Mobile Header */}
       {showHeader && isMobile && (
-        <header className={cn(
-          "sticky top-0 z-30 bg-white/95 backdrop-blur-sm border-b",
-          !isOnline && "top-12" // Account for offline banner
-        )}>
+        <header
+          className={cn(
+            'sticky top-0 z-30 bg-white/95 backdrop-blur-sm border-b',
+            !isOnline && 'top-12' // Account for offline banner
+          )}
+        >
           <div className="flex items-center justify-between px-4 py-3">
             {/* Left side - Menu */}
             <div className="flex items-center space-x-3">
-              <MobileNavSheet
-                userRole={userRole}
-                user={user}
-                onLogout={onLogout}
-              />
+              <MobileNavSheet userRole={userRole} user={user} onLogout={onLogout} />
               <div>
                 <h1 className="text-lg font-bold text-gray-900">HASIVU</h1>
                 <p className="text-xs text-muted-foreground capitalize">{userRole} Portal</p>
@@ -244,7 +230,7 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({
               >
                 <Search className="h-5 w-5" />
               </Button>
-              
+
               <Button
                 variant="ghost"
                 size="sm"
@@ -254,8 +240,8 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({
               >
                 <Bell className="h-5 w-5" />
                 {notificationCount > 0 && (
-                  <Badge 
-                    variant="destructive" 
+                  <Badge
+                    variant="destructive"
                     className="absolute -top-1 -right-1 h-5 w-5 p-0 text-xs flex items-center justify-center"
                   >
                     {notificationCount > 9 ? '9+' : notificationCount}
@@ -277,13 +263,13 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({
                 {userRole} Portal
               </Badge>
             </div>
-            
+
             <div className="flex items-center space-x-4">
               <Button variant="outline" onClick={handleSearch}>
                 <Search className="h-4 w-4 mr-2" />
                 Search
               </Button>
-              
+
               <Button variant="outline" onClick={handleNotifications}>
                 <Bell className="h-4 w-4 mr-2" />
                 Notifications
@@ -299,18 +285,18 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({
       )}
 
       {/* Main Content */}
-      <main className={cn(
-        "flex-1",
-        isMobile && showHeader && "pt-0", // Header handles its own spacing
-        !isMobile && "container mx-auto px-6 py-6"
-      )}>
+      <main
+        className={cn(
+          'flex-1',
+          isMobile && showHeader && 'pt-0', // Header handles its own spacing
+          !isMobile && 'container mx-auto px-6 py-6'
+        )}
+      >
         {children}
       </main>
 
       {/* Bottom Navigation - Mobile Only */}
-      {showBottomNav && isMobile && (
-        <BottomNavigation userRole={userRole} />
-      )}
+      {showBottomNav && isMobile && <BottomNavigation userRole={userRole} />}
 
       {/* PWA Install Prompt */}
       {showInstallPrompt && (
@@ -320,27 +306,29 @@ export const MobileLayout: React.FC<MobileLayoutProps> = ({
         />
       )}
     </div>
-  )
-}
+  );
+};
 
 // HOC for automatic mobile layout wrapping
 export const withMobileLayout = <P extends object>(
   Component: React.ComponentType<P>,
   layoutProps?: Partial<MobileLayoutProps>
 ) => {
-  const WrappedComponent: React.FC<P & { mobileLayoutProps?: Partial<MobileLayoutProps> }> = (props) => {
-    const { mobileLayoutProps, ...componentProps } = props
-    
+  const WrappedComponent: React.FC<
+    P & { mobileLayoutProps?: Partial<MobileLayoutProps> }
+  > = props => {
+    const { mobileLayoutProps, ...componentProps } = props;
+
     return (
       <MobileLayout {...layoutProps} {...mobileLayoutProps}>
         <Component {...(componentProps as P)} />
       </MobileLayout>
-    )
-  }
-  
-  WrappedComponent.displayName = `withMobileLayout(${Component.displayName || Component.name})`
-  
-  return WrappedComponent
-}
+    );
+  };
 
-export default MobileLayout
+  WrappedComponent.displayName = `withMobileLayout(${Component.displayName || Component.name})`;
+
+  return WrappedComponent;
+};
+
+export default MobileLayout;

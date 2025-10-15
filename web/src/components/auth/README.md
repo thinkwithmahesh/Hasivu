@@ -19,10 +19,11 @@ A comprehensive set of authentication UI components built with ShadCN/UI compone
 ### Form Components
 
 #### `LoginForm`
+
 Full-featured login form with email/password authentication, remember me option, and social login integration.
 
 ```tsx
-import { LoginForm } from '@/components/auth'
+import { LoginForm } from '@/components/auth';
 
 <LoginForm
   onSubmit={handleLogin}
@@ -31,10 +32,11 @@ import { LoginForm } from '@/components/auth'
   error={null}
   showRememberMe={true}
   showSocialLogin={true}
-/>
+/>;
 ```
 
 **Props:**
+
 - `onSubmit`: Login handler function
 - `onSocialLogin`: Social login handler (optional)
 - `isLoading`: Loading state
@@ -43,10 +45,11 @@ import { LoginForm } from '@/components/auth'
 - `showSocialLogin`: Show social login buttons
 
 #### `RegisterForm`
+
 Comprehensive registration form with role selection, school ID, and terms acceptance.
 
 ```tsx
-import { RegisterForm } from '@/components/auth'
+import { RegisterForm } from '@/components/auth';
 
 <RegisterForm
   onSubmit={handleRegister}
@@ -54,10 +57,11 @@ import { RegisterForm } from '@/components/auth'
   availableRoles={['student', 'parent', 'teacher']}
   isLoading={false}
   error={null}
-/>
+/>;
 ```
 
 **Props:**
+
 - `onSubmit`: Registration handler function
 - `onSocialLogin`: Social login handler (optional)
 - `isLoading`: Loading state
@@ -66,6 +70,7 @@ import { RegisterForm } from '@/components/auth'
 - `showSocialLogin`: Show social login buttons
 
 #### `ForgotPasswordForm` & `ResetPasswordForm`
+
 Password reset flow with email sending and new password setting.
 
 ```tsx
@@ -90,10 +95,11 @@ import { ForgotPasswordForm, ResetPasswordForm } from '@/components/auth'
 ```
 
 #### `EmailVerificationForm`
+
 Email verification with 6-digit code input, auto-submission, and resend functionality.
 
 ```tsx
-import { EmailVerificationForm } from '@/components/auth'
+import { EmailVerificationForm } from '@/components/auth';
 
 <EmailVerificationForm
   onSubmit={handleVerification}
@@ -103,10 +109,11 @@ import { EmailVerificationForm } from '@/components/auth'
   isResending={false}
   error={null}
   success={false}
-/>
+/>;
 ```
 
 #### `MfaForm` & `BackupCodeForm`
+
 Multi-factor authentication with support for authenticator apps, SMS, and email codes.
 
 ```tsx
@@ -142,10 +149,11 @@ import { MfaForm, BackupCodeForm } from '@/components/auth'
 ### Social Authentication
 
 #### `SocialLoginButtons`
+
 Flexible social login component with multiple providers and layout options.
 
 ```tsx
-import { SocialLoginButtons } from '@/components/auth'
+import { SocialLoginButtons } from '@/components/auth';
 
 <SocialLoginButtons
   onSocialLogin={handleSocialLogin}
@@ -154,22 +162,24 @@ import { SocialLoginButtons } from '@/components/auth'
   showSeparator={true}
   separatorText="Or continue with"
   isLoading={false}
-/>
+/>;
 ```
 
 **Supported Providers:**
+
 - Google
-- Facebook  
+- Facebook
 - GitHub
 - Apple
 
 ### Layout Components
 
 #### `AuthLayout`
+
 Full-featured authentication layout with branding, features showcase, and testimonials.
 
 ```tsx
-import { AuthLayout } from '@/components/auth'
+import { AuthLayout } from '@/components/auth';
 
 <AuthLayout
   title="Welcome Back"
@@ -180,14 +190,15 @@ import { AuthLayout } from '@/components/auth'
   showFeatures={true}
 >
   <LoginForm onSubmit={handleLogin} />
-</AuthLayout>
+</AuthLayout>;
 ```
 
 #### `MinimalAuthLayout`
+
 Simplified layout for basic authentication pages.
 
 ```tsx
-import { MinimalAuthLayout } from '@/components/auth'
+import { MinimalAuthLayout } from '@/components/auth';
 
 <MinimalAuthLayout
   title="Reset Password"
@@ -195,16 +206,17 @@ import { MinimalAuthLayout } from '@/components/auth'
   showLogo={true}
 >
   <ResetPasswordForm onSubmit={handleReset} />
-</MinimalAuthLayout>
+</MinimalAuthLayout>;
 ```
 
 ### Route Protection
 
 #### `ProtectedRoute`
+
 Comprehensive route protection with authentication, role, and permission checks.
 
 ```tsx
-import { ProtectedRoute } from '@/components/auth'
+import { ProtectedRoute } from '@/components/auth';
 
 <ProtectedRoute
   requireAuth={true}
@@ -214,43 +226,46 @@ import { ProtectedRoute } from '@/components/auth'
   redirectTo="/auth/login"
 >
   <AdminDashboard />
-</ProtectedRoute>
+</ProtectedRoute>;
 ```
 
 #### `withAuth` HOC
+
 Higher-order component for protecting pages.
 
 ```tsx
-import { withAuth } from '@/components/auth'
+import { withAuth } from '@/components/auth';
 
 const ProtectedPage = withAuth(DashboardPage, {
   allowedRoles: ['admin'],
-  requireEmailVerification: true
-})
+  requireEmailVerification: true,
+});
 ```
 
 #### Permission Hooks
+
 Hooks for checking permissions within components.
 
 ```tsx
-import { usePermissions } from '@/components/auth'
+import { usePermissions } from '@/components/auth';
 
 function MyComponent() {
-  const { hasPermission, hasRole, user } = usePermissions()
-  
+  const { hasPermission, hasRole, user } = usePermissions();
+
   if (hasRole('admin')) {
-    return <AdminPanel />
+    return <AdminPanel />;
   }
-  
+
   if (hasPermission('read_users')) {
-    return <UsersList />
+    return <UsersList />;
   }
-  
-  return <AccessDenied />
+
+  return <AccessDenied />;
 }
 ```
 
 #### Conditional Rendering Components
+
 Components for conditional rendering based on auth state.
 
 ```tsx
@@ -274,7 +289,7 @@ import { RequireAuth, RequireRole, RequirePermission } from '@/components/auth'
 All components use the HASIVU brand colors defined in the Tailwind configuration:
 
 - **Primary**: Green color palette (`primary-50` to `primary-950`)
-- **Secondary**: Purple color palette  
+- **Secondary**: Purple color palette
 - **Success**: Green success states
 - **Warning**: Orange warning states
 - **Error**: Red error states
@@ -311,58 +326,58 @@ All forms use Zod schemas for validation:
 ```tsx
 // Login validation
 const loginSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-  rememberMe: z.boolean().default(false)
-})
+  email: z.string().email('Invalid email address'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+  rememberMe: z.boolean().default(false),
+});
 
 // Registration validation with password confirmation
-const registerSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-  confirmPassword: z.string(),
-  firstName: z.string().min(2, "First name must be at least 2 characters"),
-  lastName: z.string().min(2, "Last name must be at least 2 characters"),
-  // ... other fields
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-})
+const registerSchema = z
+  .object({
+    email: z.string().email('Invalid email address'),
+    password: z.string().min(8, 'Password must be at least 8 characters'),
+    confirmPassword: z.string(),
+    firstName: z.string().min(2, 'First name must be at least 2 characters'),
+    lastName: z.string().min(2, 'Last name must be at least 2 characters'),
+    // ... other fields
+  })
+  .refine(data => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ['confirmPassword'],
+  });
 ```
 
 ## 🚦 Usage Examples
 
 ### Complete Login Page
+
 ```tsx
-import { LoginForm, AuthLayout } from '@/components/auth'
+import { LoginForm, AuthLayout } from '@/components/auth';
 
 export default function LoginPage() {
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleLogin = async (data) => {
-    setIsLoading(true)
-    setError(null)
-    
+  const handleLogin = async data => {
+    setIsLoading(true);
+    setError(null);
+
     try {
-      await loginUser(data)
-      router.push('/dashboard')
+      await loginUser(data);
+      router.push('/dashboard');
     } catch (err) {
-      setError(err.message)
+      setError(err.message);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
-  const handleSocialLogin = async (provider) => {
+  const handleSocialLogin = async provider => {
     // Handle social login
-  }
+  };
 
   return (
-    <AuthLayout
-      showFeatures={true}
-      showBranding={true}
-    >
+    <AuthLayout showFeatures={true} showBranding={true}>
       <LoginForm
         onSubmit={handleLogin}
         onSocialLogin={handleSocialLogin}
@@ -372,14 +387,15 @@ export default function LoginPage() {
         showSocialLogin={true}
       />
     </AuthLayout>
-  )
+  );
 }
 ```
 
 ### Protected Admin Dashboard
+
 ```tsx
-import { ProtectedRoute } from '@/components/auth'
-import { AdminDashboard } from '@/components/admin'
+import { ProtectedRoute } from '@/components/auth';
+import { AdminDashboard } from '@/components/admin';
 
 export default function AdminPage() {
   return (
@@ -392,29 +408,34 @@ export default function AdminPage() {
     >
       <AdminDashboard />
     </ProtectedRoute>
-  )
+  );
 }
 ```
 
 ### Multi-Step Registration Flow
+
 ```tsx
-import { useState } from 'react'
-import { RegisterForm, EmailVerificationForm, AuthLayout } from '@/components/auth'
+import { useState } from 'react';
+import {
+  RegisterForm,
+  EmailVerificationForm,
+  AuthLayout,
+} from '@/components/auth';
 
 export default function RegisterPage() {
-  const [step, setStep] = useState<'register' | 'verify'>('register')
-  const [email, setEmail] = useState('')
+  const [step, setStep] = useState<'register' | 'verify'>('register');
+  const [email, setEmail] = useState('');
 
-  const handleRegister = async (data) => {
-    await registerUser(data)
-    setEmail(data.email)
-    setStep('verify')
-  }
+  const handleRegister = async data => {
+    await registerUser(data);
+    setEmail(data.email);
+    setStep('verify');
+  };
 
-  const handleVerification = async (data) => {
-    await verifyEmail(data)
-    router.push('/dashboard')
-  }
+  const handleVerification = async data => {
+    await verifyEmail(data);
+    router.push('/dashboard');
+  };
 
   return (
     <AuthLayout>
@@ -424,13 +445,10 @@ export default function RegisterPage() {
           availableRoles={['student', 'parent', 'teacher']}
         />
       ) : (
-        <EmailVerificationForm
-          onSubmit={handleVerification}
-          email={email}
-        />
+        <EmailVerificationForm onSubmit={handleVerification} email={email} />
       )}
     </AuthLayout>
-  )
+  );
 }
 ```
 
@@ -439,12 +457,12 @@ export default function RegisterPage() {
 All components accept className props for custom styling:
 
 ```tsx
-<LoginForm 
+<LoginForm
   className="max-w-sm mx-auto"
   onSubmit={handleLogin}
 />
 
-<AuthLayout 
+<AuthLayout
   className="bg-gradient-to-br from-primary-50 to-primary-100"
   showFeatures={false}
 >

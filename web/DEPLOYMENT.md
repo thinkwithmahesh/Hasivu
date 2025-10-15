@@ -7,6 +7,7 @@ This guide covers the complete deployment process for the HASIVU Platform, inclu
 ## 📋 Prerequisites
 
 ### Required Tools
+
 - **Node.js** 18.x or higher
 - **pnpm** 8.x or higher
 - **AWS CLI** v2 configured with appropriate credentials
@@ -14,6 +15,7 @@ This guide covers the complete deployment process for the HASIVU Platform, inclu
 - **Docker** (optional, for containerized deployments)
 
 ### AWS Services Required
+
 - **S3** buckets for static hosting and backups
 - **CloudFront** CDN for global content delivery
 - **Route 53** for DNS management
@@ -41,13 +43,14 @@ This guide covers the complete deployment process for the HASIVU Platform, inclu
 ### 1. AWS Infrastructure Setup
 
 #### S3 Buckets
+
 Create the following S3 buckets with appropriate policies:
 
 ```bash
 # Production bucket
 aws s3 mb s3://hasivu-prod-frontend
 
-# Staging bucket  
+# Staging bucket
 aws s3 mb s3://hasivu-staging-frontend
 
 # Backup bucket
@@ -55,13 +58,16 @@ aws s3 mb s3://hasivu-prod-backups
 ```
 
 #### CloudFront Distribution
+
 Create CloudFront distributions for both staging and production environments with:
+
 - Origin pointing to respective S3 buckets
 - Custom error pages for SPA routing
 - Appropriate caching behaviors
 - SSL certificates from ACM
 
 #### IAM Policies
+
 Create an IAM user with the following policy:
 
 ```json
@@ -76,16 +82,11 @@ Create an IAM user with the following policy:
         "s3:DeleteObject",
         "s3:ListBucket"
       ],
-      "Resource": [
-        "arn:aws:s3:::hasivu-*",
-        "arn:aws:s3:::hasivu-*/*"
-      ]
+      "Resource": ["arn:aws:s3:::hasivu-*", "arn:aws:s3:::hasivu-*/*"]
     },
     {
       "Effect": "Allow",
-      "Action": [
-        "cloudfront:CreateInvalidation"
-      ],
+      "Action": ["cloudfront:CreateInvalidation"],
       "Resource": "*"
     }
   ]
@@ -95,14 +96,17 @@ Create an IAM user with the following policy:
 ### 2. GitHub Repository Setup
 
 #### Required Secrets
+
 Configure the following secrets in your GitHub repository settings:
 
 **AWS Configuration:**
+
 - `AWS_ACCESS_KEY_ID`
 - `AWS_SECRET_ACCESS_KEY`
 - `AWS_REGION`
 
 **Staging Environment:**
+
 - `STAGING_S3_BUCKET`
 - `STAGING_CLOUDFRONT_ID`
 - `STAGING_API_URL`
@@ -112,6 +116,7 @@ Configure the following secrets in your GitHub repository settings:
 - `STAGING_RAZORPAY_KEY_ID`
 
 **Production Environment:**
+
 - `PRODUCTION_S3_BUCKET`
 - `PRODUCTION_CLOUDFRONT_ID`
 - `PRODUCTION_API_URL`
@@ -122,12 +127,14 @@ Configure the following secrets in your GitHub repository settings:
 - `BACKUP_S3_BUCKET`
 
 **Monitoring & Notifications:**
+
 - `SENTRY_DSN`
 - `ANALYTICS_ID`
 - `SLACK_WEBHOOK_URL`
 - `LHCI_GITHUB_APP_TOKEN`
 
 #### Branch Structure
+
 - `main` - Staging deployments
 - `production` - Production deployments
 - `develop` - Development branch
@@ -138,24 +145,28 @@ Configure the following secrets in your GitHub repository settings:
 The GitHub Actions workflow includes:
 
 ### 1. Quality Checks
+
 - TypeScript compilation
-- ESLint linting  
+- ESLint linting
 - Prettier formatting
 - Security audits
 - Dependency vulnerability scanning
 
 ### 2. Testing
+
 - Unit tests with Jest
 - Integration tests
 - E2E tests with Playwright
 - Coverage reporting
 
 ### 3. Performance Testing
+
 - Lighthouse audits
 - Bundle size analysis
 - Performance regression detection
 
 ### 4. Deployment
+
 - Automated staging deployment on `main` branch
 - Manual production deployment on `production` branch
 - Rollback capabilities
@@ -171,7 +182,7 @@ Use the provided deployment script for manual deployments:
 # Deploy to staging
 ./scripts/deploy.sh staging
 
-# Deploy to production  
+# Deploy to production
 ./scripts/deploy.sh production
 ```
 
@@ -180,6 +191,7 @@ Use the provided deployment script for manual deployments:
 Create environment-specific configuration files:
 
 **.env.staging:**
+
 ```env
 NEXT_PUBLIC_API_URL=https://api-staging.hasivu.com
 NEXT_PUBLIC_WS_URL=wss://ws-staging.hasivu.com
@@ -194,6 +206,7 @@ STAGING_CLOUDFRONT_ID=EXXXXXXXXXXXXX
 ```
 
 **.env.production:**
+
 ```env
 NEXT_PUBLIC_API_URL=https://api.hasivu.com
 NEXT_PUBLIC_WS_URL=wss://ws.hasivu.com
@@ -215,6 +228,7 @@ BACKUP_S3_BUCKET=hasivu-prod-backups
 ### Staging Deployment
 
 1. **Push to `main` branch:**
+
    ```bash
    git push origin main
    ```
@@ -232,6 +246,7 @@ BACKUP_S3_BUCKET=hasivu-prod-backups
 ### Production Deployment
 
 1. **Create production release:**
+
    ```bash
    git checkout production
    git merge main
@@ -270,6 +285,7 @@ lighthouse https://app.hasivu.com --chrome-flags="--headless"
 ### Performance Metrics
 
 Monitor the following key metrics:
+
 - **Lighthouse Performance Score:** Target 90+
 - **First Contentful Paint:** Target <1.5s
 - **Largest Contentful Paint:** Target <2.5s
@@ -300,11 +316,13 @@ aws cloudfront create-invalidation --distribution-id EXXXXXXXXXXXXX --paths "/*"
 ### Emergency Procedures
 
 1. **Immediate rollback:**
+
    ```bash
    ./scripts/rollback.sh production
    ```
 
 2. **CloudFront cache clearing:**
+
    ```bash
    aws cloudfront create-invalidation --distribution-id EXXXXXXXXXXXXX --paths "/*"
    ```
@@ -371,18 +389,21 @@ const ContentSecurityPolicy = `
 ## 🎯 Success Metrics
 
 ### Technical Metrics
+
 - ✅ **Deployment Success Rate:** 99.5%+
 - ✅ **Build Time:** <5 minutes
 - ✅ **Deploy Time:** <2 minutes
 - ✅ **Zero-downtime deployments**
 
 ### Performance Metrics
+
 - ✅ **Lighthouse Score:** 90+
 - ✅ **Load Time:** <2 seconds
 - ✅ **Time to Interactive:** <3 seconds
 - ✅ **Core Web Vitals:** Green scores
 
 ### Business Metrics
+
 - ✅ **User Conversion:** Monitor post-deployment
 - ✅ **Error Rate:** <0.1%
 - ✅ **Availability:** 99.9%+
@@ -417,6 +438,7 @@ const ContentSecurityPolicy = `
 ## 🎉 Conclusion
 
 The HASIVU platform is now configured for production deployment with:
+
 - **Automated CI/CD pipeline** for reliable deployments
 - **Comprehensive testing** ensuring quality
 - **Performance monitoring** for optimal user experience

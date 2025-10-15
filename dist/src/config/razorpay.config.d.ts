@@ -32,7 +32,7 @@ export interface PaymentMethodsConfig {
 }
 export declare const razorpayConfig: RazorpayConfig;
 export declare const paymentMethodsConfig: PaymentMethodsConfig;
-export declare const razorpayEndpoints: {
+export declare const _razorpayEndpoints: {
     orders: string;
     payments: string;
     refunds: string;
@@ -40,7 +40,7 @@ export declare const razorpayEndpoints: {
     subscriptions: string;
     webhooks: string;
 };
-export declare const webhookEvents: {
+export declare const _webhookEvents: {
     PAYMENT_AUTHORIZED: string;
     PAYMENT_CAPTURED: string;
     PAYMENT_FAILED: string;
@@ -48,7 +48,7 @@ export declare const webhookEvents: {
     REFUND_CREATED: string;
     SUBSCRIPTION_CHARGED: string;
 };
-export declare const razorpayTestConfig: {
+export declare const _razorpayTestConfig: {
     testCards: {
         success: {
             number: string;

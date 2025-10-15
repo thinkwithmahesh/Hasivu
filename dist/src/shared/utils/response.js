@@ -361,7 +361,7 @@ class ErrorMapper {
             errors.push({
                 field: 'general',
                 value: null,
-                message: error.message || 'Validation failed',
+                message: error instanceof Error ? error.message : String(error) || 'Validation failed',
                 code: 'VALIDATION_ERROR'
             });
         }

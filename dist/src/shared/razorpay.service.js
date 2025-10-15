@@ -119,11 +119,11 @@ class RazorpayService {
         }
         catch (error) {
             logger.error('Failed to create Razorpay order', {
-                error: error.message,
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
                 errorCode: error.error?.code,
                 options
             });
-            throw new RazorpayServiceError(`Failed to create order: ${error.message}`, error.error?.code || 'ORDER_CREATION_FAILED', error.statusCode || 500, error.error);
+            throw new RazorpayServiceError(`Failed to create order: ${error instanceof Error ? error.message : String(error)}`, error.error?.code || 'ORDER_CREATION_FAILED', error.statusCode || 500, error.error);
         }
     }
     verifyPaymentSignature(data) {
@@ -144,7 +144,7 @@ class RazorpayService {
         }
         catch (error) {
             logger.error('Failed to verify payment signature', {
-                error: error.message,
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
                 data
             });
             return false;
@@ -167,7 +167,7 @@ class RazorpayService {
         }
         catch (error) {
             logger.error('Failed to verify webhook signature', {
-                error: error.message
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
             });
             return false;
         }
@@ -189,11 +189,11 @@ class RazorpayService {
         }
         catch (error) {
             logger.error('Failed to fetch payment details', {
-                error: error.message,
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
                 errorCode: error.error?.code,
                 paymentId
             });
-            throw new RazorpayServiceError(`Failed to fetch payment: ${error.message}`, error.error?.code || 'PAYMENT_FETCH_FAILED', error.statusCode || 500, error.error);
+            throw new RazorpayServiceError(`Failed to fetch payment: ${error instanceof Error ? error.message : String(error)}`, error.error?.code || 'PAYMENT_FETCH_FAILED', error.statusCode || 500, error.error);
         }
     }
     async getOrder(orderId) {
@@ -213,11 +213,11 @@ class RazorpayService {
         }
         catch (error) {
             logger.error('Failed to fetch order details', {
-                error: error.message,
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
                 errorCode: error.error?.code,
                 orderId
             });
-            throw new RazorpayServiceError(`Failed to fetch order: ${error.message}`, error.error?.code || 'ORDER_FETCH_FAILED', error.statusCode || 500, error.error);
+            throw new RazorpayServiceError(`Failed to fetch order: ${error instanceof Error ? error.message : String(error)}`, error.error?.code || 'ORDER_FETCH_FAILED', error.statusCode || 500, error.error);
         }
     }
     async refundPayment(paymentId, options = {}) {
@@ -260,7 +260,7 @@ class RazorpayService {
         }
         catch (error) {
             logger.error('Failed to process payment refund', {
-                error: error.message,
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
                 errorCode: error.error?.code,
                 paymentId,
                 options
@@ -268,7 +268,7 @@ class RazorpayService {
             if (error instanceof RazorpayServiceError) {
                 throw error;
             }
-            throw new RazorpayServiceError(`Failed to process refund: ${error.message}`, error.error?.code || 'REFUND_FAILED', error.statusCode || 500, error.error);
+            throw new RazorpayServiceError(`Failed to process refund: ${error instanceof Error ? error.message : String(error)}`, error.error?.code || 'REFUND_FAILED', error.statusCode || 500, error.error);
         }
     }
     async getRefund(refundId) {
@@ -288,11 +288,11 @@ class RazorpayService {
         }
         catch (error) {
             logger.error('Failed to fetch refund details', {
-                error: error.message,
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
                 errorCode: error.error?.code,
                 refundId
             });
-            throw new RazorpayServiceError(`Failed to fetch refund: ${error.message}`, error.error?.code || 'REFUND_FETCH_FAILED', error.statusCode || 500, error.error);
+            throw new RazorpayServiceError(`Failed to fetch refund: ${error instanceof Error ? error.message : String(error)}`, error.error?.code || 'REFUND_FETCH_FAILED', error.statusCode || 500, error.error);
         }
     }
     async capturePayment(paymentId, amount, currency = 'INR') {
@@ -324,7 +324,7 @@ class RazorpayService {
         }
         catch (error) {
             logger.error('Failed to capture payment', {
-                error: error.message,
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
                 errorCode: error.error?.code,
                 paymentId,
                 amount,
@@ -333,7 +333,7 @@ class RazorpayService {
             if (error instanceof RazorpayServiceError) {
                 throw error;
             }
-            throw new RazorpayServiceError(`Failed to capture payment: ${error.message}`, error.error?.code || 'PAYMENT_CAPTURE_FAILED', error.statusCode || 500, error.error);
+            throw new RazorpayServiceError(`Failed to capture payment: ${error instanceof Error ? error.message : String(error)}`, error.error?.code || 'PAYMENT_CAPTURE_FAILED', error.statusCode || 500, error.error);
         }
     }
     validateOrderAmount(amount) {
@@ -380,14 +380,14 @@ class RazorpayService {
         }
         catch (error) {
             logger.error('Failed to extract webhook event', {
-                error: error.message,
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
                 headers: event.headers,
                 bodyLength: event.body?.length
             });
             if (error instanceof RazorpayServiceError) {
                 throw error;
             }
-            throw new RazorpayServiceError(`Failed to extract webhook event: ${error.message}`, 'WEBHOOK_EXTRACTION_FAILED', 500, error);
+            throw new RazorpayServiceError(`Failed to extract webhook event: ${error instanceof Error ? error.message : String(error)}`, 'WEBHOOK_EXTRACTION_FAILED', 500, error);
         }
     }
     async healthCheck() {
@@ -430,7 +430,7 @@ class RazorpayService {
         }
         catch (error) {
             logger.error('Razorpay service health check failed', {
-                error: error.message,
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
                 errorCode: error.error?.code
             });
             return {
@@ -439,7 +439,7 @@ class RazorpayService {
                 connectivity: {
                     razorpayApi: false
                 },
-                error: error.message
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
             };
         }
     }

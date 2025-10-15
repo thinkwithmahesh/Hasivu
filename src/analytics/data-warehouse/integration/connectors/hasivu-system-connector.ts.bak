@@ -1,0 +1,151 @@
+/**
+ * HASIVU System Connector
+ * 
+ * Connector for integrating with the main HASIVU platform
+ * 
+ * @author HASIVU Development Team
+ * @version 1.0.0
+ */
+
+import { logger } from '../../../../shared/utils/logger';
+import { SystemConnector, ConnectionConfig, SyncResult, HealthStatus } from '../../types/integration-types';
+
+export class HasivuSystemConnector implements SystemConnector {
+  id = 'hasivu-system';
+  name = 'HASIVU Platform Connector';
+  type = 'hasivu_system' as const;
+  status: 'connected' | 'disconnected' | 'error' = 'disconnected';
+  config: ConnectionConfig;
+  lastSync?: Date;
+  health: HealthStatus = {
+    status: 'healthy',
+    checks: [],
+    lastUpdated: new Date()
+  };
+
+  constructor(config: ConnectionConfig) {
+    this.config = config;
+    logger.info('HASIVU System Connector initialized');
+  }
+
+  async connect(): Promise<boolean> {
+    try {
+      logger.info('Connecting to HASIVU system...');
+      this.status = 'connected';
+      return true;
+    } catch (error: unknown) {
+      logger.error('Failed to connect to HASIVU system', { error });
+      this.status = 'error';
+      return false;
+    }
+  }
+
+  async disconnect(): Promise<void> {
+    this.status = 'disconnected';
+    logger.info('Disconnected from HASIVU system');
+  }
+
+  async sync(): Promise<SyncResult> {
+    const startTime = new Date();
+    
+    try {
+      logger.info('Starting HASIVU system sync...');
+      
+      // Simulate sync process
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const result: SyncResult = {
+        integrationId: this.id,
+        startTime,
+        endTime: new Date(),
+        status: 'success',
+        recordsProcessed: 100,
+        recordsSuccess: 100,
+        recordsFailed: 0,
+        errors: [],
+        metrics: {
+          duration: Date.now() - startTime.getTime(),
+          throughput: 100,
+          dataVolume: 1024 * 100, // 100KB
+          networkLatency: 50,
+          errorRate: 0
+        }
+      };
+      
+      this.lastSync = new Date();
+      logger.info('HASIVU system sync completed successfully');
+      return result;
+      
+    } catch (error: any) {
+      logger.error('HASIVU system sync failed', { error });
+      return {
+        integrationId: this.id,
+        startTime,
+        endTime: new Date(),
+        status: 'failed',
+        recordsProcessed: 0,
+        recordsSuccess: 0,
+        recordsFailed: 0,
+        errors: [{
+          type: 'connection',
+          message: (error instanceof Error ? error.message : String(error)),
+          timestamp: new Date()
+        }],
+        metrics: {
+          duration: Date.now() - startTime.getTime(),
+          throughput: 0,
+          dataVolume: 0,
+          networkLatency: 0,
+          errorRate: 1
+        }
+      };
+    }
+  }
+
+  async healthCheck(): Promise<void> {
+    try {
+      const healthStatus: 'healthy' | 'degraded' | 'critical' = this.status === 'connected' ? 'healthy' : 'critical';
+      this.health = {
+        status: healthStatus,
+        checks: [{
+          name: 'connection',
+          status: this.status === 'connected' ? 'pass' : 'fail',
+          duration: 10,
+          message: this.status === 'connected' ? 'Connected' : 'Not connected'
+        }],
+        lastUpdated: new Date()
+      };
+    } catch (error: unknown) {
+      logger.error('Health check failed', { error });
+    }
+  }
+
+  // Additional methods required by SystemConnector interface
+  async initialize(): Promise<void> {
+    logger.info('Initializing HASIVU System Connector...');
+    await this.connect();
+  }
+
+  get healthEndpoint(): string {
+    return `${this.config.endpoint}/health`;
+  }
+
+  get capabilities(): string[] {
+    return ['sync', 'realtime', 'webhooks'];
+  }
+
+  async getHealthStatus(): Promise<HealthStatus> {
+    await this.healthCheck();
+    return {
+      status: this.health.status,
+      checks: this.health.checks,
+      lastUpdated: this.health.lastUpdated
+    };
+  }
+
+  async isConnected(): Promise<boolean> {
+    return this.status === 'connected';
+  }
+}
+
+export default HasivuSystemConnector;

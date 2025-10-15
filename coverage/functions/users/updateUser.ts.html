@@ -25,14 +25,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/103</span>
+                <span class='fraction'>0/93</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/52</span>
+                <span class='fraction'>0/47</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/101</span>
+                <span class='fraction'>0/91</span>
             </div>
         
             
@@ -368,28 +368,7 @@
 <a name='L303'></a><a href='#L303'>303</a>
 <a name='L304'></a><a href='#L304'>304</a>
 <a name='L305'></a><a href='#L305'>305</a>
-<a name='L306'></a><a href='#L306'>306</a>
-<a name='L307'></a><a href='#L307'>307</a>
-<a name='L308'></a><a href='#L308'>308</a>
-<a name='L309'></a><a href='#L309'>309</a>
-<a name='L310'></a><a href='#L310'>310</a>
-<a name='L311'></a><a href='#L311'>311</a>
-<a name='L312'></a><a href='#L312'>312</a>
-<a name='L313'></a><a href='#L313'>313</a>
-<a name='L314'></a><a href='#L314'>314</a>
-<a name='L315'></a><a href='#L315'>315</a>
-<a name='L316'></a><a href='#L316'>316</a>
-<a name='L317'></a><a href='#L317'>317</a>
-<a name='L318'></a><a href='#L318'>318</a>
-<a name='L319'></a><a href='#L319'>319</a>
-<a name='L320'></a><a href='#L320'>320</a>
-<a name='L321'></a><a href='#L321'>321</a>
-<a name='L322'></a><a href='#L322'>322</a>
-<a name='L323'></a><a href='#L323'>323</a>
-<a name='L324'></a><a href='#L324'>324</a>
-<a name='L325'></a><a href='#L325'>325</a>
-<a name='L326'></a><a href='#L326'>326</a>
-<a name='L327'></a><a href='#L327'>327</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L306'></a><a href='#L306'>306</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -429,12 +408,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -540,23 +517,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -600,8 +560,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -722,7 +680,7 @@
  */
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 import { UserService, UpdateUserRequest } from '../../services/user.service';
-import { LoggerService } from '../shared/logger.service';
+import { logger } from '../../utils/logger';
 import { ValidationService } from '../shared/validation.service';
 import { handleError, createSuccessResponse } from '../shared/response.utils';
 import Joi from 'joi';
@@ -734,9 +692,8 @@ const updateUserSchema = <span class="cstat-no" title="statement not covered" >J
   email: Joi.string().email().lowercase().optional(),
   role: Joi.string().valid('student', 'parent', 'teacher', 'staff', 'school_admin', 'admin', 'super_admin').optional(),
   schoolId: Joi.string().uuid().optional(),
-  parentId: Joi.string().uuid().optional().allow(null),
-  isActive: Joi.boolean().optional(),
-  metadata: Joi.object().optional()
+  phoneNumber: Joi.string().optional(),
+  isActive: Joi.boolean().optional()
 });
 &nbsp;
 /**
@@ -760,7 +717,6 @@ export const updateUserHandler = <span class="cstat-no" title="statement not cov
   event: APIGatewayProxyEvent,
   context: Context
 ): Promise&lt;APIGatewayProxyResult&gt; =&gt; {
-  const logger = <span class="cstat-no" title="statement not covered" >LoggerService.getInstance();</span>
   const requestId = <span class="cstat-no" title="statement not covered" >context.awsRequestId;</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >  try {</span>
@@ -774,14 +730,14 @@ export const updateUserHandler = <span class="cstat-no" title="statement not cov
     const userContext = <span class="cstat-no" title="statement not covered" >event.requestContext.authorizer;</span>
 <span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!userContext?.userId) {</span>
 <span class="cstat-no" title="statement not covered" >      logger.warn('Unauthorized access attempt', { requestId });</span>
-<span class="cstat-no" title="statement not covered" >      return handleError(new Error('Unauthorized'), undefined, 401, requestId);</span>
+<span class="cstat-no" title="statement not covered" >      return handleError(new Error('Unauthorized'));</span>
     }
 &nbsp;
     // Validate user ID parameter
     const userId = <span class="cstat-no" title="statement not covered" >event.pathParameters?.id;</span>
 <span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!userId) {</span>
 <span class="cstat-no" title="statement not covered" >      logger.warn('Missing user ID parameter', { requestId });</span>
-<span class="cstat-no" title="statement not covered" >      return handleError(new Error('User ID is required'), undefined, 400, requestId);</span>
+<span class="cstat-no" title="statement not covered" >      return handleError(new Error('User ID is required'));</span>
     }
 &nbsp;
     // Parse request body
@@ -794,17 +750,17 @@ export const updateUserHandler = <span class="cstat-no" title="statement not cov
         body: event.body,
         error: (parseError as Error).message
       });
-<span class="cstat-no" title="statement not covered" >      return handleError(new Error('Invalid JSON in request body'), undefined, 400, requestId);</span>
+<span class="cstat-no" title="statement not covered" >      return handleError(new Error('Invalid JSON in request body'));</span>
     }
 &nbsp;
     // Get requesting user for permission checks
     const requestingUser = <span class="cstat-no" title="statement not covered" >await UserService.getUserById(userContext.userId);</span>
 <span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!requestingUser) {</span>
-<span class="cstat-no" title="statement not covered" >      logger.error('Requesting user not found', {</span>
+<span class="cstat-no" title="statement not covered" >      logger.error('Requesting user not found', new Error('User not found'), {</span>
         requestId,
         userId: userContext.userId
       });
-<span class="cstat-no" title="statement not covered" >      return handleError(new Error('Requesting user not found'), undefined, 404, requestId);</span>
+<span class="cstat-no" title="statement not covered" >      return handleError(new Error('Requesting user not found'));</span>
     }
 &nbsp;
     // Get target user
@@ -815,7 +771,7 @@ export const updateUserHandler = <span class="cstat-no" title="statement not cov
         targetUserId: userId,
         requestingUserId: userContext.userId
       });
-<span class="cstat-no" title="statement not covered" >      return handleError(new Error('User not found'), undefined, 404, requestId);</span>
+<span class="cstat-no" title="statement not covered" >      return handleError(new Error('User not found'));</span>
     }
 &nbsp;
     // Check update permissions
@@ -829,7 +785,7 @@ export const updateUserHandler = <span class="cstat-no" title="statement not cov
         targetUserRole: targetUser.role,
         reason: canEdit.reason
       });
-<span class="cstat-no" title="statement not covered" >      return handleError(new Error(canEdit.reason || 'Access denied'), undefined, 403, requestId);</span>
+<span class="cstat-no" title="statement not covered" >      return handleError(new Error(canEdit.reason || 'Access denied'));</span>
     }
 &nbsp;
     // Filter update data based on permissions
@@ -847,7 +803,7 @@ export const updateUserHandler = <span class="cstat-no" title="statement not cov
         errors: validation.errors,
         updateData: filteredUpdateData
       });
-<span class="cstat-no" title="statement not covered" >      return handleError(new Error(`Validation failed: ${validation.errors?.join(', ')}`), undefined, 400, requestId);</span>
+<span class="cstat-no" title="statement not covered" >      return handleError(new Error(`Validation failed: ${validation.errors?.join(', ')}`));</span>
     }
 &nbsp;
     // Additional business rule validations
@@ -861,29 +817,12 @@ export const updateUserHandler = <span class="cstat-no" title="statement not cov
           currentSchoolId: targetUser.schoolId,
           newSchoolId: filteredUpdateData.schoolId
         });
-<span class="cstat-no" title="statement not covered" >        return handleError(new Error('Only administrators can change school associations'), undefined, 403, requestId);</span>
+<span class="cstat-no" title="statement not covered" >        return handleError(new Error('Only administrators can change school associations'));</span>
       }
     }
 &nbsp;
-    // Handle parent-child relationship changes
-<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (filteredUpdateData.parentId !== undefined &amp;&amp; filteredUpdateData.parentId !== targetUser.parentId) {</span>
-<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (filteredUpdateData.parentId) {</span>
-        // Validate new parent exists and is appropriate
-        const newParent = <span class="cstat-no" title="statement not covered" >await UserService.getUserById(filteredUpdateData.parentId);</span>
-<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (!newParent) {</span>
-<span class="cstat-no" title="statement not covered" >          return handleError(new Error('New parent user not found'), undefined, 400, requestId);</span>
-        }
-&nbsp;
-<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (!['parent', 'teacher', 'staff', 'school_admin'].includes(newParent.role)) {</span>
-<span class="cstat-no" title="statement not covered" >          return handleError(new Error('Invalid parent role'), undefined, 400, requestId);</span>
-        }
-&nbsp;
-        // Check school compatibility
-<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (targetUser.schoolId &amp;&amp; newParent.schoolId !== targetUser.schoolId) {</span>
-<span class="cstat-no" title="statement not covered" >          return handleError(new Error('Parent and child must be from the same school'), undefined, 400, requestId);</span>
-        }
-      }
-    }
+    // Note: Parent-child relationships should be managed through the manageChildren endpoint
+    // This endpoint only handles basic user profile updates
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    logger.info('Updating user with filtered data', {</span>
       requestId,
@@ -893,7 +832,7 @@ export const updateUserHandler = <span class="cstat-no" title="statement not cov
     });
 &nbsp;
     // Update user
-    const updatedUser = <span class="cstat-no" title="statement not covered" >await UserService.updateUser(userId, filteredUpdateData, userContext.userId);</span>
+    const updatedUser = <span class="cstat-no" title="statement not covered" >await UserService.updateUser(userId, filteredUpdateData);</span>
 &nbsp;
     // Log successful operation
 <span class="cstat-no" title="statement not covered" >    logger.info('Update user request completed', {</span>
@@ -911,9 +850,9 @@ export const updateUserHandler = <span class="cstat-no" title="statement not cov
         firstName: updatedUser.firstName,
         lastName: updatedUser.lastName,
         role: updatedUser.role,
-        schoolId: updatedUser.schoolId,
+        schoolId: updatedUser.schoolId ?? undefined,
         school: null, // School relation not loaded
-        parentId: updatedUser.parentId,
+        parentId: updatedUser.parentId ?? undefined,
         parent: null, // Parent relation not loaded
         children: [], // Children relation not loaded
         isActive: updatedUser.isActive,
@@ -922,15 +861,13 @@ export const updateUserHandler = <span class="cstat-no" title="statement not cov
         metadata: updatedUser.metadata || {}
       },
       updatedFields: Object.keys(filteredUpdateData)
-    }, 'User updated successfully', 200, requestId);
+    });
 &nbsp;
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    logger.error('Update user request failed', {</span>
-      requestId,
-      error: (error as Error).message,
-      stack: (error as Error).stack
+<span class="cstat-no" title="statement not covered" >    logger.error('Update user request failed', error as Error, {</span>
+      requestId
     });
-<span class="cstat-no" title="statement not covered" >    return handleError(error as Error, undefined, 500, requestId);</span>
+<span class="cstat-no" title="statement not covered" >    return handleError(error as Error);</span>
   }
 };
 &nbsp;
@@ -1048,7 +985,7 @@ export default updateUserHandler;</pre></td></tr></table></pre>
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-09-03T01:56:53.571Z
+                at 2025-10-06T16:03:48.029Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

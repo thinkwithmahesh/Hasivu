@@ -10,7 +10,8 @@ import { Metadata } from 'next';
 const APP_CONFIG = {
   name: 'HASIVU',
   fullName: 'HASIVU - School Meal Management Platform',
-  description: 'Complete school meal management system with real-time ordering, nutrition tracking, RFID pickup verification, and seamless payment integration for students, parents, and administrators.',
+  description:
+    'Complete school meal management system with real-time ordering, nutrition tracking, RFID pickup verification, and seamless payment integration for students, parents, and administrators.',
   url: process.env.NEXT_PUBLIC_APP_URL || 'https://hasivu.com',
   domain: process.env.NEXT_PUBLIC_DOMAIN || 'hasivu.com',
   logo: '/icons/icon-512x512.png',
@@ -25,7 +26,7 @@ const APP_CONFIG = {
     'meal planning software',
     'school administration',
     'parent portal',
-    'student services'
+    'student services',
   ],
   category: 'Education Technology',
   type: 'SaaS Platform',
@@ -36,7 +37,7 @@ const APP_CONFIG = {
     linkedin: 'https://linkedin.com/company/hasivu',
     facebook: 'https://facebook.com/hasivu.official',
     youtube: 'https://youtube.com/@hasivu',
-  }
+  },
 };
 
 // SEO Page Types
@@ -92,31 +93,38 @@ export function generateBaseMetadata(): Metadata {
       startupImage: [
         {
           url: '/startup/iphone5.png',
-          media: '(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)',
+          media:
+            '(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)',
         },
         {
-          url: '/startup/iphone6.png', 
-          media: '(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)',
+          url: '/startup/iphone6.png',
+          media:
+            '(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)',
         },
         {
           url: '/startup/iphoneplus.png',
-          media: '(device-width: 621px) and (device-height: 1104px) and (-webkit-device-pixel-ratio: 3)',
+          media:
+            '(device-width: 621px) and (device-height: 1104px) and (-webkit-device-pixel-ratio: 3)',
         },
         {
           url: '/startup/iphonex.png',
-          media: '(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)',
+          media:
+            '(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)',
         },
         {
           url: '/startup/iphonexr.png',
-          media: '(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)',
+          media:
+            '(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)',
         },
         {
           url: '/startup/iphonexsmax.png',
-          media: '(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3)',
+          media:
+            '(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3)',
         },
         {
           url: '/startup/ipad.png',
-          media: '(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2)',
+          media:
+            '(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2)',
         },
       ],
     },
@@ -150,7 +158,7 @@ export function generateBaseMetadata(): Metadata {
           type: 'image/png',
         },
         {
-          url: `${APP_CONFIG.url}/og/square.png`, 
+          url: `${APP_CONFIG.url}/og/square.png`,
           width: 1200,
           height: 1200,
           alt: `${APP_CONFIG.name} Logo`,
@@ -185,9 +193,7 @@ export function generateBaseMetadata(): Metadata {
         { url: '/icons/icon-192x192.png', sizes: '192x192', type: 'image/png' },
         { url: '/icons/icon-512x512.png', sizes: '512x512', type: 'image/png' },
       ],
-      apple: [
-        { url: '/icons/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
-      ],
+      apple: [{ url: '/icons/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
       shortcut: '/favicon.ico',
     },
     verification: {
@@ -214,11 +220,14 @@ export function generateBaseMetadata(): Metadata {
 
 // Generate page-specific metadata
 export function generatePageMetadata(config: SEOPageConfig): Metadata {
-  const fullTitle = config.title === APP_CONFIG.fullName ? config.title : `${config.title} | ${APP_CONFIG.name}`;
+  const fullTitle =
+    config.title === APP_CONFIG.fullName ? config.title : `${config.title} | ${APP_CONFIG.name}`;
   const canonical = config.canonical || `${APP_CONFIG.url}${config.path}`;
   const pageUrl = `${APP_CONFIG.url}${config.path}`;
-  const imageUrl = config.image ? `${APP_CONFIG.url}${config.image}` : `${APP_CONFIG.url}/og/default.png`;
-  
+  const imageUrl = config.image
+    ? `${APP_CONFIG.url}${config.image}`
+    : `${APP_CONFIG.url}/og/default.png`;
+
   const metadata: Metadata = {
     title: fullTitle,
     description: config.description,
@@ -402,8 +411,10 @@ export function generateFAQSchema(faqs: Array<{ question: string; answer: string
 // Generate meta tags as HTML string (for dynamic insertion)
 export function generateMetaTagsHTML(config: SEOPageConfig): string {
   const canonical = config.canonical || `${APP_CONFIG.url}${config.path}`;
-  const imageUrl = config.image ? `${APP_CONFIG.url}${config.image}` : `${APP_CONFIG.url}/og/default.png`;
-  
+  const imageUrl = config.image
+    ? `${APP_CONFIG.url}${config.image}`
+    : `${APP_CONFIG.url}/og/default.png`;
+
   return `
     <!-- Basic Meta Tags -->
     <meta name="description" content="${config.description}" />
@@ -441,48 +452,55 @@ export const PAGE_METADATA = {
   },
   login: {
     title: 'Sign In',
-    description: 'Sign in to your HASIVU account to order meals, track nutrition, and manage your school food experience.',
+    description:
+      'Sign in to your HASIVU account to order meals, track nutrition, and manage your school food experience.',
     path: '/login',
     keywords: ['login', 'sign in', 'student portal', 'parent access'],
     noIndex: true,
   },
   dashboard: {
     title: 'Dashboard',
-    description: 'Your HASIVU dashboard with real-time meal ordering, nutrition tracking, and account management.',
+    description:
+      'Your HASIVU dashboard with real-time meal ordering, nutrition tracking, and account management.',
     path: '/dashboard',
     keywords: ['dashboard', 'student portal', 'meal orders', 'nutrition tracking'],
     noIndex: true,
   },
   menu: {
-    title: 'Today\'s Menu',
-    description: 'Browse today\'s delicious and nutritious school meal options with detailed nutrition information.',
+    title: "Today's Menu",
+    description:
+      "Browse today's delicious and nutritious school meal options with detailed nutrition information.",
     path: '/menu',
     keywords: ['school menu', 'meal options', 'nutrition information', 'food ordering'],
   },
   orders: {
     title: 'Order History',
-    description: 'View your complete meal order history with nutrition summaries and spending insights.',
+    description:
+      'View your complete meal order history with nutrition summaries and spending insights.',
     path: '/orders',
     keywords: ['order history', 'meal orders', 'nutrition tracking', 'spending history'],
     noIndex: true,
   },
   wallet: {
     title: 'Account Balance',
-    description: 'Manage your meal account balance, view transaction history, and add funds to your wallet.',
+    description:
+      'Manage your meal account balance, view transaction history, and add funds to your wallet.',
     path: '/wallet',
     keywords: ['account balance', 'meal wallet', 'payment history', 'add funds'],
     noIndex: true,
   },
   nutrition: {
     title: 'Nutrition Tracker',
-    description: 'Track your daily nutrition intake with detailed reports and personalized recommendations.',
+    description:
+      'Track your daily nutrition intake with detailed reports and personalized recommendations.',
     path: '/nutrition',
     keywords: ['nutrition tracking', 'dietary analysis', 'health monitoring', 'meal planning'],
     noIndex: true,
   },
   support: {
     title: 'Help & Support',
-    description: 'Get help with your HASIVU account, find answers to common questions, and contact support.',
+    description:
+      'Get help with your HASIVU account, find answers to common questions, and contact support.',
     path: '/support',
     keywords: ['help', 'support', 'FAQ', 'contact', 'troubleshooting'],
   },

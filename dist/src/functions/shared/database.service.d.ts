@@ -12,17 +12,17 @@ export declare class LambdaDatabaseService {
     private getLogConfig;
     get client(): PrismaClient;
     get prisma(): PrismaClient;
-    get user(): Prisma.UserDelegate<import(".prisma/client/runtime/library").DefaultArgs>;
-    get school(): Prisma.SchoolDelegate<import(".prisma/client/runtime/library").DefaultArgs>;
-    get parentChild(): Prisma.ParentChildDelegate<import(".prisma/client/runtime/library").DefaultArgs>;
-    get role(): Prisma.RoleDelegate<import(".prisma/client/runtime/library").DefaultArgs>;
-    get userRoleAssignment(): Prisma.UserRoleAssignmentDelegate<import(".prisma/client/runtime/library").DefaultArgs>;
-    get auditLog(): Prisma.AuditLogDelegate<import(".prisma/client/runtime/library").DefaultArgs>;
-    get authSession(): Prisma.AuthSessionDelegate<import(".prisma/client/runtime/library").DefaultArgs>;
-    get order(): Prisma.OrderDelegate<import(".prisma/client/runtime/library").DefaultArgs>;
-    get paymentTransaction(): Prisma.PaymentTransactionDelegate<import(".prisma/client/runtime/library").DefaultArgs>;
-    get rfidCard(): Prisma.RFIDCardDelegate<import(".prisma/client/runtime/library").DefaultArgs>;
-    get whatsappMessage(): Prisma.WhatsAppMessageDelegate<import(".prisma/client/runtime/library").DefaultArgs>;
+    get user(): Prisma.UserDelegate<import(".prisma/client/runtime/library").DefaultArgs, Prisma.PrismaClientOptions>;
+    get school(): Prisma.SchoolDelegate<import(".prisma/client/runtime/library").DefaultArgs, Prisma.PrismaClientOptions>;
+    get parentChild(): Prisma.ParentChildDelegate<import(".prisma/client/runtime/library").DefaultArgs, Prisma.PrismaClientOptions>;
+    get role(): Prisma.RoleDelegate<import(".prisma/client/runtime/library").DefaultArgs, Prisma.PrismaClientOptions>;
+    get userRoleAssignment(): Prisma.UserRoleAssignmentDelegate<import(".prisma/client/runtime/library").DefaultArgs, Prisma.PrismaClientOptions>;
+    get auditLog(): Prisma.AuditLogDelegate<import(".prisma/client/runtime/library").DefaultArgs, Prisma.PrismaClientOptions>;
+    get authSession(): Prisma.AuthSessionDelegate<import(".prisma/client/runtime/library").DefaultArgs, Prisma.PrismaClientOptions>;
+    get order(): Prisma.OrderDelegate<import(".prisma/client/runtime/library").DefaultArgs, Prisma.PrismaClientOptions>;
+    get paymentTransaction(): Prisma.PaymentTransactionDelegate<import(".prisma/client/runtime/library").DefaultArgs, Prisma.PrismaClientOptions>;
+    get rfidCard(): Prisma.RFIDCardDelegate<import(".prisma/client/runtime/library").DefaultArgs, Prisma.PrismaClientOptions>;
+    get whatsappMessage(): Prisma.WhatsAppMessageDelegate<import(".prisma/client/runtime/library").DefaultArgs, Prisma.PrismaClientOptions>;
     transaction<T>(fn: (prisma: Prisma.TransactionClient) => Promise<T>, options?: {
         maxWait?: number;
         timeout?: number;

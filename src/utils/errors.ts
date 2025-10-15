@@ -1,143 +1,143 @@
 /**
- * Common Error Classes for HASIVU Platform
- * Provides standardized error handling across the application
+ * Custom Error Classes
+ * Standardized error handling across the application
  */
 
-/**
- * Base error class for application-specific errors
- */
 export class AppError extends Error {
   public readonly statusCode: number;
   public readonly isOperational: boolean;
-  
-  constructor(message: string, statusCode: number = 500, isOperational: boolean = true) {
+  public readonly code?: string;
+
+  constructor(
+    message: string,
+    statusCode: number = 500,
+    isOperationalOrCode?: boolean | string,
+    code?: string
+  ) {
     super(message);
-    this.name = this.constructor.name;
     this.statusCode = statusCode;
-    this.isOperational = isOperational;
-    
-    // Maintains proper stack trace for where error was thrown
+
+    if (typeof isOperationalOrCode === 'boolean') {
+      this.isOperational = isOperationalOrCode;
+      this.code = code;
+    } else if (typeof isOperationalOrCode === 'string') {
+      this.code = isOperationalOrCode;
+      this.isOperational = true;
+    } else {
+      this.isOperational = true;
+      this.code = code;
+    }
+
+    Object.setPrototypeOf(this, AppError.prototype);
     Error.captureStackTrace(this, this.constructor);
   }
 }
 
-/**
- * Validation error for invalid input data
- */
 export class ValidationError extends AppError {
-  public readonly field?: string;
-  
-  constructor(message: string, field?: string) {
-    super(message, 400);
-    this.field = field;
+  constructor(message: string, code: string = 'VALIDATION_ERROR') {
+    super(message, 400, code);
+    Object.setPrototypeOf(this, ValidationError.prototype);
   }
 }
 
-/**
- * Not found error for missing resources
- */
 export class NotFoundError extends AppError {
-  public readonly resourceType: string;
-  public readonly resourceId?: string;
-  
-  constructor(resourceType: string, resourceId?: string) {
-    const message = resourceId 
-      ? `${resourceType} with ID '${resourceId}' not found`
-      : `${resourceType} not found`;
-    super(message, 404);
-    this.resourceType = resourceType;
-    this.resourceId = resourceId;
+  constructor(resource: string = 'Resource', code: string = 'NOT_FOUND') {
+    super(`${resource} not found`, 404, code);
+    Object.setPrototypeOf(this, NotFoundError.prototype);
   }
 }
 
-/**
- * Conflict error for duplicate resources or business logic conflicts
- */
+export class UnauthorizedError extends AppError {
+  constructor(message: string = 'Unauthorized', code: string = 'UNAUTHORIZED') {
+    super(message, 401, code);
+    Object.setPrototypeOf(this, UnauthorizedError.prototype);
+  }
+}
+
+export class ForbiddenError extends AppError {
+  constructor(message: string = 'Forbidden', code: string = 'FORBIDDEN') {
+    super(message, 403, code);
+    Object.setPrototypeOf(this, ForbiddenError.prototype);
+  }
+}
+
 export class ConflictError extends AppError {
-  public readonly conflictType: string;
-  
-  constructor(message: string, conflictType: string = 'resource') {
-    super(message, 409);
-    this.conflictType = conflictType;
+  constructor(message: string, code: string = 'CONFLICT') {
+    super(message, 409, code);
+    Object.setPrototypeOf(this, ConflictError.prototype);
   }
 }
 
-/**
- * Authentication error for unauthorized access
- */
-export class AuthenticationError extends AppError {
-  constructor(message: string = 'Authentication required') {
-    super(message, 401);
-  }
-}
-
-/**
- * Authorization error for forbidden access
- */
-export class AuthorizationError extends AppError {
-  public readonly requiredPermission?: string;
-  
-  constructor(message: string = 'Insufficient permissions', requiredPermission?: string) {
-    super(message, 403);
-    this.requiredPermission = requiredPermission;
-  }
-}
-
-/**
- * Business logic error for violated business rules
- */
-export class BusinessLogicError extends AppError {
-  public readonly ruleType: string;
-  
-  constructor(message: string, ruleType: string = 'general') {
-    super(message, 422);
-    this.ruleType = ruleType;
-  }
-}
-
-/**
- * External service error for third-party integration failures
- */
-export class ExternalServiceError extends AppError {
-  public readonly service: string;
-  public readonly originalError?: Error;
-  
-  constructor(service: string, message: string, originalError?: Error) {
-    super(`${service} service error: ${message}`, 502);
-    this.service = service;
-    this.originalError = originalError;
-  }
-}
-
-/**
- * Database error for data persistence issues
- */
 export class DatabaseError extends AppError {
-  public readonly operation: string;
-  public readonly originalError?: Error;
-  
-  constructor(operation: string, message: string, originalError?: Error) {
-    super(`Database ${operation} error: ${message}`, 500);
-    this.operation = operation;
-    this.originalError = originalError;
+  constructor(message: string = 'Database operation failed', code: string = 'DATABASE_ERROR') {
+    super(message, 500, code);
+    Object.setPrototypeOf(this, DatabaseError.prototype);
   }
 }
 
-/**
- * Rate limit error for exceeded API limits
- */
+export class ExternalServiceError extends AppError {
+  constructor(service: string, message?: string, code: string = 'EXTERNAL_SERVICE_ERROR') {
+    super(message || `${service} service error`, 502, code);
+    Object.setPrototypeOf(this, ExternalServiceError.prototype);
+  }
+}
+
+export class PaymentError extends AppError {
+  constructor(message: string, code: string = 'PAYMENT_ERROR') {
+    super(message, 402, code);
+    Object.setPrototypeOf(this, PaymentError.prototype);
+  }
+}
+
 export class RateLimitError extends AppError {
-  public readonly retryAfter?: number;
-  
-  constructor(message: string = 'Rate limit exceeded', retryAfter?: number) {
-    super(message, 429);
-    this.retryAfter = retryAfter;
+  constructor(message: string = 'Too many requests', code: string = 'RATE_LIMIT_EXCEEDED') {
+    super(message, 429, code);
+    Object.setPrototypeOf(this, RateLimitError.prototype);
   }
 }
 
-/**
- * Type guard to check if an error is operational
- */
+export class AuthenticationError extends AppError {
+  constructor(message: string = 'Authentication failed', code: string = 'AUTHENTICATION_ERROR') {
+    super(message, 401, code);
+    Object.setPrototypeOf(this, AuthenticationError.prototype);
+  }
+}
+
+export class AuthorizationError extends AppError {
+  constructor(message: string = 'Authorization failed', code: string = 'AUTHORIZATION_ERROR') {
+    super(message, 403, code);
+    Object.setPrototypeOf(this, AuthorizationError.prototype);
+  }
+}
+
+export class BusinessLogicError extends AppError {
+  constructor(message: string, code: string = 'BUSINESS_LOGIC_ERROR') {
+    super(message, 400, code);
+    Object.setPrototypeOf(this, BusinessLogicError.prototype);
+  }
+}
+
+export class Logger {
+  static error(error: Error | AppError, context?: any): void {
+    if (error instanceof AppError) {
+      console.error({
+        message: error.message,
+        statusCode: error.statusCode,
+        code: error.code,
+        isOperational: error.isOperational,
+        stack: error.stack,
+        context,
+      });
+    } else {
+      console.error({
+        message: error.message,
+        stack: error.stack,
+        context,
+      });
+    }
+  }
+}
+
 export function isOperationalError(error: Error): boolean {
   if (error instanceof AppError) {
     return error.isOperational;
@@ -145,9 +145,26 @@ export function isOperationalError(error: Error): boolean {
   return false;
 }
 
-/**
- * Extract error message safely from unknown error
- */
+export function handleError(error: Error | AppError): {
+  statusCode: number;
+  message: string;
+  code?: string;
+} {
+  if (error instanceof AppError) {
+    return {
+      statusCode: error.statusCode,
+      message: error.message,
+      code: error.code,
+    };
+  }
+
+  return {
+    statusCode: 500,
+    message: error.message || 'Internal server error',
+    code: 'INTERNAL_ERROR',
+  };
+}
+
 export function getErrorMessage(error: unknown): string {
   if (error instanceof Error) {
     return error.message;
@@ -155,36 +172,29 @@ export function getErrorMessage(error: unknown): string {
   if (typeof error === 'string') {
     return error;
   }
-  return 'Unknown error occurred';
+  return 'An unknown error occurred';
 }
 
-/**
- * Create standardized error response object
- */
-export function createErrorResponse(error: AppError | Error) {
-  const isAppError = error instanceof AppError;
-  
-  return {
-    error: {
-      name: error.name,
+export function createErrorResponse(
+  error: unknown,
+  statusCode?: number
+): {
+  statusCode: number;
+  message: string;
+  code?: string;
+} {
+  if (error instanceof AppError) {
+    return {
+      statusCode: error.statusCode,
       message: error.message,
-      statusCode: isAppError ? error.statusCode : 500,
-      ...(isAppError && {
-        isOperational: error.isOperational,
-        ...(error instanceof ValidationError && error.field && { field: error.field }),
-        ...(error instanceof NotFoundError && { 
-          resourceType: error.resourceType,
-          resourceId: error.resourceId 
-        }),
-        ...(error instanceof ConflictError && { conflictType: error.conflictType }),
-        ...(error instanceof AuthorizationError && error.requiredPermission && { 
-          requiredPermission: error.requiredPermission 
-        }),
-        ...(error instanceof BusinessLogicError && { ruleType: error.ruleType }),
-        ...(error instanceof ExternalServiceError && { service: error.service }),
-        ...(error instanceof DatabaseError && { operation: error.operation }),
-        ...(error instanceof RateLimitError && error.retryAfter && { retryAfter: error.retryAfter })
-      })
-    }
+      code: error.code,
+    };
+  }
+
+  const message = getErrorMessage(error);
+  return {
+    statusCode: statusCode || 500,
+    message,
+    code: 'ERROR',
   };
 }

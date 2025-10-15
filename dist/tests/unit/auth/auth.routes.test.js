@@ -63,8 +63,41 @@ describe('Authentication Routes - Comprehensive Tests', () => {
                 email: 'test@example.com',
                 firstName: 'John',
                 lastName: 'Doe',
+                fullName: 'John Doe',
                 role: 'parent',
-                createdAt: new Date()
+                status: 'active',
+                preferences: {
+                    language: 'en',
+                    timezone: 'UTC',
+                    dateFormat: 'DD/MM/YYYY',
+                    currency: 'INR',
+                    notifications: {
+                        email: true,
+                        push: true,
+                        sms: false,
+                        whatsapp: false,
+                        inApp: true,
+                        digest: false,
+                        frequency: 'immediate',
+                        quietHours: {
+                            enabled: false
+                        }
+                    },
+                    theme: 'light',
+                    accessibility: {
+                        highContrast: false,
+                        largeText: false,
+                        reducedMotion: false,
+                        screenReader: false
+                    }
+                },
+                permissions: ['read:profile', 'write:profile'],
+                metadata: {},
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                lastLoginAt: new Date().toISOString(),
+                emailVerified: true,
+                phoneVerified: false
             };
             mockDatabaseService.transaction.mockImplementation(async (callback) => {
                 return await callback({
@@ -180,9 +213,29 @@ describe('Authentication Routes - Comprehensive Tests', () => {
                 user: {
                     id: 'user-123',
                     email: 'test@example.com',
+                    phone: '+1234567890',
+                    cognitoUserId: 'cognito-123',
+                    passwordHash: '$2a$12$hash',
+                    firstName: 'John',
+                    lastName: 'Doe',
                     role: 'parent',
-                    permissions: ['read:profile', 'write:profile'],
-                    schoolId: 'school-123'
+                    status: 'active',
+                    schoolId: 'school-123',
+                    avatar: null,
+                    bio: null,
+                    dateOfBirth: null,
+                    address: null,
+                    emergencyContact: null,
+                    parentalConsent: true,
+                    termsAcceptedAt: new Date(),
+                    lastLoginAt: new Date(),
+                    isActive: true,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    deviceTokens: '[]',
+                    preferences: '{}',
+                    metadata: '{}',
+                    permissions: ['read:profile', 'write:profile']
                 },
                 tokens: {
                     accessToken: 'access-token-123',

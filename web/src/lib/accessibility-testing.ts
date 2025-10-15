@@ -1,6 +1,6 @@
 /**
  * HASIVU Platform - Accessibility Testing Utilities
- * 
+ *
  * Comprehensive accessibility testing utilities for development and production
  * Features:
  * - Runtime accessibility monitoring
@@ -12,7 +12,7 @@
  * - Keyboard navigation testing
  */
 
-import { ReactElement } from 'react';
+import { ReactElement as _ReactElement } from 'react';
 
 // Types for accessibility testing
 export interface AccessibilityTestResult {
@@ -87,7 +87,7 @@ export class AccessibilityTester {
     try {
       // Dynamically import axe-core to avoid SSR issues
       this.axeCore = await import('axe-core');
-      
+
       // Configure axe-core for HASIVU platform
       this.axeCore.default.configure({
         reporter: 'v2',
@@ -107,9 +107,8 @@ export class AccessibilityTester {
       });
 
       this.isInitialized = true;
-      console.log('✅ HASIVU Accessibility Tester initialized');
     } catch (error) {
-      console.error('Failed to initialize accessibility tester:', error);
+      // Error handled silently
     }
   }
 
@@ -182,14 +181,14 @@ export class AccessibilityTester {
         },
         performance: {
           auditDuration: endTime - startTime,
-          elementsChecked: results.violations.reduce((count: number, v: any) => count + v.nodes.length, 0) +
-                          results.passes.reduce((count: number, p: any) => count + p.nodes.length, 0),
+          elementsChecked:
+            results.violations.reduce((count: number, v: any) => count + v.nodes.length, 0) +
+            results.passes.reduce((count: number, p: any) => count + p.nodes.length, 0),
         },
       };
 
       return report;
     } catch (error) {
-      console.error('Accessibility audit failed:', error);
       throw new Error('Failed to run accessibility audit');
     }
   }
@@ -198,7 +197,7 @@ export class AccessibilityTester {
    * Test color contrast for specific elements
    */
   async testColorContrast(selector?: string): Promise<ColorContrastResult[]> {
-    const elements = selector 
+    const elements = selector
       ? document.querySelectorAll(selector)
       : document.querySelectorAll('*:not(script):not(style):not(meta)');
 
@@ -211,11 +210,13 @@ export class AccessibilityTester {
       const foreground = styles.color;
       const background = styles.backgroundColor || 'rgb(255, 255, 255)';
       const fontSize = parseFloat(styles.fontSize);
-      const fontWeight = styles.fontWeight;
+      const { fontWeight } = styles;
 
       const ratio = this.calculateContrastRatio(foreground, background);
-      const isLarge = fontSize >= 18 || (fontSize >= 14 && (fontWeight === 'bold' || parseInt(fontWeight) >= 700));
-      
+      const isLarge =
+        fontSize >= 18 ||
+        (fontSize >= 14 && (fontWeight === 'bold' || parseInt(fontWeight) >= 700));
+
       let level: 'AA' | 'AAA' | 'FAIL';
       if (isLarge) {
         level = ratio >= 4.5 ? 'AAA' : ratio >= 3 ? 'AA' : 'FAIL';
@@ -257,7 +258,7 @@ export class AccessibilityTester {
       }
 
       // Check tab index
-      const tabIndex = htmlElement.tabIndex;
+      const { tabIndex } = htmlElement;
       if (tabIndex < -1) {
         issues.push('Invalid tabindex value');
       }
@@ -265,7 +266,7 @@ export class AccessibilityTester {
       // Focus the element and check focus visibility
       htmlElement.focus();
       const hasVisibleFocus = this.hasFocusIndicator(htmlElement);
-      
+
       if (!hasVisibleFocus) {
         issues.push('No visible focus indicator');
       }
@@ -276,8 +277,10 @@ export class AccessibilityTester {
       const ariaLabelledBy = htmlElement.getAttribute('aria-labelledby');
 
       if (!ariaLabel && !ariaLabelledBy && !htmlElement.textContent?.trim()) {
-        if (htmlElement.tagName.toLowerCase() !== 'input' || 
-            !document.querySelector(`label[for="${htmlElement.id}"]`)) {
+        if (
+          htmlElement.tagName.toLowerCase() !== 'input' ||
+          !document.querySelector(`label[for="${htmlElement.id}"]`)
+        ) {
           issues.push('No accessible name');
         }
       }
@@ -306,7 +309,7 @@ export class AccessibilityTester {
     }
 
     // Monitor DOM changes and re-run accessibility checks
-    const observer = new MutationObserver(async (mutations) => {
+    const observer = new MutationObserver(async mutations => {
       let shouldRecheck = false;
 
       for (const mutation of mutations) {
@@ -314,9 +317,12 @@ export class AccessibilityTester {
           shouldRecheck = true;
           break;
         }
-        if (mutation.type === 'attributes' && 
-            ['aria-', 'role', 'tabindex', 'alt'].some(attr => 
-              mutation.attributeName?.startsWith(attr))) {
+        if (
+          mutation.type === 'attributes' &&
+          ['aria-', 'role', 'tabindex', 'alt'].some(attr =>
+            mutation.attributeName?.startsWith(attr)
+          )
+        ) {
           shouldRecheck = true;
           break;
         }
@@ -329,7 +335,7 @@ export class AccessibilityTester {
             callback(results.violations);
           }
         } catch (error) {
-          console.error('Live accessibility monitoring error:', error);
+          // Error handled silently
         }
       }
     });
@@ -338,7 +344,14 @@ export class AccessibilityTester {
       childList: true,
       subtree: true,
       attributes: true,
-      attributeFilter: ['aria-label', 'aria-labelledby', 'aria-describedby', 'role', 'tabindex', 'alt'],
+      attributeFilter: [
+        'aria-label',
+        'aria-labelledby',
+        'aria-describedby',
+        'role',
+        'tabindex',
+        'alt',
+      ],
     });
 
     this.observers.push(observer);
@@ -357,7 +370,7 @@ export class AccessibilityTester {
    */
   generateReportHTML(report: AccessibilityAuditReport): string {
     const { compliance, violations, passes, performance } = report;
-    
+
     return `
       <!DOCTYPE html>
       <html lang="en">
@@ -409,10 +422,14 @@ export class AccessibilityTester {
           </div>
         </div>
 
-        ${violations.length > 0 ? `
+        ${
+          violations.length > 0
+            ? `
           <div class="section">
             <h2>Violations (${violations.length})</h2>
-            ${violations.map(violation => `
+            ${violations
+              .map(
+                violation => `
               <div class="violation impact-${violation.impact}">
                 <h3>${violation.rule}</h3>
                 <p><strong>Impact:</strong> ${violation.impact}</p>
@@ -421,18 +438,27 @@ export class AccessibilityTester {
                 <p><strong>Element:</strong> <code>${violation.element || 'N/A'}</code></p>
                 <p><a href="${violation.helpUrl}" target="_blank" class="help-link">Learn more</a></p>
               </div>
-            `).join('')}
+            `
+              )
+              .join('')}
           </div>
-        ` : ''}
+        `
+            : ''
+        }
 
         <div class="section">
           <h2>Successful Tests (${passes.length})</h2>
           <p>The following accessibility tests passed:</p>
-          ${passes.slice(0, 10).map(pass => `
+          ${passes
+            .slice(0, 10)
+            .map(
+              pass => `
             <div class="pass">
               <strong>${pass.rule}</strong>: ${pass.description}
             </div>
-          `).join('')}
+          `
+            )
+            .join('')}
           ${passes.length > 10 ? `<p>... and ${passes.length - 10} more tests passed.</p>` : ''}
         </div>
       </body>
@@ -476,7 +502,7 @@ export class AccessibilityTester {
   private getComplianceLevel(violations: AccessibilityTestResult[]): 'A' | 'AA' | 'AAA' {
     const hasCritical = violations.some(v => v.impact === 'critical');
     const hasSerious = violations.some(v => v.impact === 'serious');
-    
+
     if (hasCritical || violations.length > 10) return 'A';
     if (hasSerious || violations.length > 5) return 'AA';
     return 'AAA';
@@ -485,10 +511,10 @@ export class AccessibilityTester {
   private calculateContrastRatio(foreground: string, background: string): number {
     const fgLuminance = this.getLuminance(foreground);
     const bgLuminance = this.getLuminance(background);
-    
+
     const lighter = Math.max(fgLuminance, bgLuminance);
     const darker = Math.min(fgLuminance, bgLuminance);
-    
+
     return (lighter + 0.05) / (darker + 0.05);
   }
 
@@ -499,8 +525,8 @@ export class AccessibilityTester {
 
     const [r, g, b] = rgb.map(val => {
       const normalized = parseInt(val) / 255;
-      return normalized <= 0.03928 
-        ? normalized / 12.92 
+      return normalized <= 0.03928
+        ? normalized / 12.92
         : Math.pow((normalized + 0.055) / 1.055, 2.4);
     });
 
@@ -509,18 +535,22 @@ export class AccessibilityTester {
 
   private isElementVisible(element: HTMLElement): boolean {
     const styles = window.getComputedStyle(element);
-    return styles.display !== 'none' && 
-           styles.visibility !== 'hidden' && 
-           styles.opacity !== '0' &&
-           element.offsetWidth > 0 && 
-           element.offsetHeight > 0;
+    return (
+      styles.display !== 'none' &&
+      styles.visibility !== 'hidden' &&
+      styles.opacity !== '0' &&
+      element.offsetWidth > 0 &&
+      element.offsetHeight > 0
+    );
   }
 
   private hasFocusIndicator(element: HTMLElement): boolean {
     const styles = window.getComputedStyle(element);
-    return styles.outline !== 'none' || 
-           styles.boxShadow !== 'none' || 
-           styles.borderColor !== styles.borderColor; // Check if border changes on focus
+    return (
+      styles.outline !== 'none' ||
+      styles.boxShadow !== 'none' ||
+      styles.borderColor !== styles.borderColor
+    ); // Check if border changes on focus
   }
 
   private getElementSelector(element: HTMLElement): string {

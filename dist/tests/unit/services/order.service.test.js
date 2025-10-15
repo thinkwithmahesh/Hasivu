@@ -100,7 +100,7 @@ describe('OrderService', () => {
                 schoolId: 'school-123',
                 items: [
                     { menuItemId: 'item-1', quantity: 2, specialInstructions: 'No onions' },
-                    { menuItemId: 'item-2', quantity: 1, specialInstructions: null }
+                    { menuItemId: 'item-2', quantity: 1, specialInstructions: undefined }
                 ],
                 deliveryDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
                 deliveryType: 'delivery',
@@ -545,7 +545,7 @@ describe('OrderService', () => {
                 parentId: 'parent-123',
                 schoolId: 'school-123',
                 items: [{ menuItemId: 'item-1', quantity: 1 }],
-                deliveryDate: deliveryDate,
+                deliveryDate,
                 deliveryType: 'delivery'
             };
             const mockMenuItems = {

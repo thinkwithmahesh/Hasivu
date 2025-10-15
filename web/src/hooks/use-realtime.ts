@@ -5,10 +5,10 @@ import { socketClient, SocketEventName, SocketEvents } from '../lib/socket-clien
 import { useAuth } from '../contexts/auth-context';
 import { toast } from 'react-hot-toast';
 export // TODO: Refactor this function - it may be too long
-  const { autoConnect = true, events = [], rooms = [] } = options;
+  const { _autoConnect =  true, events 
   const { user, isAuthenticated } = useAuth();
   const [connectionState, setConnectionState] = useState<ConnectionState>({}
-  const unsubscribeRefs = useRef<Array<() => void>>([]);
+  const _unsubscribeRefs =  useRef<Array<() 
   // Connection management
   useEffect((
     return (
@@ -16,28 +16,28 @@ export // TODO: Refactor this function - it may be too long
   // Subscribe to connection status updates
   useEffect((
   // Update connection state with current status
-    const stats = socketClient.getConnectionStats();
+    const _stats =  socketClient.getConnectionStats();
     setConnectionState({}
     return unsubscribe;
   }, []);
   // Join rooms when connected
   useEffect((
   }, [connectionState.isConnected, rooms]);
-  const connect = useCallback((
-      setConnectionState(prev => ({ ...prev, isConnecting: true }));
+  const _connect =  useCallback((
+      setConnectionState(prev 
       socketClient.connect(token, user.id);
   }, [user]);
-  const disconnect = useCallback((
+  const _disconnect =  useCallback((
   }, []);
-  const subscribe = useCallback(<T extends SocketEventName>(
+  const _subscribe =  useCallback(<T extends SocketEventName>(
     eventName: T,
     callback: SocketEvents[T]
   }, []);
-  const emit = useCallback((eventName: string, data?: any
+  const _emit =  useCallback((eventName: string, data?: any
   }, []);
-  const joinRoom = useCallback((roomId: string
+  const _joinRoom =  useCallback((roomId: string
   }, []);
-  const leaveRoom = useCallback((roomId: string
+  const _leaveRoom =  useCallback((roomId: string
   }, []);
   return {}
   // Hook for order tracking with real-time updates

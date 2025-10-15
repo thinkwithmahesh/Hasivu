@@ -15,9 +15,7 @@ export default function TestComponentsPage() {
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Header */}
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-gradient-primary">
-            HASIVU Components Test
-          </h1>
+          <h1 className="text-4xl font-bold text-gradient-primary">HASIVU Components Test</h1>
           <p className="mt-2 text-lg text-gray-600">
             Testing Tailwind CSS and ShadCN/UI integration
           </p>
@@ -41,7 +39,7 @@ export default function TestComponentsPage() {
                 <Button variant="success">Success</Button>
                 <Button variant="warning">Warning</Button>
               </div>
-              
+
               <div className="flex flex-wrap gap-4">
                 <Button size="sm">Small</Button>
                 <Button size="default">Default</Button>
@@ -70,7 +68,7 @@ export default function TestComponentsPage() {
                     className="w-full"
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="password">Password</Label>
                   <Input
@@ -81,10 +79,8 @@ export default function TestComponentsPage() {
                   />
                 </div>
               </div>
-              
-              <Button className="w-full md:w-auto">
-                Submit Form
-              </Button>
+
+              <Button className="w-full md:w-auto">Submit Form</Button>
             </div>
           </CardContent>
         </Card>
@@ -98,8 +94,7 @@ export default function TestComponentsPage() {
             </CardHeader>
             <CardContent>
               <p className="text-gray-600">
-                This card demonstrates the standard styling with soft shadows
-                and rounded corners.
+                This card demonstrates the standard styling with soft shadows and rounded corners.
               </p>
             </CardContent>
           </Card>
@@ -145,14 +140,10 @@ export default function TestComponentsPage() {
             <div className="space-y-6">
               <div className="space-y-2">
                 <h3 className="text-lg font-semibold">Text Gradients</h3>
-                <p className="text-gradient-primary text-xl font-bold">
-                  Primary Gradient Text
-                </p>
-                <p className="text-gradient-accent text-xl font-bold">
-                  Accent Gradient Text
-                </p>
+                <p className="text-gradient-primary text-xl font-bold">Primary Gradient Text</p>
+                <p className="text-gradient-accent text-xl font-bold">Accent Gradient Text</p>
               </div>
-              
+
               <div className="space-y-2">
                 <h3 className="text-lg font-semibold">Status Badges</h3>
                 <div className="flex flex-wrap gap-2">
@@ -162,19 +153,13 @@ export default function TestComponentsPage() {
                   <span className="badge-info">Info</span>
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <h3 className="text-lg font-semibold">Animations</h3>
                 <div className="flex flex-wrap gap-4">
-                  <div className="p-4 bg-primary-100 rounded-lg animate-fade-in">
-                    Fade In
-                  </div>
-                  <div className="p-4 bg-success-100 rounded-lg animate-slide-up">
-                    Slide Up
-                  </div>
-                  <div className="p-4 bg-warning-100 rounded-lg animate-scale-in">
-                    Scale In
-                  </div>
+                  <div className="p-4 bg-primary-100 rounded-lg animate-fade-in">Fade In</div>
+                  <div className="p-4 bg-success-100 rounded-lg animate-slide-up">Slide Up</div>
+                  <div className="p-4 bg-warning-100 rounded-lg animate-scale-in">Scale In</div>
                 </div>
               </div>
             </div>

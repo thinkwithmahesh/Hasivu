@@ -64,6 +64,7 @@ export SLACK_WEBHOOK_URL=https://hooks.slack.com/...  # Slack notifications
 ## 📊 Dashboards
 
 ### 1. Executive Dashboard (`HASIVU-Executive-Overview`)
+
 **Business KPIs for executives and stakeholders**
 
 - **Revenue Tracking**: Daily/weekly/monthly revenue trends
@@ -73,6 +74,7 @@ export SLACK_WEBHOOK_URL=https://hooks.slack.com/...  # Slack notifications
 - **Business Impact**: Revenue at risk, users affected by issues
 
 **Key Metrics:**
+
 - Total Revenue (24h rolling)
 - Payment Transaction Volume
 - Order Completion Rate
@@ -80,6 +82,7 @@ export SLACK_WEBHOOK_URL=https://hooks.slack.com/...  # Slack notifications
 - User Satisfaction Index
 
 ### 2. Lambda Performance Dashboard (`HASIVU-Lambda-Performance`)
+
 **Detailed Lambda function monitoring for developers**
 
 - **Duration Analysis**: Function execution times across all services
@@ -89,6 +92,7 @@ export SLACK_WEBHOOK_URL=https://hooks.slack.com/...  # Slack notifications
 - **Memory Optimization**: Memory usage patterns and recommendations
 
 **Key Functions Monitored:**
+
 - Payment system functions
 - Authentication services
 - Order processing
@@ -96,6 +100,7 @@ export SLACK_WEBHOOK_URL=https://hooks.slack.com/...  # Slack notifications
 - Health checks
 
 ### 3. API Gateway Dashboard (`HASIVU-API-Gateway`)
+
 **API performance and usage analytics**
 
 - **Traffic Patterns**: Request volume and distribution
@@ -105,12 +110,14 @@ export SLACK_WEBHOOK_URL=https://hooks.slack.com/...  # Slack notifications
 - **Endpoint Analysis**: Performance by API endpoint
 
 **Critical Endpoints:**
+
 - `/auth/login` - Authentication performance
 - `/payments/orders` - Payment creation latency
 - `/orders` - Order management performance
 - `/rfid/verify` - RFID verification speed
 
 ### 4. Database Performance Dashboard (`HASIVU-Database-Performance`)
+
 **RDS and application database monitoring**
 
 - **Connection Pool Utilization**: Active/idle connection tracking
@@ -119,12 +126,14 @@ export SLACK_WEBHOOK_URL=https://hooks.slack.com/...  # Slack notifications
 - **Application Metrics**: Database operation success rates
 
 **Performance Thresholds:**
+
 - Query response time < 100ms (healthy)
 - Connection pool utilization < 80%
 - CPU utilization < 80%
 - No slow queries > 2 seconds
 
 ### 5. Business Intelligence Dashboard (`HASIVU-Business-Metrics`)
+
 **Real-time business operations monitoring**
 
 - **Payment Performance**: Transaction success/failure rates
@@ -134,6 +143,7 @@ export SLACK_WEBHOOK_URL=https://hooks.slack.com/...  # Slack notifications
 - **Security Events**: Failed logins, suspicious activity
 
 **Business KPIs:**
+
 - Payment success rate > 98.5%
 - Order completion rate > 95%
 - RFID verification rate > 99%
@@ -144,6 +154,7 @@ export SLACK_WEBHOOK_URL=https://hooks.slack.com/...  # Slack notifications
 ### Three-Tier Alert Structure
 
 #### 1. Critical Alerts (`hasivu-critical-alerts`)
+
 **Immediate response required - affects revenue or security**
 
 - Payment system failures (> 10 errors in 5 minutes)
@@ -157,6 +168,7 @@ export SLACK_WEBHOOK_URL=https://hooks.slack.com/...  # Slack notifications
 **Escalation:** SMS, Phone, PagerDuty
 
 #### 2. Warning Alerts (`hasivu-warning-alerts`)
+
 **Performance degradation - monitor closely**
 
 - High Lambda duration (> 10 seconds)
@@ -169,6 +181,7 @@ export SLACK_WEBHOOK_URL=https://hooks.slack.com/...  # Slack notifications
 **Escalation:** Email, Slack
 
 #### 3. Business Alerts (`hasivu-business-alerts`)
+
 **Business metrics outside normal ranges**
 
 - Payment failure rate > 5%
@@ -190,24 +203,28 @@ export SLACK_WEBHOOK_URL=https://hooks.slack.com/...  # Slack notifications
 ### Service Health Checks
 
 #### Database Health
+
 - **Connection Test**: < 100ms response time
 - **Query Performance**: Test queries under 50ms
 - **Pool Utilization**: Monitor active connections
 - **Availability Target**: 99.9% uptime
 
 #### Redis Health
+
 - **Ping Test**: < 50ms response time
 - **Memory Usage**: Monitor memory consumption
 - **Hit Rate**: Cache efficiency tracking
 - **Availability Target**: 99.5% uptime
 
 #### Payment System Health
+
 - **Razorpay Connectivity**: External payment gateway
 - **Webhook Processing**: Payment notification handling
 - **Transaction Success**: End-to-end payment flow
 - **Availability Target**: 99.8% uptime
 
 #### RFID System Health
+
 - **Reader Status**: Hardware connectivity
 - **Verification Rate**: Success/failure tracking
 - **Response Time**: Card verification speed
@@ -216,6 +233,7 @@ export SLACK_WEBHOOK_URL=https://hooks.slack.com/...  # Slack notifications
 ### Business Impact Assessment
 
 Each health check includes:
+
 - **Revenue at Risk**: Calculated impact on daily revenue
 - **Users Affected**: Estimated number of impacted users
 - **SLA Compliance**: Target vs actual performance
@@ -226,6 +244,7 @@ Each health check includes:
 ### Business Operation Tracing
 
 #### Payment Operations
+
 ```typescript
 await distributedTracingService.tracePaymentOperation(
   paymentId,
@@ -238,6 +257,7 @@ await distributedTracingService.tracePaymentOperation(
 ```
 
 #### RFID Operations
+
 ```typescript
 await distributedTracingService.traceRFIDOperation(
   studentId,
@@ -249,6 +269,7 @@ await distributedTracingService.traceRFIDOperation(
 ```
 
 #### Order Operations
+
 ```typescript
 await distributedTracingService.traceOrderOperation(
   orderId,
@@ -279,6 +300,7 @@ await distributedTracingService.traceOrderOperation(
 ### Real-Time Cost Tracking
 
 #### Service Cost Breakdown
+
 - **Lambda Functions**: By invocation and duration
 - **RDS Database**: Instance and storage costs
 - **API Gateway**: Request-based pricing
@@ -286,10 +308,11 @@ await distributedTracingService.traceOrderOperation(
 - **Data Transfer**: Cross-region and internet egress
 
 #### Budget Monitoring
+
 ```javascript
 Daily Budgets:
 - Total: $200/day
-- Lambda: $50/day  
+- Lambda: $50/day
 - RDS: $80/day
 - API Gateway: $30/day
 - S3: $20/day
@@ -305,6 +328,7 @@ Monthly Budgets:
 ### Optimization Recommendations
 
 #### Automated Recommendations
+
 - **Lambda Memory Optimization**: Right-size memory allocation
 - **Reserved Instance Opportunities**: Cost savings for stable workloads
 - **API Gateway Caching**: Reduce request volume
@@ -312,6 +336,7 @@ Monthly Budgets:
 - **Resource Consolidation**: Eliminate underutilized resources
 
 #### Cost Alerts
+
 - **Budget Violations**: When spending exceeds limits
 - **Cost Anomalies**: Unusual spending spikes
 - **Optimization Opportunities**: Potential savings identified
@@ -383,10 +408,14 @@ Enhance the existing business metrics service:
 ```typescript
 // Track business events with enhanced context
 await businessMetricsService.trackPaymentMetrics(
-  orderId, amount, status, paymentMethod, {
+  orderId,
+  amount,
+  status,
+  paymentMethod,
+  {
     schoolId: process.env.MONITORING_README_PASSWORD_1,
     mealType: 'lunch',
-    studentGrade: '5th'
+    studentGrade: '5th',
   }
 );
 ```
@@ -419,18 +448,21 @@ await businessMetricsService.trackPaymentMetrics(
 ### Common Issues
 
 #### High Cost Alerts
+
 1. Check Lambda function invocation patterns
 2. Review RDS instance utilization
 3. Analyze API Gateway request volume
 4. Implement recommended optimizations
 
 #### Performance Degradation
+
 1. Review Lambda duration metrics
 2. Check database connection pool
 3. Analyze API Gateway latency
 4. Examine X-Ray traces for bottlenecks
 
 #### Alert Fatigue
+
 1. Review alert thresholds
 2. Implement composite alarms
 3. Adjust sampling rates
@@ -439,6 +471,7 @@ await businessMetricsService.trackPaymentMetrics(
 ### Dashboard URLs
 
 After deployment, access dashboards at:
+
 - Executive: `https://console.aws.amazon.com/cloudwatch/home#dashboards:name=production-HASIVU-Executive-Overview`
 - Lambda: `https://console.aws.amazon.com/cloudwatch/home#dashboards:name=production-HASIVU-Lambda-Performance`
 - API Gateway: `https://console.aws.amazon.com/cloudwatch/home#dashboards:name=production-HASIVU-API-Gateway`
@@ -461,6 +494,7 @@ View distributed traces at:
 ## 📋 Compliance
 
 This monitoring system supports:
+
 - **SOC 2 Type II**: Continuous monitoring and alerting
 - **PCI DSS**: Payment system monitoring and security alerts
 - **ISO 27001**: Security event tracking and incident response
@@ -469,6 +503,6 @@ This monitoring system supports:
 ---
 
 **Created by DevOps Automation Specialist**  
-*Enterprise-grade monitoring for rapid deployment environments*
+_Enterprise-grade monitoring for rapid deployment environments_
 
 For questions or support, contact the DevOps team or raise an issue in the platform repository.

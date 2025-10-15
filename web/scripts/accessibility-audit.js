@@ -2,7 +2,7 @@
 
 /**
  * HASIVU Platform - Accessibility Audit Script
- * 
+ *
  * Comprehensive accessibility auditing tool for the HASIVU platform
  * Features:
  * - Automated WCAG 2.1 AA compliance checking
@@ -68,7 +68,7 @@ class AccessibilityAuditor {
 
   async initialize() {
     console.log('🚀 Initializing HASIVU Accessibility Auditor...');
-    
+
     // Create output directory
     if (!fs.existsSync(AUDIT_CONFIG.outputDir)) {
       fs.mkdirSync(AUDIT_CONFIG.outputDir, { recursive: true });
@@ -85,7 +85,7 @@ class AccessibilityAuditor {
 
   async auditPage(page, pageConfig, viewport = null) {
     const startTime = Date.now();
-    
+
     try {
       // Set viewport if specified
       if (viewport) {
@@ -93,8 +93,10 @@ class AccessibilityAuditor {
       }
 
       // Navigate to page
-      console.log(`📄 Auditing ${pageConfig.name} (${pageConfig.path})${viewport ? ` at ${viewport.name}` : ''}`);
-      
+      console.log(
+        `📄 Auditing ${pageConfig.name} (${pageConfig.path})${viewport ? ` at ${viewport.name}` : ''}`
+      );
+
       const response = await page.goto(`${AUDIT_CONFIG.baseUrl}${pageConfig.path}`, {
         waitUntil: 'networkidle',
         timeout: AUDIT_CONFIG.timeout,
@@ -114,7 +116,7 @@ class AccessibilityAuditor {
       });
 
       // Configure axe-core
-      await page.evaluate((standards) => {
+      await page.evaluate(standards => {
         window.axe.configure({
           reporter: 'v2',
           rules: {
@@ -132,7 +134,7 @@ class AccessibilityAuditor {
       }, AUDIT_CONFIG.standards);
 
       // Run accessibility audit
-      const axeResults = await page.evaluate(async (standards) => {
+      const axeResults = await page.evaluate(async standards => {
         return await window.axe.run({
           reporter: 'v2',
           runOnly: {
@@ -176,8 +178,8 @@ class AccessibilityAuditor {
       this.results.summary.totalPasses += axeResults.passes.length;
 
       // Track critical issues
-      const criticalViolations = axeResults.violations.filter(v => 
-        v.impact === 'critical' || v.impact === 'serious'
+      const criticalViolations = axeResults.violations.filter(
+        v => v.impact === 'critical' || v.impact === 'serious'
       );
       this.results.summary.criticalIssues += criticalViolations.length;
 
@@ -195,12 +197,14 @@ class AccessibilityAuditor {
 
       // Log results
       const status = axeResults.violations.length === 0 ? '✅' : '❌';
-      console.log(`${status} ${pageConfig.name}: ${axeResults.violations.length} violations, ${axeResults.passes.length} passes`);
+      console.log(
+        `${status} ${pageConfig.name}: ${axeResults.violations.length} violations, ${axeResults.passes.length} passes`
+      );
 
       return pageResult;
     } catch (error) {
       console.error(`❌ Error auditing ${pageConfig.name}:`, error.message);
-      
+
       const errorResult = {
         name: pageConfig.name,
         path: pageConfig.path,
@@ -223,17 +227,17 @@ class AccessibilityAuditor {
 
   async runAudit() {
     const auditStartTime = Date.now();
-    
+
     try {
       await this.initialize();
-      
+
       const context = await this.browser.newContext({
         // Simulate accessibility preferences
         colorScheme: 'light',
         reducedMotion: 'reduce',
         // Enable browser accessibility features
         extraHTTPHeaders: {
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         },
       });
 
@@ -253,14 +257,14 @@ class AccessibilityAuditor {
 
         // Test on different viewports for critical pages
         if (pageConfig.critical) {
-          for (const viewport of AUDIT_CONFIG.viewports.slice(0, 2)) { // Mobile and Tablet
+          for (const viewport of AUDIT_CONFIG.viewports.slice(0, 2)) {
+            // Mobile and Tablet
             await this.auditPage(page, pageConfig, viewport);
           }
         }
       }
 
       await context.close();
-      
     } catch (error) {
       console.error('❌ Audit failed:', error);
       throw error;
@@ -277,8 +281,8 @@ class AccessibilityAuditor {
 
     // Calculate compliance percentage
     const totalTests = this.results.summary.totalViolations + this.results.summary.totalPasses;
-    this.results.summary.compliance = totalTests > 0 ? 
-      Math.round((this.results.summary.totalPasses / totalTests) * 100) : 100;
+    this.results.summary.compliance =
+      totalTests > 0 ? Math.round((this.results.summary.totalPasses / totalTests) * 100) : 100;
 
     // Generate JSON report
     const jsonReport = JSON.stringify(this.results, null, 2);
@@ -310,7 +314,7 @@ class AccessibilityAuditor {
 
   generateHTMLReport() {
     const { summary, pages, violations } = this.results;
-    
+
     return `
       <!DOCTYPE html>
       <html lang="en">
@@ -437,23 +441,30 @@ class AccessibilityAuditor {
 
           <div class="section">
             <h2>Page Results (${summary.totalPages} pages tested)</h2>
-            ${pages.map(page => `
+            ${pages
+              .map(
+                page => `
               <div class="page-result ${page.error ? 'critical' : page.violations === 0 ? 'success' : 'warning'}">
                 <div>
                   <div class="page-name">${page.name}</div>
                   <div class="page-path">${page.path}${page.viewport !== 'Default' ? ` (${page.viewport})` : ''}</div>
                 </div>
                 <div class="page-metrics">
-                  ${page.error ? 
-                    `<span style="color: #dc2626;">Error: ${page.error}</span>` :
-                    `<span>${page.violations} violations • ${page.passes} passes</span>`
+                  ${
+                    page.error
+                      ? `<span style="color: #dc2626;">Error: ${page.error}</span>`
+                      : `<span>${page.violations} violations • ${page.passes} passes</span>`
                   }
                 </div>
               </div>
-            `).join('')}
+            `
+              )
+              .join('')}
           </div>
 
-          ${violations.length > 0 ? `
+          ${
+            violations.length > 0
+              ? `
             <div class="section">
               <h2>Detailed Violations (${violations.length})</h2>
               <div class="filters">
@@ -463,7 +474,10 @@ class AccessibilityAuditor {
                 <button class="filter-btn" onclick="filterViolations('moderate')">Moderate</button>
               </div>
               
-              ${violations.slice(0, 20).map((violation, index) => `
+              ${violations
+                .slice(0, 20)
+                .map(
+                  (violation, index) => `
                 <div class="violation impact-${violation.impact}" data-impact="${violation.impact}">
                   <h3>${violation.id}</h3>
                   <div class="violation-meta">
@@ -475,23 +489,36 @@ class AccessibilityAuditor {
                   <div class="violation-help">
                     <a href="${violation.helpUrl}" target="_blank">Learn how to fix this issue</a>
                   </div>
-                  ${violation.nodes ? `
+                  ${
+                    violation.nodes
+                      ? `
                     <div class="nodes">
                       <strong>Affected elements:</strong>
-                      ${violation.nodes.slice(0, 3).map(node => `
+                      ${violation.nodes
+                        .slice(0, 3)
+                        .map(
+                          node => `
                         <div class="node">
                           <strong>Target:</strong> ${node.target.join(', ')}<br>
                           <strong>HTML:</strong> ${node.html}
                         </div>
-                      `).join('')}
+                      `
+                        )
+                        .join('')}
                       ${violation.nodes.length > 3 ? `<p>... and ${violation.nodes.length - 3} more elements</p>` : ''}
                     </div>
-                  ` : ''}
+                  `
+                      : ''
+                  }
                 </div>
-              `).join('')}
+              `
+                )
+                .join('')}
               ${violations.length > 20 ? `<p><strong>Showing first 20 violations out of ${violations.length} total.</strong></p>` : ''}
             </div>
-          ` : ''}
+          `
+              : ''
+          }
 
           <div class="section">
             <h2>Recommendations</h2>
@@ -529,7 +556,7 @@ class AccessibilityAuditor {
 
   generateSummaryReport() {
     const { summary } = this.results;
-    
+
     return {
       timestamp: summary.timestamp,
       compliance: summary.compliance,
@@ -561,7 +588,7 @@ class AccessibilityAuditor {
     });
 
     const mostCommon = Object.entries(violationTypes)
-      .sort(([,a], [,b]) => b - a)
+      .sort(([, a], [, b]) => b - a)
       .slice(0, 3);
 
     if (mostCommon.length > 0) {
@@ -581,7 +608,9 @@ async function main() {
   const args = process.argv.slice(2);
   const options = {
     baseUrl: args.includes('--url') ? args[args.indexOf('--url') + 1] : AUDIT_CONFIG.baseUrl,
-    outputDir: args.includes('--output') ? args[args.indexOf('--output') + 1] : AUDIT_CONFIG.outputDir,
+    outputDir: args.includes('--output')
+      ? args[args.indexOf('--output') + 1]
+      : AUDIT_CONFIG.outputDir,
     critical: args.includes('--critical-only'),
     verbose: args.includes('--verbose'),
   };
@@ -599,11 +628,11 @@ async function main() {
   }
 
   const auditor = new AccessibilityAuditor();
-  
+
   try {
     await auditor.runAudit();
     const reports = auditor.generateReport();
-    const summary = reports.results.summary;
+    const { summary } = reports.results;
 
     console.log('\n📊 Audit Complete');
     console.log('==================');
@@ -612,7 +641,7 @@ async function main() {
     console.log(`🚨 Critical Issues: ${summary.criticalIssues}`);
     console.log(`📈 Compliance Rate: ${summary.compliance}%`);
     console.log(`⏱️  Duration: ${Math.round(summary.duration / 1000)}s`);
-    
+
     // Exit with appropriate code
     if (summary.criticalIssues > 0 || summary.compliance < 80) {
       console.log('\n❌ ACCESSIBILITY AUDIT FAILED');
@@ -624,7 +653,6 @@ async function main() {
       console.log('\n✅ ACCESSIBILITY AUDIT PASSED');
       process.exit(0);
     }
-    
   } catch (error) {
     console.error('\n❌ Audit failed:', error);
     process.exit(1);

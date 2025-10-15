@@ -1,6 +1,6 @@
 # HASIVU Platform - Prometheus Configuration
 # Enterprise-grade metrics collection and monitoring for HASIVU serverless infrastructure
-# 
+#
 # This configuration sets up Prometheus to collect metrics from:
 # - AWS CloudWatch metrics
 # - Application custom metrics
@@ -23,12 +23,12 @@ alerting:
   alertmanagers:
     - static_configs:
         - targets:
-          - alertmanager:9093
+            - alertmanager:9093
 
 # Load alerting rules
 rule_files:
-  - "alert-rules/*.yml"
-  - "business-rules/*.yml"
+  - 'alert-rules/*.yml'
+  - 'business-rules/*.yml'
 
 # Scrape configurations
 scrape_configs:
@@ -134,7 +134,7 @@ scrape_configs:
   - job_name: 'cost-monitoring'
     static_configs:
       - targets: ['cost-exporter:9092']
-    scrape_interval: 300s  # 5 minutes for cost data
+    scrape_interval: 300s # 5 minutes for cost data
     scrape_timeout: 60s
 
   # Infrastructure Security Metrics
@@ -151,9 +151,9 @@ scrape_configs:
       module: [http_2xx]
     static_configs:
       - targets:
-        - https://api.hasivu.com/health
-        - https://admin.hasivu.com/health
-        - https://dashboard.hasivu.com/health
+          - https://api.hasivu.com/health
+          - https://admin.hasivu.com/health
+          - https://dashboard.hasivu.com/health
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target
@@ -169,8 +169,8 @@ scrape_configs:
       module: [tcp_connect]
     static_configs:
       - targets:
-        - hasivu-db:5432
-        - hasivu-redis:6379
+          - hasivu-db:5432
+          - hasivu-redis:6379
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target
@@ -202,7 +202,7 @@ scrape_configs:
 
 # Remote write configuration for long-term storage
 remote_write:
-  - url: "https://prometheus-remote-storage.hasivu.com/api/v1/write"
+  - url: 'https://prometheus-remote-storage.hasivu.com/api/v1/write'
     queue_config:
       max_samples_per_send: 1000
       max_shards: 10
@@ -214,7 +214,7 @@ remote_write:
 
 # Remote read configuration
 remote_read:
-  - url: "https://prometheus-remote-storage.hasivu.com/api/v1/read"
+  - url: 'https://prometheus-remote-storage.hasivu.com/api/v1/read'
     read_recent: true
 
 # Storage configuration
@@ -224,7 +224,6 @@ storage:
     retention.size: 50GB
     min-block-duration: 2h
     max-block-duration: 25h
-
 # ClickHouse integration for high-cardinality metrics
 # Uncomment and configure if using ClickHouse for metrics storage
 # remote_write:

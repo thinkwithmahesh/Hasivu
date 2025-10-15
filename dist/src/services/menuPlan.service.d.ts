@@ -1,9 +1,24 @@
-import { MenuPlan } from '@prisma/client';
-export declare enum MenuPlanStatus {
-    DRAFT = "DRAFT",
-    ACTIVE = "ACTIVE",
-    COMPLETED = "COMPLETED",
-    ARCHIVED = "ARCHIVED"
+export interface MenuPlanItem {
+    menuItemId: string;
+    quantity?: number;
+    mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+}
+export interface CreateMenuPlanDto {
+    schoolId: string;
+    name: string;
+    description?: string;
+    startDate: Date;
+    endDate: Date;
+    items: MenuPlanItem[];
+    isActive?: boolean;
+}
+export interface UpdateMenuPlanDto {
+    name?: string;
+    description?: string;
+    startDate?: Date;
+    endDate?: Date;
+    items?: MenuPlanItem[];
+    isActive?: boolean;
 }
 export interface CreateMenuPlanInput {
     name: string;
@@ -11,119 +26,52 @@ export interface CreateMenuPlanInput {
     schoolId: string;
     startDate: Date;
     endDate: Date;
-    status?: MenuPlanStatus;
-    isActive?: boolean;
-    approvalRequired?: boolean;
-    approvalWorkflow?: Record<string, any>;
-    metadata?: Record<string, any>;
+    status: MenuPlanStatus;
     createdBy: string;
+    isTemplate?: boolean;
+    templateCategory?: string;
 }
 export interface UpdateMenuPlanInput {
     name?: string;
     description?: string;
     startDate?: Date;
     endDate?: Date;
-    status?: MenuPlanStatus;
-    isActive?: boolean;
-    approvalRequired?: boolean;
-    approvalWorkflow?: Record<string, any>;
-    metadata?: Record<string, any>;
 }
-export interface MenuPlanFilters {
-    schoolId?: string;
-    status?: MenuPlanStatus;
-    isActive?: boolean;
-    startDate?: Date;
-    endDate?: Date;
-    createdBy?: string;
-    approvalRequired?: boolean;
-}
-export interface DailyMenuAssignment {
-    date: Date;
-    menuItems: Array<{
-        menuItemId: string;
-        mealType: 'BREAKFAST' | 'LUNCH' | 'SNACK' | 'DINNER';
-        servingSize?: number;
-        notes?: string;
-    }>;
-}
-export interface MenuItemAssignment {
-    menuItemId: string;
-    mealType: 'BREAKFAST' | 'LUNCH' | 'SNACK' | 'DINNER';
-    date: Date;
-    servingSize?: number;
-    notes?: string;
-}
-export interface MenuPlanWithMenus extends MenuPlan {
-    dailyMenus: Array<{
-        id: string;
-        date: Date;
-        mealType: string;
-        menuItems: Array<{
-            id: string;
-            name: string;
-            category: string;
-            price: number;
-            servingSize?: number;
-            notes?: string;
-        }>;
-    }>;
-}
-export interface MenuPlanAnalytics {
-    totalMenuItems: number;
-    averageCaloriesPerDay: number;
-    allergenSummary: Record<string, number>;
-    costAnalysis: {
-        totalCost: number;
-        averageCostPerDay: number;
-        costByMealType: Record<string, number>;
-    };
-    nutritionalSummary: Record<string, number>;
+export declare enum MenuPlanStatus {
+    DRAFT = "DRAFT",
+    PENDING_APPROVAL = "PENDING_APPROVAL",
+    APPROVED = "APPROVED",
+    PUBLISHED = "PUBLISHED",
+    ARCHIVED = "ARCHIVED"
 }
 export declare class MenuPlanService {
-    private static readonly CACHE_TTL;
-    private static readonly MAX_PLAN_DURATION_DAYS;
-    private static readonly VALID_APPROVAL_TYPES;
-    static createMenuPlan(input: CreateMenuPlanInput): Promise<MenuPlan>;
-    static getMenuPlanById(id: string, includeMenus?: boolean): Promise<MenuPlanWithMenus | MenuPlan | null>;
-    static getMenuPlans(filters?: MenuPlanFilters, pagination?: {
-        page?: number;
-        limit?: number;
-        sortBy?: string;
-        sortOrder?: 'asc' | 'desc';
-    }): Promise<{
-        plans: MenuPlan[];
-        total: number;
-        page: number;
-        totalPages: number;
-    }>;
-    static getActiveMenuPlan(schoolId: string, date: Date): Promise<MenuPlan | null>;
-    static updateMenuPlan(id: string, input: UpdateMenuPlanInput): Promise<MenuPlan>;
-    static deleteMenuPlan(id: string): Promise<MenuPlan>;
-    static assignDailyMenus(planId: string, assignments: DailyMenuAssignment[]): Promise<void>;
-    static activateMenuPlan(id: string): Promise<MenuPlan>;
-    static submitForApproval(id: string, submittedBy: string): Promise<MenuPlan>;
-    static approveMenuPlan(id: string, approvedBy: string, notes?: string): Promise<MenuPlan>;
-    static rejectMenuPlan(id: string, rejectedBy: string, reason: string): Promise<MenuPlan>;
-    static getMenuPlanAnalytics(id: string): Promise<MenuPlanAnalytics>;
-    static cloneMenuPlan(id: string, newName: string, startDate: Date, endDate: Date, createdBy: string): Promise<MenuPlan>;
-    private static validateCreateInput;
-    private static validateUpdateInput;
-    private static validateDailyMenuAssignment;
-    private static calculateAnalytics;
-    private static mapDailyMenusToAssignments;
-    private static clearRelatedCaches;
-    disconnect(): Promise<void>;
-    createMenuPlan(input: CreateMenuPlanInput): Promise<MenuPlan>;
-    getMenuPlanById(id: string, includeDetails?: boolean): Promise<MenuPlan | null>;
-    updateMenuPlan(id: string, input: UpdateMenuPlanInput): Promise<MenuPlan>;
-    deleteMenuPlan(id: string): Promise<boolean>;
-    getActiveMenuPlan(schoolId: string): Promise<MenuPlan | null>;
-    assignMenuItemsToPlan(planId: string, assignments: MenuItemAssignment[]): Promise<MenuPlan>;
-    activateMenuPlan(planId: string): Promise<MenuPlan>;
-    deactivateMenuPlan(planId: string): Promise<MenuPlan>;
-    createWeeklyPlan(input: CreateMenuPlanInput): Promise<MenuPlan>;
-    calculateNutritionalSummary(planId: string): Promise<any>;
+    private static instance;
+    private prisma;
+    private constructor();
+    static getInstance(): MenuPlanService;
+    create(data: CreateMenuPlanDto): Promise<any>;
+    findById(_id: string): Promise<any | null>;
+    findBySchool(_schoolId: string): Promise<any[]>;
+    findActiveBySchool(_schoolId: string, _date?: Date): Promise<any | null>;
+    update(id: string, data: UpdateMenuPlanDto): Promise<any>;
+    delete(id: string): Promise<any>;
+    activate(id: string): Promise<any>;
+    deactivate(id: string): Promise<any>;
+    getMenuForDate(schoolId: string, date: Date, mealType?: string): Promise<MenuPlanItem[]>;
+    existsForDateRange(_schoolId: string, _startDate: Date, _endDate: Date): Promise<boolean>;
+    clone(planId: string, startDate: Date, endDate: Date): Promise<any>;
+    static createMenuPlan(data: CreateMenuPlanInput): Promise<any>;
+    static updateMenuPlan(id: string, data: UpdateMenuPlanInput): Promise<any>;
+    static applyTemplate(data: {
+        templateId: string;
+        name: string;
+        schoolId: string;
+        startDate: Date;
+        endDate: Date;
+    }): Promise<any>;
+    static updateStatus(id: string, status: MenuPlanStatus, approvedBy: string): Promise<any>;
+    static getStatistics(_schoolId: string): Promise<any>;
 }
 export declare const menuPlanService: MenuPlanService;
+export default MenuPlanService;
 //# sourceMappingURL=menuPlan.service.d.ts.map

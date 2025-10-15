@@ -11,11 +11,13 @@
 export const corsHeaders = {
   'Access-Control-Allow-Origin': '*', // Will be configured per environment
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Accept, Origin, X-API-Key, X-Client-Version',
-  'Access-Control-Expose-Headers': 'X-Total-Count, X-Page-Size, X-Current-Page, X-Rate-Limit-Remaining',
+  'Access-Control-Allow-Headers':
+    'Content-Type, Authorization, X-Requested-With, Accept, Origin, X-API-Key, X-Client-Version',
+  'Access-Control-Expose-Headers':
+    'X-Total-Count, X-Page-Size, X-Current-Page, X-Rate-Limit-Remaining',
   'Access-Control-Allow-Credentials': 'true',
   'Access-Control-Max-Age': '86400', // 24 hours preflight cache
-  'Vary': 'Origin, Access-Control-Request-Method, Access-Control-Request-Headers'
+  Vary: 'Origin, Access-Control-Request-Method, Access-Control-Request-Headers',
 };
 
 /**
@@ -27,7 +29,7 @@ export const preflightHeaders = {
   'Access-Control-Max-Age': '86400', // 24 hours cache
   'Cache-Control': 'public, max-age=86400',
   'Content-Type': 'application/json',
-  'Content-Length': '0'
+  'Content-Length': '0',
 };
 
 /**
@@ -60,7 +62,7 @@ export const developmentCorsConfig: CorsConfig = {
     'X-API-Key',
     'X-Client-Version',
     'X-Device-ID',
-    'X-Session-ID'
+    'X-Session-ID',
   ],
   exposedHeaders: [
     'X-Total-Count',
@@ -68,12 +70,12 @@ export const developmentCorsConfig: CorsConfig = {
     'X-Current-Page',
     'X-Rate-Limit-Remaining',
     'X-Rate-Limit-Reset',
-    'X-Request-ID'
+    'X-Request-ID',
   ],
   credentials: true,
   maxAge: 86400,
   preflightContinue: false,
-  optionsSuccessStatus: 204
+  optionsSuccessStatus: 204,
 };
 
 /**
@@ -86,7 +88,7 @@ export const productionCorsConfig: CorsConfig = {
     'https://www.hasivu.com',
     'https://app.hasivu.com',
     'https://admin.hasivu.com',
-    'https://api.hasivu.com'
+    'https://api.hasivu.com',
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: [
@@ -96,18 +98,13 @@ export const productionCorsConfig: CorsConfig = {
     'Accept',
     'Origin',
     'X-API-Key',
-    'X-Client-Version'
+    'X-Client-Version',
   ],
-  exposedHeaders: [
-    'X-Total-Count',
-    'X-Page-Size',
-    'X-Current-Page',
-    'X-Rate-Limit-Remaining'
-  ],
+  exposedHeaders: ['X-Total-Count', 'X-Page-Size', 'X-Current-Page', 'X-Rate-Limit-Remaining'],
   credentials: true,
   maxAge: 86400,
   preflightContinue: false,
-  optionsSuccessStatus: 204
+  optionsSuccessStatus: 204,
 };
 
 /**
@@ -121,7 +118,7 @@ export const stagingCorsConfig: CorsConfig = {
     'https://test.hasivu.com',
     'http://localhost:3000',
     'http://localhost:3001',
-    'http://localhost:8080'
+    'http://localhost:8080',
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'],
   allowedHeaders: [
@@ -132,19 +129,19 @@ export const stagingCorsConfig: CorsConfig = {
     'Origin',
     'X-API-Key',
     'X-Client-Version',
-    'X-Debug-Mode'
+    'X-Debug-Mode',
   ],
   exposedHeaders: [
     'X-Total-Count',
     'X-Page-Size',
     'X-Current-Page',
     'X-Rate-Limit-Remaining',
-    'X-Debug-Info'
+    'X-Debug-Info',
   ],
   credentials: true,
   maxAge: 3600, // 1 hour for faster development iteration
   preflightContinue: false,
-  optionsSuccessStatus: 204
+  optionsSuccessStatus: 204,
 };
 
 /**
@@ -239,10 +236,7 @@ export function validateOrigin(
  * @param config CORS configuration
  * @returns CORS headers for the response
  */
-export function handleCorsForLambda(
-  event: any,
-  config?: CorsConfig
-): Record<string, string> {
+export function handleCorsForLambda(event: any, config?: CorsConfig): Record<string, string> {
   const environment = process.env.NODE_ENV || 'development';
   const corsConfig = config || getCorsConfig(environment);
   const origin = event.headers?.origin || event.headers?.Origin;
@@ -252,7 +246,7 @@ export function handleCorsForLambda(
     return {
       ...generateCorsHeaders(origin, corsConfig),
       'Content-Type': 'application/json',
-      'Content-Length': '0'
+      'Content-Length': '0',
     };
   }
 
@@ -269,7 +263,7 @@ export function createCorsMiddleware(config?: CorsConfig) {
   const corsConfig = config || getCorsConfig(environment);
 
   return (req: any, res: any, next: any) => {
-    const origin = req.headers.origin;
+    const { origin } = req.headers;
 
     // Validate origin
     if (!validateOrigin(origin, corsConfig.origins)) {
@@ -277,7 +271,7 @@ export function createCorsMiddleware(config?: CorsConfig) {
         return res.status(403).json({
           error: 'CORS policy violation',
           message: 'Origin not allowed',
-          code: 'CORS_ORIGIN_NOT_ALLOWED'
+          code: 'CORS_ORIGIN_NOT_ALLOWED',
         });
       }
     }
@@ -310,7 +304,7 @@ export const secureCorsConfig: CorsConfig = {
   credentials: false,
   maxAge: 300, // 5 minutes only
   preflightContinue: false,
-  optionsSuccessStatus: 204
+  optionsSuccessStatus: 204,
 };
 
 /**
@@ -325,17 +319,13 @@ export const apiCorsConfig: CorsConfig = {
     'Authorization',
     'X-API-Key',
     'X-Client-Version',
-    'X-Request-ID'
+    'X-Request-ID',
   ],
-  exposedHeaders: [
-    'X-Total-Count',
-    'X-Rate-Limit-Remaining',
-    'X-Rate-Limit-Reset'
-  ],
+  exposedHeaders: ['X-Total-Count', 'X-Rate-Limit-Remaining', 'X-Rate-Limit-Reset'],
   credentials: false,
   maxAge: 3600,
   preflightContinue: false,
-  optionsSuccessStatus: 200
+  optionsSuccessStatus: 200,
 };
 
 /**
@@ -350,13 +340,13 @@ export const websocketCorsConfig: CorsConfig = {
     'Sec-WebSocket-Key',
     'Sec-WebSocket-Version',
     'Sec-WebSocket-Protocol',
-    'Sec-WebSocket-Extensions'
+    'Sec-WebSocket-Extensions',
   ],
   exposedHeaders: [],
   credentials: true,
   maxAge: 86400,
   preflightContinue: false,
-  optionsSuccessStatus: 101 // Switching Protocols
+  optionsSuccessStatus: 101, // Switching Protocols
 };
 
 /**
@@ -370,7 +360,7 @@ export function createEnvironmentCorsHeaders(
   customOrigins?: string[]
 ): Record<string, string> {
   const config = getCorsConfig(environment);
-  
+
   if (customOrigins && Array.isArray(config.origins)) {
     config.origins = [...config.origins, ...customOrigins];
   }
@@ -387,7 +377,12 @@ export class CorsError extends Error {
   public readonly statusCode: number;
   public readonly origin?: string;
 
-  constructor(message: string, code: string = 'CORS_ERROR', statusCode: number = 403, origin?: string) {
+  constructor(
+    message: string,
+    code: string = 'CORS_ERROR',
+    statusCode: number = 403,
+    origin?: string
+  ) {
     super(message);
     this.name = 'CorsError';
     this.code = code;
@@ -405,7 +400,7 @@ export class CorsError extends Error {
       code: this.code,
       statusCode: this.statusCode,
       origin: this.origin,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
   }
 }
@@ -449,7 +444,7 @@ export function validateCorsRequest(
   if (requestedHeaders && method === 'OPTIONS') {
     const headerList = requestedHeaders.split(',').map(h => h.trim().toLowerCase());
     const allowedHeaders = config.allowedHeaders.map(h => h.toLowerCase());
-    
+
     for (const header of headerList) {
       if (!allowedHeaders.includes(header)) {
         throw new CorsError(
@@ -483,6 +478,6 @@ export default {
     production: productionCorsConfig,
     secure: secureCorsConfig,
     api: apiCorsConfig,
-    websocket: websocketCorsConfig
-  }
+    websocket: websocketCorsConfig,
+  },
 };

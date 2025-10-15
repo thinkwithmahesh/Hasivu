@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -45,7 +45,7 @@ export function SidebarLayout({
   if (!showSidebar) {
     // Fallback to regular layout for other roles
     return (
-      <div className={cn("min-h-screen bg-background", className)}>
+      <div className={cn('min-h-screen bg-background', className)}>
         <MainHeader
           user={user}
           notifications={notifications}
@@ -54,28 +54,18 @@ export function SidebarLayout({
           onLogout={onLogout}
           className={headerClassName}
         />
-        <main className={cn("flex-1", contentClassName)}>
+        <main className={cn('flex-1', contentClassName)}>
           <div className="container mx-auto px-4 py-6">
             {(title || subtitle || actions) && (
               <div className="mb-6">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div>
                     {title && (
-                      <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                        {title}
-                      </h1>
+                      <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{title}</h1>
                     )}
-                    {subtitle && (
-                      <p className="mt-1 text-sm text-gray-600">
-                        {subtitle}
-                      </p>
-                    )}
+                    {subtitle && <p className="mt-1 text-sm text-gray-600">{subtitle}</p>}
                   </div>
-                  {actions && (
-                    <div className="flex-shrink-0">
-                      {actions}
-                    </div>
-                  )}
+                  {actions && <div className="flex-shrink-0">{actions}</div>}
                 </div>
               </div>
             )}
@@ -87,7 +77,7 @@ export function SidebarLayout({
   }
 
   return (
-    <div className={cn("min-h-screen bg-background", className)}>
+    <div className={cn('min-h-screen bg-background', className)}>
       {/* Header */}
       <MainHeader
         user={user}
@@ -109,10 +99,7 @@ export function SidebarLayout({
         />
 
         {/* Main content area */}
-        <main className={cn(
-          "flex-1 overflow-y-auto",
-          contentClassName
-        )}>
+        <main className={cn('flex-1 overflow-y-auto', contentClassName)}>
           <div className="p-6">
             {/* Page header */}
             {(title || subtitle || actions) && (
@@ -120,33 +107,24 @@ export function SidebarLayout({
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div>
                     {title && (
-                      <h1 className={cn(
-                        "text-2xl font-bold text-gray-900",
-                        sidebarCollapsed ? "sm:text-3xl" : "lg:text-3xl"
-                      )}>
+                      <h1
+                        className={cn(
+                          'text-2xl font-bold text-gray-900',
+                          sidebarCollapsed ? 'sm:text-3xl' : 'lg:text-3xl'
+                        )}
+                      >
                         {title}
                       </h1>
                     )}
-                    {subtitle && (
-                      <p className="mt-1 text-sm text-gray-600">
-                        {subtitle}
-                      </p>
-                    )}
+                    {subtitle && <p className="mt-1 text-sm text-gray-600">{subtitle}</p>}
                   </div>
-                  {actions && (
-                    <div className="flex-shrink-0">
-                      {actions}
-                    </div>
-                  )}
+                  {actions && <div className="flex-shrink-0">{actions}</div>}
                 </div>
               </div>
             )}
-            
+
             {/* Content */}
-            <div className={cn(
-              "space-y-6",
-              sidebarCollapsed ? "max-w-none" : "max-w-full"
-            )}>
+            <div className={cn('space-y-6', sidebarCollapsed ? 'max-w-none' : 'max-w-full')}>
               {children}
             </div>
           </div>
@@ -164,7 +142,7 @@ export function AdminDashboardLayout({
   cartItems = [],
   schoolStatus,
   onLogout,
-  title = "Admin Dashboard",
+  title = 'Admin Dashboard',
   subtitle,
   actions,
   className,
@@ -200,7 +178,7 @@ export function KitchenDashboardLayout({
   cartItems = [],
   schoolStatus,
   onLogout,
-  title = "Kitchen Dashboard",
+  title = 'Kitchen Dashboard',
   subtitle,
   actions,
   className,
@@ -218,7 +196,7 @@ export function KitchenDashboardLayout({
       schoolStatus={schoolStatus}
       onLogout={onLogout}
       title={title}
-      subtitle={subtitle || "Manage orders, menu, and kitchen operations"}
+      subtitle={subtitle || 'Manage orders, menu, and kitchen operations'}
       actions={actions}
       className={className}
       initialCollapsed={false}

@@ -12,13 +12,11 @@ export function trackEvent(eventName: string, params?: Record<string, any>) {
     window.gtag('event', eventName, params || {});
   } else if (process.env.NODE_ENV !== 'production') {
     // eslint-disable-next-line no-console
-    console.debug('[analytics:no-op]', eventName, params || {});
   }
 }
 
 export const events = {
   ctaClick: (cta_id: string, metadata?: Record<string, any>) =>
     trackEvent('cta_click', { cta_id, ...metadata }),
-  videoOpen: (metadata?: Record<string, any>) =>
-    trackEvent('video_open', { ...metadata }),
+  videoOpen: (metadata?: Record<string, any>) => trackEvent('video_open', { ...metadata }),
 };

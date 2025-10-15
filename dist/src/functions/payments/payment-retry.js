@@ -42,7 +42,7 @@ function calculateSmartDelay(attemptCount, previousFailures) {
     let patternMultiplier = 1;
     if (previousFailures.length > 0) {
         const recentFailures = previousFailures.slice(-3);
-        const hasNetworkIssues = recentFailures.some(f => f.reason?.includes('network') || f.reason?.includes('timeout'));
+        const hasNetworkIssues = recentFailures.some(f => f.retryReason?.includes('network') || f.retryReason?.includes('timeout'));
         if (hasNetworkIssues) {
             patternMultiplier = 1.5;
         }
@@ -50,7 +50,7 @@ function calculateSmartDelay(attemptCount, previousFailures) {
     const calculatedDelay = Math.min(baseDelay * exponentialFactor * patternMultiplier * (1 + jitter), 120);
     return Math.round(calculatedDelay);
 }
-async function canRetryPayment(paymentId, userId) {
+async function canRetryPayment(paymentId) {
     const payment = await prisma.payment.findUnique({
         where: { id: paymentId },
         include: {
@@ -109,7 +109,7 @@ async function createRetryAttempt(paymentId, userId, retryReason, retryType, sch
     });
     return retryAttempt.id;
 }
-async function executePaymentRetry(retryId, authenticatedUser) {
+async function executePaymentRetry(retryId, _authenticatedUser) {
     const logger = logger_service_1.LoggerService.getInstance();
     const retryAttempt = await prisma.paymentRetry.findUnique({
         where: { id: retryId },
@@ -164,7 +164,7 @@ async function executePaymentRetry(retryId, authenticatedUser) {
             retryId,
             paymentId: retryAttempt.paymentId,
             razorpayOrderId: razorpayOrder.id,
-            executedBy: authenticatedUser.email
+            executedBy: _authenticatedUser.email
         });
         return {
             retryId,
@@ -179,13 +179,13 @@ async function executePaymentRetry(retryId, authenticatedUser) {
         logger.error('Payment retry execution failed', {
             retryId,
             paymentId: retryAttempt.paymentId,
-            error: error.message
+            error: error instanceof Error ? error.message : String(error)
         });
         await prisma.paymentRetry.update({
             where: { id: retryId },
             data: {
                 status: 'failed',
-                failureReason: error.message
+                failureReason: error instanceof Error ? error.message : String(error)
             }
         });
         throw error;
@@ -256,14 +256,14 @@ const paymentRetryHandler = async (event, context) => {
                 }
             case 'GET':
                 if (pathParameters.paymentId) {
-                    return await handleGetRetryStatus(pathParameters.paymentId, authenticatedUser, requestId);
+                    return await handleGetRetryStatus(pathParameters.paymentId);
                 }
                 else {
-                    return await handleGetRetryAnalytics(event.queryStringParameters, authenticatedUser, requestId);
+                    return await handleGetRetryAnalytics(event.queryStringParameters);
                 }
             case 'DELETE':
                 if (pathParameters.retryId) {
-                    return await handleCancelRetry(pathParameters.retryId, authenticatedUser, requestId);
+                    return await handleCancelRetry(pathParameters.retryId);
                 }
                 break;
             default:
@@ -274,8 +274,8 @@ const paymentRetryHandler = async (event, context) => {
     catch (error) {
         logger.error('Payment retry request failed', {
             requestId,
-            error: error.message,
-            stack: error.stack
+            error: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined
         });
         return (0, response_utils_1.handleError)(error, 'Payment retry operation failed');
     }
@@ -288,7 +288,7 @@ async function handleManualRetry(event, authenticatedUser, requestId) {
     const logger = logger_service_1.LoggerService.getInstance();
     const requestBody = JSON.parse(event.body || '{}');
     const retryData = retryPaymentSchema.parse(requestBody);
-    const retryCheck = await canRetryPayment(retryData.paymentId, authenticatedUser.id);
+    const retryCheck = await canRetryPayment(retryData.paymentId);
     if (!retryCheck.canRetry) {
         logger.warn('Payment retry not allowed', {
             requestId,
@@ -297,7 +297,7 @@ async function handleManualRetry(event, authenticatedUser, requestId) {
         });
         return (0, response_utils_1.createErrorResponse)(retryCheck.reason || 'Payment cannot be retried', 400, 'RETRY_NOT_ALLOWED');
     }
-    const retryId = await createRetryAttempt(retryData.paymentId, authenticatedUser.id, retryData.retryReason, 'manual', retryData.delayMinutes ? new Date(Date.now() + retryData.delayMinutes * 60 * 1000) : new Date());
+    const retryId = await createRetryAttempt(retryData.paymentId, authenticatedUser.id || "", retryData.retryReason, 'manual', retryData.delayMinutes ? new Date(Date.now() + retryData.delayMinutes * 60 * 1000) : new Date());
     if (!retryData.delayMinutes) {
         const result = await executePaymentRetry(retryId, authenticatedUser);
         logger.info('Manual payment retry completed', {
@@ -334,7 +334,7 @@ async function handleScheduleRetry(event, authenticatedUser, requestId) {
     const logger = logger_service_1.LoggerService.getInstance();
     const requestBody = JSON.parse(event.body || '{}');
     const scheduleData = scheduleRetrySchema.parse(requestBody);
-    const retryCheck = await canRetryPayment(scheduleData.paymentId, authenticatedUser.id);
+    const retryCheck = await canRetryPayment(scheduleData.paymentId);
     if (!retryCheck.canRetry) {
         return (0, response_utils_1.createErrorResponse)(retryCheck.reason || 'Payment cannot be retried', 400, 'RETRY_NOT_ALLOWED');
     }
@@ -355,7 +355,7 @@ async function handleScheduleRetry(event, authenticatedUser, requestId) {
     const scheduledFor = delayMinutes > 0 ?
         new Date(Date.now() + delayMinutes * 60 * 1000) :
         new Date();
-    const retryId = await createRetryAttempt(scheduleData.paymentId, authenticatedUser.id, `Smart retry scheduled - ${scheduleData.scheduleType}`, 'automatic', scheduledFor);
+    const retryId = await createRetryAttempt(scheduleData.paymentId, authenticatedUser.id || "", `Smart retry scheduled - ${scheduleData.scheduleType}`, 'automatic', scheduledFor);
     logger.info('Payment retry scheduled', {
         requestId,
         paymentId: scheduleData.paymentId,
@@ -375,7 +375,7 @@ async function handleScheduleRetry(event, authenticatedUser, requestId) {
         }
     });
 }
-async function handleGetRetryStatus(paymentId, authenticatedUser, requestId) {
+async function handleGetRetryStatus(paymentId) {
     const validationService = validation_service_1.ValidationService.getInstance();
     validationService.validateUUID(paymentId, 'Payment ID');
     const retryAttempts = await prisma.paymentRetry.findMany({
@@ -397,7 +397,7 @@ async function handleGetRetryStatus(paymentId, authenticatedUser, requestId) {
         }
     });
 }
-async function handleGetRetryAnalytics(queryParams, authenticatedUser, requestId) {
+async function handleGetRetryAnalytics(queryParams) {
     const paymentId = queryParams?.paymentId;
     if (paymentId) {
         const validationService = validation_service_1.ValidationService.getInstance();
@@ -412,7 +412,7 @@ async function handleGetRetryAnalytics(queryParams, authenticatedUser, requestId
         }
     });
 }
-async function handleCancelRetry(retryId, authenticatedUser, requestId) {
+async function handleCancelRetry(retryId) {
     const logger = logger_service_1.LoggerService.getInstance();
     const validationService = validation_service_1.ValidationService.getInstance();
     validationService.validateUUID(retryId, 'Retry ID');
@@ -433,10 +433,8 @@ async function handleCancelRetry(retryId, authenticatedUser, requestId) {
         }
     });
     logger.info('Payment retry cancelled', {
-        requestId,
         retryId,
-        paymentId: retryAttempt.paymentId,
-        cancelledBy: authenticatedUser.email
+        paymentId: retryAttempt.paymentId
     });
     return (0, response_utils_1.createSuccessResponse)({
         message: 'Payment retry cancelled successfully',

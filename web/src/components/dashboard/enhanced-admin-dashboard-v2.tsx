@@ -316,15 +316,12 @@ export const EnhancedAdminDashboardV2: React.FC<EnhancedAdminDashboardV2Props> =
     const socket: Socket = io("http://localhost:3002");
 
     socket.on("connect", () => {
-      console.log("Connected to WebSocket server");
     });
 
     socket.on("disconnect", () => {
-      console.log("Disconnected from WebSocket server");
     });
 
     socket.on("realtime_stats", (data) => {
-      console.log("Received real-time stats:", data);
       setRealTimeData(prevData => ({ ...prevData, ...data }));
     });
 
@@ -444,7 +441,6 @@ export const EnhancedAdminDashboardV2: React.FC<EnhancedAdminDashboardV2Props> =
   };
 
   const handleAddToCart = (meal: MealItem, customizations: any) => {
-    console.log('Added to cart:', meal.name, customizations);
     // Implementation for adding to cart
   };
 

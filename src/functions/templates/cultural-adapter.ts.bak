@@ -1,0 +1,560 @@
+/**
+ * Cultural Adaptation Service Lambda Function
+ * 
+ * Epic 6, Story 6.3 - Template Management & Personalization
+ * - Multi-language template system with cultural adaptation
+ * - Cultural sensitivity analysis and content modification
+ * - Regional and religious considerations in communication
+ * - Contextual translation beyond literal word conversion
+ * - Festival and seasonal awareness for timing sensitivity
+ */
+
+import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
+import { DynamoDBClient, GetItemCommand, PutItemCommand, QueryCommand } from '@aws-sdk/client-dynamodb';
+import { TranslateClient, TranslateTextCommand } from '@aws-sdk/client-translate';
+import { LoggerService } from '../../shared/utils/logger';
+import { createSuccessResponse, createErrorResponse, handleError } from '../shared/response.utils';
+
+// Initialize services
+const _logger =  LoggerService.getInstance();
+const _dynamoClient =  new DynamoDBClient({});
+const _translateClient =  new TranslateClient({});
+
+// Types and interfaces
+type _AdaptationLevel =  'basic' | 'standard' | 'comprehensive' | 'deep_cultural';
+
+type _CulturalContext =  'western' | 'eastern' | 'middle_eastern' | 'african' | 'latin_american' | 'nordic' | 'mediterranean';
+
+type _ReligiousContext =  'christian' | 'muslim' | 'hindu' | 'buddhist' | 'jewish' | 'sikh' | 'secular' | 'mixed';
+
+interface CulturalRule {
+  id: string;
+  culture: CulturalContext;
+  religion?: ReligiousContext;
+  rule: string;
+  severity: 'critical' | 'important' | 'suggested';
+  category: 'communication' | 'timing' | 'content' | 'imagery' | 'tone';
+  description: string;
+}
+
+interface Festival {
+  id: string;
+  name: string;
+  date: Date;
+  religion: ReligiousContext;
+  cultures: CulturalContext[];
+  communicationImpact: {
+    beforeDays: number;
+    duringDays: number;
+    afterDays: number;
+    timing: 'avoid' | 'acknowledge' | 'celebrate';
+    restrictions: string[];
+  };
+}
+
+interface CommunicationContext {
+  language: string;
+  culture: CulturalContext;
+  religion?: ReligiousContext;
+  region: string;
+  schoolType: 'public' | 'private' | 'religious' | 'international';
+  timing: {
+    date: Date;
+    localTime: string;
+    culturalPeriod?: string;
+  };
+}
+
+interface AdaptationRequest {
+  content: {
+    text: string;
+    type: 'notification' | 'announcement' | 'menu' | 'report' | 'alert';
+    priority: 'low' | 'medium' | 'high' | 'urgent';
+    metadata: {
+      templateId?: string;
+      version: string;
+      originalLanguage: string;
+    };
+  };
+  context: CommunicationContext;
+  adaptationLevel: AdaptationLevel;
+  preserveFormatting?: boolean;
+  customRules?: string[];
+}
+
+interface AdaptationResult {
+  requestId: string;
+  originalContent: AdaptationRequest['content'];
+  adaptedContent: {
+    text: string;
+    language: string;
+    culturalAdaptations: string[];
+    religiousAdaptations: string[];
+    timingAdaptations: string[];
+    metadata: {
+      templateId?: string;
+      version: string;
+      adaptationLevel: AdaptationLevel;
+      processingTime: number;
+    };
+  };
+  confidenceScore: number;
+  suggestedReviews: string[];
+  cacheKey: string;
+  error?: string;
+}
+
+/**
+ * Main handler for cultural adaptation requests
+ */
+export const _handler =  async (
+  event: APIGatewayProxyEvent,
+  context: Context
+): Promise<APIGatewayProxyResult> 
+  const _method =  event.httpMethod;
+  const _path =  event.path;
+  
+  logger.info('Function started: culturalAdapter', { requestId: context.awsRequestId });
+  console.log(`Cultural Adapter - ${method} ${path}`);
+
+  try {
+    if (_method = 
+    } else if (_method = 
+    } else if (_method = 
+    } else if (_method = 
+    } else {
+      return createErrorResponse(404, 'Endpoint not found', undefined, undefined, context.awsRequestId);
+    }
+  } catch (error: any) {
+    return handleError(error as Error, undefined, 500, context.awsRequestId);
+  }
+};
+
+/**
+ * Adapt content based on cultural context
+ */
+async function adaptContent(
+  event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> {
+  const _startTime =  Date.now();
+
+  try {
+    // Parse request body
+    const adaptationRequest: _AdaptationRequest =  JSON.parse(event.body || '{}');
+
+    // Generate unique request ID
+    const _requestId =  `adapt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    // Validate request
+    if (!adaptationRequest.content?.text || !adaptationRequest.context) {
+      return createErrorResponse(400, 'Content and context are required', undefined, undefined, context.awsRequestId);
+    }
+
+    // Check cache first
+    const _cacheKey =  generateCacheKey(adaptationRequest);
+    const _cachedResult =  await getCachedAdaptation(cacheKey);
+    
+    if (cachedResult) {
+      logger.info('Returning cached adaptation result', { requestId, cacheKey });
+      return createSuccessResponse(cachedResult, 'Cached adaptation result', 200, context.awsRequestId);
+    }
+
+    // Get cultural rules for the context
+    const _culturalRules =  await getCulturalRulesForContext(adaptationRequest.context);
+
+    // Get festival context
+    const _festivalContext =  await getFestivalContextForDate(
+      adaptationRequest.context.timing.date,
+      adaptationRequest.context.religion
+    );
+
+    // Perform cultural adaptation
+    const _adaptedContent =  await performCulturalAdaptation(
+      adaptationRequest.content,
+      adaptationRequest.context,
+      culturalRules,
+      festivalContext,
+      adaptationRequest.adaptationLevel
+    );
+
+    // Apply religious adaptations
+    const _religiousAdaptedContent =  await applyReligiousAdaptations(
+      adaptedContent,
+      adaptationRequest.context,
+      culturalRules
+    );
+
+    // Apply timing adaptations
+    const _timingAdaptedContent =  await applyTimingAdaptations(
+      religiousAdaptedContent,
+      adaptationRequest.context,
+      festivalContext
+    );
+
+    // Calculate confidence score
+    const _confidenceScore =  calculateConfidenceScore(
+      adaptationRequest,
+      culturalRules,
+      festivalContext
+    );
+
+    // Generate suggested reviews
+    const _suggestedReviews =  generateSuggestedReviews(
+      culturalRules,
+      festivalContext,
+      adaptationRequest.context
+    );
+
+    // Create result
+    const result: _AdaptationResult =  {
+      requestId,
+      originalContent: adaptationRequest.content,
+      adaptedContent: {
+        text: timingAdaptedContent.text,
+        language: adaptationRequest.context.language,
+        culturalAdaptations: timingAdaptedContent.culturalAdaptations || [],
+        religiousAdaptations: timingAdaptedContent.religiousAdaptations || [],
+        timingAdaptations: timingAdaptedContent.timingAdaptations || [],
+        metadata: {
+          templateId: adaptationRequest.content.metadata.templateId,
+          version: `${adaptationRequest.content.metadata.version}_culturally_adapted`,
+          adaptationLevel: adaptationRequest.adaptationLevel,
+          processingTime: Date.now() - startTime
+        }
+      },
+      confidenceScore,
+      suggestedReviews,
+      cacheKey
+    };
+
+    // Cache the result
+    await cacheAdaptationResult(cacheKey, result);
+
+    console.log(`Caching adaptation result: ${result.requestId}`);
+
+    const _duration =  Date.now() - startTime;
+    logger.info('Function completed: culturalAdapter', { statusCode: 200, duration, requestId: context.awsRequestId });
+
+    return createSuccessResponse(result, 'Content adapted successfully', 200, context.awsRequestId);
+
+  } catch (error: any) {
+    return handleError(error as Error, undefined, 500, context.awsRequestId);
+  }
+}
+
+/**
+ * Get cultural rules for a specific context
+ */
+async function getCulturalRules(
+  event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> {
+  try {
+    const _culture =  event.queryStringParameters?.culture as CulturalContext;
+    const _religion =  event.queryStringParameters?.religion as ReligiousContext;
+
+    if (!culture) {
+      return createErrorResponse(400, 'Culture parameter is required', undefined, undefined, context.awsRequestId);
+    }
+
+    const _rules =  await getCulturalRulesForContext({
+      culture,
+      religion,
+      language: 'en',
+      region: 'global',
+      schoolType: 'public',
+      timing: { date: new Date(), localTime: '12:00' }
+    });
+
+    return createSuccessResponse({
+      culture,
+      religion,
+      ruleCount: rules.length,
+      rules: rules.map((rule) = > ({
+        id: rule.id,
+        rule: rule.rule,
+        severity: rule.severity,
+        category: rule.category,
+        description: rule.description
+      }))
+    }, 'Cultural rules retrieved successfully', 200, context.awsRequestId);
+
+  } catch (error: any) {
+    return handleError(error as Error, undefined, 500, context.awsRequestId);
+  }
+}
+
+/**
+ * Get festival context for adaptation
+ */
+async function getFestivalContext(
+  event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> {
+  try {
+    const _dateParam =  event.queryStringParameters?.date;
+    const _religion =  event.queryStringParameters?.religion as ReligiousContext;
+
+    const _date =  dateParam ? new Date(dateParam) : new Date();
+
+    const _festivalContext =  await getFestivalContextForDate(date, religion);
+
+    return createSuccessResponse(festivalContext, 'Festival context retrieved successfully', 200, context.awsRequestId);
+
+  } catch (error: any) {
+    return handleError(error as Error, undefined, 500, context.awsRequestId);
+  }
+}
+
+/**
+ * Batch adapt multiple content pieces
+ */
+async function batchAdaptContent(
+  event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> {
+  try {
+    const _body =  JSON.parse(event.body || '{}');
+    const requests: AdaptationRequest[] = body.requests || [];
+
+    if (!Array.isArray(requests) || requests.length = 
+    }
+
+    if (requests.length > 50) {
+      return createErrorResponse(400, 'Maximum 50 requests per batch', undefined, undefined, context.awsRequestId);
+    }
+
+    const _batchId =  `batch_${Date.now()}`;
+    const results: AdaptationResult[] = [];
+
+    // Process requests in parallel with concurrency limit
+    const _concurrency =  5;
+    const _chunks =  [];
+    for (let i = 0; i < requests.length; i += concurrency) {
+      chunks.push(requests.slice(i, i + concurrency));
+    }
+
+    for (const chunk of chunks) {
+      const _chunkPromises =  chunk.map(async (request) 
+          const _result =  await adaptContent(mockEvent, context);
+          return JSON.parse(result.body);
+        } catch (error: any) {
+          logger.error('Batch adaptation error:', error);
+          return {
+            error: 'Adaptation failed',
+            details: error instanceof Error ? error instanceof Error ? (error instanceof Error ? error.message : String(error)) : String(error) : 'Unknown error'
+          };
+        }
+      });
+
+      const _chunkResults =  await Promise.all(chunkPromises);
+      results.push(...chunkResults);
+    }
+
+    return createSuccessResponse({
+      batchId,
+      totalRequests: requests.length,
+      successfulAdaptations: results.filter((r) = > !r.error).length,
+      failedAdaptations: results.filter(r 
+  } catch (error: any) {
+    return handleError(error as Error, undefined, 500, context.awsRequestId);
+  }
+}
+
+/**
+ * Helper functions
+ */
+
+function generateCacheKey(request: AdaptationRequest): string {
+  const _content =  request.content.text.substring(0, 100);
+  const _context =  `${request.context.culture}_${request.context.language}_${request.context.religion || 'none'}`;
+  const _date =  request.context.timing.date.toISOString().split('T')[0];
+  
+  return `cultural_adapt_${Buffer.from(`${content}_${context}_${date}_${request.adaptationLevel}`).toString('base64').substring(0, 32)}`;
+}
+
+async function getCachedAdaptation(cacheKey: string): Promise<AdaptationResult | null> {
+  try {
+    const _result =  await dynamoClient.send(new GetItemCommand({
+      TableName: process.env.CULTURAL_CACHE_TABLE || 'CulturalAdaptationCache',
+      Key: {
+        cacheKey: { S: cacheKey }
+      }
+    }));
+
+    if (result.Item) {
+      return JSON.parse(result.Item.adaptationResult.S || '{}');
+    }
+    return null;
+  } catch (error: any) {
+    logger.warn('Cache retrieval failed:', error);
+    return null;
+  }
+}
+
+async function cacheAdaptationResult(cacheKey: string, result: AdaptationResult): Promise<void> {
+  try {
+    await dynamoClient.send(new PutItemCommand({
+      TableName: process.env.CULTURAL_CACHE_TABLE || 'CulturalAdaptationCache',
+      Item: {
+        cacheKey: { S: cacheKey },
+        adaptationResult: { S: JSON.stringify(result) },
+        ttl: { N: Math.floor(Date.now() / 1000 + 86400).toString() }, // 24 hours
+        createdAt: { S: new Date().toISOString() }
+      }
+    }));
+  } catch (error: any) {
+    logger.warn('Cache storage failed:', error);
+  }
+}
+
+async function getCulturalRulesForContext(context: CommunicationContext): Promise<CulturalRule[]> {
+  // In a real implementation, this would query a database of cultural rules
+  // For now, return basic rules based on context
+  const rules: CulturalRule[] = [];
+
+  // Add basic cultural rules
+  if (context.culture = 
+  }
+
+  if (context.religion = 
+  }
+
+  if (context.culture = 
+  }
+
+  return rules;
+}
+
+async function getFestivalContextForDate(date: Date, religion?: ReligiousContext): Promise<{
+  currentFestivals: Festival[];
+  upcomingFestivals: Festival[];
+  communicationRecommendations: string[];
+}> {
+  // In a real implementation, this would query a festival database
+  // For now, return basic festival awareness
+  const festivals: Festival[] = [];
+
+  // Add some common festivals (this would be a comprehensive database)
+  const _currentMonth =  date.getMonth() + 1;
+  const _currentDay =  date.getDate();
+
+  if (_currentMonth = 
+  }
+
+  const _currentFestivals =  festivals.filter(f 
+  const _upcomingFestivals =  festivals.filter(f 
+  const recommendations: string[] = [];
+  if (currentFestivals.length > 0) {
+    recommendations.push('Consider acknowledging current festivals in communications');
+  }
+  if (upcomingFestivals.length > 0) {
+    recommendations.push('Be mindful of upcoming festivals when scheduling communications');
+  }
+
+  return {
+    currentFestivals,
+    upcomingFestivals,
+    communicationRecommendations: recommendations
+  };
+}
+
+async function performCulturalAdaptation(
+  content: AdaptationRequest['content'], context: CommunicationContext, rules: CulturalRule[], festivalContext: any, level: AdaptationLevel): Promise<{ text: string; culturalAdaptations: string[] }> {
+  let _adaptedText =  content.text;
+  const adaptations: string[] = [];
+
+  // Apply cultural rules
+  for (const rule of rules.filter((r) = > r.category 
+        adaptations.push('Applied formal communication style');
+      }
+      
+      if (rule.id = 
+        adaptations.push('Adapted content for halal compliance');
+      }
+    }
+  }
+
+  // Add festival acknowledgments if appropriate
+  if (festivalContext.currentFestivals.length > 0 && level !== 'basic') {
+    const _festival =  festivalContext.currentFestivals[0];
+    if (festival.communicationImpact.timing = 
+      _adaptedText =  greeting + adaptedText;
+      adaptations.push(`Added ${festival.name} acknowledgment`);
+    }
+  }
+
+  return { text: adaptedText, culturalAdaptations: adaptations };
+}
+
+async function applyReligiousAdaptations(
+  content: { text: string; culturalAdaptations: string[] }, context: CommunicationContext, rules: CulturalRule[]): Promise<{ text: string; culturalAdaptations: string[]; religiousAdaptations: string[] }> {
+  const _adaptedText =  content.text;
+  const religiousAdaptations: string[] = [];
+
+  const _religiousRules =  rules.filter(r 
+  for (const rule of religiousRules) {
+    // Apply religious adaptations based on rules
+    if (rule.category = 
+    }
+  }
+
+  return {
+    text: adaptedText,
+    culturalAdaptations: content.culturalAdaptations,
+    religiousAdaptations
+  };
+}
+
+async function applyTimingAdaptations(
+  content: { text: string; culturalAdaptations: string[]; religiousAdaptations: string[] }, context: CommunicationContext, festivalContext: any): Promise<{ text: string; culturalAdaptations: string[]; religiousAdaptations: string[]; timingAdaptations: string[] }> {
+  const timingAdaptations: string[] = [];
+
+  // Check for timing conflicts with festivals
+  for (const festival of festivalContext.upcomingFestivals) {
+    if (festival.communicationImpact.timing = 
+    }
+  }
+
+  return {
+    ...content,
+    timingAdaptations
+  };
+}
+
+function calculateConfidenceScore(
+  request: AdaptationRequest, rules: CulturalRule[], festivalContext: any): number {
+  let score = 0.7; // Base score
+
+  // Increase confidence based on available rules
+  if (rules.length > 0) score += 0.1;
+  if (rules.some(_r = > r.severity 
+  // Increase confidence based on adaptation level
+  switch (request.adaptationLevel) {
+    case 'basic': score += 0.0; break;
+    case 'standard': score += 0.05; break;
+    case 'comprehensive': score += 0.1; break;
+    case 'deep_cultural': score += 0.15; break;
+  }
+
+  // Festival awareness
+  if (festivalContext.currentFestivals.length > 0 || festivalContext.upcomingFestivals.length > 0) {
+    score += 0.05;
+  }
+
+  return Math.min(score, 1.0);
+}
+
+function generateSuggestedReviews(
+  rules: CulturalRule[], festivalContext: any, context: CommunicationContext): string[] {
+  const suggestions: string[] = [];
+
+  const _criticalRules =  rules.filter(r 
+  if (criticalRules.length > 0) {
+    suggestions.push('Review for critical cultural compliance requirements');
+  }
+
+  if (festivalContext.upcomingFestivals.length > 0) {
+    suggestions.push('Consider timing impact of upcoming festivals');
+  }
+
+  if (context.schoolType = 
+  }
+
+  return suggestions;
+}
+
+export default handler;

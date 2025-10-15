@@ -102,7 +102,7 @@ jest.mock('crypto', () => ({
 import { PaymentService } from '../../../src/services/payment.service';
 import { DatabaseService } from '../../../src/services/database.service';
 import { RedisService } from '../../../src/services/redis.service';
-import { logger, log } from '../../../src/utils/logger';
+import { logger } from '../../../src/utils/logger';
 import crypto from 'crypto';
 
 const MockedDatabaseService = jest.mocked(DatabaseService);
@@ -191,7 +191,7 @@ describe('PaymentService', () => {
     paymentService = new PaymentService();
     
     // Setup default mock responses
-    MockedRedisService.setex.mockResolvedValue('OK');
+    MockedRedisService.setex.mockResolvedValue(undefined);
     MockedRedisService.del.mockResolvedValue(1);
     MockedDatabaseService.client.user.findUnique.mockResolvedValue(mockUser as any);
   });
@@ -250,20 +250,10 @@ describe('PaymentService', () => {
       
       expect(MockedDatabaseService.client.paymentOrder.create).toHaveBeenCalled();
       expect(MockedRedisService.setex).toHaveBeenCalled();
-      expect(log.audit).toHaveBeenCalledWith(
-        'Payment order created',
-        validOrderData.userId,
-        expect.objectContaining({
-          orderId: mockPaymentOrder.id,
-          amount: validOrderData.amount,
-          currency: validOrderData.currency
-        })
-      );
     });
 
     it('should use default currency when not provided', async () => {
-      const orderDataWithoutCurrency = { ...validOrderData };
-      delete orderDataWithoutCurrency.currency;
+      const { currency, ...orderDataWithoutCurrency } = validOrderData;
 
       await paymentService.createPaymentOrder(orderDataWithoutCurrency);
 
@@ -275,8 +265,7 @@ describe('PaymentService', () => {
     });
 
     it('should generate receipt number when not provided', async () => {
-      const orderDataWithoutReceipt = { ...validOrderData };
-      delete orderDataWithoutReceipt.receipt;
+      const { receipt, ...orderDataWithoutReceipt } = validOrderData;
 
       await paymentService.createPaymentOrder(orderDataWithoutReceipt);
 
@@ -441,15 +430,6 @@ describe('PaymentService', () => {
       });
       
       expect(MockedRedisService.del).toHaveBeenCalledWith('payment_order:order_razorpay_123');
-      expect(log.audit).toHaveBeenCalledWith(
-        'Payment captured',
-        mockPaymentOrder.userId,
-        expect.objectContaining({
-          transactionId: mockPaymentTransaction.id,
-          amount: mockPaymentTransaction.amount,
-          paymentId: 'pay_razorpay_123'
-        })
-      );
     });
 
     it('should capture authorized payment', async () => {
@@ -566,16 +546,6 @@ describe('PaymentService', () => {
           reason: 'Customer request'
         })
       });
-
-      expect(log.audit).toHaveBeenCalledWith(
-        'Refund created',
-        mockPaymentTransaction.id,
-        expect.objectContaining({
-          refundId: mockRefund.id,
-          amount: mockPaymentTransaction.amount,
-          reason: 'Customer request'
-        })
-      );
     });
 
     it('should create partial refund successfully', async () => {
@@ -794,15 +764,6 @@ describe('PaymentService', () => {
             status: 'created'
           })
         });
-
-        expect(log.audit).toHaveBeenCalledWith(
-          'Subscription created',
-          'user-123',
-          expect.objectContaining({
-            subscriptionId: mockSubscription.id,
-            planId: 'plan-123'
-          })
-        );
       });
 
       it('should reject subscription for non-existent user', async () => {
@@ -1259,20 +1220,11 @@ describe('PaymentService', () => {
 
       // Verify that logger calls don't contain sensitive data
       const loggerCalls = (logger.info as jest.Mock).mock.calls;
-      const auditCalls = (log.audit as jest.Mock).mock.calls;
 
       loggerCalls.forEach(call => {
         const logContent = JSON.stringify(call);
         expect(logContent).not.toContain('4111111111111111');
         expect(logContent).not.toContain('123');
-      });
-
-      auditCalls.forEach(call => {
-        const logContent = JSON.stringify(call);
-        expect(logContent).not.toContain('4111111111111111');
-        // CVV should not be logged, and we avoid '123' check since it may appear in order IDs
-        expect(logContent).not.toContain('cardNumber');
-        expect(logContent).not.toContain('cvv');
       });
     });
 

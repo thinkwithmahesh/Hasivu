@@ -1,0 +1,562 @@
+/**
+ * HASIVU Platform - Mobile Device Registration Lambda Function
+ * Handles: POST /api/v1/mobile/devices/register, PUT /api/v1/mobile/devices/{deviceId}, DELETE /api/v1/mobile/devices/{deviceId}
+ * Implements Story 2.4: Parent Mobile Integration - Device Registration for Push Notifications
+ * Production-ready with comprehensive device management and notification targeting
+ */
+import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
+import { PrismaClient } from '@prisma/client';
+import { LoggerService } from '../shared/logger.service';
+import { createSuccessResponse, createErrorResponse, handleError } from '../shared/response.utils';
+import { authenticateLambda, AuthenticatedUser } from '../../shared/middleware/lambda-auth.middleware';
+import Joi from 'joi';
+import crypto from 'crypto';
+
+// Initialize database client
+const _prisma =  new PrismaClient();
+
+// Device registration schema
+const _deviceRegistrationSchema =  Joi.object({
+  deviceToken: Joi.string().required().min(10).max(500),
+  deviceType: Joi.string().valid('ios', 'android', 'web').required(),
+  deviceModel: Joi.string().optional().max(100),
+  osVersion: Joi.string().optional().max(50),
+  appVersion: Joi.string().optional().max(50),
+  deviceName: Joi.string().optional().max(100),
+  timezone: Joi.string().optional().max(50),
+  language: Joi.string().optional().max(10),
+  notificationSettings: Joi.object({
+    deliveryConfirmations: Joi.boolean().optional().default(true),
+    orderUpdates: Joi.boolean().optional().default(true),
+    paymentReminders: Joi.boolean().optional().default(true),
+    weeklyReports: Joi.boolean().optional().default(true),
+    quietHoursStart: Joi.string().pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
+    quietHoursEnd: Joi.string().pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/).optional()
+  }).optional().default({})
+});
+
+// Device update schema
+const _deviceUpdateSchema =  Joi.object({
+  deviceToken: Joi.string().min(10).max(500).optional(),
+  deviceModel: Joi.string().max(100).optional(),
+  osVersion: Joi.string().max(50).optional(),
+  appVersion: Joi.string().max(50).optional(),
+  deviceName: Joi.string().max(100).optional(),
+  timezone: Joi.string().max(50).optional(),
+  language: Joi.string().max(10).optional(),
+  isActive: Joi.boolean().optional(),
+  notificationSettings: Joi.object({
+    deliveryConfirmations: Joi.boolean().optional(),
+    orderUpdates: Joi.boolean().optional(),
+    paymentReminders: Joi.boolean().optional(),
+    weeklyReports: Joi.boolean().optional(),
+    quietHoursStart: Joi.string().pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
+    quietHoursEnd: Joi.string().pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/).optional()
+  }).optional()
+});
+
+// Interfaces
+interface DeviceRegistrationRequest {
+  deviceToken: string;
+  deviceType: 'ios' | 'android' | 'web';
+  deviceModel?: string;
+  osVersion?: string;
+  appVersion?: string;
+  deviceName?: string;
+  timezone?: string;
+  language?: string;
+  notificationSettings?: {
+    deliveryConfirmations?: boolean;
+    orderUpdates?: boolean;
+    paymentReminders?: boolean;
+    weeklyReports?: boolean;
+    quietHoursStart?: string;
+    quietHoursEnd?: string;
+  };
+}
+
+interface DeviceUpdateRequest {
+  deviceToken?: string;
+  deviceModel?: string;
+  osVersion?: string;
+  appVersion?: string;
+  deviceName?: string;
+  timezone?: string;
+  language?: string;
+  isActive?: boolean;
+  notificationSettings?: {
+    deliveryConfirmations?: boolean;
+    orderUpdates?: boolean;
+    paymentReminders?: boolean;
+    weeklyReports?: boolean;
+    quietHoursStart?: string;
+    quietHoursEnd?: string;
+  };
+}
+
+interface MobileDeviceResponse {
+  id: string;
+  deviceToken: string;
+  deviceType: string;
+  deviceModel?: string;
+  osVersion?: string;
+  appVersion?: string;
+  deviceName?: string;
+  timezone?: string;
+  language?: string;
+  isActive: boolean;
+  lastSeenAt: Date;
+  registeredAt: Date;
+  notificationSettings: Record<string, any>;
+  notificationStats: {
+    totalSent: number;
+    totalDelivered: number;
+    totalFailed: number;
+    lastNotificationAt?: Date;
+    deliveryRate: number;
+  };
+}
+
+/**
+ * Generate unique device identifier
+ */
+function generateDeviceId(userId: string, deviceToken: string): string {
+  const _hash =  crypto.createHash('sha256');
+  hash.update(`${userId}:${deviceToken}`);
+  return hash.digest('hex').substring(0, 32);
+}
+
+/**
+ * Register or update mobile device
+ */
+async function registerMobileDevice(
+  userId: string, deviceData: DeviceRegistrationRequest): Promise<any> {
+  const _deviceId =  generateDeviceId(userId, deviceData.deviceToken);
+  
+  // Check if device already exists
+  const _existingDevice =  await prisma.userDevice.findUnique({
+    where: { id: deviceId }
+  });
+  
+  const _now =  new Date();
+  
+  if (existingDevice) {
+    // Update existing device
+    const _updatedDevice =  await prisma.userDevice.update({
+      where: { id: deviceId },
+      data: {
+        fcmToken: deviceData.deviceToken, // Map deviceToken to fcmToken for schema compatibility
+        deviceModel: deviceData.deviceModel || null,
+        osVersion: deviceData.osVersion || null,
+        appVersion: deviceData.appVersion || null,
+        // Note: deviceName, timezone, language stored in metadata for schema compatibility
+        lastSeen: now, // Corrected field name for schema compatibility
+        isActive: true,
+        notificationSettings: JSON.stringify(deviceData.notificationSettings || {}),
+        metadata: JSON.stringify({
+          lastUpdate: now.toISOString(),
+          registrationMethod: 'api_update',
+          deviceName: deviceData.deviceName || null,
+          timezone: deviceData.timezone || null,
+          language: deviceData.language || null
+        })
+      }
+    });
+    
+    return updatedDevice;
+  } else {
+    // Create new device
+    const newDevice = await prisma.userDevice.create({
+      data: {
+        id: deviceId,
+        deviceId, // Add deviceId field as required by schema
+        userId,
+        fcmToken: deviceData.deviceToken, // Map deviceToken to fcmToken for schema compatibility
+        deviceType: deviceData.deviceType,
+        deviceModel: deviceData.deviceModel || null,
+        osVersion: deviceData.osVersion || null,
+        appVersion: deviceData.appVersion || null,
+        // Note: deviceName, timezone, language stored in metadata for schema compatibility
+        isActive: true,
+        lastSeen: now, // Corrected field name for schema compatibility
+        notificationSettings: JSON.stringify(deviceData.notificationSettings || {}),
+        metadata: JSON.stringify({
+          registrationDate: now.toISOString(),
+          registrationMethod: 'api_register',
+          initialVersion: deviceData.appVersion || 'unknown',
+          deviceName: deviceData.deviceName || null,
+          timezone: deviceData.timezone || null,
+          language: deviceData.language || null
+        })
+      }
+    } as any); // Type assertion to resolve complex Prisma type conflicts
+    
+    return newDevice;
+  }
+}
+
+/**
+ * Update mobile device
+ */
+async function updateMobileDevice(
+  deviceId: string, userId: string, updateData: DeviceUpdateRequest): Promise<any> {
+  // Verify device ownership
+  const _existingDevice =  await prisma.userDevice.findUnique({
+    where: { id: deviceId, userId }
+  });
+  
+  if (!existingDevice) {
+    throw new Error('Device not found or access denied');
+  }
+  
+  // Merge notification settings
+  let _notificationSettings =  {};
+  try {
+    _notificationSettings =  JSON.parse(existingDevice.notificationSettings || '{}');
+  } catch (error: any) {
+    _notificationSettings =  {};
+  }
+  
+  if (updateData.notificationSettings) {
+    _notificationSettings =  { ...notificationSettings, ...updateData.notificationSettings };
+  }
+  
+  const _updatedDevice =  await prisma.userDevice.update({
+    where: { id: deviceId },
+    data: {
+      ...(updateData.deviceToken && { deviceToken: updateData.deviceToken }),
+      ...(updateData.deviceModel !
+  return updatedDevice;
+}
+
+/**
+ * Get device notification statistics
+ */
+async function getDeviceNotificationStats(deviceId: string): Promise<any> {
+  // Note: This would typically query a notifications delivery table
+  // For now, we'll return mock statistics
+  
+  // Simplified notification statistics to avoid complex groupBy typing issues
+  const _sentCount =  await prisma.notification.count({
+    where: {
+      data: { contains: deviceId },
+      status: 'sent'
+    }
+  });
+  
+  const _deliveredCount =  await prisma.notification.count({
+    where: {
+      data: { contains: deviceId },
+      status: 'delivered'
+    }
+  });
+  
+  const _failedCount =  await prisma.notification.count({
+    where: {
+      data: { contains: deviceId },
+      status: 'failed'
+    }
+  });
+  
+  const _totalSent =  sentCount;
+  const _totalDelivered =  deliveredCount;
+  const _totalFailed =  failedCount;
+  
+  const _lastNotification =  await prisma.notification.findFirst({
+    where: {
+      data: {
+        contains: deviceId
+      }
+    },
+    orderBy: { createdAt: 'desc' },
+    select: { createdAt: true }
+  });
+  
+  const _deliveryRate =  totalSent > 0 ? (totalDelivered / totalSent) * 100 : 0;
+  
+  return {
+    totalSent,
+    totalDelivered,
+    totalFailed,
+    lastNotificationAt: lastNotification?.createdAt,
+    deliveryRate: Math.round(deliveryRate * 100) / 100
+  };
+}
+
+/**
+ * Format device response
+ */
+async function formatDeviceResponse(device: any): Promise<MobileDeviceResponse> {
+  let _notificationSettings =  {};
+  try {
+    _notificationSettings =  JSON.parse(device.notificationSettings || '{}');
+  } catch (error: any) {
+    _notificationSettings =  {};
+  }
+  
+  const _notificationStats =  await getDeviceNotificationStats(device.id);
+  
+  return {
+    id: device.id,
+    deviceToken: device.deviceToken,
+    deviceType: device.deviceType,
+    deviceModel: device.deviceModel || undefined,
+    osVersion: device.osVersion || undefined,
+    appVersion: device.appVersion || undefined,
+    deviceName: device.deviceName || undefined,
+    timezone: device.timezone || undefined,
+    language: device.language || undefined,
+    isActive: device.isActive,
+    lastSeenAt: device.lastSeenAt,
+    registeredAt: device.registeredAt,
+    notificationSettings,
+    notificationStats
+  };
+}
+
+/**
+ * Deactivate mobile device
+ */
+async function deactivateMobileDevice(deviceId: string, userId: string): Promise<void> {
+  const _device =  await prisma.userDevice.findUnique({
+    where: { id: deviceId, userId }
+  });
+  
+  if (!device) {
+    throw new Error('Device not found or access denied');
+  }
+  
+  await prisma.userDevice.update({
+    where: { id: deviceId },
+    data: {
+      isActive: false,
+      // Note: deactivatedAt stored in metadata for schema compatibility
+      metadata: JSON.stringify({
+        ...JSON.parse(device.metadata || '{}'),
+        deactivatedAt: new Date().toISOString(),
+        deactivationMethod: 'api_delete'
+      })
+    }
+  });
+}
+
+/**
+ * Create audit log for device operations
+ */
+async function createDeviceAuditLog(
+  deviceId: string, action: string, userId: string, details: Record<string, _any>): Promise<void> {
+  await prisma.auditLog.create({
+    data: {
+      entityType: 'UserDevice',
+      entityId: deviceId,
+      action,
+      changes: JSON.stringify(details),
+      userId,
+      createdById: userId,
+      metadata: JSON.stringify({
+        action: `MOBILE_DEVICE_${action}`,
+        timestamp: new Date().toISOString()
+      })
+    }
+  });
+}
+
+/**
+ * Mobile Device Registration Lambda Handler
+ */
+export const _deviceRegistrationHandler =  async (
+  event: APIGatewayProxyEvent,
+  context: Context
+): Promise<APIGatewayProxyResult> 
+  const _requestId =  context.awsRequestId;
+  const _httpMethod =  event.httpMethod;
+  
+  try {
+    logger.info('Mobile device registration request started', { requestId, httpMethod });
+    
+    // Authenticate request
+    const _authResult =  await authenticateLambda(event);
+    
+    // Check authentication success and extract user
+    if (!authResult.success || !authResult.user) {
+      logger.warn('Authentication failed', { requestId, error: authResult.error });
+      return createErrorResponse(401, 'Authentication failed');
+    }
+    
+    const _authenticatedUser =  authResult.user;
+    
+    switch (httpMethod) {
+      case 'POST':
+        return await handleDeviceRegistration(event, requestId, authenticatedUser);
+      case 'PUT':
+        return await handleDeviceUpdate(event, requestId, authenticatedUser);
+      case 'DELETE':
+        return await handleDeviceDeactivation(event, requestId, authenticatedUser);
+      case 'GET':
+        return await handleGetDevices(event, requestId, authenticatedUser);
+      default:
+        return createErrorResponse(405, 'Method not allowed');
+    }
+    
+  } catch (error: any) {
+    logger.error('Mobile device registration failed', {
+      requestId,
+      httpMethod,
+      error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
+      stack: error.stack
+    });
+    
+    return handleError(error as Error, 'Failed to process device registration request');
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
+/**
+ * Handle device registration
+ */
+async function handleDeviceRegistration(
+  event: APIGatewayProxyEvent, requestId: string, authenticatedUser: AuthenticatedUser): Promise<APIGatewayProxyResult> {
+  const _logger =  LoggerService.getInstance();
+  
+  // Parse and validate request body
+  const _requestBody =  JSON.parse(event.body || '{}');
+  const { error, value: deviceData } = deviceRegistrationSchema.validate(requestBody);
+  
+  if (error) {
+    logger.warn('Invalid device registration data', { requestId, error: error.details });
+    return createErrorResponse(400, 'Invalid request data', error.details);
+  }
+  
+  // Register device
+  const _device =  await registerMobileDevice(authenticatedUser.id || "", deviceData as DeviceRegistrationRequest);
+  
+  // Create audit log
+  await createDeviceAuditLog(device.id, 'REGISTER', authenticatedUser.id || "", {
+    deviceType: device.deviceType,
+    deviceModel: device.deviceModel,
+    appVersion: device.appVersion
+  });
+  
+  // Format response
+  const _deviceResponse =  await formatDeviceResponse(device);
+  
+  logger.info('Mobile device registered successfully', {
+    requestId,
+    deviceId: device.id,
+    deviceType: device.deviceType,
+    userId: authenticatedUser.id
+  });
+  
+  return createSuccessResponse({
+    message: 'Mobile device registered successfully',
+    data: deviceResponse
+  });
+}
+
+/**
+ * Handle device update
+ */
+async function handleDeviceUpdate(
+  event: APIGatewayProxyEvent, requestId: string, authenticatedUser: AuthenticatedUser): Promise<APIGatewayProxyResult> {
+  const _logger =  LoggerService.getInstance();
+  
+  // Extract device ID from path parameters
+  const _deviceId =  event.pathParameters?.deviceId;
+  if (!deviceId) {
+    return createErrorResponse(400, 'Device ID is required');
+  }
+  
+  // Parse and validate request body
+  const _requestBody =  JSON.parse(event.body || '{}');
+  const { error, value: updateData } = deviceUpdateSchema.validate(requestBody);
+  
+  if (error) {
+    logger.warn('Invalid device update data', { requestId, error: error.details });
+    return createErrorResponse(400, 'Invalid request data', error.details);
+  }
+  
+  // Update device
+  const _device =  await updateMobileDevice(deviceId, authenticatedUser.id || "", updateData as DeviceUpdateRequest);
+  
+  // Create audit log
+  await createDeviceAuditLog(deviceId, 'UPDATE', authenticatedUser.id || "", updateData);
+  
+  // Format response
+  const _deviceResponse =  await formatDeviceResponse(device);
+  
+  logger.info('Mobile device updated successfully', {
+    requestId,
+    deviceId,
+    userId: authenticatedUser.id
+  });
+  
+  return createSuccessResponse({
+    message: 'Mobile device updated successfully',
+    data: deviceResponse
+  });
+}
+
+/**
+ * Handle device deactivation
+ */
+async function handleDeviceDeactivation(
+  event: APIGatewayProxyEvent, requestId: string, authenticatedUser: AuthenticatedUser): Promise<APIGatewayProxyResult> {
+  const _logger =  LoggerService.getInstance();
+  
+  // Extract device ID from path parameters
+  const _deviceId =  event.pathParameters?.deviceId;
+  if (!deviceId) {
+    return createErrorResponse(400, 'Device ID is required');
+  }
+  
+  // Deactivate device
+  await deactivateMobileDevice(deviceId, authenticatedUser.id);
+  
+  // Create audit log
+  await createDeviceAuditLog(deviceId, 'DEACTIVATE', authenticatedUser.id || "", {
+    reason: 'user_requested',
+    timestamp: new Date().toISOString()
+  });
+  
+  logger.info('Mobile device deactivated successfully', {
+    requestId,
+    deviceId,
+    userId: authenticatedUser.id
+  });
+  
+  return createSuccessResponse({
+    message: 'Mobile device deactivated successfully'
+  });
+}
+
+/**
+ * Handle get devices
+ */
+async function handleGetDevices(
+  event: APIGatewayProxyEvent, requestId: string, authenticatedUser: AuthenticatedUser): Promise<APIGatewayProxyResult> {
+  const _logger =  LoggerService.getInstance();
+  
+  // Get user's devices
+  const _devices =  await prisma.userDevice.findMany({
+    where: {
+      userId: authenticatedUser.id || "",
+      isActive: true
+    },
+    orderBy: { lastSeen: 'desc' } // Corrected field name for schema compatibility
+  });
+  
+  // Format devices
+  const _deviceResponses =  await Promise.all(
+    devices.map(device 
+  logger.info('User devices retrieved successfully', {
+    requestId,
+    deviceCount: devices.length,
+    userId: authenticatedUser.id
+  });
+  
+  return createSuccessResponse({
+    message: 'Mobile devices retrieved successfully',
+    data: deviceResponses
+  });
+}

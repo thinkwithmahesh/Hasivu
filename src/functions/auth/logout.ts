@@ -1,264 +1,51 @@
 /**
- * Logout Lambda Function
- * Handles: POST /auth/logout
- * Implements Epic 1: Authentication & Authorization - User Logout
+ * Logout Function
+ * Lambda function for user logout
  */
 
-import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
-import { logger } from '../../utils/logger';
-import { createSuccessResponse, createErrorResponse, handleError } from '../shared/response.utils';
-import { DatabaseService } from '../../services/database.service';
-import * as jwt from 'jsonwebtoken';
+import { APIGatewayProxyResult, APIGatewayProxyEvent } from 'aws-lambda';
+import { authService } from '../../services/auth.service';
+import { createSuccessResponse, createErrorResponse } from '../shared/response.utils';
+import { validateCSRFToken, requiresCSRFProtection } from '../shared/csrf.utils';
 
-/**
- * Logout request interface
- */
-interface LogoutRequest {
-  refreshToken?: string;
+export interface LogoutRequest {
+  refreshToken: string;
 }
 
-/**
- * Extract and validate access token from Authorization header
- */
-function extractAccessToken(authHeader?: string): string | null {
-  if (!authHeader) {
-    return null;
-  }
-  
-  if (!authHeader.startsWith('Bearer ')) {
-    return null;
-  }
-  
-  return authHeader.substring(7); // Remove 'Bearer ' prefix
-}
-
-/**
- * Invalidate access token by ending the session
- */
-async function invalidateAccessToken(accessToken: string): Promise<void> {
-  try {
-    // Verify and decode the access token
-    const decoded = jwt.verify(accessToken, process.env.JWT_ACCESS_SECRET || 'default_access_secret') as any;
-    
-    if (!decoded.sessionId || !decoded.userId) {
-      logger.warn('Invalid access token structure during logout', { sessionId: decoded.sessionId });
-      return; // Don't throw error for logout
-    }
-    
-    // Deactivate the session
-    await DatabaseService.client.authSession.updateMany({
-      where: {
-        sessionId: decoded.sessionId,
-        userId: decoded.userId,
-        isActive: true
-      },
-      data: {
-        isActive: false,
-        updatedAt: new Date()
-      }
-    });
-    
-    logger.info('Session invalidated', {
-      sessionId: decoded.sessionId,
-      userId: decoded.userId
-    });
-    
-  } catch (error) {
-    if (error instanceof jwt.JsonWebTokenError) {
-      logger.warn('Invalid access token format during logout');
-    } else if (error instanceof jwt.TokenExpiredError) {
-      logger.info('Expired access token during logout');
-    } else {
-      logger.error('Error invalidating access token', error);
-    }
-    // Don't throw error for logout - always succeed gracefully
-  }
-}
-
-/**
- * Invalidate refresh token (for session-based auth, this is similar to access token)
- */
-async function invalidateRefreshToken(refreshToken: string): Promise<void> {
-  try {
-    // Verify and decode the refresh token
-    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET || 'default_refresh_secret') as any;
-    
-    if (!decoded.sessionId || !decoded.userId) {
-      logger.warn('Invalid refresh token structure during logout', { sessionId: decoded.sessionId });
-      return; // Don't throw error for logout
-    }
-    
-    // Deactivate the session
-    const result = await DatabaseService.client.authSession.updateMany({
-      where: {
-        sessionId: decoded.sessionId,
-        userId: decoded.userId,
-        isActive: true
-      },
-      data: {
-        isActive: false,
-        updatedAt: new Date()
-      }
-    });
-    
-    if (result.count > 0) {
-      logger.info('Session deactivated via refresh token', {
-        sessionId: decoded.sessionId,
-        userId: decoded.userId
-      });
-    } else {
-      logger.warn('Session not found in database', {
-        sessionId: decoded.sessionId,
-        userId: decoded.userId
-      });
-    }
-    
-  } catch (error) {
-    if (error instanceof jwt.JsonWebTokenError) {
-      logger.warn('Invalid refresh token format during logout');
-    } else if (error instanceof jwt.TokenExpiredError) {
-      logger.info('Expired refresh token during logout');
-    } else {
-      logger.error('Error invalidating refresh token', error);
-    }
-    // Don't throw error for logout - always succeed gracefully
-  }
-}
-
-/**
- * Invalidate all user sessions (optional)
- */
-async function invalidateAllUserSessions(userId: string): Promise<void> {
-  try {
-    // Deactivate all active sessions for the user
-    const result = await DatabaseService.client.authSession.updateMany({
-      where: {
-        userId: userId,
-        isActive: true
-      },
-      data: {
-        isActive: false,
-        updatedAt: new Date()
-      }
-    });
-    
-    logger.info('All user sessions invalidated', { userId, sessionCount: result.count });
-    
-  } catch (error) {
-    logger.error('Error invalidating all user sessions', error);
-    // Don't throw error for logout - always succeed gracefully
-  }
-}
-
-/**
- * Logout Lambda Function Handler
- */
 export const handler = async (
   event: APIGatewayProxyEvent,
-  context: Context
+  _context: any
 ): Promise<APIGatewayProxyResult> => {
-  const startTime = Date.now();
-  logger.info('Logout handler starting', { 
-    requestId: context.awsRequestId,
-    httpMethod: event.httpMethod 
-  });
-
   try {
-    // Handle OPTIONS request for CORS
-    if (event.httpMethod === 'OPTIONS') {
-      return createSuccessResponse({
-        message: 'CORS preflight successful'
-      });
-    }
-
-    // Only allow POST method
-    if (event.httpMethod !== 'POST') {
-      return createErrorResponse(
-        405,
-        'Method not allowed',
-        undefined,
-        'METHOD_NOT_ALLOWED'
-      );
-    }
-
-    // Parse request body
-    const requestBody: LogoutRequest = JSON.parse(event.body || '{}');
-    logger.info('Processing logout request', { 
-      hasRefreshToken: !!requestBody.refreshToken,
-      hasAuthHeader: !!(event.headers.Authorization || event.headers.authorization)
-    });
-
-    // Extract access token from Authorization header
-    const authHeader = event.headers.Authorization || event.headers.authorization;
-    const accessToken = extractAccessToken(authHeader);
-
-    // Perform logout operations (gracefully handle errors)
-    const logoutPromises: Promise<void>[] = [];
-
-    // Invalidate access token if present
-    if (accessToken) {
-      logoutPromises.push(invalidateAccessToken(accessToken));
-    }
-
-    // Invalidate refresh token if provided
-    if (requestBody.refreshToken) {
-      logoutPromises.push(invalidateRefreshToken(requestBody.refreshToken));
-    }
-
-    // Wait for all logout operations to complete
-    await Promise.allSettled(logoutPromises);
-
-    // Optional: If user wants to logout from all devices
-    const logoutAll = event.queryStringParameters?.logoutAll === 'true';
-    if (logoutAll && accessToken) {
-      try {
-        const decoded = jwt.verify(accessToken, process.env.JWT_ACCESS_SECRET || 'default_access_secret') as any;
-        if (decoded.userId) {
-          await invalidateAllUserSessions(decoded.userId);
-        }
-      } catch (error) {
-        logger.warn('Could not invalidate all sessions', error);
+    // Validate CSRF token for POST requests
+    if (requiresCSRFProtection(event.httpMethod)) {
+      const csrfValidation = validateCSRFToken(event);
+      if (!csrfValidation.isValid) {
+        return csrfValidation.error;
       }
     }
 
-    const duration = Date.now() - startTime;
-    logger.info('Logout handler completed successfully', { 
-      statusCode: 200, 
-      duration,
-      requestId: context.awsRequestId 
-    });
-    logger.info('Logout completed successfully', {
-      hasAccessToken: !!accessToken,
-      hasRefreshToken: !!requestBody.refreshToken,
-      logoutAll: logoutAll,
-      duration: duration
-    });
+    const body: LogoutRequest = JSON.parse(event.body || '{}');
 
-    return createSuccessResponse({
-      data: {
-        loggedOut: true,
-        timestamp: new Date().toISOString()
-      },
-      message: 'Logout successful'
-    });
+    // Validate input
+    if (!body.refreshToken) {
+      return createErrorResponse('VALIDATION_ERROR', 'Refresh token is required', 400);
+    }
 
+    // Logout user
+    await authService.logout(body.refreshToken);
+
+    return createSuccessResponse({ message: 'Logged out successfully' }, 200);
   } catch (error) {
-    const duration = Date.now() - startTime;
-    logger.info('Logout handler completed with partial success', { 
-      statusCode: 200, 
-      duration,
-      requestId: context.awsRequestId,
-      note: 'Still return 200 for logout' 
-    });
-    logger.error('Logout error (gracefully handled)', error);
-    
-    // For logout, we always return success to avoid client-side issues
-    return createSuccessResponse({
-      data: {
-        loggedOut: true,
-        timestamp: new Date().toISOString()
-      },
-      message: 'Logout completed'
-    });
+    return createErrorResponse(
+      'LOGOUT_FAILED',
+      error instanceof Error ? error.message : 'Logout failed',
+      500
+    );
   }
 };
+
+// Export handler as logoutHandler for tests
+export const logoutHandler = handler;
+
+export default handler;

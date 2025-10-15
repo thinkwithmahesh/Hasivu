@@ -6,6 +6,7 @@ const client_ses_1 = require("@aws-sdk/client-ses");
 const client_s3_1 = require("@aws-sdk/client-s3");
 const logger_1 = require("../../shared/utils/logger");
 const lambda_auth_middleware_1 = require("../../shared/middleware/lambda-auth.middleware");
+const response_utils_1 = require("../../shared/response.utils");
 const zod_1 = require("zod");
 let prisma = null;
 function getPrismaClient() {
@@ -97,6 +98,9 @@ const invoiceMailerHandler = async (event, context) => {
             return authResult;
         }
         const { user } = authResult;
+        if (!user) {
+            return (0, response_utils_1.createErrorResponse)('Authentication failed - user not found', 401, 'AUTHENTICATION_ERROR');
+        }
         const userId = user.id;
         const method = event.httpMethod;
         const pathParameters = event.pathParameters || {};
@@ -108,7 +112,7 @@ const invoiceMailerHandler = async (event, context) => {
                     return handleBulkEmail(event, userId, user, prisma);
                 }
                 else if (event.path?.includes('/campaign')) {
-                    return handleEmailCampaign(event, userId, user, prisma);
+                    return handleEmailCampaign(event);
                 }
                 else if (event.path?.includes('/reminder')) {
                     return handleEmailReminder(event, userId, user, prisma);
@@ -127,10 +131,10 @@ const invoiceMailerHandler = async (event, context) => {
                     return handleDeliveryStatus(pathParameters.invoiceId, queryStringParameters, prisma);
                 }
                 else if (event.path?.includes('/campaigns')) {
-                    return handleGetCampaigns(userId, queryStringParameters, prisma);
+                    return handleGetCampaigns();
                 }
                 else if (event.path?.includes('/templates')) {
-                    return handleGetTemplates(queryStringParameters, prisma);
+                    return handleGetTemplates();
                 }
                 else {
                     return {
@@ -140,7 +144,7 @@ const invoiceMailerHandler = async (event, context) => {
                 }
             case 'PUT':
                 if (pathParameters.campaignId) {
-                    return handleUpdateCampaign(event, userId, user, prisma);
+                    return handleUpdateCampaign();
                 }
                 else if (event.path?.includes('/delivery-tracking')) {
                     return handleDeliveryTracking(event, prisma);
@@ -153,7 +157,7 @@ const invoiceMailerHandler = async (event, context) => {
                 }
             case 'DELETE':
                 if (pathParameters.campaignId) {
-                    return handleDeleteCampaign(pathParameters.campaignId, userId, prisma);
+                    return handleDeleteCampaign();
                 }
                 else {
                     return {
@@ -174,7 +178,7 @@ const invoiceMailerHandler = async (event, context) => {
             statusCode: 500,
             body: JSON.stringify({
                 error: 'Internal server error',
-                message: error instanceof Error ? error.message : 'Unknown error'
+                message: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error'
             })
         };
     }
@@ -220,9 +224,9 @@ async function handleSingleEmail(event, userId, user, prisma) {
         }
         let pdfUrl = null;
         if (data.attachPdf) {
-            pdfUrl = await generateInvoicePDF(invoice, prisma);
+            pdfUrl = await generateInvoicePDF(invoice);
         }
-        const emailContent = await prepareEmailContent(invoice, data.template, data.customMessage);
+        const emailContent = await prepareEmailContent(invoice);
         const emailResult = await sendInvoiceEmail({
             invoice,
             recipients: data.recipients,
@@ -326,9 +330,9 @@ async function handleBulkEmail(event, userId, user, prisma) {
                 try {
                     let pdfUrl = null;
                     if (data.attachPdf) {
-                        pdfUrl = await generateInvoicePDF(invoice, prisma);
+                        pdfUrl = await generateInvoicePDF(invoice);
                     }
-                    const emailContent = await prepareEmailContent(invoice, data.template, data.customMessage);
+                    const emailContent = await prepareEmailContent(invoice);
                     const recipients = [invoice.user?.email].filter(email => email && isValidEmail(email));
                     if (recipients.length === 0) {
                         throw new Error('No valid email addresses found');
@@ -368,7 +372,7 @@ async function handleBulkEmail(event, userId, user, prisma) {
                     results.failed.push({
                         invoiceId: invoice.id,
                         invoiceNumber: invoice.invoiceNumber,
-                        error: error instanceof Error ? error.message : 'Unknown error'
+                        error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error'
                     });
                 }
             });
@@ -450,7 +454,7 @@ async function handleEmailReminder(event, userId, user, prisma) {
             subject: reminderContent.subject,
             htmlContent: reminderContent.html,
             textContent: reminderContent.text,
-            pdfUrl: await generateInvoicePDF(invoice, prisma),
+            pdfUrl: await generateInvoicePDF(invoice),
             priority: data.reminderType === 'final' ? 'high' : 'normal',
             trackDelivery: true,
             metadata: {
@@ -478,7 +482,7 @@ async function handleEmailReminder(event, userId, user, prisma) {
             }
         });
         if (data.escalateAfter && data.reminderType !== 'final') {
-            await scheduleReminderEscalation(invoice.id, data.escalateAfter, data.reminderType, prisma);
+            await scheduleReminderEscalation(invoice.id, data.escalateAfter, data.reminderType);
         }
         logger_1.logger.info('Reminder email sent successfully', {
             invoiceId: data.invoiceId,
@@ -506,7 +510,7 @@ async function handleEmailReminder(event, userId, user, prisma) {
         throw error;
     }
 }
-async function handleEmailCampaign(event, userId, user, prisma) {
+async function handleEmailCampaign(event) {
     try {
         const requestBody = JSON.parse(event.body || '{}');
         const validationResult = campaignSchema.safeParse(requestBody);
@@ -599,9 +603,9 @@ async function handleDeliveryTracking(event, prisma) {
     }
 }
 async function generateReminderContent(invoice, reminderType, overdueDays, customMessage) {
-    const formatCurrency = (amount) => new Intl.NumberFormat('en-US', {
+    const formatCurrency = (amount) => new Intl.NumberFormat('en-IN', {
         style: 'currency',
-        currency: 'USD'
+        currency: 'INR'
     }).format(amount);
     const subject = `Payment Reminder - Invoice ${invoice.invoiceNumber} ${overdueDays > 0 ? `(${overdueDays} days overdue)` : ''}`;
     let reminderMessage = '';
@@ -784,13 +788,13 @@ async function hasInvoicePermission(userId, user, invoice, prisma) {
     });
     return !!school;
 }
-async function prepareEmailContent(invoice, template, customMessage) {
+async function prepareEmailContent(invoice) {
     const subject = `Invoice ${invoice.invoiceNumber} from ${invoice.school.name}`;
     const html = `<p>Invoice content for ${invoice.invoiceNumber}</p>`;
     const text = `Invoice content for ${invoice.invoiceNumber}`;
     return { subject, html, text };
 }
-async function generateInvoicePDF(invoice, prisma) {
+async function generateInvoicePDF(invoice) {
     return `https://hasivu-invoices.s3.amazonaws.com/${invoice.id}.pdf`;
 }
 async function downloadPdfContent(url) {
@@ -821,11 +825,8 @@ function isValidEmail(email) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
 }
-async function scheduleReminderEscalation(invoiceId, escalateAfter, currentType, prisma) {
+async function scheduleReminderEscalation(invoiceId, escalateAfter, currentType) {
     logger_1.logger.info('Reminder escalation scheduled', { invoiceId, escalateAfter, currentType });
-}
-async function executeCampaign(campaignId, prisma) {
-    logger_1.logger.info('Campaign execution started', { campaignId });
 }
 async function calculateDeliveryStats(emailLogs) {
     const stats = {
@@ -845,25 +846,25 @@ async function calculateDeliveryStats(emailLogs) {
     });
     return stats;
 }
-async function handleGetCampaigns(userId, queryParams, prisma) {
+async function handleGetCampaigns() {
     return {
         statusCode: 200,
         body: JSON.stringify({ campaigns: [] })
     };
 }
-async function handleGetTemplates(queryParams, prisma) {
+async function handleGetTemplates() {
     return {
         statusCode: 200,
         body: JSON.stringify({ templates: [] })
     };
 }
-async function handleUpdateCampaign(event, userId, user, prisma) {
+async function handleUpdateCampaign() {
     return {
         statusCode: 200,
         body: JSON.stringify({ message: 'Campaign updated' })
     };
 }
-async function handleDeleteCampaign(campaignId, userId, prisma) {
+async function handleDeleteCampaign() {
     return {
         statusCode: 200,
         body: JSON.stringify({ message: 'Campaign deleted' })

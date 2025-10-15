@@ -25,14 +25,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/148</span>
+                <span class='fraction'>0/147</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/67</span>
+                <span class='fraction'>0/90</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/145</span>
+                <span class='fraction'>0/144</span>
             </div>
         
             
@@ -953,7 +953,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -973,7 +972,6 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1198,7 +1196,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1208,9 +1205,11 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1218,11 +1217,15 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1241,7 +1244,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -1349,7 +1351,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -1394,7 +1395,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -1435,7 +1435,7 @@
  */
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 import { PrismaClient } from '@prisma/client';
-import { LoggerService } from '../shared/logger.service';
+import { logger } from '../../utils/logger';
 import { createSuccessResponse, createErrorResponse, handleError } from '../shared/response.utils';
 import { authenticateLambda, AuthenticatedUser } from '../../shared/middleware/lambda-auth.middleware';
 import Joi from 'joi';
@@ -1447,18 +1447,18 @@ const prisma = <span class="cstat-no" title="statement not covered" >new PrismaC
 type NotificationWithRelations = {
   id: string;
   type: string;
-  title: string;
-  message: string;
-  data: string;
+  title: string | null;
+  message: string | null;
+  data: string | null;
   priority: string;
   status: string;
   createdAt: Date;
-  readAt?: Date;
-  deliveredAt?: Date;
+  readAt: Date | null;
+  deliveredAt: Date | null;
   student?: {
     id: string;
-    firstName: string;
-    lastName: string;
+    firstName: string | null;
+    lastName: string | null;
   };
   order?: {
     id: string;
@@ -1635,8 +1635,7 @@ async function <span class="fstat-no" title="function not covered" >sendPushNoti
   // For now, we'll simulate the push notification
   
 <span class="cstat-no" title="statement not covered" >  try {</span>
-    const logger = <span class="cstat-no" title="statement not covered" >LoggerService.getInstance();</span>
-    
+      
     // Simulate push notification service call
     // In production, this would be:
     // - AWS SNS for cross-platform push notifications
@@ -1652,8 +1651,7 @@ async function <span class="fstat-no" title="function not covered" >sendPushNoti
     
 <span class="cstat-no" title="statement not covered" >    return true;</span>
   } catch (error) {
-<span class="cstat-no" title="statement not covered" >    LoggerService.getInstance().error('Push notification failed', {</span>
-      error: (error as Error).message,
+<span class="cstat-no" title="statement not covered" >    logger.error('Push notification failed', error instanceof Error ? error : new Error(String(error)), {</span>
       deviceToken: deviceToken.substring(0, 10) + '...'
     });
 <span class="cstat-no" title="statement not covered" >    return false;</span>
@@ -1815,19 +1813,19 @@ async function <span class="fstat-no" title="function not covered" >getMobileNot
 <span class="cstat-no" title="statement not covered" >    return {</span>
       id: notification.id,
       type: notification.type,
-      title: notification.title,
-      message: notification.message,
+      title: notification.title ?? '',
+      message: notification.message ?? '',
       data,
       priority: notification.priority,
       status: notification.status as any,
       createdAt: notification.createdAt,
-      readAt: notification.readAt || undefined,
-      deliveredAt: notification.deliveredAt || undefined,
+      readAt: notification.readAt ?? undefined,
+      deliveredAt: notification.deliveredAt ?? undefined,
       student: notification.student ? {
         id: notification.student.id,
-        name: `${notification.student.firstName} ${notification.student.lastName}`,
-        firstName: notification.student.firstName,
-        lastName: notification.student.lastName
+        name: `${notification.student.firstName ?? ''} ${notification.student.lastName ?? ''}`,
+        firstName: notification.student.firstName ?? '',
+        lastName: notification.student.lastName ?? ''
       } : undefined,
       order: notification.order ? {
         id: notification.order.id,
@@ -1880,36 +1878,41 @@ export const parentNotificationsHandler = <span class="cstat-no" title="statemen
   event: APIGatewayProxyEvent,
   context: Context
 ): Promise&lt;APIGatewayProxyResult&gt; =&gt; {
-  const logger = <span class="cstat-no" title="statement not covered" >LoggerService.getInstance();</span>
   const requestId = <span class="cstat-no" title="statement not covered" >context.awsRequestId;</span>
   const httpMethod = <span class="cstat-no" title="statement not covered" >event.httpMethod;</span>
   
 <span class="cstat-no" title="statement not covered" >  try {</span>
 <span class="cstat-no" title="statement not covered" >    logger.info('Parent mobile notifications request started', { requestId, httpMethod });</span>
-    
+&nbsp;
     // Authenticate request
-    const authenticatedUser = <span class="cstat-no" title="statement not covered" >await authenticateLambda(event);</span>
-    
+    const authResult = <span class="cstat-no" title="statement not covered" >await authenticateLambda(event as any);</span>
+&nbsp;
+    // Check authentication success and extract user
+<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!authResult.success || !authResult.user) {</span>
+<span class="cstat-no" title="statement not covered" >      logger.warn('Authentication failed', { requestId, error: authResult.error });</span>
+<span class="cstat-no" title="statement not covered" >      return createErrorResponse('AUTHENTICATION_FAILED', 'Authentication failed', 401);</span>
+    }
+&nbsp;
+    const authenticatedUser = <span class="cstat-no" title="statement not covered" >authResult.user;</span>
+&nbsp;
 <span class="cstat-no" title="statement not covered" >    switch (httpMethod) {</span>
       case 'POST':
-<span class="cstat-no" title="statement not covered" >        return await handleSendNotification(event, requestId, authenticatedUser as AuthenticatedUser);</span>
+<span class="cstat-no" title="statement not covered" >        return await handleSendNotification(event, requestId, authenticatedUser);</span>
       case 'GET':
-<span class="cstat-no" title="statement not covered" >        return await handleGetNotifications(event, requestId, authenticatedUser as AuthenticatedUser);</span>
+<span class="cstat-no" title="statement not covered" >        return await handleGetNotifications(event, requestId, authenticatedUser);</span>
       case 'PUT':
-<span class="cstat-no" title="statement not covered" >        return await handleMarkAsRead(event, requestId, authenticatedUser as AuthenticatedUser);</span>
+<span class="cstat-no" title="statement not covered" >        return await handleMarkAsRead(event, requestId, authenticatedUser);</span>
       default:
-<span class="cstat-no" title="statement not covered" >        return createErrorResponse(405, 'Method not allowed');</span>
+<span class="cstat-no" title="statement not covered" >        return createErrorResponse('METHOD_NOT_ALLOWED', 'Method not allowed', 405);</span>
     }
     
   } catch (error: any) {
-<span class="cstat-no" title="statement not covered" >    logger.error('Parent mobile notifications failed', {</span>
+<span class="cstat-no" title="statement not covered" >    logger.error('Parent mobile notifications failed', error instanceof Error ? error : new Error(String(error)), {</span>
       requestId,
-      httpMethod,
-      error: error.message,
-      stack: error.stack
+      httpMethod
     });
-    
-<span class="cstat-no" title="statement not covered" >    return handleError(error, 'Failed to process mobile notification request');</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >    return handleError(error instanceof Error ? error : new Error(String(error)));</span>
   } finally {
 <span class="cstat-no" title="statement not covered" >    await prisma.$disconnect();</span>
   }
@@ -1923,7 +1926,6 @@ async function <span class="fstat-no" title="function not covered" >handleSendNo
   requestId: string,
   authenticatedUser: AuthenticatedUser
 ): Promise&lt;APIGatewayProxyResult&gt; {
-  const logger = <span class="cstat-no" title="statement not covered" >LoggerService.getInstance();</span>
   
   // Authorization check
 <span class="cstat-no" title="statement not covered" >  <span class="missing-if-branch" title="if path not taken" >I</span>if (!canSendNotifications(authenticatedUser)) {</span>
@@ -1932,7 +1934,7 @@ async function <span class="fstat-no" title="function not covered" >handleSendNo
       userId: authenticatedUser.id,
       userRole: authenticatedUser.role
     });
-<span class="cstat-no" title="statement not covered" >    return createErrorResponse(403, 'Insufficient permissions to send notifications');</span>
+<span class="cstat-no" title="statement not covered" >    return createErrorResponse('INSUFFICIENT_PERMISSIONS', 'Insufficient permissions to send notifications', 403);</span>
   }
   
   // Parse and validate request body
@@ -1941,7 +1943,7 @@ async function <span class="fstat-no" title="function not covered" >handleSendNo
   
 <span class="cstat-no" title="statement not covered" >  <span class="missing-if-branch" title="if path not taken" >I</span>if (error) {</span>
 <span class="cstat-no" title="statement not covered" >    logger.warn('Invalid notification request data', { requestId, error: error.details });</span>
-<span class="cstat-no" title="statement not covered" >    return createErrorResponse(400, 'Invalid request data', error.details);</span>
+<span class="cstat-no" title="statement not covered" >    return createErrorResponse('INVALID_REQUEST', 'Invalid request data', 400, error.details);</span>
   }
   
   const { parentIds, ...notificationDetails } = <span class="cstat-no" title="statement not covered" >notificationData as PushNotificationRequest;</span>
@@ -2031,12 +2033,11 @@ async function <span class="fstat-no" title="function not covered" >handleGetNot
   requestId: string,
   authenticatedUser: AuthenticatedUser
 ): Promise&lt;APIGatewayProxyResult&gt; {
-  const logger = <span class="cstat-no" title="statement not covered" >LoggerService.getInstance();</span>
   
   // Extract parent ID from path parameters
   const parentId = <span class="cstat-no" title="statement not covered" >event.pathParameters?.parentId;</span>
 <span class="cstat-no" title="statement not covered" >  <span class="missing-if-branch" title="if path not taken" >I</span>if (!parentId) {</span>
-<span class="cstat-no" title="statement not covered" >    return createErrorResponse(400, 'Parent ID is required');</span>
+<span class="cstat-no" title="statement not covered" >    return createErrorResponse('INVALID_PARAMETERS', 'Parent ID is required', 400);</span>
   }
   
   // Validate parent access
@@ -2048,7 +2049,7 @@ async function <span class="fstat-no" title="function not covered" >handleGetNot
   
 <span class="cstat-no" title="statement not covered" >  <span class="missing-if-branch" title="if path not taken" >I</span>if (error) {</span>
 <span class="cstat-no" title="statement not covered" >    logger.warn('Invalid get notifications parameters', { requestId, error: error.details });</span>
-<span class="cstat-no" title="statement not covered" >    return createErrorResponse(400, 'Invalid query parameters', error.details);</span>
+<span class="cstat-no" title="statement not covered" >    return createErrorResponse('INVALID_PARAMETERS', 'Invalid query parameters', 400, error.details);</span>
   }
   
   // Get notifications
@@ -2076,12 +2077,11 @@ async function <span class="fstat-no" title="function not covered" >handleMarkAs
   requestId: string,
   authenticatedUser: AuthenticatedUser
 ): Promise&lt;APIGatewayProxyResult&gt; {
-  const logger = <span class="cstat-no" title="statement not covered" >LoggerService.getInstance();</span>
   
   // Extract notification ID from path parameters
   const notificationId = <span class="cstat-no" title="statement not covered" >event.pathParameters?.notificationId;</span>
 <span class="cstat-no" title="statement not covered" >  <span class="missing-if-branch" title="if path not taken" >I</span>if (!notificationId) {</span>
-<span class="cstat-no" title="statement not covered" >    return createErrorResponse(400, 'Notification ID is required');</span>
+<span class="cstat-no" title="statement not covered" >    return createErrorResponse('INVALID_PARAMETERS', 'Notification ID is required', 400);</span>
   }
   
   // Get notification to verify ownership
@@ -2089,14 +2089,14 @@ async function <span class="fstat-no" title="function not covered" >handleMarkAs
     where: { id: notificationId },
     select: { userId: true }
   });
-  
-<span class="cstat-no" title="statement not covered" >  <span class="missing-if-branch" title="if path not taken" >I</span>if (!notification) {</span>
-<span class="cstat-no" title="statement not covered" >    return createErrorResponse(404, 'Notification not found');</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  <span class="missing-if-branch" title="if path not taken" >I</span>if (!notification || !notification.userId) {</span>
+<span class="cstat-no" title="statement not covered" >    return createErrorResponse('NOT_FOUND', 'Notification not found', 404);</span>
   }
-  
+&nbsp;
   // Validate parent access
 <span class="cstat-no" title="statement not covered" >  await validateParentAccess(notification.userId, authenticatedUser);</span>
-  
+&nbsp;
   // Mark as read
 <span class="cstat-no" title="statement not covered" >  await markNotificationAsRead(notificationId, notification.userId);</span>
   
@@ -2116,7 +2116,7 @@ async function <span class="fstat-no" title="function not covered" >handleMarkAs
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-09-03T01:56:53.416Z
+                at 2025-10-06T16:03:47.957Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

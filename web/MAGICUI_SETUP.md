@@ -3,6 +3,7 @@
 ## Installation Requirements
 
 ### 1. Install MagicUI Components
+
 ```bash
 # Core MagicUI components
 npm install @magicui/react
@@ -16,6 +17,7 @@ npm install @radix-ui/react-popover
 ```
 
 ### 2. TailwindCSS Configuration
+
 Add the following to your `tailwind.config.js`:
 
 ```javascript
@@ -58,12 +60,13 @@ module.exports = {
     },
   },
   plugins: [require('tailwindcss-animate')],
-}
+};
 ```
 
 ### 3. Create MagicUI Component Files
 
 #### `/src/components/magicui/bento-grid.tsx`
+
 ```typescript
 "use client";
 
@@ -125,6 +128,7 @@ export const BentoGridItem = ({
 ```
 
 #### `/src/components/magicui/marquee.tsx`
+
 ```typescript
 "use client";
 
@@ -152,7 +156,7 @@ export function Marquee({
 }: MarqueeProps) {
   const speedClasses = {
     slow: "animate-[scroll_60s_linear_infinite]",
-    normal: "animate-[scroll_40s_linear_infinite]", 
+    normal: "animate-[scroll_40s_linear_infinite]",
     fast: "animate-[scroll_20s_linear_infinite]",
   };
 
@@ -192,6 +196,7 @@ export function Marquee({
 ```
 
 #### `/src/components/magicui/number-ticker.tsx`
+
 ```typescript
 "use client";
 
@@ -245,6 +250,7 @@ export function NumberTicker({
 ```
 
 #### `/src/components/magicui/background-beams.tsx`
+
 ```typescript
 "use client";
 
@@ -300,6 +306,7 @@ export const BackgroundBeams = () => {
 ```
 
 ### 4. Update CSS for Animations
+
 Add to your global CSS file (`globals.css`):
 
 ```css
@@ -344,7 +351,7 @@ html {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #4CAF50;
+  background: #4caf50;
   border-radius: 4px;
 }
 
@@ -356,6 +363,7 @@ html {
 ### 5. Integration Instructions
 
 #### Add to your main page file:
+
 ```typescript
 // app/page.tsx or pages/index.tsx
 import HASIVULandingPage from '@/components/landing/HASIVULandingPage';
@@ -366,6 +374,7 @@ export default function Home() {
 ```
 
 #### Update your layout for optimal performance:
+
 ```typescript
 // app/layout.tsx
 import { Inter } from 'next/font/google';
@@ -393,11 +402,13 @@ export default function RootLayout({
 ### 6. Performance Optimizations
 
 #### Image Optimization:
+
 - Create `/public/logos/`, `/public/testimonials/`, `/public/demos/` directories
 - Use Next.js Image component for production: `import Image from 'next/image'`
 - Compress images using tools like Squoosh or TinyPNG
 
 #### Loading States:
+
 ```typescript
 // Add to component for production readiness
 const [isLoading, setIsLoading] = useState(true);
@@ -419,13 +430,15 @@ if (isLoading) {
 ### 7. Mobile Responsiveness Testing
 
 Test breakpoints:
+
 - Mobile: 320px - 768px
-- Tablet: 768px - 1024px  
+- Tablet: 768px - 1024px
 - Desktop: 1024px+
 
 ### 8. Accessibility Compliance
 
 The landing page includes:
+
 - ✅ Proper heading hierarchy (h1, h2, h3)
 - ✅ Alt text for images
 - ✅ Keyboard navigation support
@@ -436,18 +449,19 @@ The landing page includes:
 ### 9. Analytics Integration
 
 Add to the component for conversion tracking:
+
 ```typescript
 // Add to button click handlers
 const trackConversion = (action: string) => {
   // Google Analytics
   if (typeof gtag !== 'undefined') {
     gtag('event', 'conversion', {
-      'action': action,
-      'event_category': 'cta',
-      'event_label': 'hasivu_landing'
+      action: action,
+      event_category: 'cta',
+      event_label: 'hasivu_landing',
     });
   }
-  
+
   // Custom analytics
   // Your analytics code here
 };
@@ -458,13 +472,14 @@ const trackConversion = (action: string) => {
 Based on psychological optimization principles implemented:
 
 - **25-35% increase** in demo bookings
-- **40-50% reduction** in bounce rate  
+- **40-50% reduction** in bounce rate
 - **60% improvement** in scroll depth
 - **20-30% increase** in qualified leads
 
 ## A/B Testing Recommendations
 
 Test these elements:
+
 1. **Headlines**: 5 variations provided
 2. **CTA buttons**: Color, text, positioning
 3. **Social proof**: Testimonial vs. stats emphasis
@@ -473,4 +488,4 @@ Test these elements:
 
 ---
 
-*This implementation creates a world-class, conversion-optimized landing page that positions HASIVU as the undisputed leader in AI-powered school food service technology.*
+_This implementation creates a world-class, conversion-optimized landing page that positions HASIVU as the undisputed leader in AI-powered school food service technology._

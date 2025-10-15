@@ -1,0 +1,1139 @@
+# HASIVU Platform - Enterprise CI/CD Pipeline with Security, Testing & Blue-Green Deployment
+# Production-ready GitHub Actions workflow for 10/10 reliability
+# Version: 1.0 | Zero-Downtime Deployment | Comprehensive Quality Gates
+
+name: 🚀 HASIVU Production Deployment Pipeline
+
+on:
+  push:
+    branches: [main, production]
+    tags: ['v*']
+  pull_request:
+    branches: [main, production]
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+      skip_tests:
+        description: 'Skip test execution (emergency only)'
+        required: false
+        default: false
+        type: boolean
+      deployment_strategy:
+        description: 'Deployment strategy'
+        required: true
+        default: 'blue-green'
+        type: choice
+        options:
+          - blue-green
+          - rolling
+          - canary
+
+env:
+  # Application Configuration
+  NODE_VERSION: '18.19.0'
+  REGISTRY: ghcr.io
+  IMAGE_NAME: hasivu/platform
+  DOCKERFILE_PATH: ./infrastructure/docker/Dockerfile
+
+  # Security & Quality
+  SECURITY_SCAN_ENABLED: true
+  PERFORMANCE_TEST_ENABLED: true
+  E2E_TEST_ENABLED: true
+  COVERAGE_THRESHOLD: 80
+
+  # Deployment Configuration
+  AWS_REGION: ap-south-1
+  EKS_CLUSTER_NAME: hasivu-production-cluster
+  NAMESPACE: hasivu-production
+  HELM_CHART_PATH: ./infrastructure/helm/hasivu-platform
+
+  # Monitoring & Observability
+  DATADOG_ENABLED: true
+  NEW_RELIC_ENABLED: true
+  SENTRY_ENABLED: true
+
+# Global permissions for enterprise security
+permissions:
+  contents: read
+  packages: write
+  security-events: write
+  actions: read
+  checks: write
+  deployments: write
+  id-token: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  # ============================================================================
+  # PRE-FLIGHT CHECKS & VALIDATION
+  # ============================================================================
+
+  pre-flight-checks:
+    name: 🔍 Pre-flight Checks & Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    outputs:
+      should-deploy: ${{ steps.deployment-decision.outputs.should-deploy }}
+      target-environment: ${{ steps.deployment-decision.outputs.target-environment }}
+      deployment-strategy: ${{ steps.deployment-decision.outputs.deployment-strategy }}
+      version: ${{ steps.version.outputs.version }}
+      security-scan-required: ${{ steps.security-check.outputs.scan-required }}
+
+    steps:
+      - name: 🛒 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🏷️ Generate Version
+        id: version
+        run: |
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            VERSION="${{ github.ref_name }}"
+          else
+            VERSION="$(date +%Y.%m.%d)-${GITHUB_SHA::8}"
+          fi
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "📦 Version: ${VERSION}"
+
+      - name: 🎯 Determine Deployment Strategy
+        id: deployment-decision
+        run: |
+          # Determine target environment
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            TARGET_ENV="${{ github.event.inputs.environment }}"
+            STRATEGY="${{ github.event.inputs.deployment_strategy }}"
+          elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            TARGET_ENV="staging"
+            STRATEGY="blue-green"
+          elif [[ "${{ github.ref }}" == "refs/heads/production" ]] || [[ "${{ github.ref_type }}" == "tag" ]]; then
+            TARGET_ENV="production"
+            STRATEGY="blue-green"
+          else
+            TARGET_ENV="none"
+            STRATEGY="none"
+          fi
+
+          # Determine if deployment should proceed
+          SHOULD_DEPLOY="false"
+          if [[ "${{ github.event_name }}" == "push" ]] && [[ "${TARGET_ENV}" != "none" ]]; then
+            SHOULD_DEPLOY="true"
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            SHOULD_DEPLOY="true"
+          fi
+
+          echo "should-deploy=${SHOULD_DEPLOY}" >> $GITHUB_OUTPUT
+          echo "target-environment=${TARGET_ENV}" >> $GITHUB_OUTPUT
+          echo "deployment-strategy=${STRATEGY}" >> $GITHUB_OUTPUT
+
+          echo "🎯 Deployment Decision:"
+          echo "  Should Deploy: ${SHOULD_DEPLOY}"
+          echo "  Target Environment: ${TARGET_ENV}"
+          echo "  Strategy: ${STRATEGY}"
+
+      - name: 🔒 Security Scan Requirements
+        id: security-check
+        run: |
+          SCAN_REQUIRED="true"
+          if [[ "${{ github.event.inputs.skip_tests }}" == "true" ]] && [[ "${{ github.actor }}" == "emergency-user" ]]; then
+            SCAN_REQUIRED="false"
+            echo "⚠️ Security scans skipped for emergency deployment"
+          fi
+          echo "scan-required=${SCAN_REQUIRED}" >> $GITHUB_OUTPUT
+
+      - name: 📋 Validate Configuration Files
+        run: |
+          echo "🔍 Validating configuration files..."
+
+          # Validate package.json
+          if ! jq empty package.json 2>/dev/null; then
+            echo "❌ Invalid package.json"
+            exit 1
+          fi
+
+          # Validate Docker configuration
+          if [[ ! -f "${{ env.DOCKERFILE_PATH }}" ]]; then
+            echo "❌ Dockerfile not found at ${{ env.DOCKERFILE_PATH }}"
+            exit 1
+          fi
+
+          # Validate Kubernetes manifests
+          if [[ -d "./infrastructure/kubernetes" ]]; then
+            find ./infrastructure/kubernetes -name "*.yml" -o -name "*.yaml" | while read -r file; do
+              if ! yq eval 'true' "$file" >/dev/null 2>&1; then
+                echo "❌ Invalid YAML: $file"
+                exit 1
+              fi
+            done
+          fi
+
+          echo "✅ All configuration files are valid"
+
+  # ============================================================================
+  # DEPENDENCY ANALYSIS & SECURITY SCANNING
+  # ============================================================================
+
+  dependency-security-scan:
+    name: 🔒 Dependency & Security Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [pre-flight-checks]
+    if: needs.pre-flight-checks.outputs.security-scan-required == 'true'
+
+    steps:
+      - name: 🛒 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            web/package-lock.json
+
+      - name: 📦 Install Dependencies
+        run: |
+          npm ci --only=production
+          cd web && npm ci --only=production
+
+      - name: 🔍 NPM Audit (Backend)
+        run: |
+          echo "🔍 Running NPM security audit for backend..."
+          npm audit --audit-level moderate --production
+          npm audit --json --production > npm-audit-backend.json || true
+
+      - name: 🔍 NPM Audit (Frontend)
+        run: |
+          echo "🔍 Running NPM security audit for frontend..."
+          cd web
+          npm audit --audit-level moderate --production
+          npm audit --json --production > ../npm-audit-frontend.json || true
+
+      - name: 🛡️ Advanced Security Scan with Snyk
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high --all-projects
+          json: true
+        continue-on-error: true
+
+      - name: 📊 License Compliance Check
+        run: |
+          echo "📊 Checking license compliance..."
+          npx license-checker --production --onlyAllow 'MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;Unlicense' --excludePrivatePackages
+
+      - name: 🔐 Secret Detection
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: main
+          head: HEAD
+          extra_args: --debug --only-verified
+
+      - name: 📄 Upload Security Reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-reports
+          path: |
+            npm-audit-*.json
+            snyk-report.json
+          retention-days: 30
+
+  # ============================================================================
+  # CODE QUALITY & TESTING PIPELINE
+  # ============================================================================
+
+  code-quality-testing:
+    name: 🧪 Code Quality & Testing Pipeline
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    needs: [pre-flight-checks]
+    if: github.event.inputs.skip_tests != 'true'
+
+    services:
+      postgres:
+        image: postgres:15.4-alpine
+        env:
+          POSTGRES_DB: hasivu_test
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7.2-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: 🛒 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            web/package-lock.json
+
+      - name: 📦 Install All Dependencies
+        run: |
+          npm ci
+          cd web && npm ci
+
+      - name: 🔍 Lint & Format Check (Backend)
+        run: |
+          echo "🔍 Running ESLint for backend..."
+          npm run lint
+          echo "📝 Checking code formatting..."
+          npm run format:check
+
+      - name: 🔍 Lint & Format Check (Frontend)
+        run: |
+          echo "🔍 Running ESLint for frontend..."
+          cd web
+          npm run lint
+          echo "📝 Checking code formatting..."
+          npm run format:check || true  # Allow frontend format check to be lenient
+
+      - name: 🏗️ Build Applications
+        run: |
+          echo "🏗️ Building backend..."
+          npm run build
+
+          echo "🏗️ Building frontend..."
+          cd web
+          npm run build
+
+      - name: 🧪 Unit Tests (Backend)
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/hasivu_test
+          REDIS_URL: redis://localhost:6379
+          JWT_SECRET: test_jwt_secret
+        run: |
+          echo "🧪 Running backend unit tests..."
+          npm run test:unit
+
+      - name: 🧪 Unit Tests (Frontend)
+        run: |
+          echo "🧪 Running frontend unit tests..."
+          cd web
+          npm run test
+
+      - name: 🔄 Integration Tests
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/hasivu_test
+          REDIS_URL: redis://localhost:6379
+          JWT_SECRET: test_jwt_secret
+          RAZORPAY_KEY_ID: test_key
+          RAZORPAY_KEY_SECRET: test_secret
+        run: |
+          echo "🔄 Running integration tests..."
+          npm run test:integration
+
+      - name: 📊 Test Coverage Analysis
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/hasivu_test
+          REDIS_URL: redis://localhost:6379
+          JWT_SECRET: test_jwt_secret
+        run: |
+          echo "📊 Generating test coverage report..."
+          npm run test:coverage
+
+          # Extract coverage percentage
+          COVERAGE=$(npx nyc report --reporter=text-summary | grep "Lines" | awk '{print $3}' | sed 's/%//')
+          echo "Coverage: ${COVERAGE}%"
+
+          if (( $(echo "${COVERAGE} < ${{ env.COVERAGE_THRESHOLD }}" | bc -l) )); then
+            echo "❌ Coverage ${COVERAGE}% is below threshold ${{ env.COVERAGE_THRESHOLD }}%"
+            exit 1
+          fi
+
+          echo "✅ Coverage ${COVERAGE}% meets threshold ${{ env.COVERAGE_THRESHOLD }}%"
+
+      - name: 📄 Upload Test Reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-reports
+          path: |
+            coverage/
+            test-results/
+            junit.xml
+          retention-days: 30
+
+      - name: 📊 SonarCloud Analysis
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.projectKey=hasivu-platform
+            -Dsonar.organization=hasivu
+            -Dsonar.sources=src,web/src
+            -Dsonar.tests=__tests__,web/tests
+            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info,web/coverage/lcov.info
+            -Dsonar.coverage.exclusions=**/*.test.ts,**/*.spec.ts,**/node_modules/**
+            -Dsonar.qualitygate.wait=true
+
+  # ============================================================================
+  # END-TO-END TESTING WITH PLAYWRIGHT
+  # ============================================================================
+
+  e2e-testing:
+    name: 🎭 End-to-End Testing
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [pre-flight-checks, code-quality-testing]
+    if: needs.pre-flight-checks.outputs.should-deploy == 'true' && github.event.inputs.skip_tests != 'true'
+
+    services:
+      postgres:
+        image: postgres:15.4-alpine
+        env:
+          POSTGRES_DB: hasivu_e2e
+          POSTGRES_USER: e2e_user
+          POSTGRES_PASSWORD: e2e_password
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7.2-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: 🛒 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            web/package-lock.json
+
+      - name: 📦 Install Dependencies
+        run: |
+          npm ci
+          cd web && npm ci
+
+      - name: 🎭 Install Playwright
+        run: |
+          cd web
+          npx playwright install --with-deps
+
+      - name: 🏗️ Build Applications for E2E
+        run: |
+          npm run build
+          cd web && npm run build
+
+      - name: 🚀 Start Test Environment
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://e2e_user:e2e_password@localhost:5432/hasivu_e2e
+          REDIS_URL: redis://localhost:6379
+          PORT: 3001
+          NEXT_PUBLIC_API_URL: http://localhost:3001
+        run: |
+          echo "🚀 Starting backend server..."
+          npm start &
+          BACKEND_PID=$!
+
+          echo "🚀 Starting frontend server..."
+          cd web
+          npm start &
+          FRONTEND_PID=$!
+
+          # Wait for services to be ready
+          echo "⏳ Waiting for services to start..."
+          sleep 30
+
+          # Health check
+          curl -f http://localhost:3001/health || exit 1
+          curl -f http://localhost:3000 || exit 1
+
+          echo "✅ Test environment ready"
+          echo "BACKEND_PID=${BACKEND_PID}" >> $GITHUB_ENV
+          echo "FRONTEND_PID=${FRONTEND_PID}" >> $GITHUB_ENV
+
+      - name: 🎭 Run E2E Tests
+        env:
+          BASE_URL: http://localhost:3000
+          API_URL: http://localhost:3001
+        run: |
+          cd web
+          echo "🎭 Running end-to-end tests..."
+          npm run test:playwright
+
+      - name: 📸 Upload E2E Test Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-test-results
+          path: |
+            web/test-results/
+            web/playwright-report/
+          retention-days: 30
+
+      - name: 🛑 Cleanup Test Environment
+        if: always()
+        run: |
+          if [[ -n "${BACKEND_PID}" ]]; then
+            kill ${BACKEND_PID} || true
+          fi
+          if [[ -n "${FRONTEND_PID}" ]]; then
+            kill ${FRONTEND_PID} || true
+          fi
+
+  # ============================================================================
+  # PERFORMANCE TESTING & BENCHMARKING
+  # ============================================================================
+
+  performance-testing:
+    name: ⚡ Performance Testing
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [pre-flight-checks, code-quality-testing]
+    if: needs.pre-flight-checks.outputs.should-deploy == 'true' && env.PERFORMANCE_TEST_ENABLED == 'true'
+
+    steps:
+      - name: 🛒 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install Dependencies
+        run: npm ci
+
+      - name: 🏗️ Build Application
+        run: npm run build
+
+      - name: ⚡ Load Testing with Artillery
+        run: |
+          echo "⚡ Running load testing..."
+          npx artillery run scripts/performance/load-test.yml
+
+      - name: 📊 Lighthouse Performance Audit
+        uses: treosh/lighthouse-ci-action@v10
+        with:
+          configPath: './lighthouse.config.js'
+          uploadDir: './lighthouse-results'
+          temporaryPublicStorage: true
+
+      - name: 📄 Upload Performance Reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: performance-reports
+          path: |
+            lighthouse-results/
+            artillery-reports/
+          retention-days: 30
+
+  # ============================================================================
+  # CONTAINER BUILD & SECURITY SCANNING
+  # ============================================================================
+
+  container-build-scan:
+    name: 🐳 Container Build & Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [pre-flight-checks, code-quality-testing]
+    if: needs.pre-flight-checks.outputs.should-deploy == 'true'
+
+    outputs:
+      image-digest: ${{ steps.build.outputs.digest }}
+      image-tag: ${{ steps.meta.outputs.tags }}
+
+    steps:
+      - name: 🛒 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🔐 Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: GitHubActions-ContainerBuild
+
+      - name: 🏷️ Extract Metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
+            type=raw,value=${{ needs.pre-flight-checks.outputs.version }}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: 🔐 Login to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🏗️ Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: |
+            network=host
+            image=moby/buildkit:latest
+
+      - name: 🐳 Build Container Image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ${{ env.DOCKERFILE_PATH }}
+          target: production
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            NODE_VERSION=${{ env.NODE_VERSION }}
+            BUILD_VERSION=${{ needs.pre-flight-checks.outputs.version }}
+            BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+            BUILD_COMMIT=${{ github.sha }}
+
+      - name: 🔍 Container Security Scan with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.pre-flight-checks.outputs.version }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: 📊 Upload Trivy Scan Results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: 🐳 Container Image Analysis
+        run: |
+          echo "📊 Container Image Analysis"
+          echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.pre-flight-checks.outputs.version }}"
+          echo "Digest: ${{ steps.build.outputs.digest }}"
+          echo "Size: $(docker images --format 'table {{.Repository}}:{{.Tag}}\t{{.Size}}' | grep '${{ needs.pre-flight-checks.outputs.version }}')"
+
+  # ============================================================================
+  # STAGING DEPLOYMENT WITH VALIDATION
+  # ============================================================================
+
+  staging-deployment:
+    name: 🚀 Staging Deployment & Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [pre-flight-checks, container-build-scan, e2e-testing]
+    if: needs.pre-flight-checks.outputs.target-environment == 'staging' || (needs.pre-flight-checks.outputs.target-environment == 'production' && github.event_name != 'workflow_dispatch')
+
+    environment:
+      name: staging
+      url: https://staging-api.hasivu.com
+
+    steps:
+      - name: 🛒 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🔐 Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_STAGING_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: GitHubActions-StagingDeploy
+
+      - name: ⚙️ Setup Kubernetes Tools
+        run: |
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl && sudo mv kubectl /usr/local/bin/
+
+          curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+          chmod 700 get_helm.sh && ./get_helm.sh
+
+      - name: 🎯 Configure Kubernetes Context
+        run: |
+          aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name hasivu-staging-cluster
+          kubectl config set-context --current --namespace=hasivu-staging
+
+      - name: 🚀 Deploy to Staging
+        run: |
+          echo "🚀 Deploying to staging environment..."
+
+          # Update Helm values for staging
+          helm upgrade --install hasivu-platform ${{ env.HELM_CHART_PATH }} \
+            --namespace hasivu-staging \
+            --create-namespace \
+            --set image.repository=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }} \
+            --set image.tag=${{ needs.pre-flight-checks.outputs.version }} \
+            --set environment=staging \
+            --set ingress.hosts[0].host=staging-api.hasivu.com \
+            --set replicaCount=2 \
+            --set resources.requests.cpu=250m \
+            --set resources.requests.memory=512Mi \
+            --values ${{ env.HELM_CHART_PATH }}/values-staging.yaml \
+            --wait --timeout=10m
+
+      - name: ✅ Staging Health Check
+        run: |
+          echo "✅ Performing staging health checks..."
+
+          # Wait for deployment to be ready
+          kubectl rollout status deployment/hasivu-platform -n hasivu-staging --timeout=600s
+
+          # Health check
+          for i in {1..30}; do
+            if curl -f https://staging-api.hasivu.com/health; then
+              echo "✅ Staging deployment is healthy"
+              break
+            fi
+            echo "⏳ Waiting for staging to be ready... ($i/30)"
+            sleep 10
+          done
+
+      - name: 🧪 Staging Smoke Tests
+        run: |
+          echo "🧪 Running staging smoke tests..."
+
+          # Basic API endpoints
+          curl -f https://staging-api.hasivu.com/health || exit 1
+          curl -f https://staging-api.hasivu.com/api/health || exit 1
+
+          # Database connectivity
+          curl -f https://staging-api.hasivu.com/api/health/database || exit 1
+
+          echo "✅ All staging smoke tests passed"
+
+  # ============================================================================
+  # PRODUCTION DEPLOYMENT WITH BLUE-GREEN STRATEGY
+  # ============================================================================
+
+  production-deployment:
+    name: 🏆 Production Deployment (Blue-Green)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [pre-flight-checks, container-build-scan, e2e-testing, staging-deployment]
+    if: needs.pre-flight-checks.outputs.target-environment == 'production' && (github.ref == 'refs/heads/production' || github.ref_type == 'tag' || github.event_name == 'workflow_dispatch')
+
+    environment:
+      name: production
+      url: https://api.hasivu.com
+
+    steps:
+      - name: 🛒 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🔐 Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_PRODUCTION_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: GitHubActions-ProductionDeploy
+
+      - name: ⚙️ Setup Kubernetes Tools
+        run: |
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl && sudo mv kubectl /usr/local/bin/
+
+          curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+          chmod 700 get_helm.sh && ./get_helm.sh
+
+      - name: 🎯 Configure Kubernetes Context
+        run: |
+          aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ env.EKS_CLUSTER_NAME }}
+          kubectl config set-context --current --namespace=${{ env.NAMESPACE }}
+
+      - name: 📊 Pre-deployment Health Check
+        run: |
+          echo "📊 Checking current production health..."
+
+          # Get current deployment status
+          kubectl get deployments -n ${{ env.NAMESPACE }}
+          kubectl get pods -n ${{ env.NAMESPACE }}
+
+          # Health check current production
+          if curl -f https://api.hasivu.com/health; then
+            echo "✅ Current production is healthy"
+          else
+            echo "⚠️ Current production health check failed"
+          fi
+
+      - name: 🔵 Blue-Green Deployment Preparation
+        run: |
+          echo "🔵 Preparing blue-green deployment..."
+
+          # Determine current color (active environment)
+          CURRENT_COLOR=$(kubectl get service hasivu-platform-active -n ${{ env.NAMESPACE }} -o jsonpath='{.spec.selector.color}' || echo "blue")
+          if [[ "$CURRENT_COLOR" == "blue" ]]; then
+            NEW_COLOR="green"
+          else
+            NEW_COLOR="blue"
+          fi
+
+          echo "Current color: $CURRENT_COLOR"
+          echo "New deployment color: $NEW_COLOR"
+          echo "NEW_COLOR=$NEW_COLOR" >> $GITHUB_ENV
+          echo "CURRENT_COLOR=$CURRENT_COLOR" >> $GITHUB_ENV
+
+      - name: 🚀 Deploy New Version (Blue/Green)
+        run: |
+          echo "🚀 Deploying new version to $NEW_COLOR environment..."
+
+          # Deploy to new color
+          helm upgrade --install hasivu-platform-$NEW_COLOR ${{ env.HELM_CHART_PATH }} \
+            --namespace ${{ env.NAMESPACE }} \
+            --create-namespace \
+            --set image.repository=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }} \
+            --set image.tag=${{ needs.pre-flight-checks.outputs.version }} \
+            --set environment=production \
+            --set nameOverride=hasivu-platform-$NEW_COLOR \
+            --set fullnameOverride=hasivu-platform-$NEW_COLOR \
+            --set service.name=hasivu-platform-$NEW_COLOR \
+            --set ingress.hosts[0].host=api.hasivu.com \
+            --set replicaCount=6 \
+            --set podLabels.color=$NEW_COLOR \
+            --set resources.requests.cpu=500m \
+            --set resources.requests.memory=1Gi \
+            --set resources.limits.cpu=1000m \
+            --set resources.limits.memory=2Gi \
+            --values ${{ env.HELM_CHART_PATH }}/values-production.yaml \
+            --wait --timeout=15m
+
+      - name: 🔍 New Version Health Validation
+        run: |
+          echo "🔍 Validating new version health..."
+
+          # Wait for new deployment to be ready
+          kubectl rollout status deployment/hasivu-platform-$NEW_COLOR -n ${{ env.NAMESPACE }} --timeout=900s
+
+          # Get service endpoint for new version
+          NEW_SERVICE_IP=$(kubectl get service hasivu-platform-$NEW_COLOR -n ${{ env.NAMESPACE }} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+
+          # Health check new version
+          for i in {1..60}; do
+            if curl -f http://$NEW_SERVICE_IP/health; then
+              echo "✅ New version is healthy"
+              break
+            fi
+            echo "⏳ Waiting for new version to be ready... ($i/60)"
+            sleep 10
+          done
+
+          # Comprehensive health checks
+          curl -f http://$NEW_SERVICE_IP/health || exit 1
+          curl -f http://$NEW_SERVICE_IP/api/health || exit 1
+          curl -f http://$NEW_SERVICE_IP/api/health/database || exit 1
+          curl -f http://$NEW_SERVICE_IP/api/health/redis || exit 1
+
+          echo "✅ All health checks passed for new version"
+
+      - name: 🔄 Traffic Switch (Blue-Green Cutover)
+        run: |
+          echo "🔄 Switching traffic to new version..."
+
+          # Update active service to point to new color
+          kubectl patch service hasivu-platform-active -n ${{ env.NAMESPACE }} -p '{"spec":{"selector":{"color":"'$NEW_COLOR'"}}}'
+
+          # Wait for DNS propagation
+          sleep 30
+
+          # Verify traffic switch
+          for i in {1..30}; do
+            if curl -f https://api.hasivu.com/health; then
+              echo "✅ Traffic switch successful"
+              break
+            fi
+            echo "⏳ Waiting for traffic switch... ($i/30)"
+            sleep 10
+          done
+
+      - name: 🧪 Production Smoke Tests
+        run: |
+          echo "🧪 Running production smoke tests..."
+
+          # Critical endpoints
+          curl -f https://api.hasivu.com/health || exit 1
+          curl -f https://api.hasivu.com/api/health || exit 1
+          curl -f https://api.hasivu.com/api/auth/health || exit 1
+          curl -f https://api.hasivu.com/api/payments/health || exit 1
+          curl -f https://api.hasivu.com/api/menu/health || exit 1
+
+          # Database and cache
+          curl -f https://api.hasivu.com/api/health/database || exit 1
+          curl -f https://api.hasivu.com/api/health/redis || exit 1
+
+          echo "✅ All production smoke tests passed"
+
+      - name: 🔄 Cleanup Old Version
+        run: |
+          echo "🔄 Cleaning up old version..."
+
+          # Wait 5 minutes before cleanup to ensure stability
+          sleep 300
+
+          # Scale down old deployment
+          kubectl scale deployment hasivu-platform-$CURRENT_COLOR -n ${{ env.NAMESPACE }} --replicas=0
+
+          # Optional: Delete old deployment after 24 hours (implement as needed)
+          echo "Old deployment scaled down. Manual cleanup required after 24h stability period."
+
+      - name: 📊 Post-deployment Monitoring Setup
+        run: |
+          echo "📊 Setting up post-deployment monitoring..."
+
+          # Update monitoring labels
+          kubectl label deployment hasivu-platform-$NEW_COLOR -n ${{ env.NAMESPACE }} version=${{ needs.pre-flight-checks.outputs.version }} --overwrite
+          kubectl label deployment hasivu-platform-$NEW_COLOR -n ${{ env.NAMESPACE }} deployment-time=$(date +%s) --overwrite
+
+          echo "✅ Monitoring labels updated"
+
+  # ============================================================================
+  # POST-DEPLOYMENT VALIDATION & MONITORING
+  # ============================================================================
+
+  post-deployment-validation:
+    name: 📊 Post-deployment Validation & Monitoring
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [pre-flight-checks, production-deployment]
+    if: always() && needs.production-deployment.result == 'success'
+
+    steps:
+      - name: 🛒 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 📊 Performance Validation
+        run: |
+          echo "📊 Running post-deployment performance validation..."
+
+          # Load test against production
+          npx artillery quick --count 50 --num 10 https://api.hasivu.com/health
+
+          # Lighthouse audit
+          npx lighthouse https://api.hasivu.com --output=json --output-path=lighthouse-prod.json --chrome-flags="--headless" || true
+
+      - name: 🔍 Security Validation
+        run: |
+          echo "🔍 Running security validation..."
+
+          # SSL/TLS check
+          echo | openssl s_client -connect api.hasivu.com:443 -servername api.hasivu.com 2>/dev/null | openssl x509 -noout -dates
+
+          # Security headers check
+          curl -I https://api.hasivu.com | grep -E "(Strict-Transport-Security|X-Frame-Options|X-Content-Type-Options)"
+
+      - name: 📈 Setup Monitoring Alerts
+        env:
+          DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
+          NEW_RELIC_API_KEY: ${{ secrets.NEW_RELIC_API_KEY }}
+        run: |
+          echo "📈 Configuring monitoring alerts..."
+
+          # Datadog deployment marker
+          if [[ -n "$DATADOG_API_KEY" ]]; then
+            curl -X POST "https://api.datadoghq.com/api/v1/events" \
+              -H "Content-Type: application/json" \
+              -H "DD-API-KEY: $DATADOG_API_KEY" \
+              -d '{
+                "title": "HASIVU Production Deployment",
+                "text": "Version ${{ needs.pre-flight-checks.outputs.version }} deployed successfully",
+                "tags": ["environment:production", "service:hasivu-platform"],
+                "alert_type": "info"
+              }'
+          fi
+
+          # New Relic deployment marker
+          if [[ -n "$NEW_RELIC_API_KEY" ]]; then
+            curl -X POST "https://api.newrelic.com/v2/applications/{app_id}/deployments.json" \
+              -H "X-Api-Key: $NEW_RELIC_API_KEY" \
+              -H "Content-Type: application/json" \
+              -d '{
+                "deployment": {
+                  "revision": "${{ needs.pre-flight-checks.outputs.version }}",
+                  "description": "Production deployment via GitHub Actions",
+                  "user": "${{ github.actor }}"
+                }
+              }'
+          fi
+
+      - name: 📢 Deployment Notification
+        if: always()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          channel: '#deployments'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          fields: repo,message,commit,author,action,eventName,ref,workflow
+          custom_payload: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "🚀 *HASIVU Production Deployment*\\n*Status:* ${{ job.status == 'success' && '✅ SUCCESS' || '❌ FAILED' }}\\n*Version:* ${{ needs.pre-flight-checks.outputs.version }}\\n*Environment:* ${{ needs.pre-flight-checks.outputs.target-environment }}\\n*Strategy:* ${{ needs.pre-flight-checks.outputs.deployment-strategy }}\\n*Triggered by:* ${{ github.actor }}"
+                  }
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Workflow"
+                      },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    },
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "Production Dashboard"
+                      },
+                      "url": "https://api.hasivu.com/health"
+                    }
+                  ]
+                }
+              ]
+            }
+
+  # ============================================================================
+  # ROLLBACK CAPABILITY (Manual Trigger)
+  # ============================================================================
+
+  emergency-rollback:
+    name: 🚨 Emergency Rollback
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.deployment_strategy == 'rollback'
+
+    environment:
+      name: production
+      url: https://api.hasivu.com
+
+    steps:
+      - name: 🛒 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🔐 Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_PRODUCTION_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: GitHubActions-EmergencyRollback
+
+      - name: ⚙️ Setup Kubernetes Tools
+        run: |
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl && sudo mv kubectl /usr/local/bin/
+
+      - name: 🎯 Configure Kubernetes Context
+        run: |
+          aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ env.EKS_CLUSTER_NAME }}
+          kubectl config set-context --current --namespace=${{ env.NAMESPACE }}
+
+      - name: 🚨 Execute Emergency Rollback
+        run: |
+          echo "🚨 Executing emergency rollback..."
+
+          # Get current and previous deployments
+          CURRENT_COLOR=$(kubectl get service hasivu-platform-active -n ${{ env.NAMESPACE }} -o jsonpath='{.spec.selector.color}')
+          PREVIOUS_COLOR=$([[ "$CURRENT_COLOR" == "blue" ]] && echo "green" || echo "blue")
+
+          echo "Current active: $CURRENT_COLOR"
+          echo "Rolling back to: $PREVIOUS_COLOR"
+
+          # Check if previous deployment exists and is healthy
+          if kubectl get deployment hasivu-platform-$PREVIOUS_COLOR -n ${{ env.NAMESPACE }}; then
+            # Scale up previous deployment
+            kubectl scale deployment hasivu-platform-$PREVIOUS_COLOR -n ${{ env.NAMESPACE }} --replicas=6
+            kubectl rollout status deployment/hasivu-platform-$PREVIOUS_COLOR -n ${{ env.NAMESPACE }} --timeout=300s
+
+            # Switch traffic back
+            kubectl patch service hasivu-platform-active -n ${{ env.NAMESPACE }} -p '{"spec":{"selector":{"color":"'$PREVIOUS_COLOR'"}}}'
+
+            # Verify rollback
+            sleep 30
+            curl -f https://api.hasivu.com/health || exit 1
+
+            echo "✅ Emergency rollback completed successfully"
+          else
+            echo "❌ Previous deployment not found. Cannot rollback."
+            exit 1
+          fi
+
+      - name: 📢 Rollback Notification
+        if: always()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          channel: '#critical-alerts'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          custom_payload: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "🚨 *EMERGENCY ROLLBACK EXECUTED*\\n*Status:* ${{ job.status == 'success' && '✅ SUCCESS' || '❌ FAILED' }}\\n*Triggered by:* ${{ github.actor }}\\n*Time:* $(date)"
+                  }
+                }
+              ]
+            }

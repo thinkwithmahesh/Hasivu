@@ -7,15 +7,15 @@
 import { Order, OrderItem, MenuItem, User, PaymentOrder, Prisma } from '@prisma/client';
 
 // Base repository interface with common CRUD operations
-export interface BaseRepository<T, CreateInput, UpdateInput, WhereInput = any> {
+export interface BaseRepository<T, CreateInput, UpdateInput, WhereInput = unknown> {
   create(data: CreateInput): Promise<T>;
   findById(id: string): Promise<T | null>;
   findMany(options?: {
     where?: WhereInput;
     skip?: number;
     take?: number;
-    orderBy?: any;
-    include?: any;
+    orderBy?: unknown;
+    include?: unknown;
   }): Promise<{ items: T[]; total: number }>;
   update(id: string, data: UpdateInput): Promise<T>;
   delete(id: string): Promise<T>;
@@ -23,19 +23,32 @@ export interface BaseRepository<T, CreateInput, UpdateInput, WhereInput = any> {
 }
 
 // Order repository interface
-export interface IOrderRepository extends BaseRepository<
-  Order,
-  Prisma.OrderCreateInput,
-  Prisma.OrderUpdateInput,
-  Prisma.OrderWhereInput
-> {
+export interface IOrderRepository
+  extends BaseRepository<
+    Order,
+    Prisma.OrderCreateInput,
+    Prisma.OrderUpdateInput,
+    Prisma.OrderWhereInput
+  > {
   findByIdWithIncludes(id: string, include: Prisma.OrderInclude): Promise<Order | null>;
-  findByStudentId(studentId: string, options?: any): Promise<{ items: Order[]; total: number }>;
-  findBySchoolId(schoolId: string, options?: any): Promise<{ items: Order[]; total: number }>;
-  findActiveOrders(filters?: any, options?: any): Promise<{ items: Order[]; total: number }>;
-  findByDeliveryDate(deliveryDate: Date, options?: any): Promise<{ items: Order[]; total: number }>;
-  updateMany(where: Prisma.OrderWhereInput, data: Prisma.OrderUpdateManyMutationInput): Promise<Prisma.BatchPayload>;
-  getAnalytics(filters?: any, groupBy?: 'day' | 'week' | 'month'): Promise<{
+  findByStudentId(studentId: string, options?: unknown): Promise<{ items: Order[]; total: number }>;
+  findBySchoolId(schoolId: string, options?: unknown): Promise<{ items: Order[]; total: number }>;
+  findActiveOrders(
+    filters?: unknown,
+    options?: unknown
+  ): Promise<{ items: Order[]; total: number }>;
+  findByDeliveryDate(
+    deliveryDate: Date,
+    options?: unknown
+  ): Promise<{ items: Order[]; total: number }>;
+  updateMany(
+    where: Prisma.OrderWhereInput,
+    data: Prisma.OrderUpdateManyMutationInput
+  ): Promise<Prisma.BatchPayload>;
+  getAnalytics(
+    filters?: unknown,
+    groupBy?: 'day' | 'week' | 'month'
+  ): Promise<{
     totalOrders: number;
     totalRevenue: number;
     deliveredOrders: number;
@@ -43,7 +56,10 @@ export interface IOrderRepository extends BaseRepository<
     ordersByStatus: Record<string, number>;
     revenueByDay: Array<{ date: string; revenue: number; orders: number }>;
   }>;
-  getDashboardStats(schoolId?: string, dateRange?: { from: Date; to: Date }): Promise<{
+  getDashboardStats(
+    schoolId?: string,
+    dateRange?: { from: Date; to: Date }
+  ): Promise<{
     todayOrders: number;
     pendingOrders: number;
     completedOrders: number;
@@ -53,38 +69,44 @@ export interface IOrderRepository extends BaseRepository<
 }
 
 // Order item repository interface
-export interface IOrderItemRepository extends BaseRepository<
-  OrderItem,
-  Prisma.OrderItemCreateInput,
-  Prisma.OrderItemUpdateInput,
-  Prisma.OrderItemWhereInput
-> {
+export interface IOrderItemRepository
+  extends BaseRepository<
+    OrderItem,
+    Prisma.OrderItemCreateInput,
+    Prisma.OrderItemUpdateInput,
+    Prisma.OrderItemWhereInput
+  > {
   findByOrderId(orderId: string): Promise<OrderItem[]>;
-  getPopularItems(filters?: any, limit?: number): Promise<any[]>;
+  getPopularItems(filters?: unknown, limit?: number): Promise<unknown[]>;
   createMany(data: Prisma.OrderItemCreateManyInput[]): Promise<Prisma.BatchPayload>;
 }
 
 // Menu item repository interface
-export interface IMenuItemRepository extends BaseRepository<
-  MenuItem,
-  Prisma.MenuItemCreateInput,
-  Prisma.MenuItemUpdateInput,
-  Prisma.MenuItemWhereInput
-> {
+export interface IMenuItemRepository
+  extends BaseRepository<
+    MenuItem,
+    Prisma.MenuItemCreateInput,
+    Prisma.MenuItemUpdateInput,
+    Prisma.MenuItemWhereInput
+  > {
   nameExists(name: string, schoolId: string, excludeId?: string): Promise<boolean>;
-  findBySchoolId(schoolId: string, options?: any): Promise<{ items: MenuItem[]; total: number }>;
+  findBySchoolId(
+    schoolId: string,
+    options?: unknown
+  ): Promise<{ items: MenuItem[]; total: number }>;
   findAvailable(schoolId?: string): Promise<MenuItem[]>;
   search(query: string, schoolId?: string): Promise<MenuItem[]>;
   updateAvailability(id: string, available: boolean): Promise<MenuItem>;
 }
 
 // User repository interface
-export interface IUserRepository extends BaseRepository<
-  User,
-  Prisma.UserCreateInput,
-  Prisma.UserUpdateInput,
-  Prisma.UserWhereInput
-> {
+export interface IUserRepository
+  extends BaseRepository<
+    User,
+    Prisma.UserCreateInput,
+    Prisma.UserUpdateInput,
+    Prisma.UserWhereInput
+  > {
   findByEmail(email: string): Promise<User | null>;
   findByPhone(phone: string): Promise<User | null>;
   emailExists(email: string, excludeId?: string): Promise<boolean>;
@@ -96,17 +118,21 @@ export interface IUserRepository extends BaseRepository<
 }
 
 // Payment order repository interface
-export interface IPaymentOrderRepository extends BaseRepository<
-  PaymentOrder,
-  Prisma.PaymentOrderCreateInput,
-  Prisma.PaymentOrderUpdateInput,
-  Prisma.PaymentOrderWhereInput
-> {
+export interface IPaymentOrderRepository
+  extends BaseRepository<
+    PaymentOrder,
+    Prisma.PaymentOrderCreateInput,
+    Prisma.PaymentOrderUpdateInput,
+    Prisma.PaymentOrderWhereInput
+  > {
   findByOrderId(orderId: string): Promise<PaymentOrder | null>;
   findByRazorpayOrderId(razorpayOrderId: string): Promise<PaymentOrder | null>;
-  findByUserId(userId: string, options?: any): Promise<{ items: PaymentOrder[]; total: number }>;
+  findByUserId(
+    userId: string,
+    options?: unknown
+  ): Promise<{ items: PaymentOrder[]; total: number }>;
   findExpiredOrders(): Promise<PaymentOrder[]>;
-  updateStatus(id: string, status: string, metadata?: any): Promise<PaymentOrder>;
+  updateStatus(id: string, status: string, metadata?: unknown): Promise<PaymentOrder>;
 }
 
 // Database service interface
@@ -116,27 +142,27 @@ export interface IDatabaseService {
   getHealth(): Promise<{
     status: 'healthy' | 'warning' | 'error';
     responseTime: number;
-    connections: any;
-    performance: any;
-    tables: any[];
+    connections: unknown;
+    performance: unknown;
+    tables: unknown[];
     errors: string[];
     timestamp: Date;
   }>;
-  transaction<T>(callback: (tx: any) => Promise<T>, options?: any): Promise<T>;
-  executeRaw<T>(query: any, ...values: any[]): Promise<T>;
-  sanitizeQuery(query: string | any): string | any;
-  
+  transaction<T>(callback: (tx: unknown) => Promise<T>, options?: unknown): Promise<T>;
+  executeRaw<T>(query: unknown, ...values: unknown[]): Promise<T>;
+  sanitizeQuery(query: string | unknown): string | unknown;
+
   // Model accessors for backward compatibility
-  readonly user: any;
-  readonly order: any;
-  readonly menuItem: any;
-  readonly orderItem: any;
-  readonly paymentOrder: any;
-  readonly rfidCard: any;
-  readonly rfidReader: any;
-  readonly deliveryVerification: any;
-  readonly notification: any;
-  readonly whatsAppMessage: any;
+  readonly user: unknown;
+  readonly order: unknown;
+  readonly menuItem: unknown;
+  readonly orderItem: unknown;
+  readonly paymentOrder: unknown;
+  readonly rfidCard: unknown;
+  readonly rfidReader: unknown;
+  readonly deliveryVerification: unknown;
+  readonly notification: unknown;
+  readonly whatsAppMessage: unknown;
 }
 
 // Service interfaces
@@ -148,14 +174,18 @@ export interface INotificationService {
     totalAmount: number;
     deliveryDate: Date;
   }): Promise<void>;
-  
+
   sendOrderStatusUpdate(data: {
     orderId: string;
     studentId: string;
     parentId: string;
     newStatus: string;
     message?: string;
-  }): Promise<void>;
+  }): Promise<{
+    success: boolean;
+    data?: any;
+    error?: { message: string; code: string };
+  }>;
 }
 
 export interface IPaymentService {
@@ -163,7 +193,7 @@ export interface IPaymentService {
     orderId: string;
     amount: number;
     currency: string;
-    paymentMethodId: string;
+    paymentMethod: string;
   }): Promise<{
     success: boolean;
     data?: {
@@ -178,6 +208,6 @@ export interface IPaymentService {
 
 export interface IRedisService {
   get(key: string): Promise<string | null>;
-  set(key: string, value: string, ttl?: number): Promise<void>;
-  del(key: string): Promise<void>;
+  set(key: string, value: string, ttl?: number): Promise<string>;
+  del(key: string): Promise<number>;
 }

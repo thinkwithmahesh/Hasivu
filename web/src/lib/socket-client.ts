@@ -14,7 +14,11 @@ interface SocketEvents {
   payment_success: (data: { orderId: string; amount: number }) => void;
   payment_failed: (data: { orderId: string; error: string }) => void;
   rfid_scan: (data: { cardId: string; userId: string }) => void;
-  notification: (data: { title: string; message: string; type: 'info' | 'success' | 'warning' | 'error' }) => void;
+  notification: (data: {
+    title: string;
+    message: string;
+    type: 'info' | 'success' | 'warning' | 'error';
+  }) => void;
 }
 
 class SocketClient {
@@ -38,7 +42,7 @@ class SocketClient {
 
       this.setupEventHandlers();
     } catch (error) {
-      console.warn('Socket connection failed:', error);
+      // Error handled silently
     }
   }
 
@@ -46,19 +50,16 @@ class SocketClient {
     if (!this.socket) return;
 
     this.socket.on('connect', () => {
-      console.log('Connected to server');
       this.reconnectAttempts = 0;
     });
 
-    this.socket.on('disconnect', () => {
-      console.log('Disconnected from server');
-    });
+    this.socket.on('disconnect', () => {});
 
     this.socket.on('reconnect_failed', () => {
       toast.error('Unable to connect to server. Please check your connection.');
     });
 
-    this.socket.on('notification', (data) => {
+    this.socket.on('notification', data => {
       const { title, message, type } = data;
       switch (type) {
         case 'success':

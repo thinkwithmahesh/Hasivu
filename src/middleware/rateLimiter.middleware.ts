@@ -4,10 +4,8 @@
  * Enhanced with security logging and threat detection
  */
 import rateLimit from 'express-rate-limit';
-import RedisStore from 'rate-limit-redis';
-import { RedisService } from '../services/redis.service';
 import { config } from '../config/environment';
-import { logger } from '../utils/logger';
+import { logger } from '../shared/logger.service';
 import { Request, Response, NextFunction } from 'express';
 
 /**
@@ -46,9 +44,9 @@ const createRateLimiter = (options: RateLimiterOptions = {}) => {
         body: req.body?.email ? { email: req.body.email } : undefined,
         headers: {
           'x-forwarded-for': req.get('x-forwarded-for'),
-          'x-real-ip': req.get('x-real-ip')
+          'x-real-ip': req.get('x-real-ip'),
         },
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
 
       // Call custom handler if provided
@@ -60,10 +58,10 @@ const createRateLimiter = (options: RateLimiterOptions = {}) => {
       res.status(options.statusCode || 429).json({
         error: 'Rate limit exceeded',
         message: options.message || 'Too many requests',
-        retryAfter: Math.ceil(options.windowMs ? options.windowMs / 1000 : 900)
+        retryAfter: Math.ceil(options.windowMs ? options.windowMs / 1000 : 900),
       });
     },
-    ...options
+    ...options,
   };
 
   // Note: Redis store not configured - using default in-memory store
@@ -77,7 +75,7 @@ const createRateLimiter = (options: RateLimiterOptions = {}) => {
 export const generalRateLimit = createRateLimiter({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 200, // 200 requests per window
-  message: 'Too many API requests, please slow down'
+  message: 'Too many API requests, please slow down',
 });
 
 /**
@@ -94,10 +92,10 @@ export const authRateLimit = createRateLimiter({
       body: req.body?.email ? { email: req.body.email } : undefined,
       headers: {
         'user-agent': req.get('User-Agent'),
-        'x-forwarded-for': req.get('x-forwarded-for')
-      }
+        'x-forwarded-for': req.get('x-forwarded-for'),
+      },
     });
-  }
+  },
 });
 
 /**
@@ -106,7 +104,7 @@ export const authRateLimit = createRateLimiter({
 export const passwordResetRateLimit = createRateLimiter({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 3, // 3 password reset attempts per hour
-  message: 'Too many password reset attempts, please try again later'
+  message: 'Too many password reset attempts, please try again later',
 });
 
 /**
@@ -115,7 +113,7 @@ export const passwordResetRateLimit = createRateLimiter({
 export const paymentRateLimit = createRateLimiter({
   windowMs: 10 * 60 * 1000, // 10 minutes
   max: 20, // 20 payment requests per window
-  message: 'Too many payment requests, please wait before trying again'
+  message: 'Too many payment requests, please wait before trying again',
 });
 
 /**
@@ -124,7 +122,7 @@ export const paymentRateLimit = createRateLimiter({
 export const rfidRateLimit = createRateLimiter({
   windowMs: 1 * 60 * 1000, // 1 minute
   max: 50, // 50 RFID scans per minute
-  message: 'RFID scanning rate limit exceeded'
+  message: 'RFID scanning rate limit exceeded',
 });
 
 /**
@@ -133,7 +131,7 @@ export const rfidRateLimit = createRateLimiter({
 export const registrationRateLimit = createRateLimiter({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 5, // 5 registrations per hour per IP
-  message: 'Too many registration attempts, please try again later'
+  message: 'Too many registration attempts, please try again later',
 });
 
 /**
@@ -142,7 +140,7 @@ export const registrationRateLimit = createRateLimiter({
 export const uploadRateLimit = createRateLimiter({
   windowMs: 10 * 60 * 1000, // 10 minutes
   max: 30, // 30 file uploads per window
-  message: 'Too many file uploads, please wait before uploading more files'
+  message: 'Too many file uploads, please wait before uploading more files',
 });
 
 /**
@@ -151,7 +149,7 @@ export const uploadRateLimit = createRateLimiter({
 export const adminRateLimit = createRateLimiter({
   windowMs: 5 * 60 * 1000, // 5 minutes
   max: 500, // 500 requests per window for admins
-  message: 'Admin rate limit exceeded'
+  message: 'Admin rate limit exceeded',
 });
 
 /**
@@ -160,7 +158,7 @@ export const adminRateLimit = createRateLimiter({
 export const suspiciousActivityRateLimit = createRateLimiter({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 1, // Only 1 request per hour for suspicious IPs
-  message: 'IP flagged for suspicious activity'
+  message: 'IP flagged for suspicious activity',
 });
 
 /**
@@ -168,10 +166,10 @@ export const suspiciousActivityRateLimit = createRateLimiter({
  */
 export const dynamicRateLimit = (req: Request, res: Response, next: NextFunction) => {
   try {
-    const user = (req as any).user;
+    const { user } = req as any;
     const isAuthenticated = !!user;
     const userRole = user?.role || 'guest';
-    const path = req.path;
+    const { path } = req;
 
     // Admin users get higher limits
     if (userRole === 'admin' || userRole === 'super_admin') {
@@ -194,7 +192,7 @@ export const dynamicRateLimit = (req: Request, res: Response, next: NextFunction
     }
 
     // File upload endpoints
-    if (path.includes('/upload/') || req.method === 'POST' && path.includes('/files/')) {
+    if (path.includes('/upload/') || (req.method === 'POST' && path.includes('/files/'))) {
       return uploadRateLimit(req, res, next);
     }
 
@@ -205,14 +203,17 @@ export const dynamicRateLimit = (req: Request, res: Response, next: NextFunction
 
     // Default to general rate limiting
     return generalRateLimit(req, res, next);
-  } catch (error) {
-    logger.error('Dynamic rate limiter error', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      path: req.path,
-      method: req.method,
-      ip: req.ip
-    });
-    
+  } catch (error: unknown) {
+    logger.error(
+      'Dynamic rate limiter error',
+      error instanceof Error ? error : new Error(String(error)),
+      {
+        path: req.path,
+        method: req.method,
+        ip: req.ip,
+      }
+    );
+
     // Fallback to general rate limiting
     return generalRateLimit(req, res, next);
   }
@@ -225,8 +226,8 @@ export const detectSuspiciousActivity = async (req: Request, res: Response, next
   try {
     const ip = req.ip || 'unknown';
     const userAgent = req.get('User-Agent') || '';
-    const path = req.path;
-    const method = req.method;
+    const { path } = req;
+    const { method } = req;
 
     // Suspicious patterns to detect
     const suspiciousPatterns = [
@@ -237,7 +238,7 @@ export const detectSuspiciousActivity = async (req: Request, res: Response, next
       method === 'OPTIONS' && !req.headers.origin,
       path.includes('.env') || path.includes('.git'),
       path.includes('/wp-admin') || path.includes('/wp-login'),
-      userAgent.length < 10 || userAgent.length > 500
+      userAgent.length < 10 || userAgent.length > 500,
     ];
 
     const suspiciousScore = suspiciousPatterns.filter(Boolean).length;
@@ -249,7 +250,7 @@ export const detectSuspiciousActivity = async (req: Request, res: Response, next
         path,
         method,
         suspiciousScore,
-        suspiciousPatterns: suspiciousPatterns.map((p, i) => ({ index: i, matched: p }))
+        suspiciousPatterns: suspiciousPatterns.map((p, i) => ({ index: i, matched: p })),
       });
 
       // Apply very strict rate limiting
@@ -257,12 +258,15 @@ export const detectSuspiciousActivity = async (req: Request, res: Response, next
     }
 
     next();
-  } catch (error) {
-    logger.error('Suspicious activity detector error', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      ip: req.ip,
-      path: req.path
-    });
+  } catch (error: unknown) {
+    logger.error(
+      'Suspicious activity detector error',
+      error instanceof Error ? error : new Error(String(error)),
+      {
+        ip: req.ip,
+        path: req.path,
+      }
+    );
     next();
   }
 };
@@ -278,12 +282,12 @@ export const ipWhitelistCheck = (req: Request, res: Response, next: NextFunction
     logger.warn('IP not in whitelist', {
       ip: clientIp,
       path: req.path,
-      method: req.method
+      method: req.method,
     });
 
     return res.status(403).json({
       error: 'Forbidden',
-      message: 'Your IP address is not authorized to access this resource'
+      message: 'Your IP address is not authorized to access this resource',
     });
   }
 
@@ -296,7 +300,7 @@ export const ipWhitelistCheck = (req: Request, res: Response, next: NextFunction
 export const burstProtection = createRateLimiter({
   windowMs: 1000, // 1 second window
   max: 10, // 10 requests per second
-  message: 'Request burst limit exceeded, please slow down'
+  message: 'Request burst limit exceeded, please slow down',
 });
 
 export default {
@@ -312,5 +316,5 @@ export default {
   dynamic: dynamicRateLimit,
   detectSuspicious: detectSuspiciousActivity,
   ipWhitelist: ipWhitelistCheck,
-  burst: burstProtection
+  burst: burstProtection,
 };

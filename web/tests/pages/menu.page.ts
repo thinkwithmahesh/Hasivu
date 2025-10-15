@@ -54,48 +54,42 @@ export class MenuPage extends BasePage {
     super(page, '/menu');
     
     // Filters and search
-    this.searchInput = page.locator('[data-testid="menu-search"]');
-    this.categoryFilters = page.locator('[data-testid="category-filters"]');
-    this.dietaryFilters = page.locator('[data-testid="dietary-filters"]');
-    this.priceFilter = page.locator('[data-testid="price-filter"]');
-    this.sortOptions = page.locator('[data-testid="sort-options"]');
-
+    this._searchInput =  page.locator('[data-testid
+    this._categoryFilters =  page.locator('[data-testid
+    this._dietaryFilters =  page.locator('[data-testid
+    this._priceFilter =  page.locator('[data-testid
+    this._sortOptions =  page.locator('[data-testid
     // Menu display
-    this.menuGrid = page.locator('[data-testid="menu-grid"]');
-    this.menuList = page.locator('[data-testid="menu-list"]');
-    this.viewToggle = page.locator('[data-testid="view-toggle"]');
-    this.menuItems = page.locator('[data-testid="menu-item"]');
-
+    this._menuGrid =  page.locator('[data-testid
+    this._menuList =  page.locator('[data-testid
+    this._viewToggle =  page.locator('[data-testid
+    this._menuItems =  page.locator('[data-testid
     // Item interactions
-    this.addToCartButtons = page.locator('[data-testid="add-to-cart"]');
-    this.quantityControls = page.locator('[data-testid="quantity-control"]');
-    this.itemDetailsButtons = page.locator('[data-testid="item-details"]');
-    this.favoriteButtons = page.locator('[data-testid="favorite-button"]');
-
+    this._addToCartButtons =  page.locator('[data-testid
+    this._quantityControls =  page.locator('[data-testid
+    this._itemDetailsButtons =  page.locator('[data-testid
+    this._favoriteButtons =  page.locator('[data-testid
     // Cart
-    this.cartSidebar = page.locator('[data-testid="cart-sidebar"]');
-    this.cartIcon = page.locator('[data-testid="cart-icon"]');
-    this.cartItemCount = page.locator('[data-testid="cart-count"]');
-    this.cartItems = page.locator('[data-testid="cart-item"]');
-    this.cartTotal = page.locator('[data-testid="cart-total"]');
-    this.checkoutButton = page.locator('[data-testid="checkout-button"]');
-    this.clearCartButton = page.locator('[data-testid="clear-cart"]');
-
+    this._cartSidebar =  page.locator('[data-testid
+    this._cartIcon =  page.locator('[data-testid
+    this._cartItemCount =  page.locator('[data-testid
+    this._cartItems =  page.locator('[data-testid
+    this._cartTotal =  page.locator('[data-testid
+    this._checkoutButton =  page.locator('[data-testid
+    this._clearCartButton =  page.locator('[data-testid
     // RFID
-    this.rfidScanIndicator = page.locator('[data-testid="rfid-scan-indicator"]');
-    this.rfidQuickOrderButton = page.locator('[data-testid="rfid-quick-order"]');
-    this.rfidStatusBanner = page.locator('[data-testid="rfid-status-banner"]');
-
+    this._rfidScanIndicator =  page.locator('[data-testid
+    this._rfidQuickOrderButton =  page.locator('[data-testid
+    this._rfidStatusBanner =  page.locator('[data-testid
     // Nutrition
-    this.nutritionButton = page.locator('[data-testid="nutrition-button"]');
-    this.nutritionModal = page.locator('[data-testid="nutrition-modal"]');
-    this.allergenInfo = page.locator('[data-testid="allergen-info"]');
-    this.calorieInfo = page.locator('[data-testid="calorie-info"]');
-
+    this._nutritionButton =  page.locator('[data-testid
+    this._nutritionModal =  page.locator('[data-testid
+    this._allergenInfo =  page.locator('[data-testid
+    this._calorieInfo =  page.locator('[data-testid
     // Special features
-    this.recommendedSection = page.locator('[data-testid="recommended-items"]');
-    this.todaysSpecial = page.locator('[data-testid="todays-special"]');
-    this.quickOrderPresets = page.locator('[data-testid="quick-order-presets"]');
+    this._recommendedSection =  page.locator('[data-testid
+    this._todaysSpecial =  page.locator('[data-testid
+    this._quickOrderPresets =  page.locator('[data-testid
   }
 
   /**
@@ -111,7 +105,7 @@ export class MenuPage extends BasePage {
    * Filter menu by category
    */
   async filterByCategory(category: string): Promise<void> {
-    const categoryButton = this.page.locator(`[data-testid="category-${category}"]`);
+    const _categoryButton =  this.page.locator(`[data-testid
     await categoryButton.click();
     await this.waitForPageLoad();
   }
@@ -120,7 +114,7 @@ export class MenuPage extends BasePage {
    * Filter menu by dietary preferences
    */
   async filterByDietary(dietary: 'vegetarian' | 'vegan' | 'gluten-free' | 'halal'): Promise<void> {
-    const dietaryButton = this.page.locator(`[data-testid="dietary-${dietary}"]`);
+    const _dietaryButton =  this.page.locator(`[data-testid
     await dietaryButton.click();
     await this.waitForPageLoad();
   }
@@ -128,18 +122,18 @@ export class MenuPage extends BasePage {
   /**
    * Add item to cart
    */
-  async addItemToCart(itemName: string, quantity: number = 1): Promise<void> {
-    const item = this.page.locator(`[data-testid="menu-item"][data-name="${itemName}"]`);
+  async addItemToCart(itemName: string, quantity: _number =  1): Promise<void> {
+    const item 
     await expect(item).toBeVisible();
     
     // Set quantity if needed
     if (quantity > 1) {
-      const quantityInput = item.locator('[data-testid="quantity-input"]');
+      const _quantityInput =  item.locator('[data-testid
       await quantityInput.fill(quantity.toString());
     }
     
     // Add to cart
-    const addButton = item.locator('[data-testid="add-to-cart"]');
+    const _addButton =  item.locator('[data-testid
     await addButton.click();
     
     // Wait for cart update animation
@@ -155,8 +149,8 @@ export class MenuPage extends BasePage {
   async removeItemFromCart(itemName: string): Promise<void> {
     await this.openCart();
     
-    const cartItem = this.page.locator(`[data-testid="cart-item"][data-name="${itemName}"]`);
-    const removeButton = cartItem.locator('[data-testid="remove-item"]');
+    const _cartItem =  this.page.locator(`[data-testid
+    const _removeButton =  cartItem.locator('[data-testid
     await removeButton.click();
     
     await this.page.waitForTimeout(500);
@@ -174,7 +168,7 @@ export class MenuPage extends BasePage {
    * Close cart sidebar
    */
   async closeCart(): Promise<void> {
-    const closeButton = this.cartSidebar.locator('[data-testid="close-cart"]');
+    const _closeButton =  this.cartSidebar.locator('[data-testid
     await closeButton.click();
     await expect(this.cartSidebar).toBeHidden();
   }
@@ -193,11 +187,11 @@ export class MenuPage extends BasePage {
    * View item details
    */
   async viewItemDetails(itemName: string): Promise<void> {
-    const item = this.page.locator(`[data-testid="menu-item"][data-name="${itemName}"]`);
-    const detailsButton = item.locator('[data-testid="item-details"]');
+    const _item =  this.page.locator(`[data-testid
+    const _detailsButton =  item.locator('[data-testid
     await detailsButton.click();
     
-    const modal = this.page.locator('[data-testid="item-details-modal"]');
+    const _modal =  this.page.locator('[data-testid
     await expect(modal).toBeVisible();
   }
 
@@ -205,8 +199,8 @@ export class MenuPage extends BasePage {
    * View nutritional information
    */
   async viewNutritionInfo(itemName: string): Promise<void> {
-    const item = this.page.locator(`[data-testid="menu-item"][data-name="${itemName}"]`);
-    const nutritionButton = item.locator('[data-testid="nutrition-button"]');
+    const _item =  this.page.locator(`[data-testid
+    const _nutritionButton =  item.locator('[data-testid
     await nutritionButton.click();
     
     await expect(this.nutritionModal).toBeVisible();
@@ -218,8 +212,8 @@ export class MenuPage extends BasePage {
    * Add item to favorites
    */
   async addToFavorites(itemName: string): Promise<void> {
-    const item = this.page.locator(`[data-testid="menu-item"][data-name="${itemName}"]`);
-    const favoriteButton = item.locator('[data-testid="favorite-button"]');
+    const _item =  this.page.locator(`[data-testid
+    const _favoriteButton =  item.locator('[data-testid
     await favoriteButton.click();
     
     // Verify favorite status
@@ -244,7 +238,7 @@ export class MenuPage extends BasePage {
     });
     
     // Simulate RFID scan
-    await this.page.evaluate(() => {
+    await this.page.evaluate(_() => {
       window.dispatchEvent(new CustomEvent('rfid-scan', {
         detail: { student_id: 'STU-12345' }
       }));
@@ -266,7 +260,7 @@ export class MenuPage extends BasePage {
    * Test menu responsive design
    */
   async testResponsiveMenu(): Promise<void> {
-    const breakpoints = [
+    const _breakpoints =  [
       { name: 'mobile', width: 375, height: 667 },
       { name: 'tablet', width: 768, height: 1024 },
       { name: 'desktop', width: 1440, height: 900 }
@@ -280,7 +274,7 @@ export class MenuPage extends BasePage {
       
       // On mobile, filters might be collapsed
       if (breakpoint.width < 768) {
-        const filterToggle = this.page.locator('[data-testid="filter-toggle"]');
+        const _filterToggle =  this.page.locator('[data-testid
         if (await filterToggle.isVisible()) {
           await filterToggle.click();
           await expect(this.categoryFilters).toBeVisible();
@@ -300,20 +294,20 @@ export class MenuPage extends BasePage {
     
     // Test empty search
     await this.searchMenu('');
-    const allItemsCount = await this.menuItems.count();
+    const _allItemsCount =  await this.menuItems.count();
     expect(allItemsCount).toBeGreaterThan(0);
     
     // Test specific search
     await this.searchMenu('rice');
     await this.page.waitForTimeout(1000);
-    const searchResults = await this.menuItems.count();
+    const _searchResults =  await this.menuItems.count();
     expect(searchResults).toBeGreaterThan(0);
     expect(searchResults).toBeLessThanOrEqual(allItemsCount);
     
     // Test no results
     await this.searchMenu('nonexistentitem123');
     await this.page.waitForTimeout(1000);
-    const noResultsMessage = this.page.locator('[data-testid="no-results"]');
+    const _noResultsMessage =  this.page.locator('[data-testid
     await expect(noResultsMessage).toBeVisible();
   }
 
@@ -339,7 +333,7 @@ export class MenuPage extends BasePage {
     await this.openCart();
     await expect(this.cartItems).toHaveCount(2);
     
-    const cartTotal = await this.cartTotal.textContent();
+    const _cartTotal =  await this.cartTotal.textContent();
     expect(cartTotal).toBeTruthy();
     expect(parseFloat(cartTotal?.replace(/[^\d.]/g, '') || '0')).toBeGreaterThan(0);
   }
@@ -348,25 +342,25 @@ export class MenuPage extends BasePage {
    * Test performance with large menu
    */
   async testMenuPerformance(): Promise<void> {
-    const startTime = Date.now();
+    const _startTime =  Date.now();
     
     await this.goto();
     await this.waitForPageLoad();
     
-    const loadTime = Date.now() - startTime;
+    const _loadTime =  Date.now() - startTime;
     expect(loadTime).toBeLessThan(3000);
     
     // Test scrolling performance with virtual scrolling if implemented
-    const itemsBeforeScroll = await this.menuItems.count();
+    const _itemsBeforeScroll =  await this.menuItems.count();
     
     // Scroll down
-    await this.page.evaluate(() => {
+    await this.page.evaluate(_() => {
       window.scrollTo(0, document.body.scrollHeight);
     });
     await this.page.waitForTimeout(1000);
     
     // Verify more items loaded or same count if all items were visible
-    const itemsAfterScroll = await this.menuItems.count();
+    const _itemsAfterScroll =  await this.menuItems.count();
     expect(itemsAfterScroll).toBeGreaterThanOrEqual(itemsBeforeScroll);
   }
 
@@ -379,7 +373,7 @@ export class MenuPage extends BasePage {
     
     // Verify keyboard navigation
     await this.page.keyboard.press('Tab');
-    const focusedElement = await this.page.evaluate(() => document.activeElement?.getAttribute('data-testid'));
+    const _focusedElement =  await this.page.evaluate(() 
     expect(focusedElement).toBeTruthy();
     
     // Test add to cart with keyboard
@@ -387,8 +381,8 @@ export class MenuPage extends BasePage {
     await this.page.keyboard.press('Enter'); // Add to cart
     
     // Verify screen reader labels
-    const firstItem = this.menuItems.first();
-    const ariaLabel = await firstItem.getAttribute('aria-label');
+    const _firstItem =  this.menuItems.first();
+    const _ariaLabel =  await firstItem.getAttribute('aria-label');
     expect(ariaLabel).toBeTruthy();
     expect(ariaLabel).toContain('price'); // Should include price information
     
@@ -407,11 +401,11 @@ export class MenuPage extends BasePage {
       await this.switchLanguage(lang);
       
       // Verify menu items have translated content
-      const firstItemName = await this.menuItems.first().locator('[data-testid="item-name"]').textContent();
+      const _firstItemName =  await this.menuItems.first().locator('[data-testid
       expect(firstItemName).toBeTruthy();
       
       // Verify categories are translated
-      const categoryButtons = await this.categoryFilters.locator('button').count();
+      const _categoryButtons =  await this.categoryFilters.locator('button').count();
       expect(categoryButtons).toBeGreaterThan(0);
       
       await this.takeScreenshot(`menu-${lang}`);
@@ -425,20 +419,20 @@ export class MenuPage extends BasePage {
     await this.goto();
     await this.waitForPageLoad();
     
-    const items = this.menuItems;
-    const itemCount = await items.count();
+    const _items =  this.menuItems;
+    const _itemCount =  await items.count();
     
     for (let i = 0; i < Math.min(itemCount, 5); i++) { // Check first 5 items
-      const item = items.nth(i);
+      const _item =  items.nth(i);
       
       // Verify required elements exist
-      await expect(item.locator('[data-testid="item-name"]')).toBeVisible();
-      await expect(item.locator('[data-testid="item-price"]')).toBeVisible();
-      await expect(item.locator('[data-testid="item-image"]')).toBeVisible();
-      await expect(item.locator('[data-testid="add-to-cart"]')).toBeVisible();
+      await expect(item.locator('[data-_testid = "item-name"]')).toBeVisible();
+      await expect(item.locator('[data-_testid = "item-price"]')).toBeVisible();
+      await expect(item.locator('[data-_testid = "item-image"]')).toBeVisible();
+      await expect(item.locator('[data-_testid = "add-to-cart"]')).toBeVisible();
       
       // Verify price format
-      const priceText = await item.locator('[data-testid="item-price"]').textContent();
+      const _priceText =  await item.locator('[data-testid
       expect(priceText).toMatch(/₹?\s*\d+(\.\d{2})?/); // Indian Rupee format
     }
   }

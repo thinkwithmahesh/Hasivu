@@ -67,7 +67,7 @@ const healthCheckHandler = async (event, context) => {
     catch (error) {
         const duration = Date.now() - startTime;
         logger.error('Health check failed', {
-            error: error instanceof Error ? error.message : 'Unknown error',
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error',
             duration,
             requestId: context.awsRequestId
         });

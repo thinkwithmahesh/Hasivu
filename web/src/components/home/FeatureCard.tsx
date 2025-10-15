@@ -5,13 +5,7 @@
  */
 
 import React, { ReactNode } from 'react';
-import {
-  Card,
-  CardContent,
-  Typography,
-  Box,
-  alpha,
-} from '@mui/material';
+import { Card, CardContent, Typography, Box, alpha } from '@mui/material';
 
 /**
  * Feature Card Props
@@ -50,25 +44,27 @@ export const FeatureCard: React.FC<FeatureCardProps> = ({
         borderRadius: 3,
         border: '1px solid',
         borderColor: isHighlighted ? 'primary.main' : 'divider',
-        background: isHighlighted 
+        background: isHighlighted
           ? `linear-gradient(135deg, ${alpha('#4CAF50', 0.05)} 0%, ${alpha('#2E7D32', 0.02)} 100%)`
           : 'background.paper',
         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         position: 'relative',
         overflow: 'hidden',
-        '&::before': isHighlighted ? {
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: '4px',
-          background: 'linear-gradient(90deg, #4CAF50 0%, #2E7D32 100%)',
-          zIndex: 1,
-        } : {},
+        '&::before': isHighlighted
+          ? {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: '4px',
+              background: 'linear-gradient(90deg, #4CAF50 0%, #2E7D32 100%)',
+              zIndex: 1,
+            }
+          : {},
         '&:hover': {
           transform: 'translateY(-4px)',
-          boxShadow: (theme) => `0 12px 32px ${alpha(theme.palette.primary.main, 0.15)}`,
+          boxShadow: theme => `0 12px 32px ${alpha(theme.palette.primary.main, 0.15)}`,
           borderColor: 'primary.main',
           '& .feature-icon': {
             transform: 'scale(1.1)',

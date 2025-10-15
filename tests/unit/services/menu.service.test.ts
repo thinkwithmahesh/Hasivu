@@ -199,21 +199,7 @@ describe('Menu Management Services - Comprehensive Tests', () => {
         price: 250,
         currency: 'INR',
         schoolId: 'restaurant-123',
-        ingredients: ['chicken breast', 'lettuce', 'tomato', 'whole wheat bread'],
-        allergens: ['gluten'],
-        tags: ['high_protein', 'popular'],
-        preparationTime: 25,
-        portionSize: '300g',
-        calories: 450,
-        nutritionalInfo: {
-          protein: 35,
-          carbohydrates: 42,
-          fat: 12,
-          fiber: 6,
-          isVegetarian: false,
-          isVegan: false,
-          isGlutenFree: false
-        }
+        allergens: ['gluten']
       };
 
       it('should create a new menu item successfully', async () => {

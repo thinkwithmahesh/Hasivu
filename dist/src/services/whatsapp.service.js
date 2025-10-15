@@ -1,4 +1,27 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -9,6 +32,7 @@ const database_service_1 = require("./database.service");
 const redis_service_1 = require("./redis.service");
 const logger_1 = require("@/utils/logger");
 const environment_1 = require("@/config/environment");
+const crypto = __importStar(require("crypto"));
 class WhatsAppService {
     static instance;
     client;
@@ -53,7 +77,7 @@ class WhatsAppService {
             });
             return config;
         }, (error) => {
-            logger_1.logger.error('WhatsApp API request error', { error: error.message });
+            logger_1.logger.error('WhatsApp API request error', { error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) });
             return Promise.reject(error);
         });
         this.client.interceptors.response.use((response) => {
@@ -66,7 +90,7 @@ class WhatsAppService {
             logger_1.logger.error('WhatsApp API response error', {
                 status: error.response?.status,
                 data: error.response?.data,
-                message: error.message
+                message: error instanceof Error ? error.message : String(error)
             });
             return Promise.reject(error);
         });
@@ -130,8 +154,8 @@ class WhatsAppService {
             logger_1.logger.error('Failed to send WhatsApp message', {
                 to,
                 type,
-                error: error.message,
-                stack: error.stack
+                error: error instanceof Error ? error.message : String(error),
+                stack: error instanceof Error ? error.stack : undefined
             });
             const failedMessage = {
                 id: `failed_${Date.now()}_${Math.random()}`,
@@ -142,7 +166,7 @@ class WhatsAppService {
                 content: type === 'text' ? content.body : JSON.stringify(content),
                 timestamp: new Date(),
                 retryCount: 0,
-                errorMessage: error.message,
+                errorMessage: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
                 businessData: options.businessData,
                 context: options.context
             };
@@ -189,13 +213,13 @@ class WhatsAppService {
             }
         };
         if (options.header) {
-            interactive['header'] = {
+            interactive.header = {
                 type: 'text',
                 text: options.header
             };
         }
         if (options.footer) {
-            interactive['footer'] = {
+            interactive.footer = {
                 text: options.footer
             };
         }
@@ -248,7 +272,7 @@ class WhatsAppService {
         catch (error) {
             logger_1.logger.error('Failed to store WhatsApp message', {
                 messageId: message.id,
-                error: error.message
+                error: error instanceof Error ? error.message : String(error)
             });
         }
     }
@@ -264,7 +288,7 @@ class WhatsAppService {
         catch (error) {
             logger_1.logger.error('Failed to queue message for tracking', {
                 messageId,
-                error: error.message
+                error: error instanceof Error ? error.message : String(error)
             });
         }
     }
@@ -283,8 +307,8 @@ class WhatsAppService {
         }
         catch (error) {
             logger_1.logger.error('Failed to process WhatsApp webhook', {
-                error: error.message,
-                stack: error.stack
+                error: error instanceof Error ? error.message : String(error),
+                stack: error instanceof Error ? error.stack : undefined
             });
             throw error;
         }
@@ -332,7 +356,7 @@ class WhatsAppService {
             logger_1.logger.error('Failed to update message status', {
                 messageId,
                 status,
-                error: error.message
+                error: error instanceof Error ? error.message : String(error)
             });
         }
     }
@@ -361,7 +385,7 @@ class WhatsAppService {
         catch (error) {
             logger_1.logger.error('Failed to process incoming message', {
                 messageId: message.id,
-                error: error.message
+                error: error instanceof Error ? error.message : String(error)
             });
         }
     }
@@ -376,7 +400,7 @@ class WhatsAppService {
             return response.data.data || [];
         }
         catch (error) {
-            logger_1.logger.error('Failed to get message templates', { error: error.message });
+            logger_1.logger.error('Failed to get message templates', { error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) });
             throw error;
         }
     }
@@ -391,17 +415,17 @@ class WhatsAppService {
                 }
             });
             const totalSent = messages.length;
-            const totalDelivered = messages.filter(m => m.status === 'delivered' || m.status === 'read').length;
-            const totalRead = messages.filter(m => m.status === 'read').length;
-            const totalFailed = messages.filter(m => m.status === 'failed').length;
+            const totalDelivered = messages.filter((m) => m.status === 'delivered' || m.status === 'read').length;
+            const totalRead = messages.filter((m) => m.status === 'read').length;
+            const totalFailed = messages.filter((m) => m.status === 'failed').length;
             const deliveryRate = totalSent > 0 ? (totalDelivered / totalSent) * 100 : 0;
             const readRate = totalDelivered > 0 ? (totalRead / totalDelivered) * 100 : 0;
-            const deliveredMessages = messages.filter(m => m.deliveredAt);
+            const deliveredMessages = messages.filter((m) => m.deliveredAt);
             const averageDeliveryTime = deliveredMessages.length > 0
                 ? deliveredMessages.reduce((sum, m) => sum + (m.deliveredAt.getTime() - m.timestamp.getTime()), 0) / deliveredMessages.length
                 : 0;
             const failureReasons = {};
-            messages.filter(m => m.status === 'failed' && m.errorMessage).forEach(m => {
+            messages.filter((m) => m.status === 'failed' && m.errorMessage).forEach((m) => {
                 const reason = m.errorMessage;
                 failureReasons[reason] = (failureReasons[reason] || 0) + 1;
             });
@@ -417,13 +441,12 @@ class WhatsAppService {
             };
         }
         catch (error) {
-            logger_1.logger.error('Failed to get delivery metrics', { error: error.message });
+            logger_1.logger.error('Failed to get delivery metrics', { error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) });
             throw error;
         }
     }
     verifyWebhookSignature(body, signature) {
         try {
-            const crypto = require('crypto');
             const expectedSignature = crypto
                 .createHmac('sha256', environment_1.config.whatsapp.webhookVerifyToken)
                 .update(body)
@@ -431,7 +454,7 @@ class WhatsAppService {
             return `sha256=${expectedSignature}` === signature;
         }
         catch (error) {
-            logger_1.logger.error('Failed to verify webhook signature', { error: error.message });
+            logger_1.logger.error('Failed to verify webhook signature', { error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) });
             return false;
         }
     }

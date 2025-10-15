@@ -5,20 +5,20 @@ import { test, expect } from '@playwright/test';
  * Ensures Playwright setup is working correctly
  */
 
-test.describe('Framework Validation', () => {
-  test('should validate Playwright is configured correctly', async ({ page }) => {
+test.describe(_'Framework Validation', _() => {
+  test(_'should validate Playwright is configured correctly', _async ({ page }) => {
     // Simple test to validate framework setup
     await page.goto('https://example.com');
     await expect(page).toHaveTitle(/Example Domain/);
   });
 
-  test('should support basic browser automation', async ({ page }) => {
+  test(_'should support basic browser automation', _async ({ page }) => {
     await page.goto('https://example.com');
-    const heading = page.locator('h1');
+    const _heading =  page.locator('h1');
     await expect(heading).toBeVisible();
   });
 
-  test('should handle responsive viewports', async ({ page }) => {
+  test(_'should handle responsive viewports', _async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 }); // Mobile
     await page.goto('https://example.com');
     await expect(page).toHaveURL(/example.com/);

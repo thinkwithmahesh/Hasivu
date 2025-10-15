@@ -45,7 +45,7 @@ class StructuredLoggingService {
                 level: info.level,
                 message: info.message,
                 ...(info.meta && typeof info.meta === 'object' ? info.meta : {}),
-                ...(info.stack && { stack: info.stack })
+                ...(info.stack ? { stack: info.stack } : {})
             };
             return JSON.stringify(logEntry);
         }));
@@ -85,7 +85,7 @@ class StructuredLoggingService {
             meta: {
                 ...metadata,
                 error: error ? {
-                    message: error.message,
+                    message: error instanceof Error ? error.message : String(error),
                     stack: error.stack,
                     name: error.name
                 } : undefined,
@@ -166,7 +166,7 @@ class StructuredLoggingService {
             status,
             gateway,
             error: error ? {
-                message: error.message,
+                message: error instanceof Error ? error.message : String(error),
                 code: error.code
             } : undefined,
             context: this.context,
@@ -198,7 +198,7 @@ class StructuredLoggingService {
             duration,
             studentId: studentId ? this.hashSensitiveData(studentId) : undefined,
             error: error ? {
-                message: error.message
+                message: error instanceof Error ? error.message : String(error)
             } : undefined,
             context: this.context,
             analysis: {

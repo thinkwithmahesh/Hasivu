@@ -65,7 +65,7 @@ class WhatsAppService {
             });
             return config;
         }, (error) => {
-            logger.error('WhatsApp API Request Error', { error: error.message });
+            logger.error('WhatsApp API Request Error', { error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) });
             return Promise.reject(error);
         });
         this.client.interceptors.response.use((response) => {
@@ -315,7 +315,7 @@ class WhatsAppService {
         }
         catch (error) {
             logger.error('Webhook signature verification failed', {
-                error: error.message
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
             });
             return false;
         }
@@ -344,7 +344,7 @@ class WhatsAppService {
         }
         catch (error) {
             logger.error('Failed to process webhook event', {
-                error: error.message
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
             });
             return { messages: [], statuses: [] };
         }
@@ -388,11 +388,11 @@ class WhatsAppService {
         if (error.code === 'ECONNABORTED') {
             return new WhatsAppServiceError(`${defaultMessage}: Request timeout`, 'TIMEOUT_ERROR', 408);
         }
-        return new WhatsAppServiceError(`${defaultMessage}: ${error.message}`, 'UNKNOWN_ERROR', 500);
+        return new WhatsAppServiceError(`${defaultMessage}: ${error instanceof Error ? error.message : String(error)}`, 'UNKNOWN_ERROR', 500);
     }
     async healthCheck() {
         try {
-            const response = await this.client.get(`/${this.phoneNumberId}`, {
+            await this.client.get(`/${this.phoneNumberId}`, {
                 params: {
                     fields: 'display_phone_number,name_status,quality_rating'
                 }
@@ -408,14 +408,14 @@ class WhatsAppService {
         catch (error) {
             logger.error('WhatsApp health check failed', {
                 phoneNumberId: this.phoneNumberId,
-                error: error.message
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
             });
             return {
                 status: 'unhealthy',
                 timestamp: Date.now(),
                 phoneNumberId: this.phoneNumberId,
                 apiVersion: this.apiVersion,
-                error: error.message
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
             };
         }
     }

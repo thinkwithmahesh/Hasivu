@@ -80,7 +80,7 @@ router.post('/query', [
         .isInt({ min: 0 })
         .toInt()
         .withMessage('Offset must be a non-negative integer')
-], handleValidationErrors, async (req, res, next) => {
+], handleValidationErrors, (async (req, res, next) => {
     try {
         const query = req.body;
         if (req.user.role === 'school_admin') {
@@ -112,7 +112,7 @@ router.post('/query', [
     catch (error) {
         next(error);
     }
-});
+}));
 router.get('/dashboard/:dashboardId', [
     (0, express_validator_1.param)('dashboardId')
         .isUUID()
@@ -125,7 +125,7 @@ router.get('/dashboard/:dashboardId', [
         .optional()
         .isISO8601()
         .withMessage('End date must be a valid ISO 8601 date')
-], handleValidationErrors, async (req, res, next) => {
+], handleValidationErrors, (async (req, res, next) => {
     try {
         const { dashboardId } = req.params;
         const { startDate, endDate } = req.query;
@@ -147,7 +147,7 @@ router.get('/dashboard/:dashboardId', [
     catch (error) {
         next(error);
     }
-});
+}));
 router.get('/kpis', [
     (0, express_validator_1.query)('schoolId')
         .optional()
@@ -161,9 +161,9 @@ router.get('/kpis', [
         .optional()
         .isISO8601()
         .withMessage('End date must be a valid ISO 8601 date')
-], handleValidationErrors, async (req, res, next) => {
+], handleValidationErrors, (async (req, res, next) => {
     try {
-        let { schoolId, startDate, endDate } = req.query;
+        const { schoolId, startDate, endDate } = req.query;
         if (req.user.role === 'school_admin') {
         }
         let dateRange;
@@ -184,13 +184,13 @@ router.get('/kpis', [
     catch (error) {
         next(error);
     }
-});
+}));
 router.get('/realtime', [
     (0, express_validator_1.query)('metrics')
         .optional()
         .isArray()
         .withMessage('Metrics must be an array if provided')
-], handleValidationErrors, async (req, res, next) => {
+], handleValidationErrors, (async (req, res, next) => {
     try {
         const metrics = req.query.metrics || [];
         const realtimeMetrics = await analytics_service_1.AnalyticsService.getRealtimeMetrics();
@@ -204,7 +204,7 @@ router.get('/realtime', [
     catch (error) {
         next(error);
     }
-});
+}));
 router.post('/reports', [
     (0, express_validator_1.body)('name')
         .isLength({ min: 1, max: 255 })
@@ -229,7 +229,7 @@ router.post('/reports', [
         .isISO8601()
         .toDate()
         .withMessage('End date must be a valid ISO 8601 date')
-], handleValidationErrors, async (req, res, next) => {
+], handleValidationErrors, (async (req, res, next) => {
     try {
         const { name, type, query } = req.body;
         if (req.user.role === 'school_admin') {
@@ -247,10 +247,10 @@ router.post('/reports', [
     catch (error) {
         next(error);
     }
-});
+}));
 router.post('/metrics', [
     (0, express_validator_1.body)('name')
-        .matches(/^[a-zA-Z][a-zA-Z0-9_\.]*$/)
+        .matches(/^[a-zA-Z][a-zA-Z0-9_.]*$/)
         .withMessage('Metric name must start with a letter and contain only letters, numbers, underscores, and dots'),
     (0, express_validator_1.body)('value')
         .isNumeric()
@@ -263,7 +263,7 @@ router.post('/metrics', [
         .optional()
         .isObject()
         .withMessage('Metadata must be an object')
-], handleValidationErrors, async (req, res, next) => {
+], handleValidationErrors, (async (req, res, next) => {
     try {
         const { name, value, dimensions = {}, metadata = {} } = req.body;
         const enrichedDimensions = {
@@ -284,8 +284,8 @@ router.post('/metrics', [
     catch (error) {
         next(error);
     }
-});
-router.get('/metrics/available', async (req, res, next) => {
+}));
+router.get('/metrics/available', (async (req, res, next) => {
     try {
         const availableMetrics = [
             { name: 'orders.total', description: 'Total number of orders', type: 'counter' },
@@ -329,7 +329,7 @@ router.get('/metrics/available', async (req, res, next) => {
     catch (error) {
         next(error);
     }
-});
+}));
 router.get('/reports/:reportId/export', [
     (0, express_validator_1.param)('reportId')
         .isUUID()
@@ -338,7 +338,7 @@ router.get('/reports/:reportId/export', [
         .optional()
         .isIn(['json', 'csv', 'xlsx'])
         .withMessage('Export format must be json, csv, or xlsx')
-], handleValidationErrors, async (req, res, next) => {
+], handleValidationErrors, (async (req, res, next) => {
     try {
         const { reportId } = req.params;
         const format = req.query.format || 'json';
@@ -392,5 +392,5 @@ router.get('/reports/:reportId/export', [
     catch (error) {
         next(error);
     }
-});
+}));
 //# sourceMappingURL=analytics.routes.js.map

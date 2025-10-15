@@ -37,7 +37,7 @@ function MyApp({ Component, pageProps }: AppProps) {
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
             <Component {...pageProps} />
-            <Toaster 
+            <Toaster
               position="top-right"
               toastOptions={{
                 duration: 4000,
@@ -141,7 +141,7 @@ import { api } from '@/lib/enhanced-api-client';
 
 export default function OrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
-  
+
   // Real-time order updates
   useOrderUpdates();
 
@@ -176,8 +176,8 @@ export default function OrdersPage() {
         {/* Order List */}
         <div className=process.env.WEB_IMPLEMENTATION_GUIDE_PASSWORD_1>
           {orders?.data?.map((order: any) => (
-            <Card 
-              key={order.id} 
+            <Card
+              key={order.id}
               className={`cursor-pointer transition-all ${
                 selectedOrder === order.id ? 'ring-2 ring-orange-500' : ''
               }`}
@@ -262,7 +262,7 @@ export function MenuGrid() {
       queryClient.invalidateQueries(['orders']);
       setCart(new Map());
       toast.success('Order placed successfully!');
-      
+
       // Emit socket event for real-time updates
       emit('order_placed', { orderId: response.data.id });
     },
@@ -275,13 +275,13 @@ export function MenuGrid() {
     const newCart = new Map(cart);
     const currentQty = newCart.get(itemId) || 0;
     const newQty = Math.max(0, currentQty + change);
-    
+
     if (newQty === 0) {
       newCart.delete(itemId);
     } else {
       newCart.set(itemId, newQty);
     }
-    
+
     setCart(newCart);
   };
 
@@ -328,8 +328,8 @@ export function MenuGrid() {
           <Card key={item.id} className="overflow-hidden hover:shadow-lg transition-shadow">
             <div className="h-48 bg-gradient-to-br from-orange-100 to-red-100 flex items-center justify-center">
               {item.imageUrl ? (
-                <img 
-                  src={item.imageUrl} 
+                <img
+                  src={item.imageUrl}
                   alt={item.name}
                   className="w-full h-full object-cover"
                 />
@@ -337,7 +337,7 @@ export function MenuGrid() {
                 <div className="text-6xl">🍽️</div>
               )}
             </div>
-            
+
             <CardHeader className="pb-2">
               <div className="flex items-start justify-between">
                 <div>
@@ -351,14 +351,14 @@ export function MenuGrid() {
                 )}
               </div>
             </CardHeader>
-            
+
             <CardContent>
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
                   <p className="text-xl font-bold text-orange-600">₹{item.price}</p>
                   <p className="text-xs text-gray-500">{item.calories} cal</p>
                 </div>
-                
+
                 <div className="flex items-center space-x-2">
                   {cart.get(item.id) ? (
                     <>
@@ -409,7 +409,7 @@ export function MenuGrid() {
                 </p>
                 <p className="text-sm text-gray-600">Total: ₹{getTotalPrice()}</p>
               </div>
-              <Button 
+              <Button
                 onClick={handleCheckout}
                 disabled={createOrderMutation.isLoading}
                 className="bg-orange-500 hover:bg-orange-600"
@@ -482,7 +482,7 @@ export function RazorpayCheckout({ orderId, amount, onSuccess, onError }: Razorp
         script.src = 'https://checkout.razorpay.com/v1/checkout.js';
         script.async = true;
         document.body.appendChild(script);
-        
+
         await new Promise((resolve) => {
           script.onload = resolve;
         });
@@ -621,7 +621,7 @@ export function NotificationCenter() {
   const [isOpen, setIsOpen] = useState(false);
   const dispatch = useAppDispatch();
   const notifications = useAppSelector(state => state.notifications.items);
-  
+
   // Subscribe to real-time notifications
   useNotifications();
 
@@ -641,8 +641,8 @@ export function NotificationCenter() {
       >
         <Bell className="h-5 w-5" />
         {unreadCount > 0 && (
-          <Badge 
-            variant="destructive" 
+          <Badge
+            variant="destructive"
             className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs"
           >
             {unreadCount > 9 ? '9+' : unreadCount}
@@ -662,7 +662,7 @@ export function NotificationCenter() {
               <X className="h-4 w-4" />
             </Button>
           </div>
-          
+
           <div className="max-h-80 overflow-y-auto">
             {notifications.length === 0 ? (
               <div className="p-4 text-center text-gray-500">
@@ -728,7 +728,7 @@ import { api } from '@/lib/enhanced-api-client';
 export async function testApiIntegration() {
   try {
     console.log('Testing API integration...');
-    
+
     // Test authentication
     const loginResult = await api.auth.login({
       email: 'test@school.com',

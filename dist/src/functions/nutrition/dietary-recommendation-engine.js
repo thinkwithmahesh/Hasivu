@@ -11,47 +11,68 @@ const lambda_auth_middleware_1 = require("../../shared/middleware/lambda-auth.mi
 const zod_1 = require("zod");
 const dynamoDbClient = lib_dynamodb_1.DynamoDBDocumentClient.from(new client_dynamodb_1.DynamoDBClient({}));
 const bedrockClient = new client_bedrock_runtime_1.BedrockRuntimeClient({ region: process.env.AWS_REGION || 'us-east-1' });
-const sageMakerClient = new client_sagemaker_runtime_1.SageMakerRuntimeClient({ region: process.env.AWS_REGION || 'us-east-1' });
+const sageMakerClient = new client_sagemaker_runtime_1.SageMakerRuntimeClient({
+    region: process.env.AWS_REGION || 'us-east-1',
+});
 const dietaryProfileSchema = zod_1.z.object({
     userId: zod_1.z.string().uuid(),
     preferences: zod_1.z.object({
-        dietType: zod_1.z.enum(['vegetarian', 'vegan', 'keto', 'paleo', 'mediterranean', 'omnivore', 'pescatarian']),
+        dietType: zod_1.z.enum([
+            'vegetarian',
+            'vegan',
+            'keto',
+            'paleo',
+            'mediterranean',
+            'omnivore',
+            'pescatarian',
+        ]),
         cuisinePreferences: zod_1.z.array(zod_1.z.string()),
         mealFrequency: zod_1.z.number().int().min(1).max(6).default(3),
-        calorieTarget: zod_1.z.number().positive().optional()
+        calorieTarget: zod_1.z.number().positive().optional(),
     }),
     goals: zod_1.z.object({
-        primary: zod_1.z.enum(['weight_loss', 'muscle_gain', 'maintenance', 'endurance', 'strength', 'general_health']),
+        primary: zod_1.z.enum([
+            'weight_loss',
+            'muscle_gain',
+            'maintenance',
+            'endurance',
+            'strength',
+            'general_health',
+        ]),
         secondary: zod_1.z.array(zod_1.z.string()).optional(),
-        targetTimeline: zod_1.z.enum(['1_month', '3_months', '6_months', '1_year', 'ongoing'])
+        targetTimeline: zod_1.z.enum(['1_month', '3_months', '6_months', '1_year', 'ongoing']),
     }),
-    currentDiet: zod_1.z.object({
+    currentDiet: zod_1.z
+        .object({
         description: zod_1.z.string(),
         typicalMeals: zod_1.z.array(zod_1.z.string()),
-        nutritionalGaps: zod_1.z.array(zod_1.z.string()).optional()
-    }).optional(),
+        nutritionalGaps: zod_1.z.array(zod_1.z.string()).optional(),
+    })
+        .optional(),
     restrictions: zod_1.z.object({
         allergies: zod_1.z.array(zod_1.z.string()),
         intolerances: zod_1.z.array(zod_1.z.string()),
-        foodsToAvoid: zod_1.z.array(zod_1.z.string())
+        foodsToAvoid: zod_1.z.array(zod_1.z.string()),
     }),
-    healthConditions: zod_1.z.array(zod_1.z.object({
+    healthConditions: zod_1.z
+        .array(zod_1.z.object({
         condition: zod_1.z.string(),
         severity: zod_1.z.enum(['mild', 'moderate', 'severe']),
-        dietaryImpact: zod_1.z.string()
-    })).optional(),
+        dietaryImpact: zod_1.z.string(),
+    }))
+        .optional(),
     healthConditionSupport: zod_1.z.array(zod_1.z.object({
         condition: zod_1.z.string(),
         recommendations: zod_1.z.array(zod_1.z.string()),
-        restrictions: zod_1.z.array(zod_1.z.string())
+        restrictions: zod_1.z.array(zod_1.z.string()),
     })),
     culturalAdaptations: zod_1.z.object({
         culturalBackground: zod_1.z.string(),
         traditionalFoods: zod_1.z.array(zod_1.z.string()),
         religiousRestrictions: zod_1.z.array(zod_1.z.string()).optional(),
         culturalMealPatterns: zod_1.z.array(zod_1.z.string()),
-        festivalConsiderations: zod_1.z.array(zod_1.z.string())
-    })
+        festivalConsiderations: zod_1.z.array(zod_1.z.string()),
+    }),
 });
 const childProfileSchema = zod_1.z.object({
     childId: zod_1.z.string().uuid(),
@@ -63,28 +84,30 @@ const childProfileSchema = zod_1.z.object({
     schoolId: zod_1.z.string().uuid(),
     medicalConditions: zod_1.z.array(zod_1.z.string()).optional(),
     allergies: zod_1.z.array(zod_1.z.string()).optional(),
-    parentPreferences: zod_1.z.object({
+    parentPreferences: zod_1.z
+        .object({
         organicPreference: zod_1.z.boolean().default(false),
         localFoodPreference: zod_1.z.boolean().default(false),
-        budgetConstraints: zod_1.z.enum(['low', 'medium', 'high']).default('medium')
-    }).optional()
+        budgetConstraints: zod_1.z.enum(['low', 'medium', 'high']).default('medium'),
+    })
+        .optional(),
 });
 function calculateChildNutritionalNeeds(childProfile) {
     const { age, gender, height, weight, activityLevel } = childProfile;
-    const bmi = weight / ((height / 100) ** 2);
+    const bmi = weight / (height / 100) ** 2;
     let bmr;
     if (gender === 'male') {
-        bmr = 88.362 + (13.397 * weight) + (4.799 * height) - (5.677 * age);
+        bmr = 88.362 + 13.397 * weight + 4.799 * height - 5.677 * age;
     }
     else {
-        bmr = 447.593 + (9.247 * weight) + (3.098 * height) - (4.330 * age);
+        bmr = 447.593 + 9.247 * weight + 3.098 * height - 4.33 * age;
     }
     const activityFactors = {
         sedentary: 1.2,
         light: 1.375,
         moderate: 1.55,
         active: 1.725,
-        very_active: 1.9
+        very_active: 1.9,
     };
     const totalDailyEnergyExpenditure = bmr * activityFactors[activityLevel];
     const growthFactor = age < 12 ? 1.2 : age < 16 ? 1.15 : 1.1;
@@ -93,39 +116,39 @@ function calculateChildNutritionalNeeds(childProfile) {
         calories: {
             min: Math.round(adjustedCalories * 0.9),
             max: Math.round(adjustedCalories * 1.1),
-            optimal: adjustedCalories
+            optimal: adjustedCalories,
         },
         macronutrients: {
             protein: {
-                grams: Math.round(adjustedCalories * 0.15 / 4),
-                percentage: 15
+                grams: Math.round((adjustedCalories * 0.15) / 4),
+                percentage: 15,
             },
             carbohydrates: {
-                grams: Math.round(adjustedCalories * 0.55 / 4),
-                percentage: 55
+                grams: Math.round((adjustedCalories * 0.55) / 4),
+                percentage: 55,
             },
             fat: {
-                grams: Math.round(adjustedCalories * 0.30 / 9),
-                percentage: 30
-            }
+                grams: Math.round((adjustedCalories * 0.3) / 9),
+                percentage: 30,
+            },
         },
         micronutrients: {
             vitamins: {
-                'vitamin_c': age < 9 ? 45 : age < 14 ? 65 : 75,
-                'vitamin_d': 15,
-                'vitamin_a': age < 9 ? 400 : age < 14 ? 600 : 700,
-                'folate': age < 9 ? 300 : age < 14 ? 400 : 400
+                vitamin_c: age < 9 ? 45 : age < 14 ? 65 : 75,
+                vitamin_d: 15,
+                vitamin_a: age < 9 ? 400 : age < 14 ? 600 : 700,
+                folate: age < 9 ? 300 : age < 14 ? 400 : 400,
             },
             minerals: {
-                'calcium': age < 9 ? 1000 : age < 19 ? 1300 : 1000,
-                'iron': age < 9 ? 10 : age < 14 ? 8 : gender === 'male' ? 11 : 15,
-                'zinc': age < 9 ? 8 : age < 14 ? 8 : gender === 'male' ? 11 : 9
-            }
+                calcium: age < 9 ? 1000 : age < 19 ? 1300 : 1000,
+                iron: age < 9 ? 10 : age < 14 ? 8 : gender === 'male' ? 11 : 15,
+                zinc: age < 9 ? 8 : age < 14 ? 8 : gender === 'male' ? 11 : 9,
+            },
         },
         hydration: {
             dailyTarget: Math.round(weight * 35),
-            timing: ['morning', 'before_meals', 'after_exercise', 'evening']
-        }
+            timing: ['morning', 'before_meals', 'after_exercise', 'evening'],
+        },
     };
 }
 function getBMICategory(bmi, age) {
@@ -154,10 +177,10 @@ async function getHistoricalData(userId) {
             TableName: process.env.DIETARY_HISTORY_TABLE || 'hasivu-dietary-history',
             KeyConditionExpression: 'userId = :userId',
             ExpressionAttributeValues: {
-                ':userId': userId
+                ':userId': userId,
             },
             ScanIndexForward: false,
-            Limit: 30
+            Limit: 30,
         });
         const result = await dynamoDbClient.send(command);
         return result.Items || [];
@@ -214,11 +237,13 @@ Return structured JSON response with meal plans, insights, and actionable recomm
                 anthropic_version: 'bedrock-2023-05-31',
                 max_tokens: 4000,
                 temperature: 0.7,
-                messages: [{
+                messages: [
+                    {
                         role: 'user',
-                        content: prompt
-                    }]
-            })
+                        content: prompt,
+                    },
+                ],
+            }),
         });
         const response = await bedrockClient.send(command);
         const responseBody = JSON.parse(new TextDecoder().decode(response.body));
@@ -226,7 +251,9 @@ Return structured JSON response with meal plans, insights, and actionable recomm
         let recommendations;
         try {
             const jsonMatch = aiResponse.match(/```json\n([\s\S]*?)\n```/);
-            recommendations = jsonMatch ? JSON.parse(jsonMatch[1]) : createFallbackRecommendations(profile, nutritionalNeeds);
+            recommendations = jsonMatch
+                ? JSON.parse(jsonMatch[1])
+                : createFallbackRecommendations(profile, nutritionalNeeds);
         }
         catch (parseError) {
             recommendations = createFallbackRecommendations(profile, nutritionalNeeds);
@@ -234,7 +261,7 @@ Return structured JSON response with meal plans, insights, and actionable recomm
         return processAIRecommendations(recommendations, profile, nutritionalNeeds);
     }
     catch (error) {
-        logger_service_1.LoggerService.getInstance().error('AI recommendation generation failed', { error });
+        logger_service_1.LoggerService.getInstance().error('AI recommendation generation failed', error instanceof Error ? error : new Error('Unknown error'), { profile: profile?.userId });
         return createFallbackRecommendations(profile, nutritionalNeeds);
     }
 }
@@ -245,43 +272,43 @@ function processAIRecommendations(aiResponse, profile, nutritionalNeeds) {
         meals: Array.from({ length: 7 }, (_, i) => createDailyMealPlan(i, nutritionalNeeds, profile)),
         nutritionalSummary: createWeeklyNutritionalSummary(nutritionalNeeds),
         totalEstimatedCost: Math.round(Math.random() * 200 + 150),
-        culturalAdaptations: profile.culturalAdaptations?.traditionalFoods?.slice(0, 3) || []
+        culturalAdaptations: profile.culturalAdaptations?.traditionalFoods?.slice(0, 3) || [],
     };
     return {
         recommendations: {
             mealPlan: weeklyMealPlan,
             nutritionalAnalysis: createNutritionalAnalysis(nutritionalNeeds, profile),
-            shoppingList: generateShoppingList(weeklyMealPlan)
+            shoppingList: generateShoppingList(weeklyMealPlan),
         },
         aiInsights: {
             personalizedTips: [
                 `Focus on ${profile.goals?.primary} with gradual dietary changes`,
                 `Incorporate ${profile.culturalAdaptations?.culturalBackground} traditional foods for better adherence`,
-                'Track progress weekly and adjust portions as needed'
+                'Track progress weekly and adjust portions as needed',
             ],
             potentialChallenges: [
                 'Initial adjustment period may cause temporary hunger',
                 'Social eating situations may require planning ahead',
-                'Seasonal ingredient availability might affect meal variety'
+                'Seasonal ingredient availability might affect meal variety',
             ],
             motivationalMessages: [
                 'Small consistent changes lead to lasting health improvements',
                 'Your cultural food traditions can be part of a healthy lifestyle',
-                'Every healthy choice is an investment in your future well-being'
-            ]
+                'Every healthy choice is an investment in your future well-being',
+            ],
         },
         actionPlan: {
             weeklyGoals: [
                 'Plan and prep 3 meals in advance each week',
                 'Track daily water intake and nutritional goals',
-                'Incorporate 2 traditional healthy recipes per week'
+                'Incorporate 2 traditional healthy recipes per week',
             ],
             monthlyMilestones: [
                 'Establish consistent meal timing and portion control',
                 'Build a repertoire of 20 healthy go-to meals',
-                'Achieve 80% adherence to nutritional targets'
-            ]
-        }
+                'Achieve 80% adherence to nutritional targets',
+            ],
+        },
     };
 }
 function createDailyMealPlan(dayIndex, nutritionalNeeds, profile) {
@@ -295,22 +322,22 @@ function createDailyMealPlan(dayIndex, nutritionalNeeds, profile) {
         meals: {
             breakfast: createMealRecommendation('breakfast', dailyCalories * 0.25, profile),
             lunch: createMealRecommendation('lunch', dailyCalories * 0.35, profile),
-            dinner: createMealRecommendation('dinner', dailyCalories * 0.30, profile),
-            afternoonSnack: createMealRecommendation('snack', dailyCalories * 0.10, profile)
+            dinner: createMealRecommendation('dinner', dailyCalories * 0.3, profile),
+            afternoonSnack: createMealRecommendation('snack', dailyCalories * 0.1, profile),
         },
         dailyNutrition: {
             calories: dailyCalories,
             macros: {
                 protein: nutritionalNeeds.macronutrients.protein.grams,
                 carbohydrates: nutritionalNeeds.macronutrients.carbohydrates.grams,
-                fat: nutritionalNeeds.macronutrients.fat.grams
+                fat: nutritionalNeeds.macronutrients.fat.grams,
             },
             micronutrients: nutritionalNeeds.micronutrients,
             fiber: 25,
             sugar: 50,
-            sodium: 2300
+            sodium: 2300,
         },
-        estimatedCost: Math.round(Math.random() * 25 + 15)
+        estimatedCost: Math.round(Math.random() * 25 + 15),
     };
 }
 function createMealRecommendation(mealType, targetCalories, profile) {
@@ -318,7 +345,7 @@ function createMealRecommendation(mealType, targetCalories, profile) {
         breakfast: ['Healthy Breakfast Bowl', 'Nutritious Morning Meal', 'Energy Start Plate'],
         lunch: ['Balanced Lunch Plate', 'Midday Nutrition Bowl', 'Power Lunch'],
         dinner: ['Evening Wellness Meal', 'Dinner Balance Plate', 'Restorative Dinner'],
-        snack: ['Healthy Snack Mix', 'Energy Boost Snack', 'Nutritious Bite']
+        snack: ['Healthy Snack Mix', 'Energy Boost Snack', 'Nutritious Bite'],
     };
     const mealName = mealNames[mealType]?.[Math.floor(Math.random() * mealNames[mealType].length)] || 'Healthy Meal';
     return {
@@ -329,22 +356,22 @@ function createMealRecommendation(mealType, targetCalories, profile) {
         nutritionalProfile: {
             calories: Math.round(targetCalories),
             macros: {
-                protein: Math.round(targetCalories * 0.15 / 4),
-                carbohydrates: Math.round(targetCalories * 0.55 / 4),
-                fat: Math.round(targetCalories * 0.30 / 9)
+                protein: Math.round((targetCalories * 0.15) / 4),
+                carbohydrates: Math.round((targetCalories * 0.55) / 4),
+                fat: Math.round((targetCalories * 0.3) / 9),
             },
             micronutrients: {
                 vitamins: { vitamin_c: 10, vitamin_d: 2 },
-                minerals: { calcium: 100, iron: 3 }
+                minerals: { calcium: 100, iron: 3 },
             },
             fiber: Math.round(targetCalories / 100),
-            sugar: Math.round(targetCalories * 0.1 / 4),
-            sodium: Math.round(targetCalories * 0.5)
+            sugar: Math.round((targetCalories * 0.1) / 4),
+            sodium: Math.round(targetCalories * 0.5),
         },
         cookingInstructions: [
             'Prepare all ingredients according to quantities',
             'Follow cooking method appropriate for ingredients',
-            'Season to taste and serve fresh'
+            'Season to taste and serve fresh',
         ],
         prepTime: 15,
         cookTime: 20,
@@ -354,32 +381,109 @@ function createMealRecommendation(mealType, targetCalories, profile) {
         healthBenefits: [
             'Provides sustained energy',
             'Supports nutritional goals',
-            'Contains essential micronutrients'
+            'Contains essential micronutrients',
         ],
-        alternatives: ['Similar meal with different protein source', 'Vegetarian variant available']
+        alternatives: ['Similar meal with different protein source', 'Vegetarian variant available'],
     };
 }
 function generateMockIngredients(mealType, calories) {
     const baseIngredients = {
         breakfast: [
-            { name: 'Oats', quantity: 50, unit: 'g', optional: false, substitutes: ['quinoa', 'millet'], estimatedCost: 0.50 },
-            { name: 'Milk', quantity: 200, unit: 'ml', optional: false, substitutes: ['almond milk', 'soy milk'], estimatedCost: 0.75 },
-            { name: 'Banana', quantity: 1, unit: 'medium', optional: false, substitutes: ['apple', 'berries'], estimatedCost: 0.25 }
+            {
+                name: 'Oats',
+                quantity: 50,
+                unit: 'g',
+                optional: false,
+                substitutes: ['quinoa', 'millet'],
+                estimatedCost: 0.5,
+            },
+            {
+                name: 'Milk',
+                quantity: 200,
+                unit: 'ml',
+                optional: false,
+                substitutes: ['almond milk', 'soy milk'],
+                estimatedCost: 0.75,
+            },
+            {
+                name: 'Banana',
+                quantity: 1,
+                unit: 'medium',
+                optional: false,
+                substitutes: ['apple', 'berries'],
+                estimatedCost: 0.25,
+            },
         ],
         lunch: [
-            { name: 'Brown rice', quantity: 75, unit: 'g', optional: false, substitutes: ['quinoa', 'bulgur'], estimatedCost: 1.00 },
-            { name: 'Chicken breast', quantity: 100, unit: 'g', optional: false, substitutes: ['tofu', 'lentils'], estimatedCost: 2.50 },
-            { name: 'Mixed vegetables', quantity: 150, unit: 'g', optional: false, substitutes: ['seasonal vegetables'], estimatedCost: 1.50 }
+            {
+                name: 'Brown rice',
+                quantity: 75,
+                unit: 'g',
+                optional: false,
+                substitutes: ['quinoa', 'bulgur'],
+                estimatedCost: 1.0,
+            },
+            {
+                name: 'Chicken breast',
+                quantity: 100,
+                unit: 'g',
+                optional: false,
+                substitutes: ['tofu', 'lentils'],
+                estimatedCost: 2.5,
+            },
+            {
+                name: 'Mixed vegetables',
+                quantity: 150,
+                unit: 'g',
+                optional: false,
+                substitutes: ['seasonal vegetables'],
+                estimatedCost: 1.5,
+            },
         ],
         dinner: [
-            { name: 'Salmon fillet', quantity: 120, unit: 'g', optional: false, substitutes: ['cod', 'tofu'], estimatedCost: 4.00 },
-            { name: 'Sweet potato', quantity: 150, unit: 'g', optional: false, substitutes: ['regular potato', 'quinoa'], estimatedCost: 0.75 },
-            { name: 'Broccoli', quantity: 100, unit: 'g', optional: false, substitutes: ['cauliflower', 'green beans'], estimatedCost: 1.00 }
+            {
+                name: 'Salmon fillet',
+                quantity: 120,
+                unit: 'g',
+                optional: false,
+                substitutes: ['cod', 'tofu'],
+                estimatedCost: 4.0,
+            },
+            {
+                name: 'Sweet potato',
+                quantity: 150,
+                unit: 'g',
+                optional: false,
+                substitutes: ['regular potato', 'quinoa'],
+                estimatedCost: 0.75,
+            },
+            {
+                name: 'Broccoli',
+                quantity: 100,
+                unit: 'g',
+                optional: false,
+                substitutes: ['cauliflower', 'green beans'],
+                estimatedCost: 1.0,
+            },
         ],
         snack: [
-            { name: 'Greek yogurt', quantity: 150, unit: 'g', optional: false, substitutes: ['regular yogurt'], estimatedCost: 1.25 },
-            { name: 'Mixed nuts', quantity: 20, unit: 'g', optional: false, substitutes: ['seeds'], estimatedCost: 0.75 }
-        ]
+            {
+                name: 'Greek yogurt',
+                quantity: 150,
+                unit: 'g',
+                optional: false,
+                substitutes: ['regular yogurt'],
+                estimatedCost: 1.25,
+            },
+            {
+                name: 'Mixed nuts',
+                quantity: 20,
+                unit: 'g',
+                optional: false,
+                substitutes: ['seeds'],
+                estimatedCost: 0.75,
+            },
+        ],
     };
     return baseIngredients[mealType] || baseIngredients.snack;
 }
@@ -390,33 +494,36 @@ function createNutritionalAnalysis(nutritionalNeeds, profile) {
             macros: {
                 protein: nutritionalNeeds.macronutrients.protein.grams * 7,
                 carbohydrates: nutritionalNeeds.macronutrients.carbohydrates.grams * 7,
-                fat: nutritionalNeeds.macronutrients.fat.grams * 7
+                fat: nutritionalNeeds.macronutrients.fat.grams * 7,
             },
             micronutrients: nutritionalNeeds.micronutrients,
             fiber: 175,
             sugar: 350,
-            sodium: 16100
+            sodium: 16100,
         },
         dailyAverages: {
             calories: nutritionalNeeds.calories.optimal,
             macros: {
                 protein: nutritionalNeeds.macronutrients.protein.grams,
                 carbohydrates: nutritionalNeeds.macronutrients.carbohydrates.grams,
-                fat: nutritionalNeeds.macronutrients.fat.grams
+                fat: nutritionalNeeds.macronutrients.fat.grams,
             },
             micronutrients: nutritionalNeeds.micronutrients,
             fiber: 25,
             sugar: 50,
-            sodium: 2300
+            sodium: 2300,
         },
         complianceScore: 85,
-        nutritionalGaps: ['Omega-3 fatty acids could be increased', 'Consider adding more fiber sources'],
+        nutritionalGaps: [
+            'Omega-3 fatty acids could be increased',
+            'Consider adding more fiber sources',
+        ],
         recommendations: [
             'Include fatty fish 2-3 times per week',
             'Add variety in vegetable colors for diverse micronutrients',
-            'Monitor portion sizes to maintain caloric goals'
+            'Monitor portion sizes to maintain caloric goals',
         ],
-        healthConditionConsiderations: profile.healthConditions?.map((condition) => `${condition.condition}: Follow specific dietary guidelines for optimal management`) || []
+        healthConditionConsiderations: profile.healthConditions?.map((condition) => `${condition.condition}: Follow specific dietary guidelines for optimal management`) || [],
     };
 }
 function createWeeklyNutritionalSummary(nutritionalNeeds) {
@@ -425,23 +532,23 @@ function createWeeklyNutritionalSummary(nutritionalNeeds) {
         macroDistribution: {
             protein: {
                 grams: nutritionalNeeds.macronutrients.protein.grams * 7,
-                percentage: nutritionalNeeds.macronutrients.protein.percentage
+                percentage: nutritionalNeeds.macronutrients.protein.percentage,
             },
             carbs: {
                 grams: nutritionalNeeds.macronutrients.carbohydrates.grams * 7,
-                percentage: nutritionalNeeds.macronutrients.carbohydrates.percentage
+                percentage: nutritionalNeeds.macronutrients.carbohydrates.percentage,
             },
             fat: {
                 grams: nutritionalNeeds.macronutrients.fat.grams * 7,
-                percentage: nutritionalNeeds.macronutrients.fat.percentage
-            }
+                percentage: nutritionalNeeds.macronutrients.fat.percentage,
+            },
         },
         micronutrientHighlights: [
             'Rich in vitamin C for immune support',
             'Adequate calcium for bone health',
-            'Sufficient iron for energy metabolism'
+            'Sufficient iron for energy metabolism',
         ],
-        healthScore: 8.5
+        healthScore: 8.5,
     };
 }
 function generateShoppingList(mealPlan) {
@@ -464,39 +571,36 @@ function createFallbackRecommendations(profile, nutritionalNeeds) {
         meals: Array.from({ length: 7 }, (_, i) => createDailyMealPlan(i, nutritionalNeeds, profile)),
         nutritionalSummary: createWeeklyNutritionalSummary(nutritionalNeeds),
         totalEstimatedCost: 175,
-        culturalAdaptations: []
+        culturalAdaptations: [],
     };
     return {
         recommendations: {
             mealPlan: weeklyMealPlan,
             nutritionalAnalysis: createNutritionalAnalysis(nutritionalNeeds, profile),
-            shoppingList: generateShoppingList(weeklyMealPlan)
+            shoppingList: generateShoppingList(weeklyMealPlan),
         },
         aiInsights: {
             personalizedTips: [
                 'Follow portion guidelines for sustainable results',
                 'Stay hydrated throughout the day',
-                'Include variety in your meal choices'
+                'Include variety in your meal choices',
             ],
             potentialChallenges: [
                 'Initial meal preparation time investment',
-                'Adjusting to new eating patterns'
+                'Adjusting to new eating patterns',
             ],
             motivationalMessages: [
                 'Consistency leads to lasting health improvements',
-                'Every healthy choice matters for your well-being'
-            ]
+                'Every healthy choice matters for your well-being',
+            ],
         },
         actionPlan: {
-            weeklyGoals: [
-                'Follow meal plan 5 days per week',
-                'Track progress daily'
-            ],
+            weeklyGoals: ['Follow meal plan 5 days per week', 'Track progress daily'],
             monthlyMilestones: [
                 'Establish sustainable eating habits',
-                'Achieve nutritional targets consistently'
-            ]
-        }
+                'Achieve nutritional targets consistently',
+            ],
+        },
     };
 }
 async function storeRecommendationResult(userId, request, recommendations) {
@@ -512,8 +616,8 @@ async function storeRecommendationResult(userId, request, recommendations) {
                 recommendations,
                 status: 'active',
                 version: '1.0',
-                ttl: Math.floor(Date.now() / 1000) + (90 * 24 * 60 * 60)
-            }
+                ttl: Math.floor(Date.now() / 1000) + 90 * 24 * 60 * 60,
+            },
         });
         await dynamoDbClient.send(command);
     }
@@ -540,7 +644,7 @@ const dietaryRecommendationHandler = async (event, context) => {
             requestId,
             userId: authenticatedUser.id,
             isChildRequest,
-            primaryGoal: validatedRequest.goals?.primary || 'general_health'
+            primaryGoal: validatedRequest.goals?.primary || 'general_health',
         });
         let nutritionalNeeds;
         if (isChildRequest) {
@@ -552,24 +656,24 @@ const dietaryRecommendationHandler = async (event, context) => {
                 macronutrients: {
                     protein: { grams: 150, percentage: 20 },
                     carbohydrates: { grams: 250, percentage: 50 },
-                    fat: { grams: 67, percentage: 30 }
+                    fat: { grams: 67, percentage: 30 },
                 },
                 micronutrients: {
                     vitamins: { vitamin_c: 90, vitamin_d: 15 },
-                    minerals: { calcium: 1000, iron: 18 }
+                    minerals: { calcium: 1000, iron: 18 },
                 },
-                hydration: { dailyTarget: 2500, timing: ['morning', 'throughout_day'] }
+                hydration: { dailyTarget: 2500, timing: ['morning', 'throughout_day'] },
             };
         }
-        const historicalData = await getHistoricalData(authenticatedUser.id);
+        const historicalData = await getHistoricalData(authenticatedUser.id || authenticatedUser.userId || '');
         const recommendations = await generatePersonalizedRecommendations(validatedRequest, nutritionalNeeds, historicalData);
-        await storeRecommendationResult(authenticatedUser.id, validatedRequest, recommendations);
+        await storeRecommendationResult(authenticatedUser.id || authenticatedUser.userId || '', validatedRequest, recommendations);
         logger.info('Dietary recommendations generated successfully', {
             requestId,
             userId: authenticatedUser.id,
             mealPlanId: recommendations.recommendations.mealPlan.id,
             totalCost: recommendations.recommendations.mealPlan.totalEstimatedCost,
-            healthScore: recommendations.recommendations.mealPlan.nutritionalSummary.healthScore
+            healthScore: recommendations.recommendations.mealPlan.nutritionalSummary.healthScore,
         });
         return (0, response_utils_1.createSuccessResponse)({
             message: 'Dietary recommendations generated successfully',
@@ -581,19 +685,17 @@ const dietaryRecommendationHandler = async (event, context) => {
                     requestId,
                     generatedAt: new Date().toISOString(),
                     version: '1.0',
-                    expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString()
-                }
-            }
+                    expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
+                },
+            },
         });
     }
     catch (error) {
-        logger.error('Dietary recommendation generation failed', {
+        logger.error('Dietary recommendation generation failed', error instanceof Error ? error : new Error(String(error)), {
             requestId,
-            error: error.message,
-            stack: error.stack
         });
         if (error.name === 'ZodError') {
-            return (0, response_utils_1.createErrorResponse)('Invalid dietary profile data', 400, 'VALIDATION_ERROR');
+            return (0, response_utils_1.createErrorResponse)('VALIDATION_ERROR', 'Invalid dietary profile data', 400);
         }
         return (0, response_utils_1.handleError)(error, 'Failed to generate dietary recommendations');
     }

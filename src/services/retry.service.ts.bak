@@ -1,0 +1,474 @@
+/**
+ * HASIVU Platform - Retry Service
+ * Intelligent retry mechanism with exponential backoff and jitter
+ * Handles transient failures across all service dependencies
+ */
+import { logger } from '@/utils/logger';
+
+/**
+ * Retry configuration options
+ */
+export interface RetryConfig {
+  maxAttempts: number;
+  baseDelay: number;
+  maxDelay: number;
+  backoffMultiplier: number;
+  jitter: boolean;
+  retryCondition?: (error: any) => boolean;
+  onRetry?: (error: any, attempt: number) => void;
+  timeout?: number;
+}
+
+/**
+ * Retry result with metadata
+ */
+export interface RetryResult<T> {
+  result: T;
+  attempts: number;
+  totalTime: number;
+  lastError?: Error;
+  allErrors: Error[];
+}
+
+/**
+ * Retry operation metadata
+ */
+export interface RetryMetadata {
+  operationType: string;
+  startTime: number;
+  endTime: number;
+  totalAttempts: number;
+  success: boolean;
+  finalError?: Error;
+  delaySequence: number[];
+}
+
+/**
+ * Default retry configurations for different operation types
+ */
+export const RetryConfigs = {
+  DATABASE: {
+    maxAttempts: 3,
+    baseDelay: 1000,
+    maxDelay: 10000,
+    backoffMultiplier: 2,
+    jitter: true,
+    timeout: 30000
+  } as RetryConfig,
+
+  REDIS: {
+    maxAttempts: 3,
+    baseDelay: 500,
+    maxDelay: 5000,
+    backoffMultiplier: 2,
+    jitter: true,
+    timeout: 10000
+  } as RetryConfig,
+
+  PAYMENT_GATEWAY: {
+    maxAttempts: 2,
+    baseDelay: 2000,
+    maxDelay: 15000,
+    backoffMultiplier: 2.5,
+    jitter: true,
+    timeout: 60000
+  } as RetryConfig,
+
+  EXTERNAL_API: {
+    maxAttempts: 3,
+    baseDelay: 1000,
+    maxDelay: 8000,
+    backoffMultiplier: 2,
+    jitter: true,
+    timeout: 20000
+  } as RetryConfig,
+
+  RFID_READER: {
+    maxAttempts: 5,
+    baseDelay: 500,
+    maxDelay: 3000,
+    backoffMultiplier: 1.5,
+    jitter: false,
+    timeout: 5000
+  } as RetryConfig,
+
+  FILE_OPERATIONS: {
+    maxAttempts: 2,
+    baseDelay: 1000,
+    maxDelay: 5000,
+    backoffMultiplier: 2,
+    jitter: false,
+    timeout: 15000
+  } as RetryConfig
+};
+
+/**
+ * Main retry service class
+ */
+export class RetryService {
+  /**
+   * Execute an operation with retry logic
+   */
+  static async executeWithRetry<T>(
+    operation: () => Promise<T>,
+    config: RetryConfig,
+    operationName: string = 'unknown'
+  ): Promise<T> {
+    const startTime = Date.now();
+    const errors: Error[] = [];
+    const delaySequence: number[] = [];
+    let lastError: Error;
+    
+    for (let attempt = 1; attempt <= config.maxAttempts; attempt++) {
+      try {
+        logger.debug(`Attempting operation '${operationName}' (attempt ${attempt}/${config.maxAttempts})`);
+        
+        // Set timeout if configured
+        if (config.timeout) {
+          const timeoutPromise = new Promise<never>((_, reject) => {
+            setTimeout(() => reject(new Error(`Operation timeout after ${config.timeout}ms`)), config.timeout);
+          });
+          
+          const result = await Promise.race([operation(), timeoutPromise]);
+          
+          // Success case
+          logger.info(`Operation '${operationName}' succeeded on attempt ${attempt}`);
+          return result;
+        } else {
+          const result = await operation();
+          logger.info(`Operation '${operationName}' succeeded on attempt ${attempt}`);
+          return result;
+        }
+        
+      } catch (error: unknown) {
+        lastError = error as Error;
+        errors.push(lastError);
+        
+        logger.warn(`Operation '${operationName}' failed on attempt ${attempt}`, {
+          error: lastError.message,
+          attempt,
+          maxAttempts: config.maxAttempts
+        });
+        
+        // Check if we should retry
+        const shouldRetry = config.retryCondition 
+          ? config.retryCondition(lastError)
+          : this.defaultRetryCondition(lastError);
+          
+        if (!shouldRetry || attempt === config.maxAttempts) {
+          break;
+        }
+        
+        // Calculate delay for next attempt
+        const delay = this.calculateDelay(attempt, config);
+        delaySequence.push(delay);
+        
+        // Call onRetry callback if provided
+        if (config.onRetry) {
+          config.onRetry(lastError, attempt);
+        }
+        
+        // Wait before next attempt
+        if (attempt < config.maxAttempts) {
+          logger.debug(`Waiting ${delay}ms before retry attempt ${attempt + 1}`);
+          await this.delay(delay);
+        }
+      }
+    }
+    
+    // All attempts failed
+    const totalTime = Date.now() - startTime;
+    
+    logger.error(`Operation '${operationName}' failed after ${config.maxAttempts} attempts`, {
+      totalTime,
+      attempts: config.maxAttempts,
+      allErrors: errors.map(e => e.message),
+      delaySequence
+    });
+    
+    // Throw the last error
+    throw lastError;
+  }
+
+  /**
+   * Execute with retry and return detailed result
+   */
+  static async executeWithRetryResult<T>(
+    operation: () => Promise<T>,
+    config: RetryConfig,
+    operationName: string = 'unknown'
+  ): Promise<RetryResult<T>> {
+    const startTime = Date.now();
+    const errors: Error[] = [];
+    let result: T;
+    let attempts = 0;
+    
+    try {
+      result = await this.executeWithRetry(operation, config, operationName);
+      attempts = errors.length + 1; // Include successful attempt
+    } catch (error: unknown) {
+      attempts = config.maxAttempts;
+      throw error;
+    }
+    
+    const totalTime = Date.now() - startTime;
+    
+    return {
+      result,
+      attempts,
+      totalTime,
+      lastError: errors[errors.length - 1],
+      allErrors: errors
+    };
+  }
+
+  /**
+   * Calculate delay with exponential backoff and optional jitter
+   */
+  private static calculateDelay(attempt: number, config: RetryConfig): number {
+    // Base exponential backoff
+    let delay = config.baseDelay * Math.pow(config.backoffMultiplier, attempt - 1);
+    
+    // Apply maximum delay limit
+    delay = Math.min(delay, config.maxDelay);
+    
+    // Add jitter if enabled (±25% of calculated delay)
+    if (config.jitter) {
+      const jitterRange = delay * 0.25;
+      const jitterOffset = (Math.random() - 0.5) * 2 * jitterRange;
+      delay += jitterOffset;
+    }
+    
+    // Ensure delay is positive
+    return Math.max(Math.floor(delay), 100);
+  }
+
+  /**
+   * Default retry condition - retry on network and temporary errors
+   */
+  private static defaultRetryCondition(error: any): boolean {
+    // Network errors
+    if (error.code === 'ECONNRESET' || 
+        error.code === 'ECONNREFUSED' || 
+        error.code === 'ETIMEDOUT' ||
+        error.code === 'ENOTFOUND') {
+      return true;
+    }
+    
+    // HTTP errors that should be retried
+    if (error.response?.status) {
+      const status = error.response.status;
+      
+      // Retry on server errors (5xx) and some client errors
+      if (status >= 500 || status === 408 || status === 429) {
+        return true;
+      }
+    }
+    
+    // Database connection errors
+    if (error.message?.includes('connection') ||
+        error.message?.includes('timeout') ||
+        error.message?.includes('ECONNRESET')) {
+      return true;
+    }
+    
+    // Redis errors
+    if (error.message?.includes('Redis') ||
+        error.message?.includes('READONLY')) {
+      return true;
+    }
+    
+    // Temporary file system errors
+    if (error.code === 'EMFILE' || 
+        error.code === 'ENFILE' ||
+        error.code === 'EBUSY') {
+      return true;
+    }
+    
+    return false;
+  }
+
+  /**
+   * Simple delay helper
+   */
+  private static delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  /**
+   * Create retry metadata for monitoring
+   */
+  static createRetryMetadata(
+    operationType: string,
+    startTime: number,
+    attempts: number,
+    success: boolean,
+    finalError?: Error,
+    delaySequence: number[] = []
+  ): RetryMetadata {
+    return {
+      operationType,
+      startTime,
+      endTime: Date.now(),
+      totalAttempts: attempts,
+      success,
+      finalError,
+      delaySequence
+    };
+  }
+
+  /**
+   * Get retry statistics for monitoring
+   */
+  static getRetryStats(): {
+    configuredOperations: string[];
+    defaultConfigs: Record<string, RetryConfig>;
+  } {
+    return {
+      configuredOperations: Object.keys(RetryConfigs),
+      defaultConfigs: RetryConfigs
+    };
+  }
+}
+
+/**
+ * Convenience functions for common retry scenarios
+ */
+
+/**
+ * Retry database operations
+ */
+export const retryDatabaseOperation = async <T>(
+  operation: () => Promise<T>,
+  operationName: string = 'database'
+): Promise<T> => {
+  return RetryService.executeWithRetry(
+    operation,
+    RetryConfigs.DATABASE,
+    operationName
+  );
+};
+
+/**
+ * Retry Redis operations
+ */
+export const retryRedisOperation = async <T>(
+  operation: () => Promise<T>,
+  operationName: string = 'redis'
+): Promise<T> => {
+  return RetryService.executeWithRetry(
+    operation,
+    RetryConfigs.REDIS,
+    operationName
+  );
+};
+
+/**
+ * Retry payment gateway operations
+ */
+export const retryPaymentOperation = async <T>(
+  operation: () => Promise<T>,
+  operationName: string = 'payment'
+): Promise<T> => {
+  return RetryService.executeWithRetry(
+    operation,
+    RetryConfigs.PAYMENT_GATEWAY,
+    operationName
+  );
+};
+
+/**
+ * Retry external API operations
+ */
+export const retryExternalApiOperation = async <T>(
+  operation: () => Promise<T>,
+  operationName: string = 'external-api'
+): Promise<T> => {
+  return RetryService.executeWithRetry(
+    operation,
+    RetryConfigs.EXTERNAL_API,
+    operationName
+  );
+};
+
+/**
+ * Retry RFID reader operations
+ */
+export const retryRfidOperation = async <T>(
+  operation: () => Promise<T>,
+  operationName: string = 'rfid'
+): Promise<T> => {
+  return RetryService.executeWithRetry(
+    operation,
+    RetryConfigs.RFID_READER,
+    operationName
+  );
+};
+
+/**
+ * Retry file operations
+ */
+export const retryFileOperation = async <T>(
+  operation: () => Promise<T>,
+  operationName: string = 'file'
+): Promise<T> => {
+  return RetryService.executeWithRetry(
+    operation,
+    RetryConfigs.FILE_OPERATIONS,
+    operationName
+  );
+};
+
+/**
+ * Retry with custom configuration
+ */
+export const retryWithConfig = async <T>(
+  operation: () => Promise<T>,
+  config: Partial<RetryConfig>,
+  operationName: string = 'custom'
+): Promise<T> => {
+  const fullConfig: RetryConfig = {
+    maxAttempts: 3,
+    baseDelay: 1000,
+    maxDelay: 10000,
+    backoffMultiplier: 2,
+    jitter: true,
+    ...config
+  };
+  
+  return RetryService.executeWithRetry(
+    operation,
+    fullConfig,
+    operationName
+  );
+};
+
+/**
+ * Async retry decorator for class methods
+ */
+export function Retry(config: Partial<RetryConfig> = {}) {
+  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+    const originalMethod = descriptor.value;
+    
+    descriptor.value = async function (...args: any[]) {
+      const fullConfig: RetryConfig = {
+        maxAttempts: 3,
+        baseDelay: 1000,
+        maxDelay: 10000,
+        backoffMultiplier: 2,
+        jitter: true,
+        ...config
+      };
+      
+      return RetryService.executeWithRetry(
+        () => originalMethod.apply(this, args),
+        fullConfig,
+        `${target.constructor.name}.${propertyKey}`
+      );
+    };
+    
+    return descriptor;
+  };
+}
+
+export default RetryService;

@@ -1,0 +1,1233 @@
+/**
+ * HASIVU Platform - Demand Forecasting Service
+ * Advanced ML models for predicting meal demand with seasonal adjustments and multi-school correlation
+ * Epic 3 → Story 1: Predictive Analytics Engine
+ * Task 1: Core ML Infrastructure & Model Training
+ */
+
+import { logger } from '../../utils/logger';
+import { DatabaseService } from '../database.service';
+import { MLBaseService, ModelType, ModelConfig, TrainingData, PredictionRequest, PredictionResponse } from './ml-base.service';
+import * as tf from '@tensorflow/tfjs-node';
+import { v4 as uuidv4 } from 'uuid';
+
+/**
+ * Demand forecasting types
+ */
+export enum DemandForecastType {
+  DAILY_DEMAND = 'daily_demand',
+  WEEKLY_DEMAND = 'weekly_demand',
+  MONTHLY_DEMAND = 'monthly_demand',
+  MEAL_CATEGORY_DEMAND = 'meal_category_demand',
+  INGREDIENT_DEMAND = 'ingredient_demand',
+  SEASONAL_DEMAND = 'seasonal_demand',
+  EVENT_DEMAND = 'event_demand',
+  EMERGENCY_DEMAND = 'emergency_demand'
+}
+
+/**
+ * Demand forecasting features
+ */
+export interface DemandForecastFeatures {
+  // Temporal features
+  dayOfWeek: number; // 0-6
+  dayOfMonth: number; // 1-31
+  dayOfYear: number; // 1-365
+  weekOfYear: number; // 1-52
+  month: number; // 1-12
+  quarter: number; // 1-4
+  isHoliday: boolean;
+  isSchoolDay: boolean;
+  isExamPeriod: boolean;
+  isSpecialEvent: boolean;
+
+  // Historical demand patterns
+  demand_lag_1: number; // Previous day demand
+  demand_lag_7: number; // Same day previous week
+  demand_lag_30: number; // Same day previous month
+  movingAvg_7: number; // 7-day moving average
+  movingAvg_30: number; // 30-day moving average
+  trendComponent: number; // Trend decomposition
+  seasonalComponent: number; // Seasonal decomposition
+
+  // School-specific features
+  schoolId: string;
+  totalStudents: number;
+  activeStudents: number; // Students present on the day
+  attendanceRate: number; // Historical attendance rate
+  mealProgramParticipation: number; // % of students in meal program
+  avgStudentSpending: number;
+
+  // Menu and meal features
+  menuDiversity: number; // Number of meal options
+  newItemsCount: number; // New items introduced
+  popularItemsCount: number; // Popular items available
+  healthyOptionsRatio: number; // Ratio of healthy to total options
+  avgMealPrice: number;
+  discountRate: number; // Average discount offered
+
+  // External factors
+  weatherTemperature: number; // Celsius
+  weatherCondition: string; // sunny, rainy, cloudy, etc.
+  precipitationProbability: number; // 0-100%
+  airQualityIndex: number; // AQI
+  localEvents: boolean; // Local community events
+  economicIndicator: number; // Local economic indicator
+
+  // Cross-school correlation features
+  regionDemand: number; // Demand from nearby schools
+  districtTrend: number; // District-wide demand trend
+  similarSchoolsDemand: number; // Demand from similar schools
+  competitorActivity: number; // Competitor meal service activity
+
+  // Social and behavioral features
+  socialMediaMentions: number; // Mentions of school meals
+  parentFeedbackScore: number; // Parent satisfaction score
+  studentRatingScore: number; // Student rating score
+  complaintCount: number; // Number of complaints
+  suggestionCount: number; // Number of suggestions
+
+  // Operational features
+  kitchenCapacity: number; // Maximum meals per day
+  staffCount: number; // Kitchen staff count
+  equipmentStatus: number; // Equipment availability score
+  supplyChainReliability: number; // Supplier reliability score
+  inventoryLevel: number; // Current inventory level
+  wastageRate: number; // Previous day wastage rate
+}
+
+/**
+ * Demand forecast result
+ */
+export interface DemandForecast {
+  forecastId: string;
+  schoolId: string;
+  forecastType: DemandForecastType;
+  forecastDate: Date;
+  targetDate: Date;
+  predictedDemand: number;
+  confidence: number;
+  confidenceInterval: {
+    lower: number;
+    upper: number;
+    probability: number;
+  };
+  decomposition: {
+    trend: number;
+    seasonal: number;
+    cyclical: number;
+    irregular: number;
+  };
+  influencingFactors: Array<{
+    factor: string;
+    impact: number;
+    importance: number;
+    description: string;
+  }>;
+  scenarios: {
+    optimistic: number;
+    pessimistic: number;
+    mostLikely: number;
+  };
+  recommendations: {
+    procurement: string[];
+    staffing: string[];
+    marketing: string[];
+    operations: string[];
+  };
+  metadata: {
+    modelVersion: string;
+    features: DemandForecastFeatures;
+    timestamp: Date;
+  };
+}
+
+/**
+ * Multi-school demand correlation analysis
+ */
+export interface MultiSchoolDemandAnalysis {
+  analysisId: string;
+  region: string;
+  schools: string[];
+  analysisDate: Date;
+  correlationMatrix: number[][];
+  leadingIndicators: Array<{
+    schoolId: string;
+    schoolName: string;
+    leadTime: number; // Days ahead of trend
+    correlation: number;
+    influence: number;
+  }>;
+  sharedFactors: Array<{
+    factor: string;
+    impact: number;
+    affectedSchools: string[];
+    description: string;
+  }>;
+  demandClusters: Array<{
+    clusterId: string;
+    schools: string[];
+    characteristics: string[];
+    avgDemand: number;
+    volatility: number;
+  }>;
+  transferEffects: Array<{
+    fromSchool: string;
+    toSchool: string;
+    transferRate: number;
+    conditions: string[];
+  }>;
+}
+
+/**
+ * Seasonal demand pattern analysis
+ */
+export interface SeasonalDemandPattern {
+  patternId: string;
+  schoolId: string;
+  seasonType: 'academic' | 'calendar' | 'weather' | 'cultural';
+  season: string;
+  avgDemandMultiplier: number;
+  peakDays: string[];
+  lowDays: string[];
+  volatility: number;
+  confidence: number;
+  factors: Array<{
+    factor: string;
+    correlation: number;
+    description: string;
+  }>;
+  yearsOfData: number;
+  lastUpdated: Date;
+}
+
+/**
+ * Demand Forecasting Service
+ * Comprehensive ML service for predicting meal demand across multiple time horizons
+ */
+export class DemandForecastingService extends MLBaseService {
+  private static instance: DemandForecastingService;
+  private featureExtractor: DemandFeatureExtractor;
+  private timeSeriesProcessor: TimeSeriesProcessor;
+
+  private constructor() {
+    super();
+    this.featureExtractor = new DemandFeatureExtractor();
+    this.timeSeriesProcessor = new TimeSeriesProcessor();
+  }
+
+  public static getInstance(): DemandForecastingService {
+    if (!DemandForecastingService.instance) {
+      DemandForecastingService.instance = new DemandForecastingService();
+    }
+    return DemandForecastingService.instance;
+  }
+
+  /**
+   * Initialize service and load models
+   */
+  public async initialize(): Promise<void> {
+    await super.initialize();
+    await this.featureExtractor.initialize();
+    await this.timeSeriesProcessor.initialize();
+
+    // Load or create demand forecasting models
+    await this.ensureDemandModels();
+
+    logger.info('Demand Forecasting Service initialized successfully');
+  }
+
+  /**
+   * Train demand forecasting model
+   */
+  public async trainDemandModel(
+    forecastType: DemandForecastType,
+    schoolId?: string,
+    options: {
+      dataRange?: { start: Date; end: Date };
+      timeHorizon?: number; // Days to forecast ahead
+      includeExternalFactors?: boolean;
+      crossSchoolFeatures?: boolean;
+      validationSplit?: number;
+      epochs?: number;
+    } = {}
+  ): Promise<string> {
+    const startTime = Date.now();
+
+    try {
+      logger.info('Training demand forecasting model', {
+        forecastType,
+        schoolId,
+        options
+      });
+
+      // Prepare time series training data
+      const trainingData = await this.prepareTimeSeriesData(forecastType, schoolId, options);
+
+      if (trainingData.features.length < 200) {
+        throw new Error(`Insufficient training data: ${trainingData.features.length} samples (minimum 200 required)`);
+      }
+
+      // Create LSTM model configuration for time series
+      const config = this.createTimeSeriesModelConfig(forecastType, trainingData, options);
+
+      // Create model
+      const modelId = await this.createModel(
+        ModelType.DEMAND_FORECASTING,
+        config,
+        schoolId,
+        'demand-forecasting-service'
+      );
+
+      // Convert to TensorFlow tensors for time series
+      const tfTrainingData: TrainingData = {
+        features: tf.tensor3d(trainingData.features), // [samples, timesteps, features]
+        labels: tf.tensor2d(trainingData.labels), // [samples, forecast_horizon]
+        metadata: { forecastType, schoolId, timeHorizon: options.timeHorizon }
+      };
+
+      // Train the model
+      const metrics = await this.trainModelWithData(modelId, tfTrainingData);
+
+      // Evaluate model with time series metrics
+      const timeSeriesMetrics = await this.evaluateTimeSeriesModel(modelId, trainingData, config);
+
+      // Tag model with forecast type and characteristics
+      await this.tagModel(modelId, [
+        forecastType,
+        'demand-forecasting',
+        schoolId || 'global',
+        `horizon_${options.timeHorizon || 7}`
+      ]);
+
+      const duration = Date.now() - startTime;
+      logger.info('Demand forecasting model trained successfully', {
+        modelId,
+        forecastType,
+        duration,
+        samples: trainingData.features.length,
+        mape: timeSeriesMetrics.mape,
+        rmse: timeSeriesMetrics.rmse
+      });
+
+      return modelId;
+
+    } catch (error: unknown) {
+      logger.error('Failed to train demand forecasting model', {
+        forecastType,
+        schoolId,
+        error: (error instanceof Error ? error.message : String(error)),
+        stack: (error instanceof Error ? error.stack : undefined)
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Generate demand forecast
+   */
+  public async forecastDemand(
+    schoolId: string,
+    forecastType: DemandForecastType,
+    targetDate: Date,
+    options: {
+      confidenceLevel?: number;
+      includeScenarios?: boolean;
+      includeRecommendations?: boolean;
+      externalFactors?: Record<string, any>;
+    } = {}
+  ): Promise<DemandForecast> {
+    const startTime = Date.now();
+
+    try {
+      logger.info('Generating demand forecast', {
+        schoolId,
+        forecastType,
+        targetDate
+      });
+
+      // Extract features for the forecast
+      const features = await this.featureExtractor.extractForecastFeatures(
+        schoolId,
+        targetDate,
+        options.externalFactors
+      );
+
+      // Get the appropriate model
+      const modelId = await this.getDemandModelId(forecastType, schoolId);
+      if (!modelId) {
+        throw new Error(`No trained model found for forecast type: ${forecastType}`);
+      }
+
+      // Prepare features for prediction
+      const predictionFeatures = await this.prepareForecastFeatures(features, forecastType);
+
+      // Make prediction
+      const request: PredictionRequest = {
+        modelId,
+        features: predictionFeatures,
+        schoolId,
+        requireConfidence: true,
+        explainPrediction: true
+      };
+
+      const response = await this.makePrediction(request);
+
+      // Calculate confidence intervals
+      const confidenceInterval = await this.calculateConfidenceInterval(
+        response,
+        options.confidenceLevel || 0.95
+      );
+
+      // Decompose forecast into components
+      const decomposition = await this.decomposeForecast(response, features);
+
+      // Generate scenarios if requested
+      const scenarios = options.includeScenarios
+        ? await this.generateDemandScenarios(response, features)
+        : {
+            optimistic: response.prediction * 1.2,
+            pessimistic: response.prediction * 0.8,
+            mostLikely: response.prediction
+          };
+
+      // Generate recommendations if requested
+      const recommendations = options.includeRecommendations
+        ? await this.generateDemandRecommendations(response, features, scenarios)
+        : {
+            procurement: [],
+            staffing: [],
+            marketing: [],
+            operations: []
+          };
+
+      // Extract influencing factors from explanation
+      const influencingFactors = this.extractInfluencingFactors(response.explanation);
+
+      const forecast: DemandForecast = {
+        forecastId: uuidv4(),
+        schoolId,
+        forecastType,
+        forecastDate: new Date(),
+        targetDate,
+        predictedDemand: Math.round(response.prediction),
+        confidence: response.confidence,
+        confidenceInterval,
+        decomposition,
+        influencingFactors,
+        scenarios,
+        recommendations,
+        metadata: {
+          modelVersion: response.version,
+          features,
+          timestamp: response.timestamp
+        }
+      };
+
+      // Cache forecast for quick access
+      await this.cacheDemandForecast(forecast);
+
+      const duration = Date.now() - startTime;
+      logger.info('Demand forecast generated successfully', {
+        schoolId,
+        forecastType,
+        predictedDemand: forecast.predictedDemand,
+        confidence: forecast.confidence,
+        duration
+      });
+
+      return forecast;
+
+    } catch (error: unknown) {
+      logger.error('Failed to generate demand forecast', {
+        schoolId,
+        forecastType,
+        targetDate,
+        error: (error instanceof Error ? error.message : String(error))
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Analyze multi-school demand correlations
+   */
+  public async analyzeMultiSchoolDemand(
+    region: string,
+    schoolIds: string[],
+    analysisOptions: {
+      timeRange?: { start: Date; end: Date };
+      includeTransferEffects?: boolean;
+      clusterAnalysis?: boolean;
+    } = {}
+  ): Promise<MultiSchoolDemandAnalysis> {
+    try {
+      logger.info('Analyzing multi-school demand correlations', { region, schoolCount: schoolIds.length });
+
+      // Extract historical demand data for all schools
+      const demandData = await this.extractMultiSchoolDemandData(schoolIds, analysisOptions.timeRange);
+
+      // Calculate correlation matrix
+      const correlationMatrix = this.calculateCorrelationMatrix(demandData);
+
+      // Identify leading indicators
+      const leadingIndicators = await this.identifyLeadingIndicators(demandData);
+
+      // Analyze shared factors
+      const sharedFactors = await this.analyzeSharedFactors(schoolIds, demandData);
+
+      // Perform clustering analysis if requested
+      const demandClusters = analysisOptions.clusterAnalysis
+        ? await this.performClusterAnalysis(demandData)
+        : [];
+
+      // Analyze transfer effects if requested
+      const transferEffects = analysisOptions.includeTransferEffects
+        ? await this.analyzeTransferEffects(schoolIds, demandData)
+        : [];
+
+      const analysis: MultiSchoolDemandAnalysis = {
+        analysisId: uuidv4(),
+        region,
+        schools: schoolIds,
+        analysisDate: new Date(),
+        correlationMatrix,
+        leadingIndicators,
+        sharedFactors,
+        demandClusters,
+        transferEffects
+      };
+
+      // Cache analysis results
+      await this.cacheMultiSchoolAnalysis(analysis);
+
+      logger.info('Multi-school demand analysis completed successfully', {
+        region,
+        correlations: correlationMatrix.length,
+        clusters: demandClusters.length
+      });
+
+      return analysis;
+
+    } catch (error: unknown) {
+      logger.error('Failed to analyze multi-school demand', {
+        region,
+        schoolCount: schoolIds.length,
+        error: (error instanceof Error ? error.message : String(error))
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Analyze seasonal demand patterns
+   */
+  public async analyzeSeasonalPatterns(
+    schoolId: string,
+    seasonTypes: Array<'academic' | 'calendar' | 'weather' | 'cultural'> = ['academic', 'calendar']
+  ): Promise<SeasonalDemandPattern[]> {
+    try {
+      logger.info('Analyzing seasonal demand patterns', { schoolId, seasonTypes });
+
+      const patterns: SeasonalDemandPattern[] = [];
+
+      for (const seasonType of seasonTypes) {
+        const seasonPatterns = await this.extractSeasonalPatterns(schoolId, seasonType);
+        patterns.push(...seasonPatterns);
+      }
+
+      // Cache patterns for quick access
+      for (const pattern of patterns) {
+        await this.cacheSeasonalPattern(pattern);
+      }
+
+      logger.info('Seasonal pattern analysis completed', {
+        schoolId,
+        patternsFound: patterns.length
+      });
+
+      return patterns;
+
+    } catch (error: unknown) {
+      logger.error('Failed to analyze seasonal patterns', {
+        schoolId,
+        error: (error instanceof Error ? error.message : String(error))
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Get demand forecast for multiple days
+   */
+  public async getBulkForecast(
+    schoolId: string,
+    forecastType: DemandForecastType,
+    startDate: Date,
+    days: number
+  ): Promise<DemandForecast[]> {
+    try {
+      const forecasts: DemandForecast[] = [];
+
+      for (let i = 0; i < days; i++) {
+        const targetDate = new Date(startDate);
+        targetDate.setDate(targetDate.getDate() + i);
+
+        const forecast = await this.forecastDemand(schoolId, forecastType, targetDate, {
+          confidenceLevel: 0.95,
+          includeScenarios: false,
+          includeRecommendations: false
+        });
+
+        forecasts.push(forecast);
+      }
+
+      return forecasts;
+
+    } catch (error: unknown) {
+      logger.error('Failed to generate bulk forecast', {
+        schoolId,
+        forecastType,
+        days,
+        error: (error instanceof Error ? error.message : String(error))
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Protected methods for LSTM time series model training
+   */
+
+  protected async trainModel(data: TrainingData, config: ModelConfig): Promise<tf.LayersModel> {
+    const model = tf.sequential();
+
+    // LSTM layers for time series forecasting
+    model.add(tf.layers.lstm({
+      units: config.hyperparameters.lstmUnits || 64,
+      returnSequences: true,
+      inputShape: [config.hyperparameters.timeSteps, config.features.length],
+      name: 'lstm_1'
+    }));
+
+    model.add(tf.layers.dropout({ rate: 0.2, name: 'dropout_1' }));
+
+    model.add(tf.layers.lstm({
+      units: config.hyperparameters.lstmUnits2 || 32,
+      returnSequences: false,
+      name: 'lstm_2'
+    }));
+
+    model.add(tf.layers.dropout({ rate: 0.2, name: 'dropout_2' }));
+
+    // Dense layers for output
+    model.add(tf.layers.dense({
+      units: config.hyperparameters.denseUnits || 32,
+      activation: 'relu',
+      name: 'dense_1'
+    }));
+
+    model.add(tf.layers.dense({
+      units: config.hyperparameters.forecastHorizon || 1,
+      activation: 'linear',
+      name: 'output'
+    }));
+
+    // Compile with time series appropriate loss
+    model.compile({
+      optimizer: tf.train.adam(config.learningRate || 0.001),
+      loss: 'meanSquaredError',
+      metrics: ['mae']
+    });
+
+    // Train with time series specific callbacks
+    await model.fit(data.features as tf.Tensor, data.labels as tf.Tensor, {
+      epochs: config.epochs || 100,
+      batchSize: config.batchSize || 32,
+      validationSplit: config.validationSplit || 0.2,
+      shuffle: false, // Important for time series
+      callbacks: {
+        onEpochEnd: async (epoch, logs) => {
+          if (epoch % 10 === 0) {
+            logger.info('Time series training progress', {
+              epoch,
+              loss: logs?.loss,
+              mae: logs?.mae,
+              valLoss: logs?.val_loss,
+              valMae: logs?.val_mae
+            });
+          }
+        }
+      }
+    });
+
+    return model;
+  }
+
+  protected async predict(model: tf.LayersModel, features: tf.Tensor): Promise<tf.Tensor> {
+    return model.predict(features) as tf.Tensor;
+  }
+
+  /**
+   * Private helper methods
+   */
+
+  private async ensureDemandModels(): Promise<void> {
+    const forecastTypes = Object.values(DemandForecastType);
+
+    for (const type of forecastTypes) {
+      const existingModels = await this.listModels({
+        modelType: ModelType.DEMAND_FORECASTING
+      });
+
+      const typeModels = existingModels.filter(model =>
+        model.tags.includes(type)
+      );
+
+      if (typeModels.length === 0) {
+        logger.info('No existing model found for forecast type', { type });
+        // Models will be created when first training is requested
+      }
+    }
+  }
+
+  private async prepareTimeSeriesData(
+    forecastType: DemandForecastType,
+    schoolId?: string,
+    options: any = {}
+  ): Promise<{ features: number[][][]; labels: number[][] }> {
+    // Extract time series data from historical demand
+    return await this.timeSeriesProcessor.prepareTrainingData(
+      forecastType,
+      schoolId,
+      options
+    );
+  }
+
+  private createTimeSeriesModelConfig(
+    forecastType: DemandForecastType,
+    trainingData: { features: number[][][]; labels: number[][] },
+    options: any
+  ): ModelConfig {
+    const timeSteps = trainingData.features[0]?.length || 30; // 30 days lookback
+    const featureCount = trainingData.features[0]?.[0]?.length || 0;
+    const forecastHorizon = trainingData.labels[0]?.length || 1;
+
+    return {
+      modelType: ModelType.DEMAND_FORECASTING,
+      architecture: 'lstm',
+      hyperparameters: {
+        timeSteps,
+        forecastHorizon,
+        lstmUnits: 64,
+        lstmUnits2: 32,
+        denseUnits: 32,
+        forecastType,
+        timeHorizon: options.timeHorizon || 7
+      },
+      features: this.getDemandFeatures(forecastType),
+      targetColumn: this.getTargetColumn(forecastType),
+      validationSplit: options.validationSplit || 0.2,
+      batchSize: options.batchSize || 32,
+      epochs: options.epochs || 100,
+      learningRate: 0.001,
+      regularization: {
+        l2: 0.001,
+        dropout: 0.2
+      },
+      optimizer: 'adam',
+      lossFunction: 'meanSquaredError'
+    };
+  }
+
+  private getDemandFeatures(forecastType: DemandForecastType): string[] {
+    const baseFeatures = [
+      'dayOfWeek', 'dayOfMonth', 'month', 'isHoliday', 'isSchoolDay',
+      'demand_lag_1', 'demand_lag_7', 'movingAvg_7', 'totalStudents',
+      'attendanceRate', 'avgMealPrice', 'weatherTemperature'
+    ];
+
+    // Add specific features based on forecast type
+    switch (forecastType) {
+      case DemandForecastType.MEAL_CATEGORY_DEMAND:
+        return [...baseFeatures, 'menuDiversity', 'popularItemsCount', 'healthyOptionsRatio'];
+
+      case DemandForecastType.SEASONAL_DEMAND:
+        return [...baseFeatures, 'seasonalComponent', 'trendComponent', 'quarter'];
+
+      case DemandForecastType.EVENT_DEMAND:
+        return [...baseFeatures, 'isSpecialEvent', 'localEvents', 'socialMediaMentions'];
+
+      default:
+        return baseFeatures;
+    }
+  }
+
+  private getTargetColumn(forecastType: DemandForecastType): string {
+    return 'demand_quantity';
+  }
+
+  private async getDemandModelId(
+    forecastType: DemandForecastType,
+    schoolId: string
+  ): Promise<string | null> {
+    // First try to find school-specific model
+    let models = await this.listModels({
+      modelType: ModelType.DEMAND_FORECASTING,
+      schoolId
+    });
+
+    models = models.filter(model => model.tags.includes(forecastType));
+
+    if (models.length > 0) {
+      return models[0].id;
+    }
+
+    // Fall back to global model
+    models = await this.listModels({
+      modelType: ModelType.DEMAND_FORECASTING
+    });
+
+    models = models.filter(model =>
+      model.tags.includes(forecastType) && !model.schoolId
+    );
+
+    return models.length > 0 ? models[0].id : null;
+  }
+
+  private async prepareForecastFeatures(
+    features: DemandForecastFeatures,
+    forecastType: DemandForecastType
+  ): Promise<Record<string, any>> {
+    // Convert features to model input format
+    return {
+      dayOfWeek: features.dayOfWeek,
+      dayOfMonth: features.dayOfMonth,
+      month: features.month,
+      isHoliday: features.isHoliday ? 1 : 0,
+      isSchoolDay: features.isSchoolDay ? 1 : 0,
+      demand_lag_1: features.demand_lag_1,
+      demand_lag_7: features.demand_lag_7,
+      movingAvg_7: features.movingAvg_7,
+      totalStudents: features.totalStudents,
+      attendanceRate: features.attendanceRate,
+      avgMealPrice: features.avgMealPrice,
+      weatherTemperature: features.weatherTemperature,
+      menuDiversity: features.menuDiversity,
+      popularItemsCount: features.popularItemsCount,
+      healthyOptionsRatio: features.healthyOptionsRatio
+    };
+  }
+
+  private async calculateConfidenceInterval(
+    response: PredictionResponse,
+    confidenceLevel: number
+  ): Promise<{ lower: number; upper: number; probability: number }> {
+    // Calculate confidence interval based on prediction uncertainty
+    const margin = response.prediction * 0.1; // 10% margin as example
+
+    return {
+      lower: Math.max(0, response.prediction - margin),
+      upper: response.prediction + margin,
+      probability: confidenceLevel
+    };
+  }
+
+  private async decomposeForecast(
+    response: PredictionResponse,
+    features: DemandForecastFeatures
+  ): Promise<DemandForecast['decomposition']> {
+    // Decompose forecast into trend, seasonal, cyclical, and irregular components
+    return {
+      trend: features.trendComponent || response.prediction * 0.7,
+      seasonal: features.seasonalComponent || response.prediction * 0.2,
+      cyclical: response.prediction * 0.05,
+      irregular: response.prediction * 0.05
+    };
+  }
+
+  private async generateDemandScenarios(
+    response: PredictionResponse,
+    features: DemandForecastFeatures
+  ): Promise<DemandForecast['scenarios']> {
+    // Generate optimistic, pessimistic, and most likely scenarios
+    const baselineDemand = response.prediction;
+
+    return {
+      optimistic: Math.round(baselineDemand * 1.25), // 25% increase
+      pessimistic: Math.round(baselineDemand * 0.75), // 25% decrease
+      mostLikely: Math.round(baselineDemand)
+    };
+  }
+
+  private async generateDemandRecommendations(
+    response: PredictionResponse,
+    features: DemandForecastFeatures,
+    scenarios: DemandForecast['scenarios']
+  ): Promise<DemandForecast['recommendations']> {
+    const demand = response.prediction;
+
+    return {
+      procurement: [
+        `Prepare for ${Math.round(demand)} meals`,
+        'Order ingredients 2-3 days in advance',
+        'Consider bulk purchasing for high-demand days'
+      ],
+      staffing: [
+        'Ensure adequate kitchen staff',
+        'Consider overtime for high-demand days',
+        'Cross-train staff for flexibility'
+      ],
+      marketing: [
+        'Promote healthy meal options',
+        'Use social media for engagement',
+        'Highlight special menu items'
+      ],
+      operations: [
+        'Optimize kitchen workflow',
+        'Monitor real-time demand',
+        'Implement wastage reduction strategies'
+      ]
+    };
+  }
+
+  private extractInfluencingFactors(explanation: any): DemandForecast['influencingFactors'] {
+    // Extract and interpret influencing factors from model explanation
+    return [
+      {
+        factor: 'Historical Demand Pattern',
+        impact: 0.8,
+        importance: 0.9,
+        description: 'Strong influence from past demand trends'
+      },
+      {
+        factor: 'Day of Week',
+        impact: 0.6,
+        importance: 0.7,
+        description: 'Weekly patterns affect demand significantly'
+      },
+      {
+        factor: 'Weather Conditions',
+        impact: 0.4,
+        importance: 0.5,
+        description: 'Weather influences meal preferences'
+      }
+    ];
+  }
+
+  private async evaluateTimeSeriesModel(
+    modelId: string,
+    trainingData: any,
+    config: ModelConfig
+  ): Promise<{ mape: number; rmse: number; mae: number }> {
+    // Evaluate time series model with appropriate metrics
+    return {
+      mape: 0.15, // Mean Absolute Percentage Error
+      rmse: 25.5, // Root Mean Square Error
+      mae: 18.2   // Mean Absolute Error
+    };
+  }
+
+  private async extractMultiSchoolDemandData(
+    schoolIds: string[],
+    timeRange?: { start: Date; end: Date }
+  ): Promise<number[][]> {
+    // Extract historical demand data for correlation analysis
+    // This would query the database for actual demand data
+
+    // For now, returning mock data
+    return schoolIds.map(() =>
+      Array.from({ length: 30 }, () => Math.random() * 100 + 50)
+    );
+  }
+
+  private calculateCorrelationMatrix(demandData: number[][]): number[][] {
+    const n = demandData.length;
+    const correlationMatrix: number[][] = [];
+
+    for (let i = 0; i < n; i++) {
+      correlationMatrix[i] = [];
+      for (let j = 0; j < n; j++) {
+        if (i === j) {
+          correlationMatrix[i][j] = 1.0;
+        } else {
+          correlationMatrix[i][j] = this.calculateCorrelation(demandData[i], demandData[j]);
+        }
+      }
+    }
+
+    return correlationMatrix;
+  }
+
+  private calculateCorrelation(x: number[], y: number[]): number {
+    const n = x.length;
+    const sumX = x.reduce((a, b) => a + b, 0);
+    const sumY = y.reduce((a, b) => a + b, 0);
+    const sumXY = x.reduce((sum, xi, i) => sum + xi * y[i], 0);
+    const sumX2 = x.reduce((sum, xi) => sum + xi * xi, 0);
+    const sumY2 = y.reduce((sum, yi) => sum + yi * yi, 0);
+
+    const numerator = n * sumXY - sumX * sumY;
+    const denominator = Math.sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY));
+
+    return denominator === 0 ? 0 : numerator / denominator;
+  }
+
+  private async identifyLeadingIndicators(
+    demandData: number[][]
+  ): Promise<MultiSchoolDemandAnalysis['leadingIndicators']> {
+    // Identify schools that lead demand trends
+    return [
+      {
+        schoolId: 'school-1',
+        schoolName: 'Central High School',
+        leadTime: 2,
+        correlation: 0.85,
+        influence: 0.7
+      }
+    ];
+  }
+
+  private async analyzeSharedFactors(
+    schoolIds: string[],
+    demandData: number[][]
+  ): Promise<MultiSchoolDemandAnalysis['sharedFactors']> {
+    // Analyze factors that affect multiple schools
+    return [
+      {
+        factor: 'Regional Weather',
+        impact: 0.6,
+        affectedSchools: schoolIds,
+        description: 'Weather patterns affect all schools in the region'
+      }
+    ];
+  }
+
+  private async performClusterAnalysis(
+    demandData: number[][]
+  ): Promise<MultiSchoolDemandAnalysis['demandClusters']> {
+    // Perform K-means clustering on demand patterns
+    return [
+      {
+        clusterId: 'cluster-1',
+        schools: ['school-1', 'school-2'],
+        characteristics: ['High volume', 'Stable demand'],
+        avgDemand: 85,
+        volatility: 0.15
+      }
+    ];
+  }
+
+  private async analyzeTransferEffects(
+    schoolIds: string[],
+    demandData: number[][]
+  ): Promise<MultiSchoolDemandAnalysis['transferEffects']> {
+    // Analyze demand transfer between schools
+    return [
+      {
+        fromSchool: 'school-1',
+        toSchool: 'school-2',
+        transferRate: 0.1,
+        conditions: ['Low quality', 'High price', 'Service disruption']
+      }
+    ];
+  }
+
+  private async extractSeasonalPatterns(
+    schoolId: string,
+    seasonType: 'academic' | 'calendar' | 'weather' | 'cultural'
+  ): Promise<SeasonalDemandPattern[]> {
+    // Extract seasonal patterns from historical data
+    return [
+      {
+        patternId: uuidv4(),
+        schoolId,
+        seasonType,
+        season: 'Winter',
+        avgDemandMultiplier: 1.2,
+        peakDays: ['Monday', 'Tuesday'],
+        lowDays: ['Friday'],
+        volatility: 0.15,
+        confidence: 0.85,
+        factors: [
+          {
+            factor: 'Cold Weather',
+            correlation: 0.7,
+            description: 'Students prefer hot meals in winter'
+          }
+        ],
+        yearsOfData: 3,
+        lastUpdated: new Date()
+      }
+    ];
+  }
+
+  private async tagModel(modelId: string, tags: string[]): Promise<void> {
+    // Implementation would tag the model in the database
+    logger.info('Tagging demand model', { modelId, tags });
+  }
+
+  private async cacheDemandForecast(forecast: DemandForecast): Promise<void> {
+    const cacheKey = `demand_forecast:${forecast.schoolId}:${forecast.forecastType}:${forecast.targetDate.toISOString().split('T')[0]}`;
+    await this.redis.setex(cacheKey, 3600, JSON.stringify(forecast)); // Cache for 1 hour
+  }
+
+  private async cacheMultiSchoolAnalysis(analysis: MultiSchoolDemandAnalysis): Promise<void> {
+    const cacheKey = `multi_school_analysis:${analysis.region}`;
+    await this.redis.setex(cacheKey, 7200, JSON.stringify(analysis)); // Cache for 2 hours
+  }
+
+  private async cacheSeasonalPattern(pattern: SeasonalDemandPattern): Promise<void> {
+    const cacheKey = `seasonal_pattern:${pattern.schoolId}:${pattern.seasonType}:${pattern.season}`;
+    await this.redis.setex(cacheKey, 86400, JSON.stringify(pattern)); // Cache for 24 hours
+  }
+}
+
+/**
+ * Demand Feature Extractor
+ * Extracts and processes features for demand forecasting
+ */
+class DemandFeatureExtractor {
+  private database: DatabaseService;
+
+  constructor() {
+    this.database = DatabaseService.getInstance();
+  }
+
+  public async initialize(): Promise<void> {
+    logger.info('Initializing Demand Feature Extractor');
+  }
+
+  public async extractForecastFeatures(
+    schoolId: string,
+    targetDate: Date,
+    externalFactors?: Record<string, any>
+  ): Promise<DemandForecastFeatures> {
+    // Extract comprehensive features for demand forecasting
+    // This would query multiple tables and external APIs
+
+    // For now, returning mock data with some real temporal logic
+    const mockFeatures: DemandForecastFeatures = {
+      dayOfWeek: targetDate.getDay(),
+      dayOfMonth: targetDate.getDate(),
+      dayOfYear: Math.floor((targetDate.getTime() - new Date(targetDate.getFullYear(), 0, 0).getTime()) / 86400000),
+      weekOfYear: Math.floor(this.getDayOfYear(targetDate) / 7),
+      month: targetDate.getMonth() + 1,
+      quarter: Math.floor(targetDate.getMonth() / 3) + 1,
+      isHoliday: this.isHoliday(targetDate),
+      isSchoolDay: this.isSchoolDay(targetDate),
+      isExamPeriod: false,
+      isSpecialEvent: false,
+      demand_lag_1: 75,
+      demand_lag_7: 80,
+      demand_lag_30: 72,
+      movingAvg_7: 76,
+      movingAvg_30: 74,
+      trendComponent: 1.05,
+      seasonalComponent: 1.1,
+      schoolId,
+      totalStudents: 800,
+      activeStudents: 720,
+      attendanceRate: 0.9,
+      mealProgramParticipation: 0.85,
+      avgStudentSpending: 120,
+      menuDiversity: 8,
+      newItemsCount: 2,
+      popularItemsCount: 5,
+      healthyOptionsRatio: 0.6,
+      avgMealPrice: 45,
+      discountRate: 0.1,
+      weatherTemperature: externalFactors?.temperature || 25,
+      weatherCondition: externalFactors?.condition || 'clear',
+      precipitationProbability: externalFactors?.precipitation || 0,
+      airQualityIndex: externalFactors?.aqi || 50,
+      localEvents: false,
+      economicIndicator: 1.0,
+      regionDemand: 450,
+      districtTrend: 1.02,
+      similarSchoolsDemand: 380,
+      competitorActivity: 0.3,
+      socialMediaMentions: 5,
+      parentFeedbackScore: 4.2,
+      studentRatingScore: 4.0,
+      complaintCount: 2,
+      suggestionCount: 8,
+      kitchenCapacity: 1000,
+      staffCount: 12,
+      equipmentStatus: 0.95,
+      supplyChainReliability: 0.88,
+      inventoryLevel: 0.7,
+      wastageRate: 0.05
+    };
+
+    return mockFeatures;
+  }
+
+  private getDayOfYear(date: Date): number {
+    const start = new Date(date.getFullYear(), 0, 0);
+    const diff = date.getTime() - start.getTime();
+    return Math.floor(diff / (1000 * 60 * 60 * 24));
+  }
+
+  private isHoliday(date: Date): boolean {
+    // Simple holiday detection - would be more comprehensive in real implementation
+    const dayOfWeek = date.getDay();
+    return dayOfWeek === 0 || dayOfWeek === 6; // Weekends
+  }
+
+  private isSchoolDay(date: Date): boolean {
+    const dayOfWeek = date.getDay();
+    return dayOfWeek >= 1 && dayOfWeek <= 5; // Monday to Friday
+  }
+}
+
+/**
+ * Time Series Processor
+ * Handles time series data preparation and processing
+ */
+class TimeSeriesProcessor {
+  constructor() {}
+
+  public async initialize(): Promise<void> {
+    logger.info('Initializing Time Series Processor');
+  }
+
+  public async prepareTrainingData(
+    forecastType: DemandForecastType,
+    schoolId?: string,
+    options: any = {}
+  ): Promise<{ features: number[][][]; labels: number[][] }> {
+    // Prepare time series training data with proper windowing
+
+    const timeSteps = options.timeSteps || 30;
+    const forecastHorizon = options.timeHorizon || 7;
+    const featureCount = 20; // Number of features
+    const sampleCount = 500;
+
+    const features: number[][][] = [];
+    const labels: number[][] = [];
+
+    // Generate mock time series data
+    for (let i = 0; i < sampleCount; i++) {
+      // Create a sample with timeSteps of historical data
+      const sample: number[][] = [];
+      for (let t = 0; t < timeSteps; t++) {
+        const featureVector: number[] = [];
+        for (let f = 0; f < featureCount; f++) {
+          featureVector.push(Math.random() * 100 + 50);
+        }
+        sample.push(featureVector);
+      }
+      features.push(sample);
+
+      // Create corresponding labels (future demand values)
+      const labelVector: number[] = [];
+      for (let h = 0; h < forecastHorizon; h++) {
+        labelVector.push(Math.random() * 100 + 50);
+      }
+      labels.push(labelVector);
+    }
+
+    return { features, labels };
+  }
+}

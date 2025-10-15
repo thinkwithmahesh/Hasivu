@@ -1,31 +1,65 @@
-import { APIGatewayProxyResult } from 'aws-lambda';
-interface StandardResponse {
-    data?: any;
-    message?: string;
-    error?: string;
-    code?: string;
-    timestamp?: string;
-    requestId?: string;
-    pagination?: {
-        page: number;
-        limit: number;
-        total: number;
-        pages: number;
-        hasNext?: boolean;
-        hasPrev?: boolean;
+export interface ApiResponse<T = any> {
+    success: boolean;
+    data?: T;
+    error?: {
+        code: string;
+        message: string;
+        details?: any;
     };
-    service?: string;
+    meta?: {
+        timestamp: string;
+        requestId?: string;
+    };
 }
-export declare const createSuccessResponse: (response: StandardResponse, statusCode?: number) => APIGatewayProxyResult;
-export declare const createErrorResponse: (message: string, statusCode?: number, code?: string) => APIGatewayProxyResult;
-export declare const createValidationErrorResponse: (errors: string[], statusCode?: number) => APIGatewayProxyResult;
-export declare const createUnauthorizedResponse: (message?: string) => APIGatewayProxyResult;
-export declare const createForbiddenResponse: (message?: string) => APIGatewayProxyResult;
-export declare const createNotFoundResponse: (resource?: string) => APIGatewayProxyResult;
-export declare const createMethodNotAllowedResponse: (method: string) => APIGatewayProxyResult;
-export declare const createConflictResponse: (message: string) => APIGatewayProxyResult;
-export declare const createTooManyRequestsResponse: (message?: string) => APIGatewayProxyResult;
-export declare const createInternalServerErrorResponse: (message?: string) => APIGatewayProxyResult;
-export declare const handleError: (error: any, defaultMessage?: string) => APIGatewayProxyResult;
-export {};
+export declare function successResponse<T>(data: T, statusCode?: number): {
+    statusCode: number;
+    body: string;
+    headers: {
+        [key: string]: string;
+    };
+};
+export declare function errorResponse(code: string, message: string, statusCode?: number, details?: any): {
+    statusCode: number;
+    body: string;
+    headers: {
+        [key: string]: string;
+    };
+};
+export declare function validationErrorResponse(message: string, details?: any): {
+    statusCode: number;
+    body: string;
+    headers: {
+        [key: string]: string;
+    };
+};
+export declare function notFoundResponse(resource?: string): {
+    statusCode: number;
+    body: string;
+    headers: {
+        [key: string]: string;
+    };
+};
+export declare function unauthorizedResponse(message?: string): {
+    statusCode: number;
+    body: string;
+    headers: {
+        [key: string]: string;
+    };
+};
+export declare function serverErrorResponse(error: Error): {
+    statusCode: number;
+    body: string;
+    headers: {
+        [key: string]: string;
+    };
+};
+export declare function handleError(error: Error | any, message?: string, statusCode?: number, requestId?: string): {
+    statusCode: number;
+    body: string;
+    headers: {
+        [key: string]: string;
+    };
+};
+export declare const createSuccessResponse: typeof successResponse;
+export declare const createErrorResponse: typeof errorResponse;
 //# sourceMappingURL=response.utils.d.ts.map

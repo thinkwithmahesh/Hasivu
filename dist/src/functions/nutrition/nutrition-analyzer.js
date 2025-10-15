@@ -18,32 +18,50 @@ const nutritionAnalysisRequestSchema = zod_1.z.object({
     timeframe: zod_1.z.object({
         startDate: zod_1.z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
         endDate: zod_1.z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-        period: zod_1.z.enum(['daily', 'weekly', 'monthly', 'quarterly', 'yearly']).default('weekly')
+        period: zod_1.z.enum(['daily', 'weekly', 'monthly', 'quarterly', 'yearly']).default('weekly'),
     }),
     targetSubjects: zod_1.z.object({
         studentIds: zod_1.z.array(zod_1.z.string().uuid()).max(100).optional(),
         classIds: zod_1.z.array(zod_1.z.string().uuid()).max(20).optional(),
         gradeLevel: zod_1.z.string().max(10).optional(),
-        ageGroups: zod_1.z.array(zod_1.z.object({
+        ageGroups: zod_1.z
+            .array(zod_1.z.object({
             min: zod_1.z.number().int().min(3).max(18),
-            max: zod_1.z.number().int().min(4).max(19)
-        })).optional()
+            max: zod_1.z.number().int().min(4).max(19),
+        }))
+            .optional(),
     }),
     analysisParameters: zod_1.z.object({
-        nutritionalFocus: zod_1.z.array(zod_1.z.enum(['calories', 'protein', 'carbs', 'fat', 'fiber', 'sodium', 'sugar', 'vitamins', 'minerals'])).default(['calories', 'protein', 'fiber']),
-        healthMetrics: zod_1.z.array(zod_1.z.enum(['bmi', 'growth', 'activity', 'allergies', 'preferences', 'compliance'])).default(['growth', 'compliance']),
-        comparisonMetrics: zod_1.z.array(zod_1.z.enum(['peer_group', 'recommended_intake', 'historical', 'seasonal'])).default(['recommended_intake']),
+        nutritionalFocus: zod_1.z
+            .array(zod_1.z.enum([
+            'calories',
+            'protein',
+            'carbs',
+            'fat',
+            'fiber',
+            'sodium',
+            'sugar',
+            'vitamins',
+            'minerals',
+        ]))
+            .default(['calories', 'protein', 'fiber']),
+        healthMetrics: zod_1.z
+            .array(zod_1.z.enum(['bmi', 'growth', 'activity', 'allergies', 'preferences', 'compliance']))
+            .default(['growth', 'compliance']),
+        comparisonMetrics: zod_1.z
+            .array(zod_1.z.enum(['peer_group', 'recommended_intake', 'historical', 'seasonal']))
+            .default(['recommended_intake']),
         dietaryRestrictions: zod_1.z.array(zod_1.z.string()).default([]),
         healthConditions: zod_1.z.array(zod_1.z.string()).default([]),
         includePredictiveInsights: zod_1.z.boolean().default(false),
-        includeRecommendations: zod_1.z.boolean().default(true)
+        includeRecommendations: zod_1.z.boolean().default(true),
     }),
     outputFormat: zod_1.z.object({
         reportLevel: zod_1.z.enum(['summary', 'detailed', 'executive', 'clinical']).default('detailed'),
         includeVisualizations: zod_1.z.boolean().default(true),
         includeActionItems: zod_1.z.boolean().default(true),
-        exportFormat: zod_1.z.enum(['json', 'pdf', 'excel']).default('json')
-    })
+        exportFormat: zod_1.z.enum(['json', 'pdf', 'excel']).default('json'),
+    }),
 });
 const mealAnalysisSchema = zod_1.z.object({
     mealData: zod_1.z.array(zod_1.z.object({
@@ -62,9 +80,9 @@ const mealAnalysisSchema = zod_1.z.object({
                 sodium: zod_1.z.number().min(0),
                 sugar: zod_1.z.number().min(0),
                 vitamins: zod_1.z.record(zod_1.z.string(), zod_1.z.number()).optional(),
-                minerals: zod_1.z.record(zod_1.z.string(), zod_1.z.number()).optional()
-            })
-        }))
+                minerals: zod_1.z.record(zod_1.z.string(), zod_1.z.number()).optional(),
+            }),
+        })),
     })),
     studentProfile: zod_1.z.object({
         age: zod_1.z.number().int().min(3).max(18),
@@ -74,8 +92,8 @@ const mealAnalysisSchema = zod_1.z.object({
         activityLevel: zod_1.z.enum(['sedentary', 'light', 'moderate', 'active', 'very_active']),
         dietaryRestrictions: zod_1.z.array(zod_1.z.string()).default([]),
         allergies: zod_1.z.array(zod_1.z.string()).default([]),
-        healthConditions: zod_1.z.array(zod_1.z.string()).default([])
-    })
+        healthConditions: zod_1.z.array(zod_1.z.string()).default([]),
+    }),
 });
 async function validateUserAccess(event, requestId) {
     const clientIP = event.requestContext?.identity?.sourceIp || 'unknown';
@@ -88,16 +106,16 @@ async function validateUserAccess(event, requestId) {
             requestId,
             clientIP,
             userAgent: userAgent.substring(0, 200),
-            action: 'authentication_failed'
+            action: 'authentication_failed',
         });
         throw new Error('Authentication required');
     }
     if (!schoolId) {
         throw new Error('School context required');
     }
-    const user = await database.user.findUnique({
+    const user = await database.prisma.user.findUnique({
         where: { id: userId },
-        select: { id: true, status: true, role: true }
+        select: { id: true, status: true, role: true },
     });
     if (!user || user.status !== 'ACTIVE') {
         throw new Error('Access denied');
@@ -105,7 +123,7 @@ async function validateUserAccess(event, requestId) {
     if (!['admin', 'nutritionist', 'teacher'].includes(user.role)) {
         const studentUser = await database.prisma.user.findFirst({
             where: { id: userId, schoolId, role: 'student' },
-            select: { id: true }
+            select: { id: true },
         });
         if (!studentUser) {
             throw new Error('Access denied - invalid school context');
@@ -135,15 +153,15 @@ function calculateRecommendedIntake(age, gender, activityLevel, weight) {
         light: 1.1,
         moderate: 1.25,
         active: 1.4,
-        very_active: 1.6
+        very_active: 1.6,
     };
     const calories = Math.round(baseCalories * activityMultipliers[activityLevel]);
     const protein = Math.round((calories * 0.15) / 4);
     const carbs = Math.round((calories * 0.55) / 4);
-    const fat = Math.round((calories * 0.30) / 9);
+    const fat = Math.round((calories * 0.3) / 9);
     const fiber = age <= 8 ? age + 5 : age <= 18 ? Math.round(age * 1.4) : 25;
     const sodium = age <= 8 ? 1500 : age <= 13 ? 1800 : 2300;
-    const sugar = Math.round(calories * 0.1 / 4);
+    const sugar = Math.round((calories * 0.1) / 4);
     return {
         calories,
         protein,
@@ -153,29 +171,47 @@ function calculateRecommendedIntake(age, gender, activityLevel, weight) {
         sodium,
         sugar,
         vitamins: {
-            vitaminA: age <= 8 ? 400 : age <= 13 ? (gender === 'male' ? 600 : 600) : (gender === 'male' ? 900 : 700),
-            vitaminC: age <= 8 ? 25 : age <= 13 ? 45 : (gender === 'male' ? 75 : 65),
+            vitaminA: age <= 8
+                ? 400
+                : age <= 13
+                    ? gender === 'male'
+                        ? 600
+                        : 600
+                    : gender === 'male'
+                        ? 900
+                        : 700,
+            vitaminC: age <= 8 ? 25 : age <= 13 ? 45 : gender === 'male' ? 75 : 65,
             vitaminD: 15,
             vitaminE: age <= 8 ? 7 : age <= 13 ? 11 : 15,
-            vitaminK: age <= 8 ? 55 : age <= 13 ? 60 : (gender === 'male' ? 75 : 60),
-            thiamin: age <= 8 ? 0.6 : age <= 13 ? 0.9 : (gender === 'male' ? 1.2 : 1.0),
-            riboflavin: age <= 8 ? 0.6 : age <= 13 ? 0.9 : (gender === 'male' ? 1.3 : 1.0),
-            niacin: age <= 8 ? 8 : age <= 13 ? 12 : (gender === 'male' ? 16 : 14),
+            vitaminK: age <= 8 ? 55 : age <= 13 ? 60 : gender === 'male' ? 75 : 60,
+            thiamin: age <= 8 ? 0.6 : age <= 13 ? 0.9 : gender === 'male' ? 1.2 : 1.0,
+            riboflavin: age <= 8 ? 0.6 : age <= 13 ? 0.9 : gender === 'male' ? 1.3 : 1.0,
+            niacin: age <= 8 ? 8 : age <= 13 ? 12 : gender === 'male' ? 16 : 14,
             vitaminB6: age <= 8 ? 0.6 : age <= 13 ? 1.0 : 1.3,
             folate: age <= 8 ? 200 : 300,
-            vitaminB12: age <= 8 ? 1.2 : 1.8
+            vitaminB12: age <= 8 ? 1.2 : 1.8,
         },
         minerals: {
             calcium: age <= 8 ? 1000 : age <= 18 ? 1300 : 1000,
-            iron: age <= 8 ? 10 : age <= 13 ? 8 : (gender === 'male' ? 11 : 15),
-            magnesium: age <= 8 ? (gender === 'male' ? 130 : 130) : age <= 13 ? (gender === 'male' ? 240 : 240) : (gender === 'male' ? 410 : 360),
+            iron: age <= 8 ? 10 : age <= 13 ? 8 : gender === 'male' ? 11 : 15,
+            magnesium: age <= 8
+                ? gender === 'male'
+                    ? 130
+                    : 130
+                : age <= 13
+                    ? gender === 'male'
+                        ? 240
+                        : 240
+                    : gender === 'male'
+                        ? 410
+                        : 360,
             phosphorus: age <= 8 ? 500 : age <= 18 ? 1250 : 700,
             potassium: age <= 8 ? 2300 : age <= 13 ? 2500 : 3000,
-            zinc: age <= 8 ? 5 : age <= 13 ? 8 : (gender === 'male' ? 11 : 9),
+            zinc: age <= 8 ? 5 : age <= 13 ? 8 : gender === 'male' ? 11 : 9,
             copper: age <= 8 ? 440 : age <= 13 ? 700 : 890,
-            manganese: age <= 8 ? 1.5 : age <= 13 ? 1.9 : (gender === 'male' ? 2.2 : 1.6),
-            selenium: age <= 8 ? 30 : age <= 13 ? 40 : 55
-        }
+            manganese: age <= 8 ? 1.5 : age <= 13 ? 1.9 : gender === 'male' ? 2.2 : 1.6,
+            selenium: age <= 8 ? 30 : age <= 13 ? 40 : 55,
+        },
     };
 }
 function calculateAdherencePercentages(actual, recommended) {
@@ -186,7 +222,7 @@ function calculateAdherencePercentages(actual, recommended) {
         fat: Math.round((actual.fat / recommended.fat) * 100),
         fiber: Math.round((actual.fiber / recommended.fiber) * 100),
         sodium: Math.round((actual.sodium / recommended.sodium) * 100),
-        sugar: Math.round((actual.sugar / recommended.sugar) * 100)
+        sugar: Math.round((actual.sugar / recommended.sugar) * 100),
     };
 }
 function identifyNutritionalRisks(adherence) {
@@ -215,7 +251,13 @@ function calculateHealthScore(adherence, varietyScore, allergenCompliance, bmiSt
     factors += 20;
     score += (allergenCompliance / 100) * 15;
     factors += 15;
-    const bmiScore = bmiStatus === 'normal' ? 25 : bmiStatus === 'overweight' ? 15 : bmiStatus === 'underweight' ? 10 : 5;
+    const bmiScore = bmiStatus === 'normal'
+        ? 25
+        : bmiStatus === 'overweight'
+            ? 15
+            : bmiStatus === 'underweight'
+                ? 10
+                : 5;
     score += bmiScore;
     factors += 25;
     return Math.round((score / factors) * 100);
@@ -275,13 +317,15 @@ Focus on actionable insights that can improve student nutrition outcomes. Consid
                 anthropic_version: 'bedrock-2023-05-31',
                 max_tokens: 3000,
                 temperature: 0.2,
-                messages: [{
+                messages: [
+                    {
                         role: 'user',
-                        content: prompt
-                    }]
+                        content: prompt,
+                    },
+                ],
             }),
             contentType: 'application/json',
-            accept: 'application/json'
+            accept: 'application/json',
         });
         const response = await bedrockClient.send(command);
         const responseBody = JSON.parse(new TextDecoder().decode(response.body));
@@ -293,14 +337,13 @@ Focus on actionable insights that can improve student nutrition outcomes. Consid
             return insights;
         }
         catch (parseError) {
-            logger.warn('Failed to parse AI insights, using fallback', { requestId, parseError });
+            logger.warn('Failed to parse AI insights, using fallback', parseError);
             return generateFallbackInsights(analysisData);
         }
     }
     catch (error) {
-        logger.error('Failed to generate AI nutritional insights', {
+        logger.error('Failed to generate AI nutritional insights', error instanceof Error ? error : new Error('Unknown error'), {
             requestId,
-            error: error instanceof Error ? error.message : 'Unknown error'
         });
         return generateFallbackInsights(analysisData);
     }
@@ -309,31 +352,33 @@ function generateFallbackInsights(analysisData) {
     const adherence = analysisData.nutritionalSummary.adherencePercentages;
     const healthScore = analysisData.healthMetrics.overallHealthScore;
     const adherenceValues = Object.values(adherence);
-    const averageCompliance = Object.keys(adherence).length > 0 ?
-        Math.round(adherenceValues.reduce((total, value) => total + Number(value || 0), 0) / Object.keys(adherence).length) : 0;
+    const averageCompliance = Object.keys(adherence).length > 0
+        ? Math.round(adherenceValues.reduce((total, value) => total + Number(value || 0), 0) /
+            Object.keys(adherence).length)
+        : 0;
     return {
         keyFindings: [
             `Overall health score: ${healthScore}/100 for ${analysisData.subjectSummary.totalStudents} students`,
             `Average nutritional compliance: ${averageCompliance}%`,
-            analysisData.nutritionalSummary.deficiencyRisks.length > 0 ?
-                `Identified nutritional deficiencies in: ${analysisData.nutritionalSummary.deficiencyRisks.join(', ')}` :
-                'No major nutritional deficiencies identified',
-            `BMI distribution shows ${analysisData.healthMetrics.growthIndicators.bmiDistribution.normal}% in normal range`
+            analysisData.nutritionalSummary.deficiencyRisks.length > 0
+                ? `Identified nutritional deficiencies in: ${analysisData.nutritionalSummary.deficiencyRisks.join(', ')}`
+                : 'No major nutritional deficiencies identified',
+            `BMI distribution shows ${analysisData.healthMetrics.growthIndicators.bmiDistribution.normal}% in normal range`,
         ],
         riskAssessment: {
             nutritionalRisks: analysisData.nutritionalSummary.deficiencyRisks.map((risk) => ({
                 risk: `${risk} deficiency`,
                 severity: adherence[risk] < 60 ? 'high' : adherence[risk] < 80 ? 'medium' : 'low',
-                prevalence: Math.max(10, 100 - adherence[risk])
+                prevalence: Math.max(10, 100 - adherence[risk]),
             })),
             healthRisks: [
                 {
                     condition: 'Childhood obesity',
                     likelihood: analysisData.healthMetrics.growthIndicators.bmiDistribution.overweight +
                         analysisData.healthMetrics.growthIndicators.bmiDistribution.obese,
-                    preventable: true
-                }
-            ]
+                    preventable: true,
+                },
+            ],
         },
         recommendations: [
             {
@@ -341,16 +386,16 @@ function generateFallbackInsights(analysisData) {
                 priority: healthScore < 70 ? 'high' : 'medium',
                 recommendation: 'Review and improve menu nutritional balance',
                 expectedImpact: 'Improve overall nutritional adequacy by 15-25%',
-                implementationEffort: 'medium'
+                implementationEffort: 'medium',
             },
             {
                 category: 'nutrition_education',
                 priority: 'medium',
                 recommendation: 'Implement student nutrition education programs',
                 expectedImpact: 'Increase nutrition awareness and healthy choices',
-                implementationEffort: 'low'
-            }
-        ]
+                implementationEffort: 'low',
+            },
+        ],
     };
 }
 async function getStudentMealData(schoolId, studentIds, startDate, endDate, requestId) {
@@ -358,13 +403,13 @@ async function getStudentMealData(schoolId, studentIds, startDate, endDate, requ
         const mealData = await database.prisma.orderItem.findMany({
             where: {
                 order: {
-                    schoolId: schoolId,
+                    schoolId,
                     userId: studentIds.length > 0 ? { in: studentIds } : undefined,
                     createdAt: {
                         gte: new Date(startDate),
-                        lte: new Date(endDate)
-                    }
-                }
+                        lte: new Date(endDate),
+                    },
+                },
             },
             include: {
                 menuItem: {
@@ -373,24 +418,23 @@ async function getStudentMealData(schoolId, studentIds, startDate, endDate, requ
                         name: true,
                         nutritionalInfo: true,
                         allergens: true,
-                        calories: true
-                    }
+                        calories: true,
+                    },
                 },
                 order: {
                     include: {
-                        student: true
-                    }
-                }
+                        student: true,
+                    },
+                },
             },
-            orderBy: { createdAt: 'asc' }
+            orderBy: { createdAt: 'asc' },
         });
         return mealData;
     }
     catch (error) {
-        logger.error('Failed to get student meal data', {
+        logger.error('Failed to get student meal data', error instanceof Error ? error : new Error('Unknown error'), {
             requestId,
             schoolId,
-            error: error instanceof Error ? error.message : 'Unknown error'
         });
         throw new Error('Failed to retrieve meal data');
     }
@@ -418,7 +462,7 @@ async function performNutritionalAnalysis(data, userId, schoolId, requestId) {
             averageAge: Math.round(ages.reduce((sum, age) => sum + age, 0) / ages.length),
             genderDistribution: { male: genderCounts.male || 0, female: genderCounts.female || 0 },
             dietaryRestrictions: {},
-            healthConditions: {}
+            healthConditions: {},
         };
         const dailyNutrition = {};
         mealData.forEach(meal => {
@@ -436,11 +480,10 @@ async function performNutritionalAnalysis(data, userId, schoolId, requestId) {
                         fat: (nutrition.fat || 0) * (meal.quantity || 1),
                         fiber: (nutrition.fiber || 0) * (meal.quantity || 1),
                         sodium: (nutrition.sodium || 0) * (meal.quantity || 1),
-                        sugar: (nutrition.sugar || 0) * (meal.quantity || 1)
+                        sugar: (nutrition.sugar || 0) * (meal.quantity || 1),
                     });
                 }
                 catch (error) {
-                    console.warn('Invalid nutritional info for menu item:', meal.menuItemId);
                 }
             }
         });
@@ -452,7 +495,7 @@ async function performNutritionalAnalysis(data, userId, schoolId, requestId) {
             fat: Math.round(allNutritionValues.reduce((sum, n) => sum + n.fat, 0) / allNutritionValues.length),
             fiber: Math.round(allNutritionValues.reduce((sum, n) => sum + n.fiber, 0) / allNutritionValues.length),
             sodium: Math.round(allNutritionValues.reduce((sum, n) => sum + n.sodium, 0) / allNutritionValues.length),
-            sugar: Math.round(allNutritionValues.reduce((sum, n) => sum + n.sugar, 0) / allNutritionValues.length)
+            sugar: Math.round(allNutritionValues.reduce((sum, n) => sum + n.sugar, 0) / allNutritionValues.length),
         };
         const recommendedIntake = calculateRecommendedIntake(subjectSummary.averageAge, genderCounts.male > genderCounts.female ? 'male' : 'female', 'moderate');
         const adherencePercentages = calculateAdherencePercentages(averageDailyIntake, recommendedIntake);
@@ -462,11 +505,12 @@ async function performNutritionalAnalysis(data, userId, schoolId, requestId) {
             recommendedIntake,
             adherencePercentages,
             deficiencyRisks: deficiencies,
-            excessRisks: excesses
+            excessRisks: excesses,
         };
         const adherenceValues = Object.values(adherencePercentages);
-        const nutritionalBalance = Object.keys(adherencePercentages).length > 0 ?
-            Math.round(adherenceValues.reduce((total, val) => total + Math.min(Number(val || 0), 100), 0) / Object.keys(adherencePercentages).length) : 0;
+        const nutritionalBalance = Object.keys(adherencePercentages).length > 0
+            ? Math.round(adherenceValues.reduce((total, val) => total + Math.min(Number(val || 0), 100), 0) / Object.keys(adherencePercentages).length)
+            : 0;
         const healthMetrics = {
             overallHealthScore: calculateHealthScore(adherencePercentages, 7.5, 95, 'normal'),
             nutritionalBalance,
@@ -474,27 +518,34 @@ async function performNutritionalAnalysis(data, userId, schoolId, requestId) {
             growthIndicators: {
                 averageBMI: 18.5,
                 bmiDistribution: { underweight: 5, normal: 75, overweight: 15, obese: 5 },
-                growthVelocity: 0.5
+                growthVelocity: 0.5,
             },
             allergenManagement: {
                 totalAllergies: 0,
                 complianceRate: 100,
-                incidents: 0
-            }
+                incidents: 0,
+            },
         };
         const analysisDataForAI = {
             subjectSummary,
             nutritionalSummary,
             healthMetrics,
-            timeframe: data.timeframe
+            timeframe: data.timeframe,
         };
         const aiInsights = await generateNutritionalInsights(analysisDataForAI, requestId);
         const actionItems = aiInsights.recommendations?.map((rec, index) => ({
             item: rec.recommendation,
             priority: rec.priority,
             assignee: 'Nutrition Team',
-            dueDate: new Date(Date.now() + (rec.priority === 'high' ? 7 : rec.priority === 'medium' ? 14 : 30) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-            resources: ['Nutrition guidelines', 'Menu planning tools']
+            dueDate: new Date(Date.now() +
+                (rec.priority === 'high' ? 7 : rec.priority === 'medium' ? 14 : 30) *
+                    24 *
+                    60 *
+                    60 *
+                    1000)
+                .toISOString()
+                .split('T')[0],
+            resources: ['Nutrition guidelines', 'Menu planning tools'],
         })) || [];
         const result = {
             analysisId,
@@ -512,8 +563,8 @@ async function performNutritionalAnalysis(data, userId, schoolId, requestId) {
                 dataQuality: 0.9,
                 sampleSize: mealData.length,
                 confidenceLevel: 0.95,
-                methodologyVersion: '1.0.0'
-            }
+                methodologyVersion: '1.0.0',
+            },
         };
         await database.transaction(async (prisma) => {
             await prisma.analyticsReport.create({
@@ -524,8 +575,8 @@ async function performNutritionalAnalysis(data, userId, schoolId, requestId) {
                     dateRange: `${data.timeframe.startDate} to ${data.timeframe.endDate}`,
                     data: JSON.stringify(result),
                     generatedBy: userId,
-                    generatedAt: new Date()
-                }
+                    generatedAt: new Date(),
+                },
             });
             await prisma.auditLog.create({
                 data: {
@@ -539,9 +590,9 @@ async function performNutritionalAnalysis(data, userId, schoolId, requestId) {
                         analysisType: data.analysisType,
                         studentCount: uniqueStudents.size,
                         mealCount: mealData.length,
-                        healthScore: healthMetrics.overallHealthScore
-                    })
-                }
+                        healthScore: healthMetrics.overallHealthScore,
+                    }),
+                },
             });
         });
         logger.info('Nutritional analysis completed successfully', {
@@ -551,16 +602,15 @@ async function performNutritionalAnalysis(data, userId, schoolId, requestId) {
             schoolId,
             studentsAnalyzed: uniqueStudents.size,
             mealsAnalyzed: mealData.length,
-            healthScore: healthMetrics.overallHealthScore
+            healthScore: healthMetrics.overallHealthScore,
         });
         return result;
     }
     catch (error) {
-        logger.error('Failed to perform nutritional analysis', {
+        logger.error('Failed to perform nutritional analysis', error instanceof Error ? error : new Error('Unknown error'), {
             requestId,
             userId,
             schoolId,
-            error: error instanceof Error ? error.message : 'Unknown error'
         });
         throw error;
     }
@@ -576,32 +626,33 @@ const nutritionAnalyzerHandler = async (event, context) => {
             method: event.httpMethod,
             path: event.path,
             clientIP,
-            userAgent: userAgent.substring(0, 200)
+            userAgent: userAgent.substring(0, 200),
         });
         if (event.httpMethod !== 'POST') {
-            return (0, response_utils_1.createErrorResponse)(405, `Method ${event.httpMethod} not allowed`, undefined, 'METHOD_NOT_ALLOWED', requestId);
+            return (0, response_utils_1.createErrorResponse)('METHOD_NOT_ALLOWED', `Method ${event.httpMethod} not allowed`, 405, undefined);
         }
         if (!event.body) {
-            return (0, response_utils_1.createErrorResponse)(400, 'Request body required', undefined, 'MISSING_BODY', requestId);
+            return (0, response_utils_1.createErrorResponse)('MISSING_BODY', 'Request body required', 400, undefined);
         }
         const { userId, schoolId, role } = await validateUserAccess(event, requestId);
         const requestData = JSON.parse(event.body);
         const validatedData = nutritionAnalysisRequestSchema.parse(requestData);
         if (validatedData.schoolId !== schoolId) {
-            return (0, response_utils_1.createErrorResponse)(403, 'Access denied - invalid school context', undefined, 'ACCESS_DENIED', requestId);
+            return (0, response_utils_1.createErrorResponse)('ACCESS_DENIED', 'Access denied - invalid school context', 403, undefined);
         }
-        if (validatedData.analysisType === 'comprehensive' && !['admin', 'nutritionist'].includes(role)) {
-            return (0, response_utils_1.createErrorResponse)(403, 'Insufficient permissions for comprehensive analysis', undefined, 'ACCESS_DENIED', requestId);
+        if (validatedData.analysisType === 'comprehensive' &&
+            !['admin', 'nutritionist'].includes(role)) {
+            return (0, response_utils_1.createErrorResponse)('ACCESS_DENIED', 'Insufficient permissions for comprehensive analysis', 403, undefined);
         }
         const startDate = new Date(validatedData.timeframe.startDate);
         const endDate = new Date(validatedData.timeframe.endDate);
         const today = new Date();
         if (endDate <= startDate) {
-            return (0, response_utils_1.createErrorResponse)(400, 'End date must be after start date', undefined, 'INVALID_DATE_RANGE', requestId);
+            return (0, response_utils_1.createErrorResponse)('INVALID_DATE_RANGE', 'End date must be after start date', 400, undefined);
         }
         const dayDiff = (endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24);
         if (dayDiff > 365) {
-            return (0, response_utils_1.createErrorResponse)(400, 'Analysis period cannot exceed 1 year', undefined, 'DATE_RANGE_TOO_LONG', requestId);
+            return (0, response_utils_1.createErrorResponse)('DATE_RANGE_TOO_LONG', 'Analysis period cannot exceed 1 year', 400, undefined);
         }
         const analysisResult = await performNutritionalAnalysis(validatedData, userId, schoolId, requestId);
         const duration = Date.now() - startTime;
@@ -614,7 +665,7 @@ const nutritionAnalyzerHandler = async (event, context) => {
             studentsAnalyzed: analysisResult.subjectSummary.totalStudents,
             healthScore: analysisResult.healthMetrics.overallHealthScore,
             duration,
-            success: true
+            success: true,
         });
         return (0, response_utils_1.createSuccessResponse)({
             analysis: analysisResult,
@@ -623,35 +674,34 @@ const nutritionAnalyzerHandler = async (event, context) => {
                 studentsAnalyzed: analysisResult.subjectSummary.totalStudents,
                 overallHealthScore: analysisResult.healthMetrics.overallHealthScore,
                 keyFindings: analysisResult.aiInsights.keyFindings,
-                criticalRecommendations: analysisResult.actionItems.filter(item => item.priority === 'urgent' || item.priority === 'high')
-            }
-        }, 'Nutritional analysis completed successfully', 200, requestId);
+                criticalRecommendations: analysisResult.actionItems.filter(item => item.priority === 'urgent' || item.priority === 'high'),
+            },
+        }, 200);
     }
     catch (error) {
         const duration = Date.now() - startTime;
-        logger.error('Nutrition analyzer request failed', {
+        logger.error('Nutrition analyzer request failed', error instanceof Error ? error : new Error('Unknown error'), {
             requestId,
-            error: error instanceof Error ? error.message : 'Unknown error',
-            duration
+            duration,
         });
         if (error instanceof zod_1.z.ZodError) {
-            return (0, response_utils_1.createErrorResponse)(400, 'Invalid request data', error.issues, 'VALIDATION_ERROR', requestId);
+            return (0, response_utils_1.createErrorResponse)('VALIDATION_ERROR', 'Invalid request data', 400, error.issues);
         }
         if (error instanceof Error) {
             if (error.message.includes('Authentication required')) {
-                return (0, response_utils_1.createErrorResponse)(401, 'Authentication required', undefined, 'AUTHENTICATION_REQUIRED', requestId);
+                return (0, response_utils_1.createErrorResponse)('AUTHENTICATION_REQUIRED', 'Authentication required', 401);
             }
             if (error.message.includes('Access denied')) {
-                return (0, response_utils_1.createErrorResponse)(403, 'Access denied', undefined, 'ACCESS_DENIED', requestId);
+                return (0, response_utils_1.createErrorResponse)('ACCESS_DENIED', 'Access denied', 403);
             }
             if (error.message.includes('No meal data found')) {
-                return (0, response_utils_1.createErrorResponse)(404, 'No meal data available for analysis', undefined, 'NO_DATA', requestId);
+                return (0, response_utils_1.createErrorResponse)('NO_DATA', 'No meal data available for analysis', 404);
             }
             if (error.message.includes('Failed to retrieve')) {
-                return (0, response_utils_1.createErrorResponse)(422, error.message, undefined, 'DATA_RETRIEVAL_FAILED', requestId);
+                return (0, response_utils_1.createErrorResponse)('DATA_RETRIEVAL_FAILED', error.message, 422);
             }
         }
-        return (0, response_utils_1.createErrorResponse)(500, 'Internal server error', undefined, 'INTERNAL_ERROR', requestId);
+        return (0, response_utils_1.createErrorResponse)('INTERNAL_ERROR', 'Internal server error', 500);
     }
 };
 exports.nutritionAnalyzerHandler = nutritionAnalyzerHandler;

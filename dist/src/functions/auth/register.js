@@ -1,147 +1,61 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.registerHandler = void 0;
-const cognito_service_1 = require("../../services/cognito.service");
-const database_service_1 = require("../../services/database.service");
-const logger_1 = require("../../utils/logger");
-const validation_service_1 = require("../../services/validation.service");
-const cognito = cognito_service_1.CognitoServiceClass.getInstance();
-const db = database_service_1.DatabaseService.getInstance();
-const logger = logger_1.logger;
-const validator = validation_service_1.ValidationService.getInstance();
-const createResponse = (statusCode, body, headers = {}) => ({
-    statusCode,
-    headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
-        'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
-        ...headers
-    },
-    body: JSON.stringify(body)
-});
-const handleError = (error, context) => {
-    logger.error('Registration Lambda function error', error, { requestId: context.awsRequestId });
-    if (error.name === 'ValidationError') {
-        return createResponse(400, { error: error.message, details: error.details });
-    }
-    if (error.isCognitoError) {
-        const statusCode = error.statusCode || 400;
-        return createResponse(statusCode, {
-            error: error.message || 'Registration failed',
-            code: error.code
-        });
-    }
-    return createResponse(500, { error: 'Internal server error' });
-};
-const registerHandler = async (event, context) => {
-    const startTime = Date.now();
+exports.registerHandler = exports.handler = void 0;
+const auth_service_1 = require("../../services/auth.service");
+const response_utils_1 = require("../shared/response.utils");
+const csrf_utils_1 = require("../shared/csrf.utils");
+const handler = async (event, _context) => {
     try {
-        logger.logFunctionStart('registerHandler', { requestId: context.awsRequestId });
+        if ((0, csrf_utils_1.requiresCSRFProtection)(event.httpMethod)) {
+            const csrfValidation = (0, csrf_utils_1.validateCSRFToken)(event);
+            if (!csrfValidation.isValid) {
+                return csrfValidation.error;
+            }
+        }
         const body = JSON.parse(event.body || '{}');
-        logger.info('Processing registration request', {
+        if (!body.email || !body.password || !body.firstName || !body.lastName) {
+            return (0, response_utils_1.createErrorResponse)('VALIDATION_ERROR', 'Email, password, first name, and last name are required', 400);
+        }
+        if (body.password !== body.passwordConfirm) {
+            return (0, response_utils_1.createErrorResponse)('VALIDATION_ERROR', 'Passwords do not match', 400);
+        }
+        if (body.password.length < 8) {
+            return (0, response_utils_1.createErrorResponse)('VALIDATION_ERROR', 'Password must be at least 8 characters long', 400);
+        }
+        const registerResult = await auth_service_1.authService.register({
             email: body.email,
+            password: body.password,
+            firstName: body.firstName,
+            lastName: body.lastName,
             role: body.role,
             schoolId: body.schoolId,
-            requestId: context.awsRequestId
         });
-        const validationResult = await validator.validateRegistration(body);
-        if (!validationResult.isValid) {
-            return createResponse(400, {
-                error: 'Validation failed',
-                details: validationResult.errors
-            });
+        if (!registerResult.success) {
+            return (0, response_utils_1.createErrorResponse)('REGISTRATION_FAILED', registerResult.error || 'Registration failed', 400);
         }
-        const { email, password, firstName, lastName, phone, schoolId, role } = validationResult.sanitizedValue;
-        const school = await db.school.findUnique({
-            where: { id: schoolId },
-            select: { id: true, name: true, isActive: true }
+        const authResult = await auth_service_1.authService.authenticate({
+            email: body.email,
+            password: body.password,
         });
-        if (!school) {
-            return createResponse(400, {
-                error: 'Validation failed',
-                details: [{ field: 'schoolId', message: 'School not found' }]
-            });
+        if (!authResult.success) {
+            return (0, response_utils_1.createErrorResponse)('REGISTRATION_FAILED', 'Registration succeeded but token generation failed', 500);
         }
-        if (!school.isActive) {
-            return createResponse(400, {
-                error: 'Validation failed',
-                details: [{ field: 'schoolId', message: 'School is not accepting registrations' }]
-            });
-        }
-        const existingUser = await db.user.findUnique({
-            where: { email },
-            select: { id: true, email: true }
-        });
-        if (existingUser) {
-            return createResponse(409, {
-                error: 'User already exists',
-                details: [{ field: 'email', message: 'A user with this email already exists' }]
-            });
-        }
-        const cognitoResult = await cognito.signUp({
-            email,
-            password,
-            firstName,
-            lastName,
-            phoneNumber: phone
-        });
-        const user = await db.user.create({
-            data: {
-                email,
-                firstName,
-                lastName,
-                phone,
-                role,
-                schoolId,
-                cognitoUserId: cognitoResult.userSub,
-                passwordHash: 'cognito-managed',
-                isActive: true
-            },
-            select: {
-                id: true,
-                email: true,
-                firstName: true,
-                lastName: true,
-                role: true,
-                schoolId: true,
-                isActive: true,
-                createdAt: true
-            }
-        });
-        if (role === 'student') {
-            await db.studentProfile.create({
-                data: {
-                    userId: user.id,
-                    studentId: `STU-${Date.now()}-${user.id.slice(-4)}`,
-                    name: `${firstName} ${lastName}`,
-                    schoolId
-                }
-            });
-        }
-        const duration = Date.now() - startTime;
-        logger.logFunctionEnd('register', { statusCode: 201, duration });
-        logger.info('User registration successful', {
-            userId: user.id,
-            email: user.email,
-            role: user.role,
-            duration
-        });
-        return createResponse(201, {
-            message: 'Registration successful',
+        return (0, response_utils_1.createSuccessResponse)({
             user: {
-                ...user,
-                school: {
-                    id: school.id,
-                    name: school.name
-                }
+                id: registerResult.user.id,
+                email: registerResult.user.email,
+                firstName: registerResult.user.firstName || '',
+                lastName: registerResult.user.lastName || '',
+                role: registerResult.user.role,
             },
-            requiresConfirmation: !cognitoResult.isConfirmed
-        });
+            tokens: authResult.tokens,
+        }, 201);
     }
     catch (error) {
-        return handleError(error, context);
+        return (0, response_utils_1.createErrorResponse)('REGISTRATION_FAILED', error instanceof Error ? error.message : 'Registration failed', 500);
     }
 };
-exports.registerHandler = registerHandler;
+exports.handler = handler;
+exports.registerHandler = exports.handler;
+exports.default = exports.handler;
 //# sourceMappingURL=register.js.map

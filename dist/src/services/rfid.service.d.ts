@@ -1,51 +1,68 @@
-import { RFIDCard, RFIDReader, DeliveryVerification, Order, User } from '@prisma/client';
-export interface RegisterRFIDCardInput {
+import { RFIDCard, RFIDReader, DeliveryVerification } from '@prisma/client';
+export interface RfidCardFilters {
+    schoolId?: string;
+    studentId?: string;
+    cardType?: string;
+    isActive?: boolean;
+}
+export interface CreateRfidCardData {
     cardNumber: string;
     studentId: string;
     schoolId: string;
-    cardType: 'student' | 'staff' | 'visitor';
+    cardType?: 'student' | 'staff';
     expiryDate?: Date;
-    metadata?: Record<string, any>;
 }
-export interface RFIDVerificationInput {
+export interface VerifyCardResult {
+    isValid: boolean;
+    card?: RFIDCard;
+    student?: {
+        id: string;
+        firstName: string;
+        lastName: string;
+    };
+}
+export interface ServiceResponse<T = any> {
+    success: boolean;
+    data?: T;
+    error?: {
+        code: string;
+        message: string;
+        details?: any;
+    };
+}
+export interface RegisterCardInput {
     cardNumber: string;
-    readerId: string;
+    studentId: string;
+    schoolId: string;
+    cardType?: 'student' | 'staff';
+    expiryDate?: Date;
+}
+export interface VerifyDeliveryInput {
+    cardNumber: string;
+    readerId?: string;
     orderId?: string;
     signalStrength?: number;
     readDuration?: number;
     location?: string;
     timestamp?: Date;
-    metadata?: Record<string, any>;
 }
-export interface RFIDVerificationResult {
+export interface VerifyDeliveryResult {
     success: boolean;
     cardNumber: string;
     studentId: string;
     studentName: string;
     schoolId: string;
     verificationId: string;
-    timestamp: Date;
-    location: string;
-    readerInfo: {
-        id: string;
-        name: string;
-        location: string;
-    };
+    signalQuality: string;
     orderInfo?: {
-        id: string;
+        orderId: string;
         status: string;
         deliveryDate: Date;
-    };
-    signalQuality: 'excellent' | 'good' | 'fair' | 'poor';
-    error?: {
-        message: string;
-        code: string;
-        details?: any;
     };
 }
 export interface UpdateReaderStatusInput {
     readerId: string;
-    status: 'online' | 'offline' | 'maintenance';
+    status?: 'online' | 'offline' | 'maintenance';
     location?: string;
     metadata?: Record<string, any>;
 }
@@ -60,66 +77,71 @@ export interface VerificationHistoryQuery {
     page?: number;
     limit?: number;
 }
-export interface BulkCardRegistrationInput {
-    cards: Array<{
+export interface VerificationHistoryResult {
+    verifications: DeliveryVerification[];
+    pagination: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+    };
+}
+export interface BulkRegisterResult {
+    successful: Array<{
+        cardNumber: string;
+        cardId: string;
+        studentId: string;
+    }>;
+    failed: Array<{
         cardNumber: string;
         studentId: string;
-        cardType: 'student' | 'staff' | 'visitor';
-        expiryDate?: Date;
+        error: {
+            message: string;
+            code: string;
+        };
     }>;
-    schoolId: string;
 }
 export interface CardAnalyticsQuery {
     schoolId?: string;
-    startDate: Date;
-    endDate: Date;
+    startDate?: Date;
+    endDate?: Date;
     groupBy?: 'day' | 'week' | 'month';
 }
-export interface ServiceResponse<T> {
-    success: boolean;
-    data?: T;
-    error?: {
-        message: string;
-        code: string;
-        details?: any;
-    };
+export interface CardAnalyticsResult {
+    totalVerifications: number;
+    uniqueCards: number;
+    verificationsByCard: Array<{
+        cardId: string;
+        count: number;
+        firstVerification: Date;
+        lastVerification: Date;
+    }>;
 }
-export interface RFIDCardWithUser extends RFIDCard {
-    user: Pick<User, 'id' | 'firstName' | 'lastName' | 'email' | 'schoolId'>;
+export declare class RfidService {
+    private static instance;
+    private prisma;
+    private verificationCache;
+    private constructor();
+    static getInstance(): RfidService;
+    private isValidCardNumber;
+    private assessSignalQuality;
+    private getReaderById;
+    private getCardByNumber;
+    registerCard(input: RegisterCardInput): Promise<ServiceResponse<RFIDCard>>;
+    verifyDelivery(input: VerifyDeliveryInput): Promise<ServiceResponse<VerifyDeliveryResult>>;
+    updateReaderStatus(input: UpdateReaderStatusInput): Promise<ServiceResponse<RFIDReader>>;
+    getVerificationHistory(query?: VerificationHistoryQuery): Promise<ServiceResponse<VerificationHistoryResult>>;
+    deactivateCard(cardId: string, reason?: string): Promise<ServiceResponse<RFIDCard>>;
+    bulkRegisterCards(input: {
+        schoolId: string;
+        cards: Array<{
+            cardNumber: string;
+            studentId: string;
+            cardType?: 'student' | 'staff';
+        }>;
+    }): Promise<ServiceResponse<BulkRegisterResult>>;
+    getCardAnalytics(query: CardAnalyticsQuery): Promise<ServiceResponse<CardAnalyticsResult>>;
 }
-export interface DeliveryVerificationWithIncludes extends DeliveryVerification {
-    rfidCard: RFIDCardWithUser;
-    rfidReader: RFIDReader;
-    order?: Order;
-}
-export declare class RFIDService {
-    private static readonly CACHE_TTL;
-    private static readonly VERIFICATION_CACHE_TTL;
-    private static readonly MAX_SIGNAL_STRENGTH;
-    private static readonly MIN_SIGNAL_STRENGTH;
-    private static readonly CARD_EXPIRY_WARNING_DAYS;
-    private static verificationCache;
-    static registerCard(input: RegisterRFIDCardInput): Promise<ServiceResponse<RFIDCard>>;
-    static verifyDelivery(input: RFIDVerificationInput): Promise<ServiceResponse<RFIDVerificationResult>>;
-    static updateReaderStatus(input: UpdateReaderStatusInput): Promise<ServiceResponse<RFIDReader>>;
-    static getVerificationHistory(query: VerificationHistoryQuery): Promise<ServiceResponse<{
-        verifications: DeliveryVerificationWithIncludes[];
-        pagination: any;
-    }>>;
-    static deactivateCard(cardId: string, reason: string): Promise<ServiceResponse<RFIDCard>>;
-    static bulkRegisterCards(input: BulkCardRegistrationInput): Promise<ServiceResponse<{
-        successful: RFIDCard[];
-        failed: any[];
-    }>>;
-    static getCardAnalytics(query: CardAnalyticsQuery): Promise<ServiceResponse<any>>;
-    private static getReaderById;
-    private static getCardByNumber;
-    private static cacheCardData;
-    private static clearCardCache;
-    private static updateCardLastUsed;
-    private static isValidCardNumber;
-    private static assessSignalQuality;
-    createCard(input: RegisterRFIDCardInput): Promise<ServiceResponse<RFIDCard>>;
-}
-export declare const rfidService: RFIDService;
+export declare const rfidService: RfidService;
+export default RfidService;
 //# sourceMappingURL=rfid.service.d.ts.map

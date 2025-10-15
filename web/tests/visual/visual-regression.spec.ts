@@ -8,9 +8,9 @@ import { MenuPage } from '../pages/menu.page';
  * Validates UI consistency across different states, themes, and user roles
  */
 
-test.describe('Visual Regression Testing', () => {
+test.describe(_'Visual Regression Testing', _() => {
   // Test data for consistent visual testing
-  const visualTestData = {
+  const _visualTestData =  {
     student: {
       name: 'Visual Test Student',
       balance: 150.00,
@@ -24,7 +24,7 @@ test.describe('Visual Regression Testing', () => {
     ]
   };
 
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(_async ({ page }) => {
     // Stabilize animations for consistent screenshots
     await page.addStyleTag({
       content: `
@@ -39,7 +39,7 @@ test.describe('Visual Regression Testing', () => {
     });
 
     // Mock consistent data for visual tests
-    await page.route('**/menu/items', async route => {
+    await page.route('**/menu/items', async _route = > {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -48,9 +48,9 @@ test.describe('Visual Regression Testing', () => {
     });
   });
 
-  test.describe('Authentication Screens', () => {
-    test('login page - all role tabs', async ({ page }) => {
-      const loginPage = new LoginPage(page);
+  test.describe(_'Authentication Screens', _() => {
+    test(_'login page - all role tabs', _async ({ page }) => {
+      const _loginPage =  new LoginPage(page);
       await loginPage.goto();
       
       // Wait for page to be fully loaded
@@ -76,16 +76,15 @@ test.describe('Visual Regression Testing', () => {
         });
         
         // Percy screenshot for cross-browser comparison
-        await page.evaluate(() => {
-          if (typeof window.percySnapshot === 'function') {
-            window.percySnapshot(`Login Page - ${role.charAt(0).toUpperCase() + role.slice(1)} Role`);
+        await page.evaluate(_() => {
+          if (typeof window._percySnapshot = 
           }
         });
       }
     });
 
-    test('login form validation states', async ({ page }) => {
-      const loginPage = new LoginPage(page);
+    test(_'login form validation states', _async ({ page }) => {
+      const _loginPage =  new LoginPage(page);
       await loginPage.goto();
       
       // Empty form submission (error state)
@@ -108,18 +107,17 @@ test.describe('Visual Regression Testing', () => {
       });
       
       // Percy snapshots
-      await page.evaluate(() => {
-        if (typeof window.percySnapshot === 'function') {
-          window.percySnapshot('Login Form - Validation Errors');
+      await page.evaluate(_() => {
+        if (typeof window._percySnapshot = 
         }
       });
     });
 
-    test('login responsive design', async ({ page }) => {
-      const loginPage = new LoginPage(page);
+    test(_'login responsive design', _async ({ page }) => {
+      const _loginPage =  new LoginPage(page);
       await loginPage.goto();
       
-      const breakpoints = [
+      const _breakpoints =  [
         { name: 'mobile', width: 375, height: 667 },
         { name: 'tablet', width: 768, height: 1024 },
         { name: 'desktop', width: 1440, height: 900 }
@@ -134,17 +132,16 @@ test.describe('Visual Regression Testing', () => {
           fullPage: true
         });
         
-        await page.evaluate((name) => {
-          if (typeof window.percySnapshot === 'function') {
-            window.percySnapshot(`Login Page - ${name.charAt(0).toUpperCase() + name.slice(1)}`);
+        await page.evaluate(_(name) => {
+          if (typeof window._percySnapshot = 
           }
         }, bp.name);
       }
     });
   });
 
-  test.describe('Dashboard Visual States', () => {
-    test.beforeEach(async ({ page }) => {
+  test.describe(_'Dashboard Visual States', _() => {
+    test.beforeEach(_async ({ page }) => {
       // Mock authentication
       await page.context().addCookies([{
         name: 'auth_token',
@@ -154,11 +151,11 @@ test.describe('Visual Regression Testing', () => {
       }]);
     });
 
-    test('student dashboard - all states', async ({ page }) => {
-      const dashboardPage = new DashboardPage(page);
+    test(_'student dashboard - all states', _async ({ page }) => {
+      const _dashboardPage =  new DashboardPage(page);
       
       // Mock student dashboard data
-      await page.route('**/dashboard/student', async route => {
+      await page.route('**/dashboard/student', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -183,14 +180,13 @@ test.describe('Visual Regression Testing', () => {
         fullPage: true
       });
       
-      await page.evaluate(() => {
-        if (typeof window.percySnapshot === 'function') {
-          window.percySnapshot('Student Dashboard - Default State');
+      await page.evaluate(_() => {
+        if (typeof window._percySnapshot = 
         }
       });
       
       // With notifications
-      await page.route('**/notifications', async route => {
+      await page.route('**/notifications', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -215,18 +211,17 @@ test.describe('Visual Regression Testing', () => {
         fullPage: true
       });
       
-      await page.evaluate(() => {
-        if (typeof window.percySnapshot === 'function') {
-          window.percySnapshot('Student Dashboard - With Notifications');
+      await page.evaluate(_() => {
+        if (typeof window._percySnapshot = 
         }
       });
     });
 
-    test('admin dashboard - system overview', async ({ page }) => {
-      const dashboardPage = new DashboardPage(page);
+    test(_'admin dashboard - system overview', _async ({ page }) => {
+      const _dashboardPage =  new DashboardPage(page);
       
       // Mock admin dashboard data
-      await page.route('**/dashboard/admin', async route => {
+      await page.route('**/dashboard/admin', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -253,18 +248,17 @@ test.describe('Visual Regression Testing', () => {
         fullPage: true
       });
       
-      await page.evaluate(() => {
-        if (typeof window.percySnapshot === 'function') {
-          window.percySnapshot('Admin Dashboard - System Overview');
+      await page.evaluate(_() => {
+        if (typeof window._percySnapshot = 
         }
       });
     });
 
-    test('kitchen dashboard - order management', async ({ page }) => {
-      const dashboardPage = new DashboardPage(page);
+    test(_'kitchen dashboard - order management', _async ({ page }) => {
+      const _dashboardPage =  new DashboardPage(page);
       
       // Mock kitchen dashboard data
-      await page.route('**/dashboard/kitchen', async route => {
+      await page.route('**/dashboard/kitchen', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -289,16 +283,15 @@ test.describe('Visual Regression Testing', () => {
         fullPage: true
       });
       
-      await page.evaluate(() => {
-        if (typeof window.percySnapshot === 'function') {
-          window.percySnapshot('Kitchen Dashboard - Order Management');
+      await page.evaluate(_() => {
+        if (typeof window._percySnapshot = 
         }
       });
     });
   });
 
-  test.describe('Menu Page Visual States', () => {
-    test.beforeEach(async ({ page }) => {
+  test.describe(_'Menu Page Visual States', _() => {
+    test.beforeEach(_async ({ page }) => {
       // Mock authentication
       await page.context().addCookies([{
         name: 'auth_token',
@@ -308,8 +301,8 @@ test.describe('Visual Regression Testing', () => {
       }]);
     });
 
-    test('menu grid and list views', async ({ page }) => {
-      const menuPage = new MenuPage(page);
+    test(_'menu grid and list views', _async ({ page }) => {
+      const _menuPage =  new MenuPage(page);
       await menuPage.goto();
       await menuPage.waitForPageLoad();
       
@@ -319,14 +312,13 @@ test.describe('Visual Regression Testing', () => {
         fullPage: true
       });
       
-      await page.evaluate(() => {
-        if (typeof window.percySnapshot === 'function') {
-          window.percySnapshot('Menu Page - Grid View');
+      await page.evaluate(_() => {
+        if (typeof window._percySnapshot = 
         }
       });
       
       // Switch to list view if available
-      const viewToggle = page.locator('[data-testid="view-toggle"]');
+      const _viewToggle =  page.locator('[data-testid
       if (await viewToggle.isVisible()) {
         await viewToggle.click();
         await page.waitForTimeout(300);
@@ -336,16 +328,15 @@ test.describe('Visual Regression Testing', () => {
           fullPage: true
         });
         
-        await page.evaluate(() => {
-          if (typeof window.percySnapshot === 'function') {
-            window.percySnapshot('Menu Page - List View');
+        await page.evaluate(_() => {
+          if (typeof window._percySnapshot = 
           }
         });
       }
     });
 
-    test('menu with cart states', async ({ page }) => {
-      const menuPage = new MenuPage(page);
+    test(_'menu with cart states', _async ({ page }) => {
+      const _menuPage =  new MenuPage(page);
       await menuPage.goto();
       await menuPage.waitForPageLoad();
       
@@ -356,8 +347,8 @@ test.describe('Visual Regression Testing', () => {
       });
       
       // Add items to cart
-      const firstItem = page.locator('[data-testid="menu-item"]').first();
-      const addButton = firstItem.locator('[data-testid="add-to-cart"]');
+      const _firstItem =  page.locator('[data-testid
+      const _addButton =  firstItem.locator('[data-testid
       await addButton.click();
       await page.waitForTimeout(500);
       
@@ -370,15 +361,14 @@ test.describe('Visual Regression Testing', () => {
         fullPage: true
       });
       
-      await page.evaluate(() => {
-        if (typeof window.percySnapshot === 'function') {
-          window.percySnapshot('Menu Page - Cart with Items');
+      await page.evaluate(_() => {
+        if (typeof window._percySnapshot = 
         }
       });
     });
 
-    test('menu filters and search', async ({ page }) => {
-      const menuPage = new MenuPage(page);
+    test(_'menu filters and search', _async ({ page }) => {
+      const _menuPage =  new MenuPage(page);
       await menuPage.goto();
       await menuPage.waitForPageLoad();
       
@@ -400,23 +390,22 @@ test.describe('Visual Regression Testing', () => {
         fullPage: true
       });
       
-      await page.evaluate(() => {
-        if (typeof window.percySnapshot === 'function') {
-          window.percySnapshot('Menu Page - Search Results');
+      await page.evaluate(_() => {
+        if (typeof window._percySnapshot = 
         }
       });
     });
   });
 
-  test.describe('Theme and Accessibility Visual Tests', () => {
-    test('dark mode theme consistency', async ({ page }) => {
+  test.describe(_'Theme and Accessibility Visual Tests', _() => {
+    test(_'dark mode theme consistency', _async ({ page }) => {
       // Enable dark mode if supported
-      await page.evaluate(() => {
+      await page.evaluate(_() => {
         document.documentElement.classList.add('dark');
         localStorage.setItem('theme', 'dark');
       });
       
-      const pages = [
+      const _pages =  [
         { name: 'login', path: '/auth/login' },
         { name: 'dashboard', path: '/dashboard' },
         { name: 'menu', path: '/menu' }
@@ -432,21 +421,20 @@ test.describe('Visual Regression Testing', () => {
           fullPage: true
         });
         
-        await page.evaluate((name) => {
-          if (typeof window.percySnapshot === 'function') {
-            window.percySnapshot(`${name.charAt(0).toUpperCase() + name.slice(1)} - Dark Theme`);
+        await page.evaluate(_(name) => {
+          if (typeof window._percySnapshot = 
           }
         }, pageInfo.name);
       }
     });
 
-    test('high contrast mode', async ({ page }) => {
+    test(_'high contrast mode', _async ({ page }) => {
       // Enable high contrast mode
-      await page.evaluate(() => {
+      await page.evaluate(_() => {
         document.documentElement.classList.add('high-contrast');
       });
       
-      const loginPage = new LoginPage(page);
+      const _loginPage =  new LoginPage(page);
       await loginPage.goto();
       await loginPage.waitForPageLoad();
       
@@ -455,15 +443,14 @@ test.describe('Visual Regression Testing', () => {
         fullPage: true
       });
       
-      await page.evaluate(() => {
-        if (typeof window.percySnapshot === 'function') {
-          window.percySnapshot('Login Page - High Contrast Mode');
+      await page.evaluate(_() => {
+        if (typeof window._percySnapshot = 
         }
       });
     });
 
-    test('focus states and keyboard navigation', async ({ page }) => {
-      const loginPage = new LoginPage(page);
+    test(_'focus states and keyboard navigation', _async ({ page }) => {
+      const _loginPage =  new LoginPage(page);
       await loginPage.goto();
       await loginPage.waitForPageLoad();
       
@@ -494,23 +481,22 @@ test.describe('Visual Regression Testing', () => {
         fullPage: true
       });
       
-      await page.evaluate(() => {
-        if (typeof window.percySnapshot === 'function') {
-          window.percySnapshot('Login Page - Focus States');
+      await page.evaluate(_() => {
+        if (typeof window._percySnapshot = 
         }
       });
     });
   });
 
-  test.describe('Multi-Language Visual Consistency', () => {
+  test.describe(_'Multi-Language Visual Consistency', _() => {
     const languages: Array<{ code: 'en' | 'hi' | 'kn', name: string }> = [
       { code: 'en', name: 'English' },
       { code: 'hi', name: 'Hindi' },
       { code: 'kn', name: 'Kannada' }
     ];
 
-    test('login page - all languages', async ({ page }) => {
-      const loginPage = new LoginPage(page);
+    test(_'login page - all languages', _async ({ page }) => {
+      const _loginPage =  new LoginPage(page);
       
       for (const lang of languages) {
         await loginPage.goto();
@@ -525,15 +511,14 @@ test.describe('Visual Regression Testing', () => {
           fullPage: true
         });
         
-        await page.evaluate((langName) => {
-          if (typeof window.percySnapshot === 'function') {
-            window.percySnapshot(`Login Page - ${langName}`);
+        await page.evaluate(_(langName) => {
+          if (typeof window._percySnapshot = 
           }
         }, lang.name);
       }
     });
 
-    test('menu page - multilingual content', async ({ page }) => {
+    test(_'menu page - multilingual content', _async ({ page }) => {
       // Mock authentication
       await page.context().addCookies([{
         name: 'auth_token',
@@ -542,18 +527,12 @@ test.describe('Visual Regression Testing', () => {
         path: '/'
       }]);
       
-      const menuPage = new MenuPage(page);
+      const _menuPage =  new MenuPage(page);
       
       for (const lang of languages) {
         // Mock localized menu data
-        await page.route('**/menu/items', async route => {
-          const localizedItems = visualTestData.menuItems.map(item => ({
-            ...item,
-            name: lang.code === 'hi' ? `${item.name} (हिंदी)` : 
-                  lang.code === 'kn' ? `${item.name} (ಕನ್ನಡ)` : item.name,
-            description: `Delicious ${item.name.toLowerCase()} prepared fresh daily`
-          }));
-          
+        await page.route('**/menu/items', async _route = > {
+          const localizedItems 
           await route.fulfill({
             status: 200,
             contentType: 'application/json',
@@ -573,21 +552,20 @@ test.describe('Visual Regression Testing', () => {
           fullPage: true
         });
         
-        await page.evaluate((langName) => {
-          if (typeof window.percySnapshot === 'function') {
-            window.percySnapshot(`Menu Page - ${langName}`);
+        await page.evaluate(_(langName) => {
+          if (typeof window._percySnapshot = 
           }
         }, lang.name);
       }
     });
   });
 
-  test.describe('Error States and Edge Cases', () => {
-    test('network error states', async ({ page }) => {
-      const menuPage = new MenuPage(page);
+  test.describe(_'Error States and Edge Cases', _() => {
+    test(_'network error states', _async ({ page }) => {
+      const _menuPage =  new MenuPage(page);
       
       // Mock network error
-      await page.route('**/menu/items', route => route.abort('failed'));
+      await page.route('**/menu/items', _route = > route.abort('failed'));
       
       await menuPage.goto();
       await page.waitForTimeout(2000); // Wait for error state
@@ -597,14 +575,13 @@ test.describe('Visual Regression Testing', () => {
         fullPage: true
       });
       
-      await page.evaluate(() => {
-        if (typeof window.percySnapshot === 'function') {
-          window.percySnapshot('Menu Page - Network Error State');
+      await page.evaluate(_() => {
+        if (typeof window._percySnapshot = 
         }
       });
     });
 
-    test('empty states', async ({ page }) => {
+    test(_'empty states', _async ({ page }) => {
       // Mock authentication
       await page.context().addCookies([{
         name: 'auth_token',
@@ -613,10 +590,10 @@ test.describe('Visual Regression Testing', () => {
         path: '/'
       }]);
       
-      const menuPage = new MenuPage(page);
+      const _menuPage =  new MenuPage(page);
       
       // Mock empty menu
-      await page.route('**/menu/items', async route => {
+      await page.route('**/menu/items', async _route = > {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -632,19 +609,18 @@ test.describe('Visual Regression Testing', () => {
         fullPage: true
       });
       
-      await page.evaluate(() => {
-        if (typeof window.percySnapshot === 'function') {
-          window.percySnapshot('Menu Page - Empty State');
+      await page.evaluate(_() => {
+        if (typeof window._percySnapshot = 
         }
       });
     });
 
-    test('loading states', async ({ page }) => {
-      const menuPage = new MenuPage(page);
+    test(_'loading states', _async ({ page }) => {
+      const _menuPage =  new MenuPage(page);
       
       // Mock slow loading
-      await page.route('**/menu/items', async route => {
-        await new Promise(resolve => setTimeout(resolve, 1000));
+      await page.route('**/menu/items', async _route = > {
+        await new Promise(resolve 
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -653,7 +629,7 @@ test.describe('Visual Regression Testing', () => {
       });
       
       // Navigate and capture loading state quickly
-      const navigation = menuPage.goto();
+      const _navigation =  menuPage.goto();
       await page.waitForTimeout(500); // Capture during loading
       
       await page.screenshot({
@@ -663,17 +639,16 @@ test.describe('Visual Regression Testing', () => {
       
       await navigation; // Complete navigation
       
-      await page.evaluate(() => {
-        if (typeof window.percySnapshot === 'function') {
-          window.percySnapshot('Menu Page - Loading State');
+      await page.evaluate(_() => {
+        if (typeof window._percySnapshot = 
         }
       });
     });
   });
 
-  test.describe('Animation and Interaction States', () => {
-    test('button hover and active states', async ({ page }) => {
-      const loginPage = new LoginPage(page);
+  test.describe(_'Animation and Interaction States', _() => {
+    test(_'button hover and active states', _async ({ page }) => {
+      const _loginPage =  new LoginPage(page);
       await loginPage.goto();
       await loginPage.waitForPageLoad();
       
@@ -691,8 +666,8 @@ test.describe('Visual Regression Testing', () => {
       });
       
       // Active/pressed state simulation
-      await page.evaluate(() => {
-        const button = document.querySelector('[data-testid="login-button"]') as HTMLElement;
+      await page.evaluate(_() => {
+        const _button =  document.querySelector('[data-testid
         if (button) {
           button.classList.add('active');
         }
@@ -703,14 +678,13 @@ test.describe('Visual Regression Testing', () => {
         fullPage: true
       });
       
-      await page.evaluate(() => {
-        if (typeof window.percySnapshot === 'function') {
-          window.percySnapshot('Login Button - Interaction States');
+      await page.evaluate(_() => {
+        if (typeof window._percySnapshot = 
         }
       });
     });
 
-    test('modal and overlay states', async ({ page }) => {
+    test(_'modal and overlay states', _async ({ page }) => {
       // Mock authentication
       await page.context().addCookies([{
         name: 'auth_token',
@@ -719,14 +693,13 @@ test.describe('Visual Regression Testing', () => {
         path: '/'
       }]);
       
-      const menuPage = new MenuPage(page);
+      const _menuPage =  new MenuPage(page);
       await menuPage.goto();
       await menuPage.waitForPageLoad();
       
       // Open item details modal
-      const firstItem = page.locator('[data-testid="menu-item"]').first();
-      const detailsButton = firstItem.locator('[data-testid="item-details"]');
-      
+      const _firstItem =  page.locator('[data-testid
+      const _detailsButton =  firstItem.locator('[data-testid
       if (await detailsButton.isVisible()) {
         await detailsButton.click();
         await page.waitForTimeout(500);
@@ -736,9 +709,8 @@ test.describe('Visual Regression Testing', () => {
           fullPage: true
         });
         
-        await page.evaluate(() => {
-          if (typeof window.percySnapshot === 'function') {
-            window.percySnapshot('Menu - Item Details Modal');
+        await page.evaluate(_() => {
+          if (typeof window._percySnapshot = 
           }
         });
       }

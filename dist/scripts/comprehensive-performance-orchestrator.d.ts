@@ -1,4 +1,68 @@
 #!/usr/bin/env ts-node
+interface DatabaseResult {
+    metrics: {
+        status: string;
+        performance: {
+            avgQueryTime: number;
+            connectionPoolUsage: number;
+            indexEfficiency: number;
+            queriesPerSecond: number;
+        };
+        slowQueries: Array<{
+            query: string;
+            duration: number;
+            timestamp: Date;
+        }>;
+        issues: string[];
+    };
+    recommendations: Array<{
+        priority: 'high' | 'medium' | 'low';
+        issue: string;
+        recommendation: string;
+        impact: string;
+    }>;
+    timestamp: string;
+}
+interface LambdaResult {
+    summary: {
+        totalFunctions: number;
+        avgColdStartDuration?: number;
+        criticalIssues: number;
+        avgExecutionDuration?: number;
+    };
+    recommendations?: Array<{
+        functions?: string[];
+        description: string;
+        action: string;
+        priority: string;
+        impact: string;
+    }>;
+}
+interface RealTimeResult {
+    api?: Array<{
+        endpoint: string;
+        averageResponseTime: number;
+        errorRate: number;
+    }>;
+    webSocket?: {
+        averageLatency: number;
+        errorRate: number;
+    };
+    redis?: {
+        cacheHitRatio: number;
+        averageGetTime: number;
+    };
+}
+interface OptimizationResult {
+    applied: number;
+    skipped: number;
+    errors: string[];
+    optimizations: Array<{
+        type: string;
+        description: string;
+        success: boolean;
+    }>;
+}
 interface OrchestrationConfig {
     environment: 'development' | 'staging' | 'production';
     runDatabaseAnalysis: boolean;
@@ -11,10 +75,10 @@ interface OrchestrationConfig {
     saveResults: boolean;
 }
 interface TestResults {
-    database?: any;
-    lambda?: any;
-    realTime?: any;
-    optimization?: any;
+    database?: DatabaseResult;
+    lambda?: LambdaResult;
+    realTime?: RealTimeResult;
+    optimization?: OptimizationResult;
 }
 interface OrchestrationReport {
     startTime: string;

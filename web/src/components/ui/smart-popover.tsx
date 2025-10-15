@@ -1,49 +1,43 @@
-import * as React from "react"
-import * as PopoverPrimitive from "@radix-ui/react-popover"
-import { motion, AnimatePresence } from "framer-motion"
-import { MoreHorizontal, Heart, Share2, Flag, Star, Clock, MapPin } from "lucide-react"
+import * as React from 'react';
+import * as PopoverPrimitive from '@radix-ui/react-popover';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Heart, Share2, Flag, Clock, MapPin } from 'lucide-react';
 
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 
-const Popover = PopoverPrimitive.Root
+const Popover = PopoverPrimitive.Root;
 
-const PopoverTrigger = PopoverPrimitive.Trigger
+const PopoverTrigger = PopoverPrimitive.Trigger;
 
-interface PopoverContentProps extends 
-  React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content> {
-  variant?: 'default' | 'menu' | 'profile' | 'meal-actions'
+interface PopoverContentProps
+  extends React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content> {
+  variant?: 'default' | 'menu' | 'profile' | 'meal-actions';
 }
 
 const PopoverContent = React.forwardRef<
   React.ElementRef<typeof PopoverPrimitive.Content>,
   PopoverContentProps
->(({ className, align = "center", sideOffset = 4, variant = 'default', ...props }, ref) => (
+>(({ className, align = 'center', sideOffset = 4, variant = 'default', ...props }, ref) => (
   <PopoverPrimitive.Portal>
     <AnimatePresence>
-      <PopoverPrimitive.Content
-        ref={ref}
-        align={align}
-        sideOffset={sideOffset}
-        asChild
-        {...props}
-      >
+      <PopoverPrimitive.Content ref={ref} align={align} sideOffset={sideOffset} asChild {...props}>
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: -10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: -10 }}
-          transition={{ 
-            type: "spring", 
-            stiffness: 300, 
+          transition={{
+            type: 'spring',
+            stiffness: 300,
             damping: 30,
-            duration: 0.2 
+            duration: 0.2,
           }}
           className={cn(
-            "z-50 w-72 rounded-md border border-slate-200 bg-white p-1 text-slate-950 shadow-md outline-none dark:border-slate-800 dark:bg-slate-950 dark:text-slate-50",
-            variant === 'menu' && "min-w-48",
-            variant === 'profile' && "w-80",
-            variant === 'meal-actions' && "w-56",
+            'z-50 w-72 rounded-md border border-slate-200 bg-white p-1 text-slate-950 shadow-md outline-none dark:border-slate-800 dark:bg-slate-950 dark:text-slate-50',
+            variant === 'menu' && 'min-w-48',
+            variant === 'profile' && 'w-80',
+            variant === 'meal-actions' && 'w-56',
             className
           )}
         >
@@ -52,74 +46,74 @@ const PopoverContent = React.forwardRef<
       </PopoverPrimitive.Content>
     </AnimatePresence>
   </PopoverPrimitive.Portal>
-))
-PopoverContent.displayName = PopoverPrimitive.Content.displayName
+));
+PopoverContent.displayName = PopoverPrimitive.Content.displayName;
 
 // Quick Action Item Component
 interface PopoverActionProps {
-  icon: React.ReactNode
-  label: string
-  description?: string
-  shortcut?: string
-  variant?: 'default' | 'destructive' | 'success'
-  onClick?: () => void
-  disabled?: boolean
+  icon: React.ReactNode;
+  label: string;
+  description?: string;
+  shortcut?: string;
+  variant?: 'default' | 'destructive' | 'success';
+  onClick?: () => void;
+  disabled?: boolean;
 }
 
-const PopoverAction = React.forwardRef<
-  HTMLButtonElement,
-  PopoverActionProps
->(({ 
-  icon, 
-  label, 
-  description, 
-  shortcut, 
-  variant = 'default', 
-  onClick, 
-  disabled = false,
-  ...props 
-}, ref) => (
-  <motion.button
-    ref={ref}
-    whileTap={{ scale: 0.98 }}
-    className={cn(
-      "flex w-full items-center rounded-sm px-3 py-2 text-sm transition-colors hover:bg-slate-100 focus:bg-slate-100 focus:outline-none disabled:pointer-events-none disabled:opacity-50 dark:hover:bg-slate-800 dark:focus:bg-slate-800",
-      variant === 'destructive' && "text-red-600 hover:bg-red-50 focus:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/20 dark:focus:bg-red-950/20",
-      variant === 'success' && "text-green-600 hover:bg-green-50 focus:bg-green-50 dark:text-green-400 dark:hover:bg-green-950/20 dark:focus:bg-green-950/20"
-    )}
-    onClick={onClick}
-    disabled={disabled}
-    {...props}
-  >
-    <div className="mr-3 flex h-4 w-4 items-center justify-center">
-      {icon}
-    </div>
-    <div className="flex-1 text-left">
-      <div className="font-medium">{label}</div>
-      {description && (
-        <div className="text-xs text-slate-500 dark:text-slate-400">{description}</div>
+const PopoverAction = React.forwardRef<HTMLButtonElement, PopoverActionProps>(
+  (
+    {
+      icon,
+      label,
+      description,
+      shortcut,
+      variant = 'default',
+      onClick,
+      disabled = false,
+      ...props
+    },
+    ref
+  ) => (
+    <motion.button
+      ref={ref}
+      whileTap={{ scale: 0.98 }}
+      className={cn(
+        'flex w-full items-center rounded-sm px-3 py-2 text-sm transition-colors hover:bg-slate-100 focus:bg-slate-100 focus:outline-none disabled:pointer-events-none disabled:opacity-50 dark:hover:bg-slate-800 dark:focus:bg-slate-800',
+        variant === 'destructive' &&
+          'text-red-600 hover:bg-red-50 focus:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/20 dark:focus:bg-red-950/20',
+        variant === 'success' &&
+          'text-green-600 hover:bg-green-50 focus:bg-green-50 dark:text-green-400 dark:hover:bg-green-950/20 dark:focus:bg-green-950/20'
       )}
-    </div>
-    {shortcut && (
-      <div className="ml-2 text-xs text-slate-400 dark:text-slate-500">
-        {shortcut}
+      onClick={onClick}
+      disabled={disabled}
+      {...props}
+    >
+      <div className="mr-3 flex h-4 w-4 items-center justify-center">{icon}</div>
+      <div className="flex-1 text-left">
+        <div className="font-medium">{label}</div>
+        {description && (
+          <div className="text-xs text-slate-500 dark:text-slate-400">{description}</div>
+        )}
       </div>
-    )}
-  </motion.button>
-))
-PopoverAction.displayName = "PopoverAction"
+      {shortcut && (
+        <div className="ml-2 text-xs text-slate-400 dark:text-slate-500">{shortcut}</div>
+      )}
+    </motion.button>
+  )
+);
+PopoverAction.displayName = 'PopoverAction';
 
 // Meal Quick Actions Popover
 interface MealQuickActionsProps {
-  children: React.ReactNode
-  mealId: string
-  mealName: string
-  isFavorite?: boolean
-  onFavoriteToggle?: (mealId: string) => void
-  onViewNutrition?: (mealId: string) => void
-  onSetAlert?: (mealId: string) => void
-  onShare?: (mealId: string, mealName: string) => void
-  onReport?: (mealId: string) => void
+  children: React.ReactNode;
+  mealId: string;
+  mealName: string;
+  isFavorite?: boolean;
+  onFavoriteToggle?: (mealId: string) => void;
+  onViewNutrition?: (mealId: string) => void;
+  onSetAlert?: (mealId: string) => void;
+  onShare?: (mealId: string, mealName: string) => void;
+  onReport?: (mealId: string) => void;
 }
 
 const MealQuickActions = ({
@@ -131,31 +125,29 @@ const MealQuickActions = ({
   onViewNutrition,
   onSetAlert,
   onShare,
-  onReport
+  onReport,
 }: MealQuickActionsProps) => {
-  const [open, setOpen] = React.useState(false)
+  const [open, setOpen] = React.useState(false);
 
   const handleAction = (action: () => void) => {
-    action()
-    setOpen(false)
-  }
+    action();
+    setOpen(false);
+  };
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        {children}
-      </PopoverTrigger>
+      <PopoverTrigger asChild>{children}</PopoverTrigger>
       <PopoverContent variant="meal-actions" align="end">
         <div className="py-1">
           {onFavoriteToggle && (
             <PopoverAction
-              icon={<Heart className={cn("h-4 w-4", isFavorite && "fill-current text-red-500")} />}
-              label={isFavorite ? "Remove from Favorites" : "Add to Favorites"}
+              icon={<Heart className={cn('h-4 w-4', isFavorite && 'fill-current text-red-500')} />}
+              label={isFavorite ? 'Remove from Favorites' : 'Add to Favorites'}
               variant={isFavorite ? 'default' : 'success'}
               onClick={() => handleAction(() => onFavoriteToggle(mealId))}
             />
           )}
-          
+
           {onViewNutrition && (
             <PopoverAction
               icon={<div className="text-blue-500">📊</div>}
@@ -196,27 +188,27 @@ const MealQuickActions = ({
         </div>
       </PopoverContent>
     </Popover>
-  )
-}
+  );
+};
 
 // Profile Quick Switcher for Parents
 interface ChildProfile {
-  id: string
-  name: string
-  avatar: string
-  balance: number
-  recentOrder?: string
-  dietaryRestrictions: string[]
-  grade?: string
+  id: string;
+  name: string;
+  avatar: string;
+  balance: number;
+  recentOrder?: string;
+  dietaryRestrictions: string[];
+  grade?: string;
 }
 
 interface ProfileSwitcherProps {
-  children: React.ReactNode
-  currentProfile: ChildProfile
-  profiles: ChildProfile[]
-  onProfileSwitch: (profileId: string) => void
-  onManageProfiles?: () => void
-  onAddFunds?: (profileId: string) => void
+  children: React.ReactNode;
+  currentProfile: ChildProfile;
+  profiles: ChildProfile[];
+  onProfileSwitch: (profileId: string) => void;
+  onManageProfiles?: () => void;
+  onAddFunds?: (profileId: string) => void;
 }
 
 const ProfileSwitcher = ({
@@ -225,20 +217,18 @@ const ProfileSwitcher = ({
   profiles,
   onProfileSwitch,
   onManageProfiles,
-  onAddFunds
+  onAddFunds,
 }: ProfileSwitcherProps) => {
-  const [open, setOpen] = React.useState(false)
+  const [open, setOpen] = React.useState(false);
 
   const handleSwitch = (profileId: string) => {
-    onProfileSwitch(profileId)
-    setOpen(false)
-  }
+    onProfileSwitch(profileId);
+    setOpen(false);
+  };
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        {children}
-      </PopoverTrigger>
+      <PopoverTrigger asChild>{children}</PopoverTrigger>
       <PopoverContent variant="profile">
         <div className="py-2">
           <div className="px-3 py-2 mb-2">
@@ -251,13 +241,13 @@ const ProfileSwitcher = ({
           </div>
 
           <div className="space-y-1">
-            {profiles.map((profile) => (
+            {profiles.map(profile => (
               <motion.button
                 key={profile.id}
                 whileTap={{ scale: 0.98 }}
                 className={cn(
-                  "flex w-full items-center space-x-3 rounded-sm px-3 py-2 text-sm transition-colors hover:bg-slate-100 focus:bg-slate-100 focus:outline-none dark:hover:bg-slate-800 dark:focus:bg-slate-800",
-                  currentProfile.id === profile.id && "bg-slate-100 dark:bg-slate-800"
+                  'flex w-full items-center space-x-3 rounded-sm px-3 py-2 text-sm transition-colors hover:bg-slate-100 focus:bg-slate-100 focus:outline-none dark:hover:bg-slate-800 dark:focus:bg-slate-800',
+                  currentProfile.id === profile.id && 'bg-slate-100 dark:bg-slate-800'
                 )}
                 onClick={() => handleSwitch(profile.id)}
               >
@@ -276,9 +266,7 @@ const ProfileSwitcher = ({
                     )}
                   </div>
                   <div className="flex items-center space-x-4 mt-1">
-                    <span className="text-xs text-green-600 font-medium">
-                      ₹{profile.balance}
-                    </span>
+                    <span className="text-xs text-green-600 font-medium">₹{profile.balance}</span>
                     {profile.recentOrder && (
                       <span className="text-xs text-slate-500 truncate max-w-24">
                         {profile.recentOrder}
@@ -288,7 +276,10 @@ const ProfileSwitcher = ({
                   {profile.dietaryRestrictions.length > 0 && (
                     <div className="flex items-center space-x-1 mt-1">
                       {profile.dietaryRestrictions.slice(0, 2).map((restriction, idx) => (
-                        <span key={idx} className="text-xs bg-orange-100 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 px-1 py-0.5 rounded">
+                        <span
+                          key={idx}
+                          className="text-xs bg-orange-100 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 px-1 py-0.5 rounded"
+                        >
                           {restriction}
                         </span>
                       ))}
@@ -305,10 +296,10 @@ const ProfileSwitcher = ({
                     variant="outline"
                     size="sm"
                     className="h-6 px-2 text-xs"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onAddFunds(profile.id)
-                      setOpen(false)
+                    onClick={e => {
+                      e.stopPropagation();
+                      onAddFunds(profile.id);
+                      setOpen(false);
                     }}
                   >
                     Top Up
@@ -326,8 +317,8 @@ const ProfileSwitcher = ({
                 label="Manage Profiles"
                 description="Add, edit, or remove children"
                 onClick={() => {
-                  onManageProfiles()
-                  setOpen(false)
+                  onManageProfiles();
+                  setOpen(false);
                 }}
               />
             </>
@@ -335,19 +326,19 @@ const ProfileSwitcher = ({
         </div>
       </PopoverContent>
     </Popover>
-  )
-}
+  );
+};
 
 // Order Status Quick Actions
 interface OrderStatusPopoverProps {
-  children: React.ReactNode
-  orderId: string
-  status: 'pending' | 'preparing' | 'ready' | 'delivered'
-  estimatedTime?: number
-  onTrackOrder?: (orderId: string) => void
-  onContactSupport?: (orderId: string) => void
-  onReorder?: (orderId: string) => void
-  onCancelOrder?: (orderId: string) => void
+  children: React.ReactNode;
+  orderId: string;
+  status: 'pending' | 'preparing' | 'ready' | 'delivered';
+  estimatedTime?: number;
+  onTrackOrder?: (orderId: string) => void;
+  onContactSupport?: (orderId: string) => void;
+  onReorder?: (orderId: string) => void;
+  onCancelOrder?: (orderId: string) => void;
 }
 
 const OrderStatusPopover = ({
@@ -358,33 +349,33 @@ const OrderStatusPopover = ({
   onTrackOrder,
   onContactSupport,
   onReorder,
-  onCancelOrder
+  onCancelOrder,
 }: OrderStatusPopoverProps) => {
-  const [open, setOpen] = React.useState(false)
+  const [open, setOpen] = React.useState(false);
 
   const handleAction = (action: () => void) => {
-    action()
-    setOpen(false)
-  }
+    action();
+    setOpen(false);
+  };
 
-  const canCancel = status === 'pending'
+  const canCancel = status === 'pending';
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        {children}
-      </PopoverTrigger>
+      <PopoverTrigger asChild>{children}</PopoverTrigger>
       <PopoverContent variant="menu">
         <div className="py-1">
           <div className="px-3 py-2 mb-2 border-b">
             <div className="flex items-center space-x-2">
-              <div className={cn(
-                "w-2 h-2 rounded-full",
-                status === 'pending' && "bg-yellow-500",
-                status === 'preparing' && "bg-blue-500 animate-pulse",
-                status === 'ready' && "bg-green-500",
-                status === 'delivered' && "bg-gray-500"
-              )} />
+              <div
+                className={cn(
+                  'w-2 h-2 rounded-full',
+                  status === 'pending' && 'bg-yellow-500',
+                  status === 'preparing' && 'bg-blue-500 animate-pulse',
+                  status === 'ready' && 'bg-green-500',
+                  status === 'delivered' && 'bg-gray-500'
+                )}
+              />
               <span className="font-medium text-sm capitalize">{status}</span>
             </div>
             {estimatedTime && status !== 'delivered' && (
@@ -436,16 +427,16 @@ const OrderStatusPopover = ({
         </div>
       </PopoverContent>
     </Popover>
-  )
-}
+  );
+};
 
-export { 
-  Popover, 
-  PopoverTrigger, 
-  PopoverContent, 
+export {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
   PopoverAction,
   MealQuickActions,
   ProfileSwitcher,
   OrderStatusPopover,
-  type ChildProfile
-}
+  type ChildProfile,
+};

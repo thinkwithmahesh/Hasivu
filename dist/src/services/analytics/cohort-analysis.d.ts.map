@@ -1,0 +1,1 @@
+{"version":3,"file":"cohort-analysis.d.ts","sourceRoot":"","sources":["../../../../src/services/analytics/cohort-analysis.ts"],"names":[],"mappings":"AAOA,OAAO,EAAE,cAAc,EAAE,eAAe,EAAE,MAAM,SAAS,CAAC;AAE1D,qBAAa,qBAAqB;WAIZ,sBAAsB,CACxC,SAAS,EAAE,IAAI,EACf,OAAO,EAAE,IAAI,GACZ,OAAO,CAAC,eAAe,CAAC,cAAc,EAAE,CAAC,CAAC;mBAyCxB,uBAAuB;CAgB7C"}

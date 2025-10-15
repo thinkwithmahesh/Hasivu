@@ -1,0 +1,726 @@
+/**
+ * HASIVU Platform - Session Management Service
+ * Secure session handling with Redis persistence and validation
+ * Implements httpOnly cookie-based session management
+ */
+
+import { Request, Response } from 'express';
+import Redis from 'ioredis';
+import { randomBytes, createHash } from 'crypto';
+import { config } from '../config/environment';
+import { logger } from '../utils/logger';
+import { jwtService } from '../shared/jwt.service';
+
+/**
+ * Session data interface
+ */
+export interface SessionData {
+  userId: string;
+  email: string;
+  role: string;
+  permissions: string[];
+  schoolId?: string;
+  deviceFingerprint: string;
+  ipAddress: string;
+  userAgent: string;
+  createdAt: Date;
+  lastActivity: Date;
+  expiresAt: Date;
+  isActive: boolean;
+  concurrentSessions?: string[];
+}
+
+/**
+ * Session validation result
+ */
+export interface SessionValidationResult {
+  valid: boolean;
+  session?: SessionData;
+  error?: string;
+  reason?: 'expired' | 'invalid' | 'fingerprint_mismatch' | 'inactive' | 'not_found';
+}
+
+/**
+ * Session creation options
+ */
+export interface SessionOptions {
+  rememberMe?: boolean;
+  deviceFingerprint?: string;
+  maxConcurrentSessions?: number;
+}
+
+/**
+ * Cookie configuration for secure session management
+ */
+export interface CookieConfig {
+  httpOnly: boolean;
+  secure: boolean;
+  sameSite: 'strict' | 'lax' | 'none';
+  maxAge: number;
+  domain?: string;
+  path: string;
+}
+
+/**
+ * CSRF token interface
+ */
+export interface CSRFToken {
+  token: string;
+  sessionId: string;
+  expiresAt: Date;
+}
+
+/**
+ * Session Service - Comprehensive session management with security
+ */
+export class SessionService {
+  private static instance: SessionService;
+  private redis: Redis;
+  private readonly sessionPrefix = 'session:';
+  private readonly csrfPrefix = 'csrf:';
+  private readonly userSessionsPrefix = 'user_sessions:';
+  private readonly blacklistPrefix = 'blacklist:';
+
+  private constructor() {
+    this.redis = new Redis(config.redis.url, {
+      maxRetriesPerRequest: 3,
+      lazyConnect: true,
+      keepAlive: 30000,
+      family: 4
+    });
+
+    this.redis.on('error', (error) => {
+      logger.error('Redis connection error', { error: (error instanceof Error ? error.message : String(error)) });
+    });
+
+    this.redis.on('connect', () => {
+      logger.info('Connected to Redis for session management');
+    });
+  }
+
+  /**
+   * Get singleton instance
+   */
+  public static getInstance(): SessionService {
+    if (!SessionService.instance) {
+      SessionService.instance = new SessionService();
+    }
+    return SessionService.instance;
+  }
+
+  /**
+   * Create a new secure session with httpOnly cookies
+   */
+  public async createSession(
+    req: Request,
+    res: Response,
+    sessionData: Omit<SessionData, 'sessionId' | 'createdAt' | 'lastActivity' | 'expiresAt' | 'isActive'>,
+    options: SessionOptions = {}
+  ): Promise<{ sessionId: string; accessToken: string; refreshToken: string }> {
+    try {
+      // Generate secure session ID
+      const sessionId = this.generateSecureSessionId();
+
+      // Calculate expiration
+      const expirationMs = options.rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000; // 30 days or 1 day
+      const expiresAt = new Date(Date.now() + expirationMs);
+
+      // Create device fingerprint
+      const deviceFingerprint = options.deviceFingerprint || this.createDeviceFingerprint(req);
+
+      // Check and manage concurrent sessions
+      const userSessions = await this.getUserSessions(sessionData.userId);
+      const maxSessions = options.maxConcurrentSessions || this.getMaxSessionsForRole(sessionData.role);
+
+      if (userSessions.length >= maxSessions) {
+        // Remove oldest session
+        const oldestSession = userSessions[0];
+        await this.destroySession(oldestSession);
+        logger.info('Removed oldest session due to concurrent limit', {
+          userId: sessionData.userId,
+          oldSessionId: oldestSession,
+          maxSessions
+        });
+      }
+
+      // Create session object
+      const session: SessionData = {
+        ...sessionData,
+        deviceFingerprint,
+        ipAddress: this.getClientIP(req),
+        userAgent: req.get('User-Agent') || 'unknown',
+        createdAt: new Date(),
+        lastActivity: new Date(),
+        expiresAt,
+        isActive: true,
+        concurrentSessions: [...userSessions, sessionId]
+      };
+
+      // Store session in Redis
+      await this.redis.setex(
+        `${this.sessionPrefix}${sessionId}`,
+        Math.floor(expirationMs / 1000),
+        JSON.stringify(session)
+      );
+
+      // Update user sessions list
+      await this.addUserSession(sessionData.userId, sessionId, expirationMs);
+
+      // Generate JWT tokens
+      const tokenPayload = {
+        userId: sessionData.userId,
+        email: sessionData.email,
+        role: sessionData.role,
+        permissions: sessionData.permissions,
+        sessionId,
+        deviceId: deviceFingerprint,
+        ipAddress: session.ipAddress,
+        userAgent: session.userAgent,
+        schoolId: sessionData.schoolId
+      };
+
+      const { accessToken, refreshToken } = jwtService.generateTokenPair(tokenPayload, {
+        expiresIn: '15m', // Short-lived access token
+        includeSessionData: true,
+        includeDeviceInfo: true
+      });
+
+      // Set secure httpOnly cookies
+      this.setSecureCookies(res, {
+        sessionId,
+        accessToken,
+        refreshToken
+      }, options.rememberMe);
+
+      // Generate CSRF token
+      const csrfToken = await this.generateCSRFToken(sessionId);
+
+      // Set CSRF token in header (not cookie for security)
+      res.setHeader('X-CSRF-Token', csrfToken.token);
+
+      logger.info('Session created successfully', {
+        userId: sessionData.userId,
+        sessionId,
+        role: sessionData.role,
+        deviceFingerprint,
+        rememberMe: options.rememberMe,
+        expiresAt: expiresAt.toISOString()
+      });
+
+      return { sessionId, accessToken, refreshToken };
+
+    } catch (error: unknown) {
+      logger.error('Failed to create session', {
+        userId: sessionData.userId,
+        error: error instanceof Error ? (error instanceof Error ? error.message : String(error)) : 'Unknown error'
+      });
+      throw new Error('Session creation failed');
+    }
+  }
+
+  /**
+   * Validate session with comprehensive security checks
+   */
+  public async validateSession(
+    sessionId: string,
+    req?: Request
+  ): Promise<SessionValidationResult> {
+    try {
+      if (!sessionId) {
+        return {
+          valid: false,
+          error: 'Session ID is required',
+          reason: 'invalid'
+        };
+      }
+
+      // Check if session is blacklisted
+      const isBlacklisted = await this.redis.exists(`${this.blacklistPrefix}${sessionId}`);
+      if (isBlacklisted) {
+        return {
+          valid: false,
+          error: 'Session is blacklisted',
+          reason: 'invalid'
+        };
+      }
+
+      // Get session from Redis
+      const sessionData = await this.redis.get(`${this.sessionPrefix}${sessionId}`);
+      if (!sessionData) {
+        return {
+          valid: false,
+          error: 'Session not found',
+          reason: 'not_found'
+        };
+      }
+
+      const session: SessionData = JSON.parse(sessionData);
+
+      // Check if session is active
+      if (!session.isActive) {
+        return {
+          valid: false,
+          error: 'Session is inactive',
+          reason: 'inactive'
+        };
+      }
+
+      // Check expiration
+      if (new Date() > new Date(session.expiresAt)) {
+        await this.destroySession(sessionId);
+        return {
+          valid: false,
+          error: 'Session has expired',
+          reason: 'expired'
+        };
+      }
+
+      // Device fingerprint validation (if request provided)
+      if (req) {
+        const currentFingerprint = this.createDeviceFingerprint(req);
+        if (session.deviceFingerprint !== currentFingerprint) {
+          logger.warn('Device fingerprint mismatch detected', {
+            sessionId,
+            userId: session.userId,
+            expected: session.deviceFingerprint,
+            received: currentFingerprint
+          });
+
+          // Invalidate session on fingerprint mismatch
+          await this.destroySession(sessionId);
+          return {
+            valid: false,
+            error: 'Device fingerprint mismatch - possible session hijacking',
+            reason: 'fingerprint_mismatch'
+          };
+        }
+      }
+
+      return {
+        valid: true,
+        session
+      };
+
+    } catch (error: unknown) {
+      logger.error('Session validation error', {
+        sessionId,
+        error: error instanceof Error ? (error instanceof Error ? error.message : String(error)) : 'Unknown error'
+      });
+      return {
+        valid: false,
+        error: 'Session validation failed',
+        reason: 'invalid'
+      };
+    }
+  }
+
+  /**
+   * Update session activity and extend expiration
+   */
+  public async updateSessionActivity(
+    sessionId: string,
+    metadata?: { userAgent?: string; ipAddress?: string }
+  ): Promise<boolean> {
+    try {
+      const sessionData = await this.redis.get(`${this.sessionPrefix}${sessionId}`);
+      if (!sessionData) {
+        return false;
+      }
+
+      const session: SessionData = JSON.parse(sessionData);
+
+      // Update activity timestamp
+      session.lastActivity = new Date();
+
+      // Update metadata if provided
+      if (metadata) {
+        if (metadata.userAgent) session.userAgent = metadata.userAgent;
+        if (metadata.ipAddress) session.ipAddress = metadata.ipAddress;
+      }
+
+      // Extend session expiration by 1 hour
+      const extendedExpiration = new Date(Date.now() + 60 * 60 * 1000);
+      session.expiresAt = extendedExpiration;
+
+      // Save updated session
+      await this.redis.setex(
+        `${this.sessionPrefix}${sessionId}`,
+        Math.floor(60 * 60), // 1 hour TTL
+        JSON.stringify(session)
+      );
+
+      return true;
+    } catch (error: unknown) {
+      logger.error('Failed to update session activity', {
+        sessionId,
+        error: error instanceof Error ? (error instanceof Error ? error.message : String(error)) : 'Unknown error'
+      });
+      return false;
+    }
+  }
+
+  /**
+   * Destroy session and cleanup
+   */
+  public async destroySession(sessionId: string): Promise<boolean> {
+    try {
+      // Get session data first
+      const sessionData = await this.redis.get(`${this.sessionPrefix}${sessionId}`);
+
+      if (sessionData) {
+        const session: SessionData = JSON.parse(sessionData);
+
+        // Remove from user sessions list
+        await this.removeUserSession(session.userId, sessionId);
+
+        // Add to blacklist with TTL (prevent reuse)
+        await this.redis.setex(
+          `${this.blacklistPrefix}${sessionId}`,
+          24 * 60 * 60, // 24 hours
+          'destroyed'
+        );
+      }
+
+      // Remove session from Redis
+      await this.redis.del(`${this.sessionPrefix}${sessionId}`);
+
+      // Remove associated CSRF tokens
+      await this.redis.del(`${this.csrfPrefix}${sessionId}`);
+
+      logger.info('Session destroyed successfully', { sessionId });
+      return true;
+    } catch (error: unknown) {
+      logger.error('Failed to destroy session', {
+        sessionId,
+        error: error instanceof Error ? (error instanceof Error ? error.message : String(error)) : 'Unknown error'
+      });
+      return false;
+    }
+  }
+
+  /**
+   * Clear all sessions for a user
+   */
+  public async destroyAllUserSessions(userId: string, excludeSessionId?: string): Promise<number> {
+    try {
+      const userSessions = await this.getUserSessions(userId);
+      let destroyedCount = 0;
+
+      for (const sessionId of userSessions) {
+        if (sessionId !== excludeSessionId) {
+          const success = await this.destroySession(sessionId);
+          if (success) destroyedCount++;
+        }
+      }
+
+      logger.info('Destroyed user sessions', {
+        userId,
+        destroyedCount,
+        excludedSession: excludeSessionId
+      });
+
+      return destroyedCount;
+    } catch (error: unknown) {
+      logger.error('Failed to destroy user sessions', {
+        userId,
+        error: error instanceof Error ? (error instanceof Error ? error.message : String(error)) : 'Unknown error'
+      });
+      return 0;
+    }
+  }
+
+  /**
+   * Generate CSRF token for session
+   */
+  public async generateCSRFToken(sessionId: string): Promise<CSRFToken> {
+    const token = randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    const csrfData: CSRFToken = {
+      token,
+      sessionId,
+      expiresAt
+    };
+
+    // Store CSRF token in Redis
+    await this.redis.setex(
+      `${this.csrfPrefix}${sessionId}`,
+      60 * 60, // 1 hour TTL
+      JSON.stringify(csrfData)
+    );
+
+    return csrfData;
+  }
+
+  /**
+   * Validate CSRF token
+   */
+  public async validateCSRFToken(sessionId: string, token: string): Promise<boolean> {
+    try {
+      const csrfData = await this.redis.get(`${this.csrfPrefix}${sessionId}`);
+      if (!csrfData) {
+        return false;
+      }
+
+      const csrf: CSRFToken = JSON.parse(csrfData);
+
+      // Check token match and expiration
+      return csrf.token === token && new Date() < new Date(csrf.expiresAt);
+    } catch (error: unknown) {
+      logger.error('CSRF validation error', {
+        sessionId,
+        error: error instanceof Error ? (error instanceof Error ? error.message : String(error)) : 'Unknown error'
+      });
+      return false;
+    }
+  }
+
+  /**
+   * Set secure httpOnly cookies
+   */
+  private setSecureCookies(
+    res: Response,
+    tokens: { sessionId: string; accessToken: string; refreshToken: string },
+    rememberMe: boolean = false
+  ): void {
+    const isProduction = config.server.nodeEnv === 'production';
+    const maxAge = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000; // 30 days or 1 day
+
+    const cookieOptions: CookieConfig = {
+      httpOnly: true,
+      secure: isProduction, // Only over HTTPS in production
+      sameSite: isProduction ? 'strict' : 'lax',
+      maxAge,
+      path: '/'
+    };
+
+    // Set session ID cookie
+    res.cookie('sessionId', tokens.sessionId, cookieOptions);
+
+    // Set access token cookie (short-lived)
+    res.cookie('accessToken', tokens.accessToken, {
+      ...cookieOptions,
+      maxAge: 15 * 60 * 1000 // 15 minutes
+    });
+
+    // Set refresh token cookie (longer-lived)
+    res.cookie('refreshToken', tokens.refreshToken, cookieOptions);
+  }
+
+  /**
+   * Clear authentication cookies
+   */
+  public clearAuthCookies(res: Response): void {
+    const cookieOptions = {
+      httpOnly: true,
+      secure: config.server.nodeEnv === 'production',
+      sameSite: 'strict' as const,
+      path: '/'
+    };
+
+    res.clearCookie('sessionId', cookieOptions);
+    res.clearCookie('accessToken', cookieOptions);
+    res.clearCookie('refreshToken', cookieOptions);
+  }
+
+  /**
+   * Generate secure session ID
+   */
+  private generateSecureSessionId(): string {
+    const timestamp = Date.now().toString();
+    const randomData = randomBytes(32).toString('hex');
+    return createHash('sha256').update(timestamp + randomData).digest('hex');
+  }
+
+  /**
+   * Create device fingerprint for session binding
+   */
+  private createDeviceFingerprint(req: Request): string {
+    const userAgent = req.get('User-Agent') || '';
+    const acceptLanguage = req.get('Accept-Language') || '';
+    const acceptEncoding = req.get('Accept-Encoding') || '';
+    const ip = this.getClientIP(req);
+
+    const fingerprintData = `${userAgent}|${acceptLanguage}|${acceptEncoding}|${ip}`;
+    return createHash('sha256').update(fingerprintData).digest('hex');
+  }
+
+  /**
+   * Get client IP address
+   */
+  private getClientIP(req: Request): string {
+    return (req.headers['x-forwarded-for'] as string)?.split(',')[0] ||
+           req.headers['x-real-ip'] as string ||
+           req.connection.remoteAddress ||
+           req.socket.remoteAddress ||
+           '127.0.0.1';
+  }
+
+  /**
+   * Get maximum concurrent sessions for role
+   */
+  private getMaxSessionsForRole(role: string): number {
+    const limits: Record<string, number> = {
+      'student': 3,
+      'parent': 5,
+      'teacher': 3,
+      'kitchen_staff': 1, // Shared devices
+      'vendor': 2,
+      'admin': 2 // High security
+    };
+
+    return limits[role] || 3;
+  }
+
+  /**
+   * Get all sessions for a user
+   */
+  private async getUserSessions(userId: string): Promise<string[]> {
+    try {
+      const sessionsData = await this.redis.get(`${this.userSessionsPrefix}${userId}`);
+      return sessionsData ? JSON.parse(sessionsData) : [];
+    } catch (error: unknown) {
+      logger.error('Failed to get user sessions', {
+        userId,
+        error: error instanceof Error ? (error instanceof Error ? error.message : String(error)) : 'Unknown error'
+      });
+      return [];
+    }
+  }
+
+  /**
+   * Add session to user's session list
+   */
+  private async addUserSession(userId: string, sessionId: string, ttlMs: number): Promise<void> {
+    try {
+      const sessions = await this.getUserSessions(userId);
+      sessions.push(sessionId);
+
+      await this.redis.setex(
+        `${this.userSessionsPrefix}${userId}`,
+        Math.floor(ttlMs / 1000),
+        JSON.stringify(sessions)
+      );
+    } catch (error: unknown) {
+      logger.error('Failed to add user session', {
+        userId,
+        sessionId,
+        error: error instanceof Error ? (error instanceof Error ? error.message : String(error)) : 'Unknown error'
+      });
+    }
+  }
+
+  /**
+   * Remove session from user's session list
+   */
+  private async removeUserSession(userId: string, sessionId: string): Promise<void> {
+    try {
+      const sessions = await this.getUserSessions(userId);
+      const updatedSessions = sessions.filter(id => id !== sessionId);
+
+      if (updatedSessions.length > 0) {
+        await this.redis.setex(
+          `${this.userSessionsPrefix}${userId}`,
+          24 * 60 * 60, // 24 hours
+          JSON.stringify(updatedSessions)
+        );
+      } else {
+        await this.redis.del(`${this.userSessionsPrefix}${userId}`);
+      }
+    } catch (error: unknown) {
+      logger.error('Failed to remove user session', {
+        userId,
+        sessionId,
+        error: error instanceof Error ? (error instanceof Error ? error.message : String(error)) : 'Unknown error'
+      });
+    }
+  }
+
+  /**
+   * Get session statistics for monitoring
+   */
+  public async getSessionStats(): Promise<{
+    totalActiveSessions: number;
+    sessionsByRole: Record<string, number>;
+    averageSessionDuration: number;
+  }> {
+    try {
+      // This is a simplified implementation
+      // In production, you'd want more sophisticated monitoring
+      const keys = await this.redis.keys(`${this.sessionPrefix}*`);
+      const sessions: SessionData[] = [];
+
+      for (const key of keys.slice(0, 100)) { // Limit for performance
+        const sessionData = await this.redis.get(key);
+        if (sessionData) {
+          sessions.push(JSON.parse(sessionData));
+        }
+      }
+
+      const sessionsByRole: Record<string, number> = {};
+      let totalDuration = 0;
+
+      sessions.forEach(session => {
+        sessionsByRole[session.role] = (sessionsByRole[session.role] || 0) + 1;
+        const duration = new Date(session.lastActivity).getTime() - new Date(session.createdAt).getTime();
+        totalDuration += duration;
+      });
+
+      return {
+        totalActiveSessions: sessions.length,
+        sessionsByRole,
+        averageSessionDuration: sessions.length > 0 ? totalDuration / sessions.length : 0
+      };
+
+    } catch (error: unknown) {
+      logger.error('Failed to get session stats', {
+        error: error instanceof Error ? (error instanceof Error ? error.message : String(error)) : 'Unknown error'
+      });
+      return {
+        totalActiveSessions: 0,
+        sessionsByRole: {},
+        averageSessionDuration: 0
+      };
+    }
+  }
+
+  /**
+   * Health check for session service
+   */
+  public async healthCheck(): Promise<{ status: 'healthy' | 'unhealthy'; details: any }> {
+    try {
+      // Test Redis connection
+      await this.redis.ping();
+
+      // Test session operations
+      const testSessionId = 'health-check-session';
+      await this.redis.setex(`${this.sessionPrefix}${testSessionId}`, 60, JSON.stringify({ test: true }));
+      const retrieved = await this.redis.get(`${this.sessionPrefix}${testSessionId}`);
+      await this.redis.del(`${this.sessionPrefix}${testSessionId}`);
+
+      if (!retrieved) {
+        throw new Error('Session storage test failed');
+      }
+
+      return {
+        status: 'healthy',
+        details: {
+          redis: 'connected',
+          sessionStorage: 'working',
+          timestamp: new Date().toISOString()
+        }
+      };
+    } catch (error: unknown) {
+      return {
+        status: 'unhealthy',
+        details: {
+          error: error instanceof Error ? (error instanceof Error ? error.message : String(error)) : 'Unknown error',
+          timestamp: new Date().toISOString()
+        }
+      };
+    }
+  }
+}
+
+// Export singleton instance
+export const sessionService = SessionService.getInstance();

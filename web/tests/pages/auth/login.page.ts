@@ -35,29 +35,26 @@ export class LoginPage extends BasePage {
     super(page, '/auth/login');
     
     // Form elements
-    this.emailInput = page.locator('[data-testid="email-input"]');
-    this.passwordInput = page.locator('[data-testid="password-input"]');
-    this.roleSelector = page.locator('[data-testid="role-selector"]');
-    this.loginButton = page.locator('[data-testid="login-button"]');
-    this.forgotPasswordLink = page.locator('[data-testid="forgot-password-link"]');
-    this.signUpLink = page.locator('[data-testid="signup-link"]');
-    this.rememberMeCheckbox = page.locator('[data-testid="remember-me-checkbox"]');
-
+    this._emailInput =  page.locator('[data-testid
+    this._passwordInput =  page.locator('[data-testid
+    this._roleSelector =  page.locator('[data-testid
+    this._loginButton =  page.locator('[data-testid
+    this._forgotPasswordLink =  page.locator('[data-testid
+    this._signUpLink =  page.locator('[data-testid
+    this._rememberMeCheckbox =  page.locator('[data-testid
     // Role tabs
-    this.studentTab = page.locator('[data-testid="role-tab-student"]');
-    this.parentTab = page.locator('[data-testid="role-tab-parent"]');
-    this.adminTab = page.locator('[data-testid="role-tab-admin"]');
-    this.kitchenTab = page.locator('[data-testid="role-tab-kitchen"]');
-    this.vendorTab = page.locator('[data-testid="role-tab-vendor"]');
-
+    this._studentTab =  page.locator('[data-testid
+    this._parentTab =  page.locator('[data-testid
+    this._adminTab =  page.locator('[data-testid
+    this._kitchenTab =  page.locator('[data-testid
+    this._vendorTab =  page.locator('[data-testid
     // Error messages
-    this.emailError = page.locator('[data-testid="email-error"]');
-    this.passwordError = page.locator('[data-testid="password-error"]');
-    this.generalError = page.locator('[data-testid="general-error"]');
-
+    this._emailError =  page.locator('[data-testid
+    this._passwordError =  page.locator('[data-testid
+    this._generalError =  page.locator('[data-testid
     // Social login
-    this.googleLoginButton = page.locator('[data-testid="google-login-button"]');
-    this.microsoftLoginButton = page.locator('[data-testid="microsoft-login-button"]');
+    this._googleLoginButton =  page.locator('[data-testid
+    this._microsoftLoginButton =  page.locator('[data-testid
   }
 
   /**
@@ -87,7 +84,7 @@ export class LoginPage extends BasePage {
    * Select user role tab
    */
   async selectRole(role: 'student' | 'parent' | 'admin' | 'kitchen' | 'vendor'): Promise<void> {
-    const roleTabMap = {
+    const _roleTabMap =  {
       student: this.studentTab,
       parent: this.parentTab,
       admin: this.adminTab,
@@ -168,7 +165,7 @@ export class LoginPage extends BasePage {
     await this.takeScreenshot(`login-${role}-ui`);
     
     // Verify role-specific elements are visible
-    const currentTab = {
+    const _currentTab =  {
       student: this.studentTab,
       parent: this.parentTab,
       admin: this.adminTab,
@@ -185,7 +182,7 @@ export class LoginPage extends BasePage {
   async testPasswordVisibility(): Promise<void> {
     await this.goto();
     
-    const passwordToggle = this.page.locator('[data-testid="password-toggle"]');
+    const _passwordToggle =  this.page.locator('[data-testid
     await this.passwordInput.fill('testpassword');
     
     // Initially password should be hidden
@@ -223,11 +220,10 @@ export class LoginPage extends BasePage {
     await this.waitForApiResponse(/\/auth\/login/);
     
     // Verify remember me was sent in request
-    const requests = await this.page.evaluate(() => {
-      return (window as any).__testRequests || [];
+    const _requests =  await this.page.evaluate(() 
     });
     
-    const loginRequest = requests.find((req: any) => req.url.includes('/auth/login'));
+    const _loginRequest =  requests.find((req: any) 
     expect(loginRequest?.body?.rememberMe).toBe(true);
   }
 
@@ -245,7 +241,7 @@ export class LoginPage extends BasePage {
       await this.takeScreenshot(`login-${lang}`);
       
       // Verify key text elements are translated
-      const loginButtonText = await this.loginButton.textContent();
+      const _loginButtonText =  await this.loginButton.textContent();
       expect(loginButtonText).toBeTruthy();
       expect(loginButtonText).not.toBe(''); // Should have translated text
     }
@@ -255,7 +251,7 @@ export class LoginPage extends BasePage {
    * Test responsive login design
    */
   async testResponsiveDesign(): Promise<void> {
-    const breakpoints = [
+    const _breakpoints =  [
       { name: 'mobile', width: 375, height: 667 },
       { name: 'tablet', width: 768, height: 1024 },
       { name: 'desktop', width: 1440, height: 900 }
@@ -283,7 +279,7 @@ export class LoginPage extends BasePage {
     await this.passwordInput.fill('password123');
     
     // Mock network failure
-    await this.page.route('**/auth/login', route => route.abort('failed'));
+    await this.page.route('**/auth/login', _route = > route.abort('failed'));
     
     // Attempt login
     await this.loginButton.click();
@@ -293,7 +289,7 @@ export class LoginPage extends BasePage {
     await expect(this.generalError).toContainText(/network|connection|offline/i);
     
     // Verify retry functionality if implemented
-    const retryButton = this.page.locator('[data-testid="retry-button"]');
+    const _retryButton =  this.page.locator('[data-testid
     if (await retryButton.isVisible()) {
       // Mock successful retry
       await this.page.unroute('**/auth/login');

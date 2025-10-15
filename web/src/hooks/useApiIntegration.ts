@@ -1,15 +1,15 @@
 // React hooks for API integration and data management
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { 
-  kitchenApi, 
-  inventoryApi, 
-  staffApi, 
-  notificationsApi, 
+import {
+  kitchenApi,
+  inventoryApi,
+  staffApi,
+  notificationsApi,
   userApi,
   rfidApi,
   analyticsApi,
   wsManager,
-  handleApiError 
+  handleApiError,
 } from '../services/api';
 
 // Generic hook for API data fetching with loading, error, and caching
@@ -146,7 +146,7 @@ export function useOrderMutations() {
     assignOrder,
     createOrder,
     loading,
-    error
+    error,
   };
 }
 
@@ -168,19 +168,13 @@ export function useInventorySuppliers() {
 }
 
 export function usePurchaseOrders(filters?: any) {
-  return useApiData(
-    () => inventoryApi.getPurchaseOrders(filters),
-    [filters],
-    { refetchInterval: 120000 }
-  );
+  return useApiData(() => inventoryApi.getPurchaseOrders(filters), [filters], {
+    refetchInterval: 120000,
+  });
 }
 
 export function useInventoryMetrics() {
-  return useApiData(
-    () => inventoryApi.getInventoryMetrics(),
-    [],
-    { refetchInterval: 60000 }
-  );
+  return useApiData(() => inventoryApi.getInventoryMetrics(), [], { refetchInterval: 60000 });
 }
 
 export function useLowStockAlerts() {
@@ -225,20 +219,23 @@ export function useInventoryMutations() {
     }
   }, []);
 
-  const updateStock = useCallback(async (itemId: string, quantity: number, type: 'add' | 'remove') => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await inventoryApi.updateStock(itemId, quantity, type);
-      return response.data;
-    } catch (err) {
-      const errorMessage = handleApiError(err);
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const updateStock = useCallback(
+    async (itemId: string, quantity: number, type: 'add' | 'remove') => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await inventoryApi.updateStock(itemId, quantity, type);
+        return response.data;
+      } catch (err) {
+        const errorMessage = handleApiError(err);
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
 
   const createPurchaseOrder = useCallback(async (orderData: any) => {
     try {
@@ -277,7 +274,7 @@ export function useInventoryMutations() {
     createPurchaseOrder,
     updatePurchaseOrderStatus,
     loading,
-    error
+    error,
   };
 }
 
@@ -291,11 +288,7 @@ export function useStaffMembers(filters?: any) {
 }
 
 export function useStaffTasks(filters?: any) {
-  return useApiData(
-    () => staffApi.getTasks(filters),
-    [filters],
-    { refetchInterval: 60000 }
-  );
+  return useApiData(() => staffApi.getTasks(filters), [filters], { refetchInterval: 60000 });
 }
 
 export function useStaffSchedules(filters?: any) {
@@ -307,11 +300,7 @@ export function useStaffSchedules(filters?: any) {
 }
 
 export function useStaffMetrics() {
-  return useApiData(
-    () => staffApi.getStaffMetrics(),
-    [],
-    { refetchInterval: 180000 }
-  );
+  return useApiData(() => staffApi.getStaffMetrics(), [], { refetchInterval: 180000 });
 }
 
 export function useStaffMutations() {
@@ -416,7 +405,7 @@ export function useStaffMutations() {
     updateTaskStatus,
     createSchedule,
     loading,
-    error
+    error,
   };
 }
 
@@ -430,10 +419,7 @@ export function useNotifications(filters?: any) {
 }
 
 export function useNotificationSettings() {
-  return useApiData(
-    () => notificationsApi.getSettings(),
-    []
-  );
+  return useApiData(() => notificationsApi.getSettings(), []);
 }
 
 export function useNotificationMutations() {
@@ -503,7 +489,7 @@ export function useNotificationMutations() {
     deleteNotification,
     updateSettings,
     loading,
-    error
+    error,
   };
 }
 
@@ -517,7 +503,8 @@ export function useAuth() {
     // Check for existing auth token on mount
     const token = localStorage.getItem('authToken');
     if (token) {
-      userApi.getProfile()
+      userApi
+        .getProfile()
         .then(response => {
           setUser(response.data);
           setLoading(false);
@@ -552,7 +539,6 @@ export function useAuth() {
     try {
       await userApi.logout();
     } catch (err) {
-      console.error('Logout error:', err);
     } finally {
       setUser(null);
       localStorage.removeItem('authToken');
@@ -581,7 +567,7 @@ export function useAuth() {
     login,
     logout,
     register,
-    isAuthenticated: !!user
+    isAuthenticated: !!user,
   };
 }
 
@@ -609,12 +595,9 @@ export function useWebSocketConnection() {
   return { connected };
 }
 
-export function useWebSocketSubscription<T>(
-  messageType: string,
-  handler: (data: T) => void
-) {
+export function useWebSocketSubscription<T>(messageType: string, handler: (data: T) => void) {
   const handlerRef = useRef(handler);
-  
+
   // Update the ref when handler changes to avoid re-subscriptions
   useEffect(() => {
     handlerRef.current = handler;
@@ -638,25 +621,13 @@ export function useDashboardAnalytics(period?: string) {
 
 // RFID System Hooks
 export function useRfidDevices() {
-  return useApiData(
-    () => rfidApi.getDevices(),
-    [],
-    { refetchInterval: 60000 }
-  );
+  return useApiData(() => rfidApi.getDevices(), [], { refetchInterval: 60000 });
 }
 
 export function useRfidTransactions(filters?: any) {
-  return useApiData(
-    () => rfidApi.getTransactions(filters),
-    [filters],
-    { refetchInterval: 30000 }
-  );
+  return useApiData(() => rfidApi.getTransactions(filters), [filters], { refetchInterval: 30000 });
 }
 
 export function useRfidMetrics() {
-  return useApiData(
-    () => rfidApi.getRfidMetrics(),
-    [],
-    { refetchInterval: 60000 }
-  );
+  return useApiData(() => rfidApi.getRfidMetrics(), [], { refetchInterval: 60000 });
 }

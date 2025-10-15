@@ -53,8 +53,8 @@ async function validateSchool(schoolId) {
         select: {
             id: true,
             name: true,
-            code: true
-        }
+            code: true,
+        },
     });
     if (!school) {
         throw new Error('School not found');
@@ -81,14 +81,14 @@ async function parseCSVData(csvData, schoolId) {
             where: {
                 schoolId,
                 role: 'student',
-                isActive: true
+                isActive: true,
             },
             include: {
                 rfidCards: {
                     where: { isActive: true },
-                    select: { id: true, cardNumber: true }
-                }
-            }
+                    select: { id: true, cardNumber: true },
+                },
+            },
         });
         const studentsByEmail = new Map(students.map(s => [s.email.toLowerCase(), s]));
         const studentsById = new Map(students.map(s => [s.id, s]));
@@ -100,7 +100,7 @@ async function parseCSVData(csvData, schoolId) {
             if (values.length !== headers.length) {
                 errors.push({
                     row: i + 1,
-                    error: `Column count mismatch. Expected ${headers.length}, got ${values.length}`
+                    error: `Column count mismatch. Expected ${headers.length}, got ${values.length}`,
                 });
                 continue;
             }
@@ -127,7 +127,7 @@ async function parseCSVData(csvData, schoolId) {
                         row: i + 1,
                         studentId: cardData.studentId,
                         studentEmail: cardData.studentEmail,
-                        error: 'Student not found or not active in this school'
+                        error: 'Student not found or not active in this school',
                     });
                     continue;
                 }
@@ -136,7 +136,7 @@ async function parseCSVData(csvData, schoolId) {
                         row: i + 1,
                         studentId: student.id,
                         studentEmail: student.email,
-                        error: `Student already has an active RFID card: ${student.rfidCards[0].cardNumber}`
+                        error: `Student already has an active RFID card: ${student.rfidCards[0].cardNumber}`,
                     });
                     continue;
                 }
@@ -149,7 +149,7 @@ async function parseCSVData(csvData, schoolId) {
                             row: i + 1,
                             studentId: student.id,
                             studentEmail: student.email,
-                            error: `Invalid expiry date format: ${expiryStr}. Use YYYY-MM-DD format`
+                            error: `Invalid expiry date format: ${expiryStr}. Use YYYY-MM-DD format`,
                         });
                         continue;
                     }
@@ -158,7 +158,7 @@ async function parseCSVData(csvData, schoolId) {
                             row: i + 1,
                             studentId: student.id,
                             studentEmail: student.email,
-                            error: 'Expiry date must be in the future'
+                            error: 'Expiry date must be in the future',
                         });
                         continue;
                     }
@@ -174,20 +174,20 @@ async function parseCSVData(csvData, schoolId) {
                             row: i + 1,
                             studentId: student.id,
                             studentEmail: student.email,
-                            error: 'Invalid JSON format in metadata column'
+                            error: 'Invalid JSON format in metadata column',
                         });
                         continue;
                     }
                 }
                 validCards.push({
                     ...cardData,
-                    student
+                    student,
                 });
             }
             catch (rowError) {
                 errors.push({
                     row: i + 1,
-                    error: `Processing error: ${rowError.message}`
+                    error: `Processing error: ${rowError.message}`,
                 });
             }
         }
@@ -195,7 +195,7 @@ async function parseCSVData(csvData, schoolId) {
     catch (parseError) {
         errors.push({
             row: 0,
-            error: `CSV parsing error: ${parseError.message}`
+            error: `CSV parsing error: ${parseError.message}`,
         });
     }
     return { validCards, errors };
@@ -204,7 +204,7 @@ async function createCardsInBatch(validCards, school, cardType, expiryDays, crea
     const result = {
         successful: [],
         errors: [],
-        duplicates: []
+        duplicates: [],
     };
     const batchSize = 50;
     for (let i = 0; i < validCards.length; i += batchSize) {
@@ -215,7 +215,7 @@ async function createCardsInBatch(validCards, school, cardType, expiryDays, crea
                 let attempts = 0;
                 while (attempts < 3) {
                     const existing = await prisma.rFIDCard.findUnique({
-                        where: { cardNumber }
+                        where: { cardNumber },
                     });
                     if (!existing)
                         break;
@@ -227,7 +227,7 @@ async function createCardsInBatch(validCards, school, cardType, expiryDays, crea
                         row: 0,
                         studentId: cardData.student.id,
                         studentEmail: cardData.student.email,
-                        error: 'Failed to generate unique card number after multiple attempts'
+                        error: 'Failed to generate unique card number after multiple attempts',
                     });
                     continue;
                 }
@@ -251,9 +251,9 @@ async function createCardsInBatch(validCards, school, cardType, expiryDays, crea
                             cardType,
                             bulkImported: true,
                             importedAt: new Date().toISOString(),
-                            ...(cardData.metadata || {})
-                        })
-                    }
+                            ...(cardData.metadata || {}),
+                        }),
+                    },
                 });
                 await prisma.auditLog.create({
                     data: {
@@ -265,22 +265,22 @@ async function createCardsInBatch(validCards, school, cardType, expiryDays, crea
                             studentId: cardData.student.id,
                             schoolId: school.id,
                             bulkImported: true,
-                            createdBy: createdByUserId
+                            createdBy: createdByUserId,
                         }),
                         userId: createdByUserId || 'system',
                         createdById: createdByUserId || 'system',
                         metadata: JSON.stringify({
                             action: 'BULK_RFID_CARD_CREATED',
-                            timestamp: new Date().toISOString()
-                        })
-                    }
+                            timestamp: new Date().toISOString(),
+                        }),
+                    },
                 });
                 result.successful.push({
                     cardId: rfidCard.id,
                     cardNumber: rfidCard.cardNumber,
                     studentId: cardData.student.id,
                     studentName: `${cardData.student.firstName} ${cardData.student.lastName}`,
-                    studentEmail: cardData.student.email
+                    studentEmail: cardData.student.email,
                 });
             }
             catch (createError) {
@@ -288,7 +288,7 @@ async function createCardsInBatch(validCards, school, cardType, expiryDays, crea
                     row: 0,
                     studentId: cardData.student.id,
                     studentEmail: cardData.student.email,
-                    error: `Card creation failed: ${createError.message}`
+                    error: `Card creation failed: ${createError.message}`,
                 });
             }
         }
@@ -305,14 +305,14 @@ const bulkImportRfidCardsHandler = async (event, context) => {
             logger_1.logger.warn('Invalid request data: missing csvData', { requestId });
             return {
                 statusCode: 400,
-                body: JSON.stringify({ error: 'csvData is required' })
+                body: JSON.stringify({ error: 'csvData is required' }),
             };
         }
         if (!requestBody.schoolId) {
             logger_1.logger.warn('Invalid request data: missing schoolId', { requestId });
             return {
                 statusCode: 400,
-                body: JSON.stringify({ error: 'schoolId is required' })
+                body: JSON.stringify({ error: 'schoolId is required' }),
             };
         }
         const { csvData, schoolId, previewMode, skipDuplicates, updateExisting, cardType, expiryDays } = requestBody;
@@ -321,11 +321,13 @@ const bulkImportRfidCardsHandler = async (event, context) => {
                 requestId,
                 userId: authenticatedUser.user?.id,
                 schoolId,
-                userRole: authenticatedUser.user?.role
+                userRole: authenticatedUser.user?.role,
             });
             return {
                 statusCode: 403,
-                body: JSON.stringify({ error: 'Insufficient permissions to perform bulk RFID card import for this school' })
+                body: JSON.stringify({
+                    error: 'Insufficient permissions to perform bulk RFID card import for this school',
+                }),
             };
         }
         const school = await validateSchool(schoolId);
@@ -334,7 +336,7 @@ const bulkImportRfidCardsHandler = async (event, context) => {
         if (csvSizeBytes > maxSizeMB * 1024 * 1024) {
             return {
                 statusCode: 400,
-                body: JSON.stringify({ error: `CSV data too large. Maximum size: ${maxSizeMB}MB` })
+                body: JSON.stringify({ error: `CSV data too large. Maximum size: ${maxSizeMB}MB` }),
             };
         }
         logger_1.logger.info('Processing bulk import CSV data', {
@@ -342,21 +344,21 @@ const bulkImportRfidCardsHandler = async (event, context) => {
             csvSizeBytes,
             schoolId,
             schoolCode: school.code,
-            previewMode: previewMode || false
+            previewMode: previewMode || false,
         });
         const parseResult = await parseCSVData(csvData, schoolId);
         if (parseResult.errors.length > 0) {
             logger_1.logger.warn('CSV parsing errors detected', {
                 requestId,
                 errorCount: parseResult.errors.length,
-                errors: parseResult.errors.slice(0, 10)
+                errors: parseResult.errors.slice(0, 10),
             });
         }
         if (previewMode) {
             logger_1.logger.info('Bulk import preview completed', {
                 requestId,
                 validCardsCount: parseResult.validCards.length,
-                errorCount: parseResult.errors.length
+                errorCount: parseResult.errors.length,
             });
             return {
                 statusCode: 200,
@@ -367,32 +369,32 @@ const bulkImportRfidCardsHandler = async (event, context) => {
                         summary: {
                             totalRows: parseResult.validCards.length + parseResult.errors.length,
                             validCards: parseResult.validCards.length,
-                            errors: parseResult.errors.length
+                            errors: parseResult.errors.length,
                         },
                         validCards: parseResult.validCards.map(card => ({
                             studentId: card.student.id,
                             studentName: `${card.student.firstName} ${card.student.lastName}`,
                             studentEmail: card.student.email,
                             expiryDate: card.expiryDate,
-                            metadata: card.metadata
+                            metadata: card.metadata,
                         })),
-                        errors: parseResult.errors
-                    }
-                })
+                        errors: parseResult.errors,
+                    },
+                }),
             };
         }
         if (parseResult.validCards.length === 0) {
             return {
                 statusCode: 400,
-                body: JSON.stringify({ error: 'No valid cards found in CSV data' })
+                body: JSON.stringify({ error: 'No valid cards found in CSV data' }),
             };
         }
-        const importResult = await createCardsInBatch(parseResult.validCards, school, cardType || 'standard', expiryDays, authenticatedUser.id);
+        const importResult = await createCardsInBatch(parseResult.validCards, school, cardType || 'standard', expiryDays, authenticatedUser.userId);
         logger_1.logger.info('Bulk RFID card import completed', {
             requestId,
             successCount: importResult.successful.length,
             errorCount: importResult.errors.length,
-            duplicateCount: importResult.duplicates.length
+            duplicateCount: importResult.duplicates.length,
         });
         return {
             statusCode: 200,
@@ -404,29 +406,27 @@ const bulkImportRfidCardsHandler = async (event, context) => {
                         totalProcessed: parseResult.validCards.length,
                         successful: importResult.successful.length,
                         errors: importResult.errors.length + parseResult.errors.length,
-                        duplicates: importResult.duplicates.length
+                        duplicates: importResult.duplicates.length,
                     },
                     results: {
                         successful: importResult.successful,
                         errors: [...importResult.errors, ...parseResult.errors],
-                        duplicates: importResult.duplicates
-                    }
-                }
-            })
+                        duplicates: importResult.duplicates,
+                    },
+                },
+            }),
         };
     }
     catch (error) {
-        logger_1.logger.error('Bulk import RFID cards failed', {
+        logger_1.logger.error('Bulk import RFID cards failed', error instanceof Error ? error : new Error(String(error)), {
             requestId,
-            error: error.message,
-            stack: error.stack
         });
         return {
             statusCode: 500,
             body: JSON.stringify({
                 error: 'Failed to bulk import RFID cards',
-                message: error.message
-            })
+                message: error.message,
+            }),
         };
     }
     finally {

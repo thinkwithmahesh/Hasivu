@@ -1,12 +1,14 @@
 'use client';
 
 /**
- * HASIVU Platform - Simplified Authentication Context for Demo
+ * HASIVU Platform - Production Authentication Context
+ * With Real API Integration and Token Management
  */
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
+import { AuthApiService } from '@/services/auth-api.service';
 
 // Simple user type for demo
 interface User {
@@ -65,183 +67,295 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [state, setState] = useState<AuthState>({
     user: null,
     isAuthenticated: false,
-    isLoading: false,
-    isInitialized: true,
+    isLoading: true, // Start as loading
+    isInitialized: false, // Not initialized until auth check completes
   });
 
   const router = useRouter();
+  const authApi = new AuthApiService();
 
-  // Simple demo user for development
-  const demoUser: User = {
-    id: 'demo-user-1',
-    email: 'admin@hasivu.com',
-    firstName: 'Admin',
-    lastName: 'User',
-    role: 'admin'
-  };
+  // Check authentication on mount
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        setState(prev => ({ ...prev, isLoading: true }));
+        const result = await authApi.checkAuth();
 
-  // Simple login method for demo
+        if (result.authenticated && result.user) {
+          setState({
+            user: result.user as User,
+            isAuthenticated: true,
+            isLoading: false,
+            isInitialized: true,
+          });
+        } else {
+          setState({
+            user: null,
+            isAuthenticated: false,
+            isLoading: false,
+            isInitialized: true,
+          });
+        }
+      } catch (error) {
+        setState({
+          user: null,
+          isAuthenticated: false,
+          isLoading: false,
+          isInitialized: true,
+        });
+      }
+    };
+
+    initAuth();
+  }, []);
+
+  // Real API login method
   const login = useCallback(async (credentials: LoginCredentials): Promise<boolean> => {
     try {
       setState(prev => ({ ...prev, isLoading: true }));
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Demo authentication - accept any email/password
-      if (credentials.email && credentials.password) {
+
+      // Call real API
+      const response = await authApi.login(credentials);
+
+      if (response.success && response.user) {
         setState({
-          user: demoUser,
+          user: response.user as User,
           isAuthenticated: true,
           isLoading: false,
           isInitialized: true,
         });
-        
-        // Store demo token
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('demoToken', 'demo-token-123');
-        }
-        
-        toast.success('Login successful!');
+
+        toast.success(`Welcome back, ${response.user.firstName}!`);
         return true;
+      } else {
+        toast.error(response.error || 'Login failed');
+        return false;
       }
-      
-      toast.error('Please enter email and password');
-      return false;
     } catch (error) {
-      console.error('Login error:', error);
-      toast.error('Login failed');
+      const errorMessage = error instanceof Error ? error.message : 'Login failed';
+      toast.error(errorMessage);
       return false;
     } finally {
       setState(prev => ({ ...prev, isLoading: false }));
     }
   }, []);
 
+  // Real API register method
   const register = useCallback(async (userData: RegistrationData): Promise<boolean> => {
     try {
       setState(prev => ({ ...prev, isLoading: true }));
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Demo registration
-      const newUser: User = {
-        id: 'demo-user-' + Date.now(),
-        email: userData.email,
-        firstName: userData.firstName,
-        lastName: userData.lastName,
-        role: userData.role || 'student'
-      };
-      
-      setState({
-        user: newUser,
-        isAuthenticated: true,
-        isLoading: false,
-        isInitialized: true,
+
+      // Call real API
+      const response = await authApi.register({
+        ...userData,
+        passwordConfirm: userData.password, // Assuming password confirm is same
       });
-      
-      toast.success('Registration successful!');
-      return true;
+
+      if (response.success && response.user) {
+        setState({
+          user: response.user as User,
+          isAuthenticated: true,
+          isLoading: false,
+          isInitialized: true,
+        });
+
+        toast.success(`Welcome, ${response.user.firstName}!`);
+        return true;
+      } else {
+        toast.error(response.error || 'Registration failed');
+        return false;
+      }
     } catch (error) {
-      console.error('Registration error:', error);
-      toast.error('Registration failed');
+      const errorMessage = error instanceof Error ? error.message : 'Registration failed';
+      toast.error(errorMessage);
       return false;
     } finally {
       setState(prev => ({ ...prev, isLoading: false }));
     }
   }, []);
 
+  // Real API logout method
   const logout = useCallback(async (): Promise<void> => {
-    setState({
-      user: null,
-      isAuthenticated: false,
-      isLoading: false,
-      isInitialized: true,
-    });
-    
-    // Clear demo token
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('demoToken');
+    try {
+      await authApi.logout();
+
+      setState({
+        user: null,
+        isAuthenticated: false,
+        isLoading: false,
+        isInitialized: true,
+      });
+
+      toast.success('Logged out successfully');
+      router.push('/');
+    } catch (error) {
+      // Still clear local state even if API call fails
+      setState({
+        user: null,
+        isAuthenticated: false,
+        isLoading: false,
+        isInitialized: true,
+      });
+      toast.success('Logged out');
+      router.push('/');
     }
-    
-    toast.success('Logged out successfully');
-    router.push('/');
   }, [router]);
 
-  // Simple demo methods
-  const updateProfile = useCallback(async (data: Partial<User>): Promise<boolean> => {
-    if (state.user) {
-      setState(prev => ({
-        ...prev,
-        user: prev.user ? { ...prev.user, ...data } : null
-      }));
-      toast.success('Profile updated successfully');
-      return true;
-    }
-    return false;
-  }, [state.user]);
+  // Real API update profile method
+  const updateProfile = useCallback(
+    async (data: Partial<User>): Promise<boolean> => {
+      if (!state.user) {
+        toast.error('You must be logged in');
+        return false;
+      }
 
-  const changePassword = useCallback(async (data: {
-    currentPassword: string;
-    newPassword: string;
-    newPasswordConfirm: string;
-  }): Promise<boolean> => {
-    // Simple validation
-    if (data.newPassword !== data.newPasswordConfirm) {
-      toast.error('Passwords do not match');
-      return false;
-    }
-    toast.success('Password changed successfully');
-    return true;
-  }, []);
+      try {
+        const response = await authApi.updateProfile(data);
 
+        if (response.success && response.user) {
+          setState(prev => ({
+            ...prev,
+            user: response.user as User,
+          }));
+          toast.success('Profile updated successfully');
+          return true;
+        } else {
+          toast.error(response.error || 'Profile update failed');
+          return false;
+        }
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Update failed';
+        toast.error(errorMessage);
+        return false;
+      }
+    },
+    [state.user]
+  );
+
+  // Real API change password method
+  const changePassword = useCallback(
+    async (data: {
+      currentPassword: string;
+      newPassword: string;
+      newPasswordConfirm: string;
+    }): Promise<boolean> => {
+      // Validate passwords match
+      if (data.newPassword !== data.newPasswordConfirm) {
+        toast.error('Passwords do not match');
+        return false;
+      }
+
+      try {
+        const response = await authApi.changePassword(data);
+
+        if (response.success) {
+          toast.success('Password changed successfully');
+          return true;
+        } else {
+          toast.error(response.error || 'Password change failed');
+          return false;
+        }
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Password change failed';
+        toast.error(errorMessage);
+        return false;
+      }
+    },
+    []
+  );
+
+  // Real API refresh profile method
   const refreshProfile = useCallback(async (): Promise<void> => {
-    // Demo: do nothing
-  }, []);
-
-  const checkAuth = useCallback(async (): Promise<boolean> => {
-    // Check if demo token exists
-    if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('demoToken');
-      if (token) {
+    try {
+      const user = await authApi.getProfile();
+      if (user) {
         setState(prev => ({
           ...prev,
-          user: demoUser,
+          user: user as User,
+        }));
+      }
+    } catch (error) {
+      // Error handled silently
+    }
+  }, []);
+
+  // Real API check auth method
+  const checkAuth = useCallback(async (): Promise<boolean> => {
+    try {
+      const result = await authApi.checkAuth();
+
+      if (result.authenticated && result.user) {
+        setState(prev => ({
+          ...prev,
+          user: result.user as User,
           isAuthenticated: true,
         }));
         return true;
       }
-    }
-    return false;
-  }, []);
-
-  const forgotPassword = useCallback(async (email: string): Promise<boolean> => {
-    toast.success('Password reset instructions sent to your email');
-    return true;
-  }, []);
-
-  const resetPassword = useCallback(async (
-    token: string, 
-    password: string, 
-    passwordConfirm: string
-  ): Promise<boolean> => {
-    if (password !== passwordConfirm) {
-      toast.error('Passwords do not match');
+      return false;
+    } catch (error) {
       return false;
     }
-    toast.success('Password reset successful');
-    return true;
   }, []);
 
-  const hasRole = useCallback((role: string | string[]): boolean => {
-    if (!state.user) return false;
-    
-    const userRole = state.user.role;
-    if (Array.isArray(role)) {
-      return role.includes(userRole);
+  // Real API forgot password method
+  const forgotPassword = useCallback(async (email: string): Promise<boolean> => {
+    try {
+      const response = await authApi.forgotPassword(email);
+
+      if (response.success) {
+        toast.success('Password reset instructions sent to your email');
+        return true;
+      } else {
+        toast.error(response.error || 'Request failed');
+        return false;
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Request failed';
+      toast.error(errorMessage);
+      return false;
     }
-    return userRole === role;
-  }, [state.user]);
+  }, []);
+
+  // Real API reset password method
+  const resetPassword = useCallback(
+    async (token: string, password: string, passwordConfirm: string): Promise<boolean> => {
+      if (password !== passwordConfirm) {
+        toast.error('Passwords do not match');
+        return false;
+      }
+
+      try {
+        const response = await authApi.resetPassword(token, password, passwordConfirm);
+
+        if (response.success) {
+          toast.success('Password reset successful');
+          return true;
+        } else {
+          toast.error(response.error || 'Password reset failed');
+          return false;
+        }
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Reset failed';
+        toast.error(errorMessage);
+        return false;
+      }
+    },
+    []
+  );
+
+  const hasRole = useCallback(
+    (role: string | string[]): boolean => {
+      if (!state.user) return false;
+
+      const userRole = state.user.role;
+      if (Array.isArray(role)) {
+        return role.includes(userRole);
+      }
+      return userRole === role;
+    },
+    [state.user]
+  );
 
   const value: AuthContextType = {
     ...state,
@@ -257,11 +371,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     hasRole,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth(): AuthContextType {
@@ -273,7 +383,7 @@ export function useAuth(): AuthContextType {
 }
 
 // Helper function to get dashboard URL based on role
-function getDashboardUrl(role: string): string {
+function _getDashboardUrl(role: string): string {
   const dashboardUrls: Record<string, string> = {
     admin: '/dashboard/admin',
     teacher: '/dashboard/teacher',
@@ -282,7 +392,7 @@ function getDashboardUrl(role: string): string {
     vendor: '/dashboard/vendor',
     kitchen_staff: '/dashboard/kitchen',
   };
-  
+
   return dashboardUrls[role] || '/dashboard';
 }
 

@@ -1,6 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Eye, EyeOff, Mail, Lock, User, Building, Phone, ChevronRight, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+import {
+  Eye,
+  EyeOff,
+  Mail,
+  Lock,
+  User,
+  Building,
+  Phone,
+  ChevronRight,
+  AlertCircle,
+  CheckCircle,
+  Loader2,
+} from 'lucide-react';
 import { hasivuApiService } from '../services/hasivu-api.service';
 import { toast } from 'react-hot-toast';
 
@@ -26,18 +38,18 @@ interface FormData {
   newPassword: string;
 }
 
-const AuthModal: React.FC<AuthModalProps> = ({ 
-  isOpen, 
-  onClose, 
+const AuthModal: React.FC<AuthModalProps> = ({
+  isOpen,
+  onClose,
   initialMode = 'login',
-  onAuthSuccess 
+  onAuthSuccess,
 }) => {
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<Partial<FormData>>({});
-  
+
   const [formData, setFormData] = useState<FormData>({
     email: '',
     password: '',
@@ -48,7 +60,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
     phoneNumber: '',
     role: 'admin',
     verificationCode: '',
-    newPassword: ''
+    newPassword: '',
   });
 
   // Reset form when modal opens/closes
@@ -64,7 +76,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
         phoneNumber: '',
         role: 'admin',
         verificationCode: '',
-        newPassword: ''
+        newPassword: '',
       });
       setErrors({});
       setMode(initialMode);
@@ -90,7 +102,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
       if (formData.password.length < 8) {
         newErrors.password = 'Password must be at least 8 characters';
       }
-      
+
       if (formData.password !== formData.confirmPassword) {
         newErrors.confirmPassword = 'Passwords do not match';
       }
@@ -122,7 +134,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
       } else if (formData.newPassword.length < 8) {
         newErrors.newPassword = 'Password must be at least 8 characters';
       }
-      
+
       if (!formData.verificationCode) {
         newErrors.verificationCode = 'Verification code is required';
       }
@@ -147,7 +159,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
     try {
       const response = await hasivuApiService.login({
         email: formData.email,
-        password: formData.password
+        password: formData.password,
       });
 
       toast.success('Login successful!');
@@ -156,7 +168,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
     } catch (error: any) {
       const message = error.response?.data?.message || 'Login failed. Please try again.';
       toast.error(message);
-      
+
       if (message.includes('verify')) {
         setMode('verify-email');
       }
@@ -177,7 +189,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
         lastName: formData.lastName,
         schoolName: formData.schoolName,
         phoneNumber: formData.phoneNumber,
-        role: formData.role
+        role: formData.role,
       });
 
       toast.success('Account created! Please check your email for verification.');
@@ -211,7 +223,10 @@ const AuthModal: React.FC<AuthModalProps> = ({
 
     setIsLoading(true);
     try {
-      const response = await hasivuApiService.verifyEmail(formData.email, formData.verificationCode);
+      const response = await hasivuApiService.verifyEmail(
+        formData.email,
+        formData.verificationCode
+      );
       toast.success('Email verified successfully!');
       onAuthSuccess?.(response.data);
       onClose();
@@ -245,7 +260,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     switch (mode) {
       case 'login':
         await handleLogin();
@@ -286,7 +301,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
           type={type}
           id={field}
           value={formData[field]}
-          onChange={(e) => handleInputChange(field, e.target.value)}
+          onChange={e => handleInputChange(field, e.target.value)}
           className={`w-full ${icon ? 'pl-10' : 'pl-3'} pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
             errors[field] ? 'border-red-500' : ''
           }`}
@@ -299,9 +314,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
           </div>
         )}
       </div>
-      {errors[field] && (
-        <p className="text-sm text-red-600">{errors[field]}</p>
-      )}
+      {errors[field] && <p className="text-sm text-red-600">{errors[field]}</p>}
     </div>
   );
 
@@ -323,7 +336,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
           type={showPasswordState ? 'text' : 'password'}
           id={field}
           value={formData[field]}
-          onChange={(e) => handleInputChange(field, e.target.value)}
+          onChange={e => handleInputChange(field, e.target.value)}
           className={`w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
             errors[field] ? 'border-red-500' : ''
           }`}
@@ -344,29 +357,37 @@ const AuthModal: React.FC<AuthModalProps> = ({
           </div>
         )}
       </div>
-      {errors[field] && (
-        <p className="text-sm text-red-600">{errors[field]}</p>
-      )}
+      {errors[field] && <p className="text-sm text-red-600">{errors[field]}</p>}
     </div>
   );
 
   const getTitle = () => {
     switch (mode) {
-      case 'login': return 'Welcome Back';
-      case 'signup': return 'Create Your Account';
-      case 'forgot-password': return 'Reset Password';
-      case 'verify-email': return 'Verify Your Email';
-      case 'reset-password': return 'Set New Password';
+      case 'login':
+        return 'Welcome Back';
+      case 'signup':
+        return 'Create Your Account';
+      case 'forgot-password':
+        return 'Reset Password';
+      case 'verify-email':
+        return 'Verify Your Email';
+      case 'reset-password':
+        return 'Set New Password';
     }
   };
 
   const getSubtitle = () => {
     switch (mode) {
-      case 'login': return 'Sign in to your HASIVU account';
-      case 'signup': return 'Join thousands of schools using HASIVU';
-      case 'forgot-password': return 'Enter your email to receive a reset code';
-      case 'verify-email': return 'Enter the verification code sent to your email';
-      case 'reset-password': return 'Enter your reset code and new password';
+      case 'login':
+        return 'Sign in to your HASIVU account';
+      case 'signup':
+        return 'Join thousands of schools using HASIVU';
+      case 'forgot-password':
+        return 'Enter your email to receive a reset code';
+      case 'verify-email':
+        return 'Enter the verification code sent to your email';
+      case 'reset-password':
+        return 'Enter your reset code and new password';
     }
   };
 
@@ -390,7 +411,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto"
-          onClick={(e) => e.stopPropagation()}
+          onClick={e => e.stopPropagation()}
         >
           {/* Header */}
           <div className="p-6 pb-0">
@@ -400,10 +421,15 @@ const AuthModal: React.FC<AuthModalProps> = ({
               disabled={isLoading}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
-            
+
             <div className="text-center mb-6">
               <h2 className="text-2xl font-bold text-gray-900 mb-2">{getTitle()}</h2>
               <p className="text-gray-600">{getSubtitle()}</p>
@@ -417,7 +443,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
               <>
                 {renderInput('email', 'Email Address', 'email', <Mail className="w-5 h-5" />)}
                 {renderPasswordInput('password', 'Password', showPassword, setShowPassword)}
-                
+
                 <button
                   type="button"
                   onClick={() => setMode('forgot-password')}
@@ -436,16 +462,16 @@ const AuthModal: React.FC<AuthModalProps> = ({
                   {renderInput('firstName', 'First Name', 'text', <User className="w-5 h-5" />)}
                   {renderInput('lastName', 'Last Name', 'text', <User className="w-5 h-5" />)}
                 </div>
-                
+
                 {renderInput('email', 'Email Address', 'email', <Mail className="w-5 h-5" />)}
                 {renderInput('schoolName', 'School Name', 'text', <Building className="w-5 h-5" />)}
                 {renderInput('phoneNumber', 'Phone Number', 'tel', <Phone className="w-5 h-5" />)}
-                
+
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">Role</label>
                   <select
                     value={formData.role}
-                    onChange={(e) => handleInputChange('role', e.target.value as any)}
+                    onChange={e => handleInputChange('role', e.target.value as any)}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     disabled={isLoading}
                   >
@@ -454,17 +480,20 @@ const AuthModal: React.FC<AuthModalProps> = ({
                     <option value="staff">Staff Member</option>
                   </select>
                 </div>
-                
+
                 {renderPasswordInput('password', 'Password', showPassword, setShowPassword)}
-                {renderPasswordInput('confirmPassword', 'Confirm Password', showConfirmPassword, setShowConfirmPassword)}
+                {renderPasswordInput(
+                  'confirmPassword',
+                  'Confirm Password',
+                  showConfirmPassword,
+                  setShowConfirmPassword
+                )}
               </>
             )}
 
             {/* Forgot Password Form */}
             {mode === 'forgot-password' && (
-              <>
-                {renderInput('email', 'Email Address', 'email', <Mail className="w-5 h-5" />)}
-              </>
+              <>{renderInput('email', 'Email Address', 'email', <Mail className="w-5 h-5" />)}</>
             )}
 
             {/* Email Verification Form */}
@@ -476,14 +505,26 @@ const AuthModal: React.FC<AuthModalProps> = ({
                     We've sent a verification code to <strong>{formData.email}</strong>
                   </p>
                 </div>
-                {renderInput('verificationCode', 'Verification Code', 'text', <Lock className="w-5 h-5" />, '6-digit code')}
+                {renderInput(
+                  'verificationCode',
+                  'Verification Code',
+                  'text',
+                  <Lock className="w-5 h-5" />,
+                  '6-digit code'
+                )}
               </>
             )}
 
             {/* Reset Password Form */}
             {mode === 'reset-password' && (
               <>
-                {renderInput('verificationCode', 'Reset Code', 'text', <Lock className="w-5 h-5" />, '6-digit code')}
+                {renderInput(
+                  'verificationCode',
+                  'Reset Code',
+                  'text',
+                  <Lock className="w-5 h-5" />,
+                  '6-digit code'
+                )}
                 {renderPasswordInput('newPassword', 'New Password', showPassword, setShowPassword)}
               </>
             )}
@@ -499,11 +540,15 @@ const AuthModal: React.FC<AuthModalProps> = ({
               ) : (
                 <>
                   <span>
-                    {mode === 'login' ? 'Sign In' :
-                     mode === 'signup' ? 'Create Account' :
-                     mode === 'forgot-password' ? 'Send Reset Code' :
-                     mode === 'verify-email' ? 'Verify Email' :
-                     'Reset Password'}
+                    {mode === 'login'
+                      ? 'Sign In'
+                      : mode === 'signup'
+                        ? 'Create Account'
+                        : mode === 'forgot-password'
+                          ? 'Send Reset Code'
+                          : mode === 'verify-email'
+                            ? 'Verify Email'
+                            : 'Reset Password'}
                   </span>
                   <ChevronRight className="w-4 h-4" />
                 </>
@@ -525,7 +570,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
                   </button>
                 </p>
               )}
-              
+
               {mode === 'signup' && (
                 <p className="text-sm text-gray-600">
                   Already have an account?{' '}
@@ -539,7 +584,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
                   </button>
                 </p>
               )}
-              
+
               {(mode === 'forgot-password' || mode === 'reset-password') && (
                 <button
                   type="button"

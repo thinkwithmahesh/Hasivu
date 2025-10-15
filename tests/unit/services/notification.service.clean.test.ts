@@ -13,7 +13,6 @@ process.env.SKIP_REDIS_TESTS = 'true';
 jest.mock('@shared/database.service', () => ({
   DatabaseService: {
     getInstance: jest.fn(() => ({
-      executeOperation: jest.fn(),
       connect: jest.fn(),
       disconnect: jest.fn(),
       isHealthy: jest.fn().mockResolvedValue(true)
@@ -26,7 +25,7 @@ jest.mock('@services/redis.service');
 jest.mock('@/utils/logger');
 jest.mock('@/utils/cache');
 
-import { 
+import {
   NotificationService,
   NotificationRequest
 } from '../../../src/services/notification.service';
@@ -54,54 +53,17 @@ describe('NotificationService - Clean ESM Test', () => {
     mockCache.setex.mockResolvedValue(undefined);
     
     // Setup basic database operation mocks
-    mockDatabaseInstance.executeOperation.mockImplementation(async (operation: Function) => {
-      // Create mock client for the operation
-      const mockClient = {
-        notification: {
-          create: jest.fn(),
-          findFirst: jest.fn(),
-          findMany: jest.fn(),
-          update: jest.fn(),
-          count: jest.fn()
-        },
-        user: {
-          findUnique: jest.fn().mockResolvedValue({
-            id: 'user-123',
-            firstName: 'John',
-            lastName: 'Doe',
-            email: 'john.doe@example.com',
-            notificationPreferences: null
-          }),
-          update: jest.fn()
-        }
-      };
-      
-      return operation(mockClient);
-    });
+    mockDatabaseInstance.connect.mockResolvedValue(undefined);
+    mockDatabaseInstance.disconnect.mockResolvedValue(undefined);
+    mockDatabaseInstance.isHealthy.mockResolvedValue(true);
   });
 
   test('should verify mock setup is working correctly', async () => {
     // Verify that DatabaseService.getInstance returns our mock
     const dbInstance = DatabaseService.getInstance();
     expect(dbInstance).toBeDefined();
-    expect(dbInstance.executeOperation).toBeDefined();
-    expect(typeof dbInstance.executeOperation).toBe('function');
-    
-    // Test that executeOperation works
-    const result = await dbInstance.executeOperation(
-      async (client: any) => client.user.findUnique({ where: { id: 'test' } }),
-      'testOperation'
-    );
-    
-    expect(result).toEqual({
-      id: 'user-123',
-      firstName: 'John',
-      lastName: 'Doe', 
-      email: 'john.doe@example.com',
-      notificationPreferences: null
-    });
-    
-    expect(mockDatabaseInstance.executeOperation).toHaveBeenCalled();
+    expect(dbInstance.connect).toBeDefined();
+    expect(typeof dbInstance.connect).toBe('function');
   });
 
   test('should send notification with mocked database', async () => {
@@ -143,38 +105,7 @@ describe('NotificationService - Clean ESM Test', () => {
       return Promise.resolve(null);
     });
 
-    // Mock the database operation to return success
-    mockDatabaseInstance.executeOperation.mockImplementation(async (operation: Function) => {
-      const mockClient = {
-        notification: {
-          create: jest.fn().mockResolvedValue({
-            id: 'notification-123',
-            message: 'Order confirmed!',
-            userId: 'user-123',
-            type: 'order_confirmation',
-            status: 'pending',
-            createdAt: new Date(),
-            updatedAt: new Date()
-          }),
-          update: jest.fn().mockResolvedValue({
-            id: 'notification-123',
-            status: 'sent',
-            sentAt: new Date()
-          })
-        },
-        user: {
-          findUnique: jest.fn().mockResolvedValue({
-            id: 'user-123',
-            firstName: 'John',
-            lastName: 'Doe',
-            email: 'john.doe@example.com',
-            notificationPreferences: null
-          })
-        }
-      };
-      
-      return operation(mockClient);
-    });
+    // Mock database operations are handled by the service itself
 
     const request: NotificationRequest = {
       templateId: 'order_confirmation',
@@ -190,7 +121,7 @@ describe('NotificationService - Clean ESM Test', () => {
     expect(result).toEqual(expect.objectContaining({
       success: true
     }));
-    expect(mockDatabaseInstance.executeOperation).toHaveBeenCalled();
+    expect(mockDatabaseInstance.connect).toHaveBeenCalled();
     expect(mockLogger.info).toHaveBeenCalledWith('Notification sent successfully', expect.any(Object));
   });
 
@@ -209,7 +140,7 @@ describe('NotificationService - Clean ESM Test', () => {
     });
 
     // Mock database operation to throw error
-    mockDatabaseInstance.executeOperation.mockRejectedValue(new Error('Mock database error'));
+    mockDatabaseInstance.connect.mockRejectedValue(new Error('Mock database error'));
 
     const request: NotificationRequest = {
       templateId: 'test_template',

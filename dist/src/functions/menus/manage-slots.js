@@ -62,7 +62,7 @@ const manageMenuSlotsHandler = async (event, context) => {
         logger_1.logger.error('Menu slot management authentication failed', {
             requestId,
             duration,
-            error: error.message,
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
             stack: error.stack
         });
         return {

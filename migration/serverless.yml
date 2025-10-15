@@ -7,7 +7,7 @@ provider:
   stage: ${opt:stage, 'dev'}
   memorySize: 512
   timeout: 30
-  
+
   environment:
     NODE_ENV: ${env:NODE_ENV, 'development'}
     DATABASE_URL: ${env:DATABASE_URL}
@@ -15,7 +15,7 @@ provider:
     COGNITO_USER_POOL_ID: ${env:COGNITO_USER_POOL_ID}
     COGNITO_CLIENT_ID: ${env:COGNITO_CLIENT_ID}
     AWS_REGION: ${env:AWS_REGION, 'ap-south-1'}
-    
+
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -27,13 +27,13 @@ provider:
         - s3:DeleteObject
         - ses:SendEmail
         - ses:SendRawEmail
-      Resource: "*"
+      Resource: '*'
     - Effect: Allow
       Action:
         - logs:CreateLogGroup
         - logs:CreateLogStream
         - logs:PutLogEvents
-      Resource: "*"
+      Resource: '*'
 
   httpApi:
     cors:
@@ -41,7 +41,7 @@ provider:
         - https://admin.hasivu.com
         - https://app.hasivu.com
         - ${env:FRONTEND_URL, 'http://localhost:3000'}
-      allowedMethods: 
+      allowedMethods:
         - GET
         - POST
         - PUT
@@ -53,7 +53,7 @@ provider:
         - X-Amz-Date
         - X-Api-Key
         - X-Amz-Security-Token
-    
+
     authorizers:
       cognitoAuthorizer:
         type: jwt
@@ -72,11 +72,11 @@ custom:
   prune:
     automatic: true
     number: 3
-  
+
   serverless-offline:
     httpPort: 3001
     lambdaPort: 3002
-    
+
 package:
   exclude:
     - node_modules/**
@@ -97,7 +97,7 @@ functions:
           method: post
     environment:
       FUNCTION_NAME: register
-      
+
   login:
     handler: src/functions/auth/login.loginHandler
     events:
@@ -106,7 +106,7 @@ functions:
           method: post
     environment:
       FUNCTION_NAME: login
-      
+
   refreshToken:
     handler: src/functions/auth/refresh.refreshTokenHandler
     events:
@@ -115,7 +115,7 @@ functions:
           method: post
     environment:
       FUNCTION_NAME: refresh-token
-      
+
   getUserProfile:
     handler: src/functions/auth/profile.getUserProfileHandler
     events:
@@ -125,7 +125,7 @@ functions:
           authorizer: cognitoAuthorizer
     environment:
       FUNCTION_NAME: get-user-profile
-      
+
   logout:
     handler: src/functions/auth/logout.logoutHandler
     events:
@@ -135,7 +135,7 @@ functions:
           authorizer: cognitoAuthorizer
     environment:
       FUNCTION_NAME: logout
-      
+
   updateProfile:
     handler: src/functions/auth/update-profile.updateProfileHandler
     events:
@@ -145,7 +145,7 @@ functions:
           authorizer: cognitoAuthorizer
     environment:
       FUNCTION_NAME: update-profile
-      
+
   changePassword:
     handler: src/functions/auth/change-password.changePasswordHandler
     events:
@@ -165,7 +165,7 @@ functions:
           method: get
     environment:
       FUNCTION_NAME: health-basic
-      
+
   healthDetailed:
     handler: src/functions/health/detailed.healthDetailedHandler
     events:
@@ -174,7 +174,7 @@ functions:
           method: get
     environment:
       FUNCTION_NAME: health-detailed
-      
+
   healthReady:
     handler: src/functions/health/ready.healthReadyHandler
     events:
@@ -183,7 +183,7 @@ functions:
           method: get
     environment:
       FUNCTION_NAME: health-ready
-      
+
   healthLive:
     handler: src/functions/health/live.healthLiveHandler
     events:
@@ -203,7 +203,7 @@ functions:
           authorizer: cognitoAuthorizer
     environment:
       FUNCTION_NAME: create-rfid-card
-      
+
   verifyRfidCard:
     handler: src/functions/rfid/verify-card.verifyRfidCardHandler
     events:
@@ -213,7 +213,7 @@ functions:
           authorizer: cognitoAuthorizer
     environment:
       FUNCTION_NAME: verify-rfid-card
-      
+
   getRfidCard:
     handler: src/functions/rfid/get-card.getRfidCardHandler
     events:
@@ -234,7 +234,7 @@ functions:
           authorizer: cognitoAuthorizer
     environment:
       FUNCTION_NAME: create-payment-order
-      
+
   verifyPayment:
     handler: src/functions/payment/verify.verifyPaymentHandler
     events:
@@ -244,7 +244,7 @@ functions:
           authorizer: cognitoAuthorizer
     environment:
       FUNCTION_NAME: verify-payment
-      
+
   paymentWebhook:
     handler: src/functions/payment/webhook.paymentWebhookHandler
     events:
@@ -264,7 +264,7 @@ functions:
           authorizer: cognitoAuthorizer
     environment:
       FUNCTION_NAME: send-notification
-      
+
   getNotifications:
     handler: src/functions/notification/get-notifications.getNotificationsHandler
     events:
@@ -274,7 +274,7 @@ functions:
           authorizer: cognitoAuthorizer
     environment:
       FUNCTION_NAME: get-notifications
-      
+
   whatsappWebhook:
     handler: src/functions/notification/whatsapp-webhook.whatsappWebhookHandler
     events:
@@ -321,7 +321,7 @@ resources:
             AttributeDataType: String
             Required: false
             Mutable: true
-            
+
     HasivuUserPoolClient:
       Type: AWS::Cognito::UserPoolClient
       Properties:
@@ -339,20 +339,20 @@ resources:
           AccessToken: hours
           IdToken: hours
           RefreshToken: days
-          
+
     # CloudWatch Log Groups
     AuthLogGroup:
       Type: AWS::Logs::LogGroup
       Properties:
         LogGroupName: /aws/lambda/${self:service}-${self:provider.stage}-auth
         RetentionInDays: 14
-        
+
     HealthLogGroup:
       Type: AWS::Logs::LogGroup
       Properties:
         LogGroupName: /aws/lambda/${self:service}-${self:provider.stage}-health
         RetentionInDays: 14
-        
+
     # Parameter Store for Configuration
     CognitoUserPoolIdParam:
       Type: AWS::SSM::Parameter
@@ -360,7 +360,7 @@ resources:
         Name: /${self:service}/${self:provider.stage}/cognito/user-pool-id
         Type: String
         Value: !Ref HasivuUserPool
-        
+
     CognitoClientIdParam:
       Type: AWS::SSM::Parameter
       Properties:
@@ -371,12 +371,12 @@ resources:
   Outputs:
     ApiGatewayUrl:
       Description: API Gateway URL
-      Value: !Sub "https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com"
-      
+      Value: !Sub 'https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com'
+
     CognitoUserPoolId:
       Description: Cognito User Pool ID
       Value: !Ref HasivuUserPool
-      
+
     CognitoClientId:
       Description: Cognito User Pool Client ID
       Value: !Ref HasivuUserPoolClient

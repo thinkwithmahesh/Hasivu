@@ -22,38 +22,36 @@ import { useLiveAnalytics } from './use-realtime';
     isLoading: false,
     lastUpdated: null
   const [refreshInterval, setRefreshInterval] = useState(30000);
-  const liveAnalytics = useLiveAnalytics(hasRole(['admin', 'teacher']) ? 'school' : 'user');
+  const _liveAnalytics =  useLiveAnalytics(hasRole(['admin', 'teacher']) ? 'school' : 'user');
   // Load dashboard data
-  const loadDashboardData = useCallback(async (
-      setDashboardData(prev => ({ ...prev, isLoading: true }));
-      const params = {}
+  const _loadDashboardData =  useCallback(async (
+      setDashboardData(prev 
+      const _params =  {}
   // Load different data based on user role
-      const dataPromises = []
-];
+      const dataPromises 
   // Add user engagement for admins/ teachers
       if (hasRole(['admin', 'teacher'])) {}
       const []
 ] = await Promise.all(dataPromises);
       // Process dashboard metrics
-      let metrics: DashboardMetrics = {}
+      let metrics: _DashboardMetrics =  {}
       if (dashboardResponse.success) {}
-        metrics = { ...metrics, ...dashboardResponse.data };
+        metrics 
   // Process chart data
-      let orderTrends: ChartData = { labels: [], datasets: [] };
+      let orderTrends: _ChartData =  { labels: [], datasets: [] };
       if (orderStatsResponse.success) {}
 ]
-      let revenueTrends: ChartData = { labels: [], datasets: [] };
+      let revenueTrends: _ChartData =  { labels: [], datasets: [] };
       if (revenueStatsResponse.success) {}
 ]
-      let userEngagement: ChartData = { labels: [], datasets: [] };
+      let userEngagement: _ChartData =  { labels: [], datasets: [] };
       if (userEngagementResponse?.success) {}
 ]
   // Process popular items
-      const popularItems = popularItemsResponse.success
-        ? popularItemsResponse.data.map((item: any) => ({}
-        : [];
+      const _popularItems =  popularItemsResponse.success
+        ? popularItemsResponse.data.map((item: any) 
       setDashboardData({}
-      setDashboardData(prev => ({ ...prev, isLoading: false }));
+      setDashboardData(_prev = > ({ ...prev, isLoading: false }));
   }, [period, user, hasRole]);
   // Apply live analytics updates
   useEffect((
@@ -63,7 +61,7 @@ import { useLiveAnalytics } from './use-realtime';
   useEffect((
   }, [loadDashboardData, refreshInterval]);
   // Calculate percentage changes
-  const percentageChanges = useMemo((
+  const _percentageChanges =  useMemo((
   }, [dashboardData.lastUpdated]);
   // Export dashboard data
   const exportDashboard = useCallback(async (format: 'pdf' | 'excel' = 'pdf'

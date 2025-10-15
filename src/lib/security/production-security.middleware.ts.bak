@@ -1,0 +1,80 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { SecurityService } from './security.service';
+
+interface ThreatMetrics {
+  totalThreats: number;
+  ipThreats: Record<string, { score: number; blocked: boolean }>;
+  threatTypes: Record<string, number>;
+}
+
+export class ProductionSecurityMiddleware {
+  private securityService: SecurityService;
+  private threatMetrics: ThreatMetrics;
+
+  constructor() {
+    this.securityService = new SecurityService();
+    this.threatMetrics = {
+      totalThreats: 0,
+      ipThreats: {},
+      threatTypes: {}
+    };
+  }
+
+  async handleRequest(request: NextRequest): Promise<NextResponse> {
+    // Basic implementation - rate limiting, CSRF, etc.
+    const ip = request.headers.get('x-forwarded-for') || 'unknown';
+
+    // Check rate limiting (simplified)
+    if (this.isRateLimited(ip)) {
+      return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
+    }
+
+    // CSRF check for POST requests
+    if (request.method === 'POST') {
+      const csrfToken = request.headers.get('x-csrf-token');
+      if (!csrfToken || !(await this.securityService.validateCSRFToken(csrfToken))) {
+        this.trackThreat(ip, 'CSRF');
+        return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 });
+      }
+    }
+
+    // SQL injection check
+    if (this.securityService.detectSQLInjection(request.url)) {
+      this.trackThreat(ip, 'SQL_INJECTION');
+      return NextResponse.json({ error: 'Malicious input detected' }, { status: 400 });
+    }
+
+    // Add security headers
+    const response = NextResponse.next();
+    response.headers.set('X-Frame-Options', 'DENY');
+    response.headers.set('X-Content-Type-Options', 'nosniff');
+    response.headers.set('X-XSS-Protection', '1; mode=block');
+    response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    response.headers.set('Content-Security-Policy', "default-src 'self'");
+    response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+
+    return response;
+  }
+
+  async cleanup(): Promise<void> {
+    // Cleanup resources
+  }
+
+  getThreatMetrics(): ThreatMetrics {
+    return this.threatMetrics;
+  }
+
+  private isRateLimited(ip: string): boolean {
+    // Simplified rate limiting logic
+    return false;
+  }
+
+  private trackThreat(ip: string, type: string): void {
+    this.threatMetrics.totalThreats++;
+    this.threatMetrics.threatTypes[type] = (this.threatMetrics.threatTypes[type] || 0) + 1;
+    this.threatMetrics.ipThreats[ip] = {
+      score: (this.threatMetrics.ipThreats[ip]?.score || 0) + 10,
+      blocked: (this.threatMetrics.ipThreats[ip]?.score || 0) > 100
+    };
+  }
+}

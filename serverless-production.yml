@@ -8,7 +8,7 @@ provider:
   memorySize: 1024
   timeout: 30
   logRetentionInDays: 30
-  
+
   # Production-ready VPC configuration
   vpc:
     securityGroupIds:
@@ -17,7 +17,7 @@ provider:
       - ${env:LAMBDA_SUBNET_1_ID}
       - ${env:LAMBDA_SUBNET_2_ID}
       - ${env:LAMBDA_SUBNET_3_ID}
-  
+
   environment:
     NODE_ENV: production
     DATABASE_URL: ${ssm:/${self:service}/${self:provider.stage}/database/url~true}
@@ -25,31 +25,31 @@ provider:
     COGNITO_USER_POOL_ID: ${cf:hasivu-infrastructure-${self:provider.stage}.CognitoUserPoolId}
     COGNITO_CLIENT_ID: ${cf:hasivu-infrastructure-${self:provider.stage}.CognitoClientId}
     COGNITO_REGION: ${self:provider.region}
-    
+
     # AWS Services Configuration
     S3_BUCKET_NAME: ${cf:hasivu-infrastructure-${self:provider.stage}.S3BucketName}
     S3_REGION: ${self:provider.region}
-    
+
     # Secrets Manager Configuration
     RAZORPAY_SECRET_ARN: ${cf:hasivu-infrastructure-${self:provider.stage}.RazorpaySecretArn}
     WHATSAPP_SECRET_ARN: ${cf:hasivu-infrastructure-${self:provider.stage}.WhatsAppSecretArn}
     JWT_SECRET_ARN: ${cf:hasivu-infrastructure-${self:provider.stage}.JwtSecretArn}
-    
+
     # External Service URLs
     FRONTEND_URL: ${env:FRONTEND_URL, 'https://app.hasivu.com'}
     ADMIN_URL: ${env:ADMIN_URL, 'https://admin.hasivu.com'}
-    
+
     # Performance and Monitoring
     X_RAY_TRACING: true
     POWERTOOLS_SERVICE_NAME: hasivu-platform-api
     POWERTOOLS_METRICS_NAMESPACE: HASIVU/Platform
     LOG_LEVEL: ${env:LOG_LEVEL, 'info'}
-    
+
     # Application Configuration
     API_VERSION: v1
     MAX_FILE_SIZE: 10485760 # 10MB
     CORS_ALLOWED_ORIGINS: https://app.hasivu.com,https://admin.hasivu.com
-    
+
   # Enhanced IAM Permissions
   iamRoleStatements:
     # Cognito Identity Provider
@@ -68,8 +68,8 @@ provider:
         - cognito-idp:AdminConfirmSignUp
         - cognito-idp:AdminEnableUser
         - cognito-idp:AdminDisableUser
-      Resource: !Sub "arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${CognitoUserPool}"
-    
+      Resource: !Sub 'arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${CognitoUserPool}'
+
     # Secrets Manager
     - Effect: Allow
       Action:
@@ -79,7 +79,7 @@ provider:
         - ${cf:hasivu-infrastructure-${self:provider.stage}.RazorpaySecretArn}
         - ${cf:hasivu-infrastructure-${self:provider.stage}.WhatsAppSecretArn}
         - ${cf:hasivu-infrastructure-${self:provider.stage}.JwtSecretArn}
-    
+
     # S3 Operations
     - Effect: Allow
       Action:
@@ -87,13 +87,13 @@ provider:
         - s3:PutObject
         - s3:DeleteObject
         - s3:PutObjectAcl
-      Resource: "${cf:hasivu-infrastructure-${self:provider.stage}.S3BucketArn}/*"
-    
+      Resource: '${cf:hasivu-infrastructure-${self:provider.stage}.S3BucketArn}/*'
+
     - Effect: Allow
       Action:
         - s3:ListBucket
-      Resource: "${cf:hasivu-infrastructure-${self:provider.stage}.S3BucketArn}"
-    
+      Resource: '${cf:hasivu-infrastructure-${self:provider.stage}.S3BucketArn}'
+
     # SES (Email Service)
     - Effect: Allow
       Action:
@@ -101,23 +101,23 @@ provider:
         - ses:SendRawEmail
         - ses:SendTemplatedEmail
       Resource:
-        - !Sub "arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/${DomainName}"
-        - !Sub "arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/*@${DomainName}"
-    
+        - !Sub 'arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/${DomainName}'
+        - !Sub 'arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/*@${DomainName}'
+
     # RDS Proxy Access (for PostgreSQL)
     - Effect: Allow
       Action:
         - rds-db:connect
-      Resource: !Sub "arn:aws:rds-db:${AWS::Region}:${AWS::AccountId}:dbuser:${RDSProxy}/hasivu_app_user"
-    
+      Resource: !Sub 'arn:aws:rds-db:${AWS::Region}:${AWS::AccountId}:dbuser:${RDSProxy}/hasivu_app_user'
+
     # Systems Manager (Parameter Store)
     - Effect: Allow
       Action:
         - ssm:GetParameter
         - ssm:GetParameters
         - ssm:GetParametersByPath
-      Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${self:service}/${self:provider.stage}/*"
-    
+      Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${self:service}/${self:provider.stage}/*'
+
     # CloudWatch Logs
     - Effect: Allow
       Action:
@@ -126,23 +126,23 @@ provider:
         - logs:PutLogEvents
         - logs:DescribeLogGroups
         - logs:DescribeLogStreams
-      Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*"
-    
+      Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*'
+
     # X-Ray Tracing
     - Effect: Allow
       Action:
         - xray:PutTraceSegments
         - xray:PutTelemetryRecords
-      Resource: "*"
-    
+      Resource: '*'
+
     # CloudWatch Metrics
     - Effect: Allow
       Action:
         - cloudwatch:PutMetricData
-      Resource: "*"
+      Resource: '*'
       Condition:
         StringEquals:
-          "cloudwatch:namespace": "HASIVU/Platform"
+          'cloudwatch:namespace': 'HASIVU/Platform'
 
   # Enhanced API Gateway Configuration
   httpApi:
@@ -151,7 +151,7 @@ provider:
         - https://app.hasivu.com
         - https://admin.hasivu.com
         - https://www.hasivu.com
-      allowedMethods: 
+      allowedMethods:
         - GET
         - POST
         - PUT
@@ -167,21 +167,21 @@ provider:
         - X-Requested-With
       allowCredentials: true
       maxAge: 86400
-    
+
     # JWT Authorizer for Cognito
     authorizers:
       cognitoAuthorizer:
         type: jwt
         identitySource: $request.header.Authorization
-        issuerUrl: !Sub "https://cognito-idp.${AWS::Region}.amazonaws.com/${CognitoUserPool}"
+        issuerUrl: !Sub 'https://cognito-idp.${AWS::Region}.amazonaws.com/${CognitoUserPool}'
         audience:
           - !Ref CognitoUserPoolClient
-    
+
     # Throttling Configuration
     throttle:
       burstLimit: 1000
       rateLimit: 500
-    
+
     # Custom Domain
     domain:
       domainName: api.hasivu.com
@@ -205,17 +205,17 @@ custom:
   prune:
     automatic: true
     number: 5
-  
+
   serverless-offline:
     httpPort: 3001
     lambdaPort: 3002
     host: 0.0.0.0
-    
+
   # X-Ray Tracing
   tracing:
     lambda: true
     apiGateway: true
-    
+
   # CloudWatch Alarms
   alerts:
     stages:
@@ -227,7 +227,7 @@ custom:
       - functionErrors
       - functionThrottles
       - functionDuration
-    
+
   # Domain Manager
   customDomain:
     domainName: api.hasivu.com
@@ -273,7 +273,7 @@ functions:
     reservedConcurrency: 50
     layers:
       - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
-      
+
   login:
     handler: src/functions/auth/login.loginHandler
     events:
@@ -285,7 +285,7 @@ functions:
     reservedConcurrency: 100
     layers:
       - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
-      
+
   refreshToken:
     handler: src/functions/auth/refresh.refreshTokenHandler
     events:
@@ -296,7 +296,7 @@ functions:
       FUNCTION_NAME: refresh-token
     layers:
       - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
-      
+
   getUserProfile:
     handler: src/functions/auth/profile.getUserProfileHandler
     events:
@@ -308,7 +308,7 @@ functions:
       FUNCTION_NAME: get-user-profile
     layers:
       - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
-      
+
   logout:
     handler: src/functions/auth/logout.logoutHandler
     events:
@@ -320,7 +320,7 @@ functions:
       FUNCTION_NAME: logout
     layers:
       - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
-      
+
   updateProfile:
     handler: src/functions/auth/update-profile.updateProfileHandler
     events:
@@ -332,7 +332,7 @@ functions:
       FUNCTION_NAME: update-profile
     layers:
       - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
-      
+
   changePassword:
     handler: src/functions/auth/change-password.changePasswordHandler
     events:
@@ -358,7 +358,7 @@ functions:
     reservedConcurrency: 10
     layers:
       - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
-      
+
   healthDetailed:
     handler: src/functions/health/detailed.healthDetailedHandler
     events:
@@ -371,7 +371,7 @@ functions:
       FUNCTION_NAME: health-detailed
     layers:
       - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
-      
+
   healthReady:
     handler: src/functions/health/ready.healthReadyHandler
     events:
@@ -382,7 +382,7 @@ functions:
       FUNCTION_NAME: health-ready
     layers:
       - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
-      
+
   healthLive:
     handler: src/functions/health/live.healthLiveHandler
     events:
@@ -406,7 +406,7 @@ functions:
       FUNCTION_NAME: get-users
     layers:
       - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
-      
+
   getUserById:
     handler: src/functions/users/getUserById.getUserByIdHandler
     events:
@@ -418,7 +418,7 @@ functions:
       FUNCTION_NAME: get-user-by-id
     layers:
       - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
-      
+
   updateUser:
     handler: src/functions/users/updateUser.updateUserHandler
     events:
@@ -430,7 +430,7 @@ functions:
       FUNCTION_NAME: update-user
     layers:
       - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
-      
+
   bulkImportUsers:
     handler: src/functions/users/bulkImport.bulkImportUsersHandler
     events:
@@ -445,7 +445,7 @@ functions:
       FUNCTION_NAME: bulk-import-users
     layers:
       - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
-      
+
   manageChildren:
     handler: src/functions/users/manageChildren.manageChildrenHandler
     events:
@@ -470,7 +470,7 @@ functions:
       FUNCTION_NAME: create-rfid-card
     layers:
       - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
-      
+
   verifyRfidCard:
     handler: src/functions/rfid/verify-card.verifyRfidCardHandler
     events:
@@ -482,7 +482,7 @@ functions:
       FUNCTION_NAME: verify-rfid-card
     layers:
       - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
-      
+
   getRfidCard:
     handler: src/functions/rfid/get-card.getRfidCardHandler
     events:
@@ -508,7 +508,7 @@ functions:
     reservedConcurrency: 100
     layers:
       - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
-      
+
   verifyPayment:
     handler: src/functions/payment/verify.verifyPaymentHandler
     events:
@@ -521,7 +521,7 @@ functions:
     reservedConcurrency: 100
     layers:
       - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
-      
+
   paymentWebhook:
     handler: src/functions/payment/webhook.paymentWebhookHandler
     events:
@@ -545,7 +545,7 @@ functions:
       FUNCTION_NAME: get-menu-items
     layers:
       - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
-      
+
   getMenuItemById:
     handler: src/functions/menu/getMenuItemById.getMenuItemByIdHandler
     events:
@@ -556,7 +556,7 @@ functions:
       FUNCTION_NAME: get-menu-item-by-id
     layers:
       - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
-      
+
   createMenuItem:
     handler: src/functions/menu/createMenuItem.createMenuItemHandler
     events:
@@ -568,7 +568,7 @@ functions:
       FUNCTION_NAME: create-menu-item
     layers:
       - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
-      
+
   updateMenuItem:
     handler: src/functions/menu/updateMenuItem.updateMenuItemHandler
     events:
@@ -580,7 +580,7 @@ functions:
       FUNCTION_NAME: update-menu-item
     layers:
       - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
-      
+
   deleteMenuItem:
     handler: src/functions/menu/deleteMenuItem.deleteMenuItemHandler
     events:
@@ -592,7 +592,7 @@ functions:
       FUNCTION_NAME: delete-menu-item
     layers:
       - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
-      
+
   searchMenuItems:
     handler: src/functions/menu/searchMenuItems.searchMenuItemsHandler
     events:
@@ -616,7 +616,7 @@ functions:
       FUNCTION_NAME: send-notification
     layers:
       - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
-      
+
   getNotifications:
     handler: src/functions/notification/get-notifications.getNotificationsHandler
     events:
@@ -628,7 +628,7 @@ functions:
       FUNCTION_NAME: get-notifications
     layers:
       - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
-      
+
   whatsappWebhook:
     handler: src/functions/notification/whatsapp-webhook.whatsappWebhookHandler
     events:
@@ -640,5 +640,4 @@ functions:
     reservedConcurrency: 100
     layers:
       - ${cf:hasivu-infrastructure-${self:provider.stage}.CommonLayerArn}
-
 # No CloudFormation resources in this file - they're in separate infrastructure templates

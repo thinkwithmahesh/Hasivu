@@ -2,42 +2,38 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
-  
+
   // Experimental features
   experimental: {
     appDir: true,
   },
-  
+
   // Image optimization
   images: {
-    domains: [
-      'localhost',
-      'hasivu.com',
-      'cdn.hasivu.com'
-    ],
+    domains: ['localhost', 'hasivu.com', 'cdn.hasivu.com'],
     formats: ['image/webp', 'image/avif'],
   },
-  
+
   // Compression
   compress: true,
-  
+
   // Security headers
   poweredByHeader: false,
-  
+
   // Generate ETags for caching
   generateEtags: true,
-  
+
   // Page extensions
   pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
-  
+
   // Trailing slash handling
   trailingSlash: false,
-  
+
   // Environment variables
   env: {
     CUSTOM_KEY: process.env.CUSTOM_KEY,
   },
-  
+
   // Production-ready security headers and CSP
   async headers() {
     return [
@@ -47,40 +43,40 @@ const nextConfig = {
           // Security Headers
           {
             key: 'X-Frame-Options',
-            value: 'DENY'
+            value: 'DENY',
           },
           {
             key: 'X-Content-Type-Options',
-            value: 'nosniff'
+            value: 'nosniff',
           },
           {
             key: 'X-XSS-Protection',
-            value: '1; mode=block'
+            value: '1; mode=block',
           },
           {
             key: 'Referrer-Policy',
-            value: 'strict-origin-when-cross-origin'
+            value: 'strict-origin-when-cross-origin',
           },
           {
             key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=(self), interest-cohort=()'
+            value: 'camera=(), microphone=(), geolocation=(self), interest-cohort=()',
           },
           {
             key: 'Cross-Origin-Embedder-Policy',
-            value: 'require-corp'
+            value: 'require-corp',
           },
           {
             key: 'Cross-Origin-Opener-Policy',
-            value: 'same-origin'
+            value: 'same-origin',
           },
           {
             key: 'Cross-Origin-Resource-Policy',
-            value: 'same-origin'
+            value: 'same-origin',
           },
           // Strict Transport Security
           {
             key: 'Strict-Transport-Security',
-            value: 'max-age=31536000; includeSubDomains; preload'
+            value: 'max-age=31536000; includeSubDomains; preload',
           },
           // Content Security Policy
           {
@@ -99,15 +95,15 @@ const nextConfig = {
               "connect-src 'self' https://api.hasivu.com https://www.google-analytics.com wss:",
               "worker-src 'self' blob:",
               "manifest-src 'self'",
-              "upgrade-insecure-requests"
-            ].join('; ')
+              'upgrade-insecure-requests',
+            ].join('; '),
           },
           // Performance Headers
           {
             key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable'
-          }
-        ]
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
       },
       // Static assets caching
       {
@@ -115,18 +111,18 @@ const nextConfig = {
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable'
-          }
-        ]
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
       },
       {
         source: '/_next/static/:path*',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable'
-          }
-        ]
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
       },
       // API routes headers
       {
@@ -134,41 +130,41 @@ const nextConfig = {
         headers: [
           {
             key: 'Cache-Control',
-            value: 'no-store, no-cache, must-revalidate, proxy-revalidate'
+            value: 'no-store, no-cache, must-revalidate, proxy-revalidate',
           },
           {
             key: 'X-Content-Type-Options',
-            value: 'nosniff'
+            value: 'nosniff',
           },
           {
             key: 'X-Frame-Options',
-            value: 'DENY'
-          }
-        ]
-      }
+            value: 'DENY',
+          },
+        ],
+      },
     ];
   },
-  
+
   // Redirects
   async redirects() {
     return [
       {
         source: '/admin',
         destination: '/dashboard/admin',
-        permanent: true
-      }
+        permanent: true,
+      },
     ];
   },
-  
+
   // API rewrites
   async rewrites() {
     return [
       {
         source: '/api/:path*',
-        destination: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'}/:path*`
-      }
+        destination: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'}/:path*`,
+      },
     ];
-  }
+  },
 };
 
 module.exports = nextConfig;

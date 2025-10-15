@@ -1,0 +1,942 @@
+/**
+ * HASIVU Platform - WhatsApp Business API Service
+ * Production-ready WhatsApp message delivery service with template support and webhook handling
+ * Integrates with WhatsApp Business API for customer communication and notifications
+ */
+
+import axios, { AxiosInstance, AxiosResponse } from 'axios';
+import crypto from 'crypto';
+// import { LoggerService } from '../logger.service';  // Logger import temporarily unavailable
+const logger = {
+  info: (message: string, data?: any) => console.log(message, data),
+  warn: (message: string, data?: any) => console.warn(message, data),
+  error: (message: string, data?: any) => console.error(message, data),
+  debug: (message: string, data?: any) => console.debug(message, data)
+};
+import { config } from '../../config/environment';
+
+/**
+ * WhatsApp message types
+ */
+export type WhatsAppMessageType = 'text' | 'template' | 'media' | 'interactive' | 'location' | 'contacts';
+
+/**
+ * WhatsApp message status
+ */
+export type WhatsAppMessageStatus = 'queued' | 'sent' | 'delivered' | 'read' | 'failed' | 'deleted';
+
+/**
+ * WhatsApp media types
+ */
+export type WhatsAppMediaType = 'image' | 'video' | 'audio' | 'document' | 'sticker';
+
+/**
+ * WhatsApp template component types
+ */
+export type WhatsAppTemplateComponentType = 'header' | 'body' | 'footer' | 'button';
+
+/**
+ * WhatsApp template parameter
+ */
+export interface WhatsAppTemplateParameter {
+  type: 'text' | 'image' | 'video' | 'document';
+  text?: string;
+  image?: {
+    link: string;
+  };
+  video?: {
+    link: string;
+  };
+  document?: {
+    link: string;
+    filename?: string;
+  };
+}
+
+/**
+ * WhatsApp template component
+ */
+export interface WhatsAppTemplateComponent {
+  type: WhatsAppTemplateComponentType;
+  parameters?: WhatsAppTemplateParameter[];
+  sub_type?: 'quick_reply' | 'url' | 'phone_number';
+  index?: number;
+}
+
+/**
+ * WhatsApp template interface
+ */
+export interface WhatsAppTemplate {
+  name: string;
+  language: {
+    code: string; // e.g., 'en_US', 'hi', 'es'
+  };
+  components?: WhatsAppTemplateComponent[];
+}
+
+/**
+ * WhatsApp media object
+ */
+export interface WhatsAppMedia {
+  id?: string;
+  link?: string;
+  caption?: string;
+  filename?: string;
+}
+
+/**
+ * WhatsApp interactive button
+ */
+export interface WhatsAppInteractiveButton {
+  type: 'reply';
+  reply: {
+    id: string;
+    title: string;
+  };
+}
+
+/**
+ * WhatsApp interactive list row
+ */
+export interface WhatsAppInteractiveRow {
+  id: string;
+  title: string;
+  description?: string;
+}
+
+/**
+ * WhatsApp interactive list section
+ */
+export interface WhatsAppInteractiveSection {
+  title?: string;
+  rows: WhatsAppInteractiveRow[];
+}
+
+/**
+ * WhatsApp interactive message
+ */
+export interface WhatsAppInteractive {
+  type: 'button' | 'list';
+  header?: {
+    type: 'text' | 'image' | 'video' | 'document';
+    text?: string;
+    image?: WhatsAppMedia;
+    video?: WhatsAppMedia;
+    document?: WhatsAppMedia;
+  };
+  body: {
+    text: string;
+  };
+  footer?: {
+    text: string;
+  };
+  action: {
+    buttons?: WhatsAppInteractiveButton[];
+    button?: string;
+    sections?: WhatsAppInteractiveSection[];
+  };
+}
+
+/**
+ * WhatsApp location
+ */
+export interface WhatsAppLocation {
+  latitude: number;
+  longitude: number;
+  name?: string;
+  address?: string;
+}
+
+/**
+ * WhatsApp contact
+ */
+export interface WhatsAppContact {
+  name: {
+    formatted_name: string;
+    first_name?: string;
+    last_name?: string;
+  };
+  phones?: Array<{
+    phone: string;
+    type?: string;
+    wa_id?: string;
+  }>;
+  emails?: Array<{
+    email: string;
+    type?: string;
+  }>;
+  org?: {
+    company?: string;
+    department?: string;
+    title?: string;
+  };
+  urls?: Array<{
+    url: string;
+    type?: string;
+  }>;
+}
+
+/**
+ * WhatsApp message request interface
+ */
+export interface WhatsAppMessageRequest {
+  messaging_product: 'whatsapp';
+  recipient_type?: 'individual' | 'group';
+  to: string; // Phone number or group ID
+  type: WhatsAppMessageType;
+  text?: {
+    preview_url?: boolean;
+    body: string;
+  };
+  template?: WhatsAppTemplate;
+  image?: WhatsAppMedia;
+  video?: WhatsAppMedia;
+  audio?: WhatsAppMedia;
+  document?: WhatsAppMedia;
+  sticker?: WhatsAppMedia;
+  interactive?: WhatsAppInteractive;
+  location?: WhatsAppLocation;
+  contacts?: WhatsAppContact[];
+  context?: {
+    message_id: string;
+  };
+}
+
+/**
+ * WhatsApp message response interface
+ */
+export interface WhatsAppMessageResponse {
+  messaging_product: string;
+  contacts: Array<{
+    input: string;
+    wa_id: string;
+  }>;
+  messages: Array<{
+    id: string;
+    message_status?: WhatsAppMessageStatus;
+  }>;
+}
+
+/**
+ * WhatsApp webhook message
+ */
+export interface WhatsAppWebhookMessage {
+  id: string;
+  from: string;
+  timestamp: string;
+  type: WhatsAppMessageType;
+  text?: {
+    body: string;
+  };
+  image?: WhatsAppMedia & { id: string; mime_type: string; sha256: string };
+  video?: WhatsAppMedia & { id: string; mime_type: string; sha256: string };
+  audio?: WhatsAppMedia & { id: string; mime_type: string; sha256: string };
+  document?: WhatsAppMedia & { id: string; mime_type: string; sha256: string };
+  sticker?: { id: string; mime_type: string; sha256: string };
+  location?: WhatsAppLocation;
+  contacts?: WhatsAppContact[];
+  interactive?: {
+    type: string;
+    button_reply?: {
+      id: string;
+      title: string;
+    };
+    list_reply?: {
+      id: string;
+      title: string;
+      description?: string;
+    };
+  };
+  context?: {
+    from: string;
+    id: string;
+  };
+}
+
+/**
+ * WhatsApp webhook status
+ */
+export interface WhatsAppWebhookStatus {
+  id: string;
+  status: WhatsAppMessageStatus;
+  timestamp: string;
+  recipient_id: string;
+  pricing?: {
+    billable: boolean;
+    pricing_model: string;
+    category: string;
+  };
+  conversation?: {
+    id: string;
+    expiration_timestamp?: string;
+    origin: {
+      type: string;
+    };
+  };
+  errors?: Array<{
+    code: number;
+    title: string;
+    message: string;
+    error_data?: {
+      details: string;
+    };
+  }>;
+}
+
+/**
+ * WhatsApp webhook event
+ */
+export interface WhatsAppWebhookEvent {
+  object: string;
+  entry: Array<{
+    id: string;
+    changes: Array<{
+      value: {
+        messaging_product: string;
+        metadata: {
+          display_phone_number: string;
+          phone_number_id: string;
+        };
+        contacts?: Array<{
+          profile: {
+            name: string;
+          };
+          wa_id: string;
+        }>;
+        messages?: WhatsAppWebhookMessage[];
+        statuses?: WhatsAppWebhookStatus[];
+      };
+      field: string;
+    }>;
+  }>;
+}
+
+/**
+ * WhatsApp Service Error
+ */
+export class WhatsAppServiceError extends Error {
+  public readonly code: string;
+  public readonly statusCode: number;
+  public readonly whatsappCode?: number;
+
+  constructor(message: string, code: string = 'WHATSAPP_ERROR', statusCode: number = 500, whatsappCode?: number) {
+    super(message);
+    this.name = 'WhatsAppServiceError';
+    this.code = code;
+    this.statusCode = statusCode;
+    this.whatsappCode = whatsappCode;
+    
+    // Ensure proper prototype chain for instanceof checks
+    Object.setPrototypeOf(this, WhatsAppServiceError.prototype);
+  }
+}
+
+/**
+ * WhatsApp Business API Service
+ * Singleton service for handling all WhatsApp operations
+ */
+export class WhatsAppService {
+  private static instance: WhatsAppService;
+  private readonly client: AxiosInstance;
+  private readonly phoneNumberId: string;
+  private readonly accessToken: string;
+  private readonly webhookVerifyToken: string;
+  private readonly apiVersion: string = 'v18.0';
+  private readonly baseUrl: string;
+
+  // Message templates cache
+  private templateCache: Map<string, any> = new Map();
+  private templateCacheExpiry: Map<string, number> = new Map();
+  private readonly templateCacheDuration = 3600000; // 1 hour
+
+  private constructor() {
+    this.phoneNumberId = config.whatsapp.phoneNumberId;
+    this.accessToken = config.whatsapp.accessToken;
+    this.webhookVerifyToken = config.whatsapp.webhookVerifyToken;
+    this.baseUrl = `https://graph.facebook.com/${this.apiVersion}`;
+
+    // Validate configuration
+    if (!this.phoneNumberId || !this.accessToken) {
+      throw new WhatsAppServiceError(
+        'WhatsApp configuration missing: phoneNumberId and accessToken required',
+        'MISSING_CONFIG',
+        500
+      );
+    }
+
+    this.client = axios.create({
+      baseURL: this.baseUrl,
+      headers: {
+        'Authorization': `Bearer ${this.accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      timeout: 30000 // 30 seconds
+    });
+
+    // Request interceptor for logging
+    this.client.interceptors.request.use(
+      (config) => {
+        logger.info('WhatsApp API Request', {
+          method: config.method?.toUpperCase(),
+          url: config.url,
+          headers: {
+            ...config.headers,
+            Authorization: '[REDACTED]'
+          }
+        });
+        return config;
+      },
+      (error) => {
+        logger.error('WhatsApp API Request Error', { error: error instanceof Error ? error.message : String(error) });
+        return Promise.reject(error);
+      }
+    );
+
+    // Response interceptor for logging
+    this.client.interceptors.response.use(
+      (response) => {
+        logger.info('WhatsApp API Response', {
+          status: response.status,
+          url: response.config.url,
+          messageId: response.data?.messages?.[0]?.id
+        });
+        return response;
+      },
+      (error) => {
+        logger.error('WhatsApp API Error', {
+          status: error.response?.status,
+          url: error.config?.url,
+          error: error.response?.data
+        });
+        return Promise.reject(error);
+      }
+    );
+
+    logger.info('WhatsApp service initialized', {
+      phoneNumberId: this.phoneNumberId,
+      apiVersion: this.apiVersion,
+      baseUrl: this.baseUrl
+    });
+  }
+
+  /**
+   * Get singleton instance
+   */
+  public static getInstance(): WhatsAppService {
+    if (!WhatsAppService.instance) {
+      WhatsAppService.instance = new WhatsAppService();
+    }
+    return WhatsAppService.instance;
+  }
+
+  /**
+   * Send a text message
+   */
+  public async sendTextMessage(
+    to: string,
+    text: string,
+    previewUrl: boolean = false,
+    contextMessageId?: string
+  ): Promise<WhatsAppMessageResponse> {
+    try {
+      const message: WhatsAppMessageRequest = {
+        messaging_product: 'whatsapp',
+        to,
+        type: 'text',
+        text: {
+          preview_url: previewUrl,
+          body: text
+        }
+      };
+
+      if (contextMessageId) {
+        message.context = { message_id: contextMessageId };
+      }
+
+      const response = await this.client.post(`/${this.phoneNumberId}/messages`, message);
+      
+      logger.info('Text message sent successfully', {
+        to,
+        messageId: response.data.messages[0].id,
+        textLength: text.length
+      });
+
+      return response.data;
+    } catch (error: any) {
+      throw this.handleError(error, 'Failed to send text message');
+    }
+  }
+
+  /**
+   * Send a template message
+   */
+  public async sendTemplateMessage(
+    to: string,
+    templateName: string,
+    languageCode: string = 'en_US',
+    components?: WhatsAppTemplateComponent[]
+  ): Promise<WhatsAppMessageResponse> {
+    try {
+      const message: WhatsAppMessageRequest = {
+        messaging_product: 'whatsapp',
+        to,
+        type: 'template',
+        template: {
+          name: templateName,
+          language: { code: languageCode },
+          components
+        }
+      };
+
+      const response = await this.client.post(`/${this.phoneNumberId}/messages`, message);
+      
+      logger.info('Template message sent successfully', {
+        to,
+        templateName,
+        languageCode,
+        messageId: response.data.messages[0].id
+      });
+
+      return response.data;
+    } catch (error: any) {
+      throw this.handleError(error, 'Failed to send template message');
+    }
+  }
+
+  /**
+   * Send media message
+   */
+  public async sendMediaMessage(
+    to: string,
+    mediaType: WhatsAppMediaType,
+    media: WhatsAppMedia,
+    caption?: string,
+    contextMessageId?: string
+  ): Promise<WhatsAppMessageResponse> {
+    try {
+      const message: WhatsAppMessageRequest = {
+        messaging_product: 'whatsapp',
+        to,
+        type: mediaType as any
+      };
+
+      // Set media object based on type
+      const mediaObject = { ...media };
+      if (caption && (mediaType === 'image' || mediaType === 'video' || mediaType === 'document')) {
+        mediaObject.caption = caption;
+      }
+
+      message[mediaType] = mediaObject;
+
+      if (contextMessageId) {
+        message.context = { message_id: contextMessageId };
+      }
+
+      const response = await this.client.post(`/${this.phoneNumberId}/messages`, message);
+      
+      logger.info('Media message sent successfully', {
+        to,
+        mediaType,
+        messageId: response.data.messages[0].id,
+        mediaId: media.id,
+        mediaLink: media.link
+      });
+
+      return response.data;
+    } catch (error: any) {
+      throw this.handleError(error, 'Failed to send media message');
+    }
+  }
+
+  /**
+   * Send interactive message
+   */
+  public async sendInteractiveMessage(
+    to: string,
+    interactive: WhatsAppInteractive,
+    contextMessageId?: string
+  ): Promise<WhatsAppMessageResponse> {
+    try {
+      const message: WhatsAppMessageRequest = {
+        messaging_product: 'whatsapp',
+        to,
+        type: 'interactive',
+        interactive
+      };
+
+      if (contextMessageId) {
+        message.context = { message_id: contextMessageId };
+      }
+
+      const response = await this.client.post(`/${this.phoneNumberId}/messages`, message);
+      
+      logger.info('Interactive message sent successfully', {
+        to,
+        interactiveType: interactive.type,
+        messageId: response.data.messages[0].id,
+        buttonsCount: interactive.action.buttons?.length || 0,
+        sectionsCount: interactive.action.sections?.length || 0
+      });
+
+      return response.data;
+    } catch (error: any) {
+      throw this.handleError(error, 'Failed to send interactive message');
+    }
+  }
+
+  /**
+   * Send location message
+   */
+  public async sendLocationMessage(
+    to: string,
+    location: WhatsAppLocation,
+    contextMessageId?: string
+  ): Promise<WhatsAppMessageResponse> {
+    try {
+      const message: WhatsAppMessageRequest = {
+        messaging_product: 'whatsapp',
+        to,
+        type: 'location',
+        location
+      };
+
+      if (contextMessageId) {
+        message.context = { message_id: contextMessageId };
+      }
+
+      const response = await this.client.post(`/${this.phoneNumberId}/messages`, message);
+      
+      logger.info('Location message sent successfully', {
+        to,
+        messageId: response.data.messages[0].id,
+        latitude: location.latitude,
+        longitude: location.longitude
+      });
+
+      return response.data;
+    } catch (error: any) {
+      throw this.handleError(error, 'Failed to send location message');
+    }
+  }
+
+  /**
+   * Send contact message
+   */
+  public async sendContactMessage(
+    to: string,
+    contacts: WhatsAppContact[],
+    contextMessageId?: string
+  ): Promise<WhatsAppMessageResponse> {
+    try {
+      const message: WhatsAppMessageRequest = {
+        messaging_product: 'whatsapp',
+        to,
+        type: 'contacts',
+        contacts
+      };
+
+      if (contextMessageId) {
+        message.context = { message_id: contextMessageId };
+      }
+
+      const response = await this.client.post(`/${this.phoneNumberId}/messages`, message);
+      
+      logger.info('Contact message sent successfully', {
+        to,
+        messageId: response.data.messages[0].id,
+        contactsCount: contacts.length
+      });
+
+      return response.data;
+    } catch (error: any) {
+      throw this.handleError(error, 'Failed to send contact message');
+    }
+  }
+
+  /**
+   * Upload media to WhatsApp
+   */
+  public async uploadMedia(file: Buffer, mimeType: string, filename?: string): Promise<{ id: string }> {
+    try {
+      const formData = new FormData();
+      formData.append('file', new Blob([file], { type: mimeType }), filename);
+      formData.append('type', mimeType);
+      formData.append('messaging_product', 'whatsapp');
+
+      const response = await this.client.post(`/${this.phoneNumberId}/media`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      logger.info('Media uploaded successfully', {
+        mediaId: response.data.id,
+        mimeType,
+        filename
+      });
+
+      return response.data;
+    } catch (error: any) {
+      throw this.handleError(error, 'Failed to upload media');
+    }
+  }
+
+  /**
+   * Get media URL
+   */
+  public async getMediaUrl(mediaId: string): Promise<{ url: string; mime_type: string; sha256: string; file_size: number }> {
+    try {
+      const response = await this.client.get(`/${mediaId}`);
+      
+      logger.info('Media URL retrieved successfully', {
+        mediaId,
+        url: response.data.url,
+        mimeType: response.data.mime_type
+      });
+
+      return response.data;
+    } catch (error: any) {
+      throw this.handleError(error, 'Failed to get media URL');
+    }
+  }
+
+  /**
+   * Download media
+   */
+  public async downloadMedia(mediaUrl: string): Promise<Buffer> {
+    try {
+      const response = await this.client.get(mediaUrl, {
+        responseType: 'arraybuffer'
+      });
+
+      const buffer = Buffer.from(response.data);
+      
+      logger.info('Media downloaded successfully', {
+        mediaUrl,
+        size: buffer.length
+      });
+
+      return buffer;
+    } catch (error: any) {
+      throw this.handleError(error, 'Failed to download media');
+    }
+  }
+
+  /**
+   * Verify webhook signature
+   */
+  public verifyWebhookSignature(payload: string, signature: string): boolean {
+    try {
+      const expectedSignature = crypto
+        .createHmac('sha256', (config.whatsapp as any).webhookSecret || '')
+        .update(payload, 'utf8')
+        .digest('hex');
+
+      const receivedSignature = signature.replace('sha256=', '');
+      
+      const isValid = crypto.timingSafeEqual(
+        Buffer.from(expectedSignature, 'hex'),
+        Buffer.from(receivedSignature, 'hex')
+      );
+
+      logger.info('Webhook signature verification', {
+        isValid,
+        signatureLength: receivedSignature.length
+      });
+
+      return isValid;
+    } catch (error: any) {
+      logger.error('Webhook signature verification failed', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+      return false;
+    }
+  }
+
+  /**
+   * Process webhook event
+   */
+  public processWebhookEvent(event: WhatsAppWebhookEvent): {
+    messages: WhatsAppWebhookMessage[];
+    statuses: WhatsAppWebhookStatus[];
+  } {
+    const messages: WhatsAppWebhookMessage[] = [];
+    const statuses: WhatsAppWebhookStatus[] = [];
+
+    try {
+      for (const entry of event.entry) {
+        for (const change of entry.changes) {
+          if (change.field === 'messages') {
+            if (change.value.messages) {
+              messages.push(...change.value.messages);
+            }
+            if (change.value.statuses) {
+              statuses.push(...change.value.statuses);
+            }
+          }
+        }
+      }
+
+      logger.info('Webhook event processed', {
+        messagesCount: messages.length,
+        statusesCount: statuses.length
+      });
+
+      return { messages, statuses };
+    } catch (error: any) {
+      logger.error('Failed to process webhook event', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+      return { messages: [], statuses: [] };
+    }
+  }
+
+  /**
+   * Get message templates
+   */
+  public async getMessageTemplates(limit: number = 100): Promise<any[]> {
+    try {
+      const cacheKey = `templates_${limit}`;
+      const cached = this.templateCache.get(cacheKey);
+      const expiry = this.templateCacheExpiry.get(cacheKey);
+
+      if (cached && expiry && Date.now() < expiry) {
+        logger.info('Returning cached templates', { count: cached.length });
+        return cached;
+      }
+
+      const response = await this.client.get(`/${config.whatsapp.businessAccountId}/message_templates`, {
+        params: {
+          limit,
+          fields: 'name,status,category,language,components'
+        }
+      });
+
+      const templates = response.data.data || [];
+      
+      // Cache the templates
+      this.templateCache.set(cacheKey, templates);
+      this.templateCacheExpiry.set(cacheKey, Date.now() + this.templateCacheDuration);
+
+      logger.info('Message templates retrieved', {
+        count: templates.length,
+        cached: true
+      });
+
+      return templates;
+    } catch (error: any) {
+      throw this.handleError(error, 'Failed to get message templates');
+    }
+  }
+
+  /**
+   * Handle API errors
+   */
+  private handleError(error: any, defaultMessage: string): WhatsAppServiceError {
+    if (error.response?.data?.error) {
+      const whatsappError = error.response.data.error;
+      return new WhatsAppServiceError(
+        whatsappError.message || defaultMessage,
+        whatsappError.type || 'WHATSAPP_API_ERROR',
+        error.response.status || 500,
+        whatsappError.code
+      );
+    }
+
+    if (error.response) {
+      return new WhatsAppServiceError(
+        `${defaultMessage}: HTTP ${error.response.status}`,
+        'HTTP_ERROR',
+        error.response.status
+      );
+    }
+
+    if (error.code === 'ECONNABORTED') {
+      return new WhatsAppServiceError(
+        `${defaultMessage}: Request timeout`,
+        'TIMEOUT_ERROR',
+        408
+      );
+    }
+
+    return new WhatsAppServiceError(
+      `${defaultMessage}: ${error.message}`,
+      'UNKNOWN_ERROR',
+      500
+    );
+  }
+
+  /**
+   * Health check for WhatsApp service
+   */
+  public async healthCheck(): Promise<{
+    status: 'healthy' | 'unhealthy';
+    timestamp: number;
+    phoneNumberId: string;
+    apiVersion: string;
+    templatesCount?: number;
+    error?: string;
+  }> {
+    try {
+      // Try to get account info as a health check
+      const response = await this.client.get(`/${this.phoneNumberId}`, {
+        params: {
+          fields: 'display_phone_number,name_status,quality_rating'
+        }
+      });
+
+      return {
+        status: 'healthy',
+        timestamp: Date.now(),
+        phoneNumberId: this.phoneNumberId,
+        apiVersion: this.apiVersion,
+        templatesCount: this.templateCache.size
+      };
+    } catch (error: any) {
+      logger.error('WhatsApp health check failed', {
+        phoneNumberId: this.phoneNumberId,
+        error: error instanceof Error ? error.message : String(error)
+      });
+
+      return {
+        status: 'unhealthy',
+        timestamp: Date.now(),
+        phoneNumberId: this.phoneNumberId,
+        apiVersion: this.apiVersion,
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
+  }
+
+  /**
+   * Get service configuration (safe for logging)
+   */
+  public getServiceInfo(): {
+    phoneNumberId: string;
+    apiVersion: string;
+    baseUrl: string;
+    templateCacheSize: number;
+    configured: boolean;
+  } {
+    return {
+      phoneNumberId: this.phoneNumberId,
+      apiVersion: this.apiVersion,
+      baseUrl: this.baseUrl,
+      templateCacheSize: this.templateCache.size,
+      configured: !!(this.phoneNumberId && this.accessToken)
+    };
+  }
+
+  /**
+   * Clear template cache
+   */
+  public clearTemplateCache(): void {
+    this.templateCache.clear();
+    this.templateCacheExpiry.clear();
+    
+    logger.info('WhatsApp template cache cleared');
+  }
+}
+
+// Export singleton instance
+export const whatsappService = WhatsAppService.getInstance();

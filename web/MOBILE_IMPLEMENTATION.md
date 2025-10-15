@@ -45,22 +45,25 @@ Comprehensive mobile-responsive design patterns and PWA features for the HASIVU 
 ## 📋 Quick Start
 
 1. **Import Components**:
+
 ```tsx
-import { MobileLayout, TouchContainer, BottomSheet } from '@/components/mobile'
+import { MobileLayout, TouchContainer, BottomSheet } from '@/components/mobile';
 ```
 
 2. **Basic Mobile Layout**:
+
 ```tsx
 export default function StudentDashboard() {
   return (
     <MobileLayout userRole="student" showBottomNav>
       <YourContent />
     </MobileLayout>
-  )
+  );
 }
 ```
 
 3. **Touch Gestures**:
+
 ```tsx
 <TouchContainer
   onSwipeLeft={() => navigateNext()}
@@ -72,6 +75,7 @@ export default function StudentDashboard() {
 ```
 
 4. **Bottom Sheets**:
+
 ```tsx
 const mealSheet = useBottomSheet()
 
@@ -111,8 +115,9 @@ Mobile-specific utilities added:
 ### PWA Manifest
 
 Enhanced with:
+
 - App shortcuts for quick actions
-- Screenshots for app stores  
+- Screenshots for app stores
 - Protocol handlers for deep linking
 - Maskable icons for Android
 
@@ -126,21 +131,25 @@ Enhanced with:
 ## 🎨 Design Principles
 
 ### Touch Targets
+
 - **Minimum 44px**: Apple's accessibility standard
 - **Comfortable spacing**: 8px minimum between targets
 - **Visual feedback**: Press states and haptic responses
 
 ### Gestures
+
 - **Intuitive patterns**: Platform-consistent behaviors
 - **Haptic feedback**: 10ms light, 20ms medium, pattern arrays for complex
 - **Visual cues**: Animation hints for available gestures
 
 ### Performance
+
 - **60fps target**: 16ms frame budget maintained
 - **Memory efficiency**: Virtual scrolling and cleanup
 - **Battery conscious**: Throttled animations and wake locks
 
 ### Accessibility
+
 - **WCAG 2.1 AA**: Full compliance with screen readers
 - **Keyboard navigation**: Tab order and focus management
 - **Color contrast**: 4.5:1 minimum ratio maintained
@@ -149,18 +158,21 @@ Enhanced with:
 ## 📱 Device Support
 
 ### iOS (Safari 14+)
+
 - ✅ Haptic feedback via Vibration API
 - ✅ Safe area insets for notched devices
 - ✅ PWA installation prompts
 - ✅ Background app refresh
 
 ### Android (Chrome 80+)
+
 - ✅ Haptic feedback via Vibration API
 - ✅ PWA with shortcuts and widgets
 - ✅ Background sync and notifications
 - ✅ Adaptive icons and maskable icons
 
 ### Progressive Enhancement
+
 - ✅ Works without JavaScript (core functionality)
 - ✅ Graceful degradation on older browsers
 - ✅ Feature detection for advanced capabilities
@@ -171,38 +183,39 @@ Enhanced with:
 
 ```tsx
 // Layout and responsive design
-const { isMobile, vibrate, shareContent } = useMobileLayout()
+const { isMobile, vibrate, shareContent } = useMobileLayout();
 
 // Touch optimization
-const { isPressed, triggerHaptic } = useTouchOptimization(ref, handlers)
+const { isPressed, triggerHaptic } = useTouchOptimization(ref, handlers);
 
 // PWA capabilities
-const { isInstallable, installApp } = usePWAInstall()
-const { isOnline, connectionQuality } = useNetworkStatus()
-const { requestPermission, showNotification } = usePushNotifications()
+const { isInstallable, installApp } = usePWAInstall();
+const { isOnline, connectionQuality } = useNetworkStatus();
+const { requestPermission, showNotification } = usePushNotifications();
 ```
 
 ### Testing Utilities
 
 ```tsx
 // Feature detection
-import { MOBILE_FEATURES } from '@/components/mobile'
+import { MOBILE_FEATURES } from '@/components/mobile';
 
 if (MOBILE_FEATURES.HAPTIC_FEEDBACK) {
   // Enable haptic features
 }
 
 // Performance monitoring
-import { PERFORMANCE_TARGETS } from '@/components/mobile'
+import { PERFORMANCE_TARGETS } from '@/components/mobile';
 
 // Component testing
-import { render, fireEvent } from '@testing-library/react'
-import { TouchContainer } from '@/components/mobile'
+import { render, fireEvent } from '@testing-library/react';
+import { TouchContainer } from '@/components/mobile';
 ```
 
 ## 📊 Performance Metrics
 
 ### Target Benchmarks
+
 - **Touch Response**: <16ms (60fps)
 - **App Launch**: <2s on 3G
 - **Bundle Size**: <500KB initial, <2MB total
@@ -210,6 +223,7 @@ import { TouchContainer } from '@/components/mobile'
 - **Battery Impact**: Minimal (throttled animations)
 
 ### Monitoring
+
 - Real User Monitoring (RUM) integration
 - Core Web Vitals tracking
 - Touch interaction analytics
@@ -218,12 +232,14 @@ import { TouchContainer } from '@/components/mobile'
 ## 🔐 Security & Privacy
 
 ### Data Handling
+
 - **Offline Storage**: Encrypted sensitive data
 - **Background Sync**: Retry with exponential backoff
 - **Push Notifications**: End-to-end encrypted content
 - **Location Services**: Opt-in with clear purpose
 
 ### Permissions
+
 - **Camera**: RFID scanning only
 - **Notifications**: Order updates and schedules
 - **Storage**: Meal caching and offline queue
@@ -232,6 +248,7 @@ import { TouchContainer } from '@/components/mobile'
 ## 🚀 Deployment Checklist
 
 ### Pre-launch
+
 - [ ] Test on physical devices (iOS/Android)
 - [ ] Verify PWA installation flow
 - [ ] Test offline functionality
@@ -240,6 +257,7 @@ import { TouchContainer } from '@/components/mobile'
 - [ ] Performance audit (Lighthouse)
 
 ### Production
+
 - [ ] Enable service worker caching
 - [ ] Configure push notification server
 - [ ] Set up background sync endpoints
@@ -250,16 +268,19 @@ import { TouchContainer } from '@/components/mobile'
 ## 📚 Resources
 
 ### Documentation
+
 - [Touch Guidelines (Apple)](https://developer.apple.com/design/human-interface-guidelines/ios/user-interaction/gestures/)
 - [Material Design Touch](https://material.io/design/interaction/gestures.html)
 - [PWA Best Practices](https://web.dev/pwa-checklist/)
 
 ### Tools
+
 - [Chrome DevTools Device Mode](https://developers.google.com/web/tools/chrome-devtools/device-mode)
 - [iOS Simulator](https://developer.apple.com/documentation/xcode/running_your_app_in_the_simulator)
 - [Android Studio Emulator](https://developer.android.com/studio/run/emulator)
 
 ### Testing
+
 - [WebPageTest](https://www.webpagetest.org/) - Performance analysis
 - [Lighthouse](https://developers.google.com/web/tools/lighthouse) - PWA audit
 - [BrowserStack](https://www.browserstack.com/) - Device testing
@@ -269,23 +290,27 @@ import { TouchContainer } from '@/components/mobile'
 ### Common Issues
 
 **Haptic feedback not working**:
+
 - Check `navigator.vibrate` support
 - Verify user gesture requirement
 - Test on physical device (not simulator)
 
 **PWA not installing**:
+
 - Verify HTTPS deployment
 - Check manifest.json validity
 - Ensure service worker registration
 - Test beforeinstallprompt event
 
 **Touch gestures inconsistent**:
+
 - Add `touch-manipulation` CSS
 - Implement proper preventDefault
 - Check for touch-action conflicts
 - Test on target devices
 
 **Performance issues**:
+
 - Profile with Chrome DevTools
 - Check for memory leaks
 - Optimize image sizes
@@ -295,22 +320,23 @@ import { TouchContainer } from '@/components/mobile'
 
 ```tsx
 // Enable debug logging
-localStorage.setItem('mobile-debug', 'true')
+localStorage.setItem('mobile-debug', 'true');
 
 // Performance monitoring
-console.time('component-render')
+console.time('component-render');
 // ... component code
-console.timeEnd('component-render')
+console.timeEnd('component-render');
 
 // Touch event debugging
 element.addEventListener('touchstart', e => {
-  console.log('Touch:', e.touches.length, e.touches[0])
-})
+  console.log('Touch:', e.touches.length, e.touches[0]);
+});
 ```
 
 ## 📞 Support
 
 For implementation questions or bug reports:
+
 - Create GitHub issue with device/browser details
 - Include console logs and network activity
 - Provide reproduction steps

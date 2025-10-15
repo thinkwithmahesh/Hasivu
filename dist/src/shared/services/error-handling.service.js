@@ -122,7 +122,7 @@ class ErrorHandlingService {
                     operation: context.operation,
                     attempt: attempt + 1,
                     maxRetries: retryConfig.maxRetries,
-                    error: error.message,
+                    error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
                     errorCode: error.code,
                     context
                 });
@@ -132,7 +132,7 @@ class ErrorHandlingService {
                 if (!this.isRetryableError(error, retryConfig.retryableErrors)) {
                     logger.info('Error is not retryable, aborting retry attempts', {
                         operation: context.operation,
-                        error: error.message,
+                        error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
                         errorCode: error.code,
                         context
                     });
@@ -179,7 +179,7 @@ class ErrorHandlingService {
     }
     async handleUnrecoverableError(error, context) {
         logger.error('Unrecoverable error occurred', {
-            error: error.message,
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
             stack: error.stack,
             context,
             timestamp: Date.now()
@@ -198,7 +198,7 @@ class ErrorHandlingService {
             const dlqMessage = {
                 originalError: {
                     name: error.name,
-                    message: error.message,
+                    message: error instanceof Error ? error.message : String(error),
                     stack: error.stack,
                     code: error.code
                 },
@@ -243,7 +243,7 @@ class ErrorHandlingService {
         catch (dlqError) {
             logger.error('Failed to send error to Dead Letter Queue', {
                 error: dlqError.message,
-                originalError: error.message,
+                originalError: error instanceof Error ? error.message : String(error),
                 context
             });
         }
@@ -292,7 +292,7 @@ class ErrorHandlingService {
         catch (notificationError) {
             logger.error('Failed to send error notification', {
                 error: notificationError.message,
-                originalError: error.message,
+                originalError: error instanceof Error ? error.message : String(error),
                 context
             });
         }
@@ -308,7 +308,7 @@ Timestamp: ${new Date(context.timestamp || Date.now()).toISOString()}
 
 Error Details:
 - Type: ${error.name}
-- Message: ${error.message}
+- Message: ${error instanceof Error ? error.message : String(error)}
 - Code: ${error.code || 'N/A'}
 
 Context:
@@ -406,7 +406,7 @@ Generated: ${new Date().toISOString()}
             /temporary/i,
             /rate limit/i
         ];
-        return retryablePatterns.some(pattern => pattern.test(error.message));
+        return retryablePatterns.some(pattern => pattern.test(error instanceof Error ? error.message : String(error)));
     }
     sleep(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
@@ -465,7 +465,7 @@ Generated: ${new Date().toISOString()}
         }
         catch (error) {
             logger.error('Error handling service health check failed', {
-                error: error.message
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
             });
             return {
                 status: 'unhealthy',
@@ -483,7 +483,7 @@ Generated: ${new Date().toISOString()}
                     halfOpen: 0,
                     closed: 0
                 },
-                error: error.message
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
             };
         }
     }

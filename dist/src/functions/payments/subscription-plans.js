@@ -47,7 +47,7 @@ async function createSubscriptionPlan(event, authenticatedUser) {
     try {
         if (!['super_admin', 'admin', 'school_admin'].includes(authenticatedUser.role)) {
             logger.warn('Unauthorized subscription plan creation attempt', {
-                userId: authenticatedUser.id,
+                userId: authenticatedUser.id || "",
                 userRole: authenticatedUser.role
             });
             return (0, response_utils_1.createErrorResponse)('Insufficient permissions to create subscription plans', 403, 'UNAUTHORIZED');
@@ -95,8 +95,8 @@ async function createSubscriptionPlan(event, authenticatedUser) {
                     currency: subscriptionPlan.currency,
                     billingCycle: subscriptionPlan.billingCycle
                 }),
-                userId: authenticatedUser.id,
-                createdById: authenticatedUser.id,
+                userId: authenticatedUser.id || "",
+                createdById: authenticatedUser.id || "",
                 metadata: JSON.stringify({
                     timestamp: new Date().toISOString(),
                     schoolId: schoolId
@@ -118,7 +118,7 @@ async function createSubscriptionPlan(event, authenticatedUser) {
     }
     catch (error) {
         logger.error('Failed to create subscription plan', {
-            error: error.message,
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
             stack: error.stack,
             userId: authenticatedUser.id
         });
@@ -178,7 +178,7 @@ async function listSubscriptionPlans(event, authenticatedUser) {
             prisma.subscriptionPlan.count({ where: whereClause })
         ]);
         logger.info('Subscription plans retrieved successfully', {
-            userId: authenticatedUser.id,
+            userId: authenticatedUser.id || "",
             plansCount: plans.length,
             total: totalCount,
             filters: filters
@@ -198,7 +198,7 @@ async function listSubscriptionPlans(event, authenticatedUser) {
     }
     catch (error) {
         logger.error('Failed to retrieve subscription plans', {
-            error: error.message,
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
             stack: error.stack,
             userId: authenticatedUser.id
         });
@@ -214,7 +214,7 @@ async function updateSubscriptionPlan(event, authenticatedUser) {
         }
         if (!['super_admin', 'admin', 'school_admin'].includes(authenticatedUser.role)) {
             logger.warn('Unauthorized subscription plan update attempt', {
-                userId: authenticatedUser.id,
+                userId: authenticatedUser.id || "",
                 userRole: authenticatedUser.role,
                 planId: planId
             });
@@ -236,7 +236,7 @@ async function updateSubscriptionPlan(event, authenticatedUser) {
         if (authenticatedUser.role === 'school_admin') {
             if (existingPlan.schoolId !== authenticatedUser.schoolId) {
                 logger.warn('School admin attempting to update plan from different school', {
-                    userId: authenticatedUser.id,
+                    userId: authenticatedUser.id || "",
                     userSchoolId: authenticatedUser.schoolId,
                     planSchoolId: existingPlan.schoolId,
                     planId: planId
@@ -284,8 +284,8 @@ async function updateSubscriptionPlan(event, authenticatedUser) {
                     }, {}),
                     newValues: validatedData
                 }),
-                userId: authenticatedUser.id,
-                createdById: authenticatedUser.id,
+                userId: authenticatedUser.id || "",
+                createdById: authenticatedUser.id || "",
                 metadata: JSON.stringify({
                     timestamp: new Date().toISOString(),
                     activeSubscriptions: existingPlan._count.subscriptions
@@ -307,7 +307,7 @@ async function updateSubscriptionPlan(event, authenticatedUser) {
     }
     catch (error) {
         logger.error('Failed to update subscription plan', {
-            error: error.message,
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
             stack: error.stack,
             userId: authenticatedUser.id
         });
@@ -326,7 +326,7 @@ async function deactivateSubscriptionPlan(event, authenticatedUser) {
         }
         if (!['super_admin', 'admin', 'school_admin'].includes(authenticatedUser.role)) {
             logger.warn('Unauthorized subscription plan deactivation attempt', {
-                userId: authenticatedUser.id,
+                userId: authenticatedUser.id || "",
                 userRole: authenticatedUser.role,
                 planId: planId
             });
@@ -354,7 +354,7 @@ async function deactivateSubscriptionPlan(event, authenticatedUser) {
         if (authenticatedUser.role === 'school_admin') {
             if (existingPlan.schoolId !== authenticatedUser.schoolId) {
                 logger.warn('School admin attempting to deactivate plan from different school', {
-                    userId: authenticatedUser.id,
+                    userId: authenticatedUser.id || "",
                     userSchoolId: authenticatedUser.schoolId,
                     planSchoolId: existingPlan.schoolId,
                     planId: planId
@@ -386,8 +386,8 @@ async function deactivateSubscriptionPlan(event, authenticatedUser) {
                     newStatus: 'inactive',
                     reason: 'Manual deactivation'
                 }),
-                userId: authenticatedUser.id,
-                createdById: authenticatedUser.id,
+                userId: authenticatedUser.id || "",
+                createdById: authenticatedUser.id || "",
                 metadata: JSON.stringify({
                     timestamp: new Date().toISOString(),
                     deactivatedBy: authenticatedUser.email
@@ -408,7 +408,7 @@ async function deactivateSubscriptionPlan(event, authenticatedUser) {
     }
     catch (error) {
         logger.error('Failed to deactivate subscription plan', {
-            error: error.message,
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
             stack: error.stack,
             userId: authenticatedUser.id
         });
@@ -422,7 +422,7 @@ async function compareSubscriptionPlans(event, authenticatedUser) {
         const { planIds, schoolId, includeFeatures, includePricing, includeMetrics } = planComparisonSchema.parse(requestBody);
         if (schoolId && authenticatedUser.role === 'school_admin' && authenticatedUser.schoolId !== schoolId) {
             logger.warn('School admin attempting to access other school data', {
-                userId: authenticatedUser.id,
+                userId: authenticatedUser.id || "",
                 userSchoolId: authenticatedUser.schoolId,
                 requestedSchoolId: schoolId
             });
@@ -483,7 +483,7 @@ async function compareSubscriptionPlans(event, authenticatedUser) {
             comparisonMatrix: includeFeatures ? generateFeatureComparisonMatrix(plans) : undefined
         };
         logger.info('Subscription plans compared successfully', {
-            userId: authenticatedUser.id,
+            userId: authenticatedUser.id || "",
             planIds: planIds,
             plansFound: plans.length
         });
@@ -494,7 +494,7 @@ async function compareSubscriptionPlans(event, authenticatedUser) {
     }
     catch (error) {
         logger.error('Failed to compare subscription plans', {
-            error: error.message,
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
             stack: error.stack,
             userId: authenticatedUser.id
         });
@@ -523,7 +523,7 @@ function generateFeatureComparisonMatrix(plans) {
         availability: plans.reduce((acc, plan) => {
             try {
                 const benefits = JSON.parse(plan.benefits || '{}');
-                acc[plan.id] = benefits.hasOwnProperty(benefit);
+                acc[plan.id] = Object.prototype.hasOwnProperty.call(benefits, benefit);
             }
             catch (e) {
                 acc[plan.id] = false;
@@ -567,7 +567,7 @@ const subscriptionPlansHandler = async (event, context) => {
         if ('statusCode' in authResult) {
             return authResult;
         }
-        const { user: authenticatedUser } = authResult;
+        const authenticatedUser = authResult;
         const method = event.httpMethod;
         const pathParams = event.pathParameters;
         if (method === 'GET' && !pathParams?.planId) {
@@ -592,7 +592,7 @@ const subscriptionPlansHandler = async (event, context) => {
     catch (error) {
         logger.error('Subscription plans request failed', {
             requestId,
-            error: error.message,
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
             stack: error.stack
         });
         return (0, response_utils_1.handleError)(error, 'Failed to process subscription plans request');

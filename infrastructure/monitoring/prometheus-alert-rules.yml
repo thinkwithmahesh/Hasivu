@@ -28,10 +28,10 @@ groups:
           category: infrastructure
           service: system
         annotations:
-          summary: "System health score critically low"
-          description: "Overall system health score is {{ $value }}%, below critical threshold of 70%"
-          runbook_url: "https://docs.hasivu.com/runbooks/system-health-critical"
-          business_impact: "System instability may affect all user operations"
+          summary: 'System health score critically low'
+          description: 'Overall system health score is {{ $value }}%, below critical threshold of 70%'
+          runbook_url: 'https://docs.hasivu.com/runbooks/system-health-critical'
+          business_impact: 'System instability may affect all user operations'
 
       # Critical services down
       - alert: CriticalServiceDown
@@ -40,12 +40,12 @@ groups:
         labels:
           severity: critical
           category: infrastructure
-          service: "{{ $labels.service }}"
+          service: '{{ $labels.service }}'
         annotations:
-          summary: "Critical service {{ $labels.service }} is down"
-          description: "Critical service {{ $labels.service }} has been unavailable for more than 2 minutes"
-          runbook_url: "https://docs.hasivu.com/runbooks/service-down"
-          business_impact: "Core functionality unavailable to users"
+          summary: 'Critical service {{ $labels.service }} is down'
+          description: 'Critical service {{ $labels.service }} has been unavailable for more than 2 minutes'
+          runbook_url: 'https://docs.hasivu.com/runbooks/service-down'
+          business_impact: 'Core functionality unavailable to users'
 
       # Database connectivity issues
       - alert: DatabaseDown
@@ -56,10 +56,10 @@ groups:
           category: infrastructure
           service: database
         annotations:
-          summary: "Database connectivity failed"
-          description: "Primary database is unreachable for {{ $labels.duration }}"
-          runbook_url: "https://docs.hasivu.com/runbooks/database-down"
-          business_impact: "All data operations suspended, revenue impact immediate"
+          summary: 'Database connectivity failed'
+          description: 'Primary database is unreachable for {{ $labels.duration }}'
+          runbook_url: 'https://docs.hasivu.com/runbooks/database-down'
+          business_impact: 'All data operations suspended, revenue impact immediate'
 
       # Redis cache issues
       - alert: RedisCacheDown
@@ -70,10 +70,10 @@ groups:
           category: infrastructure
           service: redis
         annotations:
-          summary: "Redis cache service unavailable"
-          description: "Redis cache has been down for {{ $labels.duration }}, performance degraded"
-          runbook_url: "https://docs.hasivu.com/runbooks/redis-down"
-          performance_impact: "Significantly slower response times expected"
+          summary: 'Redis cache service unavailable'
+          description: 'Redis cache has been down for {{ $labels.duration }}, performance degraded'
+          runbook_url: 'https://docs.hasivu.com/runbooks/redis-down'
+          performance_impact: 'Significantly slower response times expected'
 
       # High error rate
       - alert: HighErrorRate
@@ -84,9 +84,9 @@ groups:
           category: performance
           service: application
         annotations:
-          summary: "High application error rate detected"
-          description: "Error rate is {{ $value | humanizePercentage }} over the last 5 minutes"
-          runbook_url: "https://docs.hasivu.com/runbooks/high-error-rate"
+          summary: 'High application error rate detected'
+          description: 'Error rate is {{ $value | humanizePercentage }} over the last 5 minutes'
+          runbook_url: 'https://docs.hasivu.com/runbooks/high-error-rate'
 
   # =============================================================================
   # BUSINESS METRICS & KPI ALERTS
@@ -102,10 +102,10 @@ groups:
           category: business
           service: payment
         annotations:
-          summary: "Payment success rate below threshold"
-          description: "Payment success rate is {{ $value }}%, below critical threshold of 95%"
-          business_impact: "Revenue loss due to failed transactions"
-          recommendation: "Check payment gateway configuration and network connectivity"
+          summary: 'Payment success rate below threshold'
+          description: 'Payment success rate is {{ $value }}%, below critical threshold of 95%'
+          business_impact: 'Revenue loss due to failed transactions'
+          recommendation: 'Check payment gateway configuration and network connectivity'
 
       # Revenue drop alert
       - alert: RevenueDrop
@@ -116,9 +116,9 @@ groups:
           category: business
           service: revenue
         annotations:
-          summary: "Significant revenue drop detected"
-          description: "Hourly revenue dropped by {{ $value | humanizePercentage }} compared to previous hour"
-          business_impact: "Potential revenue loss requiring immediate investigation"
+          summary: 'Significant revenue drop detected'
+          description: 'Hourly revenue dropped by {{ $value | humanizePercentage }} compared to previous hour'
+          business_impact: 'Potential revenue loss requiring immediate investigation'
 
       # Order completion rate issues
       - alert: OrderCompletionRateLow
@@ -129,9 +129,9 @@ groups:
           category: business
           service: orders
         annotations:
-          summary: "Order completion rate below target"
-          description: "Order completion rate is {{ $value }}%, below target of 90%"
-          business_impact: "Customer satisfaction and revenue affected"
+          summary: 'Order completion rate below target'
+          description: 'Order completion rate is {{ $value }}%, below target of 90%'
+          business_impact: 'Customer satisfaction and revenue affected'
 
       # User retention decline
       - alert: UserRetentionDrop
@@ -142,9 +142,9 @@ groups:
           category: business
           service: users
         annotations:
-          summary: "User retention rate declining"
-          description: "User retention rate is {{ $value }}%, below target of 75%"
-          business_impact: "Long-term growth and revenue sustainability at risk"
+          summary: 'User retention rate declining'
+          description: 'User retention rate is {{ $value }}%, below target of 75%'
+          business_impact: 'Long-term growth and revenue sustainability at risk'
 
       # Fraud detection spike
       - alert: FraudDetectionSpike
@@ -155,9 +155,9 @@ groups:
           category: security
           service: fraud_detection
         annotations:
-          summary: "Unusual spike in fraud detections"
-          description: "Fraud detections increased to {{ $value }} per hour"
-          security_impact: "Potential security threat or system compromise"
+          summary: 'Unusual spike in fraud detections'
+          description: 'Fraud detections increased to {{ $value }} per hour'
+          security_impact: 'Potential security threat or system compromise'
 
   # =============================================================================
   # SECURITY & COMPLIANCE ALERTS
@@ -174,10 +174,10 @@ groups:
           service: authentication
           threat_level: medium
         annotations:
-          summary: "High rate of failed login attempts"
-          description: "{{ $value }} failed login attempts per minute detected"
-          security_impact: "Potential brute force attack in progress"
-          recommendation: "Review source IPs and consider rate limiting"
+          summary: 'High rate of failed login attempts'
+          description: '{{ $value }} failed login attempts per minute detected'
+          security_impact: 'Potential brute force attack in progress'
+          recommendation: 'Review source IPs and consider rate limiting'
 
       # Suspicious API activity
       - alert: SuspiciousAPIActivity
@@ -189,9 +189,9 @@ groups:
           service: api
           threat_level: low
         annotations:
-          summary: "Unusual API request volume"
-          description: "API requests spiked to {{ $value }} per minute"
-          security_impact: "Possible DDoS attack or API abuse"
+          summary: 'Unusual API request volume'
+          description: 'API requests spiked to {{ $value }} per minute'
+          security_impact: 'Possible DDoS attack or API abuse'
 
       # Unauthorized access attempts
       - alert: UnauthorizedAccess
@@ -203,10 +203,10 @@ groups:
           service: authorization
           threat_level: high
         annotations:
-          summary: "Multiple unauthorized access attempts"
-          description: "{{ $value }} unauthorized access attempts detected"
-          security_impact: "Potential security breach in progress"
-          recommendation: "Immediate investigation and possible account lockdown required"
+          summary: 'Multiple unauthorized access attempts'
+          description: '{{ $value }} unauthorized access attempts detected'
+          security_impact: 'Potential security breach in progress'
+          recommendation: 'Immediate investigation and possible account lockdown required'
 
       # SSL certificate expiry
       - alert: SSLCertificateExpiring
@@ -217,9 +217,9 @@ groups:
           category: security
           service: ssl
         annotations:
-          summary: "SSL certificate expiring soon"
-          description: "SSL certificate for {{ $labels.domain }} expires in {{ $value }} days"
-          security_impact: "Service will become inaccessible when certificate expires"
+          summary: 'SSL certificate expiring soon'
+          description: 'SSL certificate for {{ $labels.domain }} expires in {{ $value }} days'
+          security_impact: 'Service will become inaccessible when certificate expires'
 
   # =============================================================================
   # PERFORMANCE & CAPACITY ALERTS
@@ -233,12 +233,12 @@ groups:
         labels:
           severity: high
           category: performance
-          service: "{{ $labels.service }}"
+          service: '{{ $labels.service }}'
         annotations:
-          summary: "High response time detected"
-          description: "Average response time is {{ $value }}ms for service {{ $labels.service }}"
-          performance_impact: "User experience significantly degraded"
-          optimization: "Consider scaling resources or optimizing queries"
+          summary: 'High response time detected'
+          description: 'Average response time is {{ $value }}ms for service {{ $labels.service }}'
+          performance_impact: 'User experience significantly degraded'
+          optimization: 'Consider scaling resources or optimizing queries'
 
       # Lambda function errors
       - alert: LambdaHighErrorRate
@@ -249,9 +249,9 @@ groups:
           category: performance
           service: lambda
         annotations:
-          summary: "Lambda function error rate high"
-          description: "Lambda error rate is {{ $value | humanizePercentage }} for function {{ $labels.function_name }}"
-          performance_impact: "Service reliability compromised"
+          summary: 'Lambda function error rate high'
+          description: 'Lambda error rate is {{ $value | humanizePercentage }} for function {{ $labels.function_name }}'
+          performance_impact: 'Service reliability compromised'
 
       # Database performance degradation
       - alert: DatabasePerformanceDegraded
@@ -262,10 +262,10 @@ groups:
           category: performance
           service: database
         annotations:
-          summary: "Database query performance degraded"
-          description: "Average database query time is {{ $value }}ms"
-          performance_impact: "Application slowdown affecting user experience"
-          optimization: "Review slow queries and consider indexing"
+          summary: 'Database query performance degraded'
+          description: 'Average database query time is {{ $value }}ms'
+          performance_impact: 'Application slowdown affecting user experience'
+          optimization: 'Review slow queries and consider indexing'
 
       # Memory usage alerts
       - alert: HighMemoryUsage
@@ -274,11 +274,11 @@ groups:
         labels:
           severity: high
           category: capacity
-          service: "{{ $labels.service }}"
+          service: '{{ $labels.service }}'
         annotations:
-          summary: "High memory usage detected"
-          description: "Memory usage is {{ $value }}% for service {{ $labels.service }}"
-          capacity_impact: "Service may become unstable or crash"
+          summary: 'High memory usage detected'
+          description: 'Memory usage is {{ $value }}% for service {{ $labels.service }}'
+          capacity_impact: 'Service may become unstable or crash'
 
       # API Gateway throttling
       - alert: APIGatewayThrottling
@@ -289,9 +289,9 @@ groups:
           category: capacity
           service: api_gateway
         annotations:
-          summary: "API Gateway throttling detected"
-          description: "{{ $value }} requests per minute are being throttled"
-          capacity_impact: "Users experiencing request rejections"
+          summary: 'API Gateway throttling detected'
+          description: '{{ $value }} requests per minute are being throttled'
+          capacity_impact: 'Users experiencing request rejections'
 
   # =============================================================================
   # COST MANAGEMENT ALERTS
@@ -307,10 +307,10 @@ groups:
           category: cost
           service: overall
         annotations:
-          summary: "Budget utilization high"
-          description: "Monthly budget utilization is {{ $value }}%"
-          business_impact: "Risk of exceeding monthly budget"
-          optimization: "Review cost optimization recommendations"
+          summary: 'Budget utilization high'
+          description: 'Monthly budget utilization is {{ $value }}%'
+          business_impact: 'Risk of exceeding monthly budget'
+          optimization: 'Review cost optimization recommendations'
 
       # Daily cost spike
       - alert: DailyCostSpike
@@ -321,9 +321,9 @@ groups:
           category: cost
           service: overall
         annotations:
-          summary: "Unusual daily cost increase"
-          description: "Daily cost increased by {{ $value | humanizePercentage }} compared to yesterday"
-          business_impact: "Unexpected cost increase detected"
+          summary: 'Unusual daily cost increase'
+          description: 'Daily cost increased by {{ $value | humanizePercentage }} compared to yesterday'
+          business_impact: 'Unexpected cost increase detected'
 
       # Service cost anomaly
       - alert: ServiceCostAnomaly
@@ -332,11 +332,11 @@ groups:
         labels:
           severity: medium
           category: cost
-          service: "{{ $labels.service }}"
+          service: '{{ $labels.service }}'
         annotations:
-          summary: "Service cost anomaly detected"
-          description: "{{ $labels.service }} costs are unusually high: ${{ $value }}"
-          optimization: "Review {{ $labels.service }} usage patterns and optimization opportunities"
+          summary: 'Service cost anomaly detected'
+          description: '{{ $labels.service }} costs are unusually high: ${{ $value }}'
+          optimization: 'Review {{ $labels.service }} usage patterns and optimization opportunities'
 
   # =============================================================================
   # RFID & HARDWARE SYSTEMS
@@ -352,10 +352,10 @@ groups:
           category: hardware
           service: rfid
         annotations:
-          summary: "Multiple RFID readers offline"
-          description: "Only {{ $value | humanizePercentage }} of RFID readers are online"
-          business_impact: "Student verification system compromised"
-          troubleshooting: "Check network connectivity and power supply to readers"
+          summary: 'Multiple RFID readers offline'
+          description: 'Only {{ $value | humanizePercentage }} of RFID readers are online'
+          business_impact: 'Student verification system compromised'
+          troubleshooting: 'Check network connectivity and power supply to readers'
 
       # RFID verification success rate
       - alert: RFIDVerificationRateLow
@@ -366,9 +366,9 @@ groups:
           category: hardware
           service: rfid
         annotations:
-          summary: "RFID verification success rate low"
-          description: "RFID verification success rate is {{ $value }}%"
-          business_impact: "Student experience degraded, manual verification required"
+          summary: 'RFID verification success rate low'
+          description: 'RFID verification success rate is {{ $value }}%'
+          business_impact: 'Student experience degraded, manual verification required'
 
       # RFID response time issues
       - alert: RFIDSlowResponse
@@ -379,9 +379,9 @@ groups:
           category: performance
           service: rfid
         annotations:
-          summary: "RFID system response time high"
-          description: "Average RFID verification time is {{ $value }}ms"
-          performance_impact: "Slow verification affecting user experience"
+          summary: 'RFID system response time high'
+          description: 'Average RFID verification time is {{ $value }}ms'
+          performance_impact: 'Slow verification affecting user experience'
 
   # =============================================================================
   # NOTIFICATION SYSTEM ALERTS
@@ -397,9 +397,9 @@ groups:
           category: infrastructure
           service: messaging
         annotations:
-          summary: "Message queue backlog detected"
-          description: "Message queue has {{ $value }} pending messages"
-          business_impact: "Delayed notifications to users"
+          summary: 'Message queue backlog detected'
+          description: 'Message queue has {{ $value }} pending messages'
+          business_impact: 'Delayed notifications to users'
 
       # WhatsApp API rate limiting
       - alert: WhatsAppRateLimited
@@ -410,9 +410,9 @@ groups:
           category: external
           service: whatsapp
         annotations:
-          summary: "WhatsApp API rate limiting detected"
-          description: "{{ $value }} WhatsApp API calls per minute are being rate limited"
-          business_impact: "User notifications delayed"
+          summary: 'WhatsApp API rate limiting detected'
+          description: '{{ $value }} WhatsApp API calls per minute are being rate limited'
+          business_impact: 'User notifications delayed'
 
       # SMS delivery failures
       - alert: SMSDeliveryFailures
@@ -423,9 +423,9 @@ groups:
           category: external
           service: sms
         annotations:
-          summary: "High SMS delivery failure rate"
-          description: "SMS failure rate is {{ $value | humanizePercentage }}"
-          business_impact: "Critical notifications not reaching users"
+          summary: 'High SMS delivery failure rate'
+          description: 'SMS failure rate is {{ $value | humanizePercentage }}'
+          business_impact: 'Critical notifications not reaching users'
 
   # =============================================================================
   # EXTERNAL DEPENDENCIES
@@ -441,9 +441,9 @@ groups:
           category: external
           service: payment_gateway
         annotations:
-          summary: "Payment gateway unreachable"
-          description: "Payment gateway has been unreachable for {{ $labels.duration }}"
-          business_impact: "All payment processing suspended"
+          summary: 'Payment gateway unreachable'
+          description: 'Payment gateway has been unreachable for {{ $labels.duration }}'
+          business_impact: 'All payment processing suspended'
 
       # External API failures
       - alert: ExternalAPIFailures
@@ -452,11 +452,11 @@ groups:
         labels:
           severity: medium
           category: external
-          service: "{{ $labels.api }}"
+          service: '{{ $labels.api }}'
         annotations:
-          summary: "External API failure rate high"
-          description: "{{ $labels.api }} API failure rate is {{ $value | humanizePercentage }}"
-          business_impact: "Dependent features may be unavailable"
+          summary: 'External API failure rate high'
+          description: '{{ $labels.api }} API failure rate is {{ $value | humanizePercentage }}'
+          business_impact: 'Dependent features may be unavailable'
 
       # Third-party service latency
       - alert: ThirdPartyLatencyHigh
@@ -465,8 +465,8 @@ groups:
         labels:
           severity: medium
           category: external
-          service: "{{ $labels.api }}"
+          service: '{{ $labels.api }}'
         annotations:
-          summary: "Third-party service latency high"
-          description: "{{ $labels.api }} average latency is {{ $value }}ms"
-          performance_impact: "Slower user experience due to external dependency"
+          summary: 'Third-party service latency high'
+          description: '{{ $labels.api }} average latency is {{ $value }}ms'
+          performance_impact: 'Slower user experience due to external dependency'

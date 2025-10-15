@@ -25,14 +25,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/134</span>
+                <span class='fraction'>0/133</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/87</span>
+                <span class='fraction'>0/119</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/132</span>
+                <span class='fraction'>0/131</span>
             </div>
         
             
@@ -857,11 +857,7 @@
 <a name='L792'></a><a href='#L792'>792</a>
 <a name='L793'></a><a href='#L793'>793</a>
 <a name='L794'></a><a href='#L794'>794</a>
-<a name='L795'></a><a href='#L795'>795</a>
-<a name='L796'></a><a href='#L796'>796</a>
-<a name='L797'></a><a href='#L797'>797</a>
-<a name='L798'></a><a href='#L798'>798</a>
-<a name='L799'></a><a href='#L799'>799</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L795'></a><a href='#L795'>795</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1403,7 +1399,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -1560,7 +1555,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -1649,8 +1643,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1667,7 +1659,7 @@
  */
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 import { PrismaClient } from '@prisma/client';
-import { LoggerService } from '../shared/logger.service';
+import { logger } from '../../utils/logger';
 import { createSuccessResponse, createErrorResponse, handleError } from '../shared/response.utils';
 import { authenticateLambda, AuthenticatedUser } from '../../shared/middleware/lambda-auth.middleware';
 import Joi from 'joi';
@@ -2087,9 +2079,9 @@ async function <span class="fstat-no" title="function not covered" >getOrderTrac
     currentStep,
     student: {
       id: order.student.id,
-      name: `${order.student.firstName} ${order.student.lastName}`,
-      firstName: order.student.firstName,
-      lastName: order.student.lastName,
+      name: `${order.student.firstName ?? ''} ${order.student.lastName ?? ''}`,
+      firstName: order.student.firstName ?? '',
+      lastName: order.student.lastName ?? '',
       grade: order.student.grade || undefined,
       section: order.student.section || undefined
     },
@@ -2104,8 +2096,8 @@ async function <span class="fstat-no" title="function not covered" >getOrderTrac
     })),
     notifications: notifications.map(<span class="fstat-no" title="function not covered" >n </span>=&gt; (<span class="cstat-no" title="statement not covered" >{</span>
       id: n.id,
-      title: n.title,
-      message: n.message,
+      title: n.title ?? '',
+      message: n.message ?? '',
       sentAt: n.createdAt,
       type: n.type
     }))
@@ -2193,11 +2185,10 @@ async function <span class="fstat-no" title="function not covered" >getStudentTr
     where: {
       studentId,
       status: 'delivered',
-      deliveredAt: { 
+      deliveredAt: {
         gte: thirtyDaysAgo,
-        not: null 
-      },
-      createdAt: { not: null }
+        not: null
+      }
     },
     select: { createdAt: true, deliveredAt: true }
   });
@@ -2278,9 +2269,9 @@ async function <span class="fstat-no" title="function not covered" >getStudentTr
         currentStep,
         student: {
           id: order.student.id,
-          name: `${order.student.firstName} ${order.student.lastName}`,
-          firstName: order.student.firstName,
-          lastName: order.student.lastName,
+          name: `${order.student.firstName ?? ''} ${order.student.lastName ?? ''}`,
+          firstName: order.student.firstName ?? '',
+          lastName: order.student.lastName ?? '',
           grade: order.student.grade || undefined,
           section: order.student.section || undefined
         },
@@ -2319,14 +2310,14 @@ async function <span class="fstat-no" title="function not covered" >getStudentTr
       totalOrders,
       successfulDeliveries,
       averageDeliveryTime: Math.round(averageDeliveryTime),
-      lastDeliveryDate: recentDeliveries[0]?.deliveredAt,
-      nextScheduledDelivery: upcomingOrders[0]?.deliveryDate,
+      lastDeliveryDate: recentDeliveries[0]?.deliveredAt ?? undefined,
+      nextScheduledDelivery: upcomingOrders[0]?.deliveryDate ?? undefined,
       favoriteItems: favoriteItemsWithDetails
     },
     notifications: notifications.map(<span class="fstat-no" title="function not covered" >n </span>=&gt; (<span class="cstat-no" title="statement not covered" >{</span>
       id: n.id,
-      title: n.title,
-      message: n.message,
+      title: n.title ?? '',
+      message: n.message ?? '',
       sentAt: n.createdAt,
       type: n.type,
       isRead: !!n.readAt
@@ -2358,23 +2349,22 @@ export const deliveryTrackingHandler = <span class="cstat-no" title="statement n
   event: APIGatewayProxyEvent,
   context: Context
 ): Promise&lt;APIGatewayProxyResult&gt; =&gt; {
-  const logger = <span class="cstat-no" title="statement not covered" >LoggerService.getInstance();</span>
   const requestId = <span class="cstat-no" title="statement not covered" >context.awsRequestId;</span>
   const httpMethod = <span class="cstat-no" title="statement not covered" >event.httpMethod;</span>
   const pathParameters = <span class="cstat-no" title="statement not covered" >event.pathParameters || {};</span>
   
 <span class="cstat-no" title="statement not covered" >  try {</span>
 <span class="cstat-no" title="statement not covered" >    logger.info('Mobile delivery tracking request started', { requestId, httpMethod });</span>
-    
+&nbsp;
     // Authenticate request
-    const authResult = <span class="cstat-no" title="statement not covered" >await authenticateLambda(event);</span>
-    
+    const authResult = <span class="cstat-no" title="statement not covered" >await authenticateLambda(event as any);</span>
+&nbsp;
     // Check authentication success and extract user
 <span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!authResult.success || !authResult.user) {</span>
 <span class="cstat-no" title="statement not covered" >      logger.warn('Authentication failed', { requestId, error: authResult.error });</span>
-<span class="cstat-no" title="statement not covered" >      return createErrorResponse(401, 'Authentication failed');</span>
+<span class="cstat-no" title="statement not covered" >      return createErrorResponse('AUTHENTICATION_FAILED', 'Authentication failed', 401);</span>
     }
-    
+&nbsp;
     const authenticatedUser = <span class="cstat-no" title="statement not covered" >authResult.user;</span>
     
     // Parse query parameters
@@ -2383,7 +2373,7 @@ export const deliveryTrackingHandler = <span class="cstat-no" title="statement n
     
 <span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (error) {</span>
 <span class="cstat-no" title="statement not covered" >      logger.warn('Invalid tracking query parameters', { requestId, error: error.details });</span>
-<span class="cstat-no" title="statement not covered" >      return createErrorResponse(400, 'Invalid query parameters', error.details);</span>
+<span class="cstat-no" title="statement not covered" >      return createErrorResponse('INVALID_PARAMETERS', 'Invalid query parameters', 400, error.details);</span>
     }
     
 <span class="cstat-no" title="statement not covered" >    if (pathParameters.orderId) {</span>
@@ -2397,12 +2387,12 @@ export const deliveryTrackingHandler = <span class="cstat-no" title="statement n
       });
       
 <span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (!order) {</span>
-<span class="cstat-no" title="statement not covered" >        return createErrorResponse(404, 'Order not found');</span>
+<span class="cstat-no" title="statement not covered" >        return createErrorResponse('ORDER_NOT_FOUND', 'Order not found', 404);</span>
       }
       
       // Check if user can access this order's tracking data
 <span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (!canAccessTracking(authenticatedUser, authenticatedUser.id)) {</span>
-<span class="cstat-no" title="statement not covered" >        return createErrorResponse(403, 'Insufficient permissions to access tracking data');</span>
+<span class="cstat-no" title="statement not covered" >        return createErrorResponse('INSUFFICIENT_PERMISSIONS', 'Insufficient permissions to access tracking data', 403);</span>
       }
       
       const tracking = <span class="cstat-no" title="statement not covered" >await getOrderTracking(orderId, authenticatedUser.id);</span>
@@ -2424,7 +2414,7 @@ export const deliveryTrackingHandler = <span class="cstat-no" title="statement n
       
       // Check if user can access this student's tracking data
 <span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (!canAccessTracking(authenticatedUser, authenticatedUser.id)) {</span>
-<span class="cstat-no" title="statement not covered" >        return createErrorResponse(403, 'Insufficient permissions to access tracking data');</span>
+<span class="cstat-no" title="statement not covered" >        return createErrorResponse('INSUFFICIENT_PERMISSIONS', 'Insufficient permissions to access tracking data', 403);</span>
       }
       
       const overview = <span class="cstat-no" title="statement not covered" >await getStudentTrackingOverview(studentId, authenticatedUser.id, filters);</span>
@@ -2442,18 +2432,16 @@ export const deliveryTrackingHandler = <span class="cstat-no" title="statement n
       });
       
     } else {
-<span class="cstat-no" title="statement not covered" >      return createErrorResponse(400, 'Either orderId or studentId must be provided in path parameters');</span>
+<span class="cstat-no" title="statement not covered" >      return createErrorResponse('INVALID_REQUEST', 'Either orderId or studentId must be provided in path parameters', 400);</span>
     }
     
   } catch (error: any) {
-<span class="cstat-no" title="statement not covered" >    logger.error('Mobile delivery tracking failed', {</span>
+<span class="cstat-no" title="statement not covered" >    logger.error('Mobile delivery tracking failed', error instanceof Error ? error : new Error(String(error)), {</span>
       requestId,
-      httpMethod,
-      error: error.message,
-      stack: error.stack
+      httpMethod
     });
-    
-<span class="cstat-no" title="statement not covered" >    return handleError(error, 'Failed to retrieve delivery tracking information');</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >    return handleError(error instanceof Error ? error : new Error(String(error)));</span>
   } finally {
 <span class="cstat-no" title="statement not covered" >    await prisma.$disconnect();</span>
   }
@@ -2464,7 +2452,7 @@ export const deliveryTrackingHandler = <span class="cstat-no" title="statement n
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-09-03T01:56:53.571Z
+                at 2025-10-06T16:03:48.029Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

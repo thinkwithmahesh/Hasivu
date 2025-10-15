@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import apiClient, { User, AuthResponse } from '@/lib/api-client';
+import apiClient, { User, AuthResponse as _AuthResponse } from '@/lib/api-client';
 import { EnhancedLoginFormData, RegistrationFormData } from '@/components/auth/schemas';
 
 interface UseAuthReturn {
@@ -34,7 +34,7 @@ export function useAuth(): UseAuthReturn {
   const initializeAuth = async () => {
     try {
       setIsLoading(true);
-      
+
       // Check if we have a token
       const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
       if (!token) {
@@ -44,14 +44,14 @@ export function useAuth(): UseAuthReturn {
 
       // Verify the token and get current user
       const response = await apiClient.getCurrentUser();
-      
+
       if (response.success && response.data?.user) {
         setUser(response.data.user);
         setError(null);
       } else {
         // Token might be invalid, try to refresh
         const refreshResponse = await apiClient.refreshToken();
-        
+
         if (refreshResponse.success) {
           // Try to get user again after refresh
           const userResponse = await apiClient.getCurrentUser();
@@ -66,7 +66,6 @@ export function useAuth(): UseAuthReturn {
         }
       }
     } catch (error) {
-      console.error('Auth initialization error:', error);
       apiClient.clearToken();
       setUser(null);
       setError('Authentication initialization failed');
@@ -75,17 +74,19 @@ export function useAuth(): UseAuthReturn {
     }
   };
 
-  const login = async (credentials: EnhancedLoginFormData): Promise<{ success: boolean; message?: string }> => {
+  const login = async (
+    credentials: EnhancedLoginFormData
+  ): Promise<{ success: boolean; message?: string }> => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const response = await apiClient.login(credentials);
-      
+
       if (response.success && response.user) {
         setUser(response.user);
         setError(null);
-        
+
         return { success: true, message: response.message };
       } else {
         const errorMessage = response.error || response.message || 'Login failed';
@@ -93,7 +94,6 @@ export function useAuth(): UseAuthReturn {
         return { success: false, message: errorMessage };
       }
     } catch (error) {
-      console.error('Login error:', error);
       const errorMessage = 'Login failed. Please try again.';
       setError(errorMessage);
       return { success: false, message: errorMessage };
@@ -102,13 +102,15 @@ export function useAuth(): UseAuthReturn {
     }
   };
 
-  const register = async (userData: RegistrationFormData): Promise<{ success: boolean; message?: string }> => {
+  const register = async (
+    userData: RegistrationFormData
+  ): Promise<{ success: boolean; message?: string }> => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const response = await apiClient.register(userData);
-      
+
       if (response.success) {
         // Registration successful - typically user needs to verify email
         return { success: true, message: response.message || 'Registration successful' };
@@ -118,7 +120,6 @@ export function useAuth(): UseAuthReturn {
         return { success: false, message: errorMessage };
       }
     } catch (error) {
-      console.error('Registration error:', error);
       const errorMessage = 'Registration failed. Please try again.';
       setError(errorMessage);
       return { success: false, message: errorMessage };
@@ -130,11 +131,10 @@ export function useAuth(): UseAuthReturn {
   const logout = async (): Promise<void> => {
     try {
       setIsLoading(true);
-      
+
       // Call API logout
       await apiClient.logout();
     } catch (error) {
-      console.error('Logout error:', error);
     } finally {
       // Always clear local state regardless of API response
       setUser(null);
@@ -148,14 +148,14 @@ export function useAuth(): UseAuthReturn {
 
     try {
       const response = await apiClient.getCurrentUser();
-      
+
       if (response.success && response.data?.user) {
         setUser(response.data.user);
         setError(null);
       } else {
         // If getting current user fails, try refresh token
         const refreshResponse = await apiClient.refreshToken();
-        
+
         if (refreshResponse.success) {
           const userResponse = await apiClient.getCurrentUser();
           if (userResponse.success && userResponse.data?.user) {
@@ -168,7 +168,6 @@ export function useAuth(): UseAuthReturn {
         }
       }
     } catch (error) {
-      console.error('Refresh user error:', error);
       setError('Session expired. Please login again.');
     }
   };
@@ -181,9 +180,12 @@ export function useAuth(): UseAuthReturn {
   useEffect(() => {
     if (!isAuthenticated) return;
 
-    const interval = setInterval(() => {
-      refreshUser();
-    }, 15 * 60 * 1000); // 15 minutes
+    const interval = setInterval(
+      () => {
+        refreshUser();
+      },
+      15 * 60 * 1000
+    ); // 15 minutes
 
     return () => clearInterval(interval);
   }, [isAuthenticated]);

@@ -6,7 +6,7 @@ discovery:
 snapshot:
   widths:
     - 375
-    - 768 
+    - 768
     - 1440
   min-height: 1024
   percy-css: |

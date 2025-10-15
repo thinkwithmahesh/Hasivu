@@ -4,15 +4,10 @@ exports.subscriptionManagementHandler = void 0;
 const logger_service_1 = require("../shared/logger.service");
 const response_utils_1 = require("../shared/response.utils");
 const database_service_1 = require("../shared/database.service");
-const Razorpay = require('razorpay');
 const uuid_1 = require("uuid");
 const zod_1 = require("zod");
 const logger = logger_service_1.LoggerService.getInstance();
 const database = database_service_1.LambdaDatabaseService.getInstance();
-const razorpay = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID || '',
-    key_secret: process.env.RAZORPAY_KEY_SECRET || ''
-});
 const createSubscriptionSchema = zod_1.z.object({
     schoolId: zod_1.z.string().uuid(),
     studentId: zod_1.z.string().uuid().optional(),
@@ -112,7 +107,7 @@ async function calculateProration(subscription, newPlan, effectiveDate = new Dat
     catch (error) {
         logger.error('Proration calculation failed', {
             subscriptionId: subscription.id,
-            error: error instanceof Error ? error.message : 'Unknown error'
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error'
         });
         throw new Error('Failed to calculate proration');
     }
@@ -149,7 +144,7 @@ async function createBillingCycle(subscriptionId, subscriptionPlan, startDate, n
     catch (error) {
         logger.error('Failed to create billing cycle', {
             subscriptionId,
-            error: error instanceof Error ? error.message : 'Unknown error'
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error'
         });
         throw error;
     }
@@ -281,7 +276,7 @@ async function createSubscription(data, userId, requestId) {
         logger.error('Failed to create subscription', {
             requestId,
             userId,
-            error: error instanceof Error ? error.message : 'Unknown error'
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error'
         });
         throw error;
     }
@@ -358,7 +353,7 @@ async function getSubscriptions(query, userRole, schoolId, requestId) {
     catch (error) {
         logger.error('Failed to get subscriptions', {
             requestId,
-            error: error instanceof Error ? error.message : 'Unknown error'
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error'
         });
         throw error;
     }
@@ -462,7 +457,7 @@ async function updateSubscription(subscriptionId, data, userId, requestId) {
         logger.error('Failed to update subscription', {
             requestId,
             subscriptionId,
-            error: error instanceof Error ? error.message : 'Unknown error'
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error'
         });
         throw error;
     }
@@ -483,8 +478,8 @@ async function handleSubscriptionAction(subscriptionId, data, userId, requestId)
         if (subscription.userId !== userId) {
             throw new Error('Access denied - not your subscription');
         }
-        let updateData = { updatedAt: new Date() };
-        let actionResult = {};
+        const updateData = { updatedAt: new Date() };
+        const actionResult = {};
         switch (validatedData.action) {
             case 'pause':
                 if (subscription.status !== 'active') {
@@ -508,7 +503,7 @@ async function handleSubscriptionAction(subscriptionId, data, userId, requestId)
                 updateData.endDate = new Date();
                 break;
             case 'upgrade':
-            case 'downgrade':
+            case 'downgrade': {
                 if (!validatedData.newPlanId) {
                     throw new Error('New plan ID required for upgrade/downgrade');
                 }
@@ -528,6 +523,7 @@ async function handleSubscriptionAction(subscriptionId, data, userId, requestId)
                 updateData.billingAmount = newPlan.price;
                 updateData.billingCycle = newPlan.billingCycle;
                 break;
+            }
             default:
                 throw new Error(`Unsupported action: ${validatedData.action}`);
         }
@@ -575,7 +571,7 @@ async function handleSubscriptionAction(subscriptionId, data, userId, requestId)
             requestId,
             subscriptionId,
             action: data.action,
-            error: error instanceof Error ? error.message : 'Unknown error'
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error'
         });
         throw error;
     }
@@ -597,49 +593,49 @@ const subscriptionManagementHandler = async (event, context) => {
         const subscriptionId = event.pathParameters?.subscriptionId;
         let result;
         switch (`${event.httpMethod}:${event.path}`) {
-            case 'POST:/subscriptions':
+            case 'POST:/subscriptions': {
                 if (!event.body) {
                     return (0, response_utils_1.createErrorResponse)(400, 'Request body required', undefined, 'MISSING_BODY', requestId);
                 }
                 const createData = JSON.parse(event.body);
                 result = await createSubscription(createData, userId, requestId);
                 break;
+            }
             case 'GET:/subscriptions':
-                const queryParams = event.queryStringParameters || {};
-                const listQuery = getSubscriptionsQuerySchema.parse(queryParams);
-                const { subscriptions, total } = await getSubscriptions(listQuery, role, schoolId, requestId);
-                result = {
-                    subscriptions,
-                    total,
-                    pagination: {
-                        offset: listQuery.offset,
-                        limit: listQuery.limit,
-                        hasMore: (listQuery.offset + listQuery.limit) < total
-                    }
-                };
-                break;
-            case 'GET:/subscriptions':
-                if (!subscriptionId) {
-                    return (0, response_utils_1.createErrorResponse)(400, 'Missing subscriptionId in path parameters', undefined, 'MISSING_SUBSCRIPTION_ID', requestId);
-                }
-                const subscription = await database.prisma.subscription.findUnique({
-                    where: { id: subscriptionId },
-                    include: {
-                        subscriptionPlan: true,
-                        school: { select: { name: true, id: true } },
-                        user: { select: { email: true, firstName: true, lastName: true } },
-                        billingCycles: {
-                            orderBy: { createdAt: 'desc' },
-                            take: 5
+                if (subscriptionId) {
+                    const subscription = await database.prisma.subscription.findUnique({
+                        where: { id: subscriptionId },
+                        include: {
+                            subscriptionPlan: true,
+                            school: { select: { name: true, id: true } },
+                            user: { select: { email: true, firstName: true, lastName: true } },
+                            billingCycles: {
+                                orderBy: { createdAt: 'desc' },
+                                take: 5
+                            }
                         }
+                    });
+                    if (!subscription) {
+                        return (0, response_utils_1.createErrorResponse)(404, 'Subscription not found', undefined, 'NOT_FOUND', requestId);
                     }
-                });
-                if (!subscription) {
-                    return (0, response_utils_1.createErrorResponse)(404, 'Subscription not found', undefined, 'NOT_FOUND', requestId);
+                    result = { subscription };
                 }
-                result = { subscription };
+                else {
+                    const queryParams = event.queryStringParameters || {};
+                    const listQuery = getSubscriptionsQuerySchema.parse(queryParams);
+                    const { subscriptions, total } = await getSubscriptions(listQuery, role, schoolId, requestId);
+                    result = {
+                        subscriptions,
+                        total,
+                        pagination: {
+                            offset: listQuery.offset,
+                            limit: listQuery.limit,
+                            hasMore: (listQuery.offset + listQuery.limit) < total
+                        }
+                    };
+                }
                 break;
-            case 'PUT:/subscriptions':
+            case 'PUT:/subscriptions': {
                 if (!subscriptionId) {
                     return (0, response_utils_1.createErrorResponse)(400, 'Missing subscriptionId in path parameters', undefined, 'MISSING_SUBSCRIPTION_ID', requestId);
                 }
@@ -649,7 +645,8 @@ const subscriptionManagementHandler = async (event, context) => {
                 const updateData = JSON.parse(event.body);
                 result = await updateSubscription(subscriptionId, updateData, userId, requestId);
                 break;
-            case 'POST:/subscriptions/actions':
+            }
+            case 'POST:/subscriptions/actions': {
                 if (!subscriptionId) {
                     return (0, response_utils_1.createErrorResponse)(400, 'Missing subscriptionId in path parameters', undefined, 'MISSING_SUBSCRIPTION_ID', requestId);
                 }
@@ -659,6 +656,7 @@ const subscriptionManagementHandler = async (event, context) => {
                 const actionData = JSON.parse(event.body);
                 result = await handleSubscriptionAction(subscriptionId, actionData, userId, requestId);
                 break;
+            }
             default:
                 return (0, response_utils_1.createErrorResponse)(405, `Method ${event.httpMethod} not allowed for path ${event.path}`, undefined, 'METHOD_NOT_ALLOWED', requestId);
         }
@@ -679,20 +677,20 @@ const subscriptionManagementHandler = async (event, context) => {
             requestId,
             method: event.httpMethod,
             path: event.path,
-            error: error instanceof Error ? error.message : 'Unknown error',
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error',
             duration
         });
         if (error instanceof Error) {
-            if (error.message.includes('Authentication required')) {
+            if (error instanceof Error ? error.message : String(error).includes('Authentication required')) {
                 return (0, response_utils_1.createErrorResponse)(401, 'Authentication required', undefined, 'AUTHENTICATION_REQUIRED', requestId);
             }
-            if (error.message.includes('Access denied')) {
+            if (error instanceof Error ? error.message : String(error).includes('Access denied')) {
                 return (0, response_utils_1.createErrorResponse)(403, 'Access denied', undefined, 'ACCESS_DENIED', requestId);
             }
-            if (error.message.includes('not found')) {
+            if (error instanceof Error ? error.message : String(error).includes('not found')) {
                 return (0, response_utils_1.createErrorResponse)(404, 'Resource not found', undefined, 'NOT_FOUND', requestId);
             }
-            if (error.message.includes('already exists')) {
+            if (error instanceof Error ? error.message : String(error).includes('already exists')) {
                 return (0, response_utils_1.createErrorResponse)(409, 'Resource already exists', undefined, 'CONFLICT', requestId);
             }
         }

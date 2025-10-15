@@ -1,0 +1,86 @@
+/**
+ * Workflow Column Component
+ * Column container for workflow orders
+ */
+
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+
+import { WorkflowColumn as WorkflowColumnType, WorkflowOrder } from './types';
+import { WorkflowOrderCard } from './WorkflowOrderCard';
+
+interface WorkflowColumnProps {
+  column: WorkflowColumnType;
+  orders: WorkflowOrder[];
+  onStatusChange: (orderId: string, newStatus: WorkflowOrder['status']) => void;
+}
+
+export const WorkflowColumn: React.FC<WorkflowColumnProps> = ({
+  column,
+  orders,
+  onStatusChange
+}) => {
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+
+    const orderId = e.dataTransfer.getData('text/plain');
+    onStatusChange(orderId, column.id as WorkflowOrder['status']);
+  };
+
+  const IconComponent = column.icon;
+
+  return (
+    <div
+      className={`flex-1 min-h-screen transition-colors duration-200 ${
+        isDragOver
+          ? 'bg-blue-50 border-blue-300'
+          : 'bg-gray-50 border-gray-200'
+      }`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      <Card className="h-full">
+        <CardHeader className="pb-4">
+          <CardTitle className={`flex items-center text-${column.color}-600`}>
+            <IconComponent className="w-5 h-5 mr-2" />
+            {column.title} ({orders.length})
+          </CardTitle>
+          <CardDescription>{column.description}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4 max-h-[calc(100vh-200px)] overflow-y-auto">
+          <AnimatePresence>
+            {orders.map((order) => (
+              <WorkflowOrderCard
+                key={order.id}
+                order={order}
+                onStatusChange={onStatusChange}
+              />
+            ))}
+          </AnimatePresence>
+
+          {orders.length === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              <IconComponent className="w-12 h-12 mx-auto mb-3 opacity-30" />
+              <p className="text-sm">No orders in this stage</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};

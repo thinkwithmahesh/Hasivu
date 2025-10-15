@@ -50,7 +50,7 @@ export declare const PAYMENT_STATUS: {
     readonly FAILED: "failed";
     readonly CANCELLED: "cancelled";
 };
-export declare const SUPPORTED_CURRENCIES: readonly ["INR", "USD", "EUR"];
+export declare const SUPPORTED_CURRENCIES: readonly ["INR", "EUR"];
 export declare const RECEIPT_PREFIX: {
     readonly ORDER: "ORD_";
     readonly PAYMENT: "PAY_";
@@ -60,10 +60,6 @@ export declare const AMOUNT_LIMITS: {
     readonly INR: {
         readonly min: 100;
         readonly max: 1500000000;
-    };
-    readonly USD: {
-        readonly min: 100;
-        readonly max: 200000000;
     };
     readonly EUR: {
         readonly min: 100;
@@ -81,7 +77,7 @@ export declare function generatePaymentSignature(orderId: string, paymentId: str
 export declare function verifyPaymentSignature(orderId: string, paymentId: string, signature: string, secret: string): boolean;
 export declare function verifyWebhookSignature(payload: string, signature: string, secret: string): boolean;
 export declare function formatAmount(amount: number, currency: string): string;
-export declare function parseAmount(formattedAmount: string, currency: string): number;
+export declare function parseAmount(formattedAmount: string, _currency: string): number;
 export declare function getPaymentMethodName(method: string): string;
 export declare function supportsRefund(method: string): boolean;
 export declare function calculatePaymentAnalytics(payments: PaymentData[], startDate: Date, endDate: Date): PaymentAnalytics;

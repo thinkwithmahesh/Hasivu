@@ -32,7 +32,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/42</span>
+                <span class='fraction'>0/60</span>
             </div>
         
             
@@ -976,9 +976,9 @@
  * Handles payment processing, gateway integration, and transaction management
  */
 &nbsp;
-import { DatabaseService } from '../shared/database.service';
-import { Logger } from '../utils/logger';
-import { ValidationError, NotFoundError, ExternalServiceError, BusinessLogicError } from '../utils/errors';
+import { DatabaseService } from './database.service';
+import { logger } from '../utils/logger';
+import { ValidationError, NotFoundError, BusinessLogicError } from '../utils/errors';
 &nbsp;
 export interface PaymentMethod {
   id: string;
@@ -1045,7 +1045,7 @@ export interface WebhookPayload {
 export class PaymentGatewayService {
   private static instance: PaymentGatewayService;
   private <span class="cstat-no" title="statement not covered" >db = DatabaseService.getInstance();</span>
-  private <span class="cstat-no" title="statement not covered" >logger = Logger.getInstance();</span>
+  private <span class="cstat-no" title="statement not covered" >logger = logger;</span>
 &nbsp;
 <span class="fstat-no" title="function not covered" >  private constructor() {}</span>
 &nbsp;
@@ -1063,7 +1063,7 @@ export class PaymentGatewayService {
 <span class="cstat-no" title="statement not covered" >    try {</span>
 <span class="cstat-no" title="statement not covered" >      this.validatePaymentRequest(request);</span>
 &nbsp;
-      const user = <span class="cstat-no" title="statement not covered" >await this.db.getPrismaClient().user.findUnique({</span>
+      const user = <span class="cstat-no" title="statement not covered" >await this.db.client.user.findUnique({</span>
         where: { id: request.userId }
       });
 &nbsp;
@@ -1071,7 +1071,7 @@ export class PaymentGatewayService {
 <span class="cstat-no" title="statement not covered" >        throw new NotFoundError('User', request.userId);</span>
       }
 &nbsp;
-      const order = <span class="cstat-no" title="statement not covered" >await this.db.getPrismaClient().order.findUnique({</span>
+      const order = <span class="cstat-no" title="statement not covered" >await this.db.client.order.findUnique({</span>
         where: { id: request.orderId }
       });
 &nbsp;
@@ -1084,7 +1084,7 @@ export class PaymentGatewayService {
       }
 &nbsp;
       // Create payment record
-      const payment = <span class="cstat-no" title="statement not covered" >await this.db.getPrismaClient().payment.create({</span>
+      const payment = <span class="cstat-no" title="statement not covered" >await this.db.client.payment.create({</span>
         data: {
           orderId: request.orderId,
           userId: request.userId,
@@ -1100,10 +1100,10 @@ export class PaymentGatewayService {
       const gatewayResponse = <span class="cstat-no" title="statement not covered" >await this.processWithGateway(payment, request);</span>
 &nbsp;
       // Update payment status
-      const updatedPayment = <span class="cstat-no" title="statement not covered" >await this.db.getPrismaClient().payment.update({</span>
+      const updatedPayment = <span class="cstat-no" title="statement not covered" >await this.db.client.payment.update({</span>
         where: { id: payment.id },
         data: {
-          status: gatewayResponse.status.toUpperCase(),
+          status: (gatewayResponse.status || 'pending').toUpperCase(),
           razorpayPaymentId: gatewayResponse.gatewayTransactionId,
           gatewayResponse: JSON.stringify(gatewayResponse.gatewayResponse || {}),
           paidAt: gatewayResponse.processedAt || new Date(),
@@ -1113,7 +1113,7 @@ export class PaymentGatewayService {
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      return {</span>
         transactionId: updatedPayment.id,
-        status: gatewayResponse.status,
+        status: gatewayResponse.status || 'pending',
         gatewayTransactionId: gatewayResponse.gatewayTransactionId,
         gatewayResponse: gatewayResponse.gatewayResponse,
         amount: request.amount,
@@ -1123,8 +1123,8 @@ export class PaymentGatewayService {
         processedAt: gatewayResponse.processedAt,
         failureReason: gatewayResponse.failureReason
       };
-    } catch (error) {
-<span class="cstat-no" title="statement not covered" >      this.logger.error('Error processing payment', { request, error });</span>
+    } catch (error: unknown) {
+<span class="cstat-no" title="statement not covered" >      this.logger.error('Error processing payment', error instanceof Error ? error : undefined, { request });</span>
 <span class="cstat-no" title="statement not covered" >      throw error;</span>
     }
   }
@@ -1134,7 +1134,7 @@ export class PaymentGatewayService {
    */
 <span class="fstat-no" title="function not covered" >  async </span>processRefund(request: RefundRequest): Promise&lt;RefundResponse&gt; {
 <span class="cstat-no" title="statement not covered" >    try {</span>
-      const payment = <span class="cstat-no" title="statement not covered" >await this.db.getPrismaClient().payment.findUnique({</span>
+      const payment = <span class="cstat-no" title="statement not covered" >await this.db.client.payment.findUnique({</span>
         where: { id: request.transactionId },
         include: { order: true }
       });
@@ -1154,7 +1154,7 @@ export class PaymentGatewayService {
       }
 &nbsp;
       // Create refund record
-      const refund = <span class="cstat-no" title="statement not covered" >await this.db.getPrismaClient().paymentRefund.create({</span>
+      const refund = <span class="cstat-no" title="statement not covered" >await this.db.client.paymentRefund.create({</span>
         data: {
           paymentId: payment.id,
           amount: Math.round(refundAmount * 100), // Convert to paisa/cents
@@ -1170,10 +1170,10 @@ export class PaymentGatewayService {
       const gatewayRefund = <span class="cstat-no" title="statement not covered" >await this.processRefundWithGateway(payment, refund);</span>
 &nbsp;
       // Update refund status
-      const updatedRefund = <span class="cstat-no" title="statement not covered" >await this.db.getPrismaClient().paymentRefund.update({</span>
+      const updatedRefund = <span class="cstat-no" title="statement not covered" >await this.db.client.paymentRefund.update({</span>
         where: { id: refund.id },
         data: {
-          status: gatewayRefund.status.toUpperCase(),
+          status: (gatewayRefund.status || 'pending').toUpperCase(),
           razorpayRefundId: gatewayRefund.gatewayRefundId || refund.razorpayRefundId,
           processedAt: gatewayRefund.processedAt
         }
@@ -1181,13 +1181,13 @@ export class PaymentGatewayService {
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      return {</span>
         refundId: updatedRefund.id,
-        status: gatewayRefund.status,
+        status: gatewayRefund.status || 'pending',
         amount: refundAmount,
         processedAt: gatewayRefund.processedAt,
         gatewayRefundId: gatewayRefund.gatewayRefundId
       };
-    } catch (error) {
-<span class="cstat-no" title="statement not covered" >      this.logger.error('Error processing refund', { request, error });</span>
+    } catch (error: unknown) {
+<span class="cstat-no" title="statement not covered" >      this.logger.error('Error processing refund', error instanceof Error ? error : undefined, { request });</span>
 <span class="cstat-no" title="statement not covered" >      throw error;</span>
     }
   }
@@ -1202,7 +1202,7 @@ export class PaymentGatewayService {
 <span class="cstat-no" title="statement not covered" >        throw new ValidationError('Invalid webhook signature');</span>
       }
 &nbsp;
-      const payment = <span class="cstat-no" title="statement not covered" >await this.db.getPrismaClient().payment.findFirst({</span>
+      const payment = <span class="cstat-no" title="statement not covered" >await this.db.client.payment.findFirst({</span>
         where: {
           OR: [
             { id: payload.transactionId },
@@ -1217,7 +1217,7 @@ export class PaymentGatewayService {
       }
 &nbsp;
       // Update payment status based on webhook
-<span class="cstat-no" title="statement not covered" >      await this.db.getPrismaClient().payment.update({</span>
+<span class="cstat-no" title="statement not covered" >      await this.db.client.payment.update({</span>
         where: { id: payment.id },
         data: {
           status: this.mapGatewayStatus(payload.status),
@@ -1237,8 +1237,8 @@ export class PaymentGatewayService {
         event: payload.event,
         status: payload.status
       });
-    } catch (error) {
-<span class="cstat-no" title="statement not covered" >      this.logger.error('Error processing webhook', { payload, error });</span>
+    } catch (error: unknown) {
+<span class="cstat-no" title="statement not covered" >      this.logger.error('Error processing webhook', error instanceof Error ? error : undefined, { payload });</span>
 <span class="cstat-no" title="statement not covered" >      throw error;</span>
     }
   }
@@ -1248,7 +1248,7 @@ export class PaymentGatewayService {
    */
 <span class="fstat-no" title="function not covered" >  async </span>getPaymentMethods(userId: string): Promise&lt;PaymentMethod[]&gt; {
 <span class="cstat-no" title="statement not covered" >    try {</span>
-      const paymentMethods = <span class="cstat-no" title="statement not covered" >await this.db.getPrismaClient().paymentMethod.findMany({</span>
+      const paymentMethods = <span class="cstat-no" title="statement not covered" >await this.db.client.paymentMethod.findMany({</span>
         where: {
           userId,
           isActive: true
@@ -1259,9 +1259,9 @@ export class PaymentGatewayService {
         ]
       });
 &nbsp;
-<span class="cstat-no" title="statement not covered" >      return paymentMethods.map(<span class="fstat-no" title="function not covered" >pm </span>=&gt; <span class="cstat-no" title="statement not covered" >this.mapToPaymentMethod(pm))</span>;</span>
-    } catch (error) {
-<span class="cstat-no" title="statement not covered" >      this.logger.error('Error fetching payment methods', { userId, error });</span>
+<span class="cstat-no" title="statement not covered" >      return paymentMethods.map(<span class="fstat-no" title="function not covered" >(p</span>m: any) =&gt; <span class="cstat-no" title="statement not covered" >this.mapToPaymentMethod(pm))</span>;</span>
+    } catch (error: unknown) {
+<span class="cstat-no" title="statement not covered" >      this.logger.error('Error fetching payment methods', error instanceof Error ? error : undefined, { userId });</span>
 <span class="cstat-no" title="statement not covered" >      throw error;</span>
     }
   }
@@ -1271,7 +1271,7 @@ export class PaymentGatewayService {
    */
 <span class="fstat-no" title="function not covered" >  async </span>addPaymentMethod(userId: string, methodData: Partial&lt;PaymentMethod&gt;): Promise&lt;PaymentMethod&gt; {
 <span class="cstat-no" title="statement not covered" >    try {</span>
-      const user = <span class="cstat-no" title="statement not covered" >await this.db.getPrismaClient().user.findUnique({</span>
+      const user = <span class="cstat-no" title="statement not covered" >await this.db.client.user.findUnique({</span>
         where: { id: userId }
       });
 &nbsp;
@@ -1280,11 +1280,11 @@ export class PaymentGatewayService {
       }
 &nbsp;
       // If this is the first payment method, make it default
-      const existingMethods = <span class="cstat-no" title="statement not covered" >await this.db.getPrismaClient().paymentMethod.count({</span>
+      const existingMethods = <span class="cstat-no" title="statement not covered" >await this.db.client.paymentMethod.count({</span>
         where: { userId, isActive: true }
       });
 &nbsp;
-      const paymentMethod = <span class="cstat-no" title="statement not covered" >await this.db.getPrismaClient().paymentMethod.create({</span>
+      const paymentMethod = <span class="cstat-no" title="statement not covered" >await this.db.client.paymentMethod.create({</span>
         data: {
           userId,
           methodType: methodData.type || 'card',
@@ -1297,8 +1297,8 @@ export class PaymentGatewayService {
       });
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      return this.mapToPaymentMethod(paymentMethod);</span>
-    } catch (error) {
-<span class="cstat-no" title="statement not covered" >      this.logger.error('Error adding payment method', { userId, methodData, error });</span>
+    } catch (error: unknown) {
+<span class="cstat-no" title="statement not covered" >      this.logger.error('Error adding payment method', error instanceof Error ? error : undefined, { userId, methodData });</span>
 <span class="cstat-no" title="statement not covered" >      throw error;</span>
     }
   }
@@ -1358,7 +1358,7 @@ export class PaymentGatewayService {
   /**
    * Process refund with gateway (mock implementation)
    */
-  private <span class="fstat-no" title="function not covered" >async </span>processRefundWithGateway(payment: any, refund: any): Promise&lt;Partial&lt;RefundResponse&gt;&gt; {
+  private <span class="fstat-no" title="function not covered" >async </span>processRefundWithGateway(_payment: any, _refund: any): Promise&lt;Partial&lt;RefundResponse&gt;&gt; {
     // Mock refund processing
 <span class="cstat-no" title="statement not covered" >    await new Promise(<span class="fstat-no" title="function not covered" >resolve </span>=&gt; <span class="cstat-no" title="statement not covered" >setTimeout(resolve, 500))</span>;</span>
 &nbsp;
@@ -1374,7 +1374,7 @@ export class PaymentGatewayService {
    */
   private <span class="fstat-no" title="function not covered" >verifyWebhookSignature(</span>payload: WebhookPayload): boolean {
     // Mock signature verification
-<span class="cstat-no" title="statement not covered" >    return payload.signature &amp;&amp; payload.signature.length &gt; 0;</span>
+<span class="cstat-no" title="statement not covered" >    return Boolean(payload.signature &amp;&amp; payload.signature.length &gt; 0);</span>
   }
 &nbsp;
   /**
@@ -1395,7 +1395,7 @@ export class PaymentGatewayService {
   /**
    * Handle status update actions
    */
-  private <span class="fstat-no" title="function not covered" >async </span>handleStatusUpdate(paymentId: string, status: string, event: string): Promise&lt;void&gt; {
+  private <span class="fstat-no" title="function not covered" >async </span>handleStatusUpdate(_paymentId: string, status: string, _event: string): Promise&lt;void&gt; {
 <span class="cstat-no" title="statement not covered" >    switch (status) {</span>
       case 'completed':
         // Update order status, send confirmation email, etc.
@@ -1432,7 +1432,7 @@ export class PaymentGatewayService {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-09-03T01:56:53.571Z
+                at 2025-10-06T16:03:48.029Z
             </div>
         <script src="../prettify.js"></script>
         <script>

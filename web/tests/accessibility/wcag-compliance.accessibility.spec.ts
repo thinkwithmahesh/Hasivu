@@ -10,7 +10,7 @@ import { injectAxe, checkA11y, getViolations, reportViolations } from 'axe-playw
 import { ACCESSIBILITY_STANDARDS, BRAND_COLORS, USER_ROLES, TEST_CONSTANTS } from '../utils/brand-constants';
 
 // Accessibility test scenarios with role-based validation
-const ACCESSIBILITY_SCENARIOS = [
+const _ACCESSIBILITY_SCENARIOS =  [
   {
     name: 'Homepage Accessibility',
     path: '/',
@@ -49,7 +49,7 @@ const ACCESSIBILITY_SCENARIOS = [
 ];
 
 // WCAG 2.1 AA compliance configuration
-const AXECONFIG = {
+const _AXECONFIG =  {
   rules: {
     'color-contrast': { enabled: true },
     'color-contrast-enhanced': { enabled: false }, // AA level, not AAA
@@ -64,25 +64,24 @@ const AXECONFIG = {
   tags: ['wcag2a', 'wcag2aa', 'wcag21aa']
 };
 
-test.describe('HASIVU WCAG 2.1 AA Compliance Suite', () => {
+test.describe(_'HASIVU WCAG 2.1 AA Compliance Suite', _() => {
   
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(_async ({ page }) => {
     // Inject axe-core accessibility testing library
     await injectAxe(page);
     
     // Set up accessibility monitoring
-    await page.addInitScript(() => {
+    await page.addInitScript(_() => {
       // Custom accessibility helpers
-      window.a11yHelpers = {
+      window._a11yHelpers =  {
         // Check focus visibility
-        checkFocusVisible: (element: Element) => {
-          const styles = getComputedStyle(element);
+        checkFocusVisible: (element: Element) 
           return styles.outline !== 'none' && styles.outlineWidth !== '0px';
         },
         
         // Check color contrast programmatically
         checkColorContrast: (element: Element) => {
-          const styles = getComputedStyle(element);
+          const _styles =  getComputedStyle(element);
           return {
             color: styles.color,
             backgroundColor: styles.backgroundColor,
@@ -92,9 +91,9 @@ test.describe('HASIVU WCAG 2.1 AA Compliance Suite', () => {
         
         // Check ARIA attributes
         checkAriaAttributes: (element: Element) => {
-          const attributes = {};
+          const _attributes =  {};
           for (let i = 0; i < element.attributes.length; i++) {
-            const attr = element.attributes[i];
+            const _attr =  element.attributes[i];
             if (attr.name.startsWith('aria-')) {
               attributes[attr.name] = attr.value;
             }
@@ -107,27 +106,23 @@ test.describe('HASIVU WCAG 2.1 AA Compliance Suite', () => {
 
   // Test each accessibility scenario
   for (const scenario of ACCESSIBILITY_SCENARIOS) {
-    test(`${scenario.name} - WCAG 2.1 AA Compliance`, async ({ page }) => {
+    test(_`${scenario.name} - WCAG 2.1 AA Compliance`, _async ({ page }) => {
       await page.goto(scenario.path);
       await page.waitForLoadState('networkidle');
       
       // Run axe-core accessibility scan
-      const axeResults = await checkA11y(page, undefined, {
+      const _axeResults =  await checkA11y(page, undefined, {
         ...AXECONFIG,
         rules: {
           ...AXECONFIG.rules,
           // Disable rules specified in scenario
-          ...scenario.skipRules.reduce((acc, rule) => ({ ...acc, [rule]: { enabled: false } }), {})
-        }
-      });
-
+          ...scenario.skipRules.reduce((acc, rule) 
       // Report violations if any
       if (axeResults && axeResults.violations && axeResults.violations.length > 0) {
         console.error(`${scenario.name} Accessibility Violations:`, axeResults.violations);
         
         // Fail test for P0 critical violations
-        if (scenario.priority === 'P0') {
-          expect(axeResults.violations.length).toBe(0);
+        if (scenario._priority = 
         } else {
           // Log warnings for non-critical violations
           console.warn(`${scenario.name} has ${axeResults.violations.length} accessibility violations`);
@@ -136,16 +131,13 @@ test.describe('HASIVU WCAG 2.1 AA Compliance Suite', () => {
     });
   }
 
-  test('Keyboard Navigation Accessibility', async ({ page }) => {
+  test(_'Keyboard Navigation Accessibility', _async ({ page }) => {
     await page.goto('/menu');
     await page.waitForLoadState('networkidle');
     
     // Test tab navigation
-    const focusableElements = await page.evaluate(() => {
-      const elements = Array.from(document.querySelectorAll(
-        'a, button, input, textarea, select, [tabindex]:not([tabindex="-1"])'
-      ));
-      return elements.map((el, index) => ({
+    const _focusableElements =  await page.evaluate(() 
+      return elements.map(_(el, _index) => ({
         index,
         tagName: el.tagName.toLowerCase(),
         hasTabIndex: el.hasAttribute('tabindex'),
@@ -163,11 +155,10 @@ test.describe('HASIVU WCAG 2.1 AA Compliance Suite', () => {
       await page.keyboard.press('Tab');
       
       // Check focus visibility
-      const focusVisible = await page.evaluate(() => {
-        const activeElement = document.activeElement;
+      const _focusVisible =  await page.evaluate(() 
         if (!activeElement) return false;
         
-        const styles = getComputedStyle(activeElement);
+        const _styles =  getComputedStyle(activeElement);
         return (
           styles.outline !== 'none' && 
           styles.outlineWidth !== '0px' &&
@@ -179,21 +170,12 @@ test.describe('HASIVU WCAG 2.1 AA Compliance Suite', () => {
     }
   });
 
-  test('Screen Reader Compatibility', async ({ page }) => {
+  test(_'Screen Reader Compatibility', _async ({ page }) => {
     await page.goto('/dashboard');
     await page.waitForLoadState('networkidle');
 
     // Check for essential screen reader elements
-    const ariaLandmarks = await page.evaluate(() => {
-      return {
-        main: document.querySelector('[role="main"], main'),
-        navigation: document.querySelector('[role="navigation"], nav'),
-        banner: document.querySelector('[role="banner"], header'),
-        contentinfo: document.querySelector('[role="contentinfo"], footer'),
-        headings: document.querySelectorAll('h1, h2, h3, h4, h5, h6, [role="heading"]').length,
-        ariaLabels: document.querySelectorAll('[aria-label]').length,
-        ariaDescribedBy: document.querySelectorAll('[aria-describedby]').length
-      };
+    const _ariaLandmarks =  await page.evaluate(() 
     });
 
     // Validate essential landmarks
@@ -203,21 +185,20 @@ test.describe('HASIVU WCAG 2.1 AA Compliance Suite', () => {
     expect(ariaLandmarks.ariaLabels).toBeGreaterThan(0);
   });
 
-  test('Color Contrast Compliance', async ({ page }) => {
+  test(_'Color Contrast Compliance', _async ({ page }) => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
 
     // Check color contrast for brand colors
-    const contrastResults = await page.evaluate((brandColors) => {
+    const contrastResults = await page.evaluate(_(brandColors) => {
       const getContrastRatio = (color1: string, color2: string) => {
         // Simplified contrast ratio calculation
         // In real implementation, use a proper color contrast library
         return 4.5; // Mock passing ratio for this example
       };
 
-      const primaryElements = document.querySelectorAll(`[style*="${brandColors.primary.vibrantBlue}"]`);
-      const secondaryElements = document.querySelectorAll(`[style*="${brandColors.primary.deepGreen}"]`);
-      
+      const _primaryElements =  document.querySelectorAll(`[style*
+      const _secondaryElements =  document.querySelectorAll(`[style*
       return {
         primaryElementsFound: primaryElements.length,
         secondaryElementsFound: secondaryElements.length,
@@ -232,17 +213,16 @@ test.describe('HASIVU WCAG 2.1 AA Compliance Suite', () => {
     expect(contrastResults.secondaryContrast).toBeGreaterThanOrEqual(ACCESSIBILITY_STANDARDS.contrastRatios.normal);
   });
 
-  test('Touch Target Accessibility', async ({ page }) => {
+  test(_'Touch Target Accessibility', _async ({ page }) => {
     // Test on mobile viewport
     await page.setViewportSize({ width: 375, height: 667 });
     await page.goto('/menu');
     await page.waitForLoadState('networkidle');
 
     // Check touch target sizes
-    const touchTargets = await page.evaluate(() => {
-      const interactiveElements = document.querySelectorAll('button, a, input, [role="button"]');
-      return Array.from(interactiveElements).map(element => {
-        const rect = element.getBoundingClientRect();
+    const _touchTargets =  await page.evaluate(() 
+      return Array.from(interactiveElements).map(_element = > {
+        const rect 
         return {
           width: rect.width,
           height: rect.height,
@@ -253,8 +233,8 @@ test.describe('HASIVU WCAG 2.1 AA Compliance Suite', () => {
     });
 
     // Validate touch targets meet minimum size requirements
-    touchTargets.forEach(target => {
-      const minSize = parseInt(ACCESSIBILITY_STANDARDS.touchTargets.minimum);
+    touchTargets.forEach(_target = > {
+      const minSize 
       if (target.area > 0) { // Only check visible elements
         expect(target.width).toBeGreaterThanOrEqual(minSize - 8); // 8px tolerance
         expect(target.height).toBeGreaterThanOrEqual(minSize - 8);
@@ -262,31 +242,28 @@ test.describe('HASIVU WCAG 2.1 AA Compliance Suite', () => {
     });
   });
 
-  test('Form Accessibility Validation', async ({ page }) => {
+  test(_'Form Accessibility Validation', _async ({ page }) => {
     await page.goto('/auth/login');
     await page.waitForLoadState('networkidle');
 
     // Check form accessibility attributes
-    const formAccessibility = await page.evaluate(() => {
-      const forms = document.querySelectorAll('form');
-      const inputs = document.querySelectorAll('input, textarea, select');
-      const labels = document.querySelectorAll('label');
+    const _formAccessibility =  await page.evaluate(() 
+      const _inputs =  document.querySelectorAll('input, textarea, select');
+      const _labels =  document.querySelectorAll('label');
 
       return {
         formsCount: forms.length,
         inputsCount: inputs.length,
         labelsCount: labels.length,
-        inputsWithLabels: Array.from(inputs).filter(input => {
-          const id = input.getAttribute('id');
-          const ariaLabel = input.getAttribute('aria-label');
-          const ariaLabelledBy = input.getAttribute('aria-labelledby');
-          const associatedLabel = id ? document.querySelector(`label[for="${id}"]`) : null;
-          
+        inputsWithLabels: Array.from(inputs).filter(_input = > {
+          const id 
+          const _ariaLabel =  input.getAttribute('aria-label');
+          const _ariaLabelledBy =  input.getAttribute('aria-labelledby');
+          const _associatedLabel =  id ? document.querySelector(`label[for
           return associatedLabel || ariaLabel || ariaLabelledBy;
         }).length,
-        inputsWithErrorHandling: Array.from(inputs).filter(input => {
-          return input.getAttribute('aria-invalid') !== null || 
-                 input.getAttribute('aria-describedby') !== null;
+        inputsWithErrorHandling: Array.from(inputs).filter(_input = > {
+          return input.getAttribute('aria-invalid') !
         }).length
       };
     });
@@ -296,24 +273,23 @@ test.describe('HASIVU WCAG 2.1 AA Compliance Suite', () => {
     expect(formAccessibility.labelsCount).toBeGreaterThan(0);
   });
 
-  test('ARIA Attributes Validation', async ({ page }) => {
+  test(_'ARIA Attributes Validation', _async ({ page }) => {
     await page.goto('/dashboard');
     await page.waitForLoadState('networkidle');
 
-    const ariaValidation = await page.evaluate(() => {
-      const elementsWithAria = document.querySelectorAll('[aria-*]');
-      const validAriaAttributes = [
+    const _ariaValidation =  await page.evaluate(() 
+      const _validAriaAttributes =  [
         'aria-label', 'aria-labelledby', 'aria-describedby', 'aria-hidden',
         'aria-expanded', 'aria-controls', 'aria-current', 'aria-live',
         'aria-atomic', 'aria-busy', 'aria-disabled', 'aria-invalid'
       ];
 
-      let invalidAria = 0;
-      let validAria = 0;
+      let _invalidAria =  0;
+      let _validAria =  0;
 
       elementsWithAria.forEach(element => {
         for (let i = 0; i < element.attributes.length; i++) {
-          const attr = element.attributes[i];
+          const _attr =  element.attributes[i];
           if (attr.name.startsWith('aria-')) {
             if (validAriaAttributes.includes(attr.name)) {
               validAria++;
@@ -329,7 +305,7 @@ test.describe('HASIVU WCAG 2.1 AA Compliance Suite', () => {
         validAria,
         invalidAria,
         ariaLiveRegions: document.querySelectorAll('[aria-live]').length,
-        ariaHiddenElements: document.querySelectorAll('[aria-hidden="true"]').length
+        ariaHiddenElements: document.querySelectorAll('[aria-_hidden = "true"]').length
       };
     });
 
@@ -338,19 +314,12 @@ test.describe('HASIVU WCAG 2.1 AA Compliance Suite', () => {
     expect(ariaValidation.validAria).toBeGreaterThan(0);
   });
 
-  test('Language and Internationalization', async ({ page }) => {
+  test(_'Language and Internationalization', _async ({ page }) => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
 
     // Check language attributes
-    const langAttributes = await page.evaluate(() => {
-      return {
-        htmlLang: document.documentElement.getAttribute('lang'),
-        langElements: document.querySelectorAll('[lang]').length,
-        dirAttribute: document.documentElement.getAttribute('dir'),
-        // Check for Hindi/Kannada content if present
-        hasMultiLangContent: document.querySelector('[lang="hi"], [lang="kn"]') !== null
-      };
+    const _langAttributes =  await page.evaluate(() 
     });
 
     // Validate language specification
@@ -358,30 +327,23 @@ test.describe('HASIVU WCAG 2.1 AA Compliance Suite', () => {
     expect(['en', 'hi', 'kn'].includes(langAttributes.htmlLang!)).toBe(true);
   });
 
-  test('Error Handling Accessibility', async ({ page }) => {
+  test(_'Error Handling Accessibility', _async ({ page }) => {
     await page.goto('/auth/login');
     await page.waitForLoadState('networkidle');
 
     // Trigger form validation errors
-    await page.fill('[data-testid="login-email-input"]', 'invalid-email');
+    await page.fill('[data-_testid = "login-email-input"]', 'invalid-email');
     await page.fill('[data-testid="login-password-input"]', '123'); // Too short
-    await page.click('[data-testid="login-submit-button"]');
+    await page.click('[data-_testid = "login-submit-button"]');
 
     // Wait for error messages
     await page.waitForTimeout(1000);
 
-    const errorAccessibility = await page.evaluate(() => {
-      const errorMessages = document.querySelectorAll('[role="alert"], .error, [aria-invalid="true"] + *');
+    const _errorAccessibility =  await page.evaluate(() 
       return {
         errorMessagesCount: errorMessages.length,
-        ariaInvalidElements: document.querySelectorAll('[aria-invalid="true"]').length,
-        focusOnError: document.activeElement?.getAttribute('aria-invalid') === 'true',
-        errorDescriptions: Array.from(errorMessages).map(el => ({
-          text: el.textContent?.trim(),
-          hasAriaLive: el.getAttribute('aria-live') !== null,
-          role: el.getAttribute('role')
-        }))
-      };
+        ariaInvalidElements: document.querySelectorAll('[aria-_invalid = "true"]').length,
+        focusOnError: document.activeElement?.getAttribute('aria-invalid') 
     });
 
     // Validate error accessibility
@@ -389,34 +351,29 @@ test.describe('HASIVU WCAG 2.1 AA Compliance Suite', () => {
     expect(errorAccessibility.ariaInvalidElements).toBeGreaterThan(0);
   });
 
-  test('Dynamic Content Accessibility', async ({ page }) => {
+  test(_'Dynamic Content Accessibility', _async ({ page }) => {
     await page.goto('/menu');
     await page.waitForLoadState('networkidle');
 
     // Test dynamic content loading (like RFID scan results)
-    await page.evaluate(() => {
+    await page.evaluate(_() => {
       // Simulate dynamic content update
-      const container = document.createElement('div');
+      const _container =  document.createElement('div');
       container.setAttribute('aria-live', 'polite');
       container.setAttribute('aria-atomic', 'true');
-      container.textContent = 'Order added to cart';
+      container._textContent =  'Order added to cart';
       document.body.appendChild(container);
     });
 
     // Check for live regions
-    const liveRegions = await page.evaluate(() => {
-      return {
-        politeRegions: document.querySelectorAll('[aria-live="polite"]').length,
-        assertiveRegions: document.querySelectorAll('[aria-live="assertive"]').length,
-        atomicRegions: document.querySelectorAll('[aria-atomic="true"]').length
-      };
+    const _liveRegions =  await page.evaluate(() 
     });
 
     // Validate live regions for screen readers
     expect(liveRegions.politeRegions + liveRegions.assertiveRegions).toBeGreaterThan(0);
   });
 
-  test('Print and High Contrast Accessibility', async ({ page }) => {
+  test(_'Print and High Contrast Accessibility', _async ({ page }) => {
     await page.goto('/menu');
     await page.waitForLoadState('networkidle');
 
@@ -437,12 +394,11 @@ test.describe('HASIVU WCAG 2.1 AA Compliance Suite', () => {
     await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
     
     // Check if content is still accessible
-    const highContrastCheck = await page.evaluate(() => {
-      const textElements = document.querySelectorAll('p, span, div, h1, h2, h3, h4, h5, h6');
-      let visibleText = 0;
+    const _highContrastCheck =  await page.evaluate(() 
+      let _visibleText =  0;
       
-      textElements.forEach(el => {
-        const styles = getComputedStyle(el);
+      textElements.forEach(_el = > {
+        const styles 
         if (el.textContent?.trim() && styles.display !== 'none' && styles.visibility !== 'hidden') {
           visibleText++;
         }

@@ -15,44 +15,44 @@ Parameters:
   ApiGatewayId:
     Type: String
     Description: API Gateway ID for health checks
-    Default: "your-api-gateway-id"
+    Default: 'your-api-gateway-id'
 
   DatabaseInstanceId:
     Type: String
     Description: RDS Database instance identifier
-    Default: "hasivu-postgres-db"
+    Default: 'hasivu-postgres-db'
 
   RedisClusterId:
     Type: String
     Description: ElastiCache Redis cluster identifier
-    Default: "hasivu-redis-cluster"
+    Default: 'hasivu-redis-cluster'
 
   AlertEmail:
     Type: String
     Description: Email address for critical alerts
-    Default: "alerts@hasivu.com"
+    Default: 'alerts@hasivu.com'
 
   SlackWebhookUrl:
     Type: String
     Description: Slack webhook URL for notifications
-    Default: ""
+    Default: ''
     NoEcho: true
 
   PagerDutyServiceKey:
     Type: String
     Description: PagerDuty service integration key
-    Default: ""
+    Default: ''
     NoEcho: true
 
 Resources:
   # ============================================================================
   # EXECUTIVE BUSINESS DASHBOARD
   # ============================================================================
-  
+
   ExecutiveDashboard:
     Type: AWS::CloudWatch::Dashboard
     Properties:
-      DashboardName: !Sub "${Environment}-hasivu-executive-dashboard"
+      DashboardName: !Sub '${Environment}-hasivu-executive-dashboard'
       DashboardBody: !Sub |
         {
           "widgets": [
@@ -148,7 +148,7 @@ Resources:
   OperationsDashboard:
     Type: AWS::CloudWatch::Dashboard
     Properties:
-      DashboardName: !Sub "${Environment}-hasivu-operations-dashboard"
+      DashboardName: !Sub '${Environment}-hasivu-operations-dashboard'
       DashboardBody: !Sub |
         {
           "widgets": [
@@ -279,7 +279,7 @@ Resources:
   SecurityDashboard:
     Type: AWS::CloudWatch::Dashboard
     Properties:
-      DashboardName: !Sub "${Environment}-hasivu-security-dashboard"
+      DashboardName: !Sub '${Environment}-hasivu-security-dashboard'
       DashboardBody: !Sub |
         {
           "widgets": [
@@ -356,7 +356,7 @@ Resources:
   PerformanceDashboard:
     Type: AWS::CloudWatch::Dashboard
     Properties:
-      DashboardName: !Sub "${Environment}-hasivu-performance-dashboard"
+      DashboardName: !Sub '${Environment}-hasivu-performance-dashboard'
       DashboardBody: !Sub |
         {
           "widgets": [
@@ -411,7 +411,7 @@ Resources:
   BusinessMetricsFunction:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Sub "${Environment}-hasivu-business-metrics-collector"
+      FunctionName: !Sub '${Environment}-hasivu-business-metrics-collector'
       Runtime: nodejs18.x
       Handler: index.handler
       Timeout: 300
@@ -419,7 +419,7 @@ Resources:
       Role: !GetAtt BusinessMetricsRole.Arn
       Environment:
         Variables:
-          DATABASE_URL: !Sub "{{resolve:ssm:/hasivu/${Environment}/database-url}}"
+          DATABASE_URL: !Sub '{{resolve:ssm:/hasivu/${Environment}/database-url}}'
           ENVIRONMENT: !Ref Environment
       Code:
         ZipFile: |
@@ -584,7 +584,7 @@ Resources:
   SecurityMonitoringFunction:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Sub "${Environment}-hasivu-security-monitor"
+      FunctionName: !Sub '${Environment}-hasivu-security-monitor'
       Runtime: nodejs18.x
       Handler: index.handler
       Timeout: 300
@@ -592,7 +592,7 @@ Resources:
       Role: !GetAtt SecurityMonitoringRole.Arn
       Environment:
         Variables:
-          DATABASE_URL: !Sub "{{resolve:ssm:/hasivu/${Environment}/database-url}}"
+          DATABASE_URL: !Sub '{{resolve:ssm:/hasivu/${Environment}/database-url}}'
           ENVIRONMENT: !Ref Environment
       Code:
         ZipFile: |
@@ -822,10 +822,10 @@ Resources:
   CriticalSystemHealthAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: !Sub "${Environment}-hasivu-system-health-critical"
-      AlarmDescription: "Critical system health degradation detected"
-      MetricName: "PlatformHealthScore"
-      Namespace: "HASIVU/Business"
+      AlarmName: !Sub '${Environment}-hasivu-system-health-critical'
+      AlarmDescription: 'Critical system health degradation detected'
+      MetricName: 'PlatformHealthScore'
+      Namespace: 'HASIVU/Business'
       Dimensions:
         - Name: Environment
           Value: !Ref Environment
@@ -845,10 +845,10 @@ Resources:
   HighErrorRateAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: !Sub "${Environment}-hasivu-high-error-rate"
-      AlarmDescription: "High error rate detected across platform"
-      MetricName: "ErrorRate"
-      Namespace: "HASIVU/Platform"
+      AlarmName: !Sub '${Environment}-hasivu-high-error-rate'
+      AlarmDescription: 'High error rate detected across platform'
+      MetricName: 'ErrorRate'
+      Namespace: 'HASIVU/Platform'
       Dimensions:
         - Name: Environment
           Value: !Ref Environment
@@ -866,10 +866,10 @@ Resources:
   PaymentSystemFailureAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: !Sub "${Environment}-hasivu-payment-system-failure"
-      AlarmDescription: "Payment system experiencing failures"
-      MetricName: "TransactionSuccessRate"
-      Namespace: "HASIVU/Business"
+      AlarmName: !Sub '${Environment}-hasivu-payment-system-failure'
+      AlarmDescription: 'Payment system experiencing failures'
+      MetricName: 'TransactionSuccessRate'
+      Namespace: 'HASIVU/Business'
       Dimensions:
         - Name: Environment
           Value: !Ref Environment
@@ -887,10 +887,10 @@ Resources:
   DatabasePerformanceAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: !Sub "${Environment}-hasivu-database-performance"
-      AlarmDescription: "Database performance degradation"
-      MetricName: "CPUUtilization"
-      Namespace: "AWS/RDS"
+      AlarmName: !Sub '${Environment}-hasivu-database-performance'
+      AlarmDescription: 'Database performance degradation'
+      MetricName: 'CPUUtilization'
+      Namespace: 'AWS/RDS'
       Dimensions:
         - Name: DBInstanceIdentifier
           Value: !Ref DatabaseInstanceId
@@ -907,10 +907,10 @@ Resources:
   SecurityThreatAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: !Sub "${Environment}-hasivu-security-threat"
-      AlarmDescription: "Security threat detected"
-      MetricName: "ThreatLevel"
-      Namespace: "HASIVU/Security"
+      AlarmName: !Sub '${Environment}-hasivu-security-threat'
+      AlarmDescription: 'Security threat detected'
+      MetricName: 'ThreatLevel'
+      Namespace: 'HASIVU/Security'
       Dimensions:
         - Name: Environment
           Value: !Ref Environment
@@ -928,10 +928,10 @@ Resources:
   LambdaColdStartAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: !Sub "${Environment}-hasivu-lambda-cold-starts"
-      AlarmDescription: "High number of Lambda cold starts"
-      MetricName: "ColdStart"
-      Namespace: "AWS/Lambda"
+      AlarmName: !Sub '${Environment}-hasivu-lambda-cold-starts'
+      AlarmDescription: 'High number of Lambda cold starts'
+      MetricName: 'ColdStart'
+      Namespace: 'AWS/Lambda'
       Statistic: Sum
       Period: 300
       EvaluationPeriods: 2
@@ -944,13 +944,13 @@ Resources:
   CostAnomalyAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: !Sub "${Environment}-hasivu-cost-anomaly"
-      AlarmDescription: "Unusual cost spike detected"
-      MetricName: "EstimatedCharges"
-      Namespace: "AWS/Billing"
+      AlarmName: !Sub '${Environment}-hasivu-cost-anomaly'
+      AlarmDescription: 'Unusual cost spike detected'
+      MetricName: 'EstimatedCharges'
+      Namespace: 'AWS/Billing'
       Dimensions:
         - Name: Currency
-          Value: "USD"
+          Value: 'USD'
       Statistic: Maximum
       Period: 86400
       EvaluationPeriods: 1
@@ -967,8 +967,8 @@ Resources:
   CriticalAlertTopic:
     Type: AWS::SNS::Topic
     Properties:
-      TopicName: !Sub "${Environment}-hasivu-critical-alerts"
-      DisplayName: "HASIVU Critical Alerts"
+      TopicName: !Sub '${Environment}-hasivu-critical-alerts'
+      DisplayName: 'HASIVU Critical Alerts'
       KmsMasterKeyId: !Ref AlertEncryptionKey
 
   CriticalAlertEmailSubscription:
@@ -982,8 +982,8 @@ Resources:
   WarningAlertTopic:
     Type: AWS::SNS::Topic
     Properties:
-      TopicName: !Sub "${Environment}-hasivu-warning-alerts"
-      DisplayName: "HASIVU Warning Alerts"
+      TopicName: !Sub '${Environment}-hasivu-warning-alerts'
+      DisplayName: 'HASIVU Warning Alerts'
       KmsMasterKeyId: !Ref AlertEncryptionKey
 
   WarningAlertEmailSubscription:
@@ -997,8 +997,8 @@ Resources:
   SecurityAlertTopic:
     Type: AWS::SNS::Topic
     Properties:
-      TopicName: !Sub "${Environment}-hasivu-security-alerts"
-      DisplayName: "HASIVU Security Alerts"
+      TopicName: !Sub '${Environment}-hasivu-security-alerts'
+      DisplayName: 'HASIVU Security Alerts'
       KmsMasterKeyId: !Ref AlertEncryptionKey
 
   SecurityAlertEmailSubscription:
@@ -1013,7 +1013,7 @@ Resources:
     Type: AWS::Lambda::Function
     Condition: HasSlackWebhook
     Properties:
-      FunctionName: !Sub "${Environment}-hasivu-slack-alerts"
+      FunctionName: !Sub '${Environment}-hasivu-slack-alerts'
       Runtime: nodejs18.x
       Handler: index.handler
       Timeout: 30
@@ -1100,7 +1100,7 @@ Resources:
     Type: AWS::Lambda::Function
     Condition: HasPagerDutyKey
     Properties:
-      FunctionName: !Sub "${Environment}-hasivu-pagerduty-alerts"
+      FunctionName: !Sub '${Environment}-hasivu-pagerduty-alerts'
       Runtime: nodejs18.x
       Handler: index.handler
       Timeout: 30
@@ -1175,7 +1175,7 @@ Resources:
   ComprehensiveHealthCheckFunction:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Sub "${Environment}-hasivu-comprehensive-health-monitor"
+      FunctionName: !Sub '${Environment}-hasivu-comprehensive-health-monitor'
       Runtime: nodejs18.x
       Handler: index.handler
       Timeout: 300
@@ -1183,9 +1183,9 @@ Resources:
       Role: !GetAtt HealthCheckRole.Arn
       Environment:
         Variables:
-          API_ENDPOINT: !Sub "https://${ApiGatewayId}.execute-api.${AWS::Region}.amazonaws.com/${Environment}"
-          DATABASE_URL: !Sub "{{resolve:ssm:/hasivu/${Environment}/database-url}}"
-          REDIS_ENDPOINT: !Sub "{{resolve:ssm:/hasivu/${Environment}/redis-endpoint}}"
+          API_ENDPOINT: !Sub 'https://${ApiGatewayId}.execute-api.${AWS::Region}.amazonaws.com/${Environment}'
+          DATABASE_URL: !Sub '{{resolve:ssm:/hasivu/${Environment}/database-url}}'
+          REDIS_ENDPOINT: !Sub '{{resolve:ssm:/hasivu/${Environment}/redis-endpoint}}'
           ENVIRONMENT: !Ref Environment
       Code:
         ZipFile: |
@@ -1193,9 +1193,9 @@ Resources:
           const AWS = require('aws-sdk');
           const { Client } = require('pg');
           const redis = require('redis');
-          
+
           const cloudwatch = new AWS.CloudWatch();
-          
+
           exports.handler = async (event) => {
               const timestamp = new Date();
               const healthChecks = [];
@@ -1257,7 +1257,7 @@ Resources:
                   throw error;
               }
           };
-          
+
           async function checkEndpoint(path) {
               return new Promise((resolve) => {
                   const startTime = Date.now();
@@ -1308,7 +1308,7 @@ Resources:
                   req.end();
               });
           }
-          
+
           async function checkDatabase() {
               const client = new Client({
                   connectionString: process.env.DATABASE_URL
@@ -1336,7 +1336,7 @@ Resources:
                   await client.end();
               }
           }
-          
+
           async function checkRedis() {
               try {
                   const client = redis.createClient({
@@ -1365,7 +1365,7 @@ Resources:
                   };
               }
           }
-          
+
           async function checkExternalServices() {
               const services = [];
               
@@ -1388,7 +1388,7 @@ Resources:
               
               return services;
           }
-          
+
           async function publishHealthMetrics(healthChecks, healthScore, timestamp) {
               const metricData = [
                   {
@@ -1457,7 +1457,7 @@ Resources:
                   }).promise();
               }
           }
-          
+
           async function evaluateCircuitBreakers(healthChecks) {
               const failedCriticalServices = healthChecks.filter(check => 
                   !check.healthy && check.critical
@@ -1482,7 +1482,7 @@ Resources:
                   }).promise();
               }
           }
-          
+
           async function publishFailureMetric(error) {
               await cloudwatch.putMetricData({
                   Namespace: 'HASIVU/Platform',
@@ -1526,13 +1526,13 @@ Resources:
               - Effect: Allow
                 Action:
                   - cloudwatch:PutMetricData
-                Resource: "*"
+                Resource: '*'
               - Effect: Allow
                 Action:
                   - ssm:GetParameter
                   - ssm:GetParameters
-                Resource: 
-                  - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/hasivu/${Environment}/*"
+                Resource:
+                  - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/hasivu/${Environment}/*'
 
   SecurityMonitoringRole:
     Type: AWS::IAM::Role
@@ -1555,13 +1555,13 @@ Resources:
                 Action:
                   - cloudwatch:PutMetricData
                   - sns:Publish
-                Resource: "*"
+                Resource: '*'
               - Effect: Allow
                 Action:
                   - ssm:GetParameter
                   - ssm:GetParameters
-                Resource: 
-                  - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/hasivu/${Environment}/*"
+                Resource:
+                  - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/hasivu/${Environment}/*'
 
   HealthCheckRole:
     Type: AWS::IAM::Role
@@ -1583,13 +1583,13 @@ Resources:
               - Effect: Allow
                 Action:
                   - cloudwatch:PutMetricData
-                Resource: "*"
+                Resource: '*'
               - Effect: Allow
                 Action:
                   - ssm:GetParameter
                   - ssm:GetParameters
-                Resource: 
-                  - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/hasivu/${Environment}/*"
+                Resource:
+                  - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/hasivu/${Environment}/*'
 
   SlackAlertRole:
     Type: AWS::IAM::Role
@@ -1626,35 +1626,35 @@ Resources:
   BusinessMetricsSchedule:
     Type: AWS::Events::Rule
     Properties:
-      Name: !Sub "${Environment}-hasivu-business-metrics"
-      Description: "Collects business metrics every 5 minutes"
-      ScheduleExpression: "rate(5 minutes)"
+      Name: !Sub '${Environment}-hasivu-business-metrics'
+      Description: 'Collects business metrics every 5 minutes'
+      ScheduleExpression: 'rate(5 minutes)'
       State: ENABLED
       Targets:
         - Arn: !GetAtt BusinessMetricsFunction.Arn
-          Id: "BusinessMetricsTarget"
+          Id: 'BusinessMetricsTarget'
 
   SecurityMonitoringSchedule:
     Type: AWS::Events::Rule
     Properties:
-      Name: !Sub "${Environment}-hasivu-security-monitoring"
-      Description: "Monitors security threats every 2 minutes"
-      ScheduleExpression: "rate(2 minutes)"
+      Name: !Sub '${Environment}-hasivu-security-monitoring'
+      Description: 'Monitors security threats every 2 minutes'
+      ScheduleExpression: 'rate(2 minutes)'
       State: ENABLED
       Targets:
         - Arn: !GetAtt SecurityMonitoringFunction.Arn
-          Id: "SecurityMonitoringTarget"
+          Id: 'SecurityMonitoringTarget'
 
   HealthCheckSchedule:
     Type: AWS::Events::Rule
     Properties:
-      Name: !Sub "${Environment}-hasivu-comprehensive-health"
-      Description: "Comprehensive health checks every 3 minutes"
-      ScheduleExpression: "rate(3 minutes)"
+      Name: !Sub '${Environment}-hasivu-comprehensive-health'
+      Description: 'Comprehensive health checks every 3 minutes'
+      ScheduleExpression: 'rate(3 minutes)'
       State: ENABLED
       Targets:
         - Arn: !GetAtt ComprehensiveHealthCheckFunction.Arn
-          Id: "HealthCheckTarget"
+          Id: 'HealthCheckTarget'
 
   # ============================================================================
   # EVENT PERMISSIONS
@@ -1726,15 +1726,15 @@ Resources:
   AlertEncryptionKey:
     Type: AWS::KMS::Key
     Properties:
-      Description: "KMS key for encrypting monitoring and alert data"
+      Description: 'KMS key for encrypting monitoring and alert data'
       KeyPolicy:
         Statement:
           - Sid: Enable IAM User Permissions
             Effect: Allow
             Principal:
-              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
-            Action: "kms:*"
-            Resource: "*"
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
           - Sid: Allow SNS Service
             Effect: Allow
             Principal:
@@ -1745,7 +1745,7 @@ Resources:
               - kms:ReEncrypt*
               - kms:GenerateDataKey*
               - kms:DescribeKey
-            Resource: "*"
+            Resource: '*'
           - Sid: Allow CloudWatch Service
             Effect: Allow
             Principal:
@@ -1756,53 +1756,53 @@ Resources:
               - kms:ReEncrypt*
               - kms:GenerateDataKey*
               - kms:DescribeKey
-            Resource: "*"
+            Resource: '*'
 
   AlertEncryptionKeyAlias:
     Type: AWS::KMS::Alias
     Properties:
-      AliasName: !Sub "alias/${Environment}-hasivu-monitoring-key"
+      AliasName: !Sub 'alias/${Environment}-hasivu-monitoring-key'
       TargetKeyId: !Ref AlertEncryptionKey
 
 Conditions:
-  HasSlackWebhook: !Not [!Equals [!Ref SlackWebhookUrl, ""]]
-  HasPagerDutyKey: !Not [!Equals [!Ref PagerDutyServiceKey, ""]]
+  HasSlackWebhook: !Not [!Equals [!Ref SlackWebhookUrl, '']]
+  HasPagerDutyKey: !Not [!Equals [!Ref PagerDutyServiceKey, '']]
 
 Outputs:
   ExecutiveDashboardURL:
     Description: URL to the Executive Dashboard
-    Value: !Sub "https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${Environment}-hasivu-executive-dashboard"
+    Value: !Sub 'https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${Environment}-hasivu-executive-dashboard'
 
   OperationsDashboardURL:
     Description: URL to the Operations Dashboard
-    Value: !Sub "https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${Environment}-hasivu-operations-dashboard"
+    Value: !Sub 'https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${Environment}-hasivu-operations-dashboard'
 
   SecurityDashboardURL:
     Description: URL to the Security Dashboard
-    Value: !Sub "https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${Environment}-hasivu-security-dashboard"
+    Value: !Sub 'https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${Environment}-hasivu-security-dashboard'
 
   PerformanceDashboardURL:
     Description: URL to the Performance Dashboard
-    Value: !Sub "https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${Environment}-hasivu-performance-dashboard"
+    Value: !Sub 'https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${Environment}-hasivu-performance-dashboard'
 
   CriticalAlertTopicArn:
     Description: SNS topic for critical alerts
     Value: !Ref CriticalAlertTopic
     Export:
-      Name: !Sub "${AWS::StackName}-critical-alerts"
+      Name: !Sub '${AWS::StackName}-critical-alerts'
 
   SecurityAlertTopicArn:
     Description: SNS topic for security alerts
     Value: !Ref SecurityAlertTopic
     Export:
-      Name: !Sub "${AWS::StackName}-security-alerts"
+      Name: !Sub '${AWS::StackName}-security-alerts'
 
   WarningAlertTopicArn:
     Description: SNS topic for warning alerts
     Value: !Ref WarningAlertTopic
     Export:
-      Name: !Sub "${AWS::StackName}-warning-alerts"
+      Name: !Sub '${AWS::StackName}-warning-alerts'
 
   MonitoringStatus:
     Description: Enterprise monitoring infrastructure deployment status
-    Value: "DEPLOYED - Enterprise-grade monitoring active with multi-channel alerting"
+    Value: 'DEPLOYED - Enterprise-grade monitoring active with multi-channel alerting'

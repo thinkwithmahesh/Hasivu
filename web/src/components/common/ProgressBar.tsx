@@ -5,14 +5,7 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import {
-  Box,
-  LinearProgress,
-  useTheme,
-  alpha,
-  Portal,
-  Fade,
-} from '@mui/material';
+import { Box, LinearProgress, useTheme, alpha, Portal, Fade } from '@mui/material';
 import { keyframes } from '@mui/system';
 
 // Custom animations for progress bar
@@ -215,7 +208,7 @@ export const ProgressBarProvider: React.FC<ProgressBarProviderProps> = ({
 
 /**
  * HASIVU Progress Bar Component
- * 
+ *
  * Features:
  * - NProgress-style top progress bar
  * - Smooth animations and transitions
@@ -296,9 +289,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
               width: `${displayProgress}%`,
               backgroundColor: progressColor,
               position: 'relative',
-              transition: smooth
-                ? `width ${duration}ms cubic-bezier(0.4, 0, 0.2, 1)`
-                : 'none',
+              transition: smooth ? `width ${duration}ms cubic-bezier(0.4, 0, 0.2, 1)` : 'none',
               ...(showGlow && {
                 animation: `${progressGlow} 2s ease-in-out infinite`,
               }),
@@ -379,10 +370,12 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
                   }),
                 },
                 '& .MuiLinearProgress-bar1Indeterminate': {
-                  animation: 'MuiLinearProgress-keyframes-indeterminate1 2.1s cubic-bezier(0.65, 0.815, 0.735, 0.395) infinite',
+                  animation:
+                    'MuiLinearProgress-keyframes-indeterminate1 2.1s cubic-bezier(0.65, 0.815, 0.735, 0.395) infinite',
                 },
                 '& .MuiLinearProgress-bar2Indeterminate': {
-                  animation: 'MuiLinearProgress-keyframes-indeterminate2 2.1s cubic-bezier(0.165, 0.84, 0.44, 1) 1.15s infinite',
+                  animation:
+                    'MuiLinearProgress-keyframes-indeterminate2 2.1s cubic-bezier(0.165, 0.84, 0.44, 1) 1.15s infinite',
                 },
               }}
             />
@@ -415,7 +408,7 @@ export const useRouterProgress = () => {
 
     // For Next.js router events
     if (typeof window !== 'undefined' && window.next?.router) {
-      const router = window.next.router;
+      const { router } = window.next;
       router.events.on('routeChangeStart', handleRouteChangeStart);
       router.events.on('routeChangeComplete', handleRouteChangeComplete);
       router.events.on('routeChangeError', handleRouteChangeError);

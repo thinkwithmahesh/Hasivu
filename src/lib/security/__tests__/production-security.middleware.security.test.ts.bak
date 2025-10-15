@@ -1,0 +1,493 @@
+// HASIVU Platform - Security Test Suite
+// Priority 5: Advanced Testing & Quality Assurance
+// Following Archon task-driven development principles
+
+import { NextRequest } from 'next/server';
+import { ProductionSecurityMiddleware } from '../production-security.middleware';
+import { SecurityService } from '../security.service';
+
+// Mock external dependencies
+jest.mock('../security.service');
+jest.mock('ioredis', () => ({
+  default: jest.fn(() => ({
+    connect: jest.fn(),
+    get: jest.fn(),
+    setEx: jest.fn(),
+    incr: jest.fn(),
+    expire: jest.fn(),
+    disconnect: jest.fn(),
+  })),
+}));
+
+describe('ProductionSecurityMiddleware - Security Tests', () => {
+  let securityMiddleware: ProductionSecurityMiddleware;
+  let mockSecurityService: jest.Mocked<SecurityService>;
+
+  beforeEach(() => {
+    // Reset all mocks
+    jest.clearAllMocks();
+    
+    // Create fresh instances
+    mockSecurityService = new SecurityService() as jest.Mocked<SecurityService>;
+    securityMiddleware = new ProductionSecurityMiddleware();
+    
+    // Setup default mock implementations
+    mockSecurityService.validateCSRFToken.mockResolvedValue(true);
+    mockSecurityService.sanitizeInput.mockImplementation((input) => input);
+    mockSecurityService.detectSQLInjection.mockReturnValue(false);
+    mockSecurityService.validateJWTToken.mockResolvedValue({ valid: true, payload: {} });
+  });
+
+  afterEach(async () => {
+    // Cleanup resources
+    await securityMiddleware.cleanup?.();
+  });
+
+  describe('Rate Limiting Security', () => {
+    it('should block requests exceeding rate limits', async () => {
+      const request = new NextRequest('https://api.hasivu.edu.in/api/orders', {
+        method: 'POST',
+        headers: {
+          'x-forwarded-for': '192.168.1.100',
+          'user-agent': 'Mozilla/5.0',
+        },
+      });
+
+      // Simulate multiple requests from same IP
+      const responses = [];
+      for (let i = 0; i < 150; i++) { // Exceed rate limit of 100/minute
+        const response = await securityMiddleware.handleRequest(request);
+        responses.push(response);
+      }
+
+      // Check that later requests are blocked
+      const blockedResponses = responses.filter(r => r.status === 429);
+      expect(blockedResponses.length).toBeGreaterThan(0);
+      
+      const lastResponse = responses[responses.length - 1];
+      expect(lastResponse.status).toBe(429);
+      expect(lastResponse.headers.get('X-RateLimit-Limit')).toBeDefined();
+      expect(lastResponse.headers.get('X-RateLimit-Remaining')).toBe('0');
+    });
+
+    it('should apply different rate limits for different endpoints', async () => {
+      const authRequest = new NextRequest('https://api.hasivu.edu.in/api/auth/login', {
+        method: 'POST',
+        headers: { 'x-forwarded-for': '192.168.1.101' },
+      });
+
+      const orderRequest = new NextRequest('https://api.hasivu.edu.in/api/orders', {
+        method: 'GET',
+        headers: { 'x-forwarded-for': '192.168.1.101' },
+      });
+
+      // Auth endpoints should have stricter limits (5/minute)
+      const authResponses = [];
+      for (let i = 0; i < 10; i++) {
+        const response = await securityMiddleware.handleRequest(authRequest);
+        authResponses.push(response);
+      }
+
+      const authBlocked = authResponses.filter(r => r.status === 429);
+      expect(authBlocked.length).toBeGreaterThan(0);
+
+      // Order endpoints should have higher limits
+      const orderResponse = await securityMiddleware.handleRequest(orderRequest);
+      expect(orderResponse.status).not.toBe(429);
+    });
+
+    it('should implement sliding window rate limiting', async () => {
+      const request = new NextRequest('https://api.hasivu.edu.in/api/orders', {
+        method: 'GET',
+        headers: { 'x-forwarded-for': '192.168.1.102' },
+      });
+
+      // Make requests at the rate limit boundary
+      for (let i = 0; i < 100; i++) {
+        const response = await securityMiddleware.handleRequest(request);
+        expect(response.status).not.toBe(429);
+      }
+
+      // Next request should be blocked
+      const blockedResponse = await securityMiddleware.handleRequest(request);
+      expect(blockedResponse.status).toBe(429);
+    });
+  });
+
+  describe('CSRF Protection Security', () => {
+    it('should reject POST requests without valid CSRF token', async () => {
+      const request = new NextRequest('https://api.hasivu.edu.in/api/orders', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'origin': 'https://malicious-site.com',
+        },
+        body: JSON.stringify({ itemId: 'item_123' }),
+      });
+
+      mockSecurityService.validateCSRFToken.mockResolvedValue(false);
+
+      const response = await securityMiddleware.handleRequest(request);
+      
+      expect(response.status).toBe(403);
+      expect(await response.text()).toContain('CSRF');
+    });
+
+    it('should allow POST requests with valid CSRF token', async () => {
+      const request = new NextRequest('https://api.hasivu.edu.in/api/orders', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'x-csrf-token': 'valid-csrf-token',
+          'origin': 'https://app.hasivu.edu.in',
+        },
+        body: JSON.stringify({ itemId: 'item_123' }),
+      });
+
+      mockSecurityService.validateCSRFToken.mockResolvedValue(true);
+
+      const response = await securityMiddleware.handleRequest(request);
+      
+      expect(response.status).not.toBe(403);
+      expect(mockSecurityService.validateCSRFToken).toHaveBeenCalledWith('valid-csrf-token');
+    });
+
+    it('should validate origin header against allowed origins', async () => {
+      const maliciousRequest = new NextRequest('https://api.hasivu.edu.in/api/orders', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'origin': 'https://evil-site.com',
+          'x-csrf-token': 'token',
+        },
+      });
+
+      const response = await securityMiddleware.handleRequest(maliciousRequest);
+      
+      expect(response.status).toBe(403);
+    });
+  });
+
+  describe('Input Sanitization Security', () => {
+    it('should detect and block SQL injection attempts', async () => {
+      const maliciousPayload = {
+        query: "'; DROP TABLE users; --",
+        email: "test@example.com' OR '1'='1",
+      };
+
+      const request = new NextRequest('https://api.hasivu.edu.in/api/users/search', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(maliciousPayload),
+      });
+
+      mockSecurityService.detectSQLInjection.mockReturnValue(true);
+
+      const response = await securityMiddleware.handleRequest(request);
+      
+      expect(response.status).toBe(400);
+      expect(await response.text()).toContain('malicious');
+    });
+
+    it('should sanitize XSS attempts', async () => {
+      const xssPayload = {
+        name: '<script>alert("XSS")</script>',
+        description: '<img src="x" onerror="alert(1)">',
+      };
+
+      const request = new NextRequest('https://api.hasivu.edu.in/api/menu/items', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(xssPayload),
+      });
+
+      const sanitizedPayload = {
+        name: '&lt;script&gt;alert("XSS")&lt;/script&gt;',
+        description: '&lt;img src="x" onerror="alert(1)"&gt;',
+      };
+
+      mockSecurityService.sanitizeInput.mockReturnValue(sanitizedPayload);
+
+      const response = await securityMiddleware.handleRequest(request);
+      
+      expect(mockSecurityService.sanitizeInput).toHaveBeenCalledWith(xssPayload);
+      expect(response.status).not.toBe(400);
+    });
+
+    it('should validate and sanitize file uploads', async () => {
+      const formData = new FormData();
+      formData.append('file', new Blob(['<script>alert("XSS")</script>'], { type: 'text/html' }), 'malicious.html');
+      formData.append('description', 'Safe description');
+
+      const request = new NextRequest('https://api.hasivu.edu.in/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const response = await securityMiddleware.handleRequest(request);
+      
+      // Should reject dangerous file types
+      expect(response.status).toBe(400);
+      expect(await response.text()).toContain('file type');
+    });
+  });
+
+  describe('Bot Detection Security', () => {
+    it('should detect and block obvious bots', async () => {
+      const botRequest = new NextRequest('https://api.hasivu.edu.in/api/orders', {
+        method: 'GET',
+        headers: {
+          'user-agent': 'BadBot/1.0',
+          'x-forwarded-for': '1.2.3.4',
+        },
+      });
+
+      const response = await securityMiddleware.handleRequest(botRequest);
+      
+      expect(response.status).toBe(403);
+      expect(await response.text()).toContain('bot');
+    });
+
+    it('should allow legitimate user agents', async () => {
+      const legitimateRequest = new NextRequest('https://api.hasivu.edu.in/api/orders', {
+        method: 'GET',
+        headers: {
+          'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'x-forwarded-for': '192.168.1.105',
+        },
+      });
+
+      const response = await securityMiddleware.handleRequest(legitimateRequest);
+      
+      expect(response.status).not.toBe(403);
+    });
+
+    it('should implement behavioral analysis for bot detection', async () => {
+      const suspiciousIP = '10.0.0.100';
+      
+      // Simulate rapid requests from same IP
+      const requests = Array.from({ length: 50 }, (_, i) => 
+        new NextRequest(`https://api.hasivu.edu.in/api/menu?page=${i}`, {
+          method: 'GET',
+          headers: {
+            'x-forwarded-for': suspiciousIP,
+            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          },
+        })
+      );
+
+      const responses = await Promise.all(
+        requests.map(req => securityMiddleware.handleRequest(req))
+      );
+
+      // Later requests should be flagged as bot-like behavior
+      const blockedResponses = responses.filter(r => r.status === 403);
+      expect(blockedResponses.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('Security Headers', () => {
+    it('should add all required security headers', async () => {
+      const request = new NextRequest('https://api.hasivu.edu.in/api/health', {
+        method: 'GET',
+      });
+
+      const response = await securityMiddleware.handleRequest(request);
+      
+      // Verify security headers are present
+      expect(response.headers.get('X-Frame-Options')).toBe('DENY');
+      expect(response.headers.get('X-Content-Type-Options')).toBe('nosniff');
+      expect(response.headers.get('X-XSS-Protection')).toBe('1; mode=block');
+      expect(response.headers.get('Strict-Transport-Security')).toContain('max-age=');
+      expect(response.headers.get('Content-Security-Policy')).toContain('default-src');
+      expect(response.headers.get('Referrer-Policy')).toBe('strict-origin-when-cross-origin');
+      expect(response.headers.get('Permissions-Policy')).toBeDefined();
+    });
+
+    it('should set appropriate CORS headers for API endpoints', async () => {
+      const request = new NextRequest('https://api.hasivu.edu.in/api/menu', {
+        method: 'OPTIONS',
+        headers: {
+          'origin': 'https://app.hasivu.edu.in',
+          'access-control-request-method': 'GET',
+        },
+      });
+
+      const response = await securityMiddleware.handleRequest(request);
+      
+      expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://app.hasivu.edu.in');
+      expect(response.headers.get('Access-Control-Allow-Methods')).toContain('GET');
+      expect(response.headers.get('Access-Control-Allow-Headers')).toContain('authorization');
+    });
+  });
+
+  describe('Threat Tracking and Analytics', () => {
+    it('should track and log security threats', async () => {
+      const maliciousRequest = new NextRequest('https://api.hasivu.edu.in/api/orders', {
+        method: 'POST',
+        headers: {
+          'x-forwarded-for': '192.168.1.200',
+          'user-agent': 'AttackBot/1.0',
+        },
+        body: JSON.stringify({ query: "'; DROP TABLE orders; --" }),
+      });
+
+      mockSecurityService.detectSQLInjection.mockReturnValue(true);
+
+      const response = await securityMiddleware.handleRequest(maliciousRequest);
+      
+      expect(response.status).toBe(400);
+      
+      // Verify threat was logged and tracked
+      const threatMetrics = await securityMiddleware.getThreatMetrics();
+      expect(threatMetrics.totalThreats).toBeGreaterThan(0);
+      expect(threatMetrics.ipThreats['192.168.1.200']).toBeDefined();
+      expect(threatMetrics.threatTypes['SQL_INJECTION']).toBeGreaterThan(0);
+    });
+
+    it('should implement threat scoring and escalation', async () => {
+      const attackerIP = '192.168.1.250';
+      
+      // Simulate multiple attack types from same IP
+      const attacks = [
+        { type: 'SQL_INJECTION', body: { query: "'; DROP TABLE users; --" } },
+        { type: 'XSS', body: { name: '<script>alert("XSS")</script>' } },
+        { type: 'BOT', userAgent: 'EvilBot/1.0' },
+      ];
+
+      for (const attack of attacks) {
+        const request = new NextRequest('https://api.hasivu.edu.in/api/test', {
+          method: 'POST',
+          headers: {
+            'x-forwarded-for': attackerIP,
+            'user-agent': attack.userAgent || 'Mozilla/5.0',
+            'content-type': 'application/json',
+          },
+          body: JSON.stringify(attack.body || {}),
+        });
+
+        if (attack.type === 'SQL_INJECTION') {
+          mockSecurityService.detectSQLInjection.mockReturnValue(true);
+        }
+
+        await securityMiddleware.handleRequest(request);
+      }
+
+      const threatMetrics = await securityMiddleware.getThreatMetrics();
+      expect(threatMetrics.ipThreats[attackerIP].score).toBeGreaterThan(100);
+      expect(threatMetrics.ipThreats[attackerIP].blocked).toBe(true);
+    });
+  });
+
+  describe('Performance Under Attack', () => {
+    it('should maintain performance during DDoS simulation', async () => {
+      const startTime = Date.now();
+      
+      // Simulate concurrent requests from multiple IPs
+      const requests = Array.from({ length: 1000 }, (_, i) => 
+        new NextRequest('https://api.hasivu.edu.in/api/health', {
+          method: 'GET',
+          headers: { 'x-forwarded-for': `192.168.1.${i % 255}` },
+        })
+      );
+
+      const responses = await Promise.all(
+        requests.map(req => securityMiddleware.handleRequest(req))
+      );
+
+      const endTime = Date.now();
+      const duration = endTime - startTime;
+      
+      // Should handle 1000 requests in under 5 seconds
+      expect(duration).toBeLessThan(5000);
+      
+      // Most legitimate requests should succeed
+      const successfulResponses = responses.filter(r => r.status < 400);
+      expect(successfulResponses.length).toBeGreaterThan(800);
+    });
+
+    it('should not leak memory during sustained attacks', async () => {
+      const initialMemory = process.memoryUsage().heapUsed;
+      
+      // Simulate 10 minutes of sustained attacks
+      for (let minute = 0; minute < 10; minute++) {
+        const requests = Array.from({ length: 100 }, (_, i) => 
+          new NextRequest('https://api.hasivu.edu.in/api/test', {
+            method: 'POST',
+            headers: { 'x-forwarded-for': `10.0.${minute}.${i}` },
+            body: JSON.stringify({ malicious: 'payload' }),
+          })
+        );
+
+        await Promise.all(requests.map(req => securityMiddleware.handleRequest(req)));
+        
+        // Force garbage collection if available
+        if (global.gc) {
+          global.gc();
+        }
+      }
+
+      const finalMemory = process.memoryUsage().heapUsed;
+      const memoryGrowth = (finalMemory - initialMemory) / (1024 * 1024); // MB
+      
+      // Memory growth should be reasonable (less than 50MB)
+      expect(memoryGrowth).toBeLessThan(50);
+    });
+  });
+
+  describe('Edge Cases and Error Handling', () => {
+    it('should handle malformed JSON gracefully', async () => {
+      const request = new NextRequest('https://api.hasivu.edu.in/api/orders', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: '{"invalid": json}',
+      });
+
+      const response = await securityMiddleware.handleRequest(request);
+      
+      expect(response.status).toBe(400);
+      expect(await response.text()).toContain('Invalid JSON');
+    });
+
+    it('should handle missing headers gracefully', async () => {
+      const request = new NextRequest('https://api.hasivu.edu.in/api/orders', {
+        method: 'POST',
+        // Missing content-type and other headers
+      });
+
+      const response = await securityMiddleware.handleRequest(request);
+      
+      // Should not crash, should apply default security measures
+      expect(response).toBeDefined();
+      expect(response.headers.get('X-Content-Type-Options')).toBe('nosniff');
+    });
+
+    it('should handle Redis connection failures', async () => {
+      // Mock Redis connection failure
+      const mockRedis = require('redis').createClient();
+      mockRedis.connect.mockRejectedValue(new Error('Redis connection failed'));
+
+      const request = new NextRequest('https://api.hasivu.edu.in/api/orders', {
+        method: 'GET',
+        headers: { 'x-forwarded-for': '192.168.1.300' },
+      });
+
+      // Should fallback to in-memory rate limiting
+      const response = await securityMiddleware.handleRequest(request);
+      
+      expect(response).toBeDefined();
+      expect(response.status).not.toBe(500);
+    });
+  });
+});
+
+// Helper function to generate test tokens
+function generateTestToken(payload: any = {}): string {
+  // Simple JWT-like token for testing
+  const header = { alg: 'HS256', typ: 'JWT' };
+  const testPayload = { ...payload, exp: Date.now() / 1000 + 3600 };
+  
+  return Buffer.from(JSON.stringify(header)).toString('base64') + '.' +
+         Buffer.from(JSON.stringify(testPayload)).toString('base64') + '.' +
+         'test-signature';
+}

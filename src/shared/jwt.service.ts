@@ -4,16 +4,10 @@
  * Replaces all mock authentication implementations
  */
 
-import jwt from 'jsonwebtoken';
+import * as jwt from 'jsonwebtoken';
 import { APIGatewayProxyEvent } from 'aws-lambda';
 import { config } from '../config/environment';
-// import { LoggerService } from './logger.service';  // Temporarily use console for logging
-const logger = {
-  info: (message: string, data?: any) => console.log(message, data),
-  warn: (message: string, data?: any) => console.warn(message, data),
-  error: (message: string, data?: any) => console.error(message, data),
-  debug: (message: string, data?: any) => console.debug(message, data)
-};
+import { logger } from './logger.service';
 
 /**
  * JWT payload interface
@@ -91,7 +85,7 @@ export class JWTService {
   private readonly audience: string;
   private readonly defaultExpiresIn: string;
   private readonly refreshExpiresIn: string;
-  
+
   private constructor() {
     this.jwtSecret = config.jwt.secret;
     this.refreshSecret = config.jwt.refreshSecret;
@@ -137,7 +131,9 @@ export class JWTService {
     }
 
     if (issues.length > 0) {
-      logger.error('JWT configuration validation failed', { issues });
+      logger.error('JWT configuration validation failed', undefined, {
+        issues,
+      });
       throw new Error(`JWT configuration issues: ${issues.join(', ')}`);
     }
 
@@ -145,7 +141,7 @@ export class JWTService {
       issuer: this.issuer,
       audience: this.audience,
       defaultExpiresIn: this.defaultExpiresIn,
-      refreshExpiresIn: this.refreshExpiresIn
+      refreshExpiresIn: this.refreshExpiresIn,
     });
   }
 
@@ -194,8 +190,8 @@ export class JWTService {
 
       // Priority 5: Custom header (x-access-token) - safe property access
       const customHeaderName = (config.jwt as any).customHeaderName || 'x-access-token';
-      const customToken = event.headers?.[customHeaderName] ||
-                         event.headers?.[customHeaderName.toLowerCase()];
+      const customToken =
+        event.headers?.[customHeaderName] || event.headers?.[customHeaderName.toLowerCase()];
       if (customToken && customToken.length > 0) {
         logger.debug('JWT token found in custom header');
         return customToken;
@@ -205,14 +201,14 @@ export class JWTService {
         hasAuthHeader: !!authHeader,
         hasQueryToken: !!queryToken,
         hasCookies: !!cookieHeader,
-        requestId: event.requestContext?.requestId
+        requestId: event.requestContext?.requestId,
       });
 
       return null;
-    } catch (error) {
-      logger.error('Error extracting JWT token from event', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        requestId: event.requestContext?.requestId
+    } catch (error: unknown) {
+      logger.error('Error extracting JWT token from event', undefined, {
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        requestId: event.requestContext?.requestId,
       });
       return null;
     }
@@ -223,10 +219,10 @@ export class JWTService {
    */
   private parseCookies(cookieHeader: string): Record<string, string> {
     const cookies: Record<string, string> = {};
-    
+
     try {
       const cookiePairs = cookieHeader.split(';');
-      
+
       for (const pair of cookiePairs) {
         const [key, ...valueParts] = pair.trim().split('=');
         if (key && valueParts.length > 0) {
@@ -234,10 +230,10 @@ export class JWTService {
           cookies[key.trim()] = decodeURIComponent(value);
         }
       }
-    } catch (error) {
-      logger.warn('Failed to parse cookies', { 
-        cookieHeader, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+    } catch (error: unknown) {
+      logger.warn('Failed to parse cookies', {
+        cookieHeader,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
     }
 
@@ -254,7 +250,7 @@ export class JWTService {
         payload: null,
         token: null,
         error: 'Token is empty or null',
-        errorCode: 'EMPTY_TOKEN'
+        errorCode: 'EMPTY_TOKEN',
       };
     }
 
@@ -263,7 +259,7 @@ export class JWTService {
       const decoded = jwt.verify(token, this.jwtSecret, {
         issuer: this.issuer,
         audience: this.audience,
-        complete: false
+        complete: false,
       }) as JWTPayload;
 
       // Validate token type (should be access token)
@@ -273,21 +269,21 @@ export class JWTService {
           payload: null,
           token,
           error: `Invalid token type: ${decoded.tokenType}. Expected: access`,
-          errorCode: 'INVALID_TOKEN_TYPE'
+          errorCode: 'INVALID_TOKEN_TYPE',
         };
       }
 
       // Validate required fields
       const requiredFields = ['userId', 'email', 'role'];
       const missingFields = requiredFields.filter(field => !decoded[field as keyof JWTPayload]);
-      
+
       if (missingFields.length > 0) {
         return {
           isValid: false,
           payload: null,
           token,
           error: `Missing required fields: ${missingFields.join(', ')}`,
-          errorCode: 'MISSING_FIELDS'
+          errorCode: 'MISSING_FIELDS',
         };
       }
 
@@ -302,7 +298,7 @@ export class JWTService {
         email: decoded.email,
         role: decoded.role,
         expiresAt: expiresAt?.toISOString(),
-        remainingTTL
+        remainingTTL,
       });
 
       return {
@@ -311,10 +307,9 @@ export class JWTService {
         token,
         expiresAt,
         issuedAt,
-        remainingTTL
+        remainingTTL,
       };
-
-    } catch (error) {
+    } catch (error: unknown) {
       let errorMessage = 'Token verification failed';
       let errorCode = 'VERIFICATION_FAILED';
 
@@ -338,7 +333,7 @@ export class JWTService {
         error: errorMessage,
         errorCode,
         tokenLength: token.length,
-        tokenPrefix: token.substring(0, 20) + '...'
+        tokenPrefix: `${token.substring(0, 20)}...`,
       });
 
       return {
@@ -346,7 +341,7 @@ export class JWTService {
         payload: null,
         token,
         error: errorMessage,
-        errorCode
+        errorCode,
       };
     }
   }
@@ -363,7 +358,7 @@ export class JWTService {
         ...payload,
         tokenType: 'access',
         iat: Math.floor(Date.now() / 1000),
-        exp: 0 // Will be set by jwt.sign
+        exp: 0, // Will be set by jwt.sign
       };
 
       // Add session and device info if requested
@@ -384,7 +379,7 @@ export class JWTService {
         jwtid: options.jwtid,
         subject: options.subject || payload.userId,
         keyid: options.keyid as string | undefined,
-        notBefore: options.notBefore as any
+        notBefore: options.notBefore as any,
       };
 
       const token = jwt.sign(tokenPayload, this.jwtSecret, signOptions);
@@ -395,16 +390,16 @@ export class JWTService {
         role: payload.role,
         expiresIn: signOptions.expiresIn,
         includeSessionData: options.includeSessionData,
-        includeDeviceInfo: options.includeDeviceInfo
+        includeDeviceInfo: options.includeDeviceInfo,
       });
 
       return token;
-    } catch (error) {
+    } catch (error: unknown) {
       const errorMessage = `Failed to generate access token: ${error instanceof Error ? error.message : 'Unknown error'}`;
-      logger.error(errorMessage, {
+      logger.error(errorMessage, undefined, {
         userId: payload.userId,
         email: payload.email,
-        error: error instanceof Error ? error.stack : error
+        error: error instanceof Error ? error.stack : error,
       });
       throw new Error(errorMessage);
     }
@@ -422,7 +417,7 @@ export class JWTService {
         ...payload,
         tokenType: 'refresh' as const,
         iat: Math.floor(Date.now() / 1000),
-        exp: 0 // Will be set by jwt.sign
+        exp: 0, // Will be set by jwt.sign
       };
 
       const signOptions: jwt.SignOptions = {
@@ -432,7 +427,7 @@ export class JWTService {
         jwtid: options.jwtid,
         subject: options.subject || payload.userId,
         keyid: options.keyid as string | undefined,
-        notBefore: options.notBefore as any
+        notBefore: options.notBefore as any,
       };
 
       const token = jwt.sign(tokenPayload, this.refreshSecret, signOptions);
@@ -441,16 +436,16 @@ export class JWTService {
         userId: payload.userId,
         email: payload.email,
         sessionId: payload.sessionId,
-        expiresIn: signOptions.expiresIn
+        expiresIn: signOptions.expiresIn,
       });
 
       return token;
-    } catch (error) {
+    } catch (error: unknown) {
       const errorMessage = `Failed to generate refresh token: ${error instanceof Error ? error.message : 'Unknown error'}`;
-      logger.error(errorMessage, {
+      logger.error(errorMessage, undefined, {
         userId: payload.userId,
         email: payload.email,
-        error: error instanceof Error ? error.stack : error
+        error: error instanceof Error ? error.stack : error,
       });
       throw new Error(errorMessage);
     }
@@ -466,7 +461,7 @@ export class JWTService {
         payload: null,
         token: null,
         error: 'Refresh token is empty or null',
-        errorCode: 'EMPTY_TOKEN'
+        errorCode: 'EMPTY_TOKEN',
       };
     }
 
@@ -474,7 +469,7 @@ export class JWTService {
       const decoded = jwt.verify(token, this.refreshSecret, {
         issuer: this.issuer,
         audience: this.audience,
-        complete: false
+        complete: false,
       }) as JWTPayload;
 
       // Validate token type (should be refresh token)
@@ -484,21 +479,21 @@ export class JWTService {
           payload: null,
           token,
           error: `Invalid token type: ${decoded.tokenType}. Expected: refresh`,
-          errorCode: 'INVALID_TOKEN_TYPE'
+          errorCode: 'INVALID_TOKEN_TYPE',
         };
       }
 
       // Validate required fields for refresh token
       const requiredFields = ['userId', 'email', 'role'];
       const missingFields = requiredFields.filter(field => !decoded[field as keyof JWTPayload]);
-      
+
       if (missingFields.length > 0) {
         return {
           isValid: false,
           payload: null,
           token,
           error: `Missing required fields: ${missingFields.join(', ')}`,
-          errorCode: 'MISSING_FIELDS'
+          errorCode: 'MISSING_FIELDS',
         };
       }
 
@@ -514,7 +509,7 @@ export class JWTService {
         role: decoded.role,
         sessionId: decoded.sessionId,
         expiresAt: expiresAt?.toISOString(),
-        remainingTTL
+        remainingTTL,
       });
 
       return {
@@ -523,10 +518,9 @@ export class JWTService {
         token,
         expiresAt,
         issuedAt,
-        remainingTTL
+        remainingTTL,
       };
-
-    } catch (error) {
+    } catch (error: unknown) {
       let errorMessage = 'Refresh token verification failed';
       let errorCode = 'VERIFICATION_FAILED';
 
@@ -549,7 +543,7 @@ export class JWTService {
       logger.warn('Refresh token verification failed', {
         error: errorMessage,
         errorCode,
-        tokenLength: token.length
+        tokenLength: token.length,
       });
 
       return {
@@ -557,7 +551,7 @@ export class JWTService {
         payload: null,
         token,
         error: errorMessage,
-        errorCode
+        errorCode,
       };
     }
   }
@@ -569,12 +563,12 @@ export class JWTService {
     try {
       // Verify the refresh token
       const refreshResult = this.verifyRefreshToken(refreshToken);
-      
+
       if (!refreshResult.isValid || !refreshResult.payload) {
         return {
           success: false,
           error: refreshResult.error || 'Invalid refresh token',
-          errorCode: refreshResult.errorCode
+          errorCode: refreshResult.errorCode,
         };
       }
 
@@ -585,7 +579,7 @@ export class JWTService {
         role: refreshResult.payload.role,
         permissions: refreshResult.payload.permissions || [],
         businessId: refreshResult.payload.businessId,
-        sessionId: refreshResult.payload.sessionId
+        sessionId: refreshResult.payload.sessionId,
       };
 
       const newAccessToken = this.generateAccessToken(accessTokenPayload);
@@ -597,7 +591,7 @@ export class JWTService {
           userId: refreshResult.payload.userId,
           email: refreshResult.payload.email,
           role: refreshResult.payload.role,
-          sessionId: refreshResult.payload.sessionId
+          sessionId: refreshResult.payload.sessionId,
         });
       }
 
@@ -609,26 +603,25 @@ export class JWTService {
         userId: refreshResult.payload.userId,
         email: refreshResult.payload.email,
         sessionId: refreshResult.payload.sessionId,
-        rotatedRefreshToken: !!newRefreshToken
+        rotatedRefreshToken: !!newRefreshToken,
       });
 
       return {
         success: true,
         accessToken: newAccessToken,
         refreshToken: newRefreshToken,
-        expiresIn
+        expiresIn,
       };
-
-    } catch (error) {
+    } catch (error: unknown) {
       const errorMessage = `Failed to refresh access token: ${error instanceof Error ? error.message : 'Unknown error'}`;
-      logger.error(errorMessage, {
-        error: error instanceof Error ? error.stack : error
+      logger.error(errorMessage, undefined, {
+        error: error instanceof Error ? error.stack : error,
       });
 
       return {
         success: false,
         error: errorMessage,
-        errorCode: 'REFRESH_FAILED'
+        errorCode: 'REFRESH_FAILED',
       };
     }
   }
@@ -640,10 +633,10 @@ export class JWTService {
     try {
       const decoded = jwt.decode(token) as JWTPayload;
       return decoded;
-    } catch (error) {
+    } catch (error: unknown) {
       logger.warn('Failed to decode JWT token', {
         error: error instanceof Error ? error.message : 'Unknown error',
-        tokenLength: token.length
+        tokenLength: token.length,
       });
       return null;
     }
@@ -731,12 +724,15 @@ export class JWTService {
   ): { accessToken: string; refreshToken: string; expiresIn: number } {
     try {
       const accessToken = this.generateAccessToken(payload, options);
-      const refreshToken = this.generateRefreshToken({
-        userId: payload.userId,
-        email: payload.email,
-        role: payload.role,
-        sessionId: payload.sessionId
-      }, options);
+      const refreshToken = this.generateRefreshToken(
+        {
+          userId: payload.userId,
+          email: payload.email,
+          role: payload.role,
+          sessionId: payload.sessionId,
+        },
+        options
+      );
 
       // Calculate expiration time from access token
       const decoded = jwt.decode(accessToken) as JWTPayload;
@@ -747,21 +743,20 @@ export class JWTService {
         email: payload.email,
         role: payload.role,
         sessionId: payload.sessionId,
-        expiresIn
+        expiresIn,
       });
 
       return {
         accessToken,
         refreshToken,
-        expiresIn
+        expiresIn,
       };
-
-    } catch (error) {
+    } catch (error: unknown) {
       const errorMessage = `Failed to generate token pair: ${error instanceof Error ? error.message : 'Unknown error'}`;
-      logger.error(errorMessage, {
+      logger.error(errorMessage, undefined, {
         userId: payload.userId,
         email: payload.email,
-        error: error instanceof Error ? error.stack : error
+        error: error instanceof Error ? error.stack : error,
       });
       throw new Error(errorMessage);
     }
@@ -785,13 +780,13 @@ export class JWTService {
         userId: decoded.userId,
         email: decoded.email,
         tokenType: decoded.tokenType,
-        expiresAt: decoded.exp ? new Date(decoded.exp * 1000).toISOString() : 'unknown'
+        expiresAt: decoded.exp ? new Date(decoded.exp * 1000).toISOString() : 'unknown',
       });
 
       return true;
-    } catch (error) {
-      logger.error('Failed to revoke token', {
-        error: error instanceof Error ? error.message : 'Unknown error'
+    } catch (error: unknown) {
+      logger.error('Failed to revoke token', undefined, {
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
       });
       return false;
     }
@@ -807,7 +802,7 @@ export class JWTService {
         userId: 'health-check-user',
         email: 'healthcheck@test.com',
         role: 'test',
-        permissions: ['health:check']
+        permissions: ['health:check'],
       };
 
       const testToken = this.generateAccessToken(testPayload, { expiresIn: '1m' });
@@ -823,8 +818,8 @@ export class JWTService {
             issuer: this.issuer,
             audience: this.audience,
             defaultExpiry: this.defaultExpiresIn,
-            refreshExpiry: this.refreshExpiresIn
-          }
+            refreshExpiry: this.refreshExpiresIn,
+          },
         };
       } else {
         return {
@@ -833,17 +828,17 @@ export class JWTService {
             jwtConfigured: true,
             tokenGeneration: 'working',
             tokenVerification: 'failed',
-            error: verification.error
-          }
+            error: verification.error,
+          },
         };
       }
-    } catch (error) {
+    } catch (error: unknown) {
       return {
         status: 'unhealthy',
         details: {
           error: error instanceof Error ? error.message : 'Unknown error',
-          timestamp: new Date().toISOString()
-        }
+          timestamp: new Date().toISOString(),
+        },
       };
     }
   }

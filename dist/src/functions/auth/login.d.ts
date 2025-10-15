@@ -1,4 +1,9 @@
-import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
-export declare const loginHandler: (event: APIGatewayProxyEvent, context: Context) => Promise<APIGatewayProxyResult>;
-export default loginHandler;
+import { APIGatewayProxyResult, APIGatewayProxyEvent } from 'aws-lambda';
+export interface LoginRequest {
+    email: string;
+    password: string;
+}
+export declare const handler: (event: APIGatewayProxyEvent, _context: any) => Promise<APIGatewayProxyResult>;
+export declare const loginHandler: (event: APIGatewayProxyEvent, _context: any) => Promise<APIGatewayProxyResult>;
+export default handler;
 //# sourceMappingURL=login.d.ts.map

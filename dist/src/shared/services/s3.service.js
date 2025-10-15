@@ -155,13 +155,13 @@ class S3Service {
                 category,
                 entityId,
                 filename,
-                error: error.message,
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
                 duration: `${duration}ms`
             });
             if (error instanceof S3ServiceError) {
                 throw error;
             }
-            throw new S3ServiceError(`S3 upload failed: ${error.message}`, 'UPLOAD_FAILED', 500);
+            throw new S3ServiceError(`S3 upload failed: ${error instanceof Error ? error.message : String(error)}`, 'UPLOAD_FAILED', 500);
         }
     }
     async uploadBase64Image(category, entityId, imageData, options = {}, userId) {
@@ -183,12 +183,12 @@ class S3Service {
                 category,
                 entityId,
                 mimeType: imageData.mimeType,
-                error: error.message
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
             });
             if (error instanceof S3ServiceError) {
                 throw error;
             }
-            throw new S3ServiceError(`Base64 image upload failed: ${error.message}`, 'BASE64_UPLOAD_FAILED', 500);
+            throw new S3ServiceError(`Base64 image upload failed: ${error instanceof Error ? error.message : String(error)}`, 'BASE64_UPLOAD_FAILED', 500);
         }
     }
     async multipartUpload(key, buffer, params) {
@@ -217,7 +217,7 @@ class S3Service {
             };
         }
         catch (error) {
-            throw new S3ServiceError(`Multipart upload failed: ${error.message}`, 'MULTIPART_UPLOAD_FAILED', 500, key);
+            throw new S3ServiceError(`Multipart upload failed: ${error instanceof Error ? error.message : String(error)}`, 'MULTIPART_UPLOAD_FAILED', 500, key);
         }
     }
     async downloadFile(key, options = {}) {
@@ -253,12 +253,12 @@ class S3Service {
         catch (error) {
             logger.error('S3 download failed', {
                 key,
-                error: error.message
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
             });
             if (error instanceof S3ServiceError) {
                 throw error;
             }
-            throw new S3ServiceError(`Failed to download file: ${error.message}`, 'DOWNLOAD_FAILED', 500, key);
+            throw new S3ServiceError(`Failed to download file: ${error instanceof Error ? error.message : String(error)}`, 'DOWNLOAD_FAILED', 500, key);
         }
     }
     async generateUploadUrl(category, entityId, filename, options = {}, userId) {
@@ -293,9 +293,9 @@ class S3Service {
                 category,
                 entityId,
                 filename,
-                error: error.message
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
             });
-            throw new S3ServiceError(`Failed to generate presigned URL: ${error.message}`, 'PRESIGNED_URL_FAILED', 500);
+            throw new S3ServiceError(`Failed to generate presigned URL: ${error instanceof Error ? error.message : String(error)}`, 'PRESIGNED_URL_FAILED', 500);
         }
     }
     async generateDownloadUrl(key, options = {}) {
@@ -317,9 +317,9 @@ class S3Service {
         catch (error) {
             logger.error('Failed to generate presigned download URL', {
                 key,
-                error: error.message
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
             });
-            throw new S3ServiceError(`Failed to generate presigned download URL: ${error.message}`, 'PRESIGNED_DOWNLOAD_URL_FAILED', 500, key);
+            throw new S3ServiceError(`Failed to generate presigned download URL: ${error instanceof Error ? error.message : String(error)}`, 'PRESIGNED_DOWNLOAD_URL_FAILED', 500, key);
         }
     }
     async deleteFile(key, versionId) {
@@ -338,9 +338,9 @@ class S3Service {
         catch (error) {
             logger.error('S3 delete failed', {
                 key,
-                error: error.message
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
             });
-            throw new S3ServiceError(`Failed to delete file: ${error.message}`, 'DELETE_FAILED', 500, key);
+            throw new S3ServiceError(`Failed to delete file: ${error instanceof Error ? error.message : String(error)}`, 'DELETE_FAILED', 500, key);
         }
     }
     async fileExists(key, versionId) {
@@ -359,9 +359,9 @@ class S3Service {
             }
             logger.error('Error checking file existence', {
                 key,
-                error: error.message
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
             });
-            throw new S3ServiceError(`Error checking file existence: ${error.message}`, 'FILE_CHECK_FAILED', 500, key);
+            throw new S3ServiceError(`Error checking file existence: ${error instanceof Error ? error.message : String(error)}`, 'FILE_CHECK_FAILED', 500, key);
         }
     }
     async getFileInfo(key, versionId) {
@@ -389,9 +389,9 @@ class S3Service {
             }
             logger.error('Failed to get file info', {
                 key,
-                error: error.message
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
             });
-            throw new S3ServiceError(`Failed to get file info: ${error.message}`, 'FILE_INFO_FAILED', 500, key);
+            throw new S3ServiceError(`Failed to get file info: ${error instanceof Error ? error.message : String(error)}`, 'FILE_INFO_FAILED', 500, key);
         }
     }
     async listFiles(prefix, maxKeys = 1000) {
@@ -417,9 +417,9 @@ class S3Service {
         catch (error) {
             logger.error('Failed to list files', {
                 prefix,
-                error: error.message
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
             });
-            throw new S3ServiceError(`Failed to list files: ${error.message}`, 'LIST_FILES_FAILED', 500);
+            throw new S3ServiceError(`Failed to list files: ${error instanceof Error ? error.message : String(error)}`, 'LIST_FILES_FAILED', 500);
         }
     }
     async copyFile(sourceKey, destinationKey, options = {}) {
@@ -459,9 +459,9 @@ class S3Service {
             logger.error('S3 copy failed', {
                 sourceKey,
                 destinationKey,
-                error: error.message
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
             });
-            throw new S3ServiceError(`Failed to copy file: ${error.message}`, 'COPY_FAILED', 500, sourceKey);
+            throw new S3ServiceError(`Failed to copy file: ${error instanceof Error ? error.message : String(error)}`, 'COPY_FAILED', 500, sourceKey);
         }
     }
     async uploadDeliveryPhoto(orderId, imageBuffer, filename, userId) {
@@ -487,9 +487,9 @@ class S3Service {
             logger.error('Failed to upload delivery photo', {
                 orderId,
                 filename,
-                error: error.message
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
             });
-            throw new S3ServiceError(`Failed to upload delivery photo: ${error.message}`, 'DELIVERY_PHOTO_UPLOAD_FAILED', 500);
+            throw new S3ServiceError(`Failed to upload delivery photo: ${error instanceof Error ? error.message : String(error)}`, 'DELIVERY_PHOTO_UPLOAD_FAILED', 500);
         }
     }
     async healthCheck() {
@@ -508,13 +508,13 @@ class S3Service {
         catch (error) {
             logger.error('S3 health check failed', {
                 bucket: this.bucketName,
-                error: error.message
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
             });
             return {
                 status: 'unhealthy',
                 timestamp: Date.now(),
                 bucketAccessible: false,
-                error: error.message
+                error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
             };
         }
     }

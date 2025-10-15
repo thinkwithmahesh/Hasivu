@@ -1,6 +1,6 @@
 /**
  * Mobile RFID Tracking API Lambda Function
- * 
+ *
  * Implements Story 2.4: Parent Mobile Integration - Real-time Order Tracking for Mobile App
  */
 
@@ -85,11 +85,11 @@ async function validateParentAccess(studentId: string, parentUserId: string): Pr
       include: {
         rfidCards: {
           where: {
-            isActive: true
-          }
-        }
+            isActive: true,
+          },
+        },
       },
-      take: 1
+      take: 1,
     });
 
     if (!student) {
@@ -107,12 +107,12 @@ async function validateParentAccess(studentId: string, parentUserId: string): Pr
     // Verify parent relationship
     const parentRelationship = await prisma.studentParent.findFirst({
       where: {
-        studentId: studentId,
-        parentId: parentUserId
+        studentId,
+        parentId: parentUserId,
       },
       include: {
-        parent: true
-      }
+        parent: true,
+      },
     });
 
     if (!parentRelationship) {
@@ -124,8 +124,11 @@ async function validateParentAccess(studentId: string, parentUserId: string): Pr
     }
 
     return true;
-  } catch (error) {
-    logger.error('Error validating parent access:', error);
+  } catch (error: unknown) {
+    logger.error(
+      'Error validating parent access:',
+      error instanceof Error ? error : new Error(String(error))
+    );
     return false;
   }
 }
@@ -143,7 +146,7 @@ function generateTrackingSteps(order: any): TrackingStep[] {
     description: `Order #${order.orderNumber} has been placed successfully`,
     completed: true,
     timestamp: order.createdAt,
-    icon: 'shopping-cart'
+    icon: 'shopping-cart',
   };
   steps.push(placedStep);
 
@@ -154,7 +157,7 @@ function generateTrackingSteps(order: any): TrackingStep[] {
     description: 'Your order has been confirmed and is being processed',
     completed: order.status !== 'pending',
     timestamp: order.confirmedAt,
-    icon: 'check-circle'
+    icon: 'check-circle',
   };
   steps.push(confirmedStep);
 
@@ -166,7 +169,7 @@ function generateTrackingSteps(order: any): TrackingStep[] {
       description: 'Payment has been successfully processed',
       completed: true,
       timestamp: order.paidAt,
-      icon: 'credit-card'
+      icon: 'credit-card',
     };
     steps.push(paymentStep);
   }
@@ -178,7 +181,7 @@ function generateTrackingSteps(order: any): TrackingStep[] {
     description: 'Your meal is being prepared in the kitchen',
     completed: ['preparing', 'ready', 'out_for_delivery', 'delivered'].includes(order.status),
     timestamp: order.preparingAt,
-    icon: 'chef-hat'
+    icon: 'chef-hat',
   };
 
   if (!preparingStep.completed && order.status === 'confirmed') {
@@ -193,7 +196,7 @@ function generateTrackingSteps(order: any): TrackingStep[] {
     description: 'Your meal is ready and waiting for delivery',
     completed: ['ready', 'out_for_delivery', 'delivered'].includes(order.status),
     timestamp: order.readyAt,
-    icon: 'package'
+    icon: 'package',
   };
 
   if (!readyStep.completed && ['confirmed', 'preparing'].includes(order.status)) {
@@ -208,7 +211,7 @@ function generateTrackingSteps(order: any): TrackingStep[] {
     description: 'Your order is on its way to the delivery location',
     completed: ['out_for_delivery', 'delivered'].includes(order.status),
     timestamp: order.outForDeliveryAt,
-    icon: 'truck'
+    icon: 'truck',
   };
 
   if (!outForDeliveryStep.completed && ['confirmed', 'preparing', 'ready'].includes(order.status)) {
@@ -224,7 +227,7 @@ function generateTrackingSteps(order: any): TrackingStep[] {
     completed: order.status === 'delivered',
     timestamp: order.deliveredAt,
     location: undefined,
-    icon: 'check-circle-2'
+    icon: 'check-circle-2',
   };
   steps.push(deliveredStep);
 
@@ -245,19 +248,27 @@ export const getMobileTrackingHandler = async (
     // Extract student ID from path parameters
     const studentId = event.pathParameters?.studentId;
     if (!studentId) {
-      return createErrorResponse(400, 'Student ID is required');
+      return createErrorResponse('VALIDATION_ERROR', 'Student ID is required', 400);
     }
 
     // Extract parent user ID from JWT token (assuming it's in the request context)
     const parentUserId = event.requestContext?.authorizer?.principalId;
     if (!parentUserId) {
-      return createErrorResponse(401, 'Unauthorized: Parent authentication required');
+      return createErrorResponse(
+        'UNAUTHORIZED',
+        'Unauthorized: Parent authentication required',
+        401
+      );
     }
 
     // Validate parent access to student
     const hasAccess = await validateParentAccess(studentId, parentUserId);
     if (!hasAccess) {
-      return createErrorResponse(403, 'Unauthorized: Access denied to student information');
+      return createErrorResponse(
+        'FORBIDDEN',
+        'Unauthorized: Access denied to student information',
+        403
+      );
     }
 
     // Get student information
@@ -267,14 +278,14 @@ export const getMobileTrackingHandler = async (
         school: true,
         rfidCards: {
           where: {
-            isActive: true
-          }
-        }
-      }
+            isActive: true,
+          },
+        },
+      },
     });
 
     if (!student) {
-      return createErrorResponse(404, 'Student not found');
+      return createErrorResponse('NOT_FOUND', 'Student not found', 404);
     }
 
     // Get active orders (current day)
@@ -285,30 +296,30 @@ export const getMobileTrackingHandler = async (
 
     const activeOrders = await prisma.order.findMany({
       where: {
-        studentId: studentId,
+        studentId,
         createdAt: {
           gte: today,
-          lt: tomorrow
+          lt: tomorrow,
         },
         status: {
-          in: ['pending', 'confirmed', 'preparing', 'ready', 'out_for_delivery']
-        }
+          in: ['pending', 'confirmed', 'preparing', 'ready', 'out_for_delivery'],
+        },
       },
       include: {
         student: {
           include: {
-            school: true
-          }
+            school: true,
+          },
         },
         orderItems: {
           include: {
-            menuItem: true
-          }
-        }
+            menuItem: true,
+          },
+        },
       },
       orderBy: {
-        createdAt: 'desc'
-      }
+        createdAt: 'desc',
+      },
     });
 
     // Get recent deliveries (last 7 days)
@@ -317,28 +328,28 @@ export const getMobileTrackingHandler = async (
 
     const recentDeliveries = await prisma.order.findMany({
       where: {
-        studentId: studentId,
+        studentId,
         status: 'delivered',
         deliveredAt: {
-          gte: weekAgo
-        }
+          gte: weekAgo,
+        },
       },
       include: {
         student: {
           include: {
-            school: true
-          }
+            school: true,
+          },
         },
         orderItems: {
           include: {
-            menuItem: true
-          }
-        }
+            menuItem: true,
+          },
+        },
       },
       orderBy: {
-        deliveredAt: 'desc'
+        deliveredAt: 'desc',
       },
-      take: 10
+      take: 10,
     });
 
     // Get upcoming orders (next 7 days)
@@ -347,44 +358,44 @@ export const getMobileTrackingHandler = async (
 
     const upcomingOrders = await prisma.order.findMany({
       where: {
-        studentId: studentId,
+        studentId,
         deliveryDate: {
           gt: today,
-          lte: nextWeek
-        }
+          lte: nextWeek,
+        },
       },
       include: {
         student: {
           include: {
-            school: true
-          }
+            school: true,
+          },
         },
         orderItems: {
           include: {
-            menuItem: true
-          }
-        }
+            menuItem: true,
+          },
+        },
       },
       orderBy: {
-        deliveryDate: 'asc'
-      }
+        deliveryDate: 'asc',
+      },
     });
 
     // Calculate delivery stats
     const totalDelivered = recentDeliveries.length;
-    const onTimeDeliveries = recentDeliveries.filter(order => 
-      order.deliveredAt && order.deliveryDate && 
-      order.deliveredAt <= order.deliveryDate
+    const onTimeDeliveries = recentDeliveries.filter(
+      order => order.deliveredAt && order.deliveryDate && order.deliveredAt <= order.deliveryDate
     ).length;
     const onTimeDeliveryRate = totalDelivered > 0 ? (onTimeDeliveries / totalDelivered) * 100 : 0;
 
     const deliveryTimes = recentDeliveries
       .filter(order => order.createdAt && order.deliveredAt)
       .map(order => (order.deliveredAt!.getTime() - order.createdAt.getTime()) / (1000 * 60)); // minutes
-    
-    const averageDeliveryTime = deliveryTimes.length > 0 
-      ? deliveryTimes.reduce((sum, time) => sum + time, 0) / deliveryTimes.length 
-      : 0;
+
+    const averageDeliveryTime =
+      deliveryTimes.length > 0
+        ? deliveryTimes.reduce((sum, time) => sum + time, 0) / deliveryTimes.length
+        : 0;
 
     // Transform orders to mobile tracking format
     const transformOrder = (order: any): MobileOrderTracking => ({
@@ -394,7 +405,7 @@ export const getMobileTrackingHandler = async (
       menuPlan: {
         name: order.orderItems?.[0]?.menuItem?.name || 'Meal Order',
         date: order.deliveryDate,
-        meal: order.orderItems?.[0]?.menuItem?.category || 'Lunch'
+        meal: order.orderItems?.[0]?.menuItem?.category || 'Lunch',
       },
       student: {
         id: order.student.id,
@@ -403,13 +414,13 @@ export const getMobileTrackingHandler = async (
         grade: order.student.grade || 'N/A',
         school: {
           name: order.student.school.name,
-          location: order.student.school.address || 'School Campus'
-        }
+          location: order.student.school.address || 'School Campus',
+        },
       },
       trackingSteps: generateTrackingSteps(order),
       deliveryVerification: undefined, // TODO: Implement delivery verification lookup
       estimatedDeliveryTime: order.deliveryDate,
-      notifications: [] // TODO: Implement notifications system
+      notifications: [], // TODO: Implement notifications system
     });
 
     const response: MobileTrackingResponse = {
@@ -418,18 +429,17 @@ export const getMobileTrackingHandler = async (
       deliveryStats: {
         totalDelivered,
         onTimeDeliveryRate: Math.round(onTimeDeliveryRate * 100) / 100,
-        averageDeliveryTime: Math.round(averageDeliveryTime)
+        averageDeliveryTime: Math.round(averageDeliveryTime),
       },
-      upcomingOrders: upcomingOrders.map(transformOrder)
+      upcomingOrders: upcomingOrders.map(transformOrder),
     };
 
     const duration = Date.now() - startTime;
-    logger.info("getMobileTracking completed", { statusCode: 200, duration });
+    logger.info('getMobileTracking completed', { statusCode: 200, duration });
 
     return createSuccessResponse(response);
-
-  } catch (error) {
-    return handleError(error);
+  } catch (error: unknown) {
+    return handleError(error as Error);
   }
 };
 
@@ -447,7 +457,7 @@ export const updateTrackingStatusHandler = async (
     // Extract order ID from path parameters
     const orderId = event.pathParameters?.orderId;
     if (!orderId) {
-      return createErrorResponse(400, 'Order ID is required');
+      return createErrorResponse('VALIDATION_ERROR', 'Order ID is required', 400);
     }
 
     // Parse request body
@@ -456,13 +466,13 @@ export const updateTrackingStatusHandler = async (
 
     // Validate required fields
     if (!status) {
-      return createErrorResponse(400, 'Status is required');
+      return createErrorResponse('VALIDATION_ERROR', 'Status is required', 400);
     }
 
     // Validate status value
     const validStatuses = ['confirmed', 'preparing', 'ready', 'out_for_delivery', 'delivered'];
     if (!validStatuses.includes(status)) {
-      return createErrorResponse(400, 'Invalid status value');
+      return createErrorResponse('VALIDATION_ERROR', 'Invalid status value', 400);
     }
 
     // Get order information
@@ -471,20 +481,20 @@ export const updateTrackingStatusHandler = async (
       include: {
         student: {
           include: {
-            rfidCards: true
-          }
-        }
-      }
+            rfidCards: true,
+          },
+        },
+      },
     });
 
     if (!order) {
-      return createErrorResponse(404, 'Order not found');
+      return createErrorResponse('NOT_FOUND', 'Order not found', 404);
     }
 
     // Update order status
     const updateData: any = {
-      status: status,
-      updatedAt: new Date()
+      status,
+      updatedAt: new Date(),
     };
 
     // Set timestamp fields based on status
@@ -508,42 +518,44 @@ export const updateTrackingStatusHandler = async (
 
     const updatedOrder = await prisma.order.update({
       where: { id: orderId },
-      data: updateData
+      data: updateData,
     });
 
     // Create delivery verification for delivered orders
     if (status === 'delivered' && rfidCardId) {
       await prisma.deliveryVerification.create({
         data: {
-          orderId: orderId,
+          orderId,
           studentId: order.studentId,
           cardId: rfidCardId,
           readerId: 'default-reader', // Default reader ID - should be configurable
           location: location || 'School',
-          verificationNotes: 'Mobile tracking update'
-        }
+          verificationNotes: 'Mobile tracking update',
+        },
       });
     }
 
     const duration = Date.now() - startTime;
-    logger.info("getMobileTracking completed", { statusCode: 200, duration });
+    logger.info('getMobileTracking completed', { statusCode: 200, duration });
 
     return createSuccessResponse({
       message: 'Tracking status updated successfully',
-      orderId: orderId,
-      status: status,
-      timestamp: new Date()
+      orderId,
+      status,
+      timestamp: new Date(),
     });
-
-  } catch (error) {
-    return handleError(error);
+  } catch (error: unknown) {
+    return handleError(error as Error);
   }
 };
 
 // Main handler for serverless deployment
-export const handler = async (event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> => {
+export const handler = async (
+  event: APIGatewayProxyEvent,
+  context: Context
+): Promise<APIGatewayProxyResult> => {
   const { httpMethod, path } = event;
-  
+
   try {
     switch (`${httpMethod}:${path}`) {
       case 'GET:/mobile/students/{studentId}/tracking':
@@ -551,11 +563,14 @@ export const handler = async (event: APIGatewayProxyEvent, context: Context): Pr
       case 'PUT:/mobile/orders/{orderId}/tracking':
         return await updateTrackingStatusHandler(event, context);
       default:
-        return createErrorResponse(404, 'Endpoint not found');
+        return createErrorResponse('NOT_FOUND', 'Endpoint not found', 404);
     }
-  } catch (error) {
-    logger.error('Mobile tracking handler error:', error);
-    return handleError(error);
+  } catch (error: unknown) {
+    logger.error(
+      'Mobile tracking handler error:',
+      error instanceof Error ? error : new Error(String(error))
+    );
+    return handleError(error instanceof Error ? error : new Error(String(error)));
   } finally {
     await prisma.$disconnect();
   }
@@ -563,5 +578,5 @@ export const handler = async (event: APIGatewayProxyEvent, context: Context): Pr
 
 export default {
   getMobileTrackingHandler,
-  updateTrackingStatusHandler
+  updateTrackingStatusHandler,
 };

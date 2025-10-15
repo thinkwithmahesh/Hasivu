@@ -8,7 +8,7 @@
 import { test, expect, Page } from '@playwright/test';
 
 // Performance thresholds based on Core Web Vitals
-const PERFORMANCE_THRESHOLDS = {
+const _PERFORMANCE_THRESHOLDS =  {
   LCP: 2500,    // Largest Contentful Paint (ms) - Good: <2.5s
   FID: 100,     // First Input Delay (ms) - Good: <100ms  
   CLS: 0.1,     // Cumulative Layout Shift - Good: <0.1
@@ -20,7 +20,7 @@ const PERFORMANCE_THRESHOLDS = {
 };
 
 // Pages to test for performance
-const PAGES_TO_TEST = [
+const _PAGES_TO_TEST =  [
   { path: '/', name: 'homepage', priority: 'critical' },
   { path: '/auth/login', name: 'login', priority: 'high' },
   { path: '/auth/register', name: 'register', priority: 'high' },
@@ -30,19 +30,19 @@ const PAGES_TO_TEST = [
 ];
 
 // Network conditions for testing
-const NETWORK_CONDITIONS = [
+const _NETWORK_CONDITIONS =  [
   { name: 'fast-3g', downloadThroughput: 1.6 * 1024 * 1024 / 8, uploadThroughput: 750 * 1024 / 8, latency: 150 },
   { name: 'slow-3g', downloadThroughput: 500 * 1024 / 8, uploadThroughput: 500 * 1024 / 8, latency: 400 },
   { name: 'wifi', downloadThroughput: 30 * 1024 * 1024 / 8, uploadThroughput: 15 * 1024 * 1024 / 8, latency: 2 }
 ];
 
-test.describe('HASIVU Core Web Vitals Performance', () => {
+test.describe(_'HASIVU Core Web Vitals Performance', _() => {
 
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(_async ({ page }) => {
     // Enable performance monitoring
-    await page.addInitScript(() => {
+    await page.addInitScript(_() => {
       // Performance observer for Core Web Vitals
-      window.performanceMetrics = {
+      window._performanceMetrics =  {
         LCP: 0,
         FID: 0,
         CLS: 0,
@@ -54,40 +54,33 @@ test.describe('HASIVU Core Web Vitals Performance', () => {
       // LCP Observer
       if ('PerformanceObserver' in window) {
         try {
-          const lcpObserver = new PerformanceObserver((entryList) => {
-            const entries = entryList.getEntries();
+          const _lcpObserver =  new PerformanceObserver((entryList) 
             if (entries.length > 0) {
-              window.performanceMetrics.LCP = entries[entries.length - 1].startTime;
+              window.performanceMetrics._LCP =  entries[entries.length - 1].startTime;
             }
           });
           lcpObserver.observe({ entryTypes: ['largest-contentful-paint'] });
 
           // FCP Observer  
-          const fcpObserver = new PerformanceObserver((entryList) => {
-            for (const entry of entryList.getEntries()) {
-              if (entry.name === 'first-contentful-paint') {
-                window.performanceMetrics.FCP = entry.startTime;
+          const _fcpObserver =  new PerformanceObserver((entryList) 
               }
             }
           });
           fcpObserver.observe({ entryTypes: ['paint'] });
 
           // CLS Observer
-          const clsObserver = new PerformanceObserver((entryList) => {
-            for (const entry of entryList.getEntries()) {
-              if (!entry.hadRecentInput) {
-                window.performanceMetrics.CLS += entry.value;
+          const _clsObserver =  new PerformanceObserver((entryList) 
               }
             }
           });
           clsObserver.observe({ entryTypes: ['layout-shift'] });
 
           // TTFB from Navigation Timing
-          window.addEventListener('load', () => {
-            const navigationEntries = performance.getEntriesByType('navigation');
+          window.addEventListener(_'load', _() => {
+            const _navigationEntries =  performance.getEntriesByType('navigation');
             if (navigationEntries.length > 0) {
-              const nav = navigationEntries[0];
-              window.performanceMetrics.TTFB = nav.responseStart - nav.requestStart;
+              const _nav =  navigationEntries[0];
+              window.performanceMetrics._TTFB =  nav.responseStart - nav.requestStart;
             }
           });
         } catch (error) {
@@ -97,14 +90,14 @@ test.describe('HASIVU Core Web Vitals Performance', () => {
     });
   });
 
-  test.describe('Critical Pages Performance', () => {
+  test.describe(_'Critical Pages Performance', _() => {
 
-    PAGES_TO_TEST.forEach(({ path, name, priority }) => {
-      test(`${name} Core Web Vitals - ${priority} priority`, async ({ page }) => {
-        const startTime = Date.now();
+    PAGES_TO_TEST.forEach(_({ path, _name, _priority }) => {
+      test(_`${name} Core Web Vitals - ${priority} priority`, _async ({ page }) => {
+        const _startTime =  Date.now();
 
         // Navigate to page
-        const response = await page.goto(path, { 
+        const _response =  await page.goto(path, { 
           waitUntil: 'networkidle',
           timeout: 30000 
         });
@@ -117,9 +110,8 @@ test.describe('HASIVU Core Web Vitals Performance', () => {
         await page.waitForTimeout(2000); // Allow metrics to be collected
 
         // Get performance metrics
-        const performanceData = await page.evaluate(() => {
-          const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
-          const paintEntries = performance.getEntriesByType('paint');
+        const _performanceData =  await page.evaluate(() 
+          const _paintEntries =  performance.getEntriesByType('paint');
           
           return {
             // Core Web Vitals
@@ -129,14 +121,7 @@ test.describe('HASIVU Core Web Vitals Performance', () => {
             
             // Additional metrics
             TTFB: navigation.responseStart - navigation.fetchStart,
-            FCP: paintEntries.find(entry => entry.name === 'first-contentful-paint')?.startTime || 0,
-            loadComplete: navigation.loadEventEnd - navigation.fetchStart,
-            domContentLoaded: navigation.domContentLoadedEventEnd - navigation.fetchStart,
-            
-            // Resource metrics
-            totalResources: performance.getEntriesByType('resource').length,
-            totalResourceSize: performance.getEntriesByType('resource').reduce((acc, resource) => {
-              return acc + (resource.transferSize || 0);
+            FCP: paintEntries.find(_entry = > entry.name 
             }, 0),
             
             // Timing breakdown
@@ -147,7 +132,7 @@ test.describe('HASIVU Core Web Vitals Performance', () => {
           };
         });
 
-        const totalTime = Date.now() - startTime;
+        const _totalTime =  Date.now() - startTime;
 
         // Log performance metrics
         console.log(`\n📊 Performance Metrics for ${name}:`);
@@ -161,7 +146,7 @@ test.describe('HASIVU Core Web Vitals Performance', () => {
         console.log(`  Total Size: ${(performanceData.totalResourceSize / 1024).toFixed(0)}KB`);
 
         // Store metrics for reporting
-        const performanceReport = {
+        const _performanceReport =  {
           page: name,
           path,
           priority,
@@ -180,10 +165,7 @@ test.describe('HASIVU Core Web Vitals Performance', () => {
         });
 
         // Performance assertions for critical pages
-        if (priority === 'critical') {
-          // LCP should be under 2.5s for critical pages
-          expect(performanceData.LCP).toBeLessThan(PERFORMANCE_THRESHOLDS.LCP);
-          
+        if (_priority = 
           // TTFB should be under 600ms
           expect(performanceData.TTFB).toBeLessThan(PERFORMANCE_THRESHOLDS.TTFB);
           
@@ -209,14 +191,14 @@ test.describe('HASIVU Core Web Vitals Performance', () => {
 
   });
 
-  test.describe('Network Conditions Performance', () => {
+  test.describe(_'Network Conditions Performance', _() => {
 
-    test('Homepage performance on different network speeds', async ({ page, context }) => {
+    test(_'Homepage performance on different network speeds', _async ({ page, _context }) => {
       for (const network of NETWORK_CONDITIONS) {
         console.log(`\n🌐 Testing on ${network.name} network...`);
 
         // Set network conditions
-        const cdpSession = await context.newCDPSession(page);
+        const _cdpSession =  await context.newCDPSession(page);
         await cdpSession.send('Network.emulateNetworkConditions', {
           offline: false,
           downloadThroughput: network.downloadThroughput,
@@ -224,18 +206,17 @@ test.describe('HASIVU Core Web Vitals Performance', () => {
           latency: network.latency
         });
 
-        const startTime = performance.now();
+        const _startTime =  performance.now();
 
         // Navigate to homepage
         await page.goto('/', { waitUntil: 'networkidle' });
         
-        const loadTime = performance.now() - startTime;
+        const _loadTime =  performance.now() - startTime;
 
         console.log(`  Load time on ${network.name}: ${loadTime.toFixed(0)}ms`);
 
         // Get performance metrics
-        const metrics = await page.evaluate(() => {
-          const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+        const _metrics =  await page.evaluate(() 
           return {
             loadComplete: navigation.loadEventEnd - navigation.fetchStart,
             TTFB: navigation.responseStart - navigation.fetchStart,
@@ -259,34 +240,20 @@ test.describe('HASIVU Core Web Vitals Performance', () => {
 
   });
 
-  test.describe('Resource Loading Performance', () => {
+  test.describe(_'Resource Loading Performance', _() => {
 
-    test('Image loading performance', async ({ page }) => {
+    test(_'Image loading performance', _async ({ page }) => {
       await page.goto('/');
       
       // Get image loading metrics
-      const imageMetrics = await page.evaluate(() => {
-        const images = Array.from(document.images);
-        const imageData = images.map(img => ({
-          src: img.src,
-          complete: img.complete,
-          naturalWidth: img.naturalWidth,
-          naturalHeight: img.naturalHeight,
-          loading: img.loading
-        }));
-
-        const resourceEntries = performance.getEntriesByType('resource')
-          .filter(entry => entry.name.match(/\.(jpg|jpeg|png|webp|svg|gif)$/i));
-
+      const _imageMetrics =  await page.evaluate(() 
+        const _imageData =  images.map(img 
+        const _resourceEntries =  performance.getEntriesByType('resource')
+          .filter(entry 
         return {
           totalImages: images.length,
-          completeImages: images.filter(img => img.complete).length,
-          imageResources: resourceEntries.map(entry => ({
-            url: entry.name,
-            size: entry.transferSize,
-            loadTime: entry.responseEnd - entry.startTime
-          }))
-        };
+          completeImages: images.filter(_img = > img.complete).length,
+          imageResources: resourceEntries.map(entry 
       });
 
       console.log(`\n🖼️ Image Performance:`);
@@ -304,23 +271,14 @@ test.describe('HASIVU Core Web Vitals Performance', () => {
       });
     });
 
-    test('JavaScript bundle performance', async ({ page }) => {
+    test(_'JavaScript bundle performance', _async ({ page }) => {
       await page.goto('/');
       await page.waitForLoadState('networkidle');
 
-      const jsMetrics = await page.evaluate(() => {
-        const jsResources = performance.getEntriesByType('resource')
-          .filter(entry => entry.name.includes('.js'))
-          .map(entry => ({
-            url: entry.name.split('/').pop(),
-            size: entry.transferSize,
-            loadTime: entry.responseEnd - entry.startTime,
-            cached: entry.transferSize === 0
-          }));
-
+      const _jsMetrics =  await page.evaluate(() 
         return {
           totalJSFiles: jsResources.length,
-          totalJSSize: jsResources.reduce((acc, resource) => acc + resource.size, 0),
+          totalJSSize: jsResources.reduce(_(acc, _resource) => acc + resource.size, 0),
           jsResources: jsResources
         };
       });
@@ -341,23 +299,13 @@ test.describe('HASIVU Core Web Vitals Performance', () => {
       });
     });
 
-    test('CSS loading performance', async ({ page }) => {
+    test(_'CSS loading performance', _async ({ page }) => {
       await page.goto('/');
       
-      const cssMetrics = await page.evaluate(() => {
-        const cssResources = performance.getEntriesByType('resource')
-          .filter(entry => entry.name.includes('.css') || 
-                          entry.initiatorType === 'css' ||
-                          entry.name.includes('fonts.googleapis.com'))
-          .map(entry => ({
-            url: entry.name.split('/').pop(),
-            size: entry.transferSize,
-            loadTime: entry.responseEnd - entry.startTime
-          }));
-
+      const _cssMetrics =  await page.evaluate(() 
         return {
           totalCSSFiles: cssResources.length,
-          totalCSSSize: cssResources.reduce((acc, resource) => acc + resource.size, 0),
+          totalCSSSize: cssResources.reduce(_(acc, _resource) => acc + resource.size, 0),
           cssResources: cssResources
         };
       });
@@ -377,31 +325,27 @@ test.describe('HASIVU Core Web Vitals Performance', () => {
 
   });
 
-  test.describe('Mobile Performance', () => {
+  test.describe(_'Mobile Performance', _() => {
 
-    test('Mobile Core Web Vitals', async ({ page, browser }) => {
+    test(_'Mobile Core Web Vitals', _async ({ page, _browser }) => {
       // Create mobile context
-      const mobileContext = await browser.newContext({
+      const _mobileContext =  await browser.newContext({
         ...browser.newContext().device('Pixel 5'),
         viewport: { width: 375, height: 667 }
       });
       
-      const mobilePage = await mobileContext.newPage();
+      const _mobilePage =  await mobileContext.newPage();
       
       // Test homepage on mobile
       await mobilePage.goto('/');
       await mobilePage.waitForLoadState('networkidle');
 
-      const mobileMetrics = await mobilePage.evaluate(() => {
-        const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+      const _mobileMetrics =  await mobilePage.evaluate(() 
         return {
           LCP: window.performanceMetrics?.LCP || 0,
           CLS: window.performanceMetrics?.CLS || 0,
           FCP: performance.getEntriesByType('paint')
-            .find(entry => entry.name === 'first-contentful-paint')?.startTime || 0,
-          loadComplete: navigation.loadEventEnd - navigation.fetchStart,
-          TTFB: navigation.responseStart - navigation.fetchStart
-        };
+            .find(_entry = > entry.name 
       });
 
       console.log(`\n📱 Mobile Performance:`);

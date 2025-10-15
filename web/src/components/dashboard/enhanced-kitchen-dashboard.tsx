@@ -1,27 +1,85 @@
-"use client"
+'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  LineChart, Line, PieChart, Pie, Cell, Area, AreaChart, RadialBarChart, RadialBar
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Avatar as _Avatar,
+  AvatarFallback as _AvatarFallback,
+  AvatarImage as _AvatarImage,
+} from '@/components/ui/avatar';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Switch } from '@/components/ui/switch';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Checkbox as _Checkbox } from '@/components/ui/checkbox';
+import {
+  Table as _Table,
+  TableBody as _TableBody,
+  TableCell as _TableCell,
+  TableHead as _TableHead,
+  TableHeader as _TableHeader,
+  TableRow as _TableRow,
+} from '@/components/ui/table';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  PieChart as _PieChart,
+  Pie as _Pie,
+  Cell as _Cell,
+  Area as _Area,
+  AreaChart as _AreaChart,
+  RadialBarChart as _RadialBarChart,
+  RadialBar as _RadialBar,
 } from 'recharts';
-import { 
-  ChefHat, Clock, Users, Activity, AlertCircle, CheckCircle,
-  Timer, Package, Truck, TrendingUp, Target, Bell, Settings,
-  PlayCircle, PauseCircle, RotateCcw, AlertTriangle, Zap,
-  Thermometer, Scale, Utensils, Coffee, Apple, Beef, Fish,
-  Wheat, Milk, Plus, Minus, RefreshCw, Filter, Search
+import {
+  ChefHat as _ChefHat,
+  Clock,
+  Users as _Users,
+  Activity,
+  AlertCircle,
+  CheckCircle,
+  Timer,
+  Package,
+  Truck,
+  TrendingUp,
+  Target,
+  Bell,
+  Settings,
+  PlayCircle,
+  PauseCircle,
+  RotateCcw,
+  AlertTriangle,
+  Zap as _Zap,
+  Thermometer,
+  Scale,
+  Utensils,
+  Coffee as _Coffee,
+  Apple,
+  Beef,
+  Fish as _Fish,
+  Wheat,
+  Milk,
+  Plus as _Plus,
+  Minus as _Minus,
+  RefreshCw,
+  Filter as _Filter,
+  Search as _Search,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -51,7 +109,7 @@ const mockOrderQueue = [
     items: [
       { name: 'Grilled Chicken', prepTime: 15, status: 'cooking', station: 'grill' },
       { name: 'Rice Bowl', prepTime: 5, status: 'ready', station: 'prep' },
-      { name: 'Garden Salad', prepTime: 3, status: 'preparing', station: 'cold' }
+      { name: 'Garden Salad', prepTime: 3, status: 'preparing', station: 'cold' },
     ],
     totalPrepTime: 18,
     startTime: '12:15 PM',
@@ -62,7 +120,7 @@ const mockOrderQueue = [
     specialRequests: 'Extra vegetables, less oil',
     assignedChef: 'Chef Maria',
     status: 'in_progress',
-    timeElapsed: 8
+    timeElapsed: 8,
   },
   {
     id: 'ORD-002',
@@ -72,7 +130,7 @@ const mockOrderQueue = [
     mealType: 'snack',
     items: [
       { name: 'Fresh Fruit Bowl', prepTime: 2, status: 'ready', station: 'prep' },
-      { name: 'Orange Juice', prepTime: 1, status: 'ready', station: 'beverage' }
+      { name: 'Orange Juice', prepTime: 1, status: 'ready', station: 'beverage' },
     ],
     totalPrepTime: 3,
     startTime: '11:30 AM',
@@ -83,7 +141,7 @@ const mockOrderQueue = [
     specialRequests: null,
     assignedChef: 'Chef Roberto',
     status: 'ready',
-    timeElapsed: 3
+    timeElapsed: 3,
   },
   {
     id: 'ORD-003',
@@ -94,7 +152,7 @@ const mockOrderQueue = [
     items: [
       { name: 'Vegetarian Pasta', prepTime: 12, status: 'queued', station: 'main' },
       { name: 'Garlic Bread', prepTime: 5, status: 'queued', station: 'oven' },
-      { name: 'Green Smoothie', prepTime: 2, status: 'queued', station: 'beverage' }
+      { name: 'Green Smoothie', prepTime: 2, status: 'queued', station: 'beverage' },
     ],
     totalPrepTime: 15,
     startTime: '12:20 PM',
@@ -105,8 +163,8 @@ const mockOrderQueue = [
     specialRequests: 'Vegan cheese substitute',
     assignedChef: 'Chef David',
     status: 'queued',
-    timeElapsed: 0
-  }
+    timeElapsed: 0,
+  },
 ];
 
 const mockKitchenStations = [
@@ -120,7 +178,7 @@ const mockKitchenStations = [
     avgTime: 12,
     efficiency: 92,
     temperature: 180,
-    lastCleaned: '10:30 AM'
+    lastCleaned: '10:30 AM',
   },
   {
     id: 'prep',
@@ -132,7 +190,7 @@ const mockKitchenStations = [
     avgTime: 6,
     efficiency: 88,
     temperature: 22,
-    lastCleaned: '11:00 AM'
+    lastCleaned: '11:00 AM',
   },
   {
     id: 'main',
@@ -144,7 +202,7 @@ const mockKitchenStations = [
     avgTime: 18,
     efficiency: 85,
     temperature: 165,
-    lastCleaned: '09:45 AM'
+    lastCleaned: '09:45 AM',
   },
   {
     id: 'cold',
@@ -156,7 +214,7 @@ const mockKitchenStations = [
     avgTime: 4,
     efficiency: 95,
     temperature: 4,
-    lastCleaned: '11:30 AM'
+    lastCleaned: '11:30 AM',
   },
   {
     id: 'beverage',
@@ -168,8 +226,8 @@ const mockKitchenStations = [
     avgTime: 3,
     efficiency: 0,
     temperature: 15,
-    lastCleaned: '08:00 AM'
-  }
+    lastCleaned: '08:00 AM',
+  },
 ];
 
 const mockInventoryStatus = [
@@ -187,7 +245,7 @@ const mockInventoryStatus = [
     costPerUnit: 320,
     expiryDate: '2024-01-16',
     status: 'good',
-    dailyUsage: 8
+    dailyUsage: 8,
   },
   {
     id: 'rice',
@@ -203,7 +261,7 @@ const mockInventoryStatus = [
     costPerUnit: 85,
     expiryDate: '2024-03-15',
     status: 'good',
-    dailyUsage: 12
+    dailyUsage: 12,
   },
   {
     id: 'vegetables',
@@ -219,7 +277,7 @@ const mockInventoryStatus = [
     costPerUnit: 65,
     expiryDate: '2024-01-15',
     status: 'low',
-    dailyUsage: 6
+    dailyUsage: 6,
   },
   {
     id: 'milk',
@@ -235,8 +293,8 @@ const mockInventoryStatus = [
     costPerUnit: 55,
     expiryDate: '2024-01-14',
     status: 'critical',
-    dailyUsage: 8
-  }
+    dailyUsage: 8,
+  },
 ];
 
 const mockPerformanceMetrics = {
@@ -246,7 +304,7 @@ const mockPerformanceMetrics = {
     onTimeDelivery: 94.2,
     wastePercentage: 4.8,
     qualityScore: 4.7,
-    efficiency: 89.3
+    efficiency: 89.3,
   },
   weekly: [
     { day: 'Mon', orders: 180, avgTime: 15.2, onTime: 92.1, waste: 5.2, quality: 4.6 },
@@ -255,7 +313,7 @@ const mockPerformanceMetrics = {
     { day: 'Thu', orders: 175, avgTime: 14.2, onTime: 95.1, waste: 4.1, quality: 4.8 },
     { day: 'Fri', orders: 200, avgTime: 15.7, onTime: 89.2, waste: 6.2, quality: 4.4 },
     { day: 'Sat', orders: 120, avgTime: 13.5, onTime: 96.8, waste: 3.9, quality: 4.9 },
-    { day: 'Today', orders: 156, avgTime: 14.5, onTime: 94.2, waste: 4.8, quality: 4.7 }
+    { day: 'Today', orders: 156, avgTime: 14.5, onTime: 94.2, waste: 4.8, quality: 4.7 },
   ],
   hourlyLoad: [
     { hour: '8AM', orders: 45, capacity: 50 },
@@ -265,18 +323,18 @@ const mockPerformanceMetrics = {
     { hour: '12PM', orders: 78, capacity: 80 },
     { hour: '1PM', orders: 95, capacity: 80 },
     { hour: '2PM', orders: 42, capacity: 50 },
-    { hour: '3PM', orders: 35, capacity: 50 }
-  ]
+    { hour: '3PM', orders: 35, capacity: 50 },
+  ],
 };
 
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+const _COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
 export const EnhancedKitchenDashboard: React.FC<EnhancedKitchenDashboardProps> = ({
-  kitchenData,
-  className
+  kitchenData: _kitchenData,
+  className,
 }) => {
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [selectedStation, setSelectedStation] = useState<string | null>(null);
+  const [_selectedStation, _setSelectedStation] = useState<string | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [sortBy, setSortBy] = useState<'priority' | 'time' | 'station'>('priority');
 
@@ -289,46 +347,60 @@ export const EnhancedKitchenDashboard: React.FC<EnhancedKitchenDashboardProps> =
     if (autoRefresh) {
       const refreshTimer = setInterval(() => {
         // In a real app, this would fetch fresh data
-        console.log('Auto-refreshing kitchen data...');
       }, 30000); // Refresh every 30 seconds
-      
+
       return () => clearInterval(refreshTimer);
     }
   }, [autoRefresh]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'ready': return 'bg-green-500';
-      case 'in_progress': case 'cooking': case 'preparing': return 'bg-yellow-500';
-      case 'queued': return 'bg-blue-500';
-      case 'maintenance': return 'bg-red-500';
-      default: return 'bg-gray-400';
+      case 'ready':
+        return 'bg-green-500';
+      case 'in_progress':
+      case 'cooking':
+      case 'preparing':
+        return 'bg-yellow-500';
+      case 'queued':
+        return 'bg-blue-500';
+      case 'maintenance':
+        return 'bg-red-500';
+      default:
+        return 'bg-gray-400';
     }
   };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'high': return 'text-red-600';
-      case 'medium': return 'text-yellow-600';
-      case 'low': return 'text-green-600';
-      default: return 'text-gray-600';
+      case 'high':
+        return 'text-red-600';
+      case 'medium':
+        return 'text-yellow-600';
+      case 'low':
+        return 'text-green-600';
+      default:
+        return 'text-gray-600';
     }
   };
 
   const getInventoryStatusColor = (status: string) => {
     switch (status) {
-      case 'good': return 'text-green-600';
-      case 'low': return 'text-yellow-600';
-      case 'critical': return 'text-red-600';
-      default: return 'text-gray-600';
+      case 'good':
+        return 'text-green-600';
+      case 'low':
+        return 'text-yellow-600';
+      case 'critical':
+        return 'text-red-600';
+      default:
+        return 'text-gray-600';
     }
   };
 
-  const formatTime = (timeString: string) => {
+  const _formatTime = (timeString: string) => {
     return new Date(`2024-01-12 ${timeString}`).toLocaleTimeString('en-US', {
       hour: 'numeric',
       minute: '2-digit',
-      hour12: true
+      hour12: true,
     });
   };
 
@@ -339,7 +411,7 @@ export const EnhancedKitchenDashboard: React.FC<EnhancedKitchenDashboardProps> =
   };
 
   return (
-    <div className={cn("space-y-6", className)}>
+    <div className={cn('space-y-6', className)}>
       {/* Kitchen Overview Header */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
@@ -401,13 +473,10 @@ export const EnhancedKitchenDashboard: React.FC<EnhancedKitchenDashboardProps> =
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
-                <Switch 
-                  checked={autoRefresh}
-                  onCheckedChange={setAutoRefresh}
-                />
+                <Switch checked={autoRefresh} onCheckedChange={setAutoRefresh} />
                 <span className="text-sm font-medium">Auto Refresh</span>
               </div>
-              <Select value={sortBy} onValueChange={(value) => setSortBy(value as any)}>
+              <Select value={sortBy} onValueChange={value => setSortBy(value as any)}>
                 <SelectTrigger className="w-32">
                   <SelectValue />
                 </SelectTrigger>
@@ -418,7 +487,7 @@ export const EnhancedKitchenDashboard: React.FC<EnhancedKitchenDashboardProps> =
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="flex items-center space-x-2">
               <Badge variant="outline" className="px-3 py-1">
                 <Clock className="h-4 w-4 mr-1" />
@@ -449,14 +518,20 @@ export const EnhancedKitchenDashboard: React.FC<EnhancedKitchenDashboardProps> =
               .sort((a, b) => {
                 if (sortBy === 'priority') {
                   const priorityOrder = { high: 3, medium: 2, low: 1 };
-                  return priorityOrder[b.priority as keyof typeof priorityOrder] - priorityOrder[a.priority as keyof typeof priorityOrder];
+                  return (
+                    priorityOrder[b.priority as keyof typeof priorityOrder] -
+                    priorityOrder[a.priority as keyof typeof priorityOrder]
+                  );
                 } else if (sortBy === 'time') {
                   return a.totalPrepTime - b.totalPrepTime;
                 }
                 return a.id.localeCompare(b.id);
               })
-              .map((order) => (
-                <Card key={order.id} className={`transition-all duration-200 ${order.status === 'ready' ? 'border-green-500 bg-green-50' : ''}`}>
+              .map(order => (
+                <Card
+                  key={order.id}
+                  className={`transition-all duration-200 ${order.status === 'ready' ? 'border-green-500 bg-green-50' : ''}`}
+                >
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center space-x-3">
@@ -472,24 +547,23 @@ export const EnhancedKitchenDashboard: React.FC<EnhancedKitchenDashboardProps> =
                         <div>
                           <h3 className="font-semibold text-lg">{order.id}</h3>
                           <p className="text-sm text-gray-600">
-                            {order.studentName} • {order.grade}{order.section} • {order.mealType}
+                            {order.studentName} • {order.grade}
+                            {order.section} • {order.mealType}
                           </p>
                         </div>
                       </div>
-                      
+
                       <div className="text-right space-y-1">
-                        <Badge 
+                        <Badge
                           variant={order.status === 'ready' ? 'default' : 'secondary'}
                           className="capitalize"
                         >
                           {order.status.replace('_', ' ')}
                         </Badge>
-                        <p className={cn("text-sm font-medium", getPriorityColor(order.priority))}>
+                        <p className={cn('text-sm font-medium', getPriorityColor(order.priority))}>
                           {order.priority.toUpperCase()} PRIORITY
                         </p>
-                        <p className="text-xs text-gray-500">
-                          Est: {order.estimatedReady}
-                        </p>
+                        <p className="text-xs text-gray-500">Est: {order.estimatedReady}</p>
                       </div>
                     </div>
 
@@ -510,10 +584,13 @@ export const EnhancedKitchenDashboard: React.FC<EnhancedKitchenDashboardProps> =
                         <p className="text-sm font-medium text-gray-700 mb-2">Items & Status:</p>
                         <div className="space-y-2">
                           {order.items.map((item, index) => (
-                            <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                            <div
+                              key={index}
+                              className="flex items-center justify-between p-2 bg-gray-50 rounded"
+                            >
                               <span className="text-sm">{item.name}</span>
                               <div className="flex items-center space-x-2">
-                                <Badge 
+                                <Badge
                                   variant={item.status === 'ready' ? 'default' : 'secondary'}
                                   className="text-xs capitalize"
                                 >
@@ -525,7 +602,7 @@ export const EnhancedKitchenDashboard: React.FC<EnhancedKitchenDashboardProps> =
                           ))}
                         </div>
                       </div>
-                      
+
                       <div>
                         <p className="text-sm font-medium text-gray-700 mb-2">Details:</p>
                         <div className="space-y-2 text-sm">
@@ -541,7 +618,7 @@ export const EnhancedKitchenDashboard: React.FC<EnhancedKitchenDashboardProps> =
                             <div>
                               <span className="text-red-600 font-medium">Allergies:</span>
                               <div className="flex flex-wrap gap-1 mt-1">
-                                {order.allergies.map((allergy) => (
+                                {order.allergies.map(allergy => (
                                   <Badge key={allergy} variant="destructive" className="text-xs">
                                     {allergy}
                                   </Badge>
@@ -599,27 +676,27 @@ export const EnhancedKitchenDashboard: React.FC<EnhancedKitchenDashboardProps> =
         {/* Kitchen Stations Tab */}
         <TabsContent value="stations" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-            {mockKitchenStations.map((station) => (
-              <Card 
-                key={station.id} 
+            {mockKitchenStations.map(station => (
+              <Card
+                key={station.id}
                 className={`transition-all duration-200 ${
-                  station.status === 'maintenance' 
-                    ? 'border-red-300 bg-red-50' 
-                    : station.status === 'busy' 
-                    ? 'border-yellow-300 bg-yellow-50'
-                    : 'border-green-300 bg-green-50'
+                  station.status === 'maintenance'
+                    ? 'border-red-300 bg-red-50'
+                    : station.status === 'busy'
+                      ? 'border-yellow-300 bg-yellow-50'
+                      : 'border-green-300 bg-green-50'
                 }`}
               >
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg">{station.name}</CardTitle>
-                    <Badge 
+                    <Badge
                       variant={
-                        station.status === 'maintenance' 
-                          ? 'destructive' 
-                          : station.status === 'busy' 
-                          ? 'secondary'
-                          : 'default'
+                        station.status === 'maintenance'
+                          ? 'destructive'
+                          : station.status === 'busy'
+                            ? 'secondary'
+                            : 'default'
                       }
                       className="capitalize"
                     >
@@ -645,9 +722,14 @@ export const EnhancedKitchenDashboard: React.FC<EnhancedKitchenDashboardProps> =
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <span className="text-sm font-medium">Capacity</span>
-                      <span className="text-sm">{station.currentOrders}/{station.maxCapacity}</span>
+                      <span className="text-sm">
+                        {station.currentOrders}/{station.maxCapacity}
+                      </span>
                     </div>
-                    <Progress value={(station.currentOrders / station.maxCapacity) * 100} className="h-2" />
+                    <Progress
+                      value={(station.currentOrders / station.maxCapacity) * 100}
+                      className="h-2"
+                    />
                   </div>
 
                   <div className="space-y-2">
@@ -658,9 +740,7 @@ export const EnhancedKitchenDashboard: React.FC<EnhancedKitchenDashboardProps> =
                     <Progress value={station.efficiency} className="h-2" />
                   </div>
 
-                  <div className="text-xs text-gray-500">
-                    Last cleaned: {station.lastCleaned}
-                  </div>
+                  <div className="text-xs text-gray-500">Last cleaned: {station.lastCleaned}</div>
 
                   <div className="flex space-x-2">
                     {station.status === 'maintenance' ? (
@@ -699,33 +779,44 @@ export const EnhancedKitchenDashboard: React.FC<EnhancedKitchenDashboardProps> =
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {mockInventoryStatus.map((item) => (
+                  {mockInventoryStatus.map(item => (
                     <div key={item.id} className="space-y-2">
                       <div className="flex justify-between items-center">
                         <div className="flex items-center space-x-2">
                           {item.category === 'protein' && <Beef className="h-4 w-4 text-red-500" />}
-                          {item.category === 'grains' && <Wheat className="h-4 w-4 text-yellow-500" />}
-                          {item.category === 'produce' && <Apple className="h-4 w-4 text-green-500" />}
+                          {item.category === 'grains' && (
+                            <Wheat className="h-4 w-4 text-yellow-500" />
+                          )}
+                          {item.category === 'produce' && (
+                            <Apple className="h-4 w-4 text-green-500" />
+                          )}
                           {item.category === 'dairy' && <Milk className="h-4 w-4 text-blue-500" />}
                           <span className="font-medium">{item.name}</span>
                         </div>
                         <div className="text-right">
-                          <span className={cn("font-semibold", getInventoryStatusColor(item.status))}>
+                          <span
+                            className={cn('font-semibold', getInventoryStatusColor(item.status))}
+                          >
                             {item.currentStock} {item.unit}
                           </span>
                           <p className="text-xs text-gray-500">Min: {item.minThreshold}</p>
                         </div>
                       </div>
-                      <Progress 
+                      <Progress
                         value={(item.currentStock / item.maxCapacity) * 100}
                         className={cn(
-                          "h-2",
-                          item.status === 'critical' ? 'bg-red-100' : 
-                          item.status === 'low' ? 'bg-yellow-100' : 'bg-green-100'
+                          'h-2',
+                          item.status === 'critical'
+                            ? 'bg-red-100'
+                            : item.status === 'low'
+                              ? 'bg-yellow-100'
+                              : 'bg-green-100'
                         )}
                       />
                       <div className="flex justify-between text-xs text-gray-500">
-                        <span>Daily usage: {item.dailyUsage} {item.unit}</span>
+                        <span>
+                          Daily usage: {item.dailyUsage} {item.unit}
+                        </span>
                         <span>Expires: {item.expiryDate}</span>
                       </div>
                     </div>
@@ -745,24 +836,28 @@ export const EnhancedKitchenDashboard: React.FC<EnhancedKitchenDashboardProps> =
                 <div className="space-y-3">
                   {mockInventoryStatus
                     .filter(item => item.status === 'low' || item.status === 'critical')
-                    .map((item) => (
-                      <Alert 
+                    .map(item => (
+                      <Alert
                         key={item.id}
                         className={
-                          item.status === 'critical' 
-                            ? 'border-red-200 bg-red-50' 
+                          item.status === 'critical'
+                            ? 'border-red-200 bg-red-50'
                             : 'border-yellow-200 bg-yellow-50'
                         }
                       >
                         <AlertTriangle className="h-4 w-4" />
-                        <AlertTitle className={
-                          item.status === 'critical' ? 'text-red-800' : 'text-yellow-800'
-                        }>
+                        <AlertTitle
+                          className={
+                            item.status === 'critical' ? 'text-red-800' : 'text-yellow-800'
+                          }
+                        >
                           {item.name} - {item.status.toUpperCase()}
                         </AlertTitle>
-                        <AlertDescription className={
-                          item.status === 'critical' ? 'text-red-700' : 'text-yellow-700'
-                        }>
+                        <AlertDescription
+                          className={
+                            item.status === 'critical' ? 'text-red-700' : 'text-yellow-700'
+                          }
+                        >
                           Next delivery: {item.nextDelivery} from {item.supplier}
                           <div className="mt-2 flex space-x-2">
                             <Button size="sm" variant="outline">
@@ -798,9 +893,27 @@ export const EnhancedKitchenDashboard: React.FC<EnhancedKitchenDashboardProps> =
                     <XAxis dataKey="day" />
                     <YAxis />
                     <Tooltip />
-                    <Line type="monotone" dataKey="orders" stroke="#3b82f6" strokeWidth={2} name="Orders" />
-                    <Line type="monotone" dataKey="avgTime" stroke="#10b981" strokeWidth={2} name="Avg Time (min)" />
-                    <Line type="monotone" dataKey="onTime" stroke="#f59e0b" strokeWidth={2} name="On Time %" />
+                    <Line
+                      type="monotone"
+                      dataKey="orders"
+                      stroke="#3b82f6"
+                      strokeWidth={2}
+                      name="Orders"
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="avgTime"
+                      stroke="#10b981"
+                      strokeWidth={2}
+                      name="Avg Time (min)"
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="onTime"
+                      stroke="#f59e0b"
+                      strokeWidth={2}
+                      name="On Time %"
+                    />
                   </LineChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -836,7 +949,9 @@ export const EnhancedKitchenDashboard: React.FC<EnhancedKitchenDashboardProps> =
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="text-center p-4 bg-blue-50 rounded-lg">
                   <Utensils className="h-8 w-8 mx-auto mb-2 text-blue-600" />
-                  <p className="text-2xl font-bold">{mockPerformanceMetrics.daily.ordersCompleted}</p>
+                  <p className="text-2xl font-bold">
+                    {mockPerformanceMetrics.daily.ordersCompleted}
+                  </p>
                   <p className="text-sm text-gray-600">Orders Completed</p>
                 </div>
                 <div className="text-center p-4 bg-green-50 rounded-lg">
@@ -846,7 +961,9 @@ export const EnhancedKitchenDashboard: React.FC<EnhancedKitchenDashboardProps> =
                 </div>
                 <div className="text-center p-4 bg-purple-50 rounded-lg">
                   <Scale className="h-8 w-8 mx-auto mb-2 text-purple-600" />
-                  <p className="text-2xl font-bold">{mockPerformanceMetrics.daily.wastePercentage}%</p>
+                  <p className="text-2xl font-bold">
+                    {mockPerformanceMetrics.daily.wastePercentage}%
+                  </p>
                   <p className="text-sm text-gray-600">Waste Percentage</p>
                 </div>
               </div>
@@ -868,7 +985,8 @@ export const EnhancedKitchenDashboard: React.FC<EnhancedKitchenDashboardProps> =
                 <AlertTriangle className="h-4 w-4 text-red-600" />
                 <AlertTitle className="text-red-800">Critical Stock Alert</AlertTitle>
                 <AlertDescription className="text-red-700">
-                  Fresh Milk stock critically low (3 liters remaining). Immediate restocking required.
+                  Fresh Milk stock critically low (3 liters remaining). Immediate restocking
+                  required.
                   <Button size="sm" className="mt-2 bg-red-600 hover:bg-red-700">
                     Order Now
                   </Button>
@@ -890,7 +1008,8 @@ export const EnhancedKitchenDashboard: React.FC<EnhancedKitchenDashboardProps> =
                 <Clock className="h-4 w-4 text-blue-600" />
                 <AlertTitle className="text-blue-800">Peak Hour Approaching</AlertTitle>
                 <AlertDescription className="text-blue-700">
-                  Lunch rush expected in 30 minutes. Current queue: 3 orders. Recommend prepping popular items.
+                  Lunch rush expected in 30 minutes. Current queue: 3 orders. Recommend prepping
+                  popular items.
                   <Button size="sm" variant="outline" className="mt-2">
                     View Prep Suggestions
                   </Button>
@@ -901,7 +1020,8 @@ export const EnhancedKitchenDashboard: React.FC<EnhancedKitchenDashboardProps> =
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <AlertTitle className="text-green-800">Quality Achievement</AlertTitle>
                 <AlertDescription className="text-green-700">
-                  Congratulations! Your team achieved a 4.7/5 quality rating today - exceeding the target!
+                  Congratulations! Your team achieved a 4.7/5 quality rating today - exceeding the
+                  target!
                 </AlertDescription>
               </Alert>
             </CardContent>
@@ -915,11 +1035,13 @@ export const EnhancedKitchenDashboard: React.FC<EnhancedKitchenDashboardProps> =
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium">Low Stock Alerts</p>
-                  <p className="text-sm text-gray-600">Get notified when inventory falls below threshold</p>
+                  <p className="text-sm text-gray-600">
+                    Get notified when inventory falls below threshold
+                  </p>
                 </div>
                 <Switch defaultChecked />
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium">Queue Overload Warnings</p>

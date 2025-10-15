@@ -1,15 +1,18 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.billingAutomationHandler = void 0;
 const logger_service_1 = require("../shared/logger.service");
 const response_utils_1 = require("../shared/response.utils");
 const database_service_1 = require("../shared/database.service");
-const Razorpay = require('razorpay');
+const razorpay_1 = __importDefault(require("razorpay"));
 const uuid_1 = require("uuid");
 const zod_1 = require("zod");
 const logger = logger_service_1.LoggerService.getInstance();
 const database = database_service_1.LambdaDatabaseService.getInstance();
-const razorpay = new Razorpay({
+const razorpay = new razorpay_1.default({
     key_id: process.env.RAZORPAY_KEY_ID || '',
     key_secret: process.env.RAZORPAY_KEY_SECRET || ''
 });
@@ -145,7 +148,7 @@ async function getBillingCycles(query, userRole, schoolId, requestId) {
     catch (error) {
         logger.error('Failed to get billing cycles', {
             requestId,
-            error: error instanceof Error ? error.message : 'Unknown error'
+            error: error instanceof Error ? error.message : String(error)
         });
         throw error;
     }
@@ -203,7 +206,7 @@ async function processBillingCycle(billingCycle, dryRun = false) {
         return { success: true, revenue: billingCycle.billingAmount };
     }
     catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        const errorMessage = error instanceof Error ? error.message : String(error);
         logger.error(`Error processing billing cycle ${billingCycle.id}:`, {
             subscriptionId: billingCycle.subscriptionId,
             error: errorMessage
@@ -292,7 +295,7 @@ async function processDunningManagement(subscriptionId) {
     }
     catch (error) {
         logger.error(`Error in dunning management for subscription ${subscriptionId}:`, {
-            error: error instanceof Error ? error.message : 'Unknown error'
+            error: error instanceof Error ? error.message : String(error)
         });
         return { subscriptionId, action: 'no_action' };
     }
@@ -390,7 +393,7 @@ async function processBillingCycles(data, userId, requestId) {
     catch (error) {
         logger.error('Failed to process billing cycles', {
             requestId,
-            error: error instanceof Error ? error.message : 'Unknown error'
+            error: error instanceof Error ? error.message : String(error)
         });
         throw error;
     }
@@ -459,7 +462,7 @@ async function updateBillingCycle(cycleId, data, userId, requestId) {
         logger.error('Failed to update billing cycle', {
             requestId,
             cycleId,
-            error: error instanceof Error ? error.message : 'Unknown error'
+            error: error instanceof Error ? error.message : String(error)
         });
         throw error;
     }
@@ -481,13 +484,14 @@ const billingAutomationHandler = async (event, context) => {
         const cycleId = event.pathParameters?.cycleId;
         let result;
         switch (`${event.httpMethod}:${event.path}`) {
-            case 'POST:/billing/process':
+            case 'POST:/billing/process': {
                 const processData = event.body ?
                     processBillingSchema.parse(JSON.parse(event.body)) :
                     { dryRun: false, batchSize: 100 };
                 result = await processBillingCycles(processData, userId, requestId);
                 break;
-            case 'GET:/billing/cycles':
+            }
+            case 'GET:/billing/cycles': {
                 const queryParams = event.queryStringParameters || {};
                 const listQuery = getBillingCyclesQuerySchema.parse(queryParams);
                 const { billingCycles, total } = await getBillingCycles(listQuery, role, schoolId, requestId);
@@ -501,7 +505,8 @@ const billingAutomationHandler = async (event, context) => {
                     }
                 };
                 break;
-            case 'PUT:/billing/cycles':
+            }
+            case 'PUT:/billing/cycles': {
                 if (!cycleId) {
                     return (0, response_utils_1.createErrorResponse)(400, 'Missing cycleId in path parameters', undefined, 'MISSING_CYCLE_ID', requestId);
                 }
@@ -515,6 +520,7 @@ const billingAutomationHandler = async (event, context) => {
                     message: 'Billing cycle updated successfully'
                 };
                 break;
+            }
             default:
                 return (0, response_utils_1.createErrorResponse)(405, `Method ${event.httpMethod} not allowed for path ${event.path}`, undefined, 'METHOD_NOT_ALLOWED', requestId);
         }
@@ -527,7 +533,7 @@ const billingAutomationHandler = async (event, context) => {
             duration,
             success: true
         });
-        return (0, response_utils_1.createSuccessResponse)(200, 'Billing automation operation completed successfully', result, requestId);
+        return (0, response_utils_1.createSuccessResponse)(result, 'Billing automation operation completed successfully', 200, requestId);
     }
     catch (error) {
         const duration = Date.now() - startTime;
@@ -535,20 +541,20 @@ const billingAutomationHandler = async (event, context) => {
             requestId,
             method: event.httpMethod,
             path: event.path,
-            error: error instanceof Error ? error.message : 'Unknown error',
+            error: error instanceof Error ? error.message : String(error),
             duration
         });
         if (error instanceof Error) {
-            if (error.message.includes('Authentication required')) {
+            if (error instanceof Error ? error.message : String(error).includes('Authentication required')) {
                 return (0, response_utils_1.createErrorResponse)(401, 'Authentication required', undefined, 'AUTHENTICATION_REQUIRED', requestId);
             }
-            if (error.message.includes('Admin access required')) {
+            if (error instanceof Error ? error.message : String(error).includes('Admin access required')) {
                 return (0, response_utils_1.createErrorResponse)(403, 'Admin access required for billing operations', undefined, 'INSUFFICIENT_PERMISSIONS', requestId);
             }
-            if (error.message.includes('Access denied')) {
+            if (error instanceof Error ? error.message : String(error).includes('Access denied')) {
                 return (0, response_utils_1.createErrorResponse)(403, 'Access denied', undefined, 'ACCESS_DENIED', requestId);
             }
-            if (error.message.includes('not found')) {
+            if (error instanceof Error ? error.message : String(error).includes('not found')) {
                 return (0, response_utils_1.createErrorResponse)(404, 'Billing cycle not found', undefined, 'NOT_FOUND', requestId);
             }
         }

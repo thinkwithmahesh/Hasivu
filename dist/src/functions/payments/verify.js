@@ -25,13 +25,11 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.paymentVerificationHandler = void 0;
 const logger_service_1 = require("../shared/logger.service");
-const validation_service_1 = require("../shared/validation.service");
 const database_service_1 = require("../shared/database.service");
 const response_utils_1 = require("../shared/response.utils");
 const crypto = __importStar(require("crypto"));
 const zod_1 = require("zod");
 const logger = logger_service_1.LoggerService.getInstance();
-const validator = validation_service_1.ValidationService.getInstance();
 const db = database_service_1.LambdaDatabaseService.getInstance();
 const paymentVerificationSchema = zod_1.z.object({
     razorpayOrderId: zod_1.z.string().min(1, 'Razorpay order ID is required'),
@@ -67,7 +65,7 @@ async function validatePaymentOrder(razorpayOrderId) {
     catch (error) {
         logger.error('Payment order validation failed', {
             razorpayOrderId,
-            error: error.message
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
         });
         throw error;
     }
@@ -108,7 +106,7 @@ function verifyRazorpaySignature(razorpayOrderId, razorpayPaymentId, razorpaySig
     }
     catch (error) {
         logger.error('Payment signature verification error', {
-            error: error.message,
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
             razorpayOrderId,
             razorpayPaymentId
         });
@@ -141,12 +139,12 @@ async function checkDuplicatePayment(razorpayPaymentId) {
     catch (error) {
         logger.error('Error checking duplicate payment', {
             razorpayPaymentId,
-            error: error.message
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
         });
         throw error;
     }
 }
-async function createPaymentTransaction(paymentOrder, razorpayPaymentId, additionalData) {
+async function createPaymentTransaction(paymentOrder, razorpayPaymentId) {
     try {
         const transactionId = `txn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         const paymentTransaction = await db.prisma.paymentTransaction.create({
@@ -180,7 +178,7 @@ async function createPaymentTransaction(paymentOrder, razorpayPaymentId, additio
         logger.error('Failed to create payment transaction', {
             paymentOrderId: paymentOrder.id,
             razorpayPaymentId,
-            error: error.message
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
         });
         throw error;
     }
@@ -204,12 +202,12 @@ async function updatePaymentOrderStatus(paymentOrderId, status, userId) {
         logger.error('Failed to update payment order status', {
             paymentOrderId,
             status,
-            error: error.message
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
         });
         throw error;
     }
 }
-async function updateMealOrderStatus(orderId, userId) {
+async function updateMealOrderStatus(orderId, _userId) {
     try {
         const updatedOrder = await db.prisma.order.update({
             where: { id: orderId },
@@ -226,7 +224,7 @@ async function updateMealOrderStatus(orderId, userId) {
     catch (error) {
         logger.warn('Failed to update meal order status', {
             orderId,
-            error: error.message
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
         });
         return null;
     }
@@ -261,13 +259,13 @@ async function createAuditLog(paymentOrder, paymentTransaction, userId) {
     }
     catch (error) {
         logger.error('Failed to create payment verification audit log', {
-            error: error.message,
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
             paymentOrderId: paymentOrder.id,
             transactionId: paymentTransaction.id
         });
     }
 }
-async function sendPaymentNotification(paymentOrder, paymentTransaction) {
+async function sendPaymentNotification(paymentOrder, _paymentTransaction) {
     try {
         logger.info('Payment confirmation notification created', {
             paymentOrderId: paymentOrder.id,
@@ -277,14 +275,14 @@ async function sendPaymentNotification(paymentOrder, paymentTransaction) {
     }
     catch (error) {
         logger.error('Failed to send payment notification', {
-            error: error.message,
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
             paymentOrderId: paymentOrder.id
         });
     }
 }
 async function processPaymentVerification(verificationData, userId) {
     try {
-        return await db.prisma.$transaction(async (prisma) => {
+        return await db.prisma.$transaction(async (_prisma) => {
             const paymentOrder = await validatePaymentOrder(verificationData.razorpayOrderId);
             const isSignatureValid = verifyRazorpaySignature(verificationData.razorpayOrderId, verificationData.razorpayPaymentId, verificationData.razorpaySignature);
             if (!isSignatureValid) {
@@ -294,8 +292,8 @@ async function processPaymentVerification(verificationData, userId) {
             if (isDuplicate) {
                 throw new Error('Payment ID already processed - duplicate payment detected');
             }
-            const paymentTransaction = await createPaymentTransaction(paymentOrder, verificationData.razorpayPaymentId, verificationData.additionalData);
-            const updatedPaymentOrder = await updatePaymentOrderStatus(paymentOrder.id, 'paid', userId);
+            const paymentTransaction = await createPaymentTransaction(paymentOrder, verificationData.razorpayPaymentId);
+            await updatePaymentOrderStatus(paymentOrder.id, 'paid', userId);
             let updatedOrder = null;
             if (paymentOrder.orderId) {
                 updatedOrder = await updateMealOrderStatus(paymentOrder.orderId, userId);
@@ -329,7 +327,7 @@ async function processPaymentVerification(verificationData, userId) {
         logger.error('Payment verification processing failed', {
             razorpayOrderId: verificationData.razorpayOrderId,
             razorpayPaymentId: verificationData.razorpayPaymentId,
-            error: error.message
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error)
         });
         throw error;
     }
@@ -355,8 +353,7 @@ const paymentVerificationHandler = async (event, context) => {
             razorpayOrderId: validatedData.razorpayOrderId,
             razorpayPaymentId: validatedData.razorpayPaymentId
         });
-        let authenticatedUser;
-        const result = await processPaymentVerification(validatedData, authenticatedUser?.userId);
+        const result = await processPaymentVerification(validatedData, undefined);
         const duration = Date.now() - startTime;
         logger.info('Payment verification completed successfully', {
             requestId,
@@ -375,23 +372,23 @@ const paymentVerificationHandler = async (event, context) => {
         logger.error('Payment verification request failed', {
             requestId,
             duration: `${duration}ms`,
-            error: error.message,
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
             stack: error.stack
         });
         if (error instanceof Error) {
-            if (error.message.includes('signature')) {
+            if (error instanceof Error ? error.message : String(error).includes('signature')) {
                 return (0, response_utils_1.createErrorResponse)(401, 'Payment signature validation failed', undefined, 'INVALID_SIGNATURE', requestId);
             }
-            if (error.message.includes('duplicate')) {
+            if (error instanceof Error ? error.message : String(error).includes('duplicate')) {
                 return (0, response_utils_1.createErrorResponse)(409, 'Payment already processed', undefined, 'DUPLICATE_PAYMENT', requestId);
             }
-            if (error.message.includes('not found')) {
+            if (error instanceof Error ? error.message : String(error).includes('not found')) {
                 return (0, response_utils_1.createErrorResponse)(404, 'Payment order not found', undefined, 'ORDER_NOT_FOUND', requestId);
             }
-            if (error.message.includes('expired')) {
+            if (error instanceof Error ? error.message : String(error).includes('expired')) {
                 return (0, response_utils_1.createErrorResponse)(400, 'Payment order has expired', undefined, 'ORDER_EXPIRED', requestId);
             }
-            if (error.message.includes('already paid')) {
+            if (error instanceof Error ? error.message : String(error).includes('already paid')) {
                 return (0, response_utils_1.createErrorResponse)(400, 'Payment order is already paid', undefined, 'ALREADY_PAID', requestId);
             }
         }

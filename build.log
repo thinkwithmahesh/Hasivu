@@ -1,0 +1,285 @@
+
+> hasivu-platform@1.0.0 build
+> tsc && npm run copy-assets
+
+src/functions/nutrition/nutrition-compliance-checker.ts(727,11): error TS2783: 'checkId' is specified more than once, so this usage will be overwritten.
+src/functions/nutrition/nutritional-trend-analyzer.ts(840,11): error TS2783: 'analysisId' is specified more than once, so this usage will be overwritten.
+src/functions/orders/update-status.ts(260,7): error TS2353: Object literal may only specify known properties, and 'error' does not exist in type 'Error'.
+src/functions/templates/cultural-adapter.ts(379,110): error TS2358: The left-hand side of an 'instanceof' expression must be of type 'any', an object type or a type parameter.
+src/functions/templates/cultural-adapter.ts(379,172): error TS18050: The value 'undefined' cannot be used here.
+src/routes/orders.routes.ts(38,29): error TS2673: Constructor of class 'NotificationService' is private and only accessible within the class declaration.
+src/routes/orders.routes.ts(249,53): error TS2339: Property 'getParentChildren' does not exist on type 'typeof OrderService'.
+src/routes/orders.routes.ts(251,68): error TS7006: Parameter 'child' implicitly has an 'any' type.
+src/routes/orders.routes.ts(301,41): error TS2339: Property 'findMany' does not exist on type 'typeof OrderService'.
+src/routes/orders.routes.ts(316,59): error TS2345: Argument of type 'boolean' is not assignable to parameter of type 'string'.
+src/routes/orders.routes.ts(326,26): error TS2339: Property 'getTrackingInfo' does not exist on type 'typeof OrderService'.
+src/routes/orders.routes.ts(327,26): error TS2339: Property 'estimateDeliveryTime' does not exist on type 'typeof OrderService'.
+src/routes/orders.routes.ts(344,53): error TS2339: Property 'getStatusCounts' does not exist on type 'typeof OrderService'.
+src/routes/orders.routes.ts(369,9): error TS2353: Object literal may only specify known properties, and 'error' does not exist in type 'Error'.
+src/routes/orders.routes.ts(393,46): error TS2339: Property 'findById' does not exist on type 'typeof OrderService'.
+src/routes/orders.routes.ts(396,52): error TS2345: Argument of type 'boolean' is not assignable to parameter of type 'string'.
+src/routes/orders.routes.ts(402,42): error TS2339: Property 'canUserAccessOrder' does not exist on type 'typeof OrderService'.
+src/routes/orders.routes.ts(404,82): error TS2345: Argument of type 'boolean' is not assignable to parameter of type 'string'.
+src/routes/orders.routes.ts(409,22): error TS2339: Property 'getDetailedTrackingInfo' does not exist on type 'typeof OrderService'.
+src/routes/orders.routes.ts(410,22): error TS2339: Property 'getDeliveryStatus' does not exist on type 'typeof OrderService'.
+src/routes/orders.routes.ts(412,22): error TS2339: Property 'getPreparationInfo' does not exist on type 'typeof OrderService'.
+src/routes/orders.routes.ts(423,39): error TS2551: Property 'canCancelOrder' does not exist on type 'typeof OrderService'. Did you mean 'cancelOrder'?
+src/routes/orders.routes.ts(424,39): error TS2339: Property 'canModifyOrder' does not exist on type 'typeof OrderService'.
+src/routes/orders.routes.ts(425,44): error TS2339: Property 'isRefundEligible' does not exist on type 'typeof OrderService'.
+src/routes/orders.routes.ts(440,20): error TS2554: Expected 3 arguments, but got 1.
+src/routes/orders.routes.ts(456,9): error TS2353: Object literal may only specify known properties, and 'error' does not exist in type 'Error'.
+src/routes/orders.routes.ts(483,48): error TS2339: Property 'canParentOrderForStudent' does not exist on type 'typeof OrderService'.
+src/routes/orders.routes.ts(491,13): error TS2345: Argument of type 'boolean' is not assignable to parameter of type 'string'.
+src/routes/orders.routes.ts(495,82): error TS2345: Argument of type 'boolean' is not assignable to parameter of type 'string'.
+src/routes/orders.routes.ts(499,53): error TS2339: Property 'validateDeliverySlot' does not exist on type 'typeof OrderService'.
+src/routes/orders.routes.ts(506,88): error TS2345: Argument of type 'boolean' is not assignable to parameter of type 'string'.
+src/routes/orders.routes.ts(510,50): error TS2339: Property 'validateOrderItems' does not exist on type 'typeof OrderService'.
+src/routes/orders.routes.ts(517,94): error TS2345: Argument of type 'boolean' is not assignable to parameter of type 'string'.
+src/routes/orders.routes.ts(531,11): error TS2345: Argument of type 'boolean' is not assignable to parameter of type 'string'.
+src/routes/orders.routes.ts(536,46): error TS2339: Property 'calculateOrderPricing' does not exist on type 'typeof OrderService'.
+src/routes/orders.routes.ts(543,54): error TS2551: Property 'validatePaymentMethod' does not exist on type 'typeof PaymentService'. Did you mean 'validatePaymentOrder'?
+src/routes/orders.routes.ts(549,87): error TS2345: Argument of type 'boolean' is not assignable to parameter of type 'string'.
+src/routes/orders.routes.ts(561,59): error TS2345: Argument of type 'boolean' is not assignable to parameter of type 'string'.
+src/routes/orders.routes.ts(573,65): error TS2345: Argument of type '{ orderId: any; amount: any; paymentMethodId: any; notes: any; userId: string; }' is not assignable to parameter of type 'string'.
+src/routes/orders.routes.ts(581,25): error TS2339: Property 'success' does not exist on type '{ id: string; status: string; createdAt: Date; updatedAt: Date; userId: string; orderId: string | null; subscriptionId: string | null; paymentMethodId: string | null; amount: number; ... 8 more ...; refundedAt: Date | null; }'.
+src/routes/orders.routes.ts(583,28): error TS2339: Property 'updateStatus' does not exist on type 'typeof OrderService'.
+src/routes/orders.routes.ts(584,36): error TS2339: Property 'payment' does not exist on type '{ id: string; status: string; createdAt: Date; updatedAt: Date; userId: string; orderId: string | null; subscriptionId: string | null; paymentMethodId: string | null; amount: number; ... 8 more ...; refundedAt: Date | null; }'.
+src/routes/orders.routes.ts(608,28): error TS2339: Property 'updateStatus' does not exist on type 'typeof OrderService'.
+src/routes/orders.routes.ts(616,44): error TS2339: Property 'message' does not exist on type '{ id: string; status: string; createdAt: Date; updatedAt: Date; userId: string; orderId: string | null; subscriptionId: string | null; paymentMethodId: string | null; amount: number; ... 8 more ...; refundedAt: Date | null; }'.
+src/routes/orders.routes.ts(618,11): error TS2345: Argument of type 'boolean' is not assignable to parameter of type 'string'.
+src/routes/orders.routes.ts(627,20): error TS2554: Expected 3 arguments, but got 1.
+src/routes/orders.routes.ts(661,9): error TS2353: Object literal may only specify known properties, and 'error' does not exist in type 'Error'.
+src/routes/orders.routes.ts(689,54): error TS2339: Property 'findById' does not exist on type 'typeof OrderService'.
+src/routes/orders.routes.ts(691,52): error TS2345: Argument of type 'boolean' is not assignable to parameter of type 'string'.
+src/routes/orders.routes.ts(697,44): error TS2339: Property 'canUserUpdateOrder' does not exist on type 'typeof OrderService'.
+src/routes/orders.routes.ts(699,84): error TS2345: Argument of type 'boolean' is not assignable to parameter of type 'string'.
+src/routes/orders.routes.ts(704,52): error TS2339: Property 'canChangeStatus' does not exist on type 'typeof OrderService'.
+src/routes/orders.routes.ts(714,13): error TS2345: Argument of type 'boolean' is not assignable to parameter of type 'string'.
+src/routes/orders.routes.ts(721,59): error TS2339: Property 'validateItemModification' does not exist on type 'typeof OrderService'.
+src/routes/orders.routes.ts(730,13): error TS2345: Argument of type 'boolean' is not assignable to parameter of type 'string'.
+src/routes/orders.routes.ts(739,47): error TS2339: Property 'update' does not exist on type 'typeof OrderService'.
+src/routes/orders.routes.ts(746,28): error TS2339: Property 'handleStatusUpdate' does not exist on type 'typeof OrderService'.
+src/routes/orders.routes.ts(776,20): error TS2554: Expected 3 arguments, but got 1.
+src/routes/orders.routes.ts(804,9): error TS2353: Object literal may only specify known properties, and 'error' does not exist in type 'Error'.
+src/routes/orders.routes.ts(836,46): error TS2339: Property 'findById' does not exist on type 'typeof OrderService'.
+src/routes/orders.routes.ts(838,52): error TS2345: Argument of type 'boolean' is not assignable to parameter of type 'string'.
+src/routes/orders.routes.ts(844,44): error TS2551: Property 'canCancelOrder' does not exist on type 'typeof OrderService'. Did you mean 'cancelOrder'?
+src/routes/orders.routes.ts(846,77): error TS2345: Argument of type 'boolean' is not assignable to parameter of type 'string'.
+src/routes/orders.routes.ts(850,69): error TS2345: Argument of type '{ reason: any; refundRequested: any; cancelledBy: string; }' is not assignable to parameter of type 'string'.
+src/routes/orders.routes.ts(857,59): error TS2345: Argument of type 'boolean' is not assignable to parameter of type 'string'.
+src/routes/orders.routes.ts(863,45): error TS2339: Property 'processRefund' does not exist on type 'typeof PaymentService'.
+src/routes/orders.routes.ts(886,20): error TS2554: Expected 3 arguments, but got 1.
+src/routes/orders.routes.ts(917,9): error TS2353: Object literal may only specify known properties, and 'error' does not exist in type 'Error'.
+src/routes/orders.routes.ts(942,46): error TS2339: Property 'findById' does not exist on type 'typeof OrderService'.
+src/routes/orders.routes.ts(944,52): error TS2345: Argument of type 'boolean' is not assignable to parameter of type 'string'.
+src/routes/orders.routes.ts(950,42): error TS2339: Property 'canUserAccessOrder' does not exist on type 'typeof OrderService'.
+src/routes/orders.routes.ts(952,83): error TS2345: Argument of type 'boolean' is not assignable to parameter of type 'string'.
+src/routes/orders.routes.ts(956,47): error TS2339: Property 'getComprehensiveTrackingInfo' does not exist on type 'typeof OrderService'.
+src/routes/orders.routes.ts(964,9): error TS2353: Object literal may only specify known properties, and 'error' does not exist in type 'Error'.
+src/routes/payments.routes.ts(166,60): error TS2339: Property 'message' does not exist on type '{ error: unknown; }'.
+src/routes/rfid.routes.ts(8,10): error TS2724: '"@/services/rfid.service"' has no exported member named 'rfidService'. Did you mean 'RFIDService'?
+src/routes/rfid.routes.ts(256,34): error TS2339: Property 'id' does not exist on type '{ userId: string; schoolId?: string | undefined; role?: string | undefined; }'.
+src/routes/rfid.routes.ts(277,34): error TS2339: Property 'id' does not exist on type '{ userId: string; schoolId?: string | undefined; role?: string | undefined; }'.
+src/routes/rfid.routes.ts(298,34): error TS2339: Property 'id' does not exist on type '{ userId: string; schoolId?: string | undefined; role?: string | undefined; }'.
+src/routes/rfid.routes.ts(319,34): error TS2339: Property 'id' does not exist on type '{ userId: string; schoolId?: string | undefined; role?: string | undefined; }'.
+src/routes/rfid.routes.ts(339,34): error TS2339: Property 'id' does not exist on type '{ userId: string; schoolId?: string | undefined; role?: string | undefined; }'.
+src/routes/rfid.routes.ts(364,34): error TS2339: Property 'id' does not exist on type '{ userId: string; schoolId?: string | undefined; role?: string | undefined; }'.
+src/routes/rfid.routes.ts(384,34): error TS2339: Property 'id' does not exist on type '{ userId: string; schoolId?: string | undefined; role?: string | undefined; }'.
+src/routes/rfid.routes.ts(409,34): error TS2339: Property 'id' does not exist on type '{ userId: string; schoolId?: string | undefined; role?: string | undefined; }'.
+src/routes/rfid.routes.ts(430,34): error TS2339: Property 'id' does not exist on type '{ userId: string; schoolId?: string | undefined; role?: string | undefined; }'.
+src/routes/rfid.routes.ts(456,34): error TS2339: Property 'id' does not exist on type '{ userId: string; schoolId?: string | undefined; role?: string | undefined; }'.
+src/routes/rfid.routes.ts(476,34): error TS2339: Property 'id' does not exist on type '{ userId: string; schoolId?: string | undefined; role?: string | undefined; }'.
+src/routes/rfid.routes.ts(496,34): error TS2339: Property 'id' does not exist on type '{ userId: string; schoolId?: string | undefined; role?: string | undefined; }'.
+src/types/api.types.ts(1407,18): error TS2430: Interface 'ApiResponseObject' incorrectly extends interface 'Response<any, Record<string, any>>'.
+  Types of property 'sendPaginated' are incompatible.
+    Type '<T>(data: T[], pagination: any) => Response<any, Record<string, any>>' is not assignable to type '(data: any[] | undefined, total: number, metadata?: any) => void'.
+      Types of parameters 'data' and 'data' are incompatible.
+        Type 'any[] | undefined' is not assignable to type 'any[]'.
+          Type 'undefined' is not assignable to type 'any[]'.
+src/utils/validation.ts(21,28): error TS2576: Property 'validateObject' does not exist on type 'ValidationService'. Did you mean to access the static member 'ValidationService.validateObject' instead?
+src/utils/validation.ts(35,28): error TS2576: Property 'validateObject' does not exist on type 'ValidationService'. Did you mean to access the static member 'ValidationService.validateObject' instead?
+src/utils/validation.ts(51,28): error TS2576: Property 'validateObject' does not exist on type 'ValidationService'. Did you mean to access the static member 'ValidationService.validateObject' instead?
+src/utils/validation.ts(66,28): error TS2576: Property 'validateObject' does not exist on type 'ValidationService'. Did you mean to access the static member 'ValidationService.validateObject' instead?
+src/utils/validation.ts(81,28): error TS2576: Property 'validateObject' does not exist on type 'ValidationService'. Did you mean to access the static member 'ValidationService.validateObject' instead?
+tests/coverage-boost.test.ts(131,10): error TS2724: '"../src/services/rfid.service"' has no exported member named 'RFIDService'. Did you mean 'RfidService'?
+tests/coverage-boost.test.ts(201,40): error TS2339: Property 'deleteUser' does not exist on type 'typeof UserService'.
+tests/coverage-boost.test.ts(215,40): error TS2339: Property 'authenticateUser' does not exist on type 'typeof UserService'.
+tests/coverage-boost.test.ts(227,40): error TS2339: Property 'getUsersBySchool' does not exist on type 'typeof UserService'.
+tests/coverage-boost.test.ts(261,9): error TS2353: Object literal may only specify known properties, and 'userId' does not exist in type '{ studentId: string; parentId: string; schoolId: string; items: { menuItemId: string; quantity: number; specialInstructions?: string | undefined; }[]; deliveryDate: Date; deliveryType: "delivery" | "pickup"; deliveryAddress?: string | undefined; }'.
+tests/coverage-boost.test.ts(283,41): error TS2339: Property 'getOrderById' does not exist on type 'typeof OrderService'.
+tests/coverage-boost.test.ts(307,41): error TS2339: Property 'getOrdersByUser' does not exist on type 'typeof OrderService'.
+tests/coverage-boost.test.ts(318,41): error TS2339: Property 'getOrdersBySchool' does not exist on type 'typeof OrderService'.
+tests/coverage-boost.test.ts(329,40): error TS2339: Property 'calculateOrderTotal' does not exist on type 'typeof OrderService'.
+tests/coverage-boost.test.ts(335,9): error TS2353: Object literal may only specify known properties, and 'userId' does not exist in type '{ studentId: string; parentId: string; schoolId: string; items: { menuItemId: string; quantity: number; specialInstructions?: string | undefined; }[]; deliveryDate: Date; deliveryType: "delivery" | "pickup"; deliveryAddress?: string | undefined; }'.
+tests/coverage-boost.test.ts(353,67): error TS2554: Expected 1 arguments, but got 3.
+tests/coverage-boost.test.ts(370,43): error TS2339: Property 'verifyPayment' does not exist on type 'typeof PaymentService'.
+tests/coverage-boost.test.ts(382,43): error TS2339: Property 'capturePayment' does not exist on type 'typeof PaymentService'.
+tests/coverage-boost.test.ts(391,35): error TS2339: Property 'verifyPayment' does not exist on type 'typeof PaymentService'.
+tests/coverage-boost.test.ts(395,60): error TS2554: Expected 1 arguments, but got 3.
+tests/coverage-boost.test.ts(495,40): error TS2339: Property 'createMenuItem' does not exist on type 'typeof MenuService'.
+tests/coverage-boost.test.ts(514,40): error TS2339: Property 'getMenuItemById' does not exist on type 'typeof MenuService'.
+tests/coverage-boost.test.ts(526,40): error TS2339: Property 'updateMenuItem' does not exist on type 'typeof MenuService'.
+tests/coverage-boost.test.ts(541,40): error TS2339: Property 'getMenuItemsBySchool' does not exist on type 'typeof MenuService'.
+tests/coverage-boost.test.ts(552,40): error TS2339: Property 'getAvailableMenuItems' does not exist on type 'typeof MenuService'.
+tests/coverage-boost.test.ts(558,32): error TS2339: Property 'createMenuItem' does not exist on type 'typeof MenuService'.
+tests/coverage-boost.test.ts(572,45): error TS2339: Property 'generateUserAnalytics' does not exist on type 'typeof AnalyticsService'.
+tests/coverage-boost.test.ts(583,45): error TS2339: Property 'generateOrderAnalytics' does not exist on type 'typeof AnalyticsService'.
+tests/coverage-boost.test.ts(594,45): error TS2339: Property 'generatePaymentAnalytics' does not exist on type 'typeof AnalyticsService'.
+tests/coverage-boost.test.ts(603,37): error TS2339: Property 'generateUserAnalytics' does not exist on type 'typeof AnalyticsService'.
+tests/coverage-boost.test.ts(625,9): error TS2353: Object literal may only specify known properties, and 'templateName' does not exist in type 'NotificationRequest'.
+tests/coverage-boost.test.ts(639,9): error TS2353: Object literal may only specify known properties, and 'templateName' does not exist in type 'NotificationRequest'.
+tests/coverage-boost.test.ts(656,9): error TS2353: Object literal may only specify known properties, and 'templateName' does not exist in type 'NotificationRequest'.
+tests/coverage-boost.test.ts(673,9): error TS2353: Object literal may only specify known properties, and 'templateName' does not exist in type 'NotificationRequest'.
+tests/coverage-boost.test.ts(701,9): error TS2353: Object literal may only specify known properties, and 'templateName' does not exist in type 'NotificationRequest'.
+tests/coverage-boost.test.ts(724,9): error TS2353: Object literal may only specify known properties, and 'templateName' does not exist in type 'NotificationRequest'.
+tests/coverage-boost.test.ts(750,9): error TS2353: Object literal may only specify known properties, and 'templateName' does not exist in type 'NotificationRequest'.
+tests/coverage-boost.test.ts(763,9): error TS2353: Object literal may only specify known properties, and 'templateName' does not exist in type 'NotificationRequest'.
+tests/coverage-boost.test.ts(786,9): error TS2353: Object literal may only specify known properties, and 'templateName' does not exist in type 'NotificationRequest'.
+tests/coverage-boost.test.ts(810,9): error TS2353: Object literal may only specify known properties, and 'templateName' does not exist in type 'NotificationRequest'.
+tests/coverage-boost.test.ts(834,9): error TS2353: Object literal may only specify known properties, and 'templateName' does not exist in type 'BulkNotificationRequest'.
+tests/coverage-boost.test.ts(857,9): error TS2353: Object literal may only specify known properties, and 'templateName' does not exist in type 'BulkNotificationRequest'.
+tests/coverage-boost.test.ts(885,9): error TS2353: Object literal may only specify known properties, and 'templateName' does not exist in type 'BulkNotificationRequest'.
+tests/coverage-boost.test.ts(898,9): error TS2353: Object literal may only specify known properties, and 'templateName' does not exist in type 'BulkNotificationRequest'.
+tests/coverage-boost.test.ts(1071,9): error TS2353: Object literal may only specify known properties, and 'email' does not exist in type 'Partial<NotificationPreferences>'.
+tests/coverage-boost.test.ts(1094,9): error TS2353: Object literal may only specify known properties, and 'email' does not exist in type 'Partial<NotificationPreferences>'.
+tests/coverage-boost.test.ts(1106,9): error TS2353: Object literal may only specify known properties, and 'email' does not exist in type 'Partial<NotificationPreferences>'.
+tests/coverage-boost.test.ts(1120,73): error TS2559: Type '"school-123"' has no properties in common with type '{ startDate?: Date | undefined; endDate?: Date | undefined; templateId?: string | undefined; userId?: string | undefined; }'.
+tests/coverage-boost.test.ts(1133,87): error TS2554: Expected 0-1 arguments, but got 2.
+tests/coverage-boost.test.ts(1160,73): error TS2559: Type '"school-123"' has no properties in common with type '{ startDate?: Date | undefined; endDate?: Date | undefined; templateId?: string | undefined; userId?: string | undefined; }'.
+tests/coverage-boost.test.ts(1169,73): error TS2559: Type '"school-123"' has no properties in common with type '{ startDate?: Date | undefined; endDate?: Date | undefined; templateId?: string | undefined; userId?: string | undefined; }'.
+tests/coverage-boost.test.ts(1180,52): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ name: string; orderId: string; }'.
+tests/coverage-boost.test.ts(1190,9): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ email: boolean; sms: boolean; }'.
+  No index signature with a parameter of type 'string' was found on type '{ email: boolean; sms: boolean; }'.
+tests/integration/epic5-payment-ecosystem.test.ts(219,31): error TS2339: Property 'getInstance' does not exist on type 'typeof AuthService'.
+tests/security/comprehensive-security.test.ts(40,31): error TS2339: Property 'getInstance' does not exist on type 'typeof AuthService'.
+tests/security/comprehensive-security.test.ts(1194,21): error TS2339: Property 'length' does not exist on type '{ sessionId: string; expiresAt: Date; }'.
+tests/security/comprehensive-security.test.ts(1204,57): error TS2345: Argument of type '{ sessionId: string; expiresAt: Date; }' is not assignable to parameter of type 'string'.
+tests/security/comprehensive-security.test.ts(1211,53): error TS2345: Argument of type '{ sessionId: string; expiresAt: Date; }' is not assignable to parameter of type 'string'.
+tests/security/comprehensive-security.test.ts(1220,57): error TS2345: Argument of type '{ sessionId: string; expiresAt: Date; }' is not assignable to parameter of type 'string'.
+tests/security/comprehensive-security.test.ts(1224,34): error TS2345: Argument of type '{ sessionId: string; expiresAt: Date; }' is not assignable to parameter of type 'string'.
+tests/security/comprehensive-security.test.ts(1227,53): error TS2345: Argument of type '{ sessionId: string; expiresAt: Date; }' is not assignable to parameter of type 'string'.
+tests/security/comprehensive-security.test.ts(1238,55): error TS2353: Object literal may only specify known properties, and 'email' does not exist in type '{ protocol?: string | undefined; headers?: any; body?: { email: string; password: string; } | undefined; }'.
+tests/security/comprehensive-security.test.ts(1241,28): error TS2551: Property 'tokens' does not exist on type '{ success: boolean; token?: string | undefined; user?: any; message?: string | undefined; error?: string | undefined; headers?: any; cookies?: any; }'. Did you mean 'token'?
+tests/smoke/package-scripts-validation.test.ts(35,14): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ 'test:smoke': string; 'test:smoke:dev': string; 'test:smoke:staging': string; 'test:smoke:production': string; }'.
+  No index signature with a parameter of type 'string' was found on type '{ 'test:smoke': string; 'test:smoke:dev': string; 'test:smoke:staging': string; 'test:smoke:production': string; }'.
+tests/smoke/package-scripts-validation.test.ts(36,14): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ 'test:smoke': string; 'test:smoke:dev': string; 'test:smoke:staging': string; 'test:smoke:production': string; }'.
+  No index signature with a parameter of type 'string' was found on type '{ 'test:smoke': string; 'test:smoke:dev': string; 'test:smoke:staging': string; 'test:smoke:production': string; }'.
+tests/smoke/package-scripts-validation.test.ts(37,35): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ 'test:smoke': string; 'test:smoke:dev': string; 'test:smoke:staging': string; 'test:smoke:production': string; }'.
+  No index signature with a parameter of type 'string' was found on type '{ 'test:smoke': string; 'test:smoke:dev': string; 'test:smoke:staging': string; 'test:smoke:production': string; }'.
+tests/smoke/utils/test-utils.test.ts(10,54): error TS2307: Cannot find module './test-types.test' or its corresponding type declarations.
+tests/smoke/utils/test-utils.test.ts(47,43): error TS2345: Argument of type '{ headers: { Authorization?: string | undefined; 'Content-Type': string; 'User-Agent': string; } | { append(name: string, value: string): void; delete(name: string): void; get(name: string): string | null; ... 10 more ...; 'User-Agent': string; } | { ...; } | { ...; }; ... 12 more ...; window?: null | undefined; }' is not assignable to parameter of type 'RequestInit'.
+  Types of property 'body' are incompatible.
+    Type 'BodyInit | null | undefined' is not assignable to type 'import("/Users/mahesha/Downloads/hasivu-platform/node_modules/node-fetch/@types/index").BodyInit | null | undefined'.
+      Type 'ArrayBuffer' is not assignable to type 'BodyInit | null | undefined'.
+        Type 'ArrayBuffer' is missing the following properties from type 'Buffer': subarray, write, toJSON, equals, and 94 more.
+tests/unit/auth/auth.routes.test.ts(55,56): error TS2345: Argument of type '{ valid: true; message: string; score: number; requirements: { length: true; uppercase: true; lowercase: true; numbers: true; symbols: true; }; }' is not assignable to parameter of type 'PasswordValidationResult'.
+  Property 'isValid' is missing in type '{ valid: true; message: string; score: number; requirements: { length: true; uppercase: true; lowercase: true; numbers: true; symbols: true; }; }' but required in type 'PasswordValidationResult'.
+tests/unit/auth/auth.routes.test.ts(190,56): error TS2345: Argument of type '{ valid: false; message: string; errors: string[]; score: number; requirements: { length: false; uppercase: true; lowercase: true; numbers: false; symbols: false; }; }' is not assignable to parameter of type 'PasswordValidationResult'.
+  Property 'isValid' is missing in type '{ valid: false; message: string; errors: string[]; score: number; requirements: { length: false; uppercase: true; lowercase: true; numbers: false; symbols: false; }; }' but required in type 'PasswordValidationResult'.
+tests/unit/auth/auth.routes.test.ts(357,56): error TS2345: Argument of type '{ valid: true; message: string; score: number; requirements: { length: true; uppercase: true; lowercase: true; numbers: true; symbols: true; }; }' is not assignable to parameter of type 'PasswordValidationResult'.
+  Property 'isValid' is missing in type '{ valid: true; message: string; score: number; requirements: { length: true; uppercase: true; lowercase: true; numbers: true; symbols: true; }; }' but required in type 'PasswordValidationResult'.
+tests/unit/auth/auth.routes.test.ts(381,56): error TS2345: Argument of type '{ valid: false; message: string; score: number; requirements: { length: false; uppercase: false; lowercase: true; numbers: true; symbols: false; }; }' is not assignable to parameter of type 'PasswordValidationResult'.
+  Property 'isValid' is missing in type '{ valid: false; message: string; score: number; requirements: { length: false; uppercase: false; lowercase: true; numbers: true; symbols: false; }; }' but required in type 'PasswordValidationResult'.
+tests/unit/auth/auth.routes.test.ts(500,56): error TS2345: Argument of type '{ valid: true; message: string; score: number; requirements: { length: true; uppercase: true; lowercase: true; numbers: true; symbols: true; }; }' is not assignable to parameter of type 'PasswordValidationResult'.
+  Property 'isValid' is missing in type '{ valid: true; message: string; score: number; requirements: { length: true; uppercase: true; lowercase: true; numbers: true; symbols: true; }; }' but required in type 'PasswordValidationResult'.
+tests/unit/auth/auth.routes.test.ts(565,56): error TS2345: Argument of type '{ valid: true; message: string; score: number; requirements: { length: true; uppercase: true; lowercase: true; numbers: true; symbols: true; }; }' is not assignable to parameter of type 'PasswordValidationResult'.
+  Property 'isValid' is missing in type '{ valid: true; message: string; score: number; requirements: { length: true; uppercase: true; lowercase: true; numbers: true; symbols: true; }; }' but required in type 'PasswordValidationResult'.
+tests/unit/functions/orders/create-order.test.ts(202,34): error TS2339: Property 'mockResolvedValue' does not exist on type '<T extends UserFindUniqueArgs<DefaultArgs>>(args: SelectSubset<T, UserFindUniqueArgs<DefaultArgs>>) => Prisma__UserClient<...>'.
+tests/unit/functions/orders/create-order.test.ts(223,34): error TS2339: Property 'mockResolvedValue' does not exist on type '<T extends UserFindUniqueArgs<DefaultArgs>>(args: SelectSubset<T, UserFindUniqueArgs<DefaultArgs>>) => Prisma__UserClient<...>'.
+tests/unit/functions/orders/create-order.test.ts(250,34): error TS2339: Property 'mockResolvedValue' does not exist on type '<T extends UserFindUniqueArgs<DefaultArgs>>(args: SelectSubset<T, UserFindUniqueArgs<DefaultArgs>>) => Prisma__UserClient<...>'.
+tests/unit/functions/orders/create-order.test.ts(277,34): error TS2339: Property 'mockResolvedValue' does not exist on type '<T extends UserFindUniqueArgs<DefaultArgs>>(args: SelectSubset<T, UserFindUniqueArgs<DefaultArgs>>) => Prisma__UserClient<...>'.
+tests/unit/functions/orders/create-order.test.ts(286,33): error TS2339: Property 'mockResolvedValue' does not exist on type '<T extends UserFindFirstArgs<DefaultArgs>>(args?: SelectSubset<T, UserFindFirstArgs<DefaultArgs>> | undefined) => Prisma__UserClient<...>'.
+tests/unit/functions/orders/create-order.test.ts(310,34): error TS2339: Property 'mockResolvedValue' does not exist on type '<T extends UserFindUniqueArgs<DefaultArgs>>(args: SelectSubset<T, UserFindUniqueArgs<DefaultArgs>>) => Prisma__UserClient<...>'.
+tests/unit/functions/orders/create-order.test.ts(399,37): error TS2339: Property 'mockResolvedValue' does not exist on type '<T extends MenuItemFindFirstArgs<DefaultArgs>>(args?: SelectSubset<T, MenuItemFindFirstArgs<DefaultArgs>> | undefined) => Prisma__MenuItemClient<...>'.
+tests/unit/functions/orders/create-order.test.ts(420,37): error TS2339: Property 'mockResolvedValue' does not exist on type '<T extends MenuItemFindFirstArgs<DefaultArgs>>(args?: SelectSubset<T, MenuItemFindFirstArgs<DefaultArgs>> | undefined) => Prisma__MenuItemClient<...>'.
+tests/unit/functions/orders/create-order.test.ts(449,34): error TS2339: Property 'mockResolvedValue' does not exist on type '<T extends UserFindUniqueArgs<DefaultArgs>>(args: SelectSubset<T, UserFindUniqueArgs<DefaultArgs>>) => Prisma__UserClient<...>'.
+tests/unit/functions/orders/create-order.test.ts(459,37): error TS2339: Property 'mockResolvedValue' does not exist on type '<T extends MenuItemFindFirstArgs<DefaultArgs>>(args?: SelectSubset<T, MenuItemFindFirstArgs<DefaultArgs>> | undefined) => Prisma__MenuItemClient<...>'.
+tests/unit/functions/orders/create-order.test.ts(469,11): error TS2740: Type '{ create: <T extends OrderCreateArgs<DefaultArgs>>(args: SelectSubset<T, OrderCreateArgs<DefaultArgs>>) => Prisma__OrderClient<...>; }' is missing the following properties from type 'OrderDelegate<DefaultArgs, PrismaClientOptions>': findUnique, findUniqueOrThrow, findFirst, findFirstOrThrow, and 13 more.
+tests/unit/functions/orders/create-order.test.ts(472,11): error TS2740: Type '{ create: <T extends OrderItemCreateArgs<DefaultArgs>>(args: SelectSubset<T, OrderItemCreateArgs<DefaultArgs>>) => Prisma__OrderItemClient<...>; }' is missing the following properties from type 'OrderItemDelegate<DefaultArgs, PrismaClientOptions>': findUnique, findUniqueOrThrow, findFirst, findFirstOrThrow, and 13 more.
+tests/unit/functions/orders/create-order.test.ts(478,31): error TS2339: Property 'mockResolvedValue' does not exist on type '<T extends OrderCreateArgs<DefaultArgs>>(args: SelectSubset<T, OrderCreateArgs<DefaultArgs>>) => Prisma__OrderClient<GetFindResult<...>, never, DefaultArgs, PrismaClientOptions>'.
+tests/unit/functions/orders/create-order.test.ts(495,35): error TS2339: Property 'mockResolvedValue' does not exist on type '<T extends OrderItemCreateArgs<DefaultArgs>>(args: SelectSubset<T, OrderItemCreateArgs<DefaultArgs>>) => Prisma__OrderItemClient<...>'.
+tests/unit/functions/orders/create-order.test.ts(568,31): error TS2339: Property 'mockRejectedValue' does not exist on type '<T extends OrderCreateArgs<DefaultArgs>>(args: SelectSubset<T, OrderCreateArgs<DefaultArgs>>) => Prisma__OrderClient<GetFindResult<...>, never, DefaultArgs, PrismaClientOptions>'.
+tests/unit/functions/orders/create-order.test.ts(624,34): error TS2339: Property 'mockResolvedValue' does not exist on type '<T extends UserFindUniqueArgs<DefaultArgs>>(args: SelectSubset<T, UserFindUniqueArgs<DefaultArgs>>) => Prisma__UserClient<...>'.
+tests/unit/functions/orders/create-order.test.ts(633,37): error TS2339: Property 'mockResolvedValue' does not exist on type '<T extends MenuItemFindFirstArgs<DefaultArgs>>(args?: SelectSubset<T, MenuItemFindFirstArgs<DefaultArgs>> | undefined) => Prisma__MenuItemClient<...>'.
+tests/unit/functions/orders/get-order.test.ts(124,35): error TS2339: Property 'mockResolvedValue' does not exist on type '<T extends OrderFindUniqueArgs<DefaultArgs>>(args: SelectSubset<T, OrderFindUniqueArgs<DefaultArgs>>) => Prisma__OrderClient<...>'.
+tests/unit/functions/orders/get-order.test.ts(218,35): error TS2339: Property 'mockResolvedValue' does not exist on type '<T extends OrderFindUniqueArgs<DefaultArgs>>(args: SelectSubset<T, OrderFindUniqueArgs<DefaultArgs>>) => Prisma__OrderClient<...>'.
+tests/unit/functions/orders/get-order.test.ts(237,35): error TS2339: Property 'mockResolvedValue' does not exist on type '<T extends OrderFindUniqueArgs<DefaultArgs>>(args: SelectSubset<T, OrderFindUniqueArgs<DefaultArgs>>) => Prisma__OrderClient<...>'.
+tests/unit/functions/orders/get-order.test.ts(238,40): error TS2339: Property 'mock' does not exist on type '<T extends OrderFindUniqueArgs<DefaultArgs>>(args: SelectSubset<T, OrderFindUniqueArgs<DefaultArgs>>) => Prisma__OrderClient<...>'.
+tests/unit/functions/orders/get-order.test.ts(240,42): error TS2339: Property 'mock' does not exist on type '<T extends OrderFindUniqueArgs<DefaultArgs>>(args: SelectSubset<T, OrderFindUniqueArgs<DefaultArgs>>) => Prisma__OrderClient<...>'.
+tests/unit/functions/orders/get-order.test.ts(263,35): error TS2339: Property 'mockRejectedValue' does not exist on type '<T extends OrderFindUniqueArgs<DefaultArgs>>(args: SelectSubset<T, OrderFindUniqueArgs<DefaultArgs>>) => Prisma__OrderClient<...>'.
+tests/unit/functions/orders/update-order.test.ts(82,49): error TS7006: Parameter 'callback' implicitly has an 'any' type.
+tests/unit/functions/orders/update-status.test.ts(119,49): error TS7006: Parameter 'callback' implicitly has an 'any' type.
+tests/unit/functions/rfid/delivery-verification.test.ts(310,13): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/delivery-verification.test.ts(341,13): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/delivery-verification.test.ts(387,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/delivery-verification.test.ts(405,13): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/delivery-verification.test.ts(420,13): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/delivery-verification.test.ts(432,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/delivery-verification.test.ts(447,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/delivery-verification.test.ts(461,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/delivery-verification.test.ts(473,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/delivery-verification.test.ts(490,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/delivery-verification.test.ts(508,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/delivery-verification.test.ts(526,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/delivery-verification.test.ts(545,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/delivery-verification.test.ts(564,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/delivery-verification.test.ts(578,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/delivery-verification.test.ts(592,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/delivery-verification.test.ts(609,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/delivery-verification.test.ts(626,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/delivery-verification.test.ts(644,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/delivery-verification.test.ts(658,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/delivery-verification.test.ts(672,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/delivery-verification.test.ts(688,13): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/delivery-verification.test.ts(703,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/delivery-verification.test.ts(717,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/delivery-verification.test.ts(731,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/delivery-verification.test.ts(745,13): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/delivery-verification.test.ts(763,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/delivery-verification.test.ts(790,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/delivery-verification.test.ts(818,13): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/delivery-verification.test.ts(828,13): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/delivery-verification.test.ts(838,13): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/delivery-verification.test.ts(852,13): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/delivery-verification.test.ts(904,13): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/delivery-verification.test.ts(915,13): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/delivery-verification.test.ts(935,13): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/verify-card.test.ts(425,13): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/verify-card.test.ts(452,13): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/verify-card.test.ts(471,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/verify-card.test.ts(486,13): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/verify-card.test.ts(498,13): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/verify-card.test.ts(510,13): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/verify-card.test.ts(522,13): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/verify-card.test.ts(534,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/verify-card.test.ts(549,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/verify-card.test.ts(564,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/verify-card.test.ts(578,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/verify-card.test.ts(590,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/verify-card.test.ts(607,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/verify-card.test.ts(625,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/verify-card.test.ts(643,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/verify-card.test.ts(661,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/verify-card.test.ts(675,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/verify-card.test.ts(692,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/verify-card.test.ts(709,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/verify-card.test.ts(729,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/verify-card.test.ts(749,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/verify-card.test.ts(765,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/verify-card.test.ts(782,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/verify-card.test.ts(799,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/verify-card.test.ts(816,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/verify-card.test.ts(832,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/verify-card.test.ts(849,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/verify-card.test.ts(866,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/verify-card.test.ts(886,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/verify-card.test.ts(906,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/verify-card.test.ts(924,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/verify-card.test.ts(937,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/verify-card.test.ts(953,28): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/verify-card.test.ts(965,13): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/verify-card.test.ts(974,13): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/verify-card.test.ts(986,13): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/functions/rfid/verify-card.test.ts(1008,13): error TS2554: Expected 2 arguments, but got 1.
+tests/unit/services/auth.service.test.ts(133,31): error TS2339: Property 'getInstance' does not exist on type 'typeof AuthService'.
+tests/unit/services/auth.service.test.ts(857,32): error TS2339: Property 'getInstance' does not exist on type 'typeof AuthService'.

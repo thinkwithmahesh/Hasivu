@@ -1,0 +1,989 @@
+/**
+ * HASIVU Platform - Student Behavior Prediction Service
+ * Advanced ML models for predicting student meal preferences, ordering patterns, and dietary needs
+ * Epic 3 → Story 1: Predictive Analytics Engine
+ * Task 1: Core ML Infrastructure & Model Training
+ */
+
+import { logger } from '../../utils/logger';
+import { DatabaseService } from '../database.service';
+import { MLBaseService, ModelType, ModelConfig, TrainingData, PredictionRequest, PredictionResponse } from './ml-base.service';
+import * as tf from '@tensorflow/tfjs-node';
+import { v4 as uuidv4 } from 'uuid';
+
+/**
+ * Student behavior prediction types
+ */
+export enum BehaviorPredictionType {
+  MEAL_PREFERENCE = 'meal_preference',
+  ORDER_TIMING = 'order_timing',
+  QUANTITY_PREFERENCE = 'quantity_preference',
+  DIETARY_COMPLIANCE = 'dietary_compliance',
+  NUTRITIONAL_NEEDS = 'nutritional_needs',
+  SOCIAL_INFLUENCE = 'social_influence',
+  SEASONAL_PREFERENCE = 'seasonal_preference',
+  HEALTH_OUTCOME = 'health_outcome'
+}
+
+/**
+ * Student behavior features
+ */
+export interface StudentBehaviorFeatures {
+  // Student demographics
+  age: number;
+  grade: number;
+  gender: string;
+  bmi?: number;
+  healthConditions: string[];
+  allergies: string[];
+
+  // Ordering history
+  totalOrders: number;
+  avgOrderValue: number;
+  favoriteCategories: string[];
+  orderFrequency: number; // orders per week
+  avgOrderTime: number; // hour of day
+  weekdayVsWeekend: number; // preference ratio
+
+  // Meal preferences
+  proteinPreference: number; // 0-1 scale
+  vegetarianTendency: number; // 0-1 scale
+  spicyFoodTolerance: number; // 0-1 scale
+  sweetTooth: number; // 0-1 scale
+
+  // Social factors
+  peersInfluence: number; // 0-1 scale
+  parentalGuidance: number; // 0-1 scale
+  schoolEventImpact: number; // 0-1 scale
+
+  // Seasonal patterns
+  seasonalVariation: number; // 0-1 scale
+  weatherSensitivity: number; // 0-1 scale
+
+  // Health metrics
+  energyLevels: number; // 0-1 scale
+  concentrationLevels: number; // 0-1 scale
+  physicalActivity: number; // 0-1 scale
+
+  // Contextual features
+  timeOfDay: number; // 0-23
+  dayOfWeek: number; // 0-6
+  monthOfYear: number; // 1-12
+  specialEvent: boolean;
+  weatherCondition: string;
+
+  // School-specific
+  schoolId: string;
+  classSize: number;
+  mealProgramType: string;
+}
+
+/**
+ * Prediction result for student behavior
+ */
+export interface StudentBehaviorPrediction {
+  studentId: string;
+  predictionType: BehaviorPredictionType;
+  prediction: any;
+  confidence: number;
+  probability?: number[];
+  explanation: {
+    topFactors: Array<{
+      factor: string;
+      importance: number;
+      description: string;
+    }>;
+    reasoning: string;
+    recommendations: string[];
+  };
+  metadata: {
+    modelVersion: string;
+    timestamp: Date;
+    features: StudentBehaviorFeatures;
+  };
+}
+
+/**
+ * Student behavior analytics
+ */
+export interface StudentBehaviorAnalytics {
+  studentId: string;
+  analysisDate: Date;
+  timeframe: string;
+  patterns: {
+    orderingPatterns: {
+      preferredTimes: number[];
+      preferredDays: string[];
+      orderFrequency: number;
+      avgOrderValue: number;
+    };
+    mealPreferences: {
+      favoriteCategories: string[];
+      avoidedCategories: string[];
+      nutritionalBalance: number;
+      dietaryCompliance: number;
+    };
+    socialInfluence: {
+      peerInfluenceScore: number;
+      parentalInfluenceScore: number;
+      trendFollowing: number;
+    };
+    healthCorrelations: {
+      energyLevelCorrelation: number;
+      concentrationCorrelation: number;
+      activityLevelCorrelation: number;
+      moodCorrelation: number;
+    };
+  };
+  predictions: {
+    nextWeekOrders: number;
+    likelyMealChoices: string[];
+    riskFactors: string[];
+    opportunities: string[];
+  };
+  recommendations: {
+    forStudent: string[];
+    forParents: string[];
+    forSchool: string[];
+    forKitchen: string[];
+  };
+}
+
+/**
+ * Student Behavior Prediction Service
+ * Comprehensive ML service for understanding and predicting student food behaviors
+ */
+export class StudentBehaviorService extends MLBaseService {
+  private static instance: StudentBehaviorService;
+  private featureExtractor: StudentBehaviorFeatureExtractor;
+
+  private constructor() {
+    super();
+    this.featureExtractor = new StudentBehaviorFeatureExtractor();
+  }
+
+  public static getInstance(): StudentBehaviorService {
+    if (!StudentBehaviorService.instance) {
+      StudentBehaviorService.instance = new StudentBehaviorService();
+    }
+    return StudentBehaviorService.instance;
+  }
+
+  /**
+   * Initialize service and load models
+   */
+  public async initialize(): Promise<void> {
+    await super.initialize();
+    await this.featureExtractor.initialize();
+
+    // Load or create behavior models for each prediction type
+    await this.ensureBehaviorModels();
+
+    logger.info('Student Behavior Service initialized successfully');
+  }
+
+  /**
+   * Train student behavior model
+   */
+  public async trainBehaviorModel(
+    predictionType: BehaviorPredictionType,
+    schoolId?: string,
+    options: {
+      dataRange?: { start: Date; end: Date };
+      validationSplit?: number;
+      epochs?: number;
+      batchSize?: number;
+    } = {}
+  ): Promise<string> {
+    const startTime = Date.now();
+
+    try {
+      logger.info('Training student behavior model', {
+        predictionType,
+        schoolId,
+        options
+      });
+
+      // Prepare training data
+      const trainingData = await this.prepareTrainingData(predictionType, schoolId, options.dataRange);
+
+      if (trainingData.features.length < 100) {
+        throw new Error(`Insufficient training data: ${trainingData.features.length} samples (minimum 100 required)`);
+      }
+
+      // Create model configuration
+      const config = this.createBehaviorModelConfig(predictionType, trainingData);
+
+      // Create model
+      const modelId = await this.createModel(
+        ModelType.STUDENT_BEHAVIOR,
+        config,
+        schoolId,
+        'student-behavior-service'
+      );
+
+      // Convert to TensorFlow tensors
+      const tfTrainingData: TrainingData = {
+        features: tf.tensor2d(trainingData.features),
+        labels: tf.tensor1d(trainingData.labels),
+        metadata: { predictionType, schoolId }
+      };
+
+      // Train the model
+      const metrics = await this.trainModelWithData(modelId, tfTrainingData);
+
+      // Tag model with prediction type
+      await this.tagModel(modelId, [predictionType, 'student-behavior', schoolId || 'global']);
+
+      const duration = Date.now() - startTime;
+      logger.info('Student behavior model trained successfully', {
+        modelId,
+        predictionType,
+        duration,
+        samples: trainingData.features.length,
+        accuracy: metrics.accuracy
+      });
+
+      return modelId;
+
+    } catch (error: unknown) {
+      logger.error('Failed to train student behavior model', {
+        predictionType,
+        schoolId,
+        error: (error instanceof Error ? error.message : String(error)),
+        stack: (error instanceof Error ? error.stack : undefined)
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Predict student behavior
+   */
+  public async predictStudentBehavior(
+    studentId: string,
+    predictionType: BehaviorPredictionType,
+    context: Partial<StudentBehaviorFeatures> = {}
+  ): Promise<StudentBehaviorPrediction> {
+    const startTime = Date.now();
+
+    try {
+      logger.info('Predicting student behavior', {
+        studentId,
+        predictionType
+      });
+
+      // Extract full features for the student
+      const features = await this.featureExtractor.extractStudentFeatures(studentId, context);
+
+      // Get the appropriate model
+      const modelId = await this.getBehaviorModelId(predictionType, features.schoolId);
+      if (!modelId) {
+        throw new Error(`No trained model found for prediction type: ${predictionType}`);
+      }
+
+      // Make prediction
+      const request: PredictionRequest = {
+        modelId,
+        features: this.featuresToPredictionInput(features),
+        schoolId: features.schoolId,
+        userId: studentId,
+        requireConfidence: true,
+        explainPrediction: true
+      };
+
+      const response = await this.makePrediction(request);
+
+      // Interpret prediction based on type
+      const interpretedPrediction = this.interpretBehaviorPrediction(
+        predictionType,
+        response,
+        features
+      );
+
+      const prediction: StudentBehaviorPrediction = {
+        studentId,
+        predictionType,
+        prediction: interpretedPrediction.value,
+        confidence: response.confidence,
+        probability: response.probability,
+        explanation: {
+          topFactors: interpretedPrediction.topFactors,
+          reasoning: interpretedPrediction.reasoning,
+          recommendations: interpretedPrediction.recommendations
+        },
+        metadata: {
+          modelVersion: response.version,
+          timestamp: response.timestamp,
+          features
+        }
+      };
+
+      const duration = Date.now() - startTime;
+      logger.info('Student behavior predicted successfully', {
+        studentId,
+        predictionType,
+        confidence: response.confidence,
+        duration
+      });
+
+      return prediction;
+
+    } catch (error: unknown) {
+      logger.error('Failed to predict student behavior', {
+        studentId,
+        predictionType,
+        error: (error instanceof Error ? error.message : String(error))
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Generate comprehensive student behavior analytics
+   */
+  public async generateStudentAnalytics(
+    studentId: string,
+    timeframe: string = 'month'
+  ): Promise<StudentBehaviorAnalytics> {
+    try {
+      logger.info('Generating student behavior analytics', { studentId, timeframe });
+
+      // Extract historical patterns
+      const patterns = await this.analyzeStudentPatterns(studentId, timeframe);
+
+      // Generate predictions for different aspects
+      const predictions = await this.generateBehaviorPredictions(studentId);
+
+      // Create recommendations
+      const recommendations = await this.generatePersonalizedRecommendations(studentId, patterns);
+
+      const analytics: StudentBehaviorAnalytics = {
+        studentId,
+        analysisDate: new Date(),
+        timeframe,
+        patterns,
+        predictions,
+        recommendations
+      };
+
+      // Cache analytics for quick access
+      await this.cacheStudentAnalytics(studentId, analytics);
+
+      logger.info('Student behavior analytics generated successfully', { studentId });
+
+      return analytics;
+
+    } catch (error: unknown) {
+      logger.error('Failed to generate student analytics', {
+        studentId,
+        error: (error instanceof Error ? error.message : String(error))
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Get behavior insights for a group of students
+   */
+  public async getGroupBehaviorInsights(
+    studentIds: string[],
+    predictionType: BehaviorPredictionType
+  ): Promise<Array<{
+    studentId: string;
+    prediction: any;
+    confidence: number;
+    riskLevel: 'low' | 'medium' | 'high';
+  }>> {
+    try {
+      const insights = [];
+
+      // Process students in batches for efficiency
+      const batchSize = 10;
+      for (let i = 0; i < studentIds.length; i += batchSize) {
+        const batch = studentIds.slice(i, i + batchSize);
+        const batchPromises = batch.map(studentId =>
+          this.predictStudentBehavior(studentId, predictionType)
+        );
+
+        const batchResults = await Promise.allSettled(batchPromises);
+
+        for (let j = 0; j < batchResults.length; j++) {
+          const result = batchResults[j];
+          const studentId = batch[j];
+
+          if (result.status === 'fulfilled') {
+            const prediction = result.value;
+            insights.push({
+              studentId,
+              prediction: prediction.prediction,
+              confidence: prediction.confidence,
+              riskLevel: this.calculateRiskLevel(prediction)
+            });
+          } else {
+            logger.warn('Failed to predict for student', {
+              studentId,
+              error: result.reason.message
+            });
+            insights.push({
+              studentId,
+              prediction: null,
+              confidence: 0,
+              riskLevel: 'medium' as const
+            });
+          }
+        }
+      }
+
+      return insights;
+
+    } catch (error: unknown) {
+      logger.error('Failed to get group behavior insights', {
+        studentCount: studentIds.length,
+        predictionType,
+        error: (error instanceof Error ? error.message : String(error))
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Protected methods for model training and prediction
+   */
+
+  protected async trainModel(data: TrainingData, config: ModelConfig): Promise<tf.LayersModel> {
+    const model = tf.sequential();
+
+    // Input layer
+    model.add(tf.layers.dense({
+      units: 128,
+      activation: 'relu' as any,
+      inputShape: [config.features.length],
+      name: 'input_layer'
+    }));
+
+    // Add dropout for regularization
+    model.add(tf.layers.dropout({ rate: 0.2, name: 'dropout_1' }));
+
+    // Hidden layers
+    model.add(tf.layers.dense({
+      units: 64,
+      activation: 'relu',
+      name: 'hidden_layer_1'
+    }));
+
+    model.add(tf.layers.dropout({ rate: 0.2, name: 'dropout_2' }));
+
+    model.add(tf.layers.dense({
+      units: 32,
+      activation: 'relu',
+      name: 'hidden_layer_2'
+    }));
+
+    // Output layer based on prediction type
+    const outputUnits = this.getOutputUnits(config);
+    const outputActivation = this.getOutputActivation(config);
+
+    model.add(tf.layers.dense({
+      units: outputUnits,
+      activation: outputActivation as any,
+      name: 'output_layer'
+    }));
+
+    // Compile model
+    model.compile({
+      optimizer: tf.train.adam(config.learningRate || 0.001),
+      loss: this.getLossFunction(config),
+      metrics: ['accuracy']
+    });
+
+    // Train with callbacks
+    const history = await model.fit(data.features as tf.Tensor, data.labels as tf.Tensor, {
+      epochs: config.epochs || 100,
+      batchSize: config.batchSize || 32,
+      validationSplit: config.validationSplit || 0.2,
+      shuffle: true,
+      callbacks: {
+        onEpochEnd: async (epoch, logs) => {
+          if (epoch % 10 === 0) {
+            logger.info('Training progress', {
+              epoch,
+              loss: logs?.loss,
+              accuracy: logs?.acc,
+              valLoss: logs?.val_loss,
+              valAccuracy: logs?.val_acc
+            });
+          }
+        }
+      }
+    });
+
+    return model;
+  }
+
+  protected async predict(model: tf.LayersModel, features: tf.Tensor): Promise<tf.Tensor> {
+    return model.predict(features) as tf.Tensor;
+  }
+
+  /**
+   * Private helper methods
+   */
+
+  private async ensureBehaviorModels(): Promise<void> {
+    const behaviorTypes = Object.values(BehaviorPredictionType);
+
+    for (const type of behaviorTypes) {
+      const existingModels = await this.listModels({
+        modelType: ModelType.STUDENT_BEHAVIOR
+      });
+
+      const typeModels = existingModels.filter(model =>
+        model.tags.includes(type)
+      );
+
+      if (typeModels.length === 0) {
+        logger.info('No existing model found for behavior type', { type });
+        // Models will be created when first training is requested
+      }
+    }
+  }
+
+  private async prepareTrainingData(
+    predictionType: BehaviorPredictionType,
+    schoolId?: string,
+    dateRange?: { start: Date; end: Date }
+  ): Promise<{ features: number[][]; labels: number[] }> {
+    // Extract training data from database
+    const trainingData = await this.featureExtractor.extractTrainingData(
+      predictionType,
+      schoolId,
+      dateRange
+    );
+
+    return trainingData;
+  }
+
+  private createBehaviorModelConfig(
+    predictionType: BehaviorPredictionType,
+    trainingData: { features: number[][]; labels: number[] }
+  ): ModelConfig {
+    const featureCount = trainingData.features[0]?.length || 0;
+
+    return {
+      modelType: ModelType.STUDENT_BEHAVIOR,
+      architecture: 'neural_network',
+      hyperparameters: {
+        hiddenUnits: [128, 64, 32],
+        dropoutRate: 0.2,
+        predictionType
+      },
+      features: this.getBehaviorFeatures(predictionType),
+      targetColumn: this.getTargetColumn(predictionType),
+      validationSplit: 0.2,
+      batchSize: 32,
+      epochs: 100,
+      learningRate: 0.001,
+      regularization: {
+        l2: 0.001,
+        dropout: 0.2
+      },
+      optimizer: 'adam',
+      lossFunction: this.getLossFunction({ hyperparameters: { predictionType } } as any),
+      earlyStoppingPatience: 10
+    };
+  }
+
+  private getBehaviorFeatures(predictionType: BehaviorPredictionType): string[] {
+    const baseFeatures = [
+      'age', 'grade', 'totalOrders', 'avgOrderValue', 'orderFrequency',
+      'proteinPreference', 'vegetarianTendency', 'spicyFoodTolerance',
+      'peersInfluence', 'seasonalVariation', 'timeOfDay', 'dayOfWeek'
+    ];
+
+    // Add specific features based on prediction type
+    switch (predictionType) {
+      case BehaviorPredictionType.MEAL_PREFERENCE:
+        return [...baseFeatures, 'sweetTooth', 'energyLevels', 'physicalActivity'];
+
+      case BehaviorPredictionType.ORDER_TIMING:
+        return [...baseFeatures, 'avgOrderTime', 'weekdayVsWeekend', 'schoolEventImpact'];
+
+      case BehaviorPredictionType.NUTRITIONAL_NEEDS:
+        return [...baseFeatures, 'bmi', 'energyLevels', 'concentrationLevels', 'physicalActivity'];
+
+      default:
+        return baseFeatures;
+    }
+  }
+
+  private getTargetColumn(predictionType: BehaviorPredictionType): string {
+    switch (predictionType) {
+      case BehaviorPredictionType.MEAL_PREFERENCE:
+        return 'preferred_meal_category';
+      case BehaviorPredictionType.ORDER_TIMING:
+        return 'next_order_time';
+      case BehaviorPredictionType.NUTRITIONAL_NEEDS:
+        return 'nutritional_requirement_score';
+      default:
+        return 'behavior_score';
+    }
+  }
+
+  private getOutputUnits(config: ModelConfig): number {
+    const predictionType = config.hyperparameters.predictionType;
+
+    switch (predictionType) {
+      case BehaviorPredictionType.MEAL_PREFERENCE:
+        return 10; // Number of meal categories
+      case BehaviorPredictionType.ORDER_TIMING:
+        return 24; // Hours in a day
+      case BehaviorPredictionType.NUTRITIONAL_NEEDS:
+        return 1; // Regression score
+      default:
+        return 1;
+    }
+  }
+
+  private getOutputActivation(config: ModelConfig): string {
+    const predictionType = config.hyperparameters.predictionType;
+
+    switch (predictionType) {
+      case BehaviorPredictionType.MEAL_PREFERENCE:
+      case BehaviorPredictionType.ORDER_TIMING:
+        return 'softmax'; // Classification
+      case BehaviorPredictionType.NUTRITIONAL_NEEDS:
+        return 'linear'; // Regression
+      default:
+        return 'sigmoid';
+    }
+  }
+
+  private getLossFunction(config: ModelConfig): string {
+    const predictionType = config.hyperparameters?.predictionType;
+
+    switch (predictionType) {
+      case BehaviorPredictionType.MEAL_PREFERENCE:
+      case BehaviorPredictionType.ORDER_TIMING:
+        return 'sparseCategoricalCrossentropy';
+      case BehaviorPredictionType.NUTRITIONAL_NEEDS:
+        return 'meanSquaredError';
+      default:
+        return 'binaryCrossentropy';
+    }
+  }
+
+  private async getBehaviorModelId(
+    predictionType: BehaviorPredictionType,
+    schoolId: string
+  ): Promise<string | null> {
+    // First try to find school-specific model
+    let models = await this.listModels({
+      modelType: ModelType.STUDENT_BEHAVIOR,
+      schoolId
+    });
+
+    models = models.filter(model => model.tags.includes(predictionType));
+
+    if (models.length > 0) {
+      return models[0].id;
+    }
+
+    // Fall back to global model
+    models = await this.listModels({
+      modelType: ModelType.STUDENT_BEHAVIOR
+    });
+
+    models = models.filter(model =>
+      model.tags.includes(predictionType) && !model.schoolId
+    );
+
+    return models.length > 0 ? models[0].id : null;
+  }
+
+  private featuresToPredictionInput(features: StudentBehaviorFeatures): Record<string, any> {
+    return {
+      age: features.age,
+      grade: features.grade,
+      totalOrders: features.totalOrders,
+      avgOrderValue: features.avgOrderValue,
+      orderFrequency: features.orderFrequency,
+      proteinPreference: features.proteinPreference,
+      vegetarianTendency: features.vegetarianTendency,
+      spicyFoodTolerance: features.spicyFoodTolerance,
+      sweetTooth: features.sweetTooth,
+      peersInfluence: features.peersInfluence,
+      seasonalVariation: features.seasonalVariation,
+      energyLevels: features.energyLevels,
+      concentrationLevels: features.concentrationLevels,
+      physicalActivity: features.physicalActivity,
+      timeOfDay: features.timeOfDay,
+      dayOfWeek: features.dayOfWeek,
+      monthOfYear: features.monthOfYear,
+      specialEvent: features.specialEvent ? 1 : 0,
+      classSize: features.classSize
+    };
+  }
+
+  private interpretBehaviorPrediction(
+    predictionType: BehaviorPredictionType,
+    response: PredictionResponse,
+    features: StudentBehaviorFeatures
+  ): {
+    value: any;
+    topFactors: Array<{ factor: string; importance: number; description: string }>;
+    reasoning: string;
+    recommendations: string[];
+  } {
+    // This would contain sophisticated interpretation logic
+    // For now, returning a simplified version
+
+    const topFactors = [
+      {
+        factor: 'ordering_frequency',
+        importance: 0.8,
+        description: 'Student has a consistent ordering pattern'
+      },
+      {
+        factor: 'peer_influence',
+        importance: 0.6,
+        description: 'Student is influenced by peer choices'
+      },
+      {
+        factor: 'time_of_day',
+        importance: 0.4,
+        description: 'Ordering time affects meal preferences'
+      }
+    ];
+
+    const reasoning = `Based on the student's ordering history and behavioral patterns, the model predicts ${predictionType} with ${Math.round(response.confidence * 100)}% confidence.`;
+
+    const recommendations = [
+      'Consider offering personalized meal suggestions',
+      'Monitor nutritional balance in food choices',
+      'Encourage healthy eating habits through social influence'
+    ];
+
+    return {
+      value: response.prediction,
+      topFactors,
+      reasoning,
+      recommendations
+    };
+  }
+
+  private async analyzeStudentPatterns(
+    studentId: string,
+    timeframe: string
+  ): Promise<StudentBehaviorAnalytics['patterns']> {
+    // This would analyze historical data to identify patterns
+    // For now, returning placeholder data
+
+    return {
+      orderingPatterns: {
+        preferredTimes: [12, 13, 18], // Noon, 1 PM, 6 PM
+        preferredDays: ['Monday', 'Wednesday', 'Friday'],
+        orderFrequency: 3.5, // orders per week
+        avgOrderValue: 150 // in rupees
+      },
+      mealPreferences: {
+        favoriteCategories: ['Indian', 'Continental', 'Snacks'],
+        avoidedCategories: ['Spicy', 'Seafood'],
+        nutritionalBalance: 0.7,
+        dietaryCompliance: 0.8
+      },
+      socialInfluence: {
+        peerInfluenceScore: 0.6,
+        parentalInfluenceScore: 0.8,
+        trendFollowing: 0.4
+      },
+      healthCorrelations: {
+        energyLevelCorrelation: 0.7,
+        concentrationCorrelation: 0.6,
+        activityLevelCorrelation: 0.8,
+        moodCorrelation: 0.5
+      }
+    };
+  }
+
+  private async generateBehaviorPredictions(studentId: string): Promise<StudentBehaviorAnalytics['predictions']> {
+    // Generate predictions for next week
+    return {
+      nextWeekOrders: 4,
+      likelyMealChoices: ['Rice Bowl', 'Sandwich', 'Fruit Salad'],
+      riskFactors: ['Low vegetable intake', 'High sugar preference'],
+      opportunities: ['Introduce new cuisines', 'Promote healthy snacks']
+    };
+  }
+
+  private async generatePersonalizedRecommendations(
+    studentId: string,
+    patterns: StudentBehaviorAnalytics['patterns']
+  ): Promise<StudentBehaviorAnalytics['recommendations']> {
+    return {
+      forStudent: [
+        'Try adding more vegetables to your meals',
+        'Consider healthier snack options',
+        'Maintain regular meal times'
+      ],
+      forParents: [
+        'Encourage balanced nutrition at home',
+        'Discuss healthy food choices with your child',
+        'Monitor meal preferences and patterns'
+      ],
+      forSchool: [
+        'Offer more variety in healthy options',
+        'Implement nutrition education programs',
+        'Create social incentives for healthy eating'
+      ],
+      forKitchen: [
+        'Prepare more appealing healthy options',
+        'Consider student preferences in menu planning',
+        'Offer customization options for meals'
+      ]
+    };
+  }
+
+  private calculateRiskLevel(prediction: StudentBehaviorPrediction): 'low' | 'medium' | 'high' {
+    if (prediction.confidence > 0.8) {
+      return 'low';
+    } else if (prediction.confidence > 0.6) {
+      return 'medium';
+    } else {
+      return 'high';
+    }
+  }
+
+  private async tagModel(modelId: string, tags: string[]): Promise<void> {
+    // Implementation would tag the model in the database
+    logger.info('Tagging model', { modelId, tags });
+  }
+
+  private async cacheStudentAnalytics(
+    studentId: string,
+    analytics: StudentBehaviorAnalytics
+  ): Promise<void> {
+    const cacheKey = `student_analytics:${studentId}`;
+    await this.redis.setex(cacheKey, 3600, JSON.stringify(analytics)); // Cache for 1 hour
+  }
+}
+
+/**
+ * Student Behavior Feature Extractor
+ * Extracts and processes features for student behavior prediction
+ */
+class StudentBehaviorFeatureExtractor {
+  private database: DatabaseService;
+
+  constructor() {
+    this.database = DatabaseService.getInstance();
+  }
+
+  public async initialize(): Promise<void> {
+    logger.info('Initializing Student Behavior Feature Extractor');
+  }
+
+  public async extractStudentFeatures(
+    studentId: string,
+    context: Partial<StudentBehaviorFeatures> = {}
+  ): Promise<StudentBehaviorFeatures> {
+    // Extract comprehensive features for a student
+    // This would query multiple tables to build the feature set
+
+    // For now, returning mock data with some real logic
+    const mockFeatures: StudentBehaviorFeatures = {
+      age: 12,
+      grade: 7,
+      gender: 'M',
+      bmi: 18.5,
+      healthConditions: [],
+      allergies: ['nuts'],
+      totalOrders: 45,
+      avgOrderValue: 120,
+      favoriteCategories: ['Indian', 'Snacks'],
+      orderFrequency: 3.2,
+      avgOrderTime: 12.5,
+      weekdayVsWeekend: 0.8,
+      proteinPreference: 0.7,
+      vegetarianTendency: 0.3,
+      spicyFoodTolerance: 0.6,
+      sweetTooth: 0.8,
+      peersInfluence: 0.6,
+      parentalGuidance: 0.8,
+      schoolEventImpact: 0.4,
+      seasonalVariation: 0.5,
+      weatherSensitivity: 0.3,
+      energyLevels: 0.7,
+      concentrationLevels: 0.6,
+      physicalActivity: 0.8,
+      timeOfDay: context.timeOfDay || new Date().getHours(),
+      dayOfWeek: context.dayOfWeek || new Date().getDay(),
+      monthOfYear: context.monthOfYear || new Date().getMonth() + 1,
+      specialEvent: context.specialEvent || false,
+      weatherCondition: context.weatherCondition || 'clear',
+      schoolId: context.schoolId || 'school-1',
+      classSize: 30,
+      mealProgramType: 'full'
+    };
+
+    return mockFeatures;
+  }
+
+  public async extractTrainingData(
+    predictionType: BehaviorPredictionType,
+    schoolId?: string,
+    dateRange?: { start: Date; end: Date }
+  ): Promise<{ features: number[][]; labels: number[] }> {
+    // Extract training data from historical orders and student data
+    // This would involve complex SQL queries and feature engineering
+
+    // For now, generating mock training data
+    const sampleSize = 1000;
+    const features: number[][] = [];
+    const labels: number[] = [];
+
+    for (let i = 0; i < sampleSize; i++) {
+      // Generate mock feature vector
+      const featureVector = [
+        Math.random() * 6 + 10, // age (10-16)
+        Math.floor(Math.random() * 12) + 1, // grade (1-12)
+        Math.random() * 100, // totalOrders
+        Math.random() * 200 + 50, // avgOrderValue
+        Math.random() * 7, // orderFrequency
+        Math.random(), // proteinPreference
+        Math.random(), // vegetarianTendency
+        Math.random(), // spicyFoodTolerance
+        Math.random(), // sweetTooth
+        Math.random(), // peersInfluence
+        Math.random(), // seasonalVariation
+        Math.random(), // energyLevels
+        Math.random(), // concentrationLevels
+        Math.random(), // physicalActivity
+        Math.random() * 24, // timeOfDay
+        Math.floor(Math.random() * 7), // dayOfWeek
+        Math.floor(Math.random() * 12) + 1 // monthOfYear
+      ];
+
+      features.push(featureVector);
+
+      // Generate corresponding label based on prediction type
+      let label: number;
+      switch (predictionType) {
+        case BehaviorPredictionType.MEAL_PREFERENCE:
+          label = Math.floor(Math.random() * 10); // 10 meal categories
+          break;
+        case BehaviorPredictionType.ORDER_TIMING:
+          label = Math.floor(Math.random() * 24); // 24 hours
+          break;
+        case BehaviorPredictionType.NUTRITIONAL_NEEDS:
+          label = Math.random(); // Continuous score
+          break;
+        default:
+          label = Math.round(Math.random()); // Binary
+      }
+
+      labels.push(label);
+    }
+
+    return { features, labels };
+  }
+}

@@ -70,7 +70,7 @@ const comprehensiveHealthCheckHandler = async (event, context) => {
     catch (error) {
         const duration = Date.now() - startTime;
         logger.error('Comprehensive health check failed', {
-            error: error instanceof Error ? error.message : 'Unknown error',
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error',
             duration,
             requestId: context.awsRequestId
         });
@@ -97,7 +97,7 @@ async function checkDatabaseHealth() {
             name: 'database',
             status: 'unhealthy',
             responseTime: Date.now() - startTime,
-            details: { error: error instanceof Error ? error.message : 'Unknown database error' }
+            details: { error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown database error' }
         };
     }
 }
@@ -121,7 +121,7 @@ async function checkRedisHealth() {
             name: 'redis',
             status: 'unhealthy',
             responseTime: Date.now() - startTime,
-            details: { error: error instanceof Error ? error.message : 'Unknown Redis error' }
+            details: { error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown Redis error' }
         };
     }
 }

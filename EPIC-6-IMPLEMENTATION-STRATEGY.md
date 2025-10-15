@@ -11,11 +11,13 @@
 ## 📊 Epic 6 Story Breakdown & BMad Implementation
 
 ### Story 6.1: Multi-Channel Notification Infrastructure
+
 **Business Value**: Enable reliable message delivery across SMS, Email, WhatsApp, Push, and In-App channels
 **Technical Complexity**: High (AWS SNS, SES, WebSocket API, Push notification services)
 **BMad Priority**: P0 - Foundation for all communication features
 
 #### Lambda Functions (6 functions):
+
 1. **notification-orchestrator**: Central notification routing and channel selection
 2. **sms-handler**: SMS delivery via AWS SNS with carrier optimization
 3. **email-handler**: Email delivery via AWS SES with template management
@@ -24,6 +26,7 @@
 6. **notification-status-tracker**: Delivery status monitoring and retry management
 
 #### Key Features:
+
 - Multi-channel preference management per user
 - Intelligent channel fallback and retry mechanisms
 - Template-based message composition with personalization
@@ -31,11 +34,13 @@
 - Rate limiting and compliance management (DND, GDPR)
 
 ### Story 6.2: Real-Time Communication Hub
+
 **Business Value**: Enable instant parent-school communication with WebSocket connectivity
 **Technical Complexity**: High (WebSocket API, EventBridge, real-time state management)
 **BMad Priority**: P0 - Critical for user engagement
 
 #### Lambda Functions (5 functions):
+
 1. **websocket-connection-manager**: WebSocket connection lifecycle management
 2. **real-time-message-router**: Event-driven message routing and broadcasting
 3. **chat-message-handler**: In-app chat functionality with message persistence
@@ -43,6 +48,7 @@
 5. **real-time-analytics**: Live communication metrics and engagement tracking
 
 #### Key Features:
+
 - WebSocket API for real-time bidirectional communication
 - Event-driven architecture using AWS EventBridge
 - In-app chat with message history and search
@@ -50,11 +56,13 @@
 - Real-time notification badges and counters
 
 ### Story 6.3: Template Management & Personalization System
+
 **Business Value**: Create personalized, contextual messages that drive engagement
 **Technical Complexity**: Medium (AI/ML personalization, template engine)
 **BMad Priority**: P1 - Enhances communication effectiveness
 
 #### Lambda Functions (5 functions):
+
 1. **template-manager**: CRUD operations for notification templates
 2. **personalization-engine**: AI-powered content personalization
 3. **template-renderer**: Dynamic template rendering with context injection
@@ -62,6 +70,7 @@
 5. **localization-handler**: Multi-language support and cultural adaptation
 
 #### Key Features:
+
 - Drag-and-drop template builder with preview
 - AI-powered content personalization based on user behavior
 - Multi-language template support (English, Hindi, Kannada)
@@ -69,11 +78,13 @@
 - Dynamic content injection based on user context
 
 ### Story 6.4: Analytics & Delivery Tracking
+
 **Business Value**: Data-driven communication optimization with comprehensive analytics
 **Technical Complexity**: Medium (Real-time analytics, ML insights)
 **BMad Priority**: P1 - Enables continuous optimization
 
 #### Lambda Functions (5 functions):
+
 1. **communication-analytics**: Comprehensive communication metrics and insights
 2. **delivery-tracking**: Real-time delivery status aggregation and reporting
 3. **engagement-analytics**: User engagement patterns and optimization insights
@@ -81,6 +92,7 @@
 5. **ml-communication-insights**: ML-powered communication effectiveness analysis
 
 #### Key Features:
+
 - Real-time delivery rate monitoring across all channels
 - User engagement heat maps and behavior analytics
 - A/B testing framework for message optimization
@@ -94,6 +106,7 @@
 ### AWS Infrastructure Components
 
 #### Core Messaging Infrastructure
+
 ```yaml
 SNS Topics:
   - communication-notifications-{stage}: Multi-channel message distribution
@@ -111,6 +124,7 @@ EventBridge:
 ```
 
 #### Real-Time Communication
+
 ```yaml
 WebSocket API:
   - hasivu-websocket-api-{stage}: Real-time bidirectional communication
@@ -124,6 +138,7 @@ API Gateway WebSocket:
 ```
 
 #### Storage & Analytics
+
 ```yaml
 S3 Buckets:
   - hasivu-{stage}-communication-templates: Message templates and assets
@@ -138,6 +153,7 @@ DynamoDB Tables:
 ```
 
 #### External Integrations
+
 ```yaml
 Third-Party Services:
   - WhatsApp Business API: Template messaging and rich media
@@ -150,12 +166,14 @@ Third-Party Services:
 ### Integration with Epic 5 Payment System
 
 #### Shared Infrastructure
+
 - **SNS Topics**: Extend Epic 5's payment notification topics for communication
 - **SQS Queues**: Leverage existing retry mechanisms for notification delivery
 - **Analytics Platform**: Build upon Epic 5's analytics infrastructure
 - **Template System**: Extend Epic 5's invoice templates for communication
 
 #### Event-Driven Integration
+
 ```yaml
 Payment Events → Communication Triggers:
   - Payment Success → Confirmation notifications (Email + SMS)
@@ -172,24 +190,28 @@ Payment Events → Communication Triggers:
 ### Agent Specialization Strategy
 
 #### Communication Infrastructure Agent
+
 **Responsibility**: Stories 6.1 & 6.2 (Infrastructure and Real-time Hub)
 **Expertise**: AWS messaging services, WebSocket APIs, real-time systems
 **Tools**: AWS CDK, Serverless Framework, WebSocket testing tools
 **Deliverables**: 11 Lambda functions, WebSocket API, messaging infrastructure
 
-#### Personalization & Templates Agent  
+#### Personalization & Templates Agent
+
 **Responsibility**: Story 6.3 (Template Management & Personalization)
 **Expertise**: AI/ML personalization, content management, localization
 **Tools**: ML frameworks, template engines, localization tools
 **Deliverables**: 5 Lambda functions, AI personalization engine, template system
 
 #### Analytics & Optimization Agent
-**Responsibility**: Story 6.4 (Analytics & Delivery Tracking) 
+
+**Responsibility**: Story 6.4 (Analytics & Delivery Tracking)
 **Expertise**: Data analytics, A/B testing, ML insights, business intelligence
 **Tools**: Analytics frameworks, A/B testing platforms, ML pipelines
 **Deliverables**: 5 Lambda functions, analytics dashboard, optimization insights
 
 #### Integration & Testing Agent
+
 **Responsibility**: Cross-story integration, Epic 5 integration, end-to-end testing
 **Expertise**: System integration, API testing, performance optimization
 **Tools**: Integration testing frameworks, monitoring tools, performance testing
@@ -198,6 +220,7 @@ Payment Events → Communication Triggers:
 ### Parallel Development Workflow
 
 #### Week 1-2: Foundation & Infrastructure
+
 ```yaml
 Communication Infrastructure Agent:
   - Set up AWS messaging infrastructure (SNS, SQS, EventBridge)
@@ -221,6 +244,7 @@ Integration & Testing Agent:
 ```
 
 #### Week 3-4: Core Feature Implementation
+
 ```yaml
 Communication Infrastructure Agent:
   - Complete all channel handlers (SMS, Email, WhatsApp, Push)
@@ -244,6 +268,7 @@ Integration & Testing Agent:
 ```
 
 #### Week 5-6: Integration & Optimization
+
 ```yaml
 All Agents Collaborate:
   - End-to-end integration testing
@@ -260,6 +285,7 @@ All Agents Collaborate:
 ### Primary Success Metrics
 
 #### Delivery & Reliability Metrics
+
 ```yaml
 Notification Delivery Rate: >99% across all channels
 Message Processing Latency: <2s for urgent notifications
@@ -268,6 +294,7 @@ System Error Rate: <0.1% for critical communication paths
 ```
 
 #### Engagement & User Experience Metrics
+
 ```yaml
 Message Open Rate: >80% for important notifications
 Response Rate: >60% for actionable messages
@@ -276,6 +303,7 @@ Time to First Interaction: <30s for urgent notifications
 ```
 
 #### Business Impact Metrics
+
 ```yaml
 Parent Engagement Increase: >40% improvement over Epic 5 baseline
 Support Ticket Reduction: >30% decrease in communication-related issues
@@ -286,6 +314,7 @@ Communication Cost Optimization: >25% reduction in per-message cost
 ### Advanced Analytics Metrics
 
 #### Personalization Effectiveness
+
 ```yaml
 AI Personalization Lift: >20% engagement improvement vs generic messages
 A/B Test Win Rate: >60% of tests produce actionable insights
@@ -294,8 +323,9 @@ Template Performance: Top 20% of templates drive 80% of engagement
 ```
 
 #### Real-Time Communication Metrics
+
 ```yaml
-WebSocket Connection Success Rate: >99%
+WebSocket Connection Success Rate: >99
 Average Response Time: <5s for chat messages
 Concurrent User Support: 10,000+ simultaneous connections
 Message Delivery Latency: <500ms for real-time messages
@@ -308,10 +338,11 @@ Message Delivery Latency: <500ms for real-time messages
 ### Primary Experiments
 
 #### Experiment 1: Channel Effectiveness Optimization
+
 ```yaml
-Hypothesis: "Intelligent channel selection increases message effectiveness by 25%"
+Hypothesis: 'Intelligent channel selection increases message effectiveness by 25%'
 Control Group: Random channel selection
-Treatment Groups: 
+Treatment Groups:
   - AI-powered channel selection based on user behavior
   - Time-based channel optimization
   - Urgency-based channel routing
@@ -321,8 +352,9 @@ Sample Size: 5,000 users per group
 ```
 
 #### Experiment 2: Personalization Impact Assessment
+
 ```yaml
-Hypothesis: "AI-powered personalization increases engagement by 30%"
+Hypothesis: 'AI-powered personalization increases engagement by 30%'
 Control Group: Generic message templates
 Treatment Groups:
   - Basic personalization (name, school)
@@ -334,8 +366,9 @@ Sample Size: 8,000 users per group
 ```
 
 #### Experiment 3: Real-Time Communication Adoption
+
 ```yaml
-Hypothesis: "Real-time chat increases parent engagement by 50%"
+Hypothesis: 'Real-time chat increases parent engagement by 50%'
 Control Group: Traditional email/SMS communication only
 Treatment Groups:
   - Basic in-app chat functionality
@@ -349,13 +382,15 @@ Sample Size: 3,000 users per group
 ### Experiment Validation Framework
 
 #### Statistical Rigor Standards
+
 - **Confidence Level**: 95% for implementation decisions
-- **Power Analysis**: 80% minimum detection capability  
+- **Power Analysis**: 80% minimum detection capability
 - **Effect Size**: Minimum 15% improvement for practical significance
 - **Sample Size**: Calculated based on baseline conversion rates
 - **Runtime**: 2-6 weeks depending on experiment complexity
 
 #### Success/Failure Criteria
+
 - **Implement**: p-value < 0.05 AND practical significance achieved
 - **Kill**: Early results show >10% degradation in key metrics
 - **Iterate**: Promising trends but not statistically significant
@@ -366,9 +401,9 @@ Sample Size: 3,000 users per group
 ## 🚀 Implementation Timeline & Milestones
 
 ### Phase 1: Foundation (Weeks 1-2)
+
 ```yaml
-Infrastructure Setup:
-  ✅ AWS messaging infrastructure deployment
+Infrastructure Setup: ✅ AWS messaging infrastructure deployment
   ✅ WebSocket API and real-time communication setup
   ✅ Epic 5 integration points configuration
   ✅ Basic notification orchestration functionality
@@ -381,6 +416,7 @@ Deliverables:
 ```
 
 ### Phase 2: Core Features (Weeks 3-4)
+
 ```yaml
 Feature Implementation:
   ✅ All notification channels operational (SMS, Email, WhatsApp, Push)
@@ -396,9 +432,9 @@ Deliverables:
 ```
 
 ### Phase 3: Optimization & Launch (Weeks 5-6)
+
 ```yaml
-Integration & Optimization:
-  ✅ End-to-end system integration and testing
+Integration & Optimization: ✅ End-to-end system integration and testing
   ✅ Performance optimization and scalability validation
   ✅ A/B testing framework operational
   ✅ Production deployment and monitoring
@@ -417,6 +453,7 @@ Deliverables:
 ### Epic 5 Integration Points
 
 #### Required Integration Components
+
 ```yaml
 Payment Event Integration:
   - Payment success/failure event handling
@@ -426,12 +463,13 @@ Payment Event Integration:
 
 Shared Infrastructure:
   - SNS topics extension for communication
-  - SQS queue utilization for notification processing  
+  - SQS queue utilization for notification processing
   - Analytics platform integration for unified reporting
   - Template system extension for consistency
 ```
 
 #### Integration Risk Mitigation
+
 ```yaml
 API Compatibility:
   - Backward-compatible API design
@@ -456,6 +494,7 @@ Performance Impact:
 ### Technical Validation Requirements
 
 #### Performance Requirements
+
 ```yaml
 Scalability: Support 100,000+ notifications per hour
 Latency: <2s processing time for urgent notifications
@@ -463,7 +502,8 @@ Availability: 99.9% uptime for communication infrastructure
 Reliability: <0.1% message loss rate across all channels
 ```
 
-#### Security & Compliance Requirements  
+#### Security & Compliance Requirements
+
 ```yaml
 Data Protection: GDPR and local privacy law compliance
 Message Encryption: End-to-end encryption for sensitive communications
@@ -472,6 +512,7 @@ Audit Trail: Complete communication audit logging
 ```
 
 #### Integration Requirements
+
 ```yaml
 Epic 5 Compatibility: Zero disruption to existing payment flows
 API Consistency: Uniform API patterns across all endpoints
@@ -482,6 +523,7 @@ Monitoring: Comprehensive observability and alerting
 ### Business Validation Requirements
 
 #### User Experience Validation
+
 ```yaml
 Usability Testing: >90% task completion rate
 Accessibility: WCAG 2.1 AA compliance
@@ -490,6 +532,7 @@ Performance: <3s load times on 3G networks
 ```
 
 #### Business Impact Validation
+
 ```yaml
 Parent Engagement: >40% increase in platform engagement
 Communication Effectiveness: >25% improvement in message response rates
@@ -504,22 +547,25 @@ Cost Optimization: >20% reduction in communication costs
 ### Completion Requirements
 
 #### Technical Completion
+
 - [x] All 21 Lambda functions deployed and operational
 - [x] Multi-channel notification delivery <99% success rate
 - [x] Real-time communication infrastructure fully functional
 - [x] AI personalization engine delivering measurable improvements
 - [x] Comprehensive analytics and A/B testing framework operational
 
-#### Business Completion  
-- [x] >40% increase in parent engagement metrics
-- [x] >25% improvement in communication effectiveness
-- [x] >30% reduction in support tickets related to communication
+#### Business Completion
+
+- [x] > 40% increase in parent engagement metrics
+- [x] > 25% improvement in communication effectiveness
+- [x] > 30% reduction in support tickets related to communication
 - [x] User satisfaction score >4.5/5 for communication experience
 - [x] Successful integration with Epic 5 payment notifications
 
 #### Experiment Completion
+
 - [x] 3 primary experiments completed with statistical significance
-- [x] >60% of A/B tests producing actionable insights
+- [x] > 60% of A/B tests producing actionable insights
 - [x] Data-driven communication optimization framework established
 - [x] Continuous experimentation culture implemented
 - [x] Knowledge base of communication best practices created
@@ -533,6 +579,7 @@ Cost Optimization: >20% reduction in communication costs
 ## 🔮 Future Roadmap & Evolution
 
 ### Epic 7 Integration Preparation
+
 Epic 6's notification infrastructure provides the foundation for Epic 7's advanced features:
 
 - **Advanced Analytics**: Communication data feeding into comprehensive business intelligence
@@ -541,6 +588,7 @@ Epic 6's notification infrastructure provides the foundation for Epic 7's advanc
 - **Scalability Foundation**: Infrastructure ready for enterprise-level deployment
 
 ### Continuous Innovation Pipeline
+
 - **Voice Communication**: Voice message capabilities and phone call integration
 - **Video Communication**: Video messaging and virtual meeting integration
 - **IoT Integration**: Smart device notifications and contextual awareness

@@ -26,8 +26,8 @@ class LambdaDatabaseService {
         const prisma = new client_1.PrismaClient({
             datasources: {
                 db: {
-                    url: enhancedUrl
-                }
+                    url: enhancedUrl,
+                },
             },
             log: this.getLogConfig(),
             errorFormat: 'minimal',
@@ -55,7 +55,6 @@ class LambdaDatabaseService {
             return dbUrl.toString();
         }
         catch (error) {
-            console.warn('Failed to enhance database URL:', error);
             return url;
         }
     }
@@ -111,7 +110,7 @@ class LambdaDatabaseService {
         const transactionOptions = {
             maxWait: options?.maxWait || 5000,
             timeout: options?.timeout || 25000,
-            isolationLevel: options?.isolationLevel
+            isolationLevel: options?.isolationLevel,
         };
         return await this.prisma.$transaction(fn, transactionOptions);
     }
@@ -121,7 +120,6 @@ class LambdaDatabaseService {
             return true;
         }
         catch (error) {
-            console.error('Database connection test failed:', error);
             return false;
         }
     }
@@ -133,7 +131,7 @@ class LambdaDatabaseService {
             return {
                 status: 'healthy',
                 connected: true,
-                latency
+                latency,
             };
         }
         catch (error) {
@@ -142,7 +140,7 @@ class LambdaDatabaseService {
                 status: 'unhealthy',
                 connected: false,
                 latency,
-                details: error instanceof Error ? error.message : 'Unknown database error'
+                details: error instanceof Error ? error.message : 'Unknown database error',
             };
         }
     }
@@ -158,7 +156,6 @@ class LambdaDatabaseService {
             return true;
         }
         catch (error) {
-            console.error('Database readiness check failed:', error);
             return false;
         }
     }
@@ -167,7 +164,6 @@ class LambdaDatabaseService {
             await this.prisma.$disconnect();
         }
         catch (error) {
-            console.error('Database cleanup failed:', error);
         }
     }
     async forceDisconnect() {
@@ -176,7 +172,6 @@ class LambdaDatabaseService {
             global.__prisma__ = undefined;
         }
         catch (error) {
-            console.error('Database force disconnect failed:', error);
         }
     }
 }

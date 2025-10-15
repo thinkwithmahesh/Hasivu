@@ -11,11 +11,11 @@ Parameters:
     Default: production
     AllowedValues: [dev, staging, production]
     Description: Environment name
-  
+
   ApiGatewayId:
     Type: String
     Description: API Gateway REST API ID
-  
+
   LambdaFunctionPrefix:
     Type: String
     Default: hasivu-platform
@@ -28,7 +28,7 @@ Resources:
   ExecutiveDashboard:
     Type: AWS::CloudWatch::Dashboard
     Properties:
-      DashboardName: !Sub "${Environment}-HASIVU-Executive-Overview"
+      DashboardName: !Sub '${Environment}-HASIVU-Executive-Overview'
       DashboardBody: !Sub |
         {
           "widgets": [
@@ -136,7 +136,7 @@ Resources:
   LambdaPerformanceDashboard:
     Type: AWS::CloudWatch::Dashboard
     Properties:
-      DashboardName: !Sub "${Environment}-HASIVU-Lambda-Performance"
+      DashboardName: !Sub '${Environment}-HASIVU-Lambda-Performance'
       DashboardBody: !Sub |
         {
           "widgets": [
@@ -277,7 +277,7 @@ Resources:
   ApiGatewayDashboard:
     Type: AWS::CloudWatch::Dashboard
     Properties:
-      DashboardName: !Sub "${Environment}-HASIVU-API-Gateway"
+      DashboardName: !Sub '${Environment}-HASIVU-API-Gateway'
       DashboardBody: !Sub |
         {
           "widgets": [
@@ -402,7 +402,7 @@ Resources:
   DatabaseDashboard:
     Type: AWS::CloudWatch::Dashboard
     Properties:
-      DashboardName: !Sub "${Environment}-HASIVU-Database-Performance"
+      DashboardName: !Sub '${Environment}-HASIVU-Database-Performance'
       DashboardBody: !Sub |
         {
           "widgets": [
@@ -525,7 +525,7 @@ Resources:
   BusinessMetricsDashboard:
     Type: AWS::CloudWatch::Dashboard
     Properties:
-      DashboardName: !Sub "${Environment}-HASIVU-Business-Metrics"
+      DashboardName: !Sub '${Environment}-HASIVU-Business-Metrics'
       DashboardBody: !Sub |
         {
           "widgets": [
@@ -685,7 +685,7 @@ Resources:
   CostMonitoringDashboard:
     Type: AWS::CloudWatch::Dashboard
     Properties:
-      DashboardName: !Sub "${Environment}-HASIVU-Cost-Optimization"
+      DashboardName: !Sub '${Environment}-HASIVU-Cost-Optimization'
       DashboardBody: !Sub |
         {
           "widgets": [
@@ -802,20 +802,20 @@ Resources:
 Outputs:
   ExecutiveDashboardURL:
     Description: URL for Executive Dashboard
-    Value: !Sub "https://console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${Environment}-HASIVU-Executive-Overview"
-    
+    Value: !Sub 'https://console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${Environment}-HASIVU-Executive-Overview'
+
   LambdaPerformanceDashboardURL:
     Description: URL for Lambda Performance Dashboard
-    Value: !Sub "https://console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${Environment}-HASIVU-Lambda-Performance"
-    
+    Value: !Sub 'https://console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${Environment}-HASIVU-Lambda-Performance'
+
   ApiGatewayDashboardURL:
     Description: URL for API Gateway Dashboard
-    Value: !Sub "https://console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${Environment}-HASIVU-API-Gateway"
-    
+    Value: !Sub 'https://console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${Environment}-HASIVU-API-Gateway'
+
   BusinessMetricsDashboardURL:
     Description: URL for Business Metrics Dashboard
-    Value: !Sub "https://console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${Environment}-HASIVU-Business-Metrics"
-    
+    Value: !Sub 'https://console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${Environment}-HASIVU-Business-Metrics'
+
   CostMonitoringDashboardURL:
     Description: URL for Cost Monitoring Dashboard
-    Value: !Sub "https://console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${Environment}-HASIVU-Cost-Optimization"
+    Value: !Sub 'https://console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${Environment}-HASIVU-Cost-Optimization'

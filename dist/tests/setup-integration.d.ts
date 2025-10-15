@@ -14,7 +14,7 @@ export declare const IntegrationTestConfig: {
     redis: {
         host: string;
         port: number;
-        password: string;
+        password: string | undefined;
         db: number;
         keyPrefix: string;
     };

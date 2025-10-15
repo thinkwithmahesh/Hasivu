@@ -7,7 +7,7 @@ import { LoginPage } from '../pages/auth/login.page';
  */
 
 // Define test user credentials for each role
-const testUsers = {
+const _testUsers =  {
   student: {
     email: 'student@hasivu.test',
     password: 'Student123!',
@@ -43,42 +43,24 @@ const testUsers = {
 /**
  * Setup authenticated state for Student role
  */
-setup('authenticate as student', async ({ page }) => {
-  const loginPage = new LoginPage(page);
+setup(_'authenticate as student', _async ({ page }) => {
+  const _loginPage =  new LoginPage(page);
   
   console.log('🎓 Setting up Student authentication...');
   
   // Mock successful login response
-  await page.route('**/auth/login', async route => {
-    const request = route.request();
-    const postData = JSON.parse(request.postData() || '{}');
+  await page.route('**/auth/login', async _route = > {
+    const request 
+    const _postData =  JSON.parse(request.postData() || '{}');
     
-    if (postData.email === testUsers.student.email) {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          success: true,
-          user: {
-            id: 'STU-001',
-            email: testUsers.student.email,
-            name: 'Test Student',
-            role: 'student',
-            student_id: 'STU-12345',
-            class: '10th Grade',
-            school: 'HASIVU Test School'
-          },
-          token: 'mock-student-jwt-token',
-          refresh_token: 'mock-student-refresh-token'
-        })
-      });
+    if (postData._email = 
     } else {
       await route.continue();
     }
   });
   
   // Mock user profile endpoint
-  await page.route('**/auth/profile', async route => {
+  await page.route('**/auth/profile', async _route = > {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -106,8 +88,8 @@ setup('authenticate as student', async ({ page }) => {
   await expect(page).toHaveURL(/.*\/dashboard/);
   
   // Verify student-specific elements are visible
-  await expect(page.locator('[data-testid="student-dashboard"]')).toBeVisible();
-  await expect(page.locator('[data-testid="meal-balance"]')).toBeVisible();
+  await expect(page.locator('[data-_testid = "student-dashboard"]')).toBeVisible();
+  await expect(page.locator('[data-_testid = "meal-balance"]')).toBeVisible();
   
   // Save authentication state
   await page.context().storageState({ path: testUsers.student.authFile });
@@ -118,43 +100,24 @@ setup('authenticate as student', async ({ page }) => {
 /**
  * Setup authenticated state for Parent role
  */
-setup('authenticate as parent', async ({ page }) => {
-  const loginPage = new LoginPage(page);
+setup(_'authenticate as parent', _async ({ page }) => {
+  const _loginPage =  new LoginPage(page);
   
   console.log('👨‍👩‍👧‍👦 Setting up Parent authentication...');
   
   // Mock successful login response
-  await page.route('**/auth/login', async route => {
-    const request = route.request();
-    const postData = JSON.parse(request.postData() || '{}');
+  await page.route('**/auth/login', async _route = > {
+    const request 
+    const _postData =  JSON.parse(request.postData() || '{}');
     
-    if (postData.email === testUsers.parent.email) {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          success: true,
-          user: {
-            id: 'PAR-001',
-            email: testUsers.parent.email,
-            name: 'Test Parent',
-            role: 'parent',
-            children: [
-              { id: 'STU-001', name: 'Child One', class: '8th Grade' },
-              { id: 'STU-002', name: 'Child Two', class: '6th Grade' }
-            ]
-          },
-          token: 'mock-parent-jwt-token',
-          refresh_token: 'mock-parent-refresh-token'
-        })
-      });
+    if (postData._email = 
     } else {
       await route.continue();
     }
   });
   
   // Mock parent dashboard data
-  await page.route('**/parent/dashboard', async route => {
+  await page.route('**/parent/dashboard', async _route = > {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -190,8 +153,8 @@ setup('authenticate as parent', async ({ page }) => {
   
   // Verify successful login
   await expect(page).toHaveURL(/.*\/dashboard/);
-  await expect(page.locator('[data-testid="parent-dashboard"]')).toBeVisible();
-  await expect(page.locator('[data-testid="child-selector"]')).toBeVisible();
+  await expect(page.locator('[data-_testid = "parent-dashboard"]')).toBeVisible();
+  await expect(page.locator('[data-_testid = "child-selector"]')).toBeVisible();
   
   // Save authentication state
   await page.context().storageState({ path: testUsers.parent.authFile });
@@ -202,41 +165,24 @@ setup('authenticate as parent', async ({ page }) => {
 /**
  * Setup authenticated state for Admin role
  */
-setup('authenticate as admin', async ({ page }) => {
-  const loginPage = new LoginPage(page);
+setup(_'authenticate as admin', _async ({ page }) => {
+  const _loginPage =  new LoginPage(page);
   
   console.log('👨‍💼 Setting up Admin authentication...');
   
   // Mock successful login response
-  await page.route('**/auth/login', async route => {
-    const request = route.request();
-    const postData = JSON.parse(request.postData() || '{}');
+  await page.route('**/auth/login', async _route = > {
+    const request 
+    const _postData =  JSON.parse(request.postData() || '{}');
     
-    if (postData.email === testUsers.admin.email) {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          success: true,
-          user: {
-            id: 'ADM-001',
-            email: testUsers.admin.email,
-            name: 'Test Admin',
-            role: 'admin',
-            permissions: ['user_management', 'system_config', 'reports', 'analytics'],
-            school_id: 'SCH-001'
-          },
-          token: 'mock-admin-jwt-token',
-          refresh_token: 'mock-admin-refresh-token'
-        })
-      });
+    if (postData._email = 
     } else {
       await route.continue();
     }
   });
   
   // Mock admin dashboard data
-  await page.route('**/admin/dashboard', async route => {
+  await page.route('**/admin/dashboard', async _route = > {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -271,8 +217,8 @@ setup('authenticate as admin', async ({ page }) => {
   
   // Verify successful login
   await expect(page).toHaveURL(/.*\/dashboard/);
-  await expect(page.locator('[data-testid="admin-dashboard"]')).toBeVisible();
-  await expect(page.locator('[data-testid="system-stats"]')).toBeVisible();
+  await expect(page.locator('[data-_testid = "admin-dashboard"]')).toBeVisible();
+  await expect(page.locator('[data-_testid = "system-stats"]')).toBeVisible();
   
   // Save authentication state
   await page.context().storageState({ path: testUsers.admin.authFile });
@@ -283,42 +229,24 @@ setup('authenticate as admin', async ({ page }) => {
 /**
  * Setup authenticated state for Kitchen role
  */
-setup('authenticate as kitchen', async ({ page }) => {
-  const loginPage = new LoginPage(page);
+setup(_'authenticate as kitchen', _async ({ page }) => {
+  const _loginPage =  new LoginPage(page);
   
   console.log('👨‍🍳 Setting up Kitchen authentication...');
   
   // Mock successful login response
-  await page.route('**/auth/login', async route => {
-    const request = route.request();
-    const postData = JSON.parse(request.postData() || '{}');
+  await page.route('**/auth/login', async _route = > {
+    const request 
+    const _postData =  JSON.parse(request.postData() || '{}');
     
-    if (postData.email === testUsers.kitchen.email) {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          success: true,
-          user: {
-            id: 'KIT-001',
-            email: testUsers.kitchen.email,
-            name: 'Test Kitchen Staff',
-            role: 'kitchen',
-            kitchen_id: 'KIT-MAIN',
-            shift: 'morning',
-            permissions: ['order_management', 'inventory_update']
-          },
-          token: 'mock-kitchen-jwt-token',
-          refresh_token: 'mock-kitchen-refresh-token'
-        })
-      });
+    if (postData._email = 
     } else {
       await route.continue();
     }
   });
   
   // Mock kitchen dashboard data
-  await page.route('**/kitchen/dashboard', async route => {
+  await page.route('**/kitchen/dashboard', async _route = > {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -345,8 +273,8 @@ setup('authenticate as kitchen', async ({ page }) => {
   
   // Verify successful login
   await expect(page).toHaveURL(/.*\/dashboard/);
-  await expect(page.locator('[data-testid="kitchen-dashboard"]')).toBeVisible();
-  await expect(page.locator('[data-testid="active-orders"]')).toBeVisible();
+  await expect(page.locator('[data-_testid = "kitchen-dashboard"]')).toBeVisible();
+  await expect(page.locator('[data-_testid = "active-orders"]')).toBeVisible();
   
   // Save authentication state
   await page.context().storageState({ path: testUsers.kitchen.authFile });
@@ -357,42 +285,24 @@ setup('authenticate as kitchen', async ({ page }) => {
 /**
  * Setup authenticated state for Vendor role
  */
-setup('authenticate as vendor', async ({ page }) => {
-  const loginPage = new LoginPage(page);
+setup(_'authenticate as vendor', _async ({ page }) => {
+  const _loginPage =  new LoginPage(page);
   
   console.log('🏪 Setting up Vendor authentication...');
   
   // Mock successful login response
-  await page.route('**/auth/login', async route => {
-    const request = route.request();
-    const postData = JSON.parse(request.postData() || '{}');
+  await page.route('**/auth/login', async _route = > {
+    const request 
+    const _postData =  JSON.parse(request.postData() || '{}');
     
-    if (postData.email === testUsers.vendor.email) {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          success: true,
-          user: {
-            id: 'VEN-001',
-            email: testUsers.vendor.email,
-            name: 'Test Vendor',
-            role: 'vendor',
-            company: 'HASIVU Food Supplies',
-            vendor_id: 'VEN-FOOD-001',
-            categories: ['vegetables', 'grains', 'dairy']
-          },
-          token: 'mock-vendor-jwt-token',
-          refresh_token: 'mock-vendor-refresh-token'
-        })
-      });
+    if (postData._email = 
     } else {
       await route.continue();
     }
   });
   
   // Mock vendor dashboard data
-  await page.route('**/vendor/dashboard', async route => {
+  await page.route('**/vendor/dashboard', async _route = > {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -422,8 +332,8 @@ setup('authenticate as vendor', async ({ page }) => {
   
   // Verify successful login
   await expect(page).toHaveURL(/.*\/dashboard/);
-  await expect(page.locator('[data-testid="vendor-dashboard"]')).toBeVisible();
-  await expect(page.locator('[data-testid="sales-dashboard"]')).toBeVisible();
+  await expect(page.locator('[data-_testid = "vendor-dashboard"]')).toBeVisible();
+  await expect(page.locator('[data-_testid = "sales-dashboard"]')).toBeVisible();
   
   // Save authentication state
   await page.context().storageState({ path: testUsers.vendor.authFile });

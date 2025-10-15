@@ -117,7 +117,7 @@ class IntegrationPerformanceService {
             saga.status = 'failed';
             saga.updatedAt = new Date();
             await this.compensateTransaction(saga, saga.steps.length - 1);
-            return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+            return { success: false, error: error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error' };
         }
         finally {
             setTimeout(() => {
@@ -146,7 +146,7 @@ class IntegrationPerformanceService {
                 return { success: true, result };
             }
             catch (error) {
-                const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+                const errorMessage = error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error';
                 step.error = errorMessage;
                 this.recordCircuitBreakerFailure(step.epic);
                 if (attempt < retryConfig.maxRetries) {

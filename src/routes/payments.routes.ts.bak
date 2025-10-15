@@ -1,0 +1,39 @@
+/**
+ * HASIVU Platform - Payment Routes
+ * Minimal stub for compilation
+ */
+
+import express from 'express';
+
+const router = express.Router();
+
+// Basic payment routes - stub implementations
+router.get('/', (req, res) => {
+  res.json({ data: [], message: 'Payments list endpoint' });
+});
+
+router.post('/initiate', (req, res) => {
+  res.status(201).json({ data: null, message: 'Payment initiated' });
+});
+
+router.post('/verify', (req, res) => {
+  res.json({ data: null, message: 'Payment verified' });
+});
+
+router.post('/:id/refund', (req, res) => {
+  res.json({ data: null, message: 'Payment refunded' });
+});
+
+router.post('/wallet/topup', (req, res) => {
+  res.status(201).json({ data: null, message: 'Wallet topped up' });
+});
+
+router.get('/wallet/balance', (req, res) => {
+  res.json({ data: null, message: 'Wallet balance endpoint' });
+});
+
+router.post('/subscriptions', (req, res) => {
+  res.status(201).json({ data: null, message: 'Subscription created' });
+});
+
+export default router;

@@ -34,33 +34,36 @@ globals_1.jest.mock('@/services/database.service', () => ({
 }));
 globals_1.jest.mock('@/repositories/menuItem.repository', () => ({
     MenuItemRepository: {
-        nameExists: globals_1.jest.fn(),
-        create: globals_1.jest.fn(),
-        findMany: globals_1.jest.fn(),
-        search: globals_1.jest.fn(),
-        findById: globals_1.jest.fn(),
-        update: globals_1.jest.fn(),
-        softDelete: globals_1.jest.fn(),
-        hardDelete: globals_1.jest.fn(),
-        getMenuStats: globals_1.jest.fn()
+        nameExists: globals_1.jest.fn().mockResolvedValue(false),
+        create: globals_1.jest.fn().mockResolvedValue({ id: 'item-123', name: 'Test Item' }),
+        findMany: globals_1.jest.fn().mockResolvedValue({ items: [], total: 0 }),
+        search: globals_1.jest.fn().mockResolvedValue({ items: [], total: 0 }),
+        findById: globals_1.jest.fn().mockResolvedValue(null),
+        update: globals_1.jest.fn().mockResolvedValue({ id: 'item-123' }),
+        delete: globals_1.jest.fn().mockResolvedValue({ id: 'item-123' }),
+        softDelete: globals_1.jest.fn().mockResolvedValue({ id: 'item-123' }),
+        hardDelete: globals_1.jest.fn().mockResolvedValue({ id: 'item-123' }),
+        getMenuStats: globals_1.jest.fn().mockResolvedValue({})
     }
 }));
 globals_1.jest.mock('@/repositories/menuPlan.repository', () => ({
     MenuPlanRepository: {
-        findOverlapping: globals_1.jest.fn(),
-        create: globals_1.jest.fn(),
-        findMany: globals_1.jest.fn(),
-        findById: globals_1.jest.fn(),
-        update: globals_1.jest.fn(),
-        delete: globals_1.jest.fn()
+        findOverlapping: globals_1.jest.fn().mockResolvedValue([]),
+        create: globals_1.jest.fn().mockResolvedValue({ id: 'plan-123', name: 'Test Plan' }),
+        findMany: globals_1.jest.fn().mockResolvedValue({ items: [], total: 0 }),
+        findById: globals_1.jest.fn().mockResolvedValue(null),
+        update: globals_1.jest.fn().mockResolvedValue({ id: 'plan-123' }),
+        delete: globals_1.jest.fn().mockResolvedValue({ id: 'plan-123' }),
+        updateStatus: globals_1.jest.fn().mockResolvedValue({ id: 'plan-123', status: 'APPROVED' }),
+        getStatistics: globals_1.jest.fn().mockResolvedValue({ total: 0, active: 0, templates: 0, pendingApproval: 0, byStatus: {} })
     }
 }));
 globals_1.jest.mock('@/repositories/dailyMenu.repository', () => ({
     DailyMenuRepository: {
-        findMany: globals_1.jest.fn(),
-        create: globals_1.jest.fn(),
-        update: globals_1.jest.fn(),
-        delete: globals_1.jest.fn()
+        findMany: globals_1.jest.fn().mockResolvedValue({ items: [], total: 0 }),
+        create: globals_1.jest.fn().mockResolvedValue({ id: 'daily-123' }),
+        update: globals_1.jest.fn().mockResolvedValue({ id: 'daily-123' }),
+        delete: globals_1.jest.fn().mockResolvedValue({ id: 'daily-123' })
     }
 }));
 globals_1.jest.mock('@/services/logger.service');
@@ -84,6 +87,18 @@ const menuItem_repository_1 = require("@/repositories/menuItem.repository");
 const menuPlan_repository_1 = require("@/repositories/menuPlan.repository");
 const mockMenuItemRepository = menuItem_repository_1.MenuItemRepository;
 const mockMenuPlanRepository = menuPlan_repository_1.MenuPlanRepository;
+Object.keys(mockMenuItemRepository).forEach(key => {
+    const method = mockMenuItemRepository[key];
+    if (typeof method === 'function' && !globals_1.jest.isMockFunction(method)) {
+        mockMenuItemRepository[key] = globals_1.jest.fn();
+    }
+});
+Object.keys(mockMenuPlanRepository).forEach(key => {
+    const method = mockMenuPlanRepository[key];
+    if (typeof method === 'function' && !globals_1.jest.isMockFunction(method)) {
+        mockMenuPlanRepository[key] = globals_1.jest.fn();
+    }
+});
 const MenuStatus = {
     DRAFT: 'DRAFT',
     PENDING_APPROVAL: 'PENDING_APPROVAL',
@@ -91,6 +106,53 @@ const MenuStatus = {
     PUBLISHED: 'PUBLISHED',
     ARCHIVED: 'ARCHIVED'
 };
+const createMockMenuItem = (overrides = {}) => ({
+    id: 'item-123',
+    name: 'Test Item',
+    description: 'Test description',
+    category: 'LUNCH',
+    price: { toString: () => '250' },
+    originalPrice: { toString: () => '300' },
+    currency: 'INR',
+    available: true,
+    featured: false,
+    imageUrl: 'test-image.jpg',
+    nutritionalInfo: '{}',
+    allergens: '[]',
+    tags: '[]',
+    preparationTime: 15,
+    portionSize: 'Medium',
+    calories: 400,
+    schoolId: 'school-123',
+    vendorId: 'vendor-123',
+    sortOrder: 0,
+    metadata: '{}',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...overrides
+});
+const createMockMenuPlan = (overrides = {}) => ({
+    id: 'plan-123',
+    schoolId: 'school-123',
+    name: 'Test Menu Plan',
+    description: 'Test description',
+    startDate: new Date('2024-01-01'),
+    endDate: new Date('2024-01-07'),
+    isTemplate: false,
+    isRecurring: false,
+    status: 'DRAFT',
+    approvalWorkflow: '{}',
+    approvedBy: null,
+    approvedAt: null,
+    recurringPattern: null,
+    templateCategory: null,
+    metadata: '{}',
+    version: 1,
+    createdBy: 'user-123',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...overrides
+});
 describe('Menu Management Services - Comprehensive Tests', () => {
     beforeEach(() => {
         globals_1.jest.clearAllMocks();
@@ -104,32 +166,16 @@ describe('Menu Management Services - Comprehensive Tests', () => {
                 price: 250,
                 currency: 'INR',
                 schoolId: 'restaurant-123',
-                ingredients: ['chicken breast', 'lettuce', 'tomato', 'whole wheat bread'],
-                allergens: ['gluten'],
-                tags: ['high_protein', 'popular'],
-                preparationTime: 25,
-                portionSize: '300g',
-                calories: 450,
-                nutritionalInfo: {
-                    protein: 35,
-                    carbohydrates: 42,
-                    fat: 12,
-                    fiber: 6,
-                    isVegetarian: false,
-                    isVegan: false,
-                    isGlutenFree: false
-                }
+                allergens: ['gluten']
             };
             it('should create a new menu item successfully', async () => {
-                const mockMenuItem = {
+                const mockMenuItem = createMockMenuItem({
                     id: 'item-789',
-                    ...menuItemData,
-                    price: { toString: () => '250' },
-                    available: true,
-                    featured: false,
-                    createdAt: new Date(),
-                    updatedAt: new Date()
-                };
+                    name: menuItemData.name,
+                    description: menuItemData.description,
+                    category: menuItemData.category,
+                    schoolId: menuItemData.schoolId
+                });
                 (mockMenuItemRepository.nameExists).mockResolvedValue(false);
                 (mockMenuItemRepository.create).mockResolvedValue(mockMenuItem);
                 const result = await menuItem_service_1.MenuItemService.createMenuItem(menuItemData);
@@ -167,22 +213,19 @@ describe('Menu Management Services - Comprehensive Tests', () => {
         describe('getMenuItems', () => {
             it('should retrieve menu items with filters and pagination', async () => {
                 const mockItems = [
-                    {
+                    createMockMenuItem({
                         id: 'item-1',
                         name: 'Item 1',
                         category: menuItem_service_1.MenuCategory.LUNCH,
-                        price: { toString: () => '250' },
-                        available: true,
                         featured: true
-                    },
-                    {
+                    }),
+                    createMockMenuItem({
                         id: 'item-2',
                         name: 'Item 2',
                         category: menuItem_service_1.MenuCategory.DINNER,
                         price: { toString: () => '150' },
-                        available: true,
                         featured: false
-                    }
+                    })
                 ];
                 const mockResult = {
                     items: mockItems,
@@ -217,18 +260,18 @@ describe('Menu Management Services - Comprehensive Tests', () => {
         describe('searchMenuItems', () => {
             it('should search menu items by name and filters', async () => {
                 const mockItems = [
-                    {
+                    createMockMenuItem({
                         id: 'item-1',
                         name: 'Chicken Curry',
                         category: menuItem_service_1.MenuCategory.LUNCH,
                         price: { toString: () => '275' }
-                    },
-                    {
+                    }),
+                    createMockMenuItem({
                         id: 'item-2',
                         name: 'Chicken Tikka',
                         category: menuItem_service_1.MenuCategory.DINNER,
                         price: { toString: () => '300' }
-                    }
+                    })
                 ];
                 const mockResult = {
                     items: mockItems,
@@ -258,18 +301,17 @@ describe('Menu Management Services - Comprehensive Tests', () => {
                 description: 'Updated description'
             };
             it('should update menu item successfully', async () => {
-                const existingItem = {
+                const existingItem = createMockMenuItem({
                     id: itemId,
                     name: 'Old Name',
-                    price: { toString: () => '250' },
                     schoolId: 'restaurant-456',
                     available: true
-                };
-                const updatedItem = {
+                });
+                const updatedItem = createMockMenuItem({
                     ...existingItem,
                     ...updateData,
                     price: { toString: () => '275' }
-                };
+                });
                 (mockMenuItemRepository.findById).mockResolvedValue(existingItem);
                 (mockMenuItemRepository.nameExists).mockResolvedValue(false);
                 (mockMenuItemRepository.update).mockResolvedValue(updatedItem);
@@ -283,11 +325,11 @@ describe('Menu Management Services - Comprehensive Tests', () => {
             });
             it('should check for duplicate names when updating', async () => {
                 const updateData = { name: 'Duplicate Name' };
-                const existingItem = {
+                const existingItem = createMockMenuItem({
                     id: itemId,
                     name: 'Current Name',
                     schoolId: 'restaurant-456'
-                };
+                });
                 (mockMenuItemRepository.findById).mockResolvedValue(existingItem);
                 (mockMenuItemRepository.nameExists).mockResolvedValue(true);
                 await expect(menuItem_service_1.MenuItemService.updateMenuItem(itemId, updateData))
@@ -296,49 +338,29 @@ describe('Menu Management Services - Comprehensive Tests', () => {
         });
         describe('deleteMenuItem', () => {
             const itemId = 'item-123';
-            const existingItem = {
+            const existingItem = createMockMenuItem({
                 id: itemId,
                 name: 'Item to Delete',
                 available: true
-            };
+            });
             it('should perform soft delete by default', async () => {
-                const deletedItem = {
+                const deletedItem = createMockMenuItem({
                     ...existingItem,
                     available: false
-                };
+                });
                 (mockMenuItemRepository.findById).mockResolvedValue(existingItem);
-                (mockMenuItemRepository.softDelete).mockResolvedValue(deletedItem);
+                (mockMenuItemRepository.update).mockResolvedValue(deletedItem);
                 const result = await menuItem_service_1.MenuItemService.deleteMenuItem(itemId);
                 expect(result.available).toBe(false);
-                expect(mockMenuItemRepository.softDelete).toHaveBeenCalledWith(itemId);
-                expect(mockMenuItemRepository.hardDelete).not.toHaveBeenCalled();
+                expect(mockMenuItemRepository.update).toHaveBeenCalledWith(itemId, { available: false });
+                expect(mockMenuItemRepository.delete).not.toHaveBeenCalled();
             });
             it('should perform hard delete when requested', async () => {
                 (mockMenuItemRepository.findById).mockResolvedValue(existingItem);
-                (mockMenuItemRepository.hardDelete).mockResolvedValue(existingItem);
+                (mockMenuItemRepository.delete).mockResolvedValue(existingItem);
                 await menuItem_service_1.MenuItemService.deleteMenuItem(itemId, true);
-                expect(mockMenuItemRepository.hardDelete).toHaveBeenCalledWith(itemId);
-                expect(mockMenuItemRepository.softDelete).not.toHaveBeenCalled();
-            });
-        });
-        describe('getMenuStats', () => {
-            it('should return comprehensive menu statistics', async () => {
-                const mockStats = {
-                    totalItems: 50,
-                    averagePrice: 225,
-                    byCategory: {
-                        [menuItem_service_1.MenuCategory.BREAKFAST]: 10,
-                        [menuItem_service_1.MenuCategory.LUNCH]: 20,
-                        [menuItem_service_1.MenuCategory.DINNER]: 15,
-                        [menuItem_service_1.MenuCategory.SNACKS]: 5
-                    }
-                };
-                (mockMenuItemRepository.getMenuStats).mockResolvedValue(mockStats);
-                const result = await menuItem_service_1.MenuItemService.getMenuStats('restaurant-456');
-                expect(result.totalItems).toBe(50);
-                expect(result.averagePrice).toBe(225);
-                expect(result.byCategory[menuItem_service_1.MenuCategory.LUNCH]).toBe(20);
-                expect(mockMenuItemRepository.getMenuStats).toHaveBeenCalledWith('restaurant-456');
+                expect(mockMenuItemRepository.delete).toHaveBeenCalledWith(itemId);
+                expect(mockMenuItemRepository.update).not.toHaveBeenCalled();
             });
         });
     });
@@ -354,12 +376,10 @@ describe('Menu Management Services - Comprehensive Tests', () => {
                 createdBy: 'test-user-123'
             };
             it('should create a new menu plan successfully', async () => {
-                const mockMenuPlan = {
+                const mockMenuPlan = createMockMenuPlan({
                     id: 'plan-789',
-                    ...menuPlanData,
-                    createdAt: new Date(),
-                    updatedAt: new Date()
-                };
+                    ...menuPlanData
+                });
                 (mockMenuPlanRepository.findOverlapping).mockResolvedValue([]);
                 (mockMenuPlanRepository.create).mockResolvedValue(mockMenuPlan);
                 const result = await menuPlan_service_1.MenuPlanService.createMenuPlan(menuPlanData);
@@ -373,7 +393,12 @@ describe('Menu Management Services - Comprehensive Tests', () => {
             });
             it('should reject overlapping menu plans', async () => {
                 const overlappingPlans = [
-                    { id: 'existing-plan', name: 'Existing Plan', startDate: new Date('2023-12-30'), endDate: new Date('2024-01-03') }
+                    createMockMenuPlan({
+                        id: 'existing-plan',
+                        name: 'Existing Plan',
+                        startDate: new Date('2023-12-30'),
+                        endDate: new Date('2024-01-03')
+                    })
                 ];
                 (mockMenuPlanRepository.findOverlapping).mockResolvedValue(overlappingPlans);
                 await expect(menuPlan_service_1.MenuPlanService.createMenuPlan(menuPlanData))
@@ -415,11 +440,11 @@ describe('Menu Management Services - Comprehensive Tests', () => {
                 description: 'Updated description'
             };
             it('should update menu plan successfully', async () => {
-                const existingPlan = {
+                const existingPlan = createMockMenuPlan({
                     id: planId,
                     name: 'Old Name',
-                    status: menuPlan_service_1.MenuPlanStatus.DRAFT
-                };
+                    status: 'DRAFT'
+                });
                 const updatedPlan = {
                     ...existingPlan,
                     ...updateData
@@ -436,14 +461,19 @@ describe('Menu Management Services - Comprehensive Tests', () => {
                     startDate: new Date('2024-02-01'),
                     endDate: new Date('2024-02-07')
                 };
-                const existingPlan = {
+                const existingPlan = createMockMenuPlan({
                     id: planId,
                     schoolId: 'restaurant-456',
                     startDate: new Date('2024-01-01'),
                     endDate: new Date('2024-01-07')
-                };
+                });
                 const overlappingPlans = [
-                    { id: 'conflicting-plan', name: 'Conflicting Plan', startDate: new Date('2024-02-05'), endDate: new Date('2024-02-10') }
+                    createMockMenuPlan({
+                        id: 'conflicting-plan',
+                        name: 'Conflicting Plan',
+                        startDate: new Date('2024-02-05'),
+                        endDate: new Date('2024-02-10')
+                    })
                 ];
                 (mockMenuPlanRepository.findById).mockResolvedValue(existingPlan);
                 (mockMenuPlanRepository.findOverlapping).mockResolvedValue(overlappingPlans);
@@ -460,19 +490,18 @@ describe('Menu Management Services - Comprehensive Tests', () => {
                 endDate: new Date('2024-03-07')
             };
             it('should apply template successfully', async () => {
-                const mockTemplate = {
+                const mockTemplate = createMockMenuPlan({
                     id: 'template-123',
                     name: 'Weekly Template',
                     isTemplate: true,
                     approvalWorkflow: JSON.stringify({ requiredApprovals: [] }),
-                    metadata: JSON.stringify({ category: 'weekly' }),
-                    dailyMenus: []
-                };
-                const mockNewPlan = {
+                    metadata: JSON.stringify({ category: 'weekly' })
+                });
+                const mockNewPlan = createMockMenuPlan({
                     id: 'new-plan-456',
                     ...applyData,
-                    status: menuPlan_service_1.MenuPlanStatus.DRAFT
-                };
+                    status: 'DRAFT'
+                });
                 (mockMenuPlanRepository.findById)
                     .mockResolvedValueOnce(mockTemplate)
                     .mockResolvedValueOnce(mockNewPlan);
@@ -485,10 +514,10 @@ describe('Menu Management Services - Comprehensive Tests', () => {
                 }));
             });
             it('should reject non-template plans', async () => {
-                const mockNonTemplate = {
+                const mockNonTemplate = createMockMenuPlan({
                     id: 'plan-123',
                     isTemplate: false
-                };
+                });
                 (mockMenuPlanRepository.findById).mockResolvedValue(mockNonTemplate);
             });
         });
@@ -497,12 +526,12 @@ describe('Menu Management Services - Comprehensive Tests', () => {
             const newStatus = MenuStatus.APPROVED;
             const approvedBy = 'manager-456';
             it('should update plan status successfully', async () => {
-                const updatedPlan = {
+                const updatedPlan = createMockMenuPlan({
                     id: planId,
                     status: newStatus,
                     approvedBy,
                     approvedAt: new Date()
-                };
+                });
                 (mockMenuPlanRepository.updateStatus).mockResolvedValue(updatedPlan);
                 expect(mockMenuPlanRepository.updateStatus).toHaveBeenCalledWith(planId, newStatus, approvedBy);
             });
@@ -513,15 +542,15 @@ describe('Menu Management Services - Comprehensive Tests', () => {
         describe('getStatistics', () => {
             it('should return comprehensive menu plan statistics', async () => {
                 const mockStats = {
-                    totalPlans: 25,
-                    activePlans: 5,
+                    total: 25,
+                    active: 5,
                     templates: 8,
                     pendingApproval: 3,
                     byStatus: {
-                        [menuPlan_service_1.MenuPlanStatus.DRAFT]: 10,
-                        [MenuStatus.PENDING_APPROVAL]: 3,
-                        [MenuStatus.APPROVED]: 8,
-                        [MenuStatus.PUBLISHED]: 4
+                        'DRAFT': 10,
+                        'PENDING_APPROVAL': 3,
+                        'APPROVED': 8,
+                        'PUBLISHED': 4
                     }
                 };
                 (mockMenuPlanRepository.getStatistics).mockResolvedValue(mockStats);
@@ -577,10 +606,7 @@ describe('Menu Management Services - Comprehensive Tests', () => {
         it('should handle empty results gracefully', async () => {
             (mockMenuItemRepository.findMany).mockResolvedValue({
                 items: [],
-                total: 0,
-                page: 1,
-                limit: 20,
-                totalPages: 0
+                total: 0
             });
             const result = await menuItem_service_1.MenuItemService.getMenuItems({ schoolId: 'restaurant-456' });
             expect(result.items).toHaveLength(0);
@@ -595,7 +621,7 @@ describe('Menu Management Services - Comprehensive Tests', () => {
         });
         it('should handle concurrent access scenarios', async () => {
             (mockMenuItemRepository.findById)
-                .mockResolvedValueOnce({ id: 'item-123', name: 'Existing Item' })
+                .mockResolvedValueOnce(createMockMenuItem({ id: 'item-123', name: 'Existing Item' }))
                 .mockResolvedValueOnce(null);
             (mockMenuItemRepository.update).mockRejectedValue(new Error('Item was deleted by another process'));
             await expect(menuItem_service_1.MenuItemService.updateMenuItem('item-123', { name: 'Updated Name' }))

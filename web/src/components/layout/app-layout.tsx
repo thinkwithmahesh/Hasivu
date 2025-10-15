@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React from 'react';
 import { cn } from '@/lib/utils';
@@ -35,7 +35,7 @@ export function AppLayout({
   const cartItemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <div className={cn("min-h-screen bg-background", className)}>
+    <div className={cn('min-h-screen bg-background', className)}>
       {/* Header */}
       <MainHeader
         user={user}
@@ -47,21 +47,12 @@ export function AppLayout({
       />
 
       {/* Main content area */}
-      <main className={cn(
-        "flex-1",
-        showBottomNav && bottomNavPadding,
-        contentClassName
-      )}>
+      <main className={cn('flex-1', showBottomNav && bottomNavPadding, contentClassName)}>
         {children}
       </main>
 
       {/* Bottom navigation for mobile */}
-      {showBottomNav && (
-        <BottomTabNav
-          user={user}
-          cartItemCount={cartItemCount}
-        />
-      )}
+      {showBottomNav && <BottomTabNav user={user} cartItemCount={cartItemCount} />}
     </div>
   );
 }
@@ -98,26 +89,14 @@ export function DashboardLayout({
           <div className="mb-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                {title && (
-                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                    {title}
-                  </h1>
-                )}
-                {subtitle && (
-                  <p className="mt-1 text-sm text-gray-600">
-                    {subtitle}
-                  </p>
-                )}
+                {title && <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{title}</h1>}
+                {subtitle && <p className="mt-1 text-sm text-gray-600">{subtitle}</p>}
               </div>
-              {actions && (
-                <div className="flex-shrink-0">
-                  {actions}
-                </div>
-              )}
+              {actions && <div className="flex-shrink-0">{actions}</div>}
             </div>
           </div>
         )}
-        
+
         {/* Dashboard content */}
         {children}
       </div>
@@ -150,18 +129,14 @@ export function MealOrderLayout({
     >
       <div className="flex h-screen-safe">
         {/* Main content */}
-        <div className="flex-1 overflow-y-auto">
-          {children}
-        </div>
-        
+        <div className="flex-1 overflow-y-auto">{children}</div>
+
         {/* Cart sidebar (desktop only) */}
         {cartSidebar && (
-          <div className="hidden lg:block w-80 border-l bg-gray-50">
-            {cartSidebar}
-          </div>
+          <div className="hidden lg:block w-80 border-l bg-gray-50">{cartSidebar}</div>
         )}
       </div>
-      
+
       {/* Mobile bottom nav for meal ordering */}
       <BottomTabNav
         user={user}
@@ -180,10 +155,12 @@ export function AuthLayout({
   className?: string;
 }) {
   return (
-    <div className={cn(
-      "min-h-screen bg-gradient-to-br from-primary-50 to-accent-50 flex items-center justify-center p-4",
-      className
-    )}>
+    <div
+      className={cn(
+        'min-h-screen bg-gradient-to-br from-primary-50 to-accent-50 flex items-center justify-center p-4',
+        className
+      )}
+    >
       <div className="w-full max-w-md">
         {/* HASIVU Logo */}
         <div className="text-center mb-8">
@@ -197,7 +174,7 @@ export function AuthLayout({
             </div>
           </div>
         </div>
-        
+
         {children}
       </div>
     </div>

@@ -1,11 +1,13 @@
 # Epic 5 Story 5.2: Subscription Billing Management Implementation
 
 ## Overview
+
 Story 5.2 implements a comprehensive subscription billing management system with automated recurring billing, dunning management, flexible subscription plans, and detailed analytics. This builds on the advanced payment features from Story 5.1.
 
 ## Architecture
 
 ### Lambda Functions
+
 Five serverless functions handle different aspects of subscription billing:
 
 1. **subscription-management.ts** - Core subscription CRUD operations
@@ -15,6 +17,7 @@ Five serverless functions handle different aspects of subscription billing:
 5. **subscription-analytics.ts** - Comprehensive subscription metrics and reporting
 
 ### Database Models Used
+
 - `Subscription` - Core subscription entity
 - `SubscriptionPlan` - Plan definitions and pricing
 - `BillingCycle` - Individual billing periods
@@ -29,6 +32,7 @@ Five serverless functions handle different aspects of subscription billing:
 **Purpose**: CRUD operations for subscriptions with trial periods, proration, and lifecycle management.
 
 **Key Features**:
+
 - Create subscriptions with trial period support
 - Update subscriptions with automatic proration
 - Pause/resume subscription functionality
@@ -36,6 +40,7 @@ Five serverless functions handle different aspects of subscription billing:
 - List and filter subscriptions
 
 **API Endpoints**:
+
 - `POST /subscriptions` - Create new subscription
 - `PUT /subscriptions/{id}` - Update existing subscription
 - `POST /subscriptions/{id}/pause` - Pause subscription
@@ -73,6 +78,7 @@ POST /subscriptions
 **Purpose**: Automated processing of recurring subscription billing with intelligent retry logic.
 
 **Key Features**:
+
 - Automated billing cycle processing (scheduled every hour)
 - Razorpay integration for recurring payments
 - Failed payment handling with dunning trigger
@@ -80,11 +86,13 @@ POST /subscriptions
 - Manual billing processing for specific subscriptions
 
 **API Endpoints**:
+
 - `POST /billing/process` - Process all due billing cycles
 - `POST /billing/process/{id}` - Process specific subscription billing
 - `GET /billing/status` - Get billing automation status
 
 **Scheduled Processing**:
+
 - Runs every hour via CloudWatch Events
 - Processes pending billing cycles
 - Updates subscription statuses
@@ -95,6 +103,7 @@ POST /subscriptions
 **Purpose**: Management of subscription plans with features, pricing, and analytics.
 
 **Key Features**:
+
 - Create/update subscription plans with rich metadata
 - Plan comparison functionality
 - Feature and limitation management
@@ -102,6 +111,7 @@ POST /subscriptions
 - Plan analytics and usage metrics
 
 **API Endpoints**:
+
 - `POST /subscription-plans` - Create plan
 - `PUT /subscription-plans/{id}` - Update plan
 - `GET /subscription-plans/{id}` - Get plan details
@@ -112,6 +122,7 @@ POST /subscriptions
 - `GET /subscription-plans/analytics` - All plans analytics
 
 **Plan Schema**:
+
 ```typescript
 {
   "name": "Premium Meal Plan",
@@ -130,6 +141,7 @@ POST /subscriptions
 **Purpose**: Sophisticated failed payment recovery with configurable retry schedules and grace periods.
 
 **Key Features**:
+
 - Progressive retry schedule (1 day, 3 days, 7 days)
 - Grace period handling with configurable duration
 - Automatic subscription suspension after max retries
@@ -138,18 +150,21 @@ POST /subscriptions
 - Notification system integration
 
 **API Endpoints**:
+
 - `POST /dunning/process` - Process all due payment retries
 - `POST /payments/{paymentId}/retry` - Manual payment retry
 - `GET /dunning/status` - Dunning system status
 - `GET /payments/{paymentId}/retry-history` - Payment retry history
 
 **Configuration**:
+
 - `MAX_PAYMENT_RETRIES`: Maximum retry attempts (default: 3)
 - `PAYMENT_GRACE_PERIOD_DAYS`: Grace period before suspension (default: 7)
 - `DUNNING_EMAIL_ENABLED`: Enable email notifications
 - `DUNNING_SMS_ENABLED`: Enable SMS notifications
 
 **Retry Logic**:
+
 1. First failure → retry in 1 day
 2. Second failure → retry in 3 days
 3. Third failure → retry in 7 days
@@ -160,6 +175,7 @@ POST /subscriptions
 **Purpose**: Comprehensive subscription metrics, cohort analysis, and revenue insights.
 
 **Key Features**:
+
 - Real-time subscription dashboard
 - Cohort analysis for retention tracking
 - Revenue analysis with projections
@@ -168,6 +184,7 @@ POST /subscriptions
 - Time-series data for trends
 
 **API Endpoints**:
+
 - `GET /subscription-analytics` - Comprehensive analytics
 - `GET /subscription-analytics/dashboard` - Key metrics dashboard
 - `POST /subscription-analytics/cohort` - Cohort analysis
@@ -178,6 +195,7 @@ POST /subscriptions
 **Analytics Features**:
 
 #### Dashboard Metrics
+
 - Active subscriptions count
 - Monthly Recurring Revenue (MRR)
 - Annual Recurring Revenue (ARR)
@@ -185,22 +203,26 @@ POST /subscriptions
 - Payment success rates
 
 #### Cohort Analysis
+
 - Monthly/weekly cohort retention
 - Retention curve visualization
 - Average retention rates across cohorts
 
 #### Revenue Analysis
+
 - Revenue trends by period
 - Revenue breakdown by plan/segment
 - Revenue projections based on historical data
 
 #### Churn Analysis
+
 - Overall churn rate calculation
 - Churn reasons breakdown
 - Churn by subscription plan
 - Churn timeline visualization
 
 #### Customer Lifetime Value
+
 - Average CLV calculation
 - CLV by subscription plan
 - CLV distribution analysis
@@ -209,16 +231,19 @@ POST /subscriptions
 ## Integration Points
 
 ### Payment System Integration
+
 - Leverages existing payment retry system from Story 5.1
 - Uses webhook handler for payment status updates
 - Integrates with Razorpay for recurring payment processing
 
 ### Notification System
+
 - Email and SMS notifications for dunning
 - Payment success/failure notifications
 - Subscription lifecycle notifications (pause, resume, cancel)
 
 ### Monitoring and Observability
+
 - CloudWatch metrics integration
 - Comprehensive logging for all operations
 - Performance monitoring with configurable timeouts
@@ -227,6 +252,7 @@ POST /subscriptions
 ## Configuration
 
 ### Environment Variables
+
 ```yaml
 # Retry and Grace Period Configuration
 MAX_PAYMENT_RETRIES: 3
@@ -242,23 +268,27 @@ RAZORPAY_KEY_SECRET: ${ssm:/hasivu/${stage}/razorpay-key-secret}
 ```
 
 ### Scheduled Jobs
+
 - **Billing Automation**: Runs every hour to process due billing cycles
 - **Dunning Management**: Runs every 6 hours to process payment retries
 
 ## Security Features
 
 ### Authentication & Authorization
+
 - JWT-based authentication for all endpoints
 - Role-based access control (admin/school_admin required for management operations)
 - User isolation (users can only access their own subscriptions)
 
 ### Data Protection
+
 - Sensitive payment data encryption
 - Secure parameter store integration
 - Input validation using Zod schemas
 - SQL injection prevention with Prisma ORM
 
 ### Rate Limiting
+
 - API Gateway throttling (1000 req/min, 2000 burst)
 - Function-level timeout protection
 - Memory optimization for analytics functions
@@ -266,6 +296,7 @@ RAZORPAY_KEY_SECRET: ${ssm:/hasivu/${stage}/razorpay-key-secret}
 ## Performance Optimizations
 
 ### Memory Allocation
+
 - **subscription-management**: 1024MB for complex operations
 - **billing-automation**: 1024MB for batch processing
 - **subscription-plans**: 512MB for CRUD operations
@@ -273,6 +304,7 @@ RAZORPAY_KEY_SECRET: ${ssm:/hasivu/${stage}/razorpay-key-secret}
 - **subscription-analytics**: 2048MB for data analysis
 
 ### Timeout Configuration
+
 - **subscription-management**: 60s
 - **billing-automation**: 300s (5 minutes)
 - **subscription-plans**: 60s
@@ -280,6 +312,7 @@ RAZORPAY_KEY_SECRET: ${ssm:/hasivu/${stage}/razorpay-key-secret}
 - **subscription-analytics**: 120s
 
 ### Database Optimization
+
 - Efficient queries with proper indexing
 - Batch processing for bulk operations
 - Connection pooling with Prisma
@@ -288,12 +321,14 @@ RAZORPAY_KEY_SECRET: ${ssm:/hasivu/${stage}/razorpay-key-secret}
 ## Error Handling
 
 ### Comprehensive Error Management
+
 - Structured error responses with proper HTTP status codes
 - Detailed error logging for debugging
 - Graceful degradation for third-party service failures
 - Automatic retry mechanisms for transient failures
 
 ### Error Categories
+
 - **400 Bad Request**: Invalid input data
 - **401 Unauthorized**: Authentication failures
 - **403 Forbidden**: Authorization failures
@@ -304,18 +339,21 @@ RAZORPAY_KEY_SECRET: ${ssm:/hasivu/${stage}/razorpay-key-secret}
 ## Testing Strategy
 
 ### Unit Tests
+
 - Function-level testing with Jest
 - Mock external dependencies (Razorpay, database)
 - Validation schema testing
 - Business logic verification
 
 ### Integration Tests
+
 - API endpoint testing
 - Database integration testing
 - Webhook processing testing
 - Scheduled job testing
 
 ### Load Testing
+
 - Analytics function performance under load
 - Billing automation scalability
 - Concurrent user handling
@@ -323,6 +361,7 @@ RAZORPAY_KEY_SECRET: ${ssm:/hasivu/${stage}/razorpay-key-secret}
 ## Monitoring and Alerts
 
 ### Key Metrics
+
 - Subscription creation/cancellation rates
 - Billing success rates
 - Payment retry success rates
@@ -330,6 +369,7 @@ RAZORPAY_KEY_SECRET: ${ssm:/hasivu/${stage}/razorpay-key-secret}
 - Database connection health
 
 ### Alerting
+
 - Failed billing cycles alert
 - High payment failure rates
 - Function timeout alerts
@@ -339,16 +379,19 @@ RAZORPAY_KEY_SECRET: ${ssm:/hasivu/${stage}/razorpay-key-secret}
 ## Deployment
 
 ### Prerequisites
+
 - Story 5.1 (Advanced Payment Features) must be deployed
 - Prisma schema updated with subscription models
 - Environment variables configured in AWS Systems Manager
 
 ### Deployment Command
+
 ```bash
 npx serverless deploy --stage [dev|staging|production]
 ```
 
 ### Post-Deployment Verification
+
 1. Verify all 5 Lambda functions are deployed
 2. Test subscription creation flow
 3. Verify scheduled jobs are configured
@@ -358,18 +401,21 @@ npx serverless deploy --stage [dev|staging|production]
 ## Business Value
 
 ### For School Administrators
+
 - Automated billing reduces manual work
 - Comprehensive analytics for business insights
 - Flexible subscription plans for different needs
 - Automated payment recovery increases revenue
 
 ### For Parents/Students
+
 - Seamless subscription experience
 - Flexible payment options with retry logic
 - Transparent billing with grace periods
 - Easy subscription management (pause/resume)
 
 ### For Operations
+
 - Reduced payment failures through intelligent retry
 - Automated dunning reduces manual intervention
 - Comprehensive monitoring and alerting
@@ -378,18 +424,21 @@ npx serverless deploy --stage [dev|staging|production]
 ## Future Enhancements
 
 ### Phase 1
+
 - Advanced notification templates
 - Multi-language support for notifications
 - Custom retry schedules per plan
 - Subscription add-ons and upgrades
 
 ### Phase 2
+
 - Machine learning-based churn prediction
 - Dynamic pricing based on usage
 - Integration with external accounting systems
 - Advanced segmentation for marketing
 
 ### Phase 3
+
 - Multi-tenant billing (multiple schools)
 - International payment method support
 - Advanced tax calculation

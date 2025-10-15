@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -8,22 +8,22 @@ import {
   Check,
   AlertTriangle,
   Info,
-  Clock,
+  _Clock,
   ChefHat,
   Package,
   Users,
-  TrendingUp,
+  _TrendingUp,
   Settings,
-  Volume2,
-  VolumeX,
-  Filter
+  _Volume2,
+  _VolumeX,
+  _Filter,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { _Avatar, _AvatarFallback, _AvatarImage } from '@/components/ui/avatar';
 
 // Notification types and interfaces
 interface Notification {
@@ -63,7 +63,7 @@ export const useRealTimeNotifications = () => {
     showDesktop: true,
     autoMarkRead: false,
     filterByPriority: ['medium', 'high', 'urgent'],
-    filterByType: ['order', 'inventory', 'staff', 'alert']
+    filterByType: ['order', 'inventory', 'staff', 'alert'],
   });
 
   const wsRef = useRef<WebSocket | null>(null);
@@ -77,36 +77,34 @@ export const useRealTimeNotifications = () => {
 
       wsRef.current.onopen = () => {
         setIsConnected(true);
-        console.log('WebSocket connected');
         // Send authentication token if needed
         const token = localStorage.getItem('authToken');
         if (token) {
-          wsRef.current?.send(JSON.stringify({
-            type: 'auth',
-            token
-          }));
+          wsRef.current?.send(
+            JSON.stringify({
+              type: 'auth',
+              token,
+            })
+          );
         }
       };
 
-      wsRef.current.onmessage = (event) => {
+      wsRef.current.onmessage = event => {
         try {
           const message: WebSocketMessage = JSON.parse(event.data);
           handleWebSocketMessage(message);
         } catch (error) {
-          console.error('Error parsing WebSocket message:', error);
+          // Error handled silently
         }
       };
 
       wsRef.current.onclose = () => {
         setIsConnected(false);
-        console.log('WebSocket disconnected, attempting to reconnect...');
         // Reconnect after 3 seconds
         setTimeout(connectWebSocket, 3000);
       };
 
-      wsRef.current.onerror = (error) => {
-        console.error('WebSocket error:', error);
-      };
+      wsRef.current.onerror = error => {};
     };
 
     connectWebSocket();
@@ -137,17 +135,15 @@ export const useRealTimeNotifications = () => {
         handleStaffUpdate(message.data);
         break;
       default:
-        console.log('Unknown message type:', message.type);
     }
   };
 
   // Add new notification
   const addNotification = (notification: Notification) => {
     setNotifications(prev => [notification, ...prev]);
-    
+
     // Play sound if enabled
     if (settings.soundEnabled && audioRef.current) {
-      audioRef.current.play().catch(console.error);
     }
 
     // Show desktop notification if enabled and supported
@@ -155,7 +151,7 @@ export const useRealTimeNotifications = () => {
       new Notification(notification.title, {
         body: notification.message,
         icon: '/icons/notification-icon.png',
-        tag: notification.id
+        tag: notification.id,
       });
     }
 
@@ -179,7 +175,7 @@ export const useRealTimeNotifications = () => {
       isRead: false,
       source: 'kitchen',
       category: 'order_update',
-      metadata: orderData
+      metadata: orderData,
     };
     addNotification(notification);
   };
@@ -197,7 +193,7 @@ export const useRealTimeNotifications = () => {
       actionRequired: true,
       source: 'inventory',
       category: 'stock_alert',
-      metadata: inventoryData
+      metadata: inventoryData,
     };
     addNotification(notification);
   };
@@ -214,16 +210,14 @@ export const useRealTimeNotifications = () => {
       isRead: false,
       source: 'staff',
       category: 'staff_update',
-      metadata: staffData
+      metadata: staffData,
     };
     addNotification(notification);
   };
 
   // Mark notification as read
   const markAsRead = (notificationId: string) => {
-    setNotifications(prev => 
-      prev.map(n => n.id === notificationId ? { ...n, isRead: true } : n)
-    );
+    setNotifications(prev => prev.map(n => (n.id === notificationId ? { ...n, isRead: true } : n)));
   };
 
   // Mark all as read
@@ -263,37 +257,47 @@ export const useRealTimeNotifications = () => {
     markAllAsRead,
     removeNotification,
     clearAll,
-    requestDesktopPermission
+    requestDesktopPermission,
   };
 };
 
 // Notification item component
-const NotificationItem = ({ 
-  notification, 
-  onMarkAsRead, 
-  onRemove 
-}: { 
+const NotificationItem = ({
+  notification,
+  onMarkAsRead,
+  onRemove,
+}: {
   notification: Notification;
   onMarkAsRead: (id: string) => void;
   onRemove: (id: string) => void;
 }) => {
   const getIcon = () => {
     switch (notification.type) {
-      case 'order': return <ChefHat className="w-5 h-5" />;
-      case 'inventory': return <Package className="w-5 h-5" />;
-      case 'staff': return <Users className="w-5 h-5" />;
-      case 'alert': return <AlertTriangle className="w-5 h-5" />;
-      default: return <Info className="w-5 h-5" />;
+      case 'order':
+        return <ChefHat className="w-5 h-5" />;
+      case 'inventory':
+        return <Package className="w-5 h-5" />;
+      case 'staff':
+        return <Users className="w-5 h-5" />;
+      case 'alert':
+        return <AlertTriangle className="w-5 h-5" />;
+      default:
+        return <Info className="w-5 h-5" />;
     }
   };
 
   const getPriorityColor = () => {
     switch (notification.priority) {
-      case 'urgent': return 'text-red-600 bg-red-100';
-      case 'high': return 'text-orange-600 bg-orange-100';
-      case 'medium': return 'text-blue-600 bg-blue-100';
-      case 'low': return 'text-gray-600 bg-gray-100';
-      default: return 'text-gray-600 bg-gray-100';
+      case 'urgent':
+        return 'text-red-600 bg-red-100';
+      case 'high':
+        return 'text-orange-600 bg-orange-100';
+      case 'medium':
+        return 'text-blue-600 bg-blue-100';
+      case 'low':
+        return 'text-gray-600 bg-gray-100';
+      default:
+        return 'text-gray-600 bg-gray-100';
     }
   };
 
@@ -301,7 +305,7 @@ const NotificationItem = ({
     const now = new Date();
     const notificationTime = new Date(timestamp);
     const diffInMinutes = Math.floor((now.getTime() - notificationTime.getTime()) / (1000 * 60));
-    
+
     if (diffInMinutes < 1) return 'Just now';
     if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
     if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`;
@@ -315,38 +319,33 @@ const NotificationItem = ({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       className={`p-4 border-l-4 ${
-        notification.isRead 
-          ? 'border-gray-200 bg-gray-50' 
+        notification.isRead
+          ? 'border-gray-200 bg-gray-50'
           : `border-${notification.priority === 'urgent' ? 'red' : notification.priority === 'high' ? 'orange' : 'blue'}-500 bg-white`
       } hover:shadow-md transition-shadow`}
     >
       <div className="flex items-start space-x-3">
-        <div className={`p-2 rounded-full ${getPriorityColor()}`}>
-          {getIcon()}
-        </div>
-        
+        <div className={`p-2 rounded-full ${getPriorityColor()}`}>{getIcon()}</div>
+
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-1">
-            <h4 className={`font-medium ${notification.isRead ? 'text-gray-600' : 'text-gray-900'}`}>
+            <h4
+              className={`font-medium ${notification.isRead ? 'text-gray-600' : 'text-gray-900'}`}
+            >
               {notification.title}
             </h4>
             <div className="flex items-center space-x-2">
-              <Badge 
-                variant="outline" 
-                className={`${getPriorityColor()} border-0 text-xs`}
-              >
+              <Badge variant="outline" className={`${getPriorityColor()} border-0 text-xs`}>
                 {notification.priority}
               </Badge>
-              <span className="text-xs text-gray-500">
-                {timeAgo(notification.timestamp)}
-              </span>
+              <span className="text-xs text-gray-500">{timeAgo(notification.timestamp)}</span>
             </div>
           </div>
-          
+
           <p className={`text-sm ${notification.isRead ? 'text-gray-500' : 'text-gray-700'}`}>
             {notification.message}
           </p>
-          
+
           {notification.actionRequired && (
             <div className="mt-2 flex items-center space-x-2">
               <Badge variant="destructive" className="text-xs">
@@ -355,22 +354,14 @@ const NotificationItem = ({
             </div>
           )}
         </div>
-        
+
         <div className="flex items-center space-x-1">
           {!notification.isRead && (
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => onMarkAsRead(notification.id)}
-            >
+            <Button size="sm" variant="ghost" onClick={() => onMarkAsRead(notification.id)}>
               <Check className="w-4 h-4" />
             </Button>
           )}
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => onRemove(notification.id)}
-          >
+          <Button size="sm" variant="ghost" onClick={() => onRemove(notification.id)}>
             <X className="w-4 h-4" />
           </Button>
         </div>
@@ -394,7 +385,7 @@ export const RealTimeNotificationPanel: React.FC<{
     markAllAsRead,
     removeNotification,
     clearAll,
-    requestDesktopPermission
+    requestDesktopPermission,
   } = useRealTimeNotifications();
 
   const [filter, setFilter] = useState<string>('all');
@@ -426,14 +417,12 @@ export const RealTimeNotificationPanel: React.FC<{
             <div className="flex items-center space-x-2">
               <Bell className="w-5 h-5 text-blue-600" />
               <CardTitle>Notifications</CardTitle>
-              {unreadCount > 0 && (
-                <Badge className="bg-red-500 text-white">
-                  {unreadCount}
-                </Badge>
-              )}
+              {unreadCount > 0 && <Badge className="bg-red-500 text-white">{unreadCount}</Badge>}
             </div>
             <div className="flex items-center space-x-2">
-              <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
+              <div
+                className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}
+              />
               <Button size="sm" variant="ghost" onClick={() => setShowSettings(!showSettings)}>
                 <Settings className="w-4 h-4" />
               </Button>
@@ -442,7 +431,7 @@ export const RealTimeNotificationPanel: React.FC<{
               </Button>
             </div>
           </div>
-          
+
           {/* Settings Panel */}
           {showSettings && (
             <motion.div
@@ -454,26 +443,26 @@ export const RealTimeNotificationPanel: React.FC<{
                 <span className="text-sm font-medium">Sound Notifications</span>
                 <Switch
                   checked={settings.soundEnabled}
-                  onCheckedChange={(checked) => handleSettingChange('soundEnabled', checked)}
+                  onCheckedChange={checked => handleSettingChange('soundEnabled', checked)}
                 />
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Desktop Notifications</span>
                 <Switch
                   checked={settings.showDesktop}
-                  onCheckedChange={(checked) => handleSettingChange('showDesktop', checked)}
+                  onCheckedChange={checked => handleSettingChange('showDesktop', checked)}
                 />
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Auto Mark Read</span>
                 <Switch
                   checked={settings.autoMarkRead}
-                  onCheckedChange={(checked) => handleSettingChange('autoMarkRead', checked)}
+                  onCheckedChange={checked => handleSettingChange('autoMarkRead', checked)}
                 />
               </div>
-              <Button 
-                size="sm" 
-                variant="outline" 
+              <Button
+                size="sm"
+                variant="outline"
                 onClick={requestDesktopPermission}
                 className="w-full"
               >
@@ -481,12 +470,12 @@ export const RealTimeNotificationPanel: React.FC<{
               </Button>
             </motion.div>
           )}
-          
+
           {/* Filter Bar */}
           <div className="flex items-center space-x-2 mt-4">
             <select
               value={filter}
-              onChange={(e) => setFilter(e.target.value)}
+              onChange={e => setFilter(e.target.value)}
               className="flex-1 px-3 py-1 border border-gray-200 rounded-md text-sm"
             >
               <option value="all">All Notifications</option>
@@ -496,19 +485,19 @@ export const RealTimeNotificationPanel: React.FC<{
               <option value="staff">Staff</option>
               <option value="alert">Alerts</option>
             </select>
-            
+
             {unreadCount > 0 && (
               <Button size="sm" variant="outline" onClick={markAllAsRead}>
                 Mark All Read
               </Button>
             )}
-            
+
             <Button size="sm" variant="outline" onClick={clearAll}>
               Clear All
             </Button>
           </div>
         </CardHeader>
-        
+
         <CardContent className="p-0 h-full overflow-y-auto">
           <AnimatePresence>
             {filteredNotifications.length === 0 ? (
@@ -518,7 +507,7 @@ export const RealTimeNotificationPanel: React.FC<{
               </div>
             ) : (
               <div className="divide-y divide-gray-200">
-                {filteredNotifications.map((notification) => (
+                {filteredNotifications.map(notification => (
                   <NotificationItem
                     key={notification.id}
                     notification={notification}
@@ -543,12 +532,7 @@ export const NotificationBell: React.FC<{
 
   return (
     <div className="relative">
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={onClick}
-        className="relative"
-      >
+      <Button variant="ghost" size="sm" onClick={onClick} className="relative">
         <Bell className="w-5 h-5" />
         {unreadCount > 0 && (
           <motion.div
@@ -559,10 +543,10 @@ export const NotificationBell: React.FC<{
             {unreadCount > 99 ? '99+' : unreadCount}
           </motion.div>
         )}
-        <div 
+        <div
           className={`absolute bottom-0 right-0 w-2 h-2 rounded-full ${
             isConnected ? 'bg-green-500' : 'bg-red-500'
-          }`} 
+          }`}
         />
       </Button>
     </div>

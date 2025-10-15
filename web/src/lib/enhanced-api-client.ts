@@ -5,18 +5,16 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { toast } from 'react-hot-toast';
 import { socketClient } from './socket-client';
   // Enhanced types for component integration
-interface ApiResponse<T = any> {}
-const config: ApiConfig = {}
-  }> = [];
+interface ApiResponse<_T =  any> {}
+const config: ApiConfig 
   private optimisticUpdates: Map<string, OptimisticUpdate> = new Map();
   private realTimeSubscriptions: Map<string, RealTimeSubscription> = new Map();
   private componentStates: Map<string, ComponentState> = new Map();
   private requestQueue: Array<() => Promise<any>> = [];
-  private isOffline = false;
+  private _isOffline =  false;
     this.setupInterceptors();
   private setupInterceptors() {}
           config.headers.Authorization = `Bearer ${token}``
-          console.log(`✅ ${response.config.method?.toUpperCase()} ${response.config.url}``
                   originalRequest.headers.Authorization = `Bearer ${token}``
             originalRequest.headers.Authorization = `Bearer ${newToken}``
       `${config.baseURL}/ auth/refresh``

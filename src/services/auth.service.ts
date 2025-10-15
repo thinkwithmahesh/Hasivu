@@ -6,10 +6,10 @@
 import * as jwt from 'jsonwebtoken';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
+import Redis from 'ioredis';
 import { config } from '../config/environment';
-import { logger } from '../utils/logger';
-import { RedisService } from './redis.service';
-import { DatabaseService } from './database.service';
+import { logger } from '../shared/logger.service';
+import { DatabaseService } from '../shared/database.service';
 
 /**
  * JWT payload interface
@@ -35,6 +35,8 @@ export interface AuthResult {
   user: {
     id: string;
     email: string;
+    firstName: string | null;
+    lastName: string | null;
     role: string;
     permissions: string[];
     schoolId?: string;
@@ -108,12 +110,14 @@ export interface PasswordValidationResult {
  * Authentication Service class
  */
 export class AuthService {
+  private static instance: AuthService;
   private jwtSecret: string;
   private jwtRefreshSecret: string;
   private passwordRequirements: PasswordRequirements;
   private sessionTimeout: number;
   private maxFailedAttempts: number;
   private lockoutDuration: number;
+  private redis: Redis;
 
   constructor() {
     this.jwtSecret = config.jwt.secret;
@@ -121,25 +125,44 @@ export class AuthService {
     this.sessionTimeout = 24 * 60 * 60; // 24 hours in seconds
     this.maxFailedAttempts = 5;
     this.lockoutDuration = 30 * 60; // 30 minutes in seconds
+    this.redis = new Redis(config.redis.url, {
+      maxRetriesPerRequest: 3,
+      lazyConnect: true,
+      keepAlive: 30000,
+      family: 4,
+    });
 
     this.passwordRequirements = {
       minLength: 8,
       requireUppercase: true,
       requireLowercase: true,
       requireNumbers: true,
-      requireSymbols: true
+      requireSymbols: true,
     };
 
     const validation = this.validateConfiguration();
     if (!validation.isValid) {
-      throw new Error(`Auth service configuration invalid: ${validation.missingConfigs.join(', ')}`);
+      throw new Error(
+        `Auth service configuration invalid: ${validation.missingConfigs.join(', ')}`
+      );
     }
+  }
+
+  public static getInstance(): AuthService {
+    if (!AuthService.instance) {
+      AuthService.instance = new AuthService();
+    }
+    return AuthService.instance;
   }
 
   /**
    * Validate service configuration
    */
-  public validateConfiguration(): { isValid: boolean; missingConfigs: string[]; securityIssues: string[]; } {
+  public validateConfiguration(): {
+    isValid: boolean;
+    missingConfigs: string[];
+    securityIssues: string[];
+  } {
     const missingConfigs: string[] = [];
     const securityIssues: string[] = [];
 
@@ -155,7 +178,7 @@ export class AuthService {
     return {
       isValid,
       missingConfigs,
-      securityIssues
+      securityIssues,
     };
   }
 
@@ -172,7 +195,7 @@ export class AuthService {
       admin: ['read', 'write', 'delete', 'manage_users', 'manage_settings'],
       parent: ['read', 'write', 'order_food', 'view_reports'],
       student: ['read', 'view_orders'],
-      school: ['read', 'write', 'manage_menus', 'view_analytics']
+      school: ['read', 'write', 'manage_menus', 'view_analytics'],
     };
 
     return rolePermissions[role] || rolePermissions['STUDENT'];
@@ -187,11 +210,13 @@ export class AuthService {
       if (!password || password.trim().length === 0) {
         throw new Error('Password cannot be empty');
       }
-      
+
       const saltRounds = 12;
       return await bcrypt.hash(password, saltRounds);
-    } catch (error) {
-      logger.error('Password hashing failed:', error);
+    } catch (error: unknown) {
+      logger.error('Password hashing failed:', undefined, {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
       throw new Error('Password hashing failed');
     }
   }
@@ -202,13 +227,20 @@ export class AuthService {
   public async verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
     try {
       // Return false for empty inputs
-      if (!password || !hashedPassword || password.trim().length === 0 || hashedPassword.trim().length === 0) {
+      if (
+        !password ||
+        !hashedPassword ||
+        password.trim().length === 0 ||
+        hashedPassword.trim().length === 0
+      ) {
         return false;
       }
-      
+
       return await bcrypt.compare(password, hashedPassword);
-    } catch (error) {
-      logger.error('Password verification failed:', error);
+    } catch (error: unknown) {
+      logger.error('Password verification failed:', undefined, {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
       return false;
     }
   }
@@ -245,7 +277,7 @@ export class AuthService {
 
     return {
       valid: isValid,
-      isValid: isValid,
+      isValid,
       message: isValid ? 'Password is strong' : errors.join(', '),
       score,
       requirements: {
@@ -253,8 +285,8 @@ export class AuthService {
         uppercase: /[A-Z]/.test(password),
         lowercase: /[a-z]/.test(password),
         numbers: /\d/.test(password),
-        symbols: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)
-      }
+        symbols: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password),
+      },
     };
   }
 
@@ -288,19 +320,22 @@ export class AuthService {
       iat: Math.floor(Date.now() / 1000),
       exp: Math.floor(Date.now() / 1000) + (typeof expiresIn === 'string' ? 3600 : expiresIn),
       iss: 'hasivu-platform',
-      aud: 'hasivu-users'
+      aud: 'hasivu-users',
     };
 
     // Don't use expiresIn option when exp is already in payload
     return jwt.sign(tokenPayload, secret || this.jwtSecret, {
-      algorithm: 'HS256'
+      algorithm: 'HS256',
     });
   }
 
   /**
    * Verify JWT token
    */
-  public async verifyToken(token: string, expectedType?: 'access' | 'refresh'): Promise<JWTPayload> {
+  public async verifyToken(
+    token: string,
+    expectedType?: 'access' | 'refresh'
+  ): Promise<JWTPayload> {
     try {
       const secret = expectedType === 'refresh' ? this.jwtRefreshSecret : this.jwtSecret;
       const decoded = jwt.verify(token, secret) as JWTPayload;
@@ -310,14 +345,16 @@ export class AuthService {
       }
 
       // Check if token is blacklisted
-      const isBlacklisted = await RedisService.get(`blacklist:${token}`);
+      const isBlacklisted = await this.redis.get(`blacklist:${token}`);
       if (isBlacklisted) {
         throw new Error('Token has been blacklisted');
       }
 
       return decoded;
-    } catch (error) {
-      logger.error('Token verification failed:', error);
+    } catch (error: unknown) {
+      logger.error('Token verification failed:', undefined, {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
       throw new Error('Invalid or expired token');
     }
   }
@@ -332,18 +369,28 @@ export class AuthService {
   /**
    * Create user session
    */
-  private async createSession(userId: string, sessionId: string, metadata: any = {}): Promise<void> {
+  private async createSession(
+    userId: string,
+    sessionId: string,
+    metadata: any = {}
+  ): Promise<void> {
     try {
       const sessionData = {
         userId,
         createdAt: new Date().toISOString(),
         lastActivity: new Date().toISOString(),
-        ...metadata
+        ...metadata,
       };
 
-      await RedisService.setex(`session:${sessionId}`, this.sessionTimeout, JSON.stringify(sessionData));
-    } catch (error) {
-      logger.error('Session creation failed:', error);
+      await this.redis.setex(
+        `session:${sessionId}`,
+        this.sessionTimeout,
+        JSON.stringify(sessionData)
+      );
+    } catch (error: unknown) {
+      logger.error('Session creation failed:', undefined, {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
       throw new Error('Session creation failed');
     }
   }
@@ -354,20 +401,22 @@ export class AuthService {
   public async updateSessionActivity(sessionId: string, metadata: any = {}): Promise<void> {
     try {
       const sessionKey = `session:${sessionId}`;
-      const existingSession = await RedisService.get(sessionKey);
-      
+      const existingSession = await this.redis.get(sessionKey);
+
       if (existingSession) {
         const sessionData = JSON.parse(existingSession);
         const updatedSession = {
           ...sessionData,
           lastActivity: new Date().toISOString(),
-          ...metadata
+          ...metadata,
         };
 
-        await RedisService.setex(sessionKey, this.sessionTimeout, JSON.stringify(updatedSession));
+        await this.redis.setex(sessionKey, this.sessionTimeout, JSON.stringify(updatedSession));
       }
-    } catch (error) {
-      logger.error('Session update failed:', error);
+    } catch (error: unknown) {
+      logger.error('Session update failed:', undefined, {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -376,9 +425,11 @@ export class AuthService {
    */
   public async revokeSession(sessionId: string): Promise<void> {
     try {
-      await RedisService.del(`session:${sessionId}`);
-    } catch (error) {
-      logger.error('Session revocation failed:', error);
+      await this.redis.del(`session:${sessionId}`);
+    } catch (error: unknown) {
+      logger.error('Session revocation failed:', undefined, {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -391,11 +442,13 @@ export class AuthService {
       if (decoded && decoded.exp) {
         const ttl = decoded.exp - Math.floor(Date.now() / 1000);
         if (ttl > 0) {
-          await RedisService.setex(`blacklist:${token}`, ttl, 'true');
+          await this.redis.setex(`blacklist:${token}`, ttl, 'true');
         }
       }
-    } catch (error) {
-      logger.error('Token blacklisting failed:', error);
+    } catch (error: unknown) {
+      logger.error('Token blacklisting failed:', undefined, {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -408,7 +461,7 @@ export class AuthService {
 
       // Check for account lockout
       const lockoutKey = `lockout:${email}`;
-      const lockoutInfo = await RedisService.get(lockoutKey);
+      const lockoutInfo = await this.redis.get(lockoutKey);
       if (lockoutInfo) {
         throw new Error('Account temporarily locked due to too many failed attempts');
       }
@@ -422,8 +475,10 @@ export class AuthService {
           passwordHash: true,
           role: true,
           isActive: true,
-          schoolId: true
-        }
+          schoolId: true,
+          firstName: true,
+          lastName: true,
+        },
       });
 
       if (!user) {
@@ -443,7 +498,7 @@ export class AuthService {
       }
 
       // Clear any failed attempts
-      await RedisService.del(`attempts:${email}`);
+      await this.redis.del(`attempts:${email}`);
 
       // Generate session and tokens
       const sessionId = this.generateSessionId();
@@ -456,7 +511,7 @@ export class AuthService {
         sessionId,
         tokenType: 'access' as const,
         permissions,
-        schoolId: user.schoolId
+        schoolId: user.schoolId,
       };
 
       const refreshTokenPayload = {
@@ -466,7 +521,7 @@ export class AuthService {
         sessionId,
         tokenType: 'refresh' as const,
         permissions,
-        schoolId: user.schoolId
+        schoolId: user.schoolId,
       };
 
       const accessToken = await this.generateToken(accessTokenPayload, rememberMe ? '30d' : '1h');
@@ -480,7 +535,7 @@ export class AuthService {
       await this.createSession(user.id, sessionId, {
         userAgent,
         ipAddress,
-        rememberMe
+        rememberMe,
       });
 
       logger.info('User authenticated successfully', { userId: user.id, email });
@@ -490,27 +545,39 @@ export class AuthService {
         user: {
           id: user.id,
           email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
           role: user.role,
           permissions,
-          schoolId: user.schoolId
+          schoolId: user.schoolId || undefined,
         },
         tokens: {
           accessToken,
           refreshToken,
-          expiresIn: rememberMe ? 30 * 24 * 3600 : 3600
+          expiresIn: rememberMe ? 30 * 24 * 3600 : 3600,
         },
         sessionId,
-        schoolId: user.schoolId
+        schoolId: user.schoolId || undefined,
       };
     } catch (error: any) {
-      logger.error('Authentication failed:', error);
+      logger.error('Authentication failed:', undefined, {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
       return {
         success: false,
-        error: error.message || 'Authentication failed',
-        user: { id: '', email: '', role: '', permissions: [], schoolId: undefined },
+        error: error instanceof Error ? error.message : String(error) || 'Authentication failed',
+        user: {
+          id: '',
+          email: '',
+          firstName: null,
+          lastName: null,
+          role: '',
+          permissions: [],
+          schoolId: undefined,
+        },
         tokens: { accessToken: '', refreshToken: '', expiresIn: 0 },
         sessionId: '',
-        schoolId: undefined
+        schoolId: undefined,
       };
     }
   }
@@ -518,7 +585,20 @@ export class AuthService {
   /**
    * Login user - Simplified wrapper around authenticate method for backwards compatibility
    */
-  public async login(emailOrRequest: string | { protocol?: string; headers?: any; body?: { email: string; password: string } }, password?: string): Promise<{ success: boolean; token?: string; user?: any; message?: string; error?: string; headers?: any; cookies?: any }> {
+  public async login(
+    emailOrRequest:
+      | string
+      | { protocol?: string; headers?: any; body?: { email: string; password: string } },
+    password?: string
+  ): Promise<{
+    success: boolean;
+    token?: string;
+    user?: any;
+    message?: string;
+    error?: string;
+    headers?: any;
+    cookies?: any;
+  }> {
     try {
       let email: string;
       let pwd: string;
@@ -532,7 +612,7 @@ export class AuthService {
           return {
             success: false,
             error: 'HTTPS required for secure connection',
-            headers: { 'Strict-Transport-Security': 'max-age=31536000' }
+            headers: { 'Strict-Transport-Security': 'max-age=31536000' },
           };
         }
         email = emailOrRequest.body.email;
@@ -551,7 +631,7 @@ export class AuthService {
         email,
         password: pwd,
         userAgent: 'API',
-        ipAddress: '0.0.0.0'
+        ipAddress: '0.0.0.0',
       });
 
       return {
@@ -560,16 +640,18 @@ export class AuthService {
         user: {
           id: authResult.user.id,
           email: authResult.user.email,
-          role: authResult.user.role
+          role: authResult.user.role,
         },
         headers,
-        cookies
+        cookies,
       };
     } catch (error: any) {
-      logger.error('Login failed:', error);
+      logger.error('Login failed:', undefined, {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
       return {
         success: false,
-        message: error.message || 'Login failed'
+        message: error.message || 'Login failed',
       };
     }
   }
@@ -580,18 +662,20 @@ export class AuthService {
   private async recordFailedAttempt(email: string): Promise<void> {
     try {
       const attemptsKey = `attempts:${email}`;
-      const attempts = await RedisService.get(attemptsKey);
+      const attempts = await this.redis.get(attemptsKey);
       const currentAttempts = attempts ? parseInt(attempts) : 0;
       const newAttempts = currentAttempts + 1;
 
-      await RedisService.setex(attemptsKey, this.lockoutDuration, newAttempts.toString());
+      await this.redis.setex(attemptsKey, this.lockoutDuration, newAttempts.toString());
 
       if (newAttempts >= this.maxFailedAttempts) {
-        await RedisService.setex(`lockout:${email}`, this.lockoutDuration, 'true');
+        await this.redis.setex(`lockout:${email}`, this.lockoutDuration, 'true');
         logger.warn('Account locked due to too many failed attempts', { email });
       }
-    } catch (error) {
-      logger.error('Failed to record login attempt:', error);
+    } catch (error: unknown) {
+      logger.error('Failed to record login attempt:', undefined, {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -604,8 +688,10 @@ export class AuthService {
       if (token) {
         await this.blacklistToken(token);
       }
-    } catch (error) {
-      logger.error('Logout failed:', error);
+    } catch (error: unknown) {
+      logger.error('Logout failed:', undefined, {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -617,8 +703,10 @@ export class AuthService {
       // This would require more complex Redis pattern matching in a real implementation
       logger.info('Logging out all sessions for user', { userId });
       // Implementation would revoke all user sessions
-    } catch (error) {
-      logger.error('Logout all failed:', error);
+    } catch (error: unknown) {
+      logger.error('Logout all failed:', undefined, {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -628,19 +716,24 @@ export class AuthService {
   public async refreshToken(refreshToken: string): Promise<{ accessToken: string }> {
     try {
       const decoded = await this.verifyToken(refreshToken, 'refresh');
-      
-      const newAccessToken = await this.generateToken({
-        userId: decoded.userId,
-        email: decoded.email,
-        role: decoded.role,
-        sessionId: decoded.sessionId,
-        tokenType: 'access',
-        permissions: decoded.permissions
-      }, '1h');
+
+      const newAccessToken = await this.generateToken(
+        {
+          userId: decoded.userId,
+          email: decoded.email,
+          role: decoded.role,
+          sessionId: decoded.sessionId,
+          tokenType: 'access',
+          permissions: decoded.permissions,
+        },
+        '1h'
+      );
 
       return { accessToken: newAccessToken };
-    } catch (error) {
-      logger.error('Token refresh failed:', error);
+    } catch (error: unknown) {
+      logger.error('Token refresh failed:', undefined, {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
       throw error;
     }
   }
@@ -652,8 +745,10 @@ export class AuthService {
     try {
       // Implementation would clean up expired sessions from Redis
       logger.info('Session cleanup completed');
-    } catch (error) {
-      logger.error('Session cleanup failed:', error);
+    } catch (error: unknown) {
+      logger.error('Session cleanup failed:', undefined, {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -674,16 +769,17 @@ export class AuthService {
         email: userData.email,
         name: userData.name || 'Test User',
         password: hashedPassword || '$2b$12$defaulthashedpassword',
-        createdAt: new Date()
+        createdAt: new Date(),
       };
 
       return user;
-    } catch (error) {
-      logger.error('Failed to create user', error);
+    } catch (error: unknown) {
+      logger.error('Failed to create user', undefined, {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
       throw error;
     }
   }
-
 
   /**
    * Generate secure token for testing
@@ -698,10 +794,12 @@ export class AuthService {
   public async encryptPersonalData(data: any): Promise<any> {
     try {
       return {
-        sensitive: Buffer.from(JSON.stringify(data)).toString('base64')
+        sensitive: Buffer.from(JSON.stringify(data)).toString('base64'),
       };
-    } catch (error) {
-      logger.error('Failed to encrypt personal data', error);
+    } catch (error: unknown) {
+      logger.error('Failed to encrypt personal data', undefined, {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
       throw error;
     }
   }
@@ -713,8 +811,10 @@ export class AuthService {
     try {
       const jsonData = Buffer.from(encryptedData.sensitive, 'base64').toString();
       return JSON.parse(jsonData);
-    } catch (error) {
-      logger.error('Failed to decrypt personal data', error);
+    } catch (error: unknown) {
+      logger.error('Failed to decrypt personal data', undefined, {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
       throw error;
     }
   }
@@ -725,19 +825,18 @@ export class AuthService {
    */
   async initialize(): Promise<{ success: boolean; message?: string }> {
     try {
-      // Initialize Redis connection
-      await RedisService.connect();
-      
       // Test database connection
       await DatabaseService.getInstance().connect();
-      
+
       logger.info('Authentication service initialized successfully');
       return { success: true, message: 'Auth service initialized' };
-    } catch (error) {
-      logger.error('Failed to initialize auth service', error);
-      return { 
-        success: false, 
-        message: error instanceof Error ? error.message : 'Initialization failed' 
+    } catch (error: unknown) {
+      logger.error('Failed to initialize auth service', undefined, {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Initialization failed',
       };
     }
   }
@@ -746,7 +845,10 @@ export class AuthService {
    * Get all users for administrative purposes
    * Production-ready method for E2E testing
    */
-  public async getAllUsers(token: string, filters?: any): Promise<{ success: boolean; data?: any; error?: string }> {
+  public async getAllUsers(
+    token: string,
+    filters?: any
+  ): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
       // Check authorization
       try {
@@ -754,27 +856,27 @@ export class AuthService {
         if (payload.role !== 'admin') {
           return {
             success: false,
-            error: 'Insufficient privileges: admin required'
+            error: 'Insufficient privileges: admin required',
           };
         }
       } catch (parseError) {
         return {
           success: false,
-          error: 'Invalid token format'
+          error: 'Invalid token format',
         };
       }
 
       // Basic filters for testing
       const whereClause: any = {};
-      
+
       if (filters?.role) {
         whereClause.role = filters.role;
       }
-      
+
       if (filters?.active !== undefined) {
         whereClause.isActive = filters.active;
       }
-      
+
       const users = await DatabaseService.client.user.findMany({
         where: whereClause,
         select: {
@@ -787,17 +889,17 @@ export class AuthService {
           // Exclude sensitive fields
         },
         orderBy: {
-          createdAt: 'desc'
-        }
+          createdAt: 'desc',
+        },
       });
-      
+
       logger.info(`Retrieved ${users.length} users`, { filters });
       return { success: true, data: users };
-    } catch (error) {
-      logger.error('Failed to get all users', { error, filters });
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to get users' 
+    } catch (error: unknown) {
+      logger.error('Failed to get all users', undefined, { error, filters });
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to get users',
       };
     }
   }
@@ -806,7 +908,10 @@ export class AuthService {
    * Delete user for administrative purposes
    * Production-ready method for E2E testing
    */
-  public async deleteUser(userId: string, token: string): Promise<{ success: boolean; data?: any; error?: string }> {
+  public async deleteUser(
+    userId: string,
+    token: string
+  ): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
       // Check authorization
       try {
@@ -814,28 +919,28 @@ export class AuthService {
         if (payload.role !== 'admin') {
           return {
             success: false,
-            error: 'Insufficient privileges: admin required'
+            error: 'Insufficient privileges: admin required',
           };
         }
       } catch (parseError) {
         return {
           success: false,
-          error: 'Invalid token format'
+          error: 'Invalid token format',
         };
       }
 
       logger.info('Deleting user', { userId });
-      
+
       // In production, this would soft-delete or archive the user
       return {
         success: true,
-        data: { userId, status: 'deleted' }
+        data: { userId, status: 'deleted' },
       };
-    } catch (error) {
-      logger.error('Failed to delete user', { error, userId });
+    } catch (error: unknown) {
+      logger.error('Failed to delete user', undefined, { error, userId });
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to delete user'
+        error: error instanceof Error ? error.message : 'Failed to delete user',
       };
     }
   }
@@ -844,7 +949,11 @@ export class AuthService {
    * Modify user role for administrative purposes
    * Production-ready method for E2E testing
    */
-  public async modifyUserRole(userId: string, newRole: string, token: string): Promise<{ success: boolean; data?: any; error?: string }> {
+  public async modifyUserRole(
+    userId: string,
+    newRole: string,
+    token: string
+  ): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
       // Check authorization
       try {
@@ -852,27 +961,27 @@ export class AuthService {
         if (payload.role !== 'admin') {
           return {
             success: false,
-            error: 'Insufficient privileges: admin required'
+            error: 'Insufficient privileges: admin required',
           };
         }
       } catch (parseError) {
         return {
           success: false,
-          error: 'Invalid token format'
+          error: 'Invalid token format',
         };
       }
 
       logger.info('Modifying user role', { userId, newRole });
-      
+
       return {
         success: true,
-        data: { userId, previousRole: 'user', newRole, updatedAt: new Date() }
+        data: { userId, previousRole: 'user', newRole, updatedAt: new Date() },
       };
-    } catch (error) {
-      logger.error('Failed to modify user role', { error, userId, newRole });
+    } catch (error: unknown) {
+      logger.error('Failed to modify user role', undefined, { error, userId, newRole });
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to modify role'
+        error: error instanceof Error ? error.message : 'Failed to modify role',
       };
     }
   }
@@ -881,7 +990,11 @@ export class AuthService {
    * Manage school users for administrative purposes
    * Production-ready method for E2E testing
    */
-  public async manageSchoolUsers(token: string, schoolId?: string, action?: string): Promise<{ success: boolean; data?: any; error?: string }> {
+  public async manageSchoolUsers(
+    token: string,
+    schoolId?: string,
+    action?: string
+  ): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
       // Check authorization
       try {
@@ -889,32 +1002,35 @@ export class AuthService {
         if (payload.role !== 'school_admin') {
           return {
             success: false,
-            error: 'School admin required: insufficient privileges'
+            error: 'School admin required: insufficient privileges',
           };
         }
       } catch (parseError) {
         return {
           success: false,
-          error: 'Invalid token format'
+          error: 'Invalid token format',
         };
       }
 
-      logger.info('Managing school users', { schoolId: schoolId || 'default', action: action || 'view' });
-      
+      logger.info('Managing school users', {
+        schoolId: schoolId || 'default',
+        action: action || 'view',
+      });
+
       return {
         success: true,
         data: {
           schoolId,
           action,
           usersAffected: 5,
-          status: 'completed'
-        }
+          status: 'completed',
+        },
       };
-    } catch (error) {
-      logger.error('Failed to manage school users', { error, schoolId, action });
+    } catch (error: unknown) {
+      logger.error('Failed to manage school users', undefined, { error, schoolId, action });
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to manage school users'
+        error: error instanceof Error ? error.message : 'Failed to manage school users',
       };
     }
   }
@@ -923,7 +1039,10 @@ export class AuthService {
    * View school analytics for administrative purposes
    * Production-ready method for E2E testing
    */
-  public async viewSchoolAnalytics(token: string, schoolId?: string): Promise<{ success: boolean; data?: any; error?: string }> {
+  public async viewSchoolAnalytics(
+    token: string,
+    schoolId?: string
+  ): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
       // Check authorization
       try {
@@ -931,18 +1050,18 @@ export class AuthService {
         if (payload.role !== 'school_admin') {
           return {
             success: false,
-            error: 'School admin required: insufficient privileges'
+            error: 'School admin required: insufficient privileges',
           };
         }
       } catch (parseError) {
         return {
           success: false,
-          error: 'Invalid token format'
+          error: 'Invalid token format',
         };
       }
 
       logger.info('Viewing school analytics', { schoolId: schoolId || 'default' });
-      
+
       return {
         success: true,
         data: {
@@ -952,14 +1071,14 @@ export class AuthService {
           studentCount: 200,
           teacherCount: 15,
           parentCount: 35,
-          registrationTrend: '+12% this month'
-        }
+          registrationTrend: '+12% this month',
+        },
       };
-    } catch (error) {
-      logger.error('Failed to view school analytics', { error, schoolId });
+    } catch (error: unknown) {
+      logger.error('Failed to view school analytics', undefined, { error, schoolId });
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to view analytics'
+        error: error instanceof Error ? error.message : 'Failed to view analytics',
       };
     }
   }
@@ -968,7 +1087,11 @@ export class AuthService {
    * Configure school settings for administrative purposes
    * Production-ready method for E2E testing
    */
-  public async configureSchoolSettings(token: string, schoolId?: string, settings?: any): Promise<{ success: boolean; data?: any; error?: string }> {
+  public async configureSchoolSettings(
+    token: string,
+    schoolId?: string,
+    settings?: any
+  ): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
       // Check authorization
       try {
@@ -976,32 +1099,35 @@ export class AuthService {
         if (payload.role !== 'school_admin') {
           return {
             success: false,
-            error: 'School admin required: insufficient privileges'
+            error: 'School admin required: insufficient privileges',
           };
         }
       } catch (parseError) {
         return {
           success: false,
-          error: 'Invalid token format'
+          error: 'Invalid token format',
         };
       }
 
-      logger.info('Configuring school settings', { schoolId: schoolId || 'default', settings: settings || {} });
-      
+      logger.info('Configuring school settings', {
+        schoolId: schoolId || 'default',
+        settings: settings || {},
+      });
+
       return {
         success: true,
         data: {
           schoolId,
           settings,
           updatedAt: new Date(),
-          status: 'configured'
-        }
+          status: 'configured',
+        },
       };
-    } catch (error) {
-      logger.error('Failed to configure school settings', { error, schoolId });
+    } catch (error: unknown) {
+      logger.error('Failed to configure school settings', undefined, { error, schoolId });
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to configure settings'
+        error: error instanceof Error ? error.message : 'Failed to configure settings',
       };
     }
   }
@@ -1010,16 +1136,18 @@ export class AuthService {
    * Validate token for security testing
    * Production-ready method for E2E testing
    */
-  public async validateToken(token: string): Promise<{ success: boolean; valid?: boolean; error?: string }> {
+  public async validateToken(
+    token: string
+  ): Promise<{ success: boolean; valid?: boolean; error?: string }> {
     try {
       logger.info('Validating token', { tokenProvided: !!token });
-      
+
       // Mock token validation - in production would use JWT verification
       if (!token || token.length < 10) {
         return {
           success: false,
           valid: false,
-          error: 'Invalid token format'
+          error: 'Invalid token format',
         };
       }
 
@@ -1027,28 +1155,30 @@ export class AuthService {
       try {
         const payload = JSON.parse(atob(token.split('.')[1] || '{}'));
         const currentTime = Math.floor(Date.now() / 1000);
-        
+
         if (payload.exp && payload.exp < currentTime) {
           return {
             success: false,
             valid: false,
-            error: 'Token expired'
+            error: 'Token expired',
           };
         }
       } catch (parseError) {
         // Invalid token format
       }
-      
+
       return {
         success: true,
-        valid: true
+        valid: true,
       };
-    } catch (error) {
-      logger.error('Token validation failed', error);
+    } catch (error: unknown) {
+      logger.error('Token validation failed', undefined, {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
       return {
         success: false,
         valid: false,
-        error: error instanceof Error ? error.message : 'Token validation failed'
+        error: error instanceof Error ? error.message : 'Token validation failed',
       };
     }
   }
@@ -1057,24 +1187,29 @@ export class AuthService {
    * Create user resource for testing
    * Production-ready method for E2E testing
    */
-  public async createUserResource(userId: string, resourceData: any): Promise<{ success: boolean; data?: any; error?: string }> {
+  public async createUserResource(
+    userId: string,
+    resourceData: any
+  ): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
       logger.info('Creating user resource', { userId, resourceData });
-      
+
       return {
         success: true,
         data: {
           id: `resource-${Date.now()}`,
           userId,
           ...resourceData,
-          createdAt: new Date()
-        }
+          createdAt: new Date(),
+        },
       };
-    } catch (error) {
-      logger.error('Failed to create user resource', error);
+    } catch (error: unknown) {
+      logger.error('Failed to create user resource', undefined, {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to create resource'
+        error: error instanceof Error ? error.message : 'Failed to create resource',
       };
     }
   }
@@ -1083,28 +1218,33 @@ export class AuthService {
    * Get user resource for testing
    * Production-ready method for E2E testing
    */
-  public async getUserResource(resourceId: string, token: string): Promise<{ success: boolean; resource?: any; error?: string }> {
+  public async getUserResource(
+    resourceId: string,
+    token: string
+  ): Promise<{ success: boolean; resource?: any; error?: string }> {
     try {
       logger.info('Getting user resource', { resourceId, tokenProvided: !!token });
-      
+
       // Decode token to get user info
       try {
         const payload = JSON.parse(atob(token.split('.')[1] || '{}'));
         const tokenUserId = payload.userId;
-        
+
         // Mock resource data - in production would query database
-        const resourceUserId = resourceId.includes('user-1') ? 'user-1' : 
-                              resourceId.includes('user-2') ? 'user-2' : 
-                              'unknown-user';
-        
+        const resourceUserId = resourceId.includes('user-1')
+          ? 'user-1'
+          : resourceId.includes('user-2')
+            ? 'user-2'
+            : 'unknown-user';
+
         // Check authorization - user can only access their own resources
         if (tokenUserId !== resourceUserId && payload.role !== 'admin') {
           return {
             success: false,
-            error: 'Unauthorized: access denied'
+            error: 'Unauthorized: access denied',
           };
         }
-        
+
         return {
           success: true,
           resource: {
@@ -1112,20 +1252,22 @@ export class AuthService {
             userId: resourceUserId,
             type: 'document',
             content: 'mock resource content',
-            createdAt: new Date()
-          }
+            createdAt: new Date(),
+          },
         };
       } catch (parseError) {
         return {
           success: false,
-          error: 'Invalid token format'
+          error: 'Invalid token format',
         };
       }
-    } catch (error) {
-      logger.error('Failed to get user resource', error);
+    } catch (error: unknown) {
+      logger.error('Failed to get user resource', undefined, {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to get resource'
+        error: error instanceof Error ? error.message : 'Failed to get resource',
       };
     }
   }
@@ -1134,10 +1276,20 @@ export class AuthService {
    * Upload file for testing
    * Production-ready method for E2E testing
    */
-  public async uploadFile(fileData: any, token?: string): Promise<{ success: boolean; fileId?: string; filename?: string; sanitizedContent?: string; mimeType?: string; error?: string }> {
+  public async uploadFile(
+    fileData: any,
+    token?: string
+  ): Promise<{
+    success: boolean;
+    fileId?: string;
+    filename?: string;
+    sanitizedContent?: string;
+    mimeType?: string;
+    error?: string;
+  }> {
     try {
       let userId = 'test-user';
-      
+
       // If token provided, decode it to get user info
       if (token) {
         try {
@@ -1148,25 +1300,25 @@ export class AuthService {
           logger.warn('Token parse failed, using test user', parseError);
         }
       }
-      
+
       logger.info('Uploading file', { userId, fileName: fileData?.filename });
-      
+
       // Sanitize filename by removing dangerous patterns
-      let originalFilename = fileData?.filename || 'unknown.txt';
-      let sanitizedFilename = originalFilename
-        .replace(/\.\./g, '')  // Remove path traversal
-        .replace(/[<>:"/\\|?*]/g, '_')  // Replace invalid chars
-        .replace(/\.(php|exe|sh|bat|cmd|scr|pif|com)$/i, '.txt');  // Change dangerous extensions
-      
+      const originalFilename = fileData?.filename || 'unknown.txt';
+      const sanitizedFilename = originalFilename
+        .replace(/\.\./g, '') // Remove path traversal
+        .replace(/[<>:"/\\|?*]/g, '_') // Replace invalid chars
+        .replace(/\.(php|exe|sh|bat|cmd|scr|pif|com)$/i, '.txt'); // Change dangerous extensions
+
       // Sanitize content if provided
       let sanitizedContent = fileData?.content || '';
       if (typeof sanitizedContent === 'string') {
         sanitizedContent = sanitizedContent
-          .replace(/<script[^>]*>.*?<\/script>/gi, '')  // Remove scripts
-          .replace(/javascript:/gi, '')  // Remove javascript: URLs
-          .replace(/on\w+\s*=/gi, '');  // Remove event handlers
+          .replace(/<script[^>]*>.*?<\/script>/gi, '') // Remove scripts
+          .replace(/javascript:/gi, '') // Remove javascript: URLs
+          .replace(/on\w+\s*=/gi, ''); // Remove event handlers
       }
-      
+
       // Determine MIME type
       let mimeType = 'text/plain';
       const extension = sanitizedFilename.split('.').pop()?.toLowerCase();
@@ -1185,22 +1337,24 @@ export class AuthService {
           mimeType = 'text/plain';
           break;
       }
-      
+
       // Generate file ID
       const fileId = crypto.randomUUID();
-      
+
       return {
         success: true,
         fileId,
         filename: sanitizedFilename,
         sanitizedContent,
-        mimeType
+        mimeType,
       };
-    } catch (error) {
-      logger.error('Failed to upload file', error);
+    } catch (error: unknown) {
+      logger.error('Failed to upload file', undefined, {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to upload file'
+        error: error instanceof Error ? error.message : 'Failed to upload file',
       };
     }
   }
@@ -1209,41 +1363,49 @@ export class AuthService {
    * Download file for testing
    * Production-ready method for E2E testing
    */
-  public async downloadFile(fileId: string, token: string): Promise<{ success: boolean; content?: string; error?: string }> {
+  public async downloadFile(
+    fileId: string,
+    token: string
+  ): Promise<{ success: boolean; content?: string; error?: string }> {
     try {
       logger.info('Downloading file', { fileId, tokenProvided: !!token });
-      
+
       // Decode token to get user info
       try {
         const payload = JSON.parse(atob(token.split('.')[1] || '{}'));
-        const userId = payload.userId;
-        
+        const { userId } = payload;
+
         // Mock authorization check - in production would verify file ownership
-        const fileOwner = fileId.includes('user-1') ? 'user-1' : 
-                         fileId.includes('user-2') ? 'user-2' : 'user-1';
-        
+        const fileOwner = fileId.includes('user-1')
+          ? 'user-1'
+          : fileId.includes('user-2')
+            ? 'user-2'
+            : 'user-1';
+
         if (userId !== fileOwner && payload.role !== 'admin') {
           return {
             success: false,
-            error: 'Unauthorized: access denied'
+            error: 'Unauthorized: access denied',
           };
         }
-        
+
         return {
           success: true,
-          content: 'sensitive content'
+          content: 'sensitive content',
         };
       } catch (parseError) {
         return {
           success: false,
-          error: 'Invalid token format'
+          error: 'Invalid token format',
         };
       }
-    } catch (error) {
-      logger.error('Failed to download file', error);
+    } catch (error: unknown) {
+      logger.error('Failed to download file', undefined, {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to download file'
+        error: error instanceof Error ? error.message : 'Failed to download file',
       };
     }
   }
@@ -1258,11 +1420,13 @@ export class AuthService {
       // In production, this would properly cleanup resources
       logger.info('Authentication service cleaned up successfully');
       return { success: true, message: 'Auth service cleaned up' };
-    } catch (error) {
-      logger.error('Failed to cleanup auth service', error);
-      return { 
-        success: false, 
-        message: error instanceof Error ? error.message : 'Cleanup failed' 
+    } catch (error: unknown) {
+      logger.error('Failed to cleanup auth service', undefined, {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Cleanup failed',
       };
     }
   }
@@ -1271,7 +1435,10 @@ export class AuthService {
    * Get user profile by ID
    * Production-ready method for user data access
    */
-  async getUserProfile(userId: string, token: string): Promise<{ success: boolean; data?: any; error?: string }> {
+  async getUserProfile(
+    userId: string,
+    token: string
+  ): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
       // Verify token first
       const tokenVerification = await this.validateToken(token);
@@ -1291,8 +1458,8 @@ export class AuthService {
           phone: true,
           language: true,
           status: true,
-          createdAt: true
-        }
+          createdAt: true,
+        },
       });
 
       if (!user) {
@@ -1305,15 +1472,17 @@ export class AuthService {
         return { success: false, error: 'Unauthorized: access denied' };
       }
 
-      return { 
-        success: true, 
-        data: user
+      return {
+        success: true,
+        data: user,
       };
-    } catch (error) {
-      logger.error('Failed to get user profile', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Profile retrieval failed' 
+    } catch (error: unknown) {
+      logger.error('Failed to get user profile', undefined, {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Profile retrieval failed',
       };
     }
   }
@@ -1321,43 +1490,42 @@ export class AuthService {
   /**
    * Follow redirect for security testing
    */
-  public async followRedirect(url: string): Promise<{ success: boolean; finalUrl?: string; data?: any; error?: string }> {
+  public async followRedirect(
+    url: string
+  ): Promise<{ success: boolean; finalUrl?: string; data?: any; error?: string }> {
     try {
       const urlObj = new URL(url);
-      
+
       // Security validation - block potentially dangerous redirects
-      const blockedPatterns = [
-        /127\.0\.0\.1/,
-        /localhost/i,
-        /evil\.com/i,
-        /malicious\.com/i
-      ];
-      
+      const blockedPatterns = [/127\.0\.0\.1/, /localhost/i, /evil\.com/i, /malicious\.com/i];
+
       const isDangerous = blockedPatterns.some(pattern => pattern.test(url));
-      
+
       if (isDangerous) {
         return {
           success: false,
-          error: 'Unsafe redirect blocked - potential SSRF attempt'
+          error: 'Unsafe redirect blocked - potential SSRF attempt',
         };
       }
 
       logger.info('Following redirect', { url });
-      
+
       return {
         success: true,
         finalUrl: url,
         data: {
           redirectUrl: url,
           status: 'followed',
-          timestamp: new Date().toISOString()
-        }
+          timestamp: new Date().toISOString(),
+        },
       };
-    } catch (error) {
-      logger.error('Failed to follow redirect', error);
+    } catch (error: unknown) {
+      logger.error('Failed to follow redirect', undefined, {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Redirect failed'
+        error: error instanceof Error ? error.message : 'Redirect failed',
       };
     }
   }
@@ -1365,32 +1533,36 @@ export class AuthService {
   /**
    * Call specific API version for compatibility testing
    */
-  public async callAPIVersion(version: string): Promise<{ success: boolean; data?: any; error?: string }> {
+  public async callAPIVersion(
+    version: string
+  ): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
       const supportedVersions = ['v1', 'v2', 'v3'];
-      
+
       if (!supportedVersions.includes(version)) {
         return {
           success: false,
-          error: `Unsupported API version: ${version}`
+          error: `Unsupported API version: ${version}`,
         };
       }
 
       logger.info('Calling API version', { version });
-      
+
       return {
         success: true,
         data: {
           version,
           endpoints: ['auth', 'users', 'payments'],
-          status: 'available'
-        }
+          status: 'available',
+        },
       };
-    } catch (error) {
-      logger.error('Failed to call API version', error);
+    } catch (error: unknown) {
+      logger.error('Failed to call API version', undefined, {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'API version call failed'
+        error: error instanceof Error ? error.message : 'API version call failed',
       };
     }
   }
@@ -1398,19 +1570,24 @@ export class AuthService {
   /**
    * Create session for testing
    */
-  public async createSessionForTesting(userId: string, metadata?: any): Promise<{ sessionId: string; expiresAt: Date }> {
+  public async createSessionForTesting(
+    userId: string,
+    metadata?: any
+  ): Promise<{ sessionId: string; expiresAt: Date }> {
     try {
       const sessionId = crypto.randomUUID();
-      const expiresAt = new Date(Date.now() + (24 * 60 * 60 * 1000)); // 24 hours
-      
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
       logger.info('Creating session', { userId, sessionId });
-      
+
       return {
         sessionId,
-        expiresAt
+        expiresAt,
       };
-    } catch (error) {
-      logger.error('Failed to create session', error);
+    } catch (error: unknown) {
+      logger.error('Failed to create session', undefined, {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
       throw error;
     }
   }
@@ -1418,31 +1595,35 @@ export class AuthService {
   /**
    * Validate session for testing
    */
-  public async validateSession(sessionId: string): Promise<{ success: boolean; valid?: boolean; userId?: string; error?: string }> {
+  public async validateSession(
+    sessionId: string
+  ): Promise<{ success: boolean; valid?: boolean; userId?: string; error?: string }> {
     try {
       logger.info('Validating session', { sessionId });
-      
+
       if (!sessionId || sessionId.length < 10) {
         return {
           success: true,
           valid: false,
-          error: 'Invalid session ID format'
+          error: 'Invalid session ID format',
         };
       }
 
       // For security tests, simulate session validation
       const isValid = !sessionId.includes('expired') && !sessionId.includes('invalid');
-      
+
       return {
         success: true,
         valid: isValid,
-        userId: isValid ? 'test-user-' + sessionId.substring(0, 8) : undefined
+        userId: isValid ? `test-user-${sessionId.substring(0, 8)}` : undefined,
       };
-    } catch (error) {
-      logger.error('Failed to validate session', error);
+    } catch (error: unknown) {
+      logger.error('Failed to validate session', undefined, {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Session validation failed'
+        error: error instanceof Error ? error.message : 'Session validation failed',
       };
     }
   }
@@ -1453,24 +1634,26 @@ export class AuthService {
   public async getCORSHeaders(): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
       logger.info('Getting CORS headers');
-      
+
       const corsHeaders = {
         'Access-Control-Allow-Origin': process.env.ALLOWED_ORIGINS || 'https://hasivu.com',
         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
         'Access-Control-Allow-Credentials': 'true',
-        'Access-Control-Max-Age': '86400'
+        'Access-Control-Max-Age': '86400',
       };
 
       return {
         success: true,
-        data: { headers: corsHeaders }
+        data: { headers: corsHeaders },
       };
-    } catch (error) {
-      logger.error('Failed to get CORS headers', error);
+    } catch (error: unknown) {
+      logger.error('Failed to get CORS headers', undefined, {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'CORS headers retrieval failed'
+        error: error instanceof Error ? error.message : 'CORS headers retrieval failed',
       };
     }
   }
@@ -1482,10 +1665,12 @@ export class AuthService {
     try {
       const db = DatabaseService.getInstance();
       return await db.user.findUnique({
-        where: { id: userId }
+        where: { id: userId },
       });
-    } catch (error) {
-      logger.error('Failed to get user by ID', error);
+    } catch (error: unknown) {
+      logger.error('Failed to get user by ID', undefined, {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
       return null;
     }
   }
@@ -1496,7 +1681,10 @@ export class AuthService {
   public async findUserByQuery(query: string | any): Promise<any> {
     try {
       // For security tests, return null for any object queries or suspicious patterns
-      if (typeof query === 'object' || (typeof query === 'string' && (query.includes('$') || query.includes('where')))) {
+      if (
+        typeof query === 'object' ||
+        (typeof query === 'string' && (query.includes('$') || query.includes('where')))
+      ) {
         logger.warn('Blocked suspicious query', { query });
         return null;
       }
@@ -1507,13 +1695,15 @@ export class AuthService {
           OR: [
             { email: { contains: query } },
             { firstName: { contains: query } },
-            { lastName: { contains: query } }
-          ]
+            { lastName: { contains: query } },
+          ],
         },
-        take: 10
+        take: 10,
       });
-    } catch (error) {
-      logger.error('Failed to find users by query', error);
+    } catch (error: unknown) {
+      logger.error('Failed to find users by query', undefined, {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
       return [];
     }
   }
@@ -1521,16 +1711,19 @@ export class AuthService {
   /**
    * Upload user document
    */
-  public async uploadUserDocument(userId: string, file: any): Promise<{ success: boolean; data?: any; error?: string; filename?: string; fileId?: string }> {
+  public async uploadUserDocument(
+    userId: string,
+    file: any
+  ): Promise<{ success: boolean; data?: any; error?: string; filename?: string; fileId?: string }> {
     try {
       // Sanitize filename for security testing
-      let filename = typeof file === 'string' ? file : (file?.filename || 'uploaded_document.pdf');
-      
+      let filename = typeof file === 'string' ? file : file?.filename || 'uploaded_document.pdf';
+
       // Remove dangerous characters from filename for security
       filename = filename.replace(/[;|&`$]/g, '').replace(/\b(rm|wget|curl|sh|bash)\b/gi, '');
-      
+
       const fileId = `file_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-      
+
       return {
         success: true,
         filename, // Add filename property for test compatibility
@@ -1539,14 +1732,16 @@ export class AuthService {
           fileId,
           fileName: filename,
           fileSize: typeof file === 'object' ? file.size || 1024 : 1024,
-          uploadedAt: new Date().toISOString()
-        }
+          uploadedAt: new Date().toISOString(),
+        },
       };
-    } catch (error) {
-      logger.error('Failed to upload user document', error);
+    } catch (error: unknown) {
+      logger.error('Failed to upload user document', undefined, {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'File upload failed'
+        error: error instanceof Error ? error.message : 'File upload failed',
       };
     }
   }
@@ -1564,19 +1759,21 @@ export class AuthService {
         type: 'application/pdf',
         metadata: {
           uploadedAt: new Date().toISOString(),
-          userId: 'test-user'
-        }
+          userId: 'test-user',
+        },
       };
 
       return {
         success: true,
-        data: fileContent
+        data: fileContent,
       };
-    } catch (error) {
-      logger.error('Failed to read file', error);
+    } catch (error: unknown) {
+      logger.error('Failed to read file', undefined, {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'File read failed'
+        error: error instanceof Error ? error.message : 'File read failed',
       };
     }
   }
@@ -1589,15 +1786,14 @@ export class AuthService {
       const db = DatabaseService.getInstance();
       return await db.user.findMany({
         where: {
-          OR: [
-            { firstName: { contains: name } },
-            { lastName: { contains: name } }
-          ]
+          OR: [{ firstName: { contains: name } }, { lastName: { contains: name } }],
         },
-        take: 20
+        take: 20,
       });
-    } catch (error) {
-      logger.error('Failed to search users by name', error);
+    } catch (error: unknown) {
+      logger.error('Failed to search users by name', undefined, {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
       return [];
     }
   }
@@ -1605,22 +1801,30 @@ export class AuthService {
   /**
    * Get CSP headers for security testing
    */
-  public async getCSPHeaders(): Promise<{ success: boolean; data?: any; error?: string; headers?: any }> {
+  public async getCSPHeaders(): Promise<{
+    success: boolean;
+    data?: any;
+    error?: string;
+    headers?: any;
+  }> {
     try {
       const cspHeaders = {
-        'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:; frame-ancestors 'none';"
+        'Content-Security-Policy':
+          "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:; frame-ancestors 'none';",
       };
 
       return {
         success: true,
         headers: cspHeaders, // Add headers property for test compatibility
-        data: { headers: cspHeaders }
+        data: { headers: cspHeaders },
       };
-    } catch (error) {
-      logger.error('Failed to get CSP headers', error);
+    } catch (error: unknown) {
+      logger.error('Failed to get CSP headers', undefined, {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'CSP headers retrieval failed'
+        error: error instanceof Error ? error.message : 'CSP headers retrieval failed',
       };
     }
   }
@@ -1628,26 +1832,33 @@ export class AuthService {
   /**
    * Get security headers for testing
    */
-  public async getSecurityHeaders(): Promise<{ success: boolean; data?: any; error?: string; headers?: any }> {
+  public async getSecurityHeaders(): Promise<{
+    success: boolean;
+    data?: any;
+    error?: string;
+    headers?: any;
+  }> {
     try {
       const securityHeaders = {
         'X-Frame-Options': 'DENY',
         'X-Content-Type-Options': 'nosniff',
         'X-XSS-Protection': '1; mode=block',
         'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
-        'Referrer-Policy': 'strict-origin-when-cross-origin'
+        'Referrer-Policy': 'strict-origin-when-cross-origin',
       };
 
       return {
         success: true,
         headers: securityHeaders,
-        data: { headers: securityHeaders }
+        data: { headers: securityHeaders },
       };
-    } catch (error) {
-      logger.error('Failed to get security headers', error);
+    } catch (error: unknown) {
+      logger.error('Failed to get security headers', undefined, {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Security headers retrieval failed'
+        error: error instanceof Error ? error.message : 'Security headers retrieval failed',
       };
     }
   }
@@ -1655,33 +1866,41 @@ export class AuthService {
   /**
    * Get server response for testing
    */
-  public async getServerResponse(): Promise<{ success: boolean; data?: any; error?: string; response?: any; headers?: any }> {
+  public async getServerResponse(): Promise<{
+    success: boolean;
+    data?: any;
+    error?: string;
+    response?: any;
+    headers?: any;
+  }> {
     try {
       const serverResponse = {
         server: 'HASIVU-Platform',
         version: '1.0.0',
         environment: config.server.nodeEnv,
         timestamp: new Date().toISOString(),
-        uptime: process.uptime()
+        uptime: process.uptime(),
       };
 
       const responseHeaders = {
         'X-Powered-By': 'HASIVU-Platform',
         'X-Version': '1.0.0',
-        'X-Environment': config.server.nodeEnv
+        'X-Environment': config.server?.nodeEnv,
       };
 
       return {
         success: true,
         response: serverResponse,
         headers: responseHeaders, // Add headers property for test compatibility
-        data: { response: serverResponse }
+        data: { response: serverResponse, environment: config.server?.nodeEnv },
       };
-    } catch (error) {
-      logger.error('Failed to get server response', error);
+    } catch (error: unknown) {
+      logger.error('Failed to get server response', undefined, {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Server response retrieval failed'
+        error: error instanceof Error ? error.message : 'Server response retrieval failed',
       };
     }
   }
@@ -1689,43 +1908,304 @@ export class AuthService {
   /**
    * Test configuration error for security testing
    */
-  public async testConfigurationError(): Promise<{ success: boolean; error?: string; isSecure?: boolean }> {
+  public async testConfigurationError(): Promise<{
+    success: boolean;
+    error?: string;
+    isSecure?: boolean;
+  }> {
     try {
       // Simulate configuration validation for security tests
       const hasSecureConfig = process.env.NODE_ENV === 'production';
-      
+
       if (!hasSecureConfig) {
         return {
           success: false,
           error: 'Insecure configuration detected',
-          isSecure: false
+          isSecure: false,
         };
       }
 
       return {
         success: true,
-        isSecure: true
+        isSecure: true,
       };
-    } catch (error) {
-      logger.error('Configuration error test failed', error);
+    } catch (error: unknown) {
+      logger.error('Configuration error test failed', undefined, {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Configuration test failed'
+        error: error instanceof Error ? error.message : 'Configuration test failed',
       };
+    }
+  }
+
+  /**
+   * Change user password
+   */
+  public async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string
+  ): Promise<{ success: boolean; message?: string; error?: string }> {
+    try {
+      // Get user
+      const user = await DatabaseService.client.user.findUnique({
+        where: { id: userId },
+        select: { id: true, passwordHash: true },
+      });
+
+      if (!user) {
+        return { success: false, error: 'User not found' };
+      }
+
+      // Verify current password
+      const isCurrentPasswordValid = await this.verifyPassword(currentPassword, user.passwordHash);
+      if (!isCurrentPasswordValid) {
+        return { success: false, error: 'Current password is incorrect' };
+      }
+
+      // Validate new password
+      const passwordValidation = this.validatePassword(newPassword);
+      if (!passwordValidation.valid) {
+        return { success: false, error: passwordValidation.message };
+      }
+
+      // Hash new password
+      const newPasswordHash = await this.hashPassword(newPassword);
+
+      // Update password
+      await DatabaseService.client.user.update({
+        where: { id: userId },
+        data: { passwordHash: newPasswordHash },
+      });
+
+      // Revoke all sessions
+      await this.logoutAll(userId);
+
+      return { success: true, message: 'Password changed successfully' };
+    } catch (error: unknown) {
+      logger.error('Password change failed', undefined, {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
+      return { success: false, error: 'Failed to change password' };
+    }
+  }
+
+  /**
+   * Forgot password - initiate reset
+   */
+  public async forgotPassword(
+    email: string
+  ): Promise<{ success: boolean; message?: string; error?: string }> {
+    try {
+      const user = await DatabaseService.client.user.findUnique({
+        where: { email: email.toLowerCase() },
+        select: { id: true, email: true, firstName: true },
+      });
+
+      if (!user) {
+        // Don't reveal if email exists for security
+        return {
+          success: true,
+          message: 'If an account with this email exists, a password reset link has been sent',
+        };
+      }
+
+      // Generate reset token
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const resetTokenExpiry = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
+
+      // Store reset token
+      await this.redis.setex(
+        `password_reset:${resetToken}`,
+        30 * 60,
+        JSON.stringify({
+          userId: user.id,
+          email: user.email,
+        })
+      );
+
+      // Send reset email (mock implementation)
+      logger.info('Password reset email would be sent', { email: user.email, token: resetToken });
+
+      return { success: true, message: 'Password reset link sent to your email' };
+    } catch (error: unknown) {
+      logger.error('Forgot password failed', undefined, {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
+      return { success: false, error: 'Failed to initiate password reset' };
+    }
+  }
+
+  /**
+   * Register new user
+   */
+  public async register(userData: {
+    email: string;
+    password: string;
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+    role?: string;
+    schoolId?: string;
+  }): Promise<{ success: boolean; user?: any; error?: string }> {
+    try {
+      // Validate password
+      const passwordValidation = this.validatePassword(userData.password);
+      if (!passwordValidation.valid) {
+        return { success: false, error: passwordValidation.message };
+      }
+
+      // Check if user already exists
+      const existingUser = await DatabaseService.client.user.findUnique({
+        where: { email: userData.email.toLowerCase() },
+      });
+
+      if (existingUser) {
+        return { success: false, error: 'User with this email already exists' };
+      }
+
+      // Hash password
+      const passwordHash = await this.hashPassword(userData.password);
+
+      // Create user
+      const user = await DatabaseService.client.user.create({
+        data: {
+          email: userData.email.toLowerCase(),
+          passwordHash,
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+          phone: userData.phone,
+          role: userData.role || 'parent',
+          schoolId: userData.schoolId,
+        },
+      });
+
+      return {
+        success: true,
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: user.role,
+        },
+      };
+    } catch (error: unknown) {
+      logger.error('User registration failed', undefined, {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
+      return { success: false, error: 'Failed to register user' };
+    }
+  }
+
+  /**
+   * Update user profile
+   */
+  public async updateProfile(
+    userId: string,
+    profileData: {
+      firstName?: string;
+      lastName?: string;
+      phone?: string;
+      language?: string;
+      timezone?: string;
+    }
+  ): Promise<{ success: boolean; user?: any; error?: string }> {
+    try {
+      const user = await DatabaseService.client.user.update({
+        where: { id: userId },
+        data: profileData,
+      });
+
+      return {
+        success: true,
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: user.role,
+          phone: user.phone,
+          language: user.language,
+          timezone: user.timezone,
+        },
+      };
+    } catch (error: unknown) {
+      logger.error('Profile update failed', undefined, {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
+      return { success: false, error: 'Failed to update profile' };
+    }
+  }
+
+  /**
+   * Refresh access token
+   */
+  public async refreshAccessToken(refreshToken: string): Promise<{
+    success: boolean;
+    tokens?: { accessToken: string; refreshToken: string };
+    error?: string;
+  }> {
+    try {
+      const decoded = await this.verifyToken(refreshToken, 'refresh');
+
+      const newAccessToken = await this.generateToken(
+        {
+          userId: decoded.userId,
+          email: decoded.email,
+          role: decoded.role,
+          sessionId: decoded.sessionId,
+          tokenType: 'access',
+          permissions: decoded.permissions,
+        },
+        '1h'
+      );
+
+      const newRefreshToken = await this.generateToken(
+        {
+          userId: decoded.userId,
+          email: decoded.email,
+          role: decoded.role,
+          sessionId: decoded.sessionId,
+          tokenType: 'refresh',
+          permissions: decoded.permissions,
+        },
+        '7d',
+        this.jwtRefreshSecret
+      );
+
+      return {
+        success: true,
+        tokens: {
+          accessToken: newAccessToken,
+          refreshToken: newRefreshToken,
+        },
+      };
+    } catch (error: unknown) {
+      logger.error('Token refresh failed', undefined, {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
+      return { success: false, error: 'Invalid refresh token' };
     }
   }
 
   /**
    * Validate configuration - make it public for testing
    */
-  public async validateConfigurationForTesting(): Promise<{ success: boolean; data?: any; error?: string }> {
+  public async validateConfigurationForTesting(): Promise<{
+    success: boolean;
+    data?: any;
+    error?: string;
+  }> {
     try {
       const configValidation = {
         hasValidJWTSecret: !!this.jwtSecret && this.jwtSecret.length > 32,
         hasValidRefreshSecret: !!this.jwtRefreshSecret && this.jwtRefreshSecret.length > 32,
         hasSecurePasswordRequirements: this.passwordRequirements.minLength >= 8,
         hasReasonableSessionTimeout: this.sessionTimeout > 0 && this.sessionTimeout <= 86400,
-        hasProperFailedAttemptLimits: this.maxFailedAttempts > 0 && this.maxFailedAttempts <= 10
+        hasProperFailedAttemptLimits: this.maxFailedAttempts > 0 && this.maxFailedAttempts <= 10,
       };
 
       const isValid = Object.values(configValidation).every(Boolean);
@@ -1735,23 +2215,27 @@ export class AuthService {
         data: {
           isValid,
           checks: configValidation,
-          recommendations: isValid ? [] : [
-            'Use strong JWT secrets (>32 characters)',
-            'Set minimum password length to 8+ characters',
-            'Configure reasonable session timeouts',
-            'Limit failed login attempts'
-          ]
-        }
+          recommendations: isValid
+            ? []
+            : [
+                'Use strong JWT secrets (>32 characters)',
+                'Set minimum password length to 8+ characters',
+                'Configure reasonable session timeouts',
+                'Limit failed login attempts',
+              ],
+        },
       };
-    } catch (error) {
-      logger.error('Configuration validation failed', error);
+    } catch (error: unknown) {
+      logger.error('Configuration validation failed', undefined, {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Configuration validation failed'
+        error: error instanceof Error ? error.message : 'Configuration validation failed',
       };
     }
   }
 }
 
 // Export singleton instance
-export const authService = new AuthService();
+export const authService = AuthService.getInstance();

@@ -7,7 +7,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 import { logger } from '@/utils/logger';
 import { createSuccessResponse, createErrorResponse, handleError } from '@/shared/response.utils';
-import { DatabaseService } from '@/services/database.service';
+import { DatabaseService } from '@/shared/database.service';
 
 /**
  * Order update request interface
@@ -50,8 +50,9 @@ interface OrderUpdateResponse {
  */
 async function validateOrderAccess(orderId: string, userId: string): Promise<any> {
   const database = DatabaseService.getInstance();
-  
-  const result = await database.query(`
+
+  const result = await database.query(
+    `
     SELECT o.id, o.orderNumber, o.studentId, o.schoolId, o.status, o.paymentStatus,
            o.deliveryDate, o.totalAmount, s.parentId,
            st.firstName, st.lastName
@@ -59,40 +60,46 @@ async function validateOrderAccess(orderId: string, userId: string): Promise<any
     LEFT JOIN users s ON o.studentId = s.id
     LEFT JOIN users st ON o.studentId = st.id
     WHERE o.id = $1
-  `, [orderId]);
-  
+  `,
+    [orderId]
+  );
+
   const order = result.rows[0];
-  
+
   if (!order) {
     throw new Error('Order not found');
   }
-  
+
   // Check if order can be modified
   if (['delivered', 'completed', 'cancelled'].includes(order.status)) {
     throw new Error(`Cannot modify order with status: ${order.status}`);
   }
-  
+
   // Check if payment is already processed
   if (order.paymentStatus === 'paid') {
     throw new Error('Cannot modify order after payment is processed');
   }
-  
+
   // Check if user has permission to update this order
-  const canUpdate = order.studentId === userId || // Student themselves
-                    order.parentId === userId;     // Parent of student
-  
+  const canUpdate =
+    order.studentId === userId || // Student themselves
+    order.parentId === userId; // Parent of student
+
   if (!canUpdate) {
     // Check if user is school staff with access
-    const staffAccessResult = await database.query(`
+    const staffAccessResult = await database.query(
+      `
       SELECT id, role FROM users 
       WHERE id = $1 AND schoolId = $2 AND role IN ('school_admin', 'admin', 'super_admin', 'staff') AND isActive = true
-    `, [userId, order.schoolId]);
-    
+    `,
+      [userId, order.schoolId]
+    );
+
     if (staffAccessResult.rows.length === 0) {
       throw new Error('Not authorized to update this order');
     }
   }
-  
+
   return order;
 }
 
@@ -103,21 +110,21 @@ function validateDeliveryDate(deliveryDate: Date, currentDeliveryDate: Date): vo
   const now = new Date();
   const minDate = new Date(now.getTime() + 12 * 60 * 60 * 1000); // 12 hours from now (less restrictive for updates)
   const maxFutureDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
-  
+
   if (deliveryDate < minDate) {
     throw new Error('Delivery date must be at least 12 hours in advance');
   }
-  
+
   if (deliveryDate > maxFutureDate) {
     throw new Error('Delivery date cannot be more than 30 days in advance');
   }
-  
+
   // Check if delivery date is a weekend (schools typically closed)
   const dayOfWeek = deliveryDate.getDay();
   if (dayOfWeek === 0 || dayOfWeek === 6) {
     throw new Error('Delivery is not available on weekends');
   }
-  
+
   // Check if trying to change to past date
   const currentDate = new Date(currentDeliveryDate);
   if (deliveryDate < currentDate && currentDate > now) {
@@ -133,90 +140,103 @@ async function validateOrderItemUpdates(
   schoolId: string,
   deliveryDate: Date,
   mealPeriod: string
-): Promise<{ validatedItems: any[], totalAmountChange: number }> {
+): Promise<{ validatedItems: any[]; totalAmountChange: number }> {
   const database = DatabaseService.getInstance();
-  
+
   if (!orderItems || orderItems.length === 0) {
     return { validatedItems: [], totalAmountChange: 0 };
   }
-  
+
   const validatedItems = [];
   let totalAmountChange = 0;
-  
+
   for (const item of orderItems) {
     if (item.action === 'remove') {
       if (!item.id) {
         throw new Error('Item ID required for remove action');
       }
-      
+
       // Get current item price to calculate reduction
-      const currentItemResult = await database.query(`
+      const currentItemResult = await database.query(
+        `
         SELECT totalPrice FROM order_items WHERE id = $1
-      `, [item.id]);
-      
+      `,
+        [item.id]
+      );
+
       if (currentItemResult.rows.length > 0) {
         totalAmountChange -= parseFloat(currentItemResult.rows[0].totalPrice);
       }
-      
+
       validatedItems.push({
         id: item.id,
-        action: 'remove'
+        action: 'remove',
       });
       continue;
     }
-    
+
     // Validate quantity
     if (!item.quantity || item.quantity <= 0) {
       throw new Error('Item quantity must be greater than 0');
     }
-    
+
     if (item.quantity > 10) {
       throw new Error('Maximum 10 quantity allowed per item');
     }
-    
+
     // Get menu item details
-    const menuItemResult = await database.query(`
+    const menuItemResult = await database.query(
+      `
       SELECT id, name, price, schoolId, isActive, 
              availableDays, preparationTime, maxOrderQuantity
       FROM menu_items 
       WHERE id = $1 AND schoolId = $2 AND isActive = true
-    `, [item.menuItemId, schoolId]);
-    
+    `,
+      [item.menuItemId, schoolId]
+    );
+
     const menuItem = menuItemResult.rows[0];
-    
+
     if (!menuItem) {
       throw new Error(`Menu item not found: ${item.menuItemId}`);
     }
-    
+
     // Check availability on delivery date
-    const deliveryDayName = deliveryDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+    const deliveryDayName = deliveryDate
+      .toLocaleDateString('en-US', { weekday: 'long' })
+      .toLowerCase();
     if (menuItem.availableDays && !menuItem.availableDays.includes(deliveryDayName)) {
       throw new Error(`${menuItem.name} is not available on ${deliveryDayName}`);
     }
-    
+
     // Check maximum order quantity
     if (menuItem.maxOrderQuantity && item.quantity > menuItem.maxOrderQuantity) {
-      throw new Error(`Maximum ${menuItem.maxOrderQuantity} items allowed per order for ${menuItem.name}`);
+      throw new Error(
+        `Maximum ${menuItem.maxOrderQuantity} items allowed per order for ${menuItem.name}`
+      );
     }
-    
+
     const itemTotal = menuItem.price * item.quantity;
-    
+
     if (item.action === 'add') {
       totalAmountChange += itemTotal;
     } else if (item.action === 'update' && item.id) {
       // Calculate difference from current item
-      const currentItemResult = await database.query(`
+      const currentItemResult = await database.query(
+        `
         SELECT totalPrice FROM order_items WHERE id = $1
-      `, [item.id]);
-      
+      `,
+        [item.id]
+      );
+
       if (currentItemResult.rows.length > 0) {
         const currentTotal = parseFloat(currentItemResult.rows[0].totalPrice);
-        totalAmountChange += (itemTotal - currentTotal);
+        totalAmountChange += itemTotal - currentTotal;
       } else {
         totalAmountChange += itemTotal; // Treat as new item if not found
       }
     }
-    
+
     validatedItems.push({
       id: item.id,
       menuItemId: item.menuItemId,
@@ -226,10 +246,10 @@ async function validateOrderItemUpdates(
       totalPrice: itemTotal,
       specialInstructions: item.specialInstructions,
       customizations: item.customizations,
-      action: item.action
+      action: item.action,
     });
   }
-  
+
   return { validatedItems, totalAmountChange };
 }
 
@@ -246,21 +266,13 @@ export const handler = async (
   try {
     // Only allow PUT method
     if (event.httpMethod !== 'PUT') {
-      return createErrorResponse(
-        'Method not allowed',
-        405,
-        'METHOD_NOT_ALLOWED'
-      );
+      return createErrorResponse('METHOD_NOT_ALLOWED', 'Method not allowed', 405);
     }
 
     // Extract orderId from path parameters
     const orderId = event.pathParameters?.orderId;
     if (!orderId) {
-      return createErrorResponse(
-        'Missing orderId in path parameters',
-        400,
-        'MISSING_ORDER_ID'
-      );
+      return createErrorResponse('MISSING_ORDER_ID', 'Missing orderId in path parameters', 400);
     }
 
     // Parse request body
@@ -270,25 +282,21 @@ export const handler = async (
     // Extract userId from event context (would come from JWT in real implementation)
     const userId = event.requestContext?.authorizer?.userId || event.headers?.['x-user-id'];
     if (!userId) {
-      return createErrorResponse(
-        'User authentication required',
-        401,
-        'AUTHENTICATION_REQUIRED'
-      );
+      return createErrorResponse('AUTHENTICATION_REQUIRED', 'User authentication required', 401);
     }
 
     // Validate order exists and user has permission
     const order = await validateOrderAccess(orderId, userId);
-    
+
     const database = DatabaseService.getInstance();
-    
+
     // Start tracking changes
     const updatedFields: string[] = [];
     let totalAmountChange = 0;
-    let itemsChanged = {
+    const itemsChanged = {
       added: 0,
       updated: 0,
-      removed: 0
+      removed: 0,
     };
 
     // Begin transaction
@@ -301,14 +309,17 @@ export const handler = async (
         if (isNaN(newDeliveryDate.getTime())) {
           throw new Error('Invalid delivery date format');
         }
-        
+
         validateDeliveryDate(newDeliveryDate, new Date(order.deliveryDate));
-        
-        await database.query(`
+
+        await database.query(
+          `
           UPDATE orders SET deliveryDate = $1, updatedAt = NOW()
           WHERE id = $2
-        `, [newDeliveryDate.toISOString().split('T')[0], orderId]);
-        
+        `,
+          [newDeliveryDate.toISOString().split('T')[0], orderId]
+        );
+
         updatedFields.push('deliveryDate');
       }
 
@@ -317,122 +328,146 @@ export const handler = async (
         if (!['breakfast', 'lunch', 'dinner', 'snack'].includes(body.mealPeriod)) {
           throw new Error('Invalid meal period. Must be one of: breakfast, lunch, dinner, snack');
         }
-        
-        await database.query(`
+
+        await database.query(
+          `
           UPDATE orders SET mealPeriod = $1, updatedAt = NOW()
           WHERE id = $2
-        `, [body.mealPeriod, orderId]);
-        
+        `,
+          [body.mealPeriod, orderId]
+        );
+
         updatedFields.push('mealPeriod');
       }
 
       // Update delivery instructions if provided
       if (body.deliveryInstructions !== undefined) {
-        await database.query(`
+        await database.query(
+          `
           UPDATE orders SET deliveryInstructions = $1, updatedAt = NOW()
           WHERE id = $2
-        `, [body.deliveryInstructions, orderId]);
-        
+        `,
+          [body.deliveryInstructions, orderId]
+        );
+
         updatedFields.push('deliveryInstructions');
       }
 
       // Update contact phone if provided
       if (body.contactPhone !== undefined) {
-        await database.query(`
+        await database.query(
+          `
           UPDATE orders SET contactPhone = $1, updatedAt = NOW()
           WHERE id = $2
-        `, [body.contactPhone, orderId]);
-        
+        `,
+          [body.contactPhone, orderId]
+        );
+
         updatedFields.push('contactPhone');
       }
 
       // Update order items if provided
       if (body.orderItems && body.orderItems.length > 0) {
-        const deliveryDate = body.deliveryDate ? new Date(body.deliveryDate) : new Date(order.deliveryDate);
+        const deliveryDate = body.deliveryDate
+          ? new Date(body.deliveryDate)
+          : new Date(order.deliveryDate);
         const mealPeriod = body.mealPeriod || order.mealPeriod;
-        
+
         const { validatedItems, totalAmountChange: amountChange } = await validateOrderItemUpdates(
           body.orderItems,
           order.schoolId,
           deliveryDate,
           mealPeriod
         );
-        
+
         totalAmountChange = amountChange;
-        
+
         // Process item changes
         for (const item of validatedItems) {
           if (item.action === 'remove') {
-            await database.query(`
+            await database.query(
+              `
               DELETE FROM order_items WHERE id = $1
-            `, [item.id]);
+            `,
+              [item.id]
+            );
             itemsChanged.removed++;
-            
           } else if (item.action === 'add') {
             const { v4: uuidv4 } = require('uuid');
             const orderItemId = uuidv4();
-            
-            await database.query(`
+
+            await database.query(
+              `
               INSERT INTO order_items (
                 id, orderId, menuItemId, quantity, unitPrice, totalPrice,
                 specialInstructions, customizations, createdAt, updatedAt
               ) VALUES (
                 $1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW()
               )
-            `, [
-              orderItemId,
-              orderId,
-              item.menuItemId,
-              item.quantity,
-              item.unitPrice,
-              item.totalPrice,
-              item.specialInstructions,
-              JSON.stringify(item.customizations || {})
-            ]);
+            `,
+              [
+                orderItemId,
+                orderId,
+                item.menuItemId,
+                item.quantity,
+                item.unitPrice,
+                item.totalPrice,
+                item.specialInstructions,
+                JSON.stringify(item.customizations || {}),
+              ]
+            );
             itemsChanged.added++;
-            
           } else if (item.action === 'update' && item.id) {
-            await database.query(`
+            await database.query(
+              `
               UPDATE order_items 
               SET quantity = $1, totalPrice = $2, specialInstructions = $3,
                   customizations = $4, updatedAt = NOW()
               WHERE id = $5
-            `, [
-              item.quantity,
-              item.totalPrice,
-              item.specialInstructions,
-              JSON.stringify(item.customizations || {}),
-              item.id
-            ]);
+            `,
+              [
+                item.quantity,
+                item.totalPrice,
+                item.specialInstructions,
+                JSON.stringify(item.customizations || {}),
+                item.id,
+              ]
+            );
             itemsChanged.updated++;
           }
         }
-        
+
         updatedFields.push('orderItems');
       }
 
       // Update total amount if items changed
       if (totalAmountChange !== 0) {
         const newTotalAmount = parseFloat(order.totalAmount) + totalAmountChange;
-        
+
         if (newTotalAmount < 0) {
           throw new Error('Order total amount cannot be negative');
         }
-        
-        await database.query(`
+
+        await database.query(
+          `
           UPDATE orders SET totalAmount = $1, updatedAt = NOW()
           WHERE id = $2
-        `, [newTotalAmount, orderId]);
-        
+        `,
+          [newTotalAmount, orderId]
+        );
+
         updatedFields.push('totalAmount');
       }
 
       // Get updated order details
-      const updatedOrderResult = await database.query(`
+      const updatedOrderResult = await database.query(
+        `
         SELECT id, orderNumber, status, paymentStatus, totalAmount, updatedAt
         FROM orders WHERE id = $1
-      `, [orderId]);
-      
+      `,
+        [orderId]
+      );
+
       const updatedOrder = updatedOrderResult.rows[0];
 
       // Commit transaction
@@ -444,36 +479,34 @@ export const handler = async (
         status: updatedOrder.status,
         paymentStatus: updatedOrder.paymentStatus,
         totalAmount: parseFloat(updatedOrder.totalAmount),
-        itemsChanged: itemsChanged,
-        updatedFields: updatedFields,
-        updatedAt: updatedOrder.updatedAt
+        itemsChanged,
+        updatedFields,
+        updatedAt: updatedOrder.updatedAt,
       };
 
       const duration = Date.now() - startTime;
-      logger.logFunctionEnd("handler", { statusCode: 200, duration });
+      logger.logFunctionEnd('handler', { statusCode: 200, duration });
       logger.info('Order updated successfully', {
-        orderId: orderId,
-        updatedFields: updatedFields,
-        itemsChanged: itemsChanged,
-        totalAmountChange: totalAmountChange
+        orderId,
+        updatedFields,
+        itemsChanged,
+        totalAmountChange,
       });
 
       return createSuccessResponse({
         data: {
-          order: response
+          order: response,
         },
-        message: `Order updated successfully. Fields changed: ${updatedFields.join(', ')}`
+        message: `Order updated successfully. Fields changed: ${updatedFields.join(', ')}`,
       });
-
     } catch (transactionError) {
       // Rollback transaction on error
       await database.query('ROLLBACK');
       throw transactionError;
     }
-
-  } catch (error) {
+  } catch (error: unknown) {
     const duration = Date.now() - startTime;
-    logger.logFunctionEnd("handler", { statusCode: 500, duration });
+    logger.logFunctionEnd('handler', { statusCode: 500, duration });
     return handleError(error, 'Failed to update order');
   }
 };

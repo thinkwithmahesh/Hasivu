@@ -1,0 +1,115 @@
+/**
+ * HASIVU Platform - Centralized Service Imports
+ * Phase 1.3: Import Path Centralization
+ * Standardized import paths for all services
+ */
+
+// Core Services
+export { DatabaseService, databaseService } from '../services/database.service';
+export { RedisService } from '../services/redis.service';
+export { AuthService, authService } from '../services/auth.service';
+export { NotificationService, notificationService } from '../services/notification.service';
+
+// Business Logic Services
+export { AnalyticsService } from '../services/analytics.service';
+export { BusinessMetricsService } from '../services/business-metrics.service';
+export { BusinessMetricsDashboardService } from '../services/business-metrics-dashboard.service';
+export { CrossSchoolAnalyticsService } from '../services/cross-school-analytics.service';
+export { PaymentService } from '../services/payment.service';
+export { PaymentAnalyticsService } from '../services/payment-analytics.service';
+export { OrderService } from '../services/order.service';
+export { EnhancedOrderService } from '../services/order.service.enhanced';
+export { MenuService } from '../services/menu.service';
+export { MenuItemService } from '../services/menuItem.service';
+export { MenuPlanService } from '../services/menuPlan.service';
+export { DailyMenuService } from '../services/dailyMenu.service';
+export { NutritionService } from '../services/nutrition.service';
+export { NutritionalComplianceService } from '../services/nutritional-compliance.service';
+export { InventoryService } from '../services/inventory.service';
+export { KitchenService } from '../services/kitchen.service';
+export { ProductionService } from '../services/production.service';
+export { QualityControlService } from '../services/quality-control.service';
+export { StaffManagementService } from '../services/staff-management.service';
+
+// Infrastructure Services
+export { CacheService } from '../services/cache.service';
+export { CacheManager, cacheManager } from '../services/cache-manager.service';
+export { CircuitBreaker, CircuitBreakerRegistry } from '../services/circuit-breaker.service';
+export { HealthMonitorService } from '../services/health-monitor.service';
+export { ComprehensiveHealthMonitorService } from '../services/comprehensive-health-monitor.service';
+export { GracefulDegradationService } from '../services/graceful-degradation.service';
+export { IntelligentAlertingService } from '../services/intelligent-alerting.service';
+export { MetricsCollectionService } from '../services/metrics-collection.service';
+export { MetricsCollector, metricsCollector } from '../services/metrics.service';
+export { MonitoringDashboardService } from '../services/monitoring-dashboard.service';
+export { PerformanceService } from '../services/performance.service';
+export { QueueManager } from '../services/queue-manager.service';
+export { RetryService } from '../services/retry.service';
+export { ServiceInitializationService } from '../services/service-initialization.service';
+export { StructuredLoggingService } from '../services/structured-logging.service';
+export { LoggingService } from '../services/logging.service';
+
+// Communication Services
+export { WhatsAppService } from '../services/whatsapp.service';
+export { SocketService } from '../services/socket.service';
+export { WebSocketService } from '../services/websocket.service';
+
+// Security Services
+export { SecurityService } from '../services/security.service';
+export { FraudDetectionService } from '../services/fraud-detection.service';
+export { ValidationService } from '../services/validation.service';
+export { AuditService } from '../services/audit.service';
+
+// User Management Services
+export { UserService } from '../services/user.service';
+export { CustomerService } from '../services/customer.service';
+export { SessionService } from '../services/session.service';
+
+// Payment & Subscription Services
+export { PaymentGatewayService } from '../services/paymentGateway.service';
+export { SubscriptionService } from '../services/subscription.service';
+export { WalletService } from '../services/wallet.service';
+export { CostMonitoringService } from '../services/cost-monitoring.service';
+
+// RFID Services
+export { RFIDService } from '../services/rfid.service';
+
+// Vendor Marketplace Services
+export { VendorMarketplaceService } from '../services/vendor-marketplace.service';
+export { AIProcurementEngine } from '../services/vendor/ai-procurement-engine';
+export { SupplyChainAutomationService } from '../services/vendor/supply-chain-automation.service';
+export { VendorIntelligenceService } from '../services/vendor/vendor-intelligence.service';
+
+// ML Services
+export { MLBaseService } from '../services/ml/ml-base.service';
+export { AutoMLService } from '../services/ml/automl.service';
+export { DemandForecastingService } from '../services/ml/demand-forecasting.service';
+export { ExplainabilityService } from '../services/ml/explainability.service';
+export { FeatureEngineeringService } from '../services/ml/feature-engineering.service';
+export { FederatedLearningService } from '../services/ml/federated-learning.service';
+export { MLflowService } from '../services/ml/mlflow.service';
+export { ModelArtifactService } from '../services/ml/model-artifact.service';
+export { ModelMonitoringService } from '../services/ml/model-monitoring.service';
+export { PredictiveAnalyticsService } from '../services/ml/predictive-analytics.service';
+export { RealtimePredictionService } from '../services/ml/realtime-prediction.service';
+export { RecommendationEngine } from '../services/ml/recommendation-engine.service';
+export { StudentBehaviorService } from '../services/ml/student-behavior.service';
+
+// Advanced Reporting Services
+export { AdvancedReportingService } from '../services/advanced-reporting.service';
+export { AIInsightsEngine } from '../services/ai-insights.service';
+
+// Transaction Services
+export { TransactionService } from '../services/transaction.service';
+
+// Environment & Configuration Services
+// export { EnvironmentValidatorService } from '../services/environment-validator.service'; // TODO: Convert to TypeScript
+
+// Utility Services
+export { CryptoService } from '../services/crypto.service';
+
+// Legacy Services (for backward compatibility)
+export { enhancedDatabaseService } from '../services/enhanced-database.service';
+
+// Service Containers and Managers
+export { ServiceContainer } from '../container/ServiceContainer';

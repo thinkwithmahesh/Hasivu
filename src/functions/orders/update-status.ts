@@ -7,7 +7,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 import { logger } from '@/utils/logger';
 import { createSuccessResponse, createErrorResponse, handleError } from '@/shared/response.utils';
-import { DatabaseService } from '@/services/database.service';
+import { DatabaseService } from '@/shared/database.service';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
@@ -42,26 +42,26 @@ interface OrderStatusResponse {
  * Valid order status transitions
  */
 const ORDER_STATUS_TRANSITIONS: Record<string, string[]> = {
-  'pending': ['confirmed', 'cancelled'],
-  'confirmed': ['preparing', 'cancelled'],
-  'preparing': ['ready', 'cancelled'],
-  'ready': ['delivered', 'cancelled'],
-  'delivered': ['completed'],
-  'completed': [], // Final state
-  'cancelled': [] // Final state
+  pending: ['confirmed', 'cancelled'],
+  confirmed: ['preparing', 'cancelled'],
+  preparing: ['ready', 'cancelled'],
+  ready: ['delivered', 'cancelled'],
+  delivered: ['completed'],
+  completed: [], // Final state
+  cancelled: [], // Final state
 };
 
 /**
  * Status descriptions for notifications
  */
 const STATUS_DESCRIPTIONS: Record<string, string> = {
-  'pending': 'Order is pending confirmation',
-  'confirmed': 'Order has been confirmed and payment processed',
-  'preparing': 'Order is being prepared in the kitchen',
-  'ready': 'Order is ready for delivery',
-  'delivered': 'Order has been delivered to the student',
-  'completed': 'Order has been completed successfully',
-  'cancelled': 'Order has been cancelled'
+  pending: 'Order is pending confirmation',
+  confirmed: 'Order has been confirmed and payment processed',
+  preparing: 'Order is being prepared in the kitchen',
+  ready: 'Order is ready for delivery',
+  delivered: 'Order has been delivered to the student',
+  completed: 'Order has been completed successfully',
+  cancelled: 'Order has been cancelled',
 };
 
 /**
@@ -69,38 +69,45 @@ const STATUS_DESCRIPTIONS: Record<string, string> = {
  */
 async function validateOrderAccess(orderId: string, userId: string): Promise<any> {
   const database = DatabaseService.getInstance();
-  
-  const result = await database.query(`
+
+  const result = await database.query(
+    `
     SELECT o.id, o.orderNumber, o.studentId, o.schoolId, o.status, o.paymentStatus,
            s.parentId, st.firstName, st.lastName
     FROM orders o
     LEFT JOIN users s ON o.studentId = s.id
     LEFT JOIN users st ON o.studentId = st.id
     WHERE o.id = $1
-  `, [orderId]);
-  
+  `,
+    [orderId]
+  );
+
   const order = result.rows[0];
-  
+
   if (!order) {
     throw new Error('Order not found');
   }
-  
+
   // Check if user has permission to update this order
-  const canUpdate = order.studentId === userId || // Student themselves
-                    order.parentId === userId;     // Parent of student
-  
+  const canUpdate =
+    order.studentId === userId || // Student themselves
+    order.parentId === userId; // Parent of student
+
   if (!canUpdate) {
     // Check if user is school staff with access
-    const staffAccessResult = await database.query(`
+    const staffAccessResult = await database.query(
+      `
       SELECT id, role FROM users 
       WHERE id = $1 AND schoolId = $2 AND role IN ('school_admin', 'admin', 'super_admin', 'staff', 'kitchen_staff') AND isActive = true
-    `, [userId, order.schoolId]);
-    
+    `,
+      [userId, order.schoolId]
+    );
+
     if (staffAccessResult.rows.length === 0) {
       throw new Error('Not authorized to update this order');
     }
   }
-  
+
   return order;
 }
 
@@ -109,17 +116,17 @@ async function validateOrderAccess(orderId: string, userId: string): Promise<any
  */
 function validateStatusTransition(currentStatus: string, newStatus: string): void {
   const validStatuses = Object.keys(ORDER_STATUS_TRANSITIONS);
-  
+
   if (!validStatuses.includes(newStatus)) {
     throw new Error(`Invalid status '${newStatus}'. Valid statuses: ${validStatuses.join(', ')}`);
   }
-  
+
   const allowedTransitions = ORDER_STATUS_TRANSITIONS[currentStatus] || [];
-  
+
   if (!allowedTransitions.includes(newStatus)) {
     throw new Error(
       `Invalid status transition from '${currentStatus}' to '${newStatus}'. ` +
-      `Allowed transitions: ${allowedTransitions.join(', ') || 'none'}`
+        `Allowed transitions: ${allowedTransitions.join(', ') || 'none'}`
     );
   }
 }
@@ -135,34 +142,37 @@ async function createStatusHistory(
 ): Promise<any> {
   const database = DatabaseService.getInstance();
   const historyId = uuidv4();
-  
+
   try {
-    const result = await database.query(`
+    const result = await database.query(
+      `
       INSERT INTO order_status_history (
         id, orderId, status, notes, updatedBy, createdAt
       ) VALUES (
         $1, $2, $3, $4, $5, NOW()
       ) RETURNING *
-    `, [historyId, orderId, status, notes, updatedBy]);
-    
+    `,
+      [historyId, orderId, status, notes, updatedBy]
+    );
+
     return result.rows[0];
-  } catch (error) {
+  } catch (error: unknown) {
     // If order_status_history table doesn't exist, log the status change
     logger.warn('Order status history table not available, logging status change', {
       orderId,
       status,
       notes,
       updatedBy,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
     });
-    
+
     return {
       id: historyId,
       orderId,
       status,
       notes,
       updatedBy,
-      createdAt: new Date()
+      createdAt: new Date(),
     };
   }
 }
@@ -172,18 +182,21 @@ async function createStatusHistory(
  */
 async function getStatusHistory(orderId: string): Promise<any[]> {
   const database = DatabaseService.getInstance();
-  
+
   try {
-    const result = await database.query(`
+    const result = await database.query(
+      `
       SELECT id, status, notes, updatedBy, createdAt as timestamp
       FROM order_status_history
       WHERE orderId = $1
       ORDER BY createdAt DESC
       LIMIT 10
-    `, [orderId]);
-    
+    `,
+      [orderId]
+    );
+
     return result.rows;
-  } catch (error) {
+  } catch (error: unknown) {
     logger.warn('Order status history table not available', { orderId });
     return [];
   }
@@ -194,20 +207,23 @@ async function getStatusHistory(orderId: string): Promise<any[]> {
  */
 async function updatePaymentStatusIfNeeded(orderId: string, newStatus: string): Promise<void> {
   const database = DatabaseService.getInstance();
-  
+
   if (newStatus === 'confirmed') {
     try {
-      await database.query(`
+      await database.query(
+        `
         UPDATE orders 
         SET paymentStatus = 'paid'
         WHERE id = $1 AND paymentStatus = 'pending'
-      `, [orderId]);
-      
+      `,
+        [orderId]
+      );
+
       logger.info('Payment status updated to paid for confirmed order', { orderId });
-    } catch (error) {
-      logger.warn('Failed to update payment status', { 
-        orderId, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+    } catch (error: unknown) {
+      logger.warn('Failed to update payment status', {
+        orderId,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
@@ -225,26 +241,24 @@ async function sendStatusNotification(
   try {
     // TODO: Integrate with notification service
     const statusMessage = STATUS_DESCRIPTIONS[newStatus] || `Order status updated to ${newStatus}`;
-    
+
     logger.info('Order status notification should be sent', {
       orderId,
       orderNumber,
       newStatus,
       studentName,
-      message: statusMessage
+      message: statusMessage,
     });
-    
+
     // In production, integrate with:
     // - Email service
     // - SMS service
     // - WhatsApp service
     // - Push notification service
-    
-  } catch (error) {
-    logger.error('Failed to send status notification', {
-      error: error instanceof Error ? error.message : 'Unknown error',
+  } catch (error: unknown) {
+    logger.error('Failed to send status notification', error instanceof Error ? error : undefined, {
       orderId,
-      newStatus
+      newStatus,
     });
     // Don't fail status update if notification fails
   }
@@ -263,21 +277,13 @@ export const handler = async (
   try {
     // Only allow PUT method
     if (event.httpMethod !== 'PUT') {
-      return createErrorResponse(
-        'Method not allowed',
-        405,
-        'METHOD_NOT_ALLOWED'
-      );
+      return createErrorResponse('METHOD_NOT_ALLOWED', 'Method not allowed', 405);
     }
 
     // Extract orderId from path parameters
     const orderId = event.pathParameters?.orderId;
     if (!orderId) {
-      return createErrorResponse(
-        'Missing orderId in path parameters',
-        400,
-        'MISSING_ORDER_ID'
-      );
+      return createErrorResponse('MISSING_ORDER_ID', 'Missing orderId in path parameters', 400);
     }
 
     // Parse request body
@@ -288,34 +294,22 @@ export const handler = async (
     const { status, notes, reason } = body;
 
     if (!status) {
-      return createErrorResponse(
-        'Missing required field: status',
-        400,
-        'MISSING_STATUS'
-      );
+      return createErrorResponse('MISSING_STATUS', 'Missing required field: status', 400);
     }
 
     // Extract userId from event context (would come from JWT in real implementation)
     const userId = event.requestContext?.authorizer?.userId || event.headers?.['x-user-id'];
     if (!userId) {
-      return createErrorResponse(
-        'User authentication required',
-        401,
-        'AUTHENTICATION_REQUIRED'
-      );
+      return createErrorResponse('AUTHENTICATION_REQUIRED', 'User authentication required', 401);
     }
 
     // Validate order exists and user has permission
     const order = await validateOrderAccess(orderId, userId);
     const currentStatus = order.status;
-    
+
     // Check if status is actually changing
     if (currentStatus === status) {
-      return createErrorResponse(
-        `Order is already in '${status}' status`,
-        400,
-        'STATUS_UNCHANGED'
-      );
+      return createErrorResponse('STATUS_UNCHANGED', `Order is already in '${status}' status`, 400);
     }
 
     // Validate status transition
@@ -323,18 +317,21 @@ export const handler = async (
 
     // Update order status in database
     const database = DatabaseService.getInstance();
-    
+
     // Begin transaction
     await database.query('BEGIN');
 
     try {
       // Update order status
-      const updateResult = await database.query(`
+      const updateResult = await database.query(
+        `
         UPDATE orders 
         SET status = $1, updatedAt = NOW()
         WHERE id = $2
         RETURNING *
-      `, [status, orderId]);
+      `,
+        [status, orderId]
+      );
 
       const updatedOrder = updateResult.rows[0];
 
@@ -364,41 +361,39 @@ export const handler = async (
       );
 
       const response: OrderStatusResponse = {
-        orderId: orderId,
+        orderId,
         orderNumber: order.orderNumber,
         previousStatus: currentStatus,
         newStatus: status,
-        statusHistory: statusHistory,
+        statusHistory,
         updatedBy: userId,
-        updatedAt: updatedOrder.updatedAt
+        updatedAt: updatedOrder.updatedAt,
       };
 
       const duration = Date.now() - startTime;
-      logger.logFunctionEnd("handler", { statusCode: 200, duration });
+      logger.logFunctionEnd('handler', { statusCode: 200, duration });
       logger.info('Order status updated successfully', {
-        orderId: orderId,
+        orderId,
         orderNumber: order.orderNumber,
         previousStatus: currentStatus,
         newStatus: status,
-        updatedBy: userId
+        updatedBy: userId,
       });
 
       return createSuccessResponse({
         data: {
-          orderStatus: response
+          orderStatus: response,
         },
-        message: `Order status updated from '${currentStatus}' to '${status}'`
+        message: `Order status updated from '${currentStatus}' to '${status}'`,
       });
-
     } catch (transactionError) {
       // Rollback transaction on error
       await database.query('ROLLBACK');
       throw transactionError;
     }
-
-  } catch (error) {
+  } catch (error: unknown) {
     const duration = Date.now() - startTime;
-    logger.logFunctionEnd("handler", { statusCode: 500, duration });
+    logger.logFunctionEnd('handler', { statusCode: 500, duration });
     return handleError(error, 'Failed to update order status');
   }
 };

@@ -41,7 +41,7 @@ interface EnterpriseMetrics {
 
 class HASIVUEnterpriseReporter implements Reporter {
   private config!: FullConfig;
-  private metrics: EnterpriseMetrics = {
+  private metrics: _EnterpriseMetrics =  {
     totalTests: 0,
     passedTests: 0,
     failedTests: 0,
@@ -63,23 +63,23 @@ class HASIVUEnterpriseReporter implements Reporter {
   };
 
   onBegin(config: FullConfig) {
-    this.config = config;
+    this._config =  config;
     console.log(`🏫 HASIVU Enterprise Testing Framework v2.0`);
     console.log(`🎨 Brand Colors: ${BRAND_COLORS.primary.vibrantBlue}, ${BRAND_COLORS.primary.deepGreen}`);
     console.log(`🚀 Starting test execution across ${config.projects.length} projects...`);
   }
 
   onTestBegin(test: TestCase) {
-    const projectName = test.parent.project()?.name || 'Unknown';
-    const testCategory = this.categorizeTest(test.title, projectName);
+    const _projectName =  test.parent.project()?.name || 'Unknown';
+    const _testCategory =  this.categorizeTest(test.title, projectName);
     
     console.log(`🧪 [${projectName}] ${testCategory} ${test.title}`);
     this.metrics.totalTests++;
   }
 
   onTestEnd(test: TestCase, result: TestResult) {
-    const projectName = test.parent.project()?.name || 'Unknown';
-    const duration = result.duration;
+    const _projectName =  test.parent.project()?.name || 'Unknown';
+    const _duration =  result.duration;
 
     // Update metrics based on test result
     switch (result.status) {
@@ -112,8 +112,8 @@ class HASIVUEnterpriseReporter implements Reporter {
   }
 
   async onEnd(result: FullResult) {
-    const successRate = ((this.metrics.passedTests / this.metrics.totalTests) * 100).toFixed(1);
-    const totalDuration = (result.duration / 1000).toFixed(1);
+    const _successRate =  ((this.metrics.passedTests / this.metrics.totalTests) * 100).toFixed(1);
+    const _totalDuration =  (result.duration / 1000).toFixed(1);
 
     console.log('\n🏆 HASIVU Enterprise Test Results Summary');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -143,13 +143,11 @@ class HASIVUEnterpriseReporter implements Reporter {
     await this.generateEnterpriseReport();
 
     // Final status
-    const statusIcon = result.status === 'passed' ? '🎉' : result.status === 'failed' ? '🚨' : '⚠️';
+    const _statusIcon =  result.status 
     console.log(`\n${statusIcon} Final Status: ${result.status.toUpperCase()}`);
     
-    if (result.status === 'passed') {
-      console.log('🚀 All quality gates passed! Ready for production deployment.');
-    } else if (result.status === 'failed') {
-      console.log('🔍 Quality gates failed. Review test results and fix issues before deployment.');
+    if (result._status = 
+    } else if (result._status = 
     }
 
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -203,8 +201,8 @@ class HASIVUEnterpriseReporter implements Reporter {
     }
 
     // Track user role coverage
-    const roles = ['Admin', 'Parent', 'Teacher', 'Student', 'Vendor', 'Kitchen'];
-    roles.forEach(role => {
+    const _roles =  ['Admin', 'Parent', 'Teacher', 'Student', 'Vendor', 'Kitchen'];
+    roles.forEach(_role = > {
       if (test.title.includes(role.toLowerCase()) || projectName.includes(role)) {
         if (!this.metrics.coverageMetrics.userRoles.includes(role)) {
           this.metrics.coverageMetrics.userRoles.push(role);
@@ -213,8 +211,8 @@ class HASIVUEnterpriseReporter implements Reporter {
     });
 
     // Track feature coverage
-    const features = ['Auth', 'Menu', 'Orders', 'RFID', 'Payment', 'Dashboard', 'Analytics'];
-    features.forEach(feature => {
+    const _features =  ['Auth', 'Menu', 'Orders', 'RFID', 'Payment', 'Dashboard', 'Analytics'];
+    features.forEach(_feature = > {
       if (test.title.toLowerCase().includes(feature.toLowerCase())) {
         if (!this.metrics.coverageMetrics.features.includes(feature)) {
           this.metrics.coverageMetrics.features.push(feature);
@@ -224,7 +222,7 @@ class HASIVUEnterpriseReporter implements Reporter {
   }
 
   private async generateEnterpriseReport() {
-    const reportData = {
+    const _reportData =  {
       timestamp: new Date().toISOString(),
       framework: 'HASIVU Enterprise Playwright Framework v2.0',
       brandColors: {
@@ -235,14 +233,9 @@ class HASIVUEnterpriseReporter implements Reporter {
       qualityGates: {
         performanceCompliance: this.metrics.performanceMetrics.avgLCP < PERFORMANCE_BUDGETS.coreWebVitals.LCP,
         accessibilityCompliance: this.metrics.accessibilityScore > 90,
-        visualRegressionCompliance: this.metrics.visualRegressionIssues === 0,
-        overallPassRate: (this.metrics.passedTests / this.metrics.totalTests) * 100,
-      },
-      recommendations: this.generateRecommendations(),
-    };
-
+        visualRegressionCompliance: this.metrics.visualRegressionIssues 
     // Save JSON report
-    const reportDir = 'test-results';
+    const _reportDir =  'test-results';
     if (!fs.existsSync(reportDir)) {
       fs.mkdirSync(reportDir, { recursive: true });
     }
@@ -257,18 +250,11 @@ class HASIVUEnterpriseReporter implements Reporter {
   }
 
   private async generateHTMLReport(data: any) {
-    const successRate = ((data.metrics.passedTests / data.metrics.totalTests) * 100).toFixed(1);
+    const _successRate =  ((data.metrics.passedTests / data.metrics.totalTests) * 100).toFixed(1);
     
-    const htmlContent = `
+    const _htmlContent =  `
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HASIVU Enterprise Test Report</title>
-    <style>
-        :root {
-            --brand-primary: ${data.brandColors.primary};
+<html lang
             --brand-secondary: ${data.brandColors.secondary};
         }
         body { 
@@ -322,47 +308,13 @@ class HASIVUEnterpriseReporter implements Reporter {
     </style>
 </head>
 <body>
-    <div class="header">
+    <div _class = "header">
         <h1>🏫 HASIVU Enterprise Test Report</h1>
         <p>${data.framework}</p>
         <p>Generated: ${new Date(data.timestamp).toLocaleString()}</p>
     </div>
     
-    <div class="metrics">
-        <div class="metric-card">
-            <div class="metric-title">Total Tests</div>
-            <div class="metric-value">${data.metrics.totalTests}</div>
-            <div class="metric-change">Comprehensive Coverage</div>
-        </div>
-        <div class="metric-card">
-            <div class="metric-title">Success Rate</div>
-            <div class="metric-value ${successRate >= 95 ? 'success' : successRate >= 85 ? 'warning' : 'error'}">${successRate}%</div>
-            <div class="metric-change">${data.metrics.passedTests}/${data.metrics.totalTests} passed</div>
-        </div>
-        <div class="metric-card">
-            <div class="metric-title">Performance</div>
-            <div class="metric-value">${data.metrics.performanceMetrics.avgLCP}ms</div>
-            <div class="metric-change">Avg LCP (Core Web Vitals)</div>
-        </div>
-        <div class="metric-card">
-            <div class="metric-title">Browser Coverage</div>
-            <div class="metric-value">${data.metrics.coverageMetrics.browsers.length}</div>
-            <div class="metric-change">${data.metrics.coverageMetrics.browsers.join(', ')}</div>
-        </div>
-        <div class="metric-card">
-            <div class="metric-title">User Roles</div>
-            <div class="metric-value">${data.metrics.coverageMetrics.userRoles.length}</div>
-            <div class="metric-change">${data.metrics.coverageMetrics.userRoles.join(', ')}</div>
-        </div>
-        <div class="metric-card">
-            <div class="metric-title">Features Tested</div>
-            <div class="metric-value">${data.metrics.coverageMetrics.features.length}</div>
-            <div class="metric-change">${data.metrics.coverageMetrics.features.join(', ')}</div>
-        </div>
-    </div>
-</body>
-</html>`;
-
+    <div class
     await fs.promises.writeFile(
       'test-results/hasivu-enterprise-report.html',
       htmlContent

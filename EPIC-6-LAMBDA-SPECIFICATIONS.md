@@ -5,19 +5,21 @@
 **Total Functions**: 21 Lambda functions across 4 stories  
 **Runtime**: Node.js 18.x (ARM64 architecture)  
 **Integration**: Extends Epic 5's payment infrastructure  
-**Deployment**: Serverless Framework with TypeScript  
+**Deployment**: Serverless Framework with TypeScript
 
 ---
 
 ## 🔄 Story 6.1: Multi-Channel Notification Infrastructure (6 Functions)
 
 ### 1. notification-orchestrator
+
 **Purpose**: Central routing and channel selection for all notifications  
 **Complexity**: High  
 **Memory**: 1024MB  
-**Timeout**: 60s  
+**Timeout**: 60s
 
 #### Function Specification
+
 ```yaml
 Handler: src/functions/notifications/notification-orchestrator.handler
 Events:
@@ -25,7 +27,7 @@ Events:
   - HTTP: POST /notifications/send
   - HTTP: POST /notifications/send-bulk
   - Schedule: rate(5 minutes) # Health check and queue processing
-  
+
 Environment Variables:
   FUNCTION_NAME: notification-orchestrator
   USER_PREFERENCES_TABLE: user-notification-preferences-${stage}
@@ -34,6 +36,7 @@ Environment Variables:
 ```
 
 #### Key Features
+
 ```typescript
 interface NotificationRequest {
   userId: string;
@@ -58,18 +61,21 @@ interface ChannelSelectionStrategy {
 ```
 
 #### Integration Points
+
 - **Epic 5**: Payment event notifications (success, failure, refund)
 - **User Preferences**: DynamoDB table for channel preferences
 - **Analytics**: Real-time delivery tracking via SNS
 - **Template Engine**: Dynamic content rendering
 
 ### 2. sms-handler
+
 **Purpose**: SMS delivery via AWS SNS with carrier optimization  
 **Complexity**: Medium  
 **Memory**: 512MB  
-**Timeout**: 30s  
+**Timeout**: 30s
 
 #### Function Specification
+
 ```yaml
 Handler: src/functions/notifications/sms-handler.handler
 Events:
@@ -85,6 +91,7 @@ Environment Variables:
 ```
 
 #### Key Features
+
 ```typescript
 interface SMSDeliveryRequest {
   phoneNumber: string;
@@ -104,12 +111,14 @@ interface CarrierOptimization {
 ```
 
 ### 3. email-handler
+
 **Purpose**: Email delivery via AWS SES with template management  
 **Complexity**: Medium  
 **Memory**: 512MB  
-**Timeout**: 45s  
+**Timeout**: 45s
 
 #### Function Specification
+
 ```yaml
 Handler: src/functions/notifications/email-handler.handler
 Events:
@@ -127,6 +136,7 @@ Environment Variables:
 ```
 
 #### Key Features
+
 ```typescript
 interface EmailDeliveryRequest {
   recipients: EmailRecipient[];
@@ -147,12 +157,14 @@ interface EmailTrackingCapabilities {
 ```
 
 ### 4. whatsapp-handler
+
 **Purpose**: WhatsApp Business API integration with template validation  
 **Complexity**: High  
 **Memory**: 1024MB  
-**Timeout**: 60s  
+**Timeout**: 60s
 
 #### Function Specification
+
 ```yaml
 Handler: src/functions/notifications/whatsapp-handler.handler
 Events:
@@ -171,6 +183,7 @@ Environment Variables:
 ```
 
 #### Key Features
+
 ```typescript
 interface WhatsAppMessageRequest {
   phoneNumber: string;
@@ -190,12 +203,14 @@ interface WhatsAppTemplateValidation {
 ```
 
 ### 5. push-notification-handler
+
 **Purpose**: Mobile push notifications via Firebase/APNS  
 **Complexity**: High  
 **Memory**: 512MB  
-**Timeout**: 30s  
+**Timeout**: 30s
 
 #### Function Specification
+
 ```yaml
 Handler: src/functions/notifications/push-notification-handler.handler
 Events:
@@ -213,6 +228,7 @@ Environment Variables:
 ```
 
 #### Key Features
+
 ```typescript
 interface PushNotificationRequest {
   deviceTokens: string[];
@@ -234,12 +250,14 @@ interface PushNotificationCapabilities {
 ```
 
 ### 6. notification-status-tracker
+
 **Purpose**: Delivery status monitoring and retry management  
 **Complexity**: Medium  
 **Memory**: 1024MB  
-**Timeout**: 60s  
+**Timeout**: 60s
 
 #### Function Specification
+
 ```yaml
 Handler: src/functions/notifications/notification-status-tracker.handler
 Events:
@@ -261,12 +279,14 @@ Environment Variables:
 ## 🔄 Story 6.2: Real-Time Communication Hub (5 Functions)
 
 ### 7. websocket-connection-manager
+
 **Purpose**: WebSocket connection lifecycle management  
 **Complexity**: High  
 **Memory**: 512MB  
-**Timeout**: 30s  
+**Timeout**: 30s
 
 #### Function Specification
+
 ```yaml
 Handler: src/functions/realtime/websocket-connection-manager.handler
 Events:
@@ -283,6 +303,7 @@ Environment Variables:
 ```
 
 #### Key Features
+
 ```typescript
 interface WebSocketConnection {
   connectionId: string;
@@ -303,12 +324,14 @@ interface ConnectionManagement {
 ```
 
 ### 8. real-time-message-router
+
 **Purpose**: Event-driven message routing and broadcasting  
 **Complexity**: High  
 **Memory**: 1024MB  
-**Timeout**: 30s  
+**Timeout**: 30s
 
 #### Function Specification
+
 ```yaml
 Handler: src/functions/realtime/real-time-message-router.handler
 Events:
@@ -325,6 +348,7 @@ Environment Variables:
 ```
 
 #### Key Features
+
 ```typescript
 interface RealTimeMessage {
   messageId: string;
@@ -346,12 +370,14 @@ interface BroadcastCapabilities {
 ```
 
 ### 9. chat-message-handler
+
 **Purpose**: In-app chat functionality with message persistence  
 **Complexity**: Medium  
 **Memory**: 512MB  
-**Timeout**: 30s  
+**Timeout**: 30s
 
 #### Function Specification
+
 ```yaml
 Handler: src/functions/realtime/chat-message-handler.handler
 Events:
@@ -369,6 +395,7 @@ Environment Variables:
 ```
 
 #### Key Features
+
 ```typescript
 interface ChatMessage {
   messageId: string;
@@ -393,12 +420,14 @@ interface ChatCapabilities {
 ```
 
 ### 10. presence-manager
+
 **Purpose**: Online/offline status tracking and user presence  
 **Complexity**: Medium  
 **Memory**: 256MB  
-**Timeout**: 15s  
+**Timeout**: 15s
 
 #### Function Specification
+
 ```yaml
 Handler: src/functions/realtime/presence-manager.handler
 Events:
@@ -415,12 +444,14 @@ Environment Variables:
 ```
 
 ### 11. real-time-analytics
+
 **Purpose**: Live communication metrics and engagement tracking  
 **Complexity**: Medium  
 **Memory**: 1024MB  
-**Timeout**: 60s  
+**Timeout**: 60s
 
 #### Function Specification
+
 ```yaml
 Handler: src/functions/realtime/real-time-analytics.handler
 Events:
@@ -441,12 +472,14 @@ Environment Variables:
 ## 🎨 Story 6.3: Template Management & Personalization (5 Functions)
 
 ### 12. template-manager
+
 **Purpose**: CRUD operations for notification templates  
 **Complexity**: Medium  
 **Memory**: 512MB  
-**Timeout**: 30s  
+**Timeout**: 30s
 
 #### Function Specification
+
 ```yaml
 Handler: src/functions/templates/template-manager.handler
 Events:
@@ -464,6 +497,7 @@ Environment Variables:
 ```
 
 #### Key Features
+
 ```typescript
 interface NotificationTemplate {
   templateId: string;
@@ -489,12 +523,14 @@ interface TemplateContent {
 ```
 
 ### 13. personalization-engine
+
 **Purpose**: AI-powered content personalization  
 **Complexity**: High  
 **Memory**: 2048MB  
-**Timeout**: 120s  
+**Timeout**: 120s
 
 #### Function Specification
+
 ```yaml
 Handler: src/functions/templates/personalization-engine.handler
 Events:
@@ -512,6 +548,7 @@ Environment Variables:
 ```
 
 #### Key Features
+
 ```typescript
 interface PersonalizationRequest {
   userId: string;
@@ -538,12 +575,14 @@ interface AIPersonalizationCapabilities {
 ```
 
 ### 14. template-renderer
+
 **Purpose**: Dynamic template rendering with context injection  
 **Complexity**: Medium  
 **Memory**: 512MB  
-**Timeout**: 30s  
+**Timeout**: 30s
 
 #### Function Specification
+
 ```yaml
 Handler: src/functions/templates/template-renderer.handler
 Events:
@@ -559,6 +598,7 @@ Environment Variables:
 ```
 
 #### Key Features
+
 ```typescript
 interface TemplateRenderRequest {
   templateId: string;
@@ -578,12 +618,14 @@ interface RenderingCapabilities {
 ```
 
 ### 15. content-validator
+
 **Purpose**: Template validation and compliance checking  
 **Complexity**: Medium  
 **Memory**: 256MB  
-**Timeout**: 30s  
+**Timeout**: 30s
 
 #### Function Specification
+
 ```yaml
 Handler: src/functions/templates/content-validator.handler
 Events:
@@ -598,12 +640,14 @@ Environment Variables:
 ```
 
 ### 16. localization-handler
+
 **Purpose**: Multi-language support and cultural adaptation  
 **Complexity**: Medium  
 **Memory**: 512MB  
-**Timeout**: 45s  
+**Timeout**: 45s
 
 #### Function Specification
+
 ```yaml
 Handler: src/functions/templates/localization-handler.handler
 Events:
@@ -623,12 +667,14 @@ Environment Variables:
 ## 📊 Story 6.4: Analytics & Delivery Tracking (5 Functions)
 
 ### 17. communication-analytics
+
 **Purpose**: Comprehensive communication metrics and insights  
 **Complexity**: High  
 **Memory**: 2048MB  
-**Timeout**: 180s  
+**Timeout**: 180s
 
 #### Function Specification
+
 ```yaml
 Handler: src/functions/analytics/communication-analytics.handler
 Events:
@@ -645,12 +691,14 @@ Environment Variables:
 ```
 
 ### 18. delivery-tracking
+
 **Purpose**: Real-time delivery status aggregation and reporting  
 **Complexity**: Medium  
 **Memory**: 1024MB  
-**Timeout**: 60s  
+**Timeout**: 60s
 
 #### Function Specification
+
 ```yaml
 Handler: src/functions/analytics/delivery-tracking.handler
 Events:
@@ -666,12 +714,14 @@ Environment Variables:
 ```
 
 ### 19. engagement-analytics
+
 **Purpose**: User engagement patterns and optimization insights  
 **Complexity**: High  
 **Memory**: 1024MB  
-**Timeout**: 120s  
+**Timeout**: 120s
 
 #### Function Specification
+
 ```yaml
 Handler: src/functions/analytics/engagement-analytics.handler
 Events:
@@ -687,12 +737,14 @@ Environment Variables:
 ```
 
 ### 20. ab-testing-engine
+
 **Purpose**: Experiment management for communication optimization  
 **Complexity**: High  
 **Memory**: 1024MB  
-**Timeout**: 60s  
+**Timeout**: 60s
 
 #### Function Specification
+
 ```yaml
 Handler: src/functions/analytics/ab-testing-engine.handler
 Events:
@@ -709,12 +761,14 @@ Environment Variables:
 ```
 
 ### 21. ml-communication-insights
+
 **Purpose**: ML-powered communication effectiveness analysis  
 **Complexity**: High  
 **Memory**: 2048MB  
-**Timeout**: 300s  
+**Timeout**: 300s
 
 #### Function Specification
+
 ```yaml
 Handler: src/functions/analytics/ml-communication-insights.handler
 Events:
@@ -736,6 +790,7 @@ Environment Variables:
 ## 🏗️ Infrastructure Requirements
 
 ### DynamoDB Tables (12 tables)
+
 ```yaml
 Tables:
   - user-notification-preferences-${stage} # User channel preferences
@@ -753,6 +808,7 @@ Tables:
 ```
 
 ### S3 Buckets (4 buckets)
+
 ```yaml
 Buckets:
   - hasivu-${stage}-email-templates # Email template storage
@@ -762,6 +818,7 @@ Buckets:
 ```
 
 ### SNS Topics (5 topics)
+
 ```yaml
 Topics:
   - communication-notifications-${stage} # Main notification distribution
@@ -772,6 +829,7 @@ Topics:
 ```
 
 ### SQS Queues (6 queues)
+
 ```yaml
 Queues:
   - notification-queue-${stage} # Main notification processing
@@ -783,12 +841,14 @@ Queues:
 ```
 
 ### EventBridge Custom Bus
+
 ```yaml
 EventBridge:
   - hasivu-communication-bus-${stage} # Custom event bus for communication events
 ```
 
 ### WebSocket API
+
 ```yaml
 WebSocket:
   - hasivu-websocket-api-${stage} # Real-time communication API
@@ -799,6 +859,7 @@ WebSocket:
 ## 🔧 Development & Deployment Configuration
 
 ### Serverless Framework Configuration
+
 ```yaml
 # Addition to existing serverless.yml
 
@@ -825,36 +886,37 @@ custom:
       push:
         android: firebase
         ios: apns
-    
+
   realtime:
     websocket:
       idle_timeout: 600 # 10 minutes
       max_connections: 50000
       message_size_limit: 128kb
-    
+
   templates:
     supported_locales: [en, hi, kn]
     cache_ttl: 3600 # 1 hour
-    
+
   analytics:
     retention_days: 365
     aggregation_intervals: [1h, 1d, 1w, 1m]
 ```
 
 ### Environment-Specific Configuration
+
 ```yaml
 # Development
 dev:
   warmup: false
   tracing: true
   log_level: debug
-  
-# Staging  
+
+# Staging
 staging:
   warmup: true
   tracing: true
   log_level: info
-  
+
 # Production
 prod:
   warmup: true
@@ -864,18 +926,19 @@ prod:
 ```
 
 ### Monitoring & Observability
+
 ```yaml
 CloudWatch:
   - Custom metrics for each Lambda function
   - Delivery rate dashboards
   - Real-time communication metrics
   - Cost optimization tracking
-  
+
 X-Ray:
   - End-to-end request tracing
   - Performance bottleneck identification
   - Error root cause analysis
-  
+
 CloudWatch Alarms:
   - High error rates (>1%)
   - Long execution times (>5s)

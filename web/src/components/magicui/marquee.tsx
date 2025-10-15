@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { cn } from "@/lib/utils";
-import { ReactNode } from "react";
+import { cn } from '@/lib/utils';
+import { ReactNode } from 'react';
 
 interface MarqueeProps {
   className?: string;
@@ -10,7 +10,7 @@ interface MarqueeProps {
   children?: ReactNode;
   vertical?: boolean;
   repeat?: number;
-  speed?: "slow" | "normal" | "fast";
+  speed?: 'slow' | 'normal' | 'fast';
 }
 
 export function Marquee({
@@ -20,21 +20,21 @@ export function Marquee({
   children,
   vertical = false,
   repeat = 4,
-  speed = "normal",
+  speed = 'normal',
 }: MarqueeProps) {
   const speedClasses = {
-    slow: "animate-[scroll_60s_linear_infinite]",
-    normal: "animate-[scroll_40s_linear_infinite]", 
-    fast: "animate-[scroll_20s_linear_infinite]",
+    slow: 'animate-[scroll_60s_linear_infinite]',
+    normal: 'animate-[scroll_40s_linear_infinite]',
+    fast: 'animate-[scroll_20s_linear_infinite]',
   };
 
   return (
     <div
       className={cn(
-        "group flex overflow-hidden p-2 [--gap:1rem] [gap:var(--gap)]",
+        'group flex overflow-hidden p-2 [--gap:1rem] [gap:var(--gap)]',
         {
-          "flex-col": vertical,
-          "flex-row": !vertical,
+          'flex-col': vertical,
+          'flex-row': !vertical,
         },
         className
       )}
@@ -45,12 +45,12 @@ export function Marquee({
           <div
             key={i}
             className={cn(
-              "flex shrink-0 justify-around [gap:var(--gap)]",
+              'flex shrink-0 justify-around [gap:var(--gap)]',
               {
-                "animate-marquee flex-row": !vertical,
-                "animate-marquee-vertical flex-col": vertical,
-                "group-hover:[animation-play-state:paused]": pauseOnHover,
-                "[animation-direction:reverse]": reverse,
+                'animate-marquee flex-row': !vertical,
+                'animate-marquee-vertical flex-col': vertical,
+                'group-hover:[animation-play-state:paused]': pauseOnHover,
+                '[animation-direction:reverse]': reverse,
               },
               speedClasses[speed]
             )}

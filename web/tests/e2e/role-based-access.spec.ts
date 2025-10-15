@@ -9,7 +9,7 @@ import { test, expect, Page, BrowserContext } from '@playwright/test';
 import { UserRole, Permission } from '../../src/types/auth';
 
 // Test user credentials for each role
-const TEST_USERS = {
+const _TEST_USERS =  {
   [UserRole.ADMIN]: {
     email: 'admin@hasivu.test',
     password: 'Test123!',
@@ -55,7 +55,7 @@ const TEST_USERS = {
 };
 
 // Protected routes and their required permissions
-const PROTECTED_ROUTES = [
+const _PROTECTED_ROUTES =  [
   { path: '/dashboard/admin', requiredRoles: [UserRole.ADMIN, UserRole.SCHOOL_ADMIN] },
   { path: '/dashboard/parent', requiredRoles: [UserRole.PARENT] },
   { path: '/dashboard/teacher', requiredRoles: [UserRole.TEACHER] },
@@ -68,19 +68,19 @@ const PROTECTED_ROUTES = [
   { path: '/vendor/products', requiredRoles: [UserRole.VENDOR] }
 ];
 
-test.describe('HASIVU Role-Based Access Control', () => {
+test.describe(_'HASIVU Role-Based Access Control', _() => {
 
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(_async ({ page }) => {
     // Clear any existing auth state
     await page.context().clearCookies();
     await page.context().clearPermissions();
     await page.goto('/auth/logout');
   });
 
-  test.describe('Authentication Flow', () => {
+  test.describe(_'Authentication Flow', _() => {
     
-    Object.entries(TEST_USERS).forEach(([role, userData]) => {
-      test(`${role} login flow and dashboard access`, async ({ page }) => {
+    Object.entries(TEST_USERS).forEach(_([role, _userData]) => {
+      test(_`${role} login flow and dashboard access`, _async ({ page }) => {
         // Navigate to login page
         await page.goto('/auth/login');
         
@@ -88,19 +88,19 @@ test.describe('HASIVU Role-Based Access Control', () => {
         await expect(page).toHaveTitle(/login/i);
         
         // Fill login form
-        await page.fill('[data-testid="email-input"]', userData.email);
-        await page.fill('[data-testid="password-input"]', userData.password);
+        await page.fill('[data-_testid = "email-input"]', userData.email);
+        await page.fill('[data-_testid = "password-input"]', userData.password);
         
         // Submit login form
-        await page.click('[data-testid="login-button"]');
+        await page.click('[data-_testid = "login-button"]');
         
         // Wait for redirect and verify landing on correct dashboard
         await page.waitForURL('**/dashboard/**');
         expect(page.url()).toContain('/dashboard');
         
         // Verify user info is displayed
-        await expect(page.locator('[data-testid="user-name"]')).toBeVisible();
-        await expect(page.locator('[data-testid="user-role"]')).toContainText(role);
+        await expect(page.locator('[data-_testid = "user-name"]')).toBeVisible();
+        await expect(page.locator('[data-_testid = "user-role"]')).toContainText(role);
         
         // Verify role-specific dashboard elements
         await validateRoleDashboard(page, role as UserRole);
@@ -115,17 +115,17 @@ test.describe('HASIVU Role-Based Access Control', () => {
 
   });
 
-  test.describe('Authorization Enforcement', () => {
+  test.describe(_'Authorization Enforcement', _() => {
 
     // Test that users can only access routes they have permission for
-    PROTECTED_ROUTES.forEach(({ path, requiredRoles }) => {
+    PROTECTED_ROUTES.forEach(_({ path, _requiredRoles }) => {
       
-      test(`Route ${path} access control`, async ({ browser }) => {
+      test(_`Route ${path} access control`, _async ({ browser }) => {
         
         // Test authorized access
         for (const allowedRole of requiredRoles) {
-          const context = await browser.newContext();
-          const page = await context.newPage();
+          const _context =  await browser.newContext();
+          const _page =  await context.newPage();
           
           // Login as authorized user
           await loginAs(page, allowedRole);
@@ -142,26 +142,24 @@ test.describe('HASIVU Role-Based Access Control', () => {
         }
         
         // Test unauthorized access
-        const unauthorizedRoles = Object.keys(TEST_USERS).filter(
-          role => !requiredRoles.includes(role as UserRole)
-        ) as UserRole[];
-        
+        const _unauthorizedRoles =  Object.keys(TEST_USERS).filter(
+          role 
         for (const unauthorizedRole of unauthorizedRoles.slice(0, 2)) { // Test 2 for performance
-          const context = await browser.newContext();
-          const page = await context.newPage();
+          const _context =  await browser.newContext();
+          const _page =  await context.newPage();
           
           // Login as unauthorized user  
           await loginAs(page, unauthorizedRole);
           
           // Try to access protected route
-          const response = await page.goto(path);
+          const _response =  await page.goto(path);
           
           // Should be redirected or blocked
           await page.waitForTimeout(1000);
-          const currentUrl = page.url();
+          const _currentUrl =  page.url();
           
           // Should either redirect to login, 403 error, or their dashboard
-          const isBlocked = currentUrl.includes('/auth/login') || 
+          const _isBlocked =  currentUrl.includes('/auth/login') || 
                            currentUrl.includes('/403') ||
                            currentUrl.includes('/dashboard') && !currentUrl.includes(path);
           
@@ -174,84 +172,84 @@ test.describe('HASIVU Role-Based Access Control', () => {
 
   });
 
-  test.describe('Permission Validation', () => {
+  test.describe(_'Permission Validation', _() => {
 
-    test('Admin permissions - full system access', async ({ page }) => {
+    test(_'Admin permissions - full system access', _async ({ page }) => {
       await loginAs(page, UserRole.ADMIN);
       
       // Admin should have access to user management
       await page.goto('/admin/users');
-      await expect(page.locator('[data-testid="user-management"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "user-management"]')).toBeVisible();
       
       // Admin should have access to analytics
       await page.goto('/admin/analytics');
-      await expect(page.locator('[data-testid="analytics-dashboard"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "analytics-dashboard"]')).toBeVisible();
       
       // Admin should see admin-only UI elements
       await page.goto('/dashboard/admin');
-      await expect(page.locator('[data-testid="admin-controls"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "admin-controls"]')).toBeVisible();
     });
 
-    test('Parent permissions - child and order management', async ({ page }) => {
+    test(_'Parent permissions - child and order management', _async ({ page }) => {
       await loginAs(page, UserRole.PARENT);
       
       await page.goto('/dashboard/parent');
       
       // Parent should see children management
-      await expect(page.locator('[data-testid="children-section"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "children-section"]')).toBeVisible();
       
       // Parent should see order placement
-      await expect(page.locator('[data-testid="place-order-button"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "place-order-button"]')).toBeVisible();
       
       // Parent should see payment methods
-      await expect(page.locator('[data-testid="payment-methods"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "payment-methods"]')).toBeVisible();
       
       // Parent should NOT see admin controls
-      await expect(page.locator('[data-testid="admin-controls"]')).not.toBeVisible();
+      await expect(page.locator('[data-_testid = "admin-controls"]')).not.toBeVisible();
     });
 
-    test('Kitchen Staff permissions - order queue management', async ({ page }) => {
+    test(_'Kitchen Staff permissions - order queue management', _async ({ page }) => {
       await loginAs(page, UserRole.KITCHEN_STAFF);
       
       await page.goto('/dashboard/kitchen');
       
       // Kitchen staff should see preparation queue
-      await expect(page.locator('[data-testid="preparation-queue"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "preparation-queue"]')).toBeVisible();
       
       // Kitchen staff should see inventory
-      await expect(page.locator('[data-testid="inventory-section"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "inventory-section"]')).toBeVisible();
       
       // Kitchen staff should be able to update order status
-      await expect(page.locator('[data-testid="update-status-button"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "update-status-button"]')).toBeVisible();
       
       // Kitchen staff should NOT see admin functions
-      await expect(page.locator('[data-testid="user-management"]')).not.toBeVisible();
+      await expect(page.locator('[data-_testid = "user-management"]')).not.toBeVisible();
     });
 
-    test('Student permissions - limited menu access', async ({ page }) => {
+    test(_'Student permissions - limited menu access', _async ({ page }) => {
       await loginAs(page, UserRole.STUDENT);
       
       await page.goto('/dashboard/student');
       
       // Student should see limited menu access
-      await expect(page.locator('[data-testid="student-menu"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "student-menu"]')).toBeVisible();
       
       // Student should NOT see payment methods (parents handle payments)
-      await expect(page.locator('[data-testid="payment-methods"]')).not.toBeVisible();
+      await expect(page.locator('[data-_testid = "payment-methods"]')).not.toBeVisible();
       
       // Student should NOT see administrative functions
-      await expect(page.locator('[data-testid="admin-controls"]')).not.toBeVisible();
+      await expect(page.locator('[data-_testid = "admin-controls"]')).not.toBeVisible();
     });
 
   });
 
-  test.describe('Security Features', () => {
+  test.describe(_'Security Features', _() => {
 
-    test('Session timeout handling', async ({ page }) => {
+    test(_'Session timeout handling', _async ({ page }) => {
       await loginAs(page, UserRole.PARENT);
       
       // Simulate session expiry by clearing auth tokens
-      await page.evaluate(() => {
+      await page.evaluate(_() => {
         localStorage.removeItem('auth-token');
         sessionStorage.removeItem('auth-session');
       });
@@ -264,13 +262,13 @@ test.describe('HASIVU Role-Based Access Control', () => {
       expect(page.url()).toContain('/auth/login');
     });
 
-    test('Concurrent session handling', async ({ browser }) => {
+    test(_'Concurrent session handling', _async ({ browser }) => {
       // Create two contexts for same user
-      const context1 = await browser.newContext();
-      const context2 = await browser.newContext();
+      const _context1 =  await browser.newContext();
+      const _context2 =  await browser.newContext();
       
-      const page1 = await context1.newPage();
-      const page2 = await context2.newPage();
+      const _page1 =  await context1.newPage();
+      const _page2 =  await context2.newPage();
       
       // Login with same user in both contexts
       await loginAs(page1, UserRole.PARENT);
@@ -280,18 +278,18 @@ test.describe('HASIVU Role-Based Access Control', () => {
       await page1.goto('/dashboard/parent');
       await page2.goto('/dashboard/parent');
       
-      await expect(page1.locator('[data-testid="user-name"]')).toBeVisible();
-      await expect(page2.locator('[data-testid="user-name"]')).toBeVisible();
+      await expect(page1.locator('[data-_testid = "user-name"]')).toBeVisible();
+      await expect(page2.locator('[data-_testid = "user-name"]')).toBeVisible();
       
       await context1.close();
       await context2.close();
     });
 
-    test('CSRF protection', async ({ page }) => {
+    test(_'CSRF protection', _async ({ page }) => {
       await loginAs(page, UserRole.ADMIN);
       
       // Try to make request without CSRF token (if implemented)
-      const response = await page.request.post('/api/admin/users', {
+      const _response =  await page.request.post('/api/admin/users', {
         data: { name: 'Test User', email: 'test@example.com' },
         headers: { 'Content-Type': 'application/json' }
       });
@@ -303,17 +301,17 @@ test.describe('HASIVU Role-Based Access Control', () => {
 
   });
 
-  test.describe('UI Accessibility by Role', () => {
+  test.describe(_'UI Accessibility by Role', _() => {
 
-    test('Role-specific navigation menus', async ({ page }) => {
+    test(_'Role-specific navigation menus', _async ({ page }) => {
       // Test different navigation menus for each role
-      const rolesToTest = [UserRole.ADMIN, UserRole.PARENT, UserRole.KITCHEN_STAFF];
+      const _rolesToTest =  [UserRole.ADMIN, UserRole.PARENT, UserRole.KITCHEN_STAFF];
       
       for (const role of rolesToTest) {
         await loginAs(page, role);
         
         // Check navigation menu has role-appropriate items
-        const navItems = await page.locator('[data-testid="nav-menu"] a').count();
+        const _navItems =  await page.locator('[data-testid
         expect(navItems).toBeGreaterThan(0);
         
         // Verify no unauthorized nav items are visible
@@ -323,19 +321,19 @@ test.describe('HASIVU Role-Based Access Control', () => {
       }
     });
 
-    test('Role-based UI element visibility', async ({ page }) => {
+    test(_'Role-based UI element visibility', _async ({ page }) => {
       // Test that UI elements show/hide based on user permissions
       await loginAs(page, UserRole.PARENT);
       
       await page.goto('/dashboard/parent');
       
       // Elements that should be visible for parents
-      await expect(page.locator('[data-testid="place-order-button"]')).toBeVisible();
-      await expect(page.locator('[data-testid="children-list"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "place-order-button"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "children-list"]')).toBeVisible();
       
       // Elements that should NOT be visible for parents  
-      await expect(page.locator('[data-testid="admin-panel-link"]')).not.toBeVisible();
-      await expect(page.locator('[data-testid="kitchen-queue-link"]')).not.toBeVisible();
+      await expect(page.locator('[data-_testid = "admin-panel-link"]')).not.toBeVisible();
+      await expect(page.locator('[data-_testid = "kitchen-queue-link"]')).not.toBeVisible();
     });
 
   });
@@ -346,12 +344,12 @@ test.describe('HASIVU Role-Based Access Control', () => {
  * Helper function to login as a specific user role
  */
 async function loginAs(page: Page, role: UserRole) {
-  const userData = TEST_USERS[role];
+  const _userData =  TEST_USERS[role];
   
   await page.goto('/auth/login');
-  await page.fill('[data-testid="email-input"]', userData.email);
-  await page.fill('[data-testid="password-input"]', userData.password);
-  await page.click('[data-testid="login-button"]');
+  await page.fill('[data-_testid = "email-input"]', userData.email);
+  await page.fill('[data-_testid = "password-input"]', userData.password);
+  await page.click('[data-_testid = "login-button"]');
   
   // Wait for authentication to complete
   await page.waitForURL('**/dashboard/**');
@@ -363,17 +361,17 @@ async function loginAs(page: Page, role: UserRole) {
 async function validateRoleDashboard(page: Page, role: UserRole) {
   switch (role) {
     case UserRole.ADMIN:
-      await expect(page.locator('[data-testid="admin-stats"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "admin-stats"]')).toBeVisible();
       await expect(page.locator('h1')).toContainText('Admin');
       break;
       
     case UserRole.PARENT:
-      await expect(page.locator('[data-testid="children-section"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "children-section"]')).toBeVisible();
       await expect(page.locator('h1')).toContainText('Parent');
       break;
       
     case UserRole.KITCHEN_STAFF:
-      await expect(page.locator('[data-testid="preparation-queue"]')).toBeVisible();
+      await expect(page.locator('[data-_testid = "preparation-queue"]')).toBeVisible();
       await expect(page.locator('h1')).toContainText('Kitchen');
       break;
       
@@ -399,24 +397,23 @@ async function validateRoleDashboard(page: Page, role: UserRole) {
  * Validate navigation menu contains appropriate items for role
  */
 async function validateNavigationMenu(page: Page, role: UserRole) {
-  const navLinks = await page.locator('[data-testid="nav-menu"] a').allTextContents();
-  
+  const _navLinks =  await page.locator('[data-testid
   switch (role) {
     case UserRole.ADMIN:
-      expect(navLinks.some(link => link.includes('Admin'))).toBe(true);
-      expect(navLinks.some(link => link.includes('Analytics'))).toBe(true);
+      expect(navLinks.some(_link = > link.includes('Admin'))).toBe(true);
+      expect(navLinks.some(_link = > link.includes('Analytics'))).toBe(true);
       break;
       
     case UserRole.PARENT:
-      expect(navLinks.some(link => link.includes('Children'))).toBe(true);
-      expect(navLinks.some(link => link.includes('Orders'))).toBe(true);
-      expect(navLinks.some(link => link.includes('Admin'))).toBe(false);
+      expect(navLinks.some(_link = > link.includes('Children'))).toBe(true);
+      expect(navLinks.some(_link = > link.includes('Orders'))).toBe(true);
+      expect(navLinks.some(_link = > link.includes('Admin'))).toBe(false);
       break;
       
     case UserRole.KITCHEN_STAFF:
-      expect(navLinks.some(link => link.includes('Kitchen'))).toBe(true);
-      expect(navLinks.some(link => link.includes('Queue'))).toBe(true);
-      expect(navLinks.some(link => link.includes('Admin'))).toBe(false);
+      expect(navLinks.some(_link = > link.includes('Kitchen'))).toBe(true);
+      expect(navLinks.some(_link = > link.includes('Queue'))).toBe(true);
+      expect(navLinks.some(_link = > link.includes('Admin'))).toBe(false);
       break;
   }
 }

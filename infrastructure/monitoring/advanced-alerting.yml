@@ -52,7 +52,7 @@ Resources:
   # =====================================================
   # SNS TOPICS FOR DIFFERENT ALERT LEVELS
   # =====================================================
-  
+
   # P1 - Critical Alerts (Immediate Response)
   CriticalAlertTopic:
     Type: AWS::SNS::Topic
@@ -116,7 +116,7 @@ Resources:
   # =====================================================
   # CRITICAL (P1) ALARMS - IMMEDIATE RESPONSE
   # =====================================================
-  
+
   # System Health Critical Failure
   SystemHealthCriticalAlarm:
     Type: AWS::CloudWatch::Alarm
@@ -460,17 +460,17 @@ Resources:
           import os
           import logging
           from datetime import datetime, timedelta
-          
+
           logger = logging.getLogger()
           logger.setLevel(logging.INFO)
-          
+
           # Initialize AWS clients
           cloudwatch = boto3.client('cloudwatch')
           lambda_client = boto3.client('lambda')
           rds = boto3.client('rds')
           elasticache = boto3.client('elasticache')
           sns = boto3.client('sns')
-          
+
           def lambda_handler(event, context):
               try:
                   # Parse SNS message
@@ -490,7 +490,7 @@ Resources:
               except Exception as e:
                   logger.error(f"Error in incident response: {str(e)}")
                   return {'statusCode': 500, 'body': f'Error: {str(e)}'}
-          
+
           def handle_alarm(alarm_name, message):
               """Handle different types of alarms with appropriate responses"""
               environment = os.environ['ENVIRONMENT']
@@ -528,7 +528,7 @@ Resources:
                   responses.append(escalate_to_oncall())
               
               return responses
-          
+
           def restart_payment_functions():
               """Restart payment-related Lambda functions"""
               try:
@@ -547,7 +547,7 @@ Resources:
                   return "Payment functions restarted"
               except Exception as e:
                   return f"Error restarting payment functions: {str(e)}"
-          
+
           def check_payment_dependencies():
               """Check payment system dependencies"""
               try:
@@ -556,7 +556,7 @@ Resources:
                   return "Payment dependencies checked"
               except Exception as e:
                   return f"Error checking payment dependencies: {str(e)}"
-          
+
           def check_database_connections():
               """Analyze database connection issues"""
               try:
@@ -571,7 +571,7 @@ Resources:
                   return "Database connections analyzed"
               except Exception as e:
                   return f"Error checking database: {str(e)}"
-          
+
           def analyze_database_performance():
               """Analyze database performance metrics"""
               try:
@@ -601,7 +601,7 @@ Resources:
                   return "Database performance analyzed"
               except Exception as e:
                   return f"Error analyzing database performance: {str(e)}"
-          
+
           def increase_lambda_concurrency():
               """Attempt to increase Lambda concurrency limits"""
               try:
@@ -609,7 +609,7 @@ Resources:
                   return "Lambda concurrency limits reviewed"
               except Exception as e:
                   return f"Error adjusting Lambda concurrency: {str(e)}"
-          
+
           def analyze_api_errors():
               """Analyze API error patterns"""
               try:
@@ -617,7 +617,7 @@ Resources:
                   return "API error patterns analyzed"
               except Exception as e:
                   return f"Error analyzing API errors: {str(e)}"
-          
+
           def check_downstream_services():
               """Check health of downstream services"""
               try:
@@ -625,7 +625,7 @@ Resources:
                   return "Downstream services checked"
               except Exception as e:
                   return f"Error checking downstream services: {str(e)}"
-          
+
           def initiate_security_response():
               """Initiate automated security response"""
               try:
@@ -634,7 +634,7 @@ Resources:
                   return "Security response initiated"
               except Exception as e:
                   return f"Error initiating security response: {str(e)}"
-          
+
           def collect_security_evidence():
               """Collect evidence for security investigation"""
               try:
@@ -642,7 +642,7 @@ Resources:
                   return "Security evidence collected"
               except Exception as e:
                   return f"Error collecting security evidence: {str(e)}"
-          
+
           def comprehensive_health_check():
               """Perform comprehensive system health check"""
               try:
@@ -666,7 +666,7 @@ Resources:
                   return f"Comprehensive health check: {'; '.join(health_results)}"
               except Exception as e:
                   return f"Error in comprehensive health check: {str(e)}"
-          
+
           def escalate_to_oncall():
               """Escalate critical issues to on-call engineer"""
               try:
@@ -713,7 +713,7 @@ Resources:
                   - logs:DescribeLogGroups
                   - logs:DescribeLogStreams
                   - logs:FilterLogEvents
-                Resource: "*"
+                Resource: '*'
 
   # Subscribe incident response function to auto-remediation topic
   IncidentResponseSubscription:
@@ -735,7 +735,7 @@ Resources:
   # =====================================================
   # ENCRYPTION & SECURITY
   # =====================================================
-  
+
   AlertEncryptionKey:
     Type: AWS::KMS::Key
     Properties:
@@ -791,9 +791,9 @@ Resources:
           import urllib3
           import os
           from datetime import datetime
-          
+
           http = urllib3.PoolManager()
-          
+
           def lambda_handler(event, context):
               webhook_url = os.environ['SLACK_WEBHOOK_URL']
               environment = os.environ['ENVIRONMENT']
@@ -834,7 +834,7 @@ Resources:
                       'statusCode': 500,
                       'body': json.dumps(f'Error: {str(e)}')
                   }
-          
+
           def determine_severity(alarm_name):
               if any(keyword in alarm_name.lower() for keyword in ['critical', 'system-health', 'payment-system', 'auth-system-down']):
                   return 'P1-Critical'
@@ -844,7 +844,7 @@ Resources:
                   return 'Security'
               else:
                   return 'P3-Medium'
-          
+
           def get_alert_color(state, severity):
               if state == 'ALARM':
                   if severity == 'P1-Critical':
@@ -859,7 +859,7 @@ Resources:
                   return '#00FF00'  # Green
               else:
                   return '#808080'  # Gray
-          
+
           def get_alert_emoji(state, severity):
               if state == 'ALARM':
                   if severity == 'P1-Critical':
@@ -874,7 +874,7 @@ Resources:
                   return '✅'
               else:
                   return '❓'
-          
+
           def create_slack_message(emoji, alarm_name, state, reason, environment, project, region, timestamp, severity, color):
               return {
                   'text': f'{emoji} *{project.upper()} Alert - {environment.title()}*',
@@ -933,7 +933,7 @@ Resources:
                       ]
                   }]
               }
-          
+
           def send_to_slack(webhook_url, message):
               encoded_msg = json.dumps(message).encode('utf-8')
               response = http.request('POST', webhook_url, body=encoded_msg, headers={'Content-Type': 'application/json'})

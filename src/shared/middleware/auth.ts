@@ -6,15 +6,8 @@
 
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { JWTPayload, jwtService } from '../jwt.service';
-// import { LoggerService } from '../logger.service';  // Temporarily use console for logging
-import { config } from '../../config/environment';
-
-const logger = {
-  info: (message: string, data?: any) => console.log(message, data),
-  warn: (message: string, data?: any) => console.warn(message, data),
-  error: (message: string, data?: any) => console.error(message, data),
-  debug: (message: string, data?: any) => console.debug(message, data)
-};
+import { logger } from '../logger.service';
+import { env as config } from '../../config/environment';
 
 /**
  * Authentication result interface
@@ -69,35 +62,35 @@ export const authenticateJWT = async (
   options: AuthOptions = {}
 ): Promise<AuthResult> => {
   const startTime = Date.now();
-  
+
   try {
     // Extract JWT token from event
     const token = jwtService.extractTokenFromEvent(event);
-    
+
     if (!token) {
       logger.warn('No JWT token provided in request', {
         path: event.path,
         method: event.httpMethod,
         sourceIp: event.requestContext.identity.sourceIp,
-        userAgent: event.headers?.['User-Agent']
+        userAgent: event.headers?.['User-Agent'],
       });
 
       return {
         isAuthenticated: false,
-      success: false,
+        success: false,
         error: 'Authentication required - no token provided',
         statusCode: 401,
         headers: {
           'WWW-Authenticate': 'Bearer realm="API"',
           'Cache-Control': 'no-cache',
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       };
     }
 
     // Verify JWT token
     const verification = jwtService.verifyToken(token);
-    
+
     if (!verification.isValid || !verification.payload) {
       logger.warn('JWT token verification failed', {
         error: verification.error,
@@ -105,7 +98,7 @@ export const authenticateJWT = async (
         path: event.path,
         method: event.httpMethod,
         sourceIp: event.requestContext.identity.sourceIp,
-        tokenLength: token.length
+        tokenLength: token.length,
       });
 
       // Handle specific error cases
@@ -132,14 +125,14 @@ export const authenticateJWT = async (
 
       return {
         isAuthenticated: false,
-      success: false,
+        success: false,
         error: errorMessage,
         statusCode,
         headers: {
           'WWW-Authenticate': 'Bearer realm="API"',
           'Cache-Control': 'no-cache',
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       };
     }
 
@@ -152,18 +145,18 @@ export const authenticateJWT = async (
         userRole: payload.role,
         requiredRole: options.requiredRole,
         path: event.path,
-        method: event.httpMethod
+        method: event.httpMethod,
       });
 
       return {
         isAuthenticated: false,
-      success: false,
+        success: false,
         error: `Insufficient privileges - ${options.requiredRole} role required`,
         statusCode: 403,
         headers: {
           'Cache-Control': 'no-cache',
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       };
     }
 
@@ -180,7 +173,7 @@ export const authenticateJWT = async (
           requiredPermissions: options.requiredPermissions,
           missingPermissions,
           path: event.path,
-          method: event.httpMethod
+          method: event.httpMethod,
         });
 
         return {
@@ -190,8 +183,8 @@ export const authenticateJWT = async (
           statusCode: 403,
           headers: {
             'Cache-Control': 'no-cache',
-            'Content-Type': 'application/json'
-          }
+            'Content-Type': 'application/json',
+          },
         };
       }
     }
@@ -201,18 +194,18 @@ export const authenticateJWT = async (
       logger.warn('Business context required but not provided', {
         userId: payload.userId,
         path: event.path,
-        method: event.httpMethod
+        method: event.httpMethod,
       });
 
       return {
         isAuthenticated: false,
-      success: false,
+        success: false,
         error: 'Business context required for this operation',
         statusCode: 400,
         headers: {
           'Cache-Control': 'no-cache',
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       };
     }
 
@@ -221,18 +214,18 @@ export const authenticateJWT = async (
       logger.warn('Session validation required but session ID not found', {
         userId: payload.userId,
         path: event.path,
-        method: event.httpMethod
+        method: event.httpMethod,
       });
 
       return {
         isAuthenticated: false,
-      success: false,
+        success: false,
         error: 'Valid session required for this operation',
         statusCode: 401,
         headers: {
           'Cache-Control': 'no-cache',
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       };
     }
 
@@ -244,37 +237,40 @@ export const authenticateJWT = async (
           logger.warn('Custom validation failed', {
             userId: payload.userId,
             path: event.path,
-            method: event.httpMethod
+            method: event.httpMethod,
           });
 
           return {
             isAuthenticated: false,
-      success: false,
+            success: false,
             error: 'Custom authorization validation failed',
             statusCode: 403,
             headers: {
               'Cache-Control': 'no-cache',
-              'Content-Type': 'application/json'
-            }
+              'Content-Type': 'application/json',
+            },
           };
         }
-      } catch (error) {
-        logger.error('Custom validation error', {
-          userId: payload.userId,
-          error: error instanceof Error ? error.message : 'Unknown error',
-          path: event.path,
-          method: event.httpMethod
-        });
+      } catch (error: unknown) {
+        logger.error(
+          'Custom validation error',
+          error instanceof Error ? error : new Error(String(error)),
+          {
+            userId: payload.userId,
+            path: event.path,
+            method: event.httpMethod,
+          }
+        );
 
         return {
           isAuthenticated: false,
-      success: false,
+          success: false,
           error: 'Authorization validation error',
           statusCode: 500,
           headers: {
             'Cache-Control': 'no-cache',
-            'Content-Type': 'application/json'
-          }
+            'Content-Type': 'application/json',
+          },
         };
       }
     }
@@ -292,27 +288,28 @@ export const authenticateJWT = async (
       method: event.httpMethod,
       sourceIp: event.requestContext.identity.sourceIp,
       remainingTTL: verification.remainingTTL,
-      duration
+      duration,
     });
 
     return {
       isAuthenticated: true,
       success: true,
       user: payload,
-      schoolId: payload.schoolId
+      schoolId: payload.schoolId,
     };
-
-  } catch (error) {
+  } catch (error: unknown) {
     const duration = Date.now() - startTime;
 
-    logger.error('Authentication middleware error', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      path: event.path,
-      method: event.httpMethod,
-      sourceIp: event.requestContext.identity.sourceIp,
-      duration
-    });
+    logger.error(
+      'Authentication middleware error',
+      error instanceof Error ? error : new Error(String(error)),
+      {
+        path: event.path,
+        method: event.httpMethod,
+        sourceIp: event.requestContext.identity.sourceIp,
+        duration,
+      }
+    );
 
     return {
       isAuthenticated: false,
@@ -321,8 +318,8 @@ export const authenticateJWT = async (
       statusCode: 500,
       headers: {
         'Cache-Control': 'no-cache',
-        'Content-Type': 'application/json'
-      }
+        'Content-Type': 'application/json',
+      },
     };
   }
 };
@@ -349,9 +346,9 @@ export const requirePermissions = (permissions: string[]) => {
  * Admin role requirement middleware
  */
 export const requireAdmin = async (event: APIGatewayProxyEvent): Promise<AuthResult> => {
-  return authenticateJWT(event, { 
+  return authenticateJWT(event, {
     requiredRole: 'admin',
-    requiredPermissions: ['admin:*'] 
+    requiredPermissions: ['admin:*'],
   });
 };
 
@@ -359,10 +356,10 @@ export const requireAdmin = async (event: APIGatewayProxyEvent): Promise<AuthRes
  * Business owner requirement middleware
  */
 export const requireBusinessOwner = async (event: APIGatewayProxyEvent): Promise<AuthResult> => {
-  return authenticateJWT(event, { 
+  return authenticateJWT(event, {
     requiredRole: 'owner',
     requireBusinessContext: true,
-    requiredPermissions: ['business:manage'] 
+    requiredPermissions: ['business:manage'],
   });
 };
 
@@ -370,10 +367,10 @@ export const requireBusinessOwner = async (event: APIGatewayProxyEvent): Promise
  * Manager role requirement middleware
  */
 export const requireManager = async (event: APIGatewayProxyEvent): Promise<AuthResult> => {
-  return authenticateJWT(event, { 
+  return authenticateJWT(event, {
     requiredRole: 'manager',
     requireBusinessContext: true,
-    requiredPermissions: ['business:read', 'orders:manage'] 
+    requiredPermissions: ['business:read', 'orders:manage'],
   });
 };
 
@@ -381,10 +378,10 @@ export const requireManager = async (event: APIGatewayProxyEvent): Promise<AuthR
  * Staff role requirement middleware
  */
 export const requireStaff = async (event: APIGatewayProxyEvent): Promise<AuthResult> => {
-  return authenticateJWT(event, { 
+  return authenticateJWT(event, {
     requiredRole: 'staff',
     requireBusinessContext: true,
-    requireSessionValidation: true 
+    requireSessionValidation: true,
   });
 };
 
@@ -392,9 +389,9 @@ export const requireStaff = async (event: APIGatewayProxyEvent): Promise<AuthRes
  * Customer role requirement middleware
  */
 export const requireCustomer = async (event: APIGatewayProxyEvent): Promise<AuthResult> => {
-  return authenticateJWT(event, { 
+  return authenticateJWT(event, {
     requiredRole: 'customer',
-    requiredPermissions: ['orders:create', 'orders:read'] 
+    requiredPermissions: ['orders:create', 'orders:read'],
   });
 };
 
@@ -403,12 +400,12 @@ export const requireCustomer = async (event: APIGatewayProxyEvent): Promise<Auth
  */
 export const optionalAuth = async (event: APIGatewayProxyEvent): Promise<AuthResult> => {
   const token = jwtService.extractTokenFromEvent(event);
-  
+
   if (!token) {
     return {
       isAuthenticated: false,
       success: false,
-      user: undefined
+      user: undefined,
     };
   }
 
@@ -420,16 +417,16 @@ export const optionalAuth = async (event: APIGatewayProxyEvent): Promise<AuthRes
  */
 export const rateLimitMiddleware = async (
   event: APIGatewayProxyEvent,
-  limits: { requestsPerMinute: number; requestsPerHour: number } = { 
-    requestsPerMinute: 60, 
-    requestsPerHour: 1000 
+  limits: { requestsPerMinute: number; requestsPerHour: number } = {
+    requestsPerMinute: 60,
+    requestsPerHour: 1000,
   }
 ): Promise<{ allowed: boolean; remaining: number; resetTime: number }> => {
   try {
     const context: RateLimitContext = {
       ipAddress: event.requestContext.identity.sourceIp,
       endpoint: `${event.httpMethod} ${event.path}`,
-      userAgent: event.headers?.['User-Agent']
+      userAgent: event.headers?.['User-Agent'],
     };
 
     // Try to get user ID from token if present
@@ -446,27 +443,25 @@ export const rateLimitMiddleware = async (
     logger.info('Rate limit check', {
       ...context,
       limits,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
     return {
       allowed: true,
       remaining: limits.requestsPerMinute - 1,
-      resetTime: Date.now() + (60 * 1000) // 1 minute from now
+      resetTime: Date.now() + 60 * 1000, // 1 minute from now
     };
-
-  } catch (error) {
-    logger.error('Rate limiting error', {
-      error: error instanceof Error ? error.message : 'Unknown error',
+  } catch (error: unknown) {
+    logger.error('Rate limiting error', error instanceof Error ? error : new Error(String(error)), {
       path: event.path,
-      method: event.httpMethod
+      method: event.httpMethod,
     });
 
     // On error, allow the request but log the issue
     return {
       allowed: true,
       remaining: 0,
-      resetTime: Date.now() + (60 * 1000)
+      resetTime: Date.now() + 60 * 1000,
     };
   }
 };
@@ -479,14 +474,14 @@ export const corsMiddleware = (
   methods: string[] = ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   headers: string[] = ['Content-Type', 'Authorization', 'X-Requested-With']
 ): Record<string, string> => {
-  const allowedOrigin = origin || config.security.corsOrigins[0] || '*';
-  
+  const allowedOrigin = origin || '*';
+
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Methods': methods.join(', '),
     'Access-Control-Allow-Headers': headers.join(', '),
     'Access-Control-Allow-Credentials': 'true',
-    'Access-Control-Max-Age': '86400' // 24 hours
+    'Access-Control-Max-Age': '86400', // 24 hours
   };
 };
 
@@ -499,9 +494,9 @@ export const securityHeaders = (): Record<string, string> => {
     'X-Frame-Options': 'DENY',
     'X-XSS-Protection': '1; mode=block',
     'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
-    'Content-Security-Policy': (config.security as any).cspPolicy || "default-src 'self'",
+    'Content-Security-Policy': "default-src 'self'",
     'Referrer-Policy': 'strict-origin-when-cross-origin',
-    'Permissions-Policy': 'camera=(), microphone=(), geolocation=()'
+    'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
   };
 };
 
@@ -519,8 +514,8 @@ export const createAuthErrorResponse = (
       message,
       code: errorCode || 'AUTHENTICATION_ERROR',
       timestamp: new Date().toISOString(),
-      ...(details && { details })
-    }
+      ...(details && { details }),
+    },
   };
 
   return {
@@ -529,9 +524,9 @@ export const createAuthErrorResponse = (
       'Content-Type': 'application/json',
       'Cache-Control': 'no-cache',
       ...corsMiddleware(),
-      ...securityHeaders()
+      ...securityHeaders(),
     },
-    body: JSON.stringify(errorResponse)
+    body: JSON.stringify(errorResponse),
   };
 };
 
@@ -550,9 +545,9 @@ export const withAuth = (
           statusCode: 200,
           headers: {
             ...corsMiddleware(),
-            ...securityHeaders()
+            ...securityHeaders(),
           },
-          body: ''
+          body: '',
         };
       }
 
@@ -570,15 +565,10 @@ export const withAuth = (
       // Check rate limiting
       const rateLimitResult = await rateLimitMiddleware(event);
       if (!rateLimitResult.allowed) {
-        return createAuthErrorResponse(
-          429,
-          'Rate limit exceeded',
-          'RATE_LIMIT_EXCEEDED',
-          {
-            resetTime: rateLimitResult.resetTime,
-            remaining: rateLimitResult.remaining
-          }
-        );
+        return createAuthErrorResponse(429, 'Rate limit exceeded', 'RATE_LIMIT_EXCEEDED', {
+          resetTime: rateLimitResult.resetTime,
+          remaining: rateLimitResult.remaining,
+        });
       }
 
       // Execute the actual handler with authenticated user
@@ -592,23 +582,20 @@ export const withAuth = (
           ...corsMiddleware(),
           ...securityHeaders(),
           'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
-          'X-RateLimit-Reset': rateLimitResult.resetTime.toString()
-        }
+          'X-RateLimit-Reset': rateLimitResult.resetTime.toString(),
+        },
       };
-
-    } catch (error) {
-      logger.error('Authentication wrapper error', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
-        path: event.path,
-        method: event.httpMethod
-      });
-
-      return createAuthErrorResponse(
-        500,
-        'Internal server error',
-        'INTERNAL_ERROR'
+    } catch (error: unknown) {
+      logger.error(
+        'Authentication wrapper error',
+        error instanceof Error ? error : new Error(String(error)),
+        {
+          path: event.path,
+          method: event.httpMethod,
+        }
       );
+
+      return createAuthErrorResponse(500, 'Internal server error', 'INTERNAL_ERROR');
     }
   };
 };
@@ -627,9 +614,9 @@ export const withOptionalAuth = (
           statusCode: 200,
           headers: {
             ...corsMiddleware(),
-            ...securityHeaders()
+            ...securityHeaders(),
           },
-          body: ''
+          body: '',
         };
       }
 
@@ -639,15 +626,10 @@ export const withOptionalAuth = (
       // Check rate limiting
       const rateLimitResult = await rateLimitMiddleware(event);
       if (!rateLimitResult.allowed) {
-        return createAuthErrorResponse(
-          429,
-          'Rate limit exceeded',
-          'RATE_LIMIT_EXCEEDED',
-          {
-            resetTime: rateLimitResult.resetTime,
-            remaining: rateLimitResult.remaining
-          }
-        );
+        return createAuthErrorResponse(429, 'Rate limit exceeded', 'RATE_LIMIT_EXCEEDED', {
+          resetTime: rateLimitResult.resetTime,
+          remaining: rateLimitResult.remaining,
+        });
       }
 
       // Execute the handler with optional user
@@ -661,23 +643,20 @@ export const withOptionalAuth = (
           ...corsMiddleware(),
           ...securityHeaders(),
           'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
-          'X-RateLimit-Reset': rateLimitResult.resetTime.toString()
-        }
+          'X-RateLimit-Reset': rateLimitResult.resetTime.toString(),
+        },
       };
-
-    } catch (error) {
-      logger.error('Optional authentication wrapper error', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
-        path: event.path,
-        method: event.httpMethod
-      });
-
-      return createAuthErrorResponse(
-        500,
-        'Internal server error',
-        'INTERNAL_ERROR'
+    } catch (error: unknown) {
+      logger.error(
+        'Optional authentication wrapper error',
+        error instanceof Error ? error : new Error(String(error)),
+        {
+          path: event.path,
+          method: event.httpMethod,
+        }
       );
+
+      return createAuthErrorResponse(500, 'Internal server error', 'INTERNAL_ERROR');
     }
   };
 };
@@ -689,7 +668,7 @@ export const authMiddlewareHealthCheck = (): { status: 'healthy' | 'unhealthy'; 
   try {
     // Test JWT service health
     const jwtHealth = jwtService.healthCheck();
-    
+
     if (jwtHealth.status === 'healthy') {
       return {
         status: 'healthy',
@@ -698,8 +677,8 @@ export const authMiddlewareHealthCheck = (): { status: 'healthy' | 'unhealthy'; 
           jwtService: jwtHealth.details,
           rateLimiting: 'configured',
           cors: 'configured',
-          securityHeaders: 'configured'
-        }
+          securityHeaders: 'configured',
+        },
       };
     } else {
       return {
@@ -707,17 +686,17 @@ export const authMiddlewareHealthCheck = (): { status: 'healthy' | 'unhealthy'; 
         details: {
           middleware: 'degraded',
           jwtService: jwtHealth.details,
-          issue: 'JWT service unhealthy'
-        }
+          issue: 'JWT service unhealthy',
+        },
       };
     }
-  } catch (error) {
+  } catch (error: unknown) {
     return {
       status: 'unhealthy',
       details: {
         error: error instanceof Error ? error.message : 'Unknown error',
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     };
   }
 };

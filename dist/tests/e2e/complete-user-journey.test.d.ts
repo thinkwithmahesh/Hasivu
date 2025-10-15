@@ -256,7 +256,7 @@ declare class MockPaymentService {
     }>>;
     setupGradeBudgets(params: any, token: string): Promise<ApiResponse<any>>;
 }
-declare class MockRFIDService {
+declare class MockRfidService {
     createCard(data: any): Promise<ApiResponse<{
         id: string;
     }>>;
@@ -298,13 +298,13 @@ export declare const E2ETestHelpers: {
         authService: MockAuthService;
         menuService: MockMenuService;
         paymentService: MockPaymentService;
-        rfidService: MockRFIDService;
+        rfidService: MockRfidService;
     }): Promise<void>;
     cleanupTestSchool(schoolId: string, services: {
         authService: MockAuthService;
         menuService: MockMenuService;
         paymentService: MockPaymentService;
-        rfidService: MockRFIDService;
+        rfidService: MockRfidService;
     }): Promise<void>;
     waitForAsyncProcessing(timeout?: number): Promise<void>;
     verifySystemConsistency(schoolId: string, services: {

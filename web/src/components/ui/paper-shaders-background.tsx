@@ -1,7 +1,7 @@
-'use client'
+'use client';
 
-import React from 'react'
-import { MeshGradient } from '@paper-design/shaders-react'
+import React from 'react';
+import { MeshGradient } from '@paper-design/shaders-react';
 
 export const PaperShadersBackground = () => {
   return (
@@ -19,12 +19,12 @@ export const PaperShadersBackground = () => {
             '#7c3aed', // Violet accent
             '#000000', // Black anchor 3
             '#ffffff', // Strategic white accent
-            '#1a0133'  // Deep purple balance
+            '#1a0133', // Deep purple balance
           ]}
           style={{
             width: '100%',
             height: '100%',
-            opacity: 1
+            opacity: 1,
           }}
         />
       </div>
@@ -42,13 +42,13 @@ export const PaperShadersBackground = () => {
             '#8b5cf6', // Light violet wireframe
             '#000000', // Black anchor
             '#f3f4f6', // Light wireframe accent
-            '#1f0937'  // Deep purple base
+            '#1f0937', // Deep purple base
           ]}
           style={{
             width: '100%',
             height: '100%',
             opacity: 0.6,
-            mixBlendMode: 'overlay' as const
+            mixBlendMode: 'overlay' as const,
           }}
         />
       </div>
@@ -66,17 +66,17 @@ export const PaperShadersBackground = () => {
             '#1e1b4b',
             '#000000',
             '#ffffff',
-            '#0f0a1e'
+            '#0f0a1e',
           ]}
           style={{
             width: '100%',
             height: '100%',
-            mixBlendMode: 'soft-light' as const
+            mixBlendMode: 'soft-light' as const,
           }}
         />
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default PaperShadersBackground
+export default PaperShadersBackground;

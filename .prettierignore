@@ -42,3 +42,30 @@ docker-compose*.yml
 
 # AWS files
 .aws/
+
+# Test files (many have syntax errors)
+tests/
+web/tests/
+__tests__/
+*.test.*
+*.spec.*
+jest.config.*
+
+# Corrupted files with syntax errors
+src/scripts/.!66977!production-readiness-check.ts
+src/scripts/.!73791!production-readiness-check.ts
+src/services/analytics/.!67020!analytics-calculators.ts
+src/services/analytics/.!73834!analytics-calculators.ts
+src/services/environment-validator.service.js
+web/src/lib/test-polyfills.ts
+web/src/lib/test-setup.ts
+web/src/lib/utils-backup.ts
+web/src/pages-backup/integration-demo.tsx
+web/src/styles/theme.ts
+web/src/types/navigation.ts
+web/src/utils/accessibility.ts
+web/src/utils/analytics.ts
+web/src/utils/api.ts
+web/src/utils/constants.ts
+web/src/utils/createEmotionCache.ts
+web/src/lib/security/auth.ts

@@ -2,26 +2,26 @@
  * Centralized configuration, constants, and enums for the entire application
  * Provides type-safe constants and configuration management;
  * Application metadata and configuration;
-export const APP_CONFIG = {}
+export const _APP_CONFIG =  {}
   // Feature flags
   FEATURES: {}
 } as const;
  * User roles and permissions;
-export const USER_ROLES = {}
+export const _USER_ROLES =  {}
 } as const;
-export type UserRole = typeof USER_ROLES[keyof typeof USER_ROLES];
+export type _UserRole =  typeof USER_ROLES[keyof typeof USER_ROLES];
  * User permissions for role-based access control;
-export const PERMISSIONS = {}
+export const _PERMISSIONS =  {}
 } as const;
-export type Permission = typeof PERMISSIONS[keyof typeof PERMISSIONS];
+export type _Permission =  typeof PERMISSIONS[keyof typeof PERMISSIONS];
  * Role-permission mapping;
 export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {}
  * Order status definitions;
-export const ORDER_STATUS = {}
+export const _ORDER_STATUS =  {}
 } as const;
-export type OrderStatus = typeof ORDER_STATUS[keyof typeof ORDER_STATUS];
+export type _OrderStatus =  typeof ORDER_STATUS[keyof typeof ORDER_STATUS];
  * Order status labels and colors;
-export const ORDER_STATUS_CONFIG = {}
+export const _ORDER_STATUS_CONFIG =  {}
   [ORDER_STATUS.DRAFT]: { label: 'Draft', color: '#757575' },
   [ORDER_STATUS.PENDING]: { label: 'Pending', color: '#FF9800' },
   [ORDER_STATUS.CONFIRMED]: { label: "secure-configuration-value", color: '#2196F3' },
@@ -33,84 +33,75 @@ export const ORDER_STATUS_CONFIG = {}
   [ORDER_STATUS.REFUNDED]: { label: 'Refunded', color: '#607D8B' }
 } as const;
  * Payment status definitions;
-export const PAYMENT_STATUS = {}
+export const _PAYMENT_STATUS =  {}
 } as const;
-export type PaymentStatus = typeof PAYMENT_STATUS[keyof typeof PAYMENT_STATUS];
+export type _PaymentStatus =  typeof PAYMENT_STATUS[keyof typeof PAYMENT_STATUS];
  * Payment method definitions;
-export const PAYMENT_METHODS = {}
+export const _PAYMENT_METHODS =  {}
 } as const;
-export type PaymentMethod = typeof PAYMENT_METHODS[keyof typeof PAYMENT_METHODS];
+export type _PaymentMethod =  typeof PAYMENT_METHODS[keyof typeof PAYMENT_METHODS];
  * Meal types and timing;
-export const MEAL_TYPES = {}
+export const _MEAL_TYPES =  {}
 } as const;
-export type MealType = typeof MEAL_TYPES[keyof typeof MEAL_TYPES];
+export type _MealType =  typeof MEAL_TYPES[keyof typeof MEAL_TYPES];
  * Default meal timings;
-export const MEAL_TIMINGS = {}
+export const _MEAL_TIMINGS =  {}
   [MEAL_TYPES.BREAKFAST]: { start: '07:00', end: '09:00' },
   [MEAL_TYPES.LUNCH]: { start: '12:00', end: '14:00' },
   [MEAL_TYPES.DINNER]: { start: '18:00', end: '20:00' },
   [MEAL_TYPES.SNACKS]: { start: '15:00', end: '17:00' }
 } as const;
  * Dietary preferences and restrictions;
-export const DIETARY_PREFERENCES = {}
+export const _DIETARY_PREFERENCES =  {}
 } as const;
-export type DietaryPreference = typeof DIETARY_PREFERENCES[keyof typeof DIETARY_PREFERENCES];
+export type _DietaryPreference =  typeof DIETARY_PREFERENCES[keyof typeof DIETARY_PREFERENCES];
  * Common allergies and dietary restrictions;
-export const ALLERGIES = {}
+export const _ALLERGIES =  {}
 } as const;
-export type Allergy = typeof ALLERGIES[keyof typeof ALLERGIES];
+export type _Allergy =  typeof ALLERGIES[keyof typeof ALLERGIES];
  * Spice levels;
-export const SPICE_LEVELS = {}
+export const _SPICE_LEVELS =  {}
 } as const;
-export type SpiceLevel = typeof SPICE_LEVELS[keyof typeof SPICE_LEVELS];
+export type _SpiceLevel =  typeof SPICE_LEVELS[keyof typeof SPICE_LEVELS];
  * Business configuration constants;
-export const BUSINESS_CONFIG = {}
+export const _BUSINESS_CONFIG =  {}
 } as const;
  * API response codes;
-export const API_CODES = {}
+export const _API_CODES =  {}
 } as const;
-export type ApiCode = typeof API_CODES[keyof typeof API_CODES];
+export type _ApiCode =  typeof API_CODES[keyof typeof API_CODES];
  * Notification types;
-export const NOTIFICATION_TYPES = {}
+export const _NOTIFICATION_TYPES =  {}
 } as const;
-export type NotificationType = typeof NOTIFICATION_TYPES[keyof typeof NOTIFICATION_TYPES];
+export type _NotificationType =  typeof NOTIFICATION_TYPES[keyof typeof NOTIFICATION_TYPES];
  * Analytics event types;
-export const ANALYTICS_EVENTS = {}
+export const _ANALYTICS_EVENTS =  {}
 } as const;
-export type AnalyticsEvent = typeof ANALYTICS_EVENTS[keyof typeof ANALYTICS_EVENTS];
+export type _AnalyticsEvent =  typeof ANALYTICS_EVENTS[keyof typeof ANALYTICS_EVENTS];
  * Local storage keys;
-export const STORAGE_KEYS = {}
+export const _STORAGE_KEYS =  {}
 } as const;
-export type StorageKey = typeof STORAGE_KEYS[keyof typeof STORAGE_KEYS];
+export type _StorageKey =  typeof STORAGE_KEYS[keyof typeof STORAGE_KEYS];
  * Date and time formats;
-export const DATE_FORMATS = {}
+export const _DATE_FORMATS =  {}
 } as const;
  * Currency configuration;
-export const CURRENCY_CONFIG = {}
+export const _CURRENCY_CONFIG =  {}
 } as const;
  * Error messages;
-export const ERROR_MESSAGES = {}
+export const _ERROR_MESSAGES =  {}
 } as const;
  * Success messages;
-export const SUCCESS_MESSAGES = {}
+export const _SUCCESS_MESSAGES =  {}
 } as const;
  * Regular expressions for validation;
-export const REGEX_PATTERNS = {}
+export const _REGEX_PATTERNS =  {}
   PHONE_INDIAN: / ^[6-9]\d{9}$/,
   RFID_CARD: / ^[A-Fa-f0-9]{8,16}$/,
-  STRONG_PASSWORD: / ^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{}
-}$/,
-  PIN_CODE: / ^[1-9][0-9]{5}$/,
-  STUDENT_ID: / ^[A-Za-z0-9]{6,12}$/,
-  SCHOOL_CODE: / ^[A-Z0-9]{4,8}$/,
-  GST_NUMBER: / ^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/,
-  IFSC_CODE: / ^[A-Z]{4}0[A-Z0-9]{6}$/,
-  UPI_ID: / ^[\w.-]+@[\w.-]+$/,
-  CARD_NUMBER: / ^[0-9]{13,19}$/,
-  CVV: / ^[0-9]{3,4}$;
+  STRONG_PASSWORD: / ^(?
 } as const;
  * Theme constants;
-export const THEME_CONFIG = {}
+export const _THEME_CONFIG =  {}
   // Z-index values
   Z_INDEX: {}
 } as const;

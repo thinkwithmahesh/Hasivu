@@ -1,5 +1,14 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+jest.mock('@shared/database.service');
+const database_service_1 = require("../../__mocks__/@shared/database.service");
+const mockRedisGet = jest.fn();
+const mockRedisSet = jest.fn();
+const mockRedisSetex = jest.fn();
+const mockRedisDel = jest.fn();
+const mockCacheGet = jest.fn();
+const mockCacheSetex = jest.fn();
+const mockCacheDel = jest.fn();
 const NotificationStatus = {
     PENDING: 'pending',
     SENT: 'sent',
@@ -14,32 +23,15 @@ const NotificationPriority = {
     HIGH: 'high',
     URGENT: 'urgent'
 };
-jest.mock('../../../src/services/database.service', () => ({
-    DatabaseService: {
-        client: {
-            notification: {
-                create: jest.fn(),
-                findFirst: jest.fn(),
-                findMany: jest.fn(),
-                update: jest.fn(),
-                count: jest.fn()
-            },
-            user: {
-                findUnique: jest.fn(),
-                update: jest.fn()
-            }
-        }
-    }
-}));
-jest.mock('../../../src/services/redis.service', () => ({
+jest.mock('@services/redis.service', () => ({
     RedisService: {
-        get: jest.fn(),
-        set: jest.fn(),
-        setex: jest.fn(),
-        del: jest.fn()
+        get: mockRedisGet,
+        set: mockRedisSet,
+        setex: mockRedisSetex,
+        del: mockRedisDel
     }
 }));
-jest.mock('../../../src/utils/logger', () => ({
+jest.mock('@/utils/logger', () => ({
     logger: {
         info: jest.fn(),
         error: jest.fn(),
@@ -47,21 +39,21 @@ jest.mock('../../../src/utils/logger', () => ({
         debug: jest.fn()
     }
 }));
-jest.mock('../../../src/utils/cache', () => ({
+jest.mock('@/utils/cache', () => ({
     cache: {
-        get: jest.fn(),
-        setex: jest.fn(),
-        del: jest.fn()
+        get: mockCacheGet,
+        setex: mockCacheSetex,
+        del: mockCacheDel
     }
 }));
 const notification_service_1 = require("../../../src/services/notification.service");
-const database_service_1 = require("../../../src/services/database.service");
-const redis_service_1 = require("../../../src/services/redis.service");
-const logger_1 = require("../../../src/utils/logger");
-const cache_1 = require("../../../src/utils/cache");
-const MockedDatabaseService = jest.mocked(database_service_1.DatabaseService);
-const MockedRedisService = jest.mocked(redis_service_1.RedisService);
-const MockedCache = jest.mocked(cache_1.cache);
+const database_service_2 = require("@shared/database.service");
+const redis_service_1 = require("@services/redis.service");
+const logger_1 = require("@/utils/logger");
+const cache_1 = require("@/utils/cache");
+const MockedDatabaseService = database_service_2.DatabaseService;
+const MockedRedisService = redis_service_1.RedisService;
+const MockedCache = cache_1.cache;
 describe('NotificationService', () => {
     let notificationService;
     const mockUser = {
@@ -177,10 +169,10 @@ describe('NotificationService', () => {
     };
     beforeEach(() => {
         jest.clearAllMocks();
-        notificationService = new notification_service_1.NotificationService();
-        MockedDatabaseService.client.user.findUnique.mockResolvedValue(mockUser);
-        MockedCache.get.mockResolvedValue(null);
-        MockedCache.setex.mockResolvedValue(undefined);
+        notificationService = notification_service_1.NotificationService.getInstance();
+        database_service_1.mockUserFindUnique.mockResolvedValue(mockUser);
+        mockCacheGet.mockResolvedValue(null);
+        mockCacheSetex.mockResolvedValue(undefined);
     });
     describe('Notification Sending', () => {
         describe('sendNotification', () => {
@@ -193,7 +185,7 @@ describe('NotificationService', () => {
                 priority: 'normal'
             };
             beforeEach(() => {
-                MockedCache.get.mockImplementation((key) => {
+                mockCacheGet.mockImplementation((key) => {
                     if (key.includes('notification_template:')) {
                         return Promise.resolve(JSON.stringify(mockTemplate));
                     }
@@ -202,24 +194,26 @@ describe('NotificationService', () => {
                     }
                     return Promise.resolve(null);
                 });
-                MockedDatabaseService.client.notification.create.mockResolvedValue(mockNotification);
-                MockedDatabaseService.client.notification.update.mockResolvedValue({
+                database_service_1.mockNotificationCreate.mockResolvedValue(mockNotification);
+                database_service_1.mockNotificationUpdate.mockResolvedValue({
                     ...mockNotification,
                     status: 'sent',
                     sentAt: new Date()
                 });
-                MockedDatabaseService.client.notification.count.mockResolvedValue(5);
+                database_service_1.mockNotificationCount.mockResolvedValue(5);
             });
             it('should send notification successfully', async () => {
                 const result = await notification_service_1.NotificationService.sendNotification(validRequest);
-                expect(result.success).toBe(true);
+                expect(result).toEqual(expect.objectContaining({
+                    success: true
+                }));
                 expect(result.data).toBeDefined();
                 expect(result.data?.templateData).toEqual(mockTemplate);
-                expect(MockedDatabaseService.client.notification.create).toHaveBeenCalled();
+                expect(database_service_1.mockNotificationCreate).toHaveBeenCalled();
                 expect(logger_1.logger.info).toHaveBeenCalledWith('Notification sent successfully', expect.any(Object));
             });
             it('should reject notification for non-existent template', async () => {
-                MockedCache.get.mockResolvedValue(null);
+                mockCacheGet.mockResolvedValue(null);
                 const result = await notification_service_1.NotificationService.sendNotification({
                     ...validRequest,
                     templateId: 'non_existent'
@@ -229,13 +223,13 @@ describe('NotificationService', () => {
             });
             it('should reject notification for inactive template', async () => {
                 const inactiveTemplate = { ...mockTemplate, isActive: false };
-                MockedCache.get.mockResolvedValue(JSON.stringify(inactiveTemplate));
+                mockCacheGet.mockResolvedValue(JSON.stringify(inactiveTemplate));
                 const result = await notification_service_1.NotificationService.sendNotification(validRequest);
                 expect(result.success).toBe(false);
                 expect(result.error?.code).toBe('TEMPLATE_NOT_FOUND');
             });
             it('should reject notification for non-existent recipient', async () => {
-                MockedDatabaseService.client.user.findUnique.mockResolvedValue(null);
+                database_service_1.mockUserFindUnique.mockResolvedValue(null);
                 const result = await notification_service_1.NotificationService.sendNotification(validRequest);
                 expect(result.success).toBe(false);
                 expect(result.error?.code).toBe('RECIPIENT_NOT_FOUND');
@@ -252,7 +246,7 @@ describe('NotificationService', () => {
                         socket: false
                     }
                 };
-                MockedCache.get.mockImplementation((key) => {
+                mockCacheGet.mockImplementation((key) => {
                     if (key.includes('notification_template:')) {
                         return Promise.resolve(JSON.stringify(mockTemplate));
                     }
@@ -273,7 +267,7 @@ describe('NotificationService', () => {
                 const urgentRequest = { ...validRequest, priority: 'urgent' };
                 const result = await notification_service_1.NotificationService.sendNotification(urgentRequest);
                 expect(result.success).toBe(true);
-                expect(MockedDatabaseService.client.notification.create).toHaveBeenCalled();
+                expect(database_service_1.mockNotificationCreate).toHaveBeenCalled();
                 jest.useRealTimers();
             });
             it('should schedule non-urgent notifications during quiet hours', async () => {
@@ -289,14 +283,14 @@ describe('NotificationService', () => {
             it('should process template variables correctly', async () => {
                 const result = await notification_service_1.NotificationService.sendNotification(validRequest);
                 expect(result.success).toBe(true);
-                expect(MockedDatabaseService.client.notification.create).toHaveBeenCalledWith({
+                expect(database_service_1.mockNotificationCreate).toHaveBeenCalledWith({
                     data: expect.objectContaining({
                         variables: JSON.stringify(validRequest.variables)
                     })
                 });
             });
             it('should handle database errors gracefully', async () => {
-                MockedDatabaseService.client.notification.create.mockRejectedValue(new Error('Database error'));
+                database_service_1.mockNotificationCreate.mockRejectedValue(new Error('Database error'));
                 const result = await notification_service_1.NotificationService.sendNotification(validRequest);
                 expect(result.success).toBe(false);
                 expect(result.error?.code).toBe('NOTIFICATION_SEND_FAILED');
@@ -306,7 +300,7 @@ describe('NotificationService', () => {
                 const customExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
                 const requestWithExpiry = { ...validRequest, expiresAt: customExpiry };
                 await notification_service_1.NotificationService.sendNotification(requestWithExpiry);
-                expect(MockedDatabaseService.client.notification.create).toHaveBeenCalledWith({
+                expect(database_service_1.mockNotificationCreate).toHaveBeenCalledWith({
                     data: expect.objectContaining({
                         expiresAt: customExpiry
                     })
@@ -324,7 +318,7 @@ describe('NotificationService', () => {
                         socket: false
                     }
                 };
-                MockedCache.get.mockImplementation((key) => {
+                mockCacheGet.mockImplementation((key) => {
                     if (key.includes('notification_template:')) {
                         return Promise.resolve(JSON.stringify(mockTemplate));
                     }
@@ -342,7 +336,7 @@ describe('NotificationService', () => {
                 };
                 const result = await notification_service_1.NotificationService.sendNotification(request);
                 expect(result.success).toBe(true);
-                const createdNotification = MockedDatabaseService.client.notification.create.mock.calls[0][0];
+                const createdNotification = database_service_1.mockNotificationCreate.mock.calls[0][0];
                 const channels = JSON.parse(createdNotification.data.channels);
                 expect(channels).toEqual(['push', 'whatsapp']);
             });
@@ -359,7 +353,7 @@ describe('NotificationService', () => {
                 priority: 'normal'
             };
             beforeEach(() => {
-                MockedCache.get.mockImplementation((key) => {
+                mockCacheGet.mockImplementation((key) => {
                     if (key.includes('notification_template:')) {
                         return Promise.resolve(JSON.stringify(mockTemplate));
                     }
@@ -368,22 +362,22 @@ describe('NotificationService', () => {
                     }
                     return Promise.resolve(null);
                 });
-                MockedDatabaseService.client.notification.create.mockResolvedValue(mockNotification);
-                MockedDatabaseService.client.notification.update.mockResolvedValue({
+                database_service_1.mockNotificationCreate.mockResolvedValue(mockNotification);
+                database_service_1.mockNotificationUpdate.mockResolvedValue({
                     ...mockNotification,
                     status: 'sent'
                 });
-                MockedDatabaseService.client.notification.count.mockResolvedValue(5);
+                database_service_1.mockNotificationCount.mockResolvedValue(5);
             });
             it('should send bulk notifications successfully', async () => {
                 const result = await notification_service_1.NotificationService.sendBulkNotifications(bulkRequest);
                 expect(result.success).toBe(true);
                 expect(result.data?.successful).toBe(3);
                 expect(result.data?.failed).toBe(0);
-                expect(MockedDatabaseService.client.notification.create).toHaveBeenCalledTimes(3);
+                expect(database_service_1.mockNotificationCreate).toHaveBeenCalledTimes(3);
             });
             it('should handle partial failures in bulk sending', async () => {
-                MockedDatabaseService.client.user.findUnique.mockImplementation((query) => {
+                database_service_1.mockUserFindUnique.mockImplementation((query) => {
                     if (query.where.id === 'user-2') {
                         return null;
                     }
@@ -408,21 +402,21 @@ describe('NotificationService', () => {
                 const result = await notification_service_1.NotificationService.sendBulkNotifications(largeBulkRequest);
                 expect(result.success).toBe(true);
                 expect(result.data?.successful).toBe(250);
-                expect(MockedDatabaseService.client.notification.create).toHaveBeenCalledTimes(250);
+                expect(database_service_1.mockNotificationCreate).toHaveBeenCalledTimes(250);
             });
             it('should handle bulk sending errors gracefully', async () => {
-                MockedDatabaseService.client.notification.create.mockRejectedValue(new Error('Database connection failed'));
+                database_service_1.mockNotificationCreate.mockRejectedValue(new Error('Database connection failed'));
                 const result = await notification_service_1.NotificationService.sendBulkNotifications(bulkRequest);
                 expect(result.success).toBe(true);
                 expect(result.data?.failed).toBe(3);
                 expect(result.data?.successful).toBe(0);
-                MockedDatabaseService.client.notification.create.mockResolvedValue(mockNotification);
+                database_service_1.mockNotificationCreate.mockResolvedValue(mockNotification);
             });
         });
     });
     describe('Order Notifications', () => {
         beforeEach(() => {
-            MockedCache.get.mockImplementation((key) => {
+            mockCacheGet.mockImplementation((key) => {
                 if (key.includes('notification_template:')) {
                     return Promise.resolve(JSON.stringify(mockTemplate));
                 }
@@ -431,12 +425,12 @@ describe('NotificationService', () => {
                 }
                 return Promise.resolve(null);
             });
-            MockedDatabaseService.client.notification.create.mockResolvedValue(mockNotification);
-            MockedDatabaseService.client.notification.update.mockResolvedValue({
+            database_service_1.mockNotificationCreate.mockResolvedValue(mockNotification);
+            database_service_1.mockNotificationUpdate.mockResolvedValue({
                 ...mockNotification,
                 status: 'sent'
             });
-            MockedDatabaseService.client.notification.count.mockResolvedValue(5);
+            database_service_1.mockNotificationCount.mockResolvedValue(5);
         });
         describe('sendOrderConfirmation', () => {
             const orderData = {
@@ -447,9 +441,8 @@ describe('NotificationService', () => {
                 deliveryDate: new Date('2024-01-15')
             };
             it('should send order confirmation notification', async () => {
-                const result = await notification_service_1.NotificationService.sendOrderConfirmation(orderData);
-                expect(result.success).toBe(true);
-                expect(MockedDatabaseService.client.notification.create).toHaveBeenCalledWith({
+                await notification_service_1.NotificationService.sendOrderConfirmation(orderData);
+                expect(database_service_1.mockNotificationCreate).toHaveBeenCalledWith({
                     data: expect.objectContaining({
                         templateId: 'order_confirmation',
                         recipientId: 'parent-123',
@@ -460,7 +453,7 @@ describe('NotificationService', () => {
             });
             it('should format variables correctly for order confirmation', async () => {
                 await notification_service_1.NotificationService.sendOrderConfirmation(orderData);
-                const createCall = MockedDatabaseService.client.notification.create.mock.calls[0][0];
+                const createCall = database_service_1.mockNotificationCreate.mock.calls[0][0];
                 const variables = JSON.parse(createCall.data.variables);
                 expect(variables.orderId).toBe('ORD-123');
                 expect(variables.totalAmount).toBe('150.00');
@@ -478,7 +471,7 @@ describe('NotificationService', () => {
             it('should send order status update notification', async () => {
                 const result = await notification_service_1.NotificationService.sendOrderStatusUpdate(statusData);
                 expect(result.success).toBe(true);
-                expect(MockedDatabaseService.client.notification.create).toHaveBeenCalledWith({
+                expect(database_service_1.mockNotificationCreate).toHaveBeenCalledWith({
                     data: expect.objectContaining({
                         templateId: 'order_status_update',
                         recipientId: 'parent-123',
@@ -488,13 +481,13 @@ describe('NotificationService', () => {
             });
             it('should set high priority for delivered orders', async () => {
                 await notification_service_1.NotificationService.sendOrderStatusUpdate(statusData);
-                const createCall = MockedDatabaseService.client.notification.create.mock.calls[0][0];
+                const createCall = database_service_1.mockNotificationCreate.mock.calls[0][0];
                 expect(createCall.data.priority).toBe('high');
             });
             it('should set normal priority for non-delivered status', async () => {
                 const normalStatusData = { ...statusData, newStatus: 'PREPARING' };
                 await notification_service_1.NotificationService.sendOrderStatusUpdate(normalStatusData);
-                const createCall = MockedDatabaseService.client.notification.create.mock.calls[0][0];
+                const createCall = database_service_1.mockNotificationCreate.mock.calls[0][0];
                 expect(createCall.data.priority).toBe('normal');
             });
         });
@@ -502,17 +495,17 @@ describe('NotificationService', () => {
     describe('Notification Management', () => {
         describe('markAsRead', () => {
             it('should mark notification as read successfully', async () => {
-                MockedDatabaseService.client.notification.findFirst.mockResolvedValue(mockNotification);
-                MockedDatabaseService.client.notification.update.mockResolvedValue({
+                database_service_1.mockNotificationFindFirst.mockResolvedValue(mockNotification);
+                database_service_1.mockNotificationUpdate.mockResolvedValue({
                     ...mockNotification,
                     status: 'read',
                     readAt: new Date()
                 });
-                MockedDatabaseService.client.notification.count.mockResolvedValue(4);
+                database_service_1.mockNotificationCount.mockResolvedValue(4);
                 const result = await notification_service_1.NotificationService.markAsRead('notification-123', 'user-123');
                 expect(result.success).toBe(true);
                 expect(result.data?.status).toBe('read');
-                expect(MockedDatabaseService.client.notification.update).toHaveBeenCalledWith({
+                expect(database_service_1.mockNotificationUpdate).toHaveBeenCalledWith({
                     where: { id: 'notification-123' },
                     data: expect.objectContaining({
                         status: 'read',
@@ -521,14 +514,14 @@ describe('NotificationService', () => {
                 });
             });
             it('should reject marking non-existent notification as read', async () => {
-                MockedDatabaseService.client.notification.findFirst.mockResolvedValue(null);
+                database_service_1.mockNotificationFindFirst.mockResolvedValue(null);
                 const result = await notification_service_1.NotificationService.markAsRead('non-existent', 'user-123');
                 expect(result.success).toBe(false);
                 expect(result.error?.code).toBe('NOTIFICATION_NOT_FOUND');
             });
             it('should handle database errors when marking as read', async () => {
-                MockedDatabaseService.client.notification.findFirst.mockResolvedValue(mockNotification);
-                MockedDatabaseService.client.notification.update.mockRejectedValue(new Error('Database error'));
+                database_service_1.mockNotificationFindFirst.mockResolvedValue(mockNotification);
+                database_service_1.mockNotificationUpdate.mockRejectedValue(new Error('Database error'));
                 const result = await notification_service_1.NotificationService.markAsRead('notification-123', 'user-123');
                 expect(result.success).toBe(false);
                 expect(result.error?.code).toBe('MARK_READ_FAILED');
@@ -542,8 +535,8 @@ describe('NotificationService', () => {
                 { ...mockNotification, id: 'notif-3', createdAt: new Date('2024-01-13') }
             ];
             beforeEach(() => {
-                MockedDatabaseService.client.notification.findMany.mockResolvedValue(mockNotifications);
-                MockedDatabaseService.client.notification.count.mockResolvedValue(3);
+                database_service_1.mockNotificationFindMany.mockResolvedValue(mockNotifications);
+                database_service_1.mockNotificationCount.mockResolvedValue(3);
             });
             it('should get user notifications with default pagination', async () => {
                 const result = await notification_service_1.NotificationService.getUserNotifications('user-123');
@@ -555,7 +548,7 @@ describe('NotificationService', () => {
             });
             it('should apply pagination correctly', async () => {
                 await notification_service_1.NotificationService.getUserNotifications('user-123', { page: 2, limit: 10 });
-                expect(MockedDatabaseService.client.notification.findMany).toHaveBeenCalledWith({
+                expect(database_service_1.mockNotificationFindMany).toHaveBeenCalledWith({
                     where: { recipientId: 'user-123' },
                     orderBy: { createdAt: 'desc' },
                     skip: 10,
@@ -564,7 +557,7 @@ describe('NotificationService', () => {
             });
             it('should filter by status when provided', async () => {
                 await notification_service_1.NotificationService.getUserNotifications('user-123', { status: 'read' });
-                expect(MockedDatabaseService.client.notification.findMany).toHaveBeenCalledWith({
+                expect(database_service_1.mockNotificationFindMany).toHaveBeenCalledWith({
                     where: { recipientId: 'user-123', status: 'read' },
                     orderBy: { createdAt: 'desc' },
                     skip: 0,
@@ -573,7 +566,7 @@ describe('NotificationService', () => {
             });
             it('should filter unread notifications only', async () => {
                 await notification_service_1.NotificationService.getUserNotifications('user-123', { unreadOnly: true });
-                expect(MockedDatabaseService.client.notification.findMany).toHaveBeenCalledWith({
+                expect(database_service_1.mockNotificationFindMany).toHaveBeenCalledWith({
                     where: {
                         recipientId: 'user-123',
                         status: { in: ['pending', 'sent', 'delivered'] }
@@ -585,7 +578,7 @@ describe('NotificationService', () => {
             });
             it('should filter by priority when provided', async () => {
                 await notification_service_1.NotificationService.getUserNotifications('user-123', { priority: 'high' });
-                expect(MockedDatabaseService.client.notification.findMany).toHaveBeenCalledWith({
+                expect(database_service_1.mockNotificationFindMany).toHaveBeenCalledWith({
                     where: { recipientId: 'user-123', priority: 'high' },
                     orderBy: { createdAt: 'desc' },
                     skip: 0,
@@ -594,7 +587,7 @@ describe('NotificationService', () => {
             });
             it('should limit maximum page size', async () => {
                 await notification_service_1.NotificationService.getUserNotifications('user-123', { limit: 200 });
-                expect(MockedDatabaseService.client.notification.findMany).toHaveBeenCalledWith({
+                expect(database_service_1.mockNotificationFindMany).toHaveBeenCalledWith({
                     where: { recipientId: 'user-123' },
                     orderBy: { createdAt: 'desc' },
                     skip: 0,
@@ -602,7 +595,7 @@ describe('NotificationService', () => {
                 });
             });
             it('should handle database errors gracefully', async () => {
-                MockedDatabaseService.client.notification.findMany.mockRejectedValue(new Error('Database error'));
+                database_service_1.mockNotificationFindMany.mockRejectedValue(new Error('Database error'));
                 const result = await notification_service_1.NotificationService.getUserNotifications('user-123');
                 expect(result.success).toBe(false);
                 expect(result.error?.code).toBe('GET_NOTIFICATIONS_FAILED');
@@ -623,8 +616,8 @@ describe('NotificationService', () => {
                 }
             };
             beforeEach(() => {
-                MockedCache.get.mockResolvedValue(JSON.stringify(mockPreferences));
-                MockedDatabaseService.client.user.update.mockResolvedValue({
+                mockCacheGet.mockResolvedValue(JSON.stringify(mockPreferences));
+                database_service_1.mockUserUpdate.mockResolvedValue({
                     ...mockUser,
                     notificationPreferences: JSON.stringify({ ...mockPreferences, ...updatedPreferences })
                 });
@@ -634,7 +627,7 @@ describe('NotificationService', () => {
                 expect(result.success).toBe(true);
                 expect(result.data?.channels.email).toBe(false);
                 expect(result.data?.channels.sms).toBe(true);
-                expect(MockedDatabaseService.client.user.update).toHaveBeenCalledWith({
+                expect(database_service_1.mockUserUpdate).toHaveBeenCalledWith({
                     where: { id: 'user-123' },
                     data: {
                         notificationPreferences: JSON.stringify({ ...mockPreferences, ...updatedPreferences })
@@ -643,10 +636,10 @@ describe('NotificationService', () => {
             });
             it('should update cache after saving preferences', async () => {
                 await notification_service_1.NotificationService.updateNotificationPreferences('user-123', updatedPreferences);
-                expect(MockedCache.setex).toHaveBeenCalledWith('notification_preferences:user-123', 3600, JSON.stringify({ ...mockPreferences, ...updatedPreferences }));
+                expect(mockCacheSetex).toHaveBeenCalledWith('notification_preferences:user-123', 3600, JSON.stringify({ ...mockPreferences, ...updatedPreferences }));
             });
             it('should handle database errors when updating preferences', async () => {
-                MockedDatabaseService.client.user.update.mockRejectedValue(new Error('Database error'));
+                database_service_1.mockUserUpdate.mockRejectedValue(new Error('Database error'));
                 const result = await notification_service_1.NotificationService.updateNotificationPreferences('user-123', updatedPreferences);
                 expect(result.success).toBe(false);
                 expect(result.error?.code).toBe('PREFERENCES_UPDATE_FAILED');
@@ -693,7 +686,7 @@ describe('NotificationService', () => {
                 }
             ];
             beforeEach(() => {
-                MockedDatabaseService.client.notification.findMany.mockResolvedValue(mockAnalyticsNotifications);
+                database_service_1.mockNotificationFindMany.mockResolvedValue(mockAnalyticsNotifications);
             });
             it('should get notification analytics successfully', async () => {
                 const filters = {
@@ -716,7 +709,7 @@ describe('NotificationService', () => {
                     userId: 'user-123'
                 };
                 await notification_service_1.NotificationService.getNotificationAnalytics(filters);
-                expect(MockedDatabaseService.client.notification.findMany).toHaveBeenCalledWith({
+                expect(database_service_1.mockNotificationFindMany).toHaveBeenCalledWith({
                     where: {
                         createdAt: {
                             gte: filters.startDate,
@@ -742,7 +735,7 @@ describe('NotificationService', () => {
                 expect(result.data?.channelStats.email.failed).toBe(1);
             });
             it('should handle database errors in analytics', async () => {
-                MockedDatabaseService.client.notification.findMany.mockRejectedValue(new Error('Database error'));
+                database_service_1.mockNotificationFindMany.mockRejectedValue(new Error('Database error'));
                 const filters = {
                     startDate: new Date('2024-01-01'),
                     endDate: new Date('2024-01-31')
@@ -756,17 +749,17 @@ describe('NotificationService', () => {
     });
     describe('Template and Channel Management', () => {
         beforeEach(() => {
-            MockedDatabaseService.client.notification.create.mockResolvedValue(mockNotification);
-            MockedDatabaseService.client.notification.update.mockResolvedValue({
+            database_service_1.mockNotificationCreate.mockResolvedValue(mockNotification);
+            database_service_1.mockNotificationUpdate.mockResolvedValue({
                 ...mockNotification,
                 status: 'sent',
                 sentAt: new Date()
             });
-            MockedDatabaseService.client.notification.count.mockResolvedValue(5);
+            database_service_1.mockNotificationCount.mockResolvedValue(5);
         });
         describe('Template Processing', () => {
             it('should process template variables correctly', async () => {
-                MockedCache.get.mockImplementation((key) => {
+                mockCacheGet.mockImplementation((key) => {
                     if (key.includes('notification_template:')) {
                         return Promise.resolve(JSON.stringify(mockTemplate));
                     }
@@ -783,7 +776,7 @@ describe('NotificationService', () => {
                 };
                 const result = await notification_service_1.NotificationService.sendNotification(request);
                 expect(result.success).toBe(true);
-                expect(MockedDatabaseService.client.notification.create).toHaveBeenCalledWith({
+                expect(database_service_1.mockNotificationCreate).toHaveBeenCalledWith({
                     data: expect.objectContaining({
                         variables: JSON.stringify(request.variables)
                     })
@@ -793,14 +786,14 @@ describe('NotificationService', () => {
         describe('Channel Determination', () => {
             beforeEach(() => {
                 jest.clearAllMocks();
-                MockedDatabaseService.client.user.findUnique.mockResolvedValue(mockUser);
-                MockedDatabaseService.client.notification.create.mockResolvedValue(mockNotification);
-                MockedDatabaseService.client.notification.update.mockResolvedValue({
+                database_service_1.mockUserFindUnique.mockResolvedValue(mockUser);
+                database_service_1.mockNotificationCreate.mockResolvedValue(mockNotification);
+                database_service_1.mockNotificationUpdate.mockResolvedValue({
                     ...mockNotification,
                     status: 'sent',
                     sentAt: new Date()
                 });
-                MockedDatabaseService.client.notification.count.mockResolvedValue(5);
+                database_service_1.mockNotificationCount.mockResolvedValue(5);
             });
             it('should determine available channels based on template and preferences', async () => {
                 const limitedPreferences = {
@@ -814,7 +807,7 @@ describe('NotificationService', () => {
                         socket: false
                     }
                 };
-                MockedCache.get.mockImplementation((key) => {
+                mockCacheGet.mockImplementation((key) => {
                     if (key.includes('notification_template:')) {
                         return Promise.resolve(JSON.stringify(mockTemplate));
                     }
@@ -830,12 +823,12 @@ describe('NotificationService', () => {
                 };
                 const result = await notification_service_1.NotificationService.sendNotification(request);
                 expect(result.success).toBe(true);
-                const createdNotification = MockedDatabaseService.client.notification.create.mock.calls[0][0];
+                const createdNotification = database_service_1.mockNotificationCreate.mock.calls[0][0];
                 const channels = JSON.parse(createdNotification.data.channels);
                 expect(channels).toEqual(['push', 'whatsapp']);
             });
             it('should respect requested channels when provided', async () => {
-                MockedCache.get.mockImplementation((key) => {
+                mockCacheGet.mockImplementation((key) => {
                     if (key.includes('notification_template:')) {
                         return Promise.resolve(JSON.stringify(mockTemplate));
                     }
@@ -852,7 +845,7 @@ describe('NotificationService', () => {
                 };
                 const result = await notification_service_1.NotificationService.sendNotification(request);
                 expect(result.success).toBe(true);
-                const createdNotification = MockedDatabaseService.client.notification.create.mock.calls[0][0];
+                const createdNotification = database_service_1.mockNotificationCreate.mock.calls[0][0];
                 const channels = JSON.parse(createdNotification.data.channels);
                 expect(channels).toEqual(['push', 'email']);
             });
@@ -872,7 +865,7 @@ describe('NotificationService', () => {
                 const quietTime = new Date();
                 quietTime.setHours(23, 30, 0, 0);
                 jest.setSystemTime(quietTime);
-                MockedCache.get.mockImplementation((key) => {
+                mockCacheGet.mockImplementation((key) => {
                     if (key.includes('notification_template:')) {
                         return Promise.resolve(JSON.stringify(mockTemplate));
                     }
@@ -906,7 +899,7 @@ describe('NotificationService', () => {
                 const quietTime = new Date();
                 quietTime.setHours(23, 30, 0, 0);
                 jest.setSystemTime(quietTime);
-                MockedCache.get.mockImplementation((key) => {
+                mockCacheGet.mockImplementation((key) => {
                     if (key.includes('notification_template:')) {
                         return Promise.resolve(JSON.stringify(mockTemplate));
                     }
@@ -932,7 +925,7 @@ describe('NotificationService', () => {
     });
     describe('Error Handling and Edge Cases', () => {
         it('should handle cache failures gracefully', async () => {
-            MockedCache.get.mockImplementation((key) => {
+            mockCacheGet.mockImplementation((key) => {
                 if (key.includes('notification_template:')) {
                     return Promise.resolve(null);
                 }
@@ -941,7 +934,7 @@ describe('NotificationService', () => {
                 }
                 return Promise.resolve(null);
             });
-            MockedDatabaseService.client.user.findUnique.mockResolvedValue({
+            database_service_1.mockUserFindUnique.mockResolvedValue({
                 ...mockUser,
                 notificationPreferences: JSON.stringify(mockPreferences)
             });
@@ -950,18 +943,18 @@ describe('NotificationService', () => {
                 recipientId: 'user-123',
                 recipientType: 'parent'
             };
-            MockedDatabaseService.client.notification.create.mockResolvedValue(mockNotification);
-            MockedDatabaseService.client.notification.update.mockResolvedValue({
+            database_service_1.mockNotificationCreate.mockResolvedValue(mockNotification);
+            database_service_1.mockNotificationUpdate.mockResolvedValue({
                 ...mockNotification,
                 status: 'sent'
             });
-            MockedDatabaseService.client.notification.count.mockResolvedValue(5);
+            database_service_1.mockNotificationCount.mockResolvedValue(5);
             const result = await notification_service_1.NotificationService.sendNotification(request);
             expect(result.success).toBe(true);
         });
         it('should handle missing user preferences gracefully', async () => {
-            MockedCache.get.mockResolvedValue(null);
-            MockedDatabaseService.client.user.findUnique.mockResolvedValue({
+            mockCacheGet.mockResolvedValue(null);
+            database_service_1.mockUserFindUnique.mockResolvedValue({
                 ...mockUser,
                 notificationPreferences: null
             });
@@ -970,17 +963,17 @@ describe('NotificationService', () => {
                 recipientId: 'user-123',
                 recipientType: 'parent'
             };
-            MockedDatabaseService.client.notification.create.mockResolvedValue(mockNotification);
-            MockedDatabaseService.client.notification.update.mockResolvedValue({
+            database_service_1.mockNotificationCreate.mockResolvedValue(mockNotification);
+            database_service_1.mockNotificationUpdate.mockResolvedValue({
                 ...mockNotification,
                 status: 'sent'
             });
-            MockedDatabaseService.client.notification.count.mockResolvedValue(5);
+            database_service_1.mockNotificationCount.mockResolvedValue(5);
             const result = await notification_service_1.NotificationService.sendNotification(request);
             expect(result.success).toBe(true);
         });
         it('should handle empty analytics data gracefully', async () => {
-            MockedDatabaseService.client.notification.findMany.mockResolvedValue([]);
+            database_service_1.mockNotificationFindMany.mockResolvedValue([]);
             const filters = {
                 startDate: new Date('2024-01-01'),
                 endDate: new Date('2024-01-31')
@@ -993,7 +986,7 @@ describe('NotificationService', () => {
         });
         it('should handle concurrent notification sending', async () => {
             jest.clearAllMocks();
-            MockedCache.get.mockImplementation((key) => {
+            mockCacheGet.mockImplementation((key) => {
                 if (key.includes('notification_template:')) {
                     return Promise.resolve(JSON.stringify(mockTemplate));
                 }
@@ -1002,12 +995,12 @@ describe('NotificationService', () => {
                 }
                 return Promise.resolve(null);
             });
-            MockedDatabaseService.client.notification.create.mockResolvedValue(mockNotification);
-            MockedDatabaseService.client.notification.update.mockResolvedValue({
+            database_service_1.mockNotificationCreate.mockResolvedValue(mockNotification);
+            database_service_1.mockNotificationUpdate.mockResolvedValue({
                 ...mockNotification,
                 status: 'sent'
             });
-            MockedDatabaseService.client.notification.count.mockResolvedValue(5);
+            database_service_1.mockNotificationCount.mockResolvedValue(5);
             const request = {
                 templateId: 'order_confirmation',
                 recipientId: 'user-123',
@@ -1016,7 +1009,7 @@ describe('NotificationService', () => {
             const promises = Array.from({ length: 5 }, () => notification_service_1.NotificationService.sendNotification(request));
             const results = await Promise.all(promises);
             expect(results.every(r => r.success)).toBe(true);
-            expect(MockedDatabaseService.client.notification.create).toHaveBeenCalledTimes(5);
+            expect(database_service_1.mockNotificationCreate).toHaveBeenCalledTimes(5);
         });
     });
 });

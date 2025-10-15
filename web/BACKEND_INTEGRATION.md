@@ -39,7 +39,7 @@ This document outlines the comprehensive backend API integration implemented for
 
 - **Modular API Endpoints**
   - Kitchen Management API
-  - Inventory Management API  
+  - Inventory Management API
   - Staff Management API
   - RFID System API
   - Notifications API
@@ -54,18 +54,19 @@ This document outlines the comprehensive backend API integration implemented for
   - Connection status monitoring
 
 **Example Usage:**
+
 ```typescript
 // Fetch kitchen orders with filters
-const orders = await kitchenApi.getOrders({ 
-  status: 'pending', 
-  priority: 'high' 
+const orders = await kitchenApi.getOrders({
+  status: 'pending',
+  priority: 'high',
 });
 
 // Update order status
 await kitchenApi.updateOrderStatus(orderId, 'preparing');
 
 // Real-time order updates
-wsManager.subscribe('order_update', (data) => {
+wsManager.subscribe('order_update', data => {
   console.log('Order updated:', data);
 });
 ```
@@ -100,7 +101,7 @@ useKitchenOrders(filters?)
 useKitchenMetrics(period?)
 useOrderMutations()
 
-// Inventory Management  
+// Inventory Management
 useInventoryItems(filters?)
 useInventorySuppliers()
 usePurchaseOrders(filters?)
@@ -145,27 +146,45 @@ The `KitchenManagementDashboard` component has been updated to demonstrate full 
 ```typescript
 export const KitchenManagementDashboard: React.FC = () => {
   // API Integration hooks
-  const { data: orders, loading: ordersLoading, error: ordersError, refetch: refetchOrders } = useKitchenOrders(orderFilters);
+  const {
+    data: orders,
+    loading: ordersLoading,
+    error: ordersError,
+    refetch: refetchOrders,
+  } = useKitchenOrders(orderFilters);
   const { data: metrics, loading: metricsLoading } = useKitchenMetrics('today');
-  const { updateOrderStatus, assignOrder, loading: mutationLoading } = useOrderMutations();
+  const {
+    updateOrderStatus,
+    assignOrder,
+    loading: mutationLoading,
+  } = useOrderMutations();
   const { connected: wsConnected } = useWebSocketConnection();
 
   // Real-time updates
-  useWebSocketSubscription('order_update', useCallback((orderData) => {
-    toast.success(`Order ${orderData.orderNumber} updated`);
-    refetchOrders();
-  }, [refetchOrders]));
+  useWebSocketSubscription(
+    'order_update',
+    useCallback(
+      orderData => {
+        toast.success(`Order ${orderData.orderNumber} updated`);
+        refetchOrders();
+      },
+      [refetchOrders]
+    )
+  );
 
   // Handle mutations
-  const handleOrderStatusUpdate = useCallback(async (orderId, newStatus) => {
-    try {
-      await updateOrderStatus(orderId, newStatus);
-      toast.success('Order status updated successfully');
-      refetchOrders();
-    } catch (error) {
-      toast.error('Failed to update order status');
-    }
-  }, [updateOrderStatus, refetchOrders]);
+  const handleOrderStatusUpdate = useCallback(
+    async (orderId, newStatus) => {
+      try {
+        await updateOrderStatus(orderId, newStatus);
+        toast.success('Order status updated successfully');
+        refetchOrders();
+      } catch (error) {
+        toast.error('Failed to update order status');
+      }
+    },
+    [updateOrderStatus, refetchOrders]
+  );
 
   // UI with loading states, error handling, and real-time indicators
   // ...
@@ -175,12 +194,14 @@ export const KitchenManagementDashboard: React.FC = () => {
 ## Features Implemented
 
 ### 1. **Authentication & Security**
+
 - JWT token-based authentication
 - Automatic token refresh
 - Secure session management
 - Role-based access control
 
 ### 2. **Real-time Updates**
+
 - WebSocket connection for live data
 - Automatic reconnection
 - Real-time notifications
@@ -188,6 +209,7 @@ export const KitchenManagementDashboard: React.FC = () => {
 - Inventory alerts
 
 ### 3. **Error Handling**
+
 - Comprehensive error catching
 - User-friendly error messages
 - Retry mechanisms
@@ -195,6 +217,7 @@ export const KitchenManagementDashboard: React.FC = () => {
 - Connection status indicators
 
 ### 4. **Performance Optimization**
+
 - Data caching
 - Optimistic updates
 - Loading states
@@ -202,6 +225,7 @@ export const KitchenManagementDashboard: React.FC = () => {
 - Efficient re-fetching
 
 ### 5. **User Experience**
+
 - Loading spinners
 - Error alerts
 - Success notifications
@@ -211,6 +235,7 @@ export const KitchenManagementDashboard: React.FC = () => {
 ## API Endpoints
 
 ### Kitchen Management
+
 ```
 GET    /api/kitchen/orders              - Get orders with filters
 POST   /api/kitchen/orders              - Create new order
@@ -220,6 +245,7 @@ GET    /api/kitchen/metrics             - Get kitchen metrics
 ```
 
 ### Inventory Management
+
 ```
 GET    /api/inventory/items             - Get inventory items
 POST   /api/inventory/items             - Create inventory item
@@ -233,6 +259,7 @@ GET    /api/inventory/metrics           - Get inventory metrics
 ```
 
 ### Staff Management
+
 ```
 GET    /api/staff/members               - Get staff members
 POST   /api/staff/members               - Create staff member
@@ -247,6 +274,7 @@ GET    /api/staff/metrics               - Get staff metrics
 ```
 
 ### Notifications
+
 ```
 GET    /api/notifications               - Get notifications
 PATCH  /api/notifications/mark-read     - Mark notifications as read
@@ -257,6 +285,7 @@ PUT    /api/notifications/settings      - Update notification settings
 ```
 
 ### Authentication
+
 ```
 POST   /api/auth/login                  - User login
 POST   /api/auth/register               - User registration
@@ -268,6 +297,7 @@ PUT    /api/users/profile               - Update user profile
 ## WebSocket Events
 
 ### Real-time Event Types
+
 ```javascript
 // Order updates
 'order_update' - { orderId, status, orderNumber, ... }
@@ -288,6 +318,7 @@ PUT    /api/users/profile               - Update user profile
 ## Environment Configuration
 
 ### Required Environment Variables
+
 ```bash
 # API Configuration
 NEXT_PUBLIC_API_BASE_URL=http://localhost:3001/api
@@ -306,6 +337,7 @@ NEXT_PUBLIC_ENABLE_ANALYTICS=true
 ## Usage Examples
 
 ### 1. Fetching Kitchen Orders with Real-time Updates
+
 ```typescript
 function OrdersDashboard() {
   // Fetch orders with auto-refresh every 30 seconds
@@ -334,6 +366,7 @@ function OrdersDashboard() {
 ```
 
 ### 2. Updating Order Status with Optimistic Updates
+
 ```typescript
 function OrderCard({ order }) {
   const { updateOrderStatus, loading } = useOrderMutations();
@@ -353,7 +386,7 @@ function OrderCard({ order }) {
     <Card>
       <CardHeader>{order.orderNumber}</CardHeader>
       <CardContent>
-        <Button 
+        <Button
           onClick={() => handleStatusChange('preparing')}
           disabled={loading}
         >
@@ -366,6 +399,7 @@ function OrderCard({ order }) {
 ```
 
 ### 3. Managing Authentication State
+
 ```typescript
 function App() {
   const { user, login, logout, loading, isAuthenticated } = useAuth();
@@ -380,7 +414,7 @@ function App() {
   };
 
   if (loading) return <div>Loading...</div>;
-  
+
   if (!isAuthenticated) {
     return <LoginForm onLogin={handleLogin} />;
   }
@@ -392,6 +426,7 @@ function App() {
 ## Error Handling Patterns
 
 ### API Error Handling
+
 ```typescript
 // Centralized error handling
 const handleApiError = (error: any): string => {
@@ -422,18 +457,21 @@ if (error) {
 ## Testing Considerations
 
 ### Unit Tests
+
 - Test API service functions
 - Test React hooks behavior
 - Test error handling scenarios
 - Test WebSocket connections
 
 ### Integration Tests
+
 - Test complete user workflows
 - Test real-time data updates
 - Test authentication flows
 - Test error recovery
 
 ### E2E Tests
+
 - Test full user journeys
 - Test cross-module interactions
 - Test real-time synchronization
@@ -441,6 +479,7 @@ if (error) {
 ## Deployment Checklist
 
 ### Pre-deployment
+
 - [ ] Environment variables configured
 - [ ] API endpoints accessible
 - [ ] WebSocket connections tested
@@ -448,6 +487,7 @@ if (error) {
 - [ ] Error monitoring setup
 
 ### Production Monitoring
+
 - [ ] API response times
 - [ ] Error rates
 - [ ] WebSocket connection health
@@ -457,6 +497,7 @@ if (error) {
 ## Future Enhancements
 
 ### Planned Features
+
 1. **Offline Support**
    - Service worker implementation
    - Offline data caching

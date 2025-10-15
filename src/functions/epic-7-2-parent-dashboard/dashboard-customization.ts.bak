@@ -1,0 +1,1901 @@
+/**
+ * Epic 7.2: Advanced Parent Dashboard & Insights Portal
+ * Lambda Function: dashboard-customization
+ *
+ * Personalized dashboard configuration and preferences management.
+ * Provides comprehensive customization options including layout management,
+ * widget configuration, theme settings, notification preferences, and
+ * adaptive personalization based on user behavior and preferences.
+ *
+ * Features:
+ * - Dynamic layout customization and widget management
+ * - Theme and appearance personalization
+ * - Notification and communication preferences
+ * - Data display and visualization settings
+ * - Privacy and security preferences
+ * - Adaptive recommendations based on usage patterns
+ * - Multi-device synchronization
+ * - Accessibility and localization support
+ */
+
+import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
+import { LoggerService } from '../../services/logger.service';
+import { DatabaseService } from '../../shared/database.service';
+import { createSuccessResponse, createErrorResponse, handleError } from '../../shared/response.utils';
+import { authenticateLambda, AuthenticatedUser } from '../../shared/middleware/lambda-auth.middleware';
+import { z } from 'zod';
+
+// Initialize services
+const logger = LoggerService.getInstance();
+const db = DatabaseService.getInstance();
+
+// Validation schemas
+const getPreferencesSchema = z.object({
+  parentId: z.string().uuid(),
+  category: z.enum(['layout', 'notifications', 'display', 'privacy', 'accessibility', 'all']).optional().default('all'),
+  includeRecommendations: z.boolean().optional().default(true),
+});
+
+const updatePreferencesSchema = z.object({
+  parentId: z.string().uuid(),
+  category: z.enum(['layout', 'notifications', 'display', 'privacy', 'accessibility']),
+  preferences: z.record(z.string(), z.any()),
+  syncAcrossDevices: z.boolean().optional().default(true),
+});
+
+const widgetConfigSchema = z.object({
+  parentId: z.string().uuid(),
+  action: z.enum(['add', 'remove', 'update', 'reorder']),
+  widgetId: z.string().optional(),
+  widgetData: z.object({
+    id: z.string(),
+    type: z.string(),
+    position: z.object({
+      x: z.number(),
+      y: z.number(),
+    }),
+    size: z.object({
+      width: z.number(),
+      height: z.number(),
+    }),
+    visible: z.boolean().optional().default(true),
+    settings: z.record(z.string(), z.any()).optional().default({}),
+  }).optional(),
+  layoutId: z.string().optional(),
+});
+
+const themeConfigSchema = z.object({
+  parentId: z.string().uuid(),
+  theme: z.object({
+    name: z.string(),
+    mode: z.enum(['light', 'dark', 'auto']),
+    primaryColor: z.string().optional(),
+    accentColor: z.string().optional(),
+    fontSize: z.enum(['small', 'medium', 'large']).optional().default('medium'),
+    density: z.enum(['compact', 'comfortable', 'spacious']).optional().default('comfortable'),
+    animations: z.boolean().optional().default(true),
+    customProperties: z.record(z.string(), z.string()).optional().default({}),
+  }),
+});
+
+const notificationPreferencesSchema = z.object({
+  parentId: z.string().uuid(),
+  preferences: z.object({
+    email: z.object({
+      enabled: z.boolean(),
+      frequency: z.enum(['realtime', 'daily', 'weekly']),
+      categories: z.array(z.string()),
+      quietHours: z.object({
+        enabled: z.boolean(),
+        start: z.string(),
+        end: z.string(),
+      }).optional(),
+    }),
+    push: z.object({
+      enabled: z.boolean(),
+      categories: z.array(z.string()),
+      sound: z.boolean().optional().default(true),
+      vibration: z.boolean().optional().default(true),
+      quietHours: z.object({
+        enabled: z.boolean(),
+        start: z.string(),
+        end: z.string(),
+      }).optional(),
+    }),
+    sms: z.object({
+      enabled: z.boolean(),
+      categories: z.array(z.string()),
+      emergencyOnly: z.boolean().optional().default(false),
+    }),
+    inApp: z.object({
+      enabled: z.boolean(),
+      categories: z.array(z.string()),
+      persistence: z.enum(['session', 'permanent']).optional().default('session'),
+    }),
+  }),
+});
+
+// Interface definitions
+interface DashboardPreferences {
+  id: string;
+  parentId: string;
+  lastUpdated: Date;
+  layout: LayoutPreferences;
+  notifications: NotificationPreferences;
+  dataDisplay: DataDisplayPreferences;
+  privacy: PrivacyPreferences;
+  accessibility: AccessibilityPreferences;
+  personalization: PersonalizationSettings;
+  synchronization: SynchronizationSettings;
+  metadata: PreferencesMetadata;
+}
+
+interface LayoutPreferences {
+  selectedLayout: string;
+  customLayouts: CustomLayout[];
+  widgets: WidgetConfiguration[];
+  gridSettings: GridSettings;
+  responsiveBreakpoints: ResponsiveBreakpoints;
+  defaultViews: DefaultViews;
+}
+
+interface CustomLayout {
+  id: string;
+  name: string;
+  description: string;
+  isDefault: boolean;
+  deviceType: 'mobile' | 'tablet' | 'desktop' | 'all';
+  widgets: WidgetConfiguration[];
+  gridSettings: GridSettings;
+  createdAt: Date;
+  lastUsed: Date;
+}
+
+interface WidgetConfiguration {
+  id: string;
+  type: WidgetType;
+  position: Position;
+  size: Size;
+  visible: boolean;
+  settings: WidgetSettings;
+  permissions: WidgetPermissions;
+  dataSource: DataSourceConfig;
+  refreshInterval: number;
+  cacheSettings: CacheSettings;
+}
+
+interface Position {
+  x: number;
+  y: number;
+  z?: number;
+}
+
+interface Size {
+  width: number;
+  height: number;
+  minWidth?: number;
+  minHeight?: number;
+  maxWidth?: number;
+  maxHeight?: number;
+}
+
+interface WidgetSettings {
+  title?: string;
+  showHeader?: boolean;
+  allowResize?: boolean;
+  allowMove?: boolean;
+  allowRemove?: boolean;
+  theme?: string;
+  colors?: ColorScheme;
+  chartType?: string;
+  timeRange?: string;
+  filters?: FilterConfig[];
+  displayMode?: 'simple' | 'detailed' | 'compact';
+  customSettings?: Record<string, any>;
+}
+
+interface WidgetPermissions {
+  viewData: boolean;
+  editSettings: boolean;
+  exportData: boolean;
+  shareWidget: boolean;
+}
+
+interface DataSourceConfig {
+  source: string;
+  endpoint?: string;
+  parameters?: Record<string, any>;
+  transformations?: DataTransformation[];
+  caching?: boolean;
+}
+
+interface DataTransformation {
+  type: string;
+  config: Record<string, any>;
+}
+
+interface CacheSettings {
+  enabled: boolean;
+  ttl: number;
+  invalidateOn: string[];
+}
+
+interface GridSettings {
+  columns: number;
+  rows: number;
+  gap: number;
+  cellSize: Size;
+  snap: boolean;
+  guides: boolean;
+}
+
+interface ResponsiveBreakpoints {
+  mobile: number;
+  tablet: number;
+  desktop: number;
+  largeDesktop: number;
+}
+
+interface DefaultViews {
+  dashboard: string;
+  childProgress: string;
+  nutrition: string;
+  analytics: string;
+}
+
+interface NotificationPreferences {
+  email: EmailNotificationSettings;
+  push: PushNotificationSettings;
+  sms: SmsNotificationSettings;
+  inApp: InAppNotificationSettings;
+  digest: DigestSettings;
+  escalation: EscalationSettings;
+}
+
+interface EmailNotificationSettings {
+  enabled: boolean;
+  address: string;
+  frequency: 'realtime' | 'daily' | 'weekly';
+  categories: NotificationCategory[];
+  template: string;
+  quietHours: QuietHours;
+  grouping: boolean;
+  richContent: boolean;
+}
+
+interface PushNotificationSettings {
+  enabled: boolean;
+  devices: PushDevice[];
+  categories: NotificationCategory[];
+  sound: SoundSettings;
+  vibration: VibrationSettings;
+  quietHours: QuietHours;
+  badgeCount: boolean;
+  actionButtons: boolean;
+}
+
+interface SmsNotificationSettings {
+  enabled: boolean;
+  phoneNumber: string;
+  categories: NotificationCategory[];
+  emergencyOnly: boolean;
+  carrier: string;
+  internationalRoaming: boolean;
+}
+
+interface InAppNotificationSettings {
+  enabled: boolean;
+  categories: NotificationCategory[];
+  persistence: 'session' | 'permanent';
+  position: 'top' | 'bottom' | 'center';
+  animations: boolean;
+  autoClose: boolean;
+  closeDelay: number;
+}
+
+interface DigestSettings {
+  enabled: boolean;
+  frequency: 'daily' | 'weekly' | 'monthly';
+  time: string;
+  timezone: string;
+  content: DigestContent[];
+  format: 'summary' | 'detailed';
+}
+
+interface EscalationSettings {
+  enabled: boolean;
+  rules: EscalationRule[];
+  maxAttempts: number;
+  backoffStrategy: 'linear' | 'exponential';
+}
+
+interface NotificationCategory {
+  category: string;
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  enabled: boolean;
+  channels: string[];
+}
+
+interface QuietHours {
+  enabled: boolean;
+  start: string;
+  end: string;
+  timezone: string;
+  exceptions: string[];
+}
+
+interface PushDevice {
+  deviceId: string;
+  deviceType: string;
+  token: string;
+  active: boolean;
+  lastSeen: Date;
+}
+
+interface SoundSettings {
+  enabled: boolean;
+  soundFile: string;
+  volume: number;
+  customSounds: Record<string, string>;
+}
+
+interface VibrationSettings {
+  enabled: boolean;
+  pattern: number[];
+  intensity: 'light' | 'medium' | 'strong';
+}
+
+interface DigestContent {
+  type: string;
+  priority: number;
+  includeCharts: boolean;
+  includeDetails: boolean;
+}
+
+interface EscalationRule {
+  condition: string;
+  delay: number;
+  channels: string[];
+  recipients: string[];
+}
+
+interface DataDisplayPreferences {
+  locale: LocaleSettings;
+  formatting: FormattingSettings;
+  charts: ChartPreferences;
+  tables: TablePreferences;
+  colors: ColorPreferences;
+  animations: AnimationSettings;
+}
+
+interface LocaleSettings {
+  language: string;
+  region: string;
+  timezone: string;
+  currency: string;
+  dateFormat: string;
+  timeFormat: string;
+  numberFormat: string;
+  firstDayOfWeek: number;
+}
+
+interface FormattingSettings {
+  decimals: number;
+  thousandsSeparator: string;
+  decimalSeparator: string;
+  currencySymbol: string;
+  percentageFormat: string;
+  scientificNotation: boolean;
+}
+
+interface ChartPreferences {
+  defaultType: string;
+  colorScheme: string;
+  animations: boolean;
+  gridLines: boolean;
+  legends: boolean;
+  tooltips: boolean;
+  zoom: boolean;
+  export: boolean;
+  customColors: string[];
+}
+
+interface TablePreferences {
+  defaultPageSize: number;
+  sortable: boolean;
+  filterable: boolean;
+  resizable: boolean;
+  exportable: boolean;
+  pagination: boolean;
+  striped: boolean;
+  hover: boolean;
+  density: 'compact' | 'standard' | 'spacious';
+}
+
+interface ColorPreferences {
+  primaryPalette: string[];
+  accentPalette: string[];
+  statusColors: StatusColors;
+  customColors: Record<string, string>;
+}
+
+interface StatusColors {
+  success: string;
+  warning: string;
+  error: string;
+  info: string;
+  neutral: string;
+}
+
+interface AnimationSettings {
+  enabled: boolean;
+  duration: number;
+  easing: string;
+  reducedMotion: boolean;
+}
+
+interface PrivacyPreferences {
+  dataSharing: DataSharingSettings;
+  analytics: AnalyticsSettings;
+  personalization: PersonalizationPrivacy;
+  retention: DataRetentionSettings;
+  export: DataExportSettings;
+  deletion: DataDeletionSettings;
+}
+
+interface DataSharingSettings {
+  allowAnonymizedData: boolean;
+  allowAggregatedData: boolean;
+  allowPersonalizedAds: boolean;
+  allowThirdPartyIntegration: boolean;
+  allowResearchParticipation: boolean;
+  shareWithSchool: boolean;
+  shareWithEducators: boolean;
+}
+
+interface AnalyticsSettings {
+  allowUsageTracking: boolean;
+  allowPerformanceTracking: boolean;
+  allowErrorTracking: boolean;
+  allowFeatureUsageTracking: boolean;
+  allowBehavioralAnalytics: boolean;
+  detailedTracking: boolean;
+}
+
+interface PersonalizationPrivacy {
+  allowPersonalization: boolean;
+  allowRecommendations: boolean;
+  allowProfileBuilding: boolean;
+  allowCrossDeviceTracking: boolean;
+  allowPredictiveAnalytics: boolean;
+}
+
+interface DataRetentionSettings {
+  retentionPeriod: number;
+  autoDelete: boolean;
+  deleteInactiveData: boolean;
+  archiveOldData: boolean;
+  exportBeforeDeletion: boolean;
+}
+
+interface DataExportSettings {
+  allowDataExport: boolean;
+  exportFormat: 'json' | 'csv' | 'xml' | 'pdf';
+  includeMetadata: boolean;
+  includeAnalytics: boolean;
+  encryptedExport: boolean;
+}
+
+interface DataDeletionSettings {
+  allowDataDeletion: boolean;
+  confirmationRequired: boolean;
+  gracePeriod: number;
+  softDelete: boolean;
+  permanentDeletionDelay: number;
+}
+
+interface AccessibilityPreferences {
+  visual: VisualAccessibility;
+  motor: MotorAccessibility;
+  cognitive: CognitiveAccessibility;
+  hearing: HearingAccessibility;
+  keyboard: KeyboardAccessibility;
+  screen: ScreenReaderSettings;
+}
+
+interface VisualAccessibility {
+  highContrast: boolean;
+  largeText: boolean;
+  fontScale: number;
+  colorBlindnessSupport: 'none' | 'protanopia' | 'deuteranopia' | 'tritanopia';
+  reducedMotion: boolean;
+  focusIndicators: boolean;
+  customFontFamily: string;
+}
+
+interface MotorAccessibility {
+  largerClickTargets: boolean;
+  stickyKeys: boolean;
+  slowKeys: boolean;
+  bounceKeys: boolean;
+  mouseKeys: boolean;
+  customGestures: Record<string, string>;
+}
+
+interface CognitiveAccessibility {
+  simplifiedInterface: boolean;
+  reducedComplexity: boolean;
+  extendedTimeouts: boolean;
+  confirmationDialogs: boolean;
+  progressIndicators: boolean;
+  breadcrumbs: boolean;
+}
+
+interface HearingAccessibility {
+  visualAlerts: boolean;
+  captions: boolean;
+  transcripts: boolean;
+  signLanguage: boolean;
+  vibrationAlerts: boolean;
+}
+
+interface KeyboardAccessibility {
+  keyboardNavigation: boolean;
+  tabOrder: 'default' | 'custom';
+  skipLinks: boolean;
+  accessKeys: boolean;
+  customShortcuts: Record<string, string>;
+}
+
+interface ScreenReaderSettings {
+  announcements: boolean;
+  landmarks: boolean;
+  headings: boolean;
+  descriptions: boolean;
+  verbosity: 'minimal' | 'standard' | 'verbose';
+}
+
+interface PersonalizationSettings {
+  adaptiveUI: AdaptiveUISettings;
+  recommendations: RecommendationSettings;
+  learning: LearningSettings;
+  automation: AutomationSettings;
+}
+
+interface AdaptiveUISettings {
+  enabled: boolean;
+  adaptationSpeed: 'slow' | 'medium' | 'fast';
+  adaptationScope: 'layout' | 'content' | 'both';
+  learningPeriod: number;
+  confidenceThreshold: number;
+}
+
+interface RecommendationSettings {
+  enabled: boolean;
+  frequency: 'realtime' | 'daily' | 'weekly';
+  categories: string[];
+  sources: string[];
+  maxRecommendations: number;
+}
+
+interface LearningSettings {
+  trackPreferences: boolean;
+  trackUsagePatterns: boolean;
+  trackPerformance: boolean;
+  adaptToChanges: boolean;
+  learningRate: number;
+}
+
+interface AutomationSettings {
+  autoSavePreferences: boolean;
+  autoApplyRecommendations: boolean;
+  autoOptimizeLayout: boolean;
+  autoAdjustSettings: boolean;
+}
+
+interface SynchronizationSettings {
+  enabled: boolean;
+  devices: SyncDevice[];
+  conflicts: ConflictResolution;
+  backup: BackupSettings;
+}
+
+interface SyncDevice {
+  deviceId: string;
+  deviceName: string;
+  deviceType: string;
+  lastSync: Date;
+  active: boolean;
+}
+
+interface ConflictResolution {
+  strategy: 'newest' | 'manual' | 'merge';
+  priority: Record<string, number>;
+}
+
+interface BackupSettings {
+  enabled: boolean;
+  frequency: 'daily' | 'weekly' | 'monthly';
+  retention: number;
+  location: 'cloud' | 'local' | 'both';
+}
+
+interface PreferencesMetadata {
+  version: string;
+  createdAt: Date;
+  lastUpdated: Date;
+  updatedBy: string;
+  deviceInfo: DeviceInfo;
+  migrationHistory: MigrationRecord[];
+}
+
+interface DeviceInfo {
+  userAgent: string;
+  screen: ScreenInfo;
+  capabilities: DeviceCapabilities;
+}
+
+interface ScreenInfo {
+  width: number;
+  height: number;
+  pixelRatio: number;
+  colorDepth: number;
+}
+
+interface DeviceCapabilities {
+  touchScreen: boolean;
+  camera: boolean;
+  microphone: boolean;
+  geolocation: boolean;
+  notifications: boolean;
+}
+
+interface MigrationRecord {
+  fromVersion: string;
+  toVersion: string;
+  migratedAt: Date;
+  changes: string[];
+}
+
+// Widget type definitions
+type WidgetType =
+  | 'nutrition-summary'
+  | 'child-progress'
+  | 'meal-calendar'
+  | 'engagement-metrics'
+  | 'quick-actions'
+  | 'notifications'
+  | 'analytics-chart'
+  | 'activity-feed'
+  | 'goal-tracker'
+  | 'health-metrics'
+  | 'custom-chart'
+  | 'text-widget'
+  | 'image-widget'
+  | 'link-widget'
+  | 'weather-widget'
+  | 'clock-widget';
+
+interface ColorScheme {
+  primary: string;
+  secondary: string;
+  background: string;
+  surface: string;
+  text: string;
+  accent: string;
+}
+
+interface FilterConfig {
+  field: string;
+  operator: string;
+  value: any;
+  label: string;
+}
+
+/**
+ * Validate parent access permissions
+ */
+async function validateParentAccess(
+  parentId: string,
+  requestingUser: AuthenticatedUser
+): Promise<any> {
+  try {
+    if (['super_admin', 'admin'].includes(requestingUser.role)) {
+      const parent = await db.getPrismaClient().user.findUnique({
+        where: { id: parentId, role: 'parent' },
+        include: {
+          school: { select: { id: true, name: true, code: true } }
+        }
+      });
+
+      if (!parent) {
+        throw new Error('Parent not found');
+      }
+      return parent;
+    }
+
+    if (requestingUser.role === 'parent') {
+      if (requestingUser.id !== parentId) {
+        throw new Error('Access denied: Can only access your own dashboard preferences');
+      }
+
+      const parent = await db.getPrismaClient().user.findUnique({
+        where: { id: parentId },
+        include: {
+          school: { select: { id: true, name: true, code: true } }
+        }
+      });
+
+      if (!parent) {
+        throw new Error('Parent not found');
+      }
+      return parent;
+    }
+
+    if (['school_admin', 'staff', 'teacher'].includes(requestingUser.role)) {
+      const parent = await db.getPrismaClient().user.findUnique({
+        where: {
+          id: parentId,
+          role: 'parent',
+          schoolId: requestingUser.schoolId
+        },
+        include: {
+          school: { select: { id: true, name: true, code: true } }
+        }
+      });
+
+      if (!parent) {
+        throw new Error('Parent not found or not in your school');
+      }
+      return parent;
+    }
+
+    throw new Error('Insufficient permissions');
+  } catch (error: unknown) {
+    logger.error('Parent access validation failed', {
+      parentId,
+      requestingUserId: requestingUser.id,
+      error: (error as Error).message
+    });
+    throw error;
+  }
+}
+
+/**
+ * Get default dashboard preferences
+ */
+function getDefaultPreferences(parentId: string, deviceInfo?: DeviceInfo): DashboardPreferences {
+  const now = new Date();
+
+  const defaultPreferences: DashboardPreferences = {
+    id: `prefs_${parentId}_${Date.now()}`,
+    parentId,
+    lastUpdated: now,
+    layout: {
+      selectedLayout: 'default',
+      customLayouts: [],
+      widgets: [
+        {
+          id: 'nutrition-summary',
+          type: 'nutrition-summary',
+          position: { x: 0, y: 0 },
+          size: { width: 6, height: 4 },
+          visible: true,
+          settings: {
+            title: 'Nutrition Summary',
+            showHeader: true,
+            allowResize: true,
+            allowMove: true,
+            allowRemove: true,
+            displayMode: 'detailed',
+            timeRange: 'week',
+            customSettings: {}
+          },
+          permissions: {
+            viewData: true,
+            editSettings: true,
+            exportData: true,
+            shareWidget: false
+          },
+          dataSource: {
+            source: 'child-progress-analytics',
+            caching: true
+          },
+          refreshInterval: 300,
+          cacheSettings: {
+            enabled: true,
+            ttl: 300,
+            invalidateOn: ['meal_order', 'nutrition_update']
+          }
+        },
+        {
+          id: 'child-progress',
+          type: 'child-progress',
+          position: { x: 6, y: 0 },
+          size: { width: 6, height: 4 },
+          visible: true,
+          settings: {
+            title: 'Child Progress',
+            showHeader: true,
+            allowResize: true,
+            allowMove: true,
+            allowRemove: true,
+            displayMode: 'detailed',
+            timeRange: 'month',
+            customSettings: {}
+          },
+          permissions: {
+            viewData: true,
+            editSettings: true,
+            exportData: true,
+            shareWidget: false
+          },
+          dataSource: {
+            source: 'child-progress-analytics',
+            caching: true
+          },
+          refreshInterval: 600,
+          cacheSettings: {
+            enabled: true,
+            ttl: 600,
+            invalidateOn: ['progress_update']
+          }
+        },
+        {
+          id: 'quick-actions',
+          type: 'quick-actions',
+          position: { x: 0, y: 4 },
+          size: { width: 4, height: 2 },
+          visible: true,
+          settings: {
+            title: 'Quick Actions',
+            showHeader: false,
+            allowResize: false,
+            allowMove: true,
+            allowRemove: true,
+            customSettings: {}
+          },
+          permissions: {
+            viewData: true,
+            editSettings: true,
+            exportData: false,
+            shareWidget: false
+          },
+          dataSource: {
+            source: 'static',
+            caching: false
+          },
+          refreshInterval: 0,
+          cacheSettings: {
+            enabled: false,
+            ttl: 0,
+            invalidateOn: []
+          }
+        },
+        {
+          id: 'notifications',
+          type: 'notifications',
+          position: { x: 8, y: 4 },
+          size: { width: 4, height: 2 },
+          visible: true,
+          settings: {
+            title: 'Recent Notifications',
+            showHeader: true,
+            allowResize: true,
+            allowMove: true,
+            allowRemove: true,
+            displayMode: 'compact',
+            customSettings: { maxItems: 5 }
+          },
+          permissions: {
+            viewData: true,
+            editSettings: true,
+            exportData: false,
+            shareWidget: false
+          },
+          dataSource: {
+            source: 'notifications',
+            caching: true
+          },
+          refreshInterval: 60,
+          cacheSettings: {
+            enabled: true,
+            ttl: 60,
+            invalidateOn: ['new_notification']
+          }
+        }
+      ],
+      gridSettings: {
+        columns: 12,
+        rows: 8,
+        gap: 16,
+        cellSize: { width: 100, height: 80 },
+        snap: true,
+        guides: true
+      },
+      responsiveBreakpoints: {
+        mobile: 768,
+        tablet: 1024,
+        desktop: 1280,
+        largeDesktop: 1920
+      },
+      defaultViews: {
+        dashboard: 'overview',
+        childProgress: 'summary',
+        nutrition: 'weekly',
+        analytics: 'trends'
+      }
+    },
+    notifications: {
+      email: {
+        enabled: true,
+        address: '',
+        frequency: 'daily',
+        categories: [
+          { category: 'meal_updates', priority: 'medium', enabled: true, channels: ['email'] },
+          { category: 'nutrition_alerts', priority: 'high', enabled: true, channels: ['email', 'push'] },
+          { category: 'progress_reports', priority: 'medium', enabled: true, channels: ['email'] },
+          { category: 'system_updates', priority: 'low', enabled: false, channels: ['email'] }
+        ],
+        template: 'default',
+        quietHours: {
+          enabled: true,
+          start: '22:00',
+          end: '07:00',
+          timezone: 'Asia/Kolkata',
+          exceptions: ['urgent']
+        },
+        grouping: true,
+        richContent: true
+      },
+      push: {
+        enabled: true,
+        devices: [],
+        categories: [
+          { category: 'meal_updates', priority: 'medium', enabled: true, channels: ['push'] },
+          { category: 'nutrition_alerts', priority: 'high', enabled: true, channels: ['push'] },
+          { category: 'emergency', priority: 'urgent', enabled: true, channels: ['push', 'sms'] }
+        ],
+        sound: {
+          enabled: true,
+          soundFile: 'default',
+          volume: 0.8,
+          customSounds: {}
+        },
+        vibration: {
+          enabled: true,
+          pattern: [200, 100, 200],
+          intensity: 'medium'
+        },
+        quietHours: {
+          enabled: true,
+          start: '22:00',
+          end: '07:00',
+          timezone: 'Asia/Kolkata',
+          exceptions: ['urgent', 'emergency']
+        },
+        badgeCount: true,
+        actionButtons: true
+      },
+      sms: {
+        enabled: false,
+        phoneNumber: '',
+        categories: [
+          { category: 'emergency', priority: 'urgent', enabled: true, channels: ['sms'] }
+        ],
+        emergencyOnly: true,
+        carrier: '',
+        internationalRoaming: false
+      },
+      inApp: {
+        enabled: true,
+        categories: [
+          { category: 'meal_updates', priority: 'medium', enabled: true, channels: ['inApp'] },
+          { category: 'nutrition_alerts', priority: 'high', enabled: true, channels: ['inApp'] },
+          { category: 'tips', priority: 'low', enabled: true, channels: ['inApp'] }
+        ],
+        persistence: 'session',
+        position: 'top',
+        animations: true,
+        autoClose: true,
+        closeDelay: 5000
+      },
+      digest: {
+        enabled: true,
+        frequency: 'weekly',
+        time: '08:00',
+        timezone: 'Asia/Kolkata',
+        content: [
+          { type: 'nutrition_summary', priority: 1, includeCharts: true, includeDetails: false },
+          { type: 'progress_highlights', priority: 2, includeCharts: false, includeDetails: true },
+          { type: 'recommendations', priority: 3, includeCharts: false, includeDetails: false }
+        ],
+        format: 'summary'
+      },
+      escalation: {
+        enabled: true,
+        rules: [
+          {
+            condition: 'unread_urgent_notification',
+            delay: 300,
+            channels: ['push', 'email'],
+            recipients: ['parent']
+          }
+        ],
+        maxAttempts: 3,
+        backoffStrategy: 'exponential'
+      }
+    },
+    dataDisplay: {
+      locale: {
+        language: 'en',
+        region: 'IN',
+        timezone: 'Asia/Kolkata',
+        currency: 'INR',
+        dateFormat: 'DD/MM/YYYY',
+        timeFormat: '24h',
+        numberFormat: 'indian',
+        firstDayOfWeek: 1
+      },
+      formatting: {
+        decimals: 2,
+        thousandsSeparator: ',',
+        decimalSeparator: '.',
+        currencySymbol: '₹',
+        percentageFormat: '##.##%',
+        scientificNotation: false
+      },
+      charts: {
+        defaultType: 'line',
+        colorScheme: 'default',
+        animations: true,
+        gridLines: true,
+        legends: true,
+        tooltips: true,
+        zoom: true,
+        export: true,
+        customColors: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6']
+      },
+      tables: {
+        defaultPageSize: 25,
+        sortable: true,
+        filterable: true,
+        resizable: true,
+        exportable: true,
+        pagination: true,
+        striped: true,
+        hover: true,
+        density: 'standard'
+      },
+      colors: {
+        primaryPalette: ['#3B82F6', '#1D4ED8', '#1E40AF', '#1E3A8A'],
+        accentPalette: ['#10B981', '#059669', '#047857', '#065F46'],
+        statusColors: {
+          success: '#10B981',
+          warning: '#F59E0B',
+          error: '#EF4444',
+          info: '#3B82F6',
+          neutral: '#6B7280'
+        },
+        customColors: {}
+      },
+      animations: {
+        enabled: true,
+        duration: 300,
+        easing: 'ease-in-out',
+        reducedMotion: false
+      }
+    },
+    privacy: {
+      dataSharing: {
+        allowAnonymizedData: true,
+        allowAggregatedData: true,
+        allowPersonalizedAds: false,
+        allowThirdPartyIntegration: false,
+        allowResearchParticipation: false,
+        shareWithSchool: true,
+        shareWithEducators: true
+      },
+      analytics: {
+        allowUsageTracking: true,
+        allowPerformanceTracking: true,
+        allowErrorTracking: true,
+        allowFeatureUsageTracking: true,
+        allowBehavioralAnalytics: true,
+        detailedTracking: false
+      },
+      personalization: {
+        allowPersonalization: true,
+        allowRecommendations: true,
+        allowProfileBuilding: true,
+        allowCrossDeviceTracking: true,
+        allowPredictiveAnalytics: false
+      },
+      retention: {
+        retentionPeriod: 365,
+        autoDelete: false,
+        deleteInactiveData: true,
+        archiveOldData: true,
+        exportBeforeDeletion: true
+      },
+      export: {
+        allowDataExport: true,
+        exportFormat: 'json',
+        includeMetadata: false,
+        includeAnalytics: false,
+        encryptedExport: false
+      },
+      deletion: {
+        allowDataDeletion: true,
+        confirmationRequired: true,
+        gracePeriod: 30,
+        softDelete: true,
+        permanentDeletionDelay: 90
+      }
+    },
+    accessibility: {
+      visual: {
+        highContrast: false,
+        largeText: false,
+        fontScale: 1.0,
+        colorBlindnessSupport: 'none',
+        reducedMotion: false,
+        focusIndicators: true,
+        customFontFamily: ''
+      },
+      motor: {
+        largerClickTargets: false,
+        stickyKeys: false,
+        slowKeys: false,
+        bounceKeys: false,
+        mouseKeys: false,
+        customGestures: {}
+      },
+      cognitive: {
+        simplifiedInterface: false,
+        reducedComplexity: false,
+        extendedTimeouts: false,
+        confirmationDialogs: true,
+        progressIndicators: true,
+        breadcrumbs: true
+      },
+      hearing: {
+        visualAlerts: false,
+        captions: false,
+        transcripts: false,
+        signLanguage: false,
+        vibrationAlerts: true
+      },
+      keyboard: {
+        keyboardNavigation: true,
+        tabOrder: 'default',
+        skipLinks: true,
+        accessKeys: false,
+        customShortcuts: {}
+      },
+      screen: {
+        announcements: true,
+        landmarks: true,
+        headings: true,
+        descriptions: true,
+        verbosity: 'standard'
+      }
+    },
+    personalization: {
+      adaptiveUI: {
+        enabled: true,
+        adaptationSpeed: 'medium',
+        adaptationScope: 'both',
+        learningPeriod: 30,
+        confidenceThreshold: 0.7
+      },
+      recommendations: {
+        enabled: true,
+        frequency: 'daily',
+        categories: ['features', 'content', 'optimization'],
+        sources: ['usage_patterns', 'best_practices', 'peer_comparison'],
+        maxRecommendations: 5
+      },
+      learning: {
+        trackPreferences: true,
+        trackUsagePatterns: true,
+        trackPerformance: true,
+        adaptToChanges: true,
+        learningRate: 0.1
+      },
+      automation: {
+        autoSavePreferences: true,
+        autoApplyRecommendations: false,
+        autoOptimizeLayout: false,
+        autoAdjustSettings: false
+      }
+    },
+    synchronization: {
+      enabled: true,
+      devices: [],
+      conflicts: {
+        strategy: 'newest',
+        priority: {
+          layout: 1,
+          notifications: 2,
+          privacy: 3,
+          accessibility: 4,
+          personalization: 5
+        }
+      },
+      backup: {
+        enabled: true,
+        frequency: 'weekly',
+        retention: 4,
+        location: 'cloud'
+      }
+    },
+    metadata: {
+      version: '1.0.0',
+      createdAt: now,
+      lastUpdated: now,
+      updatedBy: parentId,
+      deviceInfo: deviceInfo || {
+        userAgent: '',
+        screen: { width: 1920, height: 1080, pixelRatio: 1, colorDepth: 24 },
+        capabilities: {
+          touchScreen: false,
+          camera: false,
+          microphone: false,
+          geolocation: false,
+          notifications: true
+        }
+      },
+      migrationHistory: []
+    }
+  };
+
+  return defaultPreferences;
+}
+
+/**
+ * Get dashboard preferences from database
+ */
+async function getDashboardPreferences(
+  parentId: string,
+  category: string = 'all',
+  includeRecommendations: boolean = true
+): Promise<DashboardPreferences> {
+  try {
+    // Try to get existing preferences from audit log (since dashboardPreferences model doesn't exist)
+    const existingPrefs = await db.getPrismaClient().auditLog.findFirst({
+      where: {
+        userId: parentId,
+        entityType: 'dashboard_preferences'
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    if (existingPrefs) {
+      // Parse stored preferences from audit log changes field
+      const changes = JSON.parse(existingPrefs.changes || 'null') || {};
+      const preferences: DashboardPreferences = {
+        id: existingPrefs.entityId,
+        parentId: existingPrefs.userId || parentId,
+        lastUpdated: existingPrefs.createdAt,
+        layout: changes.layout || {},
+        notifications: changes.notifications || {},
+        dataDisplay: changes.dataDisplay || {},
+        privacy: changes.privacy || {},
+        accessibility: changes.accessibility || {},
+        personalization: changes.personalization || {},
+        synchronization: changes.synchronization || {},
+        metadata: changes.metadata || {}
+      };
+
+      // If requesting specific category, return only that part
+      if (category !== 'all') {
+        const categoryData = { [category]: preferences[category as keyof DashboardPreferences] };
+        return { ...preferences, ...categoryData };
+      }
+
+      return preferences;
+    } else {
+      // Return default preferences
+      const defaultPrefs = getDefaultPreferences(parentId);
+
+      // Store default preferences in audit log (since dashboardPreferences model doesn't exist)
+      await db.getPrismaClient().auditLog.create({
+        data: {
+          entityType: 'dashboard_preferences',
+          entityId: defaultPrefs.id,
+          action: 'create_default',
+          changes: JSON.stringify({
+            layout: defaultPrefs.layout,
+            notifications: defaultPrefs.notifications,
+            dataDisplay: defaultPrefs.dataDisplay,
+            privacy: defaultPrefs.privacy,
+            accessibility: defaultPrefs.accessibility,
+            personalization: defaultPrefs.personalization,
+            synchronization: defaultPrefs.synchronization,
+            metadata: defaultPrefs.metadata
+          }),
+          userId: parentId,
+          createdById: parentId
+        }
+      });
+
+      return defaultPrefs;
+    }
+  } catch (error: unknown) {
+    logger.error('Failed to get dashboard preferences', {
+      parentId,
+      category,
+      error: (error as Error).message
+    });
+
+    // Return default preferences on error
+    return getDefaultPreferences(parentId);
+  }
+}
+
+/**
+ * Update dashboard preferences
+ */
+async function updateDashboardPreferences(
+  parentId: string,
+  category: string,
+  preferences: Record<string, any>,
+  syncAcrossDevices: boolean = true,
+  updatedBy: string
+): Promise<DashboardPreferences> {
+  try {
+    // Get current preferences
+    const currentPrefs = await getDashboardPreferences(parentId);
+
+    // Update specific category
+    const updatedPrefs = {
+      ...currentPrefs,
+      [category]: {
+        ...(currentPrefs[category as keyof DashboardPreferences] as any),
+        ...preferences
+      },
+      lastUpdated: new Date(),
+      metadata: {
+        ...currentPrefs.metadata,
+        lastUpdated: new Date(),
+        updatedBy
+      }
+    };
+
+    // Prepare update data
+    const updateData: any = {
+      updatedAt: new Date()
+    };
+
+    // Update specific category field
+    switch (category) {
+      case 'layout':
+        updateData.layoutPreferences = JSON.stringify(updatedPrefs.layout);
+        break;
+      case 'notifications':
+        updateData.notificationPreferences = JSON.stringify(updatedPrefs.notifications);
+        break;
+      case 'display':
+        updateData.dataDisplayPreferences = JSON.stringify(updatedPrefs.dataDisplay);
+        break;
+      case 'privacy':
+        updateData.privacyPreferences = JSON.stringify(updatedPrefs.privacy);
+        break;
+      case 'accessibility':
+        updateData.accessibilityPreferences = JSON.stringify(updatedPrefs.accessibility);
+        break;
+    }
+
+    updateData.metadata = JSON.stringify(updatedPrefs.metadata);
+
+    // Update in audit log (since dashboardPreferences model doesn't exist)
+    await db.getPrismaClient().auditLog.create({
+      data: {
+        entityType: 'dashboard_preferences',
+        entityId: currentPrefs.id,
+        action: `update_${category}`,
+        changes: JSON.stringify(updateData),
+        userId: parentId,
+        createdById: updatedBy
+      }
+    });
+
+    logger.info('Dashboard preferences updated successfully', {
+      parentId,
+      category,
+      syncAcrossDevices,
+      updatedBy
+    });
+
+    return updatedPrefs;
+
+  } catch (error: unknown) {
+    logger.error('Failed to update dashboard preferences', {
+      parentId,
+      category,
+      error: (error as Error).message
+    });
+    throw error;
+  }
+}
+
+/**
+ * Manage widget configuration
+ */
+async function manageWidgetConfiguration(
+  parentId: string,
+  action: string,
+  widgetData?: any,
+  layoutId?: string
+): Promise<{ success: boolean; widgets: WidgetConfiguration[] }> {
+  try {
+    // Get current layout preferences
+    const currentPrefs = await getDashboardPreferences(parentId);
+    let widgets = [...currentPrefs.layout.widgets];
+
+    switch (action) {
+      case 'add':
+        if (widgetData) {
+          // Ensure unique widget ID
+          const existingWidget = widgets.find(w => w.id === widgetData.id);
+          if (existingWidget) {
+            throw new Error(`Widget with ID ${widgetData.id} already exists`);
+          }
+
+          // Add new widget
+          widgets.push({
+            ...widgetData,
+            permissions: widgetData.permissions || {
+              viewData: true,
+              editSettings: true,
+              exportData: true,
+              shareWidget: false
+            },
+            dataSource: widgetData.dataSource || {
+              source: 'static',
+              caching: false
+            },
+            refreshInterval: widgetData.refreshInterval || 300,
+            cacheSettings: widgetData.cacheSettings || {
+              enabled: false,
+              ttl: 300,
+              invalidateOn: []
+            }
+          });
+        }
+        break;
+
+      case 'remove':
+        if (widgetData?.id) {
+          widgets = widgets.filter(w => w.id !== widgetData.id);
+        }
+        break;
+
+      case 'update':
+        if (widgetData?.id) {
+          const widgetIndex = widgets.findIndex(w => w.id === widgetData.id);
+          if (widgetIndex !== -1) {
+            widgets[widgetIndex] = {
+              ...widgets[widgetIndex],
+              ...widgetData
+            };
+          }
+        }
+        break;
+
+      case 'reorder':
+        if (widgetData && Array.isArray(widgetData)) {
+          // Reorder widgets based on provided order
+          const reorderedWidgets: WidgetConfiguration[] = [];
+          widgetData.forEach((widgetId: string) => {
+            const widget = widgets.find(w => w.id === widgetId);
+            if (widget) {
+              reorderedWidgets.push(widget);
+            }
+          });
+          widgets = reorderedWidgets;
+        }
+        break;
+
+      default:
+        throw new Error(`Unknown widget action: ${action}`);
+    }
+
+    // Update layout preferences
+    await updateDashboardPreferences(
+      parentId,
+      'layout',
+      { widgets },
+      true,
+      parentId
+    );
+
+    logger.info('Widget configuration updated successfully', {
+      parentId,
+      action,
+      widgetId: widgetData?.id,
+      totalWidgets: widgets.length
+    });
+
+    return {
+      success: true,
+      widgets
+    };
+
+  } catch (error: unknown) {
+    logger.error('Failed to manage widget configuration', {
+      parentId,
+      action,
+      error: (error as Error).message
+    });
+    throw error;
+  }
+}
+
+/**
+ * Generate layout recommendations based on usage patterns
+ */
+async function generateLayoutRecommendations(
+  parentId: string,
+  currentPrefs: DashboardPreferences
+): Promise<any[]> {
+  try {
+    const recommendations = [];
+
+    // Get usage analytics (simplified)
+    const recentActivity = await db.getPrismaClient().auditLog.findMany({
+      where: {
+        userId: parentId,
+        createdAt: {
+          gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
+        }
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 100
+    });
+
+    // Analyze feature usage
+    const featureUsage: Record<string, number> = {};
+    recentActivity.forEach(activity => {
+      const changes = JSON.parse(activity.changes || '{}');
+      const feature = changes.feature || activity.action || 'unknown';
+      featureUsage[feature] = (featureUsage[feature] || 0) + 1;
+    });
+
+    // Recommend widgets based on usage
+    const currentWidgetTypes = currentPrefs.layout.widgets.map(w => w.type);
+
+    // Nutrition-related recommendations
+    if (featureUsage['nutrition-tracker'] > 10 && !currentWidgetTypes.includes('nutrition-summary')) {
+      recommendations.push({
+        type: 'add_widget',
+        widget: 'nutrition-summary',
+        reason: 'High usage of nutrition tracking features',
+        impact: 'high',
+        effort: 'low'
+      });
+    }
+
+    // Analytics recommendations
+    if (featureUsage['analytics'] > 5 && !currentWidgetTypes.includes('analytics-chart')) {
+      recommendations.push({
+        type: 'add_widget',
+        widget: 'analytics-chart',
+        reason: 'Frequent analytics usage detected',
+        impact: 'medium',
+        effort: 'low'
+      });
+    }
+
+    // Layout optimization recommendations
+    const totalWidgets = currentPrefs.layout.widgets.length;
+    if (totalWidgets > 8) {
+      recommendations.push({
+        type: 'optimize_layout',
+        suggestion: 'Consider organizing widgets into tabs or reducing visible widgets',
+        reason: 'High widget count may impact performance and usability',
+        impact: 'medium',
+        effort: 'medium'
+      });
+    }
+
+    // Mobile optimization recommendations
+    const mobileWidgets = currentPrefs.layout.widgets.filter(w =>
+      w.size.width <= 6 && w.size.height <= 4
+    );
+
+    if (mobileWidgets.length < totalWidgets * 0.7) {
+      recommendations.push({
+        type: 'mobile_optimization',
+        suggestion: 'Optimize widget sizes for mobile viewing',
+        reason: 'Many widgets may be too large for mobile devices',
+        impact: 'high',
+        effort: 'medium'
+      });
+    }
+
+    return recommendations;
+
+  } catch (error: unknown) {
+    logger.error('Failed to generate layout recommendations', {
+      parentId,
+      error: (error as Error).message
+    });
+    return [];
+  }
+}
+
+/**
+ * Dashboard Customization Lambda Handler
+ */
+export const dashboardCustomizationHandler = async (
+  event: APIGatewayProxyEvent,
+  context: Context
+): Promise<APIGatewayProxyResult> => {
+  const requestId = context.awsRequestId;
+  const startTime = Date.now();
+
+  try {
+    logger.info('Dashboard customization request started', {
+      requestId,
+      method: event.httpMethod,
+      path: event.path
+    });
+
+    // Authenticate request
+    const authResult = await authenticateLambda(event);
+    if (!authResult.success || !authResult.user) {
+      return createErrorResponse('Authentication failed', 401);
+    }
+    const authenticatedUser = authResult.user;
+
+    switch (event.httpMethod) {
+      case 'GET':
+        return await handleGetPreferences(event, requestId, authenticatedUser);
+      case 'PUT':
+        return await handleUpdatePreferences(event, requestId, authenticatedUser);
+      case 'POST':
+        return await handleWidgetConfiguration(event, requestId, authenticatedUser);
+      case 'PATCH':
+        return await handleThemeConfiguration(event, requestId, authenticatedUser);
+      default:
+        return createErrorResponse('Method not allowed', 405);
+    }
+
+  } catch (error: unknown) {
+    const duration = Date.now() - startTime;
+    logger.error('Dashboard customization request failed', {
+      requestId,
+      duration: `${duration}ms`,
+      error: (error as Error).message,
+      stack: (error as Error).stack
+    });
+
+    return handleError(error as Error, 'Failed to process dashboard customization request');
+  }
+};
+
+/**
+ * Handle get preferences request
+ */
+async function handleGetPreferences(
+  event: APIGatewayProxyEvent,
+  requestId: string,
+  authenticatedUser: AuthenticatedUser
+): Promise<APIGatewayProxyResult> {
+  try {
+    // Parse query parameters
+    const queryParams = event.queryStringParameters || {};
+    const parentId = event.pathParameters?.parentId || authenticatedUser.id;
+
+    const validatedParams = getPreferencesSchema.parse({
+      parentId,
+      category: queryParams.category || 'all',
+      includeRecommendations: queryParams.includeRecommendations !== 'false'
+    });
+
+    // Validate parent access
+    await validateParentAccess(validatedParams.parentId, authenticatedUser);
+
+    // Get preferences
+    const preferences = await getDashboardPreferences(
+      validatedParams.parentId,
+      validatedParams.category,
+      validatedParams.includeRecommendations
+    );
+
+    // Generate recommendations if requested
+    let recommendations = [];
+    if (validatedParams.includeRecommendations) {
+      recommendations = await generateLayoutRecommendations(validatedParams.parentId, preferences);
+    }
+
+    logger.info('Dashboard preferences retrieved successfully', {
+      requestId,
+      parentId: validatedParams.parentId,
+      category: validatedParams.category,
+      recommendationsCount: recommendations.length
+    });
+
+    return createSuccessResponse(
+      {
+        data: {
+          preferences,
+          recommendations,
+          message: 'Dashboard preferences retrieved successfully'
+        },
+        message: 'Preferences retrieved successfully',
+        requestId
+      },
+      200
+    );
+
+  } catch (error: unknown) {
+    logger.error('Failed to get dashboard preferences', {
+      requestId,
+      error: (error as Error).message
+    });
+    throw error;
+  }
+}
+
+/**
+ * Handle update preferences request
+ */
+async function handleUpdatePreferences(
+  event: APIGatewayProxyEvent,
+  requestId: string,
+  authenticatedUser: AuthenticatedUser
+): Promise<APIGatewayProxyResult> {
+  try {
+    // Parse and validate request body
+    const requestBody = JSON.parse(event.body || '{}');
+    const validatedData = updatePreferencesSchema.parse(requestBody);
+
+    // Validate parent access
+    await validateParentAccess(validatedData.parentId, authenticatedUser);
+
+    // Update preferences
+    const updatedPreferences = await updateDashboardPreferences(
+      validatedData.parentId,
+      validatedData.category,
+      validatedData.preferences,
+      validatedData.syncAcrossDevices,
+      authenticatedUser.id
+    );
+
+    logger.info('Dashboard preferences updated successfully', {
+      requestId,
+      parentId: validatedData.parentId,
+      category: validatedData.category,
+      syncAcrossDevices: validatedData.syncAcrossDevices
+    });
+
+    return createSuccessResponse(
+      {
+        data: {
+          preferences: updatedPreferences,
+          message: 'Preferences updated successfully'
+        },
+        message: 'Preferences updated successfully',
+        requestId
+      },
+      200
+    );
+
+  } catch (error: unknown) {
+    logger.error('Failed to update dashboard preferences', {
+      requestId,
+      error: (error as Error).message
+    });
+    throw error;
+  }
+}
+
+/**
+ * Handle widget configuration request
+ */
+async function handleWidgetConfiguration(
+  event: APIGatewayProxyEvent,
+  requestId: string,
+  authenticatedUser: AuthenticatedUser
+): Promise<APIGatewayProxyResult> {
+  try {
+    // Parse and validate request body
+    const requestBody = JSON.parse(event.body || '{}');
+    const validatedData = widgetConfigSchema.parse(requestBody);
+
+    // Validate parent access
+    await validateParentAccess(validatedData.parentId, authenticatedUser);
+
+    // Manage widget configuration
+    const result = await manageWidgetConfiguration(
+      validatedData.parentId,
+      validatedData.action,
+      validatedData.widgetData,
+      validatedData.layoutId
+    );
+
+    logger.info('Widget configuration updated successfully', {
+      requestId,
+      parentId: validatedData.parentId,
+      action: validatedData.action,
+      widgetId: validatedData.widgetData?.id,
+      success: result.success
+    });
+
+    return createSuccessResponse(
+      {
+        data: {
+          ...result,
+          message: `Widget ${validatedData.action} completed successfully`
+        },
+        message: 'Widget configuration updated successfully',
+        requestId
+      },
+      200
+    );
+
+  } catch (error: unknown) {
+    logger.error('Failed to update widget configuration', {
+      requestId,
+      error: (error as Error).message
+    });
+    throw error;
+  }
+}
+
+/**
+ * Handle theme configuration request
+ */
+async function handleThemeConfiguration(
+  event: APIGatewayProxyEvent,
+  requestId: string,
+  authenticatedUser: AuthenticatedUser
+): Promise<APIGatewayProxyResult> {
+  try {
+    // Parse and validate request body
+    const requestBody = JSON.parse(event.body || '{}');
+    const validatedData = themeConfigSchema.parse(requestBody);
+
+    // Validate parent access
+    await validateParentAccess(validatedData.parentId, authenticatedUser);
+
+    // Update theme preferences in display settings
+    const updatedPreferences = await updateDashboardPreferences(
+      validatedData.parentId,
+      'display',
+      { theme: validatedData.theme },
+      true,
+      authenticatedUser.id
+    );
+
+    logger.info('Theme configuration updated successfully', {
+      requestId,
+      parentId: validatedData.parentId,
+      themeName: validatedData.theme.name,
+      themeMode: validatedData.theme.mode
+    });
+
+    return createSuccessResponse(
+      {
+        data: {
+          theme: validatedData.theme,
+          preferences: updatedPreferences.dataDisplay,
+          message: 'Theme configuration updated successfully'
+        },
+        message: 'Theme updated successfully',
+        requestId
+      },
+      200
+    );
+
+  } catch (error: unknown) {
+    logger.error('Failed to update theme configuration', {
+      requestId,
+      error: (error as Error).message
+    });
+    throw error;
+  }
+}

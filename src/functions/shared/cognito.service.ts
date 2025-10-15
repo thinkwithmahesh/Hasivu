@@ -10,7 +10,6 @@ import {
   ConfirmSignUpCommand,
   ResendConfirmationCodeCommand,
   InitiateAuthCommand,
-  RevokeTokenCommand,
   GlobalSignOutCommand,
   GetUserCommand,
   UpdateUserAttributesCommand,
@@ -19,7 +18,7 @@ import {
   ConfirmForgotPasswordCommand,
   AttributeType,
   AuthFlowType,
-  ChallengeNameType
+  ChallengeNameType,
 } from '@aws-sdk/client-cognito-identity-provider';
 import { logger } from '../../utils/logger';
 
@@ -80,7 +79,7 @@ export interface UserAttributes {
 export class CognitoServiceError extends Error {
   public readonly code: string;
   public readonly statusCode: number;
-  
+
   constructor(message: string, code: string = 'CognitoError', statusCode: number = 500) {
     super(message);
     this.name = 'CognitoServiceError';
@@ -100,7 +99,7 @@ class CognitoServiceClass {
 
   constructor() {
     this.client = new CognitoIdentityProviderClient({
-      region: process.env.AWS_REGION || 'us-east-1'
+      region: process.env.AWS_REGION || 'us-east-1',
     });
     this.userPoolId = process.env.COGNITO_USER_POOL_ID!;
     this.clientId = process.env.COGNITO_CLIENT_ID!;
@@ -123,10 +122,12 @@ class CognitoServiceClass {
   /**
    * Register a new user in Cognito User Pool
    */
-  public async signUp(userData: UserRegistration): Promise<{ userSub: string; isConfirmed: boolean }> {
+  public async signUp(
+    userData: UserRegistration
+  ): Promise<{ userSub: string; isConfirmed: boolean }> {
     try {
       logger.info('Attempting user registration', { email: userData.email });
-      
+
       const command = new SignUpCommand({
         ClientId: this.clientId,
         Username: userData.email,
@@ -137,22 +138,22 @@ class CognitoServiceClass {
           { Name: 'family_name', Value: userData.lastName },
           ...(userData.phoneNumber ? [{ Name: 'phone_number', Value: userData.phoneNumber }] : []),
           ...(userData.role ? [{ Name: 'custom:role', Value: userData.role }] : []),
-          ...(userData.schoolId ? [{ Name: 'custom:school_id', Value: userData.schoolId }] : [])
-        ]
+          ...(userData.schoolId ? [{ Name: 'custom:school_id', Value: userData.schoolId }] : []),
+        ],
       });
 
       const response = await this.client.send(command);
-      
+
       logger.integration('Cognito signUp operation completed successfully', {
         email: userData.email,
-        userSub: response.UserSub
+        userSub: response.UserSub,
       });
 
-      return { 
+      return {
         userSub: response.UserSub!,
-        isConfirmed: !!response.UserConfirmed // AWS returns UserConfirmed
+        isConfirmed: !!response.UserConfirmed, // AWS returns UserConfirmed
       };
-    } catch (error) {
+    } catch (error: unknown) {
       throw this.handleCognitoError(error);
     }
   }
@@ -165,12 +166,12 @@ class CognitoServiceClass {
       const command = new ConfirmSignUpCommand({
         ClientId: this.clientId,
         Username: email,
-        ConfirmationCode: confirmationCode
+        ConfirmationCode: confirmationCode,
       });
 
       await this.client.send(command);
       logger.integration('Cognito confirmSignUp operation completed successfully', { email });
-    } catch (error) {
+    } catch (error: unknown) {
       throw this.handleCognitoError(error);
     }
   }
@@ -182,12 +183,14 @@ class CognitoServiceClass {
     try {
       const command = new ResendConfirmationCodeCommand({
         ClientId: this.clientId,
-        Username: email
+        Username: email,
       });
 
       await this.client.send(command);
-      logger.integration('Cognito resendConfirmationCode operation completed successfully', { email });
-    } catch (error) {
+      logger.integration('Cognito resendConfirmationCode operation completed successfully', {
+        email,
+      });
+    } catch (error: unknown) {
       throw this.handleCognitoError(error);
     }
   }
@@ -198,14 +201,14 @@ class CognitoServiceClass {
   public async signIn(credentials: LoginCredentials): Promise<CognitoAuthResult> {
     try {
       logger.info('Attempting user authentication', { email: credentials.email });
-      
+
       const command = new InitiateAuthCommand({
         ClientId: this.clientId,
         AuthFlow: AuthFlowType.USER_PASSWORD_AUTH,
         AuthParameters: {
           USERNAME: credentials.email,
-          PASSWORD: credentials.password
-        }
+          PASSWORD: credentials.password,
+        },
       });
 
       const response = await this.client.send(command);
@@ -222,16 +225,16 @@ class CognitoServiceClass {
         expiresIn: response.AuthenticationResult.ExpiresIn!,
         userSub: this.decodeToken(response.AuthenticationResult.AccessToken!).sub,
         challengeName: response.ChallengeName,
-        challengeParameters: response.ChallengeParameters
+        challengeParameters: response.ChallengeParameters,
       };
 
       logger.integration('Cognito signIn operation completed successfully', {
         email: credentials.email,
-        userSub: authResult.userSub
+        userSub: authResult.userSub,
       });
 
       return authResult;
-    } catch (error) {
+    } catch (error: unknown) {
       throw this.handleCognitoError(error);
     }
   }
@@ -240,7 +243,10 @@ class CognitoServiceClass {
    * Authenticate user and get tokens with user info
    * Combines signIn and getUser operations for login functionality
    */
-  public async authenticate(email: string, password: string): Promise<{
+  public async authenticate(
+    email: string,
+    password: string
+  ): Promise<{
     accessToken: string;
     refreshToken: string;
     idToken: string;
@@ -249,17 +255,17 @@ class CognitoServiceClass {
     try {
       // First sign in to get tokens
       const authResult = await this.signIn({ email, password });
-      
+
       // Then get user details using the access token
       const { user } = await this.getUser(authResult.accessToken);
-      
+
       return {
         accessToken: authResult.accessToken,
         refreshToken: authResult.refreshToken,
         idToken: authResult.idToken,
-        user
+        user,
       };
-    } catch (error) {
+    } catch (error: unknown) {
       throw this.handleCognitoError(error);
     }
   }
@@ -267,14 +273,16 @@ class CognitoServiceClass {
   /**
    * Refresh access token using refresh token
    */
-  public async refreshToken(refreshToken: string): Promise<{ accessToken: string; idToken: string; expiresIn: number }> {
+  public async refreshToken(
+    refreshToken: string
+  ): Promise<{ accessToken: string; idToken: string; expiresIn: number }> {
     try {
       const command = new InitiateAuthCommand({
         ClientId: this.clientId,
         AuthFlow: AuthFlowType.REFRESH_TOKEN_AUTH,
         AuthParameters: {
-          REFRESH_TOKEN: refreshToken
-        }
+          REFRESH_TOKEN: refreshToken,
+        },
       });
 
       const response = await this.client.send(command);
@@ -286,13 +294,15 @@ class CognitoServiceClass {
       const result = {
         accessToken: response.AuthenticationResult.AccessToken!,
         idToken: response.AuthenticationResult.IdToken!,
-        expiresIn: response.AuthenticationResult.ExpiresIn!
+        expiresIn: response.AuthenticationResult.ExpiresIn!,
       };
 
-      logger.integration('Cognito refreshToken operation completed successfully', { tokenRefreshed: true });
+      logger.integration('Cognito refreshToken operation completed successfully', {
+        tokenRefreshed: true,
+      });
 
       return result;
-    } catch (error) {
+    } catch (error: unknown) {
       throw this.handleCognitoError(error);
     }
   }
@@ -303,12 +313,12 @@ class CognitoServiceClass {
   public async signOut(accessToken: string): Promise<void> {
     try {
       const command = new GlobalSignOutCommand({
-        AccessToken: accessToken
+        AccessToken: accessToken,
       });
 
       await this.client.send(command);
       logger.integration('Cognito signOut operation completed successfully');
-    } catch (error) {
+    } catch (error: unknown) {
       throw this.handleCognitoError(error);
     }
   }
@@ -319,7 +329,7 @@ class CognitoServiceClass {
   public async getUser(accessToken: string): Promise<{ user: UserAttributes }> {
     try {
       const command = new GetUserCommand({
-        AccessToken: accessToken
+        AccessToken: accessToken,
       });
 
       const response = await this.client.send(command);
@@ -361,10 +371,12 @@ class CognitoServiceClass {
         }
       });
 
-      logger.integration('Cognito getUser operation completed successfully', { userSub: attributes.sub });
+      logger.integration('Cognito getUser operation completed successfully', {
+        userSub: attributes.sub,
+      });
 
       return { user: attributes };
-    } catch (error) {
+    } catch (error: unknown) {
       throw this.handleCognitoError(error);
     }
   }
@@ -376,8 +388,8 @@ class CognitoServiceClass {
     try {
       const { user } = await this.getUser(accessToken);
       return user;
-    } catch (error) {
-      throw new CognitoServiceError('Invalid or expired access token', error);
+    } catch (error: unknown) {
+      throw new CognitoServiceError('Invalid or expired access token', 'InvalidToken', 401);
     }
   }
 
@@ -419,12 +431,14 @@ class CognitoServiceClass {
 
       const command = new UpdateUserAttributesCommand({
         AccessToken: accessToken,
-        UserAttributes: userAttributes
+        UserAttributes: userAttributes,
       });
 
       await this.client.send(command);
-      logger.integration('Cognito updateUserAttributes operation completed successfully', { attributesUpdated: userAttributes.length });
-    } catch (error) {
+      logger.integration('Cognito updateUserAttributes operation completed successfully', {
+        attributesUpdated: userAttributes.length,
+      });
+    } catch (error: unknown) {
       throw this.handleCognitoError(error);
     }
   }
@@ -441,12 +455,12 @@ class CognitoServiceClass {
       const command = new ChangePasswordCommand({
         AccessToken: accessToken,
         PreviousPassword: previousPassword,
-        ProposedPassword: proposedPassword
+        ProposedPassword: proposedPassword,
       });
 
       await this.client.send(command);
       logger.integration('Cognito changePassword operation completed successfully');
-    } catch (error) {
+    } catch (error: unknown) {
       throw this.handleCognitoError(error);
     }
   }
@@ -458,12 +472,12 @@ class CognitoServiceClass {
     try {
       const command = new ForgotPasswordCommand({
         ClientId: this.clientId,
-        Username: email
+        Username: email,
       });
 
       await this.client.send(command);
       logger.integration('Cognito forgotPassword operation completed successfully', { email });
-    } catch (error) {
+    } catch (error: unknown) {
       throw this.handleCognitoError(error);
     }
   }
@@ -481,12 +495,14 @@ class CognitoServiceClass {
         ClientId: this.clientId,
         Username: email,
         ConfirmationCode: confirmationCode,
-        Password: newPassword
+        Password: newPassword,
       });
 
       await this.client.send(command);
-      logger.integration('Cognito confirmForgotPassword operation completed successfully', { email });
-    } catch (error) {
+      logger.integration('Cognito confirmForgotPassword operation completed successfully', {
+        email,
+      });
+    } catch (error: unknown) {
       throw this.handleCognitoError(error);
     }
   }
@@ -499,7 +515,7 @@ class CognitoServiceClass {
       const base64Payload = token.split('.')[1];
       const payload = Buffer.from(base64Payload, 'base64').toString();
       return JSON.parse(payload);
-    } catch (error) {
+    } catch (error: unknown) {
       throw new CognitoServiceError('Invalid token format', 'InvalidToken', 400);
     }
   }
@@ -531,11 +547,18 @@ class CognitoServiceClass {
       case 'LimitExceededException':
         return new CognitoServiceError('Too many attempts', 'TooManyAttempts', 429);
       case 'InvalidPasswordException':
-        return new CognitoServiceError('Password does not meet requirements', 'InvalidPassword', 400);
+        return new CognitoServiceError(
+          'Password does not meet requirements',
+          'InvalidPassword',
+          400
+        );
       case 'TooManyRequestsException':
         return new CognitoServiceError('Too many requests', 'TooManyRequests', 429);
       default:
-        logger.error('Unhandled Cognito error', { error: errorName, message: errorMessage });
+        logger.error('Unhandled Cognito error', new Error(errorMessage), {
+          errorName,
+          errorMessage,
+        });
         return new CognitoServiceError(errorMessage, errorName, 500);
     }
   }

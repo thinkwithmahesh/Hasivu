@@ -1,42 +1,50 @@
-"use client";
+'use client';
 
 import React from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, BarChart3, TrendingUp, Users, ShoppingCart, DollarSign, Calendar } from 'lucide-react';
+import {
+  ArrowLeft,
+  BarChart3,
+  TrendingUp,
+  Users,
+  ShoppingCart,
+  DollarSign,
+  Calendar,
+} from 'lucide-react';
 
 export default function AnalyticsPage() {
   const analyticsData = {
     totalOrders: 1247,
-    totalRevenue: "₹45,680",
+    totalRevenue: '₹45,680',
     activeUsers: 234,
-    averageOrderValue: "₹36.60",
-    ordersTrend: "+12%",
-    revenueTrend: "+8.5%",
-    usersTrend: "+18%",
-    avgOrderTrend: "+5.2%"
+    averageOrderValue: '₹36.60',
+    ordersTrend: '+12%',
+    revenueTrend: '+8.5%',
+    usersTrend: '+18%',
+    avgOrderTrend: '+5.2%',
   };
 
   const recentMetrics = [
     {
-      period: "Today",
+      period: 'Today',
       orders: 47,
-      revenue: "₹1,720",
-      users: 28
+      revenue: '₹1,720',
+      users: 28,
     },
     {
-      period: "This Week", 
+      period: 'This Week',
       orders: 312,
-      revenue: "₹11,440",
-      users: 156
+      revenue: '₹11,440',
+      users: 156,
     },
     {
-      period: "This Month",
+      period: 'This Month',
       orders: 1247,
-      revenue: "₹45,680", 
-      users: 234
-    }
+      revenue: '₹45,680',
+      users: 234,
+    },
   ];
 
   return (
@@ -74,7 +82,9 @@ export default function AnalyticsPage() {
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Platform Analytics</h1>
-          <p className="text-gray-600">Track performance metrics and usage statistics for your school meal platform</p>
+          <p className="text-gray-600">
+            Track performance metrics and usage statistics for your school meal platform
+          </p>
         </div>
 
         {/* Key Metrics Cards */}
@@ -88,7 +98,9 @@ export default function AnalyticsPage() {
             </CardHeader>
             <CardContent className="pt-0">
               <div className="text-2xl font-bold">{analyticsData.totalOrders.toLocaleString()}</div>
-              <p className="text-xs text-green-600 font-medium">{analyticsData.ordersTrend} from last month</p>
+              <p className="text-xs text-green-600 font-medium">
+                {analyticsData.ordersTrend} from last month
+              </p>
             </CardContent>
           </Card>
 
@@ -101,7 +113,9 @@ export default function AnalyticsPage() {
             </CardHeader>
             <CardContent className="pt-0">
               <div className="text-2xl font-bold">{analyticsData.totalRevenue}</div>
-              <p className="text-xs text-green-600 font-medium">{analyticsData.revenueTrend} from last month</p>
+              <p className="text-xs text-green-600 font-medium">
+                {analyticsData.revenueTrend} from last month
+              </p>
             </CardContent>
           </Card>
 
@@ -114,7 +128,9 @@ export default function AnalyticsPage() {
             </CardHeader>
             <CardContent className="pt-0">
               <div className="text-2xl font-bold">{analyticsData.activeUsers}</div>
-              <p className="text-xs text-green-600 font-medium">{analyticsData.usersTrend} from last month</p>
+              <p className="text-xs text-green-600 font-medium">
+                {analyticsData.usersTrend} from last month
+              </p>
             </CardContent>
           </Card>
 
@@ -127,7 +143,9 @@ export default function AnalyticsPage() {
             </CardHeader>
             <CardContent className="pt-0">
               <div className="text-2xl font-bold">{analyticsData.averageOrderValue}</div>
-              <p className="text-xs text-green-600 font-medium">{analyticsData.avgOrderTrend} from last month</p>
+              <p className="text-xs text-green-600 font-medium">
+                {analyticsData.avgOrderTrend} from last month
+              </p>
             </CardContent>
           </Card>
         </div>

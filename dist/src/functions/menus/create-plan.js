@@ -47,7 +47,7 @@ async function validateSchoolAccess(schoolId, userId) {
         return { school, user: userAccess };
     }
     catch (error) {
-        logger.error('School access validation failed', { schoolId, userId, error: error.message });
+        logger.error('School access validation failed', { schoolId, userId, error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) });
         throw error;
     }
 }
@@ -110,7 +110,7 @@ async function checkForOverlappingPlans(schoolId, startDate, endDate, excludePla
         }
     }
     catch (error) {
-        logger.error('Overlap check failed', { schoolId, startDate, endDate, error: error.message });
+        logger.error('Overlap check failed', { schoolId, startDate, endDate, error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) });
         throw error;
     }
 }
@@ -149,7 +149,7 @@ async function validateTemplateReference(templateId, schoolId) {
         return template;
     }
     catch (error) {
-        logger.error('Template validation failed', { templateId, schoolId, error: error.message });
+        logger.error('Template validation failed', { templateId, schoolId, error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) });
         throw error;
     }
 }
@@ -210,7 +210,7 @@ async function createMenuPlan(planData, userId) {
         };
     }
     catch (error) {
-        logger.error('Menu plan creation failed', { planData, userId, error: error.message });
+        logger.error('Menu plan creation failed', { planData, userId, error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) });
         throw error;
     }
 }
@@ -233,7 +233,7 @@ async function createMealSlots(menuPlanId, startDate, endDate, mealTypes) {
         logger.info('Meal slots created', { menuPlanId, slotsCount: slots.length });
     }
     catch (error) {
-        logger.error('Meal slots creation failed', { menuPlanId, error: error.message });
+        logger.error('Meal slots creation failed', { menuPlanId, error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error) });
         throw error;
     }
 }
@@ -246,6 +246,9 @@ const createMenuPlanHandler = async (event, context) => {
             return (0, response_utils_1.createErrorResponse)(405, 'Method not allowed', undefined, 'METHOD_NOT_ALLOWED');
         }
         const authenticatedUser = await (0, lambda_auth_middleware_1.authenticateLambda)(event);
+        if (!authenticatedUser.success || !authenticatedUser.userId) {
+            return (0, response_utils_1.createErrorResponse)(401, 'Authentication required', undefined, 'UNAUTHENTICATED');
+        }
         const requestBody = (0, response_utils_1.parseRequestBody)(event.body);
         if (!requestBody) {
             return (0, response_utils_1.createErrorResponse)(400, 'Invalid request body', undefined, 'INVALID_REQUEST_BODY');
@@ -305,10 +308,10 @@ const createMenuPlanHandler = async (event, context) => {
         logger.error('Create menu plan request failed', {
             requestId,
             duration,
-            error: error.message,
-            stack: error.stack
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
+            stack: error instanceof Error ? error.stack : undefined
         });
-        return (0, response_utils_1.handleError)(error, requestId);
+        return (0, response_utils_1.handleError)(error instanceof Error ? error : new Error(String(error)), requestId);
     }
 };
 exports.createMenuPlanHandler = createMenuPlanHandler;

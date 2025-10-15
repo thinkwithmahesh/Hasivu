@@ -1,0 +1,869 @@
+/**
+ * HASIVU Platform - MLflow Integration Service
+ * Experiment tracking, model versioning, and deployment management
+ * Epic 3 → Story 1: Predictive Analytics Engine
+ * Task 1: Core ML Infrastructure & Model Training
+ */
+
+import { logger } from '../../utils/logger';
+import RedisService from '../redis.service';
+import axios, { AxiosInstance } from 'axios';
+import * as fs from 'fs';
+import * as path from 'path';
+import { v4 as uuidv4 } from 'uuid';
+
+/**
+ * MLflow experiment interface
+ */
+export interface MLflowExperiment {
+  experimentId: string;
+  name: string;
+  artifactLocation: string;
+  lifecycleStage: 'active' | 'deleted';
+  tags: Record<string, string>;
+  creationTime: number;
+  lastUpdateTime: number;
+}
+
+/**
+ * MLflow run interface
+ */
+export interface MLflowRun {
+  runId: string;
+  experimentId: string;
+  status: 'RUNNING' | 'SCHEDULED' | 'FINISHED' | 'FAILED' | 'KILLED';
+  startTime: number;
+  endTime?: number;
+  artifactUri: string;
+  data: {
+    metrics: Record<string, number>;
+    params: Record<string, string>;
+    tags: Record<string, string>;
+  };
+}
+
+/**
+ * MLflow model version interface
+ */
+export interface MLflowModelVersion {
+  name: string;
+  version: string;
+  creationTimestamp: number;
+  lastUpdatedTimestamp: number;
+  userId: string;
+  currentStage: 'None' | 'Staging' | 'Production' | 'Archived';
+  description?: string;
+  source: string;
+  runId: string;
+  status: 'PENDING_REGISTRATION' | 'FAILED_REGISTRATION' | 'READY';
+  statusMessage?: string;
+  tags: Record<string, string>;
+}
+
+/**
+ * MLflow registered model interface
+ */
+export interface MLflowRegisteredModel {
+  name: string;
+  creationTimestamp: number;
+  lastUpdatedTimestamp: number;
+  description?: string;
+  latestVersions: MLflowModelVersion[];
+  tags: Record<string, string>;
+}
+
+/**
+ * MLflow service configuration
+ */
+interface MLflowConfig {
+  trackingUri: string;
+  registryUri?: string;
+  username?: string;
+  password?: string;
+  token?: string;
+  s3Endpoint?: string;
+  s3AccessKey?: string;
+  s3SecretKey?: string;
+  defaultArtifactRoot: string;
+  experimentName: string;
+}
+
+/**
+ * MLflow Integration Service
+ * Provides comprehensive experiment tracking and model management
+ */
+export class MLflowService {
+  private static instance: MLflowService;
+  private config: MLflowConfig;
+  private client: AxiosInstance;
+  private redis: any;
+  private initialized: boolean = false;
+
+  private constructor() {
+    this.redis = RedisService;
+    this.initializeConfig();
+    this.initializeClient();
+  }
+
+  public static getInstance(): MLflowService {
+    if (!MLflowService.instance) {
+      MLflowService.instance = new MLflowService();
+    }
+    return MLflowService.instance;
+  }
+
+  /**
+   * Initialize MLflow service
+   */
+  public async initialize(): Promise<void> {
+    try {
+      logger.info('Initializing MLflow service', {
+        tracking_uri: this.config.trackingUri,
+        experiment_name: this.config.experimentName
+      });
+
+      // Test connection to MLflow
+      await this.testConnection();
+
+      // Create default experiment if it doesn't exist
+      await this.ensureDefaultExperiment();
+
+      this.initialized = true;
+
+      logger.info('MLflow service initialized successfully');
+
+    } catch (error: unknown) {
+      logger.error('Failed to initialize MLflow service', {
+        error: (error instanceof Error ? error.message : String(error)),
+        stack: (error instanceof Error ? error.stack : undefined)
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Create or get experiment
+   */
+  public async createExperiment(name: string, tags: Record<string, string> = {}): Promise<string> {
+    try {
+      // Check if experiment already exists
+      const existingExperiment = await this.getExperimentByName(name);
+      if (existingExperiment) {
+        return existingExperiment.experimentId;
+      }
+
+      const response = await this.client.post('/api/2.0/mlflow/experiments/create', {
+        name,
+        artifact_location: `${this.config.defaultArtifactRoot}/${name}`,
+        tags: Object.entries(tags).map(([key, value]) => ({ key, value }))
+      });
+
+      const experimentId = response.data.experiment_id;
+
+      logger.info('MLflow experiment created', { name, experimentId });
+
+      return experimentId;
+
+    } catch (error: unknown) {
+      logger.error('Failed to create MLflow experiment', {
+        name,
+        error: (error instanceof Error ? error.message : String(error))
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Start experiment run
+   */
+  public async startExperiment(modelId: string, tags: Record<string, string> = {}): Promise<string> {
+    try {
+      const experimentName = `hasivu-model-${modelId}`;
+      const experimentId = await this.createExperiment(experimentName, {
+        model_id: modelId,
+        platform: 'hasivu',
+        ...tags
+      });
+
+      logger.info('MLflow experiment started', { modelId, experimentId, experimentName });
+
+      return experimentId;
+
+    } catch (error: unknown) {
+      logger.error('Failed to start MLflow experiment', {
+        modelId,
+        error: (error instanceof Error ? error.message : String(error))
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Start a new run
+   */
+  public async startRun(
+    experimentId: string,
+    tags: Record<string, string> = {},
+    runName?: string
+  ): Promise<string> {
+    try {
+      const response = await this.client.post('/api/2.0/mlflow/runs/create', {
+        experiment_id: experimentId,
+        start_time: Date.now(),
+        tags: Object.entries(tags).map(([key, value]) => ({ key, value })),
+        run_name: runName || `run-${uuidv4()}`
+      });
+
+      const runId = response.data.run.info.run_id;
+
+      // Cache run info in Redis
+      await this.redis.setex(
+        `mlflow:run:${runId}`,
+        3600, // 1 hour
+        JSON.stringify({
+          runId,
+          experimentId,
+          startTime: Date.now(),
+          status: 'RUNNING'
+        })
+      );
+
+      logger.info('MLflow run started', { runId, experimentId });
+
+      return runId;
+
+    } catch (error: unknown) {
+      logger.error('Failed to start MLflow run', {
+        experimentId,
+        error: (error instanceof Error ? error.message : String(error))
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Log metrics for a run
+   */
+  public async logMetrics(runId: string, metrics: Record<string, number>, step?: number): Promise<void> {
+    try {
+      const metricData = Object.entries(metrics).map(([key, value]) => ({
+        key,
+        value,
+        timestamp: Date.now(),
+        step: step || 0
+      }));
+
+      await this.client.post('/api/2.0/mlflow/runs/log-batch', {
+        run_id: runId,
+        metrics: metricData
+      });
+
+      // Cache metrics in Redis for quick access
+      for (const [key, value] of Object.entries(metrics)) {
+        await this.redis.hset(`mlflow:metrics:${runId}`, key, value.toString());
+      }
+
+      logger.debug('MLflow metrics logged', { runId, metrics: Object.keys(metrics) });
+
+    } catch (error: unknown) {
+      logger.error('Failed to log MLflow metrics', {
+        runId,
+        error: (error instanceof Error ? error.message : String(error))
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Log parameters for a run
+   */
+  public async logParams(runId: string, params: Record<string, any>): Promise<void> {
+    try {
+      const paramData = Object.entries(params).map(([key, value]) => ({
+        key,
+        value: String(value)
+      }));
+
+      await this.client.post('/api/2.0/mlflow/runs/log-batch', {
+        run_id: runId,
+        params: paramData
+      });
+
+      // Cache params in Redis
+      for (const [key, value] of Object.entries(params)) {
+        await this.redis.hset(`mlflow:params:${runId}`, key, String(value));
+      }
+
+      logger.debug('MLflow parameters logged', { runId, params: Object.keys(params) });
+
+    } catch (error: unknown) {
+      logger.error('Failed to log MLflow parameters', {
+        runId,
+        error: (error instanceof Error ? error.message : String(error))
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Log tags for a run
+   */
+  public async logTags(runId: string, tags: Record<string, string>): Promise<void> {
+    try {
+      const tagData = Object.entries(tags).map(([key, value]) => ({
+        key,
+        value
+      }));
+
+      await this.client.post('/api/2.0/mlflow/runs/set-tag', {
+        run_id: runId,
+        tags: tagData
+      });
+
+      logger.debug('MLflow tags logged', { runId, tags: Object.keys(tags) });
+
+    } catch (error: unknown) {
+      logger.error('Failed to log MLflow tags', {
+        runId,
+        error: (error instanceof Error ? error.message : String(error))
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Log artifact (file) for a run
+   */
+  public async logArtifact(runId: string, filePath: string, artifactPath?: string): Promise<void> {
+    try {
+      if (!fs.existsSync(filePath)) {
+        throw new Error(`Artifact file not found: ${filePath}`);
+      }
+
+      const fileName = path.basename(filePath);
+      const finalArtifactPath = artifactPath || fileName;
+
+      // For local MLflow server, we need to copy the file to the artifact store
+      const artifactUri = await this.getRunArtifactUri(runId);
+      const destinationPath = path.join(artifactUri, finalArtifactPath);
+
+      // Ensure destination directory exists
+      const destinationDir = path.dirname(destinationPath);
+      if (!fs.existsSync(destinationDir)) {
+        fs.mkdirSync(destinationDir, { recursive: true });
+      }
+
+      // Copy file to artifact store
+      fs.copyFileSync(filePath, destinationPath);
+
+      logger.info('MLflow artifact logged', {
+        runId,
+        filePath,
+        artifactPath: finalArtifactPath
+      });
+
+    } catch (error: unknown) {
+      logger.error('Failed to log MLflow artifact', {
+        runId,
+        filePath,
+        error: (error instanceof Error ? error.message : String(error))
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * End a run
+   */
+  public async endRun(runId: string, status: 'FINISHED' | 'FAILED' | 'KILLED' = 'FINISHED'): Promise<void> {
+    try {
+      await this.client.post('/api/2.0/mlflow/runs/update', {
+        run_id: runId,
+        status,
+        end_time: Date.now()
+      });
+
+      // Update cached run info
+      const cachedRun = await this.redis.get(`mlflow:run:${runId}`);
+      if (cachedRun) {
+        const runInfo = JSON.parse(cachedRun);
+        runInfo.status = status;
+        runInfo.endTime = Date.now();
+        await this.redis.setex(`mlflow:run:${runId}`, 3600, JSON.stringify(runInfo));
+      }
+
+      logger.info('MLflow run ended', { runId, status });
+
+    } catch (error: unknown) {
+      logger.error('Failed to end MLflow run', {
+        runId,
+        error: (error instanceof Error ? error.message : String(error))
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Register model
+   */
+  public async registerModel(
+    modelId: string,
+    stage: 'Staging' | 'Production' = 'Staging',
+    description?: string
+  ): Promise<MLflowModelVersion> {
+    try {
+      const modelName = `hasivu-model-${modelId}`;
+
+      // First, create registered model if it doesn't exist
+      try {
+        await this.client.post('/api/2.0/mlflow/registered-models/create', {
+          name: modelName,
+          description: description || `HASIVU ML Model ${modelId}`
+        });
+      } catch (error: unknown) {
+        // Model might already exist, continue
+        const isAxiosError = error && typeof error === 'object' && 'response' in error;
+        if (!isAxiosError || !(error as any).response?.data?.error_code?.includes('RESOURCE_ALREADY_EXISTS')) {
+          throw error;
+        }
+      }
+
+      // Create model version
+      const response = await this.client.post('/api/2.0/mlflow/model-versions/create', {
+        name: modelName,
+        source: `models:/${modelName}/latest`,
+        description
+      });
+
+      const modelVersion = response.data.model_version;
+
+      // Transition to specified stage
+      await this.transitionModelStage(modelName, modelVersion.version, stage);
+
+      logger.info('MLflow model registered', {
+        modelId,
+        modelName,
+        version: modelVersion.version,
+        stage
+      });
+
+      return modelVersion;
+
+    } catch (error: unknown) {
+      logger.error('Failed to register MLflow model', {
+        modelId,
+        error: (error instanceof Error ? error.message : String(error))
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Transition model stage
+   */
+  public async transitionModelStage(
+    modelName: string,
+    version: string,
+    stage: 'Staging' | 'Production' | 'Archived'
+  ): Promise<void> {
+    try {
+      await this.client.post('/api/2.0/mlflow/model-versions/transition-stage', {
+        name: modelName,
+        version,
+        stage,
+        archive_existing_versions: stage === 'Production'
+      });
+
+      logger.info('MLflow model stage transitioned', { modelName, version, stage });
+
+    } catch (error: unknown) {
+      logger.error('Failed to transition MLflow model stage', {
+        modelName,
+        version,
+        stage,
+        error: (error instanceof Error ? error.message : String(error))
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Get model versions
+   */
+  public async getModelVersions(modelName: string): Promise<MLflowModelVersion[]> {
+    try {
+      const response = await this.client.get('/api/2.0/mlflow/registered-models/get', {
+        params: { name: modelName }
+      });
+
+      return response.data.registered_model.latest_versions || [];
+
+    } catch (error: unknown) {
+      logger.error('Failed to get MLflow model versions', {
+        modelName,
+        error: (error instanceof Error ? error.message : String(error))
+      });
+      return [];
+    }
+  }
+
+  /**
+   * Archive model
+   */
+  public async archiveModel(modelId: string): Promise<void> {
+    try {
+      const modelName = `hasivu-model-${modelId}`;
+      const versions = await this.getModelVersions(modelName);
+
+      // Archive all versions
+      for (const version of versions) {
+        if (version.currentStage !== 'Archived') {
+          await this.transitionModelStage(modelName, version.version, 'Archived');
+        }
+      }
+
+      logger.info('MLflow model archived', { modelId, modelName });
+
+    } catch (error: unknown) {
+      logger.error('Failed to archive MLflow model', {
+        modelId,
+        error: (error instanceof Error ? error.message : String(error))
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Get experiment by name
+   */
+  public async getExperimentByName(name: string): Promise<MLflowExperiment | null> {
+    try {
+      const response = await this.client.get('/api/2.0/mlflow/experiments/get-by-name', {
+        params: { experiment_name: name }
+      });
+
+      return response.data.experiment;
+
+    } catch (error: unknown) {
+      const isAxiosError = error && typeof error === 'object' && 'response' in error;
+      if (isAxiosError && (error as any).response?.status === 404) {
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Get run information
+   */
+  public async getRun(runId: string): Promise<MLflowRun | null> {
+    try {
+      // Try cache first
+      const cachedRun = await this.redis.get(`mlflow:run:${runId}`);
+      if (cachedRun) {
+        return JSON.parse(cachedRun);
+      }
+
+      const response = await this.client.get('/api/2.0/mlflow/runs/get', {
+        params: { run_id: runId }
+      });
+
+      const run = response.data.run;
+
+      // Cache the run info
+      await this.redis.setex(`mlflow:run:${runId}`, 3600, JSON.stringify(run));
+
+      return run;
+
+    } catch (error: unknown) {
+      logger.error('Failed to get MLflow run', { runId, error: (error instanceof Error ? error.message : String(error)) });
+      return null;
+    }
+  }
+
+  /**
+   * Search runs
+   */
+  public async searchRuns(
+    experimentIds: string[],
+    filter?: string,
+    orderBy?: string[],
+    maxResults?: number
+  ): Promise<MLflowRun[]> {
+    try {
+      const response = await this.client.post('/api/2.0/mlflow/runs/search', {
+        experiment_ids: experimentIds,
+        filter,
+        order_by: orderBy,
+        max_results: maxResults || 100
+      });
+
+      return response.data.runs || [];
+
+    } catch (error: unknown) {
+      logger.error('Failed to search MLflow runs', {
+        experimentIds,
+        error: (error instanceof Error ? error.message : String(error))
+      });
+      return [];
+    }
+  }
+
+  /**
+   * Get run metrics
+   */
+  public async getRunMetrics(runId: string): Promise<Record<string, number>> {
+    try {
+      // Try cache first
+      const cachedMetrics = await this.redis.hgetall(`mlflow:metrics:${runId}`);
+      if (Object.keys(cachedMetrics).length > 0) {
+        const metrics: Record<string, number> = {};
+        for (const [key, value] of Object.entries(cachedMetrics)) {
+          metrics[key] = parseFloat(String(value));
+        }
+        return metrics;
+      }
+
+      const run = await this.getRun(runId);
+      return run?.data.metrics || {};
+
+    } catch (error: unknown) {
+      logger.error('Failed to get MLflow run metrics', {
+        runId,
+        error: (error instanceof Error ? error.message : String(error))
+      });
+      return {};
+    }
+  }
+
+  /**
+   * Get run parameters
+   */
+  public async getRunParams(runId: string): Promise<Record<string, string>> {
+    try {
+      // Try cache first
+      const cachedParams = await this.redis.hgetall(`mlflow:params:${runId}`);
+      if (Object.keys(cachedParams).length > 0) {
+        return cachedParams;
+      }
+
+      const run = await this.getRun(runId);
+      return run?.data.params || {};
+
+    } catch (error: unknown) {
+      logger.error('Failed to get MLflow run parameters', {
+        runId,
+        error: (error instanceof Error ? error.message : String(error))
+      });
+      return {};
+    }
+  }
+
+  /**
+   * Delete experiment
+   */
+  public async deleteExperiment(experimentId: string): Promise<void> {
+    try {
+      await this.client.post('/api/2.0/mlflow/experiments/delete', {
+        experiment_id: experimentId
+      });
+
+      logger.info('MLflow experiment deleted', { experimentId });
+
+    } catch (error: unknown) {
+      logger.error('Failed to delete MLflow experiment', {
+        experimentId,
+        error: (error instanceof Error ? error.message : String(error))
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Private helper methods
+   */
+
+  private initializeConfig(): void {
+    this.config = {
+      trackingUri: process.env.MLFLOW_TRACKING_URI || 'http://localhost:5000',
+      registryUri: process.env.MLFLOW_REGISTRY_URI,
+      username: process.env.MLFLOW_USERNAME,
+      password: process.env.MLFLOW_PASSWORD,
+      token: process.env.MLFLOW_TOKEN,
+      s3Endpoint: process.env.MLFLOW_S3_ENDPOINT_URL,
+      s3AccessKey: process.env.AWS_ACCESS_KEY_ID,
+      s3SecretKey: process.env.AWS_SECRET_ACCESS_KEY,
+      defaultArtifactRoot: process.env.MLFLOW_DEFAULT_ARTIFACT_ROOT || './mlruns',
+      experimentName: process.env.MLFLOW_EXPERIMENT_NAME || 'hasivu-ml-experiments'
+    };
+  }
+
+  private initializeClient(): void {
+    this.client = axios.create({
+      baseURL: this.config.trackingUri,
+      timeout: 30000,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    // Add authentication if configured
+    if (this.config.token) {
+      this.client.defaults.headers.common['Authorization'] = `Bearer ${this.config.token}`;
+    } else if (this.config.username && this.config.password) {
+      this.client.defaults.auth = {
+        username: this.config.username,
+        password: this.config.password
+      };
+    }
+
+    // Add request/response interceptors for logging
+    this.client.interceptors.request.use(
+      (config) => {
+        logger.debug('MLflow API request', {
+          method: config.method,
+          url: config.url,
+          params: config.params
+        });
+        return config;
+      },
+      (error) => {
+        logger.error('MLflow API request error', { error: (error instanceof Error ? error.message : String(error)) });
+        return Promise.reject(error);
+      }
+    );
+
+    this.client.interceptors.response.use(
+      (response) => {
+        logger.debug('MLflow API response', {
+          status: response.status,
+          url: response.config.url
+        });
+        return response;
+      },
+      (error) => {
+        logger.error('MLflow API response error', {
+          status: error.response?.status,
+          url: error.config?.url,
+          message: error.response?.data?.message || (error instanceof Error ? error.message : String(error))
+        });
+        return Promise.reject(error);
+      }
+    );
+  }
+
+  private async testConnection(): Promise<void> {
+    try {
+      await this.client.get('/api/2.0/mlflow/experiments/list');
+      logger.info('MLflow connection test successful');
+    } catch (error: unknown) {
+      logger.error('MLflow connection test failed', { error: (error instanceof Error ? error.message : String(error)) });
+      throw new Error('Cannot connect to MLflow tracking server');
+    }
+  }
+
+  private async ensureDefaultExperiment(): Promise<void> {
+    try {
+      const experiment = await this.getExperimentByName(this.config.experimentName);
+      if (!experiment) {
+        await this.createExperiment(this.config.experimentName, {
+          platform: 'hasivu',
+          created_by: 'system',
+          environment: process.env.NODE_ENV || 'development'
+        });
+      }
+    } catch (error: unknown) {
+      logger.error('Failed to ensure default experiment', { error: (error instanceof Error ? error.message : String(error)) });
+      throw error;
+    }
+  }
+
+  private async getRunArtifactUri(runId: string): Promise<string> {
+    const run = await this.getRun(runId);
+    if (!run) {
+      throw new Error(`Run ${runId} not found`);
+    }
+
+    // For local artifact store, use file system path
+    const artifactUri = run.artifactUri || `${this.config.defaultArtifactRoot}/${runId}/artifacts`;
+
+    // Convert file:// URLs to local paths
+    if (artifactUri.startsWith('file://')) {
+      return artifactUri.replace('file://', '');
+    }
+
+    return artifactUri;
+  }
+
+  /**
+   * Health check for MLflow service
+   */
+  public async healthCheck(): Promise<{
+    status: 'healthy' | 'unhealthy';
+    details: Record<string, any>;
+  }> {
+    try {
+      const startTime = Date.now();
+      await this.testConnection();
+      const latency = Date.now() - startTime;
+
+      return {
+        status: 'healthy',
+        details: {
+          tracking_uri: this.config.trackingUri,
+          latency,
+          initialized: this.initialized
+        }
+      };
+
+    } catch (error: unknown) {
+      return {
+        status: 'unhealthy',
+        details: {
+          error: (error instanceof Error ? error.message : String(error)),
+          tracking_uri: this.config.trackingUri,
+          initialized: this.initialized
+        }
+      };
+    }
+  }
+
+  /**
+   * Get service statistics
+   */
+  public async getStats(): Promise<Record<string, any>> {
+    try {
+      const experiments = await this.client.get('/api/2.0/mlflow/experiments/list');
+      const experimentCount = experiments.data.experiments?.length || 0;
+
+      // Get run statistics from recent experiments
+      let totalRuns = 0;
+      if (experimentCount > 0) {
+        const recentExperiments = experiments.data.experiments.slice(0, 5);
+        for (const exp of recentExperiments) {
+          const runs = await this.searchRuns([exp.experiment_id]);
+          totalRuns += runs.length;
+        }
+      }
+
+      return {
+        experiment_count: experimentCount,
+        total_runs: totalRuns,
+        tracking_uri: this.config.trackingUri,
+        artifact_root: this.config.defaultArtifactRoot,
+        cache_size: {
+          runs: await this.redis.keys('mlflow:run:*').then(keys => keys.length),
+          metrics: await this.redis.keys('mlflow:metrics:*').then(keys => keys.length),
+          params: await this.redis.keys('mlflow:params:*').then(keys => keys.length)
+        }
+      };
+
+    } catch (error: unknown) {
+      logger.error('Failed to get MLflow stats', { error: (error instanceof Error ? error.message : String(error)) });
+      return {
+        error: (error instanceof Error ? error.message : String(error)),
+        tracking_uri: this.config.trackingUri
+      };
+    }
+  }
+}

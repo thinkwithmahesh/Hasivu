@@ -1,13 +1,11 @@
 #!/usr/bin/env tsx
 
-import { PrismaClient } from '@prisma/client'
-import bcrypt from 'bcryptjs'
+import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Starting database seeding...')
-
   // Create a school
   const school = await prisma.school.create({
     data: {
@@ -18,7 +16,7 @@ async function main() {
         street: '123 Education Lane',
         city: 'Bangalore',
         state: 'Karnataka',
-        pincode: '560001'
+        pincode: '560001',
       }),
       city: 'Bangalore',
       state: 'Karnataka',
@@ -28,12 +26,10 @@ async function main() {
       principalName: 'Dr. Smith',
       isActive: true,
     },
-  })
-
-  console.log('✅ Created school:', school.name)
+  });
 
   // Create test users for different roles
-  const hashedPassword = await bcrypt.hash('password123', 10)
+  const hashedPassword = await bcrypt.hash('password123', 10);
 
   const users = [
     {
@@ -94,19 +90,17 @@ async function main() {
       emailVerified: true,
       isActive: true,
     },
-  ]
+  ];
 
   // Create parent first
   const parent = await prisma.user.create({
     data: users[1], // parent
-  })
-  console.log('✅ Created parent user:', parent.email)
+  });
 
   // Create admin
   const admin = await prisma.user.create({
     data: users[0], // admin
-  })
-  console.log('✅ Created admin user:', admin.email)
+  });
 
   // Create student with parent reference
   const student = await prisma.user.create({
@@ -114,20 +108,17 @@ async function main() {
       ...users[2], // student
       parentId: parent.id,
     },
-  })
-  console.log('✅ Created student user:', student.email)
+  });
 
   // Create kitchen user
   const kitchen = await prisma.user.create({
     data: users[3], // kitchen
-  })
-  console.log('✅ Created kitchen user:', kitchen.email)
+  });
 
   // Create vendor user
   const vendor = await prisma.user.create({
     data: users[4], // vendor
-  })
-  console.log('✅ Created vendor user:', vendor.email)
+  });
 
   // Create student-parent relationship
   await prisma.studentParent.create({
@@ -140,9 +131,7 @@ async function main() {
       canPickup: true,
       isActive: true,
     },
-  })
-
-  console.log('✅ Created student-parent relationship')
+  });
 
   // Create some menu items
   const menuItems = [
@@ -200,13 +189,12 @@ async function main() {
       allergens: JSON.stringify([]),
       schoolId: school.id,
     },
-  ]
+  ];
 
   for (const menuItem of menuItems) {
     const created = await prisma.menuItem.create({
       data: menuItem,
-    })
-    console.log('✅ Created menu item:', created.name)
+    });
   }
 
   // Create an RFID card for the student
@@ -218,9 +206,7 @@ async function main() {
       schoolId: school.id,
       isActive: true,
     },
-  })
-
-  console.log('✅ Created RFID card for student')
+  });
 
   // Create a sample order
   const order = await prisma.order.create({
@@ -236,9 +222,7 @@ async function main() {
       deliveryDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
       paymentStatus: 'pending',
     },
-  })
-
-  console.log('✅ Created sample order:', order.orderNumber)
+  });
 
   // Create order item
   await prisma.orderItem.create({
@@ -249,24 +233,13 @@ async function main() {
       unitPrice: 85.0,
       totalPrice: 85.0,
     },
-  })
-
-  console.log('✅ Created order item')
-
-  console.log('\n🎉 Database seeding completed successfully!')
-  console.log('\n📋 Test Credentials:')
-  console.log('Admin: admin@hasivu.com / password123')
-  console.log('Parent: parent@example.com / password123')
-  console.log('Student: student@example.com / password123')
-  console.log('Kitchen: kitchen@example.com / password123')
-  console.log('Vendor: vendor@example.com / password123')
+  });
 }
 
 main()
-  .catch((e) => {
-    console.error('❌ Seeding failed:', e)
-    process.exit(1)
+  .catch(e => {
+    process.exit(1);
   })
   .finally(async () => {
-    await prisma.$disconnect()
-  })
+    await prisma.$disconnect();
+  });

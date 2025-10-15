@@ -1,0 +1,38 @@
+{
+  "summary": {
+    "avgTestExecutionTime": 108.33333333333333,
+    "slowestTests": [],
+    "memoryUsage": {
+      "rss": 339460096,
+      "heapTotal": 191217664,
+      "heapUsed": 161808440,
+      "external": 4736140,
+      "arrayBuffers": 1220111
+    },
+    "timestamp": "2025-09-24T15:23:57.994Z"
+  },
+  "testPerformance": [
+    {
+      "suite": "notification.service.test.ts",
+      "executionTime": 250,
+      "testsPerSecond": null,
+      "memoryDelta": 0
+    },
+    {
+      "suite": "notification.service.final.test.ts",
+      "executionTime": 39,
+      "testsPerSecond": null,
+      "memoryDelta": 0
+    },
+    {
+      "suite": "notification.service.clean.test.ts",
+      "executionTime": 36,
+      "testsPerSecond": null,
+      "memoryDelta": 0
+    }
+  ],
+  "recommendations": [
+    "Optimize slow test execution",
+    "Consider parallel test execution"
+  ]
+}

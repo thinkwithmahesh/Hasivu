@@ -1,0 +1,425 @@
+
+> hasivu-web@1.0.0 dev
+> next dev
+
+   ▲ Next.js 15.5.3
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.1.157:3000
+
+ ✓ Starting...
+ ✓ Ready in 1075ms
+ ✓ Compiled /api/health in 266ms (341 modules)
+ GET /api/health 200 in 346ms
+ GET /api/health 200 in 8ms
+ ✓ Compiled /api/status in 84ms (343 modules)
+ GET /api/status 200 in 110ms
+ ✓ Compiled /api/menu in 145ms (345 modules)
+ GET /api/menu 200 in 165ms
+ ✓ Compiled /api/menu/categories in 91ms (347 modules)
+ GET /api/menu/categories 200 in 109ms
+ ✓ Compiled /api/menu/search in 47ms (349 modules)
+ GET /api/menu/search?q=rice 200 in 60ms
+ ⚠ ./src/app/api/menu/optimized/route.ts
+Attempted import error: 'performanceMonitor' is not exported from '../../../../lib/performance/menu-performance-monitor' (imported as 'performanceMonitor').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'menuCache' is not exported from '../../../../lib/cache/redis-menu-cache' (imported as 'menuCache').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'menuCache' is not exported from '../../../../lib/cache/redis-menu-cache' (imported as 'menuCache').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'menuCache' is not exported from '../../../../lib/cache/redis-menu-cache' (imported as 'menuCache').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'menuCache' is not exported from '../../../../lib/cache/redis-menu-cache' (imported as 'menuCache').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'menuCache' is not exported from '../../../../lib/cache/redis-menu-cache' (imported as 'menuCache').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'menuCache' is not exported from '../../../../lib/cache/redis-menu-cache' (imported as 'menuCache').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'menuCache' is not exported from '../../../../lib/cache/redis-menu-cache' (imported as 'menuCache').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'menuCache' is not exported from '../../../../lib/cache/redis-menu-cache' (imported as 'menuCache').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'performanceMonitor' is not exported from '../../../../lib/performance/menu-performance-monitor' (imported as 'performanceMonitor').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'performanceMonitor' is not exported from '../../../../lib/performance/menu-performance-monitor' (imported as 'performanceMonitor').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'performanceMonitor' is not exported from '../../../../lib/performance/menu-performance-monitor' (imported as 'performanceMonitor').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'menuCache' is not exported from '../../../../lib/cache/redis-menu-cache' (imported as 'menuCache').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'menuCache' is not exported from '../../../../lib/cache/redis-menu-cache' (imported as 'menuCache').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'performanceMonitor' is not exported from '../../../../lib/performance/menu-performance-monitor' (imported as 'performanceMonitor').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'performanceMonitor' is not exported from '../../../../lib/performance/menu-performance-monitor' (imported as 'performanceMonitor').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'performanceMonitor' is not exported from '../../../../lib/performance/menu-performance-monitor' (imported as 'performanceMonitor').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'menuCache' is not exported from '../../../../lib/cache/redis-menu-cache' (imported as 'menuCache').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+OptimizedMenuQueries initialized
+MockRedisClient initialized with config: {
+  defaultTTL: 300,
+  keyPrefix: 'hasivu:menu',
+  compressionEnabled: true,
+  maxMemoryUsage: 100
+}
+RedisMenuCache initialized
+MenuPerformanceMonitor initialized
+TypeError: Cannot read properties of undefined (reading 'startRequest')
+    at GET (src/app/api/menu/optimized/route.ts:64:19)
+  62 | export async function GET(request: NextRequest) {
+  63 |   const requestStart = Date.now();
+> 64 |   const monitor = performanceMonitor.startRequest('/api/menu/optimized');
+     |                   ^
+  65 |   
+  66 |   try {
+  67 |     const { searchParams } = new URL(request.url);
+ GET /api/menu/optimized 500 in 174ms
+ ⚠ ./src/app/api/menu/optimized/route.ts
+Attempted import error: 'performanceMonitor' is not exported from '../../../../lib/performance/menu-performance-monitor' (imported as 'performanceMonitor').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'menuCache' is not exported from '../../../../lib/cache/redis-menu-cache' (imported as 'menuCache').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'menuCache' is not exported from '../../../../lib/cache/redis-menu-cache' (imported as 'menuCache').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'menuCache' is not exported from '../../../../lib/cache/redis-menu-cache' (imported as 'menuCache').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'menuCache' is not exported from '../../../../lib/cache/redis-menu-cache' (imported as 'menuCache').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'menuCache' is not exported from '../../../../lib/cache/redis-menu-cache' (imported as 'menuCache').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'menuCache' is not exported from '../../../../lib/cache/redis-menu-cache' (imported as 'menuCache').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'menuCache' is not exported from '../../../../lib/cache/redis-menu-cache' (imported as 'menuCache').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'menuCache' is not exported from '../../../../lib/cache/redis-menu-cache' (imported as 'menuCache').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'performanceMonitor' is not exported from '../../../../lib/performance/menu-performance-monitor' (imported as 'performanceMonitor').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'performanceMonitor' is not exported from '../../../../lib/performance/menu-performance-monitor' (imported as 'performanceMonitor').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'performanceMonitor' is not exported from '../../../../lib/performance/menu-performance-monitor' (imported as 'performanceMonitor').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'menuCache' is not exported from '../../../../lib/cache/redis-menu-cache' (imported as 'menuCache').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'menuCache' is not exported from '../../../../lib/cache/redis-menu-cache' (imported as 'menuCache').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'performanceMonitor' is not exported from '../../../../lib/performance/menu-performance-monitor' (imported as 'performanceMonitor').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'performanceMonitor' is not exported from '../../../../lib/performance/menu-performance-monitor' (imported as 'performanceMonitor').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'performanceMonitor' is not exported from '../../../../lib/performance/menu-performance-monitor' (imported as 'performanceMonitor').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'menuCache' is not exported from '../../../../lib/cache/redis-menu-cache' (imported as 'menuCache').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+ ⚠ ./src/app/api/menu/optimized/route.ts
+Attempted import error: 'performanceMonitor' is not exported from '../../../../lib/performance/menu-performance-monitor' (imported as 'performanceMonitor').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'menuCache' is not exported from '../../../../lib/cache/redis-menu-cache' (imported as 'menuCache').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'menuCache' is not exported from '../../../../lib/cache/redis-menu-cache' (imported as 'menuCache').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'menuCache' is not exported from '../../../../lib/cache/redis-menu-cache' (imported as 'menuCache').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'menuCache' is not exported from '../../../../lib/cache/redis-menu-cache' (imported as 'menuCache').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'menuCache' is not exported from '../../../../lib/cache/redis-menu-cache' (imported as 'menuCache').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'menuCache' is not exported from '../../../../lib/cache/redis-menu-cache' (imported as 'menuCache').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'menuCache' is not exported from '../../../../lib/cache/redis-menu-cache' (imported as 'menuCache').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'menuCache' is not exported from '../../../../lib/cache/redis-menu-cache' (imported as 'menuCache').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'performanceMonitor' is not exported from '../../../../lib/performance/menu-performance-monitor' (imported as 'performanceMonitor').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'performanceMonitor' is not exported from '../../../../lib/performance/menu-performance-monitor' (imported as 'performanceMonitor').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'performanceMonitor' is not exported from '../../../../lib/performance/menu-performance-monitor' (imported as 'performanceMonitor').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'menuCache' is not exported from '../../../../lib/cache/redis-menu-cache' (imported as 'menuCache').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'menuCache' is not exported from '../../../../lib/cache/redis-menu-cache' (imported as 'menuCache').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'performanceMonitor' is not exported from '../../../../lib/performance/menu-performance-monitor' (imported as 'performanceMonitor').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'performanceMonitor' is not exported from '../../../../lib/performance/menu-performance-monitor' (imported as 'performanceMonitor').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'performanceMonitor' is not exported from '../../../../lib/performance/menu-performance-monitor' (imported as 'performanceMonitor').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+
+./src/app/api/menu/optimized/route.ts
+Attempted import error: 'menuCache' is not exported from '../../../../lib/cache/redis-menu-cache' (imported as 'menuCache').
+
+Import trace for requested module:
+./src/app/api/menu/optimized/route.ts
+ GET /api/menu/secure 401 in 140ms
+OptimizedMenuQueries initialized
+MockRedisClient initialized with config: {
+  defaultTTL: 300,
+  keyPrefix: 'hasivu:menu',
+  compressionEnabled: true,
+  maxMemoryUsage: 100
+}
+RedisMenuCache initialized
+MenuPerformanceMonitor initialized
+TypeError: Cannot read properties of undefined (reading 'startRequest')
+    at GET (src/app/api/menu/optimized/route.ts:64:19)
+  62 | export async function GET(request: NextRequest) {
+  63 |   const requestStart = Date.now();
+> 64 |   const monitor = performanceMonitor.startRequest('/api/menu/optimized');
+     |                   ^
+  65 |   
+  66 |   try {
+  67 |     const { searchParams } = new URL(request.url);
+ GET /api/menu/optimized?action=performance-stats 500 in 42ms
+TypeError: Cannot read properties of undefined (reading 'startRequest')
+    at GET (src/app/api/menu/optimized/route.ts:64:19)
+  62 | export async function GET(request: NextRequest) {
+  63 |   const requestStart = Date.now();
+> 64 |   const monitor = performanceMonitor.startRequest('/api/menu/optimized');
+     |                   ^
+  65 |   
+  66 |   try {
+  67 |     const { searchParams } = new URL(request.url);
+ GET /api/menu/optimized?action=cache-stats 500 in 20ms
+TypeError: Cannot read properties of undefined (reading 'startRequest')
+    at GET (src/app/api/menu/optimized/route.ts:64:19)
+  62 | export async function GET(request: NextRequest) {
+  63 |   const requestStart = Date.now();
+> 64 |   const monitor = performanceMonitor.startRequest('/api/menu/optimized');
+     |                   ^
+  65 |   
+  66 |   try {
+  67 |     const { searchParams } = new URL(request.url);
+ GET /api/menu/optimized?action=health-check 500 in 20ms
+ GET /api/menu?category=Lunch 200 in 6ms
+ GET /api/menu?page=1&limit=5 200 in 5ms
+ GET /api/menu?sortBy=price&sortOrder=asc 200 in 3ms
+ GET /api/menu/search?q=dal&category=Lunch 200 in 6ms
+ GET /api/menu?page=-1 200 in 3ms
+ GET /api/menu?limit=1000 200 in 4ms
+ GET /api/menu/search?q= 200 in 4ms
+ GET /api/menu/search?q=nonexistentfood123 200 in 4ms
+ GET /api/health 200 in 7ms
+ GET /api/menu 200 in 3ms
+ GET /api/menu/search?q=rice 200 in 4ms
+ GET /api/menu/categories 200 in 6ms
+ GET /api/health 200 in 10ms
+ GET /api/health 200 in 12ms
+ GET /api/health 200 in 17ms
+ GET /api/health 200 in 16ms
+ GET /api/health 200 in 14ms
+ GET /api/health 200 in 14ms
+ GET /api/health 200 in 13ms
+ GET /api/health 200 in 19ms
+ GET /api/health 200 in 18ms
+ GET /api/health 200 in 18ms
+ ○ Compiling /api/menu/secure ...
+[?25h

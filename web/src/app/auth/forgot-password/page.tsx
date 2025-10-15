@@ -1,38 +1,37 @@
-"use client"
+'use client';
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm'
-import { AuthLayout } from '@/components/auth/AuthLayout'
-import { useAuth } from '@/contexts/auth-context'
-import type { ForgotPasswordFormData } from '@/components/auth/schemas'
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm';
+import { AuthLayout } from '@/components/auth/AuthLayout';
+import { useAuth } from '@/contexts/auth-context';
+import type { ForgotPasswordFormData } from '@/components/auth/schemas';
 
 export default function ForgotPasswordPage() {
-  const [isLoading, setIsLoading] = useState(false)
-  const [success, setSuccess] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const { forgotPassword } = useAuth()
-  const router = useRouter()
+  const [isLoading, setIsLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { forgotPassword } = useAuth();
+  const router = useRouter();
 
   const handleForgotPassword = async (data: ForgotPasswordFormData) => {
-    setIsLoading(true)
-    setError(null)
+    setIsLoading(true);
+    setError(null);
 
     try {
-      const result = await forgotPassword(data.email)
+      const result = await forgotPassword(data.email);
 
       if (result) {
-        setSuccess(true)
+        setSuccess(true);
       } else {
-        setError('Failed to send password reset instructions. Please try again.')
+        setError('Failed to send password reset instructions. Please try again.');
       }
     } catch (err: any) {
-      console.error('Forgot password error:', err)
-      setError(err.message || 'An unexpected error occurred. Please try again.')
+      setError(err.message || 'An unexpected error occurred. Please try again.');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   if (success) {
     return (
@@ -43,13 +42,21 @@ export default function ForgotPasswordPage() {
         <div className="w-full max-w-md text-center">
           <div className="p-6 bg-green-50 border border-green-200 rounded-lg">
             <div className="text-green-700 mb-4">
-              <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              <svg
+                className="w-12 h-12 mx-auto"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
               </svg>
             </div>
-            <h3 className="text-lg font-medium text-green-900 mb-2">
-              Reset Instructions Sent
-            </h3>
+            <h3 className="text-lg font-medium text-green-900 mb-2">Reset Instructions Sent</h3>
             <p className="text-green-700 mb-4">
               If an account with this email exists, we've sent you a password reset link.
             </p>
@@ -62,7 +69,7 @@ export default function ForgotPasswordPage() {
           </div>
         </div>
       </AuthLayout>
-    )
+    );
   }
 
   return (
@@ -77,5 +84,5 @@ export default function ForgotPasswordPage() {
         className="w-full max-w-md"
       />
     </AuthLayout>
-  )
+  );
 }

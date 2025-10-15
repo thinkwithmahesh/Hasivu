@@ -112,7 +112,7 @@ async function checkDatabaseHealth() {
             status: 'unhealthy',
             responseTime: Date.now() - startTime,
             lastChecked: new Date().toISOString(),
-            details: `Database connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+            details: `Database connection failed: ${error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error'}`
         };
     }
 }
@@ -134,7 +134,7 @@ async function checkRedisHealth() {
             status: 'unhealthy',
             responseTime: Date.now() - startTime,
             lastChecked: new Date().toISOString(),
-            details: `Redis connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+            details: `Redis connection failed: ${error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error'}`
         };
     }
 }
@@ -178,7 +178,7 @@ async function checkExternalService(endpoint, serviceName, timeout) {
             lastChecked: new Date().toISOString(),
             endpoint,
             timeout,
-            details: `${serviceName} service failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+            details: `${serviceName} service failed: ${error instanceof Error ? error instanceof Error ? error.message : String(error) : 'Unknown error'}`
         };
     }
 }

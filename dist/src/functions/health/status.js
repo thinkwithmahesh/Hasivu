@@ -85,7 +85,7 @@ const getStatusHandler = async (event, context) => {
     catch (error) {
         logger.error('System status check failed', {
             requestId,
-            error: error.message,
+            error: error instanceof Error ? error instanceof Error ? error.message : String(error) : String(error),
             stack: error.stack
         });
         return (0, response_utils_1.handleError)(error, 'Failed to get system status');

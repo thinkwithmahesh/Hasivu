@@ -4,19 +4,18 @@ exports.handler = void 0;
 const client_dynamodb_1 = require("@aws-sdk/client-dynamodb");
 const openai_1 = require("openai");
 const dynamoClient = new client_dynamodb_1.DynamoDBClient({
-    region: process.env.AWS_REGION || 'us-east-1'
+    region: process.env.AWS_REGION || 'us-east-1',
 });
 let openaiClient;
 if (process.env.OPENAI_API_KEY) {
     openaiClient = new openai_1.OpenAI({
-        apiKey: process.env.OPENAI_API_KEY
+        apiKey: process.env.OPENAI_API_KEY,
     });
 }
 const handler = async (event, context) => {
     const startTime = Date.now();
     const method = event.httpMethod;
     const path = event.path;
-    console.log(`Recommendation Engine - ${method} ${path}`);
     const requestId = `rec_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     try {
         const headers = {
@@ -24,13 +23,13 @@ const handler = async (event, context) => {
             'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
             'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-            'X-Request-ID': requestId
+            'X-Request-ID': requestId,
         };
         if (method === 'OPTIONS') {
             return {
                 statusCode: 200,
                 headers,
-                body: ''
+                body: '',
             };
         }
         if (method === 'POST' && path.includes('/recommendations')) {
@@ -41,8 +40,8 @@ const handler = async (event, context) => {
                     headers,
                     body: JSON.stringify({
                         success: false,
-                        error: 'Missing required fields: userId, context'
-                    })
+                        error: 'Missing required fields: userId, context',
+                    }),
                 };
             }
             const recommendations = await generateRecommendations(request);
@@ -54,9 +53,9 @@ const handler = async (event, context) => {
                     metadata: {
                         ...recommendations.metadata,
                         requestId,
-                        processingTime: Date.now() - startTime
-                    }
-                })
+                        processingTime: Date.now() - startTime,
+                    },
+                }),
             };
         }
         if (method === 'POST' && path.includes('/feedback')) {
@@ -67,8 +66,8 @@ const handler = async (event, context) => {
                 headers,
                 body: JSON.stringify({
                     success: true,
-                    message: 'Feedback recorded successfully'
-                })
+                    message: 'Feedback recorded successfully',
+                }),
             };
         }
         return {
@@ -76,23 +75,22 @@ const handler = async (event, context) => {
             headers,
             body: JSON.stringify({
                 success: false,
-                error: 'Endpoint not found'
-            })
+                error: 'Endpoint not found',
+            }),
         };
     }
     catch (error) {
-        console.error('Recommendation Engine Error:', error);
         return {
             statusCode: 500,
             headers: {
                 'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
+                'Access-Control-Allow-Origin': '*',
             },
             body: JSON.stringify({
                 success: false,
                 error: 'Internal server error',
-                requestId
-            })
+                requestId,
+            }),
         };
     }
 };
@@ -125,7 +123,7 @@ async function generateRecommendations(request) {
         userSegment: determineUserSegment(userProfile),
         engagementScore: calculateEngagementScore(userProfile),
         riskFactors: identifyRiskFactors(userProfile),
-        opportunities: identifyOpportunities(userProfile)
+        opportunities: identifyOpportunities(userProfile),
     };
     reasoning.push(`Generated ${recommendations.length} recommendations for user ${request.userId}`);
     reasoning.push(`Based on analysis of ${userProfile.engagementPatterns.length} engagement patterns`);
@@ -146,9 +144,9 @@ async function generateRecommendations(request) {
             requestId: `rec_${Date.now()}`,
             processingTime: 0,
             aiGenerated: !!request.preferences?.includeAI,
-            confidence: recommendations.reduce((acc, r) => acc + r.confidence, 0) / recommendations.length || 0
+            confidence: recommendations.reduce((acc, r) => acc + r.confidence, 0) / recommendations.length || 0,
         },
-        reasoning
+        reasoning,
     };
 }
 async function getUserProfile(userId) {
@@ -156,8 +154,8 @@ async function getUserProfile(userId) {
         const command = new client_dynamodb_1.GetItemCommand({
             TableName: process.env.USER_PROFILES_TABLE || 'UserProfiles',
             Key: {
-                userId: { S: userId }
-            }
+                userId: { S: userId },
+            },
         });
         const result = await dynamoClient.send(command);
         if (!result.Item) {
@@ -169,11 +167,10 @@ async function getUserProfile(userId) {
             channelPreferences: JSON.parse(result.Item.channelPreferences?.S || '[]'),
             contentPreferences: JSON.parse(result.Item.contentPreferences?.S || '[]'),
             culturalProfile: JSON.parse(result.Item.culturalProfile?.S || '{}'),
-            behaviorMetrics: JSON.parse(result.Item.behaviorMetrics?.S || '{}')
+            behaviorMetrics: JSON.parse(result.Item.behaviorMetrics?.S || '{}'),
         };
     }
     catch (error) {
-        console.error('Error fetching user profile:', error);
         return createDefaultUserProfile(userId);
     }
 }
@@ -184,25 +181,25 @@ function createDefaultUserProfile(userId) {
         channelPreferences: [
             { channel: 'email', effectiveness: 0.7, lastUsed: new Date().toISOString() },
             { channel: 'sms', effectiveness: 0.8, lastUsed: new Date().toISOString() },
-            { channel: 'push', effectiveness: 0.6, lastUsed: new Date().toISOString() }
+            { channel: 'push', effectiveness: 0.6, lastUsed: new Date().toISOString() },
         ],
         contentPreferences: [
             { contentType: 'informational', engagementRate: 0.5, clickThroughRate: 0.2 },
-            { contentType: 'promotional', engagementRate: 0.3, clickThroughRate: 0.1 }
+            { contentType: 'promotional', engagementRate: 0.3, clickThroughRate: 0.1 },
         ],
         culturalProfile: {
             primaryCulture: 'global',
             communicationStyle: 'direct',
             formalityPreference: 'medium',
             timezone: 'UTC',
-            languagePreference: 'en'
+            languagePreference: 'en',
         },
         behaviorMetrics: {
             averageSessionDuration: 300,
             preferredContactTimes: ['09:00', '14:00', '19:00'],
             responsePatterns: {},
-            churnRisk: 0.2
-        }
+            churnRisk: 0.2,
+        },
     };
 }
 async function generateTimingRecommendations(userProfile) {
@@ -219,19 +216,21 @@ async function generateTimingRecommendations(userProfile) {
         confidence: 0.85,
         expectedImpact: {
             metric: 'engagement_rate',
-            improvement: `${(bestTime.engagementRate * 100).toFixed(1)}%`
+            improvement: `${(bestTime.engagementRate * 100).toFixed(1)}%`,
         },
         implementation: {
             steps: [
                 'Update communication schedule',
                 'Configure automated sending times',
-                'Monitor engagement metrics'
+                'Monitor engagement metrics',
             ],
             timeline: '1-2 days',
-            resources: ['Communication scheduler', 'Analytics dashboard']
+            resources: ['Communication scheduler', 'Analytics dashboard'],
         },
-        successCriteria: [`Engagement rate improvement of ${(bestTime.engagementRate * 100).toFixed(1)}%`],
-        validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+        successCriteria: [
+            `Engagement rate improvement of ${(bestTime.engagementRate * 100).toFixed(1)}%`,
+        ],
+        validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     });
     return recommendations;
 }
@@ -249,19 +248,19 @@ async function generateChannelRecommendations(userProfile) {
         confidence: 0.8,
         expectedImpact: {
             metric: 'response_rate',
-            improvement: `${(primaryChannel.effectiveness * 100).toFixed(1)}%`
+            improvement: `${(primaryChannel.effectiveness * 100).toFixed(1)}%`,
         },
         implementation: {
             steps: [
                 'Update primary channel preference',
                 'Configure fallback channels',
-                'Monitor channel performance'
+                'Monitor channel performance',
             ],
             timeline: '1 day',
-            resources: ['Channel management system']
+            resources: ['Channel management system'],
         },
         successCriteria: [`Improved response rate on ${primaryChannel.channel}`],
-        validUntil: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString()
+        validUntil: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
     });
     return recommendations;
 }
@@ -280,19 +279,19 @@ async function generateContentRecommendations(userProfile) {
             confidence: 0.75,
             expectedImpact: {
                 metric: 'engagement_rate',
-                improvement: `${(contentPref.engagementRate * 100).toFixed(1)}%`
+                improvement: `${(contentPref.engagementRate * 100).toFixed(1)}%`,
             },
             implementation: {
                 steps: [
                     'Review current content mix',
                     'Increase content type allocation',
-                    'A/B test new approach'
+                    'A/B test new approach',
                 ],
                 timeline: '1-2 weeks',
-                resources: ['Content team', 'A/B testing platform']
+                resources: ['Content team', 'A/B testing platform'],
             },
             successCriteria: [`Increased ${contentPref.contentType} content engagement`],
-            validUntil: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000).toISOString()
+            validUntil: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000).toISOString(),
         });
     });
     return recommendations;
@@ -302,12 +301,12 @@ async function generateCulturalRecommendations(userProfile) {
     const culturalAdaptations = [
         {
             culturalRule: `${userProfile.culturalProfile.communicationStyle} communication preferred`,
-            adaptation: `Use ${userProfile.culturalProfile.communicationStyle} tone and structure`
+            adaptation: `Use ${userProfile.culturalProfile.communicationStyle} tone and structure`,
         },
         {
             culturalRule: `${userProfile.culturalProfile.formalityPreference} formality expected`,
-            adaptation: `Adjust language formality to ${userProfile.culturalProfile.formalityPreference} level`
-        }
+            adaptation: `Adjust language formality to ${userProfile.culturalProfile.formalityPreference} level`,
+        },
     ];
     culturalAdaptations.forEach(adaptation => {
         recommendations.push({
@@ -319,23 +318,23 @@ async function generateCulturalRecommendations(userProfile) {
             confidence: 0.7,
             expectedImpact: {
                 metric: 'user_satisfaction',
-                improvement: 'Higher cultural relevance'
+                improvement: 'Higher cultural relevance',
             },
             implementation: {
                 steps: [
                     'Update communication templates',
                     'Train content team on cultural preferences',
-                    'Monitor user feedback'
+                    'Monitor user feedback',
                 ],
                 timeline: '1 week',
-                resources: ['Content templates', 'Training materials']
+                resources: ['Content templates', 'Training materials'],
             },
             successCriteria: ['Improved user satisfaction scores', 'Reduced cultural friction'],
             validUntil: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
             metadata: {
                 culturalRule: adaptation.culturalRule,
-                primaryCulture: userProfile.culturalProfile.primaryCulture
-            }
+                primaryCulture: userProfile.culturalProfile.primaryCulture,
+            },
         });
     });
     return recommendations;
@@ -360,47 +359,49 @@ async function generateAIRecommendations(userProfile, request) {
     Provide recommendations in JSON format with fields: title, description, rationale, expectedImpact.
     `;
         const completion = await openaiClient.chat.completions.create({
-            model: "gpt-3.5-turbo",
-            messages: [{ role: "user", content: prompt }],
+            model: 'gpt-3.5-turbo',
+            messages: [{ role: 'user', content: prompt }],
             max_tokens: 500,
-            temperature: 0.7
+            temperature: 0.7,
         });
         const aiResponse = completion.choices[0]?.message?.content;
         if (!aiResponse) {
             return [];
         }
         const aiRecommendations = JSON.parse(aiResponse);
-        return Array.isArray(aiRecommendations) ? aiRecommendations.map((rec, index) => ({
-            id: `ai_personalization_${Date.now()}_${index}`,
-            type: 'engagement_improvement',
-            title: rec.title || 'AI-Generated Recommendation',
-            description: rec.description || 'AI-powered personalization suggestion',
-            priority: 'medium',
-            confidence: 0.7,
-            expectedImpact: {
-                metric: 'overall_engagement',
-                improvement: rec.expectedImpact || 'Improved user engagement'
-            },
-            implementation: {
-                steps: ['Review AI recommendation', 'Implement suggested changes', 'Monitor results'],
-                timeline: '1 week',
-                resources: ['AI insights', 'Implementation team']
-            },
-            successCriteria: ['Improved engagement metrics', 'Positive user feedback'],
-            validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-            metadata: {
-                aiGenerated: true,
-                rationale: rec.rationale
-            }
-        })) : [];
+        return Array.isArray(aiRecommendations)
+            ? aiRecommendations.map((rec, index) => ({
+                id: `ai_personalization_${Date.now()}_${index}`,
+                type: 'engagement_improvement',
+                title: rec.title || 'AI-Generated Recommendation',
+                description: rec.description || 'AI-powered personalization suggestion',
+                priority: 'medium',
+                confidence: 0.7,
+                expectedImpact: {
+                    metric: 'overall_engagement',
+                    improvement: rec.expectedImpact || 'Improved user engagement',
+                },
+                implementation: {
+                    steps: ['Review AI recommendation', 'Implement suggested changes', 'Monitor results'],
+                    timeline: '1 week',
+                    resources: ['AI insights', 'Implementation team'],
+                },
+                successCriteria: ['Improved engagement metrics', 'Positive user feedback'],
+                validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+                metadata: {
+                    aiGenerated: true,
+                    rationale: rec.rationale,
+                },
+            }))
+            : [];
     }
     catch (error) {
-        console.error('AI recommendation generation failed:', error);
         return [];
     }
 }
 function determineUserSegment(userProfile) {
-    const avgEngagement = userProfile.engagementPatterns.reduce((acc, pattern) => acc + pattern.engagementRate, 0) / userProfile.engagementPatterns.length || 0;
+    const avgEngagement = userProfile.engagementPatterns.reduce((acc, pattern) => acc + pattern.engagementRate, 0) /
+        userProfile.engagementPatterns.length || 0;
     if (avgEngagement > 0.8)
         return 'highly_engaged';
     if (avgEngagement > 0.5)
@@ -410,8 +411,10 @@ function determineUserSegment(userProfile) {
     return 'inactive';
 }
 function calculateEngagementScore(userProfile) {
-    const patternScore = userProfile.engagementPatterns.reduce((acc, pattern) => acc + pattern.engagementRate, 0) / userProfile.engagementPatterns.length || 0;
-    const contentScore = userProfile.contentPreferences.reduce((acc, content) => acc + content.engagementRate, 0) / userProfile.contentPreferences.length || 0;
+    const patternScore = userProfile.engagementPatterns.reduce((acc, pattern) => acc + pattern.engagementRate, 0) /
+        userProfile.engagementPatterns.length || 0;
+    const contentScore = userProfile.contentPreferences.reduce((acc, content) => acc + content.engagementRate, 0) /
+        userProfile.contentPreferences.length || 0;
     const sessionScore = Math.min(userProfile.behaviorMetrics.averageSessionDuration / 600, 1);
     return Math.round(((patternScore + contentScore + sessionScore) / 3) * 100);
 }
@@ -447,7 +450,6 @@ function identifyOpportunities(userProfile) {
     return opportunities;
 }
 async function recordFeedback(recommendationId, feedback, outcome) {
-    console.log(`Storing feedback for recommendation: ${recommendationId}`);
     try {
         const command = new client_dynamodb_1.PutItemCommand({
             TableName: process.env.RECOMMENDATION_FEEDBACK_TABLE || 'RecommendationFeedback',
@@ -455,14 +457,12 @@ async function recordFeedback(recommendationId, feedback, outcome) {
                 recommendationId: { S: recommendationId },
                 feedback: { S: JSON.stringify(feedback) },
                 outcome: { S: JSON.stringify(outcome) },
-                timestamp: { S: new Date().toISOString() }
-            }
+                timestamp: { S: new Date().toISOString() },
+            },
         });
         await dynamoClient.send(command);
-        console.log(`Updating models with feedback: ${recommendationId}`);
     }
     catch (error) {
-        console.error('Error recording feedback:', error);
         throw error;
     }
 }

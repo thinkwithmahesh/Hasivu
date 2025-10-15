@@ -10,12 +10,8 @@
         "class": "10th Grade",
         "school": "HASIVU Test School",
         "meal_balance": 150,
-        "dietary_preferences": [
-          "vegetarian"
-        ],
-        "allergies": [
-          "nuts"
-        ]
+        "dietary_preferences": ["vegetarian"],
+        "allergies": ["nuts"]
       }
     },
     "parent": {
@@ -44,12 +40,7 @@
       "profile": {
         "id": "ADM-001",
         "name": "Test Admin",
-        "permissions": [
-          "user_management",
-          "system_config",
-          "reports",
-          "analytics"
-        ],
+        "permissions": ["user_management", "system_config", "reports", "analytics"],
         "school_id": "SCH-001"
       }
     },
@@ -61,10 +52,7 @@
         "name": "Test Kitchen Staff",
         "kitchen_id": "KIT-MAIN",
         "shift": "morning",
-        "permissions": [
-          "order_management",
-          "inventory_update"
-        ]
+        "permissions": ["order_management", "inventory_update"]
       }
     },
     "vendor": {
@@ -75,11 +63,7 @@
         "name": "Test Vendor",
         "company": "HASIVU Food Supplies",
         "vendor_id": "VEN-FOOD-001",
-        "categories": [
-          "vegetables",
-          "grains",
-          "dairy"
-        ]
+        "categories": ["vegetables", "grains", "dairy"]
       }
     }
   },
@@ -98,13 +82,8 @@
           "carbs": 58,
           "fat": 4
         },
-        "allergens": [
-          "gluten"
-        ],
-        "dietary": [
-          "vegetarian",
-          "vegan"
-        ]
+        "allergens": ["gluten"],
+        "dietary": ["vegetarian", "vegan"]
       },
       {
         "id": "item-2",
@@ -120,11 +99,7 @@
           "fat": 3
         },
         "allergens": [],
-        "dietary": [
-          "vegetarian",
-          "vegan",
-          "gluten-free"
-        ]
+        "dietary": ["vegetarian", "vegan", "gluten-free"]
       },
       {
         "id": "item-3",
@@ -139,13 +114,8 @@
           "carbs": 45,
           "fat": 7
         },
-        "allergens": [
-          "dairy"
-        ],
-        "dietary": [
-          "vegetarian",
-          "gluten-free"
-        ]
+        "allergens": ["dairy"],
+        "dietary": ["vegetarian", "gluten-free"]
       },
       {
         "id": "item-4",
@@ -161,11 +131,7 @@
           "fat": 1
         },
         "allergens": [],
-        "dietary": [
-          "vegetarian",
-          "vegan",
-          "gluten-free"
-        ]
+        "dietary": ["vegetarian", "vegan", "gluten-free"]
       }
     ]
   },

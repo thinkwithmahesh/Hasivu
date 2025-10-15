@@ -37,12 +37,12 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = ({
   onSwipe,
   swipeThreshold = 80,
   disabled = false,
-  className
+  className,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [triggerHaptic, setTriggerHaptic] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
-  
+
   const x = useMotionValue(0);
   const opacity = useTransform(x, [-200, -100, 0, 100, 200], [0.5, 0.8, 1, 0.8, 0.5]);
   const scale = useTransform(x, [-200, -100, 0, 100, 200], [0.9, 0.95, 1, 0.95, 0.9]);
@@ -50,7 +50,7 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = ({
   const handleDragStart = () => {
     if (disabled) return;
     setIsDragging(true);
-    
+
     // Light haptic feedback on drag start
     if ('vibrate' in navigator && navigator.vibrate) {
       navigator.vibrate(5);
@@ -59,18 +59,18 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = ({
 
   const handleDragEnd = (event: any, info: PanInfo) => {
     if (disabled) return;
-    
+
     setIsDragging(false);
     const swipeDistance = info.offset.x;
     const velocity = info.velocity.x;
-    
+
     // Determine if swipe threshold is met
     const shouldSwipe = Math.abs(swipeDistance) > swipeThreshold || Math.abs(velocity) > 500;
-    
+
     if (shouldSwipe) {
       const direction = swipeDistance > 0 ? 'right' : 'left';
       const actions = direction === 'right' ? rightActions : leftActions;
-      
+
       // Find the appropriate action based on swipe distance
       let selectedAction: SwipeAction | undefined;
       if (actions.length > 0) {
@@ -80,25 +80,25 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = ({
         );
         selectedAction = actions[Math.max(0, actionIndex)];
       }
-      
+
       // Haptic feedback for successful swipe
       if ('vibrate' in navigator && navigator.vibrate) {
         navigator.vibrate(15);
       }
-      
+
       onSwipe?.(direction, selectedAction?.id);
       selectedAction?.action();
     }
-    
+
     // Reset position
     x.set(0);
   };
 
   const handleDrag = (event: any, info: PanInfo) => {
     if (disabled) return;
-    
+
     const swipeDistance = Math.abs(info.offset.x);
-    
+
     // Trigger haptic feedback when passing threshold
     if (swipeDistance > swipeThreshold && !triggerHaptic) {
       setTriggerHaptic(true);
@@ -112,12 +112,14 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = ({
 
   const renderActionIndicators = (actions: SwipeAction[], side: 'left' | 'right') => {
     if (actions.length === 0) return null;
-    
+
     return (
-      <div className={cn(
-        'absolute top-0 bottom-0 flex items-center space-x-2 px-4',
-        side === 'left' ? 'left-0' : 'right-0'
-      )}>
+      <div
+        className={cn(
+          'absolute top-0 bottom-0 flex items-center space-x-2 px-4',
+          side === 'left' ? 'left-0' : 'right-0'
+        )}
+      >
         {actions.map((action, index) => {
           const Icon = action.icon;
           return (
@@ -146,7 +148,7 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = ({
       {/* Background action indicators */}
       {renderActionIndicators(leftActions, 'left')}
       {renderActionIndicators(rightActions, 'right')}
-      
+
       {/* Main card */}
       <motion.div
         ref={cardRef}
@@ -162,14 +164,16 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = ({
         transition={{
           type: 'spring',
           stiffness: 400,
-          damping: 30
+          damping: 30,
         }}
       >
-        <Card className={cn(
-          'touch-none select-none',
-          isDragging && 'shadow-xl',
-          disabled && 'opacity-50 cursor-not-allowed'
-        )}>
+        <Card
+          className={cn(
+            'touch-none select-none',
+            isDragging && 'shadow-xl',
+            disabled && 'opacity-50 cursor-not-allowed'
+          )}
+        >
           {children}
         </Card>
       </motion.div>
@@ -182,9 +186,7 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = ({
           animate={{ opacity: isDragging ? 0.3 : 0 }}
           transition={{ duration: 0.2 }}
         >
-          <div className="text-gray-600 text-sm font-medium">
-            ← Swipe for actions →
-          </div>
+          <div className="text-gray-600 text-sm font-medium">← Swipe for actions →</div>
         </motion.div>
       )}
     </div>
@@ -207,7 +209,7 @@ export const createMealCardActions = (
       color: isFavorite ? 'text-red-500' : 'text-white',
       bgColor: isFavorite ? 'bg-gray-100' : 'bg-red-500',
       action: () => onToggleFavorite(meal),
-    }
+    },
   ];
 
   const rightActions: SwipeAction[] = [
@@ -226,7 +228,7 @@ export const createMealCardActions = (
       color: 'text-white',
       bgColor: 'bg-green-500',
       action: () => onAddToCart(meal),
-    }
+    },
   ];
 
   return { leftActions, rightActions };
