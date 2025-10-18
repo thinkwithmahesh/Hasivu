@@ -236,7 +236,7 @@ async function POST(request) {
                     step: "branding"
                 });
                 break;
-            case "update_configuration":
+            case "updateconfiguration":
                 // Update system configuration
                 response = await hasivu_api_service/* hasiviApi */.r.updateSchoolConfiguration({
                     ...data,

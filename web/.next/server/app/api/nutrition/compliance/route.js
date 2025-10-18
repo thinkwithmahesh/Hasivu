@@ -45,11 +45,11 @@ var module_default = /*#__PURE__*/__webpack_require__.n(app_route_module);
 var next_response = __webpack_require__(89335);
 ;// CONCATENATED MODULE: ./src/app/api/nutrition/compliance/route.ts
 
-const _LAMBDA_COMPLIANCE_CHECKER_URL = process.env.LAMBDA_COMPLIANCE_CHECKER_URL || "https://your-lambda-endpoint.execute-api.region.amazonaws.com/dev/nutrition/compliance";
+const LAMBDA_COMPLIANCE_CHECKER_URL = process.env.LAMBDA_COMPLIANCE_CHECKER_URL || "https://your-lambda-endpoint.execute-api.region.amazonaws.com/dev/nutrition/compliance";
 async function POST(request) {
     try {
         // Get auth token from httpOnly cookie
-        const _authToken = request.cookies.get("auth-token")?.value;
+        const authToken = request.cookies.get("auth-token")?.value;
         if (!authToken) {
             return next_response/* default */.Z.json({
                 success: false,
@@ -58,7 +58,7 @@ async function POST(request) {
                 status: 401
             });
         }
-        const _body = await request.json();
+        const body = await request.json();
         // Basic validation
         if (!body.entityType || !body.entityData) {
             return next_response/* default */.Z.json({
@@ -69,7 +69,7 @@ async function POST(request) {
             });
         }
         // Forward request to Lambda function
-        const _lambdaResponse = await fetch(LAMBDA_COMPLIANCE_CHECKER_URL, {
+        const lambdaResponse = await fetch(LAMBDA_COMPLIANCE_CHECKER_URL, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -79,11 +79,11 @@ async function POST(request) {
             },
             body: JSON.stringify(body)
         });
-        const _lambdaData = await lambdaResponse.json();
+        const lambdaData = await lambdaResponse.json();
         // Handle Lambda response and transform to expected frontend format
         if (lambdaResponse.ok) {
             // Transform Lambda response to frontend expected format
-            const _frontendResponse = {
+            const frontendResponse = {
                 success: true,
                 data: lambdaData.data || lambdaData
             };

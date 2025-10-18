@@ -41,7 +41,7 @@ export default function RegisterPage() {
   return (
     <AuthLayout
       title="Join HASIVU Today"
-      description="Create your account to start managing school meals efficiently"
+      subtitle="Create your account to start managing school meals efficiently"
     >
       <RegisterForm
         onSubmit={handleRegister}

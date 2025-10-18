@@ -1082,7 +1082,7 @@ function DailyMenuPage() {
 var __webpack_require__ = require("../../webpack-runtime.js");
 __webpack_require__.C(exports);
 var __webpack_exec__ = (moduleId) => (__webpack_require__(__webpack_require__.s = moduleId))
-var __webpack_exports__ = __webpack_require__.X(0, [7212,2947,6302,3490,6753,1473,9423,5114,2663], () => (__webpack_exec__(34059)));
+var __webpack_exports__ = __webpack_require__.X(0, [7212,2947,6302,3490,6753,918,9256,8003,5114,2663], () => (__webpack_exec__(34059)));
 module.exports = __webpack_exports__;
 
 })();

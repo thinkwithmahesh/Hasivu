@@ -459,7 +459,7 @@ export function VendorSearchInterface() {
             </div>
 
             <div className="flex items-center gap-4">
-              <Select value={sortBy} onValueChange={setSortBy}>
+              <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
                 <SelectTrigger className="w-48">
                   <SelectValue />
                 </SelectTrigger>

@@ -31,7 +31,7 @@ const SafariCompatibleLoginForm = dynamic(
 );
 
 // Helper function to get dashboard URL based on role
-function getDashboardUrl(role: string): string {
+function getDashboardUrl(role: string): string {role: string): string {
   const dashboardUrls: Record<string, string> = {
     admin: '/dashboard/admin',
     teacher: '/dashboard/teacher',
@@ -60,7 +60,7 @@ export default function AdminLoginPage() {
     setIsSafari(isSafariBrowser);
   }, []);
 
-  const handleLogin = async (data: LoginFormData & { role: string }) => {
+  const handleLogin = async (data: LoginFormData) => {
     setIsLoading(true);
     setError(null);
 
@@ -68,8 +68,6 @@ export default function AdminLoginPage() {
       const success = await login({
         email: data.email,
         password: data.password,
-        role: data.role,
-        rememberMe: data.rememberMe || false,
       });
 
       if (success) {
@@ -87,7 +85,7 @@ export default function AdminLoginPage() {
           } catch (e) {}
 
           // Fallback to using form role
-          const dashboardUrl = getDashboardUrl(data.role);
+          const dashboardUrl = getDashboardUrl('admin');
           router.push(dashboardUrl);
         }, 100);
       } else {
@@ -107,10 +105,7 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <AuthLayout
-      title="Admin Login - HASIVU"
-      description="System administration and management access"
-    >
+    <AuthLayout title="Admin Login - HASIVU" subtitle="System administration and management access">
       {isSafari ? (
         <SafariCompatibleLoginForm
           onSubmit={handleLogin}

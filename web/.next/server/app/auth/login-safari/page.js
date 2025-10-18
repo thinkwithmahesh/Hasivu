@@ -319,9 +319,7 @@ function SafariLoginPage() {
         try {
             const success = await login({
                 email: data.email,
-                password: data.password,
-                role: data.role,
-                rememberMe: data.rememberMe || false
+                password: data.password
             });
             if (success) {
                 // Wait for auth state to update, then use the user's actual role for redirect
@@ -356,7 +354,7 @@ function SafariLoginPage() {
     };
     return /*#__PURE__*/ react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx(_components_auth_AuthLayout__WEBPACK_IMPORTED_MODULE_4__.AuthLayout, {
         title: "Welcome Back to HASIVU (Safari)",
-        description: "Safari-compatible login for school meal account",
+        subtitle: "Safari-compatible login for school meal account",
         children: /*#__PURE__*/ react_jsx_runtime__WEBPACK_IMPORTED_MODULE_0__.jsx(_components_auth_LoginForm__WEBPACK_IMPORTED_MODULE_3__/* .LoginForm */ .U, {
             onSubmit: handleLogin,
             onSocialLogin: handleSocialLogin,
@@ -406,7 +404,7 @@ const __default__ = proxy.default;
 var __webpack_require__ = require("../../../webpack-runtime.js");
 __webpack_require__.C(exports);
 var __webpack_exec__ = (moduleId) => (__webpack_require__(__webpack_require__.s = moduleId))
-var __webpack_exports__ = __webpack_require__.X(0, [7212,2947,6302,3490,3979,6254,3408,1440,3205,9752,2107,2299,3719,1473,9423,7367,5621,9765,8763], () => (__webpack_exec__(5424)));
+var __webpack_exports__ = __webpack_require__.X(0, [7212,2947,6302,3490,3979,1440,6254,3408,3205,9752,4094,2107,2299,433,918,9256,8003,7367,9137,5621,3198,8763], () => (__webpack_exec__(5424)));
 module.exports = __webpack_exports__;
 
 })();

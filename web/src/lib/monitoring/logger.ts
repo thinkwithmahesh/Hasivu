@@ -272,7 +272,7 @@ export function withApiLogging<T extends (...args: any[]) => Promise<any>>(
     const _url =  args[0]?.url || apiName;
 
     try {
-      const _result =  await fn(...args);
+      const result =  await fn(...args);
       const _duration =  performance.now() - start;
       logger.logApiCall(method, url, 200, duration);
       return result;

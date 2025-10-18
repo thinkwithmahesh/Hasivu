@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
         });
         break;
 
-      case 'update_configuration':
+      case 'updateconfiguration':
         // Update system configuration
         response = await hasiviApi.updateSchoolConfiguration({
           ...data,

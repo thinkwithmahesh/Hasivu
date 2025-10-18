@@ -330,7 +330,7 @@ function KitchenStaffSchedulePage() {
 var __webpack_require__ = require("../../../webpack-runtime.js");
 __webpack_require__.C(exports);
 var __webpack_exec__ = (moduleId) => (__webpack_require__(__webpack_require__.s = moduleId))
-var __webpack_exports__ = __webpack_require__.X(0, [7212,2947,6302,3490,3979,6254,3408,3205,9752,6627,4612,4571,9382,8028,7579,1145,2585,1473,9423,5114,7367,5511,2452,6493,7848,282,3016], () => (__webpack_exec__(16184)));
+var __webpack_exports__ = __webpack_require__.X(0, [7212,2947,6302,3490,3979,6254,3408,3205,9752,6627,4612,4571,9382,8028,7579,1145,2585,918,9256,8003,5114,7367,5511,2452,6493,7848,282,3016], () => (__webpack_exec__(16184)));
 module.exports = __webpack_exports__;
 
 })();

@@ -11,7 +11,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const { login } = useAuth();
 
-  const handleLogin = async (data: LoginFormData & { role: string }) => {
+  const handleLogin = async (data: LoginFormData) => {
     setIsLoading(true);
     setError(null);
 
@@ -19,8 +19,6 @@ export default function LoginPage() {
       const success = await login({
         email: data.email,
         password: data.password,
-        role: data.role,
-        rememberMe: data.rememberMe || false,
       });
 
       if (success) {
@@ -44,7 +42,7 @@ export default function LoginPage() {
   return (
     <AuthLayout
       title="Welcome Back to HASIVU"
-      description="Sign in to manage your school meal account and orders"
+      subtitle="Sign in to manage your school meal account and orders"
     >
       <LoginForm
         onSubmit={handleLogin}

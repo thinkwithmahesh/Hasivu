@@ -79,5 +79,5 @@ export {
  *
  * // Advanced conversion
  * import { convertCurrency } from '@/components/currency';
- * const _result =  await convertCurrency(100, 'INR', 'USD');
+ * const result =  await convertCurrency(100, 'INR', 'USD');
  */

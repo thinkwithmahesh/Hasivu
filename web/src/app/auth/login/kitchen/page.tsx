@@ -31,7 +31,6 @@ const SafariCompatibleLoginForm = dynamic(
 );
 
 // Helper function to get dashboard URL based on role
-function getDashboardUrl(role: string): string {
   const dashboardUrls: Record<string, string> = {
     admin: '/dashboard/admin',
     teacher: '/dashboard/teacher',
@@ -60,7 +59,6 @@ export default function KitchenLoginPage() {
     setIsSafari(isSafariBrowser);
   }, []);
 
-  const handleLogin = async (data: LoginFormData & { role: string }) => {
     setIsLoading(true);
     setError(null);
 
@@ -68,8 +66,6 @@ export default function KitchenLoginPage() {
       const success = await login({
         email: data.email,
         password: data.password,
-        role: data.role,
-        rememberMe: data.rememberMe || false,
       });
 
       if (success) {
@@ -107,10 +103,7 @@ export default function KitchenLoginPage() {
   };
 
   return (
-    <AuthLayout
-      title="Kitchen Staff Login - HASIVU"
-      description="Manage orders and meal preparation"
-    >
+    <AuthLayout title="Kitchen Staff Login - HASIVU" subtitle="Manage orders and meal preparation">
       {isSafari ? (
         <SafariCompatibleLoginForm
           onSubmit={handleLogin}

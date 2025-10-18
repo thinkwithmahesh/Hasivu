@@ -2,7 +2,7 @@
  * Daily Menu Display Component
  * Displays daily menus with date selection and menu management
  */
-"use client"
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { format, addDays, subDays } from 'date-fns';

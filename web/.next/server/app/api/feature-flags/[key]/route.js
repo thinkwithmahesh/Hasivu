@@ -234,7 +234,7 @@ class FeatureFlagService {
     /**
    * Check if user matches a segment
    */ matchesSegment(segment, context) {
-        const criteria = segment.criteria;
+        const { criteria } = segment;
         if (criteria.userType && context.userType && !criteria.userType.includes(context.userType)) {
             return false;
         }
@@ -344,8 +344,8 @@ let featureFlagService = null;
 // GET /api/feature-flags/[key] - Get specific feature flag
 async function GET(request, { params }) {
     try {
-        const _service = getFeatureFlagService();
-        const _flag = service.getFlag(params.key);
+        const service = getFeatureFlagService();
+        const flag = service.getFlag(params.key);
         if (!flag) {
             return next_response/* default */.Z.json({
                 error: "Feature flag not found",
@@ -356,7 +356,7 @@ async function GET(request, { params }) {
         }
         // Evaluate the flag with context from query params
         const { searchParams } = new URL(request.url);
-        const _context = {
+        const context = {
             userId: searchParams.get("userId") || undefined,
             userType: searchParams.get("userType") || undefined,
             schoolId: searchParams.get("schoolId") || undefined,
@@ -364,7 +364,7 @@ async function GET(request, { params }) {
             region: searchParams.get("region") || undefined,
             environment: searchParams.get("environment") || "development"
         };
-        const _evaluation = service.evaluate(params.key, context);
+        const evaluation = service.evaluate(params.key, context);
         return next_response/* default */.Z.json({
             flag,
             evaluation,
@@ -382,9 +382,9 @@ async function GET(request, { params }) {
 // PUT /api/feature-flags/[key] - Update specific feature flag
 async function PUT(request, { params }) {
     try {
-        const _body = await request.json();
-        const _service = getFeatureFlagService();
-        const _existingFlag = service.getFlag(params.key);
+        const body = await request.json();
+        const service = getFeatureFlagService();
+        const existingFlag = service.getFlag(params.key);
         if (!existingFlag) {
             return next_response/* default */.Z.json({
                 error: "Feature flag not found",
@@ -393,7 +393,7 @@ async function PUT(request, { params }) {
                 status: 404
             });
         }
-        const _updatedFlag = {
+        const updatedFlag = {
             ...existingFlag,
             ...body,
             key: params.key,
@@ -421,8 +421,8 @@ async function PUT(request, { params }) {
 // DELETE /api/feature-flags/[key] - Delete feature flag (soft delete by disabling)
 async function DELETE(request, { params }) {
     try {
-        const _service = getFeatureFlagService();
-        const _flag = service.getFlag(params.key);
+        const service = getFeatureFlagService();
+        const flag = service.getFlag(params.key);
         if (!flag) {
             return next_response/* default */.Z.json({
                 error: "Feature flag not found",
@@ -432,7 +432,7 @@ async function DELETE(request, { params }) {
             });
         }
         // Soft delete by disabling the flag
-        const _disabledFlag = {
+        const disabledFlag = {
             ...flag,
             enabled: false,
             metadata: {

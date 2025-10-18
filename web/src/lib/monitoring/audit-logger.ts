@@ -400,10 +400,10 @@ class AuditLogger {
     result: AuditLogEntry['result'],
     userRole?: UserRole
   ): AuditLogEntry['riskLevel'] {
-    if (_result = 
+    if (result = 
     }
 
-    const _highRiskActions =  ['menu_delete', 'user_create', 'payment_process', 'student_data_access'];
+    const _highRiskActions =  ['menu_delete', 'user_create', 'payment_process', 'studentdata_access'];
     const _mediumRiskActions =  ['menu_create', 'menu_update', 'order_create'];
 
     if (highRiskActions.includes(action)) {
@@ -443,7 +443,7 @@ class AuditLogger {
 
   private async analyzeForSecurityIncidents(logEntry: AuditLogEntry): Promise<void> {
     // Pattern detection for security incidents
-    if (logEntry._result = 
+    if (logEntry.result = 
     }
 
     // Detect suspicious patterns

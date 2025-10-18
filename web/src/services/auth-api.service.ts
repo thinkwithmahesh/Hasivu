@@ -114,7 +114,7 @@ class AuthApiService {
         await fetch(`${this.baseUrl}/auth/logout`, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
           },
         });
       }
@@ -195,7 +195,7 @@ class AuthApiService {
 
       const response = await fetch(`${this.baseUrl}/auth/me`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
 

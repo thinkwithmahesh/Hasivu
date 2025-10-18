@@ -4,11 +4,11 @@ export async function GET(request: NextRequest) {
   try {
     // Basic auth check implementation
     // In a real app, this would validate JWT tokens, sessions, etc.
-    const _authHeader = request.headers.get('authorization');
-    const _sessionCookie = request.cookies.get('session');
+    const authHeader = request.headers.get('authorization');
+    const sessionCookie = request.cookies.get('session');
 
     // Mock authentication for development
-    const _isAuthenticated = Boolean(authHeader || sessionCookie);
+    const isAuthenticated = Boolean(authHeader || sessionCookie);
 
     if (isAuthenticated) {
       return NextResponse.json({

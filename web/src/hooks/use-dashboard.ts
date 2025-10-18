@@ -26,7 +26,7 @@ import { useLiveAnalytics } from './use-realtime';
   // Load dashboard data
   const _loadDashboardData =  useCallback(async (
       setDashboardData(prev 
-      const _params =  {}
+      const params =  {}
   // Load different data based on user role
       const dataPromises 
   // Add user engagement for admins/ teachers

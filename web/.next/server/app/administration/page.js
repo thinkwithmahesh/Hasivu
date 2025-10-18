@@ -748,7 +748,7 @@ var auth_context = __webpack_require__(73680);
     AlertType["BUDGET_EXCEEDED"] = "budget_exceeded";
     AlertType["QUALITY_ISSUE"] = "quality_issue";
     AlertType["PAYMENT_FAILED"] = "payment_failed";
-    AlertType["SYSTEM_ERROR"] = "system_error";
+    AlertType["SYSTEM_ERROR"] = "systemerror";
     AlertType["SECURITY_ALERT"] = "security_alert";
 })(AlertType || (AlertType = {}));
 var AlertSeverity;
@@ -789,17 +789,17 @@ const mockDashboardMetrics = {
         inactive: 42,
         newThisMonth: 28,
         byTier: {
-            "BASIC": 523,
-            "STANDARD": 456,
-            "PREMIUM": 189,
-            "ENTERPRISE": 37
+            BASIC: 523,
+            STANDARD: 456,
+            PREMIUM: 189,
+            ENTERPRISE: 37
         },
         byState: {
-            "Karnataka": 287,
+            Karnataka: 287,
             "Tamil Nadu": 234,
             "Andhra Pradesh": 198,
-            "Kerala": 156,
-            "Others": 372
+            Kerala: 156,
+            Others: 372
         },
         performanceDistribution: {
             excellent: 312,
@@ -1628,7 +1628,7 @@ const __default__ = proxy.default;
 var __webpack_require__ = require("../../webpack-runtime.js");
 __webpack_require__.C(exports);
 var __webpack_exec__ = (moduleId) => (__webpack_require__(__webpack_require__.s = moduleId))
-var __webpack_exports__ = __webpack_require__.X(0, [7212,2947,6302,3490,3979,6254,3408,1440,3205,9752,6627,2107,4612,1473,9423,5114,7985,5621,4365], () => (__webpack_exec__(51641)));
+var __webpack_exports__ = __webpack_require__.X(0, [7212,2947,6302,3490,3979,1440,6254,3408,3205,9752,6627,4612,2107,918,9256,8003,5114,4365,5621], () => (__webpack_exec__(51641)));
 module.exports = __webpack_exports__;
 
 })();

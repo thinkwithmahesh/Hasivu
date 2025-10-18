@@ -84,7 +84,7 @@ export enum AlertType {
   BUDGET_EXCEEDED = 'budget_exceeded',
   QUALITY_ISSUE = 'quality_issue',
   PAYMENT_FAILED = 'payment_failed',
-  SYSTEM_ERROR = 'system_error',
+  SYSTEM_ERROR = 'systemerror',
   SECURITY_ALERT = 'security_alert',
 }
 

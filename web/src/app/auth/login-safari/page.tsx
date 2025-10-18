@@ -36,8 +36,6 @@ export default function SafariLoginPage() {
       const success = await login({
         email: data.email,
         password: data.password,
-        role: data.role,
-        rememberMe: data.rememberMe || false,
       });
 
       if (success) {
@@ -77,7 +75,7 @@ export default function SafariLoginPage() {
   return (
     <AuthLayout
       title="Welcome Back to HASIVU (Safari)"
-      description="Safari-compatible login for school meal account"
+      subtitle="Safari-compatible login for school meal account"
     >
       <LoginForm
         onSubmit={handleLogin}

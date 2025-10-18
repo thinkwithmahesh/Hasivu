@@ -11,7 +11,7 @@ export interface SystemHealth {
   database: 'healthy' | 'warning' | 'critical';
   analytics: 'healthy' | 'warning' | 'critical';
   integrations: 'healthy' | 'warning' | 'critical';
-  ai_services: 'healthy' | 'warning' | 'critical';
+  aiservices: 'healthy' | 'warning' | 'critical';
   realtime: 'healthy' | 'warning' | 'critical';
   last_updated: string;
   uptime: number;
@@ -110,7 +110,7 @@ export interface ChartConfig {
   real_time: boolean;
   refresh_interval: number;
   filters: FilterConfig[];
-  custom_options: Record<string, JsonValue>;
+  customoptions: Record<string, JsonValue>;
 }
 
 export interface VisualizationData {
@@ -231,7 +231,7 @@ export interface NaturalLanguageQuery {
   query: string;
   intent: string;
   entities: Entity[];
-  parsed_query: ParsedQuery;
+  parsedquery: ParsedQuery;
   results: QueryResult[];
   confidence: number;
   processing_time: number;
@@ -610,7 +610,7 @@ export interface ExportRequest {
   data_source: string;
   filters: QueryFilter[];
   columns: string[];
-  format_options: FormatOptions;
+  formatoptions: FormatOptions;
   status: 'pending' | 'processing' | 'completed' | 'failed';
   file_size?: number;
   download_url?: string;
@@ -620,7 +620,7 @@ export interface ExportRequest {
 }
 
 export interface FormatOptions {
-  include_headers: boolean;
+  includeheaders: boolean;
   date_format: string;
   number_format: string;
   encoding: string;

@@ -44,7 +44,7 @@ export interface AuthState {
 class AuthenticationManager {
   private static instance: AuthenticationManager;
   private readonly _TOKEN_STORAGE_KEY =  'hasivu_auth_tokens';
-  private readonly _USER_STORAGE_KEY =  'hasivu_user_data';
+  private readonly _USER_STORAGE_KEY =  'hasivu_userdata';
   private readonly SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
   private refreshTimer?: NodeJS.Timeout;
   private sessionTimer?: NodeJS.Timeout;
@@ -150,7 +150,7 @@ class AuthenticationManager {
       const _tokens =  this.getTokens();
       if (!tokens) return;
 
-      const _response =  await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/validate-session`, {
+      const response =  await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/validate-session`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${tokens.accessToken}`,
@@ -174,7 +174,7 @@ class AuthenticationManager {
       const _passwordValidation =  securityValidator.validatePassword(credentials.password);
 
       if (!emailValidation.isValid || !passwordValidation.isValid) {
-        const _errors =  [...emailValidation.errors, ...passwordValidation.errors];
+        const errors =  [...emailValidation.errors, ...passwordValidation.errors];
         throw new Error(`Validation failed: ${errors.join(', ')}`);
       }
 
@@ -183,7 +183,7 @@ class AuthenticationManager {
         throw new Error('Account is temporarily locked due to too many failed attempts');
       }
 
-      const _response =  await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/login`, {
+      const response =  await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -200,7 +200,7 @@ class AuthenticationManager {
       });
 
       if (!response.ok) {
-        const _errorData =  await response.json();
+        const errorData =  await response.json();
         
         // Dispatch failed login event
         window.dispatchEvent(new CustomEvent('auth:login-failed'));
@@ -214,7 +214,7 @@ class AuthenticationManager {
         throw new Error(errorData.message || 'Login failed');
       }
 
-      const _data =  await response.json();
+      const data =  await response.json();
       const { user, tokens } = data;
 
       // Store tokens securely
@@ -288,7 +288,7 @@ class AuthenticationManager {
         throw new Error('No refresh token available');
       }
 
-      const _response =  await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/refresh`, {
+      const response =  await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/refresh`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${currentTokens.refreshToken}`,
@@ -445,8 +445,8 @@ class AuthenticationManager {
 
   private async getClientIP(): Promise<string> {
     try {
-      const _response =  await fetch('https://api.ipify.org?format
-      const _data =  await response.json();
+      const response =  await fetch('https://api.ipify.org?format
+      const data =  await response.json();
       return data.ip;
     } catch (error) {
       return 'unknown';
@@ -519,7 +519,7 @@ export function withAuth<P extends object>(
 ): React.ComponentType<P> {
   return function AuthenticatedComponent(props: P) {
     const _user =  authManager.getCurrentUser();
-    const _isAuthenticated =  authManager.isAuthenticated();
+    const isAuthenticated =  authManager.isAuthenticated();
     
     if (!isAuthenticated || !user) {
       // Redirect to login

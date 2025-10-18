@@ -292,7 +292,7 @@ export class ReportingAPI {
     endDate?: string;
     filters?: string;
   }): Promise<DashboardData> {
-    const _response = await this.client.get<ApiResponse<DashboardData>>(
+    const response = await this.client.get<ApiResponse<DashboardData>>(
       '/api/v1/reporting/dashboard',
       { params }
     );
@@ -305,7 +305,7 @@ export class ReportingAPI {
   async createReportTemplate(
     template: Omit<ReportTemplate, 'id' | 'createdAt' | 'updatedAt' | 'version'>
   ): Promise<ReportTemplate> {
-    const _response = await this.client.post<ApiResponse<ReportTemplate>>(
+    const response = await this.client.post<ApiResponse<ReportTemplate>>(
       '/api/v1/reporting/templates',
       template
     );
@@ -321,7 +321,7 @@ export class ReportingAPI {
     page: number;
     limit: number;
   }> {
-    const _response = await this.client.get<
+    const response = await this.client.get<
       ApiResponse<{
         templates: ReportTemplate[];
         total: number;
@@ -336,7 +336,7 @@ export class ReportingAPI {
    * Get a specific report template
    */
   async getReportTemplate(templateId: string): Promise<ReportTemplate> {
-    const _response = await this.client.get<ApiResponse<ReportTemplate>>(
+    const response = await this.client.get<ApiResponse<ReportTemplate>>(
       `/api/v1/reporting/templates/${templateId}`
     );
     return response.data.data;
@@ -349,7 +349,7 @@ export class ReportingAPI {
     templateId: string,
     updates: Partial<ReportTemplate>
   ): Promise<ReportTemplate> {
-    const _response = await this.client.put<ApiResponse<ReportTemplate>>(
+    const response = await this.client.put<ApiResponse<ReportTemplate>>(
       `/api/v1/reporting/templates/${templateId}`,
       updates
     );
@@ -367,7 +367,7 @@ export class ReportingAPI {
    * Generate a new report
    */
   async generateReport(request: ReportGenerationRequest): Promise<ReportGenerationResponse> {
-    const _response = await this.client.post<ApiResponse<ReportGenerationResponse>>(
+    const response = await this.client.post<ApiResponse<ReportGenerationResponse>>(
       '/api/v1/reporting/generate',
       request
     );
@@ -378,7 +378,7 @@ export class ReportingAPI {
    * Get report generation status
    */
   async getReportStatus(reportId: string): Promise<ReportStatus> {
-    const _response = await this.client.get<ApiResponse<ReportStatus>>(
+    const response = await this.client.get<ApiResponse<ReportStatus>>(
       `/api/v1/reporting/reports/${reportId}/status`
     );
     return response.data.data;
@@ -388,7 +388,7 @@ export class ReportingAPI {
    * Get generated report details
    */
   async getReport(reportId: string): Promise<GeneratedReport> {
-    const _response = await this.client.get<ApiResponse<GeneratedReport>>(
+    const response = await this.client.get<ApiResponse<GeneratedReport>>(
       `/api/v1/reporting/reports/${reportId}`
     );
     return response.data.data;
@@ -398,7 +398,7 @@ export class ReportingAPI {
    * Get report export details
    */
   async getReportExport(reportId: string, exportId: string): Promise<ReportExport> {
-    const _response = await this.client.get<ApiResponse<ReportExport>>(
+    const response = await this.client.get<ApiResponse<ReportExport>>(
       `/api/v1/reporting/reports/${reportId}/exports/${exportId}`
     );
     return response.data.data;
@@ -408,7 +408,7 @@ export class ReportingAPI {
    * Download a report export
    */
   async downloadReportExport(reportId: string, exportId: string): Promise<Blob> {
-    const _response = await this.client.get(
+    const response = await this.client.get(
       `/api/v1/reporting/reports/${reportId}/download/${exportId}`,
       { responseType: 'blob' }
     );
@@ -419,7 +419,7 @@ export class ReportingAPI {
    * Schedule automated report generation
    */
   async scheduleReport(request: ScheduleReportRequest): Promise<{ scheduleId: string }> {
-    const _response = await this.client.post<ApiResponse<{ scheduleId: string }>>(
+    const response = await this.client.post<ApiResponse<{ scheduleId: string }>>(
       '/api/v1/reporting/schedule',
       request
     );
@@ -435,7 +435,7 @@ export class ReportingAPI {
     page: number;
     limit: number;
   }> {
-    const _response = await this.client.get<
+    const response = await this.client.get<
       ApiResponse<{
         schedules: any[];
         total: number;
@@ -450,7 +450,7 @@ export class ReportingAPI {
    * Update a scheduled report
    */
   async updateScheduledReport(scheduleId: string, updates: Partial<ScheduleConfig>): Promise<any> {
-    const _response = await this.client.put<ApiResponse<any>>(
+    const response = await this.client.put<ApiResponse<any>>(
       `/api/v1/reporting/schedules/${scheduleId}`,
       updates
     );
@@ -472,7 +472,7 @@ export class ReportingAPI {
     analysisType: string;
     count: number;
   }> {
-    const _response = await this.client.post<
+    const response = await this.client.post<
       ApiResponse<{
         insights: AIGeneratedInsight[];
         analysisType: string;
@@ -489,7 +489,7 @@ export class ReportingAPI {
     summary: string;
     detailed: string;
   }> {
-    const _response = await this.client.get<
+    const response = await this.client.get<
       ApiResponse<{
         summary: string;
         detailed: string;
@@ -516,7 +516,7 @@ export class ReportingAPI {
    * Get available export formats
    */
   async getExportFormats(): Promise<{ formats: ExportFormat[]; count: number }> {
-    const _response = await this.client.get<
+    const response = await this.client.get<
       ApiResponse<{
         formats: ExportFormat[];
         count: number;
@@ -559,7 +559,7 @@ export class ReportingAPI {
     page: number;
     limit: number;
   }> {
-    const _response = await this.client.get<
+    const response = await this.client.get<
       ApiResponse<{
         reports: GeneratedReport[];
         total: number;
@@ -581,7 +581,7 @@ export class ReportingAPI {
    * Duplicate a report template
    */
   async duplicateTemplate(templateId: string, name: string): Promise<ReportTemplate> {
-    const _response = await this.client.post<ApiResponse<ReportTemplate>>(
+    const response = await this.client.post<ApiResponse<ReportTemplate>>(
       `/api/v1/reporting/templates/${templateId}/duplicate`,
       { name }
     );
@@ -592,7 +592,7 @@ export class ReportingAPI {
    * Export template configuration
    */
   async exportTemplate(templateId: string): Promise<Blob> {
-    const _response = await this.client.get(`/api/v1/reporting/templates/${templateId}/export`, {
+    const response = await this.client.get(`/api/v1/reporting/templates/${templateId}/export`, {
       responseType: 'blob',
     });
     return response.data;
@@ -605,7 +605,7 @@ export class ReportingAPI {
     const _formData = new FormData();
     formData.append('template', file);
 
-    const _response = await this.client.post<ApiResponse<ReportTemplate>>(
+    const response = await this.client.post<ApiResponse<ReportTemplate>>(
       '/api/v1/reporting/templates/import',
       formData,
       {

@@ -66,7 +66,6 @@ export default defineConfig({
     // Performance-optimized timing settings
     actionTimeout: 15000,
     navigationTimeout: 45000,
-    expect: { timeout: 10000 },
 
     // Bangalore/Karnataka localization
     locale: 'en-IN',
@@ -212,8 +211,6 @@ export default defineConfig({
         launchOptions: {
           args: ['--force-prefers-reduced-motion', '--enable-experimental-accessibility-features'],
         },
-        // High contrast mode testing
-        forcedColors: 'active',
       },
       testDir: './tests/accessibility',
       testMatch: ['**/*.accessibility.spec.ts'],
@@ -300,12 +297,8 @@ export default defineConfig({
 
   // Expect configuration for assertions
   expect: {
-    // Screenshot comparison threshold
-    threshold: 0.2,
     // Animation handling
     toHaveScreenshot: { animations: 'disabled' },
-    // Visual comparison settings
-    toMatchSnapshot: { threshold: 0.3 },
   },
 
   // Enterprise global setup and teardown

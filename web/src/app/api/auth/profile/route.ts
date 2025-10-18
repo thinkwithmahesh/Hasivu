@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const _LAMBDA_AUTH_PROFILE_URL =
+const LAMBDA_AUTH_PROFILE_URL =
   process.env.LAMBDA_AUTH_PROFILE_URL ||
   'https://your-lambda-endpoint.execute-api.region.amazonaws.com/dev/auth/profile';
 
 export async function GET(request: NextRequest) {
   try {
     // Get auth token from httpOnly cookie
-    const _authToken = request.cookies.get('auth-token')?.value;
+    const authToken = request.cookies.get('auth-token')?.value;
 
     if (!authToken) {
       return NextResponse.json(
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Forward request to Lambda function
-    const _lambdaResponse = await fetch(LAMBDA_AUTH_PROFILE_URL, {
+    const lambdaResponse = await fetch(LAMBDA_AUTH_PROFILE_URL, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -27,12 +27,12 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    const _lambdaData = await lambdaResponse.json();
+    const lambdaData = await lambdaResponse.json();
 
     // Handle Lambda response and transform to expected frontend format
     if (lambdaResponse.ok) {
       // Transform Lambda response to frontend expected format
-      const _frontendResponse = {
+      const frontendResponse = {
         success: true,
         user: lambdaData.user,
       };
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     // Get auth token from httpOnly cookie
-    const _authToken = request.cookies.get('auth-token')?.value;
+    const authToken = request.cookies.get('auth-token')?.value;
 
     if (!authToken) {
       return NextResponse.json(
@@ -65,10 +65,10 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const _body = await request.json();
+    const body = await request.json();
 
     // Forward request to Lambda function
-    const _lambdaResponse = await fetch(LAMBDA_AUTH_PROFILE_URL, {
+    const lambdaResponse = await fetch(LAMBDA_AUTH_PROFILE_URL, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -79,12 +79,12 @@ export async function PUT(request: NextRequest) {
       body: JSON.stringify(body),
     });
 
-    const _lambdaData = await lambdaResponse.json();
+    const lambdaData = await lambdaResponse.json();
 
     // Handle Lambda response and transform to expected frontend format
     if (lambdaResponse.ok) {
       // Transform Lambda response to frontend expected format
-      const _frontendResponse = {
+      const frontendResponse = {
         success: true,
         user: lambdaData.user,
         message: lambdaData.message || 'Profile updated successfully',

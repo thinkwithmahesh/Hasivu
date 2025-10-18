@@ -12,6 +12,7 @@ export enum UserRole {
   VENDOR = 'vendor',
   KITCHEN_STAFF = 'kitchen_staff',
   SCHOOL_ADMIN = 'school_admin',
+  SUPER_ADMIN = 'super_admin',
 }
 
 // Permission types for role-based access control
@@ -43,12 +44,12 @@ export enum Permission {
   // Analytics and reports
   READ_ANALYTICS = 'read_analytics',
   VIEW_REPORTS = 'view_reports',
-  EXPORT_DATA = 'export_data',
+  EXPORT_DATA = 'exportdata',
 
   // System administration
   ADMIN_ACCESS = 'admin_access',
   SCHOOL_ADMIN_ACCESS = 'school_admin_access',
-  SYSTEM_SETTINGS = 'system_settings',
+  SYSTEM_SETTINGS = 'systemsettings',
 
   // Kitchen and inventory
   KITCHEN_ACCESS = 'kitchen_access',
@@ -167,6 +168,31 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.MANAGE_INVENTORY,
     Permission.READ_MENU,
     Permission.UPDATE_PROFILE,
+    Permission.VIEW_NOTIFICATIONS,
+  ],
+
+  [UserRole.SUPER_ADMIN]: [
+    // Full system access with additional super admin permissions
+    Permission.ADMIN_ACCESS,
+    Permission.MANAGE_USERS,
+    Permission.READ_USERS,
+    Permission.WRITE_USERS,
+    Permission.DELETE_USERS,
+    Permission.READ_ORDERS,
+    Permission.WRITE_ORDERS,
+    Permission.DELETE_ORDERS,
+    Permission.UPDATE_ORDER_STATUS,
+    Permission.READ_MENU,
+    Permission.WRITE_MENU,
+    Permission.MANAGE_MENU,
+    Permission.READ_PAYMENTS,
+    Permission.WRITE_PAYMENTS,
+    Permission.PROCESS_PAYMENTS,
+    Permission.READ_ANALYTICS,
+    Permission.VIEW_REPORTS,
+    Permission.EXPORT_DATA,
+    Permission.SYSTEM_SETTINGS,
+    Permission.SEND_NOTIFICATIONS,
     Permission.VIEW_NOTIFICATIONS,
   ],
 };

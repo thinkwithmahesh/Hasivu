@@ -19,7 +19,7 @@ export default function AuthError({
   return (
     <AuthLayout
       title="Something went wrong"
-      description="We encountered an error while loading this page"
+      subtitle="We encountered an error while loading this page"
     >
       <div className="flex flex-col items-center space-y-4 p-6 bg-white rounded-lg shadow-sm border">
         <div className="text-center">

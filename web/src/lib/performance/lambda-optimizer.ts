@@ -12,7 +12,7 @@ interface ConnectionPool<T> {}
         // Pre-execution optimizations
         await LambdaOptimizer.preExecutionOptimization(context);
         // Execute the actual handler
-        const _result =  await handler(event, context);
+        const result =  await handler(event, context);
         // Post-execution cleanup and metrics
         const _metrics =  LambdaOptimizer.calculateMetrics(startTime, initialMemory);
         LambdaOptimizer.logPerformanceMetrics(context, metrics);

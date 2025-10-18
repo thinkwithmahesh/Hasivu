@@ -17,21 +17,21 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Toggle } from "@/components/ui/toggle";
-import { 
+import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   LineChart, Line, PieChart, Pie, Cell, Area, AreaChart, ComposedChart,
   RadialBarChart, RadialBar, Treemap, ScatterChart, Scatter, ReferenceLine
 } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from "@/components/ui/chart";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
-import { 
-  Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, 
-  SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, 
+import {
+  Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent,
+  SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuAction,
   SidebarMenuItem, SidebarProvider, SidebarTrigger, SidebarInset
 } from "@/components/ui/sidebar";
 import { MealOrderDrawer, type MealItem } from "@/components/ui/meal-order-drawer";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { 
+import {
   Crown, Users, DollarSign, TrendingUp, AlertCircle, CheckCircle,
   Calendar, Settings, BarChart3, PieChart as PieChartIcon, Activity,
   School, Clock, Target, Award, Bell, MessageSquare, FileText,
@@ -450,73 +450,82 @@ export const EnhancedAdminDashboard: React.FC<EnhancedAdminDashboardProps> = ({
               <SidebarGroupContent>
                 <SidebarMenu>
                   <SidebarMenuItem>
-                    <SidebarMenuButton 
-                      onClick={() => setActiveView('overview')}
-                      isActive={activeView === 'overview'}
-                    >
-                      <Home className="h-4 w-4" />
-                      <span>Overview</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton 
-                      onClick={() => setActiveView('analytics')}
-                      isActive={activeView === 'analytics'}
-                    >
-                      <BarChart3 className="h-4 w-4" />
-                      <span>Analytics</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton 
-                      onClick={() => setActiveView('orders')}
-                      isActive={activeView === 'orders'}
-                    >
-                      <Utensils className="h-4 w-4" />
-                      <span>Orders</span>
-                      <Badge className="ml-auto" variant="secondary">
-                        {mockActiveOrders.length}
-                      </Badge>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton 
-                      onClick={() => setActiveView('rfid')}
-                      isActive={activeView === 'rfid'}
-                    >
-                      <Radio className="h-4 w-4" />
-                      <span>RFID System</span>
-                      <Badge className="ml-auto" variant="outline">
-                        {mockRFIDAnalytics.deviceStatus.filter(d => d.status === 'active').length}
-                      </Badge>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton 
-                      onClick={() => setActiveView('meals')}
-                      isActive={activeView === 'meals'}
-                    >
-                      <ChefHat className="h-4 w-4" />
-                      <span>Meal Management</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton 
-                      onClick={() => setActiveView('students')}
-                      isActive={activeView === 'students'}
-                    >
-                      <Users2 className="h-4 w-4" />
-                      <span>Student Analytics</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton 
-                      onClick={() => setActiveView('kitchen')}
-                      isActive={activeView === 'kitchen'}
-                    >
-                      <Package className="h-4 w-4" />
-                      <span>Kitchen Operations</span>
-                    </SidebarMenuButton>
+                    <SidebarMenuItem>
+                      <Button
+                        variant="ghost"
+                        className={cn("w-full justify-start", activeView === 'overview' && "bg-accent")}
+                        onClick={() => setActiveView('overview')}
+                      >
+                        <Home className="h-4 w-4 mr-2" />
+                        <span>Overview</span>
+                      </Button>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <Button
+                        variant="ghost"
+                        className={cn("w-full justify-start", activeView === 'analytics' && "bg-accent")}
+                        onClick={() => setActiveView('analytics')}
+                      >
+                        <BarChart3 className="h-4 w-4 mr-2" />
+                        <span>Analytics</span>
+                      </Button>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <Button
+                        variant="ghost"
+                        className={cn("w-full justify-start", activeView === 'orders' && "bg-accent")}
+                        onClick={() => setActiveView('orders')}
+                      >
+                        <Utensils className="h-4 w-4 mr-2" />
+                        <span>Orders</span>
+                        <Badge className="ml-auto" variant="secondary">
+                          {mockActiveOrders.length}
+                        </Badge>
+                      </Button>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <Button
+                        variant="ghost"
+                        className={cn("w-full justify-start", activeView === 'rfid' && "bg-accent")}
+                        onClick={() => setActiveView('rfid')}
+                      >
+                        <Radio className="h-4 w-4 mr-2" />
+                        <span>RFID System</span>
+                        <Badge className="ml-auto" variant="outline">
+                          {mockRFIDAnalytics.deviceStatus.filter(d => d.status === 'active').length}
+                        </Badge>
+                      </Button>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <Button
+                        variant="ghost"
+                        className={cn("w-full justify-start", activeView === 'meals' && "bg-accent")}
+                        onClick={() => setActiveView('meals')}
+                      >
+                        <ChefHat className="h-4 w-4 mr-2" />
+                        <span>Meal Management</span>
+                      </Button>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <Button
+                        variant="ghost"
+                        className={cn("w-full justify-start", activeView === 'students' && "bg-accent")}
+                        onClick={() => setActiveView('students')}
+                      >
+                        <Users2 className="h-4 w-4 mr-2" />
+                        <span>Student Analytics</span>
+                      </Button>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <Button
+                        variant="ghost"
+                        className={cn("w-full justify-start", activeView === 'kitchen' && "bg-accent")}
+                        onClick={() => setActiveView('kitchen')}
+                      >
+                        <Package className="h-4 w-4 mr-2" />
+                        <span>Kitchen Operations</span>
+                      </Button>
+                    </SidebarMenuItem>
                   </SidebarMenuItem>
                 </SidebarMenu>
               </SidebarGroupContent>
@@ -752,19 +761,19 @@ export const EnhancedAdminDashboard: React.FC<EnhancedAdminDashboardProps> = ({
                           <YAxis yAxisId="left" />
                           <YAxis yAxisId="right" orientation="right" />
                           <ChartTooltip content={<ChartTooltipContent />} />
-                          <Line 
-                            yAxisId="left" 
-                            type="monotone" 
-                            dataKey="orders" 
-                            stroke="var(--color-orders)" 
+                          <Line
+                            yAxisId="left"
+                            type="monotone"
+                            dataKey="orders"
+                            stroke="var(--color-orders)"
                             strokeWidth={3}
                             dot={{ fill: "var(--color-orders)", strokeWidth: 2 }}
                           />
-                          <Line 
-                            yAxisId="right" 
-                            type="monotone" 
-                            dataKey="satisfaction" 
-                            stroke="var(--color-satisfaction)" 
+                          <Line
+                            yAxisId="right"
+                            type="monotone"
+                            dataKey="satisfaction"
+                            stroke="var(--color-satisfaction)"
                             strokeWidth={2}
                             strokeDasharray="5 5"
                           />
@@ -1400,6 +1409,89 @@ export const EnhancedAdminDashboard: React.FC<EnhancedAdminDashboardProps> = ({
         </TabsContent>
 
               </div>
+            )}
+
+            {/* Order Management View - New Structure */}
+            {activeView === 'orders' && (
+              <div className="space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <DollarSign className="h-5 w-5 mr-2" />
+                Daily Summary
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="text-center">
+                <p className="text-3xl font-bold text-green-600">₹{mockFinancialSummary.daily.revenue}</p>
+                <p className="text-gray-600">Revenue</p>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>Orders: {mockFinancialSummary.daily.orders}</div>
+                <div>Avg: ₹{mockFinancialSummary.daily.avgOrderValue}</div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <TrendingUp className="h-5 w-5 mr-2" />
+                Weekly Summary
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="text-center">
+                <p className="text-3xl font-bold text-blue-600">₹{mockFinancialSummary.weekly.revenue}</p>
+                <p className="text-gray-600">Revenue</p>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>Orders: {mockFinancialSummary.weekly.orders}</div>
+                <div>Avg: ₹{mockFinancialSummary.weekly.avgOrderValue}</div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <BarChart3 className="h-5 w-5 mr-2" />
+                Monthly Summary
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="text-center">
+                <p className="text-3xl font-bold text-purple-600">₹{mockFinancialSummary.monthly.revenue}</p>
+                <p className="text-gray-600">Revenue</p>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>Orders: {mockFinancialSummary.monthly.orders}</div>
+                <div>Avg: ₹{mockFinancialSummary.monthly.avgOrderValue}</div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Payment Methods Distribution</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {mockFinancialSummary.paymentMethods.map((method) => (
+                <div key={method.method} className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="font-medium">{method.method}</span>
+                    <span>₹{method.amount} ({method.percentage}%)</span>
+                  </div>
+                  <Progress value={method.percentage} className="h-2" />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
             )}
 
             {/* Kitchen Operations View */}

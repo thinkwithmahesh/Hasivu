@@ -1177,6 +1177,4 @@ export const EnhancedAdminDashboardV2: React.FC<EnhancedAdminDashboardV2Props> =
       )}
     </SidebarProvider>
   );
-}; );
-};
 };

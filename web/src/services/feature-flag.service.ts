@@ -7,7 +7,7 @@ import {
   UserSegment,
   _FeatureFlagEnvironment as FeatureFlagEnvironment,
   _FeatureFlagRolloutStrategy as FeatureFlagRolloutStrategy,
-  _FEATURE_FLAGS as FEATURE_FLAGS
+  _FEATURE_FLAGS as FEATURE_FLAGS,
 } from '../types/feature-flags';
 
 class FeatureFlagService {
@@ -92,7 +92,10 @@ class FeatureFlagService {
   /**
    * Evaluate a single rule
    */
-  private evaluateRule(rule: any, context: FeatureFlagEvaluationContext): FeatureFlagResult & { metadata?: any } {
+  private evaluateRule(
+    rule: any,
+    context: FeatureFlagEvaluationContext
+  ): FeatureFlagResult & { metadata?: any } {
     // Check environment
     if (rule.environments && !rule.environments.includes(context.environment)) {
       return {
@@ -142,7 +145,10 @@ class FeatureFlagService {
   /**
    * Evaluate percentage-based rule
    */
-  private evaluatePercentageRule(rule: any, context: FeatureFlagEvaluationContext): FeatureFlagResult & { metadata?: any } {
+  private evaluatePercentageRule(
+    rule: any,
+    context: FeatureFlagEvaluationContext
+  ): FeatureFlagResult & { metadata?: any } {
     if (!rule.percentage || rule.percentage <= 0) {
       return {
         enabled: false,
@@ -177,7 +183,10 @@ class FeatureFlagService {
   /**
    * Evaluate user segment rule
    */
-  private evaluateSegmentRule(rule: any, context: FeatureFlagEvaluationContext): FeatureFlagResult & { metadata?: any } {
+  private evaluateSegmentRule(
+    rule: any,
+    context: FeatureFlagEvaluationContext
+  ): FeatureFlagResult & { metadata?: any } {
     if (!rule.segments || rule.segments.length === 0) {
       return {
         enabled: false,
@@ -209,7 +218,10 @@ class FeatureFlagService {
   /**
    * Evaluate gradual rollout rule
    */
-  private evaluateGradualRule(rule: any, context: FeatureFlagEvaluationContext): FeatureFlagResult & { metadata?: any } {
+  private evaluateGradualRule(
+    rule: any,
+    context: FeatureFlagEvaluationContext
+  ): FeatureFlagResult & { metadata?: any } {
     // Simple gradual rollout - could be enhanced with more sophisticated logic
     return this.evaluatePercentageRule(rule, context);
   }
@@ -218,7 +230,7 @@ class FeatureFlagService {
    * Check if user matches a segment
    */
   private matchesSegment(segment: UserSegment, context: FeatureFlagEvaluationContext): boolean {
-    const criteria = segment.criteria;
+    const { criteria } = segment;
 
     if (criteria.userType && context.userType && !criteria.userType.includes(context.userType)) {
       return false;
@@ -256,7 +268,7 @@ class FeatureFlagService {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
     return Math.abs(hash);

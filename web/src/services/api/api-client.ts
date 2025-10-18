@@ -35,35 +35,53 @@ class ApiClient {
   /**
    * Make a GET request
    */
-  async get<T = any>(endpoint: string, config: Omit<RequestConfig, 'method' | 'body'> = {}): Promise<ApiResponse<T>> {
+  async get<T = any>(
+    endpoint: string,
+    config: Omit<RequestConfig, 'method' | 'body'> = {}
+  ): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, { ...config, method: 'GET' });
   }
 
   /**
    * Make a POST request
    */
-  async post<T = any>(endpoint: string, data?: any, config: Omit<RequestConfig, 'method' | 'body'> = {}): Promise<ApiResponse<T>> {
+  async post<T = any>(
+    endpoint: string,
+    data?: any,
+    config: Omit<RequestConfig, 'method' | 'body'> = {}
+  ): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, { ...config, method: 'POST', body: data });
   }
 
   /**
    * Make a PUT request
    */
-  async put<T = any>(endpoint: string, data?: any, config: Omit<RequestConfig, 'method' | 'body'> = {}): Promise<ApiResponse<T>> {
+  async put<T = any>(
+    endpoint: string,
+    data?: any,
+    config: Omit<RequestConfig, 'method' | 'body'> = {}
+  ): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, { ...config, method: 'PUT', body: data });
   }
 
   /**
    * Make a DELETE request
    */
-  async delete<T = any>(endpoint: string, config: Omit<RequestConfig, 'method' | 'body'> = {}): Promise<ApiResponse<T>> {
+  async delete<T = any>(
+    endpoint: string,
+    config: Omit<RequestConfig, 'method' | 'body'> = {}
+  ): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, { ...config, method: 'DELETE' });
   }
 
   /**
    * Make a PATCH request
    */
-  async patch<T = any>(endpoint: string, data?: any, config: Omit<RequestConfig, 'method' | 'body'> = {}): Promise<ApiResponse<T>> {
+  async patch<T = any>(
+    endpoint: string,
+    data?: any,
+    config: Omit<RequestConfig, 'method' | 'body'> = {}
+  ): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, { ...config, method: 'PATCH', body: data });
   }
 
@@ -71,13 +89,7 @@ class ApiClient {
    * Generic request method
    */
   private async request<T = any>(endpoint: string, config: RequestConfig): Promise<ApiResponse<T>> {
-    const {
-      method = 'GET',
-      headers = {},
-      body,
-      params,
-      timeout = this.defaultTimeout,
-    } = config;
+    const { method = 'GET', headers = {}, body, params, timeout = this.defaultTimeout } = config;
 
     // Build URL with query parameters
     let url = `${this.baseUrl}${endpoint}`;
@@ -129,12 +141,12 @@ class ApiClient {
       }
 
       if (!response.ok) {
-        const error: ApiError = {
-          message: responseData.message || responseData.error || `HTTP ${response.status}`,
-          status: response.status,
-          errors: responseData.errors,
-        };
-        throw error;
+        const httpError = new Error(
+          responseData.message || responseData.error || `HTTP ${response.status}`
+        ) as ApiError;
+        httpError.status = response.status;
+        httpError.errors = responseData.errors;
+        throw httpError;
       }
 
       // Return standardized response
@@ -145,29 +157,28 @@ class ApiClient {
       };
     } catch (error) {
       if (error instanceof Error && error.name === 'TimeoutError') {
-        throw {
-          message: 'Request timeout',
-          status: 408,
-        } as ApiError;
+        const timeoutError = new Error('Request timeout') as ApiError;
+        timeoutError.status = 408;
+        throw timeoutError;
       }
 
       if (error instanceof Error && error.name === 'AbortError') {
-        throw {
-          message: 'Request aborted',
-          status: 499,
-        } as ApiError;
+        const abortError = new Error('Request aborted') as ApiError;
+        abortError.status = 499;
+        throw abortError;
       }
 
-      // Re-throw API errors
-      if (error && typeof error === 'object' && 'status' in error) {
-        throw error as ApiError;
+      // Re-throw API errors (they're already Error objects from earlier throws)
+      if (error && typeof error === 'object' && 'status' in error && error instanceof Error) {
+        throw error;
       }
 
       // Handle network errors
-      throw {
-        message: error instanceof Error ? error.message : 'Network error',
-        status: 0,
-      } as ApiError;
+      const networkError = new Error(
+        error instanceof Error ? error.message : 'Network error'
+      ) as ApiError;
+      networkError.status = 0;
+      throw networkError;
     }
   }
 
@@ -196,7 +207,12 @@ class ApiClient {
   /**
    * Upload file
    */
-  async uploadFile(endpoint: string, file: File, fieldName = 'file', additionalData?: Record<string, any>): Promise<ApiResponse> {
+  async uploadFile(
+    endpoint: string,
+    file: File,
+    fieldName = 'file',
+    additionalData?: Record<string, any>
+  ): Promise<ApiResponse> {
     const formData = new FormData();
     formData.append(fieldName, file);
 
@@ -222,11 +238,10 @@ class ApiClient {
       const responseData = await response.json();
 
       if (!response.ok) {
-        throw {
-          message: responseData.message || 'Upload failed',
-          status: response.status,
-          errors: responseData.errors,
-        } as ApiError;
+        const uploadError = new Error(responseData.message || 'Upload failed') as ApiError;
+        uploadError.status = response.status;
+        uploadError.errors = responseData.errors;
+        throw uploadError;
       }
 
       return {
@@ -235,7 +250,16 @@ class ApiClient {
         message: responseData.message,
       };
     } catch (error) {
-      throw error as ApiError;
+      // If it's already an ApiError, re-throw it
+      if (error && typeof error === 'object' && 'status' in error) {
+        throw error;
+      }
+      // Otherwise wrap it in an Error object
+      const wrappedError = new Error(
+        error instanceof Error ? error.message : 'Upload error'
+      ) as ApiError;
+      wrappedError.status = 0;
+      throw wrappedError;
     }
   }
 }

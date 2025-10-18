@@ -31,7 +31,6 @@ const SafariCompatibleLoginForm = dynamic(
 );
 
 // Helper function to get dashboard URL based on role
-function getDashboardUrl(role: string): string {
   const dashboardUrls: Record<string, string> = {
     admin: '/dashboard/admin',
     teacher: '/dashboard/teacher',
@@ -60,7 +59,6 @@ export default function VendorLoginPage() {
     setIsSafari(isSafariBrowser);
   }, []);
 
-  const handleLogin = async (data: LoginFormData & { role: string }) => {
     setIsLoading(true);
     setError(null);
 
@@ -68,8 +66,6 @@ export default function VendorLoginPage() {
       const success = await login({
         email: data.email,
         password: data.password,
-        role: data.role,
-        rememberMe: data.rememberMe || false,
       });
 
       if (success) {
@@ -107,7 +103,7 @@ export default function VendorLoginPage() {
   };
 
   return (
-    <AuthLayout title="Vendor Login - HASIVU" description="Supply management and logistics">
+    <AuthLayout title="Vendor Login - HASIVU" subtitle="Supply management and logistics">
       {isSafari ? (
         <SafariCompatibleLoginForm
           onSubmit={handleLogin}

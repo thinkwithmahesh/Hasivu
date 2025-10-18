@@ -771,7 +771,7 @@ function ForgotPasswordPage() {
     if (success) {
         return /*#__PURE__*/ jsx_runtime_.jsx(AuthLayout.AuthLayout, {
             title: "Check Your Email",
-            description: "We've sent password reset instructions to your email address",
+            subtitle: "We've sent password reset instructions to your email address",
             children: /*#__PURE__*/ jsx_runtime_.jsx("div", {
                 className: "w-full max-w-md text-center",
                 children: /*#__PURE__*/ (0,jsx_runtime_.jsxs)("div", {
@@ -812,7 +812,7 @@ function ForgotPasswordPage() {
     }
     return /*#__PURE__*/ jsx_runtime_.jsx(AuthLayout.AuthLayout, {
         title: "Forgot Your Password?",
-        description: "Enter your email address and we'll send you a reset link",
+        subtitle: "Enter your email address and we'll send you a reset link",
         children: /*#__PURE__*/ jsx_runtime_.jsx(ForgotPasswordForm, {
             onSubmit: handleForgotPassword,
             isLoading: isLoading,
@@ -858,7 +858,7 @@ const __default__ = proxy.default;
 var __webpack_require__ = require("../../../webpack-runtime.js");
 __webpack_require__.C(exports);
 var __webpack_exec__ = (moduleId) => (__webpack_require__(__webpack_require__.s = moduleId))
-var __webpack_exports__ = __webpack_require__.X(0, [7212,2947,6302,3490,3979,1440,3719,1473,9423,7367,9765], () => (__webpack_exec__(3192)));
+var __webpack_exports__ = __webpack_require__.X(0, [7212,2947,6302,3490,3979,1440,4094,433,918,9256,8003,7367,9137,3198], () => (__webpack_exec__(3192)));
 module.exports = __webpack_exports__;
 
 })();

@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const _LAMBDA_AUTH_VERIFY_EMAIL_URL =
+const LAMBDA_AUTH_VERIFY_EMAIL_URL =
   process.env.LAMBDA_AUTH_VERIFY_EMAIL_URL ||
   'https://your-lambda-endpoint.execute-api.region.amazonaws.com/dev/auth/verify-email';
 
 export async function POST(request: NextRequest) {
   try {
-    const _body = await request.json();
+    const body = await request.json();
 
     // Validate required fields
     if (!body.token) {
@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Forward request to Lambda function
-    const _lambdaResponse = await fetch(LAMBDA_AUTH_VERIFY_EMAIL_URL, {
+    const lambdaResponse = await fetch(LAMBDA_AUTH_VERIFY_EMAIL_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -27,11 +27,11 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify(body),
     });
 
-    const _lambdaData = await lambdaResponse.json();
+    const lambdaData = await lambdaResponse.json();
 
     // Handle Lambda response and transform to expected frontend format
     if (lambdaResponse.ok) {
-      const _frontendResponse = {
+      const frontendResponse = {
         success: true,
         message: lambdaData.message || 'Email verified successfully',
         user: lambdaData.user,

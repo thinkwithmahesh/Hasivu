@@ -1,6 +1,6 @@
-export type _FeatureFlagEnvironment = 'development' | 'staging' | 'production';
+export type FeatureFlagEnvironment = 'development' | 'staging' | 'production';
 
-export type _FeatureFlagRolloutStrategy = 'percentage' | 'user-segment' | 'environment' | 'gradual';
+export type FeatureFlagRolloutStrategy = 'percentage' | 'user-segment' | 'environment' | 'gradual';
 
 export interface UserSegment {
   id: string;
@@ -108,4 +108,4 @@ export const _FEATURE_FLAGS = {
   BETA_FEATURES: 'beta_features',
 } as const;
 
-export type _FeatureFlagKey = (typeof FEATURE_FLAGS)[keyof typeof FEATURE_FLAGS];
+export type FeatureFlagKey = (typeof _FEATURE_FLAGS)[keyof typeof _FEATURE_FLAGS];

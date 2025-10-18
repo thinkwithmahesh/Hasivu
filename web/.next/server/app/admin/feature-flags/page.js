@@ -490,7 +490,16 @@ const mockFeatureFlags = {
     }, []);
     return {
         trackFeatureUsage,
-        getFeatureStats
+        getFeatureStats,
+        totalFlags: 5,
+        enabledFlags: 3,
+        flagsByCategory: {
+            payment: 2,
+            notification: 1,
+            analytics: 1,
+            ui: 0,
+            experimental: 1
+        }
     };
 };
 /**
@@ -1488,7 +1497,7 @@ var Root = Label;
 var __webpack_require__ = require("../../../webpack-runtime.js");
 __webpack_require__.C(exports);
 var __webpack_exec__ = (moduleId) => (__webpack_require__(__webpack_require__.s = moduleId))
-var __webpack_exports__ = __webpack_require__.X(0, [7212,2947,6302,3490,3979,6254,3408,3205,9752,6627,4612,8028,7579,2585,9031,1473,9423,5114,7367,5511,7848,4410], () => (__webpack_exec__(44261)));
+var __webpack_exports__ = __webpack_require__.X(0, [7212,2947,6302,3490,3979,6254,3408,3205,9752,6627,4612,8028,7579,2585,9031,918,9256,8003,5114,7367,5511,7848,4410], () => (__webpack_exec__(44261)));
 module.exports = __webpack_exports__;
 
 })();

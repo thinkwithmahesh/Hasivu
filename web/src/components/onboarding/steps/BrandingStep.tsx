@@ -108,7 +108,7 @@ const BrandingStep: React.FC<BrandingStepProps> = ({
     {
       value: 'roboto',
       name: 'Roboto',
-      description: 'Google's signature font',
+      description: "Google's signature font",
       preview: 'The quick brown fox jumps over the lazy dog'
     },
     {
@@ -235,7 +235,7 @@ const BrandingStep: React.FC<BrandingStepProps> = ({
               School Portal
             </h3>
             <p className="text-sm text-gray-600">
-              {watchedValues.customGreeting || 'Welcome to our school food service'}
+              {watchedValues.customGreeting || "Welcome to our school food service"}
             </p>
           </div>
         </div>

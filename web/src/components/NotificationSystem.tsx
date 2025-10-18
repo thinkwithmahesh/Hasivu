@@ -126,8 +126,7 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
         try {
           const message: WebSocketMessage = JSON.parse(event.data);
           handleWebSocketMessage(message);
-        } catch (error) {
-        }
+        } catch (error) {}
       };
 
       ws.onclose = event => {
@@ -143,8 +142,7 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
           reconnectAttempts.current++;
 
           reconnectTimeoutRef.current = setTimeout(() => {
-              `Attempting to reconnect (${reconnectAttempts.current}/${maxReconnectAttempts})`
-            );
+            // Attempting to reconnect silently
             connectWebSocket();
           }, delay);
         }
@@ -255,8 +253,7 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
       setNotifications(prev => prev.map(n => (n.id === notificationId ? { ...n, read: true } : n)));
 
       // Send to backend (would be actual API call in real implementation)
-    } catch (error) {
-    }
+    } catch (error) {}
   };
 
   const markAllAsRead = async () => {
@@ -272,8 +269,7 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
   const deleteNotification = async (notificationId: string) => {
     try {
       removeNotification(notificationId);
-    } catch (error) {
-    }
+    } catch (error) {}
   };
 
   const generateMockNotifications = (): Notification[] => {

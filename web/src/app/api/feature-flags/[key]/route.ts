@@ -5,8 +5,8 @@ import { FeatureFlagKey } from '../../../../types/feature-flags';
 // GET /api/feature-flags/[key] - Get specific feature flag
 export async function GET(request: NextRequest, { params }: { params: { key: string } }) {
   try {
-    const _service = getFeatureFlagService();
-    const _flag = service.getFlag(params.key as FeatureFlagKey);
+    const service = getFeatureFlagService();
+    const flag = service.getFlag(params.key as FeatureFlagKey);
 
     if (!flag) {
       return NextResponse.json(
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest, { params }: { params: { key: str
 
     // Evaluate the flag with context from query params
     const { searchParams } = new URL(request.url);
-    const _context = {
+    const context = {
       userId: searchParams.get('userId') || undefined,
       userType: searchParams.get('userType') || undefined,
       schoolId: searchParams.get('schoolId') || undefined,
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest, { params }: { params: { key: str
       environment: (searchParams.get('environment') as any) || 'development',
     };
 
-    const _evaluation = service.evaluate(params.key as FeatureFlagKey, context);
+    const evaluation = service.evaluate(params.key as FeatureFlagKey, context);
 
     return NextResponse.json({
       flag,
@@ -44,10 +44,10 @@ export async function GET(request: NextRequest, { params }: { params: { key: str
 // PUT /api/feature-flags/[key] - Update specific feature flag
 export async function PUT(request: NextRequest, { params }: { params: { key: string } }) {
   try {
-    const _body = await request.json();
-    const _service = getFeatureFlagService();
+    const body = await request.json();
+    const service = getFeatureFlagService();
 
-    const _existingFlag = service.getFlag(params.key as FeatureFlagKey);
+    const existingFlag = service.getFlag(params.key as FeatureFlagKey);
     if (!existingFlag) {
       return NextResponse.json(
         { error: 'Feature flag not found', success: false },
@@ -55,7 +55,7 @@ export async function PUT(request: NextRequest, { params }: { params: { key: str
       );
     }
 
-    const _updatedFlag = {
+    const updatedFlag = {
       ...existingFlag,
       ...body,
       key: params.key, // Ensure key doesn't change
@@ -84,8 +84,8 @@ export async function PUT(request: NextRequest, { params }: { params: { key: str
 // DELETE /api/feature-flags/[key] - Delete feature flag (soft delete by disabling)
 export async function DELETE(request: NextRequest, { params }: { params: { key: string } }) {
   try {
-    const _service = getFeatureFlagService();
-    const _flag = service.getFlag(params.key as FeatureFlagKey);
+    const service = getFeatureFlagService();
+    const flag = service.getFlag(params.key as FeatureFlagKey);
 
     if (!flag) {
       return NextResponse.json(
@@ -95,7 +95,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { key: 
     }
 
     // Soft delete by disabling the flag
-    const _disabledFlag = {
+    const disabledFlag = {
       ...flag,
       enabled: false,
       metadata: {

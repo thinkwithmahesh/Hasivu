@@ -1,21 +1,21 @@
-"use client"
+'use client';
 
-import React, { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute"
-import { UserRole } from "@/types/auth"
-import { useAuth } from "@/contexts/auth-context"
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { UserRole } from '@/types/auth';
+import { useAuth } from '@/contexts/auth-context';
 import {
   DashboardMetrics,
   Alert,
   AlertSeverity,
   AlertType,
   AdminLevel,
-  SchoolOverview
-} from "@/types/administration"
+  SchoolOverview,
+} from '@/types/administration';
 import {
   Building2,
   Users,
@@ -30,8 +30,8 @@ import {
   BarChart3,
   Bell,
   Activity,
-  Target
-} from "lucide-react"
+  Target,
+} from 'lucide-react';
 
 // Mock data - In production, this would come from APIs
 const mockDashboardMetrics: DashboardMetrics = {
@@ -41,24 +41,24 @@ const mockDashboardMetrics: DashboardMetrics = {
     inactive: 42,
     newThisMonth: 28,
     byTier: {
-      'BASIC': 523,
-      'STANDARD': 456,
-      'PREMIUM': 189,
-      'ENTERPRISE': 37
+      BASIC: 523,
+      STANDARD: 456,
+      PREMIUM: 189,
+      ENTERPRISE: 37,
     },
     byState: {
-      'Karnataka': 287,
+      Karnataka: 287,
       'Tamil Nadu': 234,
       'Andhra Pradesh': 198,
-      'Kerala': 156,
-      'Others': 372
+      Kerala: 156,
+      Others: 372,
     },
     performanceDistribution: {
       excellent: 312,
       good: 578,
       average: 289,
-      poor: 68
-    }
+      poor: 68,
+    },
   },
   operations: {
     todayOrders: 24567,
@@ -68,7 +68,7 @@ const mockDashboardMetrics: DashboardMetrics = {
     averageDeliveryTime: 18.5,
     qualityScore: 94.2,
     incidentsReported: 3,
-    emergencyAlerts: 0
+    emergencyAlerts: 0,
   },
   financial: {
     totalRevenue: 2458967,
@@ -78,7 +78,7 @@ const mockDashboardMetrics: DashboardMetrics = {
     budgetUtilization: 87.3,
     costPerMeal: 82.5,
     revenueGrowth: 12.8,
-    paymentSuccessRate: 97.8
+    paymentSuccessRate: 97.8,
   },
   compliance: {
     overallScore: 96.2,
@@ -88,7 +88,7 @@ const mockDashboardMetrics: DashboardMetrics = {
     auditsPending: 12,
     violationsReported: 2,
     correctiveActions: 8,
-    certificationStatus: 99.2
+    certificationStatus: 99.2,
   },
   performance: {
     averageRating: 4.6,
@@ -98,7 +98,7 @@ const mockDashboardMetrics: DashboardMetrics = {
     resourceUtilization: 91.2,
     innovationIndex: 78.9,
     sustainabilityScore: 85.6,
-    technologyAdoption: 94.1
+    technologyAdoption: 94.1,
   },
   alerts: [
     {
@@ -110,7 +110,7 @@ const mockDashboardMetrics: DashboardMetrics = {
       source: { type: 'kitchen', id: 'k-001', name: 'BPS Kitchen Unit 1' },
       status: 'open',
       createdAt: new Date(Date.now() - 45 * 60 * 1000),
-      updatedAt: new Date(Date.now() - 45 * 60 * 1000)
+      updatedAt: new Date(Date.now() - 45 * 60 * 1000),
     },
     {
       id: '2',
@@ -122,7 +122,7 @@ const mockDashboardMetrics: DashboardMetrics = {
       status: 'in_progress',
       assignedTo: 'district-officer-chennai',
       createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
-      updatedAt: new Date(Date.now() - 30 * 60 * 1000)
+      updatedAt: new Date(Date.now() - 30 * 60 * 1000),
     },
     {
       id: '3',
@@ -133,21 +133,26 @@ const mockDashboardMetrics: DashboardMetrics = {
       source: { type: 'school', id: 's-003', name: 'Mysore Zone' },
       status: 'open',
       createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000),
-      updatedAt: new Date(Date.now() - 4 * 60 * 60 * 1000)
-    }
+      updatedAt: new Date(Date.now() - 4 * 60 * 60 * 1000),
+    },
   ],
-  timestamp: new Date()
-}
+  timestamp: new Date(),
+};
 
 const getSeverityColor = (severity: AlertSeverity): string => {
   switch (severity) {
-    case AlertSeverity.CRITICAL: return 'bg-red-100 text-red-800 border-red-200'
-    case AlertSeverity.HIGH: return 'bg-orange-100 text-orange-800 border-orange-200'
-    case AlertSeverity.MEDIUM: return 'bg-yellow-100 text-yellow-800 border-yellow-200'
-    case AlertSeverity.LOW: return 'bg-blue-100 text-blue-800 border-blue-200'
-    default: return 'bg-gray-100 text-gray-800 border-gray-200'
+    case AlertSeverity.CRITICAL:
+      return 'bg-red-100 text-red-800 border-red-200';
+    case AlertSeverity.HIGH:
+      return 'bg-orange-100 text-orange-800 border-orange-200';
+    case AlertSeverity.MEDIUM:
+      return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+    case AlertSeverity.LOW:
+      return 'bg-blue-100 text-blue-800 border-blue-200';
+    default:
+      return 'bg-gray-100 text-gray-800 border-gray-200';
   }
-}
+};
 
 const MetricsCard = ({
   title,
@@ -155,14 +160,14 @@ const MetricsCard = ({
   subtitle,
   icon: Icon,
   trend,
-  color = "text-blue-600"
+  color = 'text-blue-600',
 }: {
-  title: string
-  value: string | number
-  subtitle?: string
-  icon: any
-  trend?: number
-  color?: string
+  title: string;
+  value: string | number;
+  subtitle?: string;
+  icon: any;
+  trend?: number;
+  color?: string;
 }) => (
   <Card className="hover:shadow-lg transition-shadow">
     <CardContent className="p-6">
@@ -170,15 +175,16 @@ const MetricsCard = ({
         <div>
           <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>
           <p className="text-2xl font-bold text-gray-900">{value}</p>
-          {subtitle && (
-            <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
-          )}
+          {subtitle && <p className="text-sm text-gray-500 mt-1">{subtitle}</p>}
           {trend !== undefined && (
-            <div className={`flex items-center mt-2 text-sm ${
-              trend >= 0 ? 'text-green-600' : 'text-red-600'
-            }`}>
+            <div
+              className={`flex items-center mt-2 text-sm ${
+                trend >= 0 ? 'text-green-600' : 'text-red-600'
+              }`}
+            >
               <TrendingUp className="w-4 h-4 mr-1" />
-              {trend >= 0 ? '+' : ''}{trend}%
+              {trend >= 0 ? '+' : ''}
+              {trend}%
             </div>
           )}
         </div>
@@ -188,60 +194,55 @@ const MetricsCard = ({
       </div>
     </CardContent>
   </Card>
-)
+);
 
 export default function AdministrationDashboard() {
-  const { user } = useAuth()
-  const [metrics, setMetrics] = useState<DashboardMetrics>(mockDashboardMetrics)
-  const [selectedTab, setSelectedTab] = useState('overview')
-  const [refreshing, setRefreshing] = useState(false)
+  const { user } = useAuth();
+  const [metrics, setMetrics] = useState<DashboardMetrics>(mockDashboardMetrics);
+  const [selectedTab, setSelectedTab] = useState('overview');
+  const [refreshing, setRefreshing] = useState(false);
 
   const refreshData = async () => {
-    setRefreshing(true)
+    setRefreshing(true);
     // In production, fetch real data from APIs
     setTimeout(() => {
       setMetrics({
         ...mockDashboardMetrics,
-        timestamp: new Date()
-      })
-      setRefreshing(false)
-    }, 1000)
-  }
+        timestamp: new Date(),
+      });
+      setRefreshing(false);
+    }, 1000);
+  };
 
   const getAdminLevel = (): AdminLevel => {
     // Determine admin level based on user role
-    if (user?.role === 'super_admin') return AdminLevel.STATE
-    if (user?.role === 'district_admin') return AdminLevel.DISTRICT
-    if (user?.role === 'zone_admin') return AdminLevel.ZONE
-    return AdminLevel.SCHOOL
-  }
+    if (user?.role === 'super_admin') return AdminLevel.STATE;
+    if (user?.role === 'district_admin') return AdminLevel.DISTRICT;
+    if (user?.role === 'zone_admin') return AdminLevel.ZONE;
+    return AdminLevel.SCHOOL;
+  };
 
   const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
       currency: 'INR',
-      maximumFractionDigits: 0
-    }).format(amount)
-  }
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
 
   const formatNumber = (num: number): string => {
-    return new Intl.NumberFormat('en-IN').format(num)
-  }
+    return new Intl.NumberFormat('en-IN').format(num);
+  };
 
   return (
-    <ProtectedRoute
-      requireAuth={true}
-      allowedRoles={[UserRole.ADMIN, UserRole.SCHOOL_ADMIN]}
-    >
+    <ProtectedRoute requireAuth={true} allowedRoles={[UserRole.ADMIN, UserRole.SCHOOL_ADMIN]}>
       <div className="min-h-screen bg-gray-50">
         {/* Header */}
         <div className="bg-white border-b">
           <div className="px-6 py-4">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  HASIVU Administration Center
-                </h1>
+                <h1 className="text-2xl font-bold text-gray-900">HASIVU Administration Center</h1>
                 <p className="text-gray-600 mt-1">
                   Centralized multi-school nutrition program management
                 </p>
@@ -289,11 +290,10 @@ export default function AdministrationDashboard() {
                         <AlertTriangle className="w-5 h-5 text-orange-600" />
                         <div>
                           <h3 className="font-medium text-orange-900">
-                            {metrics.alerts.length} Active Alert{metrics.alerts.length !== 1 ? 's' : ''}
+                            {metrics.alerts.length} Active Alert
+                            {metrics.alerts.length !== 1 ? 's' : ''}
                           </h3>
-                          <p className="text-sm text-orange-700">
-                            Requires immediate attention
-                          </p>
+                          <p className="text-sm text-orange-700">Requires immediate attention</p>
                         </div>
                       </div>
                       <Button variant="outline" size="sm">
@@ -353,7 +353,9 @@ export default function AdministrationDashboard() {
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium">Customer Satisfaction</span>
-                        <span className="text-sm text-gray-600">{metrics.performance.customerSatisfaction}%</span>
+                        <span className="text-sm text-gray-600">
+                          {metrics.performance.customerSatisfaction}%
+                        </span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div
@@ -364,7 +366,9 @@ export default function AdministrationDashboard() {
 
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium">Operational Efficiency</span>
-                        <span className="text-sm text-gray-600">{metrics.performance.operationalEfficiency}%</span>
+                        <span className="text-sm text-gray-600">
+                          {metrics.performance.operationalEfficiency}%
+                        </span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div
@@ -375,7 +379,9 @@ export default function AdministrationDashboard() {
 
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium">Technology Adoption</span>
-                        <span className="text-sm text-gray-600">{metrics.performance.technologyAdoption}%</span>
+                        <span className="text-sm text-gray-600">
+                          {metrics.performance.technologyAdoption}%
+                        </span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div
@@ -397,20 +403,18 @@ export default function AdministrationDashboard() {
                   <CardContent>
                     <div className="space-y-3">
                       {metrics.alerts.slice(0, 3).map((alert: Alert) => (
-                        <div key={alert.id} className="flex items-start space-x-3 p-3 rounded-lg border">
-                          <Badge
-                            variant="outline"
-                            className={getSeverityColor(alert.severity)}
-                          >
+                        <div
+                          key={alert.id}
+                          className="flex items-start space-x-3 p-3 rounded-lg border"
+                        >
+                          <Badge variant="outline" className={getSeverityColor(alert.severity)}>
                             {alert.severity}
                           </Badge>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-gray-900 truncate">
                               {alert.title}
                             </p>
-                            <p className="text-sm text-gray-600 truncate">
-                              {alert.message}
-                            </p>
+                            <p className="text-sm text-gray-600 truncate">{alert.message}</p>
                             <p className="text-xs text-gray-500 mt-1">
                               {alert.source.name} • {new Date(alert.createdAt).toLocaleTimeString()}
                             </p>
@@ -439,30 +443,38 @@ export default function AdministrationDashboard() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
                           <div className="w-3 h-3 bg-green-500 rounded"></div>
-                          <span className="text-sm">Excellent ({">"}90%)</span>
+                          <span className="text-sm">Excellent ({'>'}90%)</span>
                         </div>
-                        <span className="text-sm font-medium">{metrics.schools.performanceDistribution.excellent}</span>
+                        <span className="text-sm font-medium">
+                          {metrics.schools.performanceDistribution.excellent}
+                        </span>
                       </div>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
                           <div className="w-3 h-3 bg-blue-500 rounded"></div>
                           <span className="text-sm">Good (70-90%)</span>
                         </div>
-                        <span className="text-sm font-medium">{metrics.schools.performanceDistribution.good}</span>
+                        <span className="text-sm font-medium">
+                          {metrics.schools.performanceDistribution.good}
+                        </span>
                       </div>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
                           <div className="w-3 h-3 bg-yellow-500 rounded"></div>
                           <span className="text-sm">Average (50-70%)</span>
                         </div>
-                        <span className="text-sm font-medium">{metrics.schools.performanceDistribution.average}</span>
+                        <span className="text-sm font-medium">
+                          {metrics.schools.performanceDistribution.average}
+                        </span>
                       </div>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
                           <div className="w-3 h-3 bg-red-500 rounded"></div>
-                          <span className="text-sm">Needs Improvement ({"<"}50%)</span>
+                          <span className="text-sm">Needs Improvement ({'<'}50%)</span>
                         </div>
-                        <span className="text-sm font-medium">{metrics.schools.performanceDistribution.poor}</span>
+                        <span className="text-sm font-medium">
+                          {metrics.schools.performanceDistribution.poor}
+                        </span>
                       </div>
                     </div>
                   </CardContent>
@@ -492,7 +504,9 @@ export default function AdministrationDashboard() {
                   <CardTitle>Schools Management</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-600">School management interface will be implemented here.</p>
+                  <p className="text-gray-600">
+                    School management interface will be implemented here.
+                  </p>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -503,7 +517,9 @@ export default function AdministrationDashboard() {
                   <CardTitle>Operations Dashboard</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-600">Operations monitoring interface will be implemented here.</p>
+                  <p className="text-gray-600">
+                    Operations monitoring interface will be implemented here.
+                  </p>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -514,7 +530,9 @@ export default function AdministrationDashboard() {
                   <CardTitle>Financial Management</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-600">Financial management interface will be implemented here.</p>
+                  <p className="text-gray-600">
+                    Financial management interface will be implemented here.
+                  </p>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -525,7 +543,9 @@ export default function AdministrationDashboard() {
                   <CardTitle>Compliance & Audit</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-600">Compliance monitoring interface will be implemented here.</p>
+                  <p className="text-gray-600">
+                    Compliance monitoring interface will be implemented here.
+                  </p>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -533,5 +553,5 @@ export default function AdministrationDashboard() {
         </div>
       </div>
     </ProtectedRoute>
-  )
+  );
 }

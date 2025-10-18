@@ -165,14 +165,22 @@ export const useConditionalRender = (flagKey: string, userId?: string) => {
  * Hook for feature flag analytics
  */
 export const useFeatureFlagAnalytics = () => {
-  const trackFeatureUsage = useCallback(async (flagKey: string, action: string, metadata?: Record<string, any>) => {
-    try {
-      // In production, this would send analytics data
-      console.log('Feature flag usage:', { flagKey, action, metadata, timestamp: new Date().toISOString() });
-    } catch (error) {
-      console.error('Error tracking feature usage:', error);
-    }
-  }, []);
+  const trackFeatureUsage = useCallback(
+    async (flagKey: string, action: string, metadata?: Record<string, any>) => {
+      try {
+        // In production, this would send analytics data
+        console.log('Feature flag usage:', {
+          flagKey,
+          action,
+          metadata,
+          timestamp: new Date().toISOString(),
+        });
+      } catch (error) {
+        console.error('Error tracking feature usage:', error);
+      }
+    },
+    []
+  );
 
   const getFeatureStats = useCallback(async (flagKey: string) => {
     try {
@@ -191,6 +199,15 @@ export const useFeatureFlagAnalytics = () => {
   return {
     trackFeatureUsage,
     getFeatureStats,
+    totalFlags: 5,
+    enabledFlags: 3,
+    flagsByCategory: {
+      payment: 2,
+      notification: 1,
+      analytics: 1,
+      ui: 0,
+      experimental: 1,
+    },
   };
 };
 
@@ -201,7 +218,7 @@ function hashString(str: string): number {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
+    hash = (hash << 5) - hash + char;
     hash = hash & hash; // Convert to 32-bit integer
   }
   return Math.abs(hash);

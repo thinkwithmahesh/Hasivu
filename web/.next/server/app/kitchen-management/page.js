@@ -1616,7 +1616,7 @@ function KitchenManagementPage() {
 var __webpack_require__ = require("../../webpack-runtime.js");
 __webpack_require__.C(exports);
 var __webpack_exec__ = (moduleId) => (__webpack_require__(__webpack_require__.s = moduleId))
-var __webpack_exports__ = __webpack_require__.X(0, [7212,2947,6302,3490,3979,6254,3408,3205,9752,2107,4571,9382,1915,1145,569,1473,9423,5114,5621,2452,2663,6493], () => (__webpack_exec__(38168)));
+var __webpack_exports__ = __webpack_require__.X(0, [7212,2947,6302,3490,3979,6254,3408,3205,9752,4571,9382,2107,1915,1145,569,918,9256,8003,5114,2452,5621,2663,6493], () => (__webpack_exec__(38168)));
 module.exports = __webpack_exports__;
 
 })();

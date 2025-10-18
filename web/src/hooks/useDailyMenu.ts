@@ -54,9 +54,7 @@ export interface UseDailyMenuReturn {
 
 export const useDailyMenu = (): UseDailyMenuReturn => {
   const [currentMenu, setCurrentMenu] = useState<DailyMenuData | null>(null);
-  const [selectedDate, setSelectedDate] = useState<string>(
-    new Date().toISOString().split('T')[0]
-  );
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingWeekly] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -152,9 +150,12 @@ export const useDailyMenu = (): UseDailyMenuReturn => {
     setSelectedDate(date);
   }, []);
 
-  const refreshMenu = useCallback(async (schoolId: string) => {
-    await loadDailyMenu(schoolId, selectedDate);
-  }, [loadDailyMenu, selectedDate]);
+  const refreshMenu = useCallback(
+    async (schoolId: string) => {
+      await loadDailyMenu(schoolId, selectedDate);
+    },
+    [loadDailyMenu, selectedDate]
+  );
 
   const dismissError = useCallback(() => {
     setError(null);

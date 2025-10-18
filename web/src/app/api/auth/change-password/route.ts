@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const _LAMBDA_AUTH_CHANGE_PASSWORD_URL =
+const LAMBDA_AUTH_CHANGE_PASSWORD_URL =
   process.env.LAMBDA_AUTH_CHANGE_PASSWORD_URL ||
   'https://your-lambda-endpoint.execute-api.region.amazonaws.com/dev/auth/change-password';
 
 export async function POST(request: NextRequest) {
   try {
     // Get auth token from httpOnly cookie
-    const _authToken = request.cookies.get('auth-token')?.value;
+    const authToken = request.cookies.get('auth-token')?.value;
 
     if (!authToken) {
       return NextResponse.json(
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const _body = await request.json();
+    const body = await request.json();
 
     // Validate required fields
     if (!body.currentPassword || !body.newPassword) {
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Forward request to Lambda function
-    const _lambdaResponse = await fetch(LAMBDA_AUTH_CHANGE_PASSWORD_URL, {
+    const lambdaResponse = await fetch(LAMBDA_AUTH_CHANGE_PASSWORD_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -38,11 +38,11 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify(body),
     });
 
-    const _lambdaData = await lambdaResponse.json();
+    const lambdaData = await lambdaResponse.json();
 
     // Handle Lambda response and transform to expected frontend format
     if (lambdaResponse.ok) {
-      const _frontendResponse = {
+      const frontendResponse = {
         success: true,
         message: lambdaData.message || 'Password changed successfully',
       };

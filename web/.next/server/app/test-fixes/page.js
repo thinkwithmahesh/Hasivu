@@ -661,12 +661,10 @@ var OrderCard = __webpack_require__(30217);
                 responseData = await response.text();
             }
             if (!response.ok) {
-                const error = {
-                    message: responseData.message || responseData.error || `HTTP ${response.status}`,
-                    status: response.status,
-                    errors: responseData.errors
-                };
-                throw error;
+                const httpError = new Error(responseData.message || responseData.error || `HTTP ${response.status}`);
+                httpError.status = response.status;
+                httpError.errors = responseData.errors;
+                throw httpError;
             }
             // Return standardized response
             return {
@@ -676,26 +674,23 @@ var OrderCard = __webpack_require__(30217);
             };
         } catch (error) {
             if (error instanceof Error && error.name === "TimeoutError") {
-                throw {
-                    message: "Request timeout",
-                    status: 408
-                };
+                const timeoutError = new Error("Request timeout");
+                timeoutError.status = 408;
+                throw timeoutError;
             }
             if (error instanceof Error && error.name === "AbortError") {
-                throw {
-                    message: "Request aborted",
-                    status: 499
-                };
+                const abortError = new Error("Request aborted");
+                abortError.status = 499;
+                throw abortError;
             }
-            // Re-throw API errors
-            if (error && typeof error === "object" && "status" in error) {
+            // Re-throw API errors (they're already Error objects from earlier throws)
+            if (error && typeof error === "object" && "status" in error && error instanceof Error) {
                 throw error;
             }
             // Handle network errors
-            throw {
-                message: error instanceof Error ? error.message : "Network error",
-                status: 0
-            };
+            const networkError = new Error(error instanceof Error ? error.message : "Network error");
+            networkError.status = 0;
+            throw networkError;
         }
     }
     /**
@@ -737,11 +732,10 @@ var OrderCard = __webpack_require__(30217);
             });
             const responseData = await response.json();
             if (!response.ok) {
-                throw {
-                    message: responseData.message || "Upload failed",
-                    status: response.status,
-                    errors: responseData.errors
-                };
+                const uploadError = new Error(responseData.message || "Upload failed");
+                uploadError.status = response.status;
+                uploadError.errors = responseData.errors;
+                throw uploadError;
             }
             return {
                 data: responseData,
@@ -749,7 +743,14 @@ var OrderCard = __webpack_require__(30217);
                 message: responseData.message
             };
         } catch (error) {
-            throw error;
+            // If it's already an ApiError, re-throw it
+            if (error && typeof error === "object" && "status" in error) {
+                throw error;
+            }
+            // Otherwise wrap it in an Error object
+            const wrappedError = new Error(error instanceof Error ? error.message : "Upload error");
+            wrappedError.status = 0;
+            throw wrappedError;
         }
     }
 }
@@ -1512,7 +1513,7 @@ const __default__ = proxy.default;
 var __webpack_require__ = require("../../webpack-runtime.js");
 __webpack_require__.C(exports);
 var __webpack_exec__ = (moduleId) => (__webpack_require__(__webpack_require__.s = moduleId))
-var __webpack_exports__ = __webpack_require__.X(0, [7212,2947,6302,3490,3979,6254,3408,3205,9752,6627,2107,4612,2299,4571,9382,8028,7579,1915,569,885,1473,9423,5114,5621,5511,2452,2663,217], () => (__webpack_exec__(64475)));
+var __webpack_exports__ = __webpack_require__.X(0, [7212,2947,6302,3490,3979,6254,3408,3205,9752,6627,4612,4571,9382,8028,7579,2107,1915,2299,569,885,918,9256,8003,5114,5511,2452,5621,2663,217], () => (__webpack_exec__(64475)));
 module.exports = __webpack_exports__;
 
 })();

@@ -45,10 +45,10 @@ var module_default = /*#__PURE__*/__webpack_require__.n(app_route_module);
 var next_response = __webpack_require__(89335);
 ;// CONCATENATED MODULE: ./src/app/api/auth/forgot-password/route.ts
 
-const _LAMBDA_AUTH_FORGOT_PASSWORD_URL = process.env.LAMBDA_AUTH_FORGOT_PASSWORD_URL || "https://your-lambda-endpoint.execute-api.region.amazonaws.com/dev/auth/forgot-password";
+const LAMBDA_AUTH_FORGOT_PASSWORD_URL = process.env.LAMBDA_AUTH_FORGOT_PASSWORD_URL || "https://your-lambda-endpoint.execute-api.region.amazonaws.com/dev/auth/forgot-password";
 async function POST(request) {
     try {
-        const _body = await request.json();
+        const body = await request.json();
         // Validate required fields
         if (!body.email) {
             return next_response/* default */.Z.json({
@@ -59,7 +59,7 @@ async function POST(request) {
             });
         }
         // Forward request to Lambda function
-        const _lambdaResponse = await fetch(LAMBDA_AUTH_FORGOT_PASSWORD_URL, {
+        const lambdaResponse = await fetch(LAMBDA_AUTH_FORGOT_PASSWORD_URL, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -68,10 +68,10 @@ async function POST(request) {
             },
             body: JSON.stringify(body)
         });
-        const _lambdaData = await lambdaResponse.json();
+        const lambdaData = await lambdaResponse.json();
         // Handle Lambda response and transform to expected frontend format
         if (lambdaResponse.ok) {
-            const _frontendResponse = {
+            const frontendResponse = {
                 success: true,
                 message: lambdaData.message || "Password reset email sent successfully"
             };

@@ -1,46 +1,47 @@
 /**
  * HASIVU Design System - Production-Ready Design Tokens
- * 🎨 Brand Colors: Vibrant Blue (#2563eb), Deep Green (#16a34a)
+ * 🎨 Brand Colors: HASIVU Orange (#FF6B35) Primary | Green (#4CAF50) Secondary
  * 🏛️ Enterprise UI System for School Meal Management Platform
  * ♿ WCAG 2.1 AA Compliant | 📱 Mobile-First Responsive
  */
 
 // Core brand colors with semantic meanings
 export const colors = {
-  // Primary brand colors
+  // Primary brand colors - HASIVU Orange
   primary: {
-    50: '#eff6ff',
-    100: '#dbeafe',
-    200: '#bfdbfe',
-    300: '#93c5fd',
-    400: '#60a5fa',
-    500: '#2563eb', // Primary vibrant blue
-    600: '#2563eb',
-    700: '#1d4ed8',
-    800: '#1e40af',
-    900: '#1e3a8a',
-    950: '#172554',
+    50: '#FFF7ED',
+    100: '#FFEDD5',
+    200: '#FED7AA',
+    300: '#FDBA74',
+    400: '#FB923C',
+    500: '#FF6B35', // HASIVU Primary Orange
+    600: '#EA580C',
+    700: '#C2410C',
+    800: '#9A3412',
+    900: '#7C2D12',
+    950: '#431407',
   },
 
+  // Secondary brand colors - HASIVU Green
   secondary: {
-    50: '#f0fdf4',
-    100: '#dcfce7',
-    200: '#bbf7d0',
-    300: '#86efac',
-    400: '#4ade80',
-    500: '#16a34a', // Primary deep green
-    600: '#16a34a',
-    700: '#15803d',
-    800: '#166534',
-    900: '#14532d',
-    950: '#052e16',
+    50: '#E8F5E8',
+    100: '#C8E6C8',
+    200: '#A5D6A7',
+    300: '#81C784',
+    400: '#66BB6A',
+    500: '#4CAF50', // HASIVU Secondary Green
+    600: '#43A047',
+    700: '#388E3C',
+    800: '#2E7D32',
+    900: '#1B5E20',
+    950: '#0D4713',
   },
 
   // Semantic colors
-  success: '#16a34a',
+  success: '#4CAF50',
   warning: '#f59e0b',
   error: '#dc2626',
-  info: '#2563eb',
+  info: '#2196F3',
 
   // Neutral grays
   gray: {
@@ -60,11 +61,11 @@ export const colors = {
   // Role-based colors for different user types
   roles: {
     admin: '#dc2626',
-    teacher: '#2563eb',
-    parent: '#16a34a',
+    teacher: '#2196F3',
+    parent: '#4CAF50',
     student: '#f59e0b',
     vendor: '#7c3aed',
-    kitchen: '#ea580c',
+    kitchen: '#FF6B35',
     schoolAdmin: '#1e293b',
   },
 } as const;
@@ -345,12 +346,12 @@ export const utils = {
 
 // CSS custom properties for runtime theming
 export const cssVariables = {
-  '--color-primary': colors.primary[500],
-  '--color-secondary': colors.secondary[500],
+  '--color-primary': colors.primary[500], // HASIVU Orange #FF6B35
+  '--color-secondary': colors.secondary[500], // HASIVU Green #4CAF50
   '--color-success': colors.success,
   '--color-warning': colors.warning,
   '--color-error': colors.error,
-  '--color-info': colors.info,
+  '--color-info': colors.info, // HASIVU Blue #2196F3
 
   '--color-gray-50': colors.gray[50],
   '--color-gray-100': colors.gray[100],
