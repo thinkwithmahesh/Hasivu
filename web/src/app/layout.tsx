@@ -4,6 +4,7 @@ import { Toaster } from '@/components/ui/sonner';
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import { ReduxProvider } from '@/components/providers/redux-provider';
 import { AuthProvider } from '@/contexts/auth-context';
+import { CartProvider } from '@/contexts/CartContext';
 import { AccessibilityProvider } from '@/components/accessibility/AccessibilityProvider';
 import PaperShadersBackground from '@/components/ui/paper-shaders-background';
 import {
@@ -114,52 +115,69 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         className={`${inter.className} font-sans antialiased bg-gradient-to-br from-hasivu-primary-25 via-white to-hasivu-secondary-25 selection:bg-hasivu-primary-100 selection:text-hasivu-primary-900`}
       >
         <PaperShadersBackground />
+        {/*
+          Provider Hierarchy Explanation:
+
+          1. ReduxProvider: Global state management (outermost)
+          2. AuthProvider: Authentication context for user state
+          3. CartProvider: Shopping cart state (requires auth context, client-side only)
+          4. AccessibilityProvider: Accessibility features
+          5. ThemeProvider: Theme switching and styling (innermost)
+
+          This order ensures:
+          - Cart operations can access user authentication state
+          - Cart state is available throughout the app (all routes)
+          - Client-side operations (localStorage) happen after proper hydration
+          - No conflicts with theme or accessibility providers
+        */}
         <ReduxProvider>
           <AuthProvider>
-            <AccessibilityProvider>
-              <ThemeProvider
-                attribute="class"
-                defaultTheme="light"
-                enableSystem
-                disableTransitionOnChange
-              >
-                {/* Skip to main content for accessibility */}
-                <a
-                  href="#main-content"
-                  className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 z-50 bg-hasivu-primary-600 text-white px-4 py-2 rounded-md font-medium hover:bg-hasivu-primary-700 transition-colors"
+            <CartProvider>
+              <AccessibilityProvider>
+                <ThemeProvider
+                  attribute="class"
+                  defaultTheme="light"
+                  enableSystem
+                  disableTransitionOnChange
                 >
-                  Skip to main content
-                </a>
+                  {/* Skip to main content for accessibility */}
+                  <a
+                    href="#main-content"
+                    className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 z-50 bg-hasivu-primary-600 text-white px-4 py-2 rounded-md font-medium hover:bg-hasivu-primary-700 transition-colors"
+                  >
+                    Skip to main content
+                  </a>
 
-                <div className="min-h-screen relative flex flex-col">
-                  {/* Main content area */}
-                  <main id="main-content" className="flex-1" tabIndex={-1}>
-                    {children}
-                  </main>
+                  <div className="min-h-screen relative flex flex-col">
+                    {/* Main content area */}
+                    <main id="main-content" className="flex-1" tabIndex={-1}>
+                      {children}
+                    </main>
 
-                  {/* Footer spacer for mobile navigation */}
-                  <div className="pb-safe-bottom" />
-                </div>
+                    {/* Footer spacer for mobile navigation */}
+                    <div className="pb-safe-bottom" />
+                  </div>
 
-                {/* Toast notifications with HASIVU styling */}
-                <Toaster
-                  richColors
-                  position="top-right"
-                  toastOptions={{
-                    duration: 4000,
-                    style: {
-                      background: 'white',
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '0.75rem',
-                      padding: '16px',
-                      fontSize: '14px',
-                      fontFamily: 'inherit',
-                    },
-                    className: 'shadow-lg',
-                  }}
-                />
-              </ThemeProvider>
-            </AccessibilityProvider>
+                  {/* Toast notifications with HASIVU styling */}
+                  <Toaster
+                    richColors
+                    position="top-right"
+                    toastOptions={{
+                      duration: 4000,
+                      style: {
+                        background: 'white',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '0.75rem',
+                        padding: '16px',
+                        fontSize: '14px',
+                        fontFamily: 'inherit',
+                      },
+                      className: 'shadow-lg',
+                    }}
+                  />
+                </ThemeProvider>
+              </AccessibilityProvider>
+            </CartProvider>
           </AuthProvider>
         </ReduxProvider>
       </body>

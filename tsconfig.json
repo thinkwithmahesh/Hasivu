@@ -61,6 +61,7 @@
     "coverage",
     "build",
     ".next",
+    "scripts/archived/**/*",
     "scripts/run-performance-tests.ts",
     "scripts/business-continuity-dashboard.ts",
     "scripts/disaster-recovery-validator.ts",

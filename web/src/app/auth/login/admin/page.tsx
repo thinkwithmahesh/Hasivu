@@ -31,7 +31,7 @@ const SafariCompatibleLoginForm = dynamic(
 );
 
 // Helper function to get dashboard URL based on role
-function getDashboardUrl(role: string): string {role: string): string {
+function getDashboardUrl(role: string): string {
   const dashboardUrls: Record<string, string> = {
     admin: '/dashboard/admin',
     teacher: '/dashboard/teacher',

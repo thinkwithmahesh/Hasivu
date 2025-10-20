@@ -26,7 +26,10 @@ export class APIGateway {
     logger.info('APIGateway stopped');
   }
 
-  async routeRequest(path: string, data: Record<string, unknown>): Promise<Record<string, unknown>> {
+  async routeRequest(
+    path: string,
+    data: Record<string, unknown>
+  ): Promise<Record<string, unknown>> {
     logger.info('Routing request', { path });
     return { success: true, data };
   }
