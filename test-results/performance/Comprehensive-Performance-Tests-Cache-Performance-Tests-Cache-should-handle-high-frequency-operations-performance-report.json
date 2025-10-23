@@ -1,0 +1,189 @@
+{
+  "testName": "Comprehensive Performance Tests Cache Performance Tests Cache should handle high-frequency operations",
+  "timestamp": "2025-10-23T09:42:44.414Z",
+  "metrics": [
+    {
+      "responseTime": 9.900875000050291,
+      "throughput": 0,
+      "errorRate": 1,
+      "memoryUsage": 76.90744018554688,
+      "cpuUsage": 0,
+      "timestamp": 1761212563153,
+      "endpoint": "/api/health",
+      "testType": "response-time",
+      "userLoad": 1
+    },
+    {
+      "responseTime": 1.280333999893628,
+      "throughput": 0,
+      "errorRate": 1,
+      "memoryUsage": 78.28207397460938,
+      "cpuUsage": 0,
+      "timestamp": 1761212563155,
+      "endpoint": "/api/auth/profile",
+      "testType": "response-time",
+      "userLoad": 1
+    },
+    {
+      "responseTime": 1.1090420000255108,
+      "throughput": 0,
+      "errorRate": 1,
+      "memoryUsage": 79.6509017944336,
+      "cpuUsage": 0,
+      "timestamp": 1761212563156,
+      "endpoint": "/api/menu/items",
+      "testType": "response-time",
+      "userLoad": 1
+    },
+    {
+      "responseTime": 0.9886669999687001,
+      "throughput": 0,
+      "errorRate": 1,
+      "memoryUsage": 81.02642059326172,
+      "cpuUsage": 0,
+      "timestamp": 1761212563157,
+      "endpoint": "/api/orders",
+      "testType": "response-time",
+      "userLoad": 1
+    },
+    {
+      "responseTime": 2.3957500000251457,
+      "throughput": 0,
+      "errorRate": 1,
+      "memoryUsage": 81.82622528076172,
+      "cpuUsage": 0,
+      "timestamp": 1761212563164,
+      "endpoint": "/api/auth/profile",
+      "testType": "response-time",
+      "userLoad": 1
+    },
+    {
+      "responseTime": 5.225040999939665,
+      "throughput": 0,
+      "errorRate": 1,
+      "memoryUsage": 82.74015808105469,
+      "cpuUsage": 0,
+      "timestamp": 1761212563165,
+      "endpoint": "/api/auth/login",
+      "testType": "response-time",
+      "userLoad": 1
+    },
+    {
+      "responseTime": 2.7295000000158325,
+      "throughput": 0,
+      "errorRate": 1,
+      "memoryUsage": 83.14893341064453,
+      "cpuUsage": 0,
+      "timestamp": 1761212563165,
+      "endpoint": "/api/auth/refresh",
+      "testType": "response-time",
+      "userLoad": 1
+    },
+    {
+      "responseTime": 3.417875000042841,
+      "throughput": 0,
+      "errorRate": 1,
+      "memoryUsage": 87.65430450439453,
+      "cpuUsage": 0,
+      "timestamp": 1761212563169,
+      "endpoint": "/api/menu/items",
+      "testType": "response-time",
+      "userLoad": 1
+    },
+    {
+      "responseTime": 3.757458999985829,
+      "throughput": 0,
+      "errorRate": 1,
+      "memoryUsage": 88.62367248535156,
+      "cpuUsage": 0,
+      "timestamp": 1761212563170,
+      "endpoint": "/api/menu/categories",
+      "testType": "response-time",
+      "userLoad": 1
+    },
+    {
+      "responseTime": 3.1347500000847504,
+      "throughput": 0,
+      "errorRate": 1,
+      "memoryUsage": 89.03941345214844,
+      "cpuUsage": 0,
+      "timestamp": 1761212563170,
+      "endpoint": "/api/menu/daily",
+      "testType": "response-time",
+      "userLoad": 1
+    },
+    {
+      "responseTime": 2.4475829999428242,
+      "throughput": 0,
+      "errorRate": 1,
+      "memoryUsage": 87.58470916748047,
+      "cpuUsage": 0,
+      "timestamp": 1761212563175,
+      "endpoint": "/api/orders",
+      "testType": "response-time",
+      "userLoad": 1
+    },
+    {
+      "responseTime": 2.73762499995064,
+      "throughput": 0,
+      "errorRate": 1,
+      "memoryUsage": 88.48822021484375,
+      "cpuUsage": 0,
+      "timestamp": 1761212563176,
+      "endpoint": "/api/orders/123",
+      "testType": "response-time",
+      "userLoad": 1
+    },
+    {
+      "responseTime": 2.6480410000076517,
+      "throughput": 0,
+      "errorRate": 1,
+      "memoryUsage": 88.89381408691406,
+      "cpuUsage": 0,
+      "timestamp": 1761212563176,
+      "endpoint": "/api/orders",
+      "testType": "response-time",
+      "userLoad": 1
+    },
+    {
+      "responseTime": 5.7801670000189915,
+      "throughput": 0,
+      "errorRate": 1,
+      "memoryUsage": 88.0410385131836,
+      "cpuUsage": 0,
+      "timestamp": 1761212563183,
+      "endpoint": "/api/health",
+      "testType": "response-time",
+      "userLoad": 1
+    },
+    {
+      "responseTime": 5.357875000103377,
+      "throughput": 0,
+      "errorRate": 1,
+      "memoryUsage": 88.94549560546875,
+      "cpuUsage": 0,
+      "timestamp": 1761212563184,
+      "endpoint": "/api/health/basic",
+      "testType": "response-time",
+      "userLoad": 1
+    },
+    {
+      "responseTime": 4.849874999956228,
+      "throughput": 0,
+      "errorRate": 1,
+      "memoryUsage": 89.34886932373047,
+      "cpuUsage": 0,
+      "timestamp": 1761212563184,
+      "endpoint": "/api/health/live",
+      "testType": "response-time",
+      "userLoad": 1
+    }
+  ],
+  "alerts": [],
+  "summary": {
+    "averageResponseTime": 3.610028687500744,
+    "maxResponseTime": 9.900875000050291,
+    "totalRequests": 16,
+    "errorRate": 100
+  }
+}

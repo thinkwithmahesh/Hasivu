@@ -17,7 +17,7 @@ import {
   Star,
   Sparkles,
 } from 'lucide-react';
-import { hasivuApiService } from '../services/hasivu-api.service';
+import { hasiviApi } from '../services/api/hasivu-api.service';
 import { toast } from 'react-hot-toast';
 
 interface OnboardingStep {
@@ -286,23 +286,23 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
 
     switch (stepId) {
       case 'school_info':
-        await hasivuApiService.updateSchoolInfo(schoolInfo);
+        await hasiviApi.updateSchoolInfo(schoolInfo);
         break;
       case 'user_setup':
-        await hasivuApiService.updateUserProfile(userSetup);
+        await hasiviApi.updateUserProfile(userSetup);
         break;
       case 'payment_config':
-        await hasivuApiService.updatePaymentConfig(paymentConfig);
+        await hasiviApi.updateSchoolConfiguration(paymentConfig);
         break;
       case 'rfid_setup':
-        await hasivuApiService.updateRFIDConfig(rfidSetup);
+        await hasiviApi.configureRFIDSystem(rfidSetup);
         break;
     }
   };
 
   const completeOnboarding = async () => {
     try {
-      await hasivuApiService.completeOnboarding({
+      await hasiviApi.completeOnboarding({
         schoolInfo,
         userSetup,
         paymentConfig,

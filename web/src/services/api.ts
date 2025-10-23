@@ -3,11 +3,20 @@ import axios, { AxiosInstance, AxiosResponse, AxiosError } from 'axios';
 
 // API Configuration
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001/api';
+const API_BASEURL = API_BASE_URL; // For backward compatibility
+
+// Export API_CONFIG for backward compatibility
+export const API_CONFIG = {
+  BASE_URL: API_BASE_URL,
+  STAGE: process.env.NEXT_PUBLIC_STAGE || 'dev',
+  TIMEOUT: 30000,
+  RETRY_ATTEMPTS: 3,
+};
 const WS_BASE_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:3001/ws';
 
 // Create axios instance with default configuration
-const apiClient: AxiosInstance = axios.create({
-  baseURL: API_BASE_URL,
+export const apiClient: AxiosInstance = axios.create({
+  baseURL: API_BASEURL,
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
@@ -1017,4 +1026,8 @@ export const checkApiHealth = async (): Promise<boolean> => {
   }
 };
 
+// Export apiClient as default for backward compatibility
 export default apiClient;
+
+// Also export as named export
+export { apiClient as api };

@@ -103,9 +103,12 @@ const nextConfig = {
   swcMinify: true,
 
   compiler: {
-    removeConsole: process.env.NODE_ENV === 'production' ? {
-      exclude: ['error', 'warn']
-    } : false,
+    removeConsole:
+      process.env.NODE_ENV === 'production'
+        ? {
+            exclude: ['error', 'warn'],
+          }
+        : false,
   },
 
   experimental: {
@@ -272,6 +275,7 @@ echo "See PERFORMANCE_IMPLEMENTATION_GUIDE.md for detailed instructions"
 ```
 
 Make executable:
+
 ```bash
 chmod +x scripts/install-performance-tools.sh
 ./scripts/install-performance-tools.sh
@@ -391,6 +395,7 @@ npm install @vercel/analytics
 ```
 
 Update `app/layout.tsx`:
+
 ```tsx
 import { Analytics } from '@vercel/analytics/react';
 
@@ -411,6 +416,7 @@ export default function RootLayout({ children }) {
 Already configured in `<PerformanceMonitor />` component.
 
 Add to `.env.local`:
+
 ```
 NEXT_PUBLIC_GA_ID=G-XXXXXXXXXX
 ```
@@ -430,12 +436,14 @@ NEXT_PUBLIC_GA_ID=G-XXXXXXXXXX
 7. ⏳ Phase 3: Remove MUI and Mantine dependencies
 
 **Expected Timeline**:
+
 - Setup: 30 minutes
 - Phase 1: 2-3 days
 - Phase 2: 3-4 days
 - Phase 3: 8-10 days
 
 **Total Improvement**:
+
 - Bundle size: -44% (850KB → 480KB)
 - Load time: -40% (4.2s → 2.5s LCP)
 - Dependencies: -47% (1500 → 800 packages)

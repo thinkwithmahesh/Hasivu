@@ -64,3 +64,12 @@ export const performanceUtils = {
     }) as T;
   },
 };
+
+// Default export for backward compatibility
+export default {
+  numberUtils,
+  stringUtils,
+  arrayUtils,
+  dateUtils,
+  performanceUtils,
+};

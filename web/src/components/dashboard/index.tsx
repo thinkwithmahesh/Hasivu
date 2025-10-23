@@ -17,8 +17,8 @@ import React, { useState, useEffect, Suspense } from 'react';
 import {
   Card,
   CardContent,
-  CardHeader as _CardHeader,
-  CardTitle as _CardTitle,
+  CardHeader as CardHeader,
+  CardTitle as CardTitle,
 } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';

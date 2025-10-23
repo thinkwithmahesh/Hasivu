@@ -22,7 +22,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { _Separator } from '@/components/ui/separator';
+import { Separator } from '@/components/ui/separator';
 import {
   CreditCard,
   Lock,
@@ -30,11 +30,11 @@ import {
   CheckCircle,
   AlertTriangle,
   Loader2,
-  _IndianRupee,
-  _Calendar,
-  _User,
-  _Phone,
-  _Mail,
+  IndianRupee,
+  Calendar,
+  User,
+  Phone,
+  Mail,
 } from 'lucide-react';
 import { PaymentService } from '@/services/payment.service';
 import { cn } from '@/lib/utils';
@@ -61,7 +61,7 @@ interface PaymentMethod {
   fee?: number;
 }
 
-const PAYMENT_METHODS: PaymentMethod[] = [
+const PAYMENTMETHODS: PaymentMethod[] = [
   {
     id: 'card',
     type: 'card',
@@ -308,7 +308,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
             onValueChange={setSelectedMethod}
             className="mt-3 space-y-3"
           >
-            {PAYMENT_METHODS.map(method => (
+            {PAYMENTMETHODS.map(method => (
               <div key={method.id} className="flex items-center space-x-3">
                 <RadioGroupItem value={method.id} id={method.id} />
                 <Label

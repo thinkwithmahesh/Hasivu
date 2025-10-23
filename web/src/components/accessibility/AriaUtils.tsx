@@ -272,7 +272,7 @@ export function Tabs({ tabs, defaultTab, onChange, className }: TabsProps) {
         aria-labelledby={`${tablistId}-label`}
         className="flex border-b border-gray-200"
       >
-        <ScreenReaderOnly id={`${tablistId}-label`}>Tab navigation</ScreenReaderOnly>
+        <ScreenReaderOnly>Tab navigation</ScreenReaderOnly>
         {tabs.map(tab => (
           <button
             key={tab.id}

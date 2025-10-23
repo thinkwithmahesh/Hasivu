@@ -6,15 +6,24 @@ export { default as BottomNavigation } from './BottomNavigation';
 export { default as MobileHeader } from './MobileHeader';
 export { default as MobileNavigation } from './MobileNavigation';
 // Touch-Optimized Components
-export { default as TouchOptimized } from './TouchOptimized';
+export { TouchContainer, PullToRefresh, TouchInput } from './TouchOptimized';
 export { default as SwipeableCard } from './SwipeableCard';
 // PWA Features
-export { default as PWAFeatures } from './PWAFeatures';
+export {
+  PWAInstallPrompt,
+  OfflineStatus,
+  NotificationPermission,
+  NetworkStatusIndicator,
+  BackgroundSyncStatus,
+  ShareButton,
+  EmergencyBanner,
+  QuickRFIDDisplay,
+} from './PWAFeatures';
 // Loading States
 export { default as LoadingSkeleton } from './LoadingSkeleton';
 // Enhanced Mobile Components (v2)
-export { PWAEnhanced } from './PWAEnhanced';
-export { TouchGestures } from './TouchGestures';
-export { MobileOptimizations } from './MobileOptimizations';
-export { OfflineQueue } from './OfflineQueue';
-export { MobilePushNotifications } from './MobilePushNotifications';
+// export { default as PWAEnhanced } from './PWAEnhanced';
+// export { default as TouchGestures } from './TouchGestures';
+// export { default as MobileOptimizations } from './MobileOptimizations';
+// export { default as OfflineQueue } from './OfflineQueue';
+// export { usePushNotifications } from './MobilePushNotifications';

@@ -288,7 +288,7 @@ export function LoginForm({
                 <Link
                   href="/auth/forgot-password"
                   data-testid="forgot-password-link"
-                  className="text-sm text-primary-600 hover:text-primary-500 focus:outline-none focus:underline"
+                  className="text-sm text-blue-600 hover:text-blue-700 focus:outline-none focus:underline"
                 >
                   Forgot password?
                 </Link>
@@ -298,7 +298,7 @@ export function LoginForm({
             <Button
               type="submit"
               data-testid="login-button"
-              className="w-full bg-primary-600 hover:bg-primary-700 text-white font-medium py-2.5"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5"
               disabled={isLoading}
               size="lg"
             >
@@ -380,7 +380,7 @@ export function LoginForm({
           <Link
             href="/auth/register"
             data-testid="signup-link"
-            className="text-primary-600 hover:text-primary-500 font-medium focus:outline-none focus:underline"
+            className="text-blue-600 hover:text-blue-700 font-medium focus:outline-none focus:underline"
           >
             Sign up for free
           </Link>

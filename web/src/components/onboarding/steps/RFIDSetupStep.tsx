@@ -17,7 +17,7 @@ import {
   Shield,
   MapPin,
   CreditCard,
-  _Eye,
+  Eye,
   Plus,
   Minus,
   AlertTriangle,
@@ -32,13 +32,14 @@ import {
   Camera,
   Zap,
   UserCheck,
-  _Clock,
+  Clock,
   Signal,
   Database,
-  _Settings,
+  Settings,
   Award,
   Target,
-  _TrendingUp,
+  TrendingUp,
+  Bell,
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 

@@ -18,24 +18,22 @@ export interface OrderCancellationResponse {
 }
 
 // Order status types
-export type _OrderStatus =
+export type OrderStatus =
   | 'pending'
   | 'confirmed'
   | 'preparing'
   | 'ready'
   | 'delivered'
-  | 'cancelled';
+  | 'cancelled'
+  | 'out_for_delivery';
 
-export type _PaymentStatus = 'pending' | 'completed' | 'failed' | 'refunded';
+export type PaymentStatus = 'pending' | 'completed' | 'failed' | 'refunded';
 
 // Order item interface
 export interface OrderItem {
-  id: string;
-  name: string;
+  menuItemId: string;
   quantity: number;
   price: number;
-  image?: string;
-  customizations?: string[];
 }
 
 // Order status history entry

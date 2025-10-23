@@ -1,4 +1,4 @@
-import { createSlice, PayloadAction as _PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction as PayloadAction } from '@reduxjs/toolkit';
 
 export interface NotificationState {
   notifications: any[];

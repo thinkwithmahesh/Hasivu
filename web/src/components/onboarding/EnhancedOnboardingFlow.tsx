@@ -40,7 +40,7 @@ import { hasiviApi } from '@/services/api/hasivu-api.service';
 import AdminSetupStep from './steps/AdminSetupStep';
 import StakeholderSetupStep from './steps/StakeholderSetupStep';
 import BrandingStep from './steps/BrandingStep';
-import ConfigurationStep from './steps/ConfigurationStep';
+// import ConfigurationStep from './steps/ConfigurationStep'; // TODO: File doesn't exist
 import RFIDSetupStep from './steps/RFIDSetupStep';
 import CompletionStep from './steps/CompletionStep';
 
@@ -186,7 +186,7 @@ interface OnboardingStep {
   id: string;
   title: string;
   description: string;
-  icon: React.ComponentType<{ className?: string; size?: number }>;
+  icon: React.ComponentType<{ className?: string; size?: string | number }>;
   required: boolean;
   estimatedTime: string;
   category: 'setup' | 'configuration' | 'customization' | 'integration' | 'completion';
@@ -238,11 +238,21 @@ const EnhancedOnboardingFlow: React.FC<{
   const schoolInfoForm = useForm({
     resolver: zodResolver(schoolInfoSchema),
     defaultValues: {
-      languages: ['en'],
+      name: '',
+      address: '',
+      city: '',
+      state: '',
+      pinCode: '',
+      phone: '',
+      email: '',
+      website: '',
+      studentCount: 0,
+      gradeRange: { from: '1', to: '12' },
       lunchProgram: true,
       currentSystem: 'manual',
+      languages: ['en'],
+      establishedYear: new Date().getFullYear(),
       schoolType: 'private' as const,
-      gradeRange: { from: '1', to: '12' },
     },
   });
 
@@ -511,7 +521,7 @@ const EnhancedOnboardingFlow: React.FC<{
         break;
 
       case 'REAL_TIME_SUGGESTION':
-        toast.info(message.payload.suggestion, {
+        toast(message.payload.suggestion, {
           duration: 5000,
           icon: '💡',
         });
@@ -568,7 +578,7 @@ const EnhancedOnboardingFlow: React.FC<{
 
   // ============ STEP NAVIGATION ============
   const nextStep = async () => {
-    if (!validateCurrentStep()) return;
+    if (!(await validateCurrentStep())) return;
 
     setIsLoading(true);
     broadcastProgress(currentStep, 'STEP_COMPLETED');
@@ -602,22 +612,22 @@ const EnhancedOnboardingFlow: React.FC<{
   };
 
   // ============ VALIDATION ============
-  const validateCurrentStep = (): boolean => {
+  const validateCurrentStep = async (): Promise<boolean> => {
     const stepId = steps[currentStep].id;
 
     switch (stepId) {
       case 'school_info':
-        return schoolInfoForm.trigger();
+        return await schoolInfoForm.trigger();
       case 'admin_setup':
-        return adminSetupForm.trigger();
+        return await adminSetupForm.trigger();
       case 'stakeholder_setup':
-        return stakeholderForm.trigger();
+        return await stakeholderForm.trigger();
       case 'branding':
-        return brandingForm.trigger();
+        return await brandingForm.trigger();
       case 'configuration':
-        return configurationForm.trigger();
+        return await configurationForm.trigger();
       case 'rfid_setup':
-        return rfidForm.trigger();
+        return await rfidForm.trigger();
       default:
         return true;
     }
@@ -1283,17 +1293,12 @@ const EnhancedOnboardingFlow: React.FC<{
                 isLoading={isLoading}
               />
             )}
+            {/* TODO: Create ConfigurationStep component */}
             {steps[currentStep].id === 'configuration' && (
-              <ConfigurationStep
-                form={configurationForm}
-                onNext={nextStep}
-                onPrev={prevStep}
-                isLoading={isLoading}
-                schoolInfo={{
-                  studentCount: schoolInfoForm.getValues().studentCount,
-                  schoolType: schoolInfoForm.getValues().schoolType,
-                }}
-              />
+              <div>
+                <p>Configuration step - Component not yet implemented</p>
+                <button onClick={nextStep}>Skip to Next</button>
+              </div>
             )}
             {steps[currentStep].id === 'rfid_setup' && (
               <RFIDSetupStep

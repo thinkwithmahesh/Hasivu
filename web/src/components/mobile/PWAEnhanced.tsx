@@ -103,9 +103,10 @@ export const useNetworkStatus = () => {
     };
 
     const updateConnectionInfo = () => {
-      // @ts-ignore - connection is not in TypeScript definitions
       const connection =
-        navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+        (navigator as any).connection ||
+        (navigator as any).mozConnection ||
+        (navigator as any).webkitConnection;
 
       if (connection) {
         setConnectionType(connection.type || 'unknown');
@@ -118,9 +119,10 @@ export const useNetworkStatus = () => {
     window.addEventListener('online', updateOnlineStatus);
     window.addEventListener('offline', updateOnlineStatus);
 
-    // @ts-ignore
     const connection =
-      navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+      (navigator as any).connection ||
+      (navigator as any).mozConnection ||
+      (navigator as any).webkitConnection;
     if (connection) {
       connection.addEventListener('change', updateConnectionInfo);
     }
@@ -183,7 +185,7 @@ export const usePushNotifications = () => {
 
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+        applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLICKEY,
       });
 
       setSubscription(subscription);
@@ -601,7 +603,7 @@ export const CacheManagement: React.FC<CacheManagementProps> = ({ className }) =
             {Object.entries(cacheStatus.caches).map(([name, count]) => (
               <div key={name} className="flex justify-between p-2 bg-gray-50 rounded">
                 <span className="truncate">{name.replace('hasivu-', '')}</span>
-                <span className="font-mono">{count}</span>
+                <span className="font-mono">{String(count)}</span>
               </div>
             ))}
           </div>

@@ -153,12 +153,12 @@ export const AutoFocus: React.FC<AutoFocusProps> = ({ children, disabled = false
 
   return React.cloneElement(children, {
     ref: (node: HTMLElement) => {
-      ref.current = node;
+      (ref as React.MutableRefObject<HTMLElement | null>).current = node;
       // Preserve existing ref if any
-      if (typeof children.ref === 'function') {
-        children.ref(node);
-      } else if (children.ref) {
-        children.ref.current = node;
+      if (typeof (children as any).ref === 'function') {
+        (children as any).ref(node);
+      } else if ((children as any).ref) {
+        ((children as any).ref as React.MutableRefObject<HTMLElement | null>).current = node;
       }
     },
   });

@@ -46,7 +46,7 @@ export function MealSearchCommand({
         meal =>
           meal.name.toLowerCase().includes(searchValue.toLowerCase()) ||
           meal.description.toLowerCase().includes(searchValue.toLowerCase()) ||
-          meal.ingredients.some(ingredient =>
+          (meal.nutritionalInfo?.ingredients || []).some(ingredient =>
             ingredient.toLowerCase().includes(searchValue.toLowerCase())
           )
       );
@@ -71,7 +71,7 @@ export function MealSearchCommand({
 
   const handleMealSelect = (meal: MealItem) => {
     onMealSelect(meal);
-    onOpenChange(false);
+    _onOpenChange(false);
     setSearchValue('');
   };
 
@@ -81,7 +81,6 @@ export function MealSearchCommand({
         placeholder="Search meals, ingredients, or dietary preferences..."
         value={searchValue}
         onValueChange={setSearchValue}
-        icon={Search}
         className="h-12"
       />
       <CommandList className="max-h-[400px]">
@@ -105,9 +104,9 @@ export function MealSearchCommand({
                   <div className="flex items-start gap-3">
                     {/* Meal Image */}
                     <div className="relative h-16 w-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                      {meal.image ? (
+                      {meal.imageUrl ? (
                         <img
-                          src={meal.image}
+                          src={meal.imageUrl}
                           alt={meal.name}
                           className="h-full w-full object-cover"
                         />
@@ -119,7 +118,7 @@ export function MealSearchCommand({
                       {/* Availability indicator */}
                       <div
                         className={`absolute top-1 right-1 h-3 w-3 rounded-full ${
-                          meal.available ? 'bg-green-500' : 'bg-red-500'
+                          meal.isAvailable ? 'bg-green-500' : 'bg-red-500'
                         }`}
                       />
                     </div>
@@ -147,13 +146,13 @@ export function MealSearchCommand({
                           </Badge>
                         )}
 
-                        {meal.nutritionInfo?.calories && (
+                        {meal.nutritionalInfo?.calories && (
                           <Badge variant="outline" className="text-xs px-1.5 py-0.5 h-5">
-                            {meal.nutritionInfo.calories} cal
+                            {meal.nutritionalInfo.calories} cal
                           </Badge>
                         )}
 
-                        {meal.dietaryInfo?.vegetarian && (
+                        {meal.dietaryType === 'vegetarian' && (
                           <Badge
                             variant="outline"
                             className="text-xs px-1.5 py-0.5 h-5 text-green-600"

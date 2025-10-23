@@ -15,6 +15,57 @@ export enum UserRole {
   SUPER_ADMIN = 'super_admin',
 }
 
+// Role configuration for UI display
+export interface RoleConfig {
+  label: string;
+  description?: string;
+  defaultRoute?: string;
+}
+
+// Configuration mapping for each user role
+export const USER_ROLE_CONFIG: Record<UserRole, RoleConfig> = {
+  [UserRole.ADMIN]: {
+    label: 'Admin',
+    description: 'Platform administrator',
+    defaultRoute: '/admin/dashboard',
+  },
+  [UserRole.SCHOOL_ADMIN]: {
+    label: 'School Admin',
+    description: 'School-level administrator',
+    defaultRoute: '/school-admin/dashboard',
+  },
+  [UserRole.TEACHER]: {
+    label: 'Teacher',
+    description: 'Teaching staff',
+    defaultRoute: '/teacher/dashboard',
+  },
+  [UserRole.PARENT]: {
+    label: 'Parent',
+    description: 'Parent or guardian',
+    defaultRoute: '/menu',
+  },
+  [UserRole.STUDENT]: {
+    label: 'Student',
+    description: 'Student',
+    defaultRoute: '/student/dashboard',
+  },
+  [UserRole.VENDOR]: {
+    label: 'Vendor',
+    description: 'Food vendor or supplier',
+    defaultRoute: '/vendor/dashboard',
+  },
+  [UserRole.KITCHEN_STAFF]: {
+    label: 'Kitchen',
+    description: 'Kitchen staff',
+    defaultRoute: '/kitchen/dashboard',
+  },
+  [UserRole.SUPER_ADMIN]: {
+    label: 'Super Admin',
+    description: 'Super administrator',
+    defaultRoute: '/super-admin/dashboard',
+  },
+};
+
 // Permission types for role-based access control
 export enum Permission {
   // User management
@@ -73,127 +124,127 @@ export enum Permission {
 export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   [UserRole.ADMIN]: [
     // Full system access
-    Permission.ADMIN_ACCESS,
-    Permission.MANAGE_USERS,
-    Permission.READ_USERS,
-    Permission.WRITE_USERS,
-    Permission.DELETE_USERS,
-    Permission.READ_ORDERS,
-    Permission.WRITE_ORDERS,
-    Permission.DELETE_ORDERS,
-    Permission.UPDATE_ORDER_STATUS,
-    Permission.READ_MENU,
-    Permission.WRITE_MENU,
-    Permission.MANAGE_MENU,
-    Permission.READ_PAYMENTS,
-    Permission.WRITE_PAYMENTS,
-    Permission.PROCESS_PAYMENTS,
-    Permission.READ_ANALYTICS,
-    Permission.VIEW_REPORTS,
-    Permission.EXPORT_DATA,
-    Permission.SYSTEM_SETTINGS,
-    Permission.SEND_NOTIFICATIONS,
-    Permission.VIEW_NOTIFICATIONS,
+    Permission.ADMINACCESS,
+    Permission.MANAGEUSERS,
+    Permission.READUSERS,
+    Permission.WRITEUSERS,
+    Permission.DELETEUSERS,
+    Permission.READORDERS,
+    Permission.WRITEORDERS,
+    Permission.DELETEORDERS,
+    Permission.UPDATE_ORDERSTATUS,
+    Permission.READMENU,
+    Permission.WRITEMENU,
+    Permission.MANAGEMENU,
+    Permission.READPAYMENTS,
+    Permission.WRITEPAYMENTS,
+    Permission.PROCESSPAYMENTS,
+    Permission.READANALYTICS,
+    Permission.VIEWREPORTS,
+    Permission.EXPORTDATA,
+    Permission.SYSTEMSETTINGS,
+    Permission.SENDNOTIFICATIONS,
+    Permission.VIEWNOTIFICATIONS,
   ],
 
   [UserRole.SCHOOL_ADMIN]: [
     // School-level administration
-    Permission.SCHOOL_ADMIN_ACCESS,
-    Permission.READ_USERS,
-    Permission.WRITE_USERS,
-    Permission.READ_ORDERS,
-    Permission.WRITE_ORDERS,
-    Permission.UPDATE_ORDER_STATUS,
-    Permission.READ_MENU,
-    Permission.WRITE_MENU,
-    Permission.MANAGE_MENU,
-    Permission.READ_PAYMENTS,
-    Permission.READ_ANALYTICS,
-    Permission.VIEW_REPORTS,
-    Permission.EXPORT_DATA,
-    Permission.SEND_NOTIFICATIONS,
-    Permission.VIEW_NOTIFICATIONS,
+    Permission.SCHOOL_ADMINACCESS,
+    Permission.READUSERS,
+    Permission.WRITEUSERS,
+    Permission.READORDERS,
+    Permission.WRITEORDERS,
+    Permission.UPDATE_ORDERSTATUS,
+    Permission.READMENU,
+    Permission.WRITEMENU,
+    Permission.MANAGEMENU,
+    Permission.READPAYMENTS,
+    Permission.READANALYTICS,
+    Permission.VIEWREPORTS,
+    Permission.EXPORTDATA,
+    Permission.SENDNOTIFICATIONS,
+    Permission.VIEWNOTIFICATIONS,
   ],
 
   [UserRole.TEACHER]: [
     // Teacher access
-    Permission.READ_ORDERS,
-    Permission.VIEW_STUDENT_ORDERS,
-    Permission.READ_MENU,
-    Permission.VIEW_REPORTS,
-    Permission.UPDATE_PROFILE,
-    Permission.VIEW_NOTIFICATIONS,
+    Permission.READORDERS,
+    Permission.VIEW_STUDENTORDERS,
+    Permission.READMENU,
+    Permission.VIEWREPORTS,
+    Permission.UPDATEPROFILE,
+    Permission.VIEWNOTIFICATIONS,
   ],
 
   [UserRole.PARENT]: [
     // Parent access
-    Permission.PLACE_ORDERS,
-    Permission.VIEW_STUDENT_ORDERS,
+    Permission.PLACEORDERS,
+    Permission.VIEW_STUDENTORDERS,
     Permission.MANAGE_CHILDREN,
-    Permission.READ_MENU,
-    Permission.READ_PAYMENTS,
-    Permission.MANAGE_PAYMENT_METHODS,
-    Permission.UPDATE_PROFILE,
-    Permission.VIEW_NOTIFICATIONS,
+    Permission.READMENU,
+    Permission.READPAYMENTS,
+    Permission.MANAGE_PAYMENTMETHODS,
+    Permission.UPDATEPROFILE,
+    Permission.VIEWNOTIFICATIONS,
   ],
 
   [UserRole.STUDENT]: [
     // Student access
-    Permission.PLACE_ORDERS,
-    Permission.VIEW_OWN_ORDERS,
-    Permission.READ_MENU,
-    Permission.UPDATE_PROFILE,
-    Permission.VIEW_NOTIFICATIONS,
+    Permission.PLACEORDERS,
+    Permission.VIEW_OWNORDERS,
+    Permission.READMENU,
+    Permission.UPDATEPROFILE,
+    Permission.VIEWNOTIFICATIONS,
   ],
 
   [UserRole.VENDOR]: [
     // Vendor/supplier access
-    Permission.READ_ORDERS,
-    Permission.MANAGE_MENU,
-    Permission.READ_MENU,
-    Permission.WRITE_MENU,
-    Permission.MANAGE_INVENTORY,
-    Permission.VIEW_REPORTS,
-    Permission.READ_ANALYTICS,
-    Permission.UPDATE_PROFILE,
-    Permission.VIEW_NOTIFICATIONS,
+    Permission.READORDERS,
+    Permission.MANAGEMENU,
+    Permission.READMENU,
+    Permission.WRITEMENU,
+    Permission.MANAGEINVENTORY,
+    Permission.VIEWREPORTS,
+    Permission.READANALYTICS,
+    Permission.UPDATEPROFILE,
+    Permission.VIEWNOTIFICATIONS,
   ],
 
   [UserRole.KITCHEN_STAFF]: [
     // Kitchen staff access
     Permission.KITCHEN_ACCESS,
-    Permission.READ_ORDERS,
-    Permission.UPDATE_ORDER_STATUS,
-    Permission.VIEW_KITCHEN_QUEUE,
-    Permission.MANAGE_INVENTORY,
-    Permission.READ_MENU,
-    Permission.UPDATE_PROFILE,
-    Permission.VIEW_NOTIFICATIONS,
+    Permission.READORDERS,
+    Permission.UPDATE_ORDERSTATUS,
+    Permission.VIEW_KITCHENQUEUE,
+    Permission.MANAGEINVENTORY,
+    Permission.READMENU,
+    Permission.UPDATEPROFILE,
+    Permission.VIEWNOTIFICATIONS,
   ],
 
   [UserRole.SUPER_ADMIN]: [
     // Full system access with additional super admin permissions
-    Permission.ADMIN_ACCESS,
-    Permission.MANAGE_USERS,
-    Permission.READ_USERS,
-    Permission.WRITE_USERS,
-    Permission.DELETE_USERS,
-    Permission.READ_ORDERS,
-    Permission.WRITE_ORDERS,
-    Permission.DELETE_ORDERS,
-    Permission.UPDATE_ORDER_STATUS,
-    Permission.READ_MENU,
-    Permission.WRITE_MENU,
-    Permission.MANAGE_MENU,
-    Permission.READ_PAYMENTS,
-    Permission.WRITE_PAYMENTS,
-    Permission.PROCESS_PAYMENTS,
-    Permission.READ_ANALYTICS,
-    Permission.VIEW_REPORTS,
-    Permission.EXPORT_DATA,
-    Permission.SYSTEM_SETTINGS,
-    Permission.SEND_NOTIFICATIONS,
-    Permission.VIEW_NOTIFICATIONS,
+    Permission.ADMINACCESS,
+    Permission.MANAGEUSERS,
+    Permission.READUSERS,
+    Permission.WRITEUSERS,
+    Permission.DELETEUSERS,
+    Permission.READORDERS,
+    Permission.WRITEORDERS,
+    Permission.DELETEORDERS,
+    Permission.UPDATE_ORDERSTATUS,
+    Permission.READMENU,
+    Permission.WRITEMENU,
+    Permission.MANAGEMENU,
+    Permission.READPAYMENTS,
+    Permission.WRITEPAYMENTS,
+    Permission.PROCESSPAYMENTS,
+    Permission.READANALYTICS,
+    Permission.VIEWREPORTS,
+    Permission.EXPORTDATA,
+    Permission.SYSTEMSETTINGS,
+    Permission.SENDNOTIFICATIONS,
+    Permission.VIEWNOTIFICATIONS,
   ],
 };
 
@@ -203,6 +254,7 @@ export interface User {
   email: string;
   firstName: string;
   lastName: string;
+  name?: string; // Optional computed full name for convenience
   role: UserRole;
   phone?: string;
   avatar?: string;

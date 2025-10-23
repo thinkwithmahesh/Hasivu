@@ -15,6 +15,13 @@ interface UseMobileLayoutReturn {
   isDesktop: boolean;
   screenSize: { width: number; height: number };
   orientation: 'portrait' | 'landscape';
+  safeArea: {
+    top: number;
+    right: number;
+    bottom: number;
+    left: number;
+  };
+  isTouchDevice: boolean;
 }
 
 export const useMobileLayout = (): UseMobileLayoutReturn => {
@@ -38,11 +45,25 @@ export const useMobileLayout = (): UseMobileLayoutReturn => {
   const isDesktop = screenSize.width >= BREAKPOINTS.lg;
   const orientation = screenSize.height > screenSize.width ? 'portrait' : 'landscape';
 
+  // Detect touch device capability
+  const isTouchDevice =
+    typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+
+  // Safe area insets for mobile devices (can be enhanced with actual device detection)
+  const safeArea = {
+    top: isMobile ? 44 : 0,
+    right: 0,
+    bottom: isMobile ? 34 : 0,
+    left: 0,
+  };
+
   return {
     isMobile,
     isTablet,
     isDesktop,
     screenSize,
     orientation,
+    safeArea,
+    isTouchDevice,
   };
 };

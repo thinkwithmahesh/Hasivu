@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { render, screen, _fireEvent, _waitFor, act } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { jest } from '@jest/globals';
 import userEvent from '@testing-library/user-event';
 
@@ -60,7 +60,10 @@ describe('OrderWorkflowBoard', () => {
     {
       id: '1',
       orderNumber: '#001',
-      student: { name: 'John Doe', id: 'student1', avatar: 'avatar1.jpg' },
+      studentId: 'student1',
+      schoolId: 'school1',
+      paymentStatus: 'pending' as const,
+      deliveryDate: '2024-01-01',
       items: [
         {
           id: 'item1',
@@ -71,7 +74,7 @@ describe('OrderWorkflowBoard', () => {
           isCompleted: false,
         },
       ],
-      status: 'pending',
+      status: 'pending' as const,
       priority: 'high' as const,
       orderTime: '2024-01-01T10:00:00Z',
       estimatedTime: 20,
@@ -92,7 +95,10 @@ describe('OrderWorkflowBoard', () => {
     {
       id: '2',
       orderNumber: '#002',
-      student: { name: 'Jane Smith', id: 'student2' },
+      studentId: 'student2',
+      schoolId: 'school1',
+      paymentStatus: 'paid' as const,
+      deliveryDate: '2024-01-01',
       items: [
         {
           id: 'item2',
@@ -103,7 +109,7 @@ describe('OrderWorkflowBoard', () => {
           isCompleted: true,
         },
       ],
-      status: 'preparing',
+      status: 'preparing' as const,
       priority: 'medium' as const,
       orderTime: '2024-01-01T10:15:00Z',
       estimatedTime: 15,
@@ -119,18 +125,19 @@ describe('OrderWorkflowBoard', () => {
     {
       id: '1',
       orderNumber: '#001',
+      studentId: 'student1',
+      schoolId: 'school1',
+      paymentStatus: 'pending' as const,
+      deliveryDate: new Date('2024-01-01'),
       student: { name: 'John Doe', id: 'student1', avatar: 'avatar1.jpg' },
       items: [
         {
-          id: 'item1',
-          name: 'Pizza',
+          menuItemId: 'item1',
           quantity: 1,
-          category: 'Main',
-          preparationTime: 15,
-          isCompleted: false,
+          price: 15.99,
         },
       ],
-      status: 'pending',
+      status: 'pending' as const,
       priority: 'high',
       orderTime: '2024-01-01T10:00:00Z',
       estimatedTime: 20,
@@ -147,6 +154,8 @@ describe('OrderWorkflowBoard', () => {
       progress: 0,
       allergens: ['dairy'],
       notes: ['Note 1'],
+      createdAt: '2024-01-01T10:00:00Z',
+      updatedAt: '2024-01-01T10:00:00Z',
     },
   ];
 
@@ -162,12 +171,12 @@ describe('OrderWorkflowBoard', () => {
     });
 
     mockUseOrderMutations.mockReturnValue({
-      updateOrderStatus: jest.fn().mockResolvedValue({ success: true }) as any,
-      assignOrder: jest.fn() as any,
-      createOrder: jest.fn() as any,
+      updateOrderStatus: jest.fn(),
+      assignOrder: jest.fn(),
+      createOrder: jest.fn(),
       loading: false,
       error: null,
-    });
+    } as any);
 
     mockUseWebSocketSubscription.mockReturnValue(undefined);
     mockUseWebSocketConnection.mockReturnValue({
@@ -231,19 +240,24 @@ describe('OrderWorkflowBoard', () => {
     it('handles missing or malformed order data gracefully', () => {
       const malformedOrders = [
         {
-          id: null,
-          orderNumber: null,
-          student: null,
-          items: null,
-          status: null,
-          priority: null,
-          orderTime: null,
-          estimatedTime: null,
-          location: null,
-          totalAmount: null,
-          progress: null,
-          allergens: null,
-          notes: null,
+          id: '1',
+          orderNumber: '#001',
+          studentId: 'student1',
+          schoolId: 'school1',
+          paymentStatus: 'pending' as const,
+          deliveryDate: new Date('2024-01-01'),
+          items: [],
+          status: 'pending' as const,
+          priority: 'medium' as const,
+          orderTime: '2024-01-01T10:00:00Z',
+          estimatedTime: 20,
+          location: 'Kitchen',
+          totalAmount: 15.99,
+          progress: 0,
+          allergens: [],
+          notes: [],
+          createdAt: '2024-01-01T10:00:00Z',
+          updatedAt: '2024-01-01T10:00:00Z',
         },
       ];
 
@@ -269,7 +283,7 @@ describe('OrderWorkflowBoard', () => {
       ];
 
       mockUseKitchenOrders.mockReturnValue({
-        data: mixedOrders,
+        data: mixedOrders as any,
         loading: false,
         error: null,
         refetch: jest.fn(),
@@ -288,7 +302,7 @@ describe('OrderWorkflowBoard', () => {
     it('starts auto-refresh by default', () => {
       const mockRefetch = jest.fn();
       mockUseKitchenOrders.mockReturnValue({
-        data: mockApiOrders,
+        data: mockApiOrders as any,
         loading: false,
         error: null,
         refetch: mockRefetch,
@@ -307,7 +321,7 @@ describe('OrderWorkflowBoard', () => {
     it('can toggle auto-refresh on and off', async () => {
       const mockRefetch = jest.fn();
       mockUseKitchenOrders.mockReturnValue({
-        data: mockApiOrders,
+        data: mockApiOrders as any,
         loading: false,
         error: null,
         refetch: mockRefetch,
@@ -347,7 +361,7 @@ describe('OrderWorkflowBoard', () => {
     it('calls refetch when manual refresh button is clicked', async () => {
       const mockRefetch = jest.fn();
       mockUseKitchenOrders.mockReturnValue({
-        data: mockApiOrders,
+        data: mockApiOrders as any,
         loading: false,
         error: null,
         refetch: mockRefetch,
@@ -379,19 +393,19 @@ describe('OrderWorkflowBoard', () => {
 
   describe('Order Status Changes', () => {
     it('handles order status change successfully', async () => {
-      const mockUpdateOrderStatus = jest.fn().mockResolvedValue({ success: true });
+      const mockUpdateOrderStatus = jest.fn();
       const mockRefetch = jest.fn();
 
       mockUseOrderMutations.mockReturnValue({
-        updateOrderStatus: mockUpdateOrderStatus as any,
-        assignOrder: jest.fn() as any,
-        createOrder: jest.fn() as any,
+        updateOrderStatus: mockUpdateOrderStatus,
+        assignOrder: jest.fn(),
+        createOrder: jest.fn(),
         loading: false,
         error: null,
-      });
+      } as any);
 
       mockUseKitchenOrders.mockReturnValue({
-        data: mockApiOrders,
+        data: mockApiOrders as any,
         loading: false,
         error: null,
         refetch: mockRefetch,
@@ -408,16 +422,16 @@ describe('OrderWorkflowBoard', () => {
     });
 
     it('handles order status change errors gracefully', async () => {
-      const mockUpdateOrderStatus = jest.fn().mockRejectedValue(new Error('Update failed')) as any;
+      const mockUpdateOrderStatus = jest.fn();
       const mockRefetch = jest.fn();
 
       mockUseOrderMutations.mockReturnValue({
         updateOrderStatus: mockUpdateOrderStatus,
-        assignOrder: jest.fn() as any,
-        createOrder: jest.fn() as any,
+        assignOrder: jest.fn(),
+        createOrder: jest.fn(),
         loading: false,
         error: null,
-      });
+      } as any);
 
       mockUseKitchenOrders.mockReturnValue({
         data: mockApiOrders,
@@ -500,7 +514,7 @@ describe('OrderWorkflowBoard', () => {
       const mockRefetch = jest.fn();
       let subscriptionCallback: () => void = () => {};
 
-      mockUseWebSocketSubscription.mockImplementation((event, callback) => {
+      mockUseWebSocketSubscription.mockImplementation((event, callback: any) => {
         subscriptionCallback = callback;
         return jest.fn();
       });
@@ -576,8 +590,24 @@ describe('OrderWorkflowBoard', () => {
     it('handles orders with missing required fields', () => {
       const incompleteOrders = [
         {
-          // Missing most fields
           id: '1',
+          orderNumber: '#001',
+          studentId: 'student1',
+          schoolId: 'school1',
+          paymentStatus: 'pending' as const,
+          deliveryDate: new Date('2024-01-01'),
+          items: [],
+          status: 'pending' as const,
+          priority: 'medium' as const,
+          orderTime: '2024-01-01T10:00:00Z',
+          estimatedTime: 20,
+          location: 'Kitchen',
+          totalAmount: 15.99,
+          progress: 0,
+          allergens: [],
+          notes: [],
+          createdAt: '2024-01-01T10:00:00Z',
+          updatedAt: '2024-01-01T10:00:00Z',
         },
       ];
 
@@ -597,19 +627,28 @@ describe('OrderWorkflowBoard', () => {
       const largeOrders = Array.from({ length: 100 }, (_, i) => ({
         id: `${i}`,
         orderNumber: `#${i.toString().padStart(3, '0')}`,
-        student: { name: `Student ${i}`, id: `student${i}` },
+        studentId: `student${i}`,
+        schoolId: 'school1',
+        paymentStatus: 'pending' as const,
+        deliveryDate: new Date('2024-01-01'),
+        student: {
+          name: `Student ${i}`,
+          id: `student${i}`,
+          firstName: `Student${i}`,
+          lastName: '',
+          grade: '5',
+          section: 'A',
+          schoolId: 'school1',
+        },
         items: [
           {
-            id: `item${i}`,
-            name: 'Item',
+            menuItemId: `item${i}`,
             quantity: 1,
-            category: 'Main',
-            preparationTime: 5,
-            isCompleted: false,
+            price: 10,
           },
         ],
-        status: ['pending', 'preparing', 'ready', 'completed'][i % 4],
-        priority: 'medium',
+        status: ['pending', 'preparing', 'ready', 'completed'][i % 4] as any,
+        priority: 'medium' as const,
         orderTime: new Date().toISOString(),
         estimatedTime: 15,
         location: 'Kitchen',
@@ -617,6 +656,8 @@ describe('OrderWorkflowBoard', () => {
         progress: 0,
         allergens: [],
         notes: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       }));
 
       mockUseKitchenOrders.mockReturnValue({

@@ -9,15 +9,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { AuthApiService } from '@/services/auth-api.service';
-
-// Simple user type for demo
-interface User {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: string;
-}
+import type { User, UserRole } from '@/types/auth';
 
 // Simple credentials types
 interface LoginCredentials {
@@ -31,6 +23,8 @@ interface RegistrationData {
   firstName: string;
   lastName: string;
   role?: string;
+  grade?: string;
+  section?: string;
 }
 
 interface AuthState {
@@ -149,6 +143,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const response = await authApi.register({
         ...userData,
         passwordConfirm: userData.password, // Assuming password confirm is same
+        role: (userData.role as UserRole) || 'parent',
       });
 
       if (response.success && response.user) {
@@ -162,11 +157,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
         toast.success(`Welcome, ${response.user.firstName}!`);
         return true;
       } else {
-        toast.error(response.error || 'Registration failed');
+        // Show specific error message from API response
+        const errorMsg = response.error || response.message || 'Registration failed';
+        toast.error(errorMsg);
         return false;
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Registration failed';
+      // Handle API errors with more specific messages
+      let errorMessage = 'Registration failed';
+      if (error instanceof Error) {
+        // Try to parse if it's a JSON error response
+        try {
+          const errorData = JSON.parse(error.message);
+          errorMessage = errorData.message || errorData.error || error.message;
+        } catch {
+          errorMessage = error.message;
+        }
+      }
       toast.error(errorMessage);
       return false;
     } finally {

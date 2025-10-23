@@ -22,8 +22,8 @@ export async function GET(_request: NextRequest) {
       environment: process.env.NODE_ENV || 'development',
       build: {
         version: process.env.npm_package_version || '1.0.0',
-        commit: process.env.VERCEL_GIT_COMMIT_SHA || process.env.COMMIT_SHA,
-        timestamp: process.env.BUILD_TIMESTAMP,
+        commit: process.env.VERCEL_GIT_COMMIT_SHA || process.env.COMMITSHA,
+        timestamp: process.env.BUILDTIMESTAMP,
       },
     };
 

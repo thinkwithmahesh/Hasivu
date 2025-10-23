@@ -10,10 +10,16 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
-import { menuService } from '@/services/menu.service';
-import { nutritionApi, calculateTrafficLight, convertToPer100g } from '@/services/nutrition.service';
-import type { Menu, MenuItem, MealType } from '@/services/menu.service';
-import type { NutritionalInfo, AllergenType, DietaryInfo, TrafficLightColor } from '@/services/nutrition.service';
+import { menuService, type Menu, type MenuItem, type MealType } from '@/services/menu.service';
+import {
+  nutritionApi,
+  calculateTrafficLight,
+  convertToPer100g,
+  type NutritionalInfo,
+  type AllergenType,
+  type DietaryInfo,
+  type TrafficLightColor,
+} from '@/services/nutrition.service';
 
 // ============================================================================
 // Type Definitions
@@ -47,7 +53,7 @@ const ALLERGEN_ICONS: Record<AllergenType, string> = {
   peanuts: '🥜',
   wheat: '🌾',
   soy: '🫘',
-  sesame: '🫘'
+  sesame: '🫘',
 };
 
 const ALLERGEN_LABELS: Record<AllergenType, string> = {
@@ -59,20 +65,20 @@ const ALLERGEN_LABELS: Record<AllergenType, string> = {
   peanuts: 'Peanuts',
   wheat: 'Wheat',
   soy: 'Soy',
-  sesame: 'Sesame'
+  sesame: 'Sesame',
 };
 
 const TRAFFIC_LIGHT_COLORS = {
   green: '#4CAF50',
   yellow: '#f59e0b',
-  red: '#dc2626'
+  red: '#dc2626',
 };
 
 const MEAL_TYPE_LABELS: Record<MealType, string> = {
   breakfast: 'Breakfast',
   lunch: 'Lunch',
   snack: 'Snack',
-  dinner: 'Dinner'
+  dinner: 'Dinner',
 };
 
 const DIETARY_FILTER_OPTIONS: Array<{ key: DietaryFilter; label: string; icon: string }> = [
@@ -82,7 +88,7 @@ const DIETARY_FILTER_OPTIONS: Array<{ key: DietaryFilter; label: string; icon: s
   { key: 'dairyFree', label: 'Dairy-Free', icon: '🥛' },
   { key: 'nutFree', label: 'Nut-Free', icon: '🌰' },
   { key: 'halal', label: 'Halal', icon: '☪️' },
-  { key: 'kosher', label: 'Kosher', icon: '✡️' }
+  { key: 'kosher', label: 'Kosher', icon: '✡️' },
 ];
 
 // ============================================================================
@@ -253,7 +259,7 @@ const QuantitySelector: React.FC<QuantitySelectorProps> = ({
   onIncrease,
   onDecrease,
   onAdd,
-  className
+  className,
 }) => {
   if (quantity === 0) {
     return (
@@ -316,7 +322,7 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({
   nutritionInfo,
   quantity,
   onQuantityChange,
-  className
+  className,
 }) => {
   const trafficLight = useMemo(() => {
     if (!nutritionInfo) return null;
@@ -326,14 +332,14 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({
     const fatPer100g = convertToPer100g(macronutrients.totalFat, servingSizeGrams);
     const saturatedFatPer100g = convertToPer100g(macronutrients.saturatedFat, servingSizeGrams);
     const sugarsPer100g = convertToPer100g(macronutrients.sugars, servingSizeGrams);
-    const sodiumPer100g = (micronutrients.sodium / servingSizeGrams) * 100 / 1000; // Convert mg to g
+    const sodiumPer100g = ((micronutrients.sodium / servingSizeGrams) * 100) / 1000; // Convert mg to g
 
     const ratings = {
       fat: calculateTrafficLight.fat(fatPer100g),
       saturatedFat: calculateTrafficLight.saturatedFat(saturatedFatPer100g),
       sugars: calculateTrafficLight.sugars(sugarsPer100g),
       sodium: calculateTrafficLight.sodium(sodiumPer100g),
-      calories: calculateTrafficLight.calories(nutritionInfo.calories)
+      calories: calculateTrafficLight.calories(nutritionInfo.calories),
     };
 
     return calculateTrafficLight.overall(ratings);
@@ -341,10 +347,7 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({
 
   return (
     <Card
-      className={cn(
-        'group overflow-hidden hover:shadow-lg transition-all duration-200',
-        className
-      )}
+      className={cn('group overflow-hidden hover:shadow-lg transition-all duration-200', className)}
     >
       {item.imageUrl && (
         <div className="relative h-48 sm:h-56 overflow-hidden bg-gray-100">
@@ -368,34 +371,22 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({
         {/* Title and Price */}
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1">
-            <h3 className="font-semibold text-lg line-clamp-2 text-ink-900">
-              {item.name}
-            </h3>
-            <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
-              {item.description}
-            </p>
+            <h3 className="font-semibold text-lg line-clamp-2 text-ink-900">{item.name}</h3>
+            <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{item.description}</p>
           </div>
           <div className="text-right flex-shrink-0">
-            <div className="text-xl font-bold text-hasivu-orange-600">
-              ₹{item.price}
-            </div>
+            <div className="text-xl font-bold text-hasivu-orange-600">₹{item.price}</div>
             {item.preparationTime && (
-              <div className="text-xs text-muted-foreground">
-                ~{item.preparationTime}min
-              </div>
+              <div className="text-xs text-muted-foreground">~{item.preparationTime}min</div>
             )}
           </div>
         </div>
 
         {/* Traffic Light Rating */}
-        {trafficLight && (
-          <TrafficLightBadge rating={trafficLight} />
-        )}
+        {trafficLight && <TrafficLightBadge rating={trafficLight} />}
 
         {/* Compact Nutrition */}
-        {nutritionInfo && (
-          <NutritionCompact nutrition={nutritionInfo} />
-        )}
+        {nutritionInfo && <NutritionCompact nutrition={nutritionInfo} />}
 
         {/* Allergen Warnings */}
         {item.allergens && item.allergens.length > 0 && (
@@ -403,15 +394,11 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({
         )}
 
         {/* Dietary Tags */}
-        {item.dietaryInfo && (
-          <DietaryTags dietaryInfo={item.dietaryInfo} />
-        )}
+        {item.dietaryInfo && <DietaryTags dietaryInfo={item.dietaryInfo} />}
       </CardContent>
 
       <CardFooter className="p-4 pt-0 flex items-center justify-between gap-2">
-        <div className="text-xs text-muted-foreground">
-          {item.servingSize}
-        </div>
+        <div className="text-xs text-muted-foreground">{item.servingSize}</div>
         <QuantitySelector
           quantity={quantity}
           maxQuantity={item.maxQuantity}
@@ -456,7 +443,7 @@ export const MenuBrowser: React.FC<MenuBrowserProps> = ({
   schoolId,
   onAddToCart,
   initialDate,
-  className
+  className,
 }) => {
   // State management
   const [menus, setMenus] = useState<Menu[]>([]);
@@ -480,15 +467,13 @@ export const MenuBrowser: React.FC<MenuBrowserProps> = ({
           date,
           active: true,
           schoolId,
-          status: ['published', 'active']
+          status: ['published', 'active'],
         });
 
         setMenus(result.menus as Menu[]);
 
         // Fetch full menu details with items for each menu
-        const fullMenus = await Promise.all(
-          result.menus.map(menu => menuService.getMenu(menu.id))
-        );
+        const fullMenus = await Promise.all(result.menus.map(menu => menuService.getMenu(menu.id)));
 
         setMenus(fullMenus);
 
@@ -599,12 +584,8 @@ export const MenuBrowser: React.FC<MenuBrowserProps> = ({
       <div className="mb-6 space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-ink-900">
-              Today's Menu
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Fresh, healthy meals for your child
-            </p>
+            <h1 className="text-3xl font-bold text-ink-900">Today's Menu</h1>
+            <p className="text-muted-foreground mt-1">Fresh, healthy meals for your child</p>
           </div>
           {cartCount > 0 && (
             <Badge className="bg-hasivu-orange-500 text-white text-lg px-4 py-2">
@@ -616,12 +597,15 @@ export const MenuBrowser: React.FC<MenuBrowserProps> = ({
 
         {/* Search Bar */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" aria-hidden="true" />
+          <Search
+            className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground"
+            aria-hidden="true"
+          />
           <Input
             type="search"
             placeholder="Search menu items, ingredients..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={e => setSearchQuery(e.target.value)}
             className="pl-10 min-h-touch-target"
             aria-label="Search menu items"
           />
@@ -658,7 +642,7 @@ export const MenuBrowser: React.FC<MenuBrowserProps> = ({
       {/* Meal Type Tabs */}
       <Tabs
         value={selectedMealType}
-        onValueChange={(value) => setSelectedMealType(value as MealType)}
+        onValueChange={value => setSelectedMealType(value as MealType)}
         className="mb-6"
       >
         <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto min-h-touch-target">
@@ -696,13 +680,11 @@ export const MenuBrowser: React.FC<MenuBrowserProps> = ({
       {!loading && !error && filteredItems.length === 0 && (
         <div className="text-center py-12">
           <div className="text-6xl mb-4">🍽️</div>
-          <h3 className="text-xl font-semibold text-ink-900 mb-2">
-            No menu items available
-          </h3>
+          <h3 className="text-xl font-semibold text-ink-900 mb-2">No menu items available</h3>
           <p className="text-muted-foreground">
             {searchQuery || dietaryFilters.size > 0
               ? 'Try adjusting your filters or search query'
-              : 'Check back later for today\'s menu'}
+              : "Check back later for today's menu"}
           </p>
         </div>
       )}
@@ -720,7 +702,7 @@ export const MenuBrowser: React.FC<MenuBrowserProps> = ({
               item={item}
               nutritionInfo={nutritionData.get(item.id)}
               quantity={cart.get(item.id) || 0}
-              onQuantityChange={(quantity) => updateCartQuantity(item.id, quantity)}
+              onQuantityChange={quantity => updateCartQuantity(item.id, quantity)}
             />
           ))}
         </div>

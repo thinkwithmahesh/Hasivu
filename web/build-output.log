@@ -1,0 +1,44 @@
+
+> hasivu-web@1.0.0 build
+> npm run generate-docs && next build
+
+
+> hasivu-web@1.0.0 generate-docs
+> node -e "const fs = require('fs'); const specs = require('./swagger.js'); fs.writeFileSync('public/openapi.json', JSON.stringify(specs, null, 2)); fs.writeFileSync('openapi.yaml', require('yaml').stringify(specs));"
+
+- info Loaded env from /Users/mahesha/Downloads/hasivu-platform/web/.env.local
+- info Loaded env from /Users/mahesha/Downloads/hasivu-platform/web/.env.production
+- info Creating an optimized production build...
+- warn Compiled with warnings
+
+./node_modules/swagger-jsdoc/src/utils.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/swagger-jsdoc/src/utils.js
+./node_modules/swagger-jsdoc/src/specification.js
+./node_modules/swagger-jsdoc/src/lib.js
+./node_modules/swagger-jsdoc/index.js
+./swagger.js
+./src/app/api/docs/route.ts
+
+- info Linting and checking validity of types...
+- warn The Next.js plugin was not detected in your ESLint configuration. See https://nextjs.org/docs/basic-features/eslint#migrating-existing-config
+Failed to compile.
+
+./src/components/auth/RegisterForm.tsx:79:35
+Type error: No overload matches this call.
+  Overload 1 of 4, '(names: readonly ("email" | "password" | "firstName" | "lastName" | "confirmPassword" | "grade" | "section")[], defaultValue?: { firstName?: string | undefined; lastName?: string | undefined; email?: string | undefined; password?: string | undefined; confirmPassword?: string | undefined; grade?: string | undefined; section?: string | undefined; } | undefined): readonly (string | undefined)[]', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'readonly ("email" | "password" | "firstName" | "lastName" | "confirmPassword" | "grade" | "section")[]'.
+  Overload 2 of 4, '(name: "email" | "password" | "firstName" | "lastName" | "confirmPassword" | "grade" | "section", defaultValue?: string | undefined): string | undefined', gave the following error.
+    Argument of type '"role"' is not assignable to parameter of type '"email" | "password" | "firstName" | "lastName" | "confirmPassword" | "grade" | "section"'.
+  Overload 3 of 4, '(callback: WatchObserver<{ firstName: string; lastName: string; email: string; password: string; confirmPassword: string; grade?: string | undefined; section?: string | undefined; }>, defaultValues?: { ...; } | undefined): Subscription', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'WatchObserver<{ firstName: string; lastName: string; email: string; password: string; confirmPassword: string; grade?: string | undefined; section?: string | undefined; }>'.
+
+[0m [90m 77 | [39m  })[33m;[39m[0m
+[0m [90m 78 | [39m[0m
+[0m[31m[1m>[22m[39m[90m 79 | [39m  [36mconst[39m selectedRole [33m=[39m form[33m.[39mwatch([32m'role'[39m)[33m;[39m[0m
+[0m [90m    | [39m                                  [31m[1m^[22m[39m[0m
+[0m [90m 80 | [39m  [36mconst[39m needsSchoolId [33m=[39m [[0m
+[0m [90m 81 | [39m    [33mUserRole[39m[33m.[39m[33mSTUDENT[39m[33m,[39m[0m
+[0m [90m 82 | [39m    [33mUserRole[39m[33m.[39m[33mPARENT[39m[33m,[39m[0m

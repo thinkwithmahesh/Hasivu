@@ -18,6 +18,8 @@ import {
   Building,
   FileText,
   Zap,
+  Eye,
+  LucideIcon,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import NotificationSystem from './NotificationSystem';
@@ -27,7 +29,7 @@ import { toast } from 'react-hot-toast';
 interface NavigationItem {
   id: string;
   label: string;
-  icon: React.ComponentType<{ className?: string; size?: number }>;
+  icon: LucideIcon;
   href: string;
   badge?: string | number;
   roles?: string[];

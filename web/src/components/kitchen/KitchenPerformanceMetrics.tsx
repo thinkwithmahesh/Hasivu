@@ -13,8 +13,8 @@
  * - Food waste tracking and optimization
  */
 
-import React, { useState, _useEffect, useMemo } from 'react';
-import { _motion } from 'framer-motion';
+import React, { useState, useEffect, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import {
   TrendingUp,
   TrendingDown,
@@ -24,12 +24,12 @@ import {
   Brain,
   AlertTriangle,
   Target,
-  _BarChart3,
-  _PieChart,
-  _LineChart,
+  BarChart3,
+  PieChart,
+  LineChart,
   Gauge,
   Clock,
-  _DollarSign,
+  DollarSign,
   Users,
   ChefHat,
   Thermometer,

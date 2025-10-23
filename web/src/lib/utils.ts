@@ -10,6 +10,11 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
+ * Legacy alias for backward compatibility
+ */
+export const _cn = cn;
+
+/**
  * Format currency values for display
  */
 export function formatCurrency(value: number, currency = 'INR'): string {

@@ -19,9 +19,9 @@ import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
-  CardDescription as _CardDescription,
-  CardHeader as _CardHeader,
-  CardTitle as _CardTitle,
+  CardDescription as CardDescription,
+  CardHeader as CardHeader,
+  CardTitle as CardTitle,
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';

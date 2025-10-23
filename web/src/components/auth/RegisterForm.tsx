@@ -27,11 +27,11 @@ import {
 } from '@/components/ui/form';
 import { Separator } from '@/components/ui/separator';
 
-import { registerSchema, type RegisterFormData } from './schemas';
-import type { UserRole } from '@/types/auth';
+import { registerSchema, type RegistrationFormData } from './schemas';
+import { UserRole } from '@/types/auth';
 
 interface RegisterFormProps {
-  onSubmit: (data: RegisterFormData) => Promise<void>;
+  onSubmit: (data: RegistrationFormData) => Promise<void>;
   onSocialLogin?: (provider: 'google' | 'facebook') => Promise<void>;
   isLoading?: boolean;
   error?: string | null;
@@ -40,14 +40,14 @@ interface RegisterFormProps {
   className?: string;
 }
 
-const roleLabels: Record<UserRole, string> = {
-  student: 'Student',
-  parent: 'Parent/Guardian',
-  teacher: 'Teacher',
-  vendor: 'Vendor/Caterer',
-  delivery_partner: 'Delivery Partner',
-  school_admin: 'School Administrator',
+const roleLabels: Partial<Record<UserRole, string>> = {
   admin: 'Administrator',
+  teacher: 'Teacher',
+  parent: 'Parent/Guardian',
+  student: 'Student',
+  vendor: 'Vendor/Caterer',
+  kitchen_staff: 'Kitchen Staff',
+  school_admin: 'School Administrator',
   super_admin: 'Super Administrator',
 };
 
@@ -57,13 +57,13 @@ export function RegisterForm({
   isLoading = false,
   error,
   showSocialLogin = true,
-  availableRoles = ['student', 'parent', 'teacher'],
+  availableRoles = [UserRole.STUDENT, UserRole.PARENT, UserRole.TEACHER],
   className,
 }: RegisterFormProps) {
   const [showPassword, setShowPassword] = React.useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
 
-  const form = useForm<RegisterFormData>({
+  const form = useForm<RegistrationFormData>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
       email: '',
@@ -71,21 +71,30 @@ export function RegisterForm({
       confirmPassword: '',
       firstName: '',
       lastName: '',
+      role: UserRole.STUDENT,
       phone: '',
-      role: 'student',
       schoolId: '',
+      grade: '',
+      section: '',
       termsAccepted: false,
     },
   });
 
   const selectedRole = form.watch('role');
-  const needsSchoolId = ['student', 'parent', 'teacher', 'school_admin'].includes(selectedRole);
+  const needsSchoolId = [
+    UserRole.STUDENT,
+    UserRole.PARENT,
+    UserRole.TEACHER,
+    UserRole.SCHOOL_ADMIN,
+  ].includes(selectedRole);
 
-  const handleSubmit = async (data: RegisterFormData) => {
+  const handleSubmit = async (data: RegistrationFormData) => {
     try {
       await onSubmit(data);
     } catch (error) {
-      // Error handled silently
+      console.error('Registration form submission error:', error);
+      // Error is now handled by the auth context with proper toast messages
+      // The Zod validation errors are handled by react-hook-form and displayed inline
     }
   };
 
@@ -102,7 +111,7 @@ export function RegisterForm({
   return (
     <Card className={className} aria-label="Registration form">
       <CardHeader className="space-y-1 text-center">
-        <CardTitle className="text-3xl font-bold text-primary-600">Create Account</CardTitle>
+        <CardTitle className="text-3xl font-bold text-blue-600">Create Account</CardTitle>
         <CardDescription className="text-gray-600">
           Join HASIVU platform and start your journey
         </CardDescription>
@@ -128,7 +137,9 @@ export function RegisterForm({
                 name="firstName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-gray-700">First Name</FormLabel>
+                    <FormLabel className="text-gray-700">
+                      First Name <span className="text-red-500">*</span>
+                    </FormLabel>
                     <FormControl>
                       <div className="relative">
                         <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -151,7 +162,9 @@ export function RegisterForm({
                 name="lastName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-gray-700">Last Name</FormLabel>
+                    <FormLabel className="text-gray-700">
+                      Last Name <span className="text-red-500">*</span>
+                    </FormLabel>
                     <FormControl>
                       <div className="relative">
                         <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -176,7 +189,9 @@ export function RegisterForm({
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-gray-700">Email Address</FormLabel>
+                  <FormLabel className="text-gray-700">
+                    Email Address <span className="text-red-500">*</span>
+                  </FormLabel>
                   <FormControl>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -196,13 +211,15 @@ export function RegisterForm({
             />
 
             {/* Password Fields */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <FormField
                 control={form.control}
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-gray-700">Password</FormLabel>
+                    <FormLabel className="text-gray-700">
+                      Password <span className="text-red-500">*</span>
+                    </FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -238,7 +255,9 @@ export function RegisterForm({
                 name="confirmPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-gray-700">Confirm Password</FormLabel>
+                    <FormLabel className="text-gray-700">
+                      Confirm Password <span className="text-red-500">*</span>
+                    </FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -271,7 +290,7 @@ export function RegisterForm({
             </div>
 
             {/* Phone and Role */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <FormField
                 control={form.control}
                 name="phone"
@@ -301,7 +320,9 @@ export function RegisterForm({
                 name="role"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-gray-700">Role</FormLabel>
+                    <FormLabel className="text-gray-700">
+                      Role <span className="text-red-500">*</span>
+                    </FormLabel>
                     <FormControl>
                       <select
                         {...field}
@@ -362,16 +383,16 @@ export function RegisterForm({
                       type="checkbox"
                       checked={field.value}
                       onChange={field.onChange}
-                      className="mt-1 h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                      className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                       disabled={isLoading}
                     />
                   </FormControl>
                   <div className="space-y-1 leading-none">
                     <Label className="text-sm text-gray-600">
-                      I agree to the{' '}
+                      I agree to the <span className="text-red-500">*</span>{' '}
                       <Link
                         href="/legal/terms"
-                        className="text-primary-600 hover:text-primary-500 underline"
+                        className="text-blue-600 hover:text-blue-700 underline"
                         target="_blank"
                         rel="noopener noreferrer"
                       >
@@ -380,7 +401,7 @@ export function RegisterForm({
                       and{' '}
                       <Link
                         href="/legal/privacy"
-                        className="text-primary-600 hover:text-primary-500 underline"
+                        className="text-blue-600 hover:text-blue-700 underline"
                         target="_blank"
                         rel="noopener noreferrer"
                       >
@@ -395,7 +416,7 @@ export function RegisterForm({
 
             <Button
               type="submit"
-              className="w-full bg-primary-600 hover:bg-primary-700 text-white font-medium py-2.5"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5"
               disabled={isLoading}
               size="lg"
             >
@@ -474,7 +495,7 @@ export function RegisterForm({
           Already have an account?{' '}
           <Link
             href="/auth/login"
-            className="text-primary-600 hover:text-primary-500 font-medium focus:outline-none focus:underline"
+            className="text-blue-600 hover:text-blue-700 font-medium focus:outline-none focus:underline"
           >
             Sign in here
           </Link>

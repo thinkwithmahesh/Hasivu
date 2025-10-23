@@ -20,12 +20,12 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import {
-  Tabs as _Tabs,
-  TabsContent as _TabsContent,
-  TabsList as _TabsList,
-  TabsTrigger as _TabsTrigger,
+  Tabs as Tabs,
+  TabsContent as TabsContent,
+  TabsList as TabsList,
+  TabsTrigger as TabsTrigger,
 } from '@/components/ui/tabs';
-import { Alert as _Alert, AlertDescription as _AlertDescription } from '@/components/ui/alert';
+import { Alert as Alert, AlertDescription as AlertDescription } from '@/components/ui/alert';
 import {
   Dialog,
   DialogContent,
@@ -79,14 +79,14 @@ interface FeatureFlagFormData {
   }[];
 }
 
-const STRATEGY_ICONS = {
+const STRATEGYICONS = {
   percentage: Target,
   'user-segment': Users,
   environment: Shield,
   gradual: TrendingUp,
 };
 
-const CATEGORY_ICONS = {
+const CATEGORYICONS = {
   payment: '💳',
   notification: '📢',
   analytics: '📊',
@@ -94,7 +94,7 @@ const CATEGORY_ICONS = {
   experimental: '🧪',
 };
 
-const PRIORITY_COLORS = {
+const PRIORITYCOLORS = {
   low: 'bg-gray-100 text-gray-800',
   medium: 'bg-blue-100 text-blue-800',
   high: 'bg-orange-100 text-orange-800',
@@ -490,7 +490,7 @@ export default function FeatureFlagsAdminPage() {
                   <TableCell>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-lg">{CATEGORY_ICONS[flag.metadata.category]}</span>
+                        <span className="text-lg">{CATEGORYICONS[flag.metadata.category]}</span>
                         <div>
                           <p className="font-medium">{flag.name}</p>
                           <p className="text-sm text-gray-500 font-mono">{flag.key}</p>
@@ -523,7 +523,7 @@ export default function FeatureFlagsAdminPage() {
                   <TableCell>
                     <div className="space-y-1">
                       {flag.rules.map((rule, index) => {
-                        const Icon = STRATEGY_ICONS[rule.strategy];
+                        const Icon = STRATEGYICONS[rule.strategy];
                         return (
                           <div key={index} className="flex items-center gap-2">
                             <Icon className="h-4 w-4" />
@@ -534,7 +534,7 @@ export default function FeatureFlagsAdminPage() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge className={PRIORITY_COLORS[flag.metadata.priority]}>
+                    <Badge className={PRIORITYCOLORS[flag.metadata.priority]}>
                       {flag.metadata.priority}
                     </Badge>
                   </TableCell>

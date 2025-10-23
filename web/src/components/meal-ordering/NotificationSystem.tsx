@@ -13,26 +13,22 @@ import {
   AlertTriangle,
   XCircle,
   Bell,
-  _ShoppingCart,
+  ShoppingCart,
   CreditCard,
   Utensils,
   MapPin,
   Star,
   Gift,
-  _TrendingUp,
+  TrendingUp,
   Shield,
   Info,
-  _Zap,
+  Zap,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-import type {
-  _OrderHistoryItem,
-  StudentInfo,
-  MealItem,
-  _RFIDPickupInfo,
-  OrderStatus,
-} from './types';
+import type { OrderHistoryItem, StudentInfo, MealItem, RFIDPickupInfo } from './types';
+
+type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'ready' | 'delivered' | 'cancelled';
 
 export interface NotificationSystemProps {
   student: StudentInfo;
@@ -154,6 +150,7 @@ export class NotificationService {
       description: `You have ₹${student.walletBalance} in your wallet`,
       action: {
         label: 'View Menu',
+        onClick: () => {},
       },
     });
   }
@@ -264,6 +261,7 @@ export class NotificationService {
       description: `Order #${orderData.orderId} • ${orderData.items.length} items • ₹${orderData.total}`,
       action: {
         label: 'Track Order',
+        onClick: () => {},
       },
     });
   }
@@ -294,6 +292,7 @@ export class NotificationService {
         status === 'ready'
           ? {
               label: 'Get Directions',
+              onClick: () => {},
             }
           : undefined,
     });
@@ -311,6 +310,7 @@ export class NotificationService {
         description: `Unable to process ₹${amount} via ${method}`,
         action: {
           label: 'Retry',
+          onClick: () => {},
         },
       });
     }
@@ -322,6 +322,7 @@ export class NotificationService {
       description: `Balance: ₹${currentBalance} • Required: ₹${requiredAmount}`,
       action: {
         label: 'Add Money',
+        onClick: () => {},
       },
     });
   }
@@ -332,6 +333,7 @@ export class NotificationService {
       description: reason,
       action: {
         label: 'View Meal',
+        onClick: () => {},
       },
     });
   }
@@ -342,6 +344,7 @@ export class NotificationService {
       description: `${description}${offerCode ? ` • Code: ${offerCode}` : ''}`,
       action: {
         label: 'View Offers',
+        onClick: () => {},
       },
     });
   }
@@ -358,6 +361,7 @@ export class NotificationService {
         description: 'Please try scanning your card again',
         action: {
           label: 'Retry',
+          onClick: () => {},
         },
       });
     }
@@ -373,8 +377,8 @@ export class NotificationService {
 
 export function NotificationSystem({
   student,
-  _onOrderStatusUpdate,
-  _onNotificationClick,
+  onOrderStatusUpdate,
+  onNotificationClick,
   className,
 }: NotificationSystemProps) {
   const notificationService = NotificationService.getInstance();

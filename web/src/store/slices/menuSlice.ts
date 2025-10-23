@@ -1,7 +1,7 @@
 /**
  * HASIVU Platform - Menu Management Redux Slice
  */
-import { createSlice, createAsyncThunk, PayloadAction as _PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, PayloadAction as PayloadAction } from '@reduxjs/toolkit';
 import apiClient from '@/lib/api-client';
 
 export interface MenuItem {

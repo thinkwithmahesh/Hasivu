@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const LAMBDA_AUTH_REGISTER_URL =
-  process.env.LAMBDA_AUTH_REGISTER_URL ||
-  'https://your-lambda-endpoint.execute-api.region.amazonaws.com/dev/auth/register';
+  process.env.LAMBDA_AUTH_REGISTER_URL || 'http://localhost:3001/auth/register';
 
 // POST /api/auth/register - User registration
 export async function POST(request: NextRequest) {

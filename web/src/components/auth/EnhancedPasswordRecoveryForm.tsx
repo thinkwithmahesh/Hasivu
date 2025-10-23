@@ -21,7 +21,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label as _Label } from '@/components/ui/label';
+import { Label as Label } from '@/components/ui/label';
 import {
   Form,
   FormControl,
@@ -40,15 +40,15 @@ import {
   securityQuestionsSchema,
   parentVerificationSchema,
   type ForgotPasswordFormData,
-  type SecurityQuestionsData,
-  type ParentVerificationData,
+  type SecurityQuestionsFormData,
+  type ParentVerificationFormData,
   detectRoleFromEmail,
 } from './schemas';
 
 interface EnhancedPasswordRecoveryFormProps {
   onEmailRecovery: (data: ForgotPasswordFormData) => Promise<void>;
-  onSecurityQuestions: (data: SecurityQuestionsData) => Promise<void>;
-  onParentVerification: (data: ParentVerificationData) => Promise<void>;
+  onSecurityQuestions: (data: SecurityQuestionsFormData) => Promise<void>;
+  onParentVerification: (data: ParentVerificationFormData) => Promise<void>;
   onSendSMS?: (phone: string) => Promise<void>;
   isLoading?: boolean;
   error?: string | null;
@@ -56,7 +56,7 @@ interface EnhancedPasswordRecoveryFormProps {
   className?: string;
 }
 
-const SECURITY_QUESTIONS = [
+const SECURITYQUESTIONS = [
   'What was the name of your first pet?',
   "What is your mother's maiden name?",
   'What was the name of your elementary school?',
@@ -90,26 +90,30 @@ export function EnhancedPasswordRecoveryForm({
     resolver: zodResolver(forgotPasswordSchema),
     defaultValues: {
       email: '',
-      userType: 'student',
     },
   });
 
   // Security questions form
-  const questionsForm = useForm<SecurityQuestionsData>({
+  const questionsForm = useForm<SecurityQuestionsFormData>({
     resolver: zodResolver(securityQuestionsSchema),
     defaultValues: {
-      question1: { question: SECURITY_QUESTIONS[0], answer: '' },
-      question2: { question: SECURITY_QUESTIONS[1], answer: '' },
-      question3: { question: SECURITY_QUESTIONS[2], answer: '' },
+      question1: SECURITYQUESTIONS[0],
+      answer1: '',
+      question2: SECURITYQUESTIONS[1],
+      answer2: '',
+      question3: SECURITYQUESTIONS[2],
+      answer3: '',
     },
   });
 
   // Parent verification form
-  const parentForm = useForm<ParentVerificationData>({
+  const parentForm = useForm<ParentVerificationFormData>({
     resolver: zodResolver(parentVerificationSchema),
     defaultValues: {
-      studentEmail: '',
-      parentPhone: '',
+      parentEmail: '',
+      studentId: '',
+      relationshipType: 'parent' as const,
+      phoneNumber: '',
       verificationCode: '',
     },
   });
@@ -123,10 +127,6 @@ export function EnhancedPasswordRecoveryForm({
       setDetectedRole(role);
 
       if (role) {
-        emailForm.setValue(
-          'userType',
-          role === 'student' ? 'student' : role === 'parent' ? 'parent' : 'staff'
-        );
       }
     } else {
       setDetectedRole(null);
@@ -142,7 +142,7 @@ export function EnhancedPasswordRecoveryForm({
     }
   };
 
-  const handleSecurityQuestions = async (data: SecurityQuestionsData) => {
+  const handleSecurityQuestions = async (data: SecurityQuestionsFormData) => {
     try {
       await onSecurityQuestions(data);
       setStep('success');
@@ -151,7 +151,7 @@ export function EnhancedPasswordRecoveryForm({
     }
   };
 
-  const handleParentVerification = async (data: ParentVerificationData) => {
+  const handleParentVerification = async (data: ParentVerificationFormData) => {
     try {
       await onParentVerification(data);
       setStep('success');
@@ -161,7 +161,7 @@ export function EnhancedPasswordRecoveryForm({
   };
 
   const handleSendVerificationCode = async () => {
-    const phone = parentForm.getValues('parentPhone');
+    const phone = parentForm.getValues('phoneNumber');
     if (phone && onSendSMS) {
       try {
         await onSendSMS(phone);
@@ -342,11 +342,11 @@ export function EnhancedPasswordRecoveryForm({
               >
                 <FormField
                   control={questionsForm.control}
-                  name="question1.answer"
+                  name="answer1"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-sm font-medium">
-                        {questionsForm.getValues('question1.question')}
+                        {questionsForm.getValues('question1')}
                       </FormLabel>
                       <FormControl>
                         <div className="relative">
@@ -366,11 +366,11 @@ export function EnhancedPasswordRecoveryForm({
 
                 <FormField
                   control={questionsForm.control}
-                  name="question2.answer"
+                  name="answer2"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-sm font-medium">
-                        {questionsForm.getValues('question2.question')}
+                        {questionsForm.getValues('question2')}
                       </FormLabel>
                       <FormControl>
                         <div className="relative">
@@ -390,11 +390,11 @@ export function EnhancedPasswordRecoveryForm({
 
                 <FormField
                   control={questionsForm.control}
-                  name="question3.answer"
+                  name="answer3"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-sm font-medium">
-                        {questionsForm.getValues('question3.question')}
+                        {questionsForm.getValues('question3')}
                       </FormLabel>
                       <FormControl>
                         <div className="relative">
@@ -451,7 +451,7 @@ export function EnhancedPasswordRecoveryForm({
               >
                 <FormField
                   control={parentForm.control}
-                  name="studentEmail"
+                  name="studentId"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Student Email Address</FormLabel>
@@ -474,7 +474,7 @@ export function EnhancedPasswordRecoveryForm({
 
                 <FormField
                   control={parentForm.control}
-                  name="parentPhone"
+                  name="phoneNumber"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Parent Phone Number</FormLabel>
@@ -500,7 +500,7 @@ export function EnhancedPasswordRecoveryForm({
                     type="button"
                     variant="outline"
                     onClick={handleSendVerificationCode}
-                    disabled={isLoading || !parentForm.getValues('parentPhone')}
+                    disabled={isLoading || !parentForm.getValues('phoneNumber')}
                     className="flex-1"
                   >
                     <Send className="w-4 h-4 mr-2" />

@@ -6,40 +6,40 @@ import { LoginFormData } from './schemas';
 import { UserRole, USER_ROLE_CONFIG } from '@/types/auth';
 
 // Dynamic imports for Safari compatibility
-const _Form = dynamic(() => import('@/components/ui/form').then(mod => ({ default: mod.Form })), {
+const Form = dynamic(() => import('@/components/ui/form').then(mod => ({ default: mod.Form })), {
   ssr: false,
   loading: () => <div className="animate-pulse">Loading form...</div>,
 });
 
-const _FormField = dynamic(
+const FormField = dynamic(
   () => import('@/components/ui/form').then(mod => ({ default: mod.FormField })),
   {
     ssr: false,
   }
 );
 
-const _FormItem = dynamic(
+const FormItem = dynamic(
   () => import('@/components/ui/form').then(mod => ({ default: mod.FormItem })),
   {
     ssr: false,
   }
 );
 
-const _FormLabel = dynamic(
+const FormLabel = dynamic(
   () => import('@/components/ui/form').then(mod => ({ default: mod.FormLabel })),
   {
     ssr: false,
   }
 );
 
-const _FormControl = dynamic(
+const FormControl = dynamic(
   () => import('@/components/ui/form').then(mod => ({ default: mod.FormControl })),
   {
     ssr: false,
   }
 );
 
-const _FormMessage = dynamic(
+const FormMessage = dynamic(
   () => import('@/components/ui/form').then(mod => ({ default: mod.FormMessage })),
   {
     ssr: false,

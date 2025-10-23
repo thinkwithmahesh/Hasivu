@@ -312,7 +312,7 @@ export const MobileNavSheet: React.FC<MobileNavSheetProps> = ({
   };
 
   const isActive = (href?: string) => {
-    if (!href) return false;
+    if (!href || !pathname) return false;
     return pathname === href || pathname.startsWith(href + '/');
   };
 

@@ -391,9 +391,11 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
     } else {
       // Fallback to clipboard
       try {
-        await navigator.clipboard.writeText(`${title}\n${text}\n${url}`);
-        // Use console.log instead of alert for better UX
-        console.log('Link copied to clipboard!');
+        if (typeof window !== 'undefined' && window.navigator && window.navigator.clipboard) {
+          await window.navigator.clipboard.writeText(`${title}\n${text}\n${url}`);
+          // Use console.log instead of alert for better UX
+          console.log('Link copied to clipboard!');
+        }
       } catch (error) {}
     }
   }, [title, text, url]);

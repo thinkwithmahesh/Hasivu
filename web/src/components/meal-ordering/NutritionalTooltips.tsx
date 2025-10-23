@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import {
-  Info as _Info,
+  Info as Info,
   Zap,
   Droplets,
   Wheat,
@@ -17,7 +17,17 @@ import {
   Clock,
   Users,
 } from 'lucide-react';
-import { NutritionalInfo, DietaryInfo } from './types';
+import { NutritionalInfo } from './types';
+
+interface DietaryInfo {
+  vegetarian?: boolean;
+  vegan?: boolean;
+  glutenFree?: boolean;
+  dairyFree?: boolean;
+  nutFree?: boolean;
+  spicy?: boolean;
+  allergens?: string[];
+}
 
 interface NutritionalTooltipProps {
   nutrition: NutritionalInfo;

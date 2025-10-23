@@ -314,17 +314,60 @@ export class NotificationService {
     request: NotificationRequest
   ): Promise<{ success: boolean; data?: any; error?: { message: string; code: string } }> {
     try {
-      // Stub implementation - would integrate with template system, user preferences, etc.
+      // Get user preferences
+      const userPrefs = await this.getUserNotificationPreferences(request.recipientId);
+
+      // Get template content (stub - would integrate with template system)
+      const templateContent = await this.getNotificationTemplate(
+        request.templateId,
+        request.variables
+      );
+
+      if (!templateContent) {
+        return {
+          success: false,
+          error: {
+            message: 'Notification template not found',
+            code: 'TEMPLATE_NOT_FOUND',
+          },
+        };
+      }
+
       const notificationData: CreateNotificationData = {
         userId: request.recipientId,
         type: request.templateId,
-        title: 'Notification',
-        message: 'Notification message',
-        data: request.variables,
+        title: templateContent.title,
+        message: templateContent.message,
+        data: {
+          ...request.variables,
+          channels: request.channels,
+          priority: request.priority,
+        },
+        scheduledFor: request.expiresAt,
       };
 
       const notification = await this.getInstance().create(notificationData);
-      return { success: true, data: { notification, templateData: {} } };
+
+      // Send through enabled channels
+      const enabledChannels = this.getEnabledChannels(request.channels, userPrefs);
+      const deliveryResults = await this.deliverNotification(notification, enabledChannels);
+
+      // Update notification status based on delivery results
+      if (deliveryResults.some(r => r.success)) {
+        await this.getInstance().prisma.notification.update({
+          where: { id: notification.id },
+          data: { status: 'sent' },
+        });
+      }
+
+      return {
+        success: true,
+        data: {
+          notification,
+          deliveryResults,
+          templateData: templateContent,
+        },
+      };
     } catch (error: any) {
       return {
         success: false,
@@ -346,33 +389,40 @@ export class NotificationService {
       let failed = 0;
       const details: { successful: any[]; failed: any[] } = { successful: [], failed: [] };
 
-      // Process in batches
-      for (const recipient of request.recipients) {
-        try {
-          const notificationRequest: NotificationRequest = {
-            templateId: request.templateId,
-            recipientId: recipient.recipientId,
-            recipientType: recipient.recipientType,
-            channels: request.channels,
-            variables: recipient.variables,
-            priority: request.priority,
-          };
+      // Process in batches of 10 to avoid overwhelming the system
+      const batchSize = 10;
+      for (let i = 0; i < request.recipients.length; i += batchSize) {
+        const batch = request.recipients.slice(i, i + batchSize);
+        const batchPromises = batch.map(async recipient => {
+          try {
+            const notificationRequest: NotificationRequest = {
+              templateId: request.templateId,
+              recipientId: recipient.recipientId,
+              recipientType: recipient.recipientType,
+              channels: request.channels,
+              variables: recipient.variables,
+              priority: request.priority,
+            };
 
-          const result = await this.sendNotification(notificationRequest);
-          if (result.success) {
-            successful++;
-            details.successful.push({ recipientId: recipient.recipientId });
-          } else {
+            const result = await this.sendNotification(notificationRequest);
+            if (result.success) {
+              successful++;
+              details.successful.push({ recipientId: recipient.recipientId });
+            } else {
+              failed++;
+              details.failed.push({ recipientId: recipient.recipientId, error: result.error });
+            }
+          } catch (error) {
             failed++;
-            details.failed.push({ recipientId: recipient.recipientId, error: result.error });
+            details.failed.push({
+              recipientId: recipient.recipientId,
+              error: { message: 'Processing failed' },
+            });
           }
-        } catch (error) {
-          failed++;
-          details.failed.push({
-            recipientId: recipient.recipientId,
-            error: { message: 'Processing failed' },
-          });
-        }
+        });
+
+        // Wait for current batch to complete before processing next batch
+        await Promise.all(batchPromises);
       }
 
       return { success: true, data: { successful, failed, details } };
@@ -553,7 +603,171 @@ export class NotificationService {
     }
   }
 
-  public static async getNotificationAnalytics(_filters?: {
+  // Helper methods for notification delivery
+  private static async getUserNotificationPreferences(
+    userId: string
+  ): Promise<NotificationPreferences> {
+    // Stub implementation - would fetch from database/cache
+    return {
+      channels: {
+        push: true,
+        email: true,
+        sms: false,
+        whatsapp: true,
+        in_app: true,
+        socket: true,
+      },
+      quietHours: { enabled: false, startTime: '22:00', endTime: '08:00', timezone: 'UTC' },
+      frequency: {
+        email: 'immediate',
+        push: 'immediate',
+        sms: 'urgent_only',
+        whatsapp: 'immediate',
+      },
+      topics: {
+        orderUpdates: true,
+        paymentUpdates: true,
+        systemAnnouncements: true,
+        promotions: false,
+      },
+    };
+  }
+
+  private static async getNotificationTemplate(
+    templateId: string,
+    variables: Record<string, any> = {}
+  ): Promise<{ title: string; message: string } | null> {
+    // Stub template system - would integrate with actual template engine
+    const templates: Record<string, { title: string; message: string }> = {
+      order_confirmation: {
+        title: 'Order Confirmed',
+        message: `Your order #${variables.orderId || 'N/A'} has been confirmed for ${variables.deliveryDate || 'N/A'}. Total: ₹${variables.totalAmount || 'N/A'}`,
+      },
+      order_status_update: {
+        title: 'Order Status Update',
+        message: `Your order status has been updated to: ${variables.newStatus || 'N/A'}`,
+      },
+      payment_success: {
+        title: 'Payment Successful',
+        message: `Payment of ₹${variables.amount || 'N/A'} has been processed successfully.`,
+      },
+      delivery_reminder: {
+        title: 'Delivery Reminder',
+        message: `Your order will be delivered today at ${variables.deliveryTime || 'N/A'}.`,
+      },
+    };
+
+    return templates[templateId] || null;
+  }
+
+  private static getEnabledChannels(
+    requestedChannels: NotificationChannel[] | undefined,
+    userPrefs: NotificationPreferences
+  ): NotificationChannel[] {
+    const defaultChannels: NotificationChannel[] = ['in_app'];
+    const availableChannels = requestedChannels || defaultChannels;
+
+    return availableChannels.filter(channel => {
+      // Check if channel is enabled in user preferences
+      switch (channel) {
+        case 'push':
+          return userPrefs.channels.push;
+        case 'email':
+          return userPrefs.channels.email;
+        case 'sms':
+          return userPrefs.channels.sms;
+        case 'whatsapp':
+          return userPrefs.channels.whatsapp;
+        case 'in_app':
+          return userPrefs.channels.in_app;
+        case 'socket':
+          return userPrefs.channels.socket;
+        default:
+          return false;
+      }
+    });
+  }
+
+  private static async deliverNotification(
+    notification: Notification,
+    channels: NotificationChannel[]
+  ): Promise<Array<{ channel: NotificationChannel; success: boolean; error?: string }>> {
+    const results: Array<{ channel: NotificationChannel; success: boolean; error?: string }> = [];
+
+    for (const channel of channels) {
+      try {
+        switch (channel) {
+          case 'push':
+            if (notification.userId && notification.title && notification.message) {
+              await this.getInstance().sendPushNotification(notification.userId, {
+                userId: notification.userId,
+                type: notification.type,
+                title: notification.title,
+                message: notification.message,
+                data: notification.data ? JSON.parse(notification.data) : undefined,
+              });
+            }
+            break;
+
+          case 'email':
+            await this.sendEmailNotification(notification);
+            break;
+
+          case 'sms':
+            await this.sendSMSNotification(notification);
+            break;
+
+          case 'whatsapp':
+            await this.sendWhatsAppNotification(notification);
+            break;
+
+          case 'in_app':
+            // Already stored in database, just mark as delivered
+            await this.getInstance().prisma.notification.update({
+              where: { id: notification.id },
+              data: { status: 'delivered' },
+            });
+            break;
+
+          case 'socket':
+            await this.sendSocketNotification(notification);
+            break;
+        }
+
+        results.push({ channel, success: true });
+      } catch (error: any) {
+        results.push({ channel, success: false, error: error.message });
+      }
+    }
+
+    return results;
+  }
+
+  private static async sendEmailNotification(notification: Notification): Promise<void> {
+    // Stub - would integrate with email service (SendGrid, SES, etc.)
+    console.log(`Sending email notification: ${notification.title} to user ${notification.userId}`);
+  }
+
+  private static async sendSMSNotification(notification: Notification): Promise<void> {
+    // Stub - would integrate with SMS service (Twilio, etc.)
+    console.log(`Sending SMS notification: ${notification.title} to user ${notification.userId}`);
+  }
+
+  private static async sendWhatsAppNotification(notification: Notification): Promise<void> {
+    // Stub - would integrate with WhatsApp Business API
+    console.log(
+      `Sending WhatsApp notification: ${notification.title} to user ${notification.userId}`
+    );
+  }
+
+  private static async sendSocketNotification(notification: Notification): Promise<void> {
+    // Stub - would integrate with WebSocket service
+    console.log(
+      `Sending socket notification: ${notification.title} to user ${notification.userId}`
+    );
+  }
+
+  public static async getNotificationAnalytics(filters?: {
     startDate?: Date;
     endDate?: Date;
     templateId?: string;
@@ -564,23 +778,84 @@ export class NotificationService {
     error?: { message: string; code: string };
   }> {
     try {
-      // Stub implementation - would query analytics from database
-      const analytics: NotificationAnalytics = {
-        totalSent: 0,
-        totalDelivered: 0,
-        totalRead: 0,
-        deliveryRate: 0,
-        readRate: 0,
-        channelStats: {
-          push: { sent: 0, delivered: 0, read: 0, failed: 0 },
-          email: { sent: 0, delivered: 0, read: 0, failed: 0 },
-          sms: { sent: 0, delivered: 0, read: 0, failed: 0 },
-          whatsapp: { sent: 0, delivered: 0, read: 0, failed: 0 },
-          in_app: { sent: 0, delivered: 0, read: 0, failed: 0 },
-          socket: { sent: 0, delivered: 0, read: 0, failed: 0 },
+      const where: any = {};
+
+      if (filters?.startDate || filters?.endDate) {
+        where.createdAt = {};
+        if (filters.startDate) where.createdAt.gte = filters.startDate;
+        if (filters.endDate) where.createdAt.lte = filters.endDate;
+      }
+
+      if (filters?.templateId) {
+        where.type = filters.templateId;
+      }
+
+      if (filters?.userId) {
+        where.userId = filters.userId;
+      }
+
+      const notifications = await this.getInstance().prisma.notification.findMany({
+        where,
+        select: {
+          id: true,
+          type: true,
+          status: true,
+          createdAt: true,
         },
-        templateStats: {},
-        timeSeries: [],
+      });
+
+      const totalSent = notifications.length;
+      const totalDelivered = notifications.filter(n =>
+        ['delivered', 'read'].includes(n.status)
+      ).length;
+      const totalRead = notifications.filter(n => n.status === 'read').length;
+
+      const deliveryRate = totalSent > 0 ? (totalDelivered / totalSent) * 100 : 0;
+      const readRate = totalSent > 0 ? (totalRead / totalSent) * 100 : 0;
+
+      // Channel stats (simplified - would need channel tracking in database)
+      const channelStats: NotificationAnalytics['channelStats'] = {
+        push: { sent: 0, delivered: 0, read: 0, failed: 0 },
+        email: { sent: 0, delivered: 0, read: 0, failed: 0 },
+        sms: { sent: 0, delivered: 0, read: 0, failed: 0 },
+        whatsapp: { sent: 0, delivered: 0, read: 0, failed: 0 },
+        in_app: {
+          sent: totalSent,
+          delivered: totalDelivered,
+          read: totalRead,
+          failed: totalSent - totalDelivered,
+        },
+        socket: { sent: 0, delivered: 0, read: 0, failed: 0 },
+      };
+
+      // Template stats
+      const templateStats: NotificationAnalytics['templateStats'] = {};
+      notifications.forEach(notification => {
+        if (!templateStats[notification.type]) {
+          templateStats[notification.type] = { sent: 0, delivered: 0, read: 0 };
+        }
+        templateStats[notification.type].sent++;
+        if (['delivered', 'read'].includes(notification.status)) {
+          templateStats[notification.type].delivered++;
+        }
+        if (notification.status === 'read') {
+          templateStats[notification.type].read++;
+        }
+      });
+
+      // Time series (simplified)
+      const timeSeries: NotificationAnalytics['timeSeries'] = [];
+      // Would group by date in real implementation
+
+      const analytics: NotificationAnalytics = {
+        totalSent,
+        totalDelivered,
+        totalRead,
+        deliveryRate,
+        readRate,
+        channelStats,
+        templateStats,
+        timeSeries,
       };
 
       return { success: true, data: analytics };

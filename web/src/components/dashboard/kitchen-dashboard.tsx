@@ -22,11 +22,11 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  _LineChart,
-  _Line,
-  _PieChart,
-  _Pie,
-  _Cell,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
 } from 'recharts';
 import {
   ChefHat,
@@ -35,7 +35,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   Flame,
-  _Users,
+  Users,
   TrendingUp,
   ArrowUp,
   ArrowDown,
@@ -513,7 +513,11 @@ export function KitchenDashboard({ className }: KitchenDashboardProps) {
                       .filter(order => order.status !== 'completed')
                       .sort((a, b) => {
                         // Sort by priority first (high > medium > low)
-                        const priorityOrder = { high: 3, medium: 2, low: 1 };
+                        const priorityOrder: Record<string, number> = {
+                          high: 3,
+                          medium: 2,
+                          low: 1,
+                        };
                         if (priorityOrder[a.priority] !== priorityOrder[b.priority]) {
                           return priorityOrder[b.priority] - priorityOrder[a.priority];
                         }

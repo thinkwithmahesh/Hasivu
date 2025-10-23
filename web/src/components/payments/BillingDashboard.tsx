@@ -36,12 +36,12 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import {
-  Tabs as _Tabs,
-  TabsContent as _TabsContent,
-  TabsList as _TabsList,
-  TabsTrigger as _TabsTrigger,
+  Tabs as Tabs,
+  TabsContent as TabsContent,
+  TabsList as TabsList,
+  TabsTrigger as TabsTrigger,
 } from '@/components/ui/tabs';
-import { Alert as _Alert, AlertDescription as _AlertDescription } from '@/components/ui/alert';
+import { Alert as Alert, AlertDescription as AlertDescription } from '@/components/ui/alert';
 import {
   FileText,
   Download,
@@ -58,7 +58,7 @@ import {
 } from 'lucide-react';
 import { PaymentService } from '@/services/payment.service';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
-import { FEATURE_FLAGS } from '@/types/feature-flags';
+import { _FEATURE_FLAGS } from '@/types/feature-flags';
 import { cn } from '@/lib/utils';
 
 interface BillingDashboardProps {
@@ -111,8 +111,8 @@ export const BillingDashboard: React.FC<BillingDashboardProps> = ({
   const [dateRange, _setDateRange] = useState('30d');
 
   // Feature flags
-  const { isEnabled: billingAnalyticsEnabled } = useFeatureFlag(FEATURE_FLAGS.BILLING_ANALYTICS);
-  const { isEnabled: newPaymentMethodsEnabled } = useFeatureFlag(FEATURE_FLAGS.NEW_PAYMENT_METHODS);
+  const billingAnalyticsEnabled = useFeatureFlag(_FEATURE_FLAGS.BILLING_ANALYTICS);
+  const newPaymentMethodsEnabled = useFeatureFlag(_FEATURE_FLAGS.NEW_PAYMENT_METHODS);
 
   const paymentService = PaymentService.getInstance();
 

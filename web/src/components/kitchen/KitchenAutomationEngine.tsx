@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence as _AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence as AnimatePresence } from 'framer-motion';
 import {
   Bot,
   Settings,

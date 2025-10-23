@@ -20,7 +20,7 @@
 'use client';
 
 import React, { useState, _useEffect } from 'react';
-import { useForm, _Controller } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { format, addDays, isBefore, startOfDay } from 'date-fns';
@@ -32,7 +32,7 @@ import {
   AlertTriangle,
   Plus,
   Minus,
-  _Info,
+  Info,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -130,7 +130,7 @@ interface OrderCreationFormProps {
 // Available add-ons
 // ============================================================================
 
-const AVAILABLE_ADDONS = [
+const AVAILABLEADDONS = [
   { id: 'extra_cheese', label: 'Extra Cheese', price: 20 },
   { id: 'extra_veggies', label: 'Extra Vegetables', price: 15 },
   { id: 'extra_sauce', label: 'Extra Sauce', price: 10 },
@@ -142,7 +142,7 @@ const AVAILABLE_ADDONS = [
 // Time Slot Options
 // ============================================================================
 
-const TIME_SLOTS = [
+const TIMESLOTS = [
   { value: 'breakfast', label: 'Breakfast', time: '7:00 AM - 9:00 AM', icon: '☀️' },
   { value: 'lunch', label: 'Lunch', time: '12:00 PM - 2:00 PM', icon: '🌤️' },
   { value: 'snack', label: 'Snack', time: '3:30 PM - 4:30 PM', icon: '🍪' },
@@ -237,7 +237,7 @@ export const OrderCreationForm: React.FC<OrderCreationFormProps> = ({
   const calculateTotalPrice = (): number => {
     const basePrice = menuItem.price * watchedQuantity;
     const addOnsPrice = selectedAddOns.reduce((sum, addOnId) => {
-      const addOn = AVAILABLE_ADDONS.find(a => a.id === addOnId);
+      const addOn = AVAILABLEADDONS.find(a => a.id === addOnId);
       return sum + (addOn?.price || 0) * watchedQuantity;
     }, 0);
     return basePrice + addOnsPrice;
@@ -400,7 +400,7 @@ export const OrderCreationForm: React.FC<OrderCreationFormProps> = ({
                 </FormLabel>
                 <FormControl>
                   <div className="grid grid-cols-2 gap-3">
-                    {TIME_SLOTS.map(slot => {
+                    {TIMESLOTS.map(slot => {
                       const isAvailable =
                         !menuItem.availableTimeSlots ||
                         menuItem.availableTimeSlots.includes(slot.value as any);
@@ -506,7 +506,7 @@ export const OrderCreationForm: React.FC<OrderCreationFormProps> = ({
             <div className="space-y-2">
               <Label>Add-ons (Optional)</Label>
               <div className="space-y-2">
-                {AVAILABLE_ADDONS.map(addOn => (
+                {AVAILABLEADDONS.map(addOn => (
                   <div
                     key={addOn.id}
                     className="flex items-center justify-between p-2 hover:bg-gray-100 rounded"
@@ -565,7 +565,7 @@ export const OrderCreationForm: React.FC<OrderCreationFormProps> = ({
                 <span className="text-sm font-medium">
                   +₹
                   {selectedAddOns.reduce((sum, addOnId) => {
-                    const addOn = AVAILABLE_ADDONS.find(a => a.id === addOnId);
+                    const addOn = AVAILABLEADDONS.find(a => a.id === addOnId);
                     return sum + (addOn?.price || 0) * watchedQuantity;
                   }, 0)}
                 </span>

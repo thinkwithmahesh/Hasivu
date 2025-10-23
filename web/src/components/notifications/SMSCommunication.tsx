@@ -38,7 +38,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Progress as _Progress } from '@/components/ui/progress';
+import { Progress as Progress } from '@/components/ui/progress';
 import {
   Send,
   FileText,
@@ -50,7 +50,6 @@ import {
   RefreshCw,
   AlertTriangle,
 } from 'lucide-react';
-import { NotificationService } from '@/services/notification.service';
 import { cn } from '@/lib/utils';
 
 interface SMSCommunicationProps {
@@ -124,8 +123,6 @@ export const SMSCommunication: React.FC<SMSCommunicationProps> = ({ className })
     recipients: '',
     scheduledFor: '',
   });
-
-  const _notificationService = NotificationService.getInstance();
 
   // Load SMS data
   useEffect(() => {

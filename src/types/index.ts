@@ -94,7 +94,6 @@ export { isOperationalError, getErrorMessage, createErrorResponse } from '../uti
 export type {
   DatabaseConfig,
   ConnectionStatus,
-  QueryMetrics,
   TransactionOptions,
 } from '../database/DatabaseManager';
 

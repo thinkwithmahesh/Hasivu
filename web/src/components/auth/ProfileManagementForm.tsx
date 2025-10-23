@@ -16,13 +16,13 @@ import {
   X,
   AlertTriangle,
   Save,
-  _Eye,
-  _EyeOff,
+  Eye,
+  EyeOff,
   Clock,
   Smartphone,
   Mail,
-  _Heart,
-  _Zap,
+  Heart,
+  Zap,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -56,23 +56,21 @@ import {
 import {
   profileManagementSchema,
   rfidLinkingSchema,
-  _profilePreferencesSchema,
-  type ProfileManagementData,
-  type RfidLinkingData,
-  type _ProfilePreferencesData,
+  type ProfileManagementFormData,
+  type RfidLinkingFormData,
   DIETARY_RESTRICTIONS,
   COMMON_ALLERGENS,
 } from './schemas';
 
 interface ProfileManagementFormProps {
   // Data handlers
-  onUpdateProfile: (data: ProfileManagementData) => Promise<void>;
-  onLinkRfidCard?: (data: RfidLinkingData) => Promise<void>;
+  onUpdateProfile: (data: ProfileManagementFormData) => Promise<void>;
+  onLinkRfidCard?: (data: RfidLinkingFormData) => Promise<void>;
   onUploadAvatar?: (file: File) => Promise<string>;
   onValidateRfidCard?: (cardNumber: string) => Promise<boolean>;
 
   // Initial data
-  initialData?: Partial<ProfileManagementData>;
+  initialData?: Partial<ProfileManagementFormData>;
   userRole?: 'student' | 'parent' | 'teacher' | 'admin' | 'kitchen';
   linkedCards?: Array<{ id: string; number: string; status: 'active' | 'inactive' }>;
 
@@ -116,7 +114,7 @@ export function ProfileManagementForm({
   onUploadAvatar,
   onValidateRfidCard,
   initialData,
-  _userRole = 'student',
+  userRole = 'student',
   linkedCards = [],
   isLoading = false,
   error,
@@ -124,61 +122,60 @@ export function ProfileManagementForm({
   className,
 }: ProfileManagementFormProps) {
   const [activeTab, setActiveTab] = React.useState('personal');
-  const [avatarPreview, setAvatarPreview] = React.useState<string | null>(
-    initialData?.personalInfo?.avatar || null
-  );
+  const [avatarPreview, setAvatarPreview] = React.useState<string | null>(null);
   const [rfidValidationStatus, setRfidValidationStatus] = React.useState<{
     [key: string]: boolean | null;
   }>({});
 
-  // Main profile form
-  const profileForm = useForm<ProfileManagementData>({
+  // Main profile form - matching the FLAT schema structure
+  const profileForm = useForm<ProfileManagementFormData>({
     resolver: zodResolver(profileManagementSchema),
     defaultValues: {
-      personalInfo: {
-        firstName: initialData?.personalInfo?.firstName || '',
-        lastName: initialData?.personalInfo?.lastName || '',
-        phone: initialData?.personalInfo?.phone || '',
-        avatar: initialData?.personalInfo?.avatar || '',
+      // Flat fields from schema
+      firstName: initialData?.firstName || '',
+      lastName: initialData?.lastName || '',
+      email: initialData?.email || '',
+      phoneNumber: initialData?.phoneNumber || '',
+      dateOfBirth: initialData?.dateOfBirth || '',
+      grade: initialData?.grade || '',
+      studentId: initialData?.studentId || '',
+
+      // Emergency contacts (optional array)
+      emergencyContacts: initialData?.emergencyContacts || [],
+
+      // Medical info (optional nested object)
+      medicalInfo: {
+        conditions: initialData?.medicalInfo?.conditions || '',
+        medications: initialData?.medicalInfo?.medications || '',
+        allergies: initialData?.medicalInfo?.allergies || [],
+        dietaryRestrictions: initialData?.medicalInfo?.dietaryRestrictions || [],
       },
+
+      // Preferences (optional nested object) - only what exists in schema
       preferences: {
-        dietaryRestrictions: initialData?.preferences?.dietaryRestrictions || [],
-        allergens: initialData?.preferences?.allergens || [],
-        customDietaryNotes: initialData?.preferences?.customDietaryNotes || '',
-        mealPreferences: {
-          spiceLevel: initialData?.preferences?.mealPreferences?.spiceLevel || 'medium',
-          preferredCuisine: initialData?.preferences?.mealPreferences?.preferredCuisine || [],
-          dislikedFoods: initialData?.preferences?.mealPreferences?.dislikedFoods || [],
+        notifications: {
+          email: initialData?.preferences?.notifications?.email ?? true,
+          sms: initialData?.preferences?.notifications?.sms ?? false,
+          push: initialData?.preferences?.notifications?.push ?? true,
         },
-        notificationPreferences: {
-          mealReminders: initialData?.preferences?.notificationPreferences?.mealReminders ?? true,
-          orderConfirmations:
-            initialData?.preferences?.notificationPreferences?.orderConfirmations ?? true,
-          promotionalEmails:
-            initialData?.preferences?.notificationPreferences?.promotionalEmails ?? false,
-          smsNotifications:
-            initialData?.preferences?.notificationPreferences?.smsNotifications ?? true,
-        },
-      },
-      securitySettings: {
-        twoFactorEnabled: initialData?.securitySettings?.twoFactorEnabled ?? false,
-        loginNotifications: initialData?.securitySettings?.loginNotifications ?? true,
-        sessionTimeout: initialData?.securitySettings?.sessionTimeout || '30',
+        language: initialData?.preferences?.language || 'en',
+        timezone: initialData?.preferences?.timezone || 'UTC',
       },
     },
   });
 
   // RFID card linking form
-  const rfidForm = useForm<RfidLinkingData>({
+  const rfidForm = useForm<RfidLinkingFormData>({
     resolver: zodResolver(rfidLinkingSchema),
     defaultValues: {
-      cardNumber: '',
-      confirmCardNumber: '',
-      securityPin: '',
+      rfidTag: '',
+      studentId: initialData?.studentId || '',
+      verificationMethod: 'pin',
+      pin: '',
     },
   });
 
-  const watchedRfidCard = rfidForm.watch('cardNumber');
+  const watchedRfidCard = rfidForm.watch('rfidTag');
 
   // RFID card validation
   React.useEffect(() => {
@@ -203,7 +200,6 @@ export function ProfileManagementForm({
       try {
         const avatarUrl = await onUploadAvatar(file);
         setAvatarPreview(avatarUrl);
-        profileForm.setValue('personalInfo.avatar', avatarUrl);
       } catch (error) {
         // Error handled silently
       }
@@ -212,13 +208,12 @@ export function ProfileManagementForm({
       const reader = new FileReader();
       reader.onloadend = () => {
         setAvatarPreview(reader.result as string);
-        profileForm.setValue('personalInfo.avatar', reader.result as string);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleProfileSubmit = async (data: ProfileManagementData) => {
+  const handleProfileSubmit = async (data: ProfileManagementFormData) => {
     try {
       await onUpdateProfile(data);
     } catch (error) {
@@ -226,7 +221,7 @@ export function ProfileManagementForm({
     }
   };
 
-  const handleRfidSubmit = async (data: RfidLinkingData) => {
+  const handleRfidSubmit = async (data: RfidLinkingFormData) => {
     if (onLinkRfidCard) {
       try {
         await onLinkRfidCard(data);
@@ -266,11 +261,11 @@ export function ProfileManagementForm({
         </div>
       </div>
 
-      {/* Personal Information */}
+      {/* Personal Information - Flat schema fields */}
       <div className="grid grid-cols-2 gap-4">
         <FormField
           control={profileForm.control}
-          name="personalInfo.firstName"
+          name="firstName"
           render={({ field }) => (
             <FormItem>
               <FormLabel>First Name</FormLabel>
@@ -287,7 +282,7 @@ export function ProfileManagementForm({
 
         <FormField
           control={profileForm.control}
-          name="personalInfo.lastName"
+          name="lastName"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Last Name</FormLabel>
@@ -302,7 +297,30 @@ export function ProfileManagementForm({
 
       <FormField
         control={profileForm.control}
-        name="personalInfo.phone"
+        name="email"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Email</FormLabel>
+            <FormControl>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  {...field}
+                  type="email"
+                  placeholder="john.doe@example.com"
+                  className="pl-10"
+                  disabled={isLoading}
+                />
+              </div>
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={profileForm.control}
+        name="phoneNumber"
         render={({ field }) => (
           <FormItem>
             <FormLabel>Phone Number</FormLabel>
@@ -322,15 +340,63 @@ export function ProfileManagementForm({
           </FormItem>
         )}
       />
+
+      {userRole === 'student' && (
+        <>
+          <FormField
+            control={profileForm.control}
+            name="dateOfBirth"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Date of Birth</FormLabel>
+                <FormControl>
+                  <Input {...field} type="date" disabled={isLoading} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={profileForm.control}
+              name="grade"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Grade</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="e.g., 10th" disabled={isLoading} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={profileForm.control}
+              name="studentId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Student ID</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="e.g., S12345" disabled={isLoading} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </>
+      )}
     </div>
   );
 
   const renderDietaryPreferencesTab = () => (
     <div className="space-y-6">
-      {/* Dietary Restrictions */}
+      {/* Dietary Restrictions - from medicalInfo.dietaryRestrictions */}
       <FormField
         control={profileForm.control}
-        name="preferences.dietaryRestrictions"
+        name="medicalInfo.dietaryRestrictions"
         render={({ field }) => (
           <FormItem>
             <FormLabel>Dietary Restrictions</FormLabel>
@@ -363,10 +429,10 @@ export function ProfileManagementForm({
         )}
       />
 
-      {/* Allergens */}
+      {/* Allergens - from medicalInfo.allergies */}
       <FormField
         control={profileForm.control}
-        name="preferences.allergens"
+        name="medicalInfo.allergies"
         render={({ field }) => (
           <FormItem>
             <FormLabel className="flex items-center gap-2">
@@ -402,18 +468,18 @@ export function ProfileManagementForm({
         )}
       />
 
-      {/* Custom Notes */}
+      {/* Medical Conditions */}
       <FormField
         control={profileForm.control}
-        name="preferences.customDietaryNotes"
+        name="medicalInfo.conditions"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Additional Dietary Notes</FormLabel>
+            <FormLabel>Medical Conditions</FormLabel>
             <FormControl>
               <Textarea
                 {...field}
-                placeholder="Any additional dietary requirements, medical conditions, or special instructions..."
-                className="min-h-[100px]"
+                placeholder="Any medical conditions that may affect dietary needs..."
+                className="min-h-[80px]"
                 maxLength={500}
                 disabled={isLoading}
               />
@@ -424,78 +490,27 @@ export function ProfileManagementForm({
         )}
       />
 
-      {/* Meal Preferences */}
-      <div className="space-y-4">
-        <h4 className="font-medium text-gray-900">Meal Preferences</h4>
-
-        <FormField
-          control={profileForm.control}
-          name="preferences.mealPreferences.spiceLevel"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Spice Level Preference</FormLabel>
-              <FormControl>
-                <div className="grid grid-cols-3 gap-3">
-                  {SPICE_LEVELS.map(level => (
-                    <label
-                      key={level.value}
-                      className={`flex items-center justify-center space-x-2 p-3 border rounded-lg cursor-pointer transition-colors ${
-                        field.value === level.value
-                          ? 'border-primary-500 bg-primary-50'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        value={level.value}
-                        checked={field.value === level.value}
-                        onChange={field.onChange}
-                        className="sr-only"
-                        disabled={isLoading}
-                      />
-                      <span className="text-lg">{level.icon}</span>
-                      <span className="font-medium">{level.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={profileForm.control}
-          name="preferences.mealPreferences.preferredCuisine"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Preferred Cuisines</FormLabel>
-              <FormDescription>Select your favorite types of cuisine</FormDescription>
-              <div className="grid grid-cols-2 gap-2">
-                {CUISINE_OPTIONS.map(cuisine => (
-                  <div key={cuisine} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`cuisine-${cuisine}`}
-                      checked={field.value?.includes(cuisine)}
-                      onCheckedChange={checked => {
-                        const updatedCuisines = checked
-                          ? [...(field.value || []), cuisine]
-                          : field.value?.filter(c => c !== cuisine) || [];
-                        field.onChange(updatedCuisines);
-                      }}
-                      disabled={isLoading}
-                    />
-                    <Label htmlFor={`cuisine-${cuisine}`} className="text-sm font-normal">
-                      {cuisine}
-                    </Label>
-                  </div>
-                ))}
-              </div>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      </div>
+      {/* Medications */}
+      <FormField
+        control={profileForm.control}
+        name="medicalInfo.medications"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Current Medications</FormLabel>
+            <FormControl>
+              <Textarea
+                {...field}
+                placeholder="List any medications that may interact with food..."
+                className="min-h-[80px]"
+                maxLength={500}
+                disabled={isLoading}
+              />
+            </FormControl>
+            <FormDescription>{field.value?.length || 0}/500 characters</FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
     </div>
   );
 
@@ -539,7 +554,7 @@ export function ProfileManagementForm({
           <form onSubmit={rfidForm.handleSubmit(handleRfidSubmit)} className="space-y-4">
             <FormField
               control={rfidForm.control}
-              name="cardNumber"
+              name="rfidTag"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>RFID Card Number</FormLabel>
@@ -586,19 +601,12 @@ export function ProfileManagementForm({
 
             <FormField
               control={rfidForm.control}
-              name="confirmCardNumber"
+              name="studentId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Confirm Card Number</FormLabel>
+                  <FormLabel>Student ID</FormLabel>
                   <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="A1B2C3D4"
-                      className="font-mono uppercase"
-                      maxLength={8}
-                      onChange={e => field.onChange(e.target.value.toUpperCase())}
-                      disabled={isLoading}
-                    />
+                    <Input {...field} placeholder="S12345" disabled={isLoading} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -607,27 +615,56 @@ export function ProfileManagementForm({
 
             <FormField
               control={rfidForm.control}
-              name="securityPin"
+              name="verificationMethod"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Security PIN</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      type="password"
-                      placeholder="0000"
-                      className="text-center text-lg tracking-wider"
-                      maxLength={4}
-                      disabled={isLoading}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    4-digit PIN for card security (will be required for meal purchases)
-                  </FormDescription>
+                  <FormLabel>Verification Method</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                    disabled={isLoading}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select verification method" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="pin">PIN</SelectItem>
+                      <SelectItem value="biometric">Biometric</SelectItem>
+                      <SelectItem value="admin_approval">Admin Approval</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
+            {rfidForm.watch('verificationMethod') === 'pin' && (
+              <FormField
+                control={rfidForm.control}
+                name="pin"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Security PIN</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="password"
+                        placeholder="0000"
+                        className="text-center text-lg tracking-wider"
+                        maxLength={4}
+                        disabled={isLoading}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      4-digit PIN for card security (will be required for meal purchases)
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? (
@@ -667,13 +704,16 @@ export function ProfileManagementForm({
         <div className="space-y-4">
           <FormField
             control={profileForm.control}
-            name="preferences.notificationPreferences.mealReminders"
+            name="preferences.notifications.email"
             render={({ field }) => (
               <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                 <div className="space-y-0.5">
-                  <FormLabel className="text-base">Meal Reminders</FormLabel>
+                  <FormLabel className="text-base flex items-center gap-2">
+                    <Mail className="h-4 w-4" />
+                    Email Notifications
+                  </FormLabel>
                   <FormDescription>
-                    Get notified about upcoming meal times and deadlines
+                    Receive important updates and reminders via email
                   </FormDescription>
                 </div>
                 <FormControl>
@@ -689,29 +729,7 @@ export function ProfileManagementForm({
 
           <FormField
             control={profileForm.control}
-            name="preferences.notificationPreferences.orderConfirmations"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                <div className="space-y-0.5">
-                  <FormLabel className="text-base">Order Confirmations</FormLabel>
-                  <FormDescription>
-                    Receive confirmation when orders are placed and ready
-                  </FormDescription>
-                </div>
-                <FormControl>
-                  <Checkbox
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                    disabled={isLoading}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={profileForm.control}
-            name="preferences.notificationPreferences.smsNotifications"
+            name="preferences.notifications.sms"
             render={({ field }) => (
               <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                 <div className="space-y-0.5">
@@ -734,17 +752,15 @@ export function ProfileManagementForm({
 
           <FormField
             control={profileForm.control}
-            name="preferences.notificationPreferences.promotionalEmails"
+            name="preferences.notifications.push"
             render={({ field }) => (
               <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                 <div className="space-y-0.5">
                   <FormLabel className="text-base flex items-center gap-2">
-                    <Mail className="h-4 w-4" />
-                    Promotional Emails
+                    <Bell className="h-4 w-4" />
+                    Push Notifications
                   </FormLabel>
-                  <FormDescription>
-                    Special offers, new menu items, and school events
-                  </FormDescription>
+                  <FormDescription>Get real-time notifications on your device</FormDescription>
                 </div>
                 <FormControl>
                   <Checkbox
@@ -762,60 +778,14 @@ export function ProfileManagementForm({
       <Separator />
 
       <div className="space-y-4">
-        <h4 className="font-medium text-gray-900 flex items-center gap-2">
-          <Shield className="h-4 w-4" />
-          Security Settings
-        </h4>
+        <h4 className="font-medium text-gray-900">Preferences</h4>
 
         <FormField
           control={profileForm.control}
-          name="securitySettings.twoFactorEnabled"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-              <div className="space-y-0.5">
-                <FormLabel className="text-base">Two-Factor Authentication</FormLabel>
-                <FormDescription>Add an extra layer of security to your account</FormDescription>
-              </div>
-              <FormControl>
-                <Checkbox
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                  disabled={isLoading}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={profileForm.control}
-          name="securitySettings.loginNotifications"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-              <div className="space-y-0.5">
-                <FormLabel className="text-base">Login Notifications</FormLabel>
-                <FormDescription>Get notified when someone signs into your account</FormDescription>
-              </div>
-              <FormControl>
-                <Checkbox
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                  disabled={isLoading}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={profileForm.control}
-          name="securitySettings.sessionTimeout"
+          name="preferences.language"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                Session Timeout
-              </FormLabel>
+              <FormLabel>Language</FormLabel>
               <Select
                 onValueChange={field.onChange}
                 defaultValue={field.value}
@@ -823,20 +793,45 @@ export function ProfileManagementForm({
               >
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select timeout duration" />
+                    <SelectValue placeholder="Select language" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {SESSION_TIMEOUT_OPTIONS.map(option => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="en">English</SelectItem>
+                  <SelectItem value="es">Spanish</SelectItem>
+                  <SelectItem value="fr">French</SelectItem>
+                  <SelectItem value="de">German</SelectItem>
                 </SelectContent>
               </Select>
-              <FormDescription>
-                Automatically sign out after this period of inactivity
-              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={profileForm.control}
+          name="preferences.timezone"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Timezone</FormLabel>
+              <Select
+                onValueChange={field.onChange}
+                defaultValue={field.value}
+                disabled={isLoading}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select timezone" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="UTC">UTC</SelectItem>
+                  <SelectItem value="America/New_York">Eastern Time</SelectItem>
+                  <SelectItem value="America/Chicago">Central Time</SelectItem>
+                  <SelectItem value="America/Denver">Mountain Time</SelectItem>
+                  <SelectItem value="America/Los_Angeles">Pacific Time</SelectItem>
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}
@@ -850,7 +845,7 @@ export function ProfileManagementForm({
       <CardHeader>
         <CardTitle className="text-2xl font-bold">Profile Management</CardTitle>
         <CardDescription>
-          Manage your personal information, dietary preferences, and security settings
+          Manage your personal information, dietary preferences, and notification settings
         </CardDescription>
       </CardHeader>
 

@@ -4,12 +4,7 @@
 // Integrates with payment.service.ts and nutrition.service.ts
 
 import apiClient from './api';
-import type {
-  AllergenType,
-  Allergen,
-  NutritionalInfo,
-  DietaryInfo
-} from './nutrition.service';
+import type { AllergenType, Allergen, NutritionalInfo, DietaryInfo } from './nutrition.service';
 
 // ============================================================================
 // Type Definitions & Interfaces
@@ -36,26 +31,26 @@ interface ApiResponse<T = unknown> {
  * Represents the complete journey from cart to delivery
  */
 export type OrderStatus =
-  | 'draft'            // Shopping cart not yet confirmed
-  | 'confirmed'        // Order placed, awaiting payment
-  | 'paid'             // Payment successful, awaiting kitchen
-  | 'preparing'        // Kitchen preparing meal
-  | 'ready'            // Meal ready for pickup/delivery
+  | 'draft' // Shopping cart not yet confirmed
+  | 'confirmed' // Order placed, awaiting payment
+  | 'paid' // Payment successful, awaiting kitchen
+  | 'preparing' // Kitchen preparing meal
+  | 'ready' // Meal ready for pickup/delivery
   | 'out_for_delivery' // Being delivered to student
-  | 'delivered'        // Delivered to student
-  | 'completed'        // Confirmed received by parent/student
-  | 'cancelled'        // Order cancelled
-  | 'failed';          // Payment or fulfillment failed
+  | 'delivered' // Delivered to student
+  | 'completed' // Confirmed received by parent/student
+  | 'cancelled' // Order cancelled
+  | 'failed'; // Payment or fulfillment failed
 
 /**
  * Payment status tracking
  */
 export type PaymentStatus =
-  | 'pending'    // Payment not yet initiated
+  | 'pending' // Payment not yet initiated
   | 'processing' // Payment being processed
-  | 'completed'  // Payment successful
-  | 'failed'     // Payment failed
-  | 'refunded';  // Payment refunded
+  | 'completed' // Payment successful
+  | 'failed' // Payment failed
+  | 'refunded'; // Payment refunded
 
 /**
  * Meal types for delivery scheduling
@@ -69,10 +64,10 @@ export interface DeliverySlot {
   id: string;
   time: string; // Format: "HH:MM - HH:MM" (e.g., "08:00 - 08:30")
   mealType: MealType;
-  capacity: number;         // Maximum orders for this slot
-  currentBookings: number;  // Current number of bookings
-  available: boolean;       // Whether slot is available for booking
-  schoolId: string;         // School this slot belongs to
+  capacity: number; // Maximum orders for this slot
+  currentBookings: number; // Current number of bookings
+  available: boolean; // Whether slot is available for booking
+  schoolId: string; // School this slot belongs to
 }
 
 /**
@@ -84,8 +79,8 @@ export interface OrderItem {
   menuItemName: string;
   menuItemDescription?: string;
   quantity: number;
-  unitPrice: number;        // Price per item in INR
-  totalPrice: number;       // quantity * unitPrice
+  unitPrice: number; // Price per item in INR
+  totalPrice: number; // quantity * unitPrice
   nutrition: NutritionalInfo;
   allergens: Allergen[];
   dietary: DietaryInfo;
@@ -99,14 +94,14 @@ export interface OrderItem {
  */
 export interface NutritionSummary {
   totalCalories: number;
-  totalProtein: number;      // grams
-  totalCarbs: number;        // grams
-  totalFat: number;          // grams
-  totalFiber: number;        // grams
-  totalSugar: number;        // grams
-  totalSodium: number;       // mg
-  totalCholesterol: number;  // mg
-  meetsGuidelines: boolean;  // Whether order meets nutritional guidelines
+  totalProtein: number; // grams
+  totalCarbs: number; // grams
+  totalFat: number; // grams
+  totalFiber: number; // grams
+  totalSugar: number; // grams
+  totalSodium: number; // mg
+  totalCholesterol: number; // mg
+  meetsGuidelines: boolean; // Whether order meets nutritional guidelines
   guidelineNotes?: string[]; // Any nutritional concerns or recommendations
 }
 
@@ -115,7 +110,7 @@ export interface NutritionSummary {
  */
 export interface Order {
   id: string;
-  orderNumber: string;       // Human-readable order number (e.g., "ORD-2024-001234")
+  orderNumber: string; // Human-readable order number (e.g., "ORD-2024-001234")
 
   // Student and school information
   studentId: string;
@@ -130,44 +125,45 @@ export interface Order {
   parentPhone: string;
 
   // Delivery information
-  deliveryDate: string;      // ISO date string
+  deliveryDate: string; // ISO date string
   deliverySlot: DeliverySlot;
   deliveryInstructions?: string;
 
   // Order items and pricing
   items: OrderItem[];
-  subtotal: number;          // Sum of all item prices
-  tax: number;               // GST/tax amount
-  taxRate: number;           // Tax percentage (e.g., 5 for 5%)
-  deliveryFee: number;       // Delivery charge
-  discount: number;          // Discount amount if any
-  total: number;             // Final total amount
+  subtotal: number; // Sum of all item prices
+  tax: number; // GST/tax amount
+  taxRate: number; // Tax percentage (e.g., 5 for 5%)
+  deliveryFee: number; // Delivery charge
+  discount: number; // Discount amount if any
+  total: number; // Final total amount
 
   // Order status and lifecycle
   status: OrderStatus;
   paymentStatus: PaymentStatus;
-  paymentId?: string;        // Razorpay payment ID
-  razorpayOrderId?: string;  // Razorpay order ID
+  paymentId?: string; // Razorpay payment ID
+  razorpayOrderId?: string; // Razorpay order ID
 
   // Kitchen assignment and tracking
-  assignedTo?: string;       // Kitchen staff ID
-  assignedToName?: string;   // Kitchen staff name
-  assignedAt?: string;       // ISO timestamp
-  preparedAt?: string;       // ISO timestamp
-  readyAt?: string;          // ISO timestamp
-  deliveredAt?: string;      // ISO timestamp
-  completedAt?: string;      // ISO timestamp
-  cancelledAt?: string;      // ISO timestamp
+  assignedTo?: string; // Kitchen staff ID
+  assignedToName?: string; // Kitchen staff name
+  assignedAt?: string; // ISO timestamp
+  preparedAt?: string; // ISO timestamp
+  readyAt?: string; // ISO timestamp
+  deliveredAt?: string; // ISO timestamp
+  completedAt?: string; // ISO timestamp
+  cancelledAt?: string; // ISO timestamp
 
   // Additional information
-  notes?: string;            // Parent notes
-  kitchenNotes?: string;     // Kitchen/staff notes
+  notes?: string; // Parent notes
+  kitchenNotes?: string; // Kitchen/staff notes
   cancellationReason?: string;
 
   // Nutrition and safety
   nutritionSummary: NutritionSummary;
   allergenWarnings: string[]; // List of allergens present in order
-  allergenAlerts: {           // Critical allergen alerts for student
+  allergenAlerts: {
+    // Critical allergen alerts for student
     allergenType: AllergenType;
     studentAllergic: boolean;
     severity: 'critical' | 'warning' | 'info';
@@ -175,8 +171,8 @@ export interface Order {
   }[];
 
   // Timestamps
-  createdAt: string;         // ISO timestamp
-  updatedAt: string;         // ISO timestamp
+  createdAt: string; // ISO timestamp
+  updatedAt: string; // ISO timestamp
 }
 
 /**
@@ -188,9 +184,9 @@ export interface OrderSummary {
   studentName: string;
   schoolName: string;
   deliveryDate: string;
-  deliveryTime: string;      // Formatted time range
+  deliveryTime: string; // Formatted time range
   total: number;
-  itemCount: number;         // Total number of items
+  itemCount: number; // Total number of items
   status: OrderStatus;
   paymentStatus: PaymentStatus;
   createdAt: string;
@@ -211,7 +207,7 @@ export interface CartItem {
  */
 export interface CartToOrderRequest {
   studentId: string;
-  deliveryDate: string;      // ISO date string
+  deliveryDate: string; // ISO date string
   deliverySlotId: string;
   items: CartItem[];
   notes?: string;
@@ -294,10 +290,10 @@ export interface OrderFilters {
   schoolId?: string;
   parentId?: string;
   assignedTo?: string;
-  deliveryDate?: string;      // Filter by specific date
-  dateFrom?: string;          // Filter by date range
+  deliveryDate?: string; // Filter by specific date
+  dateFrom?: string; // Filter by date range
   dateTo?: string;
-  search?: string;            // Search by order number, student name, etc.
+  search?: string; // Search by order number, student name, etc.
   page?: number;
   limit?: number;
   sortBy?: 'createdAt' | 'deliveryDate' | 'total' | 'status';
@@ -337,7 +333,7 @@ export interface OrderStats {
  */
 export interface DeliverySlotQuery {
   schoolId: string;
-  date: string;              // ISO date string
+  date: string; // ISO date string
   mealType?: MealType;
 }
 
@@ -363,7 +359,6 @@ export interface DeliverySlotQuery {
  * - Menu service: Item details and pricing
  */
 class OrderService {
-
   // ==========================================================================
   // Cart Operations (Pre-Order)
   // ==========================================================================
@@ -422,10 +417,9 @@ class OrderService {
    */
   async getDeliverySlots(query: DeliverySlotQuery): Promise<DeliverySlot[]> {
     try {
-      const response = await apiClient.get<ApiResponse<DeliverySlot[]>>(
-        '/orders/delivery-slots',
-        { params: query }
-      );
+      const response = await apiClient.get<ApiResponse<DeliverySlot[]>>('/orders/delivery-slots', {
+        params: query,
+      });
       return response.data.data;
     } catch (error) {
       console.error('Failed to fetch delivery slots:', error);
@@ -464,10 +458,7 @@ class OrderService {
    */
   async createOrder(request: CreateOrderRequest): Promise<Order> {
     try {
-      const response = await apiClient.post<ApiResponse<Order>>(
-        '/orders',
-        request
-      );
+      const response = await apiClient.post<ApiResponse<Order>>('/orders', request);
       return response.data.data;
     } catch (error) {
       console.error('Failed to create order:', error);
@@ -513,15 +504,17 @@ class OrderService {
     };
   }> {
     try {
-      const response = await apiClient.get<ApiResponse<{
-        orders: OrderSummary[];
-        meta: {
-          page: number;
-          limit: number;
-          total: number;
-          totalPages: number;
-        };
-      }>>('/orders', { params: filters });
+      const response = await apiClient.get<
+        ApiResponse<{
+          orders: OrderSummary[];
+          meta: {
+            page: number;
+            limit: number;
+            total: number;
+            totalPages: number;
+          };
+        }>
+      >('/orders', { params: filters });
       return response.data.data;
     } catch (error) {
       console.error('Failed to list orders:', error);
@@ -550,9 +543,7 @@ class OrderService {
    */
   async getOrder(orderId: string): Promise<Order> {
     try {
-      const response = await apiClient.get<ApiResponse<Order>>(
-        `/orders/${orderId}`
-      );
+      const response = await apiClient.get<ApiResponse<Order>>(`/orders/${orderId}`);
       return response.data.data;
     } catch (error) {
       console.error('Failed to get order:', error);
@@ -592,10 +583,7 @@ class OrderService {
    */
   async updateOrder(orderId: string, updates: UpdateOrderRequest): Promise<Order> {
     try {
-      const response = await apiClient.put<ApiResponse<Order>>(
-        `/orders/${orderId}`,
-        updates
-      );
+      const response = await apiClient.put<ApiResponse<Order>>(`/orders/${orderId}`, updates);
       return response.data.data;
     } catch (error) {
       console.error('Failed to update order:', error);
@@ -620,20 +608,25 @@ class OrderService {
    * await orderService.cancelOrder('order123', 'Student absent from school');
    * ```
    */
-  async cancelOrder(orderId: string, reason: string): Promise<{
+  async cancelOrder(
+    orderId: string,
+    reason: string
+  ): Promise<{
     success: boolean;
     message: string;
     refundInitiated: boolean;
     refundAmount?: number;
   }> {
     try {
-      const response = await apiClient.delete<ApiResponse<{
-        success: boolean;
-        message: string;
-        refundInitiated: boolean;
-        refundAmount?: number;
-      }>>(`/orders/${orderId}`, {
-        data: { reason }
+      const response = await apiClient.delete<
+        ApiResponse<{
+          success: boolean;
+          message: string;
+          refundInitiated: boolean;
+          refundAmount?: number;
+        }>
+      >(`/orders/${orderId}`, {
+        data: { reason },
       });
       return response.data.data;
     } catch (error) {
@@ -683,10 +676,7 @@ class OrderService {
    * });
    * ```
    */
-  async updateOrderStatus(
-    orderId: string,
-    statusUpdate: UpdateOrderStatusRequest
-  ): Promise<Order> {
+  async updateOrderStatus(orderId: string, statusUpdate: UpdateOrderStatusRequest): Promise<Order> {
     try {
       const response = await apiClient.patch<ApiResponse<Order>>(
         `/orders/${orderId}/status`,
@@ -718,10 +708,7 @@ class OrderService {
    * console.log(`Assigned to: ${assigned.assignedToName}`);
    * ```
    */
-  async assignOrder(
-    orderId: string,
-    assignment: AssignOrderRequest
-  ): Promise<Order> {
+  async assignOrder(orderId: string, assignment: AssignOrderRequest): Promise<Order> {
     try {
       const response = await apiClient.patch<ApiResponse<Order>>(
         `/orders/${orderId}/assign`,
@@ -796,10 +783,9 @@ class OrderService {
    */
   async getOrderStats(filters?: Partial<OrderFilters>): Promise<OrderStats> {
     try {
-      const response = await apiClient.get<ApiResponse<OrderStats>>(
-        '/orders/stats',
-        { params: filters }
-      );
+      const response = await apiClient.get<ApiResponse<OrderStats>>('/orders/stats', {
+        params: filters,
+      });
       return response.data.data;
     } catch (error) {
       console.error('Failed to get order statistics:', error);
@@ -824,7 +810,7 @@ class OrderService {
       'ready',
       'out_for_delivery',
       'delivered',
-      'completed'
+      'completed',
     ];
     return !nonModifiableStatuses.includes(order.status);
   }
@@ -843,7 +829,7 @@ class OrderService {
       'out_for_delivery',
       'delivered',
       'completed',
-      'cancelled'
+      'cancelled',
     ];
     return !nonCancellableStatuses.includes(order.status);
   }
@@ -866,7 +852,7 @@ class OrderService {
       delivered: 'Delivered',
       completed: 'Completed',
       cancelled: 'Cancelled',
-      failed: 'Failed'
+      failed: 'Failed',
     };
     return labels[status] || status;
   }
@@ -889,7 +875,7 @@ class OrderService {
       delivered: 'success',
       completed: 'success',
       cancelled: 'error',
-      failed: 'error'
+      failed: 'error',
     };
     return colors[status] || 'info';
   }
@@ -913,7 +899,7 @@ class OrderService {
       delivered: 'Delivered',
       completed: 'Completed',
       cancelled: 'Cancelled',
-      failed: 'Failed'
+      failed: 'Failed',
     };
     return statusMessages[orderStatus] || deliverySlot.time;
   }
@@ -928,7 +914,7 @@ class OrderService {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
       currency: 'INR',
-      minimumFractionDigits: 2
+      minimumFractionDigits: 2,
     }).format(amount);
   }
 }
@@ -952,24 +938,25 @@ export default OrderService;
 // Export All Types
 // ============================================================================
 
-export type {
-  Order,
-  OrderSummary,
-  OrderItem,
-  OrderStatus,
-  PaymentStatus,
-  MealType,
-  DeliverySlot,
-  CartItem,
-  CartToOrderRequest,
-  CartCalculation,
-  CreateOrderRequest,
-  UpdateOrderRequest,
-  UpdateOrderStatusRequest,
-  AssignOrderRequest,
-  OrderFilters,
-  OrderStats,
-  DeliverySlotQuery,
-  NutritionSummary,
-  ApiResponse
-};
+// Remove duplicate exports - these are already exported above
+// export type {
+//   Order,
+//   OrderSummary,
+//   OrderItem,
+//   OrderStatus,
+//   PaymentStatus,
+//   MealType,
+//   DeliverySlot,
+//   CartItem,
+//   CartToOrderRequest,
+//   CartCalculation,
+//   CreateOrderRequest,
+//   UpdateOrderRequest,
+//   UpdateOrderStatusRequest,
+//   AssignOrderRequest,
+//   OrderFilters,
+//   OrderStats,
+//   DeliverySlotQuery,
+//   NutritionSummary,
+//   ApiResponse,
+// };

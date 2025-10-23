@@ -15,7 +15,7 @@ import {
   EyeOff,
   RefreshCw,
   Phone,
-  _Mail,
+  Mail,
   Settings,
   QrCode,
 } from 'lucide-react';
@@ -37,12 +37,12 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  _Dialog,
-  _DialogContent,
-  _DialogDescription,
-  _DialogHeader,
-  _DialogTitle,
-  _DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from '@/components/ui/dialog';
 
 import {
@@ -50,8 +50,8 @@ import {
   mfaSetupSchema,
   recoveryCodesSchema,
   type MfaFormData,
-  type MfaSetupData,
-  type RecoveryCodesData,
+  type MfaSetupFormData,
+  type RecoveryCodesFormData,
 } from './schemas';
 
 interface MultiFactorAuthFormProps {
@@ -59,7 +59,7 @@ interface MultiFactorAuthFormProps {
   onMfaVerify: (data: MfaFormData) => Promise<void>;
 
   // MFA setup
-  onMfaSetup?: (data: MfaSetupData) => Promise<void>;
+  onMfaSetup?: (data: MfaSetupFormData) => Promise<void>;
   onGenerateRecoveryCodes?: () => Promise<string[]>;
   onSendSmsCode?: (phoneNumber: string) => Promise<void>;
   onGenerateQrCode?: () => Promise<string>; // Returns QR code data URL
@@ -91,8 +91,8 @@ export function MultiFactorAuthForm({
   error,
   success,
   userPhone,
-  _userEmail,
-  _mfaEnabled = false,
+  userEmail,
+  mfaEnabled = false,
   mode = 'verify',
   className,
 }: MultiFactorAuthFormProps) {
@@ -109,7 +109,7 @@ export function MultiFactorAuthForm({
     defaultValues: { code: '' },
   });
 
-  const setupForm = useForm<MfaSetupData>({
+  const setupForm = useForm<MfaSetupFormData>({
     resolver: zodResolver(mfaSetupSchema),
     defaultValues: {
       method: 'sms',
@@ -117,7 +117,7 @@ export function MultiFactorAuthForm({
     },
   });
 
-  const recoveryForm = useForm<RecoveryCodesData>({
+  const recoveryForm = useForm<RecoveryCodesFormData>({
     resolver: zodResolver(recoveryCodesSchema),
     defaultValues: {
       codes: [],
@@ -152,7 +152,7 @@ export function MultiFactorAuthForm({
     }
   };
 
-  const handleMfaSetup = async (data: MfaSetupData) => {
+  const handleMfaSetup = async (data: MfaSetupFormData) => {
     if (onMfaSetup) {
       try {
         await onMfaSetup(data);
@@ -248,7 +248,7 @@ export function MultiFactorAuthForm({
                 <Phone className="h-3 w-3" />
                 SMS
               </TabsTrigger>
-              <TabsTrigger value="app" className="flex items-center gap-1">
+              <TabsTrigger value="totp" className="flex items-center gap-1">
                 <Smartphone className="h-3 w-3" />
                 App
               </TabsTrigger>
@@ -321,7 +321,7 @@ export function MultiFactorAuthForm({
               </Button>
             </TabsContent>
 
-            <TabsContent value="app" className="space-y-4">
+            <TabsContent value="totp" className="space-y-4">
               <div className="text-center">
                 <p className="text-sm text-gray-600 mb-2">
                   Enter the code from your authenticator app
@@ -474,15 +474,15 @@ export function MultiFactorAuthForm({
 
                         <label
                           className={`flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-colors ${
-                            field.value === 'app'
+                            field.value === 'totp'
                               ? 'border-primary-500 bg-primary-50'
                               : 'border-gray-200'
                           }`}
                         >
                           <input
                             type="radio"
-                            value="app"
-                            checked={field.value === 'app'}
+                            value="totp"
+                            checked={field.value === 'totp'}
                             onChange={field.onChange}
                             className="sr-only"
                           />
@@ -533,7 +533,7 @@ export function MultiFactorAuthForm({
                 />
               )}
 
-              {setupForm.watch('method') === 'app' && (
+              {setupForm.watch('method') === 'totp' && (
                 <div className="space-y-4">
                   <div className="text-center">
                     <Button

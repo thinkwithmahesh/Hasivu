@@ -9,7 +9,7 @@ import { PrismaClient, Prisma } from '@prisma/client';
 // Global variable to cache the Prisma client between Lambda invocations
 declare global {
   // eslint-disable-next-line no-var
-  var __prisma__: PrismaClient | undefined;
+  var __prisma__: PrismaClient | undefined; // eslint-disable-line no-var
 }
 
 /**

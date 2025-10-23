@@ -1,13 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import {
-  Card,
-  CardContent,
-  CardDescription as _CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -192,7 +186,7 @@ const mockNutritionReports = {
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'];
 
 export const EnhancedParentDashboard: React.FC<EnhancedParentDashboardProps> = ({
-  _parentData,
+  parentData,
   className,
 }) => {
   const [selectedChild, setSelectedChild] = useState(mockChildrenData[0]);
@@ -933,5 +927,3 @@ export const EnhancedParentDashboard: React.FC<EnhancedParentDashboardProps> = (
     </div>
   );
 };
-
-export { EnhancedParentDashboard };

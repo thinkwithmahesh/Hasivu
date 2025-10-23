@@ -167,9 +167,18 @@ export class RedisService {
   /**
    * Static method: Delete a key
    */
-  public static async del(key: string): Promise<number> {
-    await RedisService.getInstance().del(key);
-    return 1; // Redis DEL returns number of keys deleted
+  public static async del(key: string | string[]): Promise<number> {
+    if (Array.isArray(key)) {
+      let deleted = 0;
+      for (const k of key) {
+        await RedisService.getInstance().del(k);
+        deleted++;
+      }
+      return deleted;
+    } else {
+      await RedisService.getInstance().del(key);
+      return 1; // Redis DEL returns number of keys deleted
+    }
   }
 
   /**
@@ -188,6 +197,20 @@ export class RedisService {
     if (!instance['connected']) {
       await instance.connect();
     }
+  }
+
+  /**
+   * Static method: Get keys matching pattern
+   */
+  public static async keys(pattern: string): Promise<string[]> {
+    const instance = RedisService.getInstance();
+    const keys: string[] = [];
+    for (const [key] of instance.cache.entries()) {
+      if (key.includes(pattern.replace('*', ''))) {
+        keys.push(key);
+      }
+    }
+    return keys;
   }
 }
 

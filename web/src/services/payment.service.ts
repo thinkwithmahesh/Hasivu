@@ -446,9 +446,7 @@ export const transactionApi = {
    * @param params - Query parameters for filtering transactions
    * @returns List of transactions with pagination
    */
-  getTransactions: async (
-    params?: TransactionListParams
-  ): Promise<ApiResponse<Transaction[]>> => {
+  getTransactions: async (params?: TransactionListParams): Promise<ApiResponse<Transaction[]>> => {
     const response = await apiClient.get('/transactions', { params });
     return response.data;
   },
@@ -779,7 +777,7 @@ export const convertToRupees = (amountInPaise: number): number => {
 export const formatCurrency = (amount: number, currency: string = 'INR'): string => {
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',
-    currency: currency,
+    currency,
   }).format(amount);
 };
 

@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Clock, AlertTriangle, CheckCircle, Users } from 'lucide-react';
 import { MEAL_TYPES } from '@/utils/constants';
-import type { CategoryTabsProps, MenuCategory as _MenuCategory } from './types';
+import type { CategoryTabsProps, MenuCategory as MenuCategory } from './types';
 import { getMealCategoryInfo } from './utils';
 import { cn } from '@/lib/utils';
 
@@ -57,7 +57,7 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
             )}
           >
             {sortedCategories.map(category => {
-              const categoryInfo = getMealCategoryInfo(category.mealType);
+              const categoryInfo = getMealCategoryInfo(category.mealType || 'lunch');
               const isActive = activeCategory === category.id;
 
               return (
@@ -147,7 +147,7 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
             const activecat = sortedCategories.find(cat => cat.id === activeCategory);
             if (!activecat) return null;
 
-            const categoryInfo = getMealCategoryInfo(activecat.mealType);
+            const categoryInfo = getMealCategoryInfo(activecat.mealType || 'lunch');
 
             return (
               <div className="space-y-4">
@@ -168,14 +168,14 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {/* Timing Information */}
                   {(() => {
-                    const timingInfo = {
-                      [MEAL_TYPES.BREAKFAST]: { time: '7:00 AM - 9:00 AM', lastOrder: '8:30 AM' },
-                      [MEAL_TYPES.LUNCH]: { time: '12:00 PM - 2:00 PM', lastOrder: '1:30 PM' },
-                      [MEAL_TYPES.DINNER]: { time: '6:00 PM - 8:00 PM', lastOrder: '7:30 PM' },
-                      [MEAL_TYPES.SNACKS]: { time: '3:00 PM - 5:00 PM', lastOrder: '4:30 PM' },
+                    const timingInfo: Record<string, { time: string; lastOrder: string }> = {
+                      breakfast: { time: '7:00 AM - 9:00 AM', lastOrder: '8:30 AM' },
+                      lunch: { time: '12:00 PM - 2:00 PM', lastOrder: '1:30 PM' },
+                      dinner: { time: '6:00 PM - 8:00 PM', lastOrder: '7:30 PM' },
+                      snack: { time: '3:00 PM - 5:00 PM', lastOrder: '4:30 PM' },
                     };
 
-                    const timing = timingInfo[activecat.mealType];
+                    const timing = activecat.mealType ? timingInfo[activecat.mealType] : undefined;
 
                     return timing ? (
                       <div className="bg-white rounded-lg p-4 shadow-sm">
@@ -248,28 +248,28 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
                     </div>
                     <div className="space-y-1">
                       {/* Special features based on meal type */}
-                      {activecat.mealType === MEAL_TYPES.BREAKFAST && (
+                      {activecat.mealType === 'breakfast' && (
                         <div className="text-xs text-gray-700 flex items-center">
                           <span className="mr-2">🏃‍♂️</span>
                           Perfect energy boost to start your day
                         </div>
                       )}
 
-                      {activecat.mealType === MEAL_TYPES.LUNCH && (
+                      {activecat.mealType === 'lunch' && (
                         <div className="text-xs text-gray-700 flex items-center">
                           <span className="mr-2">💪</span>
                           Complete nutrition for active learning
                         </div>
                       )}
 
-                      {activecat.mealType === MEAL_TYPES.SNACKS && (
+                      {activecat.mealType === 'snack' && (
                         <div className="text-xs text-gray-700 flex items-center">
                           <span className="mr-2">⚡</span>
                           Quick bites between classes
                         </div>
                       )}
 
-                      {activecat.mealType === MEAL_TYPES.DINNER && (
+                      {activecat.mealType === 'dinner' && (
                         <div className="text-xs text-gray-700 flex items-center">
                           <span className="mr-2">😴</span>
                           Light & healthy evening meals
@@ -295,7 +295,7 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
                   )}
 
                   {/* Wallet balance warning */}
-                  {student.walletBalance < 100 && activecat.mealType === MEAL_TYPES.LUNCH && (
+                  {student.walletBalance < 100 && activecat.mealType === 'lunch' && (
                     <Alert className="border-orange-200 bg-orange-50">
                       <AlertTriangle className="h-4 w-4 text-orange-600" />
                       <AlertDescription className="text-orange-800">

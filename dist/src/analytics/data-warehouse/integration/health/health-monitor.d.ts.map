@@ -1,0 +1,1 @@
+{"version":3,"file":"health-monitor.d.ts","sourceRoot":"","sources":["../../../../../../src/analytics/data-warehouse/integration/health/health-monitor.ts"],"names":[],"mappings":"AAMA,qBAAa,aAAa;gBACZ,OAAO,EAAE,MAAM,CAAC,MAAM,EAAE,OAAO,CAAC;IAItC,WAAW,IAAI,OAAO,CAAC;QAAE,MAAM,EAAE,MAAM,CAAA;KAAE,CAAC;CAGjD;AAED,eAAe,aAAa,CAAC"}

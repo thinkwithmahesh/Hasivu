@@ -316,11 +316,13 @@ export const CameraScanner: React.FC<CameraScannerProps> = ({
 
       // Add torch/flash support if available
       if (flashOn && 'mediaDevices' in navigator && 'getDisplayMedia' in navigator.mediaDevices) {
-        constraints.video = {
-          ...constraints.video,
-          // @ts-ignore - advanced constraints may not be typed
-          advanced: [{ torch: true }],
-        };
+        if (typeof constraints.video === 'object' && constraints.video !== null) {
+          constraints.video = {
+            ...constraints.video,
+            // @ts-ignore - advanced constraints may not be typed
+            advanced: [{ torch: true }],
+          };
+        }
       }
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -377,7 +379,7 @@ export const CameraScanner: React.FC<CameraScannerProps> = ({
 
         if ('torch' in capabilities) {
           await videoTrack.applyConstraints({
-            advanced: [{ torch: !flashOn }],
+            advanced: [{ torch: !flashOn } as any],
           });
           setFlashOn(!flashOn);
         }
@@ -614,8 +616,12 @@ export const NativeShare: React.FC<NativeShareProps> = ({
     } else {
       // Fallback to clipboard
       try {
-        await navigator.clipboard.writeText(`${title}\n${text}\n${url}`);
-        onSuccess?.();
+        if (typeof window !== 'undefined' && window.navigator && window.navigator.clipboard) {
+          await window.navigator.clipboard.writeText(`${title}\n${text}\n${url}`);
+          onSuccess?.();
+        } else {
+          onError?.('Sharing not supported');
+        }
       } catch (error) {
         onError?.('Unable to share or copy to clipboard');
       }

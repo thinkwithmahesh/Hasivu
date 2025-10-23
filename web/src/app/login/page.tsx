@@ -44,7 +44,7 @@ export default function LoginPage() {
         const route = roleRoutes[response.user.role as keyof typeof roleRoutes] || '/dashboard';
         router.push(route);
       } else {
-        setError(response.error || 'Login failed. Please try again.');
+        setError(response.message || 'Login failed. Please try again.');
       }
     } catch (err) {
       setError('Login failed. Please check your credentials and try again.');

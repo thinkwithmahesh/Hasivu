@@ -33,21 +33,21 @@ import {
   Calendar,
   Clock,
   User,
-  Edit as _Edit,
-  Trash2 as _Trash2,
+  Edit as Edit,
+  Trash2 as Trash2,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Label as _Label } from '@/components/ui/label';
+import { Label as Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import { toast } from 'react-hot-toast';
-import { useShoppingCart } from '@/contexts/shopping-cart-context';
+import { useCart } from '@/contexts/shopping-cart-context';
 import { useAuth } from '@/contexts/production-auth-context';
 
 // ============================================================================
@@ -88,7 +88,7 @@ interface CheckoutFlowProps {
 // Available Payment Methods
 // ============================================================================
 
-const PAYMENT_METHODS: PaymentMethod[] = [
+const PAYMENTMETHODS: PaymentMethod[] = [
   {
     id: 'razorpay_card',
     type: 'card',
@@ -126,7 +126,7 @@ const PAYMENT_METHODS: PaymentMethod[] = [
 export const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ onCancel, onSuccess, className }) => {
   const router = useRouter();
   const { user } = useAuth();
-  const { items, clearCart, getCartSummary } = useShoppingCart();
+  const { items, clearCart, summary: cartSummary } = useCart();
 
   // State
   const [currentStep, setCurrentStep] = useState<CheckoutStep>('review');
@@ -167,8 +167,6 @@ export const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ onCancel, onSuccess,
       setSelectedAddress(defaultAddr.id);
     }
   }, [addresses, selectedAddress]);
-
-  const summary = useMemo(() => getCartSummary(), [getCartSummary]);
 
   // ============================================================================
   // Handlers
@@ -211,10 +209,10 @@ export const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ onCancel, onSuccess,
         paymentMethodId: selectedPaymentMethod,
         notes: orderNotes,
         summary: {
-          subtotal: summary.subtotal,
-          tax: summary.tax,
-          discount: summary.discount,
-          total: summary.total,
+          subtotal: cartSummary.subtotal,
+          tax: cartSummary.tax,
+          discount: cartSummary.discount,
+          total: cartSummary.total,
         },
       };
 
@@ -421,7 +419,7 @@ export const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ onCancel, onSuccess,
         </CardHeader>
         <CardContent>
           <RadioGroup value={selectedPaymentMethod} onValueChange={setSelectedPaymentMethod}>
-            {PAYMENT_METHODS.map(method => (
+            {PAYMENTMETHODS.map(method => (
               <div
                 key={method.id}
                 className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-gray-50 transition-colors"
@@ -468,7 +466,7 @@ export const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ onCancel, onSuccess,
 
   const renderConfirmStep = () => {
     const selectedAddr = addresses.find(a => a.id === selectedAddress);
-    const selectedPayment = PAYMENT_METHODS.find(p => p.id === selectedPaymentMethod);
+    const selectedPayment = PAYMENTMETHODS.find(p => p.id === selectedPaymentMethod);
 
     return (
       <div className="space-y-6">
@@ -521,22 +519,22 @@ export const CheckoutFlow: React.FC<CheckoutFlowProps> = ({ onCancel, onSuccess,
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Subtotal</span>
-                <span>{formatCurrency(summary.subtotal)}</span>
+                <span>{formatCurrency(cartSummary.subtotal)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">GST (18%)</span>
-                <span>{formatCurrency(summary.tax)}</span>
+                <span>{formatCurrency(cartSummary.tax)}</span>
               </div>
-              {summary.discount > 0 && (
+              {cartSummary.discount > 0 && (
                 <div className="flex justify-between text-sm text-green-600">
                   <span>Discount</span>
-                  <span>-{formatCurrency(summary.discount)}</span>
+                  <span>-{formatCurrency(cartSummary.discount)}</span>
                 </div>
               )}
               <Separator />
               <div className="flex justify-between text-lg font-bold">
                 <span>Total</span>
-                <span className="text-primary-600">{formatCurrency(summary.total)}</span>
+                <span className="text-primary-600">{formatCurrency(cartSummary.total)}</span>
               </div>
             </div>
           </CardContent>

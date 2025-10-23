@@ -18,7 +18,7 @@ import {
   MapPin,
   User,
   Phone,
-  XCircle as _XCircle,
+  XCircle as XCircle,
   RefreshCw,
 } from 'lucide-react';
 import { OrderCard, generateDemoOrder as _generateDemoOrder } from '@/components/orders/OrderCard';

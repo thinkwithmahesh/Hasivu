@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { _Tabs, _TabsContent, _TabsList, _TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Table,
   TableBody,
@@ -31,8 +31,8 @@ import {
   EyeOff,
   RefreshCw,
   FileText,
-  _Key,
-  _CreditCard,
+  Key,
+  CreditCard,
   Activity,
   Zap,
   ShieldCheck,

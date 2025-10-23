@@ -60,7 +60,7 @@ module.exports = {
         'first-contentful-paint': ['error', { maxNumericValue: 1800 }],
         'largest-contentful-paint': ['error', { maxNumericValue: 2500 }],
         'cumulative-layout-shift': ['error', { maxNumericValue: 0.1 }],
-        'interactive': ['error', { maxNumericValue: 3800 }],
+        interactive: ['error', { maxNumericValue: 3800 }],
         'speed-index': ['error', { maxNumericValue: 3400 }],
         'total-blocking-time': ['warn', { maxNumericValue: 200 }],
 

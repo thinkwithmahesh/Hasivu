@@ -11,7 +11,7 @@ globalThis.jest = jest;
 process.env.NODE_ENV = 'test';
 process.env.JWT_SECRET = 'test-jwt-secret-key-for-testing-only-minimum-64-characters-required-for-security-validation';
 process.env.JWT_REFRESH_SECRET = 'test-jwt-refresh-secret-key-for-testing-only-minimum-64-characters-required-for-security-validation';
-process.env.DATABASE_URL = 'postgresql://postgres:password@localhost:5432/hasivu_test';
+process.env.DATABASE_URL = 'file:./prisma/test.db';
 process.env.REDIS_URL = 'redis://localhost:6379/1';
 // Enable database and Redis operations for comprehensive testing
 process.env.SKIP_DATABASE_TESTS = 'false';
@@ -67,9 +67,9 @@ afterEach(async () => {
  */
 async function setupTestDatabase(): Promise<void> {
   try {
-    // In a real implementation, this would set up test database tables
-    // For now, we'll mock the database operations
     console.log('Setting up test database...');
+    // Test database is already set up via Prisma schema
+    console.log('Test database setup complete');
   } catch (error) {
     console.error('Failed to setup test database:', error);
     throw error;
@@ -81,8 +81,18 @@ async function setupTestDatabase(): Promise<void> {
  */
 async function cleanupTestDatabase(): Promise<void> {
   try {
-    // Cleanup test database
     console.log('Cleaning up test database...');
+    // For SQLite test database, we can recreate it fresh
+    const fs = require('fs');
+    const path = require('path');
+    const testDbPath = path.join(process.cwd(), 'prisma', 'test.db');
+
+    if (fs.existsSync(testDbPath)) {
+      fs.unlinkSync(testDbPath);
+      console.log('Test database file removed');
+    }
+
+    console.log('Test database cleanup complete');
   } catch (error) {
     console.error('Failed to cleanup test database:', error);
   }

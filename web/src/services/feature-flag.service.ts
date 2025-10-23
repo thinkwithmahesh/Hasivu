@@ -1,13 +1,13 @@
 import {
   FeatureFlag,
-  _FeatureFlagKey as FeatureFlagKey,
+  FeatureFlagKey,
   FeatureFlagEvaluationContext,
   FeatureFlagResult,
   FeatureFlagConfig,
   UserSegment,
-  _FeatureFlagEnvironment as FeatureFlagEnvironment,
-  _FeatureFlagRolloutStrategy as FeatureFlagRolloutStrategy,
-  _FEATURE_FLAGS as FEATURE_FLAGS,
+  FeatureFlagEnvironment,
+  FeatureFlagRolloutStrategy,
+  _FEATURE_FLAGS as _FEATURE_FLAGS,
 } from '../types/feature-flags';
 
 class FeatureFlagService {

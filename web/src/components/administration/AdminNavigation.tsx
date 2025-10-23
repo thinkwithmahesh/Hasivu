@@ -7,8 +7,21 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Building2, BarChart3, DollarSign, Shield, Activity, Settings, Menu } from 'lucide-react';
+import {
+  Building2,
+  BarChart3,
+  DollarSign,
+  Shield,
+  Activity,
+  Settings,
+  Menu,
+  TrendingUp,
+  FileText,
+  Bell,
+  Target,
+} from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
+import { UserRole } from '@/types/auth';
 
 interface NavigationItem {
   name: string;
@@ -110,6 +123,7 @@ export function AdminNavigation({ className }: AdminNavigationProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const isActive = (href: string) => {
+    if (!pathname) return false;
     if (href === '/administration') {
       return pathname === '/administration';
     }
@@ -118,9 +132,9 @@ export function AdminNavigation({ className }: AdminNavigationProps) {
 
   const getAdminLevel = () => {
     // Determine admin level based on user role
-    if (user?.role === 'super_admin') return 'STATE LEVEL';
-    if (user?.role === 'district_admin') return 'DISTRICT LEVEL';
-    if (user?.role === 'zone_admin') return 'ZONE LEVEL';
+    if (user?.role === UserRole.SUPER_ADMIN) return 'STATE LEVEL';
+    if (user?.role === UserRole.ADMIN) return 'DISTRICT LEVEL';
+    if (user?.role === UserRole.SCHOOL_ADMIN) return 'SCHOOL LEVEL';
     return 'SCHOOL LEVEL';
   };
 

@@ -17,6 +17,9 @@ export interface CartItem {
   unitPrice: number;
   totalPrice: number; // quantity * unitPrice
   addedAt: Date;
+  image?: string; // Optional direct image URL for quick access
+  name?: string; // Optional direct name for quick access
+  price?: number; // Optional direct price for quick access (alias for unitPrice)
 }
 
 export interface Cart {
@@ -45,7 +48,12 @@ export interface CartContextType {
 
 export interface CartItemUpdateRequest {
   itemId: string;
-  updates: Partial<Pick<CartItem, 'quantity' | 'deliveryDate' | 'specialInstructions' | 'customizations' | 'allergyInfo'>>;
+  updates: Partial<
+    Pick<
+      CartItem,
+      'quantity' | 'deliveryDate' | 'specialInstructions' | 'customizations' | 'allergyInfo'
+    >
+  >;
 }
 
 // Cart persistence

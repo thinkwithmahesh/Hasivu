@@ -20,11 +20,24 @@ import { useCart } from '@/contexts/CartContext';
 import { paymentAPIService } from '@/services/payment-api.service';
 import { orderAPIService } from '@/services/order-api.service';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -40,13 +53,14 @@ import {
   Loader2,
   CreditCard,
   Calendar,
-  Trash2
+  Trash2,
 } from 'lucide-react';
 
 // Checkout form validation schema
 const checkoutFormSchema = z.object({
   studentId: z.string().min(1, 'Please select a student'),
-  contactPhone: z.string()
+  contactPhone: z
+    .string()
     .min(10, 'Phone number must be at least 10 digits')
     .regex(/^[0-9+\-\s()]+$/, 'Invalid phone number format'),
   deliveryInstructions: z.string().optional(),
@@ -82,15 +96,28 @@ enum PaymentState {
   PROCESSING_PAYMENT = 'processing_payment',
   VERIFYING = 'verifying',
   SUCCESS = 'success',
-  ERROR = 'error'
+  ERROR = 'error',
 }
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { cart, clearCart, removeItem, updateQuantity, updateDeliveryDate } = useCart();
+  const {
+    cart,
+    isLoading: isLoadingCart,
+    clearCart,
+    removeItem,
+    updateQuantity,
+    updateDeliveryDate,
+  } = useCart();
 
   // Form state
-  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<CheckoutFormData>({
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors },
+  } = useForm<CheckoutFormData>({
     resolver: zodResolver(checkoutFormSchema),
   });
 
@@ -145,7 +172,7 @@ export default function CheckoutPage() {
               lastName: 'Doe',
               grade: '5',
               section: 'A',
-              schoolId: 'school_1'
+              schoolId: 'school_1',
             },
             {
               id: 'student_2',
@@ -153,9 +180,9 @@ export default function CheckoutPage() {
               lastName: 'Doe',
               grade: '3',
               section: 'B',
-              schoolId: 'school_1'
-            }
-          ]
+              schoolId: 'school_1',
+            },
+          ],
         };
 
         setUserProfile(mockProfile);
@@ -182,10 +209,10 @@ export default function CheckoutPage() {
 
   // Redirect if cart is empty
   useEffect(() => {
-    if (!cart.isLoading && cart.items.length === 0) {
+    if (!isLoadingCart && cart.items.length === 0) {
       router.push('/menu');
     }
-  }, [cart.isLoading, cart.items.length, router]);
+  }, [isLoadingCart, cart.items.length, router]);
 
   // Handle checkout submission
   const onSubmit = async (formData: CheckoutFormData) => {
@@ -299,7 +326,7 @@ export default function CheckoutPage() {
   const progressMessage = getProgressMessage();
 
   // Loading state
-  if (cart.isLoading || isLoadingProfile) {
+  if (isLoadingCart || isLoadingProfile) {
     return (
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -353,26 +380,29 @@ export default function CheckoutPage() {
                     <User className="h-5 w-5 text-hasivu-primary-500" />
                     Select Student
                   </CardTitle>
-                  <CardDescription>
-                    Choose which student will receive this meal
-                  </CardDescription>
+                  <CardDescription>Choose which student will receive this meal</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
                     <Label htmlFor="student">Student *</Label>
                     <Select
                       value={selectedStudentId}
-                      onValueChange={(value) => setValue('studentId', value)}
+                      onValueChange={value => setValue('studentId', value)}
                       disabled={isProcessing}
                     >
-                      <SelectTrigger id="student" className={errors.studentId ? 'border-destructive' : ''}>
+                      <SelectTrigger
+                        id="student"
+                        className={errors.studentId ? 'border-destructive' : ''}
+                      >
                         <SelectValue placeholder="Select a student" />
                       </SelectTrigger>
                       <SelectContent>
-                        {userProfile.students.map((student) => (
+                        {userProfile.students.map(student => (
                           <SelectItem key={student.id} value={student.id}>
                             {student.firstName} {student.lastName}
-                            {student.grade && student.section && ` (Grade ${student.grade}${student.section})`}
+                            {student.grade &&
+                              student.section &&
+                              ` (Grade ${student.grade}${student.section})`}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -451,9 +481,7 @@ export default function CheckoutPage() {
                   <ShoppingCart className="h-5 w-5 text-hasivu-primary-500" />
                   Order Items ({cart.itemCount})
                 </CardTitle>
-                <CardDescription>
-                  Review your items and delivery dates
-                </CardDescription>
+                <CardDescription>Review your items and delivery dates</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -463,7 +491,7 @@ export default function CheckoutPage() {
                       <div className="flex gap-4">
                         {/* Item Image Placeholder */}
                         <div className="w-20 h-20 bg-gray-100 rounded-lg flex-shrink-0 flex items-center justify-center">
-                          <span className="text-3xl">{item.menuItem.emoji || '🍽️'}</span>
+                          <span className="text-3xl">{'🍽️'}</span>
                         </div>
 
                         {/* Item Details */}
@@ -520,9 +548,7 @@ export default function CheckoutPage() {
 
                   {/* Tax */}
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">
-                      Tax ({(cart.taxRate * 100).toFixed(0)}%)
-                    </span>
+                    <span className="text-gray-600">Tax ({(cart.taxRate * 100).toFixed(0)}%)</span>
                     <span className="font-medium">{formatCurrency(cart.tax)}</span>
                   </div>
 

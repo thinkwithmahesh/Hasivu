@@ -31,6 +31,7 @@ const SafariCompatibleLoginForm = dynamic(
 );
 
 // Helper function to get dashboard URL based on role
+function getDashboardUrl(role: string): string {
   const dashboardUrls: Record<string, string> = {
     admin: '/dashboard/admin',
     teacher: '/dashboard/teacher',
@@ -59,6 +60,7 @@ export default function ParentLoginPage() {
     setIsSafari(isSafariBrowser);
   }, []);
 
+  const handleLogin = async (data: LoginFormData) => {
     setIsLoading(true);
     setError(null);
 
@@ -83,7 +85,7 @@ export default function ParentLoginPage() {
           } catch (e) {}
 
           // Fallback to using form role
-          const dashboardUrl = getDashboardUrl(data.role);
+          const dashboardUrl = getDashboardUrl(UserRole.PARENT);
           router.push(dashboardUrl);
         }, 100);
       } else {

@@ -30,15 +30,15 @@ interface ApiResponse<T = unknown> {
  * These 9 allergens account for 90% of food allergies and are legally required on labels
  */
 export type AllergenType =
-  | 'milk'           // Dairy products, lactose
-  | 'eggs'           // Egg proteins (albumin, ovalbumin)
-  | 'fish'           // Finned fish (salmon, tuna, cod)
-  | 'shellfish'      // Crustacean shellfish (shrimp, crab, lobster)
-  | 'tree_nuts'      // Tree nuts (almonds, walnuts, cashews, pistachios)
-  | 'peanuts'        // Peanuts and peanut products
-  | 'wheat'          // Wheat gluten and wheat proteins
-  | 'soy'            // Soybean products
-  | 'sesame';        // Sesame seeds (added as 9th major allergen in 2021)
+  | 'milk' // Dairy products, lactose
+  | 'eggs' // Egg proteins (albumin, ovalbumin)
+  | 'fish' // Finned fish (salmon, tuna, cod)
+  | 'shellfish' // Crustacean shellfish (shrimp, crab, lobster)
+  | 'tree_nuts' // Tree nuts (almonds, walnuts, cashews, pistachios)
+  | 'peanuts' // Peanuts and peanut products
+  | 'wheat' // Wheat gluten and wheat proteins
+  | 'soy' // Soybean products
+  | 'sesame'; // Sesame seeds (added as 9th major allergen in 2021)
 
 /**
  * Allergen severity classification for risk management
@@ -59,11 +59,11 @@ export interface Allergen {
   type: AllergenType;
   category: AllergenCategory;
   severity: AllergenSeverity;
-  present: boolean;              // Definitely contains this allergen
-  mayContain: boolean;           // May contain due to cross-contamination
+  present: boolean; // Definitely contains this allergen
+  mayContain: boolean; // May contain due to cross-contamination
   crossContaminationRisk: number; // 0-1 scale, probability of cross-contamination
-  warningLabel?: string;         // Custom warning text for label
-  regulatoryNote?: string;       // FDA/USDA compliance note
+  warningLabel?: string; // Custom warning text for label
+  regulatoryNote?: string; // FDA/USDA compliance note
 }
 
 /**
@@ -71,27 +71,27 @@ export interface Allergen {
  */
 export interface DietaryInfo {
   // Religious/cultural restrictions
-  vegetarian: boolean;           // No meat, fish, or poultry
-  vegan: boolean;                // No animal products (including dairy, eggs, honey)
-  halal: boolean;                // Permitted under Islamic dietary law
-  kosher: boolean;               // Permitted under Jewish dietary law
+  vegetarian: boolean; // No meat, fish, or poultry
+  vegan: boolean; // No animal products (including dairy, eggs, honey)
+  halal: boolean; // Permitted under Islamic dietary law
+  kosher: boolean; // Permitted under Jewish dietary law
 
   // Health-based restrictions
-  glutenFree: boolean;           // No wheat, barley, rye, or their derivatives
-  dairyFree: boolean;            // No milk or milk products
-  nutFree: boolean;              // No tree nuts or peanuts
-  eggFree: boolean;              // No eggs or egg products
-  soyFree: boolean;              // No soy or soy products
+  glutenFree: boolean; // No wheat, barley, rye, or their derivatives
+  dairyFree: boolean; // No milk or milk products
+  nutFree: boolean; // No tree nuts or peanuts
+  eggFree: boolean; // No eggs or egg products
+  soyFree: boolean; // No soy or soy products
 
   // Additional lifestyle choices
-  organic: boolean;              // Certified organic ingredients
-  nonGMO: boolean;               // Non-genetically modified organisms
+  organic: boolean; // Certified organic ingredients
+  nonGMO: boolean; // Non-genetically modified organisms
 
   // Special diet plans
-  keto: boolean;                 // Low-carb, high-fat ketogenic diet
-  paleo: boolean;                // Paleolithic diet (no grains, dairy, legumes)
-  lowSodium: boolean;            // Reduced sodium content
-  diabeticFriendly: boolean;     // Low glycemic index, controlled carbs
+  keto: boolean; // Low-carb, high-fat ketogenic diet
+  paleo: boolean; // Paleolithic diet (no grains, dairy, legumes)
+  lowSodium: boolean; // Reduced sodium content
+  diabeticFriendly: boolean; // Low glycemic index, controlled carbs
 }
 
 /**
@@ -99,15 +99,15 @@ export interface DietaryInfo {
  * These are required on nutrition labels by FDA regulation
  */
 export interface Macronutrients {
-  protein: number;               // Grams of protein
-  carbohydrates: number;         // Total carbohydrates (grams)
-  totalFat: number;              // Total fat (grams)
-  saturatedFat: number;          // Saturated fat (grams)
-  transFat: number;              // Trans fat (grams) - must be listed if >0.5g
-  fiber: number;                 // Dietary fiber (grams)
-  sugars: number;                // Total sugars (grams)
-  addedSugars: number;           // Added sugars (grams) - new FDA requirement
-  sugarAlcohols?: number;        // Sugar alcohols if present (grams)
+  protein: number; // Grams of protein
+  carbohydrates: number; // Total carbohydrates (grams)
+  totalFat: number; // Total fat (grams)
+  saturatedFat: number; // Saturated fat (grams)
+  transFat: number; // Trans fat (grams) - must be listed if >0.5g
+  fiber: number; // Dietary fiber (grams)
+  sugars: number; // Total sugars (grams)
+  addedSugars: number; // Added sugars (grams) - new FDA requirement
+  sugarAlcohols?: number; // Sugar alcohols if present (grams)
 }
 
 /**
@@ -116,34 +116,34 @@ export interface Macronutrients {
  */
 export interface Micronutrients {
   // Required minerals
-  sodium: number;                // Milligrams (mg)
-  potassium: number;             // Milligrams (mg)
-  calcium: number;               // Milligrams (mg)
-  iron: number;                  // Milligrams (mg)
+  sodium: number; // Milligrams (mg)
+  potassium: number; // Milligrams (mg)
+  calcium: number; // Milligrams (mg)
+  iron: number; // Milligrams (mg)
 
   // Vitamins (optional but recommended)
-  vitaminA: number;              // International Units (IU)
-  vitaminC: number;              // Milligrams (mg)
-  vitaminD: number;              // International Units (IU)
-  vitaminE: number;              // Milligrams (mg)
-  vitaminK: number;              // Micrograms (mcg)
+  vitaminA: number; // International Units (IU)
+  vitaminC: number; // Milligrams (mg)
+  vitaminD: number; // International Units (IU)
+  vitaminE: number; // Milligrams (mg)
+  vitaminK: number; // Micrograms (mcg)
 
   // B-vitamins
-  thiamin?: number;              // Vitamin B1 (mg)
-  riboflavin?: number;           // Vitamin B2 (mg)
-  niacin?: number;               // Vitamin B3 (mg)
-  vitaminB6?: number;            // Pyridoxine (mg)
-  folate?: number;               // Vitamin B9 (mcg)
-  vitaminB12?: number;           // Cobalamin (mcg)
+  thiamin?: number; // Vitamin B1 (mg)
+  riboflavin?: number; // Vitamin B2 (mg)
+  niacin?: number; // Vitamin B3 (mg)
+  vitaminB6?: number; // Pyridoxine (mg)
+  folate?: number; // Vitamin B9 (mcg)
+  vitaminB12?: number; // Cobalamin (mcg)
 
   // Additional minerals
-  magnesium?: number;            // Milligrams (mg)
-  phosphorus?: number;           // Milligrams (mg)
-  zinc?: number;                 // Milligrams (mg)
-  selenium?: number;             // Micrograms (mcg)
-  copper?: number;               // Milligrams (mg)
-  manganese?: number;            // Milligrams (mg)
-  chromium?: number;             // Micrograms (mcg)
+  magnesium?: number; // Milligrams (mg)
+  phosphorus?: number; // Milligrams (mg)
+  zinc?: number; // Milligrams (mg)
+  selenium?: number; // Micrograms (mcg)
+  copper?: number; // Milligrams (mg)
+  manganese?: number; // Milligrams (mg)
+  chromium?: number; // Micrograms (mcg)
 }
 
 /**
@@ -151,34 +151,34 @@ export interface Micronutrients {
  * These percentages help consumers understand nutrient content
  */
 export interface DailyValuePercentages {
-  totalFat: number;              // % of 78g daily value
-  saturatedFat: number;          // % of 20g daily value
-  transFat: number;              // No daily value (should be minimized)
-  cholesterol: number;           // % of 300mg daily value
-  sodium: number;                // % of 2300mg daily value
-  totalCarbohydrates: number;    // % of 275g daily value
-  dietaryFiber: number;          // % of 28g daily value
-  totalSugars: number;           // No daily value
-  addedSugars: number;           // % of 50g daily value
-  protein: number;               // % of 50g daily value
-  vitaminD: number;              // % of 20mcg daily value
-  calcium: number;               // % of 1300mg daily value
-  iron: number;                  // % of 18mg daily value
-  potassium: number;             // % of 4700mg daily value
+  totalFat: number; // % of 78g daily value
+  saturatedFat: number; // % of 20g daily value
+  transFat: number; // No daily value (should be minimized)
+  cholesterol: number; // % of 300mg daily value
+  sodium: number; // % of 2300mg daily value
+  totalCarbohydrates: number; // % of 275g daily value
+  dietaryFiber: number; // % of 28g daily value
+  totalSugars: number; // No daily value
+  addedSugars: number; // % of 50g daily value
+  protein: number; // % of 50g daily value
+  vitaminD: number; // % of 20mcg daily value
+  calcium: number; // % of 1300mg daily value
+  iron: number; // % of 18mg daily value
+  potassium: number; // % of 4700mg daily value
 }
 
 /**
  * USDA compliance verification and certifications
  */
 export interface USDACompliance {
-  compliant: boolean;                    // Meets USDA nutrition labeling requirements
-  certificationDate: string;             // Date of last compliance verification
-  certificationNumber?: string;          // USDA certification number if applicable
-  verifiedBy: string;                    // Name of verifying authority/nutritionist
-  lastAuditDate: string;                 // Date of last nutrition audit
-  expirationDate?: string;               // Certification expiration date
-  notes?: string;                        // Additional compliance notes
-  violations?: string[];                 // Any compliance violations or warnings
+  compliant: boolean; // Meets USDA nutrition labeling requirements
+  certificationDate: string; // Date of last compliance verification
+  certificationNumber?: string; // USDA certification number if applicable
+  verifiedBy: string; // Name of verifying authority/nutritionist
+  lastAuditDate: string; // Date of last nutrition audit
+  expirationDate?: string; // Certification expiration date
+  notes?: string; // Additional compliance notes
+  violations?: string[]; // Any compliance violations or warnings
 }
 
 /**
@@ -189,13 +189,13 @@ export interface USDACompliance {
 export type TrafficLightColor = 'red' | 'yellow' | 'green';
 
 export interface TrafficLightRating {
-  calories: TrafficLightColor;           // Per serving calorie rating
-  sugar: TrafficLightColor;              // Sugar content rating
-  fat: TrafficLightColor;                // Total fat rating
-  saturatedFat: TrafficLightColor;       // Saturated fat rating
-  sodium: TrafficLightColor;             // Sodium content rating
-  overall: TrafficLightColor;            // Overall health rating
-  score: number;                         // Numeric health score (0-100)
+  calories: TrafficLightColor; // Per serving calorie rating
+  sugar: TrafficLightColor; // Sugar content rating
+  fat: TrafficLightColor; // Total fat rating
+  saturatedFat: TrafficLightColor; // Saturated fat rating
+  sodium: TrafficLightColor; // Sodium content rating
+  overall: TrafficLightColor; // Overall health rating
+  score: number; // Numeric health score (0-100)
 }
 
 /**
@@ -205,13 +205,13 @@ export interface Ingredient {
   id: string;
   name: string;
   quantity: number;
-  unit: string;                          // g, mg, oz, cups, etc.
-  percentOfTotal: number;                // % of total recipe/meal
-  allergens: AllergenType[];             // Allergens in this ingredient
+  unit: string; // g, mg, oz, cups, etc.
+  percentOfTotal: number; // % of total recipe/meal
+  allergens: AllergenType[]; // Allergens in this ingredient
   organic: boolean;
   nonGMO: boolean;
-  sourceCountry?: string;                // Country of origin
-  supplier?: string;                     // Supplier name for traceability
+  sourceCountry?: string; // Country of origin
+  supplier?: string; // Supplier name for traceability
 }
 
 /**
@@ -223,13 +223,13 @@ export interface NutritionalInfo {
   menuItemName: string;
 
   // Serving information (required by FDA)
-  servingSize: string;                   // e.g., "1 cup (240g)", "2 pieces (85g)"
-  servingSizeGrams: number;              // Serving size in grams
-  servingsPerContainer: number;          // Number of servings in package/meal
+  servingSize: string; // e.g., "1 cup (240g)", "2 pieces (85g)"
+  servingSizeGrams: number; // Serving size in grams
+  servingsPerContainer: number; // Number of servings in package/meal
 
   // Energy content
-  calories: number;                      // Kilocalories per serving
-  caloriesFromFat: number;               // Calories from fat (optional but helpful)
+  calories: number; // Kilocalories per serving
+  caloriesFromFat: number; // Calories from fat (optional but helpful)
 
   // Macronutrients and micronutrients
   macronutrients: Macronutrients;
@@ -240,14 +240,14 @@ export interface NutritionalInfo {
 
   // Allergen information
   allergens: Allergen[];
-  allergenSummary: string;               // e.g., "Contains: Milk, Eggs, Wheat"
+  allergenSummary: string; // e.g., "Contains: Milk, Eggs, Wheat"
 
   // Dietary information
   dietaryInfo: DietaryInfo;
 
   // Ingredient transparency
   ingredients: Ingredient[];
-  ingredientStatement: string;           // Full ingredient list as required by FDA
+  ingredientStatement: string; // Full ingredient list as required by FDA
 
   // Traffic light system
   trafficLightRating: TrafficLightRating;
@@ -256,12 +256,12 @@ export interface NutritionalInfo {
   usdaCompliance: USDACompliance;
 
   // Additional metadata
-  preparationMethod?: string;            // Cooking method (affects nutrition)
+  preparationMethod?: string; // Cooking method (affects nutrition)
   storageInstructions?: string;
-  shelfLife?: string;                    // e.g., "3 days refrigerated"
-  nutritionistNotes?: string;            // Professional notes
-  lastUpdated: string;                   // ISO date string
-  version: number;                       // Version number for tracking changes
+  shelfLife?: string; // e.g., "3 days refrigerated"
+  nutritionistNotes?: string; // Professional notes
+  lastUpdated: string; // ISO date string
+  version: number; // Version number for tracking changes
 }
 
 /**
@@ -277,8 +277,8 @@ export interface CalculateNutritionRequest {
   }>;
   servings: number;
   preparationMethod?: string;
-  cookingTime?: number;                  // Minutes
-  userId?: string;                       // For personalized calculations
+  cookingTime?: number; // Minutes
+  userId?: string; // For personalized calculations
 }
 
 /**
@@ -286,13 +286,13 @@ export interface CalculateNutritionRequest {
  */
 export interface CalculateNutritionResponse {
   nutritionalInfo: NutritionalInfo;
-  warnings: string[];                    // Nutrition warnings or concerns
-  recommendations: string[];             // Nutritionist recommendations
+  warnings: string[]; // Nutrition warnings or concerns
+  recommendations: string[]; // Nutritionist recommendations
   calculationMetadata: {
     calculatedAt: string;
     calculationMethod: string;
-    confidenceScore: number;             // 0-1, confidence in calculation accuracy
-    dataSource: string;                  // e.g., "USDA FoodData Central"
+    confidenceScore: number; // 0-1, confidence in calculation accuracy
+    dataSource: string; // e.g., "USDA FoodData Central"
   };
 }
 
@@ -300,12 +300,12 @@ export interface CalculateNutritionResponse {
  * Request for analyzing nutrition of meal plan or day
  */
 export interface AnalyzeNutritionRequest {
-  menuItemIds: string[];                 // Array of menu item IDs to analyze
+  menuItemIds: string[]; // Array of menu item IDs to analyze
   mealType?: 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'full_day';
-  studentAge?: number;                   // For age-appropriate recommendations
-  studentGrade?: string;                 // Grade level for school nutrition standards
+  studentAge?: number; // For age-appropriate recommendations
+  studentGrade?: string; // Grade level for school nutrition standards
   dietaryRestrictions?: Partial<DietaryInfo>;
-  targetDate?: string;                   // ISO date for meal plan
+  targetDate?: string; // ISO date for meal plan
 }
 
 /**
@@ -347,11 +347,11 @@ export interface NutritionAnalysis {
   overallRating: TrafficLightRating;
 
   // Nutritional balance assessment
-  balanceScore: number;                  // 0-100, how balanced the meal plan is
+  balanceScore: number; // 0-100, how balanced the meal plan is
   balanceReport: {
-    macronutrientBalance: string;        // e.g., "Well-balanced" or "High in carbs"
-    micronutrientCoverage: number;       // % of micronutrients adequately covered
-    varietyScore: number;                // 0-100, food variety score
+    macronutrientBalance: string; // e.g., "Well-balanced" or "High in carbs"
+    micronutrientCoverage: number; // % of micronutrients adequately covered
+    varietyScore: number; // 0-100, food variety score
   };
 
   // Recommendations
@@ -370,7 +370,7 @@ export interface NutritionAnalysis {
 
   analysisMetadata: {
     analyzedAt: string;
-    criteriaUsed: string;                // e.g., "USDA School Nutrition Standards"
+    criteriaUsed: string; // e.g., "USDA School Nutrition Standards"
     ageGroup?: string;
     gradeLevel?: string;
   };
@@ -381,9 +381,9 @@ export interface NutritionAnalysis {
  */
 export interface AllergenCheckRequest {
   menuItemIds: string[];
-  allergenTypes?: AllergenType[];        // Specific allergens to check
-  severity?: AllergenSeverity;           // Filter by severity
-  includeCrossContamination?: boolean;   // Include "may contain" warnings
+  allergenTypes?: AllergenType[]; // Specific allergens to check
+  severity?: AllergenSeverity; // Filter by severity
+  includeCrossContamination?: boolean; // Include "may contain" warnings
 }
 
 /**
@@ -407,7 +407,7 @@ export interface AllergenCheckResponse {
     menuItemId: string;
     menuItemName: string;
     potentialAllergens: AllergenType[];
-    riskScore: number;                   // 0-1 scale
+    riskScore: number; // 0-1 scale
   }>;
 
   summary: {
@@ -423,12 +423,12 @@ export interface AllergenCheckResponse {
  * Dietary filter request
  */
 export interface DietaryFilterRequest {
-  menuItemIds?: string[];                // Specific items to filter (optional)
+  menuItemIds?: string[]; // Specific items to filter (optional)
   dietaryRestrictions: Partial<DietaryInfo>;
-  strictMode?: boolean;                  // If true, exclude "may contain" items
-  includeAlternatives?: boolean;         // Suggest alternative menu items
-  schoolId?: string;                     // Filter by school menu
-  date?: string;                         // Filter by specific date
+  strictMode?: boolean; // If true, exclude "may contain" items
+  includeAlternatives?: boolean; // Suggest alternative menu items
+  schoolId?: string; // Filter by school menu
+  date?: string; // Filter by specific date
 }
 
 /**
@@ -440,23 +440,23 @@ export interface DietaryFilterResponse {
     menuItemName: string;
     category: string;
     dietaryInfo: DietaryInfo;
-    confidenceScore: number;             // 0-1, confidence in dietary classification
-    nutritionalHighlights: string[];     // e.g., "High in protein", "Low sodium"
+    confidenceScore: number; // 0-1, confidence in dietary classification
+    nutritionalHighlights: string[]; // e.g., "High in protein", "Low sodium"
   }>;
 
   excludedItems: Array<{
     menuItemId: string;
     menuItemName: string;
-    reason: string;                      // Why it was excluded
-    violatedRestrictions: string[];      // Which restrictions it violated
+    reason: string; // Why it was excluded
+    violatedRestrictions: string[]; // Which restrictions it violated
   }>;
 
   alternatives: Array<{
     originalItemId: string;
     alternativeItemId: string;
     alternativeItemName: string;
-    similarityScore: number;             // 0-1, how similar to original
-    nutritionalComparison: string;       // Brief comparison
+    similarityScore: number; // 0-1, how similar to original
+    nutritionalComparison: string; // Brief comparison
   }>;
 
   summary: {
@@ -478,7 +478,7 @@ export interface AllergenDirectory {
   };
   metadata: {
     lastUpdated: string;
-    regulatoryStandard: string;          // e.g., "FDA Food Allergen Labeling Act 2021"
+    regulatoryStandard: string; // e.g., "FDA Food Allergen Labeling Act 2021"
     version: string;
   };
 }
@@ -719,7 +719,7 @@ export const calculateNutritionScore = (nutritionalInfo: NutritionalInfo): numbe
   // Negative factors (subtract points)
   const sugarsPer100g = convertToPer100g(macronutrients.sugars, servingSizeGrams);
   const saturatedFatPer100g = convertToPer100g(macronutrients.saturatedFat, servingSizeGrams);
-  const sodiumPer100g = micronutrients.sodium / servingSizeGrams * 100 / 1000; // Convert mg to g
+  const sodiumPer100g = ((micronutrients.sodium / servingSizeGrams) * 100) / 1000; // Convert mg to g
 
   score -= Math.min(sugarsPer100g, 25); // Up to -25 for sugars
   score -= Math.min(saturatedFatPer100g * 2, 20); // Up to -20 for saturated fat
@@ -749,32 +749,32 @@ export const getRDA = (
       '4-8': gender === 'male' ? 1400 : 1200,
       '9-13': gender === 'male' ? 1800 : 1600,
       '14-18': gender === 'male' ? 2400 : 1800,
-      'adult': gender === 'male' ? 2400 : 2000,
+      adult: gender === 'male' ? 2400 : 2000,
     },
     protein: {
       '4-8': 19,
       '9-13': 34,
       '14-18': gender === 'male' ? 52 : 46,
-      'adult': gender === 'male' ? 56 : 46,
+      adult: gender === 'male' ? 56 : 46,
     },
     carbohydrates: {
-      'all': 130, // Minimum recommended
+      all: 130, // Minimum recommended
     },
     fat: {
       '4-18': 78, // 25-35% of calories
-      'adult': 78,
+      adult: 78,
     },
     fiber: {
       '4-8': 25,
       '9-13': gender === 'male' ? 31 : 26,
       '14-18': gender === 'male' ? 38 : 26,
-      'adult': gender === 'male' ? 38 : 25,
+      adult: gender === 'male' ? 38 : 25,
     },
     sodium: {
       '4-8': 1900,
       '9-13': 2200,
       '14-18': 2300,
-      'adult': 2300,
+      adult: 2300,
     },
   };
 
@@ -816,31 +816,32 @@ export const generateAllergenWarning = (allergens: Allergen[]): string => {
 // Export all interfaces and types
 // ============================================================================
 
-export type {
-  ApiResponse,
-  AllergenType,
-  AllergenSeverity,
-  AllergenCategory,
-  Allergen,
-  DietaryInfo,
-  Macronutrients,
-  Micronutrients,
-  DailyValuePercentages,
-  USDACompliance,
-  TrafficLightColor,
-  TrafficLightRating,
-  Ingredient,
-  NutritionalInfo,
-  CalculateNutritionRequest,
-  CalculateNutritionResponse,
-  AnalyzeNutritionRequest,
-  NutritionAnalysis,
-  AllergenCheckRequest,
-  AllergenCheckResponse,
-  DietaryFilterRequest,
-  DietaryFilterResponse,
-  AllergenDirectory,
-};
+// Remove duplicate exports - these are already exported above
+// export type {
+//   ApiResponse,
+//   AllergenType,
+//   AllergenSeverity,
+//   AllergenCategory,
+//   Allergen,
+//   DietaryInfo,
+//   Macronutrients,
+//   Micronutrients,
+//   DailyValuePercentages,
+//   USDACompliance,
+//   TrafficLightColor,
+//   TrafficLightRating,
+//   Ingredient,
+//   NutritionalInfo,
+//   CalculateNutritionRequest,
+//   CalculateNutritionResponse,
+//   AnalyzeNutritionRequest,
+//   NutritionAnalysis,
+//   AllergenCheckRequest,
+//   AllergenCheckResponse,
+//   DietaryFilterRequest,
+//   DietaryFilterResponse,
+//   AllergenDirectory,
+// };
 
 // Default export
 export default {

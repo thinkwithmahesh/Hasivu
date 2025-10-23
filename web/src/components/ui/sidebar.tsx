@@ -136,8 +136,8 @@ const SidebarProvider = React.forwardRef<
           <div
             style={
               {
-                '--sidebar-width': SIDEBAR_WIDTH,
-                '--sidebar-width-icon': SIDEBAR_WIDTH_ICON,
+                '--sidebar-width': SIDEBARWIDTH,
+                '--sidebar-width-icon': SIDEBAR_WIDTHICON,
                 ...style,
               } as React.CSSProperties
             }
@@ -202,7 +202,7 @@ const Sidebar = React.forwardRef<
             className="w-[--sidebar-width] bg-sidebar p-0 text-sidebar-foreground [&>sidebar]:hidden"
             style={
               {
-                '--sidebar-width': SIDEBAR_WIDTH_MOBILE,
+                '--sidebar-width': SIDEBAR_WIDTHMOBILE,
               } as React.CSSProperties
             }
             side={side}

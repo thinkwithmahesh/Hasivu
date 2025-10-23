@@ -154,7 +154,7 @@ export function ForgotPasswordForm({
 
                 <Button
                   type="submit"
-                  className="w-full bg-primary-600 hover:bg-primary-700 text-white font-medium py-2.5"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5"
                   disabled={isLoading}
                   size="lg"
                 >
@@ -179,7 +179,7 @@ export function ForgotPasswordForm({
       <CardFooter className="flex flex-col space-y-2 text-center text-sm text-gray-600">
         <Link
           href="/auth/login"
-          className="inline-flex items-center text-primary-600 hover:text-primary-500 font-medium focus:outline-none focus:underline"
+          className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium focus:outline-none focus:underline"
         >
           <ArrowLeft className="mr-1 h-4 w-4" />
           Back to sign in
@@ -250,7 +250,7 @@ export function ResetPasswordForm({
 
         <CardFooter className="flex flex-col space-y-2 text-center">
           <Link href="/auth/login">
-            <Button className="w-full bg-primary-600 hover:bg-primary-700 text-white">
+            <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
               Continue to Sign In
             </Button>
           </Link>
@@ -360,7 +360,7 @@ export function ResetPasswordForm({
 
             <Button
               type="submit"
-              className="w-full bg-primary-600 hover:bg-primary-700 text-white font-medium py-2.5"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5"
               disabled={isLoading}
               size="lg"
             >
@@ -380,7 +380,7 @@ export function ResetPasswordForm({
       <CardFooter className="flex flex-col space-y-2 text-center text-sm text-gray-600">
         <Link
           href="/auth/login"
-          className="inline-flex items-center text-primary-600 hover:text-primary-500 font-medium focus:outline-none focus:underline"
+          className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium focus:outline-none focus:underline"
         >
           <ArrowLeft className="mr-1 h-4 w-4" />
           Back to sign in

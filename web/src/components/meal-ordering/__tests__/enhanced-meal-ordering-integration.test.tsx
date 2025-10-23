@@ -4,13 +4,13 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent, waitFor, _within } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { axe, toHaveNoViolations } from 'jest-axe';
 
 // Import ShadCN components
 import {
-  _Command,
+  Command,
   CommandDialog,
   CommandInput,
   CommandList,
@@ -1022,7 +1022,7 @@ describe('Enhanced Meal Ordering Integration Tests', () => {
       const user = userEvent.setup();
 
       // Mock network error
-      const mockMealsWithError = [];
+      const mockMealsWithError: typeof mockMeals = [];
 
       render(<EnhancedMealSearch meals={mockMealsWithError} />);
 

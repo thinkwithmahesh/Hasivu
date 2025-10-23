@@ -22,7 +22,7 @@ import {
   Key,
   Eye,
   Zap,
-  TrendingUp as _TrendingUp,
+  TrendingUp as TrendingUp,
   BarChart3,
   Globe,
 } from 'lucide-react';

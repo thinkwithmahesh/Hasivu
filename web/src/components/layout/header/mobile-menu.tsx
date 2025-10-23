@@ -22,7 +22,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Separator as _Separator } from '@/components/ui/separator';
+import { Separator as Separator } from '@/components/ui/separator';
 import { cn, getInitials } from '@/lib/utils';
 import { User, NavigationItem, SchoolStatus } from '@/types/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -46,7 +46,7 @@ const getNavigationItems = (userRole: User['role']): NavigationItem[] => {
     },
   ];
 
-  const roleSpecificItems: Record<User['role'], NavigationItem[]> = {
+  const roleSpecificItems: Partial<Record<User['role'], NavigationItem[]>> = {
     student: [
       {
         id: 'meals',
@@ -196,7 +196,7 @@ const getNavigationItems = (userRole: User['role']): NavigationItem[] => {
         roles: ['admin'],
       },
     ],
-    kitchen: [
+    kitchen_staff: [
       {
         id: 'orders',
         label: 'Orders',
@@ -264,7 +264,7 @@ const getNavigationItems = (userRole: User['role']): NavigationItem[] => {
     ],
   };
 
-  return [...baseItems, ...roleSpecificItems[userRole]];
+  return [...baseItems, ...(roleSpecificItems[userRole] || [])];
 };
 
 export function MobileMenu({ user, schoolStatus, onItemClick, className }: MobileMenuProps) {
@@ -296,13 +296,18 @@ export function MobileMenu({ user, schoolStatus, onItemClick, className }: Mobil
       <div className="p-6 border-b">
         <div className="flex items-center gap-3">
           <Avatar className="h-10 w-10">
-            <AvatarImage src={user.avatar} alt={user.name} />
+            <AvatarImage
+              src={user.avatar}
+              alt={user.name || `${user.firstName} ${user.lastName}`}
+            />
             <AvatarFallback className="bg-primary-100 text-primary-700">
-              {getInitials(user.name)}
+              {getInitials(user.name || `${user.firstName} ${user.lastName}`)}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1">
-            <div className="font-medium text-sm">{user.name}</div>
+            <div className="font-medium text-sm">
+              {user.name || `${user.firstName} ${user.lastName}`}
+            </div>
             <div className="text-xs text-gray-500">{user.email}</div>
             <div className="flex items-center gap-2 mt-1">
               <span
@@ -312,7 +317,7 @@ export function MobileMenu({ user, schoolStatus, onItemClick, className }: Mobil
                     'bg-blue-100 text-blue-700': user.role === 'student',
                     'bg-green-100 text-green-700': user.role === 'parent',
                     'bg-purple-100 text-purple-700': user.role === 'admin',
-                    'bg-orange-100 text-orange-700': user.role === 'kitchen',
+                    'bg-orange-100 text-orange-700': user.role === 'kitchen_staff',
                     'bg-gray-100 text-gray-700': user.role === 'teacher',
                   }
                 )}
@@ -382,7 +387,7 @@ export function MobileMenu({ user, schoolStatus, onItemClick, className }: Mobil
           {navigationItems.map(item => {
             const Icon = item.icon;
             const hasChildren = item.children && item.children.length > 0;
-            const active = isActive(item.href);
+            const active = item.href ? isActive(item.href) : false;
             const expanded = expandedItems.includes(item.id);
 
             return (
@@ -410,25 +415,27 @@ export function MobileMenu({ user, schoolStatus, onItemClick, className }: Mobil
 
                     {expanded && (
                       <div className="ml-8 mt-1 space-y-1">
-                        {item.children?.map(child => (
-                          <Link
-                            key={child.id}
-                            href={child.href}
-                            onClick={handleItemClick}
-                            className={cn(
-                              'block px-3 py-2 text-sm rounded-md transition-colors',
-                              isActive(child.href)
-                                ? 'bg-accent text-accent-foreground font-medium'
-                                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                            )}
-                          >
-                            {child.label}
-                          </Link>
-                        ))}
+                        {item.children?.map(child =>
+                          child.href ? (
+                            <Link
+                              key={child.id}
+                              href={child.href}
+                              onClick={handleItemClick}
+                              className={cn(
+                                'block px-3 py-2 text-sm rounded-md transition-colors',
+                                isActive(child.href)
+                                  ? 'bg-accent text-accent-foreground font-medium'
+                                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                              )}
+                            >
+                              {child.label}
+                            </Link>
+                          ) : null
+                        )}
                       </div>
                     )}
                   </>
-                ) : (
+                ) : item.href ? (
                   <Link
                     href={item.href}
                     onClick={handleItemClick}
@@ -442,7 +449,7 @@ export function MobileMenu({ user, schoolStatus, onItemClick, className }: Mobil
                     {Icon && <Icon className="h-5 w-5" />}
                     <span className="font-medium">{item.label}</span>
                   </Link>
-                )}
+                ) : null}
               </div>
             );
           })}

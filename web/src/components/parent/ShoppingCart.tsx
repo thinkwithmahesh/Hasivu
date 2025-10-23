@@ -11,7 +11,7 @@ import {
   Clock,
   ChevronRight,
   X,
-  Loader2
+  Loader2,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -25,16 +25,15 @@ import { Progress } from '@/components/ui/progress';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { orderService } from '@/services/order.service';
-import { formatAllergenList } from '@/services/nutrition.service';
-import type {
-  CartCalculation,
-  DeliverySlot,
-  MealType,
-  CartItem as CartItemType,
-  NutritionSummary
+import {
+  orderService,
+  type CartCalculation,
+  type DeliverySlot,
+  type MealType,
+  type CartItem as CartItemType,
+  type NutritionSummary,
 } from '@/services/order.service';
-import type { AllergenType } from '@/services/nutrition.service';
+import { formatAllergenList, type AllergenType } from '@/services/nutrition.service';
 
 // ============================================================================
 // Type Definitions
@@ -62,7 +61,12 @@ export interface ShoppingCartProps {
   studentId: string;
   schoolId: string;
   initialCartItems?: CartItemData[];
-  onProceedToCheckout?: (calculation: CartCalculation, deliveryDate: string, deliverySlotId: string, specialInstructions: string) => void;
+  onProceedToCheckout?: (
+    calculation: CartCalculation,
+    deliveryDate: string,
+    deliverySlotId: string,
+    specialInstructions: string
+  ) => void;
   onUpdateCart?: (items: CartItemData[]) => void;
   onClearCart?: () => void;
   className?: string;
@@ -97,7 +101,7 @@ const formatCurrency = (amount: number): string => {
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',
     currency: 'INR',
-    minimumFractionDigits: 2
+    minimumFractionDigits: 2,
   }).format(amount);
 };
 
@@ -135,11 +139,7 @@ const CartItem: React.FC<CartItemProps> = ({ item, onUpdateQuantity, onRemove, d
           {/* Item Image */}
           {item.imageUrl && (
             <div className="relative w-20 h-20 flex-shrink-0 rounded-md overflow-hidden bg-gray-100">
-              <img
-                src={item.imageUrl}
-                alt={item.name}
-                className="w-full h-full object-cover"
-              />
+              <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
             </div>
           )}
 
@@ -151,14 +151,12 @@ const CartItem: React.FC<CartItemProps> = ({ item, onUpdateQuantity, onRemove, d
             )}
 
             {/* Unit Price */}
-            <p className="text-sm text-gray-600 mb-2">
-              {formatCurrency(item.unitPrice)} each
-            </p>
+            <p className="text-sm text-gray-600 mb-2">{formatCurrency(item.unitPrice)} each</p>
 
             {/* Allergen Tags */}
             {item.allergens && item.allergens.length > 0 && (
               <div className="flex flex-wrap gap-1 mb-2">
-                {item.allergens.map((allergen) => (
+                {item.allergens.map(allergen => (
                   <Badge
                     key={allergen.id}
                     variant={allergen.severity === 'high' ? 'destructive' : 'secondary'}
@@ -173,7 +171,8 @@ const CartItem: React.FC<CartItemProps> = ({ item, onUpdateQuantity, onRemove, d
             {/* Customizations */}
             {item.customizations && item.customizations.length > 0 && (
               <div className="text-xs text-gray-500 mb-2">
-                <span className="font-medium">Customizations:</span> {item.customizations.join(', ')}
+                <span className="font-medium">Customizations:</span>{' '}
+                {item.customizations.join(', ')}
               </div>
             )}
           </div>
@@ -251,7 +250,7 @@ const DeliverySelector: React.FC<DeliverySelectorProps> = ({
   onDateChange,
   onSlotChange,
   loading,
-  disabled
+  disabled,
 }) => {
   return (
     <Card>
@@ -271,13 +270,11 @@ const DeliverySelector: React.FC<DeliverySelectorProps> = ({
             min={getTomorrowDate()}
             max={getMaxDate()}
             value={deliveryDate}
-            onChange={(e) => onDateChange(e.target.value)}
+            onChange={e => onDateChange(e.target.value)}
             disabled={disabled}
             className="w-full"
           />
-          <p className="text-xs text-gray-500">
-            Orders must be placed at least 1 day in advance
-          </p>
+          <p className="text-xs text-gray-500">Orders must be placed at least 1 day in advance</p>
         </div>
 
         {/* Time Slot Selection */}
@@ -302,13 +299,13 @@ const DeliverySelector: React.FC<DeliverySelectorProps> = ({
           ) : (
             <RadioGroup value={selectedSlot} onValueChange={onSlotChange} disabled={disabled}>
               <div className="space-y-2">
-                {availableSlots.map((slot) => (
+                {availableSlots.map(slot => (
                   <div
                     key={slot.id}
                     className={cn(
-                      "flex items-center space-x-2 p-3 rounded-md border transition-colors",
-                      !slot.available && "opacity-50 cursor-not-allowed bg-gray-50",
-                      slot.available && "hover:bg-gray-50 cursor-pointer"
+                      'flex items-center space-x-2 p-3 rounded-md border transition-colors',
+                      !slot.available && 'opacity-50 cursor-not-allowed bg-gray-50',
+                      slot.available && 'hover:bg-gray-50 cursor-pointer'
                     )}
                   >
                     <RadioGroupItem
@@ -316,10 +313,7 @@ const DeliverySelector: React.FC<DeliverySelectorProps> = ({
                       id={`slot-${slot.id}`}
                       disabled={!slot.available || disabled}
                     />
-                    <Label
-                      htmlFor={`slot-${slot.id}`}
-                      className="flex-1 cursor-pointer"
-                    >
+                    <Label htmlFor={`slot-${slot.id}`} className="flex-1 cursor-pointer">
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="font-medium">{slot.time}</p>
@@ -415,15 +409,15 @@ const NutritionSummaryCard: React.FC<NutritionSummaryProps> = ({ summary }) => {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label>Nutrition Score</Label>
-            <span className={cn("font-bold text-lg", getNutritionScoreColor(nutritionScore))}>
+            <span className={cn('font-bold text-lg', getNutritionScoreColor(nutritionScore))}>
               {nutritionScore}/100
             </span>
           </div>
           <Progress value={nutritionScore} className="h-2" />
           <p className="text-xs text-gray-500">
-            {nutritionScore >= 75 && "Excellent nutritional balance"}
-            {nutritionScore >= 50 && nutritionScore < 75 && "Good nutritional balance"}
-            {nutritionScore < 50 && "Consider adding more nutritious items"}
+            {nutritionScore >= 75 && 'Excellent nutritional balance'}
+            {nutritionScore >= 50 && nutritionScore < 75 && 'Good nutritional balance'}
+            {nutritionScore < 50 && 'Consider adding more nutritious items'}
           </p>
         </div>
 
@@ -459,7 +453,10 @@ interface AllergenWarningsProps {
   }>;
 }
 
-const AllergenWarnings: React.FC<AllergenWarningsProps> = ({ allergenWarnings, allergenAlerts }) => {
+const AllergenWarnings: React.FC<AllergenWarningsProps> = ({
+  allergenWarnings,
+  allergenAlerts,
+}) => {
   if (allergenWarnings.length === 0 && allergenAlerts.length === 0) {
     return null;
   }
@@ -475,10 +472,14 @@ const AllergenWarnings: React.FC<AllergenWarningsProps> = ({ allergenWarnings, a
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Critical Allergen Warning</AlertTitle>
           <AlertDescription>
-            <p className="font-medium mb-2">This order contains allergens that the student is allergic to:</p>
+            <p className="font-medium mb-2">
+              This order contains allergens that the student is allergic to:
+            </p>
             <ul className="list-disc list-inside space-y-1">
               {criticalAlerts.map((alert, idx) => (
-                <li key={idx} className="text-sm">{alert.message}</li>
+                <li key={idx} className="text-sm">
+                  {alert.message}
+                </li>
               ))}
             </ul>
           </AlertDescription>
@@ -555,7 +556,9 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({ calculation, totalItems }) 
       <CardContent className="space-y-3">
         {/* Subtotal */}
         <div className="flex items-center justify-between">
-          <span className="text-gray-600">Subtotal ({totalItems} {totalItems === 1 ? 'item' : 'items'})</span>
+          <span className="text-gray-600">
+            Subtotal ({totalItems} {totalItems === 1 ? 'item' : 'items'})
+          </span>
           <span className="font-medium">{formatCurrency(calculation.subtotal)}</span>
         </div>
 
@@ -570,7 +573,9 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({ calculation, totalItems }) 
           <span className="text-gray-600">Delivery Fee</span>
           <span className="font-medium">
             {calculation.deliveryFee === 0 ? (
-              <Badge variant="default" className="bg-green-600">FREE</Badge>
+              <Badge variant="default" className="bg-green-600">
+                FREE
+              </Badge>
             ) : (
               formatCurrency(calculation.deliveryFee)
             )}
@@ -621,7 +626,7 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
   onProceedToCheckout,
   onUpdateCart,
   onClearCart,
-  className
+  className,
 }) => {
   // State Management
   const [cartItems, setCartItems] = useState<CartItemData[]>(initialCartItems);
@@ -712,8 +717,8 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
             menuItemId: item.menuItemId,
             quantity: item.quantity,
             customizations: item.customizations,
-            specialInstructions: item.specialInstructions
-          }))
+            specialInstructions: item.specialInstructions,
+          })),
         });
         setCalculation(calc);
       } catch (err) {
@@ -750,9 +755,7 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
 
     setCartItems(prev =>
       prev.map(item =>
-        item.id === itemId
-          ? { ...item, quantity: Math.min(newQuantity, 10) }
-          : item
+        item.id === itemId ? { ...item, quantity: Math.min(newQuantity, 10) } : item
       )
     );
   };
@@ -810,7 +813,7 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
   // ============================================================================
 
   return (
-    <div className={cn("container max-w-6xl mx-auto py-6 px-4", className)}>
+    <div className={cn('container max-w-6xl mx-auto py-6 px-4', className)}>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -890,7 +893,7 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
                 <Textarea
                   placeholder="E.g., Please call before delivery, extra sauce on the side, etc."
                   value={specialInstructions}
-                  onChange={(e) => setSpecialInstructions(e.target.value)}
+                  onChange={e => setSpecialInstructions(e.target.value)}
                   disabled={processingCheckout}
                   rows={3}
                   maxLength={500}
@@ -906,9 +909,7 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
           {/* Right Column: Summary & Checkout */}
           <div className="space-y-6">
             {/* Nutrition Summary */}
-            {calculation && (
-              <NutritionSummaryCard summary={calculation.nutritionSummary} />
-            )}
+            {calculation && <NutritionSummaryCard summary={calculation.nutritionSummary} />}
 
             {/* Allergen Warnings */}
             {calculation && (
@@ -943,9 +944,9 @@ export const ShoppingCart: React.FC<ShoppingCartProps> = ({
 
             {!canCheckout && cartItems.length > 0 && (
               <p className="text-sm text-center text-gray-500">
-                {!deliveryDate && "Please select a delivery date"}
-                {deliveryDate && !selectedSlot && "Please select a delivery time slot"}
-                {deliveryDate && selectedSlot && !calculation && "Calculating order total..."}
+                {!deliveryDate && 'Please select a delivery date'}
+                {deliveryDate && !selectedSlot && 'Please select a delivery time slot'}
+                {deliveryDate && selectedSlot && !calculation && 'Calculating order total...'}
               </p>
             )}
           </div>

@@ -154,7 +154,7 @@ class HASIVUApiClient {
 
   constructor() {
     this.client = axios.create({
-      baseURL: API_CONFIG.BASE_URL,
+      baseURL: API_CONFIG.BASEURL,
       timeout: API_CONFIG.TIMEOUT,
       headers: {
         'Content-Type': 'application/json',
@@ -286,18 +286,36 @@ class HASIVUApiClient {
   }
 
   async verifyEmail(token: string): Promise<ApiResponse<void>> {
-    const response = await this.client.post(API_CONFIG.ENDPOINTS.AUTH.VERIFY_EMAIL, { token });
+    const response = await this.client.post(API_CONFIG.ENDPOINTS.AUTH.VERIFYEMAIL, { token });
+    return response.data;
+  }
+
+  async forgotPassword(email: string): Promise<ApiResponse<void>> {
+    const response = await this.client.post(API_CONFIG.ENDPOINTS.AUTH.FORGOTPASSWORD, { email });
+    return response.data;
+  }
+
+  async resetPassword(
+    email: string,
+    token: string,
+    newPassword: string
+  ): Promise<ApiResponse<void>> {
+    const response = await this.client.post(API_CONFIG.ENDPOINTS.AUTH.RESETPASSWORD, {
+      email,
+      token,
+      newPassword,
+    });
     return response.data;
   }
 
   // RFID Methods
   async createRFIDCard(cardData: any): Promise<ApiResponse<any>> {
-    const response = await this.client.post(API_CONFIG.ENDPOINTS.RFID.CREATE_CARD, cardData);
+    const response = await this.client.post(API_CONFIG.ENDPOINTS.RFID.CREATECARD, cardData);
     return response.data;
   }
 
   async verifyRFIDCard(cardNumber: string, readerId: string): Promise<ApiResponse<any>> {
-    const response = await this.client.post(API_CONFIG.ENDPOINTS.RFID.VERIFY_CARD, {
+    const response = await this.client.post(API_CONFIG.ENDPOINTS.RFID.VERIFYCARD, {
       cardNumber,
       readerId,
       timestamp: new Date().toISOString(),
@@ -306,13 +324,13 @@ class HASIVUApiClient {
   }
 
   async getRFIDAnalytics(params?: any): Promise<ApiResponse<any>> {
-    const response = await this.client.get(API_CONFIG.ENDPOINTS.RFID.CARD_ANALYTICS, { params });
+    const response = await this.client.get(API_CONFIG.ENDPOINTS.RFID.CARDANALYTICS, { params });
     return response.data;
   }
 
   // Payment Methods
   async createPaymentOrder(orderData: any): Promise<ApiResponse<any>> {
-    const response = await this.client.post(API_CONFIG.ENDPOINTS.PAYMENTS.CREATE_ORDER, orderData);
+    const response = await this.client.post(API_CONFIG.ENDPOINTS.PAYMENTS.CREATEORDER, orderData);
     return response.data;
   }
 
@@ -448,7 +466,7 @@ class HASIVUApiClient {
   }
 
   async configureRFIDSystem(rfidData: any): Promise<ApiResponse<any>> {
-    const response = await this.client.post(API_CONFIG.ENDPOINTS.RFID.BULK_IMPORT, {
+    const response = await this.client.post(API_CONFIG.ENDPOINTS.RFID.BULKIMPORT, {
       ...rfidData,
       step: 'rfid_setup',
     });
@@ -506,6 +524,22 @@ class HASIVUApiClient {
   // Testimonials (for landing page)
   async getTestimonials(): Promise<ApiResponse<any[]>> {
     const response = await this.client.get('/public/testimonials');
+    return response.data;
+  }
+
+  // Dashboard Analytics Methods
+  async getAnalyticsDashboard(params?: any): Promise<ApiResponse<any>> {
+    const response = await this.client.get(API_CONFIG.ENDPOINTS.ANALYTICS.DASHBOARD, { params });
+    return response.data;
+  }
+
+  async getRealtimeMetrics(): Promise<ApiResponse<any>> {
+    const response = await this.client.get(API_CONFIG.ENDPOINTS.ANALYTICS.REAL_TIME);
+    return response.data;
+  }
+
+  async getSystemPerformance(): Promise<ApiResponse<any>> {
+    const response = await this.client.get(API_CONFIG.ENDPOINTS.ANALYTICS.METRICS);
     return response.data;
   }
 }

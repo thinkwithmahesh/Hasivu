@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { motion, _AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Clock,
   CheckCircle,
@@ -16,11 +16,11 @@ import {
   MapPin,
   Calendar,
   User,
-  _CreditCard,
+  CreditCard,
   MoreVertical,
   Eye,
   Download,
-  _RefreshCw,
+  RefreshCw,
   X,
 } from 'lucide-react';
 
@@ -37,7 +37,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
 import { OrderCancellationModal } from './OrderCancellationModal';
-import { Order, _OrderItem, _OrderStatus, OrderStatusEntry, OrderCardProps } from '@/types/orders';
+import { Order, OrderItem, OrderStatus, OrderStatusEntry, OrderCardProps } from '@/types/orders';
 
 export function OrderCard({
   order,

@@ -5,13 +5,7 @@
 // Critical for food service delivery, parent ordering, and nutrition compliance
 
 import apiClient from './api';
-import type {
-  AllergenType,
-  Allergen,
-  NutritionalInfo,
-  DietaryInfo,
-  NutritionSummary as NutritionalSummary
-} from './nutrition.service';
+import type { AllergenType, Allergen, NutritionalInfo, DietaryInfo } from './nutrition.service';
 
 // ============================================================================
 // Type Definitions & Interfaces
@@ -38,13 +32,13 @@ interface ApiResponse<T = unknown> {
  * Represents complete approval and publishing workflow
  */
 export type MenuStatus =
-  | 'draft'      // Being created by admin, not visible to anyone
-  | 'review'     // Submitted for admin review/approval
-  | 'approved'   // Approved by admin, ready to publish
-  | 'published'  // Published and visible to parents
-  | 'active'     // Currently active (serving today)
-  | 'archived'   // Past menu, no longer active
-  | 'rejected';  // Rejected during review process
+  | 'draft' // Being created by admin, not visible to anyone
+  | 'review' // Submitted for admin review/approval
+  | 'approved' // Approved by admin, ready to publish
+  | 'published' // Published and visible to parents
+  | 'active' // Currently active (serving today)
+  | 'archived' // Past menu, no longer active
+  | 'rejected'; // Rejected during review process
 
 /**
  * Meal types for menu categorization
@@ -67,13 +61,13 @@ export type MenuItemCategory =
  * Menu pricing structure with role-based pricing
  */
 export interface MenuPricing {
-  basePrice: number;          // Base price for menu
-  studentPrice: number;       // Price for students
-  staffPrice?: number;        // Optional price for staff
-  guestPrice?: number;        // Optional price for guests
-  currency: 'INR';           // Currency (Indian Rupees)
-  taxIncluded: boolean;      // Whether tax is included in price
-  taxRate?: number;          // Tax rate percentage (e.g., 5 for 5%)
+  basePrice: number; // Base price for menu
+  studentPrice: number; // Price for students
+  staffPrice?: number; // Optional price for staff
+  guestPrice?: number; // Optional price for guests
+  currency: 'INR'; // Currency (Indian Rupees)
+  taxIncluded: boolean; // Whether tax is included in price
+  taxRate?: number; // Tax rate percentage (e.g., 5 for 5%)
 }
 
 /**
@@ -81,16 +75,16 @@ export interface MenuPricing {
  */
 export interface NutritionSummary {
   totalCalories: number;
-  totalProtein: number;        // grams
-  totalCarbs: number;          // grams
-  totalFat: number;            // grams
-  totalFiber: number;          // grams
-  totalSugar: number;          // grams
-  totalSodium: number;         // mg
-  totalCholesterol: number;    // mg
+  totalProtein: number; // grams
+  totalCarbs: number; // grams
+  totalFat: number; // grams
+  totalFiber: number; // grams
+  totalSugar: number; // grams
+  totalSodium: number; // mg
+  totalCholesterol: number; // mg
   averageCaloriesPerItem: number;
-  meetsGuidelines: boolean;    // Whether menu meets nutritional guidelines
-  guidelineNotes?: string[];   // Any nutritional concerns or recommendations
+  meetsGuidelines: boolean; // Whether menu meets nutritional guidelines
+  guidelineNotes?: string[]; // Any nutritional concerns or recommendations
 }
 
 /**
@@ -98,24 +92,24 @@ export interface NutritionSummary {
  */
 export interface MenuItem {
   id: string;
-  menuId: string;              // Parent menu ID
+  menuId: string; // Parent menu ID
   name: string;
   description: string;
   category: MenuItemCategory;
-  price: number;               // Price per item in INR
-  available: boolean;          // Whether item is currently available
-  maxQuantity?: number;        // Maximum quantity per order
-  imageUrl?: string;           // Item image URL
-  ingredients: string[];       // List of ingredients
+  price: number; // Price per item in INR
+  available: boolean; // Whether item is currently available
+  maxQuantity?: number; // Maximum quantity per order
+  imageUrl?: string; // Item image URL
+  ingredients: string[]; // List of ingredients
   nutritionalInfo: NutritionalInfo;
   allergens: Allergen[];
   dietaryInfo: DietaryInfo;
-  preparationTime?: number;    // Preparation time in minutes
-  servingSize: string;         // e.g., "1 serving (250g)"
-  calories: number;            // Calories per serving
-  displayOrder: number;        // Order for display in menu (lower = first)
-  createdAt: string;           // ISO timestamp
-  updatedAt: string;           // ISO timestamp
+  preparationTime?: number; // Preparation time in minutes
+  servingSize: string; // e.g., "1 serving (250g)"
+  calories: number; // Calories per serving
+  displayOrder: number; // Order for display in menu (lower = first)
+  createdAt: string; // ISO timestamp
+  updatedAt: string; // ISO timestamp
 }
 
 /**
@@ -166,30 +160,30 @@ export interface Menu {
   schoolName?: string;
   name: string;
   description?: string;
-  date: string;                 // Service date (ISO date string)
+  date: string; // Service date (ISO date string)
   mealType: MealType;
-  category: string;             // e.g., 'vegetarian', 'non-vegetarian', 'special-diet'
+  category: string; // e.g., 'vegetarian', 'non-vegetarian', 'special-diet'
   status: MenuStatus;
   items: MenuItem[];
-  totalItems: number;           // Count of items in menu
+  totalItems: number; // Count of items in menu
   pricing: MenuPricing;
   nutritionSummary: NutritionSummary;
-  allergenWarnings: string[];   // Aggregated allergen warnings from all items
+  allergenWarnings: string[]; // Aggregated allergen warnings from all items
 
   // Publishing metadata
-  publishedAt?: string;         // ISO timestamp
-  publishedBy?: string;         // Admin user ID who published
+  publishedAt?: string; // ISO timestamp
+  publishedBy?: string; // Admin user ID who published
 
   // Approval metadata
-  approvedAt?: string;          // ISO timestamp
-  approvedBy?: string;          // Admin user ID who approved
-  approvalNotes?: string;       // Notes from approval process
-  rejectionReason?: string;     // Reason for rejection (if rejected)
+  approvedAt?: string; // ISO timestamp
+  approvedBy?: string; // Admin user ID who approved
+  approvalNotes?: string; // Notes from approval process
+  rejectionReason?: string; // Reason for rejection (if rejected)
 
   // Creation metadata
-  createdBy: string;            // Admin user ID who created
-  createdAt: string;            // ISO timestamp
-  updatedAt: string;            // ISO timestamp
+  createdBy: string; // Admin user ID who created
+  createdAt: string; // ISO timestamp
+  updatedAt: string; // ISO timestamp
 }
 
 /**
@@ -221,12 +215,12 @@ export interface CreateMenuRequest {
   schoolId: string;
   name: string;
   description?: string;
-  date: string;                 // Service date (ISO date string)
+  date: string; // Service date (ISO date string)
   mealType: MealType;
   category: string;
   pricing: MenuPricing;
   items?: CreateMenuItemRequest[]; // Optional initial items
-  notes?: string;               // Admin notes
+  notes?: string; // Admin notes
 }
 
 /**
@@ -246,39 +240,39 @@ export interface UpdateMenuRequest {
  * Menu publish request
  */
 export interface PublishMenuRequest {
-  publishNow?: boolean;         // Publish immediately or schedule
+  publishNow?: boolean; // Publish immediately or schedule
   scheduledPublishDate?: string; // ISO timestamp for scheduled publishing
-  notifyParents?: boolean;      // Send notification to parents
-  notes?: string;               // Publishing notes
+  notifyParents?: boolean; // Send notification to parents
+  notes?: string; // Publishing notes
 }
 
 /**
  * Menu approval request
  */
 export interface ApproveMenuRequest {
-  approved: boolean;            // true = approve, false = reject
-  notes?: string;               // Approval/rejection notes
-  requiredChanges?: string[];   // List of required changes (if rejected)
+  approved: boolean; // true = approve, false = reject
+  notes?: string; // Approval/rejection notes
+  requiredChanges?: string[]; // List of required changes (if rejected)
 }
 
 /**
  * Menu filters for browsing and searching
  */
 export interface MenuFilters {
-  date?: string;                // Filter by specific date (ISO date string)
-  dateFrom?: string;            // Filter by date range start
-  dateTo?: string;              // Filter by date range end
-  mealType?: MealType;          // Filter by meal type
-  category?: string;            // Filter by category (vegetarian, etc.)
+  date?: string; // Filter by specific date (ISO date string)
+  dateFrom?: string; // Filter by date range start
+  dateTo?: string; // Filter by date range end
+  mealType?: MealType; // Filter by meal type
+  category?: string; // Filter by category (vegetarian, etc.)
   status?: MenuStatus | MenuStatus[]; // Filter by status
-  schoolId?: string;            // Filter by school
-  active?: boolean;             // Filter for currently active menus
-  published?: boolean;          // Filter for published menus only
-  search?: string;              // Search in name, description, items
+  schoolId?: string; // Filter by school
+  active?: boolean; // Filter for currently active menus
+  published?: boolean; // Filter for published menus only
+  search?: string; // Search in name, description, items
   allergenFree?: AllergenType[]; // Filter menus without specific allergens
   dietaryCompliant?: keyof DietaryInfo; // Filter by dietary compliance
-  page?: number;                // Pagination
-  limit?: number;               // Items per page
+  page?: number; // Pagination
+  limit?: number; // Items per page
   sortBy?: 'date' | 'createdAt' | 'name' | 'status';
   sortOrder?: 'asc' | 'desc';
 }
@@ -307,9 +301,9 @@ export interface MenuStats {
     averageProtein: number;
     averageCarbs: number;
     averageFat: number;
-    complianceRate: number;      // % of menus meeting guidelines
+    complianceRate: number; // % of menus meeting guidelines
   };
-  upcomingMenus: MenuSummary[];  // Next 7 days of menus
+  upcomingMenus: MenuSummary[]; // Next 7 days of menus
 }
 
 /**
@@ -355,7 +349,6 @@ export interface MenuApprovalWorkflow {
  * - School service: School-specific menu management
  */
 class MenuService {
-
   // ==========================================================================
   // Menu CRUD Operations
   // ==========================================================================
@@ -402,10 +395,7 @@ class MenuService {
    */
   async createMenu(request: CreateMenuRequest): Promise<Menu> {
     try {
-      const response = await apiClient.post<ApiResponse<Menu>>(
-        '/menus',
-        request
-      );
+      const response = await apiClient.post<ApiResponse<Menu>>('/menus', request);
       return response.data.data;
     } catch (error) {
       console.error('Failed to create menu:', error);
@@ -457,15 +447,17 @@ class MenuService {
     };
   }> {
     try {
-      const response = await apiClient.get<ApiResponse<{
-        menus: MenuSummary[];
-        meta: {
-          page: number;
-          limit: number;
-          total: number;
-          totalPages: number;
-        };
-      }>>('/menus', { params: filters });
+      const response = await apiClient.get<
+        ApiResponse<{
+          menus: MenuSummary[];
+          meta: {
+            page: number;
+            limit: number;
+            total: number;
+            totalPages: number;
+          };
+        }>
+      >('/menus', { params: filters });
       return response.data.data;
     } catch (error) {
       console.error('Failed to list menus:', error);
@@ -493,9 +485,7 @@ class MenuService {
    */
   async getMenu(menuId: string): Promise<Menu> {
     try {
-      const response = await apiClient.get<ApiResponse<Menu>>(
-        `/menus/${menuId}`
-      );
+      const response = await apiClient.get<ApiResponse<Menu>>(`/menus/${menuId}`);
       return response.data.data;
     } catch (error) {
       console.error('Failed to get menu:', error);
@@ -533,10 +523,7 @@ class MenuService {
    */
   async updateMenu(menuId: string, updates: UpdateMenuRequest): Promise<Menu> {
     try {
-      const response = await apiClient.put<ApiResponse<Menu>>(
-        `/menus/${menuId}`,
-        updates
-      );
+      const response = await apiClient.put<ApiResponse<Menu>>(`/menus/${menuId}`, updates);
       return response.data.data;
     } catch (error) {
       console.error('Failed to update menu:', error);
@@ -564,10 +551,12 @@ class MenuService {
     message: string;
   }> {
     try {
-      const response = await apiClient.delete<ApiResponse<{
-        success: boolean;
-        message: string;
-      }>>(`/menus/${menuId}`);
+      const response = await apiClient.delete<
+        ApiResponse<{
+          success: boolean;
+          message: string;
+        }>
+      >(`/menus/${menuId}`);
       return response.data.data;
     } catch (error) {
       console.error('Failed to delete menu:', error);
@@ -611,10 +600,7 @@ class MenuService {
    */
   async addMenuItem(menuId: string, item: CreateMenuItemRequest): Promise<MenuItem> {
     try {
-      const response = await apiClient.post<ApiResponse<MenuItem>>(
-        `/menus/${menuId}/items`,
-        item
-      );
+      const response = await apiClient.post<ApiResponse<MenuItem>>(`/menus/${menuId}/items`, item);
       return response.data.data;
     } catch (error) {
       console.error('Failed to add menu item:', error);
@@ -684,15 +670,20 @@ class MenuService {
    * console.log('Menu item removed successfully');
    * ```
    */
-  async removeMenuItem(menuId: string, itemId: string): Promise<{
+  async removeMenuItem(
+    menuId: string,
+    itemId: string
+  ): Promise<{
     success: boolean;
     message: string;
   }> {
     try {
-      const response = await apiClient.delete<ApiResponse<{
-        success: boolean;
-        message: string;
-      }>>(`/menus/${menuId}/items/${itemId}`);
+      const response = await apiClient.delete<
+        ApiResponse<{
+          success: boolean;
+          message: string;
+        }>
+      >(`/menus/${menuId}/items/${itemId}`);
       return response.data.data;
     } catch (error) {
       console.error('Failed to remove menu item:', error);
@@ -768,10 +759,9 @@ class MenuService {
    */
   async submitForReview(menuId: string, notes?: string): Promise<Menu> {
     try {
-      const response = await apiClient.post<ApiResponse<Menu>>(
-        `/menus/${menuId}/submit`,
-        { notes }
-      );
+      const response = await apiClient.post<ApiResponse<Menu>>(`/menus/${menuId}/submit`, {
+        notes,
+      });
       return response.data.data;
     } catch (error) {
       console.error('Failed to submit menu for review:', error);
@@ -845,10 +835,9 @@ class MenuService {
    */
   async unpublishMenu(menuId: string, reason?: string): Promise<Menu> {
     try {
-      const response = await apiClient.post<ApiResponse<Menu>>(
-        `/menus/${menuId}/unpublish`,
-        { reason }
-      );
+      const response = await apiClient.post<ApiResponse<Menu>>(`/menus/${menuId}/unpublish`, {
+        reason,
+      });
       return response.data.data;
     } catch (error) {
       console.error('Failed to unpublish menu:', error);
@@ -881,10 +870,9 @@ class MenuService {
    */
   async getMenuStats(filters?: Partial<MenuFilters>): Promise<MenuStats> {
     try {
-      const response = await apiClient.get<ApiResponse<MenuStats>>(
-        '/menus/stats',
-        { params: filters }
-      );
+      const response = await apiClient.get<ApiResponse<MenuStats>>('/menus/stats', {
+        params: filters,
+      });
       return response.data.data;
     } catch (error) {
       console.error('Failed to get menu statistics:', error);
@@ -985,7 +973,7 @@ class MenuService {
       published: 'Published',
       active: 'Active',
       archived: 'Archived',
-      rejected: 'Rejected'
+      rejected: 'Rejected',
     };
     return labels[status] || status;
   }
@@ -1005,7 +993,7 @@ class MenuService {
       published: 'success',
       active: 'success',
       archived: 'info',
-      rejected: 'error'
+      rejected: 'error',
     };
     return colors[status] || 'info';
   }
@@ -1024,7 +1012,7 @@ class MenuService {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
-      day: 'numeric'
+      day: 'numeric',
     }).format(date);
   }
 
@@ -1079,7 +1067,7 @@ class MenuService {
       published: 'active',
       active: 'archived',
       archived: null,
-      rejected: 'draft'
+      rejected: 'draft',
     };
     return workflow[currentStatus] || null;
   }
@@ -1094,7 +1082,7 @@ class MenuService {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
       currency: 'INR',
-      minimumFractionDigits: 2
+      minimumFractionDigits: 2,
     }).format(amount);
   }
 
@@ -1145,7 +1133,7 @@ class MenuService {
     const result = await this.listMenus({
       ...filters,
       dateFrom: startDate,
-      dateTo: endDate
+      dateTo: endDate,
     });
     return result.menus;
   }
@@ -1163,7 +1151,7 @@ class MenuService {
       date: today,
       active: true,
       schoolId,
-      status: ['published', 'active']
+      status: ['published', 'active'],
     });
     return result.menus;
   }
@@ -1187,7 +1175,7 @@ class MenuService {
       schoolId,
       status: ['published', 'active'],
       sortBy: 'date',
-      sortOrder: 'asc'
+      sortOrder: 'asc',
     });
     return result.menus;
   }
@@ -1212,23 +1200,24 @@ export default MenuService;
 // Export All Types
 // ============================================================================
 
-export type {
-  Menu,
-  MenuSummary,
-  MenuItem,
-  MenuStatus,
-  MealType,
-  MenuItemCategory,
-  MenuPricing,
-  NutritionSummary,
-  CreateMenuRequest,
-  UpdateMenuRequest,
-  CreateMenuItemRequest,
-  UpdateMenuItemRequest,
-  PublishMenuRequest,
-  ApproveMenuRequest,
-  MenuFilters,
-  MenuStats,
-  MenuApprovalWorkflow,
-  ApiResponse
-};
+// Remove duplicate exports - these are already exported above
+// export type {
+//   Menu,
+//   MenuSummary,
+//   MenuItem,
+//   MenuStatus,
+//   MealType,
+//   MenuItemCategory,
+//   MenuPricing,
+//   NutritionSummary,
+//   CreateMenuRequest,
+//   UpdateMenuRequest,
+//   CreateMenuItemRequest,
+//   UpdateMenuItemRequest,
+//   PublishMenuRequest,
+//   ApproveMenuRequest,
+//   MenuFilters,
+//   MenuStats,
+//   MenuApprovalWorkflow,
+//   ApiResponse,
+// };

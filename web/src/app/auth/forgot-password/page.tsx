@@ -62,7 +62,7 @@ export default function ForgotPasswordPage() {
             </p>
             <button
               onClick={() => router.push('/auth/login')}
-              className="text-primary-600 hover:text-primary-500 font-medium"
+              className="text-blue-600 hover:text-blue-700 font-medium"
             >
               Return to Login
             </button>

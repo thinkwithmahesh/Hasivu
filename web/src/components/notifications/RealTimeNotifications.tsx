@@ -8,22 +8,22 @@ import {
   Check,
   AlertTriangle,
   Info,
-  _Clock,
+  Clock,
   ChefHat,
   Package,
   Users,
-  _TrendingUp,
+  TrendingUp,
   Settings,
-  _Volume2,
-  _VolumeX,
-  _Filter,
+  Volume2,
+  VolumeX,
+  Filter,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { _Avatar, _AvatarFallback, _AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 // Notification types and interfaces
 interface Notification {

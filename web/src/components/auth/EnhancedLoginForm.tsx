@@ -28,7 +28,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSocket } from '@/hooks/useSocket';
+import { useWebSocket as useSocket } from '@/hooks/useSocket';
 import { cn } from '@/lib/utils';
 
 // Enhanced login schema with validation
@@ -67,8 +67,8 @@ export function EnhancedLoginForm({
   onLoginSuccess,
   autoFocus = true,
 }: EnhancedLoginFormProps) {
-  const { login, isLoading, error, clearError } = useAuth();
-  const { connectionState } = useSocket();
+  const { login, isLoading, error, clearAuthError, user } = useAuth();
+  const { isConnected } = useSocket();
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -85,15 +85,15 @@ export function EnhancedLoginForm({
 
   const onSubmit = async (data: LoginFormData) => {
     try {
-      clearError();
-      const result = await login(data);
+      clearAuthError();
+      await login(data);
 
       setIsSuccess(true);
-      onLoginSuccess?.(result.user);
+      onLoginSuccess?.(user);
 
       // Small delay to show success state
       setTimeout(() => {
-        const redirectUrl = redirectTo || (router.query.redirect as string) || '/dashboard';
+        const redirectUrl = redirectTo || '' || '/dashboard';
         router.push(redirectUrl);
       }, 1000);
     } catch (error: any) {
@@ -132,7 +132,7 @@ export function EnhancedLoginForm({
 
       <CardContent>
         {/* Connection Status */}
-        {connectionState === 'disconnected' && (
+        {!isConnected && (
           <Alert className="mb-4 border-yellow-200 bg-yellow-50">
             <AlertCircle className="h-4 w-4 text-yellow-600" />
             <AlertDescription className="text-yellow-800">
@@ -193,7 +193,7 @@ export function EnhancedLoginForm({
                         autoComplete="email"
                         autoFocus={autoFocus}
                         disabled={isLoading || isSuccess}
-                        onFocus={() => clearError()}
+                        onFocus={() => clearAuthError()}
                       />
                     </div>
                   </FormControl>
@@ -223,7 +223,7 @@ export function EnhancedLoginForm({
                         )}
                         autoComplete="current-password"
                         disabled={isLoading || isSuccess}
-                        onFocus={() => clearError()}
+                        onFocus={() => clearAuthError()}
                       />
                       <Button
                         type="button"
@@ -404,7 +404,7 @@ export function EnhancedLoginForm({
                 <div
                   className={cn(
                     'w-2 h-2 rounded-full',
-                    connectionState === 'connected' ? 'bg-green-500' : 'bg-yellow-500'
+                    isConnected ? 'bg-green-500' : 'bg-yellow-500'
                   )}
                 ></div>
                 <span>Real-time Orders</span>

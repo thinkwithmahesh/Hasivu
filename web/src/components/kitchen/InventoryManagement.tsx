@@ -501,26 +501,22 @@ export const InventoryManagement: React.FC = () => {
   // Live data from backend
   const {
     data: inventoryData,
-    loading: _itemsLoading,
-    error: _itemsError,
+    loading: itemsLoading,
+    error: itemsError,
     refetch: refetchItems,
   } = useInventoryItems();
   const {
     data: suppliersData,
-    loading: _suppliersLoading,
-    error: _suppliersError,
+    loading: suppliersLoading,
+    error: suppliersError,
   } = useInventorySuppliers();
   const {
     data: purchaseOrdersData,
-    loading: _poLoading,
-    error: _poError,
+    loading: poLoading,
+    error: poError,
     refetch: refetchPO,
   } = usePurchaseOrders();
-  const {
-    data: metricsData,
-    loading: _metricsLoading,
-    error: _metricsError,
-  } = useInventoryMetrics();
+  const { data: metricsData, loading: metricsLoading, error: metricsError } = useInventoryMetrics();
   const {
     createPurchaseOrder,
     updatePurchaseOrderStatus,

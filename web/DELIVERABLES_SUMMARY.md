@@ -11,9 +11,11 @@
 All performance optimization deliverables have been created and are ready for implementation:
 
 ### 1. Performance Audit Report ✅
+
 **File**: `/Users/mahesha/Downloads/hasivu-platform/web/PERFORMANCE_AUDIT_REPORT.md`
 
 **Contents**:
+
 - Executive summary with performance grade (B+)
 - Detailed metrics analysis (LCP, FID, CLS, FCP, TTI)
 - 5 critical issues identified with solutions
@@ -24,6 +26,7 @@ All performance optimization deliverables have been created and are ready for im
 - Complete monitoring strategy
 
 **Key Findings**:
+
 - 40-60% performance improvement potential
 - 35-45% bundle size reduction achievable
 - Critical: 3 UI libraries loaded simultaneously (MUI + Mantine + Radix)
@@ -32,9 +35,11 @@ All performance optimization deliverables have been created and are ready for im
 ---
 
 ### 2. Optimized Next.js Configuration ✅
+
 **File**: `/Users/mahesha/Downloads/hasivu-platform/web/next.config.optimized.js`
 
 **Features**:
+
 - Bundle analyzer integration (`ANALYZE=true`)
 - PWA support with strategic caching (menu items, images, API responses)
 - Advanced webpack chunk splitting (react, ui, forms, vendor, commons)
@@ -46,6 +51,7 @@ All performance optimization deliverables have been created and are ready for im
 - Aggressive static asset caching
 
 **Performance Impact**:
+
 - Estimated -150KB bundle size from chunk splitting
 - -1.5s load time from optimized caching
 - Better code splitting for faster TTI
@@ -53,9 +59,11 @@ All performance optimization deliverables have been created and are ready for im
 ---
 
 ### 3. Performance Monitor Component ✅
+
 **File**: `/Users/mahesha/Downloads/hasivu-platform/web/src/components/PerformanceMonitor.tsx`
 
 **Features**:
+
 - Tracks all Core Web Vitals (LCP, FID, CLS, FCP, TTFB)
 - Rating system (good/needs-improvement/poor)
 - Multiple analytics integrations:
@@ -69,6 +77,7 @@ All performance optimization deliverables have been created and are ready for im
   - `PerformanceMark` - Timing markers for async operations
 
 **Usage**:
+
 ```tsx
 // In app/layout.tsx
 import { PerformanceMonitor } from '@/components/PerformanceMonitor';
@@ -88,9 +97,11 @@ export default function RootLayout({ children }) {
 ---
 
 ### 4. Implementation Guide ✅
+
 **File**: `/Users/mahesha/Downloads/hasivu-platform/web/PERFORMANCE_IMPLEMENTATION_GUIDE.md`
 
 **Contents**:
+
 - Quick start (5 minutes setup)
 - 3-phase implementation roadmap:
   - **Phase 1** (Week 1): Quick wins - 40% improvement
@@ -105,6 +116,7 @@ export default function RootLayout({ children }) {
 **Phase Breakdown**:
 
 **Phase 1 (2-3 days)**:
+
 - Day 1: Bundle analysis & planning
 - Day 2: Lazy loading (Dialog, Calendar)
 - Day 3: Defer Razorpay script
@@ -113,6 +125,7 @@ export default function RootLayout({ children }) {
 - **Result**: LCP < 3.5s, Bundle < 650KB
 
 **Phase 2 (3-4 days)**:
+
 - Day 6-7: SWR caching strategy
 - Day 8: Image optimization
 - Day 9: Performance budget enforcement
@@ -120,6 +133,7 @@ export default function RootLayout({ children }) {
 - **Result**: LCP < 2.8s, Bundle < 550KB
 
 **Phase 3 (8-10 days)**:
+
 - UI library consolidation (remove MUI + Mantine)
 - Virtual scrolling implementation
 - Service worker optimization
@@ -128,9 +142,11 @@ export default function RootLayout({ children }) {
 ---
 
 ### 5. Package Updates Documentation ✅
+
 **File**: `/Users/mahesha/Downloads/hasivu-platform/web/PERFORMANCE_PACKAGE_UPDATES.md`
 
 **Contents**:
+
 - Required dependencies installation commands
 - package.json scripts additions (analyze, lighthouse, lhci)
 - Dependencies to remove (Phase 3)
@@ -140,6 +156,7 @@ export default function RootLayout({ children }) {
 - Monitoring setup (Vercel Analytics, Google Analytics)
 
 **Key Commands**:
+
 ```bash
 # Install performance tools
 npm install --save-dev @next/bundle-analyzer @lhci/cli
@@ -158,9 +175,11 @@ npm run lhci
 ---
 
 ### 6. Lighthouse CI Configuration ✅
+
 **File**: `/Users/mahesha/Downloads/hasivu-platform/web/.lighthouserc.js`
 
 **Features**:
+
 - Tests 3 critical pages (home, menu, checkout)
 - 3 runs per page (median values)
 - Strict performance thresholds:
@@ -255,23 +274,25 @@ npm run lighthouse
 ## Performance Targets
 
 ### Current Baseline (Estimated)
-| Metric | Value | Status |
-|--------|-------|--------|
-| LCP | 4.2s | ❌ FAIL |
-| FID | 180ms | ⚠️ WARN |
-| CLS | 0.15 | ⚠️ WARN |
-| FCP | 2.8s | ❌ FAIL |
-| TTI | 5.1s | ❌ FAIL |
+
+| Metric | Value | Status  |
+| ------ | ----- | ------- |
+| LCP    | 4.2s  | ❌ FAIL |
+| FID    | 180ms | ⚠️ WARN |
+| CLS    | 0.15  | ⚠️ WARN |
+| FCP    | 2.8s  | ❌ FAIL |
+| TTI    | 5.1s  | ❌ FAIL |
 | Bundle | 850KB | ❌ FAIL |
 
 ### After Full Implementation
-| Metric | Target | Status |
-|--------|--------|--------|
-| LCP | <2.5s | ✅ PASS |
-| FID | <100ms | ✅ PASS |
-| CLS | <0.1 | ✅ PASS |
-| FCP | <1.8s | ✅ PASS |
-| TTI | <3.8s | ✅ PASS |
+
+| Metric | Target | Status  |
+| ------ | ------ | ------- |
+| LCP    | <2.5s  | ✅ PASS |
+| FID    | <100ms | ✅ PASS |
+| CLS    | <0.1   | ✅ PASS |
+| FCP    | <1.8s  | ✅ PASS |
+| TTI    | <3.8s  | ✅ PASS |
 | Bundle | <500KB | ✅ PASS |
 
 ---
@@ -279,6 +300,7 @@ npm run lighthouse
 ## Implementation Timeline
 
 **Week 1**: Phase 1 - Quick Wins
+
 - Bundle analyzer setup
 - Performance monitoring
 - Lazy loading
@@ -287,6 +309,7 @@ npm run lighthouse
 - **Result**: 40% improvement
 
 **Week 2-3**: Phase 2 - Medium Optimizations
+
 - SWR caching
 - Image optimization
 - Performance budgets
@@ -294,6 +317,7 @@ npm run lighthouse
 - **Result**: 60% improvement
 
 **Week 4**: Phase 3 - Major Refactoring
+
 - UI library consolidation
 - MUI/Mantine removal
 - Virtual scrolling
@@ -304,18 +328,21 @@ npm run lighthouse
 ## Expected Business Impact
 
 **Performance Improvements**:
+
 - 40-60% faster load times
 - 35-45% smaller bundles
 - Better Core Web Vitals scores
 - Improved SEO rankings
 
 **User Experience**:
+
 - +15-25% conversion rate (industry standard)
 - Lower bounce rates
 - Higher user satisfaction
 - Better mobile experience
 
 **Infrastructure**:
+
 - -30% bandwidth costs
 - Smaller CDN bills
 - Better server resource utilization

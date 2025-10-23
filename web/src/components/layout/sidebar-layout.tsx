@@ -184,8 +184,8 @@ export function KitchenDashboardLayout({
   className,
 }: SidebarLayoutProps) {
   // Ensure user is kitchen staff
-  if (user.role !== 'kitchen') {
-    throw new Error('KitchenDashboardLayout can only be used with kitchen users');
+  if (user.role !== 'kitchen_staff') {
+    throw new Error('KitchenDashboardLayout can only be used with kitchen staff users');
   }
 
   return (

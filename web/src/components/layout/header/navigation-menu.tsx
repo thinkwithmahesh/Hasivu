@@ -41,11 +41,11 @@ const getNavigationItems = (userRole: User['role']): NavigationItem[] => {
       label: 'Home',
       href: '/dashboard',
       icon: Home,
-      roles: ['student', 'parent', 'admin', 'kitchen', 'teacher'],
+      roles: ['student', 'parent', 'admin', 'kitchen_staff', 'teacher'],
     },
   ];
 
-  const roleSpecificItems: Record<User['role'], NavigationItem[]> = {
+  const roleSpecificItems: Partial<Record<User['role'], NavigationItem[]>> = {
     student: [
       {
         id: 'meals',
@@ -195,31 +195,31 @@ const getNavigationItems = (userRole: User['role']): NavigationItem[] => {
         roles: ['admin'],
       },
     ],
-    kitchen: [
+    kitchen_staff: [
       {
         id: 'orders',
         label: 'Orders',
         href: '/kitchen/orders',
         icon: UtensilsCrossed,
-        roles: ['kitchen'],
+        roles: ['kitchen_staff'],
         children: [
           {
             id: 'pending',
             label: 'Pending Orders',
             href: '/kitchen/orders/pending',
-            roles: ['kitchen'],
+            roles: ['kitchen_staff'],
           },
           {
             id: 'preparing',
             label: 'Preparing',
             href: '/kitchen/orders/preparing',
-            roles: ['kitchen'],
+            roles: ['kitchen_staff'],
           },
           {
             id: 'ready',
             label: 'Ready for Pickup',
             href: '/kitchen/orders/ready',
-            roles: ['kitchen'],
+            roles: ['kitchen_staff'],
           },
         ],
       },
@@ -228,14 +228,14 @@ const getNavigationItems = (userRole: User['role']): NavigationItem[] => {
         label: 'Menu',
         href: '/kitchen/menu',
         icon: ChefHat,
-        roles: ['kitchen'],
+        roles: ['kitchen_staff'],
       },
       {
         id: 'inventory',
         label: 'Inventory',
         href: '/kitchen/inventory',
         icon: BookOpen,
-        roles: ['kitchen'],
+        roles: ['kitchen_staff'],
       },
     ],
     teacher: [
@@ -263,7 +263,7 @@ const getNavigationItems = (userRole: User['role']): NavigationItem[] => {
     ],
   };
 
-  return [...baseItems, ...roleSpecificItems[userRole]];
+  return [...baseItems, ...(roleSpecificItems[userRole] || [])];
 };
 
 export function NavigationMenu({ user, className }: NavigationMenuProps) {
@@ -284,7 +284,7 @@ export function NavigationMenu({ user, className }: NavigationMenuProps) {
         {navigationItems.map(item => {
           const Icon = item.icon;
           const hasChildren = item.children && item.children.length > 0;
-          const active = isActive(item.href);
+          const active = item.href ? isActive(item.href) : false;
 
           return (
             <NavigationMenuItem key={item.id}>
@@ -303,26 +303,31 @@ export function NavigationMenu({ user, className }: NavigationMenuProps) {
                   </NavigationMenuTrigger>
                   <NavigationMenuContent>
                     <div className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
-                      {item.children?.map(child => (
-                        <NavigationMenuLink key={child.id} asChild>
-                          <Link
-                            href={child.href}
-                            className={cn(
-                              'block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground',
-                              isActive(child.href) && 'bg-accent text-accent-foreground'
-                            )}
-                          >
-                            <div className="text-sm font-medium leading-none">{child.label}</div>
-                            <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                              {getItemDescription(child.id)}
-                            </p>
-                          </Link>
-                        </NavigationMenuLink>
-                      ))}
+                      {item.children?.map(
+                        child =>
+                          child.href && (
+                            <NavigationMenuLink key={child.id} asChild>
+                              <Link
+                                href={child.href}
+                                className={cn(
+                                  'block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground',
+                                  isActive(child.href) && 'bg-accent text-accent-foreground'
+                                )}
+                              >
+                                <div className="text-sm font-medium leading-none">
+                                  {child.label}
+                                </div>
+                                <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                                  {getItemDescription(child.id)}
+                                </p>
+                              </Link>
+                            </NavigationMenuLink>
+                          )
+                      )}
                     </div>
                   </NavigationMenuContent>
                 </>
-              ) : (
+              ) : item.href ? (
                 <NavigationMenuLink asChild>
                   <Link
                     href={item.href}
@@ -337,7 +342,7 @@ export function NavigationMenu({ user, className }: NavigationMenuProps) {
                     </div>
                   </Link>
                 </NavigationMenuLink>
-              )}
+              ) : null}
             </NavigationMenuItem>
           );
         })}

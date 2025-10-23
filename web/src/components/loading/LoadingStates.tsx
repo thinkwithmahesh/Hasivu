@@ -17,7 +17,7 @@ interface SkeletonProps {
   children?: React.ReactNode;
 }
 
-export const Skeleton: React.FC<SkeletonProps> = ({ className, children }) => (
+export const LoadingSkeleton: React.FC<SkeletonProps> = ({ className, children }) => (
   <div
     className={cn('animate-pulse rounded-md bg-gray-200', className)}
     role="status"
@@ -28,7 +28,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({ className, children }) => (
 );
 
 // Shimmer effect for enhanced visual feedback
-export const ShimmerSkeleton: React.FC<SkeletonProps> = ({ className, children }) => (
+export const StandardShimmer: React.FC<SkeletonProps> = ({ className, children }) => (
   <div
     className={cn(
       'relative overflow-hidden rounded-md bg-gray-200',
@@ -52,7 +52,7 @@ interface LoadingSpinnerProps {
   text?: string;
 }
 
-export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
+export const StandardLoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   size = 'md',
   variant = 'default',
   className,
@@ -87,7 +87,7 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
 };
 
 // Page-level loading screen
-export const PageLoader: React.FC<{ text?: string }> = ({ text = 'Loading HASIVU...' }) => (
+export const StandardPageLoader: React.FC<{ text?: string }> = ({ text = 'Loading HASIVU...' }) => (
   <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-green-50">
     <div className="text-center space-y-6">
       {/* HASIVU Logo Placeholder */}
@@ -97,7 +97,7 @@ export const PageLoader: React.FC<{ text?: string }> = ({ text = 'Loading HASIVU
 
       {/* Loading animation */}
       <div className="space-y-4">
-        <LoadingSpinner size="lg" variant="primary" />
+        <StandardLoadingSpinner size="lg" variant="primary" />
         <div className="space-y-2">
           <h2 className="text-xl font-semibold text-gray-900">{text}</h2>
           <p className="text-gray-600">Preparing your school meal experience</p>
@@ -126,20 +126,20 @@ export const PageLoader: React.FC<{ text?: string }> = ({ text = 'Loading HASIVU
 );
 
 // Card skeleton for dashboard components
-export const CardSkeleton: React.FC = () => (
+export const StandardCardSkeleton: React.FC = () => (
   <Card className="w-full">
     <CardHeader className="space-y-2">
       <div className="flex items-center justify-between">
-        <Skeleton className="h-4 w-1/3" />
-        <Skeleton className="h-4 w-4 rounded-full" />
+        <LoadingSkeleton className="h-4 w-1/3" />
+        <LoadingSkeleton className="h-4 w-4 rounded-full" />
       </div>
-      <Skeleton className="h-6 w-1/4" />
+      <LoadingSkeleton className="h-6 w-1/4" />
     </CardHeader>
     <CardContent>
       <div className="space-y-3">
-        <Skeleton className="h-4 w-full" />
-        <Skeleton className="h-4 w-4/5" />
-        <Skeleton className="h-4 w-3/5" />
+        <LoadingSkeleton className="h-4 w-full" />
+        <LoadingSkeleton className="h-4 w-4/5" />
+        <LoadingSkeleton className="h-4 w-3/5" />
       </div>
     </CardContent>
   </Card>
@@ -161,8 +161,8 @@ export const StatsSkeleton: React.FC = () => (
               <stat.icon className="h-6 w-6 text-gray-400" />
             </div>
             <div className="space-y-2 flex-1">
-              <Skeleton className="h-4 w-16" />
-              <Skeleton className="h-6 w-20" />
+              <LoadingSkeleton className="h-4 w-16" />
+              <LoadingSkeleton className="h-6 w-20" />
             </div>
           </div>
         </CardContent>
@@ -183,7 +183,7 @@ export const TableSkeleton: React.FC<TableSkeletonProps> = ({ rows = 5, columns 
     <div className="border-b border-gray-200 pb-3 mb-3">
       <div className="flex space-x-4">
         {[...Array(columns)].map((_, i) => (
-          <Skeleton key={i} className="h-4 flex-1" />
+          <LoadingSkeleton key={i} className="h-4 flex-1" />
         ))}
       </div>
     </div>
@@ -193,7 +193,7 @@ export const TableSkeleton: React.FC<TableSkeletonProps> = ({ rows = 5, columns 
       {[...Array(rows)].map((_, rowIndex) => (
         <div key={rowIndex} className="flex space-x-4">
           {[...Array(columns)].map((_, colIndex) => (
-            <Skeleton
+            <LoadingSkeleton
               key={colIndex}
               className={cn(
                 'h-4 flex-1',
@@ -212,8 +212,8 @@ export const NavigationSkeleton: React.FC = () => (
   <nav className="space-y-2 p-4">
     {[...Array(5)].map((_, i) => (
       <div key={i} className="flex items-center space-x-3 p-2">
-        <Skeleton className="h-5 w-5 rounded" />
-        <Skeleton className="h-4 w-24" />
+        <LoadingSkeleton className="h-5 w-5 rounded" />
+        <LoadingSkeleton className="h-4 w-24" />
       </div>
     ))}
   </nav>
@@ -224,11 +224,11 @@ export const FormSkeleton: React.FC = () => (
   <div className="space-y-6">
     {[...Array(4)].map((_, i) => (
       <div key={i} className="space-y-2">
-        <Skeleton className="h-4 w-20" />
-        <Skeleton className="h-10 w-full rounded-md" />
+        <LoadingSkeleton className="h-4 w-20" />
+        <LoadingSkeleton className="h-10 w-full rounded-md" />
       </div>
     ))}
-    <Skeleton className="h-10 w-32 rounded-md" />
+    <LoadingSkeleton className="h-10 w-32 rounded-md" />
   </div>
 );
 
@@ -240,22 +240,22 @@ export const OrderHistorySkeleton: React.FC = () => (
         <CardContent className="p-4">
           <div className="flex justify-between items-start mb-3">
             <div className="flex items-center space-x-3">
-              <Skeleton className="w-12 h-12 rounded-lg" />
+              <LoadingSkeleton className="w-12 h-12 rounded-lg" />
               <div className="space-y-2">
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-3 w-20" />
+                <LoadingSkeleton className="h-4 w-32" />
+                <LoadingSkeleton className="h-3 w-20" />
               </div>
             </div>
-            <Skeleton className="h-6 w-16 rounded-full" />
+            <LoadingSkeleton className="h-6 w-16 rounded-full" />
           </div>
           <div className="space-y-2">
             <div className="flex justify-between">
-              <Skeleton className="h-3 w-24" />
-              <Skeleton className="h-3 w-16" />
+              <LoadingSkeleton className="h-3 w-24" />
+              <LoadingSkeleton className="h-3 w-16" />
             </div>
             <div className="flex justify-between">
-              <Skeleton className="h-3 w-20" />
-              <Skeleton className="h-3 w-12" />
+              <LoadingSkeleton className="h-3 w-20" />
+              <LoadingSkeleton className="h-3 w-12" />
             </div>
           </div>
         </CardContent>
@@ -269,14 +269,14 @@ export const MenuItemsSkeleton: React.FC = () => (
   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
     {[...Array(8)].map((_, i) => (
       <Card key={i} className="w-full overflow-hidden">
-        <Skeleton className="h-48 w-full" />
+        <LoadingSkeleton className="h-48 w-full" />
         <CardContent className="p-4 space-y-3">
-          <Skeleton className="h-5 w-3/4" />
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-2/3" />
+          <LoadingSkeleton className="h-5 w-3/4" />
+          <LoadingSkeleton className="h-4 w-full" />
+          <LoadingSkeleton className="h-4 w-2/3" />
           <div className="flex justify-between items-center pt-2">
-            <Skeleton className="h-6 w-16" />
-            <Skeleton className="h-9 w-20 rounded-md" />
+            <LoadingSkeleton className="h-6 w-16" />
+            <LoadingSkeleton className="h-9 w-20 rounded-md" />
           </div>
         </CardContent>
       </Card>
@@ -299,10 +299,13 @@ export const ListSkeleton: React.FC<ListSkeletonProps> = ({
   <div className="space-y-3">
     {[...Array(items)].map((_, i) => (
       <div key={i} className="flex items-center space-x-3 p-3">
-        {showAvatar && <Skeleton className="w-10 h-10 rounded-full" />}
+        {showAvatar && <LoadingSkeleton className="w-10 h-10 rounded-full" />}
         <div className="flex-1 space-y-2">
           {[...Array(lines)].map((_, lineIndex) => (
-            <Skeleton key={lineIndex} className={cn('h-4', lineIndex === 0 ? 'w-3/4' : 'w-1/2')} />
+            <LoadingSkeleton
+              key={lineIndex}
+              className={cn('h-4', lineIndex === 0 ? 'w-3/4' : 'w-1/2')}
+            />
           ))}
         </div>
       </div>
@@ -327,26 +330,22 @@ export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
     {isLoading && (
       <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50">
         <div className="bg-white rounded-lg shadow-lg p-6">
-          <LoadingSpinner text={text} />
+          <StandardLoadingSpinner text={text} />
         </div>
       </div>
     )}
   </div>
 );
 
-// Export all components
+// Export all components with backward compatible names
 export {
-  CardSkeleton,
-  StatsSkeleton,
-  TableSkeleton,
-  NavigationSkeleton,
-  FormSkeleton,
-  OrderHistorySkeleton,
-  MenuItemsSkeleton,
-  ListSkeleton,
-  LoadingOverlay,
-  PageLoader,
-  LoadingSpinner,
-  Skeleton,
-  ShimmerSkeleton,
+  StandardCardSkeleton as CardSkeleton,
+  StandardPageLoader as PageLoader,
+  StandardLoadingSpinner as LoadingSpinner,
+  LoadingSkeleton as Skeleton,
+  StandardShimmer as ShimmerSkeleton,
 };
+
+// Already exported above with export const:
+// StatsSkeleton, TableSkeleton, NavigationSkeleton, FormSkeleton,
+// OrderHistorySkeleton, MenuItemsSkeleton, ListSkeleton, LoadingOverlay

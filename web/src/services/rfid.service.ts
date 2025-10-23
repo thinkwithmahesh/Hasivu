@@ -26,23 +26,23 @@ export type DeviceStatus = 'online' | 'offline' | 'maintenance' | 'error';
  * RFID card lifecycle status
  */
 export type CardStatus =
-  | 'active'        // Card is valid and usable
-  | 'inactive'      // Card not yet activated
-  | 'lost'          // Reported lost by student
-  | 'stolen'        // Reported stolen
-  | 'expired'       // Past expiry date
-  | 'suspended';    // Temporarily disabled
+  | 'active' // Card is valid and usable
+  | 'inactive' // Card not yet activated
+  | 'lost' // Reported lost by student
+  | 'stolen' // Reported stolen
+  | 'expired' // Past expiry date
+  | 'suspended'; // Temporarily disabled
 
 /**
  * Real-time verification outcome status
  */
 export type VerificationStatus =
-  | 'success'         // Card verified, access granted
-  | 'failed'          // Verification failed
-  | 'invalid_card'    // Card not recognized
-  | 'expired_card'    // Card past expiry
-  | 'blocked_card'    // Card suspended/lost/stolen
-  | 'no_order'        // Student has no ready order
+  | 'success' // Card verified, access granted
+  | 'failed' // Verification failed
+  | 'invalid_card' // Card not recognized
+  | 'expired_card' // Card past expiry
+  | 'blocked_card' // Card suspended/lost/stolen
+  | 'no_order' // Student has no ready order
   | 'wrong_location'; // Scanning at wrong device
 
 // ============================================================================
@@ -629,10 +629,7 @@ class RFIDService {
     deviceId: string,
     request: UpdateDeviceStatusRequest
   ): Promise<RFIDDevice> {
-    const response = await api.patch<RFIDDevice>(
-      `/rfid/devices/${deviceId}/status`,
-      request
-    );
+    const response = await api.patch<RFIDDevice>(`/rfid/devices/${deviceId}/status`, request);
 
     return {
       ...response.data,
@@ -675,9 +672,7 @@ class RFIDService {
     return {
       ...response.data,
       issuedDate: new Date(response.data.issuedDate),
-      expiryDate: response.data.expiryDate
-        ? new Date(response.data.expiryDate)
-        : undefined,
+      expiryDate: response.data.expiryDate ? new Date(response.data.expiryDate) : undefined,
       deactivatedAt: response.data.deactivatedAt
         ? new Date(response.data.deactivatedAt)
         : undefined,
@@ -721,10 +716,7 @@ class RFIDService {
    * ```
    */
   async bulkRegisterCards(request: BulkCardRegistration): Promise<BulkCardResult> {
-    const response = await api.post<BulkCardResult>(
-      '/rfid/cards/bulk-register',
-      request
-    );
+    const response = await api.post<BulkCardResult>('/rfid/cards/bulk-register', request);
 
     // Parse dates in successful cards
     return {
@@ -733,12 +725,8 @@ class RFIDService {
         ...card,
         issuedDate: new Date(card.issuedDate),
         expiryDate: card.expiryDate ? new Date(card.expiryDate) : undefined,
-        deactivatedAt: card.deactivatedAt
-          ? new Date(card.deactivatedAt)
-          : undefined,
-        lastScannedAt: card.lastScannedAt
-          ? new Date(card.lastScannedAt)
-          : undefined,
+        deactivatedAt: card.deactivatedAt ? new Date(card.deactivatedAt) : undefined,
+        lastScannedAt: card.lastScannedAt ? new Date(card.lastScannedAt) : undefined,
         createdAt: new Date(card.createdAt),
         updatedAt: new Date(card.updatedAt),
       })),
@@ -765,21 +753,13 @@ class RFIDService {
    * });
    * ```
    */
-  async deactivateCard(
-    cardId: string,
-    request: DeactivateCardRequest
-  ): Promise<RFIDCard> {
-    const response = await api.post<RFIDCard>(
-      `/rfid/cards/${cardId}/deactivate`,
-      request
-    );
+  async deactivateCard(cardId: string, request: DeactivateCardRequest): Promise<RFIDCard> {
+    const response = await api.post<RFIDCard>(`/rfid/cards/${cardId}/deactivate`, request);
 
     return {
       ...response.data,
       issuedDate: new Date(response.data.issuedDate),
-      expiryDate: response.data.expiryDate
-        ? new Date(response.data.expiryDate)
-        : undefined,
+      expiryDate: response.data.expiryDate ? new Date(response.data.expiryDate) : undefined,
       deactivatedAt: response.data.deactivatedAt
         ? new Date(response.data.deactivatedAt)
         : undefined,
@@ -836,10 +816,7 @@ class RFIDService {
    * ```
    */
   async verifyCard(request: VerificationRequest): Promise<VerificationResponse> {
-    const response = await api.post<VerificationResponse>(
-      '/rfid/verify',
-      request
-    );
+    const response = await api.post<VerificationResponse>('/rfid/verify', request);
 
     return response.data;
   }
@@ -875,9 +852,7 @@ class RFIDService {
    * console.log(`${result.total} meals delivered today`);
    * ```
    */
-  async getTransactions(
-    filters: TransactionFilters = {}
-  ): Promise<TransactionResponse> {
+  async getTransactions(filters: TransactionFilters = {}): Promise<TransactionResponse> {
     const response = await api.get<TransactionResponse>('/rfid/transactions', {
       params: filters,
     });
@@ -968,10 +943,9 @@ class RFIDService {
   async getVerificationHistory(
     filters: VerificationHistoryFilters = {}
   ): Promise<VerificationHistoryResponse> {
-    const response = await api.get<VerificationHistoryResponse>(
-      '/rfid/verifications',
-      { params: filters }
-    );
+    const response = await api.get<VerificationHistoryResponse>('/rfid/verifications', {
+      params: filters,
+    });
 
     return {
       ...response.data,

@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import useMobileLayout from '@/hooks/useMobileLayout';
+import { useMobileLayout } from '@/hooks/useMobileLayout';
 import { _cn } from '@/lib/utils';
 import {
   Smartphone,
@@ -21,10 +21,10 @@ import {
   Wifi,
   Battery,
   Eye,
-  TouchIcon as Touch,
+  TouchpadIcon as Touch,
   Layers,
-  _Palette,
-  _Box,
+  Palette,
+  Box,
   List,
   Grid3x3,
   Navigation,

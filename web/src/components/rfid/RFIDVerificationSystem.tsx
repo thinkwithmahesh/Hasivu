@@ -11,11 +11,11 @@ import {
   Eye,
   Camera,
   Wifi,
-  _WifiOff,
+  WifiOff,
   RefreshCw,
-  _User,
+  User,
   MapPin,
-  _Calendar,
+  Calendar,
   Activity,
   Signal,
   Battery,
@@ -26,7 +26,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { _Progress } from '@/components/ui/progress';
+import { Progress } from '@/components/ui/progress';
 
 // Enhanced TypeScript interfaces for RFID system
 interface RFIDDevice {
@@ -57,7 +57,7 @@ interface RFIDTransaction {
   fraudScore: number;
 }
 
-interface _Student {
+interface Student {
   id: string;
   name: string;
   grade: string;

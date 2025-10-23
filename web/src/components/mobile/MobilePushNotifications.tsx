@@ -208,7 +208,7 @@ export const usePushNotifications = () => {
       // Create new subscription
       const newSubscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+        applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLICKEY,
       });
 
       setSubscription(newSubscription);

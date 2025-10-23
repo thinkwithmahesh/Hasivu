@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { UserRole } from '@/types/auth';
 
 // Common validation patterns
 const emailSchema = z.string().email('Please enter a valid email address');
@@ -7,7 +8,7 @@ const passwordSchema = z
   .min(8, 'Password must be at least 8 characters')
   .regex(
     /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
-    'Password must contain uppercase, lowercase, number, and special character'
+    'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'
   );
 
 // Role detection utility
@@ -50,6 +51,11 @@ export const loginSchema = z.object({
 export const forgotPasswordSchema = z.object({
   email: emailSchema,
   recoveryMethod: z.enum(['email', 'sms', 'security_questions']).default('email'),
+});
+
+// Email verification schema
+export const emailVerificationSchema = z.object({
+  code: z.string().length(6, 'Verification code must be 6 digits'),
 });
 
 // Security questions schema
@@ -124,8 +130,17 @@ export const registrationSchema = z
     email: emailSchema,
     password: passwordSchema,
     confirmPassword: z.string(),
+    role: z.nativeEnum(UserRole),
+    phone: z
+      .string()
+      .regex(/^\+?[\d\s\-()]*$/, 'Please enter a valid phone number (e.g., +91 98765 43210)')
+      .optional(),
+    schoolId: z.string().optional(),
     grade: z.string().optional(),
     section: z.string().optional(),
+    termsAccepted: z.boolean().refine(val => val === true, {
+      message: 'You must accept the terms and conditions',
+    }),
   })
   .refine(data => data.password === data.confirmPassword, {
     message: "Passwords don't match",
@@ -140,7 +155,7 @@ export const resetPasswordSchema = z
     confirmPassword: z.string(),
   })
   .refine(data => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
+    message: 'Passwords do not match. Please ensure both password fields are identical.',
     path: ['confirmPassword'],
   });
 
@@ -275,6 +290,7 @@ export const COMMON_ALLERGENS = [
 export type EnhancedLoginFormData = z.infer<typeof enhancedLoginSchema>;
 export type LoginFormData = z.infer<typeof loginSchema>;
 export type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
+export type EmailVerificationFormData = z.infer<typeof emailVerificationSchema>;
 export type SecurityQuestionsFormData = z.infer<typeof securityQuestionsSchema>;
 export type ParentVerificationFormData = z.infer<typeof parentVerificationSchema>;
 export type RegistrationStep1FormData = z.infer<typeof registrationStep1Schema>;

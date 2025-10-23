@@ -24,7 +24,7 @@ import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
-import { Separator as _Separator } from '@/components/ui/separator';
+import { Separator as Separator } from '@/components/ui/separator';
 import {
   Dialog,
   DialogContent,
@@ -34,7 +34,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-import type { MealCardProps, MealItem as _MealItem, StudentInfo as _StudentInfo } from './types';
+import type { MealCardProps, MealItem as MealItem, StudentInfo as StudentInfo } from './types';
 import {
   formatCurrency,
   getDietaryInfo,
@@ -65,7 +65,7 @@ const MealCard: React.FC<MealCardProps> = ({
   const cardRef = useRef<HTMLDivElement>(null);
 
   const isSuitable = isMealSuitableForStudent(meal, student);
-  const canOrder = canOrderMeal(meal);
+  const canOrder = canOrderMeal(meal, student);
   const dietaryInfo = getDietaryInfo(meal.dietaryType);
   const spiceLevelInfo = getSpiceLevelInfo(meal.spiceLevel);
   const nutritionalScore = getNutritionalScore(meal.nutritionalInfo);
@@ -609,7 +609,7 @@ const MealCard: React.FC<MealCardProps> = ({
                 )}
                 onClick={() => {
                   handleHapticFeedback('light');
-                  onViewDetails(meal);
+                  onViewDetails(meal.id);
                 }}
               >
                 <Info className="h-4 w-4 mr-2 shrink-0" />

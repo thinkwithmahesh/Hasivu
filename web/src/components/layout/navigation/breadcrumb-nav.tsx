@@ -107,6 +107,11 @@ function formatBreadcrumbLabel(segment: string, _fullPath: string): string {
 export function BreadcrumbNav({ items, showHome = true, className }: BreadcrumbNavProps) {
   const pathname = usePathname();
 
+  // Don't show breadcrumbs if pathname is null
+  if (!pathname) {
+    return null;
+  }
+
   // Use provided items or auto-generate from pathname
   const breadcrumbItems = items || generateBreadcrumbs(pathname);
 
@@ -166,11 +171,11 @@ export function useBreadcrumbs() {
   const setBreadcrumbs = (_items: BreadcrumbItem[]) => {
     // This could be implemented with a context provider
     // For now, return the auto-generated breadcrumbs
-    return generateBreadcrumbs(pathname);
+    return pathname ? generateBreadcrumbs(pathname) : [];
   };
 
   return {
-    breadcrumbs: generateBreadcrumbs(pathname),
+    breadcrumbs: pathname ? generateBreadcrumbs(pathname) : [],
     setBreadcrumbs,
   };
 }

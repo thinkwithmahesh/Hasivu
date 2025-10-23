@@ -37,7 +37,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Alert as _Alert, AlertDescription as _AlertDescription } from '@/components/ui/alert';
+import { Alert as Alert, AlertDescription as AlertDescription } from '@/components/ui/alert';
 import {
   Send,
   FileText,
@@ -50,7 +50,6 @@ import {
   Copy,
   RefreshCw,
 } from 'lucide-react';
-import { NotificationService } from '@/services/notification.service';
 import { cn } from '@/lib/utils';
 
 interface EmailCommunicationProps {
@@ -126,8 +125,6 @@ export const EmailCommunication: React.FC<EmailCommunicationProps> = ({ classNam
     recipientList: '',
     scheduledFor: '',
   });
-
-  const _notificationService = NotificationService.getInstance();
 
   // Load email data
   useEffect(() => {

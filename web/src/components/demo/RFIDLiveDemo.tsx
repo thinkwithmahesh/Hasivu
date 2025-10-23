@@ -1,22 +1,22 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, _AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   CreditCard,
   CheckCircle,
   XCircle,
-  _Loader2,
+  Loader2,
   Wifi,
   WifiOff,
-  _User,
+  User,
   Package,
   Clock,
-  _Camera,
+  Camera,
   AlertCircle,
   Activity,
 } from 'lucide-react';
-import { _hasiviApi } from '@/services/api/hasivu-api.service';
+import { hasiviApi } from '@/services/api/hasivu-api.service';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

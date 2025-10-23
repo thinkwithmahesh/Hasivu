@@ -42,6 +42,9 @@ export interface EnvironmentConfig {
   SMTP_USER?: string;
   SMTP_PASSWORD?: string;
 
+  // Encryption
+  ENCRYPTION_KEY?: string;
+
   // Feature Flags
   ENABLE_PUSH_NOTIFICATIONS?: boolean;
   ENABLE_EMAIL_NOTIFICATIONS?: boolean;
@@ -102,6 +105,9 @@ class Environment {
       SMTP_PORT: parseInt(process.env.SMTP_PORT || '587', 10),
       SMTP_USER: process.env.SMTP_USER,
       SMTP_PASSWORD: process.env.SMTP_PASSWORD,
+
+      // Encryption
+      ENCRYPTION_KEY: process.env.ENCRYPTION_KEY,
 
       // Feature Flags
       ENABLE_PUSH_NOTIFICATIONS: process.env.ENABLE_PUSH_NOTIFICATIONS === 'true',
@@ -172,5 +178,8 @@ export const config = {
   },
   server: {
     nodeEnv: env.get('NODE_ENV'),
+  },
+  encryption: {
+    key: env.get('ENCRYPTION_KEY'),
   },
 };

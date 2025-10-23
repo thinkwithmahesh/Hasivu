@@ -58,9 +58,10 @@ export const usePerformanceMonitor = () => {
       }
 
       // Network connection info
-      // @ts-ignore
       const connection =
-        navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+        (navigator as any).connection ||
+        (navigator as any).mozConnection ||
+        (navigator as any).webkitConnection;
       if (connection) {
         setMetrics(prev => ({
           ...prev,
@@ -159,9 +160,10 @@ export const useDataOptimization = () => {
   const [connectionType, setConnectionType] = useState('unknown');
 
   useEffect(() => {
-    // @ts-ignore
     const connection =
-      navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+      (navigator as any).connection ||
+      (navigator as any).mozConnection ||
+      (navigator as any).webkitConnection;
 
     if (connection) {
       const updateConnectionInfo = () => {

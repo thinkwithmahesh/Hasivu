@@ -30,13 +30,9 @@ class SimpleApp {
   constructor() {
     this.app = express();
     this.server = createServer(this.app);
-
-    this.setupMiddleware();
-    this.setupRoutes();
-    this.setupErrorHandling();
   }
 
-  private setupMiddleware(): void {
+  private async setupMiddleware(): Promise<void> {
     // Security headers and helmet configuration
     this.app.use(
       helmet({
@@ -81,27 +77,58 @@ class SimpleApp {
     // Cookie parser for session management
     this.app.use(cookieParser());
 
-    // Input validation and sanitization
-    import('./middleware/auth.middleware')
-      .then(({ validateInput }) => {
-        this.app.use(validateInput);
-      })
-      .catch(err => logger.error('Failed to load auth middleware', err));
+    // Load middleware with proper error handling and fallbacks
+    await this.loadMiddlewareSafely();
+  }
 
-    // Rate limiting
-    import('./middleware/rateLimiter.middleware')
-      .then(({ generalRateLimit }) => {
-        this.app.use(generalRateLimit);
-      })
-      .catch(err => logger.error('Failed to load rate limiter middleware', err));
+  private async loadMiddlewareSafely(): Promise<void> {
+    const middlewarePromises = [
+      // Comprehensive input validation and sanitization
+      this.loadInputValidationMiddleware(),
+      // Rate limiting
+      this.loadRateLimiterMiddleware(),
+      // CSRF protection for state-changing requests
+      this.loadCSRFMiddleware(),
+    ];
 
-    // CSRF protection for state-changing requests
-    import('./middleware/csrf.middleware')
-      .then(({ csrfProtection, attachCSRFToken }) => {
-        this.app.use(attachCSRFToken);
-        this.app.use('/api', csrfProtection());
-      })
-      .catch(err => logger.error('Failed to load CSRF middleware', err));
+    // Wait for all middleware to load (or fail gracefully)
+    await Promise.allSettled(middlewarePromises);
+  }
+
+  private async loadInputValidationMiddleware(): Promise<void> {
+    try {
+      const { comprehensiveInputValidation } = await import(
+        './middleware/input-validation.middleware'
+      );
+      this.app.use(comprehensiveInputValidation);
+      logger.info('Comprehensive input validation middleware loaded successfully');
+    } catch (err) {
+      logger.warn(
+        'Input validation middleware failed to load, continuing without comprehensive validation',
+        err
+      );
+    }
+  }
+
+  private async loadRateLimiterMiddleware(): Promise<void> {
+    try {
+      const { generalRateLimit } = await import('./middleware/rateLimiter.middleware');
+      this.app.use(generalRateLimit);
+      logger.info('Rate limiter middleware loaded successfully');
+    } catch (err) {
+      logger.warn('Rate limiter middleware failed to load, continuing without rate limiting', err);
+    }
+  }
+
+  private async loadCSRFMiddleware(): Promise<void> {
+    try {
+      const { csrfProtection, attachCSRFToken } = await import('./middleware/csrf.middleware');
+      this.app.use(attachCSRFToken);
+      this.app.use('/api', csrfProtection());
+      logger.info('CSRF middleware loaded successfully');
+    } catch (err) {
+      logger.warn('CSRF middleware failed to load, continuing without CSRF protection', err);
+    }
   }
 
   private setupRoutes(): void {
@@ -109,7 +136,7 @@ class SimpleApp {
     this.app.use('/health', healthRouter);
     this.app.use('/api/health', healthRouter);
 
-    // Authentication
+    // Authentication - exclude from CSRF protection for registration
     this.app.use('/api/auth', authRouter);
 
     // Payments
@@ -165,6 +192,11 @@ class SimpleApp {
       // Initialize Redis
       await redisService.connect();
       logger.info('Redis connected successfully');
+
+      // Setup middleware, routes, and error handling
+      await this.setupMiddleware();
+      this.setupRoutes();
+      this.setupErrorHandling();
 
       const port = env.get('PORT');
       const host = '0.0.0.0';

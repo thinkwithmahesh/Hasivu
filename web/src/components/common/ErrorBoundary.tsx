@@ -14,7 +14,7 @@ import {
   Alert,
   AlertTitle,
   Collapse,
-  IconButton as _IconButton,
+  IconButton as IconButton,
   Chip,
   Stack,
   useTheme,

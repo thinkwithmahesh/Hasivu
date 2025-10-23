@@ -5,23 +5,24 @@
  */
 
 // Emotion cache utilities
-export * from './createEmotionCache';
-export {
-  createEmotionCache,
-  createEmotionSsrCache,
-  defaultEmotionCache,
-} from './createEmotionCache';
+// export * from './createEmotionCache'; // File doesn't exist
+// export {
+//   createEmotionCache,
+//   createEmotionSsrCache,
+//   defaultEmotionCache,
+// } from './createEmotionCache';
 
 // Formatting utilities
-export * from './formatters';
+// export * from './formatters'; // File doesn't exist
 
 // Validation utilities
 export * from './validators';
 
 // API utilities
-export * from './api';
-export { apiClient, api, API_CONFIG } from './api';
-export type { ApiResponse, ApiError, ApiRequestConfig } from './api';
+export * from '../services/api';
+export { handleApiError, checkApiHealth, API_CONFIG } from '../services/api';
+export { apiClient } from '../services/api';
+export type { ApiResponse } from '../services/api';
 
 // Application constants
 export * from './constants';
@@ -30,33 +31,33 @@ export * from './constants';
 export * from './helpers';
 
 // Notification utilities
-export * from './notifications';
-export { notificationManager, notificationTemplates, notificationUtils } from './notifications';
-export type {
-  NotificationConfig,
-  PushSubscriptionConfig,
-  NotificationPermission,
-} from './notifications';
+// export * from './notifications'; // File doesn't exist
+// export { notificationManager, notificationTemplates, notificationUtils } from './notifications';
+// export type {
+//   NotificationConfig,
+//   PushSubscriptionConfig,
+//   NotificationPermission,
+// } from './notifications';
 
 // Analytics utilities
-export * from './analytics';
-export { analyticsManager, analytics } from './analytics';
+// export * from './analytics'; // File doesn't exist
+// export { analyticsManager, analytics } from './analytics';
 
 // Default exports for convenience
-import formatters from './formatters';
-import validators from './validators';
-import constants from './constants';
-import helpers from './helpers';
-import notifications from './notifications';
-import analytics from './analytics';
+// import formatters from './formatters'; // File doesn't exist
+import * as validators from './validators';
+import * as constants from './constants';
+import * as helpers from './helpers';
+// import notifications from './notifications'; // File doesn't exist
+// import analytics from './analytics'; // File doesn't exist
 
 export const _utils = {
-  formatters,
+  // formatters,
   validators,
   constants,
   helpers,
-  notifications,
-  analytics,
+  // notifications,
+  // analytics,
 };
 
-export default utils;
+// export default utils; // Variable 'utils' not defined

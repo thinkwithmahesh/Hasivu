@@ -6,13 +6,13 @@ import {
   Play,
   Shield,
   Zap,
-  _CheckCircle,
+  CheckCircle,
   Star,
   ArrowRight,
   Calendar,
   Users,
   TrendingUp,
-  _Lock,
+  Lock,
   Award,
   Smartphone,
 } from 'lucide-react';
@@ -20,12 +20,12 @@ import {
 // MagicUI Components (to be installed: npm install @magicui/react)
 import { BentoGrid, BentoGridItem } from '@/components/magicui/bento-grid';
 import { Marquee } from '@/components/magicui/marquee';
-import { _AnimatedList } from '@/components/magicui/animated-list';
+import { AnimatedList } from '@/components/magicui/animated-list';
 import { NumberTicker } from '@/components/magicui/number-ticker';
-import { _TextGenerateEffect } from '@/components/magicui/text-generate-effect';
+import { TextGenerateEffect } from '@/components/magicui/text-generate-effect';
 import { BackgroundBeams } from '@/components/magicui/background-beams';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, _CardDescription, _CardHeader, _CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
   Accordion,

@@ -3,13 +3,19 @@
  * Comprehensive type system for HASIVU school meal ordering interface
  */
 
+// Define types locally
+export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
+export type DietaryPreference = 'vegetarian' | 'non-vegetarian' | 'vegan' | 'jain';
+export type SpiceLevel = 'mild' | 'medium' | 'spicy' | 'very-spicy';
+
 // Core meal item structure
 export interface MealItem {
   id: string;
   name: string;
   description: string;
   price: number;
-  category: string;
+  originalPrice?: number;
+  category: MealType;
   imageUrl: string;
   nutritionalInfo: NutritionalInfo;
   vendor: VendorInfo;
@@ -19,22 +25,39 @@ export interface MealItem {
     endDate?: Date;
     maxQuantity?: number;
   };
-  rating?: number;
-  preparationTime?: number;
+  rating: number;
+  totalRatings?: number;
+  preparationTime: number;
+  servingSize?: string;
   gradeAppropriate?: number[];
+  tags: string[];
+  dietaryType: DietaryPreference;
+  spiceLevel: SpiceLevel;
+  isAvailable: boolean;
+  isGlutenFree?: boolean;
+  isDiabeticFriendly?: boolean;
+  isJainFood?: boolean;
+  schoolApprovalRequired?: boolean;
+  maxQuantityPerStudent: number;
+  allergens: string[];
+  availableFrom?: string;
+  availableTo?: string;
+  lastOrderTime?: string;
 }
 
 // Nutritional information structure
 export interface NutritionalInfo {
   calories: number;
   protein: number;
-  carbs: number;
+  carbs?: number;
+  carbohydrates: number;
   fat: number;
   fiber: number;
+  sugar?: number;
   sodium: number;
-  allergens: string[];
-  dietaryTags: string[];
-  ingredients: string[];
+  allergens?: string[];
+  dietaryTags?: string[];
+  ingredients?: string[];
 }
 
 // Vendor information for tracking meal sources
@@ -48,6 +71,9 @@ export interface VendorInfo {
     email?: string;
     website?: string;
   };
+  location?: string;
+  contactNumber?: string;
+  hygieneCertification?: boolean;
 }
 
 // Order item with quantity and customization
@@ -66,9 +92,11 @@ export interface OrderItem {
 // Complete meal order structure
 export interface MealOrder {
   id: string;
+  orderId: string;
   studentId: string;
   items: OrderItem[];
   totalAmount: number;
+  total: number;
   orderDate: Date;
   deliveryDate: Date;
   status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'delivered' | 'cancelled';
@@ -76,6 +104,60 @@ export interface MealOrder {
   paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
   specialRequests?: string;
   pickupTime?: string;
+}
+
+// Order history item (alias for MealOrder)
+export type OrderHistoryItem = MealOrder;
+
+// RFID pickup information
+export interface RFIDPickupInfo {
+  orderId: string;
+  pickupCode: string;
+  pickupTime: string;
+  pickupLocation: string;
+  status: 'ready' | 'picked-up' | 'cancelled';
+}
+
+// Order summary type
+export type OrderSummary = {
+  totalOrders: number;
+  totalAmount: number;
+  pendingOrders: number;
+  completedOrders: number;
+};
+
+// Delivery slot type
+export interface DeliverySlot {
+  id: string;
+  mealType: string;
+  startTime: string;
+  endTime: string;
+  isAvailable: boolean;
+  currentOrders: number;
+  maxOrders: number;
+  deliveryLocation: string;
+}
+
+// Meal order form type
+export interface MealOrderForm {
+  deliveryDate: Date;
+  pickupTime: string;
+  paymentMethod: string;
+  specialInstructions?: string;
+  contactPhone: string;
+  contactEmail: string;
+}
+
+// School meal config type
+export interface SchoolMealConfig {
+  schoolId: string;
+  name: string;
+  mealTypes: string[];
+  dietaryOptions: string[];
+  deliverySlots: DeliverySlot[];
+  maxOrdersPerSlot: number;
+  cutoffTime: string;
+  supportedPaymentMethods: string[];
 }
 
 // Meal category with filtering options
@@ -87,6 +169,7 @@ export interface MealCategory {
   isActive: boolean;
   sortOrder: number;
   subcategories?: string[];
+  mealType?: string; // breakfast, lunch, dinner, snack
 }
 
 // Student meal preferences and restrictions
@@ -98,6 +181,25 @@ export interface StudentPreferences {
   dislikedIngredients: string[];
   spiceLevel: 'none' | 'mild' | 'medium' | 'hot';
   portionSize: 'small' | 'regular' | 'large';
+}
+
+// Student information for meal ordering
+export interface StudentInfo {
+  id: string;
+  name: string;
+  grade: number;
+  section?: string;
+  rfidCardId?: string;
+  dietaryPreferences: string[];
+  allergies: string[];
+  walletBalance: number;
+  parentApprovalRequired?: boolean;
+  canOrderWithoutApproval?: boolean;
+  maxDailySpend?: number;
+  schoolId?: string;
+  rollNumber?: string;
+  hasActiveMealPlan?: boolean;
+  mealPlanType?: string;
 }
 
 // Meal menu for a specific date
@@ -163,11 +265,32 @@ export interface MealSearchResults {
 }
 
 // Component prop types
+export interface CategoryTabsProps {
+  categories: MenuCategory[];
+  activeCategory: string;
+  onCategoryChange: (categoryId: string) => void;
+  student: {
+    grade: number;
+    dietaryPreferences: string[];
+    allergies: string[];
+    walletBalance: number;
+    parentApprovalRequired?: boolean;
+  };
+}
+
+// Extended MealCategory with filters
+export interface MenuCategory extends MealCategory {
+  gradeFilters?: number[];
+  dietaryFilters?: string[];
+}
+
 export interface MealCardProps {
   meal: MealItem;
+  student: StudentInfo;
   onAddToCart: (meal: MealItem, quantity: number) => void;
   onViewDetails: (mealId: string) => void;
   isInCart: boolean;
+  cartQuantity?: number;
 }
 
 export interface CartItemProps {

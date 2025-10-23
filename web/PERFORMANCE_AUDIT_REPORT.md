@@ -1,4 +1,5 @@
 # Performance Audit Report: Parent Order Journey
+
 **Project**: HASIVU Platform - Web Portal
 **Date**: 2025-10-20
 **Audited by**: Performance Benchmarker Agent
@@ -17,6 +18,7 @@
 ### Key Findings
 
 ✅ **Strengths**:
+
 - Next.js 13 App Router with modern architecture
 - SWC minification enabled
 - Image optimization configured (WebP/AVIF)
@@ -24,6 +26,7 @@
 - Strong security headers with CSP
 
 ⚠️ **Critical Bottlenecks**:
+
 - **1.8GB node_modules** - Excessive dependency footprint
 - No bundle analyzer configured for production builds
 - No code splitting strategy for heavy components
@@ -38,19 +41,20 @@
 
 ### Current Baseline (Estimated)
 
-| Metric | Current | Target | Status | Priority |
-|--------|---------|--------|--------|----------|
-| **LCP** (Largest Contentful Paint) | ~4.2s (3G) | <2.5s | ❌ FAIL | CRITICAL |
-| **FID** (First Input Delay) | ~180ms | <100ms | ⚠️ WARN | HIGH |
-| **CLS** (Cumulative Layout Shift) | ~0.15 | <0.1 | ⚠️ WARN | MEDIUM |
-| **FCP** (First Contentful Paint) | ~2.8s | <1.8s | ❌ FAIL | HIGH |
-| **TTI** (Time to Interactive) | ~5.1s | <3.8s | ❌ FAIL | CRITICAL |
-| **Bundle Size** (Initial) | ~850KB | <500KB | ❌ FAIL | CRITICAL |
-| **Total Bundle Size** | ~2.5MB | <2MB | ⚠️ WARN | MEDIUM |
+| Metric                             | Current    | Target | Status  | Priority |
+| ---------------------------------- | ---------- | ------ | ------- | -------- |
+| **LCP** (Largest Contentful Paint) | ~4.2s (3G) | <2.5s  | ❌ FAIL | CRITICAL |
+| **FID** (First Input Delay)        | ~180ms     | <100ms | ⚠️ WARN | HIGH     |
+| **CLS** (Cumulative Layout Shift)  | ~0.15      | <0.1   | ⚠️ WARN | MEDIUM   |
+| **FCP** (First Contentful Paint)   | ~2.8s      | <1.8s  | ❌ FAIL | HIGH     |
+| **TTI** (Time to Interactive)      | ~5.1s      | <3.8s  | ❌ FAIL | CRITICAL |
+| **Bundle Size** (Initial)          | ~850KB     | <500KB | ❌ FAIL | CRITICAL |
+| **Total Bundle Size**              | ~2.5MB     | <2MB   | ⚠️ WARN | MEDIUM   |
 
 ### Page-Specific Metrics
 
 #### Menu Page (`/menu`)
+
 - **Estimated Load Time (3G)**: ~4.5s → Target: <2s ❌
 - **Estimated Load Time (WiFi)**: ~1.8s → Target: <1s ⚠️
 - **Components**: 11 heavy components (Dialog, Card, Badge, Skeleton, etc.)
@@ -58,27 +62,32 @@
 - **State Management**: Multiple useState hooks (could optimize)
 
 **Critical Issues**:
+
 1. No memoization for expensive computations
 2. Dialog components loaded eagerly
 3. Filter panel loaded even when hidden
 4. No virtualization for menu items list (potential issue with 50+ items)
 
 #### Shopping Cart (`ShoppingCartSidebar.tsx`)
+
 - **Estimated Render Time**: ~120ms → Target: <50ms ⚠️
 - **Components**: 9 heavy components including Calendar
 - **Performance**: Good use of useMemo for computed values ✅
 
 **Critical Issues**:
+
 1. Calendar component loaded eagerly (should be lazy)
 2. No debouncing on quantity changes
 3. localStorage sync on every cart update (potential bottleneck)
 
 #### Checkout Page (`/checkout`)
+
 - **Estimated Load Time**: ~3.8s → Target: <3s ⚠️
 - **Form Validation**: Zod schema (efficient ✅)
 - **Payment**: Razorpay script loaded on mount (blocking)
 
 **Critical Issues**:
+
 1. Razorpay script blocks initial render
 2. Large form libraries loaded (react-hook-form + zod + resolvers)
 3. No skeleton/progressive loading for payment UI
@@ -95,6 +104,7 @@
 #### Heavy Dependencies Identified
 
 **UI Libraries** (Multiple overlapping):
+
 - `@mui/material` + `@mui/icons-material` + `@mui/system` + `@mui/x-data-grid` + `@mui/x-date-pickers`: ~2.5MB
 - `@mantine/core` + `@mantine/charts` + `@mantine/dates` + `@mantine/hooks` + `@mantine/notifications`: ~1.8MB
 - `@radix-ui/*` (18 packages): ~1.2MB
@@ -105,15 +115,18 @@
 **Recommendation**: **Choose ONE UI library** - Current stack uses MUI + Mantine + Radix UI + Emotion simultaneously. This is extremely inefficient.
 
 **Chart Libraries** (Duplicated):
+
 - `chart.js` + `react-chartjs-2`: 450KB
 - `recharts`: 380KB
 
 **Icon Libraries**:
+
 - `@mui/icons-material`: 2.1MB (entire icon set)
 - `@tabler/icons-react`: 1.8MB
 - `lucide-react`: 350KB ✅ (best choice - tree-shakeable)
 
 **Other Heavy Dependencies**:
+
 - `@paper-design/shaders-react`: 890KB (paper shader effects)
 - `framer-motion`: 280KB (animations)
 - `socket.io-client`: 210KB
@@ -134,6 +147,7 @@ Initial Bundle (~850KB uncompressed):
 ```
 
 **Compression Potential**:
+
 - Gzip: ~280KB (-67%)
 - Brotli: ~250KB (-71%) ✅ Recommended
 
@@ -142,11 +156,13 @@ Initial Bundle (~850KB uncompressed):
 ## Critical Performance Issues
 
 ### 🚨 Issue #1: Excessive UI Library Overhead
+
 **Impact**: HIGH | **Effort**: MEDIUM | **Priority**: CRITICAL
 
 **Problem**: Loading 3 different UI libraries simultaneously (MUI, Mantine, Radix UI)
 
 **Current Code** (`package.json`):
+
 ```json
 "@mui/material": "^5.14.1",
 "@mui/icons-material": "^5.14.1",
@@ -155,6 +171,7 @@ Initial Bundle (~850KB uncompressed):
 ```
 
 **Solution**:
+
 1. **Standardize on Radix UI** (already used extensively) + `shadcn/ui` patterns
 2. Remove MUI dependencies (~2.5MB saved)
 3. Remove Mantine dependencies (~1.8MB saved)
@@ -165,27 +182,33 @@ Initial Bundle (~850KB uncompressed):
 ---
 
 ### 🚨 Issue #2: No Code Splitting for Heavy Components
+
 **Impact**: HIGH | **Effort**: LOW | **Priority**: CRITICAL
 
 **Problem**: All components loaded synchronously, blocking initial render
 
 **Current Code** (`menu/page.tsx`):
+
 ```tsx
 import { Dialog, DialogContent, ... } from '@/components/ui/dialog';
 import { Calendar } from '@/components/ui/calendar';
 ```
 
 **Solution** - Implement dynamic imports:
+
 ```tsx
 // Lazy load heavy components
-const Dialog = dynamic(() => import('@/components/ui/dialog').then(mod => ({ default: mod.Dialog })), {
-  loading: () => <div>Loading...</div>,
-  ssr: false
-});
+const Dialog = dynamic(
+  () => import('@/components/ui/dialog').then(mod => ({ default: mod.Dialog })),
+  {
+    loading: () => <div>Loading...</div>,
+    ssr: false,
+  }
+);
 
 const Calendar = dynamic(() => import('@/components/ui/calendar'), {
   loading: () => <CalendarSkeleton />,
-  ssr: false
+  ssr: false,
 });
 ```
 
@@ -194,11 +217,13 @@ const Calendar = dynamic(() => import('@/components/ui/calendar'), {
 ---
 
 ### 🚨 Issue #3: Razorpay Script Blocking Initial Load
+
 **Impact**: MEDIUM | **Effort**: LOW | **Priority**: HIGH
 
 **Problem**: Razorpay script loaded on mount blocks checkout page render
 
 **Current Code** (`checkout/page.tsx`):
+
 ```tsx
 useEffect(() => {
   const loadRazorpay = async () => {
@@ -211,9 +236,10 @@ useEffect(() => {
 ```
 
 **Solution** - Defer until user interaction:
+
 ```tsx
 // Only load when user attempts payment
-const handleSubmit = async (formData) => {
+const handleSubmit = async formData => {
   if (!razorpayLoaded) {
     setPaymentState(PaymentState.LOADING_SCRIPT);
     await paymentAPIService.loadRazorpayScript();
@@ -227,6 +253,7 @@ const handleSubmit = async (formData) => {
 ---
 
 ### 🚨 Issue #4: No Performance Monitoring
+
 **Impact**: HIGH | **Effort**: LOW | **Priority**: HIGH
 
 **Problem**: No Web Vitals tracking, no bundle analysis, no production monitoring
@@ -238,11 +265,13 @@ const handleSubmit = async (formData) => {
 ---
 
 ### 🚨 Issue #5: Inefficient Re-renders
+
 **Impact**: MEDIUM | **Effort**: MEDIUM | **Priority**: MEDIUM
 
 **Problem**: Missing memoization, unnecessary state updates
 
 **Current Code** (`menu/page.tsx`):
+
 ```tsx
 // Re-creates function on every render
 const handleAddToCart = useCallback(...)
@@ -256,6 +285,7 @@ useEffect(() => {
 ```
 
 **Solution**:
+
 ```tsx
 // Debounce search queries
 const debouncedSearch = useMemo(() =>
@@ -279,6 +309,7 @@ const filteredItems = useMemo(() =>
 ### Immediate Actions (This Sprint)
 
 #### 1. Enable Bundle Analyzer ⚡
+
 **Priority**: CRITICAL | **Effort**: 5 minutes | **Impact**: HIGH
 
 ```bash
@@ -286,6 +317,7 @@ npm install --save-dev @next/bundle-analyzer
 ```
 
 Update `next.config.js`:
+
 ```javascript
 const withBundleAnalyzer = require('@next/bundle-analyzer')({
   enabled: process.env.ANALYZE === 'true',
@@ -299,9 +331,11 @@ module.exports = withBundleAnalyzer(nextConfig);
 ---
 
 #### 2. Implement Performance Monitor Component ⚡
+
 **Priority**: HIGH | **Effort**: 15 minutes | **Impact**: HIGH
 
 Create `/src/components/PerformanceMonitor.tsx`:
+
 ```typescript
 'use client';
 
@@ -349,6 +383,7 @@ export function PerformanceMonitor() {
 ```
 
 Add to `/src/app/layout.tsx`:
+
 ```tsx
 import { PerformanceMonitor } from '@/components/PerformanceMonitor';
 
@@ -365,6 +400,7 @@ export default function RootLayout({ children }) {
 ```
 
 **Dependencies needed**:
+
 ```bash
 npm install web-vitals
 ```
@@ -372,9 +408,11 @@ npm install web-vitals
 ---
 
 #### 3. Lazy Load Heavy Components ⚡
+
 **Priority**: HIGH | **Effort**: 30 minutes | **Impact**: HIGH
 
 Update `menu/page.tsx`:
+
 ```typescript
 import dynamic from 'next/dynamic';
 
@@ -405,6 +443,7 @@ const Calendar = dynamic(() => import('@/components/ui/calendar'), {
 ### Next Sprint (Medium Priority)
 
 #### 4. Implement API Response Caching
+
 **Priority**: MEDIUM | **Effort**: 2 hours | **Impact**: MEDIUM
 
 Current SWR usage is basic. Enhance with caching strategy:
@@ -434,16 +473,13 @@ export const swrConfig = {
 ```
 
 Apply in layout:
+
 ```tsx
 import { SWRConfig } from 'swr';
 import { swrConfig } from '@/lib/swr-config';
 
 export default function Layout({ children }) {
-  return (
-    <SWRConfig value={swrConfig}>
-      {children}
-    </SWRConfig>
-  );
+  return <SWRConfig value={swrConfig}>{children}</SWRConfig>;
 }
 ```
 
@@ -452,26 +488,29 @@ export default function Layout({ children }) {
 ---
 
 #### 5. Optimize Images with Priority Loading
+
 **Priority**: MEDIUM | **Effort**: 1 hour | **Impact**: MEDIUM
 
 ```tsx
 // Menu items - prioritize first 6 images
-{menuItems.map((item, index) => (
-  <Card key={item.id}>
-    {item.imageUrl && (
-      <Image
-        src={item.imageUrl}
-        alt={item.name}
-        width={300}
-        height={200}
-        priority={index < 6} // LCP optimization
-        loading={index < 6 ? 'eager' : 'lazy'}
-        placeholder="blur"
-        blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRg..." // tiny placeholder
-      />
-    )}
-  </Card>
-))}
+{
+  menuItems.map((item, index) => (
+    <Card key={item.id}>
+      {item.imageUrl && (
+        <Image
+          src={item.imageUrl}
+          alt={item.name}
+          width={300}
+          height={200}
+          priority={index < 6} // LCP optimization
+          loading={index < 6 ? 'eager' : 'lazy'}
+          placeholder="blur"
+          blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRg..." // tiny placeholder
+        />
+      )}
+    </Card>
+  ));
+}
 ```
 
 **Expected Improvement**: -1.2s LCP
@@ -479,6 +518,7 @@ export default function Layout({ children }) {
 ---
 
 #### 6. Debounce Search and Filter Changes
+
 **Priority**: MEDIUM | **Effort**: 30 minutes | **Impact**: LOW
 
 ```tsx
@@ -494,8 +534,8 @@ const debouncedSetSearch = useMemo(
 <Input
   type="search"
   placeholder="Search menu items..."
-  onChange={(e) => debouncedSetSearch(e.target.value)}
-/>
+  onChange={e => debouncedSetSearch(e.target.value)}
+/>;
 ```
 
 **Expected Improvement**: -75% unnecessary API calls, better FID
@@ -505,9 +545,11 @@ const debouncedSetSearch = useMemo(
 ### Future Improvements (Long-term)
 
 #### 7. Consolidate UI Libraries
+
 **Priority**: LOW | **Effort**: 3-5 days | **Impact**: CRITICAL
 
 **Action Plan**:
+
 1. Audit all component usage (MUI vs Mantine vs Radix)
 2. Create migration plan to Radix UI + shadcn/ui
 3. Remove MUI dependencies
@@ -519,6 +561,7 @@ const debouncedSetSearch = useMemo(
 ---
 
 #### 8. Implement Virtual Scrolling for Menu Items
+
 **Priority**: LOW | **Effort**: 4 hours | **Impact**: MEDIUM
 
 For menus with 50+ items:
@@ -543,7 +586,7 @@ import { FixedSizeGrid } from 'react-window';
     if (index >= menuItems.length) return null;
     return <MenuItemCard item={menuItems[index]} style={style} />;
   }}
-</FixedSizeGrid>
+</FixedSizeGrid>;
 ```
 
 **Expected Improvement**: 60fps scrolling with 200+ items
@@ -551,6 +594,7 @@ import { FixedSizeGrid } from 'react-window';
 ---
 
 #### 9. Service Worker for Offline Caching
+
 **Priority**: LOW | **Effort**: 2 days | **Impact**: MEDIUM
 
 Already using `next-pwa` - configure properly:
@@ -603,9 +647,12 @@ const nextConfig = {
 
   // Performance optimizations
   compiler: {
-    removeConsole: process.env.NODE_ENV === 'production' ? {
-      exclude: ['error', 'warn']
-    } : false,
+    removeConsole:
+      process.env.NODE_ENV === 'production'
+        ? {
+            exclude: ['error', 'warn'],
+          }
+        : false,
   },
 
   // Experimental features
@@ -732,6 +779,7 @@ module.exports = withPWA(withBundleAnalyzer(nextConfig));
 ### Enforce Performance Budgets
 
 Create `performance-budget.json`:
+
 ```json
 {
   "budget": [
@@ -772,6 +820,7 @@ Create `performance-budget.json`:
 ```
 
 Integrate with CI/CD:
+
 ```yaml
 # .github/workflows/performance.yml
 name: Performance Budget Check
@@ -801,35 +850,40 @@ jobs:
 ### Local Performance Testing
 
 1. **Build production bundle**:
+
 ```bash
 npm run build
 npm run start
 ```
 
 2. **Run Lighthouse**:
+
 ```bash
 npm install -g lighthouse
 lighthouse http://localhost:3000/menu --view --output=html
 ```
 
 3. **Analyze bundle**:
+
 ```bash
 ANALYZE=true npm run build
 ```
 
 4. **Test on slow 3G**:
+
 - Chrome DevTools → Network → Throttling → Slow 3G
 - Measure LCP, FCP, TTI
 
 ### Automated Testing
 
 Create `scripts/performance-test.js`:
+
 ```javascript
 const lighthouse = require('lighthouse');
 const chromeLauncher = require('chrome-launcher');
 
 async function runLighthouse(url) {
-  const chrome = await chromeLauncher.launch({chromeFlags: ['--headless']});
+  const chrome = await chromeLauncher.launch({ chromeFlags: ['--headless'] });
   const options = {
     logLevel: 'info',
     output: 'json',
@@ -901,6 +955,7 @@ alerts:
 ## Implementation Roadmap
 
 ### Week 1: Quick Wins (40% improvement)
+
 - [ ] **Day 1**: Enable bundle analyzer, analyze current state
 - [ ] **Day 2**: Implement PerformanceMonitor component
 - [ ] **Day 3**: Lazy load Dialog and Calendar components
@@ -910,6 +965,7 @@ alerts:
 **Expected Result**: LCP < 3.5s, TTI < 4.5s, Bundle < 650KB
 
 ### Week 2: Medium Optimizations (60% improvement)
+
 - [ ] **Day 1-2**: Implement SWR caching strategy
 - [ ] **Day 3**: Optimize images with priority loading
 - [ ] **Day 4**: Add performance budget enforcement
@@ -918,6 +974,7 @@ alerts:
 **Expected Result**: LCP < 2.8s, TTI < 4s, Bundle < 550KB
 
 ### Week 3-4: Major Refactoring (Target metrics achieved)
+
 - [ ] **Week 3**: Consolidate UI libraries (remove MUI + Mantine)
 - [ ] **Week 4**: Implement virtual scrolling, finalize optimizations
 
@@ -928,52 +985,58 @@ alerts:
 ## Success Metrics
 
 ### Before Optimization (Baseline)
+
 | Metric | Value |
-|--------|-------|
-| LCP | 4.2s |
-| FID | 180ms |
-| CLS | 0.15 |
-| FCP | 2.8s |
-| TTI | 5.1s |
+| ------ | ----- |
+| LCP    | 4.2s  |
+| FID    | 180ms |
+| CLS    | 0.15  |
+| FCP    | 2.8s  |
+| TTI    | 5.1s  |
 | Bundle | 850KB |
 
 ### After Phase 1 (Week 1-2)
+
 | Metric | Target | Improvement |
-|--------|--------|-------------|
-| LCP | 2.8s | -33% |
-| FID | 120ms | -33% |
-| CLS | 0.12 | -20% |
-| FCP | 2.0s | -29% |
-| TTI | 4.0s | -22% |
-| Bundle | 550KB | -35% |
+| ------ | ------ | ----------- |
+| LCP    | 2.8s   | -33%        |
+| FID    | 120ms  | -33%        |
+| CLS    | 0.12   | -20%        |
+| FCP    | 2.0s   | -29%        |
+| TTI    | 4.0s   | -22%        |
+| Bundle | 550KB  | -35%        |
 
 ### After Phase 2 (Week 3-4) - FINAL
-| Metric | Target | Improvement |
-|--------|--------|-------------|
-| LCP | <2.5s ✅ | -40% |
-| FID | <100ms ✅ | -44% |
-| CLS | <0.1 ✅ | -33% |
-| FCP | <1.8s ✅ | -36% |
-| TTI | <3.8s ✅ | -25% |
-| Bundle | <500KB ✅ | -41% |
+
+| Metric | Target    | Improvement |
+| ------ | --------- | ----------- |
+| LCP    | <2.5s ✅  | -40%        |
+| FID    | <100ms ✅ | -44%        |
+| CLS    | <0.1 ✅   | -33%        |
+| FCP    | <1.8s ✅  | -36%        |
+| TTI    | <3.8s ✅  | -25%        |
+| Bundle | <500KB ✅ | -41%        |
 
 ---
 
 ## Cost-Benefit Analysis
 
 ### Implementation Effort
+
 - **Quick Wins**: 2 developer-days
 - **Medium Optimizations**: 3 developer-days
 - **Major Refactoring**: 8 developer-days
 - **Total**: ~13 developer-days
 
 ### Expected ROI
+
 - **40-60% faster load times** → Higher conversion rates
 - **35-45% smaller bundles** → Lower bandwidth costs
 - **Better Core Web Vitals** → Improved SEO rankings
 - **Reduced infrastructure costs** → Smaller CDN bills
 
 **Estimated Business Impact**:
+
 - +15-25% conversion rate improvement (industry standard for 1s load time reduction)
 - -30% bandwidth costs
 - Better user satisfaction scores
@@ -985,20 +1048,24 @@ alerts:
 ### Tools & Resources
 
 **Bundle Analysis**:
+
 - [@next/bundle-analyzer](https://www.npmjs.com/package/@next/bundle-analyzer)
 - [Bundlephobia](https://bundlephobia.com) - Check package sizes
 
 **Performance Testing**:
+
 - [Lighthouse CI](https://github.com/GoogleChrome/lighthouse-ci)
 - [WebPageTest](https://www.webpagetest.org)
 - [Chrome DevTools Performance Panel](https://developer.chrome.com/docs/devtools/performance)
 
 **Monitoring**:
+
 - [web-vitals](https://github.com/GoogleChrome/web-vitals)
 - [Vercel Analytics](https://vercel.com/analytics)
 - [Google PageSpeed Insights](https://pagespeed.web.dev)
 
 **Documentation**:
+
 - [Next.js Performance Best Practices](https://nextjs.org/docs/app/building-your-application/optimizing)
 - [Web.dev Performance](https://web.dev/performance)
 - [Core Web Vitals](https://web.dev/vitals)

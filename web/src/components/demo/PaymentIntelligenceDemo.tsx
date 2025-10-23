@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { hasiviApi as _hasiviApi } from '@/services/api/hasivu-api.service';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button as _Button } from '@/components/ui/button';
+import { Button as Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -36,7 +36,7 @@ import {
 } from 'recharts';
 
 // Demo payment transactions for testing
-const DEMO_TRANSACTIONS = [
+const DEMOTRANSACTIONS = [
   {
     id: 'TXN-001',
     amount: 150,
@@ -71,7 +71,7 @@ const DEMO_TRANSACTIONS = [
 ];
 
 // ML Model metrics
-const ML_METRICS = {
+const MLMETRICS = {
   fraudDetection: {
     accuracy: 99.7,
     falsePositives: 0.1,
@@ -262,7 +262,7 @@ const PaymentIntelligenceDemo: React.FC = () => {
                 <CardDescription>Click on a transaction to see AI analysis</CardDescription>
               </CardHeader>
               <CardContent className="space-y-2">
-                {DEMO_TRANSACTIONS.map(transaction => (
+                {DEMOTRANSACTIONS.map(transaction => (
                   <motion.div
                     key={transaction.id}
                     whileHover={{ scale: 1.02 }}
@@ -420,25 +420,25 @@ const PaymentIntelligenceDemo: React.FC = () => {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="text-center">
                   <div className="text-3xl font-bold text-green-600">
-                    {ML_METRICS.fraudDetection.accuracy}%
+                    {MLMETRICS.fraudDetection.accuracy}%
                   </div>
                   <p className="text-sm text-gray-600">Accuracy</p>
                 </div>
                 <div className="text-center">
                   <div className="text-3xl font-bold text-blue-600">
-                    {ML_METRICS.fraudDetection.truePositives}%
+                    {MLMETRICS.fraudDetection.truePositives}%
                   </div>
                   <p className="text-sm text-gray-600">True Positives</p>
                 </div>
                 <div className="text-center">
                   <div className="text-3xl font-bold text-yellow-600">
-                    {ML_METRICS.fraudDetection.falsePositives}%
+                    {MLMETRICS.fraudDetection.falsePositives}%
                   </div>
                   <p className="text-sm text-gray-600">False Positives</p>
                 </div>
                 <div className="text-center">
                   <div className="text-3xl font-bold text-purple-600">
-                    {ML_METRICS.fraudDetection.processingTime}ms
+                    {MLMETRICS.fraudDetection.processingTime}ms
                   </div>
                   <p className="text-sm text-gray-600">Avg. Processing</p>
                 </div>
@@ -458,7 +458,7 @@ const PaymentIntelligenceDemo: React.FC = () => {
                   Revenue Forecasting
                 </CardTitle>
                 <CardDescription>
-                  AI-powered revenue predictions with {ML_METRICS.revenueForecasting.accuracy}%
+                  AI-powered revenue predictions with {MLMETRICS.revenueForecasting.accuracy}%
                   accuracy
                 </CardDescription>
               </CardHeader>
@@ -491,7 +491,7 @@ const PaymentIntelligenceDemo: React.FC = () => {
                   <p className="text-sm font-medium mb-1">Next Month Forecast</p>
                   <p className="text-2xl font-bold text-blue-600">₹64,500</p>
                   <p className="text-xs text-gray-600">
-                    Confidence: {ML_METRICS.revenueForecasting.confidence}%
+                    Confidence: {MLMETRICS.revenueForecasting.confidence}%
                   </p>
                 </div>
               </CardContent>
@@ -505,7 +505,7 @@ const PaymentIntelligenceDemo: React.FC = () => {
                   Churn Prediction Analysis
                 </CardTitle>
                 <CardDescription>
-                  Identify at-risk customers with {ML_METRICS.churnPrediction.accuracy}% accuracy
+                  Identify at-risk customers with {MLMETRICS.churnPrediction.accuracy}% accuracy
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -534,11 +534,11 @@ const PaymentIntelligenceDemo: React.FC = () => {
                   {/* Model Metrics */}
                   <div className="grid grid-cols-2 gap-3 pt-4 border-t">
                     <div className="text-center p-2 bg-gray-50 rounded">
-                      <p className="text-lg font-bold">{ML_METRICS.churnPrediction.precision}%</p>
+                      <p className="text-lg font-bold">{MLMETRICS.churnPrediction.precision}%</p>
                       <p className="text-xs text-gray-600">Precision</p>
                     </div>
                     <div className="text-center p-2 bg-gray-50 rounded">
-                      <p className="text-lg font-bold">{ML_METRICS.churnPrediction.recall}%</p>
+                      <p className="text-lg font-bold">{MLMETRICS.churnPrediction.recall}%</p>
                       <p className="text-xs text-gray-600">Recall</p>
                     </div>
                   </div>

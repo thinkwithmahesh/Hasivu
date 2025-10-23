@@ -32,6 +32,7 @@ import {
   MessageCircle,
   Headphones,
   Video,
+  ChefHat,
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -85,7 +86,7 @@ const CompletionStep: React.FC<CompletionStepProps> = ({ onComplete, onboardingD
       title: 'Add Your First Menu',
       description: "Create and publish your school's daily meal menu",
       action: 'Create Menu',
-      icon: <Utensils className="w-8 h-8" />,
+      icon: <ChefHat className="w-8 h-8" />,
       color: 'green',
     },
     {

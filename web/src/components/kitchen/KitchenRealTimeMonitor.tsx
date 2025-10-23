@@ -26,13 +26,13 @@ import {
 import {
   Card,
   CardContent,
-  CardDescription as _CardDescription,
+  CardDescription as CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Alert, AlertDescription as _AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription as AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 
 // Real-time monitoring interfaces
@@ -159,7 +159,7 @@ export const KitchenRealTimeMonitor: React.FC = () => {
           lastMaintenance: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000), // 14 days ago
           nextMaintenance: new Date(Date.now() + 16 * 24 * 60 * 60 * 1000), // 16 days from now
           efficiency: 88,
-          errorCodes: ['TEMP_HIGH'],
+          errorCodes: ['TEMPHIGH'],
         },
       ],
       networkStatus: 'connected',

@@ -72,9 +72,12 @@ const nextConfig = {
   // Performance optimizations
   compiler: {
     // Remove console.log in production (keep errors and warnings)
-    removeConsole: process.env.NODE_ENV === 'production' ? {
-      exclude: ['error', 'warn']
-    } : false,
+    removeConsole:
+      process.env.NODE_ENV === 'production'
+        ? {
+            exclude: ['error', 'warn'],
+          }
+        : false,
   },
 
   // Experimental features for performance

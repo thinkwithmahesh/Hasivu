@@ -18,7 +18,6 @@ import {
   Download,
   Loader2,
   Database,
-  Sync,
   CloudOff,
   Cloud,
 } from 'lucide-react';
@@ -623,7 +622,7 @@ export const OfflineQueue: React.FC<OfflineQueueProps> = ({ className }) => {
                 onClick={processQueue}
                 disabled={!isOnline || isProcessing}
               >
-                <Sync className="h-4 w-4 mr-2" />
+                <RefreshCw className="h-4 w-4 mr-2" />
                 Sync Now
               </Button>
 

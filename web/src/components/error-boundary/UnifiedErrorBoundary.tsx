@@ -26,7 +26,7 @@ import {
   ChevronDown,
   ChevronUp,
   Shield,
-  Zap as _Zap,
+  Zap as Zap,
 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -41,6 +41,9 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
+
+// Import structured logging service
+import { logger } from '@/utils/logger';
 
 // ============================================================================
 // Types and Interfaces
@@ -111,14 +114,48 @@ class ErrorReporter {
           : null,
     };
 
-    // Development logging
-    if (process.env.NODE_ENV === 'development') {
-    }
+    // Use structured logging service for error reporting
+    logger.error('React Error Boundary', error, {
+      eventId,
+      boundaryId,
+      retryCount,
+      componentStack: errorInfo.componentStack,
+      userAgent: errorReport.userAgent,
+      url: errorReport.url,
+      viewport: errorReport.viewport,
+    });
 
-    // Production error reporting
+    // Additional error reporting to external services
     if (process.env.NODE_ENV === 'production') {
-      // TODO: Integrate with error reporting service (Sentry, DataDog, etc.)
-      // Example: await sendToErrorService(errorReport);
+      // Send to DataDog APM if available
+      if (typeof window !== 'undefined' && (window as any).dataDogAPM) {
+        (window as any).dataDogAPM.metric({
+          name: 'frontend.error.boundary',
+          type: 'counter',
+          value: 1,
+          tags: {
+            boundaryId: boundaryId || 'unknown',
+            errorType: error.name,
+            retryCount: retryCount.toString(),
+          },
+        });
+      }
+
+      // Send to Sentry if available
+      if (typeof window !== 'undefined' && (window as any).Sentry) {
+        (window as any).Sentry.captureException(error, {
+          tags: {
+            boundaryId,
+            retryCount,
+          },
+          contexts: {
+            errorBoundary: {
+              componentStack: errorInfo.componentStack,
+              eventId,
+            },
+          },
+        });
+      }
     }
 
     return eventId;
@@ -170,6 +207,16 @@ export class UnifiedErrorBoundary extends Component<ErrorBoundaryProps, ErrorBou
       showDialog: this.props.showDialog || this.props.level === 'page',
     });
 
+    // Log retry attempts for monitoring
+    if (this.state.retryCount > 0) {
+      logger.warn('Error Boundary Retry Attempt', {
+        eventId,
+        boundaryId: this.props.errorBoundaryId,
+        retryCount: this.state.retryCount,
+        errorType: error.name,
+      });
+    }
+
     // Call custom error handler
     this.props.onError?.(error, errorInfo);
   }
@@ -183,7 +230,21 @@ export class UnifiedErrorBoundary extends Component<ErrorBoundaryProps, ErrorBou
     // Exponential backoff: 1s, 2s, 4s
     const delay = Math.pow(2, this.state.retryCount) * 1000;
 
+    // Log retry attempt
+    logger.info('Error Boundary Retry Initiated', {
+      boundaryId: this.props.errorBoundaryId,
+      retryCount: this.state.retryCount + 1,
+      maxRetries,
+      delay,
+    });
+
     this.retryTimeoutId = setTimeout(() => {
+      // Log successful retry
+      logger.info('Error Boundary Retry Completed', {
+        boundaryId: this.props.errorBoundaryId,
+        retryCount: this.state.retryCount + 1,
+      });
+
       this.setState(prevState => ({
         hasError: false,
         error: null,
@@ -199,30 +260,65 @@ export class UnifiedErrorBoundary extends Component<ErrorBoundaryProps, ErrorBou
   };
 
   handleGoHome = () => {
+    // Log user action for analytics
+    logger.info('Error Boundary Navigation: Go Home', {
+      boundaryId: this.props.errorBoundaryId,
+      eventId: this.state.eventId,
+    });
+
     if (typeof window !== 'undefined') {
       window.location.href = '/';
     }
   };
 
   handleReload = () => {
+    // Log user action for analytics
+    logger.info('Error Boundary Navigation: Reload Page', {
+      boundaryId: this.props.errorBoundaryId,
+      eventId: this.state.eventId,
+    });
+
     if (typeof window !== 'undefined') {
       window.location.reload();
     }
   };
 
   toggleDetails = () => {
+    // Log details toggle for analytics
+    logger.info('Error Boundary Details Toggle', {
+      boundaryId: this.props.errorBoundaryId,
+      eventId: this.state.eventId,
+      action: this.state.showDetails ? 'hide' : 'show',
+    });
+
     this.setState(prevState => ({
       showDetails: !prevState.showDetails,
     }));
   };
 
   handleDialogClose = () => {
+    // Log dialog dismissal for analytics
+    logger.info('Error Boundary Dialog Dismissed', {
+      boundaryId: this.props.errorBoundaryId,
+      eventId: this.state.eventId,
+    });
+
     this.setState({ showDialog: false });
   };
 
   componentWillUnmount() {
     if (this.retryTimeoutId) {
       clearTimeout(this.retryTimeoutId);
+    }
+
+    // Log component unmount for cleanup tracking
+    if (this.state.hasError) {
+      logger.info('Error Boundary Component Unmounting', {
+        boundaryId: this.props.errorBoundaryId,
+        eventId: this.state.eventId,
+        hadError: true,
+        retryCount: this.state.retryCount,
+      });
     }
   }
 

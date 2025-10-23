@@ -2039,6 +2039,78 @@ export class AuthService {
   }
 
   /**
+   * Initiate password reset (alias for forgotPassword for backwards compatibility)
+   */
+  public async initiatePasswordReset(
+    email: string
+  ): Promise<{ success: boolean; message?: string; error?: string }> {
+    return this.forgotPassword(email);
+  }
+
+  /**
+   * Reset password with token
+   */
+  public async resetPassword(
+    resetToken: string,
+    newPassword: string
+  ): Promise<{ success: boolean; message?: string; error?: string }> {
+    try {
+      // Get token data from Redis
+      const tokenDataStr = await this.redis.get(`password_reset:${resetToken}`);
+      if (!tokenDataStr) {
+        return { success: false, error: 'Invalid or expired reset token' };
+      }
+
+      const tokenData = JSON.parse(tokenDataStr);
+      const { userId } = tokenData;
+
+      // Get user
+      const user = await DatabaseService.client.user.findUnique({
+        where: { id: userId },
+        select: { id: true, email: true },
+      });
+
+      if (!user) {
+        return { success: false, error: 'User not found' };
+      }
+
+      // Validate new password
+      const passwordValidation = this.validatePassword(newPassword);
+      if (!passwordValidation.valid) {
+        return { success: false, error: passwordValidation.message };
+      }
+
+      // Hash new password
+      const newPasswordHash = await this.hashPassword(newPassword);
+
+      // Update password and reset login attempts
+      await DatabaseService.client.user.update({
+        where: { id: userId },
+        data: {
+          passwordHash: newPasswordHash,
+          loginAttempts: 0,
+          lockedUntil: null,
+        },
+      });
+
+      // Delete reset token
+      await this.redis.del(`password_reset:${resetToken}`);
+
+      // Revoke all user sessions
+      await this.logoutAll(userId);
+
+      logger.info('Password reset successful', { userId });
+
+      return { success: true, message: 'Password reset successfully' };
+    } catch (error: unknown) {
+      logger.error('Password reset failed', undefined, {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
+      return { success: false, error: 'Failed to reset password' };
+    }
+  }
+
+  /**
    * Register new user
    */
   public async register(userData: {

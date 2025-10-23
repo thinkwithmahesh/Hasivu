@@ -105,7 +105,6 @@ export function EnhancedSchoolLoginForm({
       email: '',
       password: '',
       rememberMe: false,
-      detectedRole: undefined,
     },
   });
 
@@ -119,12 +118,10 @@ export function EnhancedSchoolLoginForm({
       setEmailValidated(true);
 
       if (role) {
-        form.setValue('detectedRole', role as any);
       }
     } else {
       setDetectedRole(null);
       setEmailValidated(false);
-      form.setValue('detectedRole', undefined);
     }
   }, [watchEmail, form]);
 

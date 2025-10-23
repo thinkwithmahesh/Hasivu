@@ -197,9 +197,9 @@ export function generateBaseMetadata(): Metadata {
       shortcut: '/favicon.ico',
     },
     verification: {
-      google: process.env.GOOGLE_SITE_VERIFICATION,
-      yandex: process.env.YANDEX_VERIFICATION,
-      yahoo: process.env.YAHOO_SITE_VERIFICATION,
+      google: process.env.GOOGLE_SITEVERIFICATION,
+      yandex: process.env.YANDEXVERIFICATION,
+      yahoo: process.env.YAHOO_SITEVERIFICATION,
       other: {
         'facebook-domain-verification': process.env.FACEBOOK_DOMAIN_VERIFICATION || '',
         'p:domain_verify': process.env.PINTEREST_DOMAIN_VERIFICATION || '',

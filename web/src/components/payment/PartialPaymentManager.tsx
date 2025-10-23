@@ -38,15 +38,15 @@ import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
-  Tabs as _Tabs,
-  TabsContent as _TabsContent,
-  TabsList as _TabsList,
-  TabsTrigger as _TabsTrigger,
+  Tabs as Tabs,
+  TabsContent as TabsContent,
+  TabsList as TabsList,
+  TabsTrigger as TabsTrigger,
 } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import {
-  RadioGroup as _RadioGroup,
-  RadioGroupItem as _RadioGroupItem,
+  RadioGroup as RadioGroup,
+  RadioGroupItem as RadioGroupItem,
 } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
 import {

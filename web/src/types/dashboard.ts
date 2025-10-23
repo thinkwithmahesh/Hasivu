@@ -9,13 +9,47 @@ export interface ChildProfile {
   updatedAt: string;
 }
 
+// Child interface (alias for Student)
+export interface Child {
+  id: string;
+  name: string;
+  firstName?: string;
+  lastName?: string;
+  grade?: string;
+  class: string;
+  section: string;
+  rollNumber?: string;
+  avatar?: string;
+  rfidCode?: string;
+  isActive?: boolean;
+  allergies?: string[];
+}
+
 // Order interface with extended details
 export interface Order {
+  id: string;
+  studentId: string;
+  childId?: string; // Alias for studentId in parent dashboard context
+  studentName: string;
+  class?: string;
+  section?: string;
+  mealType: string;
+  items: Array<{
+    id: string;
+    name: string;
+    category: string;
+    price: number;
+    quantity: number;
+  }>;
+  status: 'pending' | 'preparing' | 'ready' | 'delivered' | 'completed' | 'cancelled';
+  orderDate: string;
+  totalAmount: number;
+  priority: string;
   rating?: number;
   review?: string;
   nutritionInfo?: NutritionInfo;
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // Nutrition information
@@ -37,6 +71,14 @@ export interface Subscription {
 // Notification interface
 export interface Notification {
   // Define notification fields
+}
+
+// Dashboard Analytics interface
+export interface DashboardAnalytics {
+  totalOrders: number;
+  averageOrderValue: number;
+  totalSpent?: number;
+  monthlySpending?: number;
 }
 
 // Analytics data

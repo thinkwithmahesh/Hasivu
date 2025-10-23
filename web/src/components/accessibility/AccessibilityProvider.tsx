@@ -91,7 +91,7 @@ export function AccessibilityProvider({ children }: AccessibilityProviderProps) 
 
   // Announce page changes
   useEffect(() => {
-    const pageName = getPageName(pathname);
+    const pageName = getPageName(pathname || '/');
     if (pageName) {
       announcePageChange(pageName);
     }

@@ -2,6 +2,7 @@ import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { logger } from '@/utils/logger';
 
 interface Props {
   children: ReactNode;
@@ -46,9 +47,14 @@ export class ErrorBoundary extends Component<Props, State> {
       url: window.location.href,
     };
 
-    // Log to console
+    // Log error using structured logger
+    logger.error('React Error Boundary caught an error', error, {
+      componentStack: errorInfo.componentStack,
+      userAgent: navigator.userAgent,
+      url: window.location.href,
+    });
 
-    // TODO: Send to error reporting API
+    // Send to external error reporting service
     // fetch('/api/errors', {
     //   method: 'POST',
     //   headers: { 'Content-Type': 'application/json' },

@@ -86,20 +86,20 @@ class PaymentAPIService {
 
     // Request interceptor to add auth token
     this.client.interceptors.request.use(
-      (config) => {
+      config => {
         const token = this.getAuthToken();
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
         return config;
       },
-      (error) => Promise.reject(error)
+      error => Promise.reject(error)
     );
 
     // Response interceptor for error handling
     this.client.interceptors.response.use(
-      (response) => response,
-      async (error) => {
+      response => response,
+      async error => {
         if (error.response?.status === 401) {
           console.warn('Unauthorized payment request - token may be expired');
         }
@@ -117,17 +117,12 @@ class PaymentAPIService {
    * Create a Razorpay payment order
    * Step 1 of payment flow: Create order on backend
    */
-  async createPaymentOrder(
-    request: CreatePaymentOrderRequest
-  ): Promise<PaymentOrderResponse> {
+  async createPaymentOrder(request: CreatePaymentOrderRequest): Promise<PaymentOrderResponse> {
     try {
-      const response = await this.client.post<PaymentOrderResponse>(
-        '/payments/orders',
-        {
-          ...request,
-          currency: request.currency || 'INR',
-        }
-      );
+      const response = await this.client.post<PaymentOrderResponse>('/payments/orders', {
+        ...request,
+        currency: request.currency || 'INR',
+      });
       return response.data;
     } catch (error) {
       console.error('Error creating payment order:', error);
@@ -139,9 +134,7 @@ class PaymentAPIService {
    * Verify payment after Razorpay checkout completion
    * Step 3 of payment flow: Verify payment signature on backend
    */
-  async verifyPayment(
-    verification: VerifyPaymentRequest
-  ): Promise<PaymentVerificationResponse> {
+  async verifyPayment(verification: VerifyPaymentRequest): Promise<PaymentVerificationResponse> {
     try {
       const response = await this.client.post<PaymentVerificationResponse>(
         '/payments/verify',
@@ -262,18 +255,16 @@ class PaymentAPIService {
       });
 
       // Step 2: Open Razorpay checkout and wait for completion
-      const razorpayResponse = await new Promise<RazorpayResponse>(
-        (resolve, reject) => {
-          this.initiateRazorpayCheckout(paymentOrder, {
-            userName: userInfo.name,
-            userEmail: userInfo.email,
-            userPhone: userInfo.phone,
-            onSuccess: resolve,
-            onFailure: reject,
-            onDismiss: () => reject(new Error('Payment cancelled')),
-          });
-        }
-      );
+      const razorpayResponse = await new Promise<RazorpayResponse>((resolve, reject) => {
+        this.initiateRazorpayCheckout(paymentOrder, {
+          userName: userInfo.name,
+          userEmail: userInfo.email,
+          userPhone: userInfo.phone,
+          onSuccess: resolve,
+          onFailure: reject,
+          onDismiss: () => reject(new Error('Payment cancelled')),
+        });
+      });
 
       // Step 3: Verify payment
       const verification = await this.verifyPayment({
@@ -295,7 +286,7 @@ class PaymentAPIService {
    * Call this in useEffect or before initiating payment
    */
   loadRazorpayScript(): Promise<boolean> {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       if (typeof window === 'undefined') {
         resolve(false);
         return;

@@ -611,10 +611,10 @@ export const KitchenManagementDashboard: React.FC = () => {
   );
 
   // Use fallback data if API calls fail or data is not available
-  const ordersData = orders || mockOrders;
-  const metricsData = metrics || mockMetrics;
-  const staffData = staff || mockStaff;
-  const inventoryData = inventory || mockInventory;
+  const ordersData: Order[] = (orders || mockOrders) as Order[];
+  const metricsData: KitchenMetrics = (metrics || mockMetrics) as KitchenMetrics;
+  const staffData: KitchenStaff[] = (staff || mockStaff) as KitchenStaff[];
+  const inventoryData: InventoryItem[] = (inventory || mockInventory) as InventoryItem[];
 
   // Filter orders by status
   const pendingOrders = ordersData.filter(order => order.status === 'pending');

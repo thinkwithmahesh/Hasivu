@@ -64,7 +64,7 @@ export const LiveRegion: React.FC<LiveRegionProps> = ({
       className={cn('sr-only', className)}
       aria-live={politeness}
       aria-atomic={atomic}
-      aria-relevant={relevant}
+      aria-relevant={relevant as 'additions' | 'removals' | 'text' | 'all' | 'additions text'}
       role="status"
     >
       {children}

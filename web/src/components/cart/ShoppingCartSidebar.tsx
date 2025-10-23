@@ -26,7 +26,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import {
-  X as _X,
+  X as X,
   Plus,
   Minus,
   Trash2,
@@ -53,11 +53,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -251,8 +247,8 @@ export const ShoppingCartSidebar: React.FC<ShoppingCartSidebarProps> = ({
                   <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                     <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
                     <p className="text-sm text-amber-800">
-                      Add {formatCurrency(needsMoreForMinimum)} more to reach the minimum order
-                      of {formatCurrency(MINIMUM_ORDER)}
+                      Add {formatCurrency(needsMoreForMinimum)} more to reach the minimum order of{' '}
+                      {formatCurrency(MINIMUM_ORDER)}
                     </p>
                   </div>
                 )}
@@ -320,20 +316,15 @@ export const ShoppingCartSidebar: React.FC<ShoppingCartSidebarProps> = ({
           <DialogHeader>
             <DialogTitle>Remove Item from Cart?</DialogTitle>
             <DialogDescription>
-              Are you sure you want to remove this item from your cart? This action cannot be undone.
+              Are you sure you want to remove this item from your cart? This action cannot be
+              undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setRemoveDialogItem(null)}
-            >
+            <Button variant="outline" onClick={() => setRemoveDialogItem(null)}>
               Cancel
             </Button>
-            <Button
-              variant="destructive"
-              onClick={confirmRemoveItem}
-            >
+            <Button variant="destructive" onClick={confirmRemoveItem}>
               Remove Item
             </Button>
           </DialogFooter>
@@ -389,9 +380,9 @@ const CartItemComponent: React.FC<CartItemComponentProps> = ({
       <div className="flex gap-3">
         {/* Item Image */}
         <div className="relative h-20 w-20 flex-shrink-0 rounded-md overflow-hidden bg-gray-100">
-          {item.menuItem.image ? (
+          {item.menuItem.imageUrl ? (
             <Image
-              src={item.menuItem.image}
+              src={item.menuItem.imageUrl}
               alt={item.menuItem.name}
               fill
               className="object-cover"
@@ -442,7 +433,7 @@ const CartItemComponent: React.FC<CartItemComponentProps> = ({
                   mode="single"
                   selected={item.deliveryDate}
                   onSelect={handleDateSelect}
-                  disabled={(date) => date < new Date()}
+                  disabled={date => date < new Date()}
                   initialFocus
                 />
               </PopoverContent>
@@ -497,9 +488,7 @@ const CartItemComponent: React.FC<CartItemComponentProps> = ({
             className="w-full h-auto py-2 text-xs text-gray-600 hover:text-gray-900 hover:bg-gray-50"
           >
             <MessageSquare className="h-3 w-3 mr-1.5" />
-            {item.specialInstructions
-              ? 'Edit special instructions'
-              : 'Add special instructions'}
+            {item.specialInstructions ? 'Edit special instructions' : 'Add special instructions'}
           </Button>
         ) : (
           <div className="space-y-1.5">
@@ -509,7 +498,7 @@ const CartItemComponent: React.FC<CartItemComponentProps> = ({
             </label>
             <Textarea
               value={localInstructions}
-              onChange={(e) => setLocalInstructions(e.target.value)}
+              onChange={e => setLocalInstructions(e.target.value)}
               onBlur={handleInstructionsBlur}
               placeholder="E.g., No onions, extra spicy, allergy info..."
               className="min-h-[60px] text-sm resize-none"
@@ -517,9 +506,7 @@ const CartItemComponent: React.FC<CartItemComponentProps> = ({
               disabled={disabled}
             />
             <div className="flex items-center justify-between">
-              <span className="text-xs text-gray-500">
-                {localInstructions.length}/200
-              </span>
+              <span className="text-xs text-gray-500">{localInstructions.length}/200</span>
               <Button
                 variant="ghost"
                 size="sm"

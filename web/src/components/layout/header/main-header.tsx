@@ -185,7 +185,7 @@ export function MainHeader({
                                 {notification.message}
                               </div>
                               <div className="text-xs text-gray-400 mt-1">
-                                {notification.timestamp.toLocaleTimeString()}
+                                {new Date(notification.timestamp).toLocaleTimeString()}
                               </div>
                             </div>
                           </div>
@@ -242,11 +242,11 @@ export function MainHeader({
                               <div className="flex-1">
                                 <div className="font-medium text-sm">{item.name}</div>
                                 <div className="text-xs text-gray-600">
-                                  ₹{item.price} × {item.quantity}
+                                  ₹{item.price || item.unitPrice} × {item.quantity}
                                 </div>
                               </div>
                               <div className="font-medium text-sm">
-                                ₹{item.price * item.quantity}
+                                ₹{(item.price || item.unitPrice) * item.quantity}
                               </div>
                             </div>
                           </DropdownMenuItem>
@@ -272,9 +272,12 @@ export function MainHeader({
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-9 w-9 rounded-full">
                     <Avatar className="h-9 w-9">
-                      <AvatarImage src={user.avatar} alt={user.name} />
+                      <AvatarImage
+                        src={user.avatar}
+                        alt={user.name || `${user.firstName} ${user.lastName}`}
+                      />
                       <AvatarFallback className="bg-primary-100 text-primary-700">
-                        {getInitials(user.name)}
+                        {getInitials(user.name || `${user.firstName} ${user.lastName}`)}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
@@ -282,7 +285,9 @@ export function MainHeader({
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">{user.name}</p>
+                      <p className="text-sm font-medium leading-none">
+                        {user.name || `${user.firstName} ${user.lastName}`}
+                      </p>
                       <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
                       <div className="flex items-center gap-2 mt-1">
                         <span
@@ -292,7 +297,7 @@ export function MainHeader({
                               'bg-blue-100 text-blue-700': user.role === 'student',
                               'bg-green-100 text-green-700': user.role === 'parent',
                               'bg-purple-100 text-purple-700': user.role === 'admin',
-                              'bg-orange-100 text-orange-700': user.role === 'kitchen',
+                              'bg-orange-100 text-orange-700': user.role === 'kitchen_staff',
                               'bg-gray-100 text-gray-700': user.role === 'teacher',
                             }
                           )}

@@ -11,7 +11,7 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/h
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, _CardDescription, _CardHeader, _CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -24,7 +24,7 @@ import {
   AlertTriangle,
   Plus,
   Minus,
-  _Info,
+  Info,
   Heart,
   Utensils,
 } from 'lucide-react';
@@ -52,26 +52,36 @@ interface FilterOptions {
   showAvailableOnly: boolean;
 }
 
-const DIETARY_ICONS: Record<DietaryPreference, { icon: React.ReactNode; color: string }> = {
+const DIETARY_ICONS = {
   vegetarian: { icon: <Leaf className="w-3 h-3" />, color: 'bg-green-100 text-green-800' },
   vegan: { icon: <Leaf className="w-3 h-3" />, color: 'bg-green-200 text-green-900' },
   'non-vegetarian': { icon: <Utensils className="w-3 h-3" />, color: 'bg-red-100 text-red-800' },
   jain: { icon: <Heart className="w-3 h-3" />, color: 'bg-orange-100 text-orange-800' },
   eggetarian: { icon: <Utensils className="w-3 h-3" />, color: 'bg-yellow-100 text-yellow-800' },
-};
+  pescatarian: { icon: <Utensils className="w-3 h-3" />, color: 'bg-blue-100 text-blue-800' },
+  'gluten-free': {
+    icon: <AlertTriangle className="w-3 h-3" />,
+    color: 'bg-amber-100 text-amber-800',
+  },
+  'dairy-free': {
+    icon: <AlertTriangle className="w-3 h-3" />,
+    color: 'bg-purple-100 text-purple-800',
+  },
+  'nut-free': { icon: <AlertTriangle className="w-3 h-3" />, color: 'bg-pink-100 text-pink-800' },
+} as Record<DietaryPreference, { icon: React.ReactNode; color: string }>;
 
-const SPICE_LEVEL_COLORS: Record<SpiceLevel, string> = {
+const SPICE_LEVEL_COLORS = {
   mild: 'bg-green-100 text-green-800',
   medium: 'bg-yellow-100 text-yellow-800',
   spicy: 'bg-orange-100 text-orange-800',
   'very-spicy': 'bg-red-100 text-red-800',
-};
+} as any;
 
 export function EnhancedMealList({
   meals,
-  _student,
+  student: _student,
   onAddToCart,
-  _onViewDetails,
+  onViewDetails: _onViewDetails,
   cartItems,
   className,
 }: EnhancedMealListProps) {

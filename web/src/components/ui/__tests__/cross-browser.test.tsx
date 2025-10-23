@@ -8,7 +8,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {
   Command,
-  CommandDialog as _CommandDialog,
+  CommandDialog as CommandDialog,
   CommandInput,
   CommandList,
   CommandEmpty,

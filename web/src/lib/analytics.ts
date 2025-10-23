@@ -16,6 +16,7 @@ export function trackEvent(eventName: string, params?: Record<string, any>) {
 }
 
 export const events = {
+  track: (eventName: string, params?: Record<string, any>) => trackEvent(eventName, params),
   ctaClick: (cta_id: string, metadata?: Record<string, any>) =>
     trackEvent('cta_click', { cta_id, ...metadata }),
   videoOpen: (metadata?: Record<string, any>) => trackEvent('video_open', { ...metadata }),

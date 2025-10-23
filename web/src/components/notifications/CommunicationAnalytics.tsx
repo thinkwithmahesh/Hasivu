@@ -22,24 +22,23 @@ import { Progress } from '@/components/ui/progress';
 import {
   BarChart3,
   TrendingUp,
-  _TrendingDown,
+  TrendingDown,
   Users,
   MessageSquare,
   Mail,
   Smartphone,
   CheckCircle,
-  _XCircle,
+  XCircle,
   Clock,
   Target,
   Zap,
   AlertTriangle,
   Lightbulb,
-  _Download,
+  Download,
   RefreshCw,
-  _Calendar,
-  _Filter,
+  Calendar,
+  Filter,
 } from 'lucide-react';
-import { NotificationService } from '@/services/notification.service';
 import { cn } from '@/lib/utils';
 
 interface CommunicationAnalyticsProps {
@@ -91,8 +90,6 @@ export const CommunicationAnalytics: React.FC<CommunicationAnalyticsProps> = ({ 
   const [metrics, setMetrics] = useState<ChannelMetrics[]>([]);
   const [_timeSeriesData, setTimeSeriesData] = useState<TimeSeriesData[]>([]);
   const [recommendations, setRecommendations] = useState<OptimizationRecommendation[]>([]);
-
-  const _notificationService = NotificationService.getInstance();
 
   // Load analytics data
   useEffect(() => {

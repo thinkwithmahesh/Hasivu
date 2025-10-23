@@ -46,7 +46,6 @@ import { useMobileLayout } from '@/hooks/useMobileLayout';
 
 import {
   Smartphone,
-  Touch,
   Bell,
   Utensils,
   Heart,
@@ -178,7 +177,7 @@ const MobileFeaturesDemo: NextPage = () => {
     {
       id: 'touch',
       label: 'Touch UI',
-      icon: <Touch className="h-4 w-4" />,
+      icon: <Smartphone className="h-4 w-4" />,
       color: 'bg-blue-500',
     },
     {

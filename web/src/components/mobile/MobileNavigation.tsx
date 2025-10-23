@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   Home,
@@ -46,6 +46,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
   className,
 }) => {
   const router = useRouter();
+  const pathname = usePathname();
 
   const navigationItems: NavigationItem[] = [
     {
@@ -93,7 +94,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
     onTabChange(item.id);
 
     // Navigate if href is different from current route
-    if (router.asPath !== item.href) {
+    if (pathname !== item.href) {
       router.push(item.href);
     }
   };

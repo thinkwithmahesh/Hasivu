@@ -3,61 +3,61 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Skeleton as _Skeleton } from '@/components/ui/skeleton';
+import { Skeleton as Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
-  Avatar as _Avatar,
-  AvatarFallback as _AvatarFallback,
-  AvatarImage as _AvatarImage,
+  Avatar as Avatar,
+  AvatarFallback as AvatarFallback,
+  AvatarImage as AvatarImage,
 } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
-  BarChart as _BarChart,
-  Bar as _Bar,
+  BarChart as BarChart,
+  Bar as Bar,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  LineChart as _LineChart,
-  Line as _Line,
-  PieChart as _PieChart,
-  Pie as _Pie,
-  Cell as _Cell,
+  LineChart as LineChart,
+  Line as Line,
+  PieChart as PieChart,
+  Pie as Pie,
+  Cell as Cell,
   Area,
   AreaChart,
-  RadialBarChart as _RadialBarChart,
-  RadialBar as _RadialBar,
+  RadialBarChart as RadialBarChart,
+  RadialBar as RadialBar,
 } from 'recharts';
 import {
   Apple,
-  Utensils as _Utensils,
+  Utensils as Utensils,
   Trophy,
   Clock,
   QrCode,
   Heart,
   Wallet,
   TrendingUp,
-  Calendar as _Calendar,
+  Calendar as Calendar,
   Target,
-  Award as _Award,
-  Star as _Star,
+  Award as Award,
+  Star as Star,
   Timer,
   CheckCircle,
-  AlertCircle as _AlertCircle,
+  AlertCircle as AlertCircle,
   Plus,
   Minus,
   ShoppingCart,
   CreditCard,
-  Gift as _Gift,
+  Gift as Gift,
   Zap,
   Flame,
   Droplets,
   Activity,
-  TrendingDown as _TrendingDown,
+  TrendingDown as TrendingDown,
   Bell,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -234,7 +234,7 @@ export const EnhancedStudentDashboard: React.FC<EnhancedStudentDashboardProps> =
 }) => {
   const [_currentTime, _setCurrentTime] = useState(new Date());
   const [_isLoading, _setIsLoading] = useState(false);
-  const [_selectedMeal, _setSelectedMeal] = useState<string | null>(null);
+  const [selectedMeal, setSelectedMeal] = useState<string | null>(null);
 
   useEffect(() => {
     const timer = setInterval(() => _setCurrentTime(new Date()), 1000);
@@ -721,5 +721,3 @@ export const EnhancedStudentDashboard: React.FC<EnhancedStudentDashboardProps> =
     </div>
   );
 };
-
-export { EnhancedStudentDashboard };

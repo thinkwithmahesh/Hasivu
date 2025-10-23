@@ -1,0 +1,39 @@
+
+> hasivu-web@1.0.0 build
+> npm run generate-docs && next build
+
+
+> hasivu-web@1.0.0 generate-docs
+> node -e "const fs = require('fs'); const specs = require('./swagger.js'); fs.writeFileSync('public/openapi.json', JSON.stringify(specs, null, 2)); fs.writeFileSync('openapi.yaml', require('yaml').stringify(specs));"
+
+- info Loaded env from /Users/mahesha/Downloads/hasivu-platform/web/.env.local
+- info Loaded env from /Users/mahesha/Downloads/hasivu-platform/web/.env.production
+- info Creating an optimized production build...
+- warn Compiled with warnings
+
+./node_modules/swagger-jsdoc/src/utils.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/swagger-jsdoc/src/utils.js
+./node_modules/swagger-jsdoc/src/specification.js
+./node_modules/swagger-jsdoc/src/lib.js
+./node_modules/swagger-jsdoc/index.js
+./swagger.js
+./src/app/api/docs/route.ts
+
+- info Linting and checking validity of types...
+- warn The Next.js plugin was not detected in your ESLint configuration. See https://nextjs.org/docs/basic-features/eslint#migrating-existing-config
+Failed to compile.
+
+./src/components/dashboard/kitchen-dashboard.tsx:58:3
+Type error: Type '{ id: string; studentId: string; studentName: string; class: string; mealType: string; items: { id: string; name: string; category: string; price: number; quantity: number; nutritionalInfo: { calories: number; ... 5 more ...; sugar: number; }; isVegetarian: true; allergens: string[]; }[]; ... 6 more ...; specialInst...' is not assignable to type 'MealOrder & { prepTime?: number | undefined; ingredients?: string[] | undefined; allergens?: string[] | undefined; specialInstructions?: string | undefined; }'.
+  Property 'section' is missing in type '{ id: string; studentId: string; studentName: string; class: string; mealType: string; items: { id: string; name: string; category: string; price: number; quantity: number; nutritionalInfo: { calories: number; ... 5 more ...; sugar: number; }; isVegetarian: true; allergens: string[]; }[]; ... 6 more ...; specialInst...' but required in type 'MealOrder'.
+
+[0m [90m 56 | [39m  specialInstructions[33m?[39m[33m:[39m string[33m;[39m[0m
+[0m [90m 57 | [39m})[] [33m=[39m [[0m
+[0m[31m[1m>[22m[39m[90m 58 | [39m  {[0m
+[0m [90m    | [39m  [31m[1m^[22m[39m[0m
+[0m [90m 59 | [39m    id[33m:[39m [32m'1'[39m[33m,[39m[0m
+[0m [90m 60 | [39m    studentId[33m:[39m [32m'student-1'[39m[33m,[39m[0m
+[0m [90m 61 | [39m    studentName[33m:[39m [32m'Arjun Sharma'[39m[33m,[39m[0m

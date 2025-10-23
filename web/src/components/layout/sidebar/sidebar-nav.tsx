@@ -16,7 +16,7 @@ import {
   Clock,
   FileText,
   ShoppingBag,
-  AlertTriangle as _AlertTriangle,
+  AlertTriangle as AlertTriangle,
   Shield,
   CreditCard,
   Zap,
@@ -336,6 +336,7 @@ export function SidebarNav({ user, collapsed = false, onToggle, className }: Sid
   const navItems = user.role === 'admin' ? getAdminNavItems() : getKitchenNavItems();
 
   const isActive = (href: string) => {
+    if (!pathname) return false;
     if (href === '/admin' || href === '/kitchen') {
       return pathname === href;
     }
@@ -396,7 +397,7 @@ export function SidebarNav({ user, collapsed = false, onToggle, className }: Sid
           {navItems.map(item => {
             const Icon = item.icon;
             const hasChildren = item.children && item.children.length > 0;
-            const active = isActive(item.href);
+            const active = item.href ? isActive(item.href) : false;
             const expanded = expandedItems.includes(item.id);
 
             return (
@@ -442,29 +443,32 @@ export function SidebarNav({ user, collapsed = false, onToggle, className }: Sid
 
                     {expanded && !collapsed && (
                       <div className="ml-8 mt-1 space-y-1">
-                        {item.children?.map(child => (
-                          <Link
-                            key={child.id}
-                            href={child.href}
-                            className={cn(
-                              'flex items-center justify-between px-3 py-2 text-sm rounded-md transition-colors',
-                              isActive(child.href)
-                                ? 'bg-primary-100 text-primary-700 font-medium'
-                                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                            )}
-                          >
-                            <span>{child.label}</span>
-                            {child.badge && child.badge > 0 && (
-                              <span className="h-5 w-5 rounded-full bg-error-500 text-white text-xs font-medium flex items-center justify-center">
-                                {child.badge > 9 ? '9+' : child.badge}
-                              </span>
-                            )}
-                          </Link>
-                        ))}
+                        {item.children?.map(
+                          child =>
+                            child.href && (
+                              <Link
+                                key={child.id}
+                                href={child.href}
+                                className={cn(
+                                  'flex items-center justify-between px-3 py-2 text-sm rounded-md transition-colors',
+                                  isActive(child.href)
+                                    ? 'bg-primary-100 text-primary-700 font-medium'
+                                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                                )}
+                              >
+                                <span>{child.label}</span>
+                                {child.badge && child.badge > 0 && (
+                                  <span className="h-5 w-5 rounded-full bg-error-500 text-white text-xs font-medium flex items-center justify-center">
+                                    {child.badge > 9 ? '9+' : child.badge}
+                                  </span>
+                                )}
+                              </Link>
+                            )
+                        )}
                       </div>
                     )}
                   </>
-                ) : (
+                ) : item.href ? (
                   <Link
                     href={item.href}
                     className={cn(
@@ -485,7 +489,7 @@ export function SidebarNav({ user, collapsed = false, onToggle, className }: Sid
                     </div>
                     {!collapsed && <span className="flex-1">{item.label}</span>}
                   </Link>
-                )}
+                ) : null}
               </div>
             );
           })}

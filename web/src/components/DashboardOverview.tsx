@@ -26,7 +26,7 @@ import {
   Bell,
   ArrowUpRight,
 } from 'lucide-react';
-import { hasivuApiService } from '../services/hasivu-api.service';
+import { hasiviApi } from '../services/api/hasivu-api.service';
 import { toast } from 'react-hot-toast';
 
 interface DashboardStats {
@@ -84,9 +84,9 @@ const DashboardOverview: React.FC = () => {
     try {
       setIsLoading(true);
       const [analyticsRes, realtimeRes, performanceRes] = await Promise.all([
-        hasivuApiService.getAnalyticsDashboard({ period: selectedPeriod }),
-        hasivuApiService.getRealtimeMetrics(),
-        hasivuApiService.getSystemPerformance(),
+        hasiviApi.getAnalyticsDashboard({ period: selectedPeriod }),
+        hasiviApi.getRealtimeMetrics(),
+        hasiviApi.getSystemPerformance(),
       ]);
 
       const dashboardStats: DashboardStats = {
@@ -139,7 +139,7 @@ const DashboardOverview: React.FC = () => {
   const refreshDashboard = async () => {
     setRefreshing(true);
     try {
-      const realtimeRes = await hasivuApiService.getRealtimeMetrics();
+      const realtimeRes = await hasiviApi.getRealtimeMetrics();
       if (stats) {
         setStats(prev =>
           prev
@@ -176,41 +176,47 @@ const DashboardOverview: React.FC = () => {
     { type: 'Payment Abuse', count: 31, prevented: 28 },
   ];
 
-  const generateMockActivity = () => [
+  const generateMockActivity = (): Array<{
+    id: string;
+    type: 'order' | 'verification' | 'fraud' | 'system';
+    message: string;
+    timestamp: string;
+    status: 'success' | 'warning' | 'error';
+  }> => [
     {
       id: '1',
-      type: 'verification',
+      type: 'verification' as const,
       message: 'RFID verification completed for Lincoln High',
       timestamp: '2 min ago',
-      status: 'success',
+      status: 'success' as const,
     },
     {
       id: '2',
-      type: 'fraud',
+      type: 'fraud' as const,
       message: 'Prevented fraudulent transaction attempt',
       timestamp: '5 min ago',
-      status: 'warning',
+      status: 'warning' as const,
     },
     {
       id: '3',
-      type: 'order',
+      type: 'order' as const,
       message: '15 new orders processed successfully',
       timestamp: '8 min ago',
-      status: 'success',
+      status: 'success' as const,
     },
     {
       id: '4',
-      type: 'system',
+      type: 'system' as const,
       message: 'Payment gateway response time optimized',
       timestamp: '12 min ago',
-      status: 'success',
+      status: 'success' as const,
     },
     {
       id: '5',
-      type: 'verification',
+      type: 'verification' as const,
       message: 'RFID reader connectivity restored',
       timestamp: '18 min ago',
-      status: 'success',
+      status: 'success' as const,
     },
   ];
 

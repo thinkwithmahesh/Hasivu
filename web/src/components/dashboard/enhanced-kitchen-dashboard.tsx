@@ -7,9 +7,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
-  Avatar as _Avatar,
-  AvatarFallback as _AvatarFallback,
-  AvatarImage as _AvatarImage,
+  Avatar as Avatar,
+  AvatarFallback as AvatarFallback,
+  AvatarImage as AvatarImage,
 } from '@/components/ui/avatar';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Switch } from '@/components/ui/switch';
@@ -20,14 +20,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Checkbox as _Checkbox } from '@/components/ui/checkbox';
+import { Checkbox as Checkbox } from '@/components/ui/checkbox';
 import {
-  Table as _Table,
-  TableBody as _TableBody,
-  TableCell as _TableCell,
-  TableHead as _TableHead,
-  TableHeader as _TableHeader,
-  TableRow as _TableRow,
+  Table as Table,
+  TableBody as TableBody,
+  TableCell as TableCell,
+  TableHead as TableHead,
+  TableHeader as TableHeader,
+  TableRow as TableRow,
 } from '@/components/ui/table';
 import {
   BarChart,
@@ -39,18 +39,18 @@ import {
   ResponsiveContainer,
   LineChart,
   Line,
-  PieChart as _PieChart,
-  Pie as _Pie,
-  Cell as _Cell,
-  Area as _Area,
-  AreaChart as _AreaChart,
-  RadialBarChart as _RadialBarChart,
-  RadialBar as _RadialBar,
+  PieChart as PieChart,
+  Pie as Pie,
+  Cell as Cell,
+  Area as Area,
+  AreaChart as AreaChart,
+  RadialBarChart as RadialBarChart,
+  RadialBar as RadialBar,
 } from 'recharts';
 import {
-  ChefHat as _ChefHat,
+  ChefHat as ChefHat,
   Clock,
-  Users as _Users,
+  Users as Users,
   Activity,
   AlertCircle,
   CheckCircle,
@@ -65,21 +65,21 @@ import {
   PauseCircle,
   RotateCcw,
   AlertTriangle,
-  Zap as _Zap,
+  Zap as Zap,
   Thermometer,
   Scale,
   Utensils,
-  Coffee as _Coffee,
+  Coffee as Coffee,
   Apple,
   Beef,
-  Fish as _Fish,
+  Fish as Fish,
   Wheat,
   Milk,
-  Plus as _Plus,
-  Minus as _Minus,
+  Plus as Plus,
+  Minus as Minus,
   RefreshCw,
-  Filter as _Filter,
-  Search as _Search,
+  Filter as Filter,
+  Search as Search,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -327,7 +327,7 @@ const mockPerformanceMetrics = {
   ],
 };
 
-const _COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
 export const EnhancedKitchenDashboard: React.FC<EnhancedKitchenDashboardProps> = ({
   kitchenData: _kitchenData,
@@ -1072,5 +1072,3 @@ export const EnhancedKitchenDashboard: React.FC<EnhancedKitchenDashboardProps> =
     </div>
   );
 };
-
-export { EnhancedKitchenDashboard };

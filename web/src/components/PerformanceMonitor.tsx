@@ -32,10 +32,10 @@ import { onCLS, onFID, onFCP, onLCP, onTTFB, Metric } from 'web-vitals';
 // Performance thresholds (Google's Core Web Vitals)
 const PERFORMANCE_THRESHOLDS = {
   LCP: { good: 2500, needsImprovement: 4000 }, // ms
-  FID: { good: 100, needsImprovement: 300 },    // ms
-  CLS: { good: 0.1, needsImprovement: 0.25 },   // score
-  FCP: { good: 1800, needsImprovement: 3000 },  // ms
-  TTFB: { good: 800, needsImprovement: 1800 },  // ms
+  FID: { good: 100, needsImprovement: 300 }, // ms
+  CLS: { good: 0.1, needsImprovement: 0.25 }, // score
+  FCP: { good: 1800, needsImprovement: 3000 }, // ms
+  TTFB: { good: 800, needsImprovement: 1800 }, // ms
 };
 
 /**
@@ -96,7 +96,7 @@ function sendToAnalytics(metric: Metric) {
 
   // Send to custom analytics endpoint (optional)
   if (process.env.NEXT_PUBLIC_ANALYTICS_ENDPOINT) {
-    fetch(process.env.NEXT_PUBLIC_ANALYTICS_ENDPOINT, {
+    fetch(process.env.NEXT_PUBLIC_ANALYTICSENDPOINT, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -114,7 +114,7 @@ function sendToAnalytics(metric: Metric) {
       }),
       // Use keepalive to ensure the request completes even if the page is closed
       keepalive: true,
-    }).catch((error) => {
+    }).catch(error => {
       console.error('Failed to send analytics:', error);
     });
   }
@@ -123,7 +123,9 @@ function sendToAnalytics(metric: Metric) {
   if (rating === 'poor') {
     console.warn(`⚠️ Poor ${metric.name} detected:`, {
       value: metric.value,
-      threshold: PERFORMANCE_THRESHOLDS[metric.name as keyof typeof PERFORMANCE_THRESHOLDS]?.needsImprovement,
+      threshold:
+        PERFORMANCE_THRESHOLDS[metric.name as keyof typeof PERFORMANCE_THRESHOLDS]
+          ?.needsImprovement,
       improvement: 'Check Performance Audit Report for optimization recommendations',
     });
   }
@@ -175,10 +177,7 @@ export function usePerformanceTracking() {
     }
   };
 
-  const measureAsync = async <T,>(
-    name: string,
-    fn: () => Promise<T>
-  ): Promise<T> => {
+  const measureAsync = async <T,>(name: string, fn: () => Promise<T>): Promise<T> => {
     const start = performance.now();
     try {
       const result = await fn();

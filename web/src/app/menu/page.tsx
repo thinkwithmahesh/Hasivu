@@ -3,14 +3,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -48,6 +43,26 @@ import { MenuItem, MenuCategory, MenuFilters } from '@/types/menu';
 export default function MenuPage() {
   const router = useRouter();
   const { cart, addItem } = useCart();
+  const { user, isAuthenticated } = useAuth();
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push('/auth/login?redirect=/menu');
+    }
+  }, [isAuthenticated, router]);
+
+  // Show loading while checking authentication
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 to-accent-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Checking authentication...</p>
+        </div>
+      </div>
+    );
+  }
 
   // State management
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -178,19 +193,19 @@ export default function MenuPage() {
   };
 
   const toggleDietaryFilter = (dietary: string) => {
-    setFilters((prev) => ({
+    setFilters(prev => ({
       ...prev,
       dietary: prev.dietary?.includes(dietary as any)
-        ? prev.dietary.filter((d) => d !== dietary)
+        ? prev.dietary.filter(d => d !== dietary)
         : [...(prev.dietary || []), dietary as any],
     }));
   };
 
   const toggleSpiceLevelFilter = (level: string) => {
-    setFilters((prev) => ({
+    setFilters(prev => ({
       ...prev,
       spiceLevel: prev.spiceLevel?.includes(level as any)
-        ? prev.spiceLevel.filter((l) => l !== level)
+        ? prev.spiceLevel.filter(l => l !== level)
         : [...(prev.spiceLevel || []), level as any],
     }));
   };
@@ -321,12 +336,8 @@ export default function MenuPage() {
       <main className="container mx-auto px-4 py-6 md:py-8">
         {/* Page Title */}
         <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-            Browse Our Menu
-          </h1>
-          <p className="text-gray-600">
-            Healthy and delicious meals prepared fresh daily
-          </p>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Browse Our Menu</h1>
+          <p className="text-gray-600">Healthy and delicious meals prepared fresh daily</p>
         </div>
 
         {/* Search and Filter Bar */}
@@ -338,7 +349,7 @@ export default function MenuPage() {
                 type="search"
                 placeholder="Search menu items..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={e => setSearchQuery(e.target.value)}
                 className="pl-10"
               />
             </div>
@@ -359,38 +370,32 @@ export default function MenuPage() {
                 <div>
                   <h3 className="text-sm font-semibold mb-2">Dietary Preferences</h3>
                   <div className="flex flex-wrap gap-2">
-                    {['vegetarian', 'vegan', 'glutenFree', 'dairyFree', 'nutFree'].map(
-                      (diet) => (
-                        <Badge
-                          key={diet}
-                          variant={
-                            filters.dietary?.includes(diet as any) ? 'default' : 'outline'
-                          }
-                          className="cursor-pointer"
-                          onClick={() => toggleDietaryFilter(diet)}
-                        >
-                          {diet === 'glutenFree'
-                            ? 'Gluten-Free'
-                            : diet === 'dairyFree'
+                    {['vegetarian', 'vegan', 'glutenFree', 'dairyFree', 'nutFree'].map(diet => (
+                      <Badge
+                        key={diet}
+                        variant={filters.dietary?.includes(diet as any) ? 'default' : 'outline'}
+                        className="cursor-pointer"
+                        onClick={() => toggleDietaryFilter(diet)}
+                      >
+                        {diet === 'glutenFree'
+                          ? 'Gluten-Free'
+                          : diet === 'dairyFree'
                             ? 'Dairy-Free'
                             : diet === 'nutFree'
-                            ? 'Nut-Free'
-                            : diet.charAt(0).toUpperCase() + diet.slice(1)}
-                        </Badge>
-                      )
-                    )}
+                              ? 'Nut-Free'
+                              : diet.charAt(0).toUpperCase() + diet.slice(1)}
+                      </Badge>
+                    ))}
                   </div>
                 </div>
 
                 <div>
                   <h3 className="text-sm font-semibold mb-2">Spice Level</h3>
                   <div className="flex flex-wrap gap-2">
-                    {['none', 'mild', 'medium', 'hot'].map((level) => (
+                    {['none', 'mild', 'medium', 'hot'].map(level => (
                       <Badge
                         key={level}
-                        variant={
-                          filters.spiceLevel?.includes(level as any) ? 'default' : 'outline'
-                        }
+                        variant={filters.spiceLevel?.includes(level as any) ? 'default' : 'outline'}
                         className="cursor-pointer"
                         onClick={() => toggleSpiceLevelFilter(level)}
                       >
@@ -447,7 +452,7 @@ export default function MenuPage() {
             >
               All Items
             </Button>
-            {categories.map((category) => (
+            {categories.map(category => (
               <Button
                 key={category.id}
                 variant={selectedCategory === category.name ? 'default' : 'outline'}
@@ -475,12 +480,8 @@ export default function MenuPage() {
                 <div className="flex items-center gap-2">
                   <ShoppingCart className="h-5 w-5 text-green-600" />
                   <div>
-                    <p className="font-medium text-green-800">
-                      {cart.itemCount} items in cart
-                    </p>
-                    <p className="text-sm text-green-700">
-                      Total: ₹{cart.total.toFixed(2)}
-                    </p>
+                    <p className="font-medium text-green-800">{cart.itemCount} items in cart</p>
+                    <p className="text-sm text-green-700">Total: ₹{cart.total.toFixed(2)}</p>
                   </div>
                 </div>
                 <Button
@@ -516,10 +517,10 @@ export default function MenuPage() {
                   <div>
                     <p className="text-xs text-gray-600">Avg Rating</p>
                     <p className="text-xl font-bold">
-                      {menuItems.filter((item) => item.rating).length > 0
+                      {menuItems.filter(item => item.rating).length > 0
                         ? (
                             menuItems.reduce((sum, item) => sum + (item.rating || 0), 0) /
-                            menuItems.filter((item) => item.rating).length
+                            menuItems.filter(item => item.rating).length
                           ).toFixed(1)
                         : 'N/A'}
                     </p>
@@ -575,7 +576,7 @@ export default function MenuPage() {
         {/* Menu Items Grid */}
         {!loading && !error && menuItems.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {menuItems.map((item) => (
+            {menuItems.map(item => (
               <Card
                 key={item.id}
                 className="border-0 shadow-soft hover:shadow-medium transition-all duration-200"
@@ -598,7 +599,10 @@ export default function MenuPage() {
                         {item.category}
                       </Badge>
                       {item.availability === 'limited' && (
-                        <Badge variant="outline" className="text-xs border-orange-300 text-orange-700">
+                        <Badge
+                          variant="outline"
+                          className="text-xs border-orange-300 text-orange-700"
+                        >
                           Limited
                         </Badge>
                       )}
@@ -619,9 +623,7 @@ export default function MenuPage() {
                             <Star className="h-4 w-4 text-yellow-500 fill-current" />
                             <span className="font-medium">{item.rating.toFixed(1)}</span>
                             {item.reviewCount && (
-                              <span className="text-gray-500 text-xs">
-                                ({item.reviewCount})
-                              </span>
+                              <span className="text-gray-500 text-xs">({item.reviewCount})</span>
                             )}
                           </>
                         ) : (
@@ -653,7 +655,11 @@ export default function MenuPage() {
                       )}
                       {item.spiceLevel !== 'none' && (
                         <Badge variant="secondary" className="text-xs bg-red-100 text-red-700">
-                          {item.spiceLevel === 'mild' ? '🌶️' : item.spiceLevel === 'medium' ? '🌶️🌶️' : '🌶️🌶️🌶️'}
+                          {item.spiceLevel === 'mild'
+                            ? '🌶️'
+                            : item.spiceLevel === 'medium'
+                              ? '🌶️🌶️'
+                              : '🌶️🌶️🌶️'}
                         </Badge>
                       )}
                     </div>
@@ -695,7 +701,7 @@ export default function MenuPage() {
                         </Button>
                         <Dialog
                           open={isOrderDialogOpen && selectedItem?.id === item.id}
-                          onOpenChange={(open) => {
+                          onOpenChange={open => {
                             if (!open) {
                               setIsOrderDialogOpen(false);
                               setSelectedItem(null);
@@ -747,7 +753,9 @@ export default function MenuPage() {
                                   </div>
                                   <div className="text-center">
                                     <p className="text-xs text-gray-600">Carbs</p>
-                                    <p className="font-semibold">{item.nutritionalInfo.carbohydrates}g</p>
+                                    <p className="font-semibold">
+                                      {item.nutritionalInfo.carbohydrates}g
+                                    </p>
                                   </div>
                                 </div>
                               )}
@@ -807,9 +815,7 @@ export default function MenuPage() {
                                   id="deliveryDate"
                                   type="date"
                                   value={selectedDeliveryDate.toISOString().split('T')[0]}
-                                  onChange={(e) =>
-                                    setSelectedDeliveryDate(new Date(e.target.value))
-                                  }
+                                  onChange={e => setSelectedDeliveryDate(new Date(e.target.value))}
                                   min={getMinDeliveryDate()}
                                   max={getMaxDeliveryDate()}
                                 />
@@ -825,7 +831,7 @@ export default function MenuPage() {
                                   type="text"
                                   placeholder="e.g., Less spicy, Extra sauce..."
                                   value={specialInstructions}
-                                  onChange={(e) => setSpecialInstructions(e.target.value)}
+                                  onChange={e => setSpecialInstructions(e.target.value)}
                                   maxLength={200}
                                 />
                               </div>

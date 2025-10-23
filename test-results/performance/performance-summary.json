@@ -1,0 +1,13 @@
+{
+  "summary": {
+    "totalTests": 21,
+    "averageResponseTime": 3.3392202857094597,
+    "maxResponseTime": 9.900875000050291,
+    "minResponseTime": 0.9886669999687001,
+    "totalAlerts": 0,
+    "errorRate": 100,
+    "passRate": 100
+  },
+  "recommendations": ["Improve error handling and system stability under load"],
+  "timestamp": "2025-10-23T09:42:44.776Z"
+}

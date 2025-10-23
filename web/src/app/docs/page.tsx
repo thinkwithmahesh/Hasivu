@@ -182,7 +182,7 @@ export default function DocsPage() {
             </Card>
 
             <Card>
-              <CardContent class="p-4">
+              <CardContent className="p-4">
                 <div className="text-2xl font-bold text-purple-600">
                   {spec?.servers ? spec.servers.length : 0}
                 </div>
@@ -225,7 +225,6 @@ export default function DocsPage() {
                 filter={true}
                 showExtensions={true}
                 showCommonExtensions={true}
-                presets={[SwaggerUI.presets.apis]}
                 layout="StandaloneLayout"
               />
             )}

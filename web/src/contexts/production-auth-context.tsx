@@ -25,7 +25,7 @@ class ProductionAuthService {
   private tokenRefreshTimeout: NodeJS.Timeout | null = null;
 
   constructor() {
-    this.baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+    this.baseUrl = process.env.NEXTPUBLICAPIURL || 'http://localhost:3000/api';
   }
 
   /**

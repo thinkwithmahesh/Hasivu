@@ -409,7 +409,7 @@ const HeroSection = () => {
           >
             <Link href="/dashboard">
               <Button
-                size="xl"
+                size="lg"
                 className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white px-12 py-4 text-lg shadow-2xl shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all transform hover:scale-105 group font-bold rounded-2xl backdrop-blur-sm"
               >
                 <Users className="mr-3 h-6 w-6 group-hover:scale-110 transition-transform" />
@@ -421,7 +421,7 @@ const HeroSection = () => {
             <Link href="/school/demo">
               <Button
                 variant="outline"
-                size="xl"
+                size="lg"
                 className="border-2 border-white/20 hover:border-white/40 px-12 py-4 text-lg bg-white/10 backdrop-blur-md text-white hover:bg-white/20 transition-all group font-bold rounded-2xl"
               >
                 <Play className="mr-3 h-6 w-6 group-hover:scale-110 transition-transform" />

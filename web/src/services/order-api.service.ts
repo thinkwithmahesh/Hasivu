@@ -35,20 +35,20 @@ class OrderAPIService {
 
     // Request interceptor to add auth token
     this.client.interceptors.request.use(
-      (config) => {
+      config => {
         const token = this.getAuthToken();
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
         return config;
       },
-      (error) => Promise.reject(error)
+      error => Promise.reject(error)
     );
 
     // Response interceptor for error handling
     this.client.interceptors.response.use(
-      (response) => response,
-      async (error) => {
+      response => response,
+      async error => {
         if (error.response?.status === 401) {
           // Handle unauthorized - could trigger re-login
           console.warn('Unauthorized request - token may be expired');
@@ -126,15 +126,9 @@ class OrderAPIService {
    * Update order status (Epic 3: update-status Lambda)
    * PUT /orders/:orderId/status
    */
-  async updateOrderStatus(
-    orderId: string,
-    statusUpdate: UpdateOrderStatusRequest
-  ): Promise<Order> {
+  async updateOrderStatus(orderId: string, statusUpdate: UpdateOrderStatusRequest): Promise<Order> {
     try {
-      const response = await this.client.put<Order>(
-        `/orders/${orderId}/status`,
-        statusUpdate
-      );
+      const response = await this.client.put<Order>(`/orders/${orderId}/status`, statusUpdate);
       return response.data;
     } catch (error) {
       console.error(`Error updating order status ${orderId}:`, error);
@@ -206,9 +200,7 @@ class OrderAPIService {
 
     // Handle status as array or single value
     if (params.status) {
-      queryParams.status = Array.isArray(params.status)
-        ? params.status.join(',')
-        : params.status;
+      queryParams.status = Array.isArray(params.status) ? params.status.join(',') : params.status;
     }
 
     return queryParams;

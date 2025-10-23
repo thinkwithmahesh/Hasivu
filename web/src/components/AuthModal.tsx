@@ -13,7 +13,7 @@ import {
   CheckCircle,
   Loader2,
 } from 'lucide-react';
-import { hasivuApiService } from '../services/hasivu-api.service';
+import { hasiviApi } from '@/services/api/hasivu-api.service';
 import { toast } from 'react-hot-toast';
 
 interface AuthModalProps {
@@ -157,10 +157,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
 
     setIsLoading(true);
     try {
-      const response = await hasivuApiService.login({
-        email: formData.email,
-        password: formData.password,
-      });
+      const response = await hasiviApi.login(formData.email, formData.password);
 
       toast.success('Login successful!');
       onAuthSuccess?.(response.data);
@@ -182,7 +179,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
 
     setIsLoading(true);
     try {
-      await hasivuApiService.register({
+      await hasiviApi.register({
         email: formData.email,
         password: formData.password,
         firstName: formData.firstName,
@@ -207,7 +204,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
 
     setIsLoading(true);
     try {
-      await hasivuApiService.forgotPassword(formData.email);
+      await hasiviApi.forgotPassword(formData.email);
       toast.success('Password reset code sent to your email!');
       setMode('reset-password');
     } catch (error: any) {
@@ -223,10 +220,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
 
     setIsLoading(true);
     try {
-      const response = await hasivuApiService.verifyEmail(
-        formData.email,
-        formData.verificationCode
-      );
+      const response = await hasiviApi.verifyEmail(formData.verificationCode);
       toast.success('Email verified successfully!');
       onAuthSuccess?.(response.data);
       onClose();
@@ -243,7 +237,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
 
     setIsLoading(true);
     try {
-      await hasivuApiService.resetPassword(
+      await hasiviApi.resetPassword(
         formData.email,
         formData.verificationCode,
         formData.newPassword

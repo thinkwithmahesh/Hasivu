@@ -56,9 +56,9 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   onQuickAction,
 }) => {
   const getStatusColor = (status: Order['status']) => {
-    const colors = {
+    const colors: Record<Order['status'], string> = {
       pending: 'bg-yellow-100 text-yellow-800',
-      confirmed: 'bg-blue-100 text-blue-800',
+      completed: 'bg-blue-100 text-blue-800',
       preparing: 'bg-orange-100 text-orange-800',
       ready: 'bg-green-100 text-green-800',
       delivered: 'bg-gray-100 text-gray-800',
@@ -160,20 +160,22 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             {children.slice(0, 6).map(child => (
               <div key={child.id} className="flex items-center space-x-3 p-3 border rounded-lg">
                 <Avatar>
-                  <AvatarImage src={child.avatar} alt={child.firstName} />
+                  <AvatarImage src={child.avatar} alt={child.firstName || child.name} />
                   <AvatarFallback>
-                    {child.firstName[0]}
-                    {child.lastName[0]}
+                    {child.firstName?.[0] || child.name?.[0] || '?'}
+                    {child.lastName?.[0] || ''}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">
-                    {child.firstName} {child.lastName}
+                    {child.firstName && child.lastName
+                      ? `${child.firstName} ${child.lastName}`
+                      : child.name}
                   </p>
                   <p className="text-xs text-gray-500">
                     Grade {child.grade}, Class {child.class}
                   </p>
-                  {child.allergies.length > 0 && (
+                  {child.allergies && child.allergies.length > 0 && (
                     <Badge variant="outline" className="mt-1 text-xs">
                       {child.allergies.length} allergi{child.allergies.length === 1 ? 'y' : 'es'}
                     </Badge>
@@ -232,12 +234,17 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                       <div>
                         <p className="font-medium">Order #{order.id.slice(-8)}</p>
                         <p className="text-sm text-gray-600">
-                          {child?.firstName} {child?.lastName} • {order.items.length} item
+                          {child?.firstName && child?.lastName
+                            ? `${child.firstName} ${child.lastName}`
+                            : child?.name || 'Unknown'}{' '}
+                          • {order.items.length} item
                           {order.items.length !== 1 ? 's' : ''}
                         </p>
                         <p className="text-xs text-gray-500">
-                          {new Date(order.createdAt).toLocaleDateString()} • ₹
-                          {order.totalAmount.toFixed(2)}
+                          {order.createdAt
+                            ? new Date(order.createdAt).toLocaleDateString()
+                            : order.orderDate}{' '}
+                          • ₹{order.totalAmount.toFixed(2)}
                         </p>
                       </div>
                     </div>

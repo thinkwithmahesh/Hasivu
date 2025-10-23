@@ -1,0 +1,39 @@
+
+> hasivu-web@1.0.0 build
+> npm run generate-docs && next build
+
+
+> hasivu-web@1.0.0 generate-docs
+> node -e "const fs = require('fs'); const specs = require('./swagger.js'); fs.writeFileSync('public/openapi.json', JSON.stringify(specs, null, 2)); fs.writeFileSync('openapi.yaml', require('yaml').stringify(specs));"
+
+- info Loaded env from /Users/mahesha/Downloads/hasivu-platform/web/.env.local
+- info Loaded env from /Users/mahesha/Downloads/hasivu-platform/web/.env.production
+- info Creating an optimized production build...
+- warn Compiled with warnings
+
+./node_modules/swagger-jsdoc/src/utils.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/swagger-jsdoc/src/utils.js
+./node_modules/swagger-jsdoc/src/specification.js
+./node_modules/swagger-jsdoc/src/lib.js
+./node_modules/swagger-jsdoc/index.js
+./swagger.js
+./src/app/api/docs/route.ts
+
+- info Linting and checking validity of types...
+- warn The Next.js plugin was not detected in your ESLint configuration. See https://nextjs.org/docs/basic-features/eslint#migrating-existing-config
+Failed to compile.
+
+./src/components/dashboard/kitchen-dashboard.tsx:81:9
+Type error: Type '{ id: string; name: string; category: string; price: number; quantity: number; nutritionalInfo: { calories: number; protein: number; carbs: number; fat: number; fiber: number; sodium: number; sugar: number; }; isVegetarian: true; allergens: string[]; }' is not assignable to type 'MealItem'.
+  Object literal may only specify known properties, and 'allergens' does not exist in type 'MealItem'.
+
+[0m [90m 79 | [39m        }[33m,[39m[0m
+[0m [90m 80 | [39m        isVegetarian[33m:[39m [36mtrue[39m[33m,[39m[0m
+[0m[31m[1m>[22m[39m[90m 81 | [39m        allergens[33m:[39m [[32m'gluten'[39m][33m,[39m[0m
+[0m [90m    | [39m        [31m[1m^[22m[39m[0m
+[0m [90m 82 | [39m      }[33m,[39m[0m
+[0m [90m 83 | [39m    ][33m,[39m[0m
+[0m [90m 84 | [39m    status[33m:[39m [32m'pending'[39m[33m,[39m[0m

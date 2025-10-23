@@ -3,12 +3,14 @@
 ## 🚀 Quick Start
 
 ### Files Created
+
 ```
 web/src/app/(parent)/checkout/page.tsx
 web/src/app/(parent)/orders/[orderId]/confirmation/page.tsx
 ```
 
 ### Prerequisites
+
 ```bash
 # Environment Variables
 NEXT_PUBLIC_API_URL=https://api.hasivu.com
@@ -26,6 +28,7 @@ NEXT_PUBLIC_RAZORPAY_KEY_ID=rzp_test_xxxxx
 ## 📋 Checkout Page Components
 
 ### 1. Cart Summary (Right Column)
+
 ```typescript
 // Displays from CartContext
 - Subtotal: ₹{cart.subtotal}
@@ -35,6 +38,7 @@ NEXT_PUBLIC_RAZORPAY_KEY_ID=rzp_test_xxxxx
 ```
 
 ### 2. Student Selection (Multi-child)
+
 ```typescript
 // Auto-selects if single child
 // Shows dropdown for multiple children
@@ -42,6 +46,7 @@ NEXT_PUBLIC_RAZORPAY_KEY_ID=rzp_test_xxxxx
 ```
 
 ### 3. Contact Form
+
 ```typescript
 // Required fields
 - studentId: string (required)
@@ -53,6 +58,7 @@ NEXT_PUBLIC_RAZORPAY_KEY_ID=rzp_test_xxxxx
 ```
 
 ### 4. Order Items Display
+
 ```typescript
 // Shows each cart item with:
 - Item name & emoji
@@ -67,6 +73,7 @@ NEXT_PUBLIC_RAZORPAY_KEY_ID=rzp_test_xxxxx
 ## 🔐 Payment Flow (3 Simple Steps)
 
 ### Step 1: Create Order
+
 ```typescript
 const order = await orderAPIService.createOrder({
   studentId,
@@ -79,6 +86,7 @@ const order = await orderAPIService.createOrder({
 ```
 
 ### Step 2: Process Payment
+
 ```typescript
 const result = await paymentAPIService.processPayment(
   order.id,
@@ -92,6 +100,7 @@ const result = await paymentAPIService.processPayment(
 ```
 
 ### Step 3: Handle Success
+
 ```typescript
 if (result.success) {
   clearCart();
@@ -123,7 +132,8 @@ enum PaymentState {
 const checkoutFormSchema = z.object({
   studentId: z.string().min(1, 'Please select a student'),
 
-  contactPhone: z.string()
+  contactPhone: z
+    .string()
     .min(10, 'Phone must be at least 10 digits')
     .regex(/^[0-9+\-\s()]+$/, 'Invalid phone format'),
 
@@ -137,21 +147,23 @@ const checkoutFormSchema = z.object({
 ## ❌ Error Handling
 
 ### Common Errors
+
 ```typescript
 // Payment cancelled
-"Payment was cancelled. You can try again."
+'Payment was cancelled. You can try again.';
 
 // Payment failed
-"Payment failed. Please check your payment details."
+'Payment failed. Please check your payment details.';
 
 // Order creation failed
-"Failed to create order. Please try again."
+'Failed to create order. Please try again.';
 
 // Razorpay not loaded
-"Payment gateway not ready. Please refresh."
+'Payment gateway not ready. Please refresh.';
 ```
 
 ### Error Recovery
+
 - Form data preserved on error
 - Cart items remain intact
 - User can retry immediately
@@ -162,6 +174,7 @@ const checkoutFormSchema = z.object({
 ## 📱 Confirmation Page Features
 
 ### Order Information Display
+
 ```typescript
 - Order number & status
 - Student details
@@ -173,6 +186,7 @@ const checkoutFormSchema = z.object({
 ```
 
 ### Order Items & Payment
+
 ```typescript
 - Item list with quantities
 - Price breakdown
@@ -181,6 +195,7 @@ const checkoutFormSchema = z.object({
 ```
 
 ### Action Buttons
+
 ```typescript
 - Download Receipt (Print)
 - Share Order (Native share)
@@ -190,6 +205,7 @@ const checkoutFormSchema = z.object({
 ```
 
 ### Next Steps Guide
+
 ```typescript
 1. Order confirmation email
 2. Kitchen preparation
@@ -202,6 +218,7 @@ const checkoutFormSchema = z.object({
 ## 🧪 Testing with Razorpay Test Cards
 
 ### Success Flow
+
 ```
 Card: 4111 1111 1111 1111
 CVV: Any 3 digits
@@ -210,6 +227,7 @@ Name: Any name
 ```
 
 ### Failure Flow
+
 ```
 Card: 4000 0000 0000 0002
 CVV: Any 3 digits
@@ -222,6 +240,7 @@ Name: Any name
 ## 🔧 API Endpoints Used
 
 ### Order Management
+
 ```
 POST   /orders                    Create new order
 GET    /orders/:orderId           Get order details
@@ -230,6 +249,7 @@ GET    /orders/:orderId/track     Track order
 ```
 
 ### Payment Processing
+
 ```
 POST   /payments/orders           Create Razorpay order
 POST   /payments/verify           Verify payment signature
@@ -265,6 +285,7 @@ GET    /payments/orders/:orderId/status   Get payment status
 ## 💡 Key Features
 
 ### Progressive Enhancement
+
 - ✅ Loading states for all async operations
 - ✅ Progress messages during checkout
 - ✅ Skeleton loaders on page load
@@ -272,6 +293,7 @@ GET    /payments/orders/:orderId/status   Get payment status
 - ✅ Success/error alerts
 
 ### Accessibility (WCAG 2.1 AA)
+
 - ✅ Keyboard navigation support
 - ✅ Screen reader announcements
 - ✅ ARIA labels and descriptions
@@ -280,6 +302,7 @@ GET    /payments/orders/:orderId/status   Get payment status
 - ✅ Required field indicators
 
 ### Mobile Responsiveness
+
 - ✅ Touch-friendly tap targets (44x44px)
 - ✅ Responsive grid layout
 - ✅ Mobile-first design
@@ -287,6 +310,7 @@ GET    /payments/orders/:orderId/status   Get payment status
 - ✅ Optimized font sizes (prevents zoom)
 
 ### Security
+
 - ✅ HTTPS only
 - ✅ PCI compliant (via Razorpay)
 - ✅ Signature verification
@@ -300,18 +324,23 @@ GET    /payments/orders/:orderId/status   Get payment status
 ## 🐛 Common Issues & Solutions
 
 ### Issue: Razorpay SDK not loading
+
 **Solution**: Check `NEXT_PUBLIC_RAZORPAY_KEY_ID` is set correctly
 
 ### Issue: Payment not processing
+
 **Solution**: Verify Razorpay test mode is enabled and key is correct
 
 ### Issue: Order not created
+
 **Solution**: Check API endpoint `/orders` is accessible and payload format
 
 ### Issue: Cart not clearing after payment
+
 **Solution**: Ensure `clearCart()` is called in success handler
 
 ### Issue: Signature verification fails
+
 **Solution**: Check backend HMAC signature calculation matches Razorpay docs
 
 ---
@@ -331,6 +360,7 @@ Cumulative Layout Shift: < 0.1
 ## 🔗 Important Links
 
 ### Code Files
+
 - Checkout Page: `web/src/app/(parent)/checkout/page.tsx`
 - Confirmation: `web/src/app/(parent)/orders/[orderId]/confirmation/page.tsx`
 - Payment Service: `web/src/services/payment-api.service.ts`
@@ -338,15 +368,18 @@ Cumulative Layout Shift: < 0.1
 - Cart Context: `web/src/contexts/CartContext.tsx`
 
 ### Type Definitions
+
 - Order Types: `web/src/types/order.ts`
 - Cart Types: `web/src/types/cart.ts`
 
 ### Documentation
+
 - Full Implementation: `web/CHECKOUT_IMPLEMENTATION_SUMMARY.md`
 - Payment Flow: `web/PAYMENT_FLOW_DIAGRAM.md`
 - This Quick Reference: `web/CHECKOUT_QUICK_REFERENCE.md`
 
 ### External Resources
+
 - [Razorpay Checkout Docs](https://razorpay.com/docs/payments/payment-gateway/web-integration/)
 - [React Hook Form](https://react-hook-form.com/)
 - [Zod Validation](https://zod.dev/)
@@ -376,6 +409,7 @@ Cumulative Layout Shift: < 0.1
 ## 🎓 Developer Tips
 
 ### Debug Payment Issues
+
 ```typescript
 // Enable debug logging
 const DEBUG = process.env.NODE_ENV === 'development';
@@ -387,6 +421,7 @@ if (DEBUG) {
 ```
 
 ### Test Different Scenarios
+
 ```bash
 # Test with single child
 # Test with multiple children
@@ -398,6 +433,7 @@ if (DEBUG) {
 ```
 
 ### Monitor Performance
+
 ```typescript
 // Add performance monitoring
 performance.mark('checkout-start');
@@ -411,6 +447,7 @@ performance.measure('checkout', 'checkout-start', 'checkout-end');
 ## 🚦 Status Indicators
 
 ### Payment State Colors
+
 ```css
 IDLE: gray-500
 LOADING_SCRIPT: blue-500
@@ -422,6 +459,7 @@ ERROR: red-500
 ```
 
 ### Badge Variants
+
 ```typescript
 completed: default (green)
 processing: secondary (blue)
@@ -435,6 +473,7 @@ refunded: secondary (blue)
 ## 📞 Support
 
 For implementation questions:
+
 1. Check code comments in page.tsx
 2. Review CHECKOUT_IMPLEMENTATION_SUMMARY.md
 3. See PAYMENT_FLOW_DIAGRAM.md

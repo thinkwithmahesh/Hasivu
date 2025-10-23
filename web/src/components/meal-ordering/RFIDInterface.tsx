@@ -12,8 +12,37 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import type { RFIDInterfaceProps } from './types';
-import { formatCurrency, generatePickupCode } from './utils';
+interface RFIDInterfaceProps {
+  studentInfo: {
+    id: string;
+    name: string;
+    grade: number;
+    section?: string;
+    rfidCardId?: string;
+    walletBalance: number;
+    rollNumber?: string;
+  };
+  pendingOrders: Array<{
+    orderId: string;
+    date: string;
+    total: number;
+    status: string;
+    items: Array<{
+      quantity: number;
+      mealItem: {
+        name: string;
+        price: number;
+      };
+    }>;
+  }>;
+  onRFIDScan: (cardId: string) => Promise<void>;
+  isScanning?: boolean;
+}
+import { formatCurrency } from './utils';
+
+const generatePickupCode = (orderId: string, studentId: string) => {
+  return `RFID-${orderId.slice(-6)}-${studentId.slice(-4)}`.toUpperCase();
+};
 
 const RFIDInterface: React.FC<RFIDInterfaceProps> = ({
   studentInfo,
@@ -236,7 +265,7 @@ const RFIDInterface: React.FC<RFIDInterfaceProps> = ({
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {pendingOrders.map(order => (
+            {pendingOrders.map((order: any) => (
               <div key={order.orderId} className="border rounded-lg p-4">
                 <div className="flex justify-between items-start mb-3">
                   <div>
@@ -270,7 +299,7 @@ const RFIDInterface: React.FC<RFIDInterfaceProps> = ({
 
                 {/* Order Items Summary */}
                 <div className="space-y-2">
-                  {order.items.slice(0, 3).map((item, index) => (
+                  {order.items.slice(0, 3).map((item: any, index: number) => (
                     <div key={index} className="flex justify-between text-sm">
                       <span>
                         {item.quantity}x {item.mealItem.name}

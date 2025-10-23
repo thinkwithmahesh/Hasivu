@@ -12,7 +12,7 @@
  * - Keyboard navigation testing
  */
 
-import { ReactElement as _ReactElement } from 'react';
+import { ReactElement as ReactElement } from 'react';
 
 // Types for accessibility testing
 export interface AccessibilityTestResult {

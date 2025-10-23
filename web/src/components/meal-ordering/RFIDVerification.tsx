@@ -21,7 +21,7 @@ import {
   CreditCard,
   Shield,
   CheckCircle,
-  XCircle as _XCircle,
+  XCircle as XCircle,
   Clock,
   Scan,
   AlertTriangle,
@@ -31,7 +31,33 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-import type { StudentInfo, RFIDPickupInfo, OrderHistoryItem } from './types';
+interface StudentInfo {
+  id: string;
+  name: string;
+  grade: number;
+  section?: string;
+  rfidCardId?: string;
+  rollNumber?: string;
+}
+
+interface RFIDPickupInfo {
+  studentId: string;
+  orderId: string;
+  rfidCardId: string;
+  pickupLocation: string;
+  pickupTime: string;
+  verificationStatus: string;
+  pickupCode: string;
+  status: 'ready' | 'picked-up' | 'cancelled';
+}
+
+interface OrderHistoryItem {
+  orderId: string;
+  items: any[];
+  total: number;
+  status: string;
+  id?: string;
+}
 
 interface RFIDVerificationProps {
   studentInfo: StudentInfo;
@@ -187,6 +213,8 @@ export function RFIDVerification({
         pickupLocation: `Location-${state.locationCode}`,
         pickupTime: new Date().toISOString(),
         verificationStatus: 'verified',
+        pickupCode: `RFID-${state.rfidCode}`,
+        status: 'picked-up',
       };
 
       setState(prev => ({

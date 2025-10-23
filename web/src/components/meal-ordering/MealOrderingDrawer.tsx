@@ -126,9 +126,9 @@ export function MealOrderingDrawer({
                     <div className="flex gap-3">
                       {/* Meal Image */}
                       <div className="relative h-16 w-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                        {meal.image ? (
+                        {meal.imageUrl ? (
                           <img
-                            src={meal.image}
+                            src={meal.imageUrl}
                             alt={meal.name}
                             className="h-full w-full object-cover"
                           />
@@ -137,7 +137,7 @@ export function MealOrderingDrawer({
                             <ShoppingCart className="h-6 w-6 text-muted-foreground" />
                           </div>
                         )}
-                        {!meal.available && (
+                        {!meal.availability?.isAvailable && (
                           <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                             <AlertCircle className="h-4 w-4 text-white" />
                           </div>
@@ -165,7 +165,7 @@ export function MealOrderingDrawer({
                               {meal.preparationTime}m
                             </Badge>
                           )}
-                          {meal.dietaryInfo?.vegetarian && (
+                          {meal.dietaryType === 'vegetarian' && (
                             <Badge
                               variant="outline"
                               className="text-xs px-1.5 py-0.5 h-5 text-green-600"
@@ -202,7 +202,7 @@ export function MealOrderingDrawer({
                               variant="outline"
                               className="h-7 w-7 p-0"
                               onClick={() => updateQuantity(meal.id, currentQuantity + 1)}
-                              disabled={!meal.available}
+                              disabled={!meal.availability?.isAvailable}
                             >
                               <Plus className="h-3 w-3" />
                             </Button>
@@ -217,7 +217,7 @@ export function MealOrderingDrawer({
                             <Button
                               size="sm"
                               onClick={() => handleAddToCart(meal)}
-                              disabled={currentQuantity === 0 || !meal.available}
+                              disabled={currentQuantity === 0 || !meal.availability?.isAvailable}
                               className="h-7 px-3 text-xs"
                             >
                               Add

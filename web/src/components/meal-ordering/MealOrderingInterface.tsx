@@ -6,18 +6,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Search,
-  Filter as _Filter,
-  SortAsc as _SortAsc,
+  Filter as Filter,
+  SortAsc as SortAsc,
   Heart,
   ShoppingCart,
   Smartphone,
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button as _Button } from '@/components/ui/button';
+import { Button as Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert as _Alert, AlertDescription as _AlertDescription } from '@/components/ui/alert';
+import { Alert as Alert, AlertDescription as AlertDescription } from '@/components/ui/alert';
 import {
   Select,
   SelectContent,
@@ -72,7 +72,9 @@ const MealOrderingInterface: React.FC<MealOrderingInterfaceProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('popularity');
   const [filterDietary, setFilterDietary] = useState<string>('all');
-  const [cart, setCart] = useState<OrderItem[]>([]);
+  const [cart, setCart] = useState<
+    { mealItem: MealItem; quantity: number; selectedDeliveryTime: string }[]
+  >([]);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [selectedDeliverySlot, setSelectedDeliverySlot] = useState<DeliverySlot | null>(null);
 
@@ -94,36 +96,36 @@ const MealOrderingInterface: React.FC<MealOrderingInterfaceProps> = ({
       {
         id: 'breakfast',
         name: 'Breakfast',
-        mealType: MEAL_TYPES.BREAKFAST,
+        mealType: 'breakfast',
         description: 'Start your day with nutritious breakfast options',
-        iconName: 'sunrise',
+        icon: '☕',
         isActive: true,
         sortOrder: 1,
       },
       {
         id: 'lunch',
         name: 'Lunch',
-        mealType: MEAL_TYPES.LUNCH,
+        mealType: 'lunch',
         description: 'Hearty and filling lunch meals',
-        iconName: 'sun',
+        icon: '🍽️',
         isActive: true,
         sortOrder: 2,
       },
       {
         id: 'snacks',
         name: 'Snacks',
-        mealType: MEAL_TYPES.SNACKS,
+        mealType: 'snacks',
         description: 'Quick and tasty snacks',
-        iconName: 'cookie',
+        icon: '🍪',
         isActive: true,
         sortOrder: 3,
       },
       {
         id: 'dinner',
         name: 'Dinner',
-        mealType: MEAL_TYPES.DINNER,
+        mealType: 'dinner',
         description: 'Light and healthy dinner options',
-        iconName: 'moon',
+        icon: '🌙',
         isActive: true,
         sortOrder: 4,
       },
@@ -135,16 +137,16 @@ const MealOrderingInterface: React.FC<MealOrderingInterfaceProps> = ({
         id: 'meal-1',
         name: 'Vegetable Sandwich',
         description: 'Fresh vegetables with whole wheat bread and mint chutney',
-        category: MEAL_TYPES.BREAKFAST,
+        category: 'breakfast',
         price: 45,
         originalPrice: 50,
         imageUrl: '/images/meals/veg-sandwich.jpg',
         isAvailable: true,
         preparationTime: 10,
         servingSize: '2 pieces',
-        dietaryType: DIETARY_PREFERENCES.VEGETARIAN,
+        dietaryType: 'vegetarian',
         allergens: [],
-        spiceLevel: SPICE_LEVELS.MILD,
+        spiceLevel: 'mild',
         isGlutenFree: false,
         isDiabeticFriendly: true,
         isJainFood: true,
@@ -157,29 +159,34 @@ const MealOrderingInterface: React.FC<MealOrderingInterfaceProps> = ({
           sugar: 8,
           sodium: 320,
         },
-        gradeRestrictions: [],
-        schoolApprovalRequired: false,
         maxQuantityPerStudent: 2,
         rating: 4.3,
-        totalRatings: 156,
         tags: ['healthy', 'fresh', 'popular'],
-        availableFrom: '07:00',
-        availableTo: '09:00',
-        lastOrderTime: '08:30',
+        availability: {
+          isAvailable: true,
+          maxQuantity: 2,
+        },
+        vendor: {
+          id: 'vendor-1',
+          name: 'Fresh Foods',
+          rating: 4.3,
+          certifications: ['FSSAI'],
+          contactInfo: {},
+        },
       },
       {
         id: 'meal-2',
         name: 'Dal Rice Bowl',
         description: 'Nutritious lentil curry with steamed rice and pickle',
-        category: MEAL_TYPES.LUNCH,
+        category: 'lunch',
         price: 85,
         imageUrl: '/images/meals/dal-rice.jpg',
         isAvailable: true,
         preparationTime: 15,
         servingSize: '1 bowl',
-        dietaryType: DIETARY_PREFERENCES.VEGETARIAN,
+        dietaryType: 'vegetarian',
         allergens: [],
-        spiceLevel: SPICE_LEVELS.MEDIUM,
+        spiceLevel: 'medium',
         isGlutenFree: true,
         isDiabeticFriendly: false,
         isJainFood: true,
@@ -192,29 +199,34 @@ const MealOrderingInterface: React.FC<MealOrderingInterfaceProps> = ({
           sugar: 4,
           sodium: 480,
         },
-        gradeRestrictions: [],
-        schoolApprovalRequired: false,
         maxQuantityPerStudent: 2,
         rating: 4.6,
-        totalRatings: 234,
         tags: ['traditional', 'protein-rich', 'comfort-food'],
-        availableFrom: '12:00',
-        availableTo: '14:00',
-        lastOrderTime: '13:30',
+        availability: {
+          isAvailable: true,
+          maxQuantity: 2,
+        },
+        vendor: {
+          id: 'vendor-2',
+          name: 'Traditional Foods',
+          rating: 4.6,
+          certifications: ['FSSAI'],
+          contactInfo: {},
+        },
       },
       {
         id: 'meal-3',
         name: 'Fresh Fruit Bowl',
         description: 'Seasonal fresh fruits with honey and nuts',
-        category: MEAL_TYPES.SNACKS,
+        category: 'snack',
         price: 35,
         imageUrl: '/images/meals/fruit-bowl.jpg',
         isAvailable: true,
         preparationTime: 5,
         servingSize: '1 bowl',
-        dietaryType: DIETARY_PREFERENCES.VEGAN,
+        dietaryType: 'vegan',
         allergens: ['nuts'],
-        spiceLevel: SPICE_LEVELS.MILD,
+        spiceLevel: 'mild',
         isGlutenFree: true,
         isDiabeticFriendly: true,
         isJainFood: true,
@@ -227,15 +239,20 @@ const MealOrderingInterface: React.FC<MealOrderingInterfaceProps> = ({
           sugar: 28,
           sodium: 5,
         },
-        gradeRestrictions: [],
-        schoolApprovalRequired: false,
         maxQuantityPerStudent: 3,
         rating: 4.8,
-        totalRatings: 89,
         tags: ['healthy', 'fresh', 'vitamin-rich'],
-        availableFrom: '15:00',
-        availableTo: '17:00',
-        lastOrderTime: '16:30',
+        availability: {
+          isAvailable: true,
+          maxQuantity: 3,
+        },
+        vendor: {
+          id: 'vendor-3',
+          name: 'Fresh Produce',
+          rating: 4.8,
+          certifications: ['Organic'],
+          contactInfo: {},
+        },
       },
     ];
 
@@ -243,7 +260,7 @@ const MealOrderingInterface: React.FC<MealOrderingInterfaceProps> = ({
     const mockSlots: DeliverySlot[] = [
       {
         id: 'slot-1',
-        mealType: MEAL_TYPES.BREAKFAST,
+        mealType: 'breakfast',
         startTime: '08:00',
         endTime: '09:00',
         isAvailable: true,
@@ -253,7 +270,7 @@ const MealOrderingInterface: React.FC<MealOrderingInterfaceProps> = ({
       },
       {
         id: 'slot-2',
-        mealType: MEAL_TYPES.LUNCH,
+        mealType: 'lunch',
         startTime: '12:30',
         endTime: '13:30',
         isAvailable: true,
@@ -339,6 +356,19 @@ const MealOrderingInterface: React.FC<MealOrderingInterfaceProps> = ({
     };
   }, [cart, selectedDeliverySlot, studentInfo]);
 
+  // Convert to ShoppingCart format for OrderSummary component
+  const shoppingCart: any = React.useMemo(() => {
+    if (!orderSummary) return null;
+    return {
+      items: cart,
+      totalItems: cart.reduce((sum, item) => sum + item.quantity, 0),
+      subtotal: cart.reduce((sum, item) => sum + item.mealItem.price * item.quantity, 0),
+      tax: 0,
+      total: cart.reduce((sum, item) => sum + item.mealItem.price * item.quantity, 0),
+      estimatedDeliveryTime: '30 minutes',
+    };
+  }, [cart, orderSummary]);
+
   // Cart management
   const addToCart = useCallback(
     (meal: MealItem, quantity: number) => {
@@ -401,7 +431,7 @@ const MealOrderingInterface: React.FC<MealOrderingInterfaceProps> = ({
   };
 
   // View meal details
-  const handleViewMealDetails = useCallback((meal: MealItem) => {
+  const handleViewMealDetails = useCallback((mealId: string) => {
     // This could open a detailed modal or navigate to a detail page
   }, []);
 
@@ -485,19 +515,17 @@ const MealOrderingInterface: React.FC<MealOrderingInterfaceProps> = ({
                   />
                 </div>
 
-                {/* Dietary Filter as _Filter */}
+                {/* Dietary Filter as Filter */}
                 <Select value={filterDietary} onValueChange={setFilterDietary}>
                   <SelectTrigger className="w-48">
                     <SelectValue placeholder="Dietary preference" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Diets</SelectItem>
-                    <SelectItem value={DIETARY_PREFERENCES.VEGETARIAN}>Vegetarian</SelectItem>
-                    <SelectItem value={DIETARY_PREFERENCES.VEGAN}>Vegan</SelectItem>
-                    <SelectItem value={DIETARY_PREFERENCES.NON_VEGETARIAN}>
-                      Non-Vegetarian
-                    </SelectItem>
-                    <SelectItem value={DIETARY_PREFERENCES.JAIN}>Jain</SelectItem>
+                    <SelectItem value="vegetarian">Vegetarian</SelectItem>
+                    <SelectItem value="vegan">Vegan</SelectItem>
+                    <SelectItem value="non-vegetarian">Non-Vegetarian</SelectItem>
+                    <SelectItem value="jain">Jain</SelectItem>
                   </SelectContent>
                 </Select>
 
@@ -583,14 +611,11 @@ const MealOrderingInterface: React.FC<MealOrderingInterfaceProps> = ({
 
         {/* Cart Tab */}
         <TabsContent value="cart">
-          {orderSummary && (
+          {shoppingCart && (
             <OrderSummary
-              orderSummary={orderSummary}
-              student={studentInfo}
-              onUpdateQuantity={updateCartQuantity}
-              onRemoveItem={removeFromCart}
+              cart={shoppingCart}
               onPlaceOrder={handlePlaceOrder}
-              isPlacingOrder={isPlacingOrder}
+              isLoading={isPlacingOrder}
             />
           )}
         </TabsContent>

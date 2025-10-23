@@ -8,19 +8,19 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {
   Command,
-  _CommandDialog,
+  CommandDialog,
   CommandInput,
   CommandList,
   CommandEmpty,
   CommandGroup,
   CommandItem,
-  _CommandSeparator,
+  CommandSeparator,
   CommandShortcut,
 } from '../command';
 import {
   Drawer,
-  _DrawerPortal,
-  _DrawerOverlay,
+  DrawerPortal,
+  DrawerOverlay,
   DrawerTrigger,
   DrawerClose,
   DrawerContent,
@@ -31,7 +31,7 @@ import {
 } from '../drawer';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '../popover';
-import { InputOTP, InputOTPGroup, InputOTPSlot, _InputOTPSeparator } from '../input-otp';
+import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from '../input-otp';
 
 // Performance measurement utilities
 const measureRenderTime = (renderFunction: () => void): number => {

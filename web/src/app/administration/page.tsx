@@ -216,9 +216,9 @@ export default function AdministrationDashboard() {
 
   const getAdminLevel = (): AdminLevel => {
     // Determine admin level based on user role
-    if (user?.role === 'super_admin') return AdminLevel.STATE;
-    if (user?.role === 'district_admin') return AdminLevel.DISTRICT;
-    if (user?.role === 'zone_admin') return AdminLevel.ZONE;
+    if (user?.role === UserRole.SUPER_ADMIN) return AdminLevel.STATE;
+    if (user?.role === UserRole.ADMIN) return AdminLevel.DISTRICT;
+    if (user?.role === UserRole.SCHOOL_ADMIN) return AdminLevel.SCHOOL;
     return AdminLevel.SCHOOL;
   };
 

@@ -11,17 +11,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
-  Tabs as _Tabs,
-  TabsContent as _TabsContent,
-  TabsList as _TabsList,
-  TabsTrigger as _TabsTrigger,
+  Tabs as Tabs,
+  TabsContent as TabsContent,
+  TabsList as TabsList,
+  TabsTrigger as TabsTrigger,
 } from '@/components/ui/tabs';
 import {
-  Select as _Select,
-  SelectContent as _SelectContent,
-  SelectItem as _SelectItem,
-  SelectTrigger as _SelectTrigger,
-  SelectValue as _SelectValue,
+  Select as Select,
+  SelectContent as SelectContent,
+  SelectItem as SelectItem,
+  SelectTrigger as SelectTrigger,
+  SelectValue as SelectValue,
 } from '@/components/ui/select';
 import {
   Dialog,
@@ -31,7 +31,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Alert as _Alert, AlertDescription as _AlertDescription } from '@/components/ui/alert';
+import { Alert as Alert, AlertDescription as AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -52,7 +52,7 @@ import { PaymentService } from '@/services/payment.service';
 import { cn } from '@/lib/utils';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { useConditionalRender } from '@/hooks/useFeatureFlag';
-import { FEATURE_FLAGS } from '@/types/feature-flags';
+import { _FEATURE_FLAGS } from '@/types/feature-flags';
 
 interface SubscriptionPlan {
   id: string;
@@ -86,7 +86,7 @@ interface SubscriptionManagerProps {
   className?: string;
 }
 
-const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
+const SUBSCRIPTIONPLANS: SubscriptionPlan[] = [
   {
     id: 'basic',
     name: 'Basic Plan',
@@ -157,7 +157,7 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
   className,
 }) => {
   const [activeSubscription, setActiveSubscription] = useState<ActiveSubscription | null>(null);
-  const [availablePlans] = useState<SubscriptionPlan[]>(SUBSCRIPTION_PLANS);
+  const [availablePlans] = useState<SubscriptionPlan[]>(SUBSCRIPTIONPLANS);
   const [loading, setLoading] = useState(true);
   const [upgrading, setUpgrading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string>('');
@@ -167,7 +167,7 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
 
   // Feature flag for new payment methods
   const { shouldRender: showNewPaymentMethods, isLoading: paymentFlagLoading } =
-    useConditionalRender(FEATURE_FLAGS.NEW_PAYMENT_METHODS, {
+    useConditionalRender(_FEATURE_FLAGS.NEW_PAYMENT_METHODS, {
       fallback: null, // No fallback needed, just hide new payment options
     });
 
@@ -612,7 +612,7 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
                   >
                     {activeSubscription?.planId === plan.id
                       ? 'Current Plan'
-                      : 'Select as _Select Plan'}
+                      : 'Select as Select Plan'}
                   </Button>
                 </CardContent>
               </Card>

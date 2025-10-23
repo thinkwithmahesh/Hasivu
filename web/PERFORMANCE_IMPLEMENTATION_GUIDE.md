@@ -56,7 +56,11 @@ Edit `/src/app/layout.tsx`:
 ```tsx
 import { PerformanceMonitor } from '@/components/PerformanceMonitor';
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en">
       <body>
@@ -104,6 +108,7 @@ ls -lh .next/static/chunks/
 ```
 
 **Review Questions**:
+
 - Which packages are largest?
 - Are there duplicate libraries?
 - Are icons being tree-shaken properly?
@@ -111,6 +116,7 @@ ls -lh .next/static/chunks/
 #### 1.2 Identify Heavy Components
 
 Open the bundle analyzer and look for:
+
 - `@mui/*` packages (if found, prioritize removal)
 - `@mantine/*` packages (if found, prioritize removal)
 - Large icon libraries
@@ -132,35 +138,37 @@ import { Suspense } from 'react';
 
 // Lazy load Dialog components (only loaded when needed)
 const Dialog = dynamic(
-  () => import('@/components/ui/dialog').then((mod) => mod.Dialog),
+  () => import('@/components/ui/dialog').then(mod => mod.Dialog),
   {
-    loading: () => <div className="animate-pulse bg-gray-200 h-96 rounded-lg" />,
+    loading: () => (
+      <div className="animate-pulse bg-gray-200 h-96 rounded-lg" />
+    ),
     ssr: false,
   }
 );
 
 const DialogContent = dynamic(
-  () => import('@/components/ui/dialog').then((mod) => mod.DialogContent),
+  () => import('@/components/ui/dialog').then(mod => mod.DialogContent),
   { ssr: false }
 );
 
 const DialogDescription = dynamic(
-  () => import('@/components/ui/dialog').then((mod) => mod.DialogDescription),
+  () => import('@/components/ui/dialog').then(mod => mod.DialogDescription),
   { ssr: false }
 );
 
 const DialogHeader = dynamic(
-  () => import('@/components/ui/dialog').then((mod) => mod.DialogHeader),
+  () => import('@/components/ui/dialog').then(mod => mod.DialogHeader),
   { ssr: false }
 );
 
 const DialogTitle = dynamic(
-  () => import('@/components/ui/dialog').then((mod) => mod.DialogTitle),
+  () => import('@/components/ui/dialog').then(mod => mod.DialogTitle),
   { ssr: false }
 );
 
 const DialogTrigger = dynamic(
-  () => import('@/components/ui/dialog').then((mod) => mod.DialogTrigger),
+  () => import('@/components/ui/dialog').then(mod => mod.DialogTrigger),
   { ssr: false }
 );
 
@@ -192,7 +200,7 @@ import dynamic from 'next/dynamic';
 
 // Lazy load Calendar (only loaded in cart when date picker opened)
 const Calendar = dynamic(
-  () => import('@/components/ui/calendar').then((mod) => mod.Calendar),
+  () => import('@/components/ui/calendar').then(mod => mod.Calendar),
   {
     loading: () => (
       <div className="h-64 w-64 bg-gray-100 rounded-lg animate-pulse flex items-center justify-center">
@@ -210,11 +218,11 @@ const Calendar = dynamic(
       mode="single"
       selected={item.deliveryDate}
       onSelect={handleDateSelect}
-      disabled={(date) => date < new Date()}
+      disabled={date => date < new Date()}
       initialFocus
     />
   </Suspense>
-</PopoverContent>
+</PopoverContent>;
 ```
 
 **Expected Improvement**: -50KB initial bundle, faster cart rendering
@@ -268,7 +276,9 @@ export default function CheckoutPage() {
       disabled={isLoadingPayment}
       loading={isLoadingPayment || isProcessing}
     >
-      {isLoadingPayment ? 'Loading payment gateway...' : `Pay ${formatCurrency(cart.total)}`}
+      {isLoadingPayment
+        ? 'Loading payment gateway...'
+        : `Pay ${formatCurrency(cart.total)}`}
     </Button>
   );
 }
@@ -312,7 +322,7 @@ export default function MenuPage() {
       type="search"
       placeholder="Search menu items..."
       value={searchInput}
-      onChange={(e) => {
+      onChange={e => {
         setSearchInput(e.target.value);
         debouncedSearch(e.target.value);
       }}
@@ -323,6 +333,7 @@ export default function MenuPage() {
 ```
 
 Install debounce:
+
 ```bash
 npm install lodash.debounce
 npm install --save-dev @types/lodash.debounce
@@ -352,11 +363,13 @@ npm run lighthouse
 #### 5.2 Compare Before/After
 
 **Baseline (Before)**:
+
 - LCP: ~4.2s
 - TTI: ~5.1s
 - Bundle: ~850KB
 
 **Target (After Phase 1)**:
+
 - LCP: <3.5s ✅
 - TTI: <4.5s ✅
 - Bundle: <650KB ✅
@@ -364,6 +377,7 @@ npm run lighthouse
 #### 5.3 Fix Any Issues
 
 Common issues:
+
 - Lazy-loaded components causing layout shift → Add proper skeleton loaders
 - Debounce causing UX confusion → Reduce delay to 200ms
 - Bundle still too large → Check analyzer for remaining large deps
@@ -436,9 +450,7 @@ export default function RootLayout({ children }) {
   return (
     <html>
       <body>
-        <SWRConfig value={swrConfig}>
-          {children}
-        </SWRConfig>
+        <SWRConfig value={swrConfig}>{children}</SWRConfig>
       </body>
     </html>
   );
@@ -500,7 +512,8 @@ import Image from 'next/image';
 // Generate blur placeholder (one-time setup)
 // Use https://blurred.dev/ or similar tool
 
-const BLUR_DATA_URL = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAb/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=";
+const BLUR_DATA_URL =
+  'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAb/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=';
 
 export default function MenuPage() {
   return (
@@ -588,6 +601,7 @@ Create `performance-budget.json`:
 #### 9.2 Setup Lighthouse CI
 
 Install Lighthouse CI:
+
 ```bash
 npm install --save-dev @lhci/cli
 ```
@@ -610,7 +624,7 @@ module.exports = {
         'categories:performance': ['error', { minScore: 0.9 }],
         'first-contentful-paint': ['error', { maxNumericValue: 1800 }],
         'largest-contentful-paint': ['error', { maxNumericValue: 2500 }],
-        'interactive': ['error', { maxNumericValue: 3800 }],
+        interactive: ['error', { maxNumericValue: 3800 }],
         'cumulative-layout-shift': ['error', { maxNumericValue: 0.1 }],
       },
     },
@@ -622,6 +636,7 @@ module.exports = {
 ```
 
 Add to `package.json` scripts:
+
 ```json
 {
   "scripts": {
@@ -634,6 +649,7 @@ Add to `package.json` scripts:
 ```
 
 **Run tests**:
+
 ```bash
 npm run build
 npm run lhci
@@ -683,20 +699,25 @@ grep -r "@radix-ui" src/
 **Example Migration** (Button component):
 
 Before (MUI):
+
 ```tsx
 import { Button } from '@mui/material';
-<Button variant="contained" color="primary">Click</Button>
+<Button variant="contained" color="primary">
+  Click
+</Button>;
 ```
 
 After (Radix UI + shadcn/ui):
+
 ```tsx
 import { Button } from '@/components/ui/button';
-<Button variant="default">Click</Button>
+<Button variant="default">Click</Button>;
 ```
 
 #### 3.3 Remove Dependencies
 
 After migration:
+
 ```bash
 npm uninstall @mui/material @mui/icons-material @mui/system @mui/x-data-grid @mui/x-date-pickers
 npm uninstall @mantine/core @mantine/charts @mantine/dates @mantine/hooks @mantine/notifications
@@ -745,6 +766,7 @@ npm install @vercel/analytics
 ```
 
 Update layout:
+
 ```tsx
 import { Analytics } from '@vercel/analytics/react';
 
@@ -767,6 +789,7 @@ export default function RootLayout({ children }) {
 ### Issue: Bundle still too large after Phase 1
 
 **Solution**:
+
 1. Check bundle analyzer - identify largest packages
 2. Ensure tree-shaking is working (check imports)
 3. Verify dynamic imports are actually lazy-loaded
@@ -775,6 +798,7 @@ export default function RootLayout({ children }) {
 ### Issue: Layout shift after lazy loading
 
 **Solution**:
+
 1. Add proper skeleton loaders with exact dimensions
 2. Reserve space with CSS before component loads
 3. Use `priority` prop on above-the-fold images
@@ -782,6 +806,7 @@ export default function RootLayout({ children }) {
 ### Issue: Performance regression in production
 
 **Solution**:
+
 1. Check Lighthouse CI reports
 2. Review Web Vitals in analytics
 3. Compare bundle sizes between deployments
@@ -792,6 +817,7 @@ export default function RootLayout({ children }) {
 ## Success Criteria
 
 ### Phase 1 Complete When:
+
 - [x] Bundle analyzer running successfully
 - [x] PerformanceMonitor tracking Core Web Vitals
 - [x] Dialog and Calendar lazy-loaded
@@ -800,6 +826,7 @@ export default function RootLayout({ children }) {
 - [x] Lighthouse score > 70
 
 ### Phase 2 Complete When:
+
 - [x] SWR caching implemented
 - [x] Images optimized with priority loading
 - [x] Performance budget enforced
@@ -807,6 +834,7 @@ export default function RootLayout({ children }) {
 - [x] Lighthouse score > 80
 
 ### Phase 3 Complete When:
+
 - [x] Single UI library (Radix UI)
 - [x] MUI and Mantine removed
 - [x] Bundle < 500KB

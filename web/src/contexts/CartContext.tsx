@@ -94,7 +94,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Restore cart with recalculated totals
-      const restoredItems = cartData.items.map((item) => ({
+      const restoredItems = cartData.items.map(item => ({
         ...item,
         deliveryDate: new Date(item.deliveryDate),
         addedAt: new Date(item.addedAt),
@@ -122,7 +122,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         expiresAt: expiresAt.toISOString(),
       };
 
-      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(storageData));
+      localStorage.setItem(CART_STORAGEKEY, JSON.stringify(storageData));
     } catch (error) {
       console.error('Error saving cart to storage:', error);
     }
@@ -135,7 +135,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
         // Check if item already exists in cart
         const existingItemIndex = cart.items.findIndex(
-          (cartItem) =>
+          cartItem =>
             cartItem.menuItemId === item.menuItemId &&
             cartItem.deliveryDate.toDateString() === item.deliveryDate.toDateString()
         );
@@ -177,7 +177,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     (itemId: string) => {
       try {
         setError(null);
-        const updatedItems = cart.items.filter((item) => item.id !== itemId);
+        const updatedItems = cart.items.filter(item => item.id !== itemId);
         const updatedCart = calculateCartTotals(updatedItems);
         setCart(updatedCart);
       } catch (err) {
@@ -198,7 +198,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
-        const updatedItems = cart.items.map((item) =>
+        const updatedItems = cart.items.map(item =>
           item.id === itemId
             ? {
                 ...item,
@@ -222,7 +222,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     (itemId: string, date: Date) => {
       try {
         setError(null);
-        const updatedItems = cart.items.map((item) =>
+        const updatedItems = cart.items.map(item =>
           item.id === itemId ? { ...item, deliveryDate: date } : item
         );
 
@@ -240,7 +240,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     (itemId: string, instructions: string) => {
       try {
         setError(null);
-        const updatedItems = cart.items.map((item) =>
+        const updatedItems = cart.items.map(item =>
           item.id === itemId ? { ...item, specialInstructions: instructions } : item
         );
 

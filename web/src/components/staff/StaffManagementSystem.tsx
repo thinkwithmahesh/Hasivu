@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -30,7 +30,7 @@ import {
   UserMinus,
   Target,
   Zap,
-  Loader2
+  Loader2,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -125,7 +125,7 @@ const mockShifts: Shift[] = [
     startTime: '06:00',
     endTime: '14:00',
     days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
-    isActive: true
+    isActive: true,
   },
   {
     id: 'shift-2',
@@ -133,7 +133,7 @@ const mockShifts: Shift[] = [
     startTime: '14:00',
     endTime: '22:00',
     days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
-    isActive: true
+    isActive: true,
   },
   {
     id: 'shift-3',
@@ -141,8 +141,8 @@ const mockShifts: Shift[] = [
     startTime: '08:00',
     endTime: '16:00',
     days: ['saturday', 'sunday'],
-    isActive: true
-  }
+    isActive: true,
+  },
 ];
 
 const mockStaffMembers: StaffMember[] = [
@@ -155,7 +155,8 @@ const mockStaffMembers: StaffMember[] = [
     role: 'chef',
     department: 'kitchen',
     status: 'active',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face',
+    avatar:
+      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face',
     hireDate: '2023-01-15',
     salary: 45000,
     efficiency: 92,
@@ -168,7 +169,7 @@ const mockStaffMembers: StaffMember[] = [
     performanceRating: 4.8,
     attendanceRate: 96,
     lastLogin: '2024-01-15T08:30:00Z',
-    location: 'Main Kitchen'
+    location: 'Main Kitchen',
   },
   {
     id: 'staff-2',
@@ -179,7 +180,8 @@ const mockStaffMembers: StaffMember[] = [
     role: 'assistant',
     department: 'kitchen',
     status: 'active',
-    avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face',
+    avatar:
+      'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face',
     hireDate: '2023-03-20',
     salary: 28000,
     efficiency: 88,
@@ -192,7 +194,7 @@ const mockStaffMembers: StaffMember[] = [
     performanceRating: 4.5,
     attendanceRate: 94,
     lastLogin: '2024-01-15T07:45:00Z',
-    location: 'Prep Area'
+    location: 'Prep Area',
   },
   {
     id: 'staff-3',
@@ -203,7 +205,8 @@ const mockStaffMembers: StaffMember[] = [
     role: 'prep',
     department: 'kitchen',
     status: 'break',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
+    avatar:
+      'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
     hireDate: '2023-06-10',
     salary: 25000,
     efficiency: 85,
@@ -215,7 +218,7 @@ const mockStaffMembers: StaffMember[] = [
     performanceRating: 4.2,
     attendanceRate: 91,
     lastLogin: '2024-01-15T14:15:00Z',
-    location: 'Storage Area'
+    location: 'Storage Area',
   },
   {
     id: 'staff-4',
@@ -226,7 +229,8 @@ const mockStaffMembers: StaffMember[] = [
     role: 'manager',
     department: 'management',
     status: 'active',
-    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face',
+    avatar:
+      'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face',
     hireDate: '2022-09-01',
     salary: 65000,
     efficiency: 95,
@@ -239,15 +243,16 @@ const mockStaffMembers: StaffMember[] = [
     performanceRating: 4.9,
     attendanceRate: 98,
     lastLogin: '2024-01-15T09:00:00Z',
-    location: 'Office'
-  }
+    location: 'Office',
+  },
 ];
 
 const mockTasks: Task[] = [
   {
     id: 'task-1',
     title: 'Prepare lunch menu for 200 students',
-    description: 'Coordinate with team to prepare balanced lunch menu including main course, sides, and beverages',
+    description:
+      'Coordinate with team to prepare balanced lunch menu including main course, sides, and beverages',
     assignedTo: 'staff-1',
     assignedBy: 'staff-4',
     priority: 'high',
@@ -256,7 +261,7 @@ const mockTasks: Task[] = [
     estimatedHours: 4,
     actualHours: 2.5,
     category: 'Food Preparation',
-    tags: ['urgent', 'lunch', 'coordination']
+    tags: ['urgent', 'lunch', 'coordination'],
   },
   {
     id: 'task-2',
@@ -270,7 +275,7 @@ const mockTasks: Task[] = [
     estimatedHours: 2,
     actualHours: 1.8,
     category: 'Inventory',
-    tags: ['inventory', 'audit', 'stock']
+    tags: ['inventory', 'audit', 'stock'],
   },
   {
     id: 'task-3',
@@ -283,8 +288,8 @@ const mockTasks: Task[] = [
     dueDate: '2024-01-15T16:00:00Z',
     estimatedHours: 3,
     category: 'Cleaning',
-    tags: ['cleaning', 'sanitization', 'maintenance']
-  }
+    tags: ['cleaning', 'sanitization', 'maintenance'],
+  },
 ];
 
 const mockMetrics: StaffMetrics = {
@@ -295,40 +300,58 @@ const mockMetrics: StaffMetrics = {
   tasksCompleted: 173,
   attendanceRate: 94.7,
   turnoverRate: 8.3,
-  averageSalary: 38750
+  averageSalary: 38750,
 };
 
 // Utility functions
 const getStatusColor = (status: StaffMember['status']) => {
   switch (status) {
-    case 'active': return 'bg-green-100 text-green-800 border-green-200';
-    case 'break': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-    case 'offline': return 'bg-gray-100 text-gray-800 border-gray-200';
-    case 'sick': return 'bg-red-100 text-red-800 border-red-200';
-    case 'vacation': return 'bg-blue-100 text-blue-800 border-blue-200';
-    default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    case 'active':
+      return 'bg-green-100 text-green-800 border-green-200';
+    case 'break':
+      return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+    case 'offline':
+      return 'bg-gray-100 text-gray-800 border-gray-200';
+    case 'sick':
+      return 'bg-red-100 text-red-800 border-red-200';
+    case 'vacation':
+      return 'bg-blue-100 text-blue-800 border-blue-200';
+    default:
+      return 'bg-gray-100 text-gray-800 border-gray-200';
   }
 };
 
 const getTaskStatusColor = (status: Task['status']) => {
   switch (status) {
-    case 'completed': return 'bg-green-100 text-green-800 border-green-200';
-    case 'in_progress': return 'bg-blue-100 text-blue-800 border-blue-200';
-    case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-    case 'overdue': return 'bg-red-100 text-red-800 border-red-200';
-    default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    case 'completed':
+      return 'bg-green-100 text-green-800 border-green-200';
+    case 'in_progress':
+      return 'bg-blue-100 text-blue-800 border-blue-200';
+    case 'pending':
+      return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+    case 'overdue':
+      return 'bg-red-100 text-red-800 border-red-200';
+    default:
+      return 'bg-gray-100 text-gray-800 border-gray-200';
   }
 };
 
 const getRoleIcon = (role: StaffMember['role']) => {
   switch (role) {
-    case 'chef': return '👨‍🍳';
-    case 'assistant': return '👩‍🍳';
-    case 'prep': return '🔪';
-    case 'manager': return '👔';
-    case 'server': return '🍽️';
-    case 'cleaner': return '🧹';
-    default: return '👤';
+    case 'chef':
+      return '👨‍🍳';
+    case 'assistant':
+      return '👩‍🍳';
+    case 'prep':
+      return '🔪';
+    case 'manager':
+      return '👔';
+    case 'server':
+      return '🍽️';
+    case 'cleaner':
+      return '🧹';
+    default:
+      return '👤';
   }
 };
 
@@ -344,33 +367,40 @@ const StaffMemberCard = ({ staff }: { staff: StaffMember }) => {
             <Avatar className="w-16 h-16">
               <AvatarImage src={staff.avatar} alt={staff.name} />
               <AvatarFallback className="text-lg">
-                {staff.name.split(' ').map(n => n[0]).join('')}
+                {staff.name
+                  .split(' ')
+                  .map(n => n[0])
+                  .join('')}
               </AvatarFallback>
             </Avatar>
-            <div className="absolute -bottom-1 -right-1 text-2xl">
-              {getRoleIcon(staff.role)}
-            </div>
-            <div className={`absolute -top-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${
-              staff.status === 'active' ? 'bg-green-500' :
-              staff.status === 'break' ? 'bg-yellow-500' :
-              staff.status === 'offline' ? 'bg-gray-500' :
-              staff.status === 'sick' ? 'bg-red-500' :
-              'bg-blue-500'
-            }`} />
+            <div className="absolute -bottom-1 -right-1 text-2xl">{getRoleIcon(staff.role)}</div>
+            <div
+              className={`absolute -top-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${
+                staff.status === 'active'
+                  ? 'bg-green-500'
+                  : staff.status === 'break'
+                    ? 'bg-yellow-500'
+                    : staff.status === 'offline'
+                      ? 'bg-gray-500'
+                      : staff.status === 'sick'
+                        ? 'bg-red-500'
+                        : 'bg-blue-500'
+              }`}
+            />
           </div>
-          
+
           <div className="flex-1">
             <div className="flex items-center justify-between mb-2">
               <div>
                 <h3 className="font-semibold text-lg text-gray-900">{staff.name}</h3>
-                <p className="text-sm text-gray-600 capitalize">{staff.role} • {staff.department}</p>
+                <p className="text-sm text-gray-600 capitalize">
+                  {staff.role} • {staff.department}
+                </p>
                 <p className="text-xs text-gray-500">{staff.employeeId}</p>
               </div>
-              <Badge className={`${getStatusColor(staff.status)} border`}>
-                {staff.status}
-              </Badge>
+              <Badge className={`${getStatusColor(staff.status)} border`}>{staff.status}</Badge>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-3 text-sm mb-3">
               <div>
                 <p className="text-gray-600">Efficiency</p>
@@ -445,7 +475,7 @@ const StaffMemberCard = ({ staff }: { staff: StaffMember }) => {
                 </div>
               </div>
             </div>
-            
+
             <div>
               <h4 className="text-sm font-medium text-gray-900 mb-2">Skills</h4>
               <div className="flex flex-wrap gap-1">
@@ -456,7 +486,7 @@ const StaffMemberCard = ({ staff }: { staff: StaffMember }) => {
                 ))}
               </div>
             </div>
-            
+
             <div>
               <h4 className="text-sm font-medium text-gray-900 mb-2">Certifications</h4>
               <div className="flex flex-wrap gap-1">
@@ -476,11 +506,7 @@ const StaffMemberCard = ({ staff }: { staff: StaffMember }) => {
             <Edit className="w-3 h-3 mr-1" />
             Edit
           </Button>
-          <Button 
-            size="sm" 
-            variant="outline" 
-            onClick={() => setIsExpanded(!isExpanded)}
-          >
+          <Button size="sm" variant="outline" onClick={() => setIsExpanded(!isExpanded)}>
             <Eye className="w-3 h-3 mr-1" />
             {isExpanded ? 'Less' : 'More'}
           </Button>
@@ -516,7 +542,10 @@ const TaskCard = ({ task, staffMembers }: { task: Task; staffMembers: StaffMembe
                 <Avatar className="w-6 h-6">
                   <AvatarImage src={assignedStaff.avatar} alt={assignedStaff.name} />
                   <AvatarFallback className="text-xs">
-                    {assignedStaff.name.split(' ').map(n => n[0]).join('')}
+                    {assignedStaff.name
+                      .split(' ')
+                      .map(n => n[0])
+                      .join('')}
                   </AvatarFallback>
                 </Avatar>
               )}
@@ -525,12 +554,17 @@ const TaskCard = ({ task, staffMembers }: { task: Task; staffMembers: StaffMembe
           </div>
           <div>
             <p className="text-gray-600">Priority</p>
-            <Badge className={`${
-              task.priority === 'urgent' ? 'bg-red-100 text-red-800' :
-              task.priority === 'high' ? 'bg-orange-100 text-orange-800' :
-              task.priority === 'medium' ? 'bg-blue-100 text-blue-800' :
-              'bg-gray-100 text-gray-800'
-            }`}>
+            <Badge
+              className={`${
+                task.priority === 'urgent'
+                  ? 'bg-red-100 text-red-800'
+                  : task.priority === 'high'
+                    ? 'bg-orange-100 text-orange-800'
+                    : task.priority === 'medium'
+                      ? 'bg-blue-100 text-blue-800'
+                      : 'bg-gray-100 text-gray-800'
+              }`}
+            >
               {task.priority}
             </Badge>
           </div>
@@ -541,9 +575,7 @@ const TaskCard = ({ task, staffMembers }: { task: Task; staffMembers: StaffMembe
             <Clock className="w-3 h-3 mr-1" />
             Due: {new Date(task.dueDate).toLocaleString()}
           </span>
-          <span>
-            {task.actualHours ? `${task.actualHours}h` : `Est: ${task.estimatedHours}h`}
-          </span>
+          <span>{task.actualHours ? `${task.actualHours}h` : `Est: ${task.estimatedHours}h`}</span>
         </div>
 
         <div className="flex flex-wrap gap-1 mb-3">
@@ -595,10 +627,12 @@ export const StaffManagementSystem: React.FC = () => {
   // Filter staff members
   const filteredStaff = useMemo(() => {
     return staff.filter((s: any) => {
-      const matchesSearch = (s.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            (s.email || '').toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch =
+        (s.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (s.email || '').toLowerCase().includes(searchTerm.toLowerCase());
       const matchesRole = filterRole === 'all' || (s.role || '').toLowerCase() === filterRole;
-      const matchesStatus = filterStatus === 'all' || (s.status || '').toLowerCase() === filterStatus;
+      const matchesStatus =
+        filterStatus === 'all' || (s.status || '').toLowerCase() === filterStatus;
       return matchesSearch && matchesRole && matchesStatus;
     });
   }, [staff, searchTerm, filterRole, filterStatus]);
@@ -609,10 +643,16 @@ export const StaffManagementSystem: React.FC = () => {
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900" data-testid="staff-header">Staff Management</h1>
-            <p className="text-gray-600">Manage staff scheduling, tasks, and performance tracking</p>
+            <h1 className="text-3xl font-bold text-gray-900" data-testid="staff-header">
+              Staff Management
+            </h1>
+            <p className="text-gray-600">
+              Manage staff scheduling, tasks, and performance tracking
+            </p>
             {(staffError || metricsError) && (
-              <div className="mt-2 p-3 rounded bg-red-50 border border-red-200 text-red-800">Failed to load staff data.</div>
+              <div className="mt-2 p-3 rounded bg-red-50 border border-red-200 text-red-800">
+                Failed to load staff data.
+              </div>
             )}
           </div>
           <div className="flex items-center space-x-3">
@@ -646,7 +686,7 @@ export const StaffManagementSystem: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center">
@@ -660,7 +700,7 @@ export const StaffManagementSystem: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center">
@@ -674,7 +714,7 @@ export const StaffManagementSystem: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center">
@@ -706,14 +746,14 @@ export const StaffManagementSystem: React.FC = () => {
                 <Input
                   placeholder="Search staff by name, ID, or email..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={e => setSearchTerm(e.target.value)}
                   className="w-full"
                 />
               </div>
               <select
                 className="px-3 py-2 border border-gray-200 rounded-md"
                 value={filterRole}
-                onChange={(e) => setFilterRole(e.target.value)}
+                onChange={e => setFilterRole(e.target.value)}
               >
                 <option value="all">All Roles</option>
                 <option value="chef">Chef</option>
@@ -726,7 +766,7 @@ export const StaffManagementSystem: React.FC = () => {
               <select
                 className="px-3 py-2 border border-gray-200 rounded-md"
                 value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
+                onChange={e => setFilterStatus(e.target.value)}
               >
                 <option value="all">All Status</option>
                 <option value="active">Active</option>
@@ -741,30 +781,39 @@ export const StaffManagementSystem: React.FC = () => {
               {filteredStaff.map((s: any) => (
                 <div data-testid="staff-card" key={s.id}>
                   {/* Narrow mapping to StaffMember shape where possible */}
-                  <StaffMemberCard staff={{
-                    id: s.id,
-                    employeeId: s.employeeId || s.id,
-                    name: s.name || 'Staff',
-                    email: s.email || '-',
-                    phone: s.phone || '-',
-                    role: (s.role || 'chef') as any,
-                    department: (s.department || 'kitchen') as any,
-                    status: (s.status || 'active') as any,
-                    avatar: s.avatar,
-                    hireDate: s.hireDate || new Date().toISOString(),
-                    salary: s.salary || 0,
-                    efficiency: s.efficiency || 0,
-                    hoursWorked: s.hoursWorked || 0,
-                    tasksCompleted: s.tasksCompleted || 0,
-                    currentTask: s.currentTask,
-                    shift: { id: 'shift', name: 'Shift', startTime: '09:00', endTime: '17:00', days: [], isActive: true },
-                    skills: s.skills || [],
-                    certifications: s.certifications || [],
-                    performanceRating: s.performanceRating || 0,
-                    attendanceRate: s.attendanceRate || 0,
-                    lastLogin: s.lastLogin || new Date().toISOString(),
-                    location: s.location || 'Kitchen',
-                  }} />
+                  <StaffMemberCard
+                    staff={{
+                      id: s.id,
+                      employeeId: s.employeeId || s.id,
+                      name: s.name || 'Staff',
+                      email: s.email || '-',
+                      phone: s.phone || '-',
+                      role: (s.role || 'chef') as any,
+                      department: (s.department || 'kitchen') as any,
+                      status: (s.status || 'active') as any,
+                      avatar: s.avatar,
+                      hireDate: s.hireDate || new Date().toISOString(),
+                      salary: s.salary || 0,
+                      efficiency: s.efficiency || 0,
+                      hoursWorked: s.hoursWorked || 0,
+                      tasksCompleted: s.tasksCompleted || 0,
+                      currentTask: s.currentTask,
+                      shift: {
+                        id: 'shift',
+                        name: 'Shift',
+                        startTime: '09:00',
+                        endTime: '17:00',
+                        days: [],
+                        isActive: true,
+                      },
+                      skills: s.skills || [],
+                      certifications: s.certifications || [],
+                      performanceRating: s.performanceRating || 0,
+                      attendanceRate: s.attendanceRate || 0,
+                      lastLogin: s.lastLogin || new Date().toISOString(),
+                      location: s.location || 'Kitchen',
+                    }}
+                  />
                 </div>
               ))}
             </div>
@@ -796,57 +845,6 @@ export const StaffManagementSystem: React.FC = () => {
             <div className="p-3 rounded bg-gray-50 border border-gray-200 text-gray-700">
               Live scheduling integration will appear here once backend endpoints are connected.
             </div>
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <Clock className="w-5 h-5 mr-2 text-blue-600" />
-                      {shift.name}
-                    </CardTitle>
-                    <CardDescription>
-                      {shift.startTime} - {shift.endTime}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      <div>
-                        <p className="text-sm font-medium text-gray-900 mb-2">Days</p>
-                        <div className="flex flex-wrap gap-1">
-                          {shift.days.map((day) => (
-                            <Badge key={day} variant="secondary" className="text-xs capitalize">
-                              {day.slice(0, 3)}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <p className="text-sm font-medium text-gray-900 mb-2">
-                          Assigned Staff ({staffMembers.filter(s => s.shift.id === shift.id).length})
-                        </p>
-                        <div className="space-y-2">
-                          {staffMembers
-                            .filter(s => s.shift.id === shift.id)
-                            .slice(0, 3)
-                            .map((staff) => (
-                              <div key={staff.id} className="flex items-center space-x-2">
-                                <Avatar className="w-6 h-6">
-                                  <AvatarImage src={staff.avatar} alt={staff.name} />
-                                  <AvatarFallback className="text-xs">
-                                    {staff.name.split(' ').map(n => n[0]).join('')}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <span className="text-sm">{staff.name}</span>
-                                <Badge className={`${getStatusColor(staff.status)} text-xs`}>
-                                  {staff.status}
-                                </Badge>
-                              </div>
-                            ))}
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
           </TabsContent>
 
           {/* Analytics Tab */}
@@ -865,7 +863,7 @@ export const StaffManagementSystem: React.FC = () => {
                       </div>
                       <Progress value={metrics.averageEfficiency ?? 0} className="h-3" />
                     </div>
-                    
+
                     <div>
                       <div className="flex items-center justify-between text-sm mb-2">
                         <span>Attendance Rate</span>
@@ -873,14 +871,18 @@ export const StaffManagementSystem: React.FC = () => {
                       </div>
                       <Progress value={metrics.attendanceRate ?? 0} className="h-3" />
                     </div>
-                    
+
                     <div className="grid grid-cols-2 gap-4 pt-4">
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-green-600">{metrics.tasksCompleted}</div>
+                        <div className="text-2xl font-bold text-green-600">
+                          {metrics.tasksCompleted}
+                        </div>
                         <div className="text-sm text-gray-600">Tasks Completed</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-blue-600">{metrics.totalHoursWorked}h</div>
+                        <div className="text-2xl font-bold text-blue-600">
+                          {metrics.totalHoursWorked}h
+                        </div>
                         <div className="text-sm text-gray-600">Total Hours</div>
                       </div>
                     </div>
@@ -900,10 +902,12 @@ export const StaffManagementSystem: React.FC = () => {
                       </div>
                       <div className="text-sm text-gray-600">Average Salary</div>
                     </div>
-                    
+
                     <div className="grid grid-cols-2 gap-4 pt-4">
                       <div className="text-center p-3 bg-gray-50 rounded-lg">
-                        <div className="text-lg font-bold text-red-600">{metrics.turnoverRate}%</div>
+                        <div className="text-lg font-bold text-red-600">
+                          {metrics.turnoverRate}%
+                        </div>
                         <div className="text-xs text-gray-600">Turnover Rate</div>
                       </div>
                       <div className="text-center p-3 bg-gray-50 rounded-lg">

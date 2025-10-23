@@ -53,7 +53,7 @@ import {
 import { PaymentService } from '@/services/payment.service';
 import { cn } from '@/lib/utils';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
-import { useConditionalRender, FEATURE_FLAGS } from '@/hooks/useFeatureFlag';
+import { useConditionalRender, _FEATURE_FLAGS } from '@/hooks/useFeatureFlag';
 
 interface PaymentAnalyticsProps {
   schoolId?: string;
@@ -91,7 +91,7 @@ interface PaymentMetrics {
   }>;
 }
 
-const CHART_COLORS = [
+const CHARTCOLORS = [
   '#3b82f6',
   '#10b981',
   '#f59e0b',
@@ -116,7 +116,7 @@ export const PaymentAnalyticsDashboard: React.FC<PaymentAnalyticsProps> = ({
 
   // Feature flag for advanced analytics
   const { shouldRender: showAdvancedAnalytics, isLoading: analyticsFlagLoading } =
-    useConditionalRender(FEATURE_FLAGS.ADVANCED_ANALYTICS, {
+    useConditionalRender(_FEATURE_FLAGS.ADVANCED_ANALYTICS, {
       fallback: (
         <Card className="p-6">
           <div className="text-center">
@@ -503,7 +503,7 @@ export const PaymentAnalyticsDashboard: React.FC<PaymentAnalyticsProps> = ({
                           {metrics?.topPaymentMethods.map((entry, index) => (
                             <Cell
                               key={`cell-${index}`}
-                              fill={CHART_COLORS[index % CHART_COLORS.length]}
+                              fill={CHARTCOLORS[index % CHARTCOLORS.length]}
                             />
                           ))}
                         </Pie>

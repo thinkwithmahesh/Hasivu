@@ -34,7 +34,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-  DialogTrigger as _DialogTrigger,
+  DialogTrigger as DialogTrigger,
 } from '@/components/ui/dialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
@@ -42,7 +42,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
-import { ScrollArea as _ScrollArea } from '@/components/ui/scroll-area';
+import { ScrollArea as ScrollArea } from '@/components/ui/scroll-area';
 import {
   Crown,
   Calendar,
@@ -178,7 +178,7 @@ interface SubscriptionManagementUIProps {
 }
 
 // Mock data for demonstration
-const MOCK_PLANS: SubscriptionPlan[] = [
+const MOCKPLANS: SubscriptionPlan[] = [
   {
     id: 'basic_monthly',
     name: 'Basic Plan',
@@ -309,7 +309,7 @@ const MOCK_PLANS: SubscriptionPlan[] = [
   },
 ];
 
-const MOCK_ACTIVE_SUBSCRIPTION: ActiveSubscription = {
+const MOCKACTIVESUBSCRIPTION: ActiveSubscription = {
   id: 'sub_standard_123',
   planId: 'standard_monthly',
   planName: 'Standard Plan',
@@ -343,7 +343,7 @@ const MOCK_ACTIVE_SUBSCRIPTION: ActiveSubscription = {
   ],
 };
 
-const MOCK_BILLING_HISTORY: BillingHistory[] = [
+const MOCKBILLINGHISTORY: BillingHistory[] = [
   {
     id: 'bill_001',
     subscriptionId: 'sub_standard_123',
@@ -413,9 +413,9 @@ export const SubscriptionManagementUI: React.FC<SubscriptionManagementUIProps> =
       // For now, use mock data
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      setActiveSubscription(MOCK_ACTIVE_SUBSCRIPTION);
-      setAvailablePlans(MOCK_PLANS);
-      setBillingHistory(MOCK_BILLING_HISTORY);
+      setActiveSubscription(MOCKACTIVESUBSCRIPTION);
+      setAvailablePlans(MOCKPLANS);
+      setBillingHistory(MOCKBILLINGHISTORY);
     } catch (error) {
     } finally {
       setLoading(false);

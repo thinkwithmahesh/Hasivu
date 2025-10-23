@@ -472,7 +472,7 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
 
   const handleSwipe = useCallback(
-    async (direction: 'down', velocity: number) => {
+    async (direction: 'left' | 'right' | 'up' | 'down', velocity: number) => {
       if (disabled || direction !== 'down' || !canRefresh) return;
 
       setIsRefreshing(true);

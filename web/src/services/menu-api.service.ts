@@ -19,7 +19,7 @@ class MenuAPIService {
   private baseURL: string;
 
   constructor() {
-    this.baseURL = process.env.NEXT_PUBLIC_API_URL || 'https://api.hasivu.com';
+    this.baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
     this.client = axios.create({
       baseURL: this.baseURL,
       timeout: 30000,
@@ -30,7 +30,7 @@ class MenuAPIService {
 
     // Request interceptor to add auth token
     this.client.interceptors.request.use(
-      (config) => {
+      config => {
         // Get token from localStorage or cookies
         const token = this.getAuthToken();
         if (token) {
@@ -38,13 +38,13 @@ class MenuAPIService {
         }
         return config;
       },
-      (error) => Promise.reject(error)
+      error => Promise.reject(error)
     );
 
     // Response interceptor for error handling
     this.client.interceptors.response.use(
-      (response) => response,
-      async (error) => {
+      response => response,
+      async error => {
         if (error.response?.status === 401) {
           // Handle token refresh or logout
           // You can integrate with your auth service here
@@ -119,7 +119,10 @@ class MenuAPIService {
   async getRecommendations(studentId?: string): Promise<MenuItem[]> {
     try {
       const params = studentId ? { studentId } : {};
-      const response = await this.client.get<{ recommendations: MenuItem[] }>('/menu/recommendations', { params });
+      const response = await this.client.get<{ recommendations: MenuItem[] }>(
+        '/menu/recommendations',
+        { params }
+      );
       return response.data.recommendations;
     } catch (error) {
       console.error('Error fetching recommendations:', error);
@@ -156,7 +159,7 @@ class MenuAPIService {
 
     // Dietary filters
     if (filters.dietary && filters.dietary.length > 0) {
-      filters.dietary.forEach((diet) => {
+      filters.dietary.forEach(diet => {
         params[diet] = true;
       });
     }

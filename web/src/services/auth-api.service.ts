@@ -18,6 +18,7 @@ export interface RegisterData {
   lastName: string;
   role: UserRole;
   schoolId?: string;
+  passwordConfirm?: string;
 }
 
 export interface AuthResponse {
@@ -25,6 +26,7 @@ export interface AuthResponse {
   tokens: AuthTokens;
   success: boolean;
   message?: string;
+  error?: string;
 }
 
 export interface PasswordResetRequest {

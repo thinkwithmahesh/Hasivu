@@ -26,7 +26,7 @@ interface BottomTabNavProps {
 
 // Define mobile bottom navigation items based on user role
 const getMobileNavItems = (userRole: UserType['role']): MobileNavItem[] => {
-  const roleSpecificItems: Record<UserType['role'], MobileNavItem[]> = {
+  const roleSpecificItems: Partial<Record<UserType['role'], MobileNavItem[]>> = {
     student: [
       {
         id: 'home',
@@ -123,7 +123,7 @@ const getMobileNavItems = (userRole: UserType['role']): MobileNavItem[] => {
         icon: Settings,
       },
     ],
-    kitchen: [
+    kitchen_staff: [
       {
         id: 'home',
         label: 'Home',
@@ -189,7 +189,7 @@ const getMobileNavItems = (userRole: UserType['role']): MobileNavItem[] => {
     ],
   };
 
-  return roleSpecificItems[userRole];
+  return roleSpecificItems[userRole] || [];
 };
 
 export function BottomTabNav({ user, cartItemCount = 0, className }: BottomTabNavProps) {

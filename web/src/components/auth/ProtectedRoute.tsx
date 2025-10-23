@@ -16,7 +16,7 @@ import {
 import { cn } from '@/lib/utils';
 
 import type { User, UserRole, Permission } from '@/types/auth';
-import { ROLE_PERMISSIONS as _ROLE_PERMISSIONS, PermissionChecker } from '@/types/auth';
+import { ROLE_PERMISSIONS as ROLE_PERMISSIONS, PermissionChecker } from '@/types/auth';
 import { useAuth as useAuthContext } from '@/contexts/auth-context';
 
 interface ProtectedRouteProps {

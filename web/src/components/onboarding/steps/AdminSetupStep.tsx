@@ -5,19 +5,19 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { _FormProvider, useFormContext } from 'react-hook-form';
+import { FormProvider, useFormContext } from 'react-hook-form';
 import {
   UserPlus,
   Crown,
   Shield,
   Settings,
   Briefcase,
-  _Mail,
-  _Phone,
+  Mail,
+  Phone,
   User,
   GraduationCap,
   Languages,
-  _Clock,
+  Clock,
   CheckCircle2,
   AlertCircle,
 } from 'lucide-react';

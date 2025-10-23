@@ -1,6 +1,6 @@
 import * as React from 'react';
 import * as TooltipPrimitive from '@radix-ui/react-tooltip';
-import { motion, AnimatePresence as _AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence as AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 
 import { cn } from '@/lib/utils';

@@ -19,11 +19,11 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Progress } from '@/components/ui/progress';
-import { _Alert, _AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   TrendingUp,
-  _TrendingDown,
+  TrendingDown,
   AlertTriangle,
   Lightbulb,
   Target,
@@ -34,7 +34,7 @@ import {
   Clock,
   CheckCircle2,
   Circle,
-  _Info,
+  Info,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -70,7 +70,7 @@ interface InsightCardProps {
   className?: string;
 }
 
-const INSIGHT_ICONS = {
+const INSIGHTICONS = {
   trend: TrendingUp,
   anomaly: AlertTriangle,
   recommendation: Lightbulb,
@@ -78,14 +78,14 @@ const INSIGHT_ICONS = {
   correlation: CornerDownRight,
 };
 
-const PRIORITY_COLORS = {
+const PRIORITYCOLORS = {
   low: 'bg-blue-50 border-blue-200 text-blue-800',
   medium: 'bg-yellow-50 border-yellow-200 text-yellow-800',
   high: 'bg-orange-50 border-orange-200 text-orange-800',
   critical: 'bg-red-50 border-red-200 text-red-800',
 };
 
-const PRIORITY_BADGES = {
+const PRIORITYBADGES = {
   low: 'default',
   medium: 'secondary',
   high: 'destructive',
@@ -104,9 +104,9 @@ export const InsightCard: React.FC<InsightCardProps> = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const [expandedDetails, setExpandedDetails] = useState(false);
 
-  const IconComponent = INSIGHT_ICONS[insight.type];
-  const priorityColor = PRIORITY_COLORS[insight.priority];
-  const priorityBadge = PRIORITY_BADGES[insight.priority];
+  const IconComponent = INSIGHTICONS[insight.type];
+  const priorityColor = PRIORITYCOLORS[insight.priority];
+  const priorityBadge = PRIORITYBADGES[insight.priority];
 
   const handleActionToggle = (actionId: string) => {
     if (onActionComplete) {

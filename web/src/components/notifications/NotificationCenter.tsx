@@ -10,7 +10,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   Card,
   CardContent,
-  CardDescription as _CardDescription,
+  CardDescription as CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -19,9 +19,9 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  Avatar as _Avatar,
-  AvatarFallback as _AvatarFallback,
-  AvatarImage as _AvatarImage,
+  Avatar as Avatar,
+  AvatarFallback as AvatarFallback,
+  AvatarImage as AvatarImage,
 } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -45,7 +45,6 @@ import {
   Star,
   RefreshCw,
 } from 'lucide-react';
-import { NotificationService } from '@/services/notification.service';
 import { notificationsApi, handleApiError as _handleApiError, wsManager } from '@/services/api';
 import { cn } from '@/lib/utils';
 
@@ -95,8 +94,6 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
   const [activeTab, setActiveTab] = useState('all');
   const [unreadCount, setUnreadCount] = useState(0);
   const refreshTimerRef = useRef<NodeJS.Timeout>();
-
-  const _notificationService = NotificationService.getInstance();
 
   // Load notifications
   const loadNotifications = async () => {

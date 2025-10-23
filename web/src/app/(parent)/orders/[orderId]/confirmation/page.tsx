@@ -25,7 +25,7 @@ import {
   Phone,
   ShoppingBag,
   ArrowRight,
-  Home
+  Home,
 } from 'lucide-react';
 
 interface OrderConfirmationProps {
@@ -116,9 +116,7 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationProps
             <CardDescription>{error || 'Order not found'}</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => router.push('/orders')}>
-              View All Orders
-            </Button>
+            <Button onClick={() => router.push('/orders')}>View All Orders</Button>
           </CardContent>
         </Card>
       </div>
@@ -165,7 +163,8 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationProps
                 </p>
                 {order.student.grade && order.student.section && (
                   <p className="text-xs text-gray-500">
-                    Grade {order.student.grade}{order.student.section}
+                    Grade {order.student.grade}
+                    {order.student.section}
                   </p>
                 )}
               </div>
@@ -256,9 +255,7 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationProps
                     </Badge>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold text-gray-900">
-                      {formatCurrency(item.totalPrice)}
-                    </p>
+                    <p className="font-semibold text-gray-900">{formatCurrency(item.totalPrice)}</p>
                   </div>
                 </div>
               </div>
@@ -290,9 +287,7 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationProps
             <Separator className="my-2" />
             <div className="flex justify-between text-lg font-semibold">
               <span>Total Paid</span>
-              <span className="text-hasivu-primary-600">
-                {formatCurrency(order.totalAmount)}
-              </span>
+              <span className="text-hasivu-primary-600">{formatCurrency(order.totalAmount)}</span>
             </div>
           </div>
         </CardContent>
@@ -300,11 +295,7 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationProps
 
       {/* Action Buttons */}
       <div className="flex flex-col sm:flex-row gap-4">
-        <Button
-          variant="outline"
-          className="flex-1"
-          onClick={() => window.print()}
-        >
+        <Button variant="outline" className="flex-1" onClick={() => window.print()}>
           <Download className="h-4 w-4 mr-2" />
           Download Receipt
         </Button>
@@ -327,30 +318,16 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationProps
 
       {/* Navigation */}
       <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-        <Button
-          variant="parent"
-          size="lg"
-          asChild
-        >
+        <Button variant="parent" size="lg" asChild>
           <Link href={`/orders/${order.id}/track`}>
             Track Order
             <ArrowRight className="h-4 w-4 ml-2" />
           </Link>
         </Button>
-        <Button
-          variant="outline"
-          size="lg"
-          asChild
-        >
-          <Link href="/orders">
-            View All Orders
-          </Link>
+        <Button variant="outline" size="lg" asChild>
+          <Link href="/orders">View All Orders</Link>
         </Button>
-        <Button
-          variant="ghost"
-          size="lg"
-          asChild
-        >
+        <Button variant="ghost" size="lg" asChild>
           <Link href="/menu">
             <Home className="h-4 w-4 mr-2" />
             Back to Menu
@@ -404,9 +381,7 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationProps
               </div>
               <div>
                 <p className="font-medium text-gray-900">Track Updates</p>
-                <p className="text-sm text-gray-600">
-                  You'll receive notifications at each step
-                </p>
+                <p className="text-sm text-gray-600">You'll receive notifications at each step</p>
               </div>
             </li>
           </ol>

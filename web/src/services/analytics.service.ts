@@ -53,7 +53,7 @@ export type ReportType =
  */
 export interface DateRange {
   startDate: string; // ISO 8601 format
-  endDate: string;   // ISO 8601 format
+  endDate: string; // ISO 8601 format
 }
 
 /**
@@ -849,9 +849,7 @@ export class AnalyticsService {
    * @param params - Order analytics parameters
    * @returns Comprehensive order analytics
    */
-  async getOrderAnalytics(
-    params: OrderAnalyticsParams = {}
-  ): Promise<ApiResponse<OrderAnalytics>> {
+  async getOrderAnalytics(params: OrderAnalyticsParams = {}): Promise<ApiResponse<OrderAnalytics>> {
     const response = await apiClient.get('/analytics/orders', { params });
     return response.data;
   }
@@ -913,12 +911,14 @@ export class AnalyticsService {
    * @param params - Kitchen analytics parameters
    * @returns Kitchen efficiency and performance metrics
    */
-  async getKitchenAnalytics(params: {
-    startDate?: string;
-    endDate?: string;
-    period?: TimePeriod;
-    schoolId?: string;
-  } = {}): Promise<ApiResponse<KitchenAnalytics>> {
+  async getKitchenAnalytics(
+    params: {
+      startDate?: string;
+      endDate?: string;
+      period?: TimePeriod;
+      schoolId?: string;
+    } = {}
+  ): Promise<ApiResponse<KitchenAnalytics>> {
     const response = await apiClient.get('/analytics/kitchen', { params });
     return response.data;
   }
@@ -930,14 +930,16 @@ export class AnalyticsService {
    * @param params - Menu performance parameters
    * @returns Menu item analytics and recommendations
    */
-  async getMenuPerformance(params: {
-    menuItemId?: string;
-    startDate?: string;
-    endDate?: string;
-    period?: TimePeriod;
-    category?: string;
-    schoolId?: string;
-  } = {}): Promise<ApiResponse<MenuPerformanceAnalytics>> {
+  async getMenuPerformance(
+    params: {
+      menuItemId?: string;
+      startDate?: string;
+      endDate?: string;
+      period?: TimePeriod;
+      category?: string;
+      schoolId?: string;
+    } = {}
+  ): Promise<ApiResponse<MenuPerformanceAnalytics>> {
     const response = await apiClient.get('/analytics/menu-performance', { params });
     return response.data;
   }
@@ -949,13 +951,15 @@ export class AnalyticsService {
    * @param params - Inventory analytics parameters
    * @returns Inventory levels, predictions, and recommendations
    */
-  async getInventoryAnalytics(params: {
-    startDate?: string;
-    endDate?: string;
-    period?: TimePeriod;
-    category?: string;
-    schoolId?: string;
-  } = {}): Promise<ApiResponse<InventoryAnalytics>> {
+  async getInventoryAnalytics(
+    params: {
+      startDate?: string;
+      endDate?: string;
+      period?: TimePeriod;
+      category?: string;
+      schoolId?: string;
+    } = {}
+  ): Promise<ApiResponse<InventoryAnalytics>> {
     const response = await apiClient.get('/analytics/inventory', { params });
     return response.data;
   }
@@ -967,14 +971,16 @@ export class AnalyticsService {
    * @param params - Staff performance parameters
    * @returns Staff performance and efficiency metrics
    */
-  async getStaffPerformance(params: {
-    staffId?: string;
-    department?: string;
-    startDate?: string;
-    endDate?: string;
-    period?: TimePeriod;
-    schoolId?: string;
-  } = {}): Promise<ApiResponse<StaffPerformanceAnalytics>> {
+  async getStaffPerformance(
+    params: {
+      staffId?: string;
+      department?: string;
+      startDate?: string;
+      endDate?: string;
+      period?: TimePeriod;
+      schoolId?: string;
+    } = {}
+  ): Promise<ApiResponse<StaffPerformanceAnalytics>> {
     const response = await apiClient.get('/analytics/staff-performance', { params });
     return response.data;
   }
@@ -986,13 +992,15 @@ export class AnalyticsService {
    * @param params - Compliance analytics parameters
    * @returns Compliance status and audit reports
    */
-  async getComplianceAnalytics(params: {
-    domain?: string;
-    startDate?: string;
-    endDate?: string;
-    period?: TimePeriod;
-    schoolId?: string;
-  } = {}): Promise<ApiResponse<ComplianceAnalytics>> {
+  async getComplianceAnalytics(
+    params: {
+      domain?: string;
+      startDate?: string;
+      endDate?: string;
+      period?: TimePeriod;
+      schoolId?: string;
+    } = {}
+  ): Promise<ApiResponse<ComplianceAnalytics>> {
     const response = await apiClient.get('/analytics/compliance', { params });
     return response.data;
   }
@@ -1004,9 +1012,11 @@ export class AnalyticsService {
    * @param params - Real-time metrics parameters
    * @returns Current system metrics and alerts
    */
-  async getRealTimeMetrics(params: {
-    schoolId?: string;
-  } = {}): Promise<ApiResponse<RealTimeMetrics>> {
+  async getRealTimeMetrics(
+    params: {
+      schoolId?: string;
+    } = {}
+  ): Promise<ApiResponse<RealTimeMetrics>> {
     const response = await apiClient.get('/analytics/real-time', { params });
     return response.data;
   }
@@ -1130,9 +1140,9 @@ export const downloadExportedFile = (blob: Blob, filename: string): void => {
  */
 export const getAlertColor = (severity: AlertSeverity): string => {
   const colors: Record<AlertSeverity, string> = {
-    info: '#3b82f6',    // blue
+    info: '#3b82f6', // blue
     warning: '#f59e0b', // amber
-    error: '#ef4444',   // red
+    error: '#ef4444', // red
     critical: '#dc2626', // dark red
   };
   return colors[severity];

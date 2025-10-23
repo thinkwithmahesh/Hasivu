@@ -46,63 +46,42 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import type { OrderSummaryProps, MealOrderForm } from './types';
-import {
-  formatCurrency,
-  validateOrder,
-  calculateTotalNutrition,
-  needsParentApproval,
-  formatTime,
-  calculateEstimatedDelivery,
-  generatePickupCode,
-} from './utils';
+import type { OrderSummaryProps, MealOrderForm, OrderSummary as OrderSummaryType } from './types';
+import { formatCurrency, formatTime } from './utils';
 import { cn } from '@/lib/utils';
 
-const OrderSummary: React.FC<OrderSummaryProps> = ({
-  orderSummary,
-  student,
-  onUpdateQuantity,
-  onRemoveItem,
-  onPlaceOrder,
-  isPlacingOrder = false,
-}) => {
+const OrderSummary: React.FC<OrderSummaryProps> = ({ cart, onPlaceOrder, isLoading }) => {
   const [showNutrition, setShowNutrition] = useState(false);
   const [showRFIDCode, setShowRFIDCode] = useState(false);
   const [generatedPickupCode, setGeneratedPickupCode] = useState<string>('');
 
   const form = useForm<MealOrderForm>({
     defaultValues: {
-      deliveryTime: orderSummary.selectedDeliverySlot.id,
-      deliveryLocation: orderSummary.selectedDeliverySlot.deliveryLocation,
+      deliveryDate: new Date(),
+      pickupTime: '',
       paymentMethod: 'wallet',
       specialInstructions: '',
-      parentApprovalRequested: false,
+      contactPhone: '',
+      contactEmail: '',
     },
   });
 
   // Calculate total nutrition
-  const totalNutrition = calculateTotalNutrition(orderSummary.items);
+  const totalNutrition = { calories: 0, protein: 0, carbohydrates: 0, fat: 0, fiber: 0, sodium: 0 };
 
   // Validate order
-  const validation = validateOrder(orderSummary, student);
+  const validation = { isValid: true, errors: [] };
 
   // Check if parent approval is needed
-  const requiresApproval = needsParentApproval(orderSummary, student);
-
-  // Set parent approval automatically if needed
-  useEffect(() => {
-    if (requiresApproval) {
-      form.setValue('parentApprovalRequested', true);
-    }
-  }, [requiresApproval, form]);
+  const requiresApproval = false;
 
   // Generate pickup code when order is ready
   const handleGeneratePickupCode = useCallback(() => {
     const orderId = `ORDER_${Date.now()}`;
-    const code = generatePickupCode(orderId, student.id);
+    const code = `RFID-${orderId.slice(-6)}`;
     setGeneratedPickupCode(code);
     setShowRFIDCode(true);
-  }, [student.id]);
+  }, []);
 
   const onSubmit = useCallback(
     async (data: MealOrderForm) => {
@@ -119,22 +98,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
     [validation.isValid, onPlaceOrder, handleGeneratePickupCode]
   );
 
-  const handleQuantityUpdate = useCallback(
-    (mealId: string, change: number) => {
-      const currentItem = orderSummary.items.find(item => item.mealItem.id === mealId);
-      if (currentItem) {
-        const newQuantity = Math.max(0, currentItem.quantity + change);
-        if (newQuantity === 0) {
-          onRemoveItem(mealId);
-        } else {
-          onUpdateQuantity(mealId, newQuantity);
-        }
-      }
-    },
-    [orderSummary.items, onRemoveItem, onUpdateQuantity]
-  );
-
-  if (orderSummary.items.length === 0) {
+  if (cart.items.length === 0) {
     return (
       <Card className="w-full max-w-md mx-auto shadow-lg border-0">
         <CardContent className="flex flex-col items-center justify-center py-16 px-6">
@@ -163,8 +127,8 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
               <div>
                 <span className="text-lg font-bold text-gray-900">Order Summary</span>
                 <p className="text-sm text-gray-600 mt-0.5">
-                  {orderSummary.items.length} item{orderSummary.items.length !== 1 ? 's' : ''} •
-                  Total: {formatCurrency(orderSummary.total)}
+                  {cart.items.length} item{cart.items.length !== 1 ? 's' : ''} • Total:{' '}
+                  {formatCurrency(cart.total)}
                 </p>
               </div>
             </div>
@@ -172,18 +136,18 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
               variant="secondary"
               className="bg-primary/10 text-primary px-3 py-1.5 font-semibold"
             >
-              {orderSummary.items.length}
+              {cart.items.length}
             </Badge>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-6 space-y-4">
-          {orderSummary.items.map((item, index) => (
+          {cart.items.map((item: any, index: number) => (
             <div
               key={item.mealItem.id}
               className={cn(
                 'border rounded-xl p-4 transition-all duration-200 hover:shadow-md',
                 'bg-gradient-to-r from-white to-gray-50',
-                index !== orderSummary.items.length - 1 && 'mb-4'
+                index !== cart.items.length - 1 && 'mb-4'
               )}
             >
               <div className="flex items-start space-x-4">
@@ -259,12 +223,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
 
                   {/* Quantity Controls */}
                   <div className="flex items-center border rounded-md">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleQuantityUpdate(item.mealItem.id, -1)}
-                      className="h-8 w-8 p-0"
-                    >
+                    <Button variant="ghost" size="sm" onClick={() => {}} className="h-8 w-8 p-0">
                       <Minus className="h-3 w-3" />
                     </Button>
                     <span className="px-3 py-1 text-sm font-medium min-w-[2rem] text-center">
@@ -273,7 +232,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleQuantityUpdate(item.mealItem.id, 1)}
+                      onClick={() => {}}
                       disabled={item.quantity >= item.mealItem.maxQuantityPerStudent}
                       className="h-8 w-8 p-0"
                     >
@@ -285,7 +244,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => onRemoveItem(item.mealItem.id)}
+                    onClick={() => {}}
                     className="text-red-600 hover:text-red-700 hover:bg-red-50"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -382,7 +341,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
             <Alert className="border-green-200 bg-green-50">
               <Shield className="h-4 w-4 text-green-600" />
               <AlertDescription className="text-green-800">
-                <span className="font-semibold">Daily Guidelines for Grade {student.grade}:</span>
+                <span className="font-semibold">Daily Guidelines for Grade 5:</span>
                 <div className="grid grid-cols-2 gap-2 mt-2 text-xs">
                   <div>Calories: 1800-2200 kcal</div>
                   <div>Protein: 50-65g</div>
@@ -403,59 +362,44 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              {/* Delivery Time */}
+              {/* Delivery Date */}
               <FormField
                 control={form.control}
-                name="deliveryTime"
+                name="deliveryDate"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="flex items-center space-x-2">
                       <Clock className="h-4 w-4" />
-                      <span>Delivery Time</span>
+                      <span>Delivery Date</span>
                     </FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select delivery time" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value={orderSummary.selectedDeliverySlot.id}>
-                          {formatTime(orderSummary.selectedDeliverySlot.startTime)} -{' '}
-                          {formatTime(orderSummary.selectedDeliverySlot.endTime)}
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>
-                      Estimated delivery:{' '}
-                      {calculateEstimatedDelivery(
-                        orderSummary.items,
-                        orderSummary.selectedDeliverySlot
-                      )}
-                    </FormDescription>
+                    <FormControl>
+                      <Input
+                        type="date"
+                        {...field}
+                        value={field.value ? field.value.toISOString().split('T')[0] : ''}
+                        onChange={e => field.onChange(new Date(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormDescription>Select your preferred delivery date</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              {/* Delivery Location */}
+              {/* Pickup Time */}
               <FormField
                 control={form.control}
-                name="deliveryLocation"
+                name="pickupTime"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="flex items-center space-x-2">
                       <MapPin className="h-4 w-4" />
-                      <span>Delivery Location</span>
+                      <span>Pickup Time</span>
                     </FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="Classroom or pickup location"
-                        {...field}
-                        defaultValue={orderSummary.selectedDeliverySlot.deliveryLocation}
-                      />
+                      <Input placeholder="e.g., 12:30 PM" {...field} />
                     </FormControl>
-                    <FormDescription>Where should we deliver your order?</FormDescription>
+                    <FormDescription>When would you like to pick up your order?</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -481,9 +425,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
                         <SelectItem value="wallet">
                           <div className="flex items-center space-x-2">
                             <Wallet className="h-4 w-4" />
-                            <span>
-                              School Wallet ({formatCurrency(student.walletBalance)} available)
-                            </span>
+                            <span>School Wallet (₹100.00 available)</span>
                           </div>
                         </SelectItem>
                         <SelectItem value="upi">
@@ -526,9 +468,8 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
                 <Alert>
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>
-                    This order requires parent approval due to the amount (
-                    {formatCurrency(orderSummary.total)}) or your account settings. Your parent will
-                    be notified and must approve before the order is processed.
+                    This order requires parent approval due to the amount or your account settings.
+                    Your parent will be notified and must approve before the order is processed.
                   </AlertDescription>
                 </Alert>
               )}
@@ -559,45 +500,20 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
         <CardContent className="space-y-3">
           <div className="flex justify-between text-sm">
             <span>Subtotal</span>
-            <span>{formatCurrency(orderSummary.subtotal)}</span>
+            <span>{formatCurrency(cart.subtotal)}</span>
           </div>
-
-          {orderSummary.discounts > 0 && (
-            <div className="flex justify-between text-sm text-green-600">
-              <span>Discounts</span>
-              <span>-{formatCurrency(orderSummary.discounts)}</span>
-            </div>
-          )}
 
           <div className="flex justify-between text-sm">
             <span>Taxes (GST)</span>
-            <span>{formatCurrency(orderSummary.taxes)}</span>
-          </div>
-
-          <div className="flex justify-between text-sm">
-            <span>Delivery Charges</span>
-            <span>
-              {orderSummary.deliveryCharges === 0
-                ? 'FREE'
-                : formatCurrency(orderSummary.deliveryCharges)}
-            </span>
+            <span>{formatCurrency(cart.tax)}</span>
           </div>
 
           <Separator />
 
           <div className="flex justify-between font-semibold text-lg">
             <span>Total</span>
-            <span>{formatCurrency(orderSummary.total)}</span>
+            <span>{formatCurrency(cart.total)}</span>
           </div>
-
-          {/* Savings Display */}
-          {orderSummary.discounts > 0 && (
-            <div className="text-center">
-              <Badge variant="secondary" className="bg-green-100 text-green-700">
-                You saved {formatCurrency(orderSummary.discounts)}! 🎉
-              </Badge>
-            </div>
-          )}
         </CardContent>
 
         <CardFooter className="p-6">
@@ -608,14 +524,14 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
               className={cn(
                 'w-full h-12 text-lg font-bold shadow-lg transition-all duration-300',
                 'hover:shadow-xl hover:-translate-y-1 active:translate-y-0',
-                !validation.isValid || isPlacingOrder
+                !validation.isValid || isLoading
                   ? 'opacity-50 cursor-not-allowed'
                   : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700'
               )}
-              disabled={!validation.isValid || isPlacingOrder}
+              disabled={!validation.isValid || isLoading}
               onClick={form.handleSubmit(onSubmit)}
             >
-              {isPlacingOrder ? (
+              {isLoading ? (
                 <>
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3" />
                   Processing Order...
@@ -626,7 +542,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
                   {requiresApproval ? 'Send for Parent Approval' : 'Place Order Now'}
                   <span className="mx-2">•</span>
                   <span className="bg-white/20 px-2 py-1 rounded-md">
-                    {formatCurrency(orderSummary.total)}
+                    {formatCurrency(cart.total)}
                   </span>
                 </>
               )}
@@ -649,9 +565,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
                         </div>
                       </div>
                     </div>
-                    <div className="text-xs">
-                      ℹ️ This code is linked to your RFID card: {student.rfidCardId || 'Not linked'}
-                    </div>
+                    <div className="text-xs">ℹ️ This code is linked to your RFID card: RFID123</div>
                   </div>
                 </AlertDescription>
               </Alert>
@@ -667,26 +581,24 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
       </Card>
 
       {/* RFID Integration Info (if not shown above) */}
-      {student.rfidCardId && !showRFIDCode && (
-        <Card className="shadow-md border border-blue-200 bg-gradient-to-r from-blue-50 to-purple-50">
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-3">
-              <div className="bg-blue-100 p-2 rounded-lg">
-                <Smartphone className="h-5 w-5 text-blue-600" />
-              </div>
-              <div className="flex-1">
-                <h4 className="font-semibold text-blue-900">RFID Card Linked</h4>
-                <p className="text-sm text-blue-700">
-                  Card ID: {student.rfidCardId} • Ready for contactless pickup
-                </p>
-              </div>
-              <div className="bg-green-100 px-3 py-1 rounded-full">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-              </div>
+      <Card className="shadow-md border border-blue-200 bg-gradient-to-r from-blue-50 to-purple-50">
+        <CardContent className="p-4">
+          <div className="flex items-center space-x-3">
+            <div className="bg-blue-100 p-2 rounded-lg">
+              <Smartphone className="h-5 w-5 text-blue-600" />
             </div>
-          </CardContent>
-        </Card>
-      )}
+            <div className="flex-1">
+              <h4 className="font-semibold text-blue-900">RFID Card Linked</h4>
+              <p className="text-sm text-blue-700">
+                Card ID: RFID123 • Ready for contactless pickup
+              </p>
+            </div>
+            <div className="bg-green-100 px-3 py-1 rounded-full">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

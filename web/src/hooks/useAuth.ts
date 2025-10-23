@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import apiClient, { User, AuthResponse as _AuthResponse } from '@/lib/api-client';
+import apiClient, { User, AuthResponse as AuthResponse } from '@/lib/api-client';
 import { EnhancedLoginFormData, RegistrationFormData } from '@/components/auth/schemas';
 
 interface UseAuthReturn {
