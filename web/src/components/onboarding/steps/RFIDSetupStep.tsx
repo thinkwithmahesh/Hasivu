@@ -82,9 +82,9 @@ interface RFIDSetupStepProps {
 
 const RFIDSetupStep: React.FC<RFIDSetupStepProps> = ({
   form,
-  _onNext,
-  _onPrev,
-  _isLoading = false,
+  onNext,
+  onPrev,
+  isLoading = false,
   schoolInfo,
 }) => {
   const [activeTab, setActiveTab] = useState<
@@ -99,7 +99,7 @@ const RFIDSetupStep: React.FC<RFIDSetupStepProps> = ({
     control,
     watch,
     setValue,
-    formState: { _errors },
+    formState: { errors },
   } = form;
   const watchedValues = watch();
 

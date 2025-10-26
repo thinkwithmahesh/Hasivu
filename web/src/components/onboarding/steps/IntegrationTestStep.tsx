@@ -49,10 +49,10 @@ interface IntegrationTestStepProps {
 }
 
 const IntegrationTestStep: React.FC<IntegrationTestStepProps> = ({
-  _onNext,
-  _onPrev,
-  _isLoading = false,
-  _onboardingData,
+  onNext,
+  onPrev,
+  isLoading = false,
+  onboardingData,
 }) => {
   const [currentPhase, setCurrentPhase] = useState<'ready' | 'testing' | 'completed'>('ready');
   const [testResults, setTestResults] = useState<TestResult[]>([]);

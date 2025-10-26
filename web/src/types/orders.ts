@@ -31,7 +31,9 @@ export type PaymentStatus = 'pending' | 'completed' | 'failed' | 'refunded';
 
 // Order item interface
 export interface OrderItem {
+  id?: string;
   menuItemId: string;
+  name?: string;
   quantity: number;
   price: number;
 }

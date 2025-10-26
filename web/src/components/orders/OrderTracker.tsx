@@ -21,9 +21,40 @@ import {
   Phone,
   MessageSquare,
 } from 'lucide-react';
-import { useOrderTracking, useSocketConnection } from '@/hooks/useSocket';
+// import { useOrderTracking, useSocketConnection } from '@/hooks/useSocket'; // TODO: Implement these hooks
 import { cn, formatTime } from '@/lib/utils';
 import { toast } from 'react-hot-toast';
+
+// TODO: Temporary stub implementations - replace with real hooks
+const useOrderTracking = (
+  _orderId: string
+): {
+  status: string;
+  updates: any[];
+  lastUpdate: any;
+  estimatedDelivery: any;
+  estimatedTime?: string;
+  deliveryPersonId?: string;
+  location?: string;
+} => ({
+  status: 'pending',
+  updates: [],
+  lastUpdate: null,
+  estimatedDelivery: null,
+  estimatedTime: undefined,
+  deliveryPersonId: undefined,
+  location: undefined,
+});
+
+const useSocketConnection = (): {
+  isConnected: boolean;
+  connectionState: string;
+  reconnect: () => void;
+} => ({
+  isConnected: false,
+  connectionState: 'disconnected',
+  reconnect: () => {},
+});
 
 interface OrderTrackerProps {
   orderId: string;

@@ -19,7 +19,7 @@
 
 'use client';
 
-import React, { useState, _useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -61,7 +61,7 @@ import { Slider } from '@/components/ui/slider';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { toast } from 'react-hot-toast';
-import { useShoppingCart } from '@/contexts/shopping-cart-context';
+import { useCart } from '@/contexts/shopping-cart-context';
 
 // ============================================================================
 // Types & Validation Schema
@@ -70,10 +70,10 @@ import { useShoppingCart } from '@/contexts/shopping-cart-context';
 const orderFormSchema = z.object({
   menuItemId: z.string().min(1, 'Menu item is required'),
   deliveryDate: z.date({
-    required_error: 'Delivery date is required',
+    message: 'Delivery date is required',
   }),
   deliveryTimeSlot: z.enum(['breakfast', 'lunch', 'dinner', 'snack'], {
-    required_error: 'Time slot is required',
+    message: 'Time slot is required',
   }),
   quantity: z.number().min(1).max(10),
   studentId: z.string().optional(),
@@ -160,7 +160,7 @@ export const OrderCreationForm: React.FC<OrderCreationFormProps> = ({
   onCancel,
   className,
 }) => {
-  const { addItem } = useShoppingCart();
+  const { addItem } = useCart();
   const [selectedAddOns, setSelectedAddOns] = useState<string[]>([]);
 
   // Initialize form

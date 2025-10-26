@@ -66,7 +66,7 @@ import {
   Star,
   Sparkles,
 } from 'lucide-react';
-import { PaymentService } from '@/services/payment.service';
+import PaymentService from '@/services/payment.service';
 import { cn } from '@/lib/utils';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 
@@ -398,8 +398,6 @@ export const SubscriptionManagementUI: React.FC<SubscriptionManagementUIProps> =
   const [prorationPreview, setProrationPreview] = useState<ProrationPreview | null>(null);
   const [processing, setProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
-
-  const _paymentService = PaymentService.getInstance();
 
   // Load subscription data
   useEffect(() => {

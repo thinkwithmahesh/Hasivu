@@ -28,7 +28,7 @@ interface AdminSetupStepProps {
   isLoading: boolean;
 }
 
-const AdminSetupStep: React.FC<AdminSetupStepProps> = ({ _onNext, _onPrev, _isLoading }) => {
+const AdminSetupStep: React.FC<AdminSetupStepProps> = ({ onNext, onPrev, isLoading }) => {
   const form = useFormContext();
   const {
     register,
@@ -111,7 +111,7 @@ const AdminSetupStep: React.FC<AdminSetupStepProps> = ({ _onNext, _onPrev, _isLo
             {errors.firstName && (
               <p className="text-red-600 text-sm mt-2 flex items-center">
                 <AlertCircle className="w-4 h-4 mr-1" />
-                {errors.firstName.message}
+                {String(errors.firstName.message)}
               </p>
             )}
           </div>
@@ -128,7 +128,7 @@ const AdminSetupStep: React.FC<AdminSetupStepProps> = ({ _onNext, _onPrev, _isLo
             {errors.lastName && (
               <p className="text-red-600 text-sm mt-2 flex items-center">
                 <AlertCircle className="w-4 h-4 mr-1" />
-                {errors.lastName.message}
+                {String(errors.lastName.message)}
               </p>
             )}
           </div>
@@ -146,7 +146,7 @@ const AdminSetupStep: React.FC<AdminSetupStepProps> = ({ _onNext, _onPrev, _isLo
             {errors.email && (
               <p className="text-red-600 text-sm mt-2 flex items-center">
                 <AlertCircle className="w-4 h-4 mr-1" />
-                {errors.email.message}
+                {String(errors.email.message)}
               </p>
             )}
           </div>
@@ -165,7 +165,7 @@ const AdminSetupStep: React.FC<AdminSetupStepProps> = ({ _onNext, _onPrev, _isLo
             {errors.phone && (
               <p className="text-red-600 text-sm mt-2 flex items-center">
                 <AlertCircle className="w-4 h-4 mr-1" />
-                {errors.phone.message}
+                {String(errors.phone.message)}
               </p>
             )}
           </div>
@@ -187,7 +187,7 @@ const AdminSetupStep: React.FC<AdminSetupStepProps> = ({ _onNext, _onPrev, _isLo
             {errors.department && (
               <p className="text-red-600 text-sm mt-2 flex items-center">
                 <AlertCircle className="w-4 h-4 mr-1" />
-                {errors.department.message}
+                {String(errors.department.message)}
               </p>
             )}
           </div>
@@ -300,7 +300,7 @@ const AdminSetupStep: React.FC<AdminSetupStepProps> = ({ _onNext, _onPrev, _isLo
         {errors.role && (
           <p className="text-red-600 text-sm mt-4 flex items-center">
             <AlertCircle className="w-4 h-4 mr-1" />
-            {errors.role.message}
+            {String(errors.role.message)}
           </p>
         )}
       </div>

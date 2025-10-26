@@ -50,10 +50,11 @@ import {
   Lock,
   Info,
 } from 'lucide-react';
-import { PaymentService } from '@/services/payment.service';
+import PaymentService from '@/services/payment.service';
 import { cn } from '@/lib/utils';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
-import { useConditionalRender, _FEATURE_FLAGS } from '@/hooks/useFeatureFlag';
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
+import { _FEATURE_FLAGS } from '@/types/feature-flags';
 
 interface PaymentAnalyticsProps {
   schoolId?: string;
@@ -112,28 +113,8 @@ export const PaymentAnalyticsDashboard: React.FC<PaymentAnalyticsProps> = ({
   const [timeRange, setTimeRange] = useState('30d');
   const [refreshing, setRefreshing] = useState(false);
 
-  const paymentService = PaymentService.getInstance();
-
   // Feature flag for advanced analytics
-  const { shouldRender: showAdvancedAnalytics, isLoading: analyticsFlagLoading } =
-    useConditionalRender(_FEATURE_FLAGS.ADVANCED_ANALYTICS, {
-      fallback: (
-        <Card className="p-6">
-          <div className="text-center">
-            <Lock className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-            <h3 className="text-lg font-semibold mb-2">Advanced Analytics Unavailable</h3>
-            <p className="text-gray-600 mb-4">
-              Advanced payment analytics features are currently disabled for your account. Contact
-              your administrator to enable this feature.
-            </p>
-            <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
-              <Info className="h-4 w-4" />
-              <span>Basic payment tracking is still available</span>
-            </div>
-          </div>
-        </Card>
-      ),
-    });
+  const showAdvancedAnalytics = useFeatureFlag(_FEATURE_FLAGS.ADVANCED_ANALYTICS);
 
   // Load analytics data
   const loadAnalytics = async (showRefreshing = false) => {
@@ -144,16 +125,17 @@ export const PaymentAnalyticsDashboard: React.FC<PaymentAnalyticsProps> = ({
       setError(null); // Clear any previous errors
 
       const dateRange = getDateRange(timeRange);
-      const result = await paymentService.getPaymentAnalytics({
+      const result = await PaymentService.analytics.getDashboard({
         schoolId,
-        dateRange,
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate,
       });
 
       if (result.success && result.data) {
-        setMetrics(result.data);
+        setMetrics(result.data as unknown as PaymentMetrics);
       } else {
         // Handle API error
-        setError(result.error || 'Failed to load payment analytics');
+        setError('Failed to load payment analytics');
         setMetrics(null);
       }
     } catch (error) {
@@ -389,16 +371,7 @@ export const PaymentAnalyticsDashboard: React.FC<PaymentAnalyticsProps> = ({
       </div>
 
       {/* Advanced Analytics Section */}
-      {analyticsFlagLoading ? (
-        <Card>
-          <CardContent className="p-6">
-            <div className="animate-pulse space-y-2">
-              <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-              <div className="h-32 bg-gray-200 rounded"></div>
-            </div>
-          </CardContent>
-        </Card>
-      ) : showAdvancedAnalytics ? (
+      {showAdvancedAnalytics ? (
         <>
           {/* Charts and Analytics */}
           <Tabs defaultValue="overview" className="space-y-4">

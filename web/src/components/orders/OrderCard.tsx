@@ -53,11 +53,12 @@ export function OrderCard({
 
   // Calculate status progress
   useEffect(() => {
-    const statusMap = {
+    const statusMap: Record<OrderStatus, number> = {
       pending: 10,
       confirmed: 25,
       preparing: 50,
       ready: 75,
+      out_for_delivery: 85,
       delivered: 100,
       cancelled: 0,
     };
@@ -65,7 +66,17 @@ export function OrderCard({
   }, [order.status]);
 
   const getStatusConfig = (status: Order['status']) => {
-    const configs = {
+    const configs: Record<
+      OrderStatus,
+      {
+        color: string;
+        bgColor: string;
+        textColor: string;
+        borderColor: string;
+        icon: React.ComponentType<any>;
+        message: string;
+      }
+    > = {
       pending: {
         color: 'orange',
         bgColor: 'bg-orange-50',
@@ -97,6 +108,14 @@ export function OrderCard({
         borderColor: 'border-green-200',
         icon: CheckCircle,
         message: 'Ready for pickup',
+      },
+      out_for_delivery: {
+        color: 'indigo',
+        bgColor: 'bg-indigo-50',
+        textColor: 'text-indigo-700',
+        borderColor: 'border-indigo-200',
+        icon: Truck,
+        message: 'Out for delivery',
       },
       delivered: {
         color: 'green',
@@ -377,12 +396,14 @@ export function generateDemoOrder(): Order {
     items: [
       {
         id: 'item-1',
+        menuItemId: 'menu-1',
         name: 'Masala Dosa',
         quantity: 1,
         price: 45,
       },
       {
         id: 'item-2',
+        menuItemId: 'menu-2',
         name: 'Sambar & Chutney',
         quantity: 1,
         price: 15,

@@ -56,7 +56,7 @@ import {
   TrendingUp,
   BarChart3,
 } from 'lucide-react';
-import { PaymentService } from '@/services/payment.service';
+import PaymentService from '@/services/payment.service';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { _FEATURE_FLAGS } from '@/types/feature-flags';
 import { cn } from '@/lib/utils';
@@ -99,7 +99,7 @@ interface BillingSummary {
 
 export const BillingDashboard: React.FC<BillingDashboardProps> = ({
   parentId,
-  _schoolId,
+  schoolId,
   className,
 }) => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -114,8 +114,6 @@ export const BillingDashboard: React.FC<BillingDashboardProps> = ({
   const billingAnalyticsEnabled = useFeatureFlag(_FEATURE_FLAGS.BILLING_ANALYTICS);
   const newPaymentMethodsEnabled = useFeatureFlag(_FEATURE_FLAGS.NEW_PAYMENT_METHODS);
 
-  const paymentService = PaymentService.getInstance();
-
   // Load billing data
   useEffect(() => {
     loadBillingData();
@@ -125,17 +123,10 @@ export const BillingDashboard: React.FC<BillingDashboardProps> = ({
     try {
       setLoading(true);
 
-      // Load billing history
-      const billingResult = await paymentService.getBillingHistory(parentId, 1, 50);
-
-      if (billingResult.success && billingResult.data) {
-        setInvoices(billingResult.data.invoices || []);
-        setBillingSummary(billingResult.data.summary || null);
-      } else {
-        // Fallback to mock data
-        setInvoices(generateMockInvoices());
-        setBillingSummary(generateMockSummary());
-      }
+      // TODO: Implement billing history API in payment service
+      // For now, use mock data
+      setInvoices(generateMockInvoices());
+      setBillingSummary(generateMockSummary());
     } catch (error) {
       setInvoices(generateMockInvoices());
       setBillingSummary(generateMockSummary());

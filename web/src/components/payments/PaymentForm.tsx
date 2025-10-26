@@ -6,7 +6,7 @@
  * and real-time validation for school meal ordering
  */
 
-import React, { useState, _useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,7 +36,7 @@ import {
   Phone,
   Mail,
 } from 'lucide-react';
-import { PaymentService } from '@/services/payment.service';
+import PaymentService from '@/services/payment.service';
 import { cn } from '@/lib/utils';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 
@@ -127,8 +127,6 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
 
   // Net banking state
   const [selectedBank, setSelectedBank] = useState('');
-
-  const paymentService = PaymentService.getInstance();
 
   // Format amount for display
   const formatAmount = (amount: number) => {
@@ -260,12 +258,13 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
         paymentData.bankCode = selectedBank;
       }
 
-      const result = await paymentService.processPayment(paymentData);
+      // Create order using PaymentService
+      const result = await PaymentService.payment.createOrder(paymentData);
 
-      if (result.success) {
-        onSuccess?.(result.transactionId || result.data?.transactionId);
+      if (result.success && result.data) {
+        onSuccess?.(result.data.orderDetails.orderId);
       } else {
-        onError?.(result.error || 'Payment failed');
+        onError?.('Payment failed');
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Payment processing failed';

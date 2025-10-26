@@ -186,7 +186,7 @@ interface OnboardingStep {
   id: string;
   title: string;
   description: string;
-  icon: React.ComponentType<{ className?: string; size?: string | number }>;
+  icon: React.ComponentType<any>;
   required: boolean;
   estimatedTime: string;
   category: 'setup' | 'configuration' | 'customization' | 'integration' | 'completion';
@@ -1269,25 +1269,18 @@ const EnhancedOnboardingFlow: React.FC<{
             {steps[currentStep].id === 'welcome' && renderWelcomeStep()}
             {steps[currentStep].id === 'school_info' && renderSchoolInfoStep()}
             {steps[currentStep].id === 'admin_setup' && (
-              <AdminSetupStep
-                form={adminSetupForm}
-                onNext={nextStep}
-                onPrev={prevStep}
-                isLoading={isLoading}
-              />
+              <FormProvider {...adminSetupForm}>
+                <AdminSetupStep onNext={nextStep} onPrev={prevStep} isLoading={isLoading} />
+              </FormProvider>
             )}
             {steps[currentStep].id === 'stakeholder_setup' && (
-              <StakeholderSetupStep
-                form={stakeholderForm}
-                onNext={nextStep}
-                onPrev={prevStep}
-                isLoading={isLoading}
-                schoolInfo={schoolInfoForm.getValues()}
-              />
+              <FormProvider {...stakeholderForm}>
+                <StakeholderSetupStep onNext={nextStep} onPrev={prevStep} isLoading={isLoading} />
+              </FormProvider>
             )}
             {steps[currentStep].id === 'branding' && (
               <BrandingStep
-                form={brandingForm}
+                form={brandingForm as any}
                 onNext={nextStep}
                 onPrev={prevStep}
                 isLoading={isLoading}
@@ -1302,7 +1295,7 @@ const EnhancedOnboardingFlow: React.FC<{
             )}
             {steps[currentStep].id === 'rfid_setup' && (
               <RFIDSetupStep
-                form={rfidForm}
+                form={rfidForm as any}
                 onNext={nextStep}
                 onPrev={prevStep}
                 isLoading={isLoading}
