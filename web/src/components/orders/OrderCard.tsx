@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
   Clock,
   CheckCircle,
@@ -47,6 +47,7 @@ export function OrderCard({
   showActions = true,
   className = '',
 }: OrderCardProps) {
+  const reduced = useReducedMotion();
   const [isUpdating, setIsUpdating] = useState(false);
   const [statusProgress, setStatusProgress] = useState(0);
   const [showCancellationModal, setShowCancellationModal] = useState(false);
@@ -188,9 +189,11 @@ export function OrderCard({
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
+      initial={reduced ? undefined : { opacity: 0, y: 20 }}
+      animate={reduced ? undefined : { opacity: 1, y: 0 }}
+      exit={reduced ? undefined : { opacity: 0, y: -20 }}
+      whileHover={reduced ? undefined : { y: -2, scale: 1.005 }}
+      transition={reduced ? { duration: 0 } : { duration: 0.2 }}
       className={className}
       data-testid={`order-card-${order.id}`}
     >
@@ -201,9 +204,9 @@ export function OrderCard({
         <div className="absolute top-0 left-0 right-0 h-1 bg-gray-200">
           <motion.div
             className={`h-full bg-${statusConfig.color}-500`}
-            initial={{ width: 0 }}
+            initial={reduced ? undefined : { width: 0 }}
             animate={{ width: `${statusProgress}%` }}
-            transition={{ duration: 0.8, ease: 'easeOut' }}
+            transition={reduced ? { duration: 0 } : { duration: 0.8, ease: 'easeOut' }}
           />
         </div>
 
@@ -282,11 +285,11 @@ export function OrderCard({
             <div className="flex items-center space-x-2">
               <motion.div
                 animate={{
-                  rotate: isUpdating ? 360 : 0,
+                  rotate: reduced ? 0 : isUpdating ? 360 : 0,
                 }}
                 transition={{
-                  duration: 1,
-                  repeat: isUpdating ? Infinity : 0,
+                  duration: reduced ? 0 : 1,
+                  repeat: reduced ? 0 : isUpdating ? Infinity : 0,
                   ease: 'linear',
                 }}
               >

@@ -9,16 +9,21 @@ import { AccessibilityProvider } from '@/components/accessibility/AccessibilityP
 import PaperShadersBackground from '@/components/ui/paper-shaders-background';
 import {
   generateBaseMetadata,
+  generateBaseViewport,
   generateOrganizationSchema,
   generateWebApplicationSchema,
 } from '@/lib/seo';
+import { getNonce } from '@/lib/security/nonce';
 
 const inter = Inter({ subsets: ['latin'] });
 
 // Generate comprehensive production-ready metadata
 export const metadata = generateBaseMetadata();
+export const viewport = generateBaseViewport();
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // Get CSP nonce from middleware
+  const nonce = await getNonce();
   // Generate structured data for SEO
   const organizationSchema = generateOrganizationSchema();
   const webApplicationSchema = generateWebApplicationSchema();
@@ -29,6 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Structured Data - Organization Schema */}
         <script
           type="application/ld+json"
+          nonce={nonce}
           dangerouslySetInnerHTML={{
             __html: JSON.stringify(organizationSchema),
           }}
@@ -37,6 +43,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Structured Data - Web Application Schema */}
         <script
           type="application/ld+json"
+          nonce={nonce}
           dangerouslySetInnerHTML={{
             __html: JSON.stringify(webApplicationSchema),
           }}
@@ -73,9 +80,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <>
             <script
               async
+              nonce={nonce}
               src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}`}
             />
             <script
+              nonce={nonce}
               dangerouslySetInnerHTML={{
                 __html: `
                   window.dataLayer = window.dataLayer || [];
@@ -96,6 +105,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
         {/* Service Worker Registration */}
         <script
+          nonce={nonce}
           dangerouslySetInnerHTML={{
             __html: `
               if ('serviceWorker' in navigator && '${process.env.NODE_ENV}' === 'production') {

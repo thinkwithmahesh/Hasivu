@@ -4,7 +4,7 @@
  * Implements structured data, meta tags, and social media optimization
  */
 
-import { Metadata } from 'next';
+import { Metadata, Viewport } from 'next';
 
 // Base application configuration
 const APP_CONFIG = {
@@ -73,18 +73,6 @@ export function generateBaseMetadata(): Metadata {
     generator: 'Next.js',
     keywords: APP_CONFIG.keywords,
     referrer: 'origin-when-cross-origin',
-    colorScheme: 'light dark',
-    viewport: {
-      width: 'device-width',
-      initialScale: 1,
-      maximumScale: 5,
-      userScalable: true,
-      viewportFit: 'cover',
-    },
-    themeColor: [
-      { media: '(prefers-color-scheme: light)', color: '#2563eb' },
-      { media: '(prefers-color-scheme: dark)', color: '#1d4ed8' },
-    ],
     manifest: '/manifest.json',
     appleWebApp: {
       capable: true,
@@ -218,6 +206,22 @@ export function generateBaseMetadata(): Metadata {
   };
 }
 
+// Next.js 15 expects viewport/themeColor/colorScheme in a separate viewport export.
+export function generateBaseViewport(): Viewport {
+  return {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 5,
+    userScalable: true,
+    viewportFit: 'cover',
+    colorScheme: 'light dark',
+    themeColor: [
+      { media: '(prefers-color-scheme: light)', color: '#2563eb' },
+      { media: '(prefers-color-scheme: dark)', color: '#1d4ed8' },
+    ],
+  };
+}
+
 // Generate page-specific metadata
 export function generatePageMetadata(config: SEOPageConfig): Metadata {
   const fullTitle =
@@ -255,7 +259,7 @@ export function generatePageMetadata(config: SEOPageConfig): Metadata {
       ...(config.author && { authors: [config.author] }),
       ...(config.section && { section: config.section }),
       ...(config.tags && { tags: config.tags }),
-    },
+    } as any,
     twitter: {
       card: 'summary_large_image',
       site: APP_CONFIG.twitter,

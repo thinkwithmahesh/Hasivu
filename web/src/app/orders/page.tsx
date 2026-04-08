@@ -23,10 +23,12 @@ import {
 } from 'lucide-react';
 import { OrderCard, generateDemoOrder as _generateDemoOrder } from '@/components/orders/OrderCard';
 import { toast } from 'sonner';
+import { LazyMotion, domAnimation, m, useReducedMotion } from 'framer-motion';
 
 export default function OrdersPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const reduced = useReducedMotion();
   const [isCheckout, setIsCheckout] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
   const [orderConfirmed, setOrderConfirmed] = useState(false);
@@ -248,16 +250,246 @@ export default function OrdersPage() {
   // Render checkout flow if coming from menu
   if (isCheckout && orderId) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary-50 to-accent-50">
+      <LazyMotion features={domAnimation}>
+        <m.div
+          initial={reduced ? undefined : { opacity: 0, y: 12 }}
+          animate={reduced ? undefined : { opacity: 1, y: 0 }}
+          transition={reduced ? { duration: 0 } : { duration: 0.35 }}
+          className="min-h-screen bg-gradient-to-br from-primary-50 to-accent-50"
+        >
+          {/* Header */}
+          <header className="border-b bg-white/80 backdrop-blur">
+            <div className="container mx-auto px-4 py-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <Link href="/menu">
+                    <Button variant="ghost" size="sm">
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      Back to Menu
+                    </Button>
+                  </Link>
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-xl bg-primary-500 flex items-center justify-center">
+                      <span className="text-white font-bold text-xl">H</span>
+                    </div>
+                    <div>
+                      <div
+                        id="orders-checkout-heading"
+                        className="font-display font-bold text-2xl text-primary-600"
+                      >
+                        Checkout
+                      </div>
+                      <div className="text-sm text-gray-600 -mt-1">Order #{orderId}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </header>
+
+          {/* Main Content */}
+          <m.main
+            aria-labelledby="orders-checkout-heading"
+            initial={reduced ? undefined : { opacity: 0 }}
+            animate={reduced ? undefined : { opacity: 1 }}
+            transition={reduced ? { duration: 0 } : { delay: 0.05, duration: 0.3 }}
+            className="container mx-auto px-4 py-8"
+          >
+            {orderConfirmed ? (
+              // Order Confirmation
+              <div className="max-w-2xl mx-auto">
+                <Card className="border-0 shadow-soft text-center p-8">
+                  <CardContent>
+                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <CheckCircle className="h-8 w-8 text-green-600" />
+                    </div>
+                    <h1 className="text-2xl font-bold text-gray-900 mb-2">Order Confirmed!</h1>
+                    <p className="text-gray-600 mb-6">
+                      Your order #{orderId} has been confirmed and sent to the kitchen.
+                    </p>
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                      <h3 className="font-semibold text-green-800 mb-2">What happens next?</h3>
+                      <ul className="text-sm text-green-700 space-y-1">
+                        <li>• Kitchen will start preparing your meal</li>
+                        <li>• You'll receive updates on preparation progress</li>
+                        <li>• Estimated ready time: 15-20 minutes</li>
+                        <li>• You'll be notified when ready for pickup</li>
+                      </ul>
+                    </div>
+                    <p className="text-sm text-gray-500">Redirecting to orders page...</p>
+                  </CardContent>
+                </Card>
+              </div>
+            ) : (
+              // Checkout Form
+              <div className="max-w-4xl mx-auto">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  {/* Order Summary */}
+                  <div className="lg:col-span-2">
+                    <Card className="border-0 shadow-soft">
+                      <CardHeader>
+                        <CardTitle className="flex items-center">
+                          <ShoppingCart className="h-5 w-5 mr-2" />
+                          Order Summary
+                        </CardTitle>
+                        <CardDescription>
+                          Review your items before confirming the order
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          {cartItems.map(item => (
+                            <div
+                              key={item.id}
+                              className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
+                            >
+                              <div className="flex items-center gap-4">
+                                <div className="text-3xl">{item.image}</div>
+                                <div>
+                                  <h3 className="font-medium">{item.name}</h3>
+                                  <p className="text-sm text-gray-600">{item.description}</p>
+                                  <Badge variant="outline" className="mt-1">
+                                    {item.category}
+                                  </Badge>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <p className="font-semibold">
+                                  {item.price} × {item.quantity}
+                                </p>
+                                <p className="text-sm text-gray-600">
+                                  ₹{item.priceValue * item.quantity}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        <Separator className="my-4" />
+
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span>Subtotal ({getTotalItems()} items)</span>
+                            <span>₹{getTotalAmount()}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>Service Fee</span>
+                            <span>₹0</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>Tax</span>
+                            <span>₹{Math.round(getTotalAmount() * 0.05)}</span>
+                          </div>
+                          <Separator />
+                          <div className="flex justify-between font-bold text-lg">
+                            <span>Total</span>
+                            <span>₹{getTotalAmount() + Math.round(getTotalAmount() * 0.05)}</span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Checkout Details */}
+                  <div>
+                    <Card className="border-0 shadow-soft">
+                      <CardHeader>
+                        <CardTitle className="flex items-center">
+                          <User className="h-5 w-5 mr-2" />
+                          Order Details
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Student Name
+                          </label>
+                          <div className="p-3 bg-gray-50 rounded-md text-gray-700">
+                            Sarah Johnson
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Class & Section
+                          </label>
+                          <div className="p-3 bg-gray-50 rounded-md text-gray-700">
+                            8th Grade - Section A
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <MapPin className="h-4 w-4 inline mr-1" />
+                            Pickup Location
+                          </label>
+                          <div className="p-3 bg-gray-50 rounded-md text-gray-700">
+                            School Cafeteria - Counter 2
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <Phone className="h-4 w-4 inline mr-1" />
+                            Contact Number
+                          </label>
+                          <div className="p-3 bg-gray-50 rounded-md text-gray-700">
+                            +91 98765 43210
+                          </div>
+                        </div>
+
+                        <Separator />
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <CreditCard className="h-4 w-4 inline mr-1" />
+                            Payment Method
+                          </label>
+                          <div className="p-3 bg-green-50 border border-green-200 rounded-md">
+                            <div className="flex items-center justify-between">
+                              <span className="text-green-800 font-medium">School Wallet</span>
+                              <span className="text-green-600">₹850 available</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <Button className="w-full" size="lg" onClick={handleConfirmOrder}>
+                          Confirm Order - ₹{getTotalAmount() + Math.round(getTotalAmount() * 0.05)}
+                        </Button>
+
+                        <p className="text-xs text-gray-500 text-center">
+                          By confirming, you agree to the school meal policy and terms
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              </div>
+            )}
+          </m.main>
+        </m.div>
+      </LazyMotion>
+    );
+  }
+
+  // Regular orders page
+  return (
+    <LazyMotion features={domAnimation}>
+      <m.div
+        initial={reduced ? undefined : { opacity: 0, y: 12 }}
+        animate={reduced ? undefined : { opacity: 1, y: 0 }}
+        transition={reduced ? { duration: 0 } : { duration: 0.35 }}
+        className="min-h-screen bg-gradient-to-br from-primary-50 to-accent-50"
+      >
         {/* Header */}
         <header className="border-b bg-white/80 backdrop-blur">
           <div className="container mx-auto px-4 py-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <Link href="/menu">
+                <Link href="/">
                   <Button variant="ghost" size="sm">
                     <ArrowLeft className="h-4 w-4 mr-2" />
-                    Back to Menu
+                    Back to Home
                   </Button>
                 </Link>
                 <div className="flex items-center gap-3">
@@ -265,340 +497,158 @@ export default function OrdersPage() {
                     <span className="text-white font-bold text-xl">H</span>
                   </div>
                   <div>
-                    <div className="font-display font-bold text-2xl text-primary-600">Checkout</div>
-                    <div className="text-sm text-gray-600 -mt-1">Order #{orderId}</div>
+                    <div className="font-display font-bold text-2xl text-primary-600">
+                      Order Management
+                    </div>
+                    <div className="text-sm text-gray-600 -mt-1">HASIVU Platform</div>
                   </div>
                 </div>
               </div>
+              <Button>
+                <ShoppingCart className="h-4 w-4 mr-2" />
+                New Order
+              </Button>
             </div>
           </div>
         </header>
 
         {/* Main Content */}
-        <main className="container mx-auto px-4 py-8">
-          {orderConfirmed ? (
-            // Order Confirmation
-            <div className="max-w-2xl mx-auto">
-              <Card className="border-0 shadow-soft text-center p-8">
-                <CardContent>
-                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <CheckCircle className="h-8 w-8 text-green-600" />
-                  </div>
-                  <h1 className="text-2xl font-bold text-gray-900 mb-2">Order Confirmed!</h1>
-                  <p className="text-gray-600 mb-6">
-                    Your order #{orderId} has been confirmed and sent to the kitchen.
+        <m.main
+          aria-labelledby="orders-page-heading"
+          initial={reduced ? undefined : { opacity: 0 }}
+          animate={reduced ? undefined : { opacity: 1 }}
+          transition={reduced ? { duration: 0 } : { delay: 0.05, duration: 0.3 }}
+          className="container mx-auto px-4 py-8"
+        >
+          <m.section
+            initial={reduced ? undefined : { opacity: 0, y: 8 }}
+            animate={reduced ? undefined : { opacity: 1, y: 0 }}
+            transition={reduced ? { duration: 0 } : { delay: 0.08, duration: 0.25 }}
+            className="mb-8"
+          >
+            <h1 id="orders-page-heading" className="text-3xl font-bold text-gray-900 mb-2">
+              Meal Orders
+            </h1>
+            <p className="text-gray-600">Track and manage meal orders for students</p>
+          </m.section>
+
+          {/* Stats Cards */}
+          {!loading && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <m.div whileHover={reduced ? undefined : { y: -2, scale: 1.01 }}>
+                <Card className="border-0 shadow-soft">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-sm font-medium text-gray-600">
+                        Total Orders
+                      </CardTitle>
+                      <ShoppingCart className="h-4 w-4 text-gray-600" />
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="text-2xl font-bold">{orders.length}</div>
+                    <p className="text-xs text-gray-600">All time</p>
+                  </CardContent>
+                </Card>
+              </m.div>
+
+              <m.div whileHover={reduced ? undefined : { y: -2, scale: 1.01 }}>
+                <Card className="border-0 shadow-soft">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-sm font-medium text-gray-600">Delivered</CardTitle>
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="text-2xl font-bold text-green-600">
+                      {orders.filter(order => order.status === 'delivered').length}
+                    </div>
+                    <p className="text-xs text-gray-600">
+                      {orders.length > 0
+                        ? Math.round(
+                            (orders.filter(order => order.status === 'delivered').length /
+                              orders.length) *
+                              100
+                          )
+                        : 0}
+                      % completion rate
+                    </p>
+                  </CardContent>
+                </Card>
+              </m.div>
+
+              <m.div whileHover={reduced ? undefined : { y: -2, scale: 1.01 }}>
+                <Card className="border-0 shadow-soft">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-sm font-medium text-gray-600">Pending</CardTitle>
+                      <Clock className="h-4 w-4 text-yellow-600" />
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="text-2xl font-bold text-yellow-600">
+                      {
+                        orders.filter(
+                          order => order.status === 'pending' || order.status === 'preparing'
+                        ).length
+                      }
+                    </div>
+                    <p className="text-xs text-gray-600">In queue</p>
+                  </CardContent>
+                </Card>
+              </m.div>
+            </div>
+          )}
+
+          {/* Orders List */}
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Recent Orders</h2>
+                <p className="text-gray-600">Manage and track your meal orders</p>
+              </div>
+              <Button onClick={loadOrders} variant="outline" size="sm">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh
+              </Button>
+            </div>
+
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+                <span className="ml-2 text-gray-600">Loading orders...</span>
+              </div>
+            ) : orders.length === 0 ? (
+              <Card className="border-0 shadow-soft">
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <ShoppingCart className="h-12 w-12 text-gray-400 mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No orders yet</h3>
+                  <p className="text-gray-600 text-center mb-4">
+                    You haven't placed any orders yet. Start by browsing our menu!
                   </p>
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-                    <h3 className="font-semibold text-green-800 mb-2">What happens next?</h3>
-                    <ul className="text-sm text-green-700 space-y-1">
-                      <li>• Kitchen will start preparing your meal</li>
-                      <li>• You'll receive updates on preparation progress</li>
-                      <li>• Estimated ready time: 15-20 minutes</li>
-                      <li>• You'll be notified when ready for pickup</li>
-                    </ul>
-                  </div>
-                  <p className="text-sm text-gray-500">Redirecting to orders page...</p>
+                  <Button asChild>
+                    <Link href="/menu">Browse Menu</Link>
+                  </Button>
                 </CardContent>
               </Card>
-            </div>
-          ) : (
-            // Checkout Form
-            <div className="max-w-4xl mx-auto">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Order Summary */}
-                <div className="lg:col-span-2">
-                  <Card className="border-0 shadow-soft">
-                    <CardHeader>
-                      <CardTitle className="flex items-center">
-                        <ShoppingCart className="h-5 w-5 mr-2" />
-                        Order Summary
-                      </CardTitle>
-                      <CardDescription>
-                        Review your items before confirming the order
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        {cartItems.map(item => (
-                          <div
-                            key={item.id}
-                            className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
-                          >
-                            <div className="flex items-center gap-4">
-                              <div className="text-3xl">{item.image}</div>
-                              <div>
-                                <h3 className="font-medium">{item.name}</h3>
-                                <p className="text-sm text-gray-600">{item.description}</p>
-                                <Badge variant="outline" className="mt-1">
-                                  {item.category}
-                                </Badge>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <p className="font-semibold">
-                                {item.price} × {item.quantity}
-                              </p>
-                              <p className="text-sm text-gray-600">
-                                ₹{item.priceValue * item.quantity}
-                              </p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-
-                      <Separator className="my-4" />
-
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span>Subtotal ({getTotalItems()} items)</span>
-                          <span>₹{getTotalAmount()}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span>Service Fee</span>
-                          <span>₹0</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span>Tax</span>
-                          <span>₹{Math.round(getTotalAmount() * 0.05)}</span>
-                        </div>
-                        <Separator />
-                        <div className="flex justify-between font-bold text-lg">
-                          <span>Total</span>
-                          <span>₹{getTotalAmount() + Math.round(getTotalAmount() * 0.05)}</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* Checkout Details */}
-                <div>
-                  <Card className="border-0 shadow-soft">
-                    <CardHeader>
-                      <CardTitle className="flex items-center">
-                        <User className="h-5 w-5 mr-2" />
-                        Order Details
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Student Name
-                        </label>
-                        <div className="p-3 bg-gray-50 rounded-md text-gray-700">Sarah Johnson</div>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Class & Section
-                        </label>
-                        <div className="p-3 bg-gray-50 rounded-md text-gray-700">
-                          8th Grade - Section A
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          <MapPin className="h-4 w-4 inline mr-1" />
-                          Pickup Location
-                        </label>
-                        <div className="p-3 bg-gray-50 rounded-md text-gray-700">
-                          School Cafeteria - Counter 2
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          <Phone className="h-4 w-4 inline mr-1" />
-                          Contact Number
-                        </label>
-                        <div className="p-3 bg-gray-50 rounded-md text-gray-700">
-                          +91 98765 43210
-                        </div>
-                      </div>
-
-                      <Separator />
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          <CreditCard className="h-4 w-4 inline mr-1" />
-                          Payment Method
-                        </label>
-                        <div className="p-3 bg-green-50 border border-green-200 rounded-md">
-                          <div className="flex items-center justify-between">
-                            <span className="text-green-800 font-medium">School Wallet</span>
-                            <span className="text-green-600">₹850 available</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <Button className="w-full" size="lg" onClick={handleConfirmOrder}>
-                        Confirm Order - ₹{getTotalAmount() + Math.round(getTotalAmount() * 0.05)}
-                      </Button>
-
-                      <p className="text-xs text-gray-500 text-center">
-                        By confirming, you agree to the school meal policy and terms
-                      </p>
-                    </CardContent>
-                  </Card>
-                </div>
+            ) : (
+              <div className="grid gap-6">
+                {orders.map(order => (
+                  <OrderCard
+                    key={order.id}
+                    order={order}
+                    onOrderUpdate={handleOrderUpdate}
+                    onOrderCancel={handleOrderCancel}
+                    onViewDetails={handleViewDetails}
+                    showActions={true}
+                  />
+                ))}
               </div>
-            </div>
-          )}
-        </main>
-      </div>
-    );
-  }
-
-  // Regular orders page
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-accent-50">
-      {/* Header */}
-      <header className="border-b bg-white/80 backdrop-blur">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link href="/">
-                <Button variant="ghost" size="sm">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Home
-                </Button>
-              </Link>
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-primary-500 flex items-center justify-center">
-                  <span className="text-white font-bold text-xl">H</span>
-                </div>
-                <div>
-                  <div className="font-display font-bold text-2xl text-primary-600">
-                    Order Management
-                  </div>
-                  <div className="text-sm text-gray-600 -mt-1">HASIVU Platform</div>
-                </div>
-              </div>
-            </div>
-            <Button>
-              <ShoppingCart className="h-4 w-4 mr-2" />
-              New Order
-            </Button>
+            )}
           </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Meal Orders</h1>
-          <p className="text-gray-600">Track and manage meal orders for students</p>
-        </div>
-
-        {/* Stats Cards */}
-        {!loading && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <Card className="border-0 shadow-soft">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm font-medium text-gray-600">Total Orders</CardTitle>
-                  <ShoppingCart className="h-4 w-4 text-gray-600" />
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="text-2xl font-bold">{orders.length}</div>
-                <p className="text-xs text-gray-600">All time</p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-soft">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm font-medium text-gray-600">Delivered</CardTitle>
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="text-2xl font-bold text-green-600">
-                  {orders.filter(order => order.status === 'delivered').length}
-                </div>
-                <p className="text-xs text-gray-600">
-                  {orders.length > 0
-                    ? Math.round(
-                        (orders.filter(order => order.status === 'delivered').length /
-                          orders.length) *
-                          100
-                      )
-                    : 0}
-                  % completion rate
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-soft">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm font-medium text-gray-600">Pending</CardTitle>
-                  <Clock className="h-4 w-4 text-yellow-600" />
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="text-2xl font-bold text-yellow-600">
-                  {
-                    orders.filter(
-                      order => order.status === 'pending' || order.status === 'preparing'
-                    ).length
-                  }
-                </div>
-                <p className="text-xs text-gray-600">In queue</p>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Orders List */}
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">Recent Orders</h2>
-              <p className="text-gray-600">Manage and track your meal orders</p>
-            </div>
-            <Button onClick={loadOrders} variant="outline" size="sm">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
-            </Button>
-          </div>
-
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-              <span className="ml-2 text-gray-600">Loading orders...</span>
-            </div>
-          ) : orders.length === 0 ? (
-            <Card className="border-0 shadow-soft">
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <ShoppingCart className="h-12 w-12 text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No orders yet</h3>
-                <p className="text-gray-600 text-center mb-4">
-                  You haven't placed any orders yet. Start by browsing our menu!
-                </p>
-                <Button asChild>
-                  <Link href="/menu">Browse Menu</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-6">
-              {orders.map(order => (
-                <OrderCard
-                  key={order.id}
-                  order={order}
-                  onOrderUpdate={handleOrderUpdate}
-                  onOrderCancel={handleOrderCancel}
-                  onViewDetails={handleViewDetails}
-                  showActions={true}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      </main>
-    </div>
+        </m.main>
+      </m.div>
+    </LazyMotion>
   );
 }
