@@ -1,0 +1,26 @@
+name: API Contract Validation
+
+on:
+  workflow_dispatch:
+
+jobs:
+  validate-openapi:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline --no-audit
+
+      - name: Regenerate swagger artifact
+        run: node -e "const fs=require('fs'); const specs=require('./web/swagger.js'); fs.writeFileSync('swagger.json', JSON.stringify(specs,null,2));"
+
+      - name: Validate swagger json syntax
+        run: python3 -m json.tool swagger.json >/dev/null
