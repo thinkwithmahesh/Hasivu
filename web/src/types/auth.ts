@@ -248,12 +248,15 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   ],
 };
 
-// User profile interface
+// User profile interface (aligned with backend `AuthResult.user` in
+// `src/services/auth.service.ts`: id, email, firstName, lastName, role, permissions, schoolId;
+// JWT claims add sessionId via token decode — optional here.)
 export interface User {
   id: string;
   email: string;
-  firstName: string;
-  lastName: string;
+  /** Backend may return null when not set (`AuthResult.user` in auth.service.ts). */
+  firstName: string | null;
+  lastName: string | null;
   name?: string; // Optional computed full name for convenience
   role: UserRole;
   phone?: string;
@@ -267,11 +270,19 @@ export interface User {
   createdAt: Date;
   updatedAt: Date;
   lastLoginAt?: Date;
+  /** String permission ids from JWT / login payload (`JWTPayload.permissions` in auth.service.ts). */
+  permissions?: string[];
 
   // Role-specific fields
   children?: string[]; // For parents
   managedClasses?: string[]; // For teachers
-  permissions?: Permission[];
+  /** Fine-grained UI permissions (optional; not always on API user). */
+  permissionEnums?: Permission[];
+
+  // Enhanced auth / MFA (optional; not on minimal JWT user)
+  mfaEnabled?: boolean;
+  mfaMethods?: ('sms' | 'email' | 'totp')[];
+  lastLogin?: Date;
 
   // Preferences
   preferences?: {
@@ -319,14 +330,18 @@ export interface AuthTokens {
   expiresIn: number;
 }
 
-// Auth response from API
+// Auth response from API (flat shape used by `auth-api.service.ts` and secure auth)
 export interface AuthResponse {
   success: boolean;
-  data: {
+  user?: User;
+  tokens?: AuthTokens;
+  message?: string;
+  error?: string;
+  /** Legacy nested shape from some gateways — optional */
+  data?: {
     user: User;
     tokens: AuthTokens;
   };
-  message?: string;
 }
 
 // Auth state interface
@@ -347,6 +362,54 @@ export interface ResetPasswordRequest {
   token: string;
   password: string;
   confirmPassword: string;
+}
+
+/** Alias for secure-auth / API naming */
+export type PasswordResetRequest = ForgotPasswordRequest;
+
+export interface PasswordResetConfirmation {
+  token: string;
+  password: string;
+  confirmPassword?: string;
+}
+
+export interface PasswordChangeRequest {
+  currentPassword: string;
+  newPassword: string;
+  newPasswordConfirm?: string;
+}
+
+/** Registration payload used by secure-auth (role optional until mapped to `RegisterData`). */
+export interface RegistrationData {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  role?: UserRole | string;
+  schoolId?: string;
+  grade?: string;
+  section?: string;
+}
+
+export type UserPermission = Permission;
+
+/**
+ * Base auth context contract consumed by `secure-auth-context.tsx`.
+ * Other providers may define their own local `AuthContextType` with a different shape.
+ */
+export interface AuthContextType extends AuthState {
+  login: (credentials: LoginCredentials) => Promise<AuthResponse>;
+  register: (data: RegistrationData) => Promise<AuthResponse>;
+  logout: () => Promise<void>;
+  refreshToken: () => Promise<AuthResponse>;
+  updateProfile: (data: Partial<User>) => Promise<AuthResponse>;
+  changePassword: (data: PasswordChangeRequest) => Promise<AuthResponse>;
+  forgotPassword: (data: PasswordResetRequest) => Promise<AuthResponse>;
+  resetPassword: (data: PasswordResetConfirmation) => Promise<AuthResponse>;
+  checkAuth: () => Promise<boolean>;
+  hasRole: (role: UserRole | UserRole[]) => boolean;
+  hasPermission: (permission: UserPermission | UserPermission[]) => boolean;
+  clearError: () => void;
 }
 
 // Profile update interface
@@ -410,6 +473,38 @@ export class PermissionChecker {
 
   static canViewAnalytics(user: User | null): boolean {
     return this.hasPermission(user, Permission.READ_ANALYTICS);
+  }
+}
+
+/** Shared helpers for secure auth and fingerprinting */
+export class AuthUtils {
+  static generateDeviceFingerprint(): string {
+    if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+      return 'ssr';
+    }
+    try {
+      const raw = [
+        navigator.userAgent,
+        navigator.language,
+        String(screen?.width),
+        String(screen?.height),
+      ].join('|');
+      return typeof btoa === 'function' ? btoa(raw).slice(0, 128) : raw.slice(0, 128);
+    } catch {
+      return 'unknown-device';
+    }
+  }
+
+  static hasRole(user: User | null, role: UserRole | UserRole[]): boolean {
+    if (!user) return false;
+    const roles = Array.isArray(role) ? role : [role];
+    return roles.some(r => user.role === r);
+  }
+
+  static hasPermission(user: User | null, permission: UserPermission | UserPermission[]): boolean {
+    if (!user) return false;
+    const perms = Array.isArray(permission) ? permission : [permission];
+    return perms.every(p => PermissionChecker.hasPermission(user, p));
   }
 }
 

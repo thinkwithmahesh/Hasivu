@@ -3,7 +3,15 @@
  * Client-side authentication service for login, logout, and user management
  */
 
-import { User, UserRole, AuthTokens } from '@/types/auth';
+import {
+  User,
+  UserRole,
+  AuthTokens,
+  AuthResponse,
+  PasswordResetRequest,
+  PasswordChangeRequest,
+  PasswordResetConfirmation,
+} from '@/types/auth';
 
 export interface LoginCredentials {
   email: string;
@@ -21,22 +29,12 @@ export interface RegisterData {
   passwordConfirm?: string;
 }
 
-export interface AuthResponse {
-  user: User;
-  tokens: AuthTokens;
-  success: boolean;
-  message?: string;
-  error?: string;
-}
-
-export interface PasswordResetRequest {
-  email: string;
-}
-
 export interface PasswordResetConfirm {
   token: string;
   newPassword: string;
 }
+
+export type { AuthResponse, PasswordResetRequest };
 
 class AuthApiService {
   private baseUrl: string;
@@ -376,7 +374,8 @@ class AuthApiService {
   /**
    * Request password reset email (wrapper for existing requestPasswordReset).
    */
-  async forgotPassword(email: string): Promise<{ success: boolean; error?: string }> {
+  async forgotPassword(emailOrRequest: string | PasswordResetRequest): Promise<AuthResponse> {
+    const email = typeof emailOrRequest === 'string' ? emailOrRequest : emailOrRequest.email;
     try {
       await this.requestPasswordReset({ email });
       return { success: true };
@@ -390,15 +389,120 @@ class AuthApiService {
    * Complete password reset with token (maps to confirmPasswordReset).
    */
   async resetPassword(
-    token: string,
-    password: string,
-    _passwordConfirm: string
-  ): Promise<{ success: boolean; error?: string }> {
+    tokenOrData: string | PasswordResetConfirmation,
+    password?: string,
+    _passwordConfirm?: string
+  ): Promise<AuthResponse> {
     try {
-      await this.confirmPasswordReset({ token, newPassword: password });
+      if (typeof tokenOrData === 'object') {
+        await this.confirmPasswordReset({
+          token: tokenOrData.token,
+          newPassword: tokenOrData.password,
+        });
+      } else {
+        await this.confirmPasswordReset({
+          token: tokenOrData,
+          newPassword: password ?? '',
+        });
+      }
       return { success: true };
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Reset failed';
+      return { success: false, error: message };
+    }
+  }
+
+  /**
+   * Session probe used by secure-auth (wraps `checkAuth` with a success flag).
+   */
+  async checkSession(): Promise<{ success: boolean; user?: User; error?: string }> {
+    const result = await this.checkAuth();
+    if (result.authenticated && result.user) {
+      return { success: true, user: result.user };
+    }
+    return { success: false, user: result.user, error: result.error };
+  }
+
+  private getCookie(name: string): string | null {
+    if (typeof document === 'undefined') return null;
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) {
+      return parts.pop()?.split(';').shift() || null;
+    }
+    return null;
+  }
+
+  getCurrentCSRFToken(): string | null {
+    return this.getCookie('csrfToken');
+  }
+
+  async getCSRFToken(): Promise<{ csrfToken: string; expiresAt: string }> {
+    let token = this.getCurrentCSRFToken();
+    if (!token && typeof document !== 'undefined') {
+      token = `${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
+      document.cookie = `csrfToken=${token}; path=/; max-age=86400; samesite=strict`;
+    }
+    const expiresAt = new Date(Date.now() + 23 * 60 * 60 * 1000).toISOString();
+    return { csrfToken: token || '', expiresAt };
+  }
+
+  /**
+   * Update profile (Bearer `PATCH` — same base URL pattern as `getCurrentUser`).
+   */
+  async updateProfile(
+    data: Partial<User>
+  ): Promise<{ success: boolean; user?: User; error?: string }> {
+    try {
+      const token = this.getAccessToken();
+      if (!token) {
+        return { success: false, error: 'Not authenticated' };
+      }
+      const response = await fetch(`${this.baseUrl}/auth/me`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        const err = (await response.json().catch(() => ({}))) as { message?: string };
+        return { success: false, error: err.message || 'Update failed' };
+      }
+      const user = (await response.json()) as User;
+      this.setStoredUser(user);
+      return { success: true, user };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Update failed';
+      return { success: false, error: message };
+    }
+  }
+
+  async changePassword(data: PasswordChangeRequest): Promise<{ success: boolean; error?: string }> {
+    try {
+      const token = this.getAccessToken();
+      if (!token) {
+        return { success: false, error: 'Not authenticated' };
+      }
+      const response = await fetch(`${this.baseUrl}/auth/change-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          currentPassword: data.currentPassword,
+          newPassword: data.newPassword,
+        }),
+      });
+      if (!response.ok) {
+        const err = (await response.json().catch(() => ({}))) as { message?: string };
+        return { success: false, error: err.message || 'Change failed' };
+      }
+      return { success: true };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Change failed';
       return { success: false, error: message };
     }
   }

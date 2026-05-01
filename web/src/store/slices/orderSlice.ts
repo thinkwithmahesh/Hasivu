@@ -16,7 +16,14 @@ export interface Order {
     price: number;
     notes?: string;
   }>;
-  status: 'pending' | 'confirmed' | 'preparing' | 'ready' | 'delivered' | 'cancelled';
+  status:
+    | 'pending'
+    | 'confirmed'
+    | 'preparing'
+    | 'ready'
+    | 'out_for_delivery'
+    | 'delivered'
+    | 'cancelled';
   totalAmount: number;
   deliveryType: 'pickup' | 'delivery';
   deliveryTime?: string;
@@ -117,6 +124,13 @@ const orderSlice = createSlice({
 
       state.lastUpdated = new Date().toISOString();
     },
+    addOrder: (state, action: PayloadAction<Order>) => {
+      state.orders.unshift(action.payload);
+      if (!['delivered', 'cancelled'].includes(action.payload.status)) {
+        state.activeOrders.unshift(action.payload);
+      }
+      state.lastUpdated = new Date().toISOString();
+    },
   },
   extraReducers: builder => {
     // Fetch orders
@@ -158,7 +172,7 @@ const orderSlice = createSlice({
   },
 });
 
-export const { clearError, setCurrentOrder, updateOrderStatus } = orderSlice.actions;
+export const { clearError, setCurrentOrder, updateOrderStatus, addOrder } = orderSlice.actions;
 
 // Selectors
 export const selectOrders = (state: any) => state.orders.orders;

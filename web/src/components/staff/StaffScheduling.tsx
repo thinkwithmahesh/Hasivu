@@ -230,7 +230,7 @@ const CalendarView = ({
                     <AvatarFallback>
                       {staff.name
                         .split(' ')
-                        .map(n => n[0])
+                        .map((n: string) => n[0])
                         .join('')}
                     </AvatarFallback>
                   </Avatar>
@@ -470,9 +470,16 @@ export default function StaffScheduling() {
   });
 
   // Process schedules data
-  const schedules = useMemo(() => {
+  const schedules = useMemo((): Schedule[] => {
     if (!schedulesData) return [];
-    return schedulesData;
+    return schedulesData.map(s => ({
+      ...s,
+      shiftId: s.shiftId ?? 'morning',
+      status: (['scheduled', 'confirmed', 'absent', 'sick', 'completed'].includes(s.status)
+        ? s.status
+        : 'scheduled') as Schedule['status'],
+      hoursWorked: s.hoursWorked,
+    }));
   }, [schedulesData]);
 
   // Calculate metrics

@@ -6,7 +6,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
-import { format, isToday, isYesterday, _subDays, _startOfDay, _endOfDay } from 'date-fns';
+import { format, isToday, isYesterday } from 'date-fns';
 import {
   CheckCircleIcon,
   ClockIcon,
@@ -103,7 +103,7 @@ interface ParentDashboardProps {
  * Enhanced Parent Dashboard Component
  */
 export const ParentDashboard: React.FC<ParentDashboardProps> = ({ className = '' }) => {
-  const { user, _hasPermission } = useAuth();
+  const { user } = useAuth();
   const { isConnected, lastMessage } = useRealTimeNotifications();
   const { isSupported, permission, isRegistered, requestPermission } = usePushNotifications();
 
@@ -146,9 +146,13 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ className = ''
 
       // Load students and their data
       const studentsResponse = await api.get(`/api/v1/users/${user.id}/children`);
+      const studentsPayload = studentsResponse.data as {
+        success: boolean;
+        data: Array<Record<string, unknown>>;
+      };
 
-      if (studentsResponse.data.success) {
-        const studentData = studentsResponse.data.data.map((student: any) => ({
+      if (studentsPayload.success) {
+        const studentData = studentsPayload.data.map((student: any) => ({
           ...student,
           lastDelivery: student.lastDelivery
             ? {
@@ -167,22 +171,31 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ className = ''
 
       // Load dashboard statistics
       const statsResponse = await api.get(`/rfid/parent/${user.id}/dashboard`);
+      const statsPayload = statsResponse.data as {
+        success: boolean;
+        data: Record<string, unknown>;
+      };
 
-      if (statsResponse.data.success) {
-        const statsData = statsResponse.data.data;
-        setStats({
+      if (statsPayload.success) {
+        const statsData = statsPayload.data as Partial<DashboardStats>;
+        setStats(prev => ({
+          ...prev,
           ...statsData,
           lastDeliveryTime: statsData.lastDeliveryTime
-            ? new Date(statsData.lastDeliveryTime)
+            ? new Date(statsData.lastDeliveryTime as Date | string)
             : undefined,
-        });
+        }));
       }
 
       // Load recent activity
       const activityResponse = await api.get(`/rfid/delivery-history?parentId=${user.id}&limit=10`);
+      const activityPayload = activityResponse.data as {
+        success: boolean;
+        data: { verifications: Array<Record<string, any>> };
+      };
 
-      if (activityResponse.data.success) {
-        const activities = activityResponse.data.data.verifications.map((verification: any) => ({
+      if (activityPayload.success) {
+        const activities = activityPayload.data.verifications.map((verification: any) => ({
           id: verification.id,
           type: 'delivery' as const,
           title: 'Meal Delivered',
@@ -203,9 +216,13 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ className = ''
 
       // Load notification settings
       const settingsResponse = await api.get(`/api/v1/users/${user.id}/notification-settings`);
+      const settingsPayload = settingsResponse.data as {
+        success: boolean;
+        data: NotificationSettings;
+      };
 
-      if (settingsResponse.data.success) {
-        setNotificationSettings(settingsResponse.data.data);
+      if (settingsPayload.success) {
+        setNotificationSettings(settingsPayload.data);
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to load dashboard data';
@@ -303,7 +320,8 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ className = ''
         updatedSettings
       );
 
-      if (response.data.success) {
+      const payload = response.data as { success: boolean };
+      if (payload.success) {
         setNotificationSettings(updatedSettings);
         toast.success('Notification settings updated');
       }

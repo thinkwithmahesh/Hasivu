@@ -24,6 +24,7 @@ import {
   Plus,
   Edit2,
   Trash2,
+  Zap,
 } from 'lucide-react';
 import { hasivuApiService } from '../services/hasivu-api.service';
 

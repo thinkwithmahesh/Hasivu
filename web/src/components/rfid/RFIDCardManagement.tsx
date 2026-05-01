@@ -105,15 +105,13 @@ export const RFIDCardManagement: React.FC = () => {
         throw new Error('No valid cards found in input');
       }
 
-      const response = await rfidApi.bulkRegisterCards({
-        schoolId: newCard.schoolId,
-        cards,
-      });
+      const response = await rfidApi.bulkRegisterCards(
+        cards as Array<{ studentId: string; cardNumber: string }>
+      );
 
       setBulkImportResult(response.data);
-      setSuccess(
-        `Bulk import completed. Successful: ${response.data.successful.length}, Failed: ${response.data.failed.length}`
-      );
+      const count = Array.isArray(response.data) ? response.data.length : 0;
+      setSuccess(`Bulk import completed. Processed ${count} card(s).`);
       setBulkCards('');
       loadCards();
     } catch (err: any) {

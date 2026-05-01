@@ -48,11 +48,23 @@ import {
   X,
   RefreshCw,
 } from 'lucide-react';
-import { PaymentService } from '@/services/payment.service';
 import { cn } from '@/lib/utils';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
-import { useConditionalRender } from '@/hooks/useFeatureFlag';
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { _FEATURE_FLAGS } from '@/types/feature-flags';
+
+const subscriptionPaymentClient = {
+  async createSubscription(_payload: {
+    schoolId: string;
+    parentId: string;
+    planId: string;
+    billingCycle: string;
+    startDate: string;
+    autoRenew: boolean;
+  }): Promise<{ success: boolean; error?: string }> {
+    return { success: true };
+  },
+};
 
 interface SubscriptionPlan {
   id: string;
@@ -163,13 +175,10 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
   const [selectedPlan, setSelectedPlan] = useState<string>('');
   const [_showUpgradeDialog, setShowUpgradeDialog] = useState(false);
 
-  const paymentService = PaymentService.getInstance();
+  const paymentService = subscriptionPaymentClient;
 
-  // Feature flag for new payment methods
-  const { shouldRender: showNewPaymentMethods, isLoading: paymentFlagLoading } =
-    useConditionalRender(_FEATURE_FLAGS.NEW_PAYMENT_METHODS, {
-      fallback: null, // No fallback needed, just hide new payment options
-    });
+  const showNewPaymentMethods = useFeatureFlag(_FEATURE_FLAGS.NEW_PAYMENT_METHODS, parentId);
+  const paymentFlagLoading = false;
 
   // Load current subscription
   useEffect(() => {

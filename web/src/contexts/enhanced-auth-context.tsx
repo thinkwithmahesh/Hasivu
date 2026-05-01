@@ -9,25 +9,11 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
-import { UserRole } from '@/types/auth';
+import { UserRole, type User } from '@/types/auth';
 import { mfaService, MFAChallenge, RiskAssessment } from '@/lib/security/mfa-service';
 import { sessionManager, SessionData, DeviceFingerprint } from '@/lib/security/session-manager';
 import { threatProtection, ThreatAnalysis } from '@/lib/security/threat-protection';
 import { logger } from '@/lib/monitoring/logger';
-
-// Enhanced user interface
-interface User {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: UserRole;
-  schoolId?: string;
-  mfaEnabled: boolean;
-  mfaMethods: ('sms' | 'email' | 'totp')[];
-  lastLogin?: Date;
-  createdAt: Date;
-}
 
 // Enhanced authentication state
 interface EnhancedAuthState {
@@ -145,16 +131,17 @@ export function EnhancedAuthProvider({ children }: EnhancedAuthProviderProps) {
         );
 
         if (validation.valid && validation.session) {
+          const activeSession = validation.session;
           setState(prev => ({
             ...prev,
             user,
-            session: validation.session,
+            session: activeSession,
             isAuthenticated: true,
-            securityLevel: calculateSecurityLevel(user, validation.session),
+            securityLevel: calculateSecurityLevel(user, activeSession),
           }));
 
           // Perform background security check
-          await performSecurityCheck(user, validation.session);
+          await performSecurityCheck(user, activeSession);
         } else {
           // Clear invalid session
           await clearAuthData();
@@ -164,7 +151,7 @@ export function EnhancedAuthProvider({ children }: EnhancedAuthProviderProps) {
       setState(prev => ({ ...prev, isInitialized: true, isLoading: false }));
     } catch (error) {
       logger.logSecurityEvent('Authentication initialization failed', {
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
       });
       setState(prev => ({ ...prev, isInitialized: true, isLoading: false }));
     }
@@ -243,7 +230,7 @@ export function EnhancedAuthProvider({ children }: EnhancedAuthProviderProps) {
 
         // Determine if MFA is required
         const mfaRequired =
-          user.mfaEnabled || riskAssessment.requiresMFA || action.action === 'challenge';
+          Boolean(user.mfaEnabled) || riskAssessment.requiresMFA || action.action === 'challenge';
 
         if (mfaRequired) {
           setState(prev => ({
@@ -254,8 +241,9 @@ export function EnhancedAuthProvider({ children }: EnhancedAuthProviderProps) {
           }));
 
           // Send appropriate MFA challenge
+          const methods = user.mfaMethods ?? [];
           let challenge: MFAChallenge;
-          if (user.mfaMethods.includes('totp')) {
+          if (methods.includes('totp')) {
             // TOTP doesn't need a challenge, just return info
             challenge = {
               challengeId: '',
@@ -263,7 +251,7 @@ export function EnhancedAuthProvider({ children }: EnhancedAuthProviderProps) {
               expiresAt: new Date(Date.now() + 5 * 60 * 1000),
               attemptsRemaining: 3,
             };
-          } else if (user.mfaMethods.includes('sms')) {
+          } else if (methods.includes('sms')) {
             challenge = await mfaService.sendSMSOTP(user.id, '+1234567890'); // Get from user profile
           } else {
             challenge = await mfaService.sendEmailOTP(user.id, user.email);
@@ -319,7 +307,9 @@ export function EnhancedAuthProvider({ children }: EnhancedAuthProviderProps) {
         toast.success(`Welcome back, ${user.firstName}!`);
         return { success: true };
       } catch (error) {
-        logger.logSecurityEvent('Login error', { error: error.message });
+        logger.logSecurityEvent('Login error', {
+          error: error instanceof Error ? error.message : String(error),
+        });
         toast.error('Login failed. Please try again.');
         return { success: false };
       } finally {
@@ -363,7 +353,7 @@ export function EnhancedAuthProvider({ children }: EnhancedAuthProviderProps) {
         logger.logSecurityEvent('MFA setup failed', {
           userId: state.user.id,
           method,
-          error: error.message,
+          error: error instanceof Error ? error.message : String(error),
         });
         throw error;
       }
@@ -450,7 +440,7 @@ export function EnhancedAuthProvider({ children }: EnhancedAuthProviderProps) {
         logger.logSecurityEvent('MFA verification error', {
           userId: state.user.id,
           type: challenge.type,
-          error: error.message,
+          error: error instanceof Error ? error.message : String(error),
         });
         return { success: false, message: 'Verification failed' };
       }
@@ -481,7 +471,9 @@ export function EnhancedAuthProvider({ children }: EnhancedAuthProviderProps) {
       toast.success('Logged out successfully');
       router.push('/');
     } catch (error) {
-      logger.logSecurityEvent('Logout error', { error: error.message });
+      logger.logSecurityEvent('Logout error', {
+        error: error instanceof Error ? error.message : String(error),
+      });
       // Clear local state even if server logout fails
       await clearAuthData();
       setState({
@@ -511,7 +503,9 @@ export function EnhancedAuthProvider({ children }: EnhancedAuthProviderProps) {
 
         toast.success('Session terminated');
       } catch (error) {
-        logger.logSecurityEvent('Session termination error', { error: error.message });
+        logger.logSecurityEvent('Session termination error', {
+          error: error instanceof Error ? error.message : String(error),
+        });
         toast.error('Failed to terminate session');
       }
     },
@@ -527,7 +521,9 @@ export function EnhancedAuthProvider({ children }: EnhancedAuthProviderProps) {
       await logout();
       toast.success('All sessions terminated');
     } catch (error) {
-      logger.logSecurityEvent('All sessions termination error', { error: error.message });
+      logger.logSecurityEvent('All sessions termination error', {
+        error: error instanceof Error ? error.message : String(error),
+      });
       toast.error('Failed to terminate all sessions');
     }
   }, [state.user, logout]);
@@ -566,7 +562,9 @@ export function EnhancedAuthProvider({ children }: EnhancedAuthProviderProps) {
 
       return false;
     } catch (error) {
-      logger.logSecurityEvent('Session refresh error', { error: error.message });
+      logger.logSecurityEvent('Session refresh error', {
+        error: error instanceof Error ? error.message : String(error),
+      });
       return false;
     }
   }, []);
@@ -578,7 +576,9 @@ export function EnhancedAuthProvider({ children }: EnhancedAuthProviderProps) {
     try {
       await performSecurityCheck(state.user, state.session);
     } catch (error) {
-      logger.logSecurityEvent('Security check error', { error: error.message });
+      logger.logSecurityEvent('Security check error', {
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }, [state.user, state.session]);
 
@@ -597,7 +597,9 @@ export function EnhancedAuthProvider({ children }: EnhancedAuthProviderProps) {
 
         toast.success('Security team has been notified');
       } catch (error) {
-        logger.logSecurityEvent('Failed to report suspicious activity', { error: error.message });
+        logger.logSecurityEvent('Failed to report suspicious activity', {
+          error: error instanceof Error ? error.message : String(error),
+        });
       }
     },
     [state.user]
@@ -628,7 +630,9 @@ export function EnhancedAuthProvider({ children }: EnhancedAuthProviderProps) {
         toast.success('Security settings updated');
         return true;
       } catch (error) {
-        logger.logSecurityEvent('Security settings update failed', { error: error.message });
+        logger.logSecurityEvent('Security settings update failed', {
+          error: error instanceof Error ? error.message : String(error),
+        });
         toast.error('Failed to update security settings');
         return false;
       }
@@ -720,6 +724,7 @@ export function EnhancedAuthProvider({ children }: EnhancedAuthProviderProps) {
 
   async function authenticateUser(credentials: any): Promise<{ success: boolean; user?: User }> {
     // Demo authentication - replace with actual API call
+    const now = new Date();
     const user: User = {
       id: `user-${Date.now()}`,
       email: credentials.email,
@@ -728,7 +733,10 @@ export function EnhancedAuthProvider({ children }: EnhancedAuthProviderProps) {
       role: (credentials.role as UserRole) || UserRole.STUDENT,
       mfaEnabled: false,
       mfaMethods: ['email'],
-      createdAt: new Date(),
+      isActive: true,
+      emailVerified: true,
+      createdAt: now,
+      updatedAt: now,
     };
 
     return { success: true, user };

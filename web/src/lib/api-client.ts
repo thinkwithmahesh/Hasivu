@@ -127,6 +127,17 @@ class APIClient {
     }
   }
 
+  async get<T = unknown>(endpoint: string): Promise<APIResponse<T>> {
+    return this.request<T>(endpoint, { method: 'GET' });
+  }
+
+  async put<T = unknown>(endpoint: string, body: unknown): Promise<APIResponse<T>> {
+    return this.request<T>(endpoint, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    });
+  }
+
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<APIResponse<T>> {
     const url = `${this.baseURL}${endpoint}`;
     const config: RequestInit = {

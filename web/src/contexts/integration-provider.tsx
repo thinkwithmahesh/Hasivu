@@ -153,18 +153,26 @@ export function IntegrationProvider({ children }: IntegrationProviderProps) {
       ]);
 
       if (versionResponse.success && statusResponse.success) {
+        const statusData = statusResponse.data as {
+          maintenance?: boolean;
+          environment?: string;
+        };
+        const versionData = versionResponse.data as {
+          version?: string;
+          environment?: string;
+        };
         setState(prev => ({
           ...prev,
           systemStatus: {
-            maintenance: statusResponse.data.maintenance || false,
-            version: versionResponse.data.version || '1.0.0',
-            environment: versionResponse.data.environment || 'production',
+            maintenance: statusData.maintenance || false,
+            version: versionData.version || '1.0.0',
+            environment: versionData.environment || statusData.environment || 'production',
           },
         }));
 
         return {
-          version: versionResponse.data,
-          status: statusResponse.data,
+          version: versionData,
+          status: statusData,
         };
       }
     } catch (error) {

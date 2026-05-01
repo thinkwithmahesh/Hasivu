@@ -74,6 +74,35 @@ interface Task {
   };
 }
 
+function normalizeStaffTask(t: {
+  id: string;
+  title: string;
+  description: string;
+  assignedTo: string;
+  status: string;
+  priority: string;
+  dueDate: string;
+}): Task {
+  const now = new Date().toISOString();
+  const priorities: Task['priority'][] = ['low', 'medium', 'high', 'urgent'];
+  const statuses: Task['status'][] = ['pending', 'in_progress', 'completed', 'overdue'];
+  return {
+    ...t,
+    assignedBy: 'system',
+    priority: priorities.includes(t.priority as Task['priority'])
+      ? (t.priority as Task['priority'])
+      : 'medium',
+    status: statuses.includes(t.status as Task['status'])
+      ? (t.status as Task['status'])
+      : 'pending',
+    estimatedHours: 0,
+    category: 'general',
+    tags: [],
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
 const TaskPriorityBadge = ({ priority }: { priority: Task['priority'] }) => {
   const getPriorityStyles = () => {
     switch (priority) {
@@ -454,9 +483,9 @@ export default function StaffTasksManagement() {
   });
 
   // Process tasks data
-  const tasks = useMemo(() => {
+  const tasks = useMemo((): Task[] => {
     if (!tasksData) return [];
-    return tasksData;
+    return tasksData.map(normalizeStaffTask);
   }, [tasksData]);
 
   // Filter tasks

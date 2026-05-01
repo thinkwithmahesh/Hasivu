@@ -21,8 +21,9 @@ import {
   AuthState,
   AuthContextType,
   AuthUtils,
+  isValidUserRole,
 } from '../types/auth';
-import { authApiService } from '../services/auth-api.service';
+import { authApiService, type RegisterData } from '../services/auth-api.service';
 
 /**
  * Enhanced Auth Context with security features
@@ -271,7 +272,7 @@ export function SecureAuthProvider({ children }: SecureAuthProviderProps) {
           // Get CSRF token for new session
           await refreshCSRFToken();
 
-          toast.success(`Welcome back, ${response.user.firstName}!`);
+          toast.success(`Welcome back, ${response.user.firstName ?? response.user.email}!`);
 
           // Redirect to appropriate dashboard
           const dashboardUrl = getDashboardUrl(response.user.role);
@@ -310,7 +311,17 @@ export function SecureAuthProvider({ children }: SecureAuthProviderProps) {
       setState(prev => ({ ...prev, isLoading: true, error: undefined }));
 
       try {
-        const response = await authApiService.register(data);
+        const role: UserRole =
+          typeof data.role === 'string' && isValidUserRole(data.role) ? data.role : UserRole.PARENT;
+        const payload: RegisterData = {
+          email: data.email,
+          password: data.password,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          role,
+          schoolId: data.schoolId,
+        };
+        const response = await authApiService.register(payload);
 
         if (response.success && response.user) {
           setState({
@@ -412,20 +423,10 @@ export function SecureAuthProvider({ children }: SecureAuthProviderProps) {
    */
   const refreshToken = useCallback(async (): Promise<AuthResponse> => {
     try {
-      const response = await authApiService.refreshToken();
-
-      if (response.success && response.user) {
-        setState(prev => ({
-          ...prev,
-          user: response.user!,
-          error: undefined,
-        }));
-
-        updateActivity();
-      }
-
-      return response;
-    } catch (error) {
+      const tokens = await authApiService.refreshToken();
+      updateActivity();
+      return { success: true, tokens };
+    } catch {
       return { success: false, error: 'Token refresh failed' };
     }
   }, [updateActivity]);
@@ -690,6 +691,7 @@ function getDashboardUrl(role: UserRole): string {
   const dashboardUrls: Record<UserRole, string> = {
     admin: '/dashboard/admin',
     super_admin: '/dashboard/admin',
+    school_admin: '/school-admin/dashboard',
     parent: '/dashboard/parent',
     student: '/dashboard/student',
     vendor: '/dashboard/vendor',

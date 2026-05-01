@@ -558,6 +558,11 @@ export const staffApi = {
         startTime: string;
         endTime: string;
         status: string;
+        shiftId?: string;
+        hoursWorked?: number;
+        checkIn?: string;
+        checkOut?: string;
+        notes?: string;
       }>
     >
   > => {

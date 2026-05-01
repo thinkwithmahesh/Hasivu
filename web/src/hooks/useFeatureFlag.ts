@@ -94,6 +94,17 @@ const mockFeatureFlags: Record<string, FeatureFlag> = {
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
+  new_payment_methods: {
+    id: '6',
+    name: 'New Payment Methods',
+    description: 'UPI, wallets, and instant transfer options',
+    enabled: true,
+    rolloutPercentage: 100,
+    environment: 'production',
+    userSegments: [],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
 };
 
 /**

@@ -25,6 +25,7 @@ class SocketClient {
   private socket: Socket | null = null;
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
+  private lastConnected?: Date;
 
   constructor() {
     this.connect();
@@ -51,6 +52,7 @@ class SocketClient {
 
     this.socket.on('connect', () => {
       this.reconnectAttempts = 0;
+      this.lastConnected = new Date();
     });
 
     this.socket.on('disconnect', () => {});
@@ -99,6 +101,30 @@ class SocketClient {
 
   public isConnected(): boolean {
     return this.socket?.connected || false;
+  }
+
+  getConnectionStats(): { isConnected: boolean; reconnectAttempts: number; lastConnected?: Date } {
+    return {
+      isConnected: this.isConnected(),
+      reconnectAttempts: this.reconnectAttempts,
+      lastConnected: this.lastConnected,
+    };
+  }
+
+  subscribe(event: string, callback: (data: { status?: string }) => void): () => void {
+    if (!this.socket) {
+      return () => {};
+    }
+    const handler = (data: { status?: string }) => callback(data);
+    this.socket.on(event, handler);
+    return () => {
+      this.socket?.off(event, handler);
+    };
+  }
+
+  reconnect(): void {
+    this.disconnect();
+    this.connect();
   }
 
   // Authentication methods

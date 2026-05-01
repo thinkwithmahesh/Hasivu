@@ -6,7 +6,7 @@
  */
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { AuthApiService } from '@/services/auth-api.service';
 import type { User, UserRole } from '@/types/auth';
@@ -274,7 +274,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Real API refresh profile method
   const refreshProfile = useCallback(async (): Promise<void> => {
     try {
-      const user = await authApi.getProfile();
+      const user = await authApi.getCurrentUser();
       if (user) {
         setState(prev => ({
           ...prev,
@@ -408,13 +408,15 @@ export function withAuth<P extends object>(Component: React.ComponentType<P>) {
   return function AuthenticatedComponent(props: P) {
     const { isAuthenticated, isLoading, isInitialized } = useAuth();
     const router = useRouter();
+    const pathname = usePathname();
+    const search = typeof window !== 'undefined' ? window.location.search : '';
 
     useEffect(() => {
       if (isInitialized && !isLoading && !isAuthenticated) {
-        const currentPath = router.asPath;
+        const currentPath = `${pathname || '/'}${search}`;
         router.push(`/auth/login?redirect=${encodeURIComponent(currentPath)}`);
       }
-    }, [isAuthenticated, isLoading, isInitialized, router]);
+    }, [isAuthenticated, isLoading, isInitialized, router, pathname, search]);
 
     if (!isInitialized || isLoading) {
       return (

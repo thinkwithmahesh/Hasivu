@@ -94,7 +94,7 @@ export const DeliveryTracking: React.FC<DeliveryTrackingProps> = ({
   autoRefresh = true,
   className = '',
 }) => {
-  const { user, hasPermission: _hasPermission } = useAuth();
+  const { user } = useAuth();
   const { isConnected, lastMessage } = useRealTimeNotifications();
 
   // State management
@@ -121,9 +121,14 @@ export const DeliveryTracking: React.FC<DeliveryTrackingProps> = ({
       if (!showHistorical) params.append('dateFilter', 'today');
 
       const response = await api.get(`/api/v1/mobile/tracking/orders?${params.toString()}`);
+      const payload = response.data as {
+        success: boolean;
+        data: Array<Record<string, any>>;
+        error?: { message?: string };
+      };
 
-      if (response.data.success) {
-        const trackingData = response.data.data.map((order: any) => ({
+      if (payload.success) {
+        const trackingData = payload.data.map((order: any) => ({
           ...order,
           deliveryDate: new Date(order.deliveryDate),
           estimatedDeliveryTime: order.estimatedDeliveryTime
@@ -156,7 +161,7 @@ export const DeliveryTracking: React.FC<DeliveryTrackingProps> = ({
           }
         }
       } else {
-        throw new Error(response.data.error?.message || 'Failed to load delivery data');
+        throw new Error(payload.error?.message || 'Failed to load delivery data');
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
