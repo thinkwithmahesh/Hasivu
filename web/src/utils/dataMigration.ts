@@ -124,7 +124,7 @@ export class DataMigration {
           // Add default password for demo purposes
           password: 'defaultPassword123',
           active: true,
-        });
+        } as any);
         migratedCount++;
       } catch (error) {
         // Error handled silently
@@ -149,7 +149,7 @@ export class DataMigration {
           orderTime: order.orderTime,
           totalAmount: order.totalAmount,
           location: 'Main Cafeteria', // Default location
-        });
+        } as any);
         migratedCount++;
       } catch (error) {
         // Error handled silently
@@ -176,7 +176,7 @@ export class DataMigration {
           costPerUnit: item.costPerUnit,
           description: `Migrated ${item.category.toLowerCase()} item`,
           active: true,
-        });
+        } as any);
         migratedCount++;
       } catch (error) {
         // Error handled silently
@@ -202,7 +202,7 @@ export class DataMigration {
           phone: '1234567890', // Default phone
           hireDate: new Date().toISOString(),
           active: true,
-        });
+        } as any);
         migratedCount++;
       } catch (error) {
         // Error handled silently
@@ -226,7 +226,7 @@ export class DataMigration {
           items: menu.items,
           active: menu.active || true,
           price: menu.price,
-        });
+        } as any);
         migratedCount++;
       } catch (error) {
         // Error handled silently

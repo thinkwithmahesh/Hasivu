@@ -4,6 +4,41 @@ import { useState, useEffect } from 'react';
 import apiClient, { User, AuthResponse as AuthResponse } from '@/lib/api-client';
 import { EnhancedLoginFormData, RegistrationFormData } from '@/components/auth/schemas';
 
+/** Coerce API user payloads into full `User` (required timestamps). */
+function normalizeUser(
+  u: Pick<User, 'id' | 'email' | 'firstName' | 'lastName' | 'role'> &
+    Partial<
+      Pick<
+        User,
+        | 'createdAt'
+        | 'updatedAt'
+        | 'phone'
+        | 'timezone'
+        | 'language'
+        | 'preferences'
+        | 'permissions'
+        | 'roles'
+      >
+    >
+): User {
+  const now = new Date().toISOString();
+  return {
+    id: u.id,
+    email: u.email,
+    firstName: u.firstName,
+    lastName: u.lastName,
+    role: u.role,
+    phone: u.phone,
+    timezone: u.timezone,
+    language: u.language,
+    preferences: u.preferences,
+    permissions: u.permissions,
+    roles: u.roles,
+    createdAt: u.createdAt ?? now,
+    updatedAt: u.updatedAt ?? now,
+  };
+}
+
 interface UseAuthReturn {
   // State
   user: User | null;
@@ -46,7 +81,7 @@ export function useAuth(): UseAuthReturn {
       const response = await apiClient.getCurrentUser();
 
       if (response.success && response.data?.user) {
-        setUser(response.data.user);
+        setUser(normalizeUser(response.data.user));
         setError(null);
       } else {
         // Token might be invalid, try to refresh
@@ -56,7 +91,7 @@ export function useAuth(): UseAuthReturn {
           // Try to get user again after refresh
           const userResponse = await apiClient.getCurrentUser();
           if (userResponse.success && userResponse.data?.user) {
-            setUser(userResponse.data.user);
+            setUser(normalizeUser(userResponse.data.user));
             setError(null);
           }
         } else {
@@ -84,7 +119,7 @@ export function useAuth(): UseAuthReturn {
       const response = await apiClient.login(credentials);
 
       if (response.success && response.user) {
-        setUser(response.user);
+        setUser(normalizeUser(response.user));
         setError(null);
 
         return { success: true, message: response.message };
@@ -150,7 +185,7 @@ export function useAuth(): UseAuthReturn {
       const response = await apiClient.getCurrentUser();
 
       if (response.success && response.data?.user) {
-        setUser(response.data.user);
+        setUser(normalizeUser(response.data.user));
         setError(null);
       } else {
         // If getting current user fails, try refresh token
@@ -159,7 +194,7 @@ export function useAuth(): UseAuthReturn {
         if (refreshResponse.success) {
           const userResponse = await apiClient.getCurrentUser();
           if (userResponse.success && userResponse.data?.user) {
-            setUser(userResponse.data.user);
+            setUser(normalizeUser(userResponse.data.user));
             setError(null);
           }
         } else {

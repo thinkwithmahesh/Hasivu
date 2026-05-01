@@ -154,7 +154,7 @@ class HASIVUApiClient {
 
   constructor() {
     this.client = axios.create({
-      baseURL: API_CONFIG.BASEURL,
+      baseURL: API_CONFIG.BASE_URL,
       timeout: API_CONFIG.TIMEOUT,
       headers: {
         'Content-Type': 'application/json',
@@ -170,7 +170,7 @@ class HASIVUApiClient {
     // Request interceptor for authentication
     this.client.interceptors.request.use(
       async (config: InternalAxiosRequestConfig) => {
-        const session = await getSession();
+        const session = (await getSession()) as { accessToken?: string } | null;
 
         if (session?.accessToken) {
           config.headers.Authorization = `Bearer ${session.accessToken}`;
@@ -237,7 +237,7 @@ class HASIVUApiClient {
   }
 
   private async performTokenRefresh(): Promise<AuthTokens> {
-    const session = await getSession();
+    const session = (await getSession()) as { refreshToken?: string } | null;
 
     if (!session?.refreshToken) {
       throw new Error('No refresh token available');
@@ -286,12 +286,12 @@ class HASIVUApiClient {
   }
 
   async verifyEmail(token: string): Promise<ApiResponse<void>> {
-    const response = await this.client.post(API_CONFIG.ENDPOINTS.AUTH.VERIFYEMAIL, { token });
+    const response = await this.client.post(API_CONFIG.ENDPOINTS.AUTH.VERIFY_EMAIL, { token });
     return response.data;
   }
 
   async forgotPassword(email: string): Promise<ApiResponse<void>> {
-    const response = await this.client.post(API_CONFIG.ENDPOINTS.AUTH.FORGOTPASSWORD, { email });
+    const response = await this.client.post(API_CONFIG.ENDPOINTS.AUTH.FORGOT_PASSWORD, { email });
     return response.data;
   }
 
@@ -300,7 +300,7 @@ class HASIVUApiClient {
     token: string,
     newPassword: string
   ): Promise<ApiResponse<void>> {
-    const response = await this.client.post(API_CONFIG.ENDPOINTS.AUTH.RESETPASSWORD, {
+    const response = await this.client.post(API_CONFIG.ENDPOINTS.AUTH.RESET_PASSWORD, {
       email,
       token,
       newPassword,
@@ -310,12 +310,12 @@ class HASIVUApiClient {
 
   // RFID Methods
   async createRFIDCard(cardData: any): Promise<ApiResponse<any>> {
-    const response = await this.client.post(API_CONFIG.ENDPOINTS.RFID.CREATECARD, cardData);
+    const response = await this.client.post(API_CONFIG.ENDPOINTS.RFID.CREATE_CARD, cardData);
     return response.data;
   }
 
   async verifyRFIDCard(cardNumber: string, readerId: string): Promise<ApiResponse<any>> {
-    const response = await this.client.post(API_CONFIG.ENDPOINTS.RFID.VERIFYCARD, {
+    const response = await this.client.post(API_CONFIG.ENDPOINTS.RFID.VERIFY_CARD, {
       cardNumber,
       readerId,
       timestamp: new Date().toISOString(),
@@ -324,13 +324,13 @@ class HASIVUApiClient {
   }
 
   async getRFIDAnalytics(params?: any): Promise<ApiResponse<any>> {
-    const response = await this.client.get(API_CONFIG.ENDPOINTS.RFID.CARDANALYTICS, { params });
+    const response = await this.client.get(API_CONFIG.ENDPOINTS.RFID.CARD_ANALYTICS, { params });
     return response.data;
   }
 
   // Payment Methods
   async createPaymentOrder(orderData: any): Promise<ApiResponse<any>> {
-    const response = await this.client.post(API_CONFIG.ENDPOINTS.PAYMENTS.CREATEORDER, orderData);
+    const response = await this.client.post(API_CONFIG.ENDPOINTS.PAYMENTS.CREATE_ORDER, orderData);
     return response.data;
   }
 
@@ -466,7 +466,7 @@ class HASIVUApiClient {
   }
 
   async configureRFIDSystem(rfidData: any): Promise<ApiResponse<any>> {
-    const response = await this.client.post(API_CONFIG.ENDPOINTS.RFID.BULKIMPORT, {
+    const response = await this.client.post(API_CONFIG.ENDPOINTS.RFID.BULK_IMPORT, {
       ...rfidData,
       step: 'rfid_setup',
     });

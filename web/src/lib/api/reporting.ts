@@ -296,7 +296,7 @@ export class ReportingAPI {
       '/api/v1/reporting/dashboard',
       { params }
     );
-    return response.data.data;
+    return response.data;
   }
 
   /**
@@ -309,7 +309,7 @@ export class ReportingAPI {
       '/api/v1/reporting/templates',
       template
     );
-    return response.data.data;
+    return response.data;
   }
 
   /**
@@ -329,7 +329,7 @@ export class ReportingAPI {
         limit: number;
       }>
     >('/api/v1/reporting/templates', { params });
-    return response.data.data;
+    return response.data;
   }
 
   /**
@@ -339,7 +339,7 @@ export class ReportingAPI {
     const response = await this.client.get<ApiResponse<ReportTemplate>>(
       `/api/v1/reporting/templates/${templateId}`
     );
-    return response.data.data;
+    return response.data;
   }
 
   /**
@@ -353,7 +353,7 @@ export class ReportingAPI {
       `/api/v1/reporting/templates/${templateId}`,
       updates
     );
-    return response.data.data;
+    return response.data;
   }
 
   /**
@@ -371,7 +371,7 @@ export class ReportingAPI {
       '/api/v1/reporting/generate',
       request
     );
-    return response.data.data;
+    return response.data;
   }
 
   /**
@@ -381,7 +381,7 @@ export class ReportingAPI {
     const response = await this.client.get<ApiResponse<ReportStatus>>(
       `/api/v1/reporting/reports/${reportId}/status`
     );
-    return response.data.data;
+    return response.data;
   }
 
   /**
@@ -391,7 +391,7 @@ export class ReportingAPI {
     const response = await this.client.get<ApiResponse<GeneratedReport>>(
       `/api/v1/reporting/reports/${reportId}`
     );
-    return response.data.data;
+    return response.data;
   }
 
   /**
@@ -401,18 +401,18 @@ export class ReportingAPI {
     const response = await this.client.get<ApiResponse<ReportExport>>(
       `/api/v1/reporting/reports/${reportId}/exports/${exportId}`
     );
-    return response.data.data;
+    return response.data;
   }
 
   /**
    * Download a report export
    */
   async downloadReportExport(reportId: string, exportId: string): Promise<Blob> {
-    const response = await this.client.get(
+    const response = await this.client.get<Blob>(
       `/api/v1/reporting/reports/${reportId}/download/${exportId}`,
       { responseType: 'blob' }
     );
-    return response.data;
+    return response;
   }
 
   /**
@@ -423,7 +423,7 @@ export class ReportingAPI {
       '/api/v1/reporting/schedule',
       request
     );
-    return response.data.data;
+    return response.data;
   }
 
   /**
@@ -443,7 +443,7 @@ export class ReportingAPI {
         limit: number;
       }>
     >('/api/v1/reporting/schedules', { params });
-    return response.data.data;
+    return response.data;
   }
 
   /**
@@ -454,7 +454,7 @@ export class ReportingAPI {
       `/api/v1/reporting/schedules/${scheduleId}`,
       updates
     );
-    return response.data.data;
+    return response.data;
   }
 
   /**
@@ -479,7 +479,7 @@ export class ReportingAPI {
         count: number;
       }>
     >('/api/v1/reporting/insights/analyze', request);
-    return response.data.data;
+    return response.data;
   }
 
   /**
@@ -495,7 +495,7 @@ export class ReportingAPI {
         detailed: string;
       }>
     >(`/api/v1/reporting/insights/${insightId}/explanation`);
-    return response.data.data;
+    return response.data;
   }
 
   /**
@@ -522,7 +522,7 @@ export class ReportingAPI {
         count: number;
       }>
     >('/api/v1/reporting/exports/formats');
-    return response.data.data;
+    return response.data;
   }
 
   /**
@@ -540,7 +540,7 @@ export class ReportingAPI {
         timestamp: string;
       }>
     >('/api/v1/reporting/health');
-    return response.data.data;
+    return response.data;
   }
 
   /**
@@ -567,7 +567,7 @@ export class ReportingAPI {
         limit: number;
       }>
     >('/api/v1/reporting/history', { params });
-    return response.data.data;
+    return response.data;
   }
 
   /**
@@ -585,24 +585,27 @@ export class ReportingAPI {
       `/api/v1/reporting/templates/${templateId}/duplicate`,
       { name }
     );
-    return response.data.data;
+    return response.data;
   }
 
   /**
    * Export template configuration
    */
   async exportTemplate(templateId: string): Promise<Blob> {
-    const response = await this.client.get(`/api/v1/reporting/templates/${templateId}/export`, {
-      responseType: 'blob',
-    });
-    return response.data;
+    const response = await this.client.get<Blob>(
+      `/api/v1/reporting/templates/${templateId}/export`,
+      {
+        responseType: 'blob',
+      }
+    );
+    return response;
   }
 
   /**
    * Import template configuration
    */
   async importTemplate(file: File): Promise<ReportTemplate> {
-    const _formData = new FormData();
+    const formData = new FormData();
     formData.append('template', file);
 
     const response = await this.client.post<ApiResponse<ReportTemplate>>(
@@ -614,7 +617,7 @@ export class ReportingAPI {
         },
       }
     );
-    return response.data.data;
+    return response.data;
   }
 }
 

@@ -214,24 +214,7 @@ function setupGlobalMocks(): void {
     DeleteObjectCommand: jest.fn(),
   }));
 
-  // Mock Redis
-  jest.doMock('ioredis', () => {
-    const mockRedis = jest.fn();
-    mockRedis.mockImplementation(() => ({
-      get: jest.fn(async () => null),
-      set: jest.fn(async () => 'OK'),
-      del: jest.fn(async () => 1),
-      exists: jest.fn(async () => 0),
-      expire: jest.fn(async () => 1),
-      incr: jest.fn(async () => 1),
-      decr: jest.fn(async () => 0),
-      hget: jest.fn(async () => null),
-      hset: jest.fn(async () => 1),
-      hdel: jest.fn(async () => 1),
-      disconnect: jest.fn(async () => undefined),
-    }));
-    return mockRedis;
-  });
+  // Mock Redis — see tests/redis-mock.setup.js (setupFiles) for module-load order
 
   // Mock bcryptjs
   jest.doMock('bcryptjs', () => ({

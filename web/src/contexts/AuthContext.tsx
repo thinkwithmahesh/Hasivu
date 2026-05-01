@@ -29,12 +29,12 @@ export interface User {
   email: string;
   firstName: string;
   lastName: string;
-  role: UserRole;
+  role: string;
   schoolId?: string;
   phone?: string;
   avatar?: string;
-  isActive: boolean;
-  emailVerified: boolean;
+  isActive?: boolean;
+  emailVerified?: boolean;
   lastLogin?: string;
   createdAt: string;
   preferences?: UserPreferences;
@@ -253,7 +253,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
    */
   const hasAnyRole = useCallback(
     (roles: UserRole[]): boolean => {
-      return user ? roles.includes(user.role) : false;
+      return user ? roles.includes(user.role as UserRole) : false;
     },
     [user]
   );

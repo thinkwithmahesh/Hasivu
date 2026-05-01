@@ -356,6 +356,52 @@ class AuthApiService {
   setStoredUser(user: User): void {
     localStorage.setItem('user', JSON.stringify(user));
   }
+
+  /**
+   * Check whether the client has a valid session and return the current user when possible.
+   */
+  async checkAuth(): Promise<{ authenticated: boolean; user?: User; error?: string }> {
+    try {
+      if (!this.isAuthenticated()) {
+        return { authenticated: false };
+      }
+      const user = await this.getCurrentUser();
+      return { authenticated: true, user };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Auth check failed';
+      return { authenticated: false, error: message };
+    }
+  }
+
+  /**
+   * Request password reset email (wrapper for existing requestPasswordReset).
+   */
+  async forgotPassword(email: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      await this.requestPasswordReset({ email });
+      return { success: true };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Request failed';
+      return { success: false, error: message };
+    }
+  }
+
+  /**
+   * Complete password reset with token (maps to confirmPasswordReset).
+   */
+  async resetPassword(
+    token: string,
+    password: string,
+    _passwordConfirm: string
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      await this.confirmPasswordReset({ token, newPassword: password });
+      return { success: true };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Reset failed';
+      return { success: false, error: message };
+    }
+  }
 }
 
 // Export singleton instance

@@ -122,7 +122,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         expiresAt: expiresAt.toISOString(),
       };
 
-      localStorage.setItem(CART_STORAGEKEY, JSON.stringify(storageData));
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(storageData));
     } catch (error) {
       console.error('Error saving cart to storage:', error);
     }

@@ -65,6 +65,7 @@ model User {
   // Fixed Order relationship
   orders            Order[] @relation("UserOrders")
   studentOrders     Order[] @relation("StudentOrders")
+  assignedOrders    Order[] @relation("OrderAssignedStaff")
   
   // Epic 5 Relations - Payment Processing & Billing
   paymentMethods    PaymentMethod[] @relation("UserPaymentMethods")
@@ -239,6 +240,9 @@ model Order {
   userId          String   @map("user_id")        // Parent/Guardian who placed order
   studentId       String   @map("student_id")     // Student receiving the meal
   schoolId        String   @map("school_id")      // School where order is placed
+
+  assignedStaffId String?  @map("assigned_staff_id")
+  assignedAt      DateTime? @map("assigned_at")
   
   // Order details
   status          String   @default("pending")    // pending, confirmed, preparing, ready, out_for_delivery, delivered, cancelled
@@ -261,6 +265,7 @@ model Order {
   // Fixed Relations with proper constraints
   user            User       @relation("UserOrders", fields: [userId], references: [id], onDelete: Restrict)
   student         User       @relation("StudentOrders", fields: [studentId], references: [id], onDelete: Restrict)
+  assignedStaff   User?      @relation("OrderAssignedStaff", fields: [assignedStaffId], references: [id], onDelete: SetNull)
   school          School     @relation("SchoolOrders", fields: [schoolId], references: [id], onDelete: Restrict)
   payments        Payment[]  @relation("OrderPayments")
   
@@ -276,6 +281,7 @@ model Order {
   @@index([paymentStatus])
   @@index([deliveryDate])
   @@index([createdAt])
+  @@index([assignedStaffId])
   @@map("orders")
 }
 

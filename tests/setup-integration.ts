@@ -215,7 +215,7 @@ export async function cleanTestRedis(): Promise<void> {
  * Initialize AWS SDK with test configuration
  */
 export function initTestAWS(): void {
-  AWS.config.update({
+  (AWS.config as { update: (c: Record<string, string>) => void }).update({
     accessKeyId: IntegrationTestConfig.aws.accessKeyId,
     secretAccessKey: IntegrationTestConfig.aws.secretAccessKey,
     region: IntegrationTestConfig.aws.region,

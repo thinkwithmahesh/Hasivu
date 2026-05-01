@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Clock,
@@ -35,10 +35,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'react-hot-toast';
 
+import { useAuth, useUser } from '@/contexts/AuthContext';
+import { UserRole } from '@/types/auth';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
 // Import API integration hooks
 import {
   useKitchenOrders,
   useKitchenMetrics,
+  useKitchenStaff,
   useOrderMutations,
   useStaffMembers,
   useInventoryItems,
@@ -53,6 +64,7 @@ interface Order {
   orderNumber: string;
   studentName: string;
   studentId: string;
+  schoolId?: string;
   items: OrderItem[];
   status: 'pending' | 'preparing' | 'ready' | 'completed' | 'cancelled';
   priority: 'low' | 'medium' | 'high';
@@ -60,6 +72,7 @@ interface Order {
   estimatedTime: number; // in minutes
   actualTime?: number;
   assignedStaff?: string;
+  assignedStaffId?: string | null;
   location: string;
   specialInstructions?: string;
   totalAmount: number;
@@ -327,8 +340,30 @@ const getPriorityColor = (priority: Order['priority']) => {
   }
 };
 
+type AssignableStaffRow = {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  email: string;
+  role: string;
+};
+
 // Order Card Component
-const OrderCard = ({ order }: { order: Order }) => {
+const OrderCard = ({
+  order,
+  assignableStaff,
+  showAssignUi,
+  assigningOrderId,
+  assignError,
+  onAssign,
+}: {
+  order: Order;
+  assignableStaff: AssignableStaffRow[];
+  showAssignUi: boolean;
+  assigningOrderId: string | null;
+  assignError: string | null;
+  onAssign: (orderId: string, staffId: string) => void | Promise<void>;
+}) => {
   const [timeElapsed, setTimeElapsed] = useState(0);
 
   useEffect(() => {
@@ -393,6 +428,29 @@ const OrderCard = ({ order }: { order: Order }) => {
             <Timer className="w-3 h-3 mr-1" />
             Est. {order.estimatedTime}min
           </span>
+        </div>
+      )}
+
+      {showAssignUi && assignableStaff.length > 0 && (
+        <div className="mb-3 space-y-1">
+          <Select
+            disabled={assigningOrderId === order.id}
+            onValueChange={value => {
+              void onAssign(order.id, value);
+            }}
+          >
+            <SelectTrigger className="h-8 text-xs" aria-label="Assign to staff">
+              <SelectValue placeholder="Assign to staff…" />
+            </SelectTrigger>
+            <SelectContent>
+              {assignableStaff.map(s => (
+                <SelectItem key={s.id} value={s.id}>
+                  {[s.firstName, s.lastName].filter(Boolean).join(' ') || s.email} ({s.role})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {assignError ? <p className="text-xs text-red-600">{assignError}</p> : null}
         </div>
       )}
 
@@ -543,6 +601,17 @@ export const KitchenManagementDashboard: React.FC = () => {
   const [orderFilters, _setOrderFilters] = useState({});
   const [staffFilters, _setStaffFilters] = useState({});
   const [inventoryFilters, _setInventoryFilters] = useState({});
+  const [assigningOrderId, setAssigningOrderId] = useState<string | null>(null);
+  const [assignErrors, setAssignErrors] = useState<Record<string, string | null>>({});
+
+  const { hasAnyRole } = useAuth();
+  const user = useUser();
+  const canAssign = hasAnyRole([
+    UserRole.KITCHEN_STAFF,
+    UserRole.SCHOOL_ADMIN,
+    UserRole.ADMIN,
+    UserRole.SUPER_ADMIN,
+  ]);
 
   // API Integration hooks
   const {
@@ -557,10 +626,22 @@ export const KitchenManagementDashboard: React.FC = () => {
   const { data: _lowStockAlerts, loading: _alertsLoading } = useLowStockAlerts();
   const {
     updateOrderStatus,
+    assignOrder,
     loading: mutationLoading,
     error: mutationError,
   } = useOrderMutations();
   const { connected: wsConnected } = useWebSocketConnection();
+
+  const schoolIdForStaff =
+    user?.schoolId ||
+    (orders && Array.isArray(orders) && (orders[0] as { schoolId?: string })?.schoolId) ||
+    undefined;
+  const { data: kitchenStaffList } = useKitchenStaff(canAssign ? schoolIdForStaff : undefined);
+
+  const assignableStaff: AssignableStaffRow[] = useMemo(
+    () => (Array.isArray(kitchenStaffList) ? (kitchenStaffList as AssignableStaffRow[]) : []),
+    [kitchenStaffList]
+  );
 
   // Real-time updates via WebSocket
   useWebSocketSubscription(
@@ -595,8 +676,49 @@ export const KitchenManagementDashboard: React.FC = () => {
     [updateOrderStatus, refetchOrders]
   );
 
+  const handleAssignOrder = useCallback(
+    async (orderId: string, staffId: string) => {
+      setAssigningOrderId(orderId);
+      setAssignErrors(prev => ({ ...prev, [orderId]: null }));
+      try {
+        await assignOrder(orderId, staffId);
+        toast.success('Order assigned successfully');
+        await refetchOrders();
+      } catch {
+        setAssignErrors(prev => ({
+          ...prev,
+          [orderId]: 'Could not assign order. Try again.',
+        }));
+        toast.error('Failed to assign order');
+      } finally {
+        setAssigningOrderId(null);
+      }
+    },
+    [assignOrder, refetchOrders]
+  );
+
   // Use fallback data if API calls fail or data is not available
-  const ordersData: Order[] = (orders || mockOrders) as Order[];
+  const ordersData: Order[] = useMemo(() => {
+    const raw = (orders || mockOrders) as any[];
+    return raw.map((o: any) => {
+      const assigned = o?.assignedStaff;
+      let assignedStaff: string | undefined;
+      if (typeof assigned === 'string') {
+        assignedStaff = assigned;
+      } else if (assigned && (assigned.firstName || assigned.lastName)) {
+        assignedStaff =
+          [assigned.firstName, assigned.lastName].filter(Boolean).join(' ') || assigned.email;
+      } else if (assigned?.name) {
+        assignedStaff = assigned.name;
+      }
+      return {
+        ...o,
+        assignedStaff: assignedStaff ?? o.assignedStaff,
+        schoolId: o.schoolId,
+        assignedStaffId: o.assignedStaffId,
+      } as Order;
+    });
+  }, [orders]);
   const metricsData: KitchenMetrics = (metrics || mockMetrics) as KitchenMetrics;
   const staffData: KitchenStaff[] = (staff || mockStaff) as KitchenStaff[];
   const inventoryData: InventoryItem[] = (inventory || mockInventory) as InventoryItem[];
@@ -746,7 +868,15 @@ export const KitchenManagementDashboard: React.FC = () => {
                 <CardContent className="space-y-3">
                   <AnimatePresence>
                     {pendingOrders.map(order => (
-                      <OrderCard key={order.id} order={order} />
+                      <OrderCard
+                        key={order.id}
+                        order={order}
+                        assignableStaff={assignableStaff}
+                        showAssignUi={canAssign}
+                        assigningOrderId={assigningOrderId}
+                        assignError={assignErrors[order.id] ?? null}
+                        onAssign={handleAssignOrder}
+                      />
                     ))}
                   </AnimatePresence>
                 </CardContent>
@@ -764,7 +894,15 @@ export const KitchenManagementDashboard: React.FC = () => {
                 <CardContent className="space-y-3">
                   <AnimatePresence>
                     {preparingOrders.map(order => (
-                      <OrderCard key={order.id} order={order} />
+                      <OrderCard
+                        key={order.id}
+                        order={order}
+                        assignableStaff={assignableStaff}
+                        showAssignUi={canAssign}
+                        assigningOrderId={assigningOrderId}
+                        assignError={assignErrors[order.id] ?? null}
+                        onAssign={handleAssignOrder}
+                      />
                     ))}
                   </AnimatePresence>
                 </CardContent>
@@ -782,7 +920,15 @@ export const KitchenManagementDashboard: React.FC = () => {
                 <CardContent className="space-y-3">
                   <AnimatePresence>
                     {readyOrders.map(order => (
-                      <OrderCard key={order.id} order={order} />
+                      <OrderCard
+                        key={order.id}
+                        order={order}
+                        assignableStaff={assignableStaff}
+                        showAssignUi={canAssign}
+                        assigningOrderId={assigningOrderId}
+                        assignError={assignErrors[order.id] ?? null}
+                        onAssign={handleAssignOrder}
+                      />
                     ))}
                   </AnimatePresence>
                 </CardContent>

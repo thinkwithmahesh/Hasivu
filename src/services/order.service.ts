@@ -12,6 +12,13 @@ import { NotificationService } from './notification.service';
 import { PaymentService } from './payment.service';
 import { PaymentOrderRepository } from '../repositories/paymentOrder.repository';
 import { OrderItemRepository } from '../repositories/orderItem.repository';
+import { AppError, ForbiddenError } from '../utils/errors';
+
+/** Kitchen order assignment payload (schoolId must match the order's school) */
+export interface AssignOrderRequest {
+  staffId: string;
+  schoolId: string;
+}
 
 export interface OrderFilters {
   schoolId?: string;
@@ -1048,6 +1055,120 @@ export class OrderService {
    */
   async update(orderId: string, updates: any): Promise<Order> {
     return await this.orderRepo.update(orderId, updates);
+  }
+
+  /**
+   * Assign an order to kitchen staff (same school, authorized roles only).
+   */
+  async assignOrder(
+    orderId: string,
+    request: AssignOrderRequest,
+    _actorUserId: string,
+    actorRole: string,
+    actorSchoolId?: string | null
+  ): Promise<
+    Order & {
+      assignedStaff: {
+        id: string;
+        firstName: string | null;
+        lastName: string | null;
+        email: string;
+        role: string;
+      } | null;
+    }
+  > {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: { school: true },
+    });
+
+    if (!order) {
+      throw new AppError(`Order ${orderId} not found`, 404, true, 'ORDER_NOT_FOUND');
+    }
+
+    if (request.schoolId !== order.schoolId) {
+      throw new ForbiddenError('schoolId does not match this order', 'ORDER_SCHOOL_MISMATCH');
+    }
+
+    const elevatedRoles = ['admin', 'super_admin'];
+    const kitchenRoles = ['kitchen_staff', 'school_admin'];
+    const isElevated = elevatedRoles.includes(actorRole);
+    const isKitchenRole = kitchenRoles.includes(actorRole);
+
+    if (!isElevated && !isKitchenRole) {
+      throw new ForbiddenError(
+        'Only kitchen staff or school admin with matching school may assign orders',
+        'ORDER_ASSIGN_FORBIDDEN'
+      );
+    }
+
+    if (!isElevated) {
+      if (!actorSchoolId || actorSchoolId !== order.schoolId) {
+        throw new ForbiddenError(
+          'Only kitchen staff or school admin with matching school may assign orders',
+          'ORDER_ASSIGN_FORBIDDEN'
+        );
+      }
+    }
+
+    const targetStaff = await this.prisma.user.findFirst({
+      where: {
+        id: request.staffId,
+        schoolId: order.schoolId,
+        role: { in: ['kitchen_staff', 'school_admin'] },
+      },
+    });
+
+    if (!targetStaff) {
+      throw new AppError(
+        `Staff member ${request.staffId} not found in school ${order.schoolId}`,
+        404,
+        true,
+        'ASSIGN_STAFF_NOT_FOUND'
+      );
+    }
+
+    return (await this.prisma.order.update({
+      where: { id: orderId },
+      data: {
+        assignedStaffId: request.staffId,
+        assignedAt: new Date(),
+      },
+      include: {
+        assignedStaff: {
+          select: { id: true, firstName: true, lastName: true, email: true, role: true },
+        },
+      },
+    })) as any;
+  }
+
+  /**
+   * Kitchen staff / school admins eligible for order assignment at a school.
+   */
+  async listAssignableStaff(schoolId: string): Promise<
+    Array<{
+      id: string;
+      firstName: string | null;
+      lastName: string | null;
+      email: string;
+      role: string;
+    }>
+  > {
+    return this.prisma.user.findMany({
+      where: {
+        schoolId,
+        role: { in: ['kitchen_staff', 'school_admin'] },
+        isActive: true,
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        role: true,
+      },
+      orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
+    });
   }
 
   /**

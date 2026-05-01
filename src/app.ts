@@ -19,6 +19,8 @@ import { logger } from './utils/logger';
 import { healthRouter } from './routes/health.routes';
 import { authRouter } from './routes/auth.routes';
 import paymentsRouter from './routes/payments.routes';
+import ordersRouter from './routes/orders.routes';
+import kitchenRouter from './routes/kitchen.routes';
 
 // Import essential services
 import { redisService } from './services/redis.service';
@@ -141,6 +143,10 @@ class SimpleApp {
 
     // Payments
     this.app.use('/api/payments', paymentsRouter);
+
+    // Orders (v1) + kitchen assignment
+    this.app.use('/api/v1/orders', ordersRouter);
+    this.app.use('/api/kitchen', kitchenRouter);
 
     // Root endpoint
     this.app.get('/', (req: Request, res: Response): void => {

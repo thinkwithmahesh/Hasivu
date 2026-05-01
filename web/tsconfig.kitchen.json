@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "next-env.d.ts",
+    "src/services/api.ts",
+    "src/hooks/useApiIntegration.ts",
+    "src/components/kitchen/**/*.ts",
+    "src/components/kitchen/**/*.tsx"
+  ],
+  "exclude": ["node_modules", ".next", "**/*.test.ts", "**/*.test.tsx", "**/__tests__/**"]
+}

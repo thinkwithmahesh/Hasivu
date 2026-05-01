@@ -305,7 +305,7 @@ export function CartProvider({ children }: CartProviderProps) {
   const saveCart = useCallback(() => {
     try {
       if (typeof window !== 'undefined') {
-        localStorage.setItem(STORAGEKEY, JSON.stringify(items));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
       }
     } catch (error) {
       // Error handled silently

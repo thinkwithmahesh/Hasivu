@@ -19,6 +19,7 @@
     "format": "prettier --write \"src/**/*.{ts,js,json,md}\" \"web/**/*.{ts,tsx,js,jsx,json,md}\"",
     "format:check": "prettier --check \"src/**/*.{ts,js,json,md}\" \"web/**/*.{ts,tsx,js,jsx,json,md}\"",
     "test": "jest",
+    "test:required": "jest tests/required --passWithNoTests",
     "test:unit": "jest --testPathPattern=unit",
     "test:integration": "jest --testPathPattern=integration",
     "test:e2e": "jest --testPathPattern=e2e",

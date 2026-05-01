@@ -10,6 +10,7 @@ import {
   analyticsApi,
   wsManager,
   handleApiError,
+  type User as ApiUser,
 } from '../services/api';
 
 // Generic hook for API data fetching with loading, error, and caching
@@ -92,6 +93,13 @@ export function useKitchenMetrics(period?: string) {
   );
 }
 
+export function useKitchenStaff(schoolId: string | undefined) {
+  return useApiData(() => kitchenApi.getKitchenStaff(schoolId!), [schoolId], {
+    refetchInterval: 120000,
+    enabled: Boolean(schoolId),
+  });
+}
+
 export function useOrderMutations() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -101,6 +109,21 @@ export function useOrderMutations() {
       setLoading(true);
       setError(null);
       const response = await kitchenApi.updateOrderStatus(orderId, status);
+      return response.data;
+    } catch (err) {
+      const errorMessage = handleApiError(err);
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const assignOrder = useCallback(async (orderId: string, staffId: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await kitchenApi.assignOrder(orderId, staffId);
       return response.data;
     } catch (err) {
       const errorMessage = handleApiError(err);
@@ -128,6 +151,7 @@ export function useOrderMutations() {
 
   return {
     updateOrderStatus,
+    assignOrder,
     createOrder,
     loading,
     error,
@@ -479,7 +503,7 @@ export function useNotificationMutations() {
 
 // Authentication Hooks
 export function useAuth() {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<ApiUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -507,7 +531,10 @@ export function useAuth() {
       setLoading(true);
       setError(null);
       const response = await userApi.login(credentials);
-      localStorage.setItem('authToken', response.data.token);
+      const accessToken = response.data.accessToken ?? response.data.token;
+      if (accessToken) {
+        localStorage.setItem('authToken', accessToken);
+      }
       setUser(response.data.user);
       return response.data;
     } catch (err) {
@@ -588,7 +615,9 @@ export function useWebSocketSubscription<T>(messageType: string, handler: (data:
   }, [handler]);
 
   useEffect(() => {
-    const stableHandler = (data: T) => handlerRef.current(data);
+    const stableHandler = (data: unknown) => {
+      handlerRef.current(data as T);
+    };
     wsManager.subscribe(messageType, stableHandler);
     return () => wsManager.unsubscribe(messageType);
   }, [messageType]); // Only re-subscribe when messageType changes

@@ -143,7 +143,7 @@ class ApiClient {
       if (!response.ok) {
         const httpError = new Error(
           responseData.message || responseData.error || `HTTP ${response.status}`
-        ) as ApiError;
+        ) as unknown as ApiError;
         httpError.status = response.status;
         httpError.errors = responseData.errors;
         throw httpError;
@@ -157,13 +157,13 @@ class ApiClient {
       };
     } catch (error) {
       if (error instanceof Error && error.name === 'TimeoutError') {
-        const timeoutError = new Error('Request timeout') as ApiError;
+        const timeoutError = new Error('Request timeout') as unknown as ApiError;
         timeoutError.status = 408;
         throw timeoutError;
       }
 
       if (error instanceof Error && error.name === 'AbortError') {
-        const abortError = new Error('Request aborted') as ApiError;
+        const abortError = new Error('Request aborted') as unknown as ApiError;
         abortError.status = 499;
         throw abortError;
       }
@@ -176,7 +176,7 @@ class ApiClient {
       // Handle network errors
       const networkError = new Error(
         error instanceof Error ? error.message : 'Network error'
-      ) as ApiError;
+      ) as unknown as ApiError;
       networkError.status = 0;
       throw networkError;
     }
@@ -238,7 +238,9 @@ class ApiClient {
       const responseData = await response.json();
 
       if (!response.ok) {
-        const uploadError = new Error(responseData.message || 'Upload failed') as ApiError;
+        const uploadError = new Error(
+          responseData.message || 'Upload failed'
+        ) as unknown as ApiError;
         uploadError.status = response.status;
         uploadError.errors = responseData.errors;
         throw uploadError;
@@ -257,7 +259,7 @@ class ApiClient {
       // Otherwise wrap it in an Error object
       const wrappedError = new Error(
         error instanceof Error ? error.message : 'Upload error'
-      ) as ApiError;
+      ) as unknown as ApiError;
       wrappedError.status = 0;
       throw wrappedError;
     }

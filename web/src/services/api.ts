@@ -48,7 +48,7 @@ apiClient.interceptors.response.use(
 );
 
 // Generic API response type
-interface ApiResponse<T = unknown> {
+export interface ApiResponse<T = unknown> {
   data: T;
   message: string;
   success: boolean;
@@ -62,7 +62,7 @@ interface ApiResponse<T = unknown> {
 }
 
 // Common API data types
-interface User {
+export interface User {
   id: string;
   email: string;
   name: string;
@@ -87,6 +87,15 @@ interface Order {
   deliveryDate: Date;
   createdAt: string;
   updatedAt: string;
+  assignedStaffId?: string | null;
+  assignedAt?: string | null;
+  assignedStaff?: {
+    id: string;
+    firstName?: string | null;
+    lastName?: string | null;
+    email: string;
+    role: string;
+  } | null;
 }
 
 interface InventoryItem {
@@ -162,7 +171,7 @@ export const userApi = {
   login: async (credentials: {
     email: string;
     password: string;
-  }): Promise<ApiResponse<{ user: User }>> => {
+  }): Promise<ApiResponse<{ user: User; accessToken?: string; token?: string }>> => {
     const response = await apiClient.post('/auth/login', credentials);
     return response.data;
   },
@@ -251,14 +260,34 @@ export const kitchenApi = {
     return response.data;
   },
 
+  assignOrder: async (orderId: string, staffId: string): Promise<ApiResponse<Order>> => {
+    const response = await apiClient.put(`/kitchen/orders/${orderId}/assign`, { staffId });
+    return response.data;
+  },
+
+  getKitchenStaff: async (
+    schoolId: string
+  ): Promise<
+    ApiResponse<
+      Array<{
+        id: string;
+        firstName: string | null;
+        lastName: string | null;
+        email: string;
+        role: string;
+      }>
+    >
+  > => {
+    const response = await apiClient.get('/kitchen/staff', { params: { schoolId } });
+    return response.data;
+  },
+
   // Kitchen metrics
   getKitchenMetrics: async (period?: string): Promise<ApiResponse<Record<string, unknown>>> => {
     const response = await apiClient.get('/kitchen/metrics', { params: { period } });
     return response.data;
   },
 };
-
-// assignOrder: DEFERRED to Phase 2 — see docs/scope-decisions.md
 
 // Inventory Management API
 export const inventoryApi = {

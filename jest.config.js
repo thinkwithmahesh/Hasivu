@@ -45,6 +45,7 @@ module.exports = {
       statements: 80
     }
   },
+  setupFiles: ['<rootDir>/tests/redis-mock.setup.js'],
   setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',

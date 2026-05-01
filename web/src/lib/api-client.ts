@@ -23,6 +23,7 @@ interface APIResponse<T = any> {
 interface AuthResponse {
   success: boolean;
   message: string;
+  error?: string;
   user?: {
     id: string;
     email: string;
@@ -31,11 +32,23 @@ interface AuthResponse {
     role: string;
     permissions?: string[];
     roles?: string[];
+    createdAt?: string;
+    updatedAt?: string;
   };
   tokens?: {
     accessToken: string;
     refreshToken: string;
   };
+  data?: {
+    user?: AuthResponse['user'];
+    tokens?: {
+      accessToken: string;
+      refreshToken: string;
+    };
+  };
+  /** Flat shape returned by some refresh handlers */
+  accessToken?: string;
+  refreshToken?: string;
   sessionId?: string;
 }
 

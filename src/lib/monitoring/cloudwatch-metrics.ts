@@ -3,9 +3,12 @@
  * Performance monitoring and custom metrics for Hasivu Platform
  */
 
-import { CloudWatch } from 'aws-sdk';
+import AWS from 'aws-sdk';
 
-const cloudwatch = new CloudWatch({
+// aws-sdk v2 typings omit CloudWatch on some @types/aws-sdk builds — use service constructor at runtime.
+const cloudwatch = new (
+  AWS as unknown as { CloudWatch: new (opts: { region: string }) => any }
+).CloudWatch({
   region: process.env.AWS_REGION || 'ap-south-1',
 });
 

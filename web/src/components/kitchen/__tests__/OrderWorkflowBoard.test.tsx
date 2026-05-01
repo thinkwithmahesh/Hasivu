@@ -172,6 +172,7 @@ describe('OrderWorkflowBoard', () => {
 
     mockUseOrderMutations.mockReturnValue({
       updateOrderStatus: jest.fn(),
+      assignOrder: jest.fn(),
       createOrder: jest.fn(),
       loading: false,
       error: null,
@@ -397,6 +398,7 @@ describe('OrderWorkflowBoard', () => {
 
       mockUseOrderMutations.mockReturnValue({
         updateOrderStatus: mockUpdateOrderStatus,
+        assignOrder: jest.fn(),
         createOrder: jest.fn(),
         loading: false,
         error: null,
@@ -425,6 +427,7 @@ describe('OrderWorkflowBoard', () => {
 
       mockUseOrderMutations.mockReturnValue({
         updateOrderStatus: mockUpdateOrderStatus,
+        assignOrder: jest.fn(),
         createOrder: jest.fn(),
         loading: false,
         error: null,
@@ -447,6 +450,40 @@ describe('OrderWorkflowBoard', () => {
       expect(screen.getByText('Order Workflow Board')).toBeInTheDocument();
 
       consoleSpy.mockRestore();
+    });
+  });
+
+  describe('Order assignment', () => {
+    it('calls assignOrder with correct orderId and staffId', async () => {
+      const mockAssign = jest.fn().mockResolvedValue({
+        id: 'order-1',
+        assignedStaffId: 'staff-1',
+        assignedStaff: { name: 'Test Staff' },
+      });
+
+      mockUseOrderMutations.mockReturnValue({
+        updateOrderStatus: jest.fn(),
+        assignOrder: mockAssign,
+        createOrder: jest.fn(),
+        loading: false,
+        error: null,
+      } as any);
+
+      mockUseKitchenOrders.mockReturnValue({
+        data: mockApiOrders as any,
+        loading: false,
+        error: null,
+        refetch: jest.fn(),
+      });
+
+      render(<OrderWorkflowBoard />);
+
+      const mutations = mockUseOrderMutations.mock.results[0]?.value as {
+        assignOrder: (orderId: string, staffId: string) => Promise<unknown>;
+      };
+      expect(mutations).toBeDefined();
+      await mutations.assignOrder('order-1', 'staff-1');
+      expect(mockAssign).toHaveBeenCalledWith('order-1', 'staff-1');
     });
   });
 

@@ -42,17 +42,23 @@ export const loginUser = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const response = await apiClient.login(credentials);
+      const response = await apiClient.login({
+        ...credentials,
+        rememberMe: credentials.rememberMe ?? false,
+      } as import('@/components/auth/schemas').EnhancedLoginFormData);
 
-      if (response.success && response.user) {
+      const user = response.user ?? response.data?.user;
+      const tokens = response.tokens ?? response.data?.tokens;
+
+      if (response.success && user) {
         return {
-          user: response.user,
-          token: response.tokens?.accessToken || null,
-          refreshToken: response.tokens?.refreshToken || null,
+          user,
+          token: tokens?.accessToken || null,
+          refreshToken: tokens?.refreshToken || null,
           message: response.message,
         };
       } else {
-        return rejectWithValue(response.error || 'Login failed');
+        return rejectWithValue(response.error || response.message || 'Login failed');
       }
     } catch (error) {
       return rejectWithValue(error instanceof Error ? error.message : 'Login failed');
@@ -66,10 +72,14 @@ export const refreshToken = createAsyncThunk(
     try {
       const response = await apiClient.refreshToken();
 
-      if (response.success) {
+      const tokens = response.data?.tokens ?? response.tokens;
+      const flatAccess = response.accessToken ?? tokens?.accessToken;
+      const flatRefresh = response.refreshToken ?? tokens?.refreshToken;
+
+      if (response.success && flatAccess) {
         return {
-          token: response.accessToken,
-          refreshToken: response.refreshToken,
+          token: flatAccess,
+          refreshToken: flatRefresh ?? null,
         };
       } else {
         return rejectWithValue(response.message || 'Token refresh failed');
@@ -158,7 +168,12 @@ const authSlice = createSlice({
       })
       .addCase(loginUser.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.user = action.payload.user;
+        const u = action.payload.user;
+        state.user = {
+          ...u,
+          createdAt: u.createdAt || new Date().toISOString(),
+          updatedAt: u.updatedAt || new Date().toISOString(),
+        };
         state.token = action.payload.token;
         state.refreshToken = action.payload.refreshToken;
         state.isAuthenticated = true;

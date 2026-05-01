@@ -155,6 +155,7 @@ export const KitchenManagementDashboard: React.FC = () => {
   const { data: metrics, loading: metricsLoading } = useKitchenMetrics('today');
   const {
     updateOrderStatus,
+    assignOrder,
     loading: mutationLoading,
   } = useOrderMutations();
   const { connected: wsConnected } = useWebSocketConnection();
@@ -239,14 +240,18 @@ export const KitchenManagementDashboard: React.FC = () => {
 GET    /api/kitchen/orders              - Get orders with filters
 POST   /api/kitchen/orders              - Create new order
 PATCH  /api/kitchen/orders/:id/status   - Update order status
+PUT    /api/kitchen/orders/:id/assign   - Assign order to staff
+GET    /api/kitchen/staff               - List assignable staff (?schoolId=)
 GET    /api/kitchen/metrics             - Get kitchen metrics
 ```
 
 ### Kitchen Order Assignment
 
-**Status: DEFERRED — Phase 2**  
-The assign-order-to-staff workflow is not implemented in MVP.  
-See `docs/scope-decisions.md` for the scope decision record.
+**Endpoint:** `PUT /api/kitchen/orders/:id/assign`  
+**Auth:** kitchen_staff, school_admin, admin, super_admin  
+**Body:** `{ "staffId": "uuid-of-target-staff" }`  
+**Response:** Updated Order object including `assignedStaff { id, firstName, lastName, email, role }`  
+**Notes:** staffId must belong to the same school as the order. Assignment is tracked with `assignedAt` timestamp.
 
 ### Inventory Management
 
