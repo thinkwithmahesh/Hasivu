@@ -278,5 +278,10 @@
   },
   "prisma": {
     "seed": "tsx src/database/seed.ts"
+  },
+  "overrides": {
+    "openai": {
+      "zod": "^4.0.0"
+    }
   }
 }

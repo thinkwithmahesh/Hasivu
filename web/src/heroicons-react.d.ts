@@ -3,6 +3,8 @@ import type { FC, SVGProps } from 'react';
 type HeroIcon = FC<SVGProps<SVGSVGElement>>;
 
 declare module '@heroicons/react/24/outline' {
+  type HeroIcon = import('react').FC<import('react').SVGProps<SVGSVGElement>>;
+
   export const CheckCircleIcon: HeroIcon;
   export const ClockIcon: HeroIcon;
   export const MapPinIcon: HeroIcon;
@@ -18,6 +20,8 @@ declare module '@heroicons/react/24/outline' {
 }
 
 declare module '@heroicons/react/24/solid' {
+  type HeroIcon = import('react').FC<import('react').SVGProps<SVGSVGElement>>;
+
   export const CheckCircleIcon: HeroIcon;
   export const BellIcon: HeroIcon;
 }
