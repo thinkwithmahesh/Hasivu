@@ -273,14 +273,6 @@ export interface UpdateOrderStatusRequest {
 }
 
 /**
- * Order assignment request
- */
-export interface AssignOrderRequest {
-  staffId: string;
-  notes?: string;
-}
-
-/**
  * Order list filters
  */
 export interface OrderFilters {
@@ -690,38 +682,6 @@ class OrderService {
   }
 
   /**
-   * Endpoint: PATCH /orders/:id/assign
-   * Assign order to kitchen staff
-   * Assigns order to specific kitchen staff member for preparation
-   * Automatically updates status to 'preparing' if currently 'paid'
-   *
-   * @param orderId - Order ID
-   * @param assignment - Staff assignment details
-   * @returns Updated order with assignment
-   *
-   * @example
-   * ```typescript
-   * const assigned = await orderService.assignOrder('order123', {
-   *   staffId: 'staff456',
-   *   notes: 'Assigned to senior chef for special dietary requirements'
-   * });
-   * console.log(`Assigned to: ${assigned.assignedToName}`);
-   * ```
-   */
-  async assignOrder(orderId: string, assignment: AssignOrderRequest): Promise<Order> {
-    try {
-      const response = await apiClient.patch<ApiResponse<Order>>(
-        `/orders/${orderId}/assign`,
-        assignment
-      );
-      return response.data.data;
-    } catch (error) {
-      console.error('Failed to assign order:', error);
-      throw new Error('Unable to assign order. Please try again.');
-    }
-  }
-
-  /**
    * Endpoint: PATCH /orders/:id/complete
    * Mark order as completed
    * Final step in order lifecycle - confirms delivery and receipt
@@ -953,7 +913,6 @@ export default OrderService;
 //   CreateOrderRequest,
 //   UpdateOrderRequest,
 //   UpdateOrderStatusRequest,
-//   AssignOrderRequest,
 //   OrderFilters,
 //   OrderStats,
 //   DeliverySlotQuery,

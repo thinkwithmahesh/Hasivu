@@ -557,7 +557,6 @@ export const KitchenManagementDashboard: React.FC = () => {
   const { data: _lowStockAlerts, loading: _alertsLoading } = useLowStockAlerts();
   const {
     updateOrderStatus,
-    assignOrder,
     loading: mutationLoading,
     error: mutationError,
   } = useOrderMutations();
@@ -594,20 +593,6 @@ export const KitchenManagementDashboard: React.FC = () => {
       }
     },
     [updateOrderStatus, refetchOrders]
-  );
-
-  // Handle order assignment
-  const _handleOrderAssignment = useCallback(
-    async (orderId: string, staffId: string) => {
-      try {
-        await assignOrder(orderId, staffId);
-        toast.success('Order assigned successfully');
-        refetchOrders();
-      } catch (error) {
-        toast.error('Failed to assign order');
-      }
-    },
-    [assignOrder, refetchOrders]
   );
 
   // Use fallback data if API calls fail or data is not available

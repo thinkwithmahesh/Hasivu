@@ -111,21 +111,6 @@ export function useOrderMutations() {
     }
   }, []);
 
-  const assignOrder = useCallback(async (orderId: string, staffId: string) => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await kitchenApi.assignOrder(orderId, staffId);
-      return response.data;
-    } catch (err) {
-      const errorMessage = handleApiError(err);
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   const createOrder = useCallback(async (orderData: any) => {
     try {
       setLoading(true);
@@ -143,7 +128,6 @@ export function useOrderMutations() {
 
   return {
     updateOrderStatus,
-    assignOrder,
     createOrder,
     loading,
     error,

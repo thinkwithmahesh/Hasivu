@@ -155,7 +155,6 @@ export const KitchenManagementDashboard: React.FC = () => {
   const { data: metrics, loading: metricsLoading } = useKitchenMetrics('today');
   const {
     updateOrderStatus,
-    assignOrder,
     loading: mutationLoading,
   } = useOrderMutations();
   const { connected: wsConnected } = useWebSocketConnection();
@@ -240,9 +239,14 @@ export const KitchenManagementDashboard: React.FC = () => {
 GET    /api/kitchen/orders              - Get orders with filters
 POST   /api/kitchen/orders              - Create new order
 PATCH  /api/kitchen/orders/:id/status   - Update order status
-PATCH  /api/kitchen/orders/:id/assign   - Assign order to staff
 GET    /api/kitchen/metrics             - Get kitchen metrics
 ```
+
+### Kitchen Order Assignment
+
+**Status: DEFERRED — Phase 2**  
+The assign-order-to-staff workflow is not implemented in MVP.  
+See `docs/scope-decisions.md` for the scope decision record.
 
 ### Inventory Management
 

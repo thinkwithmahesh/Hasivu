@@ -172,7 +172,6 @@ describe('OrderWorkflowBoard', () => {
 
     mockUseOrderMutations.mockReturnValue({
       updateOrderStatus: jest.fn(),
-      assignOrder: jest.fn(),
       createOrder: jest.fn(),
       loading: false,
       error: null,
@@ -398,7 +397,6 @@ describe('OrderWorkflowBoard', () => {
 
       mockUseOrderMutations.mockReturnValue({
         updateOrderStatus: mockUpdateOrderStatus,
-        assignOrder: jest.fn(),
         createOrder: jest.fn(),
         loading: false,
         error: null,
@@ -427,7 +425,6 @@ describe('OrderWorkflowBoard', () => {
 
       mockUseOrderMutations.mockReturnValue({
         updateOrderStatus: mockUpdateOrderStatus,
-        assignOrder: jest.fn(),
         createOrder: jest.fn(),
         loading: false,
         error: null,

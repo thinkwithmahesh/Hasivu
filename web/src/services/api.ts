@@ -251,17 +251,14 @@ export const kitchenApi = {
     return response.data;
   },
 
-  assignOrder: async (orderId: string, staffId: string): Promise<ApiResponse<Order>> => {
-    const response = await apiClient.patch(`/kitchen/orders/${orderId}/assign`, { staffId });
-    return response.data;
-  },
-
   // Kitchen metrics
   getKitchenMetrics: async (period?: string): Promise<ApiResponse<Record<string, unknown>>> => {
     const response = await apiClient.get('/kitchen/metrics', { params: { period } });
     return response.data;
   },
 };
+
+// assignOrder: DEFERRED to Phase 2 — see docs/scope-decisions.md
 
 // Inventory Management API
 export const inventoryApi = {
