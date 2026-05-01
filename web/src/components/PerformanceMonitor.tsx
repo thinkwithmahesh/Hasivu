@@ -27,12 +27,12 @@
 'use client';
 
 import { useEffect } from 'react';
-import { onCLS, onFID, onFCP, onLCP, onTTFB, Metric } from 'web-vitals';
+import { onCLS, onINP, onFCP, onLCP, onTTFB, Metric } from 'web-vitals';
 
 // Performance thresholds (Google's Core Web Vitals)
 const PERFORMANCE_THRESHOLDS = {
   LCP: { good: 2500, needsImprovement: 4000 }, // ms
-  FID: { good: 100, needsImprovement: 300 }, // ms
+  INP: { good: 200, needsImprovement: 500 }, // ms (interaction to next paint)
   CLS: { good: 0.1, needsImprovement: 0.25 }, // score
   FCP: { good: 1800, needsImprovement: 3000 }, // ms
   TTFB: { good: 800, needsImprovement: 1800 }, // ms
@@ -95,8 +95,9 @@ function sendToAnalytics(metric: Metric) {
   }
 
   // Send to custom analytics endpoint (optional)
-  if (process.env.NEXT_PUBLIC_ANALYTICS_ENDPOINT) {
-    fetch(process.env.NEXT_PUBLIC_ANALYTICSENDPOINT, {
+  const analyticsEndpoint = process.env.NEXT_PUBLIC_ANALYTICS_ENDPOINT;
+  if (analyticsEndpoint) {
+    fetch(analyticsEndpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -138,7 +139,7 @@ export function PerformanceMonitor() {
   useEffect(() => {
     // Monitor all Core Web Vitals
     onCLS(sendToAnalytics);
-    onFID(sendToAnalytics);
+    onINP(sendToAnalytics);
     onFCP(sendToAnalytics);
     onLCP(sendToAnalytics);
     onTTFB(sendToAnalytics);

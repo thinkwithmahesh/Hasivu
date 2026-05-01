@@ -63,7 +63,7 @@ import {
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { AnalyticsService } from '@/services/analytics.service';
+import { AnalyticsService, type DashboardMetrics } from '@/services/analytics.service';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 // TODO: Import these components when they are implemented
 // import { ReportTemplate } from './ReportTemplateManager';
@@ -162,10 +162,11 @@ export const AdvancedReportingDashboard: React.FC = () => {
         if (showRefreshing) setRefreshing(true);
         else setLoading(true);
 
-        const analyticsService = AnalyticsService.getInstance();
-
-        // Get comprehensive analytics dashboard data
-        const dashboardResult = await analyticsService.getAnalyticsDashboard('default-school');
+        const analyticsService = new AnalyticsService();
+        const metricsRes = await analyticsService.getDashboardMetrics({
+          schoolId: 'default-school',
+        });
+        const dashboardResult = metricsToLegacyDashboardResult(metricsRes.data);
 
         // Transform the analytics service response to dashboard format
         const transformedData: DashboardData = {
@@ -638,6 +639,56 @@ export const AdvancedReportingDashboard: React.FC = () => {
     </div>
   );
 };
+
+/** Map typed GET /analytics/dashboard payload into the legacy shape used by transforms below. */
+function metricsToLegacyDashboardResult(m: DashboardMetrics) {
+  const revenueTrend = m.charts.revenueByDay.map(d => d.value);
+  return {
+    executiveDashboard: {
+      data: [
+        {
+          id: 'total_orders',
+          metricId: 'total_orders',
+          title: 'Total Orders',
+          value: m.overview.totalOrders,
+          change: m.overview.growthRate,
+          format: 'number',
+        },
+        {
+          id: 'total_revenue',
+          metricId: 'total_revenue',
+          title: 'Revenue',
+          value: m.overview.revenue,
+          change: m.overview.growthRate,
+          trend: revenueTrend.length ? revenueTrend : [m.overview.revenue],
+          format: 'currency',
+        },
+        {
+          id: 'active_students',
+          title: 'Active Students',
+          value: m.overview.activeStudents,
+          change: 0,
+          format: 'number',
+        },
+        {
+          id: 'avg_order',
+          title: 'Avg Order Value',
+          value: m.overview.averageOrderValue,
+          change: 0,
+          format: 'currency',
+        },
+      ],
+    },
+    performanceBenchmarks: {
+      data: m.charts.popularItems.map((p, i) => ({
+        metric: p.label || `metric-${i}`,
+        value: p.value,
+      })),
+    },
+    predictiveInsights: { data: m.insights.length > 0 ? m.insights : null },
+    strategicInsights: { data: m.insights.length > 1 ? m.insights : null },
+  };
+}
 
 // Transform functions for analytics service responses
 const transformKPIs = (dashboardResult: any): DashboardData['kpis'] => {

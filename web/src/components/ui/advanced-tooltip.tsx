@@ -195,7 +195,7 @@ const TooltipContent = React.forwardRef<
 
               {variant === 'nutrition' && nutritionData && renderNutritionContent()}
               {variant === 'allergen' && allergens && renderAllergenContent()}
-              {(variant === 'modal' || variant === 'info') && children}
+              {variant === 'modal' && children}
             </motion.div>
           </TooltipPrimitive.Content>
         </TooltipPrimitive.Portal>

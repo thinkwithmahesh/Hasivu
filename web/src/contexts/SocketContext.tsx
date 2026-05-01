@@ -16,7 +16,7 @@ import React, {
 import { toast } from 'react-hot-toast';
 import { useAuth } from './AuthContext';
 import { useAppDispatch } from '@/store';
-import { updateOrder, addOrder } from '@/store/slices/orderSlice';
+import { updateOrderStatus, addOrder, type Order } from '@/store/slices/orderSlice';
 
 // WebSocket message types
 export type SocketEventType =
@@ -396,7 +396,7 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           handleOrderStatusUpdate(message.payload as OrderStatusUpdate);
           break;
         case 'new_order':
-          dispatch(addOrder(message.payload));
+          dispatch(addOrder(message.payload as Order));
           toast.success('New order received!');
           break;
         case 'notification':
@@ -429,14 +429,14 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const handleOrderStatusUpdate = useCallback(
     (update: OrderStatusUpdate) => {
       dispatch(
-        updateOrder({
-          id: update.orderId,
+        updateOrderStatus({
+          orderId: update.orderId,
           status: update.status,
-          estimatedTime: update.estimatedTime,
-        } as any)
+        })
       );
 
-      const statusMessages = {
+      const statusMessages: Record<OrderStatusUpdate['status'], string> = {
+        pending: 'Your order is pending.',
         confirmed: 'Your order has been confirmed!',
         preparing: 'Your order is being prepared',
         ready: 'Your order is ready for pickup!',
@@ -641,11 +641,10 @@ export const useRealTimeOrders = () => {
 
   useSocketSubscription('order_status_update', (update: OrderStatusUpdate) => {
     dispatch(
-      updateOrder({
-        id: update.orderId,
+      updateOrderStatus({
+        orderId: update.orderId,
         status: update.status,
-        estimatedTime: update.estimatedTime,
-      } as any)
+      })
     );
   });
 

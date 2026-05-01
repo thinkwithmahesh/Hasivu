@@ -8,8 +8,6 @@ import { Star, Clock, Plus, Minus, Heart, Info, ShoppingCart, Sparkles } from 'l
 import { cn } from '@/lib/utils';
 import { MenuItem } from '@/types/menu.types';
 
-import { MenuItem } from '@/types/menu.types';
-
 interface FoodItemCardProps {
   item: MenuItem;
   onAddToCart: (item: MenuItem, quantity: number) => void;

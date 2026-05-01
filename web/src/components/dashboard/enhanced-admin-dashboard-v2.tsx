@@ -98,7 +98,7 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
-  SidebarMenusidebar,
+  SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
   SidebarTrigger,
@@ -686,8 +686,7 @@ export const EnhancedAdminDashboardV2: React.FC<EnhancedAdminDashboardV2Props> =
               <SidebarGroupContent>
                 <SidebarMenu>
                   <SidebarMenuItem>
-                    {/* @ts-ignore - SidebarMenusidebar asChild accepts children via Slot */}
-                    <SidebarMenusidebar asChild isActive={activeView === 'overview'}>
+                    <SidebarMenuButton asChild isActive={activeView === 'overview'}>
                       <button
                         onClick={() => setActiveView('overview')}
                         className="flex items-center gap-2 w-full"
@@ -695,11 +694,10 @@ export const EnhancedAdminDashboardV2: React.FC<EnhancedAdminDashboardV2Props> =
                         <Home className="h-4 w-4" />
                         <span>Overview</span>
                       </button>
-                    </SidebarMenusidebar>
+                    </SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
-                    {/* @ts-ignore - SidebarMenusidebar asChild accepts children via Slot */}
-                    <SidebarMenusidebar asChild isActive={activeView === 'analytics'}>
+                    <SidebarMenuButton asChild isActive={activeView === 'analytics'}>
                       <button
                         onClick={() => setActiveView('analytics')}
                         className="flex items-center gap-2 w-full"
@@ -707,11 +705,10 @@ export const EnhancedAdminDashboardV2: React.FC<EnhancedAdminDashboardV2Props> =
                         <BarChart3 className="h-4 w-4" />
                         <span>Analytics</span>
                       </button>
-                    </SidebarMenusidebar>
+                    </SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
-                    {/* @ts-ignore - SidebarMenusidebar asChild accepts children via Slot */}
-                    <SidebarMenusidebar asChild isActive={activeView === 'orders'}>
+                    <SidebarMenuButton asChild isActive={activeView === 'orders'}>
                       <button
                         onClick={() => setActiveView('orders')}
                         className="flex items-center gap-2 w-full"
@@ -722,11 +719,10 @@ export const EnhancedAdminDashboardV2: React.FC<EnhancedAdminDashboardV2Props> =
                           {mockActiveOrders.length}
                         </Badge>
                       </button>
-                    </SidebarMenusidebar>
+                    </SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
-                    {/* @ts-ignore - SidebarMenusidebar asChild accepts children via Slot */}
-                    <SidebarMenusidebar asChild isActive={activeView === 'rfid'}>
+                    <SidebarMenuButton asChild isActive={activeView === 'rfid'}>
                       <button
                         onClick={() => setActiveView('rfid')}
                         className="flex items-center gap-2 w-full"
@@ -738,11 +734,10 @@ export const EnhancedAdminDashboardV2: React.FC<EnhancedAdminDashboardV2Props> =
                           {mockRFIDAnalytics.deviceStatus.filter(d => d.status === 'active').length}
                         </Badge>
                       </button>
-                    </SidebarMenusidebar>
+                    </SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
-                    {/* @ts-ignore - SidebarMenusidebar asChild accepts children via Slot */}
-                    <SidebarMenusidebar asChild isActive={activeView === 'meals'}>
+                    <SidebarMenuButton asChild isActive={activeView === 'meals'}>
                       <button
                         onClick={() => setActiveView('meals')}
                         className="flex items-center gap-2 w-full"
@@ -750,11 +745,10 @@ export const EnhancedAdminDashboardV2: React.FC<EnhancedAdminDashboardV2Props> =
                         <ChefHat className="h-4 w-4" />
                         <span>Meal Management</span>
                       </button>
-                    </SidebarMenusidebar>
+                    </SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
-                    {/* @ts-ignore - SidebarMenusidebar asChild accepts children via Slot */}
-                    <SidebarMenusidebar asChild isActive={activeView === 'students'}>
+                    <SidebarMenuButton asChild isActive={activeView === 'students'}>
                       <button
                         onClick={() => setActiveView('students')}
                         className="flex items-center gap-2 w-full"
@@ -762,11 +756,10 @@ export const EnhancedAdminDashboardV2: React.FC<EnhancedAdminDashboardV2Props> =
                         <Users2 className="h-4 w-4" />
                         <span>Student Analytics</span>
                       </button>
-                    </SidebarMenusidebar>
+                    </SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
-                    {/* @ts-ignore - SidebarMenusidebar asChild accepts children via Slot */}
-                    <SidebarMenusidebar asChild isActive={activeView === 'kitchen'}>
+                    <SidebarMenuButton asChild isActive={activeView === 'kitchen'}>
                       <button
                         onClick={() => setActiveView('kitchen')}
                         className="flex items-center gap-2 w-full"
@@ -774,7 +767,7 @@ export const EnhancedAdminDashboardV2: React.FC<EnhancedAdminDashboardV2Props> =
                         <Package className="h-4 w-4" />
                         <span>Kitchen Operations</span>
                       </button>
-                    </SidebarMenusidebar>
+                    </SidebarMenuButton>
                   </SidebarMenuItem>
                 </SidebarMenu>
               </SidebarGroupContent>

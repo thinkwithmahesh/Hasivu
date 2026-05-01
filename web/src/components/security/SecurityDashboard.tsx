@@ -30,6 +30,7 @@ import { threatProtection } from '@/lib/security/threat-protection';
 import { sessionManager } from '@/lib/security/session-manager';
 import { mfaService as _mfaService } from '@/lib/security/mfa-service';
 import { useEnhancedAuth } from '@/contexts/enhanced-auth-context';
+import { UserRole } from '@/types/auth';
 
 interface SecurityMetrics {
   activeThreats: number;
@@ -85,7 +86,7 @@ const SecurityDashboard: React.FC = () => {
   const [autoRefresh, setAutoRefresh] = useState(true);
 
   // Check if user has admin access
-  const hasSecurityAccess = hasRole(['admin', 'school_admin']);
+  const hasSecurityAccess = hasRole([UserRole.ADMIN, UserRole.SCHOOL_ADMIN]);
 
   useEffect(() => {
     if (hasSecurityAccess) {

@@ -61,13 +61,28 @@ export const DeliveryVerification: React.FC = () => {
 
     try {
       const response = await rfidApi.verifyRfidScan({
-        cardNumber,
-        orderId: orderId || undefined,
-        location: 'Delivery Station A', // In real implementation, get from GPS/context
+        cardId: cardNumber,
+        deviceId: 'delivery-station-a',
         timestamp: new Date().toISOString(),
       });
 
-      setVerificationResult(response.data);
+      const payload = response.data;
+      setVerificationResult({
+        success: Boolean(payload.valid && payload.accessGranted),
+        cardNumber,
+        studentId: payload.studentId,
+        studentName: '—',
+        schoolId: '',
+        verificationId: `v-${Date.now()}`,
+        signalQuality: 'good',
+        orderInfo: orderId
+          ? {
+              orderId,
+              status: payload.accessGranted ? 'verified' : 'denied',
+              deliveryDate: new Date().toISOString(),
+            }
+          : undefined,
+      });
       setSuccess('RFID verification completed successfully');
 
       // Clear form

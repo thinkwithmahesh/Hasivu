@@ -4,7 +4,18 @@
  * Implements structured data, meta tags, and social media optimization
  */
 
-import { Metadata, Viewport } from 'next';
+import type { Metadata } from 'next';
+
+/** Next.js `viewport` export shape (typed locally for compatibility across Next versions). */
+export type Viewport = {
+  width?: 'device-width' | number;
+  initialScale?: number;
+  maximumScale?: number;
+  userScalable?: boolean;
+  viewportFit?: 'auto' | 'contain' | 'cover';
+  colorScheme?: string | null;
+  themeColor?: string | string[] | ReadonlyArray<{ media: string; color: string }>;
+};
 
 // Base application configuration
 const APP_CONFIG = {
