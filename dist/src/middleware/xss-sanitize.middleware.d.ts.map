@@ -1,0 +1,1 @@
+{"version":3,"file":"xss-sanitize.middleware.d.ts","sourceRoot":"","sources":["../../../src/middleware/xss-sanitize.middleware.ts"],"names":[],"mappings":"AAKA,OAAO,EAAE,cAAc,EAAE,MAAM,SAAS,CAAC;AAiBzC,eAAO,MAAM,WAAW,EAAE,cAoBzB,CAAC"}
