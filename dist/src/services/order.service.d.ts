@@ -1,4 +1,8 @@
 import { Order } from '@prisma/client';
+export interface AssignOrderRequest {
+    staffId: string;
+    schoolId: string;
+}
 export interface OrderFilters {
     schoolId?: string;
     studentId?: string;
@@ -215,6 +219,22 @@ export declare class OrderService {
         errors?: string[];
     }>;
     update(orderId: string, updates: any): Promise<Order>;
+    assignOrder(orderId: string, request: AssignOrderRequest, _actorUserId: string, actorRole: string, actorSchoolId?: string | null): Promise<Order & {
+        assignedStaff: {
+            id: string;
+            firstName: string | null;
+            lastName: string | null;
+            email: string;
+            role: string;
+        } | null;
+    }>;
+    listAssignableStaff(schoolId: string): Promise<Array<{
+        id: string;
+        firstName: string | null;
+        lastName: string | null;
+        email: string;
+        role: string;
+    }>>;
     handleStatusUpdate(orderId: string, newStatus: string): Promise<void>;
     canParentOrderForStudent(parentId: string, studentId: string): Promise<boolean>;
     createOrder(orderData: any): Promise<{

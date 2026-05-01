@@ -6,7 +6,7 @@ const logger_service_1 = require("../shared/logger.service");
 const defaultCSRFConfig = {
     ignoreMethods: ['GET', 'HEAD', 'OPTIONS'],
     customHeaderName: 'X-CSRF-Token',
-    skipPaths: ['/health', '/metrics', '/auth/refresh'],
+    skipPaths: ['/health', '/metrics', '/auth/refresh', '/auth/register', '/auth/login'],
     errorMessage: 'Invalid CSRF token',
 };
 const csrfProtection = (config = {}) => {

@@ -10,6 +10,20 @@ const database_service_1 = require("../services/database.service");
 const notification_service_1 = require("../services/notification.service");
 const payment_service_1 = require("../services/payment.service");
 const redis_service_1 = require("../services/redis.service");
+function createMockFn(impl) {
+    const fn = ((...args) => (fn.__impl ? fn.__impl(...args) : undefined));
+    fn.__impl = impl;
+    fn.mockResolvedValue = (value) => {
+        fn.__impl = async () => value;
+        return fn;
+    };
+    fn.mockImplementation = (nextImpl) => {
+        fn.__impl = nextImpl;
+        return fn;
+    };
+    return fn;
+}
+const mock = { fn: createMockFn };
 class ServiceContainer {
     orderRepository;
     orderItemRepository;
@@ -63,19 +77,19 @@ class ServiceContainer {
 exports.ServiceContainer = ServiceContainer;
 function createMockOrderRepository() {
     return {
-        create: jest.fn().mockResolvedValue({ id: 'order-1', status: 'pending' }),
-        findById: jest.fn().mockResolvedValue(null),
-        findMany: jest.fn().mockResolvedValue({ items: [], total: 0 }),
-        update: jest.fn().mockResolvedValue({ id: 'order-1' }),
-        delete: jest.fn().mockResolvedValue({ id: 'order-1' }),
-        count: jest.fn().mockResolvedValue(0),
-        findByIdWithIncludes: jest.fn().mockResolvedValue(null),
-        findByStudentId: jest.fn().mockResolvedValue({ items: [], total: 0 }),
-        findBySchoolId: jest.fn().mockResolvedValue({ items: [], total: 0 }),
-        findActiveOrders: jest.fn().mockResolvedValue({ items: [], total: 0 }),
-        findByDeliveryDate: jest.fn().mockResolvedValue({ items: [], total: 0 }),
-        updateMany: jest.fn().mockResolvedValue({ count: 0 }),
-        getAnalytics: jest.fn().mockResolvedValue({
+        create: mock.fn().mockResolvedValue({ id: 'order-1', status: 'pending' }),
+        findById: mock.fn().mockResolvedValue(null),
+        findMany: mock.fn().mockResolvedValue({ items: [], total: 0 }),
+        update: mock.fn().mockResolvedValue({ id: 'order-1' }),
+        delete: mock.fn().mockResolvedValue({ id: 'order-1' }),
+        count: mock.fn().mockResolvedValue(0),
+        findByIdWithIncludes: mock.fn().mockResolvedValue(null),
+        findByStudentId: mock.fn().mockResolvedValue({ items: [], total: 0 }),
+        findBySchoolId: mock.fn().mockResolvedValue({ items: [], total: 0 }),
+        findActiveOrders: mock.fn().mockResolvedValue({ items: [], total: 0 }),
+        findByDeliveryDate: mock.fn().mockResolvedValue({ items: [], total: 0 }),
+        updateMany: mock.fn().mockResolvedValue({ count: 0 }),
+        getAnalytics: mock.fn().mockResolvedValue({
             totalOrders: 0,
             totalRevenue: 0,
             deliveredOrders: 0,
@@ -83,7 +97,7 @@ function createMockOrderRepository() {
             ordersByStatus: {},
             revenueByDay: [],
         }),
-        getDashboardStats: jest.fn().mockResolvedValue({
+        getDashboardStats: mock.fn().mockResolvedValue({
             todayOrders: 0,
             pendingOrders: 0,
             completedOrders: 0,
@@ -94,70 +108,70 @@ function createMockOrderRepository() {
 }
 function createMockOrderItemRepository() {
     return {
-        create: jest.fn().mockResolvedValue({ id: 'item-1' }),
-        findById: jest.fn().mockResolvedValue(null),
-        findMany: jest.fn().mockResolvedValue({ items: [], total: 0 }),
-        update: jest.fn().mockResolvedValue({ id: 'item-1' }),
-        delete: jest.fn().mockResolvedValue({ id: 'item-1' }),
-        count: jest.fn().mockResolvedValue(0),
-        findByOrderId: jest.fn().mockResolvedValue([]),
-        getPopularItems: jest.fn().mockResolvedValue([]),
-        createMany: jest.fn().mockResolvedValue({ count: 0 }),
+        create: mock.fn().mockResolvedValue({ id: 'item-1' }),
+        findById: mock.fn().mockResolvedValue(null),
+        findMany: mock.fn().mockResolvedValue({ items: [], total: 0 }),
+        update: mock.fn().mockResolvedValue({ id: 'item-1' }),
+        delete: mock.fn().mockResolvedValue({ id: 'item-1' }),
+        count: mock.fn().mockResolvedValue(0),
+        findByOrderId: mock.fn().mockResolvedValue([]),
+        getPopularItems: mock.fn().mockResolvedValue([]),
+        createMany: mock.fn().mockResolvedValue({ count: 0 }),
     };
 }
 function createMockMenuItemRepository() {
     return {
-        create: jest.fn().mockResolvedValue({ id: 'menu-1', name: 'Test Item' }),
-        findById: jest.fn().mockResolvedValue(null),
-        findMany: jest.fn().mockResolvedValue({ items: [], total: 0 }),
-        update: jest.fn().mockResolvedValue({ id: 'menu-1' }),
-        delete: jest.fn().mockResolvedValue({ id: 'menu-1' }),
-        count: jest.fn().mockResolvedValue(0),
-        nameExists: jest.fn().mockResolvedValue(false),
-        findBySchoolId: jest.fn().mockResolvedValue({ items: [], total: 0 }),
-        findAvailable: jest.fn().mockResolvedValue([]),
-        search: jest.fn().mockResolvedValue([]),
-        updateAvailability: jest.fn().mockResolvedValue({ id: 'menu-1', available: true }),
+        create: mock.fn().mockResolvedValue({ id: 'menu-1', name: 'Test Item' }),
+        findById: mock.fn().mockResolvedValue(null),
+        findMany: mock.fn().mockResolvedValue({ items: [], total: 0 }),
+        update: mock.fn().mockResolvedValue({ id: 'menu-1' }),
+        delete: mock.fn().mockResolvedValue({ id: 'menu-1' }),
+        count: mock.fn().mockResolvedValue(0),
+        nameExists: mock.fn().mockResolvedValue(false),
+        findBySchoolId: mock.fn().mockResolvedValue({ items: [], total: 0 }),
+        findAvailable: mock.fn().mockResolvedValue([]),
+        search: mock.fn().mockResolvedValue([]),
+        updateAvailability: mock.fn().mockResolvedValue({ id: 'menu-1', available: true }),
     };
 }
 function createMockUserRepository() {
     return {
-        create: jest.fn().mockResolvedValue({ id: 'user-1', email: 'test@example.com' }),
-        findById: jest.fn().mockResolvedValue(null),
-        findMany: jest.fn().mockResolvedValue({ items: [], total: 0 }),
-        update: jest.fn().mockResolvedValue({ id: 'user-1' }),
-        delete: jest.fn().mockResolvedValue({ id: 'user-1' }),
-        count: jest.fn().mockResolvedValue(0),
-        findByEmail: jest.fn().mockResolvedValue(null),
-        findByPhone: jest.fn().mockResolvedValue(null),
-        emailExists: jest.fn().mockResolvedValue(false),
-        phoneExists: jest.fn().mockResolvedValue(false),
-        findStudentsByParentId: jest.fn().mockResolvedValue([]),
-        findByRole: jest.fn().mockResolvedValue([]),
-        updateLastLogin: jest.fn().mockResolvedValue({ id: 'user-1' }),
-        deactivateUser: jest.fn().mockResolvedValue({ id: 'user-1' }),
+        create: mock.fn().mockResolvedValue({ id: 'user-1', email: 'test@example.com' }),
+        findById: mock.fn().mockResolvedValue(null),
+        findMany: mock.fn().mockResolvedValue({ items: [], total: 0 }),
+        update: mock.fn().mockResolvedValue({ id: 'user-1' }),
+        delete: mock.fn().mockResolvedValue({ id: 'user-1' }),
+        count: mock.fn().mockResolvedValue(0),
+        findByEmail: mock.fn().mockResolvedValue(null),
+        findByPhone: mock.fn().mockResolvedValue(null),
+        emailExists: mock.fn().mockResolvedValue(false),
+        phoneExists: mock.fn().mockResolvedValue(false),
+        findStudentsByParentId: mock.fn().mockResolvedValue([]),
+        findByRole: mock.fn().mockResolvedValue([]),
+        updateLastLogin: mock.fn().mockResolvedValue({ id: 'user-1' }),
+        deactivateUser: mock.fn().mockResolvedValue({ id: 'user-1' }),
     };
 }
 function createMockPaymentOrderRepository() {
     return {
-        create: jest.fn().mockResolvedValue({ id: 'payment-1', status: 'pending' }),
-        findById: jest.fn().mockResolvedValue(null),
-        findMany: jest.fn().mockResolvedValue({ items: [], total: 0 }),
-        update: jest.fn().mockResolvedValue({ id: 'payment-1' }),
-        delete: jest.fn().mockResolvedValue({ id: 'payment-1' }),
-        count: jest.fn().mockResolvedValue(0),
-        findByOrderId: jest.fn().mockResolvedValue(null),
-        findByRazorpayOrderId: jest.fn().mockResolvedValue(null),
-        findByUserId: jest.fn().mockResolvedValue({ items: [], total: 0 }),
-        findExpiredOrders: jest.fn().mockResolvedValue([]),
-        updateStatus: jest.fn().mockResolvedValue({ id: 'payment-1', status: 'captured' }),
+        create: mock.fn().mockResolvedValue({ id: 'payment-1', status: 'pending' }),
+        findById: mock.fn().mockResolvedValue(null),
+        findMany: mock.fn().mockResolvedValue({ items: [], total: 0 }),
+        update: mock.fn().mockResolvedValue({ id: 'payment-1' }),
+        delete: mock.fn().mockResolvedValue({ id: 'payment-1' }),
+        count: mock.fn().mockResolvedValue(0),
+        findByOrderId: mock.fn().mockResolvedValue(null),
+        findByRazorpayOrderId: mock.fn().mockResolvedValue(null),
+        findByUserId: mock.fn().mockResolvedValue({ items: [], total: 0 }),
+        findExpiredOrders: mock.fn().mockResolvedValue([]),
+        updateStatus: mock.fn().mockResolvedValue({ id: 'payment-1', status: 'captured' }),
     };
 }
 function createMockDatabaseService() {
     return {
-        connect: jest.fn().mockResolvedValue(undefined),
-        disconnect: jest.fn().mockResolvedValue(undefined),
-        getHealth: jest.fn().mockResolvedValue({
+        connect: mock.fn().mockResolvedValue(undefined),
+        disconnect: mock.fn().mockResolvedValue(undefined),
+        getHealth: mock.fn().mockResolvedValue({
             status: 'healthy',
             responseTime: 50,
             connections: {},
@@ -166,90 +180,90 @@ function createMockDatabaseService() {
             errors: [],
             timestamp: new Date(),
         }),
-        transaction: jest.fn().mockImplementation(callback => callback({})),
-        executeRaw: jest.fn().mockResolvedValue({}),
-        sanitizeQuery: jest.fn().mockImplementation(query => query),
+        transaction: mock.fn().mockImplementation(callback => callback({})),
+        executeRaw: mock.fn().mockResolvedValue({}),
+        sanitizeQuery: mock.fn().mockImplementation(query => query),
         user: {
-            findUnique: jest.fn(),
-            findMany: jest.fn(),
-            create: jest.fn(),
-            update: jest.fn(),
-            delete: jest.fn(),
+            findUnique: mock.fn(),
+            findMany: mock.fn(),
+            create: mock.fn(),
+            update: mock.fn(),
+            delete: mock.fn(),
         },
         order: {
-            findUnique: jest.fn(),
-            findMany: jest.fn(),
-            create: jest.fn(),
-            update: jest.fn(),
-            delete: jest.fn(),
+            findUnique: mock.fn(),
+            findMany: mock.fn(),
+            create: mock.fn(),
+            update: mock.fn(),
+            delete: mock.fn(),
         },
         menuItem: {
-            findUnique: jest.fn(),
-            findMany: jest.fn(),
-            create: jest.fn(),
-            update: jest.fn(),
-            delete: jest.fn(),
+            findUnique: mock.fn(),
+            findMany: mock.fn(),
+            create: mock.fn(),
+            update: mock.fn(),
+            delete: mock.fn(),
         },
         orderItem: {
-            findUnique: jest.fn(),
-            findMany: jest.fn(),
-            create: jest.fn(),
-            update: jest.fn(),
-            delete: jest.fn(),
+            findUnique: mock.fn(),
+            findMany: mock.fn(),
+            create: mock.fn(),
+            update: mock.fn(),
+            delete: mock.fn(),
         },
         paymentOrder: {
-            findUnique: jest.fn(),
-            findMany: jest.fn(),
-            create: jest.fn(),
-            update: jest.fn(),
-            delete: jest.fn(),
+            findUnique: mock.fn(),
+            findMany: mock.fn(),
+            create: mock.fn(),
+            update: mock.fn(),
+            delete: mock.fn(),
         },
         rfidCard: {
-            findUnique: jest.fn(),
-            findMany: jest.fn(),
-            create: jest.fn(),
-            update: jest.fn(),
-            delete: jest.fn(),
+            findUnique: mock.fn(),
+            findMany: mock.fn(),
+            create: mock.fn(),
+            update: mock.fn(),
+            delete: mock.fn(),
         },
         rfidReader: {
-            findUnique: jest.fn(),
-            findMany: jest.fn(),
-            create: jest.fn(),
-            update: jest.fn(),
-            delete: jest.fn(),
+            findUnique: mock.fn(),
+            findMany: mock.fn(),
+            create: mock.fn(),
+            update: mock.fn(),
+            delete: mock.fn(),
         },
         deliveryVerification: {
-            findUnique: jest.fn(),
-            findMany: jest.fn(),
-            create: jest.fn(),
-            update: jest.fn(),
-            delete: jest.fn(),
+            findUnique: mock.fn(),
+            findMany: mock.fn(),
+            create: mock.fn(),
+            update: mock.fn(),
+            delete: mock.fn(),
         },
         notification: {
-            findUnique: jest.fn(),
-            findMany: jest.fn(),
-            create: jest.fn(),
-            update: jest.fn(),
-            delete: jest.fn(),
+            findUnique: mock.fn(),
+            findMany: mock.fn(),
+            create: mock.fn(),
+            update: mock.fn(),
+            delete: mock.fn(),
         },
         whatsAppMessage: {
-            findUnique: jest.fn(),
-            findMany: jest.fn(),
-            create: jest.fn(),
-            update: jest.fn(),
-            delete: jest.fn(),
+            findUnique: mock.fn(),
+            findMany: mock.fn(),
+            create: mock.fn(),
+            update: mock.fn(),
+            delete: mock.fn(),
         },
     };
 }
 function createMockNotificationService() {
     return {
-        sendOrderConfirmation: jest.fn().mockResolvedValue(undefined),
-        sendOrderStatusUpdate: jest.fn().mockResolvedValue(undefined),
+        sendOrderConfirmation: mock.fn().mockResolvedValue(undefined),
+        sendOrderStatusUpdate: mock.fn().mockResolvedValue(undefined),
     };
 }
 function createMockPaymentService() {
     return {
-        processPayment: jest.fn().mockResolvedValue({
+        processPayment: mock.fn().mockResolvedValue({
             success: true,
             data: {
                 paymentId: 'payment-123',
@@ -260,9 +274,9 @@ function createMockPaymentService() {
 }
 function createMockRedisService() {
     return {
-        get: jest.fn().mockResolvedValue(null),
-        set: jest.fn().mockResolvedValue('OK'),
-        del: jest.fn().mockResolvedValue(1),
+        get: mock.fn().mockResolvedValue(null),
+        set: mock.fn().mockResolvedValue('OK'),
+        del: mock.fn().mockResolvedValue(1),
     };
 }
 let productionContainer = null;

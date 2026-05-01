@@ -1,8 +1,11 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getMetricStatistics = exports.createPerformanceTimer = exports.trackBusinessEvent = exports.measureExternalAPI = exports.measureDatabaseQuery = exports.measurePerformance = exports.recordMetrics = exports.recordMetric = void 0;
-const aws_sdk_1 = require("aws-sdk");
-const cloudwatch = new aws_sdk_1.CloudWatch({
+const aws_sdk_1 = __importDefault(require("aws-sdk"));
+const cloudwatch = new aws_sdk_1.default.CloudWatch({
     region: process.env.AWS_REGION || 'ap-south-1',
 });
 async function recordMetric(metricName, value, unit = 'Milliseconds', dimensions) {

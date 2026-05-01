@@ -143,7 +143,6 @@ provider:
     apiGateway: true
 
 plugins:
-  - serverless-plugin-typescript
   - serverless-offline
   - serverless-plugin-warmup
   - serverless-plugin-split-stacks

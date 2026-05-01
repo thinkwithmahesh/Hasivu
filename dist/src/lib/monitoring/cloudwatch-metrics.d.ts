@@ -1,4 +1,3 @@
-import { CloudWatch } from 'aws-sdk';
 declare global {
     var lambdaWarmupFlag: boolean | undefined;
 }
@@ -20,5 +19,5 @@ export declare function createPerformanceTimer(operationName: string): {
         checkpoints: Record<string, number>;
     }>;
 };
-export declare function getMetricStatistics(metricName: string, period?: number, statistics?: string[], startTime?: Date, endTime?: Date): Promise<CloudWatch.Datapoints | undefined>;
+export declare function getMetricStatistics(metricName: string, period?: number, statistics?: string[], startTime?: Date, endTime?: Date): Promise<any>;
 //# sourceMappingURL=cloudwatch-metrics.d.ts.map

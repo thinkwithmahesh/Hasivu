@@ -166,23 +166,6 @@ function setupGlobalMocks() {
         GetObjectCommand: globals_1.jest.fn(),
         DeleteObjectCommand: globals_1.jest.fn(),
     }));
-    globals_1.jest.doMock('ioredis', () => {
-        const mockRedis = globals_1.jest.fn();
-        mockRedis.mockImplementation(() => ({
-            get: globals_1.jest.fn(async () => null),
-            set: globals_1.jest.fn(async () => 'OK'),
-            del: globals_1.jest.fn(async () => 1),
-            exists: globals_1.jest.fn(async () => 0),
-            expire: globals_1.jest.fn(async () => 1),
-            incr: globals_1.jest.fn(async () => 1),
-            decr: globals_1.jest.fn(async () => 0),
-            hget: globals_1.jest.fn(async () => null),
-            hset: globals_1.jest.fn(async () => 1),
-            hdel: globals_1.jest.fn(async () => 1),
-            disconnect: globals_1.jest.fn(async () => undefined),
-        }));
-        return mockRedis;
-    });
     globals_1.jest.doMock('bcryptjs', () => ({
         hash: globals_1.jest.fn().mockImplementation(() => Promise.resolve('$2b$12$mockedHashValue')),
         compare: globals_1.jest.fn().mockImplementation(() => Promise.resolve(true)),

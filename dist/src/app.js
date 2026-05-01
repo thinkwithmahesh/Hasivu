@@ -38,6 +38,8 @@ const logger_1 = require("./utils/logger");
 const health_routes_1 = require("./routes/health.routes");
 const auth_routes_1 = require("./routes/auth.routes");
 const payments_routes_1 = __importDefault(require("./routes/payments.routes"));
+const orders_routes_1 = __importDefault(require("./routes/orders.routes"));
+const kitchen_routes_1 = __importDefault(require("./routes/kitchen.routes"));
 const redis_service_1 = require("./services/redis.service");
 class SimpleApp {
     app;
@@ -121,6 +123,8 @@ class SimpleApp {
         this.app.use('/api/health', health_routes_1.healthRouter);
         this.app.use('/api/auth', auth_routes_1.authRouter);
         this.app.use('/api/payments', payments_routes_1.default);
+        this.app.use('/api/v1/orders', orders_routes_1.default);
+        this.app.use('/api/kitchen', kitchen_routes_1.default);
         this.app.get('/', (req, res) => {
             res.json({
                 name: 'HASIVU Platform API',

@@ -15,9 +15,12 @@ FROM base AS deps
 COPY package*.json ./
 COPY web/package*.json ./web/
 
-# Install dependencies with clean install
-RUN npm ci --only=production && \
-    cd web && npm ci --only=production
+# Install dependencies for build stages.
+# Backend/frontend builders require dev toolchain (typescript, copyfiles, postcss/autoprefixer).
+ENV DOCKER_BUILD=1
+ENV HUSKY=0
+RUN cd web && npm ci && \
+    cd .. && npm ci
 
 # Stage 3: Build backend
 FROM base AS backend-builder

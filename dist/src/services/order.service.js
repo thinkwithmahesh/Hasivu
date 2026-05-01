@@ -10,6 +10,7 @@ const notification_service_1 = require("./notification.service");
 const payment_service_1 = require("./payment.service");
 const paymentOrder_repository_1 = require("../repositories/paymentOrder.repository");
 const orderItem_repository_1 = require("../repositories/orderItem.repository");
+const errors_1 = require("../utils/errors");
 var OrderStatus;
 (function (OrderStatus) {
     OrderStatus["PENDING"] = "pending";
@@ -722,6 +723,69 @@ class OrderService {
     }
     async update(orderId, updates) {
         return await this.orderRepo.update(orderId, updates);
+    }
+    async assignOrder(orderId, request, _actorUserId, actorRole, actorSchoolId) {
+        const order = await this.prisma.order.findUnique({
+            where: { id: orderId },
+            include: { school: true },
+        });
+        if (!order) {
+            throw new errors_1.AppError(`Order ${orderId} not found`, 404, true, 'ORDER_NOT_FOUND');
+        }
+        if (request.schoolId !== order.schoolId) {
+            throw new errors_1.ForbiddenError('schoolId does not match this order', 'ORDER_SCHOOL_MISMATCH');
+        }
+        const elevatedRoles = ['admin', 'super_admin'];
+        const kitchenRoles = ['kitchen_staff', 'school_admin'];
+        const isElevated = elevatedRoles.includes(actorRole);
+        const isKitchenRole = kitchenRoles.includes(actorRole);
+        if (!isElevated && !isKitchenRole) {
+            throw new errors_1.ForbiddenError('Only kitchen staff or school admin with matching school may assign orders', 'ORDER_ASSIGN_FORBIDDEN');
+        }
+        if (!isElevated) {
+            if (!actorSchoolId || actorSchoolId !== order.schoolId) {
+                throw new errors_1.ForbiddenError('Only kitchen staff or school admin with matching school may assign orders', 'ORDER_ASSIGN_FORBIDDEN');
+            }
+        }
+        const targetStaff = await this.prisma.user.findFirst({
+            where: {
+                id: request.staffId,
+                schoolId: order.schoolId,
+                role: { in: ['kitchen_staff', 'school_admin'] },
+            },
+        });
+        if (!targetStaff) {
+            throw new errors_1.AppError(`Staff member ${request.staffId} not found in school ${order.schoolId}`, 404, true, 'ASSIGN_STAFF_NOT_FOUND');
+        }
+        return (await this.prisma.order.update({
+            where: { id: orderId },
+            data: {
+                assignedStaffId: request.staffId,
+                assignedAt: new Date(),
+            },
+            include: {
+                assignedStaff: {
+                    select: { id: true, firstName: true, lastName: true, email: true, role: true },
+                },
+            },
+        }));
+    }
+    async listAssignableStaff(schoolId) {
+        return this.prisma.user.findMany({
+            where: {
+                schoolId,
+                role: { in: ['kitchen_staff', 'school_admin'] },
+                isActive: true,
+            },
+            select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                role: true,
+            },
+            orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
+        });
     }
     async handleStatusUpdate(orderId, newStatus) {
         await this.updateStatus(orderId, newStatus);

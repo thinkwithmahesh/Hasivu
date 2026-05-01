@@ -21,7 +21,7 @@
     "build-storybook": "storybook build",
     "analyze": "cross-env ANALYZE=true next build",
     "clean": "rimraf .next out dist",
-    "postinstall": "husky install",
+    "postinstall": "node -e \"process.env.CI || process.env.DOCKER_BUILD ? null : require('child_process').execSync('husky install', {stdio: 'inherit'})\"",
     "_comment_playwright": "=== PLAYWRIGHT ENTERPRISE TESTING ===",
     "test:playwright": "playwright test",
     "test:ui": "playwright test --ui",
