@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import Image from 'next/image';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/utils';
 import { X } from 'lucide-react';
@@ -282,7 +283,7 @@ export const MealDetailsSheet: React.FC<MealDetailsSheetProps> = ({
       <div className="p-4 space-y-4">
         {/* Meal Image */}
         <div className="relative h-48 rounded-lg overflow-hidden">
-          <img src={meal.image} alt={meal.name} className="w-full h-full object-cover" />
+          <Image src={meal.image} alt={meal.name} fill className="object-cover" unoptimized />
           <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1">
             <span className="text-lg font-bold text-green-600">₹{meal.price}</span>
           </div>

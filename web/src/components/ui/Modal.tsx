@@ -75,6 +75,7 @@ export function Modal({ isOpen, onClose, title, children, footer, size = 'md' }:
                   </h2>
                   <button
                     onClick={onClose}
+                    aria-label="Close dialog"
                     className="p-2 -mr-2 text-pm-text-tertiary hover:text-pm-text-primary rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pm-primary-600 transition-colors"
                   >
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

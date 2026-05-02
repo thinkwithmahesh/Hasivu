@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import Image from 'next/image';
 import {
   ShoppingCart as ShoppingCartIcon,
   Trash2,
@@ -139,7 +140,13 @@ const CartItem: React.FC<CartItemProps> = ({ item, onUpdateQuantity, onRemove, d
           {/* Item Image */}
           {item.imageUrl && (
             <div className="relative w-20 h-20 flex-shrink-0 rounded-md overflow-hidden bg-gray-100">
-              <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+              <Image
+                src={item.imageUrl}
+                alt={item.name}
+                fill
+                className="object-cover"
+                unoptimized
+              />
             </div>
           )}
 

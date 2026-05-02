@@ -29,6 +29,7 @@ provider:
     NOTIFICATION_TOPIC_ARN: ${cf:hasivu-${self:provider.stage}-messaging.NotificationTopicArn}
     RETRY_QUEUE_URL: ${cf:hasivu-${self:provider.stage}-queues.RetryQueueUrl}
     MAX_RETRY_ATTEMPTS: 3
+    REDIS_URL: ${ssm:/hasivu/${self:provider.stage}/redis-url, ''}
 
   iam:
     role:
@@ -52,7 +53,8 @@ provider:
             - cognito-idp:AdminCreateUser
             - cognito-idp:AdminSetUserPassword
             - cognito-idp:AdminUpdateUserAttributes
-          Resource: 'arn:aws:cognito-idp:${aws:region}:${aws:accountId}:userpool/*'
+          Resource:
+            - 'arn:aws:cognito-idp:${aws:region}:${aws:accountId}:userpool/${self:provider.environment.AWS_COGNITO_USER_POOL_ID}'
         - Effect: Allow
           Action:
             - ses:SendEmail
@@ -63,7 +65,8 @@ provider:
             - logs:CreateLogGroup
             - logs:CreateLogStream
             - logs:PutLogEvents
-          Resource: '*'
+          Resource:
+            - 'arn:aws:logs:${aws:region}:${aws:accountId}:log-group:/aws/lambda/hasivu-${self:provider.stage}-*:*'
         - Effect: Allow
           Action:
             - dynamodb:GetItem
@@ -124,7 +127,7 @@ provider:
       restApi: true
       level: INFO
     cors:
-      origin: '*'
+      origin: ${self:custom.corsOrigin}
       headers:
         - Content-Type
         - X-Amz-Date
@@ -149,6 +152,9 @@ plugins:
   - serverless-associate-waf
 
 custom:
+  corsOrigin: ${ssm:/hasivu/${self:provider.stage}/cors-origin, 'https://app.hasivu.com'}
+  cognitoAuthorizerArn: arn:aws:cognito-idp:${aws:region}:${aws:accountId}:userpool/${self:provider.environment.AWS_COGNITO_USER_POOL_ID}
+
   warmup:
     enabled: true
     prewarm: true
@@ -245,6 +251,7 @@ functions:
           path: /api/v1/users
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: users-list
 
@@ -255,6 +262,7 @@ functions:
           path: /api/v1/users/{id}
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: users-get
 
@@ -265,6 +273,7 @@ functions:
           path: /api/v1/users/{id}
           method: put
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: users-update
 
@@ -277,6 +286,7 @@ functions:
           path: /api/v1/users/bulk-import
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: users-bulk-import
 
@@ -287,32 +297,38 @@ functions:
           path: /api/v1/users/{id}/children
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: users-manage-children
 
   # Payment Functions
   payments-create-order:
     handler: src/functions/payments/create-order.createOrderHandler
+    memorySize: 1024
     events:
       - http:
           path: /payments/orders
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: payments-create-order
 
   payments-verify:
     handler: src/functions/payments/verify-payment.verifyPaymentHandler
+    memorySize: 1024
     events:
       - http:
           path: /payments/verify
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: payments-verify
 
   payments-webhook:
     handler: src/functions/payments/webhook.webhookHandler
+    memorySize: 1024
     events:
       - http:
           path: /payments/webhook
@@ -328,6 +344,7 @@ functions:
           path: /payments/refund
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: payments-refund
 
@@ -338,6 +355,7 @@ functions:
           path: /payments/status/{orderId}
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: payments-status
 
@@ -349,18 +367,22 @@ functions:
           path: /payments/methods
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /payments/methods
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /payments/methods/{methodId}
           method: put
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /payments/methods/{methodId}
           method: delete
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: payments-manage-methods
 
@@ -372,18 +394,22 @@ functions:
           path: /payments/advanced/create
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /payments/advanced/validate
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /payments/advanced/installment
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /payments/advanced/{paymentId}
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: payments-advanced
 
@@ -395,22 +421,27 @@ functions:
           path: /payments/retry
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /payments/retry/schedule
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /payments/retry/process-scheduled
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /payments/retry/{paymentId}
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /payments/retry/{retryId}
           method: delete
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - schedule:
           rate: rate(15 minutes)
           input:
@@ -427,26 +458,32 @@ functions:
           path: /payments/reconciliation/generate
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /payments/reconciliation/manual-adjustment
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /payments/reconciliation/auto-reconcile
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /payments/reconciliation/{recordId}
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /payments/reconciliation/{recordId}
           method: put
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /payments/reconciliation
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - schedule:
           rate: cron(0 2 * * ? *)
           input:
@@ -463,30 +500,37 @@ functions:
           path: /payments/analytics/dashboard
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /payments/analytics/trends
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /payments/analytics/failure-analysis
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /payments/analytics/customer-behavior
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /payments/analytics/{schoolId}
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /payments/analytics/generate-report
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /payments/analytics/update-behavior
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: payments-analytics
 
@@ -511,30 +555,37 @@ functions:
           path: /subscriptions
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /subscriptions/{id}
           method: put
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /subscriptions/{id}/pause
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /subscriptions/{id}/resume
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /subscriptions/{id}/cancel
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /subscriptions/{id}
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /subscriptions
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: subscription-management
 
@@ -547,14 +598,17 @@ functions:
           path: /billing/process
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /billing/process/{id}
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /billing/status
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - schedule:
           rate: rate(1 hour)
           enabled: true
@@ -574,34 +628,42 @@ functions:
           path: /subscription-plans
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /subscription-plans/{id}
           method: put
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /subscription-plans/{id}
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /subscription-plans
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /subscription-plans/compare
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /subscription-plans/{id}
           method: delete
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /subscription-plans/{id}/analytics
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /subscription-plans/analytics
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: subscription-plans
 
@@ -647,37 +709,45 @@ functions:
           path: /subscription-analytics
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /subscription-analytics/dashboard
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /subscription-analytics/cohort
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /subscription-analytics/revenue
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /subscription-analytics/churn
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /subscription-analytics/clv
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: subscription-analytics
 
   # Order Functions
   orders-create:
     handler: src/functions/orders/create-order.createOrderHandler
+    memorySize: 1024
     events:
       - http:
           path: /orders
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: orders-create
 
@@ -688,6 +758,7 @@ functions:
           path: /orders/{orderId}
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: orders-get
 
@@ -698,6 +769,7 @@ functions:
           path: /orders/{orderId}
           method: put
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: orders-update
 
@@ -708,6 +780,7 @@ functions:
           path: /orders
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: orders-list
 
@@ -718,6 +791,7 @@ functions:
           path: /orders/history/{userId}
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: orders-history
 
@@ -1011,14 +1085,17 @@ functions:
           path: /rfid/readers
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /rfid/readers/{readerId}
           method: put
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /rfid/readers
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: rfid-manage-readers
 
@@ -1029,6 +1106,7 @@ functions:
           path: /rfid/verify
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: rfid-verify-card
 
@@ -1041,6 +1119,7 @@ functions:
           path: /rfid/cards/bulk-import
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: rfid-bulk-import-cards
 
@@ -1052,14 +1131,17 @@ functions:
           path: /api/v1/mobile/notifications/send
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /api/v1/mobile/notifications/{parentId}
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /api/v1/mobile/notifications/{notificationId}/read
           method: put
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: mobile-parent-notifications
 
@@ -1070,10 +1152,12 @@ functions:
           path: /api/v1/mobile/tracking/orders/{orderId}
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /api/v1/mobile/tracking/student/{studentId}
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: mobile-delivery-tracking
 
@@ -1084,18 +1168,22 @@ functions:
           path: /api/v1/mobile/devices/register
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /api/v1/mobile/devices/{deviceId}
           method: put
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /api/v1/mobile/devices/{deviceId}
           method: delete
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /api/v1/mobile/devices
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: mobile-device-registration
 
@@ -1106,6 +1194,7 @@ functions:
           path: /rfid/readers/{readerId}/test
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: rfid-test-connection
 
@@ -1116,10 +1205,12 @@ functions:
           path: /rfid/cards
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /rfid/cards/{cardId}
           method: put
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: rfid-card-registration
 
@@ -1130,6 +1221,7 @@ functions:
           path: /rfid/verify-delivery
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: rfid-delivery-verification
 
@@ -1140,6 +1232,7 @@ functions:
           path: /rfid/verify-bulk
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: rfid-bulk-verification
 
@@ -1150,6 +1243,7 @@ functions:
           path: /rfid/tracking/{studentId}
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: rfid-mobile-tracking
 
@@ -1160,6 +1254,7 @@ functions:
           path: /rfid/parent/{parentId}/dashboard
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: rfid-parent-dashboard
 
@@ -1170,6 +1265,7 @@ functions:
           path: /rfid/delivery-history
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: rfid-delivery-history
 
@@ -1191,6 +1287,7 @@ functions:
           path: /monitoring/dashboard
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: monitoring-dashboard
 
@@ -1201,6 +1298,7 @@ functions:
           path: /monitoring/health/{service}
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: monitoring-health
 
@@ -1211,6 +1309,7 @@ functions:
           path: /monitoring/metrics
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: monitoring-metrics
 
@@ -1221,6 +1320,7 @@ functions:
           path: /monitoring/performance
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: monitoring-performance
 
@@ -1231,6 +1331,7 @@ functions:
           path: /monitoring/business
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: monitoring-business
 
@@ -1241,6 +1342,7 @@ functions:
           path: /monitoring/alerts
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: monitoring-alerts
 
@@ -1251,6 +1353,7 @@ functions:
           path: /monitoring/recommendations
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: monitoring-recommendations
 
@@ -1268,22 +1371,27 @@ functions:
           path: /analytics/orchestrator/execute
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /analytics/orchestrator/health
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /analytics/orchestrator/status
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /analytics/orchestrator/cache-stats
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /analytics/orchestrator/batch
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: analytics-orchestrator
       ANALYTICS_DATA_BUCKET: hasivu-${self:provider.stage}-analytics
@@ -1298,18 +1406,22 @@ functions:
           path: /analytics/business-intelligence/dashboard
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /analytics/business-intelligence/metrics
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /analytics/business-intelligence/trends
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /analytics/business-intelligence/insights
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: analytics-business-intelligence
       ML_MODEL_BUCKET: hasivu-${self:provider.stage}-ml-models
@@ -1324,18 +1436,22 @@ functions:
           path: /analytics/cross-school/compare
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /analytics/cross-school/benchmarks
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /analytics/cross-school/rankings
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /analytics/cross-school/insights
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: analytics-cross-school
 
@@ -1349,18 +1465,22 @@ functions:
           path: /analytics/executive/dashboard
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /analytics/executive/kpis
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /analytics/executive/strategic-metrics
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /analytics/executive/reports
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: analytics-executive-dashboard
 
@@ -1374,18 +1494,22 @@ functions:
           path: /analytics/performance/benchmark
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /analytics/performance/compare
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /analytics/performance/metrics
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /analytics/performance/trends
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: analytics-performance-benchmarking
 
@@ -1399,18 +1523,22 @@ functions:
           path: /analytics/predictive/forecast
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /analytics/predictive/demand
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /analytics/predictive/enrollment
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /analytics/predictive/risk-assessment
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: analytics-predictive-insights
       ML_MODEL_BUCKET: hasivu-${self:provider.stage}-ml-models
@@ -1425,18 +1553,22 @@ functions:
           path: /analytics/revenue/optimize
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /analytics/revenue/metrics
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /analytics/revenue/forecasts
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /analytics/revenue/recommendations
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: analytics-revenue-optimization
 
@@ -1450,18 +1582,22 @@ functions:
           path: /analytics/strategic/generate
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /analytics/strategic/insights
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /analytics/strategic/opportunities
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /analytics/strategic/risks
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: analytics-strategic-insights
       ML_MODEL_BUCKET: hasivu-${self:provider.stage}-ml-models
@@ -1480,18 +1616,22 @@ functions:
           path: /nutrition/recommendations/generate
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /nutrition/recommendations/student/{studentId}
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /nutrition/recommendations/class/{classId}
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /nutrition/recommendations/personalized
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: nutrition-dietary-recommendations
       ML_MODEL_BUCKET: hasivu-${self:provider.stage}-ml-models
@@ -1506,18 +1646,22 @@ functions:
           path: /nutrition/meal-optimization/optimize
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /nutrition/meal-optimization/suggestions
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /nutrition/meal-optimization/balance
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /nutrition/meal-optimization/cost-efficiency
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: nutrition-meal-optimization
       ML_MODEL_BUCKET: hasivu-${self:provider.stage}-ml-models
@@ -1532,18 +1676,22 @@ functions:
           path: /nutrition/analyze
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /nutrition/analysis/{analysisId}
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /nutrition/analysis/school/{schoolId}
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /nutrition/analysis/batch
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: nutrition-analyzer
 
@@ -1557,18 +1705,22 @@ functions:
           path: /nutrition/compliance/check
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /nutrition/compliance/report
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /nutrition/compliance/standards
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /nutrition/compliance/violations
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: nutrition-compliance
 
@@ -1582,18 +1734,22 @@ functions:
           path: /nutrition/trends/analyze
           method: post
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /nutrition/trends/historical
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /nutrition/trends/patterns
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
       - http:
           path: /nutrition/trends/forecasts
           method: get
           cors: true
+          authorizer: ${self:custom.cognitoAuthorizerArn}
     environment:
       FUNCTION_NAME: nutrition-trend-analyzer
 

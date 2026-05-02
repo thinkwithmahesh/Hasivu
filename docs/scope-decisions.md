@@ -1,12 +1,18 @@
-# Product scope decisions (MVP vs PRD)
+# Scope Decisions — BMAD Audit
 
-Formal descopes and deferrals for stakeholder alignment. PRD references are placeholders until the canonical PRD document ID is linked in-repo.
+**Date:** 2026-05-02
 
-| Feature                       | PRD Reference                  | Decision                                                                                                      | Date       | Owner |
-| ----------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------- | ---------- | ----- |
-| React Native mobile app       | PRD §Mobile                    | DESCOPED — MVP is web-only                                                                                    | 2026-05-01 | PM    |
-| Stripe payment gateway        | PRD §Payments                  | DESCOPED — Razorpay only for MVP                                                                              | 2026-05-01 | PM    |
-| WhatsApp notifications        | PRD §Comms                     | DESCOPED — Email + push for MVP                                                                               | 2026-05-01 | PM    |
-| 100k users / &lt;100ms NFR    | PRD §NFR                       | REVISED — Target: 5k concurrent web users, p95 API &lt; 500ms under nominal load until dedicated perf program | 2026-05-01 | PM    |
-| School-code onboarding        | PRD §Onboarding                | DEFERRED to Phase 2                                                                                           | 2026-05-01 | PM    |
-| Kitchen order assign-to-staff | PRD (if any) / engineering gap | IMPLEMENTED in closure sprint — `PUT /api/kitchen/orders/:id/assign` + `GET /api/kitchen/staff`               | 2026-05-01 | PM    |
+Items identified by BMAD audit as outside PRD scope:
+
+| File/Feature                                    | In PRD? | Decision                 | Rationale                                     |
+| ----------------------------------------------- | ------- | ------------------------ | --------------------------------------------- |
+| `src/services/fraud-detection.service.ts`       | No      | KEEP                     | Production safety — protects payment flow     |
+| `src/services/ml/federated-learning.service.ts` | No      | DEFERRED to Phase 3      | Experimental ML feature — not needed for MVP  |
+| `src/services/ml/automl.service.ts`             | No      | DEFERRED to Phase 3      | AI-powered recommendations (Phase 3 PRD item) |
+| `src/services/api-key-rotation.service.ts`      | No      | KEEP                     | Security best practice                        |
+| `web/src/app/blend/page.tsx`                    | No      | **REMOVED**              | Unclear purpose, no PRD mapping               |
+| `web/src/app/sprrrint/page.tsx`                 | No      | **REMOVED**              | Unclear purpose, no PRD mapping               |
+| `web/src/app/test-fixes/page.tsx`               | No      | **REMOVED**              | Test page, should not be in production        |
+| `web/src/pages-backup/`                         | No      | **REMOVED**              | Dead Pages Router remnant                     |
+| `web/next.config.optimized.js`                  | N/A     | **ARCHIVED** (`.backup`) | Only `next.config.js` is active               |
+| `web/next.config.performance.js`                | N/A     | **ARCHIVED** (`.backup`) | Only `next.config.js` is active               |

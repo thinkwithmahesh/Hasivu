@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -112,7 +113,7 @@ export const QuickMealCarousel: React.FC<QuickMealCarouselProps> = ({
 
               {/* Meal image */}
               <div className="relative h-32 bg-gray-100">
-                <img src={meal.image} alt={meal.name} className="w-full h-full object-cover" />
+                <Image src={meal.image} alt={meal.name} fill className="object-cover" unoptimized />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
 
                 {/* Quick add button */}

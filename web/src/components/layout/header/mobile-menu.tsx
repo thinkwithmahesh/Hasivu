@@ -383,7 +383,7 @@ export function MobileMenu({ user, schoolStatus, onItemClick, className }: Mobil
 
       {/* Navigation Items */}
       <div className="flex-1 overflow-y-auto py-4">
-        <nav className="px-4 space-y-1">
+        <nav aria-label="Mobile navigation" className="px-4 space-y-1">
           {navigationItems.map(item => {
             const Icon = item.icon;
             const hasChildren = item.children && item.children.length > 0;

@@ -72,7 +72,10 @@ export function BottomNav() {
   ];
 
   return (
-    <nav className="fixed bottom-0 inset-x-0 bg-pm-surface-1 border-t border-pm-neutral-200 pb-safe z-40 shadow-[0_-4px_16px_rgba(20,18,16,0.04)]">
+    <nav
+      aria-label="Main navigation"
+      className="fixed bottom-0 inset-x-0 bg-pm-surface-1 border-t border-pm-neutral-200 pb-safe z-40 shadow-[0_-4px_16px_rgba(20,18,16,0.04)]"
+    >
       <div className="flex items-center justify-around h-[68px]">
         {navItems.map(item => {
           const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`);

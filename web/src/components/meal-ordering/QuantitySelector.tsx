@@ -6,6 +6,7 @@
 'use client';
 
 import React, { useState, useCallback, useMemo } from 'react';
+import Image from 'next/image';
 import { Slider } from '@/components/ui/slider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -203,7 +204,14 @@ export function QuantitySelector({
       <CardContent className={`${sizeClasses.card} pt-0 space-y-4`}>
         {/* Meal Info */}
         <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-          <img src={meal.imageUrl} alt={meal.name} className="w-12 h-12 rounded-md object-cover" />
+          <Image
+            src={meal.imageUrl}
+            alt={meal.name}
+            width={48}
+            height={48}
+            className="rounded-md object-cover"
+            unoptimized
+          />
           <div className="flex-1 min-w-0">
             <h3 className="font-medium text-sm truncate">{meal.name}</h3>
             <p className="text-xs text-gray-600">₹{meal.price} per item</p>

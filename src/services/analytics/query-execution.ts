@@ -180,10 +180,23 @@ export class QueryExecutionService {
 
   /**
    * Execute raw SQL query (use with caution)
+   * WARNING: Uses $queryRawUnsafe — always pass user input via params array, never concatenate.
    */
   async executeRawQuery(query: string, params?: unknown[]): Promise<unknown[]> {
     try {
       logger.info('Executing raw query', { query, params });
+
+      // Security guard: warn if params exist but query has no $N placeholders
+      if (params && params.length > 0 && !query.includes('$')) {
+        logger.warn('Raw query has params but no $N placeholders — possible SQL injection risk', {
+          query,
+        });
+      }
+      // Block dangerous multi-statement patterns
+      const dangerousPatterns = /;\s*(DROP|DELETE|INSERT|UPDATE|ALTER|CREATE|TRUNCATE)\s/i;
+      if (dangerousPatterns.test(query)) {
+        throw new Error('Raw query rejected: suspicious multi-statement pattern detected');
+      }
 
       const results = await prisma.$queryRawUnsafe(query, ...(params || []));
       return results as unknown[];

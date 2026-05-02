@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import Image from 'next/image';
 import {
   Package,
   AlertTriangle,
@@ -175,7 +176,14 @@ const InventoryItemCard = ({
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center space-x-3">
             {item.image && (
-              <img src={item.image} alt={item.name} className="w-12 h-12 rounded-lg object-cover" />
+              <Image
+                src={item.image}
+                alt={item.name}
+                width={48}
+                height={48}
+                className="rounded-lg object-cover"
+                unoptimized
+              />
             )}
             <div>
               <h3 className="font-semibold text-gray-900">{item.name}</h3>

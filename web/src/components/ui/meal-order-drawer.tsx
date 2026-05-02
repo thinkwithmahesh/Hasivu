@@ -1,4 +1,5 @@
 import * as React from 'react';
+import Image from 'next/image';
 import { Drawer } from 'vaul';
 import { X, Plus, Minus, Clock, Heart, Share2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -143,7 +144,7 @@ const MealOrderDrawer = ({
             {/* Meal Preview */}
             <div className="mb-6">
               <div className="aspect-video relative rounded-xl overflow-hidden mb-4">
-                <img src={meal.image} alt={meal.name} className="w-full h-full object-cover" />
+                <Image src={meal.image} alt={meal.name} fill className="object-cover" unoptimized />
                 <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1">
                   <div className="flex items-center space-x-1">
                     <span className="text-sm font-medium">⭐ {meal.rating}</span>

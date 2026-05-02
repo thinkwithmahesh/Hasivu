@@ -26,7 +26,7 @@ export function KitchenShell({ children }: KitchenShellProps) {
             Kitchen<span className="text-pm-text-tertiary ml-2 text-[24px]">10:45 AM</span>
           </div>
           <div className="h-10 w-px bg-pm-neutral-200 mx-2" />
-          <nav className="flex gap-4">
+          <nav aria-label="Kitchen navigation" className="flex gap-4">
             {tabs.map(tab => {
               const isActive = pathname === tab.href || pathname?.startsWith(`${tab.href}/`);
               return (
