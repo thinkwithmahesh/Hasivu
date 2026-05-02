@@ -120,6 +120,29 @@ async function main() {
     data: users[4], // vendor
   });
 
+  // Playwright critical journey (web/tests/e2e/login-order-pay.spec.ts)
+  const e2eParentHash = await bcrypt.hash('Hasivu@123', 10);
+  await prisma.user.upsert({
+    where: { email: 'parent@hasivu.com' },
+    create: {
+      id: 'user-parent-hasivu-e2e',
+      email: 'parent@hasivu.com',
+      passwordHash: e2eParentHash,
+      firstName: 'Hasivu',
+      lastName: 'Parent',
+      role: 'parent',
+      schoolId: school.id,
+      emailVerified: true,
+      isActive: true,
+    },
+    update: {
+      passwordHash: e2eParentHash,
+      schoolId: school.id,
+      emailVerified: true,
+      isActive: true,
+    },
+  });
+
   // Create student-parent relationship
   await prisma.studentParent.create({
     data: {

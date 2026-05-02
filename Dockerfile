@@ -33,7 +33,8 @@ COPY --from=deps /app/web/node_modules ./web/node_modules
 # Copy source code
 COPY . .
 
-# Generate Prisma client
+# Generate Prisma client (URL must match provider; generate does not open a real connection)
+ENV DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:5432/postgres?schema=public"
 RUN npx prisma generate
 
 # Build backend

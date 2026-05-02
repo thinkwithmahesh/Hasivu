@@ -8,7 +8,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -858,6 +858,9 @@ model PaymentRetry {
   // Relations
   payment       Payment  @relation("PaymentRetries", fields: [paymentId], references: [id], onDelete: Cascade)
   
+  @@index([paymentId])
+  @@index([retryAt])
+  @@index([paymentId, retryAt])
   @@map("payment_retries")
 }
 
@@ -1022,6 +1025,10 @@ model BillingCycle {
   subscription    Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
   payment         Payment?     @relation("BillingCyclePayment", fields: [paymentId], references: [id], onDelete: SetNull)
   
+  @@index([subscriptionId])
+  @@index([paymentId])
+  @@index([status])
+  @@index([billingDate])
   @@map("billing_cycles")
 }
 
@@ -1075,6 +1082,11 @@ model Invoice {
   invoiceItems    InvoiceItem[]
   emailLogs       InvoiceEmailLog[]
   
+  @@index([schoolId])
+  @@index([userId])
+  @@index([paymentId])
+  @@index([status, dueDate])
+  @@index([invoiceDate])
   @@map("invoices")
 }
 

@@ -11,7 +11,10 @@ globalThis.jest = jest;
 process.env.NODE_ENV = 'test';
 process.env.JWT_SECRET = 'test-jwt-secret-key-for-testing-only-minimum-64-characters-required-for-security-validation';
 process.env.JWT_REFRESH_SECRET = 'test-jwt-refresh-secret-key-for-testing-only-minimum-64-characters-required-for-security-validation';
-process.env.DATABASE_URL = 'file:./prisma/test.db';
+// Default test DB URL (CI integration job uses postgres:postgres@localhost:5432/hasivu_test)
+process.env.DATABASE_URL =
+  process.env.DATABASE_URL ||
+  'postgresql://postgres:postgres@127.0.0.1:5432/hasivu_test?schema=public';
 process.env.REDIS_URL = 'redis://localhost:6379/1';
 // Enable database and Redis operations for comprehensive testing
 process.env.SKIP_DATABASE_TESTS = 'false';
