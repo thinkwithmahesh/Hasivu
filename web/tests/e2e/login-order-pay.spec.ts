@@ -15,12 +15,13 @@ test.describe('Critical User Journey: Login -> Order -> Pay', () => {
     // We navigate to /login and fill out the mock parent credentials
     await page.goto('/login');
 
-    // Expect login page to be loaded
-    await expect(page.getByRole('heading', { name: /Sign in|Login/i })).toBeVisible();
+    // Expect login page to be loaded (/login uses h1 "Welcome back!")
+    await expect(page.getByRole('heading', { name: /Welcome back/i })).toBeVisible();
 
     // Fill credentials (assuming test accounts are seeded or mock server is running)
     await page.getByLabel(/email/i).fill('parent@hasivu.com');
-    await page.getByLabel(/password/i).fill('Hasivu@123');
+    // "Password" label also matches the show-password control's accessible name in strict mode
+    await page.getByRole('textbox', { name: 'Password' }).fill('Hasivu@123');
     await page.getByRole('button', { name: /sign in|login/i }).click();
 
     // Wait for redirect to dashboard
