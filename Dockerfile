@@ -2,7 +2,7 @@
 # Optimized for production deployment with minimal image size
 
 # Stage 1: Base image with Node.js
-FROM node:18-alpine AS base
+FROM node:20-alpine AS base
 WORKDIR /app
 
 # Install system dependencies
@@ -61,7 +61,7 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 RUN npm run build
 
 # Stage 5: Production backend image
-FROM node:18-alpine AS backend-production
+FROM node:20-alpine AS backend-production
 WORKDIR /app
 
 # Create non-root user
@@ -72,12 +72,15 @@ RUN addgroup -g 1001 -S nodejs && \
 COPY --from=backend-builder --chown=nodejs:nodejs /app/dist ./dist
 COPY --from=backend-builder --chown=nodejs:nodejs /app/node_modules ./node_modules
 COPY --from=backend-builder --chown=nodejs:nodejs /app/package*.json ./
+COPY --from=backend-builder --chown=nodejs:nodejs /app/tsconfig.runtime.json ./tsconfig.runtime.json
 
 # Copy Prisma files
 COPY --from=backend-builder --chown=nodejs:nodejs /app/prisma ./prisma
 
 # Switch to non-root user
 USER nodejs
+
+ENV TS_NODE_PROJECT=tsconfig.runtime.json
 
 # Expose port
 EXPOSE 3000
@@ -87,10 +90,10 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
 # Start backend
-CMD ["node", "dist/index.js"]
+CMD ["node", "-r", "tsconfig-paths/register", "dist/src/index.js"]
 
 # Stage 6: Production frontend image
-FROM node:18-alpine AS frontend-production
+FROM node:20-alpine AS frontend-production
 WORKDIR /app
 
 # Create non-root user
@@ -108,15 +111,15 @@ USER nodejs
 # Expose port
 EXPOSE 3000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+# Health check (Next app listens on 3000 inside the container; /api/status is the live route)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3000/api/status', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
 # Start frontend
 CMD ["node", "server.js"]
 
 # Stage 7: Combined production image (default)
-FROM node:18-alpine AS production
+FROM node:20-alpine AS production
 WORKDIR /app
 
 # Install system dependencies
