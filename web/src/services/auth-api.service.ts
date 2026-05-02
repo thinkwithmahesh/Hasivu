@@ -63,9 +63,10 @@ class AuthApiService {
       }
 
       const data = await response.json();
+      const payload = data?.data ?? data;
       return {
-        user: data.user,
-        tokens: data.tokens,
+        user: payload?.user,
+        tokens: payload?.tokens,
         success: true,
       };
     } catch (error) {
