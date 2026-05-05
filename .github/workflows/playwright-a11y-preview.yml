@@ -1,0 +1,54 @@
+name: Playwright A11y (Preview/Staging)
+
+on:
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+jobs:
+  playwright-a11y-preview:
+    name: Playwright accessibility against preview URL
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      NODE_VERSION: '18.x'
+      PLAYWRIGHT_BASE_URL: ${{ secrets.PLAYWRIGHT_BASE_URL }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install web dependencies
+        run: cd web && npm ci --prefer-offline --no-audit
+
+      - name: Ensure preview/staging URL is configured
+        run: |
+          if [ -z "${PLAYWRIGHT_BASE_URL}" ]; then
+            echo "::error::Missing PLAYWRIGHT_BASE_URL secret. Set it to your staging/preview web URL."
+            exit 1
+          fi
+
+      - name: Install Playwright browsers
+        run: cd web && npx playwright install --with-deps
+
+      - name: Run Playwright accessibility suite
+        run: cd web && npm run test:accessibility
+        env:
+          BASE_URL: ${{ env.PLAYWRIGHT_BASE_URL }}
+          PLAYWRIGHT_BASE_URL: ${{ env.PLAYWRIGHT_BASE_URL }}
+          CI: true
+
+      - name: Upload Playwright artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-a11y-preview-report
+          path: |
+            web/playwright-report/
+            web/test-results/
+          retention-days: 14
