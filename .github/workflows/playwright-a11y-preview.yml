@@ -33,6 +33,26 @@ jobs:
             echo "::error::Missing PLAYWRIGHT_BASE_URL secret. Set it to your staging/preview web URL."
             exit 1
           fi
+          echo "Configured PLAYWRIGHT_BASE_URL host:"
+          echo "${PLAYWRIGHT_BASE_URL}" | sed -E 's#(https?://)([^/]+).*#\2#'
+
+      - name: Preflight check preview/staging URL reachability
+        run: |
+          set -euo pipefail
+          host="$(echo "${PLAYWRIGHT_BASE_URL}" | sed -E 's#https?://([^/]+).*#\1#')"
+          echo "Checking DNS for: ${host}"
+          getent hosts "${host}" || true
+          echo "Checking HTTPS response for: ${PLAYWRIGHT_BASE_URL}"
+          if ! curl -fIsS --max-time 25 --retry 2 --retry-delay 2 "${PLAYWRIGHT_BASE_URL}" >/tmp/base_url_headers.txt; then
+            echo "::error::PLAYWRIGHT_BASE_URL is not reachable from this runner."
+            echo "Troubleshooting:"
+            echo "- confirm URL is public (not VPN/private-only)"
+            echo "- confirm DNS resolves publicly"
+            echo "- confirm ingress allows GitHub runner IPs"
+            exit 1
+          fi
+          echo "Reachable. Response headers:"
+          cat /tmp/base_url_headers.txt
 
       - name: Cache Playwright browsers
         uses: actions/cache@v4
