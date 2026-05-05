@@ -8,7 +8,9 @@ async function globalSetup(config: FullConfig) {
   const page = await browser.newPage();
 
   try {
-    await page.goto(`${baseURL}/api/status`, { timeout: 30000 });
+    // For preview/staging checks, validate the app root is reachable.
+    // Some environments do not expose a common /api/status endpoint.
+    await page.goto(baseURL, { timeout: 30000, waitUntil: 'domcontentloaded' });
     console.log('[global-setup] App reachable at', baseURL);
   } catch (err) {
     console.error('[global-setup] App not reachable:', err);
