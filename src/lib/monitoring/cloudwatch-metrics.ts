@@ -4,6 +4,7 @@
  */
 
 import AWS from 'aws-sdk';
+import { logger } from '../../utils/logger';
 
 // aws-sdk v2 typings omit CloudWatch on some @types/aws-sdk builds — use service constructor at runtime.
 const cloudwatch = new (
@@ -33,7 +34,7 @@ export async function recordMetric(
 ): Promise<void> {
   // Skip in development to avoid AWS costs
   if (process.env.NODE_ENV === 'development') {
-    console.log(`[Metric] ${metricName}: ${value} ${unit}`, dimensions);
+    logger.debug('Metric recorded locally', { metricName, value, unit, dimensions });
     return;
   }
 
@@ -59,7 +60,9 @@ export async function recordMetric(
       .promise();
   } catch (error) {
     // Don't throw on metric errors - they shouldn't break the application
-    console.error('Failed to record metric:', error);
+    logger.error('Failed to record metric', error instanceof Error ? error : undefined, {
+      metricName,
+    });
   }
 }
 
@@ -79,7 +82,12 @@ export async function recordMetrics(
 ): Promise<void> {
   if (process.env.NODE_ENV === 'development') {
     metrics.forEach(m => {
-      console.log(`[Metric] ${m.name}: ${m.value} ${m.unit || 'Milliseconds'}`, m.dimensions);
+      logger.debug('Metric recorded locally', {
+        metricName: m.name,
+        value: m.value,
+        unit: m.unit || 'Milliseconds',
+        dimensions: m.dimensions,
+      });
     });
     return;
   }
@@ -103,7 +111,7 @@ export async function recordMetrics(
       })
       .promise();
   } catch (error) {
-    console.error('Failed to record metrics:', error);
+    logger.error('Failed to record metrics', error instanceof Error ? error : undefined);
   }
 }
 
@@ -244,7 +252,7 @@ export async function measureDatabaseQuery<T>(queryType: string, fn: () => Promi
 
     // Warn if query is slow
     if (duration > 100) {
-      console.warn(`Slow database query detected: ${queryType} took ${duration}ms`);
+      logger.warn('Slow database query detected', { queryType, duration });
       await recordMetric('SlowDatabaseQueries', 1, 'Count', { QueryType: queryType });
     }
 
@@ -448,7 +456,9 @@ export async function getMetricStatistics(
 
     return result.Datapoints;
   } catch (error) {
-    console.error('Failed to get metric statistics:', error);
+    logger.error('Failed to get metric statistics', error instanceof Error ? error : undefined, {
+      metricName,
+    });
     return [];
   }
 }

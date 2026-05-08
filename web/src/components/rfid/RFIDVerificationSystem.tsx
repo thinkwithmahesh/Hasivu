@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
   Shield,
   CheckCircle,
@@ -144,6 +144,7 @@ const RFIDScannerAnimation = ({
   isScanning: boolean;
   status: RFIDTransaction['status'];
 }) => {
+  const reduced = useReducedMotion();
   return (
     <div className="relative w-32 h-32 mx-auto mb-6">
       {/* Base scanner circle */}
@@ -161,7 +162,7 @@ const RFIDScannerAnimation = ({
 
       {/* Animated scanning rings */}
       <AnimatePresence>
-        {isScanning && (
+        {isScanning && !reduced && (
           <>
             {[0, 0.5, 1].map((delay, index) => (
               <motion.div
@@ -280,10 +281,8 @@ const TransactionHistory = ({ transactions }: { transactions: RFIDTransaction[] 
   return (
     <div className="space-y-4">
       {transactions.map(transaction => (
-        <motion.div
+        <div
           key={transaction.id}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
           className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
         >
           <Avatar className="w-12 h-12">
@@ -343,7 +342,7 @@ const TransactionHistory = ({ transactions }: { transactions: RFIDTransaction[] 
               </div>
             </div>
           </div>
-        </motion.div>
+        </div>
       ))}
     </div>
   );
@@ -351,6 +350,7 @@ const TransactionHistory = ({ transactions }: { transactions: RFIDTransaction[] 
 
 // Real-time RFID Monitor Component
 const RealTimeMonitor = () => {
+  const reduced = useReducedMotion();
   const [_activeTransactions, _setActiveTransactions] =
     useState<RFIDTransaction[]>(mockTransactions);
   const [isScanning, setIsScanning] = useState(false);
@@ -423,7 +423,9 @@ const RealTimeMonitor = () => {
               }}
               disabled={isScanning}
             >
-              <RefreshCw className={`w-4 h-4 mr-2 ${isScanning ? 'animate-spin' : ''}`} />
+              <RefreshCw
+                className={`w-4 h-4 mr-2 ${isScanning && !reduced ? 'animate-spin' : ''}`}
+              />
               Test Scan
             </Button>
             <Button variant="outline">

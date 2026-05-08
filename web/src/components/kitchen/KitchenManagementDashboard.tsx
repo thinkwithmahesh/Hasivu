@@ -35,7 +35,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'react-hot-toast';
 
-import { useAuth, useUser } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/auth-context';
 import { UserRole } from '@/types/auth';
 import {
   Select,
@@ -356,6 +356,8 @@ const OrderCard = ({
   assigningOrderId,
   assignError,
   onAssign,
+  onView,
+  onAdvance,
 }: {
   order: Order;
   assignableStaff: AssignableStaffRow[];
@@ -363,6 +365,8 @@ const OrderCard = ({
   assigningOrderId: string | null;
   assignError: string | null;
   onAssign: (orderId: string, staffId: string) => void | Promise<void>;
+  onView: (order: Order) => void;
+  onAdvance: (order: Order) => void | Promise<void>;
 }) => {
   const [timeElapsed, setTimeElapsed] = useState(0);
 
@@ -455,11 +459,19 @@ const OrderCard = ({
       )}
 
       <div className="flex space-x-2">
-        <Button size="sm" variant="outline" className="flex-1">
+        <Button size="sm" variant="outline" className="flex-1" onClick={() => onView(order)}>
           <Eye className="w-3 h-3 mr-1" />
           View
         </Button>
-        <Button size="sm" variant="outline">
+        <Button
+          size="sm"
+          variant="outline"
+          aria-label={`Move ${order.orderNumber} to next kitchen status`}
+          disabled={order.status === 'completed' || order.status === 'cancelled'}
+          onClick={() => {
+            void onAdvance(order);
+          }}
+        >
           <MoreHorizontal className="w-3 h-3" />
         </Button>
       </div>
@@ -603,10 +615,17 @@ export const KitchenManagementDashboard: React.FC = () => {
   const [inventoryFilters, _setInventoryFilters] = useState({});
   const [assigningOrderId, setAssigningOrderId] = useState<string | null>(null);
   const [assignErrors, setAssignErrors] = useState<Record<string, string | null>>({});
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [localOrders, setLocalOrders] = useState<Order[]>([]);
+  const [localOrderStatuses, setLocalOrderStatuses] = useState<Record<string, Order['status']>>({});
+  const [showFilters, setShowFilters] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [showAddOrder, setShowAddOrder] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<'all' | Order['status']>('all');
+  const [searchTerm, setSearchTerm] = useState('');
 
-  const { hasAnyRole } = useAuth();
-  const user = useUser();
-  const canAssign = hasAnyRole([
+  const { hasRole, user } = useAuth();
+  const canAssign = hasRole([
     UserRole.KITCHEN_STAFF,
     UserRole.SCHOOL_ADMIN,
     UserRole.ADMIN,
@@ -630,7 +649,7 @@ export const KitchenManagementDashboard: React.FC = () => {
     loading: mutationLoading,
     error: mutationError,
   } = useOrderMutations();
-  const { connected: wsConnected } = useWebSocketConnection();
+  const { connected: wsConnected, realtimeEnabled } = useWebSocketConnection();
 
   const schoolIdForStaff =
     user?.schoolId ||
@@ -697,9 +716,35 @@ export const KitchenManagementDashboard: React.FC = () => {
     [assignOrder, refetchOrders]
   );
 
+  const handleAdvanceOrder = useCallback(
+    async (order: Order) => {
+      const nextStatus: Partial<Record<Order['status'], Order['status']>> = {
+        pending: 'preparing',
+        preparing: 'ready',
+        ready: 'completed',
+      };
+      const next = nextStatus[order.status];
+
+      if (!next) {
+        toast('This order is already closed.');
+        return;
+      }
+
+      try {
+        await updateOrderStatus(order.id, next);
+        setLocalOrderStatuses(prev => ({ ...prev, [order.id]: next }));
+        setSelectedOrder(current => (current?.id === order.id ? { ...current, status: next } : current));
+        toast.success(`${order.orderNumber} moved to ${next}`);
+      } catch {
+        toast.error('Failed to update order status');
+      }
+    },
+    [refetchOrders, updateOrderStatus]
+  );
+
   // Use fallback data if API calls fail or data is not available
   const ordersData: Order[] = useMemo(() => {
-    const raw = (orders || mockOrders) as any[];
+    const raw = [...localOrders, ...((orders || mockOrders) as any[])];
     return raw.map((o: any) => {
       const assigned = o?.assignedStaff;
       let assignedStaff: string | undefined;
@@ -713,39 +758,62 @@ export const KitchenManagementDashboard: React.FC = () => {
       }
       return {
         ...o,
+        status: localOrderStatuses[o.id] || o.status,
         assignedStaff: assignedStaff ?? o.assignedStaff,
         schoolId: o.schoolId,
         assignedStaffId: o.assignedStaffId,
       } as Order;
     });
-  }, [orders]);
+  }, [localOrderStatuses, localOrders, orders]);
   const metricsData: KitchenMetrics = (metrics || mockMetrics) as KitchenMetrics;
   const staffData: KitchenStaff[] = (staff || mockStaff) as KitchenStaff[];
   const inventoryData: InventoryItem[] = (inventory || mockInventory) as InventoryItem[];
 
   // Filter orders by status
-  const pendingOrders = ordersData.filter(order => order.status === 'pending');
-  const preparingOrders = ordersData.filter(order => order.status === 'preparing');
-  const readyOrders = ordersData.filter(order => order.status === 'ready');
+  const filteredOrders = ordersData.filter(order => {
+    const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
+    const query = searchTerm.trim().toLowerCase();
+    const matchesSearch =
+      !query ||
+      order.orderNumber.toLowerCase().includes(query) ||
+      order.studentName.toLowerCase().includes(query) ||
+      order.location.toLowerCase().includes(query);
+    return matchesStatus && matchesSearch;
+  });
+  const pendingOrders = filteredOrders.filter(order => order.status === 'pending');
+  const preparingOrders = filteredOrders.filter(order => order.status === 'preparing');
+  const readyOrders = filteredOrders.filter(order => order.status === 'ready');
 
-  // Check if any critical data is loading
+  // Check if any critical data is loading. Read-side fetch failures degrade to
+  // fallback dashboard data; only action/mutation failures should block users.
   const isLoading = ordersLoading || metricsLoading;
-  const hasError = ordersError || mutationError;
+  const dataNotice = ordersError
+    ? 'Live kitchen orders are unavailable right now, so fallback queue data is shown.'
+    : null;
+  const hasError = mutationError;
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Connection Status */}
-        {!wsConnected && (
+        {realtimeEnabled && !wsConnected && (
           <Alert className="border-yellow-200 bg-yellow-50">
             <AlertTriangle className="h-4 w-4 text-yellow-600" />
             <AlertDescription className="text-yellow-800">
-              Real-time connection lost. Data may not be current.
+              Real-time connection is unavailable. Polling refresh remains active.
             </AlertDescription>
           </Alert>
         )}
 
-        {/* Error State */}
+        {/* Data availability notice */}
+        {dataNotice && (
+          <Alert className="border-blue-200 bg-blue-50">
+            <AlertTriangle className="h-4 w-4 text-blue-600" />
+            <AlertDescription className="text-blue-800">{dataNotice}</AlertDescription>
+          </Alert>
+        )}
+
+        {/* Action Error State */}
         {hasError && (
           <Alert className="border-red-200 bg-red-50">
             <AlertTriangle className="h-4 w-4 text-red-600" />
@@ -762,7 +830,14 @@ export const KitchenManagementDashboard: React.FC = () => {
             <p className="text-gray-600">Real-time order tracking and kitchen operations</p>
           </div>
           <div className="flex items-center space-x-3">
-            <Button variant="outline" onClick={() => refetchOrders()} disabled={isLoading}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                refetchOrders();
+                toast.success('Kitchen orders refreshed');
+              }}
+              disabled={isLoading}
+            >
               {isLoading ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               ) : (
@@ -770,20 +845,120 @@ export const KitchenManagementDashboard: React.FC = () => {
               )}
               Refresh
             </Button>
-            <Button variant="outline">
+            <Button
+              variant={showFilters ? 'default' : 'outline'}
+              onClick={() => setShowFilters(value => !value)}
+              aria-expanded={showFilters}
+            >
               <Filter className="w-4 h-4 mr-2" />
               Filter
             </Button>
-            <Button variant="outline">
+            <Button
+              variant={showSearch ? 'default' : 'outline'}
+              onClick={() => setShowSearch(value => !value)}
+              aria-expanded={showSearch}
+            >
               <Search className="w-4 h-4 mr-2" />
               Search
             </Button>
-            <Button disabled={mutationLoading}>
+            <Button
+              onClick={() => setShowAddOrder(value => !value)}
+              disabled={mutationLoading}
+              aria-expanded={showAddOrder}
+              aria-controls="kitchen-add-order-panel"
+            >
               <Plus className="w-4 h-4 mr-2" />
               Add Order
             </Button>
           </div>
         </div>
+
+        {(showFilters || showSearch || showAddOrder) && (
+          <Card>
+            <CardContent className="grid gap-4 pt-6 md:grid-cols-3">
+              {showFilters && (
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-gray-700">
+                    Status filter
+                  </label>
+                  <Select value={statusFilter} onValueChange={value => setStatusFilter(value as typeof statusFilter)}>
+                    <SelectTrigger aria-label="Filter kitchen orders by status">
+                      <SelectValue placeholder="All statuses" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All statuses</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="preparing">Preparing</SelectItem>
+                      <SelectItem value="ready">Ready</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {showSearch && (
+                <div>
+                  <label htmlFor="kitchen-order-search" className="mb-2 block text-sm font-semibold text-gray-700">
+                    Search orders
+                  </label>
+                  <input
+                    id="kitchen-order-search"
+                    aria-label="Search kitchen orders"
+                    className="h-11 w-full rounded-md border border-gray-300 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    placeholder="Search by order, student, or location"
+                    value={searchTerm}
+                    onChange={event => setSearchTerm(event.target.value)}
+                  />
+                </div>
+              )}
+
+              {showAddOrder && (
+                <div id="kitchen-add-order-panel" className="space-y-3">
+                  <div>
+                    <h2 className="text-sm font-semibold text-gray-900">Add local test order</h2>
+                    <p className="text-sm text-gray-600">
+                      Create a walk-in kitchen order for operational testing.
+                    </p>
+                  </div>
+                  <Button
+                    className="w-full min-h-11"
+                    onClick={() => {
+                      const created: Order = {
+                        id: `local-order-${Date.now()}`,
+                        orderNumber: `#${Math.floor(20000 + Math.random() * 70000)}`,
+                        studentName: 'Walk-in Student',
+                        studentId: 'STU-WALKIN',
+                        schoolId: 'school-demo-hasivu-local',
+                        items: [
+                          {
+                            id: 'local-meal',
+                            name: 'Vegetable Pulao',
+                            quantity: 1,
+                            category: 'Main',
+                            allergens: [],
+                            preparationTime: 20,
+                          },
+                        ],
+                        status: 'pending',
+                        priority: 'medium',
+                        orderTime: new Date().toISOString(),
+                        estimatedTime: 20,
+                        location: 'Kitchen counter',
+                        totalAmount: 95,
+                      };
+                      setLocalOrders(prev => [created, ...prev]);
+                      setSelectedTab('orders');
+                      toast.success(`Added ${created.orderNumber} to the queue`);
+                    }}
+                  >
+                    Create local queue order
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Metrics Overview */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -876,6 +1051,8 @@ export const KitchenManagementDashboard: React.FC = () => {
                         assigningOrderId={assigningOrderId}
                         assignError={assignErrors[order.id] ?? null}
                         onAssign={handleAssignOrder}
+                        onView={setSelectedOrder}
+                        onAdvance={handleAdvanceOrder}
                       />
                     ))}
                   </AnimatePresence>
@@ -902,6 +1079,8 @@ export const KitchenManagementDashboard: React.FC = () => {
                         assigningOrderId={assigningOrderId}
                         assignError={assignErrors[order.id] ?? null}
                         onAssign={handleAssignOrder}
+                        onView={setSelectedOrder}
+                        onAdvance={handleAdvanceOrder}
                       />
                     ))}
                   </AnimatePresence>
@@ -928,6 +1107,8 @@ export const KitchenManagementDashboard: React.FC = () => {
                         assigningOrderId={assigningOrderId}
                         assignError={assignErrors[order.id] ?? null}
                         onAssign={handleAssignOrder}
+                        onView={setSelectedOrder}
+                        onAdvance={handleAdvanceOrder}
                       />
                     ))}
                   </AnimatePresence>
@@ -1014,6 +1195,66 @@ export const KitchenManagementDashboard: React.FC = () => {
             </div>
           </TabsContent>
         </Tabs>
+
+        {selectedOrder && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="kitchen-order-detail-title"
+          >
+            <Card className="w-full max-w-lg">
+              <CardHeader>
+                <CardTitle id="kitchen-order-detail-title">
+                  Order {selectedOrder.orderNumber}
+                </CardTitle>
+                <CardDescription>
+                  {selectedOrder.studentName} • {selectedOrder.location}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Badge className={`${getStatusColor(selectedOrder.status)} border`}>
+                    {selectedOrder.status}
+                  </Badge>
+                  <span className="font-semibold">Rs.{selectedOrder.totalAmount}</span>
+                </div>
+
+                <div className="space-y-2">
+                  {selectedOrder.items.map(item => (
+                    <div key={item.id} className="rounded-lg bg-gray-50 p-3 text-sm">
+                      <div className="font-medium">
+                        {item.quantity}x {item.name}
+                      </div>
+                      <div className="text-gray-600">Prep time: {item.preparationTime}min</div>
+                      {item.allergens.length > 0 && (
+                        <div className="mt-1 text-red-700">
+                          Allergens: {item.allergens.join(', ')}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setSelectedOrder(null)}>
+                    Close
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      void handleAdvanceOrder(selectedOrder);
+                    }}
+                    disabled={
+                      selectedOrder.status === 'completed' || selectedOrder.status === 'cancelled'
+                    }
+                  >
+                    Advance status
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   );

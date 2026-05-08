@@ -187,6 +187,29 @@ class ProductionReadinessChecker {
         status: 'pass',
         message: 'Database URL is properly formatted',
       });
+
+      const host = url.hostname.toLowerCase();
+      const isSupabaseHost = host.includes('supabase.co');
+      const usesPoolerHost = host.includes('pooler.supabase.com');
+      const pgbouncerFlag = (url.searchParams.get('pgbouncer') || '').toLowerCase() === 'true';
+      const runtimeEnv = (process.env.NODE_ENV || '').toLowerCase();
+      const isProductionLike = runtimeEnv === 'production' || runtimeEnv === 'staging';
+
+      // Production-like runtimes should use pooled runtime URLs to avoid connection exhaustion.
+      if (isProductionLike && isSupabaseHost && !usesPoolerHost && !pgbouncerFlag) {
+        this.results.database.push({
+          name: 'Database Pooling',
+          status: 'warning',
+          message:
+            'Runtime DATABASE_URL is not a pooled endpoint. Use Supabase pooler/RDS proxy for production-like traffic.',
+        });
+      } else {
+        this.results.database.push({
+          name: 'Database Pooling',
+          status: 'pass',
+          message: 'Database URL appears pooler-compatible for runtime traffic',
+        });
+      }
     } catch (error) {
       this.results.database.push({
         name: 'Database URL Format',

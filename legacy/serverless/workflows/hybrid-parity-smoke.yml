@@ -1,0 +1,26 @@
+name: Hybrid Parity Smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      vps_base_url:
+        description: VPS staging/prod base URL (e.g. https://api-staging.hasivu.com)
+        required: true
+        type: string
+      serverless_base_url:
+        description: Serverless staging/prod base URL
+        required: true
+        type: string
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run hybrid smoke checks
+        run: ./scripts/smoke-hybrid.sh
+        env:
+          VPS_BASE_URL: ${{ inputs.vps_base_url }}
+          SERVERLESS_BASE_URL: ${{ inputs.serverless_base_url }}

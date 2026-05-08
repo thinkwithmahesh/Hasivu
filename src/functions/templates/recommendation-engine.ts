@@ -148,11 +148,16 @@ export const handler = async (
 
   const requestId = `rec_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
+  const corsOrigin =
+    process.env.CORS_ORIGINS?.split(',')[0]?.trim() ||
+    process.env.FRONTEND_URL ||
+    'https://app.hasivu.com';
+
   try {
     // CORS headers
     const headers = {
       'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': corsOrigin,
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
       'X-Request-ID': requestId,
@@ -225,7 +230,7 @@ export const handler = async (
       statusCode: 500,
       headers: {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Origin': corsOrigin,
       },
       body: JSON.stringify({
         success: false,

@@ -1,8 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm, type FieldErrors, type Resolver } from 'react-hook-form';
 import {
   Eye,
   EyeOff,
@@ -11,10 +10,10 @@ import {
   Lock,
   LogIn,
   Users,
-  GraduationCap,
   Shield,
   ChefHat,
-  Truck,
+  GraduationCap,
+  Store,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -39,6 +38,7 @@ import {
 } from '@/components/ui/form';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
 
 import { loginSchema, type LoginFormData } from './schemas';
 
@@ -47,8 +47,8 @@ const USER_ROLES = {
   student: {
     label: 'Student',
     icon: GraduationCap,
-    description: 'Access your meal orders and account',
-    color: 'bg-blue-500',
+    description: 'Browse meals, track orders, and verify RFID pickup',
+    color: 'bg-sky-500',
   },
   parent: {
     label: 'Parent',
@@ -70,13 +70,41 @@ const USER_ROLES = {
   },
   vendor: {
     label: 'Vendor',
-    icon: Truck,
-    description: 'Supply management and logistics',
-    color: 'bg-indigo-500',
+    icon: Store,
+    description: 'Manage menu supply, inventory, orders, and payments',
+    color: 'bg-amber-500',
   },
 } as const;
 
 type UserRole = keyof typeof USER_ROLES;
+
+const loginFormResolver: Resolver<LoginFormData> = async values => {
+  const result = loginSchema.safeParse(values);
+
+  if (result.success) {
+    return {
+      values: result.data,
+      errors: {},
+    };
+  }
+
+  const errors: FieldErrors<LoginFormData> = {};
+
+  for (const issue of result.error.issues) {
+    const fieldName = issue.path[0] as keyof LoginFormData | undefined;
+    if (fieldName && !errors[fieldName]) {
+      errors[fieldName] = {
+        type: issue.code,
+        message: issue.message,
+      };
+    }
+  }
+
+  return {
+    values: {} as LoginFormData,
+    errors,
+  };
+};
 
 interface LoginFormProps {
   onSubmit: (data: LoginFormData & { role: UserRole }) => Promise<void>;
@@ -98,14 +126,18 @@ export function LoginForm({
   showRememberMe = true,
   showSocialLogin = true,
   showRoleSelection = true,
-  defaultRole = 'student',
+  defaultRole = 'parent',
   className,
 }: LoginFormProps) {
   const [showPassword, setShowPassword] = React.useState(false);
   const [selectedRole, setSelectedRole] = React.useState<UserRole>(defaultRole);
 
+  React.useEffect(() => {
+    setSelectedRole(defaultRole);
+  }, [defaultRole]);
+
   const form = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
+    resolver: loginFormResolver,
     defaultValues: {
       email: '',
       password: '',
@@ -134,7 +166,7 @@ export function LoginForm({
   return (
     <Card className={className} aria-label="Login form">
       <CardHeader className="space-y-1 text-center">
-        <CardTitle className="text-3xl font-bold text-primary-600">
+        <CardTitle className="text-3xl font-bold text-[var(--hasivu-primary)]">
           Welcome Back to HASIVU
         </CardTitle>
         <CardDescription className="text-gray-600">
@@ -146,7 +178,7 @@ export function LoginForm({
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="space-y-4">
+      <CardContent className={cn('space-y-4', className)}>
         {error && (
           <div
             data-testid="general-error"
@@ -166,7 +198,7 @@ export function LoginForm({
               onValueChange={value => setSelectedRole(value as UserRole)}
               className="w-full"
             >
-              <TabsList className="grid w-full grid-cols-5 mb-4">
+              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 mb-4 h-auto">
                 {Object.entries(USER_ROLES).map(([role, config]) => {
                   const Icon = config.icon;
                   return (
@@ -174,7 +206,7 @@ export function LoginForm({
                       key={role}
                       value={role}
                       data-testid={`role-tab-${role}`}
-                      className="flex flex-col items-center gap-1 p-3 text-xs"
+                      className="flex flex-col items-center gap-1 p-3 text-xs text-slate-700 data-[state=active]:text-[var(--hasivu-text-primary)]"
                       aria-selected={selectedRole === role}
                     >
                       <Icon className="h-4 w-4" />
@@ -197,16 +229,21 @@ export function LoginForm({
         )}
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+          <form
+            onSubmit={form.handleSubmit(handleSubmit)}
+            className="space-y-4"
+            aria-label="Login form"
+            noValidate
+          >
             <FormField
               control={form.control}
               name="email"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-gray-700">Email Address</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <FormControl>
                       <Input
                         {...field}
                         data-testid="email-input"
@@ -216,9 +253,9 @@ export function LoginForm({
                         autoComplete="email"
                         disabled={isLoading}
                       />
-                    </div>
-                  </FormControl>
-                  <FormMessage data-testid="email-error" />
+                    </FormControl>
+                  </div>
+                  <FormMessage data-testid="email-error" role="alert" />
                 </FormItem>
               )}
             />
@@ -229,9 +266,9 @@ export function LoginForm({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-gray-700">Password</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <FormControl>
                       <Input
                         {...field}
                         data-testid="password-input"
@@ -241,22 +278,23 @@ export function LoginForm({
                         autoComplete="current-password"
                         disabled={isLoading}
                       />
-                      <button
-                        type="button"
-                        data-testid="password-toggle"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none focus:text-gray-600"
-                        aria-label={showPassword ? 'Hide password' : 'Show password'}
-                      >
-                        {showPassword ? (
-                          <EyeOff className="h-4 w-4" />
-                        ) : (
-                          <Eye className="h-4 w-4" />
-                        )}
-                      </button>
-                    </div>
-                  </FormControl>
-                  <FormMessage data-testid="password-error" />
+                    </FormControl>
+	                    <button
+	                      type="button"
+	                      data-testid="password-toggle"
+	                      onClick={() => setShowPassword(!showPassword)}
+	                      tabIndex={-1}
+	                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none focus:text-gray-600"
+	                    >
+	                      <span className="sr-only">Toggle password visibility</span>
+	                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
+                  <FormMessage data-testid="password-error" role="alert" />
                 </FormItem>
               )}
             />
@@ -267,9 +305,9 @@ export function LoginForm({
                   control={form.control}
                   name="rememberMe"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                      <FormControl>
-                        <input
+	                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+	                      <FormControl>
+	                        <input
                           type="checkbox"
                           data-testid="remember-me-checkbox"
                           checked={field.value}
@@ -277,18 +315,19 @@ export function LoginForm({
                           className="mt-1 h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
                           disabled={isLoading}
                         />
-                      </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <Label className="text-sm text-gray-600">Remember me</Label>
-                      </div>
-                    </FormItem>
+	                      </FormControl>
+	                      <div className="space-y-1 leading-none">
+	                        <FormLabel className="text-sm text-gray-600">Remember me</FormLabel>
+	                      </div>
+	                    </FormItem>
                   )}
                 />
 
-                <Link
-                  href="/auth/forgot-password"
-                  data-testid="forgot-password-link"
-                  className="text-sm text-blue-600 hover:text-blue-700 focus:outline-none focus:underline"
+	                <Link
+	                  href="/auth/forgot-password"
+	                  data-testid="forgot-password-link"
+	                  tabIndex={-1}
+	                  className="text-sm text-blue-600 hover:text-blue-700 focus:outline-none focus:underline"
                 >
                   Forgot password?
                 </Link>
@@ -305,6 +344,9 @@ export function LoginForm({
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <span data-testid="loading-spinner" className="sr-only">
+                    Loading
+                  </span>
                   Signing in...
                 </>
               ) : (
@@ -354,7 +396,7 @@ export function LoginForm({
                     d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                   />
                 </svg>
-                Google
+                Continue with Google
               </Button>
 
               <Button
@@ -367,7 +409,7 @@ export function LoginForm({
                 <svg className="h-4 w-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
                 </svg>
-                Facebook
+                Continue with Facebook
               </Button>
             </div>
           </>

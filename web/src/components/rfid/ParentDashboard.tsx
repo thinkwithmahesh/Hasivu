@@ -4,7 +4,7 @@
  * Story 2.4: Parent Mobile Integration
  */
 import React, { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import { format, isToday, isYesterday } from 'date-fns';
 import {
@@ -103,6 +103,7 @@ interface ParentDashboardProps {
  * Enhanced Parent Dashboard Component
  */
 export const ParentDashboard: React.FC<ParentDashboardProps> = ({ className = '' }) => {
+  const reduced = useReducedMotion();
   const { user } = useAuth();
   const { isConnected, lastMessage } = useRealTimeNotifications();
   const { isSupported, permission, isRegistered, requestPermission } = usePushNotifications();
@@ -370,7 +371,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ className = ''
   if (isLoading) {
     return (
       <div className={`bg-white rounded-lg shadow-sm border p-6 ${className}`}>
-        <div className="animate-pulse">
+        <div className={reduced ? '' : 'animate-pulse'}>
           <div className="h-8 bg-gray-200 rounded w-1/3 mb-6"></div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
             {[1, 2, 3].map(i => (
@@ -627,9 +628,10 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ className = ''
           {activeTab === 'tracking' && (
             <motion.div
               key="tracking"
-              initial={{ opacity: 0, y: 20 }}
+              initial={reduced ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
+              exit={reduced ? { opacity: 1, y: 0 } : { opacity: 0, y: -20 }}
+              transition={reduced ? { duration: 0.001 } : undefined}
             >
               <DeliveryTracking
                 studentId={selectedStudent?.id}
@@ -642,9 +644,10 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ className = ''
           {activeTab === 'history' && (
             <motion.div
               key="history"
-              initial={{ opacity: 0, y: 20 }}
+              initial={reduced ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
+              exit={reduced ? { opacity: 1, y: 0 } : { opacity: 0, y: -20 }}
+              transition={reduced ? { duration: 0.001 } : undefined}
             >
               <DeliveryTracking
                 studentId={selectedStudent?.id}
@@ -657,9 +660,10 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ className = ''
           {activeTab === 'settings' && (
             <motion.div
               key="settings"
-              initial={{ opacity: 0, y: 20 }}
+              initial={reduced ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
+              exit={reduced ? { opacity: 1, y: 0 } : { opacity: 0, y: -20 }}
+              transition={reduced ? { duration: 0.001 } : undefined}
               className="space-y-6"
             >
               <div>
@@ -711,14 +715,18 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ className = ''
                             [key]: !notificationSettings[key as keyof NotificationSettings],
                           })
                         }
-                        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
+                        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
+                          reduced ? '' : 'transition-colors duration-200 ease-in-out'
+                        } ${
                           notificationSettings[key as keyof NotificationSettings]
                             ? 'bg-indigo-600'
                             : 'bg-gray-200'
                         }`}
                       >
                         <span
-                          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 ${
+                            reduced ? '' : 'transition duration-200 ease-in-out'
+                          } ${
                             notificationSettings[key as keyof NotificationSettings]
                               ? 'translate-x-5'
                               : 'translate-x-0'

@@ -109,20 +109,11 @@ const Users = dynamic(() => import('lucide-react').then(mod => ({ default: mod.U
   ssr: false,
 });
 
-const GraduationCap = dynamic(
-  () => import('lucide-react').then(mod => ({ default: mod.GraduationCap })),
-  {
-    ssr: false,
-  }
-);
-
-const Store = dynamic(() => import('lucide-react').then(mod => ({ default: mod.Store })), {
-  ssr: false,
-});
-
 const ChefHat = dynamic(() => import('lucide-react').then(mod => ({ default: mod.ChefHat })), {
   ssr: false,
 });
+
+const LAUNCH_LOGIN_ROLES = [UserRole.PARENT, UserRole.ADMIN, UserRole.KITCHEN_STAFF] as const;
 
 interface SafariCompatibleLoginFormProps {
   onSubmit: (data: LoginFormData & { role: UserRole }) => Promise<void>;
@@ -144,7 +135,7 @@ export function SafariCompatibleLoginForm({
   showRememberMe = true,
   showSocialLogin = true,
   showRoleSelection = true,
-  defaultRole = UserRole.STUDENT,
+  defaultRole = UserRole.PARENT,
   className = '',
 }: SafariCompatibleLoginFormProps) {
   const [isMounted, setIsMounted] = useState(false);
@@ -200,14 +191,11 @@ export function SafariCompatibleLoginForm({
             onValueChange={value => setSelectedRole(value as UserRole)}
             className="w-full"
           >
-            <TabsList className="grid w-full grid-cols-5 mb-4" data-testid="role-selector">
-              {Object.entries(USER_ROLE_CONFIG).map(([role, config]) => {
+            <TabsList className="grid w-full grid-cols-3 mb-4" data-testid="role-selector">
+              {LAUNCH_LOGIN_ROLES.map(role => {
+                const config = USER_ROLE_CONFIG[role];
                 let Icon = Crown; // Default icon
-                if (role === UserRole.SCHOOL_ADMIN) Icon = School;
-                else if (role === UserRole.TEACHER) Icon = UserCheck;
-                else if (role === UserRole.PARENT) Icon = Users;
-                else if (role === UserRole.STUDENT) Icon = GraduationCap;
-                else if (role === UserRole.VENDOR) Icon = Store;
+                if (role === UserRole.PARENT) Icon = Users;
                 else if (role === UserRole.KITCHEN_STAFF) Icon = ChefHat;
 
                 return (

@@ -28,22 +28,11 @@ class OrderAPIService {
     this.client = axios.create({
       baseURL: this.baseURL,
       timeout: 30000,
+      withCredentials: true,
       headers: {
         'Content-Type': 'application/json',
       },
     });
-
-    // Request interceptor to add auth token
-    this.client.interceptors.request.use(
-      config => {
-        const token = this.getAuthToken();
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-      },
-      error => Promise.reject(error)
-    );
 
     // Response interceptor for error handling
     this.client.interceptors.response.use(
@@ -56,11 +45,6 @@ class OrderAPIService {
         return Promise.reject(error);
       }
     );
-  }
-
-  private getAuthToken(): string | null {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem('accessToken');
   }
 
   /**

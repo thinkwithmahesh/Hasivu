@@ -172,9 +172,11 @@ export default function RegisterPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="PARENT">Parent</SelectItem>
+                    <SelectItem value="STUDENT">Student</SelectItem>
                     <SelectItem value="TEACHER">Teacher</SelectItem>
                     <SelectItem value="ADMIN">School Admin</SelectItem>
                     <SelectItem value="KITCHEN_STAFF">Kitchen Staff</SelectItem>
+                    <SelectItem value="VENDOR">Food Vendor</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

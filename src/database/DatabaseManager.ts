@@ -105,34 +105,6 @@ export class DatabaseManager {
   }
 
   /**
-   * Execute raw SQL query
-   * WARNING: Uses $queryRawUnsafe — always pass user input via params, never concatenate into query string.
-   * The guard below rejects queries that appear to use string interpolation instead of $N placeholders.
-   */
-  async executeRaw<T = any>(query: string, params: any[] = []): Promise<T[]> {
-    try {
-      // Security guard: reject queries that look like they contain unparameterized user input
-      if (params.length > 0 && !query.includes('$')) {
-        logger.warn('Raw query has params but no $N placeholders — possible SQL injection risk', {
-          query,
-        });
-      }
-      // Block obvious injection patterns (semicolon-separated multi-statements, UNION-based injection)
-      const dangerousPatterns = /;\s*(DROP|DELETE|INSERT|UPDATE|ALTER|CREATE|TRUNCATE)\s/i;
-      if (dangerousPatterns.test(query)) {
-        throw new DatabaseError(
-          'Raw query rejected: suspicious multi-statement pattern detected',
-          'SECURITY_VIOLATION'
-        );
-      }
-      return await this.prisma.$queryRawUnsafe<T[]>(query, ...params);
-    } catch (error) {
-      logger.error('Raw query execution failed', error as Error, { query });
-      throw new DatabaseError(`Raw query execution failed: ${query}`, 'QUERY_ERROR');
-    }
-  }
-
-  /**
    * Execute transaction
    */
   async transaction<T>(

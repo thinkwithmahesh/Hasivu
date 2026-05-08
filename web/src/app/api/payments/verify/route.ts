@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getAccessTokenFromRequest, fetchConfiguredProxy } from '@/app/api/_utils/proxy';
+const LAMBDA_PAYMENTS_VERIFY_URL = process.env.LAMBDA_PAYMENTS_VERIFY_URL;
 
-const LAMBDA_PAYMENTS_VERIFY_URL =
-  process.env.LAMBDA_PAYMENTS_VERIFY_URL ||
-  'https://your-lambda-endpoint.execute-api.region.amazonaws.com/dev/payments/verify';
+;
 
 // POST /api/payments/verify - Verify payment
 export async function POST(request: NextRequest) {
   try {
     // Get auth token from httpOnly cookie
-    const authToken = request.cookies.get('auth-token')?.value;
+    const authToken = getAccessTokenFromRequest(request);
 
     if (!authToken) {
       return NextResponse.json(
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Forward request to Lambda function
-    const lambdaResponse = await fetch(LAMBDA_PAYMENTS_VERIFY_URL, {
+    const lambdaResponse = await fetchConfiguredProxy(LAMBDA_PAYMENTS_VERIFY_URL, 'LAMBDA_PAYMENTS_VERIFY_URL', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

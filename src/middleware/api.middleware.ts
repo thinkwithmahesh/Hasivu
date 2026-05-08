@@ -68,6 +68,19 @@ const API_CONFIG = {
   },
 };
 
+function configuredCorsOrigin(origin?: string): string {
+  const configuredOrigins = (process.env.CORS_ORIGINS || process.env.FRONTEND_URL || '')
+    .split(',')
+    .map(value => value.trim())
+    .filter(Boolean);
+
+  if (origin && configuredOrigins.includes(origin)) {
+    return origin;
+  }
+
+  return configuredOrigins[0] || 'https://app.hasivu.com';
+}
+
 const { window } = new JSDOM('');
 const purify = DOMPurify(window);
 
@@ -468,7 +481,8 @@ export const corsPreflightMiddleware = (
   next: NextFunction
 ): void => {
   if (req.method === 'OPTIONS') {
-    res.setHeader('Access-Control-Allow-Origin', req.get('Origin') || '*');
+    res.setHeader('Access-Control-Allow-Origin', configuredCorsOrigin(req.get('Origin')));
+    res.setHeader('Vary', 'Origin');
     res.setHeader('Access-Control-Allow-Methods', API_CONFIG.security.cors.methods.join(', '));
     res.setHeader(
       'Access-Control-Allow-Headers',

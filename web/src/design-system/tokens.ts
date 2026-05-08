@@ -91,6 +91,39 @@ export const motionTokens = {
   page: { duration: 0.4, ease: [0.25, 1, 0.5, 1] },
   spring: { type: 'spring', stiffness: 320, damping: 28 },
   stagger: 0.06,
+  reduced: { duration: 0, stagger: 0, spring: { stiffness: 1000, damping: 1000 } },
+} as const;
+
+export const typography = {
+  families: {
+    body: 'Nunito',
+    ui: 'Nunito',
+    hero: 'Instrument Serif',
+  },
+  scale: {
+    11: '11px',
+    12: '12px',
+    13: '13px',
+    14: '14px',
+    16: '16px',
+    18: '18px',
+    20: '20px',
+    24: '24px',
+    30: '30px',
+    36: '36px',
+    48: '48px',
+    60: '60px',
+  },
+  weights: {
+    regular: 400,
+    semibold: 600,
+    bold: 700,
+  },
+  lineHeights: {
+    heading: 1.4,
+    body: 1.6,
+    ui: 1.3,
+  },
 } as const;
 
 export const dietaryFlags = {

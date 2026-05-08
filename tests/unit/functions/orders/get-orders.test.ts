@@ -1,20 +1,21 @@
 /**
- * Unit Tests for Get Orders Lambda Function
- * Tests Epic 3: Order Processing System - Order Listing
+ * Unit tests for Get Orders Lambda — prisma from DatabaseManager + authorizer userId.
  */
 
-import { handler } from '../../../../src/functions/orders/get-orders';
-
-// Mock dependencies
-jest.mock('@/functions/shared/database.service', () => ({
-  DatabaseService: {
-    prisma: {
-      order: {
-        findMany: jest.fn(),
-        count: jest.fn(),
-      },
-    },
+const prismaMock = {
+  user: {
+    findUnique: jest.fn(),
+    findMany: jest.fn(),
   },
+  order: {
+    findMany: jest.fn(),
+    count: jest.fn(),
+  },
+};
+
+jest.mock('@/database/DatabaseManager', () => ({
+  prisma: prismaMock,
+  DatabaseManager: {},
 }));
 
 jest.mock('@/utils/logger', () => ({
@@ -32,88 +33,119 @@ jest.mock('@/shared/response.utils', () => ({
   handleError: jest.fn(),
 }));
 
+import { handler } from '../../../../src/functions/orders/get-orders';
+
 describe('Get Orders Lambda Function', () => {
-  const mockCreateSuccessResponse = require('@/shared/response.utils').createSuccessResponse;
-  const mockCreateErrorResponse = require('@/shared/response.utils').createErrorResponse;
-  const mockHandleError = require('@/shared/response.utils').handleError;
-  const mockPrisma = require('@/functions/shared/database.service').DatabaseService.prisma;
+  const mockCreateSuccessResponse = jest.requireMock('@/shared/response.utils')
+    .createSuccessResponse as jest.Mock;
+  const mockCreateErrorResponse = jest.requireMock('@/shared/response.utils')
+    .createErrorResponse as jest.Mock;
+
+  const baseEvent = {
+    httpMethod: 'GET',
+    requestContext: { authorizer: { userId: 'test-user' } },
+    queryStringParameters: null as Record<string, string> | null,
+  };
+
+  const adminUser = {
+    id: 'test-user',
+    role: 'admin',
+    schoolId: null,
+    isActive: true,
+  };
+
+  const sampleOrder = {
+    id: 'order1',
+    orderNumber: 'ORD001',
+    studentId: 's1',
+    deliveryDate: new Date('2026-06-01'),
+    status: 'pending',
+    paymentStatus: 'pending',
+    totalAmount: 100,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    student: {
+      id: 's1',
+      firstName: 'A',
+      lastName: 'B',
+      grade: '5',
+      section: 'A',
+    },
+    school: { id: 'sch1', name: 'Test School' },
+    orderItems: [{ id: 'oi1' }],
+  };
 
   beforeEach(() => {
     jest.clearAllMocks();
     mockCreateSuccessResponse.mockReturnValue({
       statusCode: 200,
-      body: JSON.stringify({ message: 'Orders retrieved successfully' }),
+      body: JSON.stringify({ success: true }),
     });
+    mockCreateErrorResponse.mockImplementation((code: string, msg: string, status: number) => ({
+      statusCode: status,
+      body: JSON.stringify({ code, message: msg }),
+    }));
   });
 
   describe('Input Validation', () => {
-    test('should reject non-GET methods', async () => {
-      const event = { httpMethod: 'POST' } as any;
-      mockCreateErrorResponse.mockReturnValue({ statusCode: 405 });
-
+    it('rejects non-GET methods', async () => {
+      const event = { ...baseEvent, httpMethod: 'POST' } as any;
       await handler(event, {} as any);
-      expect(mockCreateErrorResponse).toHaveBeenCalledWith('METHOD_NOT_ALLOWED', 'Method not allowed', 405);
+      expect(mockCreateErrorResponse).toHaveBeenCalledWith(
+        'METHOD_NOT_ALLOWED',
+        'Method not allowed',
+        405
+      );
     });
 
-    test('should reject missing authentication', async () => {
-      const event = { httpMethod: 'GET', headers: {} } as any;
-      mockCreateErrorResponse.mockReturnValue({ statusCode: 401 });
-
+    it('rejects missing authentication', async () => {
+      const event = {
+        httpMethod: 'GET',
+        requestContext: {} as any,
+        queryStringParameters: {},
+      } as any;
       await handler(event, {} as any);
-      expect(mockCreateErrorResponse).toHaveBeenCalledWith('AUTHENTICATION_REQUIRED', 'User authentication required', 401);
+      expect(mockCreateErrorResponse).toHaveBeenCalledWith(
+        'AUTHENTICATION_REQUIRED',
+        'User authentication required',
+        401
+      );
     });
   });
 
   describe('Order Retrieval', () => {
     beforeEach(() => {
-      mockPrisma.order.findMany.mockResolvedValue([
-        {
-          id: 'order1',
-          orderNumber: 'ORD001',
-          status: 'pending',
-          totalAmount: 100,
-          createdAt: new Date(),
-        },
-      ]);
-      mockPrisma.order.count.mockResolvedValue(1);
+      prismaMock.user.findUnique.mockResolvedValue(adminUser);
+      prismaMock.order.count.mockResolvedValue(1);
+      prismaMock.order.findMany.mockResolvedValue([sampleOrder]);
     });
 
-    test('should retrieve orders successfully', async () => {
-      const event = {
-        httpMethod: 'GET',
-        headers: { 'x-user-id': 'test-user' },
-        queryStringParameters: {},
-      } as any;
+    it('retrieves orders successfully', async () => {
+      await handler({ ...baseEvent, queryStringParameters: {} } as any, {} as any);
 
-      await handler(event, {} as any);
       expect(mockCreateSuccessResponse).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             orders: expect.any(Array),
             pagination: expect.any(Object),
           }),
-        }),
-        200
+        })
       );
     });
 
-    test('should handle filtering and pagination', async () => {
-      const event = {
-        httpMethod: 'GET',
-        headers: { 'x-user-id': 'test-user' },
+    it('applies filtering and pagination', async () => {
+      await handler({
+        ...baseEvent,
         queryStringParameters: {
           status: 'pending',
           page: '1',
           limit: '10',
         },
-      } as any;
+      } as any, {} as any);
 
-      await handler(event, {} as any);
-      expect(mockPrisma.order.findMany).toHaveBeenCalledWith(
+      expect(prismaMock.order.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: expect.objectContaining({
-            status: 'pending',
-          }),
+          where: expect.objectContaining({ status: 'pending' }),
           skip: 0,
           take: 10,
         })

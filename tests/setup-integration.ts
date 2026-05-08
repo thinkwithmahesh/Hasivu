@@ -113,7 +113,26 @@ export async function cleanTestDatabase(): Promise<void> {
       throw new Error('Test database not initialized. Call initTestDatabase() first.');
     }
 
-    // For SQLite, get all table names using sqlite_master
+    const url = IntegrationTestConfig.database.url;
+    const isPostgres = /^postgres(ql)?:\/\//i.test(url);
+
+    if (isPostgres) {
+      const tables = await testPrisma.$queryRaw<Array<{ tablename: string }>>`
+        SELECT tablename FROM pg_tables
+        WHERE schemaname = 'public'
+          AND tablename != '_prisma_migrations'
+      `;
+      if (tables.length === 0) {
+        console.log('✅ No public tables to truncate');
+        return;
+      }
+      const list = tables.map(t => `"${t.tablename.replace(/"/g, '""')}"`).join(', ');
+      await testPrisma.$executeRawUnsafe(`TRUNCATE TABLE ${list} RESTART IDENTITY CASCADE;`);
+      console.log(`✅ Truncated ${tables.length} tables (PostgreSQL)`);
+      return;
+    }
+
+    // SQLite: legacy path for file-based test DBs
     const tableNames = await testPrisma.$queryRaw<Array<{ name: string }>>`
       SELECT name FROM sqlite_master
       WHERE type='table'
@@ -121,29 +140,27 @@ export async function cleanTestDatabase(): Promise<void> {
         AND name != '_prisma_migrations'
     `;
 
-    // Disable foreign key checks temporarily for SQLite
     await testPrisma.$executeRaw`PRAGMA foreign_keys = OFF;`;
 
-    // Clean all tables
     for (const { name: tableName } of tableNames) {
       try {
-        await testPrisma.$executeRawUnsafe(`DELETE FROM "${tableName}";`);
+        await testPrisma.$executeRawUnsafe(`DELETE FROM "${tableName.replace(/"/g, '""')}";`);
         console.log(`✅ Cleaned table: ${tableName}`);
       } catch (tableError) {
         console.warn(`⚠️ Failed to clean table ${tableName}:`, tableError);
       }
     }
 
-    // Reset auto-increment counters
     for (const { name: tableName } of tableNames) {
       try {
-        await testPrisma.$executeRawUnsafe(`DELETE FROM sqlite_sequence WHERE name="${tableName}";`);
-      } catch (tableError) {
-        // Ignore errors for tables without auto-increment
+        await testPrisma.$executeRawUnsafe(
+          `DELETE FROM sqlite_sequence WHERE name="${tableName.replace(/"/g, '""')}";`
+        );
+      } catch {
+        // Ignore tables without sqlite_sequence row
       }
     }
 
-    // Re-enable foreign key checks
     await testPrisma.$executeRaw`PRAGMA foreign_keys = ON;`;
 
     console.log('✅ Test database cleaned successfully');

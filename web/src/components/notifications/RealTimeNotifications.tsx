@@ -77,16 +77,6 @@ export const useRealTimeNotifications = () => {
 
       wsRef.current.onopen = () => {
         setIsConnected(true);
-        // Send authentication token if needed
-        const token = localStorage.getItem('authToken');
-        if (token) {
-          wsRef.current?.send(
-            JSON.stringify({
-              type: 'auth',
-              token,
-            })
-          );
-        }
       };
 
       wsRef.current.onmessage = event => {

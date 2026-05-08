@@ -29,7 +29,7 @@ class ApiClient {
   private defaultTimeout: number = 30000; // 30 seconds
 
   constructor(baseUrl?: string) {
-    this.baseUrl = baseUrl || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+    this.baseUrl = baseUrl || process.env.NEXT_PUBLIC_API_URL || '/api';
   }
 
   /**
@@ -109,16 +109,11 @@ class ApiClient {
       ...headers,
     };
 
-    // Add authorization header if token exists
-    const token = this.getAuthToken();
-    if (token) {
-      requestHeaders['Authorization'] = `Bearer ${token}`;
-    }
-
     // Prepare request options
     const requestOptions: RequestInit = {
       method,
       headers: requestHeaders,
+      credentials: 'include',
       signal: AbortSignal.timeout(timeout),
     };
 
@@ -183,14 +178,6 @@ class ApiClient {
   }
 
   /**
-   * Get authentication token from localStorage
-   */
-  private getAuthToken(): string | null {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem('accessToken');
-  }
-
-  /**
    * Set base URL
    */
   setBaseUrl(url: string): void {
@@ -222,17 +209,14 @@ class ApiClient {
       });
     }
 
-    const token = this.getAuthToken();
     const headers: Record<string, string> = {};
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
 
     try {
       const response = await fetch(`${this.baseUrl}${endpoint}`, {
         method: 'POST',
         headers,
         body: formData,
+        credentials: 'include',
       });
 
       const responseData = await response.json();

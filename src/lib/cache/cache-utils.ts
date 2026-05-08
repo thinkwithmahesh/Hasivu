@@ -5,6 +5,7 @@
 
 import redis from './redis-client';
 import { recordMetric } from '../monitoring/cloudwatch-metrics';
+import { logger } from '../../utils/logger';
 
 /**
  * Cache TTL constants (in seconds)
@@ -58,7 +59,7 @@ export async function getCached<T>(
 
     // Store in cache (fire and forget, don't wait)
     redis.setex(key, ttl, JSON.stringify(data)).catch(error => {
-      console.error('Failed to cache data:', error);
+      logger.error('Failed to cache data', error instanceof Error ? error : undefined, { key });
     });
 
     // Record cache miss metrics
@@ -67,7 +68,9 @@ export async function getCached<T>(
 
     return data;
   } catch (error) {
-    console.error('Cache operation error, falling back to fetcher:', error);
+    logger.error('Cache operation error, falling back to fetcher', error instanceof Error ? error : undefined, {
+      key,
+    });
 
     // Record cache error
     await recordMetric('CacheErrors', 1, 'Count');
@@ -88,7 +91,7 @@ export async function setCached<T>(key: string, value: T, ttl: number): Promise<
   try {
     await redis.setex(key, ttl, JSON.stringify(value));
   } catch (error) {
-    console.error('Failed to set cache:', error);
+    logger.error('Failed to set cache', error instanceof Error ? error : undefined, { key });
     await recordMetric('CacheErrors', 1, 'Count');
   }
 }
@@ -104,7 +107,7 @@ export async function getFromCache<T>(key: string): Promise<T | null> {
     const cached = await redis.get(key);
     return cached ? (JSON.parse(cached) as T) : null;
   } catch (error) {
-    console.error('Failed to get from cache:', error);
+    logger.error('Failed to get from cache', error instanceof Error ? error : undefined, { key });
     await recordMetric('CacheErrors', 1, 'Count');
     return null;
   }
@@ -119,7 +122,7 @@ export async function deleteCache(key: string): Promise<void> {
   try {
     await redis.del(key);
   } catch (error) {
-    console.error('Failed to delete cache key:', error);
+    logger.error('Failed to delete cache key', error instanceof Error ? error : undefined, { key });
     await recordMetric('CacheErrors', 1, 'Count');
   }
 }
@@ -153,7 +156,7 @@ export async function invalidateCache(pattern: string): Promise<void> {
       await recordMetric('CacheKeysInvalidated', keys.length, 'Count');
     }
   } catch (error) {
-    console.error('Failed to invalidate cache pattern:', error);
+    logger.error('Failed to invalidate cache pattern', error instanceof Error ? error : undefined, { pattern });
     await recordMetric('CacheErrors', 1, 'Count');
   }
 }
@@ -179,7 +182,7 @@ export async function cacheExists(key: string): Promise<boolean> {
     const exists = await redis.exists(key);
     return exists === 1;
   } catch (error) {
-    console.error('Failed to check cache existence:', error);
+    logger.error('Failed to check cache existence', error instanceof Error ? error : undefined, { key });
     return false;
   }
 }
@@ -194,7 +197,7 @@ export async function getCacheTTL(key: string): Promise<number> {
   try {
     return await redis.ttl(key);
   } catch (error) {
-    console.error('Failed to get cache TTL:', error);
+    logger.error('Failed to get cache TTL', error instanceof Error ? error : undefined, { key });
     return -1;
   }
 }
@@ -209,7 +212,7 @@ export async function extendCacheTTL(key: string, ttl: number): Promise<void> {
   try {
     await redis.expire(key, ttl);
   } catch (error) {
-    console.error('Failed to extend cache TTL:', error);
+    logger.error('Failed to extend cache TTL', error instanceof Error ? error : undefined, { key });
     await recordMetric('CacheErrors', 1, 'Count');
   }
 }
@@ -245,7 +248,7 @@ export async function getCacheStats(): Promise<{
       hitRate: Math.round(hitRate * 100) / 100,
     };
   } catch (error) {
-    console.error('Failed to get cache stats:', error);
+    logger.error('Failed to get cache stats', error instanceof Error ? error : undefined);
     return {
       keys: 0,
       memory: 'Unknown',
@@ -265,7 +268,7 @@ export async function warmUpCache(
     loader: () => Promise<any>;
   }>
 ): Promise<void> {
-  console.log('Starting cache warm-up...');
+  logger.info('Starting cache warm-up');
 
   const results = await Promise.allSettled(
     dataLoaders.map(async ({ key, ttl, loader }) => {
@@ -278,7 +281,7 @@ export async function warmUpCache(
   const successful = results.filter(r => r.status === 'fulfilled').length;
   const failed = results.filter(r => r.status === 'rejected').length;
 
-  console.log(`Cache warm-up completed: ${successful} successful, ${failed} failed`);
+  logger.info('Cache warm-up completed', { successful, failed });
   await recordMetric('CacheWarmUpKeys', successful, 'Count');
 }
 
@@ -288,14 +291,14 @@ export async function warmUpCache(
  */
 export async function clearAllCache(): Promise<void> {
   if (process.env.NODE_ENV === 'production') {
-    console.warn('Cannot clear all cache in production environment');
+    logger.warn('Cannot clear all cache in production environment');
     return;
   }
 
   try {
     await redis.flushdb();
-    console.log('All cache cleared');
+    logger.info('All cache cleared');
   } catch (error) {
-    console.error('Failed to clear cache:', error);
+    logger.error('Failed to clear cache', error instanceof Error ? error : undefined);
   }
 }

@@ -34,6 +34,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { Priya } from '../characters/HasivuFriend';
 import type { MealCardProps, MealItem as MealItem, StudentInfo as StudentInfo } from './types';
 import {
   formatCurrency,
@@ -187,11 +188,11 @@ const MealCard: React.FC<MealCardProps> = ({
     <Card
       ref={cardRef}
       className={cn(
-        'group relative transition-all duration-300 hover:shadow-xl hover:-translate-y-1',
-        'border-0 shadow-md bg-white touch-manipulation select-none',
-        'active:scale-[0.98] active:shadow-lg',
+        'group relative transition-all duration-300 hover:shadow-warm-xl hover:-translate-y-1',
+        'border border-hasivu-primary/10 shadow-warm-sm bg-white rounded-2xl touch-manipulation select-none overflow-hidden',
+        'active:scale-[0.98] active:shadow-warm-md',
         !isSuitable && 'opacity-60 grayscale',
-        isInCart && 'ring-2 ring-primary shadow-primary/20',
+        isInCart && 'ring-2 ring-hasivu-primary shadow-hasivu-primary/20',
         !canOrder && 'cursor-not-allowed',
         isPressed && 'scale-[0.98] shadow-lg',
         swipeDirection === 'right' && 'translate-x-2 bg-green-50',
@@ -225,11 +226,11 @@ const MealCard: React.FC<MealCardProps> = ({
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             />
           ) : (
-            <div className="w-full h-full bg-gray-100 flex items-center justify-center">
-              <div className="text-gray-400 text-center">
-                <div className="text-4xl mb-2">🍽️</div>
-                <p className="text-sm">Image unavailable</p>
-              </div>
+            <div className="w-full h-full bg-hasivu-bg-warm flex flex-col items-center justify-center p-4">
+              <Priya size={80} animation="breathe" />
+              <p className="text-sm text-hasivu-text-secondary mt-2 font-medium">
+                Meal preview coming soon
+              </p>
             </div>
           )}
 
@@ -319,31 +320,35 @@ const MealCard: React.FC<MealCardProps> = ({
           {/* Meal Title and Rating */}
           <div className="flex justify-between items-start gap-3">
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-lg leading-tight text-gray-900 group-hover:text-primary transition-colors">
+              <h3 className="font-display font-bold text-lg leading-tight text-hasivu-text-primary group-hover:text-hasivu-primary transition-colors">
                 {meal.name}
               </h3>
-              <p className="text-sm text-gray-600 mt-1.5 line-clamp-2 leading-relaxed">
+              <p className="text-sm text-hasivu-text-secondary mt-1.5 line-clamp-2 leading-relaxed">
                 {meal.description}
               </p>
             </div>
-            <div className="flex items-center shrink-0 bg-yellow-50 px-2 py-1 rounded-full">
-              <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
-              <span className="text-sm font-semibold ml-1 text-gray-900">
+            <div className="flex items-center shrink-0 bg-hasivu-accent/20 px-2 py-1 rounded-full border border-hasivu-accent/30">
+              <Star className="h-3.5 w-3.5 fill-hasivu-accent text-hasivu-accent" />
+              <span className="text-sm font-semibold ml-1 text-hasivu-text-primary">
                 {meal.rating.toFixed(1)}
               </span>
-              <span className="text-xs text-gray-500 ml-1">({meal.totalRatings})</span>
+              <span className="text-xs text-hasivu-text-secondary ml-1">({meal.totalRatings})</span>
             </div>
           </div>
 
           {/* Price */}
           <div className="flex items-baseline space-x-2">
-            <span className="text-2xl font-bold text-primary">{formatCurrency(meal.price)}</span>
+            <span className="text-2xl font-bold text-hasivu-primary">
+              {formatCurrency(meal.price)}
+            </span>
             {meal.originalPrice && meal.originalPrice > meal.price && (
-              <span className="text-sm text-gray-500 line-through">
+              <span className="text-sm text-hasivu-text-secondary line-through">
                 {formatCurrency(meal.originalPrice)}
               </span>
             )}
-            <span className="text-xs text-gray-500 font-medium">per {meal.servingSize}</span>
+            <span className="text-xs text-hasivu-text-secondary font-medium">
+              per {meal.servingSize}
+            </span>
           </div>
 
           {/* Key Information */}
@@ -501,11 +506,11 @@ const MealCard: React.FC<MealCardProps> = ({
               <div className="flex items-center space-x-3">
                 <Label
                   htmlFor={`quantity-${meal.id}`}
-                  className="text-sm font-medium text-gray-700"
+                  className="text-sm font-medium text-hasivu-text-primary"
                 >
                   Quantity:
                 </Label>
-                <div className="flex items-center border-2 rounded-lg bg-white shadow-sm">
+                <div className="flex items-center border border-hasivu-primary/20 rounded-xl bg-white shadow-sm overflow-hidden">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -531,14 +536,16 @@ const MealCard: React.FC<MealCardProps> = ({
                     size="sm"
                     onClick={() => handleQuantityChangeWithFeedback(1)}
                     disabled={quantity >= meal.maxQuantityPerStudent}
-                    className="h-11 w-11 p-0 hover:bg-gray-50 disabled:opacity-50 touch-manipulation active:scale-95"
+                    className="h-11 w-11 p-0 hover:bg-hasivu-primary/5 text-hasivu-primary disabled:opacity-50 touch-manipulation active:scale-95"
                     aria-label="Increase quantity"
                   >
                     <Plus className="h-4 w-4" />
                   </Button>
                 </div>
                 {meal.maxQuantityPerStudent > 1 && (
-                  <span className="text-xs text-gray-500">Max: {meal.maxQuantityPerStudent}</span>
+                  <span className="text-xs text-hasivu-text-secondary">
+                    Max: {meal.maxQuantityPerStudent}
+                  </span>
                 )}
               </div>
 

@@ -23,7 +23,7 @@ export default function RegisterPage() {
         password: data.password,
         grade: data.grade,
         section: data.section,
-        role: 'parent', // Default role, can be adjusted based on email or selection
+        role: data.role,
       });
 
       if (success) {

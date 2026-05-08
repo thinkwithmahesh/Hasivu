@@ -24,12 +24,12 @@ const features = [
   {
     icon: Shield,
     title: 'Secure & Safe',
-    description: 'Bank-level security with end-to-end encryption',
+    description: 'Cookie-backed sessions and protected school meal workflows',
   },
   {
     icon: Users,
-    title: 'Trusted by Schools',
-    description: 'Over 1000+ schools trust HASIVU platform',
+    title: 'Built for School Roles',
+    description: 'Parent, student, admin, kitchen, and vendor workflows share one account system',
   },
   {
     icon: Zap,
@@ -38,27 +38,8 @@ const features = [
   },
   {
     icon: Globe,
-    title: 'Always Available',
-    description: '24/7 support and 99.9% uptime guarantee',
-  },
-];
-
-const testimonials = [
-  {
-    name: 'Sarah Johnson',
-    role: 'School Administrator',
-    school: 'Greenwood High School',
-    content:
-      'HASIVU has transformed how we manage school meals. The platform is intuitive and our parents love it!',
-    avatar: 'SJ',
-  },
-  {
-    name: 'Raj Patel',
-    role: 'Parent',
-    school: 'Delhi Public School',
-    content:
-      'Ordering meals for my kids has never been easier. I can track nutrition and payments all in one place.',
-    avatar: 'RP',
+    title: 'Operationally Ready',
+    description: 'Health checks, readiness signals, and Docker-first deployment support',
   },
 ];
 
@@ -74,6 +55,8 @@ export function AuthLayout({
   backgroundImage,
   className,
 }: AuthLayoutProps) {
+  const currentYear = new Date().getFullYear();
+
   return (
     <div className={cn('min-h-screen bg-gray-50', className)}>
       {/* Background Image/Pattern */}
@@ -100,7 +83,7 @@ export function AuthLayout({
 
           {showBranding && (
             <Link href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-[var(--hasivu-secondary)] rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-lg">H</span>
               </div>
               <span className="text-xl font-bold text-gray-900">HASIVU</span>
@@ -112,7 +95,7 @@ export function AuthLayout({
       <div className="relative z-10 flex flex-col lg:flex-row min-h-screen">
         {/* Left Side - Features/Branding */}
         {showFeatures && (
-          <div className="hidden lg:flex lg:w-1/2 bg-primary-600 text-white p-8 lg:p-12 flex-col justify-center">
+          <div className="hidden lg:flex lg:w-1/2 bg-[var(--hasivu-secondary)] text-white p-8 lg:p-12 flex-col justify-center">
             <div className="max-w-md mx-auto">
               {/* Logo and Title */}
               <div className="mb-8">
@@ -122,9 +105,9 @@ export function AuthLayout({
                   </div>
                   <h1 className="text-3xl font-bold">HASIVU</h1>
                 </div>
-                <p className="text-primary-100 text-lg">
-                  Revolutionizing school meal management with smart technology and seamless
-                  experiences.
+                <p className="text-emerald-50 text-lg">
+                  Warm, reliable school meal ordering for parents, students, school teams,
+                  kitchens, and food vendors.
                 </p>
               </div>
 
@@ -137,41 +120,33 @@ export function AuthLayout({
                     </div>
                     <div>
                       <h3 className="font-semibold mb-1">{feature.title}</h3>
-                      <p className="text-primary-100 text-sm">{feature.description}</p>
+                      <p className="text-emerald-50 text-sm">{feature.description}</p>
                     </div>
                   </div>
                 ))}
               </div>
 
-              {/* Testimonial */}
               <div className="bg-white/10 rounded-xl p-6">
-                <div className="flex items-center space-x-3 mb-3">
-                  <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                    <span className="text-white font-medium text-sm">{testimonials[0].avatar}</span>
-                  </div>
-                  <div>
-                    <p className="font-medium">{testimonials[0].name}</p>
-                    <p className="text-primary-100 text-sm">
-                      {testimonials[0].role}, {testimonials[0].school}
-                    </p>
-                  </div>
-                </div>
-                <p className="text-primary-100 text-sm italic">"{testimonials[0].content}"</p>
+                <p className="font-medium">Role-based access</p>
+                <p className="mt-2 text-emerald-50 text-sm">
+                  Use the role selector to sign in as a parent, student, school admin, kitchen
+                  staff member, or food vendor.
+                </p>
               </div>
 
               {/* Stats */}
               <div className="grid grid-cols-3 gap-4 mt-8 pt-8 border-t border-white/20">
                 <div className="text-center">
-                  <div className="text-2xl font-bold">1000+</div>
-                  <div className="text-primary-100 text-sm">Schools</div>
+                  <div className="text-2xl font-bold">5</div>
+                  <div className="text-emerald-50 text-sm">User roles</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold">50K+</div>
-                  <div className="text-primary-100 text-sm">Students</div>
+                  <div className="text-2xl font-bold">RFID</div>
+                  <div className="text-emerald-50 text-sm">Verification</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold">99.9%</div>
-                  <div className="text-primary-100 text-sm">Uptime</div>
+                  <div className="text-2xl font-bold">Ready</div>
+                  <div className="text-emerald-50 text-sm">Health checks</div>
                 </div>
               </div>
             </div>
@@ -190,7 +165,7 @@ export function AuthLayout({
             {showBranding && (
               <div className="lg:hidden text-center mb-8">
                 <Link href="/" className="inline-flex items-center space-x-2">
-                  <div className="w-10 h-10 bg-primary-600 rounded-xl flex items-center justify-center">
+                  <div className="w-10 h-10 bg-[var(--hasivu-secondary)] rounded-xl flex items-center justify-center">
                     <span className="text-white font-bold text-xl">H</span>
                   </div>
                   <span className="text-2xl font-bold text-gray-900">HASIVU</span>
@@ -212,8 +187,8 @@ export function AuthLayout({
               <div className="lg:hidden mt-8 grid grid-cols-2 gap-4">
                 {features.slice(0, 4).map((feature, index) => (
                   <div key={index} className="text-center p-4 bg-white rounded-lg shadow-sm">
-                    <div className="w-8 h-8 bg-primary-100 rounded-lg flex items-center justify-center mx-auto mb-2">
-                      <feature.icon className="w-4 h-4 text-primary-600" />
+                    <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+                      <feature.icon className="w-4 h-4 text-[var(--hasivu-secondary)]" />
                     </div>
                     <h4 className="font-medium text-sm text-gray-900 mb-1">{feature.title}</h4>
                     <p className="text-xs text-gray-600">{feature.description}</p>
@@ -240,7 +215,7 @@ export function AuthLayout({
             </Link>
           </div>
           <div className="flex items-center space-x-1">
-            <span>© 2024 HASIVU. All rights reserved.</span>
+            <span>© {currentYear} HASIVU. All rights reserved.</span>
           </div>
         </div>
       </footer>
@@ -275,7 +250,7 @@ export function MinimalAuthLayout({
         {showLogo && (
           <div className="text-center">
             <Link href="/" className="inline-flex items-center space-x-2">
-              <div className="w-12 h-12 bg-primary-600 rounded-xl flex items-center justify-center">
+              <div className="w-12 h-12 bg-[var(--hasivu-secondary)] rounded-xl flex items-center justify-center">
                 <span className="text-white font-bold text-2xl">H</span>
               </div>
               <span className="text-3xl font-bold text-gray-900">HASIVU</span>

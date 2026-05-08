@@ -23,7 +23,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { LandingDemoVideoDialog } from '@/components/landing/LandingDemoVideoDialog';
 import {
   Accordion,
   AccordionContent,
@@ -32,9 +32,11 @@ import {
 } from '@/components/ui/accordion';
 import { Star } from 'lucide-react';
 import { events } from '@/lib/analytics';
+import { GroupScene, Aarav, Meera, Rajan, Priya, Benny } from '@/components/characters/HasivuFriend';
+import { useCharacterState } from '@/components/characters/useCharacterState';
 
-// Startwell-inspired, but original design and copy for HASIVU
-// Bright, friendly, trustworthy, with clear CTAs
+// Hasivu Platform Landing Page
+// Character-driven, playful, trustworthy, with clear CTAs
 
 const FeatureItem = ({
   icon: Icon,
@@ -45,16 +47,16 @@ const FeatureItem = ({
   title: string;
   description: string;
 }) => (
-  <div className="group p-6 rounded-2xl bg-white/60 backdrop-blur-sm border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300 hover:bg-white/80">
+  <div className="group p-6 rounded-2xl bg-white/80 backdrop-blur-sm border border-hasivu-primary/10 shadow-warm-sm hover:shadow-warm-md transition-all duration-300 hover:bg-white">
     <div className="flex items-start space-x-4">
-      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg group-hover:shadow-xl transition-all duration-300">
+      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-hasivu-accent/20 text-hasivu-primary shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-300">
         <Icon className="h-7 w-7" />
       </div>
       <div className="flex-1">
-        <h3 className="text-xl font-bold text-slate-800 mb-2 group-hover:text-blue-600 transition-colors duration-300">
+        <h3 className="text-xl font-bold text-hasivu-text-primary mb-2 group-hover:text-hasivu-primary transition-colors duration-300">
           {title}
         </h3>
-        <p className="text-slate-600 leading-relaxed">{description}</p>
+        <p className="text-hasivu-text-secondary leading-relaxed">{description}</p>
       </div>
     </div>
   </div>
@@ -88,6 +90,7 @@ const testimonials = [
 
 export default function StartwellInspiredLandingPage() {
   const [videoOpen, setVideoOpen] = useState(false);
+  const characterState = useCharacterState({ scrollEnabled: true });
 
   const instagramUrl = process.env.NEXT_PUBLIC_SOCIAL_INSTAGRAM || 'https://instagram.com/hasivu';
   const twitterUrl =
@@ -96,44 +99,55 @@ export default function StartwellInspiredLandingPage() {
     process.env.NEXT_PUBLIC_SOCIAL_LINKEDIN || 'https://linkedin.com/company/hasivu';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
+    <div
+      className="min-h-screen bg-hasivu-bg-warm font-sans"
+      onMouseEnter={() => characterState.setHover(true)}
+      onMouseLeave={() => characterState.setHover(false)}
+    >
       {/* Header */}
-      <header className="sticky top-0 z-40 w-full border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
+      <header className="sticky top-0 z-40 w-full border-b border-hasivu-primary/10 bg-white/90 backdrop-blur-xl">
         <div className="mx-auto max-w-7xl px-4 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center space-x-3 group">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600 text-white font-bold grid place-items-center shadow-lg group-hover:shadow-xl transition-all duration-300">
-              <span className="text-lg font-black">H</span>
+          <Link href="/" className="flex items-center space-x-3 group relative">
+            <div className="w-12 h-12 rounded-2xl bg-hasivu-primary text-white font-bold grid place-items-center shadow-warm-md group-hover:shadow-warm-lg transition-all duration-300">
+              <span className="text-xl font-display font-black">H</span>
             </div>
             <div className="leading-tight">
-              <div className="text-2xl font-black tracking-tight bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent group-hover:from-blue-700 group-hover:via-purple-700 group-hover:to-indigo-700 transition-all duration-300">
+              <div className="text-2xl font-display font-black tracking-tight text-hasivu-primary transition-all duration-300">
                 HASIVU
               </div>
-              <div className="text-xs text-slate-600 font-medium">School Meals Done Right</div>
+              <div className="text-xs text-hasivu-text-secondary font-medium">
+                School Meals Done Right
+              </div>
+            </div>
+
+            {/* Aarav peeks from behind the logo on hover */}
+            <div className="absolute -left-4 -bottom-6 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              <Aarav state={characterState.state} size={48} />
             </div>
           </Link>
 
           <nav className="hidden md:flex items-center space-x-8">
             <Link
               href="#how"
-              className="text-slate-600 hover:text-blue-600 font-medium transition-colors duration-200"
+              className="text-hasivu-text-primary hover:text-hasivu-primary font-medium transition-colors duration-200"
             >
               How it works
             </Link>
             <Link
               href="#reasons"
-              className="text-slate-600 hover:text-blue-600 font-medium transition-colors duration-200"
+              className="text-hasivu-text-primary hover:text-hasivu-primary font-medium transition-colors duration-200"
             >
               Why HASIVU
             </Link>
             <Link
               href="#faqs"
-              className="text-slate-600 hover:text-blue-600 font-medium transition-colors duration-200"
+              className="text-hasivu-text-primary hover:text-hasivu-primary font-medium transition-colors duration-200"
             >
               FAQs
             </Link>
             <Link
               href="/auth/login"
-              className="text-slate-600 hover:text-blue-600 font-medium transition-colors duration-200"
+              className="text-hasivu-text-primary hover:text-hasivu-primary font-medium transition-colors duration-200"
             >
               Login
             </Link>
@@ -143,7 +157,7 @@ export default function StartwellInspiredLandingPage() {
             <Link href="/auth/login?redirect=/menu">
               <Button
                 variant="outline"
-                className="rounded-xl border-blue-200 text-blue-700 hover:bg-blue-50 transition-all duration-200"
+                className="rounded-xl border-hasivu-primary/20 text-hasivu-primary hover:bg-hasivu-primary/5 transition-all duration-200"
                 onClick={() => events.ctaClick('header_order_online', { location: 'header' })}
               >
                 Order Online
@@ -151,7 +165,7 @@ export default function StartwellInspiredLandingPage() {
             </Link>
             <Link href="/auth/register">
               <Button
-                className="rounded-xl bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-600 hover:from-blue-600 hover:via-purple-600 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-300"
+                className="rounded-xl bg-hasivu-primary hover:bg-hasivu-primary/90 text-white shadow-warm-md hover:shadow-warm-lg transition-all duration-300"
                 onClick={() => events.ctaClick('header_get_started', { location: 'header' })}
               >
                 Get Started
@@ -162,82 +176,29 @@ export default function StartwellInspiredLandingPage() {
       </header>
 
       {/* Hero */}
-      <section className="relative overflow-hidden py-20 md:py-32">
-        {/* Background Graphics - Inspired by izum.study */}
-        <div className="absolute inset-0 overflow-hidden">
-          {/* Large gradient orbs */}
-          <div className="absolute -top-40 -right-40 h-[600px] w-[600px] rounded-full bg-gradient-to-br from-blue-400/20 via-purple-400/20 to-indigo-400/20 blur-3xl animate-pulse" />
+      <section className="relative overflow-hidden py-16 md:py-24">
+        {/* Background Graphics - Warm Hasivu Colors */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-40 -right-40 h-[600px] w-[600px] rounded-full bg-hasivu-accent/10 blur-3xl animate-pulse" />
           <div
-            className="absolute -bottom-40 -left-40 h-[500px] w-[500px] rounded-full bg-gradient-to-br from-indigo-400/20 via-purple-400/20 to-pink-400/20 blur-3xl animate-pulse"
+            className="absolute -bottom-40 -left-40 h-[500px] w-[500px] rounded-full bg-hasivu-secondary/10 blur-3xl animate-pulse"
             style={{ animationDelay: '2s' }}
           />
-
-          {/* Geometric shapes */}
-          <div
-            className="absolute top-20 right-20 w-32 h-32 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-lg rotate-45 animate-bounce"
-            style={{ animationDelay: '1s', animationDuration: '6s' }}
-          />
-          <div
-            className="absolute bottom-32 left-16 w-24 h-24 bg-gradient-to-br from-purple-500/10 to-indigo-500/10 rounded-full animate-bounce"
-            style={{ animationDelay: '3s', animationDuration: '8s' }}
-          />
-          <div
-            className="absolute top-1/2 left-1/4 w-16 h-16 bg-gradient-to-br from-indigo-500/10 to-blue-500/10 rounded-lg rotate-12 animate-bounce"
-            style={{ animationDelay: '5s', animationDuration: '7s' }}
-          />
-
-          {/* Floating particles */}
-          <div
-            className="absolute top-1/4 right-1/3 w-2 h-2 bg-blue-400/30 rounded-full animate-ping"
-            style={{ animationDelay: '0.5s', animationDuration: '4s' }}
-          />
-          <div
-            className="absolute bottom-1/3 right-1/4 w-1.5 h-1.5 bg-purple-400/30 rounded-full animate-ping"
-            style={{ animationDelay: '2.5s', animationDuration: '5s' }}
-          />
-          <div
-            className="absolute top-2/3 left-1/3 w-1 h-1 bg-indigo-400/30 rounded-full animate-ping"
-            style={{ animationDelay: '4.5s', animationDuration: '6s' }}
-          />
-
-          {/* Wave patterns */}
-          <svg
-            className="absolute bottom-0 left-0 w-full h-32 text-blue-50/50"
-            viewBox="0 0 1200 120"
-            preserveAspectRatio="none"
-          >
-            <path
-              d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z"
-              opacity=".25"
-              className="fill-current"
-            ></path>
-            <path
-              d="M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s75.16-39,116.92-43.05c59.73-5.85,113.28,22.88,168.9,38.84,30.2,8.66,59,6.17,87.09-7.5,22.43-10.89,48-26.93,60.65-49.24V0Z"
-              opacity=".5"
-              className="fill-current"
-            ></path>
-            <path
-              d="M0,0V5.63C149.93,59,314.09,71.32,475.83,42.57c43-7.64,84.23-20.12,127.61-26.46,59-8.63,112.48,12.24,165.56,35.4C827.93,77.22,886,95.24,951.2,90c86.53-7,172.46-45.71,248.8-84.81V0Z"
-              className="fill-current"
-            ></path>
-          </svg>
         </div>
 
-        <div className="relative mx-auto max-w-7xl px-4 grid lg:grid-cols-2 gap-16 items-center">
-          <div className="space-y-8">
+        <div className="relative mx-auto max-w-7xl px-4 grid lg:grid-cols-2 gap-12 items-center">
+          <div className="space-y-8 relative z-10">
             <div className="space-y-4">
-              <Badge className="bg-gradient-to-r from-blue-100 to-purple-100 text-blue-700 border-blue-200 px-4 py-2 rounded-full font-medium">
-                ✨ Smart School Nutrition Platform
+              <Badge className="bg-hasivu-primary/10 text-hasivu-primary border-hasivu-primary/20 px-4 py-2 rounded-full font-medium">
+                ✨ Playful Nutrition Platform
               </Badge>
-              <h1 className="text-5xl md:text-7xl font-black tracking-tight bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent leading-tight">
-                School Meals
-                <br />
-                <span className="text-slate-800">Done Right</span>
+              <h1 className="text-5xl md:text-7xl font-display font-black tracking-tight text-hasivu-text-primary leading-[1.1]">
+                School Meals <br />
+                <span className="text-hasivu-primary">Done Right</span>
               </h1>
-              <p className="text-xl text-slate-600 max-w-2xl leading-relaxed">
-                Experience the future of school nutrition with AI-powered meal planning,
-                RFID-verified delivery, and complete parental control. Warm, nutritious meals
-                delivered to classrooms with real-time tracking.
+              <p className="text-xl text-hasivu-text-secondary max-w-xl leading-relaxed">
+                Join the Hasivu Friends on a journey to better nutrition! Smart meal planning, warm
+                deliveries, and happy children — all with complete parental control.
               </p>
             </div>
 
@@ -245,92 +206,86 @@ export default function StartwellInspiredLandingPage() {
               <Link href="/auth/register">
                 <Button
                   size="lg"
-                  className="rounded-2xl px-8 py-4 bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-600 hover:from-blue-600 hover:via-purple-600 hover:to-indigo-700 shadow-xl hover:shadow-2xl transition-all duration-300 text-white font-semibold text-lg"
+                  className="rounded-2xl px-8 py-6 bg-hasivu-primary hover:bg-[#E55A2B] shadow-warm-lg hover:shadow-warm-xl transition-all duration-300 text-white font-bold text-lg w-full sm:w-auto"
                   onClick={() => events.ctaClick('hero_get_started', { location: 'hero' })}
                 >
-                  Get Started Free
+                  Start the Journey
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
               <Button
                 size="lg"
                 variant="outline"
-                className="rounded-2xl border-2 border-slate-300 hover:border-blue-300 px-8 py-4 transition-all duration-300"
+                className="rounded-2xl border-2 border-slate-200 hover:border-hasivu-secondary text-hasivu-text-primary hover:bg-hasivu-secondary/5 px-8 py-6 transition-all duration-300 w-full sm:w-auto group"
                 onClick={() => {
                   events.videoOpen({ location: 'hero' });
                   setVideoOpen(true);
+                  characterState.triggerSuccess(); // Characters celebrate when video opens
                 }}
               >
-                <Play className="mr-2 h-5 w-5 text-blue-600" />
-                <span className="text-slate-700 font-medium">Watch Demo</span>
+                <Play className="mr-2 h-5 w-5 text-hasivu-secondary group-hover:scale-110 transition-transform" />
+                <span className="font-bold">Watch Demo</span>
               </Button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-8">
-              <div className="text-center p-4 rounded-2xl bg-white/60 backdrop-blur-sm border border-white/20 shadow-lg">
-                <div className="text-2xl font-black text-blue-600 mb-1">AI-Powered</div>
-                <p className="text-sm text-slate-600">Smart meal planning</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4">
+              <div className="flex items-center gap-2 text-hasivu-text-secondary">
+                <div className="w-8 h-8 rounded-full bg-hasivu-accent/20 flex items-center justify-center">
+                  <Star className="w-4 h-4 text-hasivu-accent fill-current" />
+                </div>
+                <span className="text-sm font-medium">Smart AI Menu</span>
               </div>
-              <div className="text-center p-4 rounded-2xl bg-white/60 backdrop-blur-sm border border-white/20 shadow-lg">
-                <div className="text-2xl font-black text-purple-600 mb-1">RFID</div>
-                <p className="text-sm text-slate-600">Verified delivery</p>
+              <div className="flex items-center gap-2 text-hasivu-text-secondary">
+                <div className="w-8 h-8 rounded-full bg-hasivu-success/20 flex items-center justify-center">
+                  <Shield className="w-4 h-4 text-hasivu-success" />
+                </div>
+                <span className="text-sm font-medium">RFID Safe</span>
               </div>
-              <div className="text-center p-4 rounded-2xl bg-white/60 backdrop-blur-sm border border-white/20 shadow-lg">
-                <div className="text-2xl font-black text-indigo-600 mb-1">Real-time</div>
-                <p className="text-sm text-slate-600">Live tracking</p>
+              <div className="flex items-center gap-2 text-hasivu-text-secondary">
+                <div className="w-8 h-8 rounded-full bg-hasivu-secondary/20 flex items-center justify-center">
+                  <Utensils className="w-4 h-4 text-hasivu-secondary" />
+                </div>
+                <span className="text-sm font-medium">Warm Delivery</span>
               </div>
             </div>
           </div>
 
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-indigo-500/10 rounded-3xl blur-xl" />
-            <Card className="relative rounded-3xl border-0 shadow-2xl bg-white/80 backdrop-blur-sm">
-              <CardHeader className="text-center pb-6">
-                <CardTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  Platform Statistics
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="grid grid-cols-2 gap-6">
-                <div className="text-center p-6 rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200/50">
-                  <div className="text-4xl font-black text-blue-600 mb-2">4.9★</div>
-                  <p className="text-slate-700 font-medium">Parent Rating</p>
-                  <p className="text-sm text-slate-500">Average satisfaction</p>
-                </div>
-                <div className="text-center p-6 rounded-2xl bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200/50">
-                  <div className="text-4xl font-black text-purple-600 mb-2">99.9%</div>
-                  <p className="text-slate-700 font-medium">On-Time Delivery</p>
-                  <p className="text-sm text-slate-500">Reliability guarantee</p>
-                </div>
-                <div className="text-center p-6 rounded-2xl bg-gradient-to-br from-indigo-50 to-indigo-100 border border-indigo-200/50">
-                  <div className="text-4xl font-black text-indigo-600 mb-2">100%</div>
-                  <p className="text-slate-700 font-medium">Flexible Control</p>
-                  <p className="text-sm text-slate-500">Change anytime</p>
-                </div>
-                <div className="text-center p-6 rounded-2xl bg-gradient-to-br from-pink-50 to-pink-100 border border-pink-200/50">
-                  <div className="text-4xl font-black text-pink-600 mb-2">AI</div>
-                  <p className="text-slate-700 font-medium">Smart Planning</p>
-                  <p className="text-sm text-slate-500">Nutrition optimized</p>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="relative mt-8 lg:mt-0 flex justify-center items-center group/scene">
+            {/* The Hasivu Friends Group Scene */}
+            <div className="relative w-full max-w-lg aspect-square">
+              <GroupScene
+                state={characterState.state}
+                size={500}
+                className="w-full h-auto drop-shadow-2xl z-10 relative"
+                priority
+              />
+
+              {/* Interactive Dash Character (Priya runs across on scroll/hover) */}
+              <div className="absolute -bottom-8 -left-12 z-20">
+                <Priya state={characterState.state} size={140} />
+              </div>
+
+              {/* Background glow behind the characters */}
+              <div className="absolute inset-0 bg-hasivu-accent/20 rounded-full blur-3xl -z-10 group-hover/scene:bg-hasivu-accent/30 transition-colors duration-500" />
+            </div>
           </div>
         </div>
       </section>
 
       {/* Features Section */}
       <section id="features" className="py-20 md:py-32 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-white via-blue-50/30 to-white" />
+        <div className="absolute inset-0 bg-gradient-to-b from-white via-hasivu-bg-warm/50 to-white" />
 
         {/* Background decorative elements */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           {/* Floating geometric shapes */}
-          <div className="absolute top-20 left-10 w-20 h-20 bg-gradient-to-br from-blue-200/20 to-purple-200/20 rounded-full blur-sm animate-float" />
+          <div className="absolute top-20 left-10 w-20 h-20 bg-hasivu-secondary/10 rounded-full blur-sm animate-float" />
           <div
-            className="absolute bottom-32 right-16 w-16 h-16 bg-gradient-to-br from-purple-200/20 to-indigo-200/20 rounded-lg rotate-45 animate-float"
+            className="absolute bottom-32 right-16 w-16 h-16 bg-hasivu-primary/10 rounded-lg rotate-45 animate-float"
             style={{ animationDelay: '2s' }}
           />
           <div
-            className="absolute top-1/2 right-1/4 w-12 h-12 bg-gradient-to-br from-indigo-200/20 to-blue-200/20 rounded-full animate-float"
+            className="absolute top-1/2 right-1/4 w-12 h-12 bg-hasivu-accent/10 rounded-full animate-float"
             style={{ animationDelay: '4s' }}
           />
 
@@ -339,21 +294,26 @@ export default function StartwellInspiredLandingPage() {
             <div
               className="absolute inset-0"
               style={{
-                backgroundImage: `radial-gradient(circle at 1px 1px, rgba(59, 130, 246, 0.15) 1px, transparent 0)`,
+                backgroundImage: `radial-gradient(circle at 1px 1px, rgba(255, 107, 53, 0.15) 1px, transparent 0)`,
                 backgroundSize: '50px 50px',
               }}
             />
           </div>
         </div>
         <div className="relative mx-auto max-w-7xl px-4">
-          <div className="text-center mb-16">
-            <Badge className="bg-gradient-to-r from-blue-100 to-purple-100 text-blue-700 border-blue-200 px-4 py-2 rounded-full font-medium mb-4">
+          <div className="text-center mb-16 relative">
+            {/* Meera peeking from header */}
+            <div className="absolute -top-16 left-1/2 -translate-x-1/2 opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+              <Meera state={characterState.state} size={80} />
+            </div>
+
+            <Badge className="bg-hasivu-secondary/10 text-hasivu-secondary border-hasivu-secondary/20 px-4 py-2 rounded-full font-medium mb-4">
               🚀 Advanced Features
             </Badge>
-            <h2 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent mb-6">
+            <h2 className="text-4xl md:text-5xl font-display font-black text-hasivu-text-primary mb-6">
               Why Choose HASIVU?
             </h2>
-            <p className="text-xl text-slate-600 max-w-3xl mx-auto">
+            <p className="text-xl text-hasivu-text-secondary max-w-3xl mx-auto">
               Experience the most advanced school nutrition platform with cutting-edge technology
               and unparalleled parental control.
             </p>
@@ -398,15 +358,12 @@ export default function StartwellInspiredLandingPage() {
       </section>
 
       {/* How it works */}
-      <section
-        id="how"
-        className="py-20 md:py-32 bg-gradient-to-br from-slate-50 to-blue-50/30 relative overflow-hidden"
-      >
+      <section id="how" className="py-20 md:py-32 bg-hasivu-bg-warm relative overflow-hidden">
         {/* Background decorative elements */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           {/* Flowing wave patterns */}
           <svg
-            className="absolute top-0 left-0 w-full h-full text-blue-50/20"
+            className="absolute top-0 left-0 w-full h-full text-hasivu-primary/5"
             viewBox="0 0 1200 600"
             preserveAspectRatio="none"
           >
@@ -423,27 +380,27 @@ export default function StartwellInspiredLandingPage() {
 
           {/* Floating particles */}
           <div
-            className="absolute top-1/4 left-1/4 w-3 h-3 bg-blue-400/20 rounded-full animate-bounce"
+            className="absolute top-1/4 left-1/4 w-3 h-3 bg-hasivu-primary/20 rounded-full animate-bounce"
             style={{ animationDelay: '0s', animationDuration: '6s' }}
           />
           <div
-            className="absolute top-1/3 right-1/3 w-2 h-2 bg-purple-400/20 rounded-full animate-bounce"
+            className="absolute top-1/3 right-1/3 w-2 h-2 bg-hasivu-secondary/20 rounded-full animate-bounce"
             style={{ animationDelay: '2s', animationDuration: '8s' }}
           />
           <div
-            className="absolute bottom-1/4 left-1/2 w-2.5 h-2.5 bg-indigo-400/20 rounded-full animate-bounce"
+            className="absolute bottom-1/4 left-1/2 w-2.5 h-2.5 bg-hasivu-accent/20 rounded-full animate-bounce"
             style={{ animationDelay: '4s', animationDuration: '7s' }}
           />
         </div>
-        <div className="mx-auto max-w-7xl px-4">
-          <div className="text-center mb-16">
-            <Badge className="bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-700 border-purple-200 px-4 py-2 rounded-full font-medium mb-4">
+        <div className="mx-auto max-w-7xl px-4 relative">
+          <div className="text-center mb-16 relative">
+            <Badge className="bg-hasivu-accent/20 text-hasivu-primary border-hasivu-accent/30 px-4 py-2 rounded-full font-medium mb-4">
               📋 Simple Process
             </Badge>
-            <h2 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 bg-clip-text text-transparent mb-6">
+            <h2 className="text-4xl md:text-5xl font-display font-black text-hasivu-text-primary mb-6">
               How It Works
             </h2>
-            <p className="text-xl text-slate-600 max-w-3xl mx-auto">
+            <p className="text-xl text-hasivu-text-secondary max-w-3xl mx-auto">
               Getting started is easy. Follow these simple steps to provide your child with
               nutritious, warm meals every day.
             </p>
@@ -451,17 +408,17 @@ export default function StartwellInspiredLandingPage() {
 
           <div className="grid md:grid-cols-3 gap-8 mb-16">
             <div className="relative group">
-              <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-600 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-300" />
-              <Card className="relative rounded-3xl border-0 shadow-xl bg-white/90 backdrop-blur-sm h-full">
+              <div className="absolute -inset-1 bg-hasivu-primary/20 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-300" />
+              <Card className="relative rounded-3xl border-0 shadow-warm-sm hover:shadow-warm-md transition-all duration-300 bg-white/90 backdrop-blur-sm h-full">
                 <CardHeader className="text-center pb-4">
-                  <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-hasivu-primary flex items-center justify-center shadow-md">
                     <Utensils className="h-8 w-8 text-white" />
                   </div>
-                  <CardTitle className="text-2xl font-bold text-slate-800 mb-2">
+                  <CardTitle className="text-2xl font-bold text-hasivu-text-primary mb-2">
                     1. Choose & Customize
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="text-center text-slate-600">
+                <CardContent className="text-center text-hasivu-text-secondary">
                   Select from our AI-curated menu options. Set dietary preferences, allergies, and
                   nutritional requirements for personalized meal planning.
                 </CardContent>
@@ -469,17 +426,17 @@ export default function StartwellInspiredLandingPage() {
             </div>
 
             <div className="relative group">
-              <div className="absolute -inset-1 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-300" />
-              <Card className="relative rounded-3xl border-0 shadow-xl bg-white/90 backdrop-blur-sm h-full">
+              <div className="absolute -inset-1 bg-hasivu-secondary/20 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-300" />
+              <Card className="relative rounded-3xl border-0 shadow-warm-sm hover:shadow-warm-md transition-all duration-300 bg-white/90 backdrop-blur-sm h-full">
                 <CardHeader className="text-center pb-4">
-                  <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-lg">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-hasivu-secondary flex items-center justify-center shadow-md">
                     <Clock className="h-8 w-8 text-white" />
                   </div>
-                  <CardTitle className="text-2xl font-bold text-slate-800 mb-2">
+                  <CardTitle className="text-2xl font-bold text-hasivu-text-primary mb-2">
                     2. RFID-Verified Delivery
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="text-center text-slate-600">
+                <CardContent className="text-center text-hasivu-text-secondary">
                   Meals are prepared fresh and delivered warm to classrooms with RFID tracking.
                   Real-time notifications keep you informed every step of the way.
                 </CardContent>
@@ -487,17 +444,20 @@ export default function StartwellInspiredLandingPage() {
             </div>
 
             <div className="relative group">
-              <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-blue-600 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-300" />
-              <Card className="relative rounded-3xl border-0 shadow-xl bg-white/90 backdrop-blur-sm h-full">
+              <div className="absolute -top-12 -right-4 z-10 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <Rajan state={characterState.state} size={70} />
+              </div>
+              <div className="absolute -inset-1 bg-hasivu-accent/20 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-300" />
+              <Card className="relative rounded-3xl border-0 shadow-warm-sm hover:shadow-warm-md transition-all duration-300 bg-white/90 backdrop-blur-sm h-full">
                 <CardHeader className="text-center pb-4">
-                  <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center shadow-lg">
-                    <Repeat className="h-8 w-8 text-white" />
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-hasivu-accent flex items-center justify-center shadow-md">
+                    <Repeat className="h-8 w-8 text-hasivu-text-primary" />
                   </div>
-                  <CardTitle className="text-2xl font-bold text-slate-800 mb-2">
+                  <CardTitle className="text-2xl font-bold text-hasivu-text-primary mb-2">
                     3. Full Control
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="text-center text-slate-600">
+                <CardContent className="text-center text-hasivu-text-secondary">
                   Change plans, pause subscriptions, or modify orders anytime before midnight.
                   Complete flexibility with our intuitive parent dashboard.
                 </CardContent>
@@ -509,7 +469,7 @@ export default function StartwellInspiredLandingPage() {
             <Link href="/auth/register">
               <Button
                 size="lg"
-                className="rounded-2xl px-8 py-4 bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-600 hover:from-blue-600 hover:via-purple-600 hover:to-indigo-700 shadow-xl hover:shadow-2xl transition-all duration-300 text-white font-semibold text-lg"
+                className="rounded-2xl px-8 py-4 bg-hasivu-primary hover:bg-[#E55A2B] shadow-warm-lg hover:shadow-warm-xl transition-all duration-300 text-white font-bold text-lg"
                 onClick={() => events.ctaClick('how_get_started', { location: 'how_it_works' })}
               >
                 Get Started Today
@@ -525,38 +485,40 @@ export default function StartwellInspiredLandingPage() {
         {/* Background decorative elements */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           {/* Subtle geometric patterns */}
-          <div className="absolute top-10 right-10 w-32 h-32 bg-gradient-to-br from-purple-100/30 to-indigo-100/30 rounded-full blur-2xl" />
-          <div className="absolute bottom-10 left-10 w-24 h-24 bg-gradient-to-br from-blue-100/30 to-purple-100/30 rounded-lg rotate-45 blur-xl" />
+          <div className="absolute top-10 right-10 w-32 h-32 bg-hasivu-accent/10 rounded-full blur-2xl" />
+          <div className="absolute bottom-10 left-10 w-24 h-24 bg-hasivu-secondary/10 rounded-lg rotate-45 blur-xl" />
 
           {/* Floating dots pattern */}
           <div className="absolute inset-0 opacity-10">
             <div
               className="absolute inset-0"
               style={{
-                backgroundImage: `radial-gradient(circle at 2px 2px, rgba(139, 92, 246, 0.3) 1px, transparent 0)`,
+                backgroundImage: `radial-gradient(circle at 2px 2px, rgba(46, 196, 182, 0.3) 1px, transparent 0)`,
                 backgroundSize: '40px 40px',
               }}
             />
           </div>
         </div>
-        <div className="text-center mb-10">
-          <Badge className="mb-3 bg-purple-100 text-purple-700 border-purple-200">
+        <div className="text-center mb-10 relative">
+          <Badge className="mb-3 bg-hasivu-primary/10 text-hasivu-primary border-hasivu-primary/20">
             Parents say it best
           </Badge>
-          <h2 className="text-3xl md:text-4xl font-black text-ink-900">Loved by busy families</h2>
+          <h2 className="text-3xl md:text-4xl font-display font-black text-hasivu-text-primary">
+            Loved by busy families
+          </h2>
         </div>
         <div className="grid md:grid-cols-3 gap-6">
           {testimonials.map((t, i) => (
-            <Card key={i} className="rounded-2xl border-slate-200">
+            <Card key={i} className="rounded-2xl border-hasivu-primary/10 shadow-warm-sm">
               <CardContent className="p-6">
                 <div className="flex mb-3">
                   {[...Array(5)].map((_, idx) => (
-                    <Star key={idx} className="h-4 w-4 text-yellow-400 fill-current" />
+                    <Star key={idx} className="h-4 w-4 text-hasivu-accent fill-current" />
                   ))}
                 </div>
-                <p className="text-ink-700 italic">“{t.quote}”</p>
-                <div className="mt-4 text-sm text-ink-700 font-medium">{t.author}</div>
-                <div className="text-xs text-ink-500">{t.title}</div>
+                <p className="text-hasivu-text-primary italic">“{t.quote}”</p>
+                <div className="mt-4 text-sm text-hasivu-text-primary font-bold">{t.author}</div>
+                <div className="text-xs text-hasivu-text-secondary">{t.title}</div>
               </CardContent>
             </Card>
           ))}
@@ -567,10 +529,10 @@ export default function StartwellInspiredLandingPage() {
       <section id="contact" className="mx-auto max-w-7xl px-4 py-16">
         <div className="grid md:grid-cols-2 gap-8 items-center">
           <div>
-            <h3 className="text-2xl md:text-3xl font-black text-ink-900">
+            <h3 className="text-2xl md:text-3xl font-display font-black text-hasivu-text-primary">
               We feed your kids like our own
             </h3>
-            <p className="mt-3 text-ink-700">
+            <p className="mt-3 text-hasivu-text-secondary">
               Follow us for menu highlights, behind-the-scenes, and nutrition tips.
             </p>
             <div className="mt-6 flex gap-3">
@@ -579,7 +541,7 @@ export default function StartwellInspiredLandingPage() {
                 target="_blank"
                 rel="noreferrer"
                 aria-label="HASIVU on Instagram"
-                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-ink-700 hover:bg-slate-50"
+                className="inline-flex items-center gap-2 rounded-xl border border-hasivu-primary/10 px-4 py-2 text-hasivu-text-primary hover:bg-hasivu-primary/5 transition-colors"
               >
                 <Instagram className="h-4 w-4" /> Instagram
               </a>
@@ -588,7 +550,7 @@ export default function StartwellInspiredLandingPage() {
                 target="_blank"
                 rel="noreferrer"
                 aria-label="HASIVU on Twitter"
-                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-ink-700 hover:bg-slate-50"
+                className="inline-flex items-center gap-2 rounded-xl border border-hasivu-primary/10 px-4 py-2 text-hasivu-text-primary hover:bg-hasivu-primary/5 transition-colors"
               >
                 <Twitter className="h-4 w-4" /> Twitter
               </a>
@@ -597,26 +559,28 @@ export default function StartwellInspiredLandingPage() {
                 target="_blank"
                 rel="noreferrer"
                 aria-label="HASIVU on LinkedIn"
-                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-ink-700 hover:bg-slate-50"
+                className="inline-flex items-center gap-2 rounded-xl border border-hasivu-primary/10 px-4 py-2 text-hasivu-text-primary hover:bg-hasivu-primary/5 transition-colors"
               >
                 <Linkedin className="h-4 w-4" /> LinkedIn
               </a>
             </div>
           </div>
 
-          <Card className="rounded-2xl border-slate-200">
+          <Card className="rounded-2xl border-hasivu-primary/10 shadow-warm-sm">
             <CardHeader>
-              <CardTitle className="text-ink-900">Let's get talking!</CardTitle>
+              <CardTitle className="text-hasivu-text-primary">Let's get talking!</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3 text-ink-700">
+            <CardContent className="space-y-3 text-hasivu-text-secondary">
               <div className="flex items-center gap-3">
-                <Mail className="h-4 w-4 text-emerald-600" aria-hidden="true" /> support@hasivu.com
+                <Mail className="h-4 w-4 text-hasivu-secondary" aria-hidden="true" />{' '}
+                support@hasivu.com
               </div>
               <div className="flex items-center gap-3">
-                <Phone className="h-4 w-4 text-cyan-600" aria-hidden="true" /> +91 91361 47011
+                <Phone className="h-4 w-4 text-hasivu-primary" aria-hidden="true" /> +91 91361 47011
               </div>
               <div className="flex items-center gap-3">
-                <MapPin className="h-4 w-4 text-blue-600" aria-hidden="true" /> Bangalore, India
+                <MapPin className="h-4 w-4 text-hasivu-accent" aria-hidden="true" /> Bangalore,
+                India
               </div>
             </CardContent>
           </Card>
@@ -624,12 +588,15 @@ export default function StartwellInspiredLandingPage() {
       </section>
 
       {/* FAQs */}
-      <section id="faqs" className="bg-white border-y border-slate-200/70 relative overflow-hidden">
+      <section
+        id="faqs"
+        className="bg-white border-y border-hasivu-primary/10 relative overflow-hidden"
+      >
         {/* Background decorative elements */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           {/* Subtle wave pattern at bottom */}
           <svg
-            className="absolute bottom-0 left-0 w-full h-20 text-slate-50/50"
+            className="absolute bottom-0 left-0 w-full h-20 text-hasivu-bg-warm"
             viewBox="0 0 1200 120"
             preserveAspectRatio="none"
           >
@@ -640,16 +607,24 @@ export default function StartwellInspiredLandingPage() {
           </svg>
 
           {/* Floating accent shapes */}
-          <div className="absolute top-1/4 right-1/4 w-8 h-8 bg-gradient-to-br from-blue-200/20 to-purple-200/20 rounded-full animate-pulse" />
+          <div className="absolute top-1/4 right-1/4 w-8 h-8 bg-hasivu-primary/10 rounded-full animate-pulse" />
           <div
-            className="absolute bottom-1/3 left-1/4 w-6 h-6 bg-gradient-to-br from-purple-200/20 to-indigo-200/20 rounded-lg rotate-45 animate-pulse"
+            className="absolute bottom-1/3 left-1/4 w-6 h-6 bg-hasivu-secondary/10 rounded-lg rotate-45 animate-pulse"
             style={{ animationDelay: '1s' }}
           />
         </div>
         <div className="mx-auto max-w-3xl px-4 py-16">
-          <div className="text-center mb-8">
-            <Badge className="mb-3 bg-slate-100 text-ink-700 border-slate-200">FAQs</Badge>
-            <h2 className="text-3xl font-black text-ink-900">Questions parents ask</h2>
+          <div className="text-center mb-8 relative">
+            <Badge className="mb-3 bg-hasivu-accent/10 text-hasivu-text-primary border-hasivu-accent/20">
+              FAQs
+            </Badge>
+            <h2 className="text-3xl font-display font-black text-hasivu-text-primary">
+              Questions parents ask
+            </h2>
+            {/* Benny hiding in FAQs */}
+            <div className="absolute -bottom-8 -right-16 pointer-events-none opacity-0 hover:opacity-100 transition-opacity duration-300">
+              <Benny state={characterState.state} size={60} />
+            </div>
           </div>
           <Accordion type="single" collapsible className="w-full">
             <AccordionItem value="item-1">
@@ -678,40 +653,42 @@ export default function StartwellInspiredLandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-slate-200/80 bg-white relative overflow-hidden">
+      <footer className="border-t border-hasivu-primary/10 bg-white relative overflow-hidden">
         {/* Background decorative elements */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           {/* Subtle gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-50/20 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-hasivu-bg-warm to-transparent opacity-50" />
 
           {/* Geometric patterns */}
-          <div className="absolute bottom-0 right-0 w-64 h-64 bg-gradient-to-tl from-blue-50/30 to-transparent rounded-full blur-3xl" />
-          <div className="absolute top-0 left-0 w-48 h-48 bg-gradient-to-br from-purple-50/30 to-transparent rounded-full blur-2xl" />
+          <div className="absolute bottom-0 right-0 w-64 h-64 bg-hasivu-secondary/10 rounded-full blur-3xl" />
+          <div className="absolute top-0 left-0 w-48 h-48 bg-hasivu-primary/10 rounded-full blur-2xl" />
         </div>
         <div className="relative mx-auto max-w-7xl px-4 py-8 grid md:grid-cols-3 gap-6 items-center">
-          <div className="text-sm text-slate-700">© {new Date().getFullYear()} HASIVU</div>
+          <div className="text-sm text-hasivu-text-secondary">
+            © {new Date().getFullYear()} HASIVU
+          </div>
           <div className="flex justify-center gap-6 text-sm">
             <Link
               href="/"
-              className="text-slate-700 hover:text-blue-600 transition-colors duration-200"
+              className="text-hasivu-text-secondary hover:text-hasivu-primary transition-colors duration-200"
             >
               Home
             </Link>
             <Link
               href="#faqs"
-              className="text-slate-700 hover:text-blue-600 transition-colors duration-200"
+              className="text-hasivu-text-secondary hover:text-hasivu-primary transition-colors duration-200"
             >
               FAQs
             </Link>
             <Link
               href="/privacy"
-              className="text-slate-700 hover:text-blue-600 transition-colors duration-200"
+              className="text-hasivu-text-secondary hover:text-hasivu-primary transition-colors duration-200"
             >
               Privacy
             </Link>
             <Link
               href="/terms"
-              className="text-slate-700 hover:text-blue-600 transition-colors duration-200"
+              className="text-hasivu-text-secondary hover:text-hasivu-primary transition-colors duration-200"
             >
               Terms
             </Link>
@@ -731,23 +708,7 @@ export default function StartwellInspiredLandingPage() {
         </div>
       </footer>
 
-      {/* Video Dialog */}
-      <Dialog open={videoOpen} onOpenChange={setVideoOpen}>
-        <DialogContent className="sm:max-w-[900px]">
-          <DialogHeader>
-            <DialogTitle>How to Order</DialogTitle>
-          </DialogHeader>
-          <div className="aspect-video w-full rounded-lg overflow-hidden bg-black">
-            {/* Replace with a real hosted video URL when available */}
-            <video
-              src="/videos/how-to-order.mp4"
-              className="w-full h-full"
-              controls
-              poster="/videos/how-to-order-poster.jpg"
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
+      <LandingDemoVideoDialog open={videoOpen} onOpenChange={setVideoOpen} />
     </div>
   );
 }

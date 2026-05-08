@@ -42,8 +42,8 @@ export default defineConfig({
 
   // Enterprise global test configuration
   use: {
-    // Base URL for all tests
-    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000',
+    // Base URL for all tests (must match local webServer port 3002 when not using CI/Docker URL)
+    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3002',
 
     // Browser settings optimized for enterprise testing
     headless: !!process.env.CI,

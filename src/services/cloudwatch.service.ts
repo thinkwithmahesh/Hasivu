@@ -18,6 +18,7 @@ import {
   cloudwatchConfig,
   MetricNames,
 } from '../config/cloudwatch.config';
+import { logger } from '../utils/logger';
 
 interface MetricData {
   metricName: string;
@@ -83,7 +84,9 @@ class CloudWatchService {
         await this.flushMetrics();
       }
     } catch (error) {
-      console.error('Error putting metric to CloudWatch:', error);
+      logger.error('Error putting metric to CloudWatch', error instanceof Error ? error : undefined, {
+        metricName: data.metricName,
+      });
     }
   }
 
@@ -112,7 +115,7 @@ class CloudWatchService {
         await this.flushMetrics();
       }
     } catch (error) {
-      console.error('Error putting metrics to CloudWatch:', error);
+      logger.error('Error putting metrics to CloudWatch', error instanceof Error ? error : undefined);
     }
   }
 
@@ -137,7 +140,7 @@ class CloudWatchService {
       // Clear buffer after successful flush
       this.metricBuffer = [];
     } catch (error) {
-      console.error('Error flushing metrics to CloudWatch:', error);
+      logger.error('Error flushing metrics to CloudWatch', error instanceof Error ? error : undefined);
       // Don't clear buffer on error, will retry on next flush
     }
   }
@@ -414,7 +417,9 @@ class CloudWatchService {
       const response = await cloudwatchLogsClient.send(command);
       this.logSequenceToken = response.nextSequenceToken;
     } catch (error) {
-      console.error('Error logging to CloudWatch Logs:', error);
+      logger.error('Error logging to CloudWatch Logs', error instanceof Error ? error : undefined, {
+        logGroupName,
+      });
     }
   }
 
@@ -517,7 +522,10 @@ class CloudWatchService {
         await cloudwatchLogsClient.send(createCommand);
       }
     } catch (error) {
-      console.error('Error ensuring log stream:', error);
+      logger.error('Error ensuring log stream', error instanceof Error ? error : undefined, {
+        logGroupName,
+        logStreamName,
+      });
     }
   }
 

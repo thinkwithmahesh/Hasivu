@@ -1,27 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
+import {
+  buildProxyHeaders,
+  clearAuthCookies,
+  fetchConfiguredProxy,
+  getAccessTokenFromRequest,
+  resolveProxyUrl,
+} from '@/app/api/_utils/proxy';
 
-const LAMBDA_AUTH_LOGOUT_URL =
-  process.env.LAMBDA_AUTH_LOGOUT_URL ||
-  'https://your-lambda-endpoint.execute-api.region.amazonaws.com/dev/auth/logout';
+const LAMBDA_AUTH_LOGOUT_URL = resolveProxyUrl(process.env.LAMBDA_AUTH_LOGOUT_URL);
 
 // POST /api/auth/logout - User logout
 export async function POST(request: NextRequest) {
   try {
     // Get auth token from cookie
-    const authToken = request.cookies.get('auth-token')?.value;
+    const authToken = getAccessTokenFromRequest(request);
 
     // Forward request to Lambda function if token exists
     if (authToken) {
       try {
-        await fetch(LAMBDA_AUTH_LOGOUT_URL, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${authToken}`,
-            'User-Agent': request.headers.get('user-agent') || '',
-            'X-Forwarded-For': request.headers.get('x-forwarded-for') || '',
-          },
-        });
+        if (LAMBDA_AUTH_LOGOUT_URL) {
+          await fetchConfiguredProxy(LAMBDA_AUTH_LOGOUT_URL, 'LAMBDA_AUTH_LOGOUT_URL', {
+            method: 'POST',
+            headers: {
+              ...buildProxyHeaders(request, authToken),
+            },
+          });
+        }
       } catch (lambdaError) {
         // Log but don't fail logout due to Lambda issues
       }
@@ -33,22 +37,7 @@ export async function POST(request: NextRequest) {
       message: 'Logout successful',
     });
 
-    // Clear auth cookies
-    response.cookies.set('auth-token', '', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 0,
-    });
-
-    response.cookies.set('refresh-token', '', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 0,
-    });
-
-    return response;
+    return clearAuthCookies(response);
   } catch (error) {
     // Still clear cookies even if there's an error
     const response = NextResponse.json(
@@ -56,20 +45,6 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
 
-    response.cookies.set('auth-token', '', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 0,
-    });
-
-    response.cookies.set('refresh-token', '', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 0,
-    });
-
-    return response;
+    return clearAuthCookies(response);
   }
 }

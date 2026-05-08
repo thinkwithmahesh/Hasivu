@@ -15,8 +15,8 @@ import {
 } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
-import type { User, UserRole, Permission } from '@/types/auth';
-import { ROLE_PERMISSIONS as ROLE_PERMISSIONS, PermissionChecker } from '@/types/auth';
+import type { User, Permission } from '@/types/auth';
+import { ROLE_PERMISSIONS as ROLE_PERMISSIONS, PermissionChecker, UserRole } from '@/types/auth';
 import { useAuth as useAuthContext } from '@/contexts/auth-context';
 
 interface ProtectedRouteProps {
@@ -65,6 +65,9 @@ const useAuth = (): AuthContextType => {
   };
 
   const checkRole = (role: UserRole): boolean => {
+    if (role === UserRole.KITCHEN_STAFF && String(user?.role) === 'kitchen') {
+      return true;
+    }
     return PermissionChecker.hasRole(user, role);
   };
 

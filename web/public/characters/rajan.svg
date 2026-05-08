@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Rajan">
+  <rect width="512" height="512" fill="#E8F5E8" rx="48"/>
+  <circle cx="256" cy="200" r="88" fill="#fff" stroke="#43A047" stroke-width="6"/>
+  <text x="256" y="360" text-anchor="middle" font-family="system-ui,sans-serif" font-size="36" font-weight="800" fill="#2E7D32">Rajan</text>
+</svg>

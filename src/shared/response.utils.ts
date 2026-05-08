@@ -17,6 +17,24 @@ export interface ApiResponse<T = any> {
   };
 }
 
+function configuredCorsOrigin(): string {
+  const [origin] = (process.env.CORS_ORIGINS || process.env.FRONTEND_URL || '')
+    .split(',')
+    .map(value => value.trim())
+    .filter(Boolean);
+
+  return origin || 'https://app.hasivu.com';
+}
+
+function jsonHeaders(): { [key: string]: string } {
+  return {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': configuredCorsOrigin(),
+    'Access-Control-Allow-Credentials': 'true',
+    Vary: 'Origin',
+  };
+}
+
 export function successResponse<T>(
   data: T,
   statusCode: number = 200
@@ -35,11 +53,7 @@ export function successResponse<T>(
 
   return {
     statusCode,
-    headers: {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Credentials': 'true',
-    },
+    headers: jsonHeaders(),
     body: JSON.stringify(response),
   };
 }
@@ -68,11 +82,7 @@ export function errorResponse(
 
   return {
     statusCode,
-    headers: {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Credentials': 'true',
-    },
+    headers: jsonHeaders(),
     body: JSON.stringify(response),
   };
 }

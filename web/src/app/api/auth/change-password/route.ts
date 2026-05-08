@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getAccessTokenFromRequest, fetchConfiguredProxy } from '@/app/api/_utils/proxy';
+const LAMBDA_AUTH_CHANGE_PASSWORD_URL = process.env.LAMBDA_AUTH_CHANGE_PASSWORD_URL;
 
-const LAMBDA_AUTH_CHANGE_PASSWORD_URL =
-  process.env.LAMBDA_AUTH_CHANGE_PASSWORD_URL ||
-  'https://your-lambda-endpoint.execute-api.region.amazonaws.com/dev/auth/change-password';
+;
 
 export async function POST(request: NextRequest) {
   try {
     // Get auth token from httpOnly cookie
-    const authToken = request.cookies.get('auth-token')?.value;
+    const authToken = getAccessTokenFromRequest(request);
 
     if (!authToken) {
       return NextResponse.json(
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Forward request to Lambda function
-    const lambdaResponse = await fetch(LAMBDA_AUTH_CHANGE_PASSWORD_URL, {
+    const lambdaResponse = await fetchConfiguredProxy(LAMBDA_AUTH_CHANGE_PASSWORD_URL, 'LAMBDA_AUTH_CHANGE_PASSWORD_URL', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

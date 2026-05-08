@@ -5,6 +5,7 @@
 
 import Redis from 'ioredis';
 import { recordMetric } from '../monitoring/cloudwatch-metrics';
+import { logger } from '../../utils/logger';
 
 // Redis connection configuration
 const redisConfig = {
@@ -22,7 +23,7 @@ const redisConfig = {
   retryStrategy: (times: number) => {
     if (times > 10) {
       // Stop retrying after 10 attempts
-      console.error('Redis max retry attempts reached');
+      logger.error('Redis max retry attempts reached');
       return null;
     }
     const delay = Math.min(times * 50, 2000);
@@ -41,36 +42,42 @@ const redis = new Redis(redisConfig);
 
 // Connection event handlers
 redis.on('connect', () => {
-  console.log('Redis client connected successfully');
-  recordMetric('RedisConnectionStatus', 1, 'Count').catch(console.error);
+  logger.info('Redis client connected successfully');
+  recordMetric('RedisConnectionStatus', 1, 'Count').catch(error =>
+    logger.error('Failed to record Redis connection metric', error)
+  );
 });
 
 redis.on('ready', () => {
-  console.log('Redis client ready to accept commands');
+  logger.info('Redis client ready to accept commands');
 });
 
 redis.on('error', error => {
-  console.error('Redis connection error:', error);
-  recordMetric('RedisConnectionErrors', 1, 'Count').catch(console.error);
+  logger.error('Redis connection error', error);
+  recordMetric('RedisConnectionErrors', 1, 'Count').catch(metricError =>
+    logger.error('Failed to record Redis connection error metric', metricError)
+  );
 });
 
 redis.on('close', () => {
-  console.log('Redis connection closed');
-  recordMetric('RedisConnectionStatus', 0, 'Count').catch(console.error);
+  logger.info('Redis connection closed');
+  recordMetric('RedisConnectionStatus', 0, 'Count').catch(error =>
+    logger.error('Failed to record Redis disconnection metric', error)
+  );
 });
 
 redis.on('reconnecting', () => {
-  console.log('Redis client reconnecting...');
+  logger.info('Redis client reconnecting');
 });
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {
-  console.log('Closing Redis connection...');
+  logger.info('Closing Redis connection');
   await redis.quit();
 });
 
 process.on('SIGINT', async () => {
-  console.log('Closing Redis connection...');
+  logger.info('Closing Redis connection');
   await redis.quit();
 });
 

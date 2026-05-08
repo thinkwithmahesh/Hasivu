@@ -14,6 +14,7 @@
     "scripts/production-deployment-validation.ts",
     "scripts/production-readiness-orchestrator.ts",
     "scripts/system-health-monitor.ts",
+    "src/functions/**/*",
     "tests/load/production-load-test.ts",
     "tests/integration/production-integration.test.ts",
     "web/**/*",

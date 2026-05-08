@@ -36,13 +36,22 @@ services:
     environment:
       NODE_ENV: development
       PORT: 3000
-      DATABASE_URL: ${DATABASE_URL:-postgresql://hasivu:dev-only-change-me@postgres:5432/hasivu?schema=public}
-      DIRECT_DATABASE_URL: ${DIRECT_DATABASE_URL:-postgresql://hasivu:dev-only-change-me@postgres:5432/hasivu?schema=public}
+      # Always use the compose network hostname — do not inherit host DATABASE_URL (often 127.0.0.1),
+      # which is unreachable from inside the backend container.
+      DATABASE_URL: postgresql://hasivu:dev-only-change-me@postgres:5432/hasivu?schema=public
+      DIRECT_DATABASE_URL: postgresql://hasivu:dev-only-change-me@postgres:5432/hasivu?schema=public
+      CORS_ORIGINS: http://localhost:3000,http://localhost:3001
+      HELMET_CORP_POLICY: cross-origin
       REDIS_URL: redis://redis:6379
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      JWT_SECRET: replace-with-a-unique-32-plus-character-secret
-      JWT_REFRESH_SECRET: replace-with-a-different-unique-32-plus-character-secret
+      # Fail fast if unset — do not commit real secrets; use a local .env (see .env.example).
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required (min 32 random chars; openssl rand -hex 32)}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?JWT_REFRESH_SECRET is required (different from JWT_SECRET)}
+      # Prefer migrate deploy when baseline migrations are in tree; db push skips migration history.
+      USE_PRISMA_DB_PUSH: "false"
+      RUN_DEMO_LOCAL_USER_SYNC: "true"
+      RUN_DB_SEED_IF_EMPTY: "true"
       RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-}
       RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-}
       RAZORPAY_WEBHOOK_SECRET: ${RAZORPAY_WEBHOOK_SECRET:-}
@@ -57,7 +66,8 @@ services:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode===200?0:1)})"]
       interval: 30s
       timeout: 10s
-      retries: 3
+      retries: 5
+      start_period: 120s
 
   frontend:
     build:
@@ -65,11 +75,22 @@ services:
       dockerfile: Dockerfile
       target: frontend-production
       args:
-        NEXT_PUBLIC_API_URL: http://localhost:3000
+        # Browser code uses same-origin Next BFF routes; Next rewrites use compose DNS.
+        NEXT_PUBLIC_API_URL: /api
+        NEXT_PUBLIC_API_BASE_URL: /api
+        NEXT_SERVER_API_URL: http://backend:3000/api
     container_name: hasivu-frontend-dev
     environment:
       NODE_ENV: development
-      NEXT_PUBLIC_API_URL: http://localhost:3000
+      NEXT_PUBLIC_API_URL: /api
+      NEXT_PUBLIC_API_BASE_URL: /api
+      NEXT_SERVER_API_URL: http://backend:3000/api
+      BACKEND_INTERNAL_API_URL: http://backend:3000/api
+      # BFF auth routes run server-side in this container and must use compose DNS, not localhost.
+      LAMBDA_AUTH_LOGIN_URL: http://backend:3000/api/auth/login
+      LAMBDA_AUTH_REFRESH_URL: http://backend:3000/api/auth/refresh
+      # Must match backend JWT_SECRET so /api/auth/me can verify cookies set after BFF login.
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required (same value as backend service)}
     ports:
       - "3001:3000"
     depends_on:

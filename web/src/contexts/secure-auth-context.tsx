@@ -692,7 +692,7 @@ function getDashboardUrl(role: UserRole): string {
     admin: '/dashboard/admin',
     super_admin: '/dashboard/admin',
     school_admin: '/school-admin/dashboard',
-    parent: '/dashboard/parent',
+    parent: '/dashboard',
     student: '/dashboard/student',
     vendor: '/dashboard/vendor',
     kitchen_staff: '/dashboard/kitchen',

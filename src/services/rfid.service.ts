@@ -158,6 +158,17 @@ export class RfidService {
     return RfidService.instance;
   }
 
+  /**
+   * Clears singleton for isolated Jest runs (`JEST_WORKER_ID` set only).
+   */
+  public static resetInstanceForTests(): void {
+    if (!process.env.JEST_WORKER_ID) {
+      return;
+    }
+    const holder = RfidService as unknown as { instance?: RfidService };
+    holder.instance = undefined;
+  }
+
   // Private helper methods
   private isValidCardNumber(cardNumber: string): boolean {
     // Card number must be 4-20 characters, uppercase letters, numbers, and hyphens only

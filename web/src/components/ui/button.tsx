@@ -129,36 +129,47 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       'aria-disabled': disabled || loading,
     };
 
+    const classes = cn(
+      buttonVariants({ variant, size }),
+      // Enhanced focus styles for accessibility
+      'focus-visible:ring-2 focus-visible:ring-offset-2',
+      // High contrast mode support
+      'contrast-more:border-2 contrast-more:border-current',
+      // Reduced motion support
+      'motion-reduce:transition-none motion-reduce:transform-none',
+      className
+    );
+
+    if (asChild) {
+      return (
+        <Slot
+          className={classes}
+          ref={ref}
+          onClick={handleClick}
+          {...accessibilityProps}
+          {...props}
+        >
+          {children}
+        </Slot>
+      );
+    }
+
     return (
       <Comp
-        className={cn(
-          buttonVariants({ variant, size }),
-          // Enhanced focus styles for accessibility
-          'focus-visible:ring-2 focus-visible:ring-offset-2',
-          // High contrast mode support
-          'contrast-more:border-2 contrast-more:border-current',
-          // Reduced motion support
-          'motion-reduce:transition-none motion-reduce:transform-none',
-          className
-        )}
+        className={classes}
         ref={ref}
         disabled={disabled || loading}
         onClick={handleClick}
         {...accessibilityProps}
         {...props}
       >
-        {/* Screen reader loading announcement */}
         {loading && <ScreenReaderOnly>{loadingText || 'Loading...'}</ScreenReaderOnly>}
-
-        {/* Visual loading indicator */}
         {loading && (
           <div
             className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent"
             aria-hidden="true"
           />
         )}
-
-        {/* Button content */}
         <span className={loading ? 'ml-2' : ''}>
           {children}
           {srOnlyText && <ScreenReaderOnly>{srOnlyText}</ScreenReaderOnly>}

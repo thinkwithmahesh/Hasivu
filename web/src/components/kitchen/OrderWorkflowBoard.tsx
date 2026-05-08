@@ -28,7 +28,7 @@ export const OrderWorkflowBoard: React.FC = () => {
   // Fetch all orders from backend
   const { data: apiOrders, loading, error, refetch } = useKitchenOrders();
   const { updateOrderStatus, loading: _mutating } = useOrderMutations();
-  const { connected } = useWebSocketConnection();
+  const { connected, realtimeEnabled } = useWebSocketConnection();
 
   // WebSocket real-time updates
   useWebSocketSubscription(
@@ -87,8 +87,8 @@ export const OrderWorkflowBoard: React.FC = () => {
                 variant={isAutoRefresh ? 'default' : 'outline'}
                 onClick={() => setIsAutoRefresh(!isAutoRefresh)}
               >
-                <RefreshCw className={`w-4 h-4 mr-2 ${isAutoRefresh ? 'animate-spin' : ''}`} />
-                Auto Refresh
+                <RefreshCw className="w-4 h-4 mr-2" />
+                {isAutoRefresh ? 'Auto refresh on' : 'Auto refresh off'}
               </Button>
               <Button variant="outline" onClick={() => refetch()} disabled={loading}>
                 {loading ? (
@@ -102,7 +102,7 @@ export const OrderWorkflowBoard: React.FC = () => {
                 className={`border ${connected ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}
                 data-testid="connection-status"
               >
-                {connected ? 'Live' : 'Reconnecting...'}
+                {connected ? 'Live' : realtimeEnabled ? 'Polling fallback' : 'Polling'}
               </Badge>
             </div>
           </div>
@@ -110,7 +110,7 @@ export const OrderWorkflowBoard: React.FC = () => {
           {/* Loading / Error States */}
           {error && (
             <div className="mb-4 p-3 rounded bg-red-50 border border-red-200 text-red-800">
-              Failed to load orders. Please try again.
+              Kitchen orders are temporarily unavailable. The board will retry automatically.
             </div>
           )}
 

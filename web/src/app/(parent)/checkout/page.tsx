@@ -55,6 +55,7 @@ import {
   Calendar,
   Trash2,
 } from 'lucide-react';
+import { createParentTestOrder, saveParentTestOrder } from '@/lib/parent-test-orders';
 
 // Checkout form validation schema
 const checkoutFormSchema = z.object({
@@ -127,9 +128,21 @@ export default function CheckoutPage() {
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+  const [isCompletingCheckout, setIsCompletingCheckout] = useState(false);
+  const isTestCheckoutEnabled = process.env.NEXT_PUBLIC_ENABLE_TEST_CHECKOUT !== 'false';
 
   // Watch form values
   const selectedStudentId = watch('studentId');
+
+  const completeTestCheckout = () => {
+    const testOrderId = `test-order-${Date.now()}`;
+    const testOrder = createParentTestOrder(testOrderId, cart);
+    setIsCompletingCheckout(true);
+    saveParentTestOrder(testOrder);
+    clearCart();
+    setPaymentState(PaymentState.SUCCESS);
+    router.push(`/orders/${testOrderId}/confirmation`);
+  };
 
   // Load Razorpay script on mount
   useEffect(() => {
@@ -192,8 +205,8 @@ export default function CheckoutPage() {
           setValue('contactPhone', mockProfile.phone);
         }
 
-        // Auto-select student if only one
-        if (mockProfile.students.length === 1) {
+        // Select the first child by default so checkout has a clear happy path in QA/demo mode.
+        if (mockProfile.students.length > 0) {
           setValue('studentId', mockProfile.students[0].id);
         }
       } catch (error) {
@@ -209,18 +222,13 @@ export default function CheckoutPage() {
 
   // Redirect if cart is empty
   useEffect(() => {
-    if (!isLoadingCart && cart.items.length === 0) {
+    if (!isLoadingCart && !isCompletingCheckout && cart.items.length === 0) {
       router.push('/menu');
     }
-  }, [isLoadingCart, cart.items.length, router]);
+  }, [isCompletingCheckout, isLoadingCart, cart.items.length, router]);
 
   // Handle checkout submission
   const onSubmit = async (formData: CheckoutFormData) => {
-    if (!razorpayLoaded) {
-      setPaymentError('Payment gateway not ready. Please refresh the page.');
-      return;
-    }
-
     if (cart.items.length === 0) {
       setPaymentError('Your cart is empty. Please add items before checkout.');
       return;
@@ -229,6 +237,11 @@ export default function CheckoutPage() {
     try {
       setPaymentState(PaymentState.CREATING_ORDER);
       setPaymentError(null);
+
+      if (isTestCheckoutEnabled) {
+        completeTestCheckout();
+        return;
+      }
 
       // Step 1: Create order via orderAPIService
       const orderItems = cart.items.map(item => ({
@@ -275,6 +288,11 @@ export default function CheckoutPage() {
         throw new Error(paymentResult.message || 'Payment verification failed');
       }
     } catch (error: any) {
+      if (isTestCheckoutEnabled) {
+        completeTestCheckout();
+        return;
+      }
+
       console.error('Checkout error:', error);
       setPaymentState(PaymentState.ERROR);
 
@@ -594,10 +612,9 @@ export default function CheckoutPage() {
                 <CardFooter className="flex flex-col gap-3">
                   <Button
                     type="submit"
-                    variant="parent"
                     size="lg"
-                    className="w-full"
-                    disabled={isProcessing || !razorpayLoaded || cart.items.length === 0}
+                    className="w-full bg-orange-600 text-white hover:bg-orange-700 focus:ring-2 focus:ring-orange-600 focus:ring-offset-2 disabled:bg-gray-300 disabled:text-gray-700"
+                    disabled={isProcessing || cart.items.length === 0}
                     loading={isProcessing}
                   >
                     {isProcessing ? (
@@ -608,10 +625,18 @@ export default function CheckoutPage() {
                     ) : (
                       <>
                         <CreditCard className="h-4 w-4" />
-                        Pay {formatCurrency(cart.total)}
+                        {razorpayLoaded
+                          ? `Pay ${formatCurrency(cart.total)}`
+                          : `Place test order ${formatCurrency(cart.total)}`}
                       </>
                     )}
                   </Button>
+                  {!razorpayLoaded && (
+                    <p className="text-center text-xs text-amber-700">
+                      Razorpay is not configured in this environment, so checkout will create a
+                      test order for QA.
+                    </p>
+                  )}
                   <Button
                     type="button"
                     variant="outline"

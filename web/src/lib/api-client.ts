@@ -10,7 +10,8 @@ import {
   ProfileManagementFormData,
 } from '@/components/auth/schemas';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || '/api';
 
 // Response types
 interface APIResponse<T = any> {
@@ -75,17 +76,9 @@ class APIClient {
   private csrfToken: string | null = null;
 
   constructor(baseURL: string = API_BASE_URL) {
-    this.baseURL = baseURL;
-    // Load token from cookies on client-side
+    this.baseURL = baseURL.replace(/\/$/, '');
     if (typeof window !== 'undefined') {
-      this.accessToken = this.getCookie('accessToken');
-      this.csrfToken = this.getCookie('csrfToken') || this.generateCSRFToken();
-      this.setCookie('csrfToken', this.csrfToken, {
-        maxAge: 24 * 3600, // 24 hours
-        httpOnly: false,
-        secure: true,
-        sameSite: 'strict',
-      });
+      this.csrfToken = this.getCookie('csrfToken');
     }
   }
 
@@ -139,22 +132,16 @@ class APIClient {
   }
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<APIResponse<T>> {
-    const url = `${this.baseURL}${endpoint}`;
+    const base = typeof window !== 'undefined' ? '/api' : this.baseURL;
+    const url = `${base}${endpoint}`;
     const config: RequestInit = {
       ...options,
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
         ...options.headers,
       },
     };
-
-    // Add authorization header if token exists
-    if (this.accessToken) {
-      config.headers = {
-        ...config.headers,
-        Authorization: `Bearer ${this.accessToken}`,
-      };
-    }
 
     // Add CSRF token for auth endpoints
     if (
@@ -207,24 +194,13 @@ class APIClient {
 
   // Token management
   setToken(token: string): void {
-    this.accessToken = token;
-    if (typeof window !== 'undefined') {
-      // Set access token as regular cookie (httpOnly would need server-side)
-      this.setCookie('accessToken', token, {
-        maxAge: 15 * 60, // 15 minutes
-        httpOnly: false, // Can't set httpOnly from client-side
-        secure: true,
-        sameSite: 'strict',
-      });
-    }
+    void token;
+    this.accessToken = null;
   }
 
   clearToken(): void {
     this.accessToken = null;
     if (typeof window !== 'undefined') {
-      // Clear cookies by setting them to expire
-      this.setCookie('accessToken', '', { maxAge: 0 });
-      this.setCookie('refreshToken', '', { maxAge: 0 });
       this.setCookie('csrfToken', '', { maxAge: 0 });
     }
   }
@@ -235,20 +211,6 @@ class APIClient {
       method: 'POST',
       body: JSON.stringify(credentials),
     });
-
-    if (response.success && response.data?.tokens?.accessToken) {
-      this.setToken(response.data.tokens.accessToken);
-
-      // Store refresh token in cookie
-      if (typeof window !== 'undefined' && response.data.tokens.refreshToken) {
-        this.setCookie('refreshToken', response.data.tokens.refreshToken, {
-          maxAge: 7 * 24 * 3600, // 7 days
-          httpOnly: false,
-          secure: true,
-          sameSite: 'strict',
-        });
-      }
-    }
 
     return response as AuthResponse;
   }
@@ -318,19 +280,9 @@ class APIClient {
   }
 
   async refreshToken(): Promise<AuthResponse> {
-    const refreshToken = typeof window !== 'undefined' ? this.getCookie('refreshToken') : null;
-    if (!refreshToken) {
-      return { success: false, message: 'No refresh token available' };
-    }
-
     const response = await this.request<AuthResponse>('/auth/refresh', {
       method: 'POST',
-      body: JSON.stringify({ refreshToken }),
     });
-
-    if (response.success && response.data?.tokens?.accessToken) {
-      this.setToken(response.data.tokens.accessToken);
-    }
 
     return response as AuthResponse;
   }
@@ -427,13 +379,9 @@ apiClient['request'] = async function <T>(
   const response = (await originalRequest.call(this, endpoint, options)) as APIResponse<T>;
   // If we get 401 and have a refresh token, try to refresh
   if (!response.success && response.error?.includes('401') && typeof window !== 'undefined') {
-    const refreshToken = localStorage.getItem('refreshToken');
-    if (refreshToken) {
-      const refreshResponse = await this.refreshToken();
-      if (refreshResponse.success) {
-        // Retry the original request with new token
-        return originalRequest.call(this, endpoint, options) as Promise<APIResponse<T>>;
-      }
+    const refreshResponse = await this.refreshToken();
+    if (refreshResponse.success) {
+      return originalRequest.call(this, endpoint, options) as Promise<APIResponse<T>>;
     }
   }
 

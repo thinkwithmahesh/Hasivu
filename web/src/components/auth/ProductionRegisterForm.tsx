@@ -254,7 +254,9 @@ export const ProductionRegisterForm: React.FC<RegisterFormProps> = ({
             >
               <option value="parent">Parent</option>
               <option value="student">Student</option>
-              <option value="teacher">Teacher</option>
+              <option value="school_admin">School Administrator</option>
+              <option value="kitchen_staff">Kitchen Staff</option>
+              <option value="vendor">Food Vendor</option>
             </select>
           </div>
 

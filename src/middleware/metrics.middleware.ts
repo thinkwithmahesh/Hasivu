@@ -3,6 +3,7 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { metricsService } from '../services/metrics.service';
+import { logger } from '../utils/logger';
 
 interface MetricsRequest extends Request {
   startTime?: number;
@@ -47,7 +48,7 @@ export const metricsMiddleware = (req: MetricsRequest, res: Response, next: Next
 
       // Log slow requests
       if (duration > 1000) {
-        console.warn(`Slow API request detected: ${method} ${endpoint} - ${duration}ms`);
+        logger.warn('Slow API request detected', { method, endpoint, duration });
       }
 
       // Log errors
@@ -75,7 +76,7 @@ export const metricsMiddleware = (req: MetricsRequest, res: Response, next: Next
         );
       }
     } catch (error) {
-      console.error('Error in metrics middleware:', error);
+      logger.error('Error in metrics middleware', error instanceof Error ? error : undefined);
     }
   });
 
@@ -123,7 +124,7 @@ export const userActivityMiddleware = (req: Request, res: Response, next: NextFu
         });
       }
     } catch (error) {
-      console.error('Error in user activity middleware:', error);
+      logger.error('Error in user activity middleware', error instanceof Error ? error : undefined);
     }
   });
 
@@ -161,7 +162,7 @@ export const securityMetricsMiddleware = (
         });
       }
     } catch (error) {
-      console.error('Error in security metrics middleware:', error);
+      logger.error('Error in security metrics middleware', error instanceof Error ? error : undefined);
     }
   });
 
@@ -193,7 +194,10 @@ export const createDatabaseMetricsWrapper = <T>(
       try {
         await metricsService.trackDatabasePerformance(queryType, duration, success);
       } catch (metricsError) {
-        console.error('Error tracking database metrics:', metricsError);
+        logger.error(
+          'Error tracking database metrics',
+          metricsError instanceof Error ? metricsError : undefined
+        );
       }
     }
   };
@@ -218,7 +222,10 @@ export const createCacheMetricsWrapper = <T>(
       try {
         await metricsService.trackCacheOperation(operation, duration);
       } catch (metricsError) {
-        console.error('Error tracking cache metrics:', metricsError);
+        logger.error(
+          'Error tracking cache metrics',
+          metricsError instanceof Error ? metricsError : undefined
+        );
       }
     }
   };
@@ -271,7 +278,7 @@ export const healthCheckMetricsMiddleware = async (
 
     next();
   } catch (error) {
-    console.error('Error in health check metrics middleware:', error);
+    logger.error('Error in health check metrics middleware', error instanceof Error ? error : undefined);
     next(error);
   }
 };

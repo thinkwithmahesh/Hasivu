@@ -31,9 +31,12 @@ class Logger {
   }
 
   private formatLog(level: LogLevel, message: string, context?: any): string {
-    const timestamp = new Date().toISOString();
-    const contextStr = context ? ` ${JSON.stringify(context)}` : '';
-    return `[${timestamp}] [${level.toUpperCase()}] ${message}${contextStr}`;
+    return JSON.stringify({
+      timestamp: new Date().toISOString(),
+      level,
+      message,
+      ...(context ? { context } : {}),
+    });
   }
 
   public debug(message: string, context?: any): void {

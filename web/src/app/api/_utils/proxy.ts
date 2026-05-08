@@ -95,9 +95,40 @@ export function misconfiguredProxyResponse(serviceName: string): NextResponse {
   );
 }
 
+export async function fetchConfiguredProxy(
+  configuredUrl: string | undefined | null,
+  serviceName: string,
+  init: RequestInit
+): Promise<Response> {
+  const url = resolveProxyUrl(configuredUrl);
+  if (!url) {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: `${serviceName} is not configured`,
+      }),
+      {
+        status: 503,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+  }
+
+  return fetch(url, init);
+}
+
+export function configuredProxyUrl(configuredUrl: string | undefined | null): string | null {
+  return resolveProxyUrl(configuredUrl);
+}
+
 /** Express API base including `/api` (same as `next.config.js` rewrite destination). */
 export function getExpressApiBaseUrl(): string {
-  const raw = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+  const raw =
+    process.env.NEXT_SERVER_API_URL ||
+    process.env.BACKEND_INTERNAL_API_URL ||
+    process.env.NEXT_PUBLIC_API_BASE_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    'http://localhost:3000/api';
   return raw.replace(/\/$/, '');
 }
 

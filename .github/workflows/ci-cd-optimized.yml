@@ -183,16 +183,16 @@ jobs:
 
       - name: Run npm audit
         run: |
-          npm audit --audit-level=moderate --json > npm-audit-results.json || true
-          npm audit --audit-level=high || true
+          npm audit --audit-level=moderate --json > npm-audit-results.json
+          npm audit --audit-level=high
 
       - name: Run Snyk security scan
+        if: ${{ secrets.SNYK_TOKEN != '' }}
         uses: snyk/actions/node@master
-        continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          args: --severity-threshold=high --json > snyk-results.json || true
+          args: --severity-threshold=high --json-file-output=snyk-results.json
 
       - name: Upload security results
         if: always()

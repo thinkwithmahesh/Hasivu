@@ -6,12 +6,14 @@ import { AuthLayout } from '@/components/auth/AuthLayout';
 import { useAuth } from '@/contexts/auth-context';
 import type { LoginFormData } from '@/components/auth/schemas';
 
+type LoginRole = 'student' | 'parent' | 'admin' | 'kitchen' | 'vendor';
+
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { login } = useAuth();
 
-  const handleLogin = async (data: LoginFormData) => {
+  const handleLogin = async (data: LoginFormData & { role: LoginRole }) => {
     setIsLoading(true);
     setError(null);
 
@@ -49,6 +51,7 @@ export default function LoginPage() {
         onSocialLogin={handleSocialLogin}
         isLoading={isLoading}
         error={error}
+        showRoleSelection={true}
         className="w-full max-w-md"
       />
     </AuthLayout>

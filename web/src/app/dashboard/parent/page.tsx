@@ -1,67 +1,65 @@
 'use client';
 
+import Link from 'next/link';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { UserRole, Permission } from '@/types/auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function ParentDashboard() {
+  const workspaces = [
+    {
+      icon: '👶',
+      title: 'My Children',
+      description: "Manage your children's profiles and meal preferences",
+      href: '/children',
+    },
+    {
+      icon: '🛒',
+      title: 'Place Orders',
+      description: 'Order meals for your children and schedule deliveries',
+      href: '/menu',
+    },
+    {
+      icon: '💳',
+      title: 'Payment Methods',
+      description: 'Manage payment methods and view transaction history',
+      href: '/payment-methods',
+    },
+    {
+      icon: '📋',
+      title: 'Order History',
+      description: 'View past orders and track current meal deliveries',
+      href: '/orders',
+    },
+  ];
+
   return (
     <ProtectedRoute
       requireAuth={true}
       allowedRoles={[UserRole.PARENT]}
       requiredPermissions={[Permission.MANAGE_CHILDREN, Permission.PLACE_ORDERS]}
     >
-      <div className="container mx-auto py-8">
-        <h1 className="text-3xl font-bold mb-8">Parent Dashboard</h1>
+      <div className="min-h-screen bg-[var(--hasivu-bg-warm)] px-4 py-8 text-[var(--hasivu-text-primary)]">
+        <div className="container mx-auto">
+          <h1 className="mb-8 text-3xl font-bold">Parent Dashboard</h1>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <span className="text-2xl">👶</span>
-                My Children
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-600">Manage your children's profiles and meal preferences</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <span className="text-2xl">🛒</span>
-                Place Orders
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-600">Order meals for your children and schedule deliveries</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <span className="text-2xl">💳</span>
-                Payment Methods
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-600">Manage payment methods and view transaction history</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <span className="text-2xl">📋</span>
-                Order History
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-600">View past orders and track current meal deliveries</p>
-            </CardContent>
-          </Card>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {workspaces.map(workspace => (
+              <Link key={workspace.title} href={workspace.href} className="block h-full">
+                <Card className="h-full transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-md)]">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <span className="text-2xl">{workspace.icon}</span>
+                      {workspace.title}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-[var(--hasivu-text-secondary)]">{workspace.description}</p>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
     </ProtectedRoute>

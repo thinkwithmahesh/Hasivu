@@ -190,12 +190,54 @@ export class AuthService {
       ADMIN: ['read', 'write', 'delete', 'manage_users', 'manage_settings'],
       PARENT: ['read', 'write', 'order_food', 'view_reports'],
       STUDENT: ['read', 'view_orders'],
+      VENDOR: ['read', 'write', 'read_orders', 'manage_inventory', 'view_analytics', 'view_payments'],
       SCHOOL: ['read', 'write', 'manage_menus', 'view_analytics'],
+      KITCHEN: [
+        'read',
+        'read_orders',
+        'update_order_status',
+        'kitchen_access',
+        'view_kitchen_queue',
+        'manage_inventory',
+        'read_menu',
+        'view_notifications',
+      ],
+      KITCHEN_STAFF: [
+        'read',
+        'read_orders',
+        'update_order_status',
+        'kitchen_access',
+        'view_kitchen_queue',
+        'manage_inventory',
+        'read_menu',
+        'view_notifications',
+      ],
       // Fallback lowercase mappings for compatibility
       admin: ['read', 'write', 'delete', 'manage_users', 'manage_settings'],
       parent: ['read', 'write', 'order_food', 'view_reports'],
       student: ['read', 'view_orders'],
+      vendor: ['read', 'write', 'read_orders', 'manage_inventory', 'view_analytics', 'view_payments'],
       school: ['read', 'write', 'manage_menus', 'view_analytics'],
+      kitchen: [
+        'read',
+        'read_orders',
+        'update_order_status',
+        'kitchen_access',
+        'view_kitchen_queue',
+        'manage_inventory',
+        'read_menu',
+        'view_notifications',
+      ],
+      kitchen_staff: [
+        'read',
+        'read_orders',
+        'update_order_status',
+        'kitchen_access',
+        'view_kitchen_queue',
+        'manage_inventory',
+        'read_menu',
+        'view_notifications',
+      ],
     };
 
     return rolePermissions[role] || rolePermissions['STUDENT'];
@@ -375,10 +417,14 @@ export class AuthService {
     metadata: any = {}
   ): Promise<void> {
     try {
+      const now = new Date();
+      const expiresAt = new Date(now.getTime() + this.sessionTimeout * 1000);
       const sessionData = {
         userId,
-        createdAt: new Date().toISOString(),
-        lastActivity: new Date().toISOString(),
+        createdAt: now.toISOString(),
+        lastActivity: now.toISOString(),
+        expiresAt: expiresAt.toISOString(),
+        isActive: true,
         ...metadata,
       };
 
@@ -458,17 +504,12 @@ export class AuthService {
   public async authenticate(credentials: LoginCredentials): Promise<AuthResult> {
     try {
       const { email, password, rememberMe = false, userAgent, ipAddress } = credentials;
-
-      // Check for account lockout
-      const lockoutKey = `lockout:${email}`;
+      const emailNorm = (email || '').trim().toLowerCase();
+      const lockoutKey = `lockout:${emailNorm}`;
       const lockoutInfo = await this.redis.get(lockoutKey);
-      if (lockoutInfo) {
-        throw new Error('Account temporarily locked due to too many failed attempts');
-      }
 
-      // Find user
       const user = await DatabaseService.client.user.findUnique({
-        where: { email: email.toLowerCase() },
+        where: { email: emailNorm },
         select: {
           id: true,
           email: true,
@@ -482,7 +523,7 @@ export class AuthService {
       });
 
       if (!user) {
-        await this.recordFailedAttempt(email);
+        await this.recordFailedAttempt(emailNorm);
         throw new Error('Invalid credentials');
       }
 
@@ -490,15 +531,17 @@ export class AuthService {
         throw new Error('Account is deactivated');
       }
 
-      // Verify password
       const isPasswordValid = await this.verifyPassword(password, user.passwordHash);
       if (!isPasswordValid) {
-        await this.recordFailedAttempt(email);
+        if (lockoutInfo) {
+          throw new Error('Account temporarily locked due to too many failed attempts');
+        }
+        await this.recordFailedAttempt(emailNorm);
         throw new Error('Invalid credentials');
       }
 
-      // Clear any failed attempts
-      await this.redis.del(`attempts:${email}`);
+      // Successful auth clears lockout + attempt counters (lockout used to persist until TTL even with correct password)
+      await this.redis.del(`attempts:${emailNorm}`, `lockout:${emailNorm}`);
 
       // Generate session and tokens
       const sessionId = this.generateSessionId();
@@ -661,7 +704,8 @@ export class AuthService {
    */
   private async recordFailedAttempt(email: string): Promise<void> {
     try {
-      const attemptsKey = `attempts:${email}`;
+      const emailNorm = (email || '').trim().toLowerCase();
+      const attemptsKey = `attempts:${emailNorm}`;
       const attempts = await this.redis.get(attemptsKey);
       const currentAttempts = attempts ? parseInt(attempts) : 0;
       const newAttempts = currentAttempts + 1;
@@ -669,8 +713,8 @@ export class AuthService {
       await this.redis.setex(attemptsKey, this.lockoutDuration, newAttempts.toString());
 
       if (newAttempts >= this.maxFailedAttempts) {
-        await this.redis.setex(`lockout:${email}`, this.lockoutDuration, 'true');
-        logger.warn('Account locked due to too many failed attempts', { email });
+        await this.redis.setex(`lockout:${emailNorm}`, this.lockoutDuration, 'true');
+        logger.warn('Account locked due to too many failed attempts', { email: emailNorm });
       }
     } catch (error: unknown) {
       logger.error('Failed to record login attempt:', undefined, {

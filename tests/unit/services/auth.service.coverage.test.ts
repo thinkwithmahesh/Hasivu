@@ -3,6 +3,10 @@
  * Tests password validation, configuration, and token logic
  * without requiring Redis or database connections.
  */
+
+/** Real bcrypt — global `setup.ts` mocks bcrypt with `compare` always true, which breaks these tests. */
+jest.mock('bcryptjs', () => jest.requireActual('bcryptjs'));
+
 import * as bcrypt from 'bcryptjs';
 
 // Mock Redis before importing AuthService

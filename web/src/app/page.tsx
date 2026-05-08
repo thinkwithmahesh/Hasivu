@@ -1,5 +1,5 @@
 import React from 'react';
-import StartwellInspiredLandingPage from '@/components/landing/StartwellInspiredLandingPage';
+import HybridLandingPage from '@/components/landing/HybridLandingPage';
 
 export const metadata = {
   title: 'School Meals Done Right — HASIVU',
@@ -29,5 +29,5 @@ export const metadata = {
 };
 
 export default function HomePage() {
-  return <StartwellInspiredLandingPage />;
+  return <HybridLandingPage />;
 }

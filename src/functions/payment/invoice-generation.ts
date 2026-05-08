@@ -176,8 +176,8 @@ export const handler = async (
       return createErrorResponse('Missing payment ID', 'paymentId is required in path', 400);
     }
 
-    // Extract userId from event context
-    const userId = event.requestContext?.authorizer?.userId || event.headers?.['x-user-id'];
+    // Trust only API authorizer context for identity.
+    const userId = event.requestContext?.authorizer?.userId;
     if (!userId) {
       return createErrorResponse('Authentication required', 'User authentication required', 401);
     }
@@ -248,25 +248,23 @@ export const handler = async (
 
     // Create invoice items from order
     if (order && order.orderItems) {
-      for (const orderItem of order.orderItems) {
+      const invoiceItemPayload = order.orderItems.map((orderItem: any) => {
         const itemTax = calculateGST(Number(orderItem.totalPrice), gstRate);
-
-        await prisma.invoiceItem.create({
-          data: {
-            invoiceId: invoice.id,
-            orderId: order.id,
-            description: orderItem.menuItem.name,
-            quantity: orderItem.quantity,
-            unitPrice: Number(orderItem.unitPrice),
-            totalPrice: Number(orderItem.totalPrice),
-            taxRate: gstRate,
-            taxAmount: itemTax.gstAmount,
-            itemType: 'meal',
-            itemCode: orderItem.menuItemId,
-            hsnCode: '996331',
-          },
-        });
-      }
+        return {
+          invoiceId: invoice.id,
+          orderId: order.id,
+          description: orderItem.menuItem.name,
+          quantity: orderItem.quantity,
+          unitPrice: Number(orderItem.unitPrice),
+          totalPrice: Number(orderItem.totalPrice),
+          taxRate: gstRate,
+          taxAmount: itemTax.gstAmount,
+          itemType: 'meal',
+          itemCode: orderItem.menuItemId,
+          hsnCode: '996331',
+        };
+      });
+      await prisma.invoiceItem.createMany({ data: invoiceItemPayload });
     } else {
       // Create single invoice item for payment
       await prisma.invoiceItem.create({

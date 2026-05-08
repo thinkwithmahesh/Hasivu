@@ -42,10 +42,9 @@ interface RegisterFormProps {
 
 const roleLabels: Partial<Record<UserRole, string>> = {
   admin: 'Administrator',
-  teacher: 'Teacher',
-  parent: 'Parent/Guardian',
   student: 'Student',
-  vendor: 'Vendor/Caterer',
+  parent: 'Parent/Guardian',
+  vendor: 'Food Vendor',
   kitchen_staff: 'Kitchen Staff',
   school_admin: 'School Administrator',
   super_admin: 'Super Administrator',
@@ -57,7 +56,13 @@ export function RegisterForm({
   isLoading = false,
   error,
   showSocialLogin = true,
-  availableRoles = [UserRole.STUDENT, UserRole.PARENT, UserRole.TEACHER],
+  availableRoles = [
+    UserRole.STUDENT,
+    UserRole.PARENT,
+    UserRole.SCHOOL_ADMIN,
+    UserRole.KITCHEN_STAFF,
+    UserRole.VENDOR,
+  ],
   className,
 }: RegisterFormProps) {
   const [showPassword, setShowPassword] = React.useState(false);

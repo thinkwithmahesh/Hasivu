@@ -4,15 +4,14 @@
  */
 
 import { PrismaClient, Prisma } from '@prisma/client';
+import { prisma } from '../database/DatabaseManager';
 
 export class DatabaseService {
   private static instance: DatabaseService;
   public client: PrismaClient;
 
   private constructor() {
-    this.client = new PrismaClient({
-      log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-    });
+    this.client = prisma;
   }
 
   public static getInstance(): DatabaseService {
@@ -57,29 +56,6 @@ export class DatabaseService {
     } catch (error) {
       return { healthy: false };
     }
-  }
-
-  /**
-   * Execute raw SQL query
-   */
-  public async executeRaw(query: string, ...params: any[]): Promise<any> {
-    return await this.client.$executeRaw(Prisma.raw(query), ...params);
-  }
-
-  /**
-   * Query raw SQL
-   */
-  public async queryRaw<T = any>(query: string, ...params: any[]): Promise<T> {
-    return await this.client.$queryRaw(Prisma.raw(query), ...params);
-  }
-
-  /**
-   * Execute raw SQL query with PostgreSQL-style result format
-   * Returns result with 'rows' property for compatibility
-   */
-  public async query<T = any>(query: string, params: any[] = []): Promise<{ rows: T[] }> {
-    const result = await this.client.$queryRaw<T[]>(Prisma.raw(query), ...params);
-    return { rows: result };
   }
 
   /**
@@ -149,20 +125,6 @@ export class DatabaseService {
         timestamp: new Date(),
       };
     }
-  }
-
-  /**
-   * Sanitize query input
-   */
-  public sanitizeQuery(query: string | unknown): string | unknown {
-    if (typeof query === 'string') {
-      // Basic sanitization - remove dangerous keywords
-      return query
-        .replace(/DROP\s+/gi, '')
-        .replace(/DELETE\s+/gi, '')
-        .replace(/TRUNCATE\s+/gi, '');
-    }
-    return query;
   }
 
   /**

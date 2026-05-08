@@ -11,15 +11,15 @@ import type { LoginFormData } from '@/components/auth/schemas';
 function getDashboardUrl(role: string): string {
   const dashboardUrls: Record<string, string> = {
     admin: '/dashboard/admin',
-    teacher: '/dashboard/teacher',
     parent: '/dashboard/parent',
     student: '/dashboard/student',
     vendor: '/dashboard/vendor',
     kitchen_staff: '/dashboard/kitchen',
+    kitchen: '/dashboard/kitchen',
     school_admin: '/dashboard/school-admin',
   };
 
-  return dashboardUrls[role] || '/dashboard';
+  return dashboardUrls[role] || '/dashboard/parent';
 }
 
 export default function SafariLoginPage() {
@@ -41,18 +41,7 @@ export default function SafariLoginPage() {
       if (success) {
         // Wait for auth state to update, then use the user's actual role for redirect
         setTimeout(() => {
-          // Try to get user from localStorage since auth context might not be updated yet
-          try {
-            const savedUser = localStorage.getItem('demoUser');
-            if (savedUser) {
-              const parsedUser = JSON.parse(savedUser);
-              const dashboardUrl = getDashboardUrl(parsedUser.role);
-              router.push(dashboardUrl);
-              return;
-            }
-          } catch (e) {}
-
-          // Fallback to using form role
+          // Fallback to using form role; auth state comes from cookie-backed endpoints.
           const dashboardUrl = getDashboardUrl(data.role);
           router.push(dashboardUrl);
         }, 100);
@@ -83,8 +72,8 @@ export default function SafariLoginPage() {
         isLoading={isLoading}
         error={error}
         className="w-full max-w-md"
-        showRoleSelection={false}
-        defaultRole="student"
+        showRoleSelection={true}
+        defaultRole="parent"
         showSocialLogin={false}
       />
     </AuthLayout>

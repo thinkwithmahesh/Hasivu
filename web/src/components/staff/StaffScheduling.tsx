@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import {
   Calendar,
   Clock,
@@ -176,12 +176,14 @@ const CalendarView = ({
   currentWeek,
   onScheduleClick,
   onCreateSchedule,
+  reducedMotion,
 }: {
   schedules: Schedule[];
   staffMembers: any[];
   currentWeek: Date;
   onScheduleClick: (schedule: Schedule) => void;
   onCreateSchedule: (date: string, staffId: string) => void;
+  reducedMotion: boolean;
 }) => {
   const weekDays = useMemo(() => {
     const days = [];
@@ -255,8 +257,11 @@ const CalendarView = ({
                         return (
                           <motion.div
                             key={schedule.id}
-                            initial={{ opacity: 0, scale: 0.9 }}
+                            initial={
+                              reducedMotion ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.9 }
+                            }
                             animate={{ opacity: 1, scale: 1 }}
+                            transition={reducedMotion ? { duration: 0.001 } : undefined}
                             className={`p-2 rounded text-xs cursor-pointer hover:shadow-md transition-shadow ${
                               shift?.color || 'bg-gray-100'
                             }`}
@@ -431,6 +436,7 @@ const CreateScheduleDialog = ({
 };
 
 export default function StaffScheduling() {
+  const reducedMotion = useReducedMotion();
   const { toast } = useToast();
   const [currentWeek, setCurrentWeek] = useState(new Date());
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
@@ -587,7 +593,7 @@ export default function StaffScheduling() {
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-center h-48">
-              <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+              <Loader2 className={`w-8 h-8 text-gray-400 ${reducedMotion ? '' : 'animate-spin'}`} />
             </div>
           </CardContent>
         </Card>
@@ -746,6 +752,7 @@ export default function StaffScheduling() {
             currentWeek={currentWeek}
             onScheduleClick={handleScheduleClick}
             onCreateSchedule={handleQuickCreateSchedule}
+            reducedMotion={!!reducedMotion}
           />
         </CardContent>
       </Card>

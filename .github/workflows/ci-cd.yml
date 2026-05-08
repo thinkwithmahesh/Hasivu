@@ -110,13 +110,28 @@ jobs:
             ~/.npm
           key: ${{ needs.setup.outputs.cache-key }}
 
-      - name: Run npm audit
-        run: npm audit --audit-level=moderate
+      - name: Audit production dependencies (critical gate)
+        run: npm run audit:prod-critical
+
+      - name: Full npm audit JSON (informational)
+        if: always()
         continue-on-error: true
+        run: |
+          npm audit --json > audit-root-full.json || true
+          (cd web && npm audit --json > audit-web-full.json) || true
+
+      - name: Upload full audit artifacts
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: npm-audit-json
+          path: |
+            audit-root-full.json
+            audit-web-full.json
 
       - name: Run Snyk security scan
+        if: ${{ secrets.SNYK_TOKEN != '' }}
         uses: snyk/actions/node@master
-        continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
@@ -163,6 +178,32 @@ jobs:
           path: |
             coverage/
             test-results/
+
+  accessibility-tests:
+    name: Web accessibility (Jest / jest-axe)
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Restore dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            node_modules
+            web/node_modules
+            ~/.npm
+          key: ${{ needs.setup.outputs.cache-key }}
+
+      - name: Run accessibility-focused Jest suite
+        run: cd web && npm run test:a11y -- --passWithNoTests
 
   integration-tests:
     name: Integration Tests
@@ -215,7 +256,7 @@ jobs:
       - name: Setup test database
         run: |
           npm run db:generate
-          npm run db:push
+          npx prisma migrate deploy
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/hasivu_test
 
@@ -238,7 +279,7 @@ jobs:
   build:
     name: Build Application
     runs-on: ubuntu-latest
-    needs: [code-quality, security, unit-tests, integration-tests]
+    needs: [code-quality, security, unit-tests, integration-tests, accessibility-tests]
     strategy:
       matrix:
         target: [backend, frontend]

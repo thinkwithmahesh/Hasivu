@@ -28,22 +28,31 @@ export function useApiData<T>(
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const intervalRef = useRef<NodeJS.Timeout>();
+  const apiCallRef = useRef(apiCall);
+  const onSuccessRef = useRef(options?.onSuccess);
+  const onErrorRef = useRef(options?.onError);
+
+  useEffect(() => {
+    apiCallRef.current = apiCall;
+    onSuccessRef.current = options?.onSuccess;
+    onErrorRef.current = options?.onError;
+  });
 
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await apiCall();
+      const response = await apiCallRef.current();
       setData(response.data);
-      options?.onSuccess?.(response.data);
+      onSuccessRef.current?.(response.data);
     } catch (err) {
       const errorMessage = handleApiError(err);
       setError(errorMessage);
-      options?.onError?.(errorMessage);
+      onErrorRef.current?.(errorMessage);
     } finally {
       setLoading(false);
     }
-  }, [apiCall, options?.onSuccess, options?.onError]);
+  }, []);
 
   useEffect(() => {
     if (options?.enabled !== false) {
@@ -60,14 +69,7 @@ export function useApiData<T>(
         clearInterval(intervalRef.current);
       }
     };
-  }, [fetchData, options?.refetchInterval, options?.enabled]);
-
-  // Separate effect for dependency changes to prevent infinite loops
-  useEffect(() => {
-    if (options?.enabled !== false) {
-      fetchData();
-    }
-  }, dependencies);
+  }, [fetchData, options?.refetchInterval, options?.enabled, ...dependencies]);
 
   const refetch = useCallback(() => {
     fetchData();
@@ -508,22 +510,15 @@ export function useAuth() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check for existing auth token on mount
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      userApi
-        .getProfile()
-        .then(response => {
-          setUser(response.data);
-          setLoading(false);
-        })
-        .catch(() => {
-          localStorage.removeItem('authToken');
-          setLoading(false);
-        });
-    } else {
-      setLoading(false);
-    }
+    userApi
+      .getProfile()
+      .then(response => {
+        setUser(response.data);
+        setLoading(false);
+      })
+      .catch(() => {
+        setLoading(false);
+      });
   }, []);
 
   const login = useCallback(async (credentials: { email: string; password: string }) => {
@@ -531,10 +526,6 @@ export function useAuth() {
       setLoading(true);
       setError(null);
       const response = await userApi.login(credentials);
-      const accessToken = response.data.accessToken ?? response.data.token;
-      if (accessToken) {
-        localStorage.setItem('authToken', accessToken);
-      }
       setUser(response.data.user);
       return response.data;
     } catch (err) {
@@ -552,7 +543,6 @@ export function useAuth() {
     } catch (err) {
     } finally {
       setUser(null);
-      localStorage.removeItem('authToken');
     }
   }, []);
 
@@ -585,11 +575,16 @@ export function useAuth() {
 // WebSocket hooks for real-time updates
 export function useWebSocketConnection() {
   const [connected, setConnected] = useState(false);
+  const realtimeEnabled = wsManager.isEnabled();
 
   useEffect(() => {
-    const token = localStorage.getItem('authToken');
-    if (token && !wsManager.isConnected()) {
-      wsManager.connect(token);
+    if (!realtimeEnabled) {
+      setConnected(false);
+      return;
+    }
+
+    if (!wsManager.isConnected()) {
+      wsManager.connect();
     }
 
     // Monitor connection status
@@ -601,9 +596,9 @@ export function useWebSocketConnection() {
     checkConnection(); // Initial check
 
     return () => clearInterval(interval);
-  }, []);
+  }, [realtimeEnabled]);
 
-  return { connected };
+  return { connected, realtimeEnabled };
 }
 
 export function useWebSocketSubscription<T>(messageType: string, handler: (data: T) => void) {
@@ -615,6 +610,10 @@ export function useWebSocketSubscription<T>(messageType: string, handler: (data:
   }, [handler]);
 
   useEffect(() => {
+    if (!wsManager.isEnabled()) {
+      return;
+    }
+
     const stableHandler = (data: unknown) => {
       handlerRef.current(data as T);
     };

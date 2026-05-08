@@ -5,7 +5,6 @@
  */
 
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
-import { getSession, signIn as _signIn, signOut } from 'next-auth/react';
 
 // API Configuration
 const API_CONFIG = {
@@ -156,6 +155,7 @@ class HASIVUApiClient {
     this.client = axios.create({
       baseURL: API_CONFIG.BASE_URL,
       timeout: API_CONFIG.TIMEOUT,
+      withCredentials: true,
       headers: {
         'Content-Type': 'application/json',
         'X-API-Version': 'v1',
@@ -170,12 +170,6 @@ class HASIVUApiClient {
     // Request interceptor for authentication
     this.client.interceptors.request.use(
       async (config: InternalAxiosRequestConfig) => {
-        const session = (await getSession()) as { accessToken?: string } | null;
-
-        if (session?.accessToken) {
-          config.headers.Authorization = `Bearer ${session.accessToken}`;
-        }
-
         // Add request ID for tracking
         config.headers['X-Request-ID'] = this.generateRequestId();
 
@@ -200,12 +194,12 @@ class HASIVUApiClient {
           try {
             const tokens = await this.refreshAccessToken();
             if (tokens) {
-              originalRequest.headers.Authorization = `Bearer ${tokens.accessToken}`;
               return this.client(originalRequest);
             }
           } catch (refreshError) {
-            // Redirect to login
-            await signOut({ callbackUrl: '/login' });
+            if (typeof window !== 'undefined') {
+              window.location.assign('/auth/login');
+            }
             return Promise.reject(refreshError);
           }
         }
@@ -237,15 +231,7 @@ class HASIVUApiClient {
   }
 
   private async performTokenRefresh(): Promise<AuthTokens> {
-    const session = (await getSession()) as { refreshToken?: string } | null;
-
-    if (!session?.refreshToken) {
-      throw new Error('No refresh token available');
-    }
-
-    const response = await this.client.post(API_CONFIG.ENDPOINTS.AUTH.REFRESH, {
-      refreshToken: session.refreshToken,
-    });
+    const response = await this.client.post(API_CONFIG.ENDPOINTS.AUTH.REFRESH);
 
     return response.data;
   }

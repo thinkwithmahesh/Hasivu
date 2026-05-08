@@ -4,10 +4,8 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { logger } from '@/utils/logger';
 import { DatabaseService } from '@/services/database.service';
 import { RedisService } from '@/services/redis.service';
-import { config } from '@/config/environment';
 import { asyncHandler } from '@/middleware/error.middleware';
 
 const router = Router();
@@ -33,57 +31,106 @@ interface SystemHealth {
   };
 }
 
-// Utility to format memory usage
-function getMemoryUsage() {
-  const usage = process.memoryUsage();
+async function checkDatabase(): Promise<ServiceHealth> {
+  const start = Date.now();
+  try {
+    await DatabaseService.client.$queryRaw`SELECT 1`;
+    return { status: 'up', responseTime: `${Date.now() - start}ms` };
+  } catch (err: unknown) {
+    return {
+      status: 'down',
+      error: err instanceof Error ? err.message : 'Database health check failed',
+    };
+  }
+}
+
+async function checkRedis(): Promise<ServiceHealth> {
+  const start = Date.now();
+  try {
+    await RedisService.ping();
+    return { status: 'up', responseTime: `${Date.now() - start}ms` };
+  } catch (err: unknown) {
+    return {
+      status: 'down',
+      error: err instanceof Error ? err.message : 'Redis health check failed',
+    };
+  }
+}
+
+async function checkDependencies(): Promise<SystemHealth> {
+  const [dbHealth, redisHealth] = await Promise.all([checkDatabase(), checkRedis()]);
+
   return {
-    rss: `${Math.round(usage.rss / 1024 / 1024)}MB`,
-    heapTotal: `${Math.round(usage.heapTotal / 1024 / 1024)}MB`,
-    heapUsed: `${Math.round(usage.heapUsed / 1024 / 1024)}MB`,
-    external: `${Math.round(usage.external / 1024 / 1024)}MB`,
-    arrayBuffers: `${Math.round(usage.arrayBuffers / 1024 / 1024)}MB`,
+    system: {
+      uptime: `${process.uptime()}s`,
+      timestamp: new Date().toISOString(),
+    },
+    services: {
+      database: dbHealth,
+      redis: redisHealth,
+    },
+    metrics: {
+      memory: process.memoryUsage(),
+    },
   };
+}
+
+function isReady(health: SystemHealth): boolean {
+  return Object.values(health.services).every(service => service.status === 'up');
 }
 
 // /health endpoint
 router.get(
   '/',
   asyncHandler(async (req: Request, res: Response) => {
-    const start = Date.now();
+    const health = await checkDependencies();
+    res.status(isReady(health) ? 200 : 503).json(health);
+  })
+);
 
-    // Check DB
-    let dbHealth: ServiceHealth = { status: 'up' };
-    try {
-      await DatabaseService.client.$queryRaw`SELECT 1`; // Basic connectivity check
-      dbHealth.responseTime = `${Date.now() - start}ms`;
-    } catch (err: any) {
-      dbHealth = { status: 'down', error: err.message };
-    }
+router.get(
+  '/live',
+  asyncHandler(async (_req: Request, res: Response) => {
+    res.status(200).json({
+      status: 'up',
+      uptime: `${process.uptime()}s`,
+      timestamp: new Date().toISOString(),
+    });
+  })
+);
 
-    // Check Redis
-    let redisHealth: ServiceHealth = { status: 'up' };
-    try {
-      await RedisService.ping();
-      redisHealth.responseTime = `${Date.now() - start}ms`;
-    } catch (err: any) {
-      redisHealth = { status: 'down', error: err.message };
-    }
+router.get(
+  '/ready',
+  asyncHandler(async (_req: Request, res: Response) => {
+    const health = await checkDependencies();
+    res.status(isReady(health) ? 200 : 503).json(health);
+  })
+);
 
-    const health: SystemHealth = {
-      system: {
-        uptime: `${process.uptime()}s`,
-        timestamp: new Date().toISOString(),
-      },
-      services: {
-        database: dbHealth,
-        redis: redisHealth,
-      },
-      metrics: {
-        memory: process.memoryUsage(),
-      },
-    };
+router.get(
+  '/metrics',
+  asyncHandler(async (_req: Request, res: Response) => {
+    const health = await checkDependencies();
+    const memory = process.memoryUsage();
+    const ready = isReady(health) ? 1 : 0;
 
-    res.status(200).json(health);
+    res.type('text/plain').send(
+      [
+        '# HELP hasivu_process_ready Whether the API is ready to serve traffic.',
+        '# TYPE hasivu_process_ready gauge',
+        `hasivu_process_ready ${ready}`,
+        '# HELP hasivu_process_uptime_seconds Node.js process uptime in seconds.',
+        '# TYPE hasivu_process_uptime_seconds gauge',
+        `hasivu_process_uptime_seconds ${process.uptime()}`,
+        '# HELP hasivu_process_memory_bytes Node.js process memory usage in bytes.',
+        '# TYPE hasivu_process_memory_bytes gauge',
+        `hasivu_process_memory_bytes{type="rss"} ${memory.rss}`,
+        `hasivu_process_memory_bytes{type="heapUsed"} ${memory.heapUsed}`,
+        `hasivu_dependency_up{dependency="database"} ${health.services.database.status === 'up' ? 1 : 0}`,
+        `hasivu_dependency_up{dependency="redis"} ${health.services.redis.status === 'up' ? 1 : 0}`,
+        '',
+      ].join('\n')
+    );
   })
 );
 

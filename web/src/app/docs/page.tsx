@@ -207,11 +207,7 @@ export default function DocsPage() {
                 spec={spec}
                 tryItOutEnabled={true}
                 requestInterceptor={req => {
-                  // Add authorization header if token exists
-                  const token = localStorage.getItem('auth-token');
-                  if (token) {
-                    req.headers.Authorization = `Bearer ${token}`;
-                  }
+                  req.credentials = 'include';
                   return req;
                 }}
                 responseInterceptor={res => {

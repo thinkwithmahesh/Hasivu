@@ -43,6 +43,22 @@ export class PerformanceService {
   }
 
   /**
+   * Clears in-memory state and singleton for isolated Jest runs.
+   * Intended for Jest only (`JEST_WORKER_ID` set); do not call from production code.
+   */
+  public static resetStateForTests(): void {
+    if (!process.env.JEST_WORKER_ID) {
+      return;
+    }
+    PerformanceService.metrics = [];
+    PerformanceService.startTimes.clear();
+    PerformanceService.benchmarks = [];
+    PerformanceService.isMonitoringActive = false;
+    const holder = PerformanceService as unknown as { instance?: PerformanceService };
+    holder.instance = undefined;
+  }
+
+  /**
    * Start tracking an operation
    */
   public startTracking(operationId: string): void {

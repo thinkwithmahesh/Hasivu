@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
@@ -44,34 +44,10 @@ import { LazyMotion, domAnimation, m, useReducedMotion } from 'framer-motion';
 export default function MenuPage() {
   const router = useRouter();
   const { cart, addItem } = useCart();
-  const { user, isAuthenticated } = useAuth();
+  const { isAuthenticated, isInitialized, isLoading, user } = useAuth();
+  const dashboardHref = user?.role === 'student' ? '/dashboard/student' : '/dashboard/parent';
   const reduced = useReducedMotion();
-
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/auth/login?redirect=/menu');
-    }
-  }, [isAuthenticated, router]);
-
-  // Show loading while checking authentication
-  if (!isAuthenticated) {
-    return (
-      <LazyMotion features={domAnimation}>
-        <m.div
-          initial={reduced ? undefined : { opacity: 0, y: 12 }}
-          animate={reduced ? undefined : { opacity: 1, y: 0 }}
-          transition={reduced ? { duration: 0 } : { duration: 0.35 }}
-          className="min-h-screen bg-gradient-to-br from-primary-50 to-accent-50 flex items-center justify-center"
-        >
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Checking authentication...</p>
-          </div>
-        </m.div>
-      </LazyMotion>
-    );
-  }
+  const hasLoadedInitialData = useRef(false);
 
   // State management
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -100,19 +76,7 @@ export default function MenuPage() {
   );
   const [specialInstructions, setSpecialInstructions] = useState('');
 
-  // Load menu items and categories on mount
-  useEffect(() => {
-    loadInitialData();
-  }, []);
-
-  // Reload menu items when filters change
-  useEffect(() => {
-    if (!loading) {
-      loadMenuItems();
-    }
-  }, [selectedCategory, filters, searchQuery]);
-
-  const loadInitialData = async () => {
+  const loadInitialData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -134,11 +98,12 @@ export default function MenuPage() {
       setError(err instanceof Error ? err.message : 'Failed to load menu data');
       toast.error('Failed to load menu items. Please try again.');
     } finally {
+      hasLoadedInitialData.current = true;
       setLoading(false);
     }
-  };
+  }, []);
 
-  const loadMenuItems = async () => {
+  const loadMenuItems = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -158,7 +123,30 @@ export default function MenuPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters, searchQuery, selectedCategory]);
+
+  // Redirect to login only after auth initialization finishes.
+  useEffect(() => {
+    if (isInitialized && !isLoading && !isAuthenticated) {
+      router.push('/auth/login?redirect=/menu');
+    }
+  }, [isAuthenticated, isInitialized, isLoading, router]);
+
+  // Load menu items and categories once authenticated.
+  useEffect(() => {
+    if (isInitialized && isAuthenticated) {
+      hasLoadedInitialData.current = false;
+      loadInitialData();
+    }
+  }, [isAuthenticated, isInitialized, loadInitialData]);
+
+  // Reload menu items when filters change. Initial page load is handled above
+  // so we do not double-hit the menu API and burn rate-limit budget.
+  useEffect(() => {
+    if (isInitialized && isAuthenticated && hasLoadedInitialData.current) {
+      loadMenuItems();
+    }
+  }, [isAuthenticated, isInitialized, loadMenuItems]);
 
   const handleAddToCart = useCallback(
     (item: MenuItem, quantity: number = 1, deliveryDate?: Date) => {
@@ -301,6 +289,26 @@ export default function MenuPage() {
     </div>
   );
 
+  // Show loading while auth initializes. This stays after every hook declaration
+  // so role transitions never change hook order and crash the page.
+  if (!isInitialized || isLoading || !isAuthenticated) {
+    return (
+      <LazyMotion features={domAnimation}>
+        <m.div
+          initial={reduced ? undefined : { opacity: 0, y: 12 }}
+          animate={reduced ? undefined : { opacity: 1, y: 0 }}
+          transition={reduced ? { duration: 0 } : { duration: 0.35 }}
+          className="min-h-screen bg-gradient-to-br from-primary-50 to-accent-50 flex items-center justify-center"
+        >
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Checking authentication...</p>
+          </div>
+        </m.div>
+      </LazyMotion>
+    );
+  }
+
   return (
     <LazyMotion features={domAnimation}>
       <m.div
@@ -314,7 +322,7 @@ export default function MenuPage() {
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <Link href="/">
+                <Link href={dashboardHref}>
                   <Button variant="ghost" size="sm">
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     Back
@@ -325,9 +333,9 @@ export default function MenuPage() {
                     <span className="text-white font-bold text-xl">H</span>
                   </div>
                   <div>
-                    <div className="font-display font-bold text-xl md:text-2xl text-primary-600">
+                    <h1 className="font-display font-bold text-xl md:text-2xl text-primary-600">
                       School Menu
-                    </div>
+                    </h1>
                     <div className="text-xs text-gray-600 -mt-1">HASIVU Platform</div>
                   </div>
                 </div>

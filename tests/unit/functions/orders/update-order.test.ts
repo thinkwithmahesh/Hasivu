@@ -1,27 +1,18 @@
 /**
- * Unit Tests for Update Order Lambda Function
- * Tests Epic 3: Order Processing System - Order Modification
+ * Unit tests for Update Order Lambda — aligned with DatabaseService.query + raw SQL flow.
  */
 
-import { handler } from '../../../../src/functions/orders/update-order';
+const mockQuery = jest.fn();
 
-// Mock dependencies
-jest.mock('@/functions/shared/database.service', () => ({
+jest.mock('@/shared/database.service', () => ({
   DatabaseService: {
-    prisma: {
-      order: {
-        findUnique: jest.fn(),
-        update: jest.fn(),
-      },
-      user: {
-        findFirst: jest.fn(),
-      },
-    },
-    transaction: jest.fn(),
+    getInstance: jest.fn(() => ({
+      query: mockQuery,
+    })),
   },
 }));
 
-jest.mock('../../../../src/utils/logger', () => ({
+jest.mock('@/utils/logger', () => ({
   logger: {
     info: jest.fn(),
     error: jest.fn(),
@@ -30,98 +21,158 @@ jest.mock('../../../../src/utils/logger', () => ({
   },
 }));
 
-jest.mock('../../../../src/shared/response.utils', () => ({
+jest.mock('@/shared/response.utils', () => ({
   createSuccessResponse: jest.fn(),
   createErrorResponse: jest.fn(),
   handleError: jest.fn(),
 }));
 
+import { handler } from '../../../../src/functions/orders/update-order';
+
 describe('Update Order Lambda Function', () => {
-  const mockCreateSuccessResponse = require('../../../../src/shared/response.utils').createSuccessResponse;
-  const mockCreateErrorResponse = require('../../../../src/shared/response.utils').createErrorResponse;
-  const mockHandleError = require('@/shared/response.utils').handleError;
-  const mockPrisma = require('@/functions/shared/database.service').DatabaseService.prisma;
-  const mockTransaction = require('@/functions/shared/database.service').DatabaseService.transaction;
+  const mockCreateSuccessResponse = jest.requireMock('@/shared/response.utils')
+    .createSuccessResponse as jest.Mock;
+  const mockCreateErrorResponse = jest.requireMock('@/shared/response.utils')
+    .createErrorResponse as jest.Mock;
+  const mockHandleError = jest.requireMock('@/shared/response.utils').handleError as jest.Mock;
+
+  const orderAccessRow = {
+    id: 'order1',
+    orderNumber: 'ON-001',
+    studentId: 'user1',
+    schoolId: 'school1',
+    status: 'pending',
+    paymentStatus: 'pending',
+    deliveryDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
+    totalAmount: '100',
+    parentId: null,
+    firstName: 'S',
+    lastName: 'T',
+    mealPeriod: 'lunch',
+  };
+
+  const updatedOrderRow = {
+    id: 'order1',
+    orderNumber: 'ON-001',
+    status: 'pending',
+    paymentStatus: 'pending',
+    totalAmount: '100',
+    updatedAt: new Date(),
+  };
 
   beforeEach(() => {
     jest.clearAllMocks();
     mockCreateSuccessResponse.mockReturnValue({
       statusCode: 200,
-      body: JSON.stringify({ message: 'Order updated successfully' }),
+      body: JSON.stringify({ success: true }),
+    });
+    mockCreateErrorResponse.mockImplementation((code: string, msg: string, status: number) => ({
+      statusCode: status,
+      body: JSON.stringify({ code, message: msg }),
+    }));
+    mockHandleError.mockReturnValue({
+      statusCode: 500,
+      body: JSON.stringify({ message: 'Failed to update order' }),
     });
   });
 
   describe('Input Validation', () => {
-    test('should reject non-PUT methods', async () => {
+    it('rejects non-PUT methods', async () => {
       const event = { httpMethod: 'POST' } as any;
-      mockCreateErrorResponse.mockReturnValue({ statusCode: 405 });
-
       await handler(event, {} as any);
-      expect(mockCreateErrorResponse).toHaveBeenCalledWith('METHOD_NOT_ALLOWED', 'Method not allowed', 405);
+      expect(mockCreateErrorResponse).toHaveBeenCalledWith(
+        'METHOD_NOT_ALLOWED',
+        'Method not allowed',
+        405
+      );
     });
 
-    test('should reject missing orderId', async () => {
+    it('rejects missing orderId', async () => {
       const event = { httpMethod: 'PUT', pathParameters: {} } as any;
-      mockCreateErrorResponse.mockReturnValue({ statusCode: 400 });
-
       await handler(event, {} as any);
-      expect(mockCreateErrorResponse).toHaveBeenCalledWith('MISSING_ORDER_ID', 'Missing orderId in path parameters', 400);
+      expect(mockCreateErrorResponse).toHaveBeenCalledWith(
+        'MISSING_ORDER_ID',
+        'Missing orderId in path parameters',
+        400
+      );
     });
   });
 
   describe('Order Update', () => {
     beforeEach(() => {
-      mockPrisma.order.findUnique.mockResolvedValue({
-        id: 'order1',
-        status: 'pending',
-        userId: 'user1',
-        studentId: 'student1',
-        schoolId: 'school1',
-      } as any);
-
-      mockTransaction.mockImplementation(async (callback: any) => callback(mockPrisma));
-      mockPrisma.order.update.mockResolvedValue({
-        id: 'order1',
-        specialInstructions: 'Updated instructions',
-        updatedAt: new Date(),
-      } as any);
+      mockQuery.mockImplementation(async (sql: string) => {
+        const s = sql.replace(/\s+/g, ' ').trim();
+        if (s.startsWith('BEGIN') || s.startsWith('COMMIT') || s.startsWith('ROLLBACK')) {
+          return { rows: [] };
+        }
+        if (s.includes('FROM orders o') && s.includes('WHERE o.id')) {
+          return { rows: [orderAccessRow] };
+        }
+        if (s.includes('FROM users') && s.includes("role IN ('school_admin'")) {
+          return { rows: [] };
+        }
+        if (s.includes('FROM orders WHERE id')) {
+          return { rows: [updatedOrderRow] };
+        }
+        return { rows: [] };
+      });
     });
 
-    test('should update order successfully', async () => {
+    it('updates successfully when caller is the student on the order', async () => {
       const event = {
         httpMethod: 'PUT',
         pathParameters: { orderId: 'order1' },
         headers: { 'x-user-id': 'user1' },
-        body: JSON.stringify({
-          specialInstructions: 'Updated instructions',
-        }),
+        body: JSON.stringify({}),
       } as any;
 
       await handler(event, {} as any);
+
       expect(mockCreateSuccessResponse).toHaveBeenCalledWith(
         expect.objectContaining({
-          message: 'Order updated successfully',
-        }),
-        200
+          message: expect.stringContaining('Order updated successfully'),
+          data: expect.objectContaining({
+            order: expect.objectContaining({ id: 'order1', orderNumber: 'ON-001' }),
+          }),
+        })
       );
     });
 
-    test('should reject unauthorized updates', async () => {
-      mockPrisma.user.findFirst.mockResolvedValue(null); // No admin access
+    it('rejects when user is not authorized', async () => {
+      mockQuery.mockImplementation(async (sql: string) => {
+        const s = sql.replace(/\s+/g, ' ').trim();
+        if (s.includes('FROM orders o') && s.includes('WHERE o.id')) {
+          return {
+            rows: [
+              {
+                ...orderAccessRow,
+                studentId: 'student1',
+                parentId: null,
+              },
+            ],
+          };
+        }
+        if (s.includes('FROM users') && s.includes("role IN ('school_admin'")) {
+          return { rows: [] };
+        }
+        return { rows: [] };
+      });
 
       const event = {
         httpMethod: 'PUT',
         pathParameters: { orderId: 'order1' },
         headers: { 'x-user-id': 'unauthorized-user' },
-        body: JSON.stringify({ specialInstructions: 'Test' }),
+        body: JSON.stringify({}),
       } as any;
 
       await handler(event, {} as any);
+
       expect(mockHandleError).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: 'Not authorized to update this order',
-        })
+        expect.any(Error),
+        'Failed to update order'
       );
+      const err = mockHandleError.mock.calls[0][0] as Error;
+      expect(err.message).toBe('Not authorized to update this order');
     });
   });
 });

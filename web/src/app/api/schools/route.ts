@@ -6,15 +6,17 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { getAccessTokenFromRequest } from '@/app/api/_utils/proxy';
 import { hasiviApi } from '@/services/api/hasivu-api.service';
+
+function hasAuthCookie(request: NextRequest): boolean {
+  return Boolean(getAccessTokenFromRequest(request));
+}
 
 // GET /api/schools - List schools
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession();
-
-    if (!session) {
+    if (!hasAuthCookie(request)) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
@@ -39,9 +41,7 @@ export async function GET(request: NextRequest) {
 // POST /api/schools - Register new school
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession();
-
-    if (!session) {
+    if (!hasAuthCookie(request)) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
@@ -127,9 +127,7 @@ export async function POST(request: NextRequest) {
 // PUT /api/schools - Update school information
 export async function PUT(request: NextRequest) {
   try {
-    const session = await getServerSession();
-
-    if (!session) {
+    if (!hasAuthCookie(request)) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 

@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getAccessTokenFromRequest, fetchConfiguredProxy } from '@/app/api/_utils/proxy';
+const LAMBDA_PAYMENTS_ANALYTICS_URL = process.env.LAMBDA_PAYMENTS_ANALYTICS_URL;
 
-const LAMBDA_PAYMENTS_ANALYTICS_URL =
-  process.env.LAMBDA_PAYMENTS_ANALYTICS_URL ||
-  'https://your-lambda-endpoint.execute-api.region.amazonaws.com/dev/payments/analytics';
+;
 
 // GET /api/payments/analytics - Get payment analytics
 export async function GET(request: NextRequest) {
   try {
     // Get auth token from httpOnly cookie
-    const authToken = request.cookies.get('auth-token')?.value;
+    const authToken = getAccessTokenFromRequest(request);
 
     if (!authToken) {
       return NextResponse.json(
@@ -20,12 +20,13 @@ export async function GET(request: NextRequest) {
     // Extract query parameters
     const { searchParams } = new URL(request.url);
     const queryString = searchParams.toString();
-    const url = queryString
-      ? `${LAMBDA_PAYMENTS_ANALYTICS_URL}?${queryString}`
-      : LAMBDA_PAYMENTS_ANALYTICS_URL;
+    const url =
+      LAMBDA_PAYMENTS_ANALYTICS_URL && queryString
+        ? `${LAMBDA_PAYMENTS_ANALYTICS_URL}?${queryString}`
+        : LAMBDA_PAYMENTS_ANALYTICS_URL;
 
     // Forward request to Lambda function
-    const lambdaResponse = await fetch(url, {
+    const lambdaResponse = await fetchConfiguredProxy(url, 'LAMBDA_PAYMENTS_ANALYTICS_URL', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

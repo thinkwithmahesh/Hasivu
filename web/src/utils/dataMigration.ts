@@ -34,6 +34,7 @@ interface MockUser {
   role: 'admin' | 'staff' | 'student' | 'parent';
   grade?: string;
   rfidTag?: string;
+  temporaryPassword?: string;
 }
 
 interface MockOrder {
@@ -115,14 +116,17 @@ export class DataMigration {
 
     for (const user of mockUsers) {
       try {
+        if (!user.temporaryPassword) {
+          throw new Error(`Cannot migrate ${user.email}: temporaryPassword is required`);
+        }
+
         await userApi.createUser({
           name: user.name,
           email: user.email,
           role: user.role,
           grade: user.grade,
           rfidTag: user.rfidTag,
-          // Add default password for demo purposes
-          password: 'defaultPassword123',
+          password: user.temporaryPassword,
           active: true,
         } as any);
         migratedCount++;

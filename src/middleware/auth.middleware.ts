@@ -185,21 +185,17 @@ export const authMiddleware = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    // Extract token from request headers
+    // Prefer httpOnly cookie auth for browser traffic, while preserving bearer support for
+    // service-to-service and non-browser clients.
     const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      res.status(401).json({
-        error: 'Unauthorized',
-        message: 'Access token is required',
-      });
-      return;
-    }
+    const cookieToken = req.cookies?.accessToken;
+    const headerToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7).trim() : null;
+    const token = typeof cookieToken === 'string' && cookieToken ? cookieToken : headerToken;
 
-    const token = authHeader.substring(7).trim();
     if (!token) {
       res.status(401).json({
         error: 'Unauthorized',
-        message: 'Invalid access token format',
+        message: 'Access token is required',
       });
       return;
     }

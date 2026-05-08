@@ -166,6 +166,16 @@ async function validateOrderItems(
   const validatedItems = [];
   let totalAmount = 0;
 
+  const requestedMenuItemIds = Array.from(new Set(orderItems.map(item => item.menuItemId)));
+  const menuItems = await prisma.menuItem.findMany({
+    where: {
+      id: { in: requestedMenuItemIds },
+      schoolId,
+      available: true,
+    },
+  });
+  const menuItemMap = new Map(menuItems.map(menuItem => [menuItem.id, menuItem]));
+
   for (const item of orderItems) {
     if (!item.quantity || item.quantity <= 0) {
       throw new Error('Item quantity must be greater than 0');
@@ -175,14 +185,7 @@ async function validateOrderItems(
       throw new Error('Maximum 10 quantity allowed per item');
     }
 
-    // Get menu item with availability check
-    const menuItem = await prisma.menuItem.findFirst({
-      where: {
-        id: item.menuItemId,
-        schoolId,
-        available: true,
-      },
-    });
+    const menuItem = menuItemMap.get(item.menuItemId);
 
     if (!menuItem) {
       throw new Error(`Menu item not found: ${item.menuItemId}`);
@@ -263,8 +266,8 @@ export const handler = async (
       );
     }
 
-    // Extract userId from event context (would come from JWT in real implementation)
-    const userId = event.requestContext?.authorizer?.userId || event.headers?.['x-user-id'];
+    // Trust only the API authorizer context for authenticated identity.
+    const userId = event.requestContext?.authorizer?.userId;
     if (!userId) {
       return createErrorResponse('AUTHENTICATION_REQUIRED', 'User authentication required', 401);
     }

@@ -26,6 +26,9 @@ This matrix documents the effective authentication and authorization posture for
 | `/api/payments` | `POST /orders`          | `writeRateLimit -> authMiddleware -> validateRequest` | Yes                 | Resource checks in service | Yes             | Yes                      | Zod body validation               |
 | `/api/payments` | `GET /orders/:id`       | `readRateLimit -> authMiddleware -> validateRequest`  | Yes                 | `canAccessPayment(...)`    | Yes             | Yes                      | UUID path validation              |
 | `/api/payments` | `POST /:id/process`     | `writeRateLimit -> authMiddleware -> validateRequest` | Yes                 | `canAccessPayment(...)`    | Yes             | Yes                      | Ownership enforced                |
+| `/api/v1/orders` | (see `orders.routes.ts`) | `readRateLimit` / `writeRateLimit` + `authMiddleware` + `validateRequest` where applicable | Yes (mutations & most reads) | Service-level ownership / school checks | Yes | Yes (Zod) | Cancel/update paths enforce parent/student ownership |
+| `/api/kitchen` | `PUT /orders/:id/assign`  | `writeRateLimit -> authMiddleware -> requireRole(...)` | Yes                 | Kitchen/school roles       | Yes             | Yes                      | Assignment scoped by school        |
+| `/api/kitchen` | `GET /staff`             | `readRateLimit -> authMiddleware -> requireRole(...)`  | Yes                 | Kitchen/school roles       | Yes             | Yes (query)              | `schoolId` UUID in query           |
 
 ## App-Level Middleware Policy (Current)
 

@@ -48,6 +48,19 @@ export class PaymentService {
     return PaymentService.instance;
   }
 
+  /**
+   * Clears the service singleton so the next `getInstance()` builds a fresh client.
+   * Intended for Jest only (`JEST_WORKER_ID` set); do not call from production code.
+   */
+  public static resetInstanceForTests(): void {
+    if (!process.env.JEST_WORKER_ID) {
+      return;
+    }
+    const holder = PaymentService as unknown as { instance?: PaymentService };
+    void holder.instance?.prisma?.$disconnect?.().catch(() => undefined);
+    holder.instance = undefined;
+  }
+
   async findById(id: string): Promise<Payment | null> {
     return await this.prisma.payment.findUnique({
       where: { id },

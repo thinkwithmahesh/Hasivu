@@ -32,7 +32,7 @@ const mockClasses = [
 
 export function ByClassView() {
   return (
-    <div className="flex flex-col gap-6 w-full pb-12 animate-fade-in-up">
+    <div className="flex flex-col gap-6 w-full pb-12">
       <div className="flex justify-between items-center mb-2">
         <h1 className="font-hero text-[32px] text-pm-text-primary leading-tight">
           Dispatch by Class

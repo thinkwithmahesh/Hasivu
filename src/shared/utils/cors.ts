@@ -8,8 +8,12 @@
  * Standard CORS headers for API responses
  * Configured for production security with proper origin handling
  */
+const defaultCorsOrigin = (process.env.CORS_ORIGINS || process.env.FRONTEND_URL || 'https://app.hasivu.com')
+  .split(',')[0]
+  .trim();
+
 export const corsHeaders = {
-  'Access-Control-Allow-Origin': '*', // Will be configured per environment
+  'Access-Control-Allow-Origin': defaultCorsOrigin,
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
   'Access-Control-Allow-Headers':
     'Content-Type, Authorization, X-Requested-With, Accept, Origin, X-API-Key, X-Client-Version',
@@ -36,7 +40,7 @@ export const preflightHeaders = {
  * CORS configuration for different environments
  */
 export interface CorsConfig {
-  origins: string[] | string | boolean;
+  origins: string[] | string;
   methods: string[];
   allowedHeaders: string[];
   exposedHeaders: string[];
@@ -48,10 +52,16 @@ export interface CorsConfig {
 
 /**
  * Development CORS configuration
- * Allows all origins for local development
+ * Restricts local development to explicit localhost origins.
  */
 export const developmentCorsConfig: CorsConfig = {
-  origins: true, // Allow all origins
+  origins: [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:8080',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:3001',
+  ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'],
   allowedHeaders: [
     'Content-Type',
@@ -178,9 +188,7 @@ export function generateCorsHeaders(
   const headers: Record<string, string> = {};
 
   // Handle origin
-  if (config.origins === true) {
-    headers['Access-Control-Allow-Origin'] = origin || '*';
-  } else if (typeof config.origins === 'string') {
+  if (typeof config.origins === 'string') {
     headers['Access-Control-Allow-Origin'] = config.origins;
   } else if (Array.isArray(config.origins)) {
     if (origin && config.origins.includes(origin)) {
@@ -267,13 +275,11 @@ export function createCorsMiddleware(config?: CorsConfig) {
 
     // Validate origin
     if (!validateOrigin(origin, corsConfig.origins)) {
-      if (corsConfig.origins !== true) {
-        return res.status(403).json({
-          error: 'CORS policy violation',
-          message: 'Origin not allowed',
-          code: 'CORS_ORIGIN_NOT_ALLOWED',
-        });
-      }
+      return res.status(403).json({
+        error: 'CORS policy violation',
+        message: 'Origin not allowed',
+        code: 'CORS_ORIGIN_NOT_ALLOWED',
+      });
     }
 
     // Generate and set headers
@@ -312,7 +318,7 @@ export const secureCorsConfig: CorsConfig = {
  * Optimized for REST API usage with common headers
  */
 export const apiCorsConfig: CorsConfig = {
-  origins: false, // Must be explicitly set
+  origins: productionCorsConfig.origins,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: [
     'Content-Type',
@@ -333,7 +339,7 @@ export const apiCorsConfig: CorsConfig = {
  * Specific settings for WebSocket upgrades
  */
 export const websocketCorsConfig: CorsConfig = {
-  origins: false, // Must be explicitly configured
+  origins: productionCorsConfig.origins,
   methods: ['GET'], // WebSocket only uses GET for upgrade
   allowedHeaders: [
     'Origin',

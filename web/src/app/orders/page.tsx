@@ -24,10 +24,43 @@ import {
 import { OrderCard, generateDemoOrder as _generateDemoOrder } from '@/components/orders/OrderCard';
 import { toast } from 'sonner';
 import { LazyMotion, domAnimation, m, useReducedMotion } from 'framer-motion';
+import { getParentTestOrders } from '@/lib/parent-test-orders';
+import { useAuth } from '@/contexts/auth-context';
+
+function normalizeOrderForCard(order: any) {
+  const orderItems = Array.isArray(order.orderItems) ? order.orderItems : [];
+  const cardItems = Array.isArray(order.items)
+    ? order.items
+    : orderItems.map((item: any) => ({
+        id: item.id,
+        menuItemId: item.menuItemId,
+        name: item.menuItem?.name || item.name || 'Menu item',
+        quantity: item.quantity || 1,
+        price: item.unitPrice || item.price || 0,
+      }));
+
+  return {
+    ...order,
+    studentName:
+      order.studentName ||
+      [order.student?.firstName, order.student?.lastName].filter(Boolean).join(' ') ||
+      'Student',
+    items: cardItems,
+    placedAt: order.placedAt || order.createdAt || new Date().toISOString(),
+    estimatedDelivery:
+      order.estimatedDelivery ||
+      new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+    location: order.location || 'School Cafeteria',
+    paymentMethod: order.paymentMethod || 'Test checkout',
+    rfidVerified: Boolean(order.rfidVerified),
+  };
+}
 
 export default function OrdersPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user } = useAuth();
+  const dashboardHref = user?.role === 'student' ? '/dashboard/student' : '/dashboard/parent';
   const reduced = useReducedMotion();
   const [isCheckout, setIsCheckout] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
@@ -82,15 +115,25 @@ export default function OrdersPage() {
       const response = await fetch('/api/orders');
       const data = await response.json();
 
+      const savedOrders = getParentTestOrders();
+
       if (data.success && data.data) {
-        setOrders(data.data);
+        const apiOrders = Array.isArray(data.data) ? data.data : [];
+        const savedOrderIds = new Set(savedOrders.map(order => order.id));
+        setOrders(
+          [...savedOrders, ...apiOrders.filter((order: any) => !savedOrderIds.has(order.id))].map(
+            normalizeOrderForCard
+          )
+        );
       } else {
         throw new Error(data.error || 'Failed to load orders');
       }
     } catch (error) {
-      toast.error('Failed to load orders');
-      // Fallback to empty array
-      setOrders([]);
+      const savedOrders = getParentTestOrders();
+      if (savedOrders.length === 0) {
+        toast.error('Failed to load orders');
+      }
+      setOrders(savedOrders.map(normalizeOrderForCard));
     } finally {
       setLoading(false);
     }
@@ -486,7 +529,7 @@ export default function OrdersPage() {
           <div className="container mx-auto px-4 py-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <Link href="/">
+                <Link href={dashboardHref}>
                   <Button variant="ghost" size="sm">
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     Back to Home
@@ -504,9 +547,11 @@ export default function OrdersPage() {
                   </div>
                 </div>
               </div>
-              <Button>
-                <ShoppingCart className="h-4 w-4 mr-2" />
-                New Order
+              <Button asChild>
+                <Link href="/menu">
+                  <ShoppingCart className="h-4 w-4 mr-2" />
+                  New Order
+                </Link>
               </Button>
             </div>
           </div>

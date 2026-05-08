@@ -1,25 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getAccessTokenFromRequest } from '@/app/api/_utils/proxy';
+import { verifyHs256Jwt } from '@/lib/security/jwt-verify';
 
 export async function GET(request: NextRequest) {
   try {
-    // Basic auth check implementation
-    // In a real app, this would validate JWT tokens, sessions, etc.
-    const authHeader = request.headers.get('authorization');
-    const sessionCookie = request.cookies.get('session');
-
-    // Mock authentication for development
-    const isAuthenticated = Boolean(authHeader || sessionCookie);
-
-    if (isAuthenticated) {
-      return NextResponse.json({
-        authenticated: true,
-        user: {
-          id: 'demo-user',
-          email: 'demo@hasivu.com',
-          role: 'customer',
-        },
-      });
-    } else {
+    const authToken = getAccessTokenFromRequest(request);
+    if (!authToken) {
       return NextResponse.json(
         {
           authenticated: false,
@@ -28,6 +14,45 @@ export async function GET(request: NextRequest) {
         { status: 401 }
       );
     }
+
+    const jwtSecret = process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET;
+    if (!jwtSecret) {
+      return NextResponse.json(
+        {
+          authenticated: false,
+          error: 'Auth secret not configured',
+        },
+        { status: 500 }
+      );
+    }
+
+    const verification = verifyHs256Jwt(authToken, jwtSecret);
+    if (
+      verification?.expired ||
+      !verification?.payload?.userId ||
+      !verification.payload.email ||
+      !verification.payload.role
+    ) {
+      return NextResponse.json(
+        {
+          authenticated: false,
+          message: 'No valid authentication found',
+        },
+        { status: 401 }
+      );
+    }
+
+    return NextResponse.json({
+      authenticated: true,
+      user: {
+        id: verification.payload.userId,
+        email: verification.payload.email,
+        role: verification.payload.role,
+        permissions: Array.isArray(verification.payload.permissions)
+          ? verification.payload.permissions
+          : [],
+      },
+    });
   } catch (error) {
     return NextResponse.json(
       {

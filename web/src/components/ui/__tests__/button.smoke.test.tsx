@@ -17,4 +17,17 @@ describe('Button (smoke)', () => {
     await user.click(screen.getByRole('button', { name: 'Save' }));
     expect(onClick).toHaveBeenCalledTimes(1);
   });
+
+  it('supports asChild links without wrapping extra children', () => {
+    render(
+      <Button asChild>
+        <a href="/orders">Order history</a>
+      </Button>
+    );
+
+    expect(screen.getByRole('link', { name: 'Order history' })).toHaveAttribute(
+      'href',
+      '/orders'
+    );
+  });
 });

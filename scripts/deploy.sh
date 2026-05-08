@@ -208,11 +208,32 @@ create_deployment_backup() {
         # Create timestamp for backup
         BACKUP_TIMESTAMP=$(date +%Y%m%d_%H%M%S)
         
-        # Create Lambda function aliases for rollback
+        # Persist current LIVE version as a timestamped backup alias.
+        local current_live_version
+        current_live_version=$(aws lambda get-alias \
+            --function-name "$PROJECT_NAME-$env-health" \
+            --name "LIVE" \
+            --query 'FunctionVersion' \
+            --output text \
+            --region "$AWS_REGION" 2>/dev/null || echo "")
+
+        if [ -z "$current_live_version" ] || [ "$current_live_version" = "None" ]; then
+            current_live_version=$(aws lambda list-versions-by-function \
+                --function-name "$PROJECT_NAME-$env-health" \
+                --query 'Versions[?Version!=`$LATEST`][-1].Version' \
+                --output text \
+                --region "$AWS_REGION" 2>/dev/null || echo "")
+        fi
+
+        if [ -z "$current_live_version" ] || [ "$current_live_version" = "None" ]; then
+            log_warning "Could not determine current published version for backup alias"
+            return
+        fi
+
         aws lambda create-alias \
             --function-name "$PROJECT_NAME-$env-health" \
             --name "backup-$BACKUP_TIMESTAMP" \
-            --function-version '$LATEST' \
+            --function-version "$current_live_version" \
             --region "$AWS_REGION" || log_warning "Could not create backup alias"
         
         log_success "Deployment backup created: backup-$BACKUP_TIMESTAMP"
@@ -310,11 +331,24 @@ rollback_deployment() {
             --output text | sort -r | head -1)
         
         if [ -n "$backup_alias" ]; then
-            log_info "Rolling back to: $backup_alias"
+            local backup_version
+            backup_version=$(aws lambda get-alias \
+                --function-name "$PROJECT_NAME-$env-health" \
+                --name "$backup_alias" \
+                --query 'FunctionVersion' \
+                --output text \
+                --region "$AWS_REGION" 2>/dev/null || echo "")
+
+            if [ -z "$backup_version" ] || [ "$backup_version" = "None" ]; then
+                log_error "Could not resolve backup alias version: $backup_alias"
+                exit 1
+            fi
+
+            log_info "Rolling back to alias: $backup_alias (version: $backup_version)"
             aws lambda update-alias \
                 --function-name "$PROJECT_NAME-$env-health" \
                 --name LIVE \
-                --function-version "$backup_alias" \
+                --function-version "$backup_version" \
                 --region "$AWS_REGION"
             log_success "Rollback completed"
         else

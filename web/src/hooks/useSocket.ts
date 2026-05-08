@@ -22,9 +22,7 @@ export function useWebSocket(options?: UseWebSocketOptions) {
 
   useEffect(() => {
     try {
-      const token =
-        typeof window !== 'undefined' ? localStorage.getItem('authToken') || undefined : undefined;
-      wsManager.connect(token);
+      wsManager.connect();
     } catch (e) {
       // no-op
     }

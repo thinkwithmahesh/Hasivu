@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,6 +15,9 @@ import {
 } from 'lucide-react';
 
 export default function AnalyticsPage() {
+  const [activeInsight, setActiveInsight] = useState<'popular' | 'peak' | 'nutrition' | null>(
+    null
+  );
   const analyticsData = {
     totalOrders: 1247,
     totalRevenue: '₹45,680',
@@ -187,25 +190,76 @@ export default function AnalyticsPage() {
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="border-0 shadow-soft hover:shadow-medium transition-shadow cursor-pointer">
+          <Card
+            role="button"
+            tabIndex={0}
+            onClick={() => setActiveInsight(activeInsight === 'popular' ? null : 'popular')}
+            onKeyDown={event => {
+              if (event.key === 'Enter' || event.key === ' ') setActiveInsight('popular');
+            }}
+            className="border-0 shadow-soft hover:shadow-medium transition-shadow cursor-pointer"
+          >
             <CardHeader>
               <CardTitle className="text-lg">Popular Menu Items</CardTitle>
               <CardDescription>See which meals students love most</CardDescription>
             </CardHeader>
+            {activeInsight === 'popular' && (
+              <CardContent>
+                <ol className="space-y-2 text-sm text-gray-700">
+                  <li>1. Vegetable Pulao — 184 orders</li>
+                  <li>2. Chicken Biryani — 162 orders</li>
+                  <li>3. Masala Dosa — 139 orders</li>
+                </ol>
+              </CardContent>
+            )}
           </Card>
 
-          <Card className="border-0 shadow-soft hover:shadow-medium transition-shadow cursor-pointer">
+          <Card
+            role="button"
+            tabIndex={0}
+            onClick={() => setActiveInsight(activeInsight === 'peak' ? null : 'peak')}
+            onKeyDown={event => {
+              if (event.key === 'Enter' || event.key === ' ') setActiveInsight('peak');
+            }}
+            className="border-0 shadow-soft hover:shadow-medium transition-shadow cursor-pointer"
+          >
             <CardHeader>
               <CardTitle className="text-lg">Peak Hours Analysis</CardTitle>
               <CardDescription>Understand busy times for better planning</CardDescription>
             </CardHeader>
+            {activeInsight === 'peak' && (
+              <CardContent>
+                <div className="space-y-2 text-sm text-gray-700">
+                  <p>Highest ordering window: 7:45 AM - 8:30 AM</p>
+                  <p>Kitchen peak pickup window: 12:00 PM - 12:40 PM</p>
+                  <p>Recommendation: staff one extra prep assistant from 11:30 AM.</p>
+                </div>
+              </CardContent>
+            )}
           </Card>
 
-          <Card className="border-0 shadow-soft hover:shadow-medium transition-shadow cursor-pointer">
+          <Card
+            role="button"
+            tabIndex={0}
+            onClick={() => setActiveInsight(activeInsight === 'nutrition' ? null : 'nutrition')}
+            onKeyDown={event => {
+              if (event.key === 'Enter' || event.key === ' ') setActiveInsight('nutrition');
+            }}
+            className="border-0 shadow-soft hover:shadow-medium transition-shadow cursor-pointer"
+          >
             <CardHeader>
               <CardTitle className="text-lg">Nutrition Reports</CardTitle>
               <CardDescription>Track student nutrition and dietary habits</CardDescription>
             </CardHeader>
+            {activeInsight === 'nutrition' && (
+              <CardContent>
+                <div className="space-y-2 text-sm text-gray-700">
+                  <p>Balanced meals selected this month: 78%</p>
+                  <p>Allergen-safe substitutions completed: 23</p>
+                  <p>Low-protein lunch alerts: 4 classes flagged for menu review.</p>
+                </div>
+              </CardContent>
+            )}
           </Card>
         </div>
       </main>

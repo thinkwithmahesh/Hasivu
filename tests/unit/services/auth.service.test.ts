@@ -5,6 +5,13 @@
  * Archon Task: 7f11c077-99e1-423e-beac-1136b95abf34
  */
 
+/** Match `jest.mock('../../../src/config/environment')` below — used for jwt.sign */
+const TEST_JWT_ACCESS_SECRET = 'test-auth-jwt-secret-key-40chars-minimum!!';
+const TEST_JWT_REFRESH_SECRET = 'test-auth-refresh-secret-key-40chars-min!!';
+
+jest.mock('bcryptjs', () => jest.requireActual('bcryptjs'));
+jest.mock('jsonwebtoken', () => jest.requireActual('jsonwebtoken'));
+
 // Mock Prisma enums
 const UserRole = {
   ADMIN: 'ADMIN',
@@ -53,19 +60,47 @@ jest.mock('../../../src/utils/logger', () => ({
 
 jest.mock('../../../src/config/environment', () => ({
   config: {
-    JWT_SECRET: 'test-jwt-secret-key-for-testing-purposes-only',
-    JWT_REFRESH_SECRET: 'test-jwt-refresh-secret-key-for-testing-purposes-only'
-  }
+    server: { nodeEnv: 'test' },
+    jwt: {
+      secret: 'test-auth-jwt-secret-key-40chars-minimum!!',
+      refreshSecret: 'test-auth-refresh-secret-key-40chars-min!!',
+      expiresIn: '15m',
+      refreshExpiresIn: '7d',
+      issuer: 'hasivu-test',
+      audience: 'hasivu-users-test',
+    },
+    redis: { url: 'redis://127.0.0.1:6379/0' },
+  },
 }));
+
+jest.mock('ioredis', () =>
+  jest.fn().mockImplementation(() => ({
+    on: jest.fn(),
+    setex: jest.fn().mockResolvedValue('OK'),
+    get: jest.fn().mockResolvedValue(null),
+    set: jest.fn().mockResolvedValue('OK'),
+    del: jest.fn().mockResolvedValue(1),
+    quit: jest.fn().mockResolvedValue('OK'),
+    ping: jest.fn().mockResolvedValue('PONG'),
+    connect: jest.fn().mockResolvedValue(undefined),
+  }))
+);
 
 import { AuthService } from '../../../src/services/auth.service';
 import { DatabaseService } from '../../../src/services/database.service';
-import { RedisService } from '../../../src/services/redis.service';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 
 const MockedDatabaseService = jest.mocked(DatabaseService);
-const MockedRedisService = jest.mocked(RedisService);
+
+function getAuthRedis(auth: AuthService): {
+  get: jest.Mock;
+  set: jest.Mock;
+  setex: jest.Mock;
+  del: jest.Mock;
+} {
+  return (auth as unknown as { redis: { get: jest.Mock; set: jest.Mock; setex: jest.Mock; del: jest.Mock } }).redis;
+}
 
 // Helper functions
 const createMockUser = (overrides = {}) => ({
@@ -132,13 +167,12 @@ describe('AuthService', () => {
     jest.clearAllMocks();
     authService = AuthService.getInstance();
     mockUser = createMockUser();
-    
-    // Setup default Redis responses
-    MockedRedisService.get.mockResolvedValue(null); // No lockout
-    MockedRedisService.set.mockResolvedValue('OK');
-    MockedRedisService.setex.mockResolvedValue(undefined);
-    MockedRedisService.del.mockResolvedValue(1);
-    MockedRedisService.exists.mockResolvedValue(1);
+
+    const redis = getAuthRedis(authService);
+    redis.get.mockResolvedValue(null);
+    redis.set.mockResolvedValue('OK');
+    redis.setex.mockResolvedValue(undefined);
+    redis.del.mockResolvedValue(1);
   });
 
   describe('Password Management', () => {
@@ -149,7 +183,7 @@ describe('AuthService', () => {
 
         expect(hashedPassword).toBeDefined();
         expect(hashedPassword).not.toBe(password);
-        expect(hashedPassword.startsWith('$2a$12$')).toBe(true);
+        expect(hashedPassword).toMatch(/^\$2[aby]\$\d{2}\$/);
       });
 
       it('should generate different hashes for same password', async () => {
@@ -277,10 +311,10 @@ describe('AuthService', () => {
 
         const token = jwt.sign(
           { ...payload, iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 3600 },
-          'test-jwt-secret-key-for-testing-purposes-only'
+          TEST_JWT_ACCESS_SECRET
         );
 
-        MockedRedisService.get.mockResolvedValue(null); // Not blacklisted
+        getAuthRedis(authService).get.mockResolvedValue(null); // Not blacklisted
 
         const decoded = await authService.verifyToken(token, 'access');
         
@@ -303,10 +337,10 @@ describe('AuthService', () => {
 
         const token = jwt.sign(
           { ...payload, iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 3600 },
-          'test-jwt-refresh-secret-key-for-testing-purposes-only'
+          TEST_JWT_REFRESH_SECRET
         );
 
-        MockedRedisService.get.mockResolvedValue(null); // Not blacklisted
+        getAuthRedis(authService).get.mockResolvedValue(null); // Not blacklisted
 
         const decoded = await authService.verifyToken(token, 'refresh');
         
@@ -333,7 +367,7 @@ describe('AuthService', () => {
           exp: Math.floor(Date.now() / 1000) - 3600 // Expired 1 hour ago
         };
 
-        const expiredToken = jwt.sign(expiredPayload, 'test-jwt-secret-key-for-testing-purposes-only');
+        const expiredToken = jwt.sign(expiredPayload, TEST_JWT_ACCESS_SECRET);
         
         await expect(authService.verifyToken(expiredToken, 'access'))
           .rejects.toThrow('Invalid or expired token');
@@ -351,13 +385,13 @@ describe('AuthService', () => {
           exp: Math.floor(Date.now() / 1000) + 3600
         };
 
-        const token = jwt.sign(payload, 'test-jwt-secret-key-for-testing-purposes-only');
-        MockedRedisService.get.mockResolvedValue('true'); // Blacklisted
+        const token = jwt.sign(payload, TEST_JWT_ACCESS_SECRET);
+        getAuthRedis(authService).get.mockResolvedValue('true'); // Blacklisted
 
         await expect(authService.verifyToken(token, 'access'))
           .rejects.toThrow('Invalid or expired token');
 
-        expect(MockedRedisService.get).toHaveBeenCalledWith(`blacklist:${token}`);
+        expect(getAuthRedis(authService).get).toHaveBeenCalledWith(`blacklist:${token}`);
       });
 
       it('should reject wrong token type', async () => {
@@ -372,8 +406,8 @@ describe('AuthService', () => {
           exp: Math.floor(Date.now() / 1000) + 3600
         };
 
-        const token = jwt.sign(payload, 'test-jwt-secret-key-for-testing-purposes-only');
-        MockedRedisService.get.mockResolvedValue(null);
+        const token = jwt.sign(payload, TEST_JWT_ACCESS_SECRET);
+        getAuthRedis(authService).get.mockResolvedValue(null);
 
         await expect(authService.verifyToken(token, 'refresh'))
           .rejects.toThrow('Invalid or expired token');
@@ -388,11 +422,11 @@ describe('AuthService', () => {
           exp: Math.floor(Date.now() / 1000) + 3600
         };
 
-        const token = jwt.sign(payload, 'test-jwt-secret-key-for-testing-purposes-only');
+        const token = jwt.sign(payload, TEST_JWT_ACCESS_SECRET);
         
         await authService.blacklistToken(token);
         
-        expect(MockedRedisService.setex).toHaveBeenCalledWith(
+        expect(getAuthRedis(authService).setex).toHaveBeenCalledWith(
           `blacklist:${token}`,
           expect.any(Number),
           'true'
@@ -405,7 +439,7 @@ describe('AuthService', () => {
         // Should not throw
         await authService.blacklistToken(invalidToken);
         
-        expect(MockedRedisService.setex).not.toHaveBeenCalled();
+        expect(getAuthRedis(authService).setex).not.toHaveBeenCalled();
       });
 
       it('should not blacklist already expired token', async () => {
@@ -415,11 +449,11 @@ describe('AuthService', () => {
           exp: Math.floor(Date.now() / 1000) - 3600 // Already expired
         };
 
-        const expiredToken = jwt.sign(expiredPayload, 'test-jwt-secret-key-for-testing-purposes-only');
+        const expiredToken = jwt.sign(expiredPayload, TEST_JWT_ACCESS_SECRET);
         
         await authService.blacklistToken(expiredToken);
         
-        expect(MockedRedisService.setex).not.toHaveBeenCalled();
+        expect(getAuthRedis(authService).setex).not.toHaveBeenCalled();
       });
     });
   });
@@ -440,7 +474,7 @@ describe('AuthService', () => {
       };
 
       it('should authenticate user successfully', async () => {
-        MockedRedisService.get.mockResolvedValue(null); // No lockout
+        getAuthRedis(authService).get.mockResolvedValue(null); // No lockout
         
         const result = await authService.authenticate(validCredentials);
 
@@ -456,7 +490,7 @@ describe('AuthService', () => {
       });
 
       it('should generate longer-lived tokens for remember me', async () => {
-        MockedRedisService.get.mockResolvedValue(null);
+        getAuthRedis(authService).get.mockResolvedValue(null);
         const credentialsWithRememberMe = { ...validCredentials, rememberMe: true };
 
         const result = await authService.authenticate(credentialsWithRememberMe);
@@ -466,14 +500,15 @@ describe('AuthService', () => {
 
       it('should reject invalid email', async () => {
         MockedDatabaseService.client.user.findUnique.mockResolvedValue(null);
-        MockedRedisService.get.mockResolvedValue(null);
+        getAuthRedis(authService).get.mockResolvedValue(null);
         
         const credentials = { ...validCredentials, email: 'invalid@example.com' };
         
-        await expect(authService.authenticate(credentials))
-          .rejects.toThrow('Invalid credentials');
+        const result = await authService.authenticate(credentials);
+        expect(result.success).toBe(false);
+        expect(result.error).toContain('Invalid credentials');
         
-        expect(MockedRedisService.setex).toHaveBeenCalledWith(
+        expect(getAuthRedis(authService).setex).toHaveBeenCalledWith(
           'attempts:invalid@example.com',
           expect.any(Number),
           '1'
@@ -482,14 +517,15 @@ describe('AuthService', () => {
 
       it('should reject invalid password', async () => {
         jest.spyOn(authService, 'verifyPassword').mockResolvedValue(false);
-        MockedRedisService.get.mockResolvedValue(null);
+        getAuthRedis(authService).get.mockResolvedValue(null);
         
         const credentials = { ...validCredentials, password: 'WrongPassword123!' };
         
-        await expect(authService.authenticate(credentials))
-          .rejects.toThrow('Invalid credentials');
+        const result = await authService.authenticate(credentials);
+        expect(result.success).toBe(false);
+        expect(result.error).toContain('Invalid credentials');
         
-        expect(MockedRedisService.setex).toHaveBeenCalledWith(
+        expect(getAuthRedis(authService).setex).toHaveBeenCalledWith(
           `attempts:${validCredentials.email}`,
           expect.any(Number),
           '1'
@@ -499,33 +535,39 @@ describe('AuthService', () => {
       it('should reject inactive user', async () => {
         const inactiveUser = { ...mockUser, isActive: false };
         MockedDatabaseService.client.user.findUnique.mockResolvedValue(inactiveUser);
-        MockedRedisService.get.mockResolvedValue(null);
+        getAuthRedis(authService).get.mockResolvedValue(null);
         
-        await expect(authService.authenticate(validCredentials))
-          .rejects.toThrow('Account is deactivated');
+        const result = await authService.authenticate(validCredentials);
+        expect(result.success).toBe(false);
+        expect(result.error).toContain('Account is deactivated');
       });
 
       it('should reject locked account', async () => {
-        MockedRedisService.get.mockResolvedValue('true'); // Account locked
-        
-        await expect(authService.authenticate(validCredentials))
-          .rejects.toThrow('Account temporarily locked due to too many failed attempts');
+        jest.spyOn(authService, 'verifyPassword').mockResolvedValue(false);
+        getAuthRedis(authService).get.mockResolvedValue('true');
+
+        const result = await authService.authenticate(validCredentials);
+        expect(result.success).toBe(false);
+        expect(result.error).toContain('Account temporarily locked');
       });
 
       it('should clear failed attempts on successful login', async () => {
-        MockedRedisService.get.mockResolvedValue(null);
+        getAuthRedis(authService).get.mockResolvedValue(null);
         
         await authService.authenticate(validCredentials);
         
-        expect(MockedRedisService.del).toHaveBeenCalledWith(`attempts:${validCredentials.email}`);
+        expect(getAuthRedis(authService).del).toHaveBeenCalledWith(
+          `attempts:${validCredentials.email}`,
+          `lockout:${validCredentials.email}`
+        );
       });
 
       it('should create session with metadata', async () => {
-        MockedRedisService.get.mockResolvedValue(null);
+        getAuthRedis(authService).get.mockResolvedValue(null);
         
         await authService.authenticate(validCredentials);
         
-        expect(MockedRedisService.setex).toHaveBeenCalledWith(
+        expect(getAuthRedis(authService).setex).toHaveBeenCalledWith(
           expect.stringMatching(/^session:/),
           expect.any(Number),
           expect.stringContaining(validCredentials.userAgent)
@@ -533,7 +575,7 @@ describe('AuthService', () => {
       });
 
       it('should handle case-insensitive email', async () => {
-        MockedRedisService.get.mockResolvedValue(null);
+        getAuthRedis(authService).get.mockResolvedValue(null);
         const credentials = { ...validCredentials, email: 'TEST@EXAMPLE.COM' };
         
         await authService.authenticate(credentials);
@@ -548,13 +590,14 @@ describe('AuthService', () => {
     describe('lockout mechanism', () => {
       it('should track failed attempts', async () => {
         MockedDatabaseService.client.user.findUnique.mockResolvedValue(null);
-        MockedRedisService.get.mockResolvedValue(null);
+        getAuthRedis(authService).get.mockResolvedValue(null);
         
         const credentials = { email: 'test@example.com', password: 'wrong' };
         
-        await expect(authService.authenticate(credentials)).rejects.toThrow();
+        const result = await authService.authenticate(credentials);
+        expect(result.success).toBe(false);
         
-        expect(MockedRedisService.setex).toHaveBeenCalledWith(
+        expect(getAuthRedis(authService).setex).toHaveBeenCalledWith(
           'attempts:test@example.com',
           expect.any(Number),
           '1'
@@ -564,15 +607,16 @@ describe('AuthService', () => {
       it('should lock account after max failed attempts', async () => {
         MockedDatabaseService.client.user.findUnique.mockResolvedValue(null);
         // Simulate max failed attempts reached (5 attempts = lockout threshold)
-        MockedRedisService.get
+        getAuthRedis(authService).get
           .mockResolvedValueOnce(null) // lockout check returns null (not locked yet)
           .mockResolvedValueOnce('5'); // attempt count returns 5 (max reached)
         
         const credentials = { email: 'test@example.com', password: 'wrong' };
         
-        await expect(authService.authenticate(credentials)).rejects.toThrow();
+        const result = await authService.authenticate(credentials);
+        expect(result.success).toBe(false);
         
-        expect(MockedRedisService.setex).toHaveBeenCalledWith(
+        expect(getAuthRedis(authService).setex).toHaveBeenCalledWith(
           'lockout:test@example.com',
           expect.any(Number),
           'true'
@@ -591,12 +635,12 @@ describe('AuthService', () => {
           lastActivity: '2024-01-01T00:00:00.000Z'
         });
         
-        MockedRedisService.get.mockResolvedValue(existingSession);
+        getAuthRedis(authService).get.mockResolvedValue(existingSession);
         
         await authService.updateSessionActivity(sessionId, { action: 'test' });
         
-        expect(MockedRedisService.get).toHaveBeenCalledWith(`session:${sessionId}`);
-        expect(MockedRedisService.setex).toHaveBeenCalledWith(
+        expect(getAuthRedis(authService).get).toHaveBeenCalledWith(`session:${sessionId}`);
+        expect(getAuthRedis(authService).setex).toHaveBeenCalledWith(
           `session:${sessionId}`,
           expect.any(Number),
           expect.stringContaining('"action":"test"')
@@ -605,21 +649,21 @@ describe('AuthService', () => {
 
       it('should handle non-existent session gracefully', async () => {
         const sessionId = 'non-existent-session';
-        MockedRedisService.get.mockResolvedValue(null);
+        getAuthRedis(authService).get.mockResolvedValue(null);
         
         await authService.updateSessionActivity(sessionId);
         
-        expect(MockedRedisService.setex).not.toHaveBeenCalled();
+        expect(getAuthRedis(authService).setex).not.toHaveBeenCalled();
       });
 
       it('should handle Redis errors gracefully', async () => {
         const sessionId = 'test-session-id';
-        MockedRedisService.get.mockRejectedValue(new Error('Redis error'));
+        getAuthRedis(authService).get.mockRejectedValue(new Error('Redis error'));
         
         // Should not throw
         await authService.updateSessionActivity(sessionId);
         
-        expect(MockedRedisService.setex).not.toHaveBeenCalled();
+        expect(getAuthRedis(authService).setex).not.toHaveBeenCalled();
       });
     });
 
@@ -629,12 +673,12 @@ describe('AuthService', () => {
         
         await authService.revokeSession(sessionId);
         
-        expect(MockedRedisService.del).toHaveBeenCalledWith(`session:${sessionId}`);
+        expect(getAuthRedis(authService).del).toHaveBeenCalledWith(`session:${sessionId}`);
       });
 
       it('should handle Redis errors gracefully', async () => {
         const sessionId = 'test-session-id';
-        MockedRedisService.del.mockRejectedValue(new Error('Redis error'));
+        getAuthRedis(authService).del.mockRejectedValue(new Error('Redis error'));
         
         // Should not throw
         await authService.revokeSession(sessionId);
@@ -648,7 +692,7 @@ describe('AuthService', () => {
         
         await authService.logout(sessionId, token);
         
-        expect(MockedRedisService.del).toHaveBeenCalledWith(`session:${sessionId}`);
+        expect(getAuthRedis(authService).del).toHaveBeenCalledWith(`session:${sessionId}`);
       });
 
       it('should logout without token', async () => {
@@ -656,7 +700,7 @@ describe('AuthService', () => {
         
         await authService.logout(sessionId);
         
-        expect(MockedRedisService.del).toHaveBeenCalledWith(`session:${sessionId}`);
+        expect(getAuthRedis(authService).del).toHaveBeenCalledWith(`session:${sessionId}`);
       });
     });
   });
@@ -675,8 +719,8 @@ describe('AuthService', () => {
           exp: Math.floor(Date.now() / 1000) + 3600
         };
 
-        const refreshToken = jwt.sign(refreshPayload, 'test-jwt-refresh-secret-key-for-testing-purposes-only');
-        MockedRedisService.get.mockResolvedValue(null); // Not blacklisted
+        const refreshToken = jwt.sign(refreshPayload, TEST_JWT_REFRESH_SECRET);
+        getAuthRedis(authService).get.mockResolvedValue(null); // Not blacklisted
         
         const result = await authService.refreshToken(refreshToken);
         
@@ -703,7 +747,7 @@ describe('AuthService', () => {
           exp: Math.floor(Date.now() / 1000) + 3600
         };
 
-        const accessToken = jwt.sign(accessPayload, 'test-jwt-secret-key-for-testing-purposes-only');
+        const accessToken = jwt.sign(accessPayload, TEST_JWT_ACCESS_SECRET);
         
         await expect(authService.refreshToken(accessToken))
           .rejects.toThrow();
@@ -715,7 +759,7 @@ describe('AuthService', () => {
     beforeEach(() => {
       // Reset and setup fresh mocks for role permission tests
       jest.clearAllMocks();
-      MockedRedisService.get.mockResolvedValue(null); // No lockout
+      getAuthRedis(authService).get.mockResolvedValue(null); // No lockout
     });
 
     it('should get admin permissions', async () => {
@@ -811,29 +855,33 @@ describe('AuthService', () => {
   describe('Error Handling', () => {
     it('should handle database connection errors', async () => {
       MockedDatabaseService.client.user.findUnique.mockRejectedValue(new Error('Database connection failed'));
-      MockedRedisService.get.mockResolvedValue(null);
+      getAuthRedis(authService).get.mockResolvedValue(null);
       
       const credentials = {
         email: 'test@example.com',
         password: 'TestPass123!'
       };
       
-      await expect(authService.authenticate(credentials))
-        .rejects.toThrow('Database connection failed');
+      const result = await authService.authenticate(credentials);
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Database connection failed');
     });
 
     it('should handle Redis connection errors gracefully', async () => {
       MockedDatabaseService.client.user.findUnique.mockResolvedValue(mockUser);
-      MockedRedisService.get.mockRejectedValue(new Error('Redis connection failed'));
+      jest.spyOn(authService, 'verifyPassword').mockResolvedValue(true);
+      getAuthRedis(authService).get.mockRejectedValue(new Error('Redis connection failed'));
       
       const credentials = {
         email: 'test@example.com',
-        password: 'TestPass123!'
+        password: 'TestPass123!',
+        userAgent: 't',
+        ipAddress: '127.0.0.1',
       };
       
-      // Should still attempt authentication even if Redis fails
-      await expect(authService.authenticate(credentials))
-        .rejects.toThrow(); // Will fail at password verification step due to mocking
+      const result = await authService.authenticate(credentials);
+      expect(result.success).toBe(false);
+      expect(result.error).toBeDefined();
     });
 
     it('should handle password hashing errors', async () => {

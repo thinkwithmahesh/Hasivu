@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   buildProxyHeaders,
   copyUpstreamSetCookieHeaders,
+  fetchConfiguredProxy,
   forwardToExpressApi,
   getRefreshTokenFromRequest,
   resolveProxyUrl,
@@ -21,7 +22,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const upstream = await fetch(LAMBDA_AUTH_REFRESH_URL, {
+      const upstream = await fetchConfiguredProxy(LAMBDA_AUTH_REFRESH_URL, 'LAMBDA_AUTH_REFRESH_URL', {
         method: 'POST',
         headers: buildProxyHeaders(request),
         body: JSON.stringify({ refreshToken }),

@@ -702,8 +702,11 @@ router.put(
       if (updateData.status) {
         await orderService.handleStatusUpdate(id, updateData.status);
 
-        // Send status notifications
-        await (notificationService.constructor as any).sendStatusUpdate(id, updateData.status);
+        // Send status notifications only when helper exists in current notification service build.
+        const sendStatusUpdate = (notificationService as any).sendStatusUpdate;
+        if (typeof sendStatusUpdate === 'function') {
+          await sendStatusUpdate.call(notificationService, id, updateData.status);
+        }
 
         // Real-time updates
         wsService.emitToUser(existingOrder.studentId, 'order.status.updated', {
@@ -790,10 +793,10 @@ router.post(
         throw new AppError('Order not found', 404, true);
       }
 
-      // Check cancellation permissions
-      const canCancel = await orderService.canCancelOrder(id);
+      // Enforce ownership: only the order owner can cancel their own order.
+      const canCancel = await orderService.canUserCancelOrder(currentUser.id, id);
       if (!canCancel) {
-        throw new AppError('Cannot cancel order', 400, true);
+        throw new AppError('You do not have permission to cancel this order', 403, true);
       }
 
       // Process cancellation
@@ -818,8 +821,11 @@ router.post(
       // Release inventory
       await inventoryService.releaseReservation(id);
 
-      // Send notifications
-      await (notificationService.constructor as any).sendOrderCancellation(id, reason);
+      // Send cancellation notifications only when helper exists in current service build.
+      const sendOrderCancellation = (notificationService as any).sendOrderCancellation;
+      if (typeof sendOrderCancellation === 'function') {
+        await sendOrderCancellation.call(notificationService, id, reason);
+      }
 
       // Real-time updates
       wsService.emitToUser(order.studentId, 'order.cancelled', {
@@ -866,7 +872,18 @@ router.post(
           userId: req.user?.id,
         }
       );
-      throw error;
+      if (error instanceof AppError) {
+        res.status(error.statusCode || 500).json({
+          error: error.message,
+          requestId: req.requestId,
+        });
+        return;
+      }
+
+      res.status(500).json({
+        error: 'Failed to cancel order',
+        requestId: req.requestId,
+      });
     }
   }
 );

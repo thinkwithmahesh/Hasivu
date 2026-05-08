@@ -4,7 +4,7 @@
  * Story 2.4: Parent Mobile Integration
  */
 import React, { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import { format, isToday, differenceInMinutes } from 'date-fns';
 import {
@@ -94,6 +94,7 @@ export const DeliveryTracking: React.FC<DeliveryTrackingProps> = ({
   autoRefresh = true,
   className = '',
 }) => {
+  const reduced = useReducedMotion();
   const { user } = useAuth();
   const { isConnected, lastMessage } = useRealTimeNotifications();
 
@@ -341,7 +342,7 @@ export const DeliveryTracking: React.FC<DeliveryTrackingProps> = ({
   if (isLoading) {
     return (
       <div className={`bg-white rounded-lg shadow-sm border p-6 ${className}`}>
-        <div className="animate-pulse space-y-4">
+        <div className={reduced ? 'space-y-4' : 'animate-pulse space-y-4'}>
           <div className="h-6 bg-gray-200 rounded w-1/3"></div>
           <div className="space-y-3">
             <div className="h-4 bg-gray-200 rounded"></div>
@@ -396,7 +397,9 @@ export const DeliveryTracking: React.FC<DeliveryTrackingProps> = ({
             disabled={isRefreshing}
             className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
           >
-            <RefreshIcon className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <RefreshIcon
+              className={`h-4 w-4 mr-2 ${isRefreshing && !reduced ? 'animate-spin' : ''}`}
+            />
             Refresh
           </button>
         </div>
@@ -455,8 +458,9 @@ export const DeliveryTracking: React.FC<DeliveryTrackingProps> = ({
             {filteredOrders.map(order => (
               <motion.div
                 key={order.id}
-                initial={{ opacity: 0, y: 20 }}
+                initial={reduced ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
+                transition={reduced ? { duration: 0.001 } : undefined}
                 className={`border rounded-lg p-4 cursor-pointer transition-all hover:shadow-md ${
                   selectedOrder?.id === order.id
                     ? 'border-indigo-500 bg-indigo-50'
@@ -504,9 +508,10 @@ export const DeliveryTracking: React.FC<DeliveryTrackingProps> = ({
         <AnimatePresence>
           {selectedOrder && (
             <motion.div
-              initial={{ opacity: 0, height: 0 }}
+              initial={reduced ? { opacity: 1, height: 'auto' } : { opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
+              exit={reduced ? { opacity: 1, height: 'auto' } : { opacity: 0, height: 0 }}
+              transition={reduced ? { duration: 0.001 } : undefined}
               className="mt-6 border-t pt-6"
             >
               <h3 className="text-lg font-medium text-gray-900 mb-4">

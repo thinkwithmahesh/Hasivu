@@ -3,6 +3,7 @@
 
 import { cloudwatchService } from './cloudwatch.service';
 import { MetricNames } from '../config/cloudwatch.config';
+import { logger } from '../utils/logger';
 
 interface PaymentMetrics {
   transactionId: string;
@@ -95,7 +96,7 @@ class MetricsService {
         processingTime: metrics.processingTime,
       });
     } catch (error) {
-      console.error('Error tracking payment metrics:', error);
+      logger.error('Error tracking payment metrics', error instanceof Error ? error : undefined);
       await cloudwatchService.logError(error as Error, { context: 'trackPayment', metrics });
     }
   }
@@ -139,7 +140,7 @@ class MetricsService {
         itemCount: metrics.itemCount,
       });
     } catch (error) {
-      console.error('Error tracking order creation metrics:', error);
+      logger.error('Error tracking order creation metrics', error instanceof Error ? error : undefined);
       await cloudwatchService.logError(error as Error, { context: 'trackOrderCreation', metrics });
     }
   }
@@ -164,7 +165,7 @@ class MetricsService {
         deliveryTime,
       });
     } catch (error) {
-      console.error('Error tracking order completion metrics:', error);
+      logger.error('Error tracking order completion metrics', error instanceof Error ? error : undefined);
     }
   }
 
@@ -196,7 +197,7 @@ class MetricsService {
         refundAmount,
       });
     } catch (error) {
-      console.error('Error tracking order cancellation metrics:', error);
+      logger.error('Error tracking order cancellation metrics', error instanceof Error ? error : undefined);
     }
   }
 
@@ -232,7 +233,7 @@ class MetricsService {
         location: metrics.location,
       });
     } catch (error) {
-      console.error('Error tracking RFID metrics:', error);
+      logger.error('Error tracking RFID metrics', error instanceof Error ? error : undefined);
     }
   }
 
@@ -261,7 +262,7 @@ class MetricsService {
         await cloudwatchService.trackBusinessMetric(MetricNames.ACTIVE_USERS, 1);
       }
     } catch (error) {
-      console.error('Error tracking user activity metrics:', error);
+      logger.error('Error tracking user activity metrics', error instanceof Error ? error : undefined);
     }
   }
 
@@ -302,7 +303,7 @@ class MetricsService {
         });
       }
     } catch (error) {
-      console.error('Error tracking API performance metrics:', error);
+      logger.error('Error tracking API performance metrics', error instanceof Error ? error : undefined);
     }
   }
 
@@ -364,7 +365,7 @@ class MetricsService {
         components: metrics.components,
       });
     } catch (error) {
-      console.error('Error tracking system health metrics:', error);
+      logger.error('Error tracking system health metrics', error instanceof Error ? error : undefined);
     }
   }
 
@@ -386,7 +387,7 @@ class MetricsService {
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
-      console.error('Error tracking security event:', error);
+      logger.error('Error tracking security event', error instanceof Error ? error : undefined);
     }
   }
 
@@ -400,7 +401,7 @@ class MetricsService {
     try {
       await cloudwatchService.trackCost(service, estimatedCost);
     } catch (error) {
-      console.error('Error tracking cost metric:', error);
+      logger.error('Error tracking cost metric', error instanceof Error ? error : undefined);
     }
   }
 
@@ -425,7 +426,7 @@ class MetricsService {
         revenuePerTransaction,
       });
     } catch (error) {
-      console.error('Error calculating revenue metrics:', error);
+      logger.error('Error calculating revenue metrics', error instanceof Error ? error : undefined);
     }
   }
 
@@ -453,7 +454,7 @@ class MetricsService {
         });
       }
     } catch (error) {
-      console.error('Error tracking database performance:', error);
+      logger.error('Error tracking database performance', error instanceof Error ? error : undefined);
     }
   }
 
@@ -485,7 +486,7 @@ class MetricsService {
         namespace: 'HASIVU/Infrastructure',
       });
     } catch (error) {
-      console.error('Error tracking cache operation:', error);
+      logger.error('Error tracking cache operation', error instanceof Error ? error : undefined);
     }
   }
 
@@ -513,7 +514,7 @@ class MetricsService {
         ...context,
       });
     } catch (error) {
-      console.error('Error tracking error metric:', error);
+      logger.error('Error tracking error metric', error instanceof Error ? error : undefined);
     }
   }
 

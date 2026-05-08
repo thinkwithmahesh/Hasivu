@@ -22,8 +22,8 @@ export interface AssignOrderRequest {
 
 export interface OrderFilters {
   schoolId?: string;
-  studentId?: string;
-  status?: string;
+  studentId?: string | string[];
+  status?: string | string[];
   startDate?: Date;
   endDate?: Date;
 }
@@ -635,11 +635,11 @@ export class OrderService {
       );
     }
 
-    if (filters?.status && filters?.schoolId) {
+    if (filters?.status && filters?.schoolId && !Array.isArray(filters.status)) {
       return await this.orderRepo.findByStatus(filters.schoolId, filters.status);
     }
 
-    if (filters?.studentId) {
+    if (filters?.studentId && !Array.isArray(filters.studentId)) {
       return await this.orderRepo.findByStudent(filters.studentId);
     }
 
@@ -759,8 +759,16 @@ export class OrderService {
     const where: any = {};
 
     if (filters.schoolId) where.schoolId = filters.schoolId;
-    if (filters.studentId) where.studentId = filters.studentId;
-    if (filters.status) where.status = filters.status;
+    if (Array.isArray(filters.studentId)) {
+      where.studentId = { in: filters.studentId };
+    } else if (filters.studentId) {
+      where.studentId = filters.studentId;
+    }
+    if (Array.isArray(filters.status)) {
+      where.status = { in: filters.status };
+    } else if (filters.status) {
+      where.status = filters.status;
+    }
     if (filters.startDate && filters.endDate) {
       where.createdAt = {
         gte: filters.startDate,
@@ -869,8 +877,10 @@ export class OrderService {
     const order = await this.findById(orderId);
     if (!order) return false;
 
+    const ownerId = (order as any).userId || (order as any).user_id;
+
     // Parent can access child's orders
-    if (order.userId === userId) return true;
+    if (ownerId === userId) return true;
 
     // Check if user is parent of student
     const children = await this.getParentChildren(userId);
@@ -885,6 +895,17 @@ export class OrderService {
     if (!order) return false;
 
     return ['pending', 'confirmed'].includes(order.status);
+  }
+
+  /**
+   * Check if specific user can cancel order they own
+   */
+  async canUserCancelOrder(userId: string, orderId: string): Promise<boolean> {
+    const order = await this.findById(orderId);
+    if (!order) return false;
+
+    const ownerId = (order as any).userId || (order as any).user_id;
+    return ownerId === userId && ['pending', 'confirmed'].includes(order.status);
   }
 
   /**
@@ -1010,7 +1031,8 @@ export class OrderService {
     const order = await this.findById(orderId);
     if (!order) return false;
 
-    return order.userId === userId && order.status === 'pending';
+    const ownerId = (order as any).userId || (order as any).user_id;
+    return ownerId === userId && order.status === 'pending';
   }
 
   /**

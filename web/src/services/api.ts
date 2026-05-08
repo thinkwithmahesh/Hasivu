@@ -2,7 +2,7 @@
 import axios, { AxiosInstance, AxiosResponse, AxiosError } from 'axios';
 
 // API Configuration
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '/api';
 const API_BASEURL = API_BASE_URL; // For backward compatibility
 
 // Export API_CONFIG for backward compatibility
@@ -12,7 +12,7 @@ export const API_CONFIG = {
   TIMEOUT: 30000,
   RETRY_ATTEMPTS: 3,
 };
-const WS_BASE_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:3001/ws';
+const WS_BASE_URL = process.env.NEXT_PUBLIC_WS_URL || '';
 
 // Create axios instance with default configuration
 export const apiClient: AxiosInstance = axios.create({
@@ -946,7 +946,15 @@ export class WebSocketManager {
   private reconnectInterval = 3000;
   private messageHandlers: Map<string, (data: unknown) => void> = new Map();
 
+  isEnabled(): boolean {
+    return Boolean(WS_BASE_URL);
+  }
+
   connect(token?: string) {
+    if (!this.isEnabled() || typeof window === 'undefined') {
+      return;
+    }
+
     if (this.ws?.readyState === WebSocket.OPEN) {
       return;
     }
@@ -988,6 +996,10 @@ export class WebSocketManager {
   }
 
   private attemptReconnect() {
+    if (!this.isEnabled()) {
+      return;
+    }
+
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
       setTimeout(() => {
@@ -997,6 +1009,10 @@ export class WebSocketManager {
   }
 
   send(type: string, data: unknown) {
+    if (!this.isEnabled()) {
+      return;
+    }
+
     if (this.ws?.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify({ type, data }));
     }
@@ -1019,7 +1035,7 @@ export class WebSocketManager {
   }
 
   isConnected(): boolean {
-    return this.ws?.readyState === WebSocket.OPEN;
+    return this.isEnabled() && this.ws?.readyState === WebSocket.OPEN;
   }
 }
 
@@ -1029,6 +1045,9 @@ export const wsManager = new WebSocketManager();
 // Initialize WebSocket connection on app start
 export const initializeWebSocket = () => {
   // WebSocket will authenticate via cookies, no need to pass token
+  if (!wsManager.isEnabled()) {
+    return;
+  }
   wsManager.connect();
 };
 

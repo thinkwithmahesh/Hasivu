@@ -163,7 +163,9 @@ export const adminCorsOptions: CorsOptions = {
  * More permissive for public endpoints
  */
 export const publicCorsOptions: CorsOptions = {
-  origin: '*', // Allow all origins for public APIs
+  origin: process.env.CORS_ORIGINS?.split(',').map(origin => origin.trim()).filter(Boolean) || [
+    'https://app.hasivu.com',
+  ],
   credentials: false, // No credentials for public APIs
   methods: ['GET', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Accept', 'X-Request-ID'],
@@ -185,7 +187,7 @@ export const websocketCorsOptions: CorsOptions = {
  * WARNING: Never use in production
  */
 export const devCorsOptions: CorsOptions = {
-  origin: true, // Allow all origins in development
+  origin: getAllowedOrigins(),
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'],
   allowedHeaders: '*',
@@ -204,7 +206,7 @@ export const getCorsConfig = (): CorsOptions => {
 
   if (env.isTest()) {
     return {
-      origin: true,
+      origin: getAllowedOrigins(),
       credentials: true,
     };
   }

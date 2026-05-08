@@ -3,14 +3,21 @@
  * Data access layer for order operations
  */
 
-import { PrismaClient, Order } from '@prisma/client';
+import { Order } from '@prisma/client';
+import { prisma } from '../database/DatabaseManager';
+
+type OrderFilterValue = string | string[];
+
+function applyOrderFilter(where: Record<string, unknown>, key: string, value?: OrderFilterValue) {
+  if (Array.isArray(value)) {
+    where[key] = { in: value };
+  } else if (value) {
+    where[key] = value;
+  }
+}
 
 export class OrderRepository {
-  private prisma: PrismaClient;
-
-  constructor() {
-    this.prisma = new PrismaClient();
-  }
+  private prisma = prisma;
 
   async findAll(schoolId?: string): Promise<Order[]> {
     return await this.prisma.order.findMany({
@@ -125,7 +132,6 @@ export class OrderRepository {
   }
 
   static async findByIdWithIncludes(id: string, include?: any): Promise<Order | null> {
-    const prisma = new (await import('@prisma/client')).PrismaClient();
     return await prisma.order.findUnique({
       where: { id },
       include: include || {
@@ -140,92 +146,62 @@ export class OrderRepository {
   }
 
   static async findById(id: string): Promise<Order | null> {
-    const prisma = new PrismaClient();
-    try {
-      return await prisma.order.findUnique({
-        where: { id },
-      });
-    } finally {
-      await prisma.$disconnect();
-    }
+    return await prisma.order.findUnique({
+      where: { id },
+    });
   }
 
   static async update(id: string, data: Partial<Order>): Promise<Order> {
-    const prisma = new PrismaClient();
-    try {
-      return await prisma.order.update({
-        where: { id },
-        data,
-      });
-    } finally {
-      await prisma.$disconnect();
-    }
+    return await prisma.order.update({
+      where: { id },
+      data,
+    });
   }
 
   static async findMany(options: {
-    filters?: { studentId?: string; status?: string; schoolId?: string };
+    filters?: { studentId?: OrderFilterValue; status?: OrderFilterValue; schoolId?: string };
     skip?: number;
     take?: number;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
   }): Promise<{ items: Order[]; total: number }> {
-    const prisma = new PrismaClient();
-    try {
-      const where: any = {};
+    const where: any = {};
 
-      if (options.filters?.studentId) {
-        where.studentId = options.filters.studentId;
-      }
+    applyOrderFilter(where, 'studentId', options.filters?.studentId);
+    applyOrderFilter(where, 'status', options.filters?.status);
 
-      if (options.filters?.status) {
-        where.status = options.filters.status;
-      }
-
-      if (options.filters?.schoolId) {
-        where.schoolId = options.filters.schoolId;
-      }
-
-      const [items, total] = await Promise.all([
-        prisma.order.findMany({
-          where,
-          skip: options.skip || 0,
-          take: options.take || 10,
-          orderBy: { [options.sortBy || 'createdAt']: options.sortOrder || 'desc' },
-        }),
-        prisma.order.count({ where }),
-      ]);
-
-      return { items, total };
-    } finally {
-      await prisma.$disconnect();
+    if (options.filters?.schoolId) {
+      where.schoolId = options.filters.schoolId;
     }
+
+    const [items, total] = await Promise.all([
+      prisma.order.findMany({
+        where,
+        skip: options.skip || 0,
+        take: options.take || 10,
+        orderBy: { [options.sortBy || 'createdAt']: options.sortOrder || 'desc' },
+      }),
+      prisma.order.count({ where }),
+    ]);
+
+    return { items, total };
   }
 
   static async count(filters?: {
-    studentId?: string;
-    status?: string;
+    studentId?: OrderFilterValue;
+    status?: OrderFilterValue;
     schoolId?: string;
   }): Promise<number> {
-    const prisma = new PrismaClient();
-    try {
-      const where: any = {};
+    const where: any = {};
 
-      if (filters?.studentId) {
-        where.studentId = filters.studentId;
-      }
+    applyOrderFilter(where, 'studentId', filters?.studentId);
+    applyOrderFilter(where, 'status', filters?.status);
 
-      if (filters?.status) {
-        where.status = filters.status;
-      }
-
-      if (filters?.schoolId) {
-        where.schoolId = filters.schoolId;
-      }
-
-      return await prisma.order.count({ where });
-    } finally {
-      await prisma.$disconnect();
+    if (filters?.schoolId) {
+      where.schoolId = filters.schoolId;
     }
+
+    return await prisma.order.count({ where });
   }
 
   static async getAnalytics(
@@ -240,57 +216,52 @@ export class OrderRepository {
     ordersByStatus: { [status: string]: number };
     revenueByDay: Array<{ date: string; revenue: number }>;
   }> {
-    const prisma = new PrismaClient();
-    try {
-      const where: any = { schoolId };
+    const where: any = { schoolId };
 
-      if (startDate && endDate) {
-        where.createdAt = {
-          gte: startDate,
-          lte: endDate,
-        };
-      }
-
-      const orders = await prisma.order.findMany({ where });
-
-      const totalOrders = orders.length;
-      const totalRevenue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
-      const deliveredOrders = orders.filter(o => o.status === 'delivered').length;
-      const cancelledOrders = orders.filter(o => o.status === 'cancelled').length;
-
-      const ordersByStatus: { [status: string]: number } = {};
-      orders.forEach(order => {
-        ordersByStatus[order.status] = (ordersByStatus[order.status] || 0) + 1;
-      });
-
-      // Simple revenue by day
-      const revenueByDay: Array<{ date: string; revenue: number }> = [];
-      const dailyRevenue: { [date: string]: number } = {};
-
-      orders.forEach(order => {
-        const date = order.createdAt.toISOString().split('T')[0];
-        dailyRevenue[date] = (dailyRevenue[date] || 0) + order.totalAmount;
-      });
-
-      Object.entries(dailyRevenue).forEach(([date, revenue]) => {
-        revenueByDay.push({ date, revenue });
-      });
-
-      return {
-        totalOrders,
-        totalRevenue,
-        deliveredOrders,
-        cancelledOrders,
-        ordersByStatus,
-        revenueByDay,
+    if (startDate && endDate) {
+      where.createdAt = {
+        gte: startDate,
+        lte: endDate,
       };
-    } finally {
-      await prisma.$disconnect();
     }
+
+    const orders = await prisma.order.findMany({ where });
+
+    const totalOrders = orders.length;
+    const totalRevenue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
+    const deliveredOrders = orders.filter(o => o.status === 'delivered').length;
+    const cancelledOrders = orders.filter(o => o.status === 'cancelled').length;
+
+    const ordersByStatus: { [status: string]: number } = {};
+    orders.forEach(order => {
+      ordersByStatus[order.status] = (ordersByStatus[order.status] || 0) + 1;
+    });
+
+    // Simple revenue by day
+    const revenueByDay: Array<{ date: string; revenue: number }> = [];
+    const dailyRevenue: { [date: string]: number } = {};
+
+    orders.forEach(order => {
+      const date = order.createdAt.toISOString().split('T')[0];
+      dailyRevenue[date] = (dailyRevenue[date] || 0) + order.totalAmount;
+    });
+
+    Object.entries(dailyRevenue).forEach(([date, revenue]) => {
+      revenueByDay.push({ date, revenue });
+    });
+
+    return {
+      totalOrders,
+      totalRevenue,
+      deliveredOrders,
+      cancelledOrders,
+      ordersByStatus,
+      revenueByDay,
+    };
   }
 
   async findMany(options: {
-    filters?: { studentId?: string; status?: string };
+    filters?: { studentId?: OrderFilterValue; status?: OrderFilterValue };
     skip?: number;
     take?: number;
     sortBy?: string;
@@ -298,13 +269,8 @@ export class OrderRepository {
   }): Promise<{ items: Order[]; total: number }> {
     const where: any = {};
 
-    if (options.filters?.studentId) {
-      where.studentId = options.filters.studentId;
-    }
-
-    if (options.filters?.status) {
-      where.status = options.filters.status;
-    }
+    applyOrderFilter(where, 'studentId', options.filters?.studentId);
+    applyOrderFilter(where, 'status', options.filters?.status);
 
     const [items, total] = await Promise.all([
       this.prisma.order.findMany({
@@ -319,16 +285,11 @@ export class OrderRepository {
     return { items, total };
   }
 
-  async count(filters?: { studentId?: string; status?: string }): Promise<number> {
+  async count(filters?: { studentId?: OrderFilterValue; status?: OrderFilterValue }): Promise<number> {
     const where: any = {};
 
-    if (filters?.studentId) {
-      where.studentId = filters.studentId;
-    }
-
-    if (filters?.status) {
-      where.status = filters.status;
-    }
+    applyOrderFilter(where, 'studentId', filters?.studentId);
+    applyOrderFilter(where, 'status', filters?.status);
 
     return await this.prisma.order.count({ where });
   }

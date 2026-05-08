@@ -2,12 +2,21 @@
 
 import React, { useState } from 'react';
 import { Card } from '../../ui/card';
-import { DataTable } from '../../ui/DataTable';
+import { DataTable, type Column } from '../../ui/DataTable';
 import { Badge } from '../../ui/badge';
 import { Switch } from '../../ui/switch';
 import { SideDrawer } from '../../ui/SideDrawer';
 
-const mockMenuData = [
+type MenuRow = {
+  id: string;
+  name: string;
+  category: string;
+  price: number;
+  status: boolean;
+  inventory: number;
+};
+
+const mockMenuData: MenuRow[] = [
   { id: '1', name: 'Chicken Pasta', category: 'Main', price: 120, status: true, inventory: 150 },
   { id: '2', name: 'Dal Rice', category: 'Main', price: 80, status: true, inventory: 200 },
   { id: '3', name: 'Fruit Bowl', category: 'Side', price: 50, status: false, inventory: 0 },
@@ -15,7 +24,7 @@ const mockMenuData = [
 
 export function MenuManagement() {
   const [isDrawerOpen, setDrawerOpen] = useState(false);
-  const [menuItems, setMenuItems] = useState(mockMenuData);
+  const [menuItems, setMenuItems] = useState<MenuRow[]>(mockMenuData);
 
   const toggleStatus = (id: string) => {
     setMenuItems(prev =>
@@ -23,18 +32,18 @@ export function MenuManagement() {
     );
   };
 
-  const columns = [
+  const columns: Column<MenuRow>[] = [
     { header: 'Item Name', accessorKey: 'name', width: '30%' },
     { header: 'Category', accessorKey: 'category' },
     {
       header: 'Price',
       accessorKey: 'price',
-      cell: (item: any) => `₹${item.price.toFixed(2)}`,
+      cell: item => `₹${item.price.toFixed(2)}`,
     },
     {
       header: 'Inventory',
       accessorKey: 'inventory',
-      cell: (item: any) => (
+      cell: item => (
         <Badge
           variant={item.inventory > 50 ? 'success' : item.inventory > 0 ? 'warning' : 'destructive'}
         >
@@ -45,7 +54,7 @@ export function MenuManagement() {
     {
       header: 'Status',
       accessorKey: 'status',
-      cell: (item: any) => (
+      cell: item => (
         <Switch
           checked={item.status}
           onChange={() => toggleStatus(item.id)}

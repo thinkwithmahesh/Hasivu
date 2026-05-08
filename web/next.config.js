@@ -1,17 +1,18 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: true,
   output: 'standalone',
-
-  // Experimental features
-  experimental: {
-    appDir: true,
+  turbopack: {
+    root: __dirname,
   },
 
   // Image optimization
   images: {
-    domains: ['localhost', 'hasivu.com', 'cdn.hasivu.com'],
+    remotePatterns: [
+      { protocol: 'http', hostname: 'localhost' },
+      { protocol: 'https', hostname: 'hasivu.com' },
+      { protocol: 'https', hostname: 'cdn.hasivu.com' },
+    ],
     formats: ['image/webp', 'image/avif'],
   },
 
@@ -29,11 +30,6 @@ const nextConfig = {
 
   // Trailing slash handling
   trailingSlash: false,
-
-  // Environment variables
-  env: {
-    CUSTOM_KEY: process.env.CUSTOM_KEY,
-  },
 
   // Production-ready security headers and CSP
   async headers() {
@@ -64,11 +60,11 @@ const nextConfig = {
           },
           {
             key: 'Cross-Origin-Embedder-Policy',
-            value: 'require-corp',
+            value: 'credentialless',
           },
           {
             key: 'Cross-Origin-Opener-Policy',
-            value: 'same-origin',
+            value: 'same-origin-allow-popups',
           },
           {
             key: 'Cross-Origin-Resource-Policy',
@@ -84,7 +80,8 @@ const nextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com https://cdn.razorpay.com https://www.googletagmanager.com https://www.google-analytics.com",
+              "script-src-elem 'self' 'unsafe-inline' https://checkout.razorpay.com https://cdn.razorpay.com https://www.googletagmanager.com https://www.google-analytics.com",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https: http:",
@@ -93,16 +90,13 @@ const nextConfig = {
               "base-uri 'self'",
               "form-action 'self'",
               "frame-ancestors 'none'",
-              "connect-src 'self' https://api.hasivu.com https://www.google-analytics.com wss:",
+              "frame-src 'self' https://api.razorpay.com https://checkout.razorpay.com",
+              "child-src 'self' https://api.razorpay.com https://checkout.razorpay.com",
+              "connect-src 'self' https://api.hasivu.com https://api.razorpay.com https://checkout.razorpay.com https://cdn.razorpay.com https://lumberjack.razorpay.com https://www.google-analytics.com wss:",
               "worker-src 'self' blob:",
               "manifest-src 'self'",
               'upgrade-insecure-requests',
             ].join('; '),
-          },
-          // Performance Headers
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
           },
         ],
       },
@@ -157,12 +151,21 @@ const nextConfig = {
     ];
   },
 
-  // API rewrites
+  // API rewrites. Browser code calls same-origin `/api`; the Next server
+  // forwards that traffic to the canonical Express backend.
   async rewrites() {
+    const apiRewriteDestination =
+      process.env.NEXT_SERVER_API_URL ||
+      process.env.BACKEND_INTERNAL_API_URL ||
+      'http://localhost:3000/api';
+
     return [
       {
-        source: '/api/:path*',
-        destination: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'}/:path*`,
+        // Keep explicit Next route handlers local to the web app; only unknown
+        // `/api/*` paths fall through to the canonical Express backend.
+        source:
+          '/api/:path((?!(?:analytics|auth|docs|feature-flags|inventory|kitchen|mobile|nutrition|orders|payments|rfid|schools|staff|status)(?:/|$)).*)',
+        destination: `${apiRewriteDestination.replace(/\/$/, '')}/:path*`,
       },
     ];
   },

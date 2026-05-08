@@ -13,6 +13,7 @@ import { MEAL_TYPES } from '@/utils/constants';
 import type { CategoryTabsProps, MenuCategory as MenuCategory } from './types';
 import { getMealCategoryInfo } from './utils';
 import { cn } from '@/lib/utils';
+import { GroupScene } from '../characters/HasivuFriend';
 
 const CategoryTabs: React.FC<CategoryTabsProps> = ({
   categories,
@@ -52,7 +53,7 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
         <div className="overflow-x-auto scrollbar-hide">
           <TabsList
             className={cn(
-              'inline-flex h-auto p-1 bg-gray-50 border border-gray-200 rounded-xl',
+              'inline-flex h-auto p-1 bg-hasivu-bg-warm border border-hasivu-primary/10 rounded-xl',
               'min-w-full lg:grid lg:grid-cols-4 gap-1'
             )}
           >
@@ -69,9 +70,9 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
                     'p-3 sm:p-4 rounded-lg transition-all duration-300 min-w-[120px] lg:min-w-0',
                     'border-2 border-transparent',
                     isActive
-                      ? 'bg-white shadow-lg border-primary text-primary scale-105 lg:scale-100'
-                      : 'hover:bg-white/80 hover:shadow-md active:scale-95',
-                    'focus:outline-none focus:ring-2 focus:ring-primary/50'
+                      ? 'bg-white shadow-warm-lg border-hasivu-primary text-hasivu-primary scale-105 lg:scale-100'
+                      : 'hover:bg-white/80 hover:shadow-warm-sm active:scale-95 text-hasivu-text-secondary',
+                    'focus:outline-none focus:ring-2 focus:ring-hasivu-primary/50'
                   )}
                   role="tab"
                   aria-selected={isActive}
@@ -87,10 +88,10 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
                       {categoryInfo.icon}
                     </span>
                     <div className="text-center sm:text-left">
-                      <div className="font-bold text-xs sm:text-sm leading-tight">
+                      <div className="font-display font-bold text-xs sm:text-sm leading-tight">
                         {categoryInfo.label}
                       </div>
-                      <div className="text-xs text-gray-600 hidden lg:block mt-0.5">
+                      <div className="text-xs text-hasivu-text-secondary hidden lg:block mt-0.5">
                         {categoryInfo.description}
                       </div>
                     </div>
@@ -135,14 +136,16 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
         </div>
       </Tabs>
 
-      {/* Enhanced Category Description Panel */}
       {activeCategory && (
         <div
           id={`category-panel-${activeCategory}`}
           role="tabpanel"
           aria-labelledby={`category-tab-${activeCategory}`}
-          className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 sm:p-6 shadow-sm border border-gray-200"
+          className="bg-hasivu-bg-warm rounded-3xl p-4 sm:p-6 shadow-warm-sm border border-hasivu-primary/10 relative overflow-hidden"
         >
+          <div className="absolute -top-12 -right-12 opacity-5 pointer-events-none">
+            <GroupScene size={280} animation="breathe" />
+          </div>
           {(() => {
             const activecat = sortedCategories.find(cat => cat.id === activeCategory);
             if (!activecat) return null;
@@ -151,16 +154,19 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
 
             return (
               <div className="space-y-4">
-                {/* Header */}
-                <div className="flex items-start space-x-4">
-                  <div className="bg-white p-3 rounded-xl shadow-sm">
+                <div className="flex items-start space-x-4 relative z-10">
+                  <div className="bg-white p-3 rounded-xl shadow-warm-sm border border-hasivu-primary/5">
                     <span className="text-4xl" role="img" aria-label={activecat.name}>
                       {categoryInfo.icon}
                     </span>
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-bold text-xl text-gray-900 mb-1">{categoryInfo.label}</h3>
-                    <p className="text-gray-700 text-sm leading-relaxed">{activecat.description}</p>
+                    <h3 className="font-display font-bold text-xl text-hasivu-text-primary mb-1">
+                      {categoryInfo.label}
+                    </h3>
+                    <p className="text-hasivu-text-secondary text-sm leading-relaxed">
+                      {activecat.description}
+                    </p>
                   </div>
                 </div>
 
@@ -181,15 +187,19 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
                       <div className="bg-white rounded-lg p-4 shadow-sm">
                         <div className="flex items-center mb-2">
                           <Clock className="h-4 w-4 text-blue-500 mr-2" />
-                          <span className="font-semibold text-sm text-gray-900">Timings</span>
+                          <span className="font-semibold text-sm text-hasivu-text-primary">
+                            Timings
+                          </span>
                         </div>
                         <div className="space-y-1 text-xs">
                           <div className="flex justify-between">
-                            <span className="text-gray-600">Available:</span>
-                            <span className="font-medium text-gray-900">{timing.time}</span>
+                            <span className="text-hasivu-text-secondary">Available:</span>
+                            <span className="font-medium text-hasivu-text-primary">
+                              {timing.time}
+                            </span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-gray-600">Last order:</span>
+                            <span className="text-hasivu-text-secondary">Last order:</span>
                             <span className="font-medium text-amber-700">{timing.lastOrder}</span>
                           </div>
                         </div>
@@ -201,7 +211,9 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
                   <div className="bg-white rounded-lg p-4 shadow-sm">
                     <div className="flex items-center mb-2">
                       <Users className="h-4 w-4 text-green-500 mr-2" />
-                      <span className="font-semibold text-sm text-gray-900">Your Profile</span>
+                      <span className="font-semibold text-sm text-hasivu-text-primary">
+                        Your Profile
+                      </span>
                     </div>
                     <div className="space-y-2">
                       {activecat.gradeFilters && activecat.gradeFilters.includes(student.grade) ? (
@@ -210,7 +222,7 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
                           Perfect for Grade {student.grade}
                         </div>
                       ) : (
-                        <div className="flex items-center text-xs text-gray-600">
+                        <div className="flex items-center text-xs text-hasivu-text-secondary">
                           <Users className="h-3 w-3 mr-1.5" />
                           Available for all grades
                         </div>
@@ -231,7 +243,7 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
                               {compatibleDiets.length > 1 ? 's' : ''}
                             </div>
                           ) : (
-                            <div className="flex items-center text-xs text-gray-600">
+                            <div className="flex items-center text-xs text-hasivu-text-secondary">
                               <AlertTriangle className="h-3 w-3 mr-1.5" />
                               Check individual meals for dietary compatibility
                             </div>
@@ -244,33 +256,35 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
                   <div className="bg-white rounded-lg p-4 shadow-sm">
                     <div className="flex items-center mb-2">
                       <span className="text-lg mr-2">{categoryInfo.icon}</span>
-                      <span className="font-semibold text-sm text-gray-900">Features</span>
+                      <span className="font-semibold text-sm text-hasivu-text-primary">
+                        Features
+                      </span>
                     </div>
                     <div className="space-y-1">
                       {/* Special features based on meal type */}
                       {activecat.mealType === 'breakfast' && (
-                        <div className="text-xs text-gray-700 flex items-center">
+                        <div className="text-xs text-hasivu-text-secondary flex items-center">
                           <span className="mr-2">🏃‍♂️</span>
                           Perfect energy boost to start your day
                         </div>
                       )}
 
                       {activecat.mealType === 'lunch' && (
-                        <div className="text-xs text-gray-700 flex items-center">
+                        <div className="text-xs text-hasivu-text-secondary flex items-center">
                           <span className="mr-2">💪</span>
                           Complete nutrition for active learning
                         </div>
                       )}
 
                       {activecat.mealType === 'snack' && (
-                        <div className="text-xs text-gray-700 flex items-center">
+                        <div className="text-xs text-hasivu-text-secondary flex items-center">
                           <span className="mr-2">⚡</span>
                           Quick bites between classes
                         </div>
                       )}
 
                       {activecat.mealType === 'dinner' && (
-                        <div className="text-xs text-gray-700 flex items-center">
+                        <div className="text-xs text-hasivu-text-secondary flex items-center">
                           <span className="mr-2">😴</span>
                           Light & healthy evening meals
                         </div>

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { AuthLayout } from '@/components/auth/AuthLayout';
@@ -30,28 +29,11 @@ const SafariCompatibleLoginForm = dynamic(
   }
 );
 
-// Helper function to get dashboard URL based on role
-function getDashboardUrl(role: string): string {
-  const dashboardUrls: Record<string, string> = {
-    admin: '/dashboard/admin',
-    teacher: '/dashboard/teacher',
-    parent: '/dashboard/parent',
-    student: '/dashboard/student',
-    vendor: '/dashboard/vendor',
-    kitchen_staff: '/dashboard/kitchen',
-    school_admin: '/dashboard/school-admin',
-  };
-
-  return dashboardUrls[role] || '/dashboard';
-}
-
 export default function KitchenLoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSafari, setIsSafari] = useState(false);
   const { login, user: _user } = useAuth();
-  const router = useRouter();
-
   // Detect Safari browser for compatibility
   useEffect(() => {
     const userAgent = navigator.userAgent.toLowerCase();
@@ -71,23 +53,7 @@ export default function KitchenLoginPage() {
       });
 
       if (success) {
-        // Wait for auth state to update, then use the user's actual role for redirect
-        setTimeout(() => {
-          // Try to get user from localStorage since auth context might not be updated yet
-          try {
-            const savedUser = localStorage.getItem('demoUser');
-            if (savedUser) {
-              const parsedUser = JSON.parse(savedUser);
-              const dashboardUrl = getDashboardUrl(parsedUser.role);
-              router.push(dashboardUrl);
-              return;
-            }
-          } catch (e) {}
-
-          // Fallback to using form role
-          const dashboardUrl = getDashboardUrl('kitchen_staff');
-          router.push(dashboardUrl);
-        }, 100);
+        // Redirect handled in auth-context after login.
       } else {
         setError('Invalid email or password. Please try again.');
       }
@@ -113,6 +79,7 @@ export default function KitchenLoginPage() {
           isLoading={isLoading}
           error={error}
           defaultRole={UserRole.KITCHEN_STAFF}
+          showRoleSelection={false}
           className="w-full max-w-md"
         />
       ) : (
@@ -122,6 +89,7 @@ export default function KitchenLoginPage() {
           isLoading={isLoading}
           error={error}
           defaultRole={'kitchen' as any}
+          showRoleSelection={false}
           className="w-full max-w-md"
         />
       )}

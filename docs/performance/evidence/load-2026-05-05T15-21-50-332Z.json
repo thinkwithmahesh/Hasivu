@@ -1,0 +1,23 @@
+{
+  "generatedAt": "2026-05-05T15:21:50.332Z",
+  "testType": "load",
+  "environment": "staging",
+  "target": "https://app.hasivu.com/health",
+  "gitSha": "local",
+  "branch": "local",
+  "summary": {
+    "totalRequests": 250,
+    "successfulRequests": 0,
+    "failedRequests": 250,
+    "successRatePct": 0,
+    "errorRatePct": 100,
+    "p50Ms": 3,
+    "p95Ms": 207,
+    "p99Ms": 209,
+    "avgMs": 24.056,
+    "minMs": 1,
+    "maxMs": 235,
+    "totalDurationMs": 568,
+    "throughputRps": 440.14084507042253
+  }
+}

@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     template: '%s | HASIVU Auth',
   },
   description:
-    'Sign in to access your HASIVU school meal management account. Secure authentication for students, parents, teachers, and administrators.',
+    'Sign in to access your HASIVU school meal management account. Secure authentication for parents, students, school administrators, kitchen staff, and food vendors.',
   robots: 'noindex, nofollow', // Don't index auth pages
 };
 

@@ -149,8 +149,6 @@ export interface IDatabaseService {
     timestamp: Date;
   }>;
   transaction<T>(callback: (tx: unknown) => Promise<T>, options?: unknown): Promise<T>;
-  executeRaw<T>(query: unknown, ...values: unknown[]): Promise<T>;
-  sanitizeQuery(query: string | unknown): string | unknown;
 
   // Model accessors for backward compatibility
   readonly user: unknown;

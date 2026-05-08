@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users,
   Calendar,
@@ -457,11 +456,7 @@ const StaffMemberCard = ({ staff }: { staff: StaffMember }) => {
         </div>
 
         {isExpanded && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            className="space-y-3 pt-3 border-t"
-          >
+          <div className="space-y-3 pt-3 border-t">
             <div>
               <h4 className="text-sm font-medium text-gray-900 mb-2">Contact</h4>
               <div className="space-y-1 text-sm text-gray-600">
@@ -498,7 +493,7 @@ const StaffMemberCard = ({ staff }: { staff: StaffMember }) => {
                 ))}
               </div>
             </div>
-          </motion.div>
+          </div>
         )}
 
         <div className="flex space-x-2 mt-4">

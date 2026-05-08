@@ -32,6 +32,24 @@ export const motionPresets = {
     exit: { opacity: 0, y: -8 },
     transition: { duration: motionDurations.standard, ease: motionEase },
   },
+  modal: {
+    initial: { opacity: 0, scale: 0.96 },
+    animate: { opacity: 1, scale: 1 },
+    exit: { opacity: 0, scale: 0.96 },
+    transition: { duration: motionDurations.standard, ease: motionEase },
+  },
+  drawer: {
+    initial: { opacity: 0, x: 24 },
+    animate: { opacity: 1, x: 0 },
+    exit: { opacity: 0, x: 24 },
+    transition: { duration: motionDurations.standard, ease: motionEase },
+  },
+  status: {
+    initial: { opacity: 0, y: 6 },
+    animate: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: -6 },
+    transition: { duration: motionDurations.micro, ease: motionEase },
+  },
   tap: {
     whileTap: { scale: 0.98 },
   },

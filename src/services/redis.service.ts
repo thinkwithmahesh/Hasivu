@@ -2,6 +2,8 @@
  * Redis Service
  * Centralized Redis operations for caching and session management
  */
+import Redis from 'ioredis';
+import { logger } from '../utils/logger';
 
 export interface RedisConfig {
   host: string;
@@ -14,9 +16,12 @@ export class RedisService {
   private static instance: RedisService;
   private connected: boolean = false;
   private config: RedisConfig;
+  private client: Redis | null = null;
+  private readonly useInMemoryFallback: boolean;
   private cache: Map<string, { value: string; expiry?: number }> = new Map();
 
   private constructor() {
+    this.useInMemoryFallback = process.env.NODE_ENV === 'test';
     this.config = {
       host: process.env.REDIS_HOST || 'localhost',
       port: parseInt(process.env.REDIS_PORT || '6379'),
@@ -36,7 +41,29 @@ export class RedisService {
    * Connect to Redis server
    */
   public async connect(): Promise<void> {
-    // In-memory implementation for now (replace with actual Redis client)
+    if (this.connected) return;
+
+    if (this.useInMemoryFallback) {
+      this.connected = true;
+      return;
+    }
+
+    const redisUrl = process.env.REDIS_URL;
+    this.client = redisUrl
+      ? new Redis(redisUrl)
+      : new Redis({
+          host: this.config.host,
+          port: this.config.port,
+          password: this.config.password,
+          db: this.config.db || 0,
+        });
+
+    this.client.on('error', error => {
+      this.connected = false;
+      logger.error('Redis connection error', error);
+    });
+
+    await this.client.ping();
     this.connected = true;
   }
 
@@ -44,6 +71,10 @@ export class RedisService {
    * Disconnect from Redis server
    */
   public async disconnect(): Promise<void> {
+    if (this.client) {
+      await this.client.quit();
+      this.client = null;
+    }
     this.connected = false;
     this.cache.clear();
   }
@@ -52,6 +83,17 @@ export class RedisService {
    * Set a key-value pair with optional TTL
    */
   public async set(key: string, value: string, ttl?: number): Promise<void> {
+    if (!this.connected) await this.connect();
+
+    if (this.client) {
+      if (ttl) {
+        await this.client.set(key, value, 'EX', ttl);
+      } else {
+        await this.client.set(key, value);
+      }
+      return;
+    }
+
     const expiry = ttl ? Date.now() + ttl * 1000 : undefined;
     this.cache.set(key, { value, expiry });
   }
@@ -60,6 +102,12 @@ export class RedisService {
    * Get value by key
    */
   public async get(key: string): Promise<string | null> {
+    if (!this.connected) await this.connect();
+
+    if (this.client) {
+      return await this.client.get(key);
+    }
+
     const entry = this.cache.get(key);
     if (!entry) return null;
 
@@ -76,6 +124,11 @@ export class RedisService {
    * Delete a key
    */
   public async del(key: string): Promise<void> {
+    if (!this.connected) await this.connect();
+    if (this.client) {
+      await this.client.del(key);
+      return;
+    }
     this.cache.delete(key);
   }
 
@@ -83,6 +136,12 @@ export class RedisService {
    * Check if key exists
    */
   public async exists(key: string): Promise<boolean> {
+    if (!this.connected) await this.connect();
+
+    if (this.client) {
+      return (await this.client.exists(key)) === 1;
+    }
+
     const entry = this.cache.get(key);
     if (!entry) return false;
 
@@ -99,6 +158,13 @@ export class RedisService {
    * Set expiration time for a key
    */
   public async expire(key: string, ttl: number): Promise<void> {
+    if (!this.connected) await this.connect();
+
+    if (this.client) {
+      await this.client.expire(key, ttl);
+      return;
+    }
+
     const entry = this.cache.get(key);
     if (entry) {
       entry.expiry = Date.now() + ttl * 1000;
@@ -110,6 +176,12 @@ export class RedisService {
    * Increment a numeric value
    */
   public async incr(key: string): Promise<number> {
+    if (!this.connected) await this.connect();
+
+    if (this.client) {
+      return await this.client.incr(key);
+    }
+
     const current = await this.get(key);
     const value = current ? parseInt(current) + 1 : 1;
     await this.set(key, value.toString());
@@ -126,11 +198,15 @@ export class RedisService {
 
     try {
       const startTime = Date.now();
-      await this.set('health_check', 'ok', 1);
-      await this.get('health_check');
+      if (this.client) {
+        await this.client.ping();
+      } else {
+        await this.set('health_check', 'ok', 1);
+        await this.get('health_check');
+      }
       const latency = Date.now() - startTime;
       return { healthy: true, latency };
-    } catch (error) {
+    } catch (_error) {
       return { healthy: false };
     }
   }
@@ -139,6 +215,13 @@ export class RedisService {
    * Flush all keys in current database
    */
   public async flushdb(): Promise<void> {
+    if (!this.connected) await this.connect();
+
+    if (this.client) {
+      await this.client.flushdb();
+      return;
+    }
+
     this.cache.clear();
   }
 
@@ -194,8 +277,11 @@ export class RedisService {
    */
   public static async ping(): Promise<void> {
     const instance = RedisService.getInstance();
-    if (!instance['connected']) {
+    if (!instance.connected) {
       await instance.connect();
+    }
+    if (instance.client) {
+      await instance.client.ping();
     }
   }
 
@@ -204,6 +290,12 @@ export class RedisService {
    */
   public static async keys(pattern: string): Promise<string[]> {
     const instance = RedisService.getInstance();
+    if (!instance.connected) await instance.connect();
+
+    if (instance.client) {
+      return await instance.client.keys(pattern);
+    }
+
     const keys: string[] = [];
     for (const [key] of instance.cache.entries()) {
       if (key.includes(pattern.replace('*', ''))) {

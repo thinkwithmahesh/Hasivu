@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { fetchConfiguredProxy } from '@/app/api/_utils/proxy';
+const LAMBDA_AUTH_VERIFY_EMAIL_URL = process.env.LAMBDA_AUTH_VERIFY_EMAIL_URL;
 
-const LAMBDA_AUTH_VERIFY_EMAIL_URL =
-  process.env.LAMBDA_AUTH_VERIFY_EMAIL_URL ||
-  'https://your-lambda-endpoint.execute-api.region.amazonaws.com/dev/auth/verify-email';
+;
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Forward request to Lambda function
-    const lambdaResponse = await fetch(LAMBDA_AUTH_VERIFY_EMAIL_URL, {
+    const lambdaResponse = await fetchConfiguredProxy(LAMBDA_AUTH_VERIFY_EMAIL_URL, 'LAMBDA_AUTH_VERIFY_EMAIL_URL', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

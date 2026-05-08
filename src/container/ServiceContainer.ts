@@ -250,8 +250,6 @@ function createMockDatabaseService(): IDatabaseService {
       timestamp: new Date(),
     }),
     transaction: mock.fn().mockImplementation(callback => callback({})),
-    executeRaw: mock.fn().mockResolvedValue({}),
-    sanitizeQuery: mock.fn().mockImplementation(query => query),
     user: {
       findUnique: mock.fn(),
       findMany: mock.fn(),

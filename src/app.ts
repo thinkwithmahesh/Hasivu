@@ -17,10 +17,12 @@ import { logger } from './utils/logger';
 
 // Import only working routes
 import { healthRouter } from './routes/health.routes';
+import { metricsRouter } from './routes/metrics.routes';
 import { authRouter } from './routes/auth.routes';
 import paymentsRouter from './routes/payments.routes';
 import ordersRouter from './routes/orders.routes';
 import kitchenRouter from './routes/kitchen.routes';
+import menusRouter from './routes/menus.routes';
 
 // Import essential services
 import { redisService } from './services/redis.service';
@@ -28,10 +30,13 @@ import { redisService } from './services/redis.service';
 class SimpleApp {
   public app: express.Application;
   public server: ReturnType<typeof createServer>;
+  private readonly strictSecurityMiddleware: boolean;
 
   constructor() {
     this.app = express();
     this.server = createServer(this.app);
+    this.strictSecurityMiddleware =
+      process.env.NODE_ENV === 'production' || process.env.STRICT_SECURITY_MIDDLEWARE === 'true';
   }
 
   private async setupMiddleware(): Promise<void> {
@@ -46,6 +51,11 @@ class SimpleApp {
             imgSrc: ["'self'", 'data:', 'https:'],
           },
         },
+        // Allow browsers on another dev port (e.g. Next on :3001) to read JSON from this API.
+        // Set HELMET_CORP_POLICY=cross-origin in docker-compose.dev.yml for local full-stack.
+        ...(process.env.HELMET_CORP_POLICY === 'cross-origin'
+          ? { crossOriginResourcePolicy: { policy: 'cross-origin' as const } }
+          : {}),
       })
     );
 
@@ -85,58 +95,55 @@ class SimpleApp {
 
   private async loadMiddlewareSafely(): Promise<void> {
     const middlewarePromises = [
-      // Comprehensive input validation and sanitization
       this.loadInputValidationMiddleware(),
-      // Rate limiting
       this.loadRateLimiterMiddleware(),
-      // CSRF protection for state-changing requests
       this.loadCSRFMiddleware(),
     ];
 
-    // Wait for all middleware to load (or fail gracefully)
-    await Promise.allSettled(middlewarePromises);
+    const middlewareResults = await Promise.allSettled(middlewarePromises);
+    const failedMiddleware: string[] = [];
+
+    middlewareResults.forEach(result => {
+      if (result.status === 'rejected') {
+        failedMiddleware.push(result.reason?.message || 'unknown middleware');
+      }
+    });
+
+    if (failedMiddleware.length > 0) {
+      const errorMessage = `Critical security middleware failed to load: ${failedMiddleware.join(', ')}`;
+
+      if (this.strictSecurityMiddleware) {
+        throw new Error(errorMessage);
+      }
+
+      logger.warn(`${errorMessage}. Continuing because strict mode is disabled.`);
+    }
   }
 
   private async loadInputValidationMiddleware(): Promise<void> {
-    try {
-      const { comprehensiveInputValidation } = await import(
-        './middleware/input-validation.middleware'
-      );
-      this.app.use(comprehensiveInputValidation);
-      logger.info('Comprehensive input validation middleware loaded successfully');
-    } catch (err) {
-      logger.warn(
-        'Input validation middleware failed to load, continuing without comprehensive validation',
-        err
-      );
-    }
+    const { comprehensiveInputValidation } = await import('./middleware/input-validation.middleware');
+    this.app.use(comprehensiveInputValidation);
+    logger.info('Comprehensive input validation middleware loaded successfully');
   }
 
   private async loadRateLimiterMiddleware(): Promise<void> {
-    try {
-      const { generalRateLimit } = await import('./middleware/rateLimiter.middleware');
-      this.app.use(generalRateLimit);
-      logger.info('Rate limiter middleware loaded successfully');
-    } catch (err) {
-      logger.warn('Rate limiter middleware failed to load, continuing without rate limiting', err);
-    }
+    const { generalRateLimit } = await import('./middleware/rateLimiter.middleware');
+    this.app.use(generalRateLimit);
+    logger.info('Rate limiter middleware loaded successfully');
   }
 
   private async loadCSRFMiddleware(): Promise<void> {
-    try {
-      const { csrfProtection, attachCSRFToken } = await import('./middleware/csrf.middleware');
-      this.app.use(attachCSRFToken);
-      this.app.use('/api', csrfProtection());
-      logger.info('CSRF middleware loaded successfully');
-    } catch (err) {
-      logger.warn('CSRF middleware failed to load, continuing without CSRF protection', err);
-    }
+    const { csrfProtection, attachCSRFToken } = await import('./middleware/csrf.middleware');
+    this.app.use('/api', csrfProtection());
+    this.app.use(attachCSRFToken);
+    logger.info('CSRF middleware loaded successfully');
   }
 
   private setupRoutes(): void {
     // Health check - no auth needed
     this.app.use('/health', healthRouter);
     this.app.use('/api/health', healthRouter);
+    this.app.use('/metrics', metricsRouter);
 
     // Authentication - exclude from CSRF protection for registration
     this.app.use('/api/auth', authRouter);
@@ -146,6 +153,7 @@ class SimpleApp {
 
     // Orders (v1) + kitchen assignment
     this.app.use('/api/v1/orders', ordersRouter);
+    this.app.use('/api/v1/menus', menusRouter);
     this.app.use('/api/kitchen', kitchenRouter);
 
     // Root endpoint
@@ -195,6 +203,8 @@ class SimpleApp {
 
   public async start(): Promise<void> {
     try {
+      env.assertProductionSafe();
+
       // Initialize Redis
       await redisService.connect();
       logger.info('Redis connected successfully');

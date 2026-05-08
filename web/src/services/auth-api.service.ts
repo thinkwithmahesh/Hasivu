@@ -37,11 +37,14 @@ export interface PasswordResetConfirm {
 export type { AuthResponse, PasswordResetRequest };
 
 class AuthApiService {
-  private baseUrl: string;
   private refreshPromise: Promise<AuthTokens> | null = null;
 
-  constructor() {
-    this.baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+  /** Same-origin in the browser so httpOnly cookies always match the page host/port. */
+  private getApiBase(): string {
+    if (typeof window !== 'undefined') {
+      return '/api';
+    }
+    return (process.env.NEXT_PUBLIC_API_URL || '/api').replace(/\/$/, '');
   }
 
   /**
@@ -49,11 +52,12 @@ class AuthApiService {
    */
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     try {
-      const response = await fetch(`${this.baseUrl}/auth/login`, {
+      const response = await fetch(`${this.getApiBase()}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify(credentials),
       });
 
@@ -64,10 +68,11 @@ class AuthApiService {
 
       const data = await response.json();
       const payload = data?.data ?? data;
+      const user = payload?.user;
       return {
-        user: payload?.user,
+        user,
         tokens: payload?.tokens,
-        success: true,
+        success: !!user,
       };
     } catch (error) {
       console.error('Login error:', error);
@@ -80,7 +85,7 @@ class AuthApiService {
    */
   async register(userData: RegisterData): Promise<AuthResponse> {
     try {
-      const response = await fetch(`${this.baseUrl}/auth/register`, {
+      const response = await fetch(`${this.getApiBase()}/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -110,25 +115,13 @@ class AuthApiService {
    */
   async logout(): Promise<void> {
     try {
-      const token = this.getAccessToken();
-      if (token) {
-        await fetch(`${this.baseUrl}/auth/logout`, {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-      }
-
-      // Clear local storage
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
+      await fetch(`${this.getApiBase()}/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      });
       localStorage.removeItem('user');
     } catch (error) {
       console.error('Logout error:', error);
-      // Still clear local storage even if API call fails
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
       localStorage.removeItem('user');
     }
   }
@@ -152,29 +145,21 @@ class AuthApiService {
   }
 
   private async _refreshToken(): Promise<AuthTokens> {
-    const refreshToken = this.getRefreshToken();
-    if (!refreshToken) {
-      throw new Error('No refresh token available');
-    }
-
     try {
-      const response = await fetch(`${this.baseUrl}/auth/refresh`, {
+      const response = await fetch(`${this.getApiBase()}/auth/refresh`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ refreshToken }),
+        credentials: 'include',
       });
 
       if (!response.ok) {
         throw new Error('Token refresh failed');
       }
 
-      const tokens = await response.json();
-
-      // Store new tokens
-      localStorage.setItem('accessToken', tokens.accessToken);
-      localStorage.setItem('refreshToken', tokens.refreshToken);
+      const body = await response.json();
+      const tokens = body?.tokens ?? body?.data?.tokens ?? body;
 
       return tokens;
     } catch (error) {
@@ -189,30 +174,29 @@ class AuthApiService {
    */
   async getCurrentUser(): Promise<User> {
     try {
-      const token = this.getAccessToken();
-      if (!token) {
-        throw new Error('No access token available');
-      }
-
-      const response = await fetch(`${this.baseUrl}/auth/me`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const response = await fetch(`${this.getApiBase()}/auth/me`, {
+        credentials: 'include',
       });
 
       if (!response.ok) {
         if (response.status === 401) {
-          // Try to refresh token
           await this.refreshToken();
           return this.getCurrentUser();
         }
         throw new Error('Failed to get user profile');
       }
 
-      const user = await response.json();
-      return user;
+      const body = (await response.json()) as {
+        user?: User;
+        data?: { user?: User };
+        email?: string;
+      };
+      const user = body?.user ?? body?.data?.user;
+      if (user && typeof user === 'object' && 'email' in user) {
+        return user as User;
+      }
+      throw new Error('Invalid user profile response');
     } catch (error) {
-      console.error('Get current user error:', error);
       throw error;
     }
   }
@@ -222,7 +206,7 @@ class AuthApiService {
    */
   async requestPasswordReset(data: PasswordResetRequest): Promise<void> {
     try {
-      const response = await fetch(`${this.baseUrl}/auth/forgot-password`, {
+      const response = await fetch(`${this.getApiBase()}/auth/forgot-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -245,7 +229,7 @@ class AuthApiService {
    */
   async confirmPasswordReset(data: PasswordResetConfirm): Promise<void> {
     try {
-      const response = await fetch(`${this.baseUrl}/auth/reset-password`, {
+      const response = await fetch(`${this.getApiBase()}/auth/reset-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -268,7 +252,7 @@ class AuthApiService {
    */
   async verifyEmail(token: string): Promise<void> {
     try {
-      const response = await fetch(`${this.baseUrl}/auth/verify-email`, {
+      const response = await fetch(`${this.getApiBase()}/auth/verify-email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -290,48 +274,34 @@ class AuthApiService {
    * Check if user is authenticated
    */
   isAuthenticated(): boolean {
-    const token = this.getAccessToken();
-    if (!token) return false;
-
-    try {
-      // Basic JWT validation (in production, use a proper JWT library)
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const currentTime = Date.now() / 1000;
-
-      return payload.exp > currentTime;
-    } catch {
-      return false;
-    }
+    return false;
   }
 
   /**
    * Get access token from storage
    */
   getAccessToken(): string | null {
-    return localStorage.getItem('accessToken');
+    return null;
   }
 
   /**
    * Get refresh token from storage
    */
   getRefreshToken(): string | null {
-    return localStorage.getItem('refreshToken');
+    return null;
   }
 
   /**
    * Store tokens in local storage
    */
   setTokens(tokens: AuthTokens): void {
-    localStorage.setItem('accessToken', tokens.accessToken);
-    localStorage.setItem('refreshToken', tokens.refreshToken);
+    void tokens;
   }
 
   /**
    * Clear all tokens
    */
   clearTokens(): void {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
   }
 
@@ -361,9 +331,6 @@ class AuthApiService {
    */
   async checkAuth(): Promise<{ authenticated: boolean; user?: User; error?: string }> {
     try {
-      if (!this.isAuthenticated()) {
-        return { authenticated: false };
-      }
       const user = await this.getCurrentUser();
       return { authenticated: true, user };
     } catch (error) {
@@ -459,7 +426,7 @@ class AuthApiService {
       if (!token) {
         return { success: false, error: 'Not authenticated' };
       }
-      const response = await fetch(`${this.baseUrl}/auth/me`, {
+      const response = await fetch(`${this.getApiBase()}/auth/me`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -486,7 +453,7 @@ class AuthApiService {
       if (!token) {
         return { success: false, error: 'Not authenticated' };
       }
-      const response = await fetch(`${this.baseUrl}/auth/change-password`, {
+      const response = await fetch(`${this.getApiBase()}/auth/change-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

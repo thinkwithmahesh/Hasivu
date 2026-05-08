@@ -70,14 +70,7 @@ export function useAuth(): UseAuthReturn {
     try {
       setIsLoading(true);
 
-      // Check if we have a token
-      const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
-      if (!token) {
-        setIsLoading(false);
-        return;
-      }
-
-      // Verify the token and get current user
+      // Verify the cookie-backed session and get current user.
       const response = await apiClient.getCurrentUser();
 
       if (response.success && response.data?.user) {

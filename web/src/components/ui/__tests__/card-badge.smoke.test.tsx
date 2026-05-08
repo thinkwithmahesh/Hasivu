@@ -21,7 +21,7 @@ describe('Card (smoke)', () => {
   });
 
   it('accepts elevated prop', () => {
-    const { container } = render(<Card elevated>Elevated Card</Card>);
+    const { container } = render(<Card variant="elevated">Elevated Card</Card>);
     expect(container.firstChild).toHaveClass('shadow-md');
   });
 

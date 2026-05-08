@@ -3,6 +3,10 @@ node_modules
 
 # Build artifacts
 web/.next/
+dist/
+build/
+web/dist/
+web/build/
 *.tsbuildinfo
 
 # Environment variables — ALL variants
@@ -26,6 +30,12 @@ pids
 
 # Coverage directory used by tools like istanbul
 coverage/
+coverage-required/
+web/coverage/
+test-results/
+web/test-results/
+playwright-report/
+web/playwright-report/
 
 # Dependency directories
 jspm_packages/

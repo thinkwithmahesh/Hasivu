@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Radio, CheckCircle, AlertTriangle, Loader2, Zap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
@@ -33,6 +33,7 @@ export function RFIDScanIndicator({
   className = '',
   onScanStatusChange,
 }: RFIDScanIndicatorProps) {
+  const reduced = useReducedMotion();
   const [currentStatus, setCurrentStatus] = useState<typeof scanStatus>(scanStatus);
   const [_isAnimating, setIsAnimating] = useState(false);
 
@@ -139,7 +140,7 @@ export function RFIDScanIndicator({
       >
         {/* Scanning pulse animation */}
         <AnimatePresence>
-          {currentStatus === 'scanning' && (
+          {currentStatus === 'scanning' && !reduced && (
             <>
               {[...Array(3)].map((_, i) => (
                 <motion.div
@@ -165,26 +166,34 @@ export function RFIDScanIndicator({
 
         {/* Status icon */}
         <motion.div
-          animate={{
-            rotate: currentStatus === 'scanning' ? 360 : 0,
-            scale: currentStatus === 'success' ? [1, 1.2, 1] : 1,
-          }}
-          transition={{
-            rotate: {
-              duration: 2,
-              repeat: currentStatus === 'scanning' ? Infinity : 0,
-              ease: 'linear',
-            },
-            scale: {
-              duration: 0.6,
-              ease: 'easeInOut',
-            },
-          }}
+          animate={
+            reduced
+              ? { rotate: 0, scale: 1 }
+              : {
+                  rotate: currentStatus === 'scanning' ? 360 : 0,
+                  scale: currentStatus === 'success' ? [1, 1.2, 1] : 1,
+                }
+          }
+          transition={
+            reduced
+              ? { duration: 0.001 }
+              : {
+                  rotate: {
+                    duration: 2,
+                    repeat: currentStatus === 'scanning' ? Infinity : 0,
+                    ease: 'linear',
+                  },
+                  scale: {
+                    duration: 0.6,
+                    ease: 'easeInOut',
+                  },
+                }
+          }
         >
           <IconComponent
             size={iconSize[size]}
             className={`text-${config.color}-500 ${
-              currentStatus === 'processing' ? 'animate-spin' : ''
+              currentStatus === 'processing' && !reduced ? 'animate-spin' : ''
             }`}
           />
         </motion.div>
@@ -194,10 +203,10 @@ export function RFIDScanIndicator({
           {(currentStatus === 'success' || currentStatus === 'failed') && (
             <motion.div
               className="absolute inset-0 rounded-full flex items-center justify-center"
-              initial={{ scale: 0 }}
+              initial={reduced ? { scale: 1 } : { scale: 0 }}
               animate={{ scale: 1 }}
-              exit={{ scale: 0 }}
-              transition={{ type: 'spring', duration: 0.5 }}
+              exit={reduced ? { scale: 1 } : { scale: 0 }}
+              transition={reduced ? { duration: 0.001 } : { type: 'spring', duration: 0.5 }}
             >
               <div
                 className={`w-full h-full rounded-full border-4 ${config.borderColor} ${config.bgColor} flex items-center justify-center`}
@@ -213,10 +222,10 @@ export function RFIDScanIndicator({
       <AnimatePresence mode="wait">
         <motion.div
           key={currentStatus}
-          initial={{ opacity: 0, y: 10 }}
+          initial={reduced ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.3 }}
+          exit={reduced ? { opacity: 1, y: 0 } : { opacity: 0, y: -10 }}
+          transition={reduced ? { duration: 0.001 } : { duration: 0.3 }}
           className="text-center"
         >
           <Badge
@@ -232,29 +241,34 @@ export function RFIDScanIndicator({
       {/* Signal strength indicator for active scanning */}
       {currentStatus === 'scanning' && (
         <motion.div
-          initial={{ opacity: 0 }}
+          initial={{ opacity: reduced ? 1 : 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          transition={reduced ? { duration: 0.001 } : undefined}
           className="flex items-center space-x-1"
         >
           <Zap size={14} className="text-blue-500" />
           <div className="flex space-x-1">
-            {[...Array(5)].map((_, i) => (
-              <motion.div
-                key={i}
-                className="w-1 h-3 bg-blue-500 rounded-full"
-                animate={{
-                  opacity: [0.3, 1, 0.3],
-                  height: [8, 12, 8],
-                }}
-                transition={{
-                  duration: 1.5,
-                  repeat: Infinity,
-                  delay: i * 0.1,
-                  ease: 'easeInOut',
-                }}
-              />
-            ))}
+            {[...Array(5)].map((_, i) =>
+              reduced ? (
+                <div key={i} className="w-1 h-3 bg-blue-500 rounded-full opacity-80" />
+              ) : (
+                <motion.div
+                  key={i}
+                  className="w-1 h-3 bg-blue-500 rounded-full"
+                  animate={{
+                    opacity: [0.3, 1, 0.3],
+                    height: [8, 12, 8],
+                  }}
+                  transition={{
+                    duration: 1.5,
+                    repeat: Infinity,
+                    delay: i * 0.1,
+                    ease: 'easeInOut',
+                  }}
+                />
+              )
+            )}
           </div>
         </motion.div>
       )}

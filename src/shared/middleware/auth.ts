@@ -474,7 +474,14 @@ export const corsMiddleware = (
   methods: string[] = ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   headers: string[] = ['Content-Type', 'Authorization', 'X-Requested-With']
 ): Record<string, string> => {
-  const allowedOrigin = origin || '*';
+  const configuredOrigins = (process.env.CORS_ORIGINS || process.env.FRONTEND_URL || '')
+    .split(',')
+    .map(value => value.trim())
+    .filter(Boolean);
+  const allowedOrigin =
+    origin && configuredOrigins.includes(origin)
+      ? origin
+      : configuredOrigins[0] || 'https://app.hasivu.com';
 
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
@@ -482,6 +489,7 @@ export const corsMiddleware = (
     'Access-Control-Allow-Headers': headers.join(', '),
     'Access-Control-Allow-Credentials': 'true',
     'Access-Control-Max-Age': '86400', // 24 hours
+    Vary: 'Origin',
   };
 };
 

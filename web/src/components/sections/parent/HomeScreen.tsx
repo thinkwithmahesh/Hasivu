@@ -1,32 +1,45 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { motion, useAnimationFrame } from 'framer-motion';
+import { animate, motion, useMotionValue, useReducedMotion } from 'framer-motion';
 import { Button } from '../../ui/button';
 import { Card, CardContent } from '../../ui/card';
 
 export function HomeScreen() {
-  const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0 });
+  const shouldReduce = useReducedMotion();
+  const [minutesLeft, setMinutesLeft] = useState(45);
+  const [countdownLabel, setCountdownLabel] = useState('45:00 remaining');
+  const seconds = useMotionValue(0);
 
-  // Cutoff is tomorrow at 8:00 AM for this demonstration logic
-  useAnimationFrame(t => {
-    const now = new Date();
-    const cutoff = new Date();
-    cutoff.setHours(8, 0, 0, 0);
-    if (now.getHours() >= 8) {
-      cutoff.setDate(cutoff.getDate() + 1);
+  useEffect(() => {
+    const deadlineMs = Date.now() + 45 * 60 * 1000;
+    const compute = () => Math.max(0, Math.floor((deadlineMs - Date.now()) / 60000));
+    setMinutesLeft(compute());
+    const id = window.setInterval(() => setMinutesLeft(compute()), 30000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    if (minutesLeft >= 30) return;
+    const totalSeconds = Math.max(0, minutesLeft * 60);
+    const format = (raw: number) => {
+      const safe = Math.max(0, Math.floor(raw));
+      const mm = Math.floor(safe / 60);
+      const ss = safe % 60;
+      return `${mm}:${ss.toString().padStart(2, '0')} remaining`;
+    };
+    if (shouldReduce) {
+      setCountdownLabel(format(totalSeconds));
+      return;
     }
-
-    const diff = cutoff.getTime() - now.getTime();
-
-    if (diff > 0) {
-      setTimeLeft({
-        hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
-        minutes: Math.floor((diff / 1000 / 60) % 60),
-        seconds: Math.floor((diff / 1000) % 60),
-      });
-    }
-  });
+    seconds.set(totalSeconds);
+    const controls = animate(seconds, 0, {
+      duration: Math.max(1, totalSeconds),
+      ease: 'linear',
+      onUpdate: v => setCountdownLabel(format(Number(v))),
+    });
+    return () => controls.stop();
+  }, [minutesLeft, seconds, shouldReduce]);
 
   return (
     <div className="w-full flex flex-col pt-12 px-4 pb-8 space-y-6">
@@ -49,58 +62,32 @@ export function HomeScreen() {
         </div>
       </header>
 
-      {/* Live Countdown Card */}
-      <motion.div
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="w-full rounded-2xl bg-gradient-to-br from-pm-primary-600 to-pm-primary-800 p-5 text-white shadow-lg relative overflow-hidden"
-      >
-        <div className="absolute -right-10 -top-10 w-40 h-40 bg-white/10 rounded-full blur-2xl pointer-events-none" />
+      {minutesLeft >= 30 && minutesLeft <= 60 && (
+        <motion.div
+          initial={shouldReduce ? undefined : { y: 8, opacity: 0 }}
+          animate={shouldReduce ? undefined : { y: 0, opacity: 1 }}
+          className="w-full rounded-2xl border border-pm-semantic-warning/40 bg-pm-semantic-warning/10 p-4"
+        >
+          <p className="text-[14px] font-ui text-pm-text-primary">
+            Order by 9:00 AM today
+            <span className="ml-2 font-semibold text-pm-semantic-warning">{minutesLeft} min left</span>
+          </p>
+        </motion.div>
+      )}
 
-        <div className="relative z-10 flex flex-col">
-          <span className="font-ui font-bold text-[13px] uppercase tracking-wider text-pm-primary-100 flex items-center gap-1.5 mb-2">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            Order Cutoff For Tomorrow
-          </span>
-
-          <div className="flex gap-3 mb-5 mt-1 font-hero text-[40px] leading-none tabular-nums">
-            <div className="flex flex-col items-center">
-              <span>{String(timeLeft.hours).padStart(2, '0')}</span>
-              <span className="text-[11px] font-ui font-bold uppercase tracking-wider text-pm-primary-200 mt-1">
-                hrs
-              </span>
-            </div>
-            <span className="text-pm-primary-400 mt-[-2px] animate-pulse-slow">:</span>
-            <div className="flex flex-col items-center">
-              <span>{String(timeLeft.minutes).padStart(2, '0')}</span>
-              <span className="text-[11px] font-ui font-bold uppercase tracking-wider text-pm-primary-200 mt-1">
-                min
-              </span>
-            </div>
-            <span className="text-pm-primary-400 mt-[-2px] animate-pulse-slow">:</span>
-            <div className="flex flex-col items-center">
-              <span>{String(timeLeft.seconds).padStart(2, '0')}</span>
-              <span className="text-[11px] font-ui font-bold uppercase tracking-wider text-pm-primary-200 mt-1">
-                sec
-              </span>
-            </div>
-          </div>
-
-          <Button
-            variant="secondary"
-            className="w-full bg-white text-pm-primary-800 hover:bg-pm-neutral-50 border-none shadow-soft h-12 text-[16px]"
-          >
-            Plan Tomorrow's Meals
-          </Button>
-        </div>
-      </motion.div>
+      {minutesLeft < 30 && (
+        <motion.div
+          initial={shouldReduce ? undefined : { y: 8, opacity: 0 }}
+          animate={shouldReduce ? undefined : { y: 0, opacity: 1 }}
+          className="w-full rounded-2xl border border-pm-semantic-danger/40 bg-pm-semantic-danger/10 p-4"
+          role="alert"
+        >
+          <p className="text-[14px] font-ui font-semibold text-pm-semantic-danger">
+            Ordering closes very soon
+          </p>
+          <p className="text-[16px] font-hero text-pm-semantic-danger mt-1">{countdownLabel}</p>
+        </motion.div>
+      )}
 
       {/* Quick Actions */}
       <div className="grid grid-cols-2 gap-4">

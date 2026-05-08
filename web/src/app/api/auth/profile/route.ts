@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getAccessTokenFromRequest, fetchConfiguredProxy } from '@/app/api/_utils/proxy';
+const LAMBDA_AUTH_PROFILE_URL = process.env.LAMBDA_AUTH_PROFILE_URL;
 
-const LAMBDA_AUTH_PROFILE_URL =
-  process.env.LAMBDA_AUTH_PROFILE_URL ||
-  'https://your-lambda-endpoint.execute-api.region.amazonaws.com/dev/auth/profile';
+;
 
 export async function GET(request: NextRequest) {
   try {
     // Get auth token from httpOnly cookie
-    const authToken = request.cookies.get('auth-token')?.value;
+    const authToken = getAccessTokenFromRequest(request);
 
     if (!authToken) {
       return NextResponse.json(
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Forward request to Lambda function
-    const lambdaResponse = await fetch(LAMBDA_AUTH_PROFILE_URL, {
+    const lambdaResponse = await fetchConfiguredProxy(LAMBDA_AUTH_PROFILE_URL, 'LAMBDA_AUTH_PROFILE_URL', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     // Get auth token from httpOnly cookie
-    const authToken = request.cookies.get('auth-token')?.value;
+    const authToken = getAccessTokenFromRequest(request);
 
     if (!authToken) {
       return NextResponse.json(
@@ -68,7 +68,7 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
 
     // Forward request to Lambda function
-    const lambdaResponse = await fetch(LAMBDA_AUTH_PROFILE_URL, {
+    const lambdaResponse = await fetchConfiguredProxy(LAMBDA_AUTH_PROFILE_URL, 'LAMBDA_AUTH_PROFILE_URL', {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',

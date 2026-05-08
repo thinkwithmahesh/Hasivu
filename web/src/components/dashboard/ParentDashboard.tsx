@@ -2,8 +2,8 @@
 
 // Removed unused imports: useEffect, AnimatePresence, Users, Calendar, Filter, ChevronDown
 // These imports were not used in the component, causing ESLint no-unused-vars errors
-import React, { useState } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import React, { useState, useMemo, useEffect } from 'react';
+import { motion, useReducedMotion, animate, useMotionValue } from 'framer-motion';
 import {
   CreditCard,
   ShoppingCart,
@@ -43,6 +43,7 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
+import { Aarav } from '@/components/characters/HasivuFriend';
 
 // Enhanced TypeScript interfaces for parent dashboard
 interface Child {
@@ -134,6 +135,98 @@ const mockChildren: Child[] = [
   },
 ];
 
+/** Demo lunch cutoff (minutes from mount): 45 → state B; use 22 for state C; 75+ for state A */
+const MOCK_CUTOFF_MINUTES_FROM_NOW = 45;
+
+function CutoffCountdown({ deadlineMs, reduced }: { deadlineMs: number; reduced: boolean }) {
+  const secondsMv = useMotionValue(0);
+  const [label, setLabel] = useState('0:00 remaining');
+
+  useEffect(() => {
+    const fmt = (totalSeconds: number) => {
+      const s = Math.max(0, Math.floor(totalSeconds));
+      const m = Math.floor(s / 60);
+      const r = s % 60;
+      return `${m}:${r.toString().padStart(2, '0')} remaining`;
+    };
+    const startSec = Math.max(0, Math.floor((deadlineMs - Date.now()) / 1000));
+    if (reduced) {
+      setLabel(fmt(startSec));
+      return;
+    }
+    secondsMv.set(startSec);
+    const controls = animate(secondsMv, 0, {
+      duration: Math.max(0.05, startSec),
+      ease: 'linear',
+      onUpdate: v => setLabel(fmt(typeof v === 'number' ? v : Number(v))),
+    });
+    return () => controls.stop();
+  }, [deadlineMs, reduced, secondsMv]);
+
+  return (
+    <span className="font-mono text-sm text-hasivu-danger" aria-live="polite">
+      {label}
+    </span>
+  );
+}
+
+function OrderingCutoffUrgency({ reduced }: { reduced: boolean }) {
+  const deadlineMs = useMemo(() => Date.now() + MOCK_CUTOFF_MINUTES_FROM_NOW * 60 * 1000, []);
+
+  const minutesLeft = Math.max(0, Math.floor((deadlineMs - Date.now()) / 60000));
+
+  if (minutesLeft > 60) {
+    const t = new Date(deadlineMs);
+    return (
+      <Card className="rounded-2xl border-hasivu-primary/10 shadow-warm-sm bg-hasivu-surface">
+        <CardContent className="py-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-hasivu-secondary">
+            <Clock className="h-5 w-5" />
+            <span className="text-sm font-medium text-hasivu-text-primary">
+              Order by {t.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          </div>
+          <Badge className="bg-hasivu-secondary/15 text-hasivu-secondary border border-hasivu-secondary/30">
+            On track
+          </Badge>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (minutesLeft >= 30) {
+    return (
+      <Card className="rounded-2xl border-hasivu-warning/40 bg-hasivu-warning/10 shadow-warm-sm">
+        <CardContent className="py-4 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-hasivu-text-primary">
+            Lunch ordering closes soon — order by{' '}
+            <span className="font-medium">
+              {new Date(deadlineMs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          </p>
+          <motion.div
+            animate={reduced ? undefined : { scale: [1, 1.04, 1] }}
+            transition={reduced ? undefined : { duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            <Badge className="bg-hasivu-warning/20 text-hasivu-warning border border-hasivu-warning/40">
+              {minutesLeft} min left
+            </Badge>
+          </motion.div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="rounded-2xl border-hasivu-danger/40 bg-hasivu-danger/10 shadow-warm-sm">
+      <CardContent className="py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <p className="text-sm font-medium text-hasivu-danger">Ordering closes very soon</p>
+        <CutoffCountdown deadlineMs={deadlineMs} reduced={reduced} />
+      </CardContent>
+    </Card>
+  );
+}
+
 const mockOrders: Order[] = [
   {
     id: 'ORD-001',
@@ -184,57 +277,103 @@ const ChildSelector = ({
   children,
   selectedChild,
   onSelect,
+  reduced,
 }: {
   children: Child[];
   selectedChild: Child | null;
   onSelect: (child: Child) => void;
+  reduced: boolean;
 }) => {
+  const childBtnClass = (selected: boolean) =>
+    `flex items-center space-x-3 p-4 rounded-2xl border-2 transition-all duration-200 ${
+      selected
+        ? 'border-hasivu-orange-500 bg-hasivu-orange-50 shadow-glow-orange'
+        : 'border-hasivu-primary/10 bg-hasivu-surface hover:border-hasivu-orange-300 hover:bg-hasivu-orange-25'
+    }`;
+
   return (
     <div className="flex flex-wrap gap-3 mb-6">
-      {children.map(child => (
+      {children.map(child =>
+        reduced ? (
+          <button
+            key={child.id}
+            type="button"
+            onClick={() => onSelect(child)}
+            className={childBtnClass(selectedChild?.id === child.id)}
+          >
+            <Avatar className="w-12 h-12">
+              <AvatarImage src={child.avatar} alt={child.name} />
+              <AvatarFallback>
+                {child.name
+                  .split(' ')
+                  .map(n => n[0])
+                  .join('')}
+              </AvatarFallback>
+            </Avatar>
+            <div className="text-left">
+              <div className="font-semibold text-hasivu-text-primary">{child.name}</div>
+              <div className="text-sm text-hasivu-text-secondary">{child.grade}</div>
+              <div className="text-xs text-hasivu-green-600 font-medium">
+                {child.weeklyStreak} day streak
+              </div>
+            </div>
+            {selectedChild?.id === child.id && (
+              <CheckCircle className="w-5 h-5 text-hasivu-orange-500" />
+            )}
+          </button>
+        ) : (
+          <motion.button
+            key={child.id}
+            onClick={() => onSelect(child)}
+            className={childBtnClass(selectedChild?.id === child.id)}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <Avatar className="w-12 h-12">
+              <AvatarImage src={child.avatar} alt={child.name} />
+              <AvatarFallback>
+                {child.name
+                  .split(' ')
+                  .map(n => n[0])
+                  .join('')}
+              </AvatarFallback>
+            </Avatar>
+            <div className="text-left">
+              <div className="font-semibold text-hasivu-text-primary">{child.name}</div>
+              <div className="text-sm text-hasivu-text-secondary">{child.grade}</div>
+              <div className="text-xs text-hasivu-green-600 font-medium">
+                {child.weeklyStreak} day streak
+              </div>
+            </div>
+            {selectedChild?.id === child.id && (
+              <CheckCircle className="w-5 h-5 text-hasivu-orange-500" />
+            )}
+          </motion.button>
+        )
+      )}
+
+      {reduced ? (
+        <button
+          type="button"
+          className="flex items-center justify-center p-4 rounded-2xl border-2 border-dashed border-hasivu-primary/15 bg-hasivu-bg-warm hover:border-hasivu-orange-300 hover:bg-hasivu-orange-25 transition-all duration-200 min-w-[120px]"
+        >
+          <div className="text-center">
+            <Plus className="w-6 h-6 text-hasivu-text-secondary/70 mx-auto mb-1" />
+            <div className="text-sm font-medium text-hasivu-text-secondary">Add Child</div>
+          </div>
+        </button>
+      ) : (
         <motion.button
-          key={child.id}
-          onClick={() => onSelect(child)}
-          className={`flex items-center space-x-3 p-4 rounded-2xl border-2 transition-all duration-200 ${
-            selectedChild?.id === child.id
-              ? 'border-hasivu-orange-500 bg-hasivu-orange-50 shadow-glow-orange'
-              : 'border-gray-200 bg-white hover:border-hasivu-orange-300 hover:bg-hasivu-orange-25'
-          }`}
+          className="flex items-center justify-center p-4 rounded-2xl border-2 border-dashed border-hasivu-primary/15 bg-hasivu-bg-warm hover:border-hasivu-orange-300 hover:bg-hasivu-orange-25 transition-all duration-200 min-w-[120px]"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
-          <Avatar className="w-12 h-12">
-            <AvatarImage src={child.avatar} alt={child.name} />
-            <AvatarFallback>
-              {child.name
-                .split(' ')
-                .map(n => n[0])
-                .join('')}
-            </AvatarFallback>
-          </Avatar>
-          <div className="text-left">
-            <div className="font-semibold text-gray-900">{child.name}</div>
-            <div className="text-sm text-gray-500">{child.grade}</div>
-            <div className="text-xs text-hasivu-green-600 font-medium">
-              {child.weeklyStreak} day streak
-            </div>
+          <div className="text-center">
+            <Plus className="w-6 h-6 text-hasivu-text-secondary/70 mx-auto mb-1" />
+            <div className="text-sm font-medium text-hasivu-text-secondary">Add Child</div>
           </div>
-          {selectedChild?.id === child.id && (
-            <CheckCircle className="w-5 h-5 text-hasivu-orange-500" />
-          )}
         </motion.button>
-      ))}
-
-      <motion.button
-        className="flex items-center justify-center p-4 rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 hover:border-hasivu-orange-300 hover:bg-hasivu-orange-25 transition-all duration-200 min-w-[120px]"
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-      >
-        <div className="text-center">
-          <Plus className="w-6 h-6 text-gray-400 mx-auto mb-1" />
-          <div className="text-sm font-medium text-gray-600">Add Child</div>
-        </div>
-      </motion.button>
+      )}
     </div>
   );
 };
@@ -254,7 +393,7 @@ const OrderTracker = ({ order }: { order: Order }) => {
       case 'cancelled':
         return 'text-red-600 bg-red-100';
       default:
-        return 'text-gray-600 bg-gray-100';
+        return 'text-hasivu-text-secondary bg-hasivu-surface-elevated';
     }
   };
 
@@ -289,7 +428,7 @@ const OrderTracker = ({ order }: { order: Order }) => {
             <div key={item.id} className="flex justify-between items-center">
               <div>
                 <span className="font-medium">{item.name}</span>
-                <span className="text-sm text-gray-500 ml-2">×{item.quantity}</span>
+                <span className="text-sm text-hasivu-text-secondary ml-2">×{item.quantity}</span>
               </div>
               <span className="font-semibold">Rs.{item.price}</span>
             </div>
@@ -314,13 +453,13 @@ const OrderTracker = ({ order }: { order: Order }) => {
                   className={`w-8 h-8 rounded-full flex items-center justify-center ${
                     isCompleted
                       ? 'bg-hasivu-green-100 text-hasivu-green-600'
-                      : 'bg-gray-100 text-gray-400'
+                      : 'bg-hasivu-surface-elevated text-hasivu-text-secondary/70'
                   }`}
                 >
                   <step.icon className="w-4 h-4" />
                 </div>
                 <span
-                  className={`text-sm ${isActive ? 'font-semibold text-hasivu-orange-600' : 'text-gray-600'}`}
+                  className={`text-sm ${isActive ? 'font-semibold text-hasivu-orange-600' : 'text-hasivu-text-secondary'}`}
                 >
                   {step.label}
                 </span>
@@ -345,7 +484,7 @@ const OrderTracker = ({ order }: { order: Order }) => {
 
         {/* Nutrition Score */}
         <div className="flex items-center justify-between">
-          <span className="text-sm text-gray-600">Nutrition Score</span>
+          <span className="text-sm text-hasivu-text-secondary">Nutrition Score</span>
           <div className="flex items-center space-x-2">
             <Progress value={order.nutritionScore} className="w-16 h-2" />
             <span className="text-sm font-semibold text-hasivu-green-600">
@@ -408,15 +547,17 @@ const NutritionInsights = ({ child }: { child: Child }) => {
           <div className="flex items-center justify-between mb-4">
             <div>
               <div className="text-2xl font-bold text-hasivu-green-600">{child.weeklyStreak}</div>
-              <div className="text-sm text-gray-600">Day Streak</div>
+              <div className="text-sm text-hasivu-text-secondary">Day Streak</div>
             </div>
             <div className="flex space-x-1">
               {weeklyData.map((day, index) => (
                 <div key={index} className="text-center">
-                  <div className="text-xs text-gray-500 mb-1">{day.day}</div>
+                  <div className="text-xs text-hasivu-text-secondary mb-1">{day.day}</div>
                   <div
                     className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold ${
-                      day.meals > 0 ? 'bg-hasivu-green-500 text-white' : 'bg-gray-200 text-gray-400'
+                      day.meals > 0
+                        ? 'bg-hasivu-green-500 text-white'
+                        : 'bg-hasivu-surface-elevated text-hasivu-text-secondary/70'
                     }`}
                   >
                     {day.score || '-'}
@@ -445,17 +586,19 @@ const NutritionInsights = ({ child }: { child: Child }) => {
                 className={`flex items-center space-x-3 p-3 rounded-lg transition-all ${
                   achievement.unlocked
                     ? 'bg-hasivu-green-50 border border-hasivu-green-200'
-                    : 'bg-gray-50 border border-gray-200 opacity-60'
+                    : 'bg-hasivu-bg-warm border border-hasivu-primary/10 opacity-60'
                 }`}
               >
                 <achievement.icon
                   className={`w-6 h-6 ${
-                    achievement.unlocked ? 'text-hasivu-green-600' : 'text-gray-400'
+                    achievement.unlocked ? 'text-hasivu-green-600' : 'text-hasivu-text-secondary/70'
                   }`}
                 />
                 <div className="flex-1">
                   <div className="font-medium">{achievement.name}</div>
-                  <div className="text-sm text-gray-600">{achievement.description}</div>
+                  <div className="text-sm text-hasivu-text-secondary">
+                    {achievement.description}
+                  </div>
                 </div>
                 {achievement.unlocked && <CheckCircle className="w-5 h-5 text-hasivu-green-600" />}
               </div>
@@ -471,7 +614,9 @@ const NutritionInsights = ({ child }: { child: Child }) => {
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <label className="text-sm font-medium text-gray-700">Dietary Restrictions</label>
+            <label className="text-sm font-medium text-hasivu-text-primary">
+              Dietary Restrictions
+            </label>
             <div className="flex flex-wrap gap-2 mt-1">
               {child.dietaryRestrictions.length > 0 ? (
                 child.dietaryRestrictions.map(restriction => (
@@ -484,13 +629,13 @@ const NutritionInsights = ({ child }: { child: Child }) => {
                   </Badge>
                 ))
               ) : (
-                <span className="text-sm text-gray-500">None</span>
+                <span className="text-sm text-hasivu-text-secondary">None</span>
               )}
             </div>
           </div>
 
           <div>
-            <label className="text-sm font-medium text-gray-700">Allergies</label>
+            <label className="text-sm font-medium text-hasivu-text-primary">Allergies</label>
             <div className="flex flex-wrap gap-2 mt-1">
               {child.allergies.length > 0 ? (
                 child.allergies.map(allergy => (
@@ -499,13 +644,15 @@ const NutritionInsights = ({ child }: { child: Child }) => {
                   </Badge>
                 ))
               ) : (
-                <span className="text-sm text-gray-500">None reported</span>
+                <span className="text-sm text-hasivu-text-secondary">None reported</span>
               )}
             </div>
           </div>
 
           <div>
-            <label className="text-sm font-medium text-gray-700">Preferred Cuisines</label>
+            <label className="text-sm font-medium text-hasivu-text-primary">
+              Preferred Cuisines
+            </label>
             <div className="flex flex-wrap gap-2 mt-1">
               {child.preferences.cuisineType.map(cuisine => (
                 <Badge key={cuisine} className="bg-hasivu-orange-100 text-hasivu-orange-800">
@@ -516,7 +663,7 @@ const NutritionInsights = ({ child }: { child: Child }) => {
           </div>
 
           <div>
-            <label className="text-sm font-medium text-gray-700">Spice Preference</label>
+            <label className="text-sm font-medium text-hasivu-text-primary">Spice Preference</label>
             <Badge className="ml-2 bg-yellow-100 text-yellow-800">
               {child.preferences.spiceLevel.charAt(0).toUpperCase() +
                 child.preferences.spiceLevel.slice(1)}
@@ -553,14 +700,16 @@ export const ParentDashboard: React.FC = () => {
     : [];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-hasivu-bg-warm">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      <div className="bg-hasivu-surface shadow-warm-sm border-b border-hasivu-primary/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Parent Dashboard</h1>
-              <p className="text-gray-600">Manage your children's meal plans and nutrition</p>
+              <h1 className="text-2xl font-bold text-hasivu-text-primary">Parent Dashboard</h1>
+              <p className="text-hasivu-text-secondary">
+                Manage your children's meal plans and nutrition
+              </p>
             </div>
             <div className="flex items-center space-x-4">
               <Button variant="outline" className="flex items-center">
@@ -583,7 +732,10 @@ export const ParentDashboard: React.FC = () => {
           children={mockChildren}
           selectedChild={selectedChild}
           onSelect={setSelectedChild}
+          reduced={!!reduced}
         />
+
+        <OrderingCutoffUrgency reduced={!!reduced} />
 
         {/* Dashboard Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -603,7 +755,10 @@ export const ParentDashboard: React.FC = () => {
                   <div className="lg:col-span-2 space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <motion.div whileHover={reduced ? undefined : { y: -2, scale: 1.01 }}>
-                        <Card>
+                        <Card className="relative overflow-visible">
+                          <div className="absolute -top-1 -right-1 z-10" aria-hidden="true">
+                            <Aarav size={48} animation="breathe" respectReducedMotion />
+                          </div>
                           <CardContent className="pt-6">
                             <div className="flex items-center">
                               <div className="p-2 bg-hasivu-green-100 rounded-full">
@@ -611,7 +766,7 @@ export const ParentDashboard: React.FC = () => {
                               </div>
                               <div className="ml-4">
                                 <p className="text-2xl font-bold">{todaysOrders.length}</p>
-                                <p className="text-gray-600">Today's Orders</p>
+                                <p className="text-hasivu-text-secondary">Today's Orders</p>
                               </div>
                             </div>
                           </CardContent>
@@ -629,7 +784,7 @@ export const ParentDashboard: React.FC = () => {
                                 <p className="text-2xl font-bold">
                                   {selectedChild.nutritionScore}%
                                 </p>
-                                <p className="text-gray-600">Nutrition Score</p>
+                                <p className="text-hasivu-text-secondary">Nutrition Score</p>
                               </div>
                             </div>
                           </CardContent>
@@ -645,7 +800,7 @@ export const ParentDashboard: React.FC = () => {
                               </div>
                               <div className="ml-4">
                                 <p className="text-2xl font-bold">{selectedChild.weeklyStreak}</p>
-                                <p className="text-gray-600">Day Streak</p>
+                                <p className="text-hasivu-text-secondary">Day Streak</p>
                               </div>
                             </div>
                           </CardContent>
@@ -687,8 +842,10 @@ export const ParentDashboard: React.FC = () => {
             <motion.div {...sectionMotionProps}>
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">Orders & Tracking</h2>
-                  <p className="text-gray-600">Monitor all meal orders and delivery status</p>
+                  <h2 className="text-2xl font-bold text-hasivu-text-primary">Orders & Tracking</h2>
+                  <p className="text-hasivu-text-secondary">
+                    Monitor all meal orders and delivery status
+                  </p>
                 </div>
                 <div className="flex items-center space-x-3">
                   <Select defaultValue="all">
@@ -732,7 +889,7 @@ export const ParentDashboard: React.FC = () => {
                         </div>
                         <div className="ml-4">
                           <p className="text-2xl font-bold">24</p>
-                          <p className="text-sm text-gray-600">Total Orders</p>
+                          <p className="text-sm text-hasivu-text-secondary">Total Orders</p>
                         </div>
                       </div>
                     </CardContent>
@@ -747,7 +904,7 @@ export const ParentDashboard: React.FC = () => {
                         </div>
                         <div className="ml-4">
                           <p className="text-2xl font-bold">3</p>
-                          <p className="text-sm text-gray-600">In Progress</p>
+                          <p className="text-sm text-hasivu-text-secondary">In Progress</p>
                         </div>
                       </div>
                     </CardContent>
@@ -762,7 +919,7 @@ export const ParentDashboard: React.FC = () => {
                         </div>
                         <div className="ml-4">
                           <p className="text-2xl font-bold">21</p>
-                          <p className="text-sm text-gray-600">Completed</p>
+                          <p className="text-sm text-hasivu-text-secondary">Completed</p>
                         </div>
                       </div>
                     </CardContent>
@@ -777,7 +934,7 @@ export const ParentDashboard: React.FC = () => {
                         </div>
                         <div className="ml-4">
                           <p className="text-2xl font-bold">Rs.2,340</p>
-                          <p className="text-sm text-gray-600">Total Spent</p>
+                          <p className="text-sm text-hasivu-text-secondary">Total Spent</p>
                         </div>
                       </div>
                     </CardContent>
@@ -848,7 +1005,9 @@ export const ParentDashboard: React.FC = () => {
                                     </Avatar>
                                     <div>
                                       <h4 className="font-semibold">{order.childName}</h4>
-                                      <p className="text-sm text-gray-600">Order #{order.id}</p>
+                                      <p className="text-sm text-hasivu-text-secondary">
+                                        Order #{order.id}
+                                      </p>
                                     </div>
                                   </div>
                                   <Badge
@@ -857,7 +1016,7 @@ export const ParentDashboard: React.FC = () => {
                                         ? 'bg-orange-100 text-orange-800'
                                         : order.status === 'ordered'
                                           ? 'bg-blue-100 text-blue-800'
-                                          : 'bg-gray-100 text-gray-800'
+                                          : 'bg-hasivu-surface-elevated text-hasivu-text-primary'
                                     }`}
                                   >
                                     {order.status === 'ready'
@@ -871,12 +1030,14 @@ export const ParentDashboard: React.FC = () => {
                                   {order.items.map((item, idx) => (
                                     <div key={idx} className="flex justify-between items-center">
                                       <span className="font-medium">{item.name}</span>
-                                      <span className="text-gray-600">Rs.{item.price}</span>
+                                      <span className="text-hasivu-text-secondary">
+                                        Rs.{item.price}
+                                      </span>
                                     </div>
                                   ))}
                                 </div>
 
-                                <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
+                                <div className="flex items-center justify-between text-sm text-hasivu-text-secondary mb-2">
                                   <span>
                                     Ordered: {new Date(order.orderTime).toLocaleTimeString()}
                                   </span>
@@ -897,7 +1058,9 @@ export const ParentDashboard: React.FC = () => {
 
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center space-x-2">
-                                    <span className="text-sm text-gray-600">Nutrition Score:</span>
+                                    <span className="text-sm text-hasivu-text-secondary">
+                                      Nutrition Score:
+                                    </span>
                                     <Progress value={order.nutritionScore} className="w-20 h-2" />
                                     <span className="text-sm font-semibold text-hasivu-green-600">
                                       {order.nutritionScore}%
@@ -931,8 +1094,8 @@ export const ParentDashboard: React.FC = () => {
             <motion.div {...sectionMotionProps}>
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">Nutrition & Goals</h2>
-                  <p className="text-gray-600">
+                  <h2 className="text-2xl font-bold text-hasivu-text-primary">Nutrition & Goals</h2>
+                  <p className="text-hasivu-text-secondary">
                     AI-powered nutrition insights and personalized goals
                   </p>
                 </div>
@@ -988,7 +1151,7 @@ export const ParentDashboard: React.FC = () => {
                                 return (
                                   <div key={index} className="flex flex-col items-center flex-1">
                                     <div
-                                      className="w-full bg-gray-200 rounded-t-lg relative overflow-hidden"
+                                      className="w-full bg-hasivu-surface-elevated rounded-t-lg relative overflow-hidden"
                                       style={{ height: '200px' }}
                                     >
                                       <motion.div
@@ -1003,13 +1166,19 @@ export const ParentDashboard: React.FC = () => {
                                                   ? 'bg-gradient-to-t from-red-500 to-red-400'
                                                   : ''
                                         }`}
-                                        initial={{ height: 0 }}
+                                        initial={{ height: reduced ? height : 0 }}
                                         animate={{ height: `${height}px` }}
-                                        transition={{ delay: index * 0.1, duration: 0.5 }}
+                                        transition={
+                                          reduced
+                                            ? { duration: 0.001 }
+                                            : { delay: index * 0.1, duration: 0.5 }
+                                        }
                                       />
                                     </div>
                                     <div className="text-center mt-2">
-                                      <div className="text-xs text-gray-500">{day.day}</div>
+                                      <div className="text-xs text-hasivu-text-secondary">
+                                        {day.day}
+                                      </div>
                                       <div className="text-sm font-semibold">
                                         {day.score || '-'}
                                       </div>
@@ -1068,7 +1237,7 @@ export const ParentDashboard: React.FC = () => {
                                         stroke="currentColor"
                                         strokeWidth="4"
                                         fill="none"
-                                        className="text-gray-200"
+                                        className="text-hasivu-text-secondary/30"
                                       />
                                       <circle
                                         cx="40"
@@ -1089,7 +1258,7 @@ export const ParentDashboard: React.FC = () => {
                                     </div>
                                   </div>
                                   <div className="font-medium">{nutrient.label}</div>
-                                  <div className="text-sm text-gray-600">
+                                  <div className="text-sm text-hasivu-text-secondary">
                                     {nutrient.value}
                                     {nutrient.unit} / {nutrient.target}
                                     {nutrient.unit}
@@ -1177,7 +1346,7 @@ export const ParentDashboard: React.FC = () => {
                                       <IconComponent className="w-4 h-4 text-hasivu-orange-600" />
                                       <span className="font-medium text-sm">{goal.label}</span>
                                     </div>
-                                    <span className="text-sm text-gray-600">
+                                    <span className="text-sm text-hasivu-text-secondary">
                                       {goal.current}/{goal.target}
                                     </span>
                                   </div>
@@ -1225,10 +1394,12 @@ export const ParentDashboard: React.FC = () => {
                                   <div className="text-2xl">{achievement.icon}</div>
                                   <div className="flex-1">
                                     <h4 className="font-semibold text-sm">{achievement.title}</h4>
-                                    <p className="text-xs text-gray-600 mb-1">
+                                    <p className="text-xs text-hasivu-text-secondary mb-1">
                                       {achievement.description}
                                     </p>
-                                    <p className="text-xs text-gray-500">{achievement.date}</p>
+                                    <p className="text-xs text-hasivu-text-secondary">
+                                      {achievement.date}
+                                    </p>
                                   </div>
                                 </div>
                               ))}
@@ -1278,8 +1449,10 @@ export const ParentDashboard: React.FC = () => {
             <motion.div {...sectionMotionProps}>
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">Payments & Wallet</h2>
-                  <p className="text-gray-600">Manage payments, wallet balance, and security</p>
+                  <h2 className="text-2xl font-bold text-hasivu-text-primary">Payments & Wallet</h2>
+                  <p className="text-hasivu-text-secondary">
+                    Manage payments, wallet balance, and security
+                  </p>
                 </div>
                 <div className="flex items-center space-x-3">
                   <Button variant="outline">
@@ -1329,20 +1502,20 @@ export const ParentDashboard: React.FC = () => {
                         </div>
 
                         <div className="space-y-4">
-                          <div className="text-center p-4 border-2 border-dashed border-gray-300 rounded-lg">
-                            <TrendingUp className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                            <p className="text-sm text-gray-600">Monthly Spending</p>
-                            <p className="text-xl font-bold text-gray-900">Rs.3,240</p>
+                          <div className="text-center p-4 border-2 border-dashed border-hasivu-primary/15 rounded-lg">
+                            <TrendingUp className="w-8 h-8 text-hasivu-text-secondary/70 mx-auto mb-2" />
+                            <p className="text-sm text-hasivu-text-secondary">Monthly Spending</p>
+                            <p className="text-xl font-bold text-hasivu-text-primary">Rs.3,240</p>
                             <p className="text-xs text-green-600">↓ 12% from last month</p>
                           </div>
                         </div>
 
                         <div className="space-y-4">
-                          <div className="text-center p-4 border-2 border-dashed border-gray-300 rounded-lg">
-                            <Shield className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                            <p className="text-sm text-gray-600">Fraud Protection</p>
+                          <div className="text-center p-4 border-2 border-dashed border-hasivu-primary/15 rounded-lg">
+                            <Shield className="w-8 h-8 text-hasivu-text-secondary/70 mx-auto mb-2" />
+                            <p className="text-sm text-hasivu-text-secondary">Fraud Protection</p>
                             <p className="text-xl font-bold text-green-600">Active</p>
-                            <p className="text-xs text-gray-500">99.7% accuracy</p>
+                            <p className="text-xs text-hasivu-text-secondary">99.7% accuracy</p>
                           </div>
                         </div>
                       </div>
@@ -1415,7 +1588,7 @@ export const ParentDashboard: React.FC = () => {
                         ].map(transaction => (
                           <div
                             key={transaction.id}
-                            className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                            className="flex items-center justify-between p-4 border border-hasivu-primary/10 rounded-lg hover:bg-hasivu-bg-warm transition-colors"
                           >
                             <div className="flex items-center space-x-4">
                               <div
@@ -1426,7 +1599,7 @@ export const ParentDashboard: React.FC = () => {
                                       ? 'bg-green-100'
                                       : transaction.type === 'refund'
                                         ? 'bg-blue-100'
-                                        : 'bg-gray-100'
+                                        : 'bg-hasivu-surface-elevated'
                                 }`}
                               >
                                 {transaction.type === 'payment' && (
@@ -1449,7 +1622,7 @@ export const ParentDashboard: React.FC = () => {
                                     </Badge>
                                   )}
                                 </div>
-                                <div className="flex items-center space-x-4 text-sm text-gray-600">
+                                <div className="flex items-center space-x-4 text-sm text-hasivu-text-secondary">
                                   <span>#{transaction.id}</span>
                                   {transaction.child && <span>{transaction.child}</span>}
                                   <span>{new Date(transaction.timestamp).toLocaleString()}</span>
@@ -1561,7 +1734,7 @@ export const ParentDashboard: React.FC = () => {
                       ].map((method, index) => (
                         <div
                           key={index}
-                          className="flex items-center justify-between p-3 border border-gray-200 rounded-lg"
+                          className="flex items-center justify-between p-3 border border-hasivu-primary/10 rounded-lg"
                         >
                           <div className="flex items-center space-x-3">
                             <div className="p-2 bg-blue-100 rounded">
@@ -1569,7 +1742,9 @@ export const ParentDashboard: React.FC = () => {
                             </div>
                             <div>
                               <div className="font-medium text-sm">{method.type}</div>
-                              <div className="text-xs text-gray-600">{method.details}</div>
+                              <div className="text-xs text-hasivu-text-secondary">
+                                {method.details}
+                              </div>
                             </div>
                           </div>
                           {method.primary && (
@@ -1591,7 +1766,7 @@ export const ParentDashboard: React.FC = () => {
                       <div className="flex items-center justify-between">
                         <div>
                           <div className="font-medium text-sm">Two-Factor Auth</div>
-                          <div className="text-xs text-gray-600">
+                          <div className="text-xs text-hasivu-text-secondary">
                             SMS verification for transactions
                           </div>
                         </div>
@@ -1600,7 +1775,9 @@ export const ParentDashboard: React.FC = () => {
                       <div className="flex items-center justify-between">
                         <div>
                           <div className="font-medium text-sm">Transaction Limits</div>
-                          <div className="text-xs text-gray-600">Rs.500 per transaction</div>
+                          <div className="text-xs text-hasivu-text-secondary">
+                            Rs.500 per transaction
+                          </div>
                         </div>
                         <Button variant="outline" size="sm">
                           Edit
@@ -1609,7 +1786,9 @@ export const ParentDashboard: React.FC = () => {
                       <div className="flex items-center justify-between">
                         <div>
                           <div className="font-medium text-sm">Auto-reload</div>
-                          <div className="text-xs text-gray-600">When balance &lt; Rs. 100</div>
+                          <div className="text-xs text-hasivu-text-secondary">
+                            When balance &lt; Rs. 100
+                          </div>
                         </div>
                         <div className="w-4 h-4 bg-green-500 rounded-full"></div>
                       </div>

@@ -438,7 +438,7 @@ const HASIVULandingPage: React.FC = () => {
               Real Results From Real Schools
             </h2>
             <p className="text-xl text-gray-600">
-              See why 100+ school districts trust HASIVU with their food service operations
+              Explore how HASIVU supports safer, simpler school food service operations
             </p>
           </motion.div>
 

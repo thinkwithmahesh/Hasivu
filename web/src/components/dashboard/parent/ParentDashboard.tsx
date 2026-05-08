@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSelector as _useSelector, useDispatch as _useDispatch } from 'react-redux';
+import { useReducedMotion } from 'framer-motion';
+import { Aarav } from '@/components/characters/HasivuFriend';
 import {
   Card,
   CardContent,
@@ -55,37 +57,42 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   analytics,
   onQuickAction,
 }) => {
+  const shouldReduce = useReducedMotion();
+
   const getStatusColor = (status: Order['status']) => {
     const colors: Record<Order['status'], string> = {
-      pending: 'bg-yellow-100 text-yellow-800',
-      completed: 'bg-blue-100 text-blue-800',
+      pending: 'bg-hasivu-warning/15 text-hasivu-warning',
+      completed: 'bg-hasivu-primary/15 text-hasivu-primary',
       preparing: 'bg-orange-100 text-orange-800',
-      ready: 'bg-green-100 text-green-800',
-      delivered: 'bg-gray-100 text-gray-800',
-      cancelled: 'bg-red-100 text-red-800',
+      ready: 'bg-hasivu-success/15 text-hasivu-success',
+      delivered: 'bg-hasivu-bg-warm text-hasivu-text-secondary',
+      cancelled: 'bg-hasivu-danger/15 text-hasivu-danger',
     };
-    return colors[status] || 'bg-gray-100 text-gray-800';
+    return colors[status] || 'bg-hasivu-bg-warm text-hasivu-text-secondary';
   };
 
   const getStatusIcon = (status: Order['status']) => {
     switch (status) {
       case 'delivered':
-        return <CheckCircle className="h-4 w-4 text-green-600" />;
+        return <CheckCircle className="h-4 w-4 text-hasivu-success" />;
       case 'cancelled':
-        return <AlertCircle className="h-4 w-4 text-red-600" />;
+        return <AlertCircle className="h-4 w-4 text-hasivu-danger" />;
       case 'ready':
-        return <Clock className="h-4 w-4 text-green-600" />;
+        return <Clock className="h-4 w-4 text-hasivu-success" />;
       default:
-        return <Clock className="h-4 w-4 text-blue-600" />;
+        return <Clock className="h-4 w-4 text-hasivu-primary" />;
     }
   };
 
   return (
     <div className="space-y-6">
       {/* Welcome Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg p-6">
-        <h1 className="text-2xl font-bold mb-2">Welcome back!</h1>
-        <p className="text-blue-100">
+      <div className="bg-gradient-to-r from-hasivu-primary to-hasivu-primary-dark text-white rounded-2xl p-6 relative overflow-hidden">
+        <div className="absolute -right-2 -top-2" aria-hidden="true">
+          <Aarav size={48} animation="breathe" respectReducedMotion />
+        </div>
+        <h1 className="text-2xl font-display font-bold mb-2">Welcome back!</h1>
+        <p className="text-white/80">
           Manage your children's meals and track their nutrition journey
         </p>
       </div>
@@ -96,10 +103,10 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Active Children</p>
+                <p className="text-sm font-medium text-hasivu-text-secondary">Active Children</p>
                 <p className="text-2xl font-bold">{children.filter(c => c.isActive).length}</p>
               </div>
-              <User className="h-8 w-8 text-blue-600" />
+              <User className="h-8 w-8 text-hasivu-primary" />
             </div>
           </CardContent>
         </Card>
@@ -108,10 +115,10 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Orders This Month</p>
+                <p className="text-sm font-medium text-hasivu-text-secondary">Orders This Month</p>
                 <p className="text-2xl font-bold">{analytics?.totalOrders || 0}</p>
               </div>
-              <ShoppingCart className="h-8 w-8 text-green-600" />
+              <ShoppingCart className="h-8 w-8 text-hasivu-success" />
             </div>
           </CardContent>
         </Card>
@@ -120,10 +127,10 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Spent</p>
+                <p className="text-sm font-medium text-hasivu-text-secondary">Total Spent</p>
                 <p className="text-2xl font-bold">₹{analytics?.totalSpent?.toFixed(2) || '0.00'}</p>
               </div>
-              <CreditCard className="h-8 w-8 text-purple-600" />
+              <CreditCard className="h-8 w-8 text-hasivu-primary" />
             </div>
           </CardContent>
         </Card>
@@ -132,7 +139,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Avg Order Value</p>
+                <p className="text-sm font-medium text-hasivu-text-secondary">Avg Order Value</p>
                 <p className="text-2xl font-bold">
                   ₹{analytics?.averageOrderValue?.toFixed(2) || '0.00'}
                 </p>
@@ -172,7 +179,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                       ? `${child.firstName} ${child.lastName}`
                       : child.name}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-hasivu-text-secondary">
                     Grade {child.grade}, Class {child.class}
                   </p>
                   {child.allergies && child.allergies.length > 0 && (
@@ -182,7 +189,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                   )}
                 </div>
                 {child.isActive ? (
-                  <Badge className="bg-green-100 text-green-800">Active</Badge>
+                  <Badge className="bg-hasivu-success/15 text-hasivu-success">Active</Badge>
                 ) : (
                   <Badge variant="outline">Inactive</Badge>
                 )}
@@ -214,8 +221,8 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({
         <CardContent>
           {recentOrders.length === 0 ? (
             <div className="text-center py-8">
-              <ShoppingCart className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">No recent orders</p>
+              <ShoppingCart className="h-12 w-12 text-hasivu-text-secondary/50 mx-auto mb-4" />
+              <p className="text-hasivu-text-secondary">No recent orders</p>
               <Button className="mt-4" onClick={() => onQuickAction('create_order')}>
                 Place Your First Order
               </Button>
@@ -233,14 +240,14 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                       <div className="flex-shrink-0">{getStatusIcon(order.status)}</div>
                       <div>
                         <p className="font-medium">Order #{order.id.slice(-8)}</p>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-hasivu-text-secondary">
                           {child?.firstName && child?.lastName
                             ? `${child.firstName} ${child.lastName}`
                             : child?.name || 'Unknown'}{' '}
                           • {order.items.length} item
                           {order.items.length !== 1 ? 's' : ''}
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-hasivu-text-secondary/70">
                           {order.createdAt
                             ? new Date(order.createdAt).toLocaleDateString()
                             : order.orderDate}{' '}
@@ -376,7 +383,7 @@ export const ParentDashboard: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-hasivu-primary"></div>
       </div>
     );
   }
@@ -385,8 +392,10 @@ export const ParentDashboard: React.FC = () => {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Parent Dashboard</h1>
-          <p className="text-gray-600">Manage your children's meals and nutrition</p>
+          <h1 className="text-3xl font-display font-bold text-hasivu-text-primary">
+            Parent Dashboard
+          </h1>
+          <p className="text-hasivu-text-secondary">Manage your children's meals and nutrition</p>
         </div>
         <div className="flex items-center space-x-4">
           <Button variant="outline" size="sm">

@@ -11,7 +11,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -215,6 +215,8 @@ const EnhancedOnboardingFlow: React.FC<{
   schoolId?: string;
   tenantId?: string;
 }> = ({ onComplete, onSkip, schoolId, tenantId }) => {
+  const shouldReduce = useReducedMotion();
+  const [slideDirection, setSlideDirection] = useState(1);
   // ============ STATE MANAGEMENT ============
   const [currentStep, setCurrentStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -592,6 +594,7 @@ const EnhancedOnboardingFlow: React.FC<{
       }));
 
       if (currentStep < steps.length - 1) {
+        setSlideDirection(1);
         setCurrentStep(currentStep + 1);
         broadcastProgress(currentStep + 1, 'STEP_STARTED');
       } else {
@@ -606,6 +609,7 @@ const EnhancedOnboardingFlow: React.FC<{
 
   const prevStep = () => {
     if (currentStep > 0) {
+      setSlideDirection(-1);
       setCurrentStep(currentStep - 1);
       broadcastProgress(currentStep - 1, 'STEP_RETURNED');
     }
@@ -728,12 +732,7 @@ const EnhancedOnboardingFlow: React.FC<{
 
   // ============ STEP RENDERERS ============
   const renderWelcomeStep = () => (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      className="text-center space-y-8"
-    >
+    <div className="text-center space-y-8">
       <div className="space-y-6">
         <div className="mx-auto w-32 h-32 bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-600 rounded-full flex items-center justify-center shadow-2xl">
           <Sparkles className="w-16 h-16 text-white animate-pulse" />
@@ -754,7 +753,7 @@ const EnhancedOnboardingFlow: React.FC<{
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto mt-12">
         <motion.div
           className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-2xl p-8 text-center border border-blue-200 hover:shadow-lg transition-all duration-300"
-          whileHover={{ scale: 1.02, y: -5 }}
+          {...(!shouldReduce ? { whileHover: { scale: 1.02, y: -5 } } : {})}
         >
           <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
             <Shield className="w-8 h-8 text-white" />
@@ -767,7 +766,7 @@ const EnhancedOnboardingFlow: React.FC<{
 
         <motion.div
           className="bg-gradient-to-br from-green-50 to-emerald-100 rounded-2xl p-8 text-center border border-green-200 hover:shadow-lg transition-all duration-300"
-          whileHover={{ scale: 1.02, y: -5 }}
+          {...(!shouldReduce ? { whileHover: { scale: 1.02, y: -5 } } : {})}
         >
           <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
             <Radio className="w-8 h-8 text-white" />
@@ -780,7 +779,7 @@ const EnhancedOnboardingFlow: React.FC<{
 
         <motion.div
           className="bg-gradient-to-br from-purple-50 to-violet-100 rounded-2xl p-8 text-center border border-purple-200 hover:shadow-lg transition-all duration-300"
-          whileHover={{ scale: 1.02, y: -5 }}
+          {...(!shouldReduce ? { whileHover: { scale: 1.02, y: -5 } } : {})}
         >
           <div className="w-16 h-16 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
             <Clock className="w-8 h-8 text-white" />
@@ -834,17 +833,12 @@ const EnhancedOnboardingFlow: React.FC<{
           <span className="font-semibold">30-Day Free Trial • No Setup Fees • Cancel Anytime</span>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 
   const renderSchoolInfoStep = () => (
     <FormProvider {...schoolInfoForm}>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -20 }}
-        className="space-y-8 max-w-4xl mx-auto"
-      >
+      <div className="space-y-8 max-w-4xl mx-auto">
         <div className="text-center mb-10">
           <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6">
             <Building className="w-10 h-10 text-white" />
@@ -1146,7 +1140,7 @@ const EnhancedOnboardingFlow: React.FC<{
             </div>
           </div>
         </div>
-      </motion.div>
+      </div>
     </FormProvider>
   );
 
@@ -1222,7 +1216,7 @@ const EnhancedOnboardingFlow: React.FC<{
                 className="bg-gradient-to-r from-blue-500 to-purple-600 h-3 rounded-full"
                 initial={{ width: 0 }}
                 animate={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
-                transition={{ duration: 0.5, ease: 'easeOut' }}
+                transition={shouldReduce ? { duration: 0.001 } : { duration: 0.5, ease: 'easeOut' }}
               />
             </div>
 
@@ -1258,13 +1252,25 @@ const EnhancedOnboardingFlow: React.FC<{
 
       {/* Main Content */}
       <div className="max-w-6xl mx-auto px-6 py-12">
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="wait" initial={false} custom={slideDirection}>
           <motion.div
             key={currentStep}
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -50 }}
-            transition={{ duration: 0.3 }}
+            custom={slideDirection}
+            variants={{
+              initial: (d: number) => ({
+                opacity: shouldReduce ? 1 : 0,
+                x: shouldReduce ? 0 : d * 50,
+              }),
+              animate: { opacity: 1, x: 0 },
+              exit: (d: number) => ({
+                opacity: shouldReduce ? 1 : 0,
+                x: shouldReduce ? 0 : d * -50,
+              }),
+            }}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={shouldReduce ? { duration: 0.001 } : { duration: 0.3 }}
           >
             {steps[currentStep].id === 'welcome' && renderWelcomeStep()}
             {steps[currentStep].id === 'school_info' && renderSchoolInfoStep()}
@@ -1325,9 +1331,9 @@ const EnhancedOnboardingFlow: React.FC<{
         {steps[currentStep].id !== 'completion' && (
           <motion.div
             className="flex items-center justify-between mt-16 pt-8 border-t border-gray-200"
-            initial={{ opacity: 0, y: 20 }}
+            initial={shouldReduce ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
+            transition={shouldReduce ? { duration: 0.001 } : { delay: 0.2 }}
           >
             <button
               onClick={prevStep}
@@ -1341,7 +1347,10 @@ const EnhancedOnboardingFlow: React.FC<{
             <div className="flex items-center space-x-4">
               {!steps[currentStep].required && currentStep > 0 && (
                 <button
-                  onClick={() => setCurrentStep(currentStep + 1)}
+                  onClick={() => {
+                    setSlideDirection(1);
+                    setCurrentStep(currentStep + 1);
+                  }}
                   className="px-6 py-3 text-gray-600 hover:text-gray-800 font-medium hover:bg-gray-50 rounded-xl transition-all duration-200"
                 >
                   Skip for now
@@ -1352,12 +1361,13 @@ const EnhancedOnboardingFlow: React.FC<{
                 onClick={nextStep}
                 disabled={isLoading}
                 className="flex items-center space-x-3 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-lg"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                {...(!shouldReduce
+                  ? { whileHover: { scale: 1.02 }, whileTap: { scale: 0.98 } }
+                  : {})}
               >
                 {isLoading ? (
                   <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <Loader2 className={`w-5 h-5 ${shouldReduce ? '' : 'animate-spin'}`} />
                     <span>Saving...</span>
                   </>
                 ) : (

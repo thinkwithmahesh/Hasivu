@@ -1,56 +1,49 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Critical User Journey: Login -> Order -> Pay', () => {
-  // Use a unique suffix for this test run to prevent user collisions if running in parallel
-  const timestamp = Date.now();
-  const testEmail = `parent_${timestamp}@test.com`;
-
   test.beforeEach(async ({ page }) => {
     // Navigate to the app (assuming it's running locally on port 3000)
     await page.goto('/');
   });
 
   test('Parent logs in, selects meals, and completes payment', async ({ page }) => {
-    // 1. Authentication / Login (Simulated via bypassing to dashboard or using the login form)
-    // We navigate to /login and fill out the mock parent credentials
-    await page.goto('/login');
+    // 1. Authentication / Login against the canonical cookie-backed auth route.
+    await page.goto('/auth/login');
 
-    // Expect login page to be loaded (/login uses h1 "Welcome back!")
-    await expect(page.getByRole('heading', { name: /Welcome back/i })).toBeVisible();
+    await expect(page.getByRole('form', { name: 'Login form' })).toBeVisible();
 
-    // Fill credentials (assuming test accounts are seeded or mock server is running)
-    await page.getByLabel(/email/i).fill('parent@hasivu.com');
+    await page.getByRole('tab', { name: 'Parent' }).click();
+    await page.getByLabel(/email/i).fill(process.env.TEST_PARENT_EMAIL || 'parent.demo@hasivu.local');
     // "Password" label also matches the show-password control's accessible name in strict mode
-    await page.getByRole('textbox', { name: 'Password' }).fill('Hasivu@123');
-    await page.getByRole('button', { name: /sign in|login/i }).click();
+    await page
+      .getByRole('textbox', { name: 'Password' })
+      .fill(process.env.TEST_PARENT_PASSWORD || 'Hasivu123!');
+    await page.getByRole('button', { name: /sign in/i }).click();
 
-    // Wait for redirect to dashboard
+    // Wait for redirect to dashboard (parent route renders Parent Dashboard, not login copy)
     await expect(page).toHaveURL(/\/dashboard/);
-    await expect(page.getByText(/Welcome back/i)).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Parent Dashboard/i })).toBeVisible();
 
-    // 2. Select Meals / Ordering
-    // Navigate to the ordering page
-    await page.getByRole('link', { name: /Order Meals/i }).click();
-    await expect(page).toHaveURL(/\/order/);
+    // 2. Select Meals / Ordering via the current parent navigation.
+    await page.getByRole('link', { name: 'Menu' }).click();
+    await expect(page).toHaveURL(/\/menu/);
+    await expect(page.getByRole('heading', { name: /School Menu/i })).toBeVisible();
 
-    // Add a meal to the cart (Find a meal card and click 'Add' or '+' button)
-    const firstMealCard = page.locator('.meal-card').first();
-    await expect(firstMealCard).toBeVisible();
-    await firstMealCard.getByRole('button', { name: /Add|Order/i }).click();
+    await page.getByRole('button', { name: /Quick Add/i }).first().click();
 
-    // Open the Drawer / Cart
-    await page.getByRole('button', { name: /View Cart/i }).click();
+    await page.getByRole('button', { name: /Cart/i }).click();
+    await expect(page).toHaveURL(/\/cart/);
 
     // 3. Review and Pay
-    // Verify item is in cart
-    await expect(page.getByRole('dialog', { name: /Cart/i })).toBeVisible();
-    await expect(page.getByText(/Total/i)).toBeVisible();
+    await expect(page.getByRole('heading', { name: /^Cart$/i })).toBeVisible();
+    await expect(page.getByText(/^Total\s*₹/i)).toBeVisible();
 
     // Click checkout
-    await page.getByRole('button', { name: /Checkout/i }).click();
+    await page.getByRole('button', { name: /Proceed to checkout/i }).click();
+    await expect(page).toHaveURL(/\/checkout/);
 
     // Verify order success or payment gateway trigger
-    // Since we can't fully mock Razorpay in e2e without a sandbox mock, we look for the intent
-    await expect(page.getByText(/Order Placed|Proceeding to Payment/i)).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Checkout/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Pay/i })).toBeVisible();
   });
 });

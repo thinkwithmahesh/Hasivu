@@ -38,9 +38,12 @@ export default function CartPage() {
         <p className="mb-6 text-muted-foreground">
           Browse the menu and add meals for your children.
         </p>
-        <Button asChild>
-          <Link href="/daily-menu">Browse menu</Link>
-        </Button>
+        <Link
+          href="/daily-menu"
+          className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        >
+          Browse menu
+        </Link>
       </div>
     );
   }

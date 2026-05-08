@@ -28,6 +28,16 @@ import {
 } from 'lucide-react';
 import { hasiviApi } from '../services/api/hasivu-api.service';
 import { toast } from 'react-hot-toast';
+import { Benny, Meera, Aarav } from '@/components/characters/HasivuFriend';
+
+function formatInr(amount: number): string {
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(amount);
+}
 
 interface DashboardStats {
   totalStudents: number;
@@ -225,7 +235,7 @@ const DashboardOverview: React.FC = () => {
       <div className="p-6 space-y-6">
         {[...Array(3)].map((_, i) => (
           <div key={i} className="animate-pulse">
-            <div className="h-32 bg-gray-200 rounded-lg mb-4"></div>
+            <div className="h-32 bg-hasivu-primary/10 rounded-lg mb-4"></div>
           </div>
         ))}
       </div>
@@ -252,7 +262,7 @@ const DashboardOverview: React.FC = () => {
     const formatValue = (val: number) => {
       switch (format) {
         case 'currency':
-          return `$${val.toLocaleString()}`;
+          return formatInr(val);
         case 'percentage':
           return `${val}%`;
         case 'time':
@@ -273,9 +283,9 @@ const DashboardOverview: React.FC = () => {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-lg transition-shadow"
+        className="bg-white rounded-2xl shadow-sm border border-hasivu-primary/10 p-6 hover:shadow-warm-md transition-all relative overflow-hidden group"
       >
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-4 relative z-10">
           <div className={`p-3 rounded-lg bg-gradient-to-r ${colorClasses[color]} text-white`}>
             <Icon className="w-6 h-6" />
           </div>
@@ -292,8 +302,22 @@ const DashboardOverview: React.FC = () => {
             </div>
           )}
         </div>
-        <h3 className="text-2xl font-bold text-gray-900 mb-1">{formatValue(value)}</h3>
-        <p className="text-gray-600 text-sm">{title}</p>
+        <h3 className="text-2xl font-bold text-hasivu-text-primary mb-1 relative z-10">
+          {formatValue(value)}
+        </h3>
+        <p className="text-hasivu-text-secondary text-sm relative z-10">{title}</p>
+
+        {/* Subtle character integration on hover for specific cards */}
+        {title === 'Active Orders' && (
+          <div className="absolute -bottom-6 -right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+            <Aarav size={80} animation="dash" />
+          </div>
+        )}
+        {title === 'System Uptime' && (
+          <div className="absolute -bottom-2 -right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+            <Meera size={80} animation="celebrate" />
+          </div>
+        )}
       </motion.div>
     );
   };
@@ -309,28 +333,46 @@ const DashboardOverview: React.FC = () => {
       case 'system':
         return <Activity className="w-4 h-4 text-purple-500" />;
       default:
-        return <Bell className="w-4 h-4 text-gray-500" />;
+        return <Bell className="w-4 h-4 text-hasivu-text-secondary/70" />;
     }
   };
 
   const CHART_COLORS = ['#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EF4444'];
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard Overview</h1>
-          <p className="text-gray-600 mt-1">
+      <div className="flex items-center justify-between relative bg-hasivu-bg-warm p-6 rounded-3xl border border-hasivu-primary/10 overflow-hidden shadow-warm-sm">
+        {/* Background Waves */}
+        <div className="absolute inset-0 pointer-events-none opacity-50">
+          <svg
+            className="absolute top-0 left-0 w-full h-full text-hasivu-primary/5"
+            viewBox="0 0 1200 600"
+            preserveAspectRatio="none"
+          >
+            <path d="M0,300 Q300,200 600,300 T1200,300 V600 H0 Z" className="fill-current" />
+          </svg>
+        </div>
+
+        <div className="relative z-10">
+          <div className="flex items-center gap-4">
+            <h1 className="text-3xl font-display font-bold text-hasivu-text-primary">
+              Dashboard Overview
+            </h1>
+            <div className="hidden md:block translate-y-2">
+              <Benny size={64} animation="peek" />
+            </div>
+          </div>
+          <p className="text-hasivu-text-secondary mt-1">
             Real-time insights and analytics for your HASIVU platform
           </p>
         </div>
 
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-4 relative z-10">
           <select
             value={selectedPeriod}
             onChange={e => setSelectedPeriod(e.target.value as any)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="px-4 py-2 border border-hasivu-primary/20 rounded-xl bg-white text-hasivu-text-primary focus:ring-2 focus:ring-hasivu-primary focus:border-transparent font-medium shadow-sm transition-all outline-none"
           >
             <option value="7d">Last 7 days</option>
             <option value="30d">Last 30 days</option>
@@ -340,7 +382,7 @@ const DashboardOverview: React.FC = () => {
           <button
             onClick={() => loadDashboardData()}
             disabled={refreshing}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center space-x-2"
+            className="px-4 py-2 bg-hasivu-primary text-white font-medium rounded-xl hover:bg-hasivu-primary/90 hover:-translate-y-0.5 shadow-warm-sm hover:shadow-warm-md transition-all disabled:opacity-50 flex items-center space-x-2"
           >
             <Activity className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
             <span>Refresh</span>
@@ -412,12 +454,17 @@ const DashboardOverview: React.FC = () => {
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+          className="bg-white rounded-2xl shadow-sm border border-hasivu-primary/10 p-6 relative overflow-hidden"
         >
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-semibold text-gray-900">Revenue Trends</h3>
-            <div className="flex items-center space-x-2 text-sm text-gray-600">
-              <TrendingUp className="w-4 h-4 text-green-500" />
+          <div className="absolute top-2 right-2 opacity-10 pointer-events-none">
+            <Aarav size={120} animation="breathe" />
+          </div>
+          <div className="flex items-center justify-between mb-6 relative z-10">
+            <h3 className="text-xl font-display font-semibold text-hasivu-text-primary">
+              Revenue Trends
+            </h3>
+            <div className="flex items-center space-x-2 text-sm text-hasivu-text-secondary bg-hasivu-bg-warm px-3 py-1 rounded-full border border-hasivu-primary/10">
+              <TrendingUp className="w-4 h-4 text-hasivu-success" />
               <span>+12.5% vs last period</span>
             </div>
           </div>
@@ -433,7 +480,7 @@ const DashboardOverview: React.FC = () => {
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" />
               <YAxis />
-              <Tooltip formatter={value => [`$${(value as number).toLocaleString()}`, 'Revenue']} />
+              <Tooltip formatter={value => [formatInr(value as number), 'Revenue']} />
               <Area
                 type="monotone"
                 dataKey="revenue"
@@ -449,13 +496,15 @@ const DashboardOverview: React.FC = () => {
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
-          className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+          className="bg-white rounded-2xl shadow-sm border border-hasivu-primary/10 p-6"
         >
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-semibold text-gray-900">Fraud Prevention</h3>
-            <div className="flex items-center space-x-2 text-sm text-green-600">
+            <h3 className="text-xl font-display font-semibold text-hasivu-text-primary">
+              Fraud Prevention
+            </h3>
+            <div className="flex items-center space-x-2 text-sm text-hasivu-success bg-hasivu-success/10 px-3 py-1 rounded-full">
               <Shield className="w-4 h-4" />
-              <span>99.7% Success Rate</span>
+              <span className="font-medium">99.7% Success Rate</span>
             </div>
           </div>
 
@@ -485,11 +534,13 @@ const DashboardOverview: React.FC = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+          className="bg-white rounded-2xl shadow-sm border border-hasivu-primary/10 p-6"
         >
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-semibold text-gray-900">Recent Activity</h3>
-            <button className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center space-x-1">
+            <h3 className="text-xl font-display font-semibold text-hasivu-text-primary">
+              Recent Activity
+            </h3>
+            <button className="text-hasivu-primary hover:text-hasivu-primary/80 text-sm font-medium flex items-center space-x-1 transition-colors">
               <span>View All</span>
               <ArrowUpRight className="w-4 h-4" />
             </button>
@@ -499,12 +550,12 @@ const DashboardOverview: React.FC = () => {
             {stats.recentActivity.map(activity => (
               <div
                 key={activity.id}
-                className="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50"
+                className="flex items-start space-x-3 p-3 rounded-lg hover:bg-hasivu-bg-warm"
               >
                 <ActivityIcon type={activity.type} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900">{activity.message}</p>
-                  <p className="text-xs text-gray-500 mt-1">{activity.timestamp}</p>
+                  <p className="text-sm font-medium text-hasivu-text-primary">{activity.message}</p>
+                  <p className="text-xs text-hasivu-text-secondary/70 mt-1">{activity.timestamp}</p>
                 </div>
               </div>
             ))}
@@ -515,53 +566,63 @@ const DashboardOverview: React.FC = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+          className="bg-white rounded-2xl shadow-sm border border-hasivu-primary/10 p-6"
         >
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-semibold text-gray-900">System Performance</h3>
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-sm text-gray-600">All Systems Operational</span>
+            <h3 className="text-xl font-display font-semibold text-hasivu-text-primary">
+              System Performance
+            </h3>
+            <div className="flex items-center space-x-2 bg-hasivu-success/10 px-3 py-1 rounded-full">
+              <div className="w-2 h-2 bg-hasivu-success rounded-full animate-pulse shadow-[0_0_8px_rgba(6,214,160,0.6)]"></div>
+              <span className="text-sm text-hasivu-success font-medium">
+                All Systems Operational
+              </span>
             </div>
           </div>
 
           <div className="space-y-6">
             <div>
               <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-medium text-gray-700">API Response Time</span>
-                <span className="text-sm text-gray-900">
+                <span className="text-sm font-medium text-hasivu-text-secondary">
+                  API Response Time
+                </span>
+                <span className="text-sm text-hasivu-text-primary">
                   {stats.performanceMetrics.apiResponseTime}ms
                 </span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="w-full bg-hasivu-primary/10 rounded-full h-2">
                 <div className="bg-green-500 h-2 rounded-full" style={{ width: '85%' }}></div>
               </div>
             </div>
 
             <div>
               <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-medium text-gray-700">Cache Hit Rate</span>
-                <span className="text-sm text-gray-900">
+                <span className="text-sm font-medium text-hasivu-text-secondary">
+                  Cache Hit Rate
+                </span>
+                <span className="text-sm text-hasivu-text-primary">
                   {stats.performanceMetrics.cacheHitRate}%
                 </span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="w-full bg-hasivu-primary/10 rounded-full h-2">
                 <div className="bg-blue-500 h-2 rounded-full" style={{ width: '94%' }}></div>
               </div>
             </div>
 
             <div>
               <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-medium text-gray-700">Error Rate</span>
-                <span className="text-sm text-gray-900">{stats.performanceMetrics.errorRate}%</span>
+                <span className="text-sm font-medium text-hasivu-text-secondary">Error Rate</span>
+                <span className="text-sm text-hasivu-text-primary">
+                  {stats.performanceMetrics.errorRate}%
+                </span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="w-full bg-hasivu-primary/10 rounded-full h-2">
                 <div className="bg-red-500 h-2 rounded-full" style={{ width: '3%' }}></div>
               </div>
             </div>
 
-            <div className="pt-4 border-t border-gray-200">
-              <div className="text-xs text-gray-500 space-y-1">
+            <div className="pt-4 border-t border-hasivu-primary/10">
+              <div className="text-xs text-hasivu-text-secondary/70 space-y-1">
                 <p>
                   Database Queries: {stats.performanceMetrics.databaseQueries.toLocaleString()}/day
                 </p>

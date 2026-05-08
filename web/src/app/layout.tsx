@@ -1,4 +1,4 @@
-import { Inter } from 'next/font/google';
+import { Instrument_Serif, Nunito } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/sonner';
 import { ThemeProvider } from '@/components/providers/theme-provider';
@@ -15,7 +15,18 @@ import {
 } from '@/lib/seo';
 import { getNonce } from '@/lib/security/nonce';
 
-const inter = Inter({ subsets: ['latin'] });
+const nunito = Nunito({
+  subsets: ['latin'],
+  variable: '--font-body',
+  display: 'swap',
+  weight: ['400', '600', '700'],
+});
+const instrumentSerif = Instrument_Serif({
+  subsets: ['latin'],
+  variable: '--font-hero',
+  display: 'swap',
+  weight: '400',
+});
 
 // Generate comprehensive production-ready metadata
 export const metadata = generateBaseMetadata();
@@ -29,7 +40,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const webApplicationSchema = generateWebApplicationSchema();
 
   return (
-    <html lang="en" className="scroll-smooth">
+    <html lang="en">
       <head>
         {/* Structured Data - Organization Schema */}
         <script
@@ -58,12 +69,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <link rel="preconnect" href="https://fonts.googleapis.com" crossOrigin="" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
 
-        {/* Security Headers */}
-        <meta httpEquiv="X-Content-Type-Options" content="nosniff" />
-        <meta httpEquiv="X-Frame-Options" content="DENY" />
-        <meta httpEquiv="X-XSS-Protection" content="1; mode=block" />
-        <meta httpEquiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
-
         {/* PWA Enhancement */}
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -71,9 +76,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <meta name="apple-mobile-web-app-title" content="HASIVU" />
         <meta name="msapplication-TileColor" content="#2563eb" />
         <meta name="msapplication-config" content="/browserconfig.xml" />
-
-        {/* Performance - Resource Hints */}
-        <link rel="preload" href="/fonts/inter.woff2" as="font" type="font/woff2" crossOrigin="" />
 
         {/* Analytics - Google Analytics (Production) */}
         {process.env.NODE_ENV === 'production' && process.env.NEXT_PUBLIC_GA_ID && (
@@ -122,7 +124,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         />
       </head>
       <body
-        className={`${inter.className} font-sans antialiased bg-gradient-to-br from-hasivu-primary-25 via-white to-hasivu-secondary-25 selection:bg-hasivu-primary-100 selection:text-hasivu-primary-900`}
+        className={`${nunito.variable} ${instrumentSerif.variable} font-sans antialiased`}
       >
         <PaperShadersBackground />
         {/*

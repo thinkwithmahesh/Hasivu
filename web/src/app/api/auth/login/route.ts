@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
+import {
+  buildProxyHeaders,
+  copyUpstreamSetCookieHeaders,
+  fetchConfiguredProxy,
+  forwardToExpressApi,
+  resolveProxyUrl,
+  setAuthCookies,
+} from '@/app/api/_utils/proxy';
 
-const LAMBDA_AUTH_LOGIN_URL =
-  process.env.LAMBDA_AUTH_LOGIN_URL ||
-  'https://your-lambda-endpoint.execute-api.region.amazonaws.com/dev/auth/login';
+const LAMBDA_AUTH_LOGIN_URL = resolveProxyUrl(process.env.LAMBDA_AUTH_LOGIN_URL);
 
 // POST /api/auth/login - User login
 export async function POST(request: NextRequest) {
@@ -20,60 +26,52 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Forward request to Lambda function
-    const lambdaResponse = await fetch(LAMBDA_AUTH_LOGIN_URL, {
+    const upstream = LAMBDA_AUTH_LOGIN_URL
+      ? await fetchConfiguredProxy(LAMBDA_AUTH_LOGIN_URL, 'LAMBDA_AUTH_LOGIN_URL', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'User-Agent': request.headers.get('user-agent') || '',
-        'X-Forwarded-For': request.headers.get('x-forwarded-for') || '',
-      },
+          headers: buildProxyHeaders(request),
       body: JSON.stringify(body),
-    });
+        })
+      : await forwardToExpressApi(request, '/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
 
-    const lambdaData = await lambdaResponse.json();
+    const text = await upstream.text();
+    let upstreamData: Record<string, any> = {};
+    try {
+      upstreamData = text ? JSON.parse(text) : {};
+    } catch {
+      upstreamData = { success: false, error: 'Invalid response from auth server' };
+    }
 
-    // Handle Lambda response
-    if (lambdaResponse.ok) {
-      // Extract tokens and set them as httpOnly cookies
-      const { accessToken, refreshToken, ...userData } = lambdaData.data || lambdaData;
+    if (upstream.ok) {
+      // Extract tokens and set them as httpOnly cookies.
+      // Upstream shape can be either:
+      // - { accessToken, refreshToken, ...user }
+      // - { success, message, user, tokens: { accessToken, refreshToken } }
+      const payload = upstreamData?.data || upstreamData;
+      const accessToken = payload?.accessToken || payload?.tokens?.accessToken;
+      const refreshToken = payload?.refreshToken || payload?.tokens?.refreshToken;
+      const { accessToken: _at, refreshToken: _rt, tokens: _tokens, ...userData } = payload || {};
 
       const response = NextResponse.json({
         success: true,
         data: userData,
         message: 'Login successful',
       });
-
-      // Set httpOnly cookies for tokens
-      if (accessToken) {
-        response.cookies.set('auth-token', accessToken, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'strict',
-          maxAge: 60 * 60 * 24, // 24 hours
-        });
-      }
-
-      if (refreshToken) {
-        response.cookies.set('refresh-token', refreshToken, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'strict',
-          maxAge: 60 * 60 * 24 * 7, // 7 days
-        });
-      }
-
-      return response;
-    } else {
-      // Handle Lambda errors
-      return NextResponse.json(
-        {
-          success: false,
-          error: lambdaData.error || 'Login failed',
-        },
-        { status: lambdaResponse.status }
-      );
+      copyUpstreamSetCookieHeaders(upstream, response);
+      return setAuthCookies(response, { accessToken, refreshToken });
     }
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: upstreamData.error || upstreamData.message || 'Login failed',
+      },
+      { status: upstream.status }
+    );
   } catch (error) {
     return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }

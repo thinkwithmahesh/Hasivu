@@ -6,15 +6,17 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { getAccessTokenFromRequest } from '@/app/api/_utils/proxy';
 import { hasiviApi } from '@/services/api/hasivu-api.service';
+
+function hasAuthCookie(request: NextRequest): boolean {
+  return Boolean(getAccessTokenFromRequest(request));
+}
 
 // GET /api/schools/[schoolId] - Get school details
 export async function GET(request: NextRequest, { params }: { params: { schoolId: string } }) {
   try {
-    const session = await getServerSession();
-
-    if (!session) {
+    if (!hasAuthCookie(request)) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
@@ -45,9 +47,7 @@ export async function GET(request: NextRequest, { params }: { params: { schoolId
 // PUT /api/schools/[schoolId] - Update school
 export async function PUT(request: NextRequest, { params }: { params: { schoolId: string } }) {
   try {
-    const session = await getServerSession();
-
-    if (!session) {
+    if (!hasAuthCookie(request)) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
@@ -75,9 +75,7 @@ export async function PUT(request: NextRequest, { params }: { params: { schoolId
 // DELETE /api/schools/[schoolId] - Delete school
 export async function DELETE(request: NextRequest, { params }: { params: { schoolId: string } }) {
   try {
-    const session = await getServerSession();
-
-    if (!session) {
+    if (!hasAuthCookie(request)) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 

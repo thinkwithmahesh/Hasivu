@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { fetchConfiguredProxy } from '@/app/api/_utils/proxy';
 
 const LAMBDA_AUTH_REGISTER_URL =
   process.env.LAMBDA_AUTH_REGISTER_URL || 'http://localhost:3001/auth/register';
@@ -20,7 +21,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Forward request to Lambda function
-    const lambdaResponse = await fetch(LAMBDA_AUTH_REGISTER_URL, {
+    const lambdaResponse = await fetchConfiguredProxy(LAMBDA_AUTH_REGISTER_URL, 'LAMBDA_AUTH_REGISTER_URL', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

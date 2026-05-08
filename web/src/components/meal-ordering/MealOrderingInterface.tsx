@@ -31,6 +31,7 @@ import MealCard from './MealCard';
 import CategoryTabs from './CategoryTabs';
 import OrderSummary from './OrderSummary';
 import RFIDInterface from './RFIDInterface';
+import { Benny, Rajan } from '../characters/HasivuFriend';
 
 // Import types and utilities
 import type {
@@ -441,8 +442,11 @@ const MealOrderingInterface: React.FC<MealOrderingInterfaceProps> = ({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+      <div className="flex flex-col items-center justify-center min-h-[60vh] bg-hasivu-bg-warm rounded-3xl m-6 border border-hasivu-primary/10">
+        <Benny size={120} animation="celebrate" />
+        <h2 className="text-xl font-display font-bold text-hasivu-primary mt-6 animate-pulse">
+          Loading delicious meals...
+        </h2>
       </div>
     );
   }
@@ -450,20 +454,24 @@ const MealOrderingInterface: React.FC<MealOrderingInterfaceProps> = ({
   return (
     <div className="max-w-7xl mx-auto p-4 space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0 relative z-10">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">HASIVU Meal Ordering</h1>
-          <p className="text-gray-600">
+          <h1 className="text-3xl font-display font-bold text-hasivu-text-primary">
+            HASIVU Meal Ordering
+          </h1>
+          <p className="text-hasivu-text-secondary mt-1 font-medium">
             Welcome, {studentInfo.name} | Grade {studentInfo.grade}-{studentInfo.section}
           </p>
         </div>
 
         {/* Wallet Balance */}
         <div className="flex items-center space-x-4">
-          <Card className="p-4">
+          <Card className="p-4 border border-hasivu-primary/10 shadow-warm-sm bg-white/80 backdrop-blur-sm rounded-2xl">
             <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-600">Wallet Balance:</span>
-              <span className="font-bold text-green-600">
+              <span className="text-sm font-medium text-hasivu-text-secondary">
+                Wallet Balance:
+              </span>
+              <span className="font-bold text-lg text-hasivu-success">
                 {formatCurrency(studentInfo.walletBalance)}
               </span>
             </div>
@@ -597,12 +605,14 @@ const MealOrderingInterface: React.FC<MealOrderingInterfaceProps> = ({
 
           {/* No Results */}
           {filteredMeals.length === 0 && (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <div className="text-6xl mb-4">🔍</div>
-                <h3 className="text-lg font-semibold text-gray-600 mb-2">No meals found</h3>
-                <p className="text-sm text-gray-500 text-center">
-                  Try adjusting your search query or filters to find more meals.
+            <Card className="border border-hasivu-primary/10 bg-hasivu-bg-warm shadow-warm-md rounded-2xl">
+              <CardContent className="flex flex-col items-center justify-center py-16 px-6">
+                <Rajan size={120} animation="breathe" />
+                <h3 className="text-xl font-display font-bold text-hasivu-text-primary mt-6 mb-2">
+                  No meals found
+                </h3>
+                <p className="text-sm text-hasivu-text-secondary text-center max-w-sm">
+                  Try adjusting your search query or dietary filters to find more delicious meals.
                 </p>
               </CardContent>
             </Card>

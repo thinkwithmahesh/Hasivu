@@ -840,6 +840,11 @@ async function storeAnalysisResults(
 export const handler: APIGatewayProxyHandler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
+  const corsOrigin =
+    process.env.CORS_ORIGINS?.split(',')[0]?.trim() ||
+    process.env.FRONTEND_URL ||
+    'https://app.hasivu.com';
+
   try {
     // Parse and validate request
     const body = event.body ? JSON.parse(event.body) : {};
@@ -860,7 +865,7 @@ export const handler: APIGatewayProxyHandler = async (
         statusCode: 404,
         headers: {
           'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Origin': corsOrigin,
         },
         body: JSON.stringify({
           success: false,
@@ -951,7 +956,7 @@ export const handler: APIGatewayProxyHandler = async (
       statusCode: 200,
       headers: {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Origin': corsOrigin,
       },
       body: JSON.stringify({
         success: true,
@@ -969,7 +974,7 @@ export const handler: APIGatewayProxyHandler = async (
         statusCode: 400,
         headers: {
           'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Origin': corsOrigin,
         },
         body: JSON.stringify({
           success: false,
@@ -983,7 +988,7 @@ export const handler: APIGatewayProxyHandler = async (
       statusCode: 500,
       headers: {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Origin': corsOrigin,
       },
       body: JSON.stringify({
         success: false,

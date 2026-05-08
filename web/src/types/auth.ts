@@ -27,12 +27,12 @@ export const USER_ROLE_CONFIG: Record<UserRole, RoleConfig> = {
   [UserRole.ADMIN]: {
     label: 'Admin',
     description: 'Platform administrator',
-    defaultRoute: '/admin/dashboard',
+    defaultRoute: '/dashboard/admin',
   },
   [UserRole.SCHOOL_ADMIN]: {
     label: 'School Admin',
     description: 'School-level administrator',
-    defaultRoute: '/school-admin/dashboard',
+    defaultRoute: '/dashboard/school-admin',
   },
   [UserRole.TEACHER]: {
     label: 'Teacher',
@@ -42,22 +42,22 @@ export const USER_ROLE_CONFIG: Record<UserRole, RoleConfig> = {
   [UserRole.PARENT]: {
     label: 'Parent',
     description: 'Parent or guardian',
-    defaultRoute: '/menu',
+    defaultRoute: '/dashboard/parent',
   },
   [UserRole.STUDENT]: {
     label: 'Student',
     description: 'Student',
-    defaultRoute: '/student/dashboard',
+    defaultRoute: '/dashboard/student',
   },
   [UserRole.VENDOR]: {
     label: 'Vendor',
     description: 'Food vendor or supplier',
-    defaultRoute: '/vendor/dashboard',
+    defaultRoute: '/dashboard/vendor',
   },
   [UserRole.KITCHEN_STAFF]: {
     label: 'Kitchen',
     description: 'Kitchen staff',
-    defaultRoute: '/kitchen/dashboard',
+    defaultRoute: '/dashboard/kitchen',
   },
   [UserRole.SUPER_ADMIN]: {
     label: 'Super Admin',
@@ -430,10 +430,19 @@ export interface SessionData extends AuthTokens {
 
 // Permission check utilities
 export class PermissionChecker {
+  private static normalizeRole(role: string | undefined | null): UserRole | null {
+    if (!role) return null;
+    if (role === 'kitchen') return UserRole.KITCHEN_STAFF;
+    if (isValidUserRole(role)) return role;
+    return null;
+  }
+
   static hasPermission(user: User | null, permission: Permission): boolean {
     if (!user) return false;
 
-    const rolePermissions = ROLE_PERMISSIONS[user.role] || [];
+    const normalizedRole = this.normalizeRole(String(user.role));
+    if (!normalizedRole) return false;
+    const rolePermissions = ROLE_PERMISSIONS[normalizedRole] || [];
     return rolePermissions.includes(permission);
   }
 
@@ -451,12 +460,14 @@ export class PermissionChecker {
 
   static hasRole(user: User | null, role: UserRole): boolean {
     if (!user) return false;
-    return user.role === role;
+    return this.normalizeRole(String(user.role)) === role;
   }
 
   static hasAnyRole(user: User | null, roles: UserRole[]): boolean {
     if (!user) return false;
-    return roles.includes(user.role);
+    const normalizedRole = this.normalizeRole(String(user.role));
+    if (!normalizedRole) return false;
+    return roles.includes(normalizedRole);
   }
 
   static isAdmin(user: User | null): boolean {

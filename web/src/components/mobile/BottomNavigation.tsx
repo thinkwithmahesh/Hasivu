@@ -62,28 +62,26 @@ const navigationItems = {
     {
       label: 'Home',
       icon: Home,
-      href: '/parent',
-      activePattern: ['/parent', '/parent/dashboard'],
+      href: '/dashboard',
+      activePattern: ['/dashboard', '/dashboard/parent'],
     },
     {
       label: 'Orders',
       icon: UtensilsCrossed,
-      href: '/parent/orders',
+      href: '/orders',
+      activePattern: ['/orders'],
     },
     {
       label: 'Wallet',
       icon: Wallet,
-      href: '/parent/wallet',
-    },
-    {
-      label: 'History',
-      icon: Clock,
-      href: '/parent/history',
+      href: '/settings',
+      activePattern: ['/settings'],
     },
     {
       label: 'Profile',
       icon: User,
-      href: '/parent/profile',
+      href: '/settings',
+      activePattern: ['/settings'],
     },
   ] as NavigationItem[],
   admin: [
@@ -157,7 +155,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
 
           return (
             <button
-              key={item.href}
+              key={`${userRole}-${item.label}`}
               onClick={() => handleNavigation(item.href)}
               className={cn(
                 'relative flex flex-col items-center justify-center min-h-[48px] px-3 py-1.5 rounded-lg transition-all duration-200',

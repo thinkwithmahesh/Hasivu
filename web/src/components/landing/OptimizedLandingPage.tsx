@@ -162,7 +162,7 @@ export default function OptimizedLandingPage() {
           </div>
 
           <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-slate-400">
-            <p>&copy; 2024 HASIVU. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} HASIVU. All rights reserved.</p>
             <p>Made with ❤️ for Indian schools</p>
           </div>
         </div>

@@ -10,6 +10,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { AuthApiService } from '@/services/auth-api.service';
 import type { User, UserRole } from '@/types/auth';
+import { getDashboardUrlForRole } from '@/lib/dashboard-urls';
 
 // Simple credentials types
 interface LoginCredentials {
@@ -66,10 +67,36 @@ export function AuthProvider({ children }: AuthProviderProps) {
   });
 
   const router = useRouter();
+  const pathname = usePathname();
   const authApi = new AuthApiService();
 
   // Check authentication on mount
   useEffect(() => {
+    const PUBLIC_ROUTES = new Set([
+      '/',
+      '/startwell',
+      '/login',
+      '/register',
+      '/legal/privacy',
+      '/legal/terms',
+      '/support',
+    ]);
+    const isPublicRoute =
+      pathname &&
+      (PUBLIC_ROUTES.has(pathname) ||
+        pathname.startsWith('/auth') ||
+        pathname.startsWith('/docs'));
+
+    if (isPublicRoute) {
+      setState({
+        user: null,
+        isAuthenticated: false,
+        isLoading: false,
+        isInitialized: true,
+      });
+      return;
+    }
+
     const initAuth = async () => {
       try {
         setState(prev => ({ ...prev, isLoading: true }));
@@ -101,7 +128,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
 
     initAuth();
-  }, []);
+  }, [pathname]);
 
   // Real API login method
   const login = useCallback(async (credentials: LoginCredentials): Promise<boolean> => {
@@ -120,6 +147,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
         });
 
         toast.success(`Welcome back, ${response.user.firstName}!`);
+        // Full navigation so httpOnly cookies are present before middleware + AuthProvider init run (avoids router.push races).
+        if (typeof window !== 'undefined') {
+          window.location.assign(getDashboardUrlForRole(String(response.user.role)));
+        }
         return true;
       } else {
         toast.error(response.error || 'Login failed');

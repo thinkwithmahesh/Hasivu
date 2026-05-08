@@ -253,8 +253,8 @@ export const handler = async (
       return createErrorResponse('METHOD_NOT_ALLOWED', 'Method not allowed', 405);
     }
 
-    // Extract userId from event context (would come from JWT in real implementation)
-    const userId = event.requestContext?.authorizer?.userId || event.headers?.['x-user-id'];
+    // Trust only the API authorizer context for authenticated identity.
+    const userId = event.requestContext?.authorizer?.userId;
     if (!userId) {
       return createErrorResponse('AUTHENTICATION_REQUIRED', 'User authentication required', 401);
     }

@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, Mail, Lock, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,7 +12,6 @@ import { OptimizedBackground } from '@/components/ui/optimized-background';
 import { authApiService } from '@/services/auth-api.service';
 
 export default function LoginPage() {
-  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -34,15 +32,19 @@ export default function LoginPage() {
       if (response.success && response.user) {
         // Redirect to dashboard based on user role
         const roleRoutes = {
-          admin: '/admin',
-          parent: '/dashboard',
-          student: '/dashboard',
-          kitchen: '/kitchen',
-          vendor: '/vendor',
+          admin: '/dashboard/admin',
+          school_admin: '/dashboard/admin',
+          parent: '/dashboard/parent',
+          student: '/dashboard/student',
+          kitchen: '/dashboard/kitchen',
+          kitchen_staff: '/dashboard/kitchen',
+          vendor: '/dashboard/vendor',
         };
 
         const route = roleRoutes[response.user.role as keyof typeof roleRoutes] || '/dashboard';
-        router.push(route);
+        // Full navigation so httpOnly auth cookies are visible to the next load's `checkAuth` / server.
+        // Client-side `router.push` leaves `AuthProvider`'s one-shot init as pre-login state.
+        window.location.assign(route);
       } else {
         setError(response.message || 'Login failed. Please try again.');
       }

@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
+import { fetchConfiguredProxy } from '@/app/api/_utils/proxy';
+const LAMBDA_PAYMENTS_WEBHOOK_URL = process.env.LAMBDA_PAYMENTS_WEBHOOK_URL;
 
-const LAMBDA_PAYMENTS_WEBHOOK_URL =
-  process.env.LAMBDA_PAYMENTS_WEBHOOK_URL ||
-  'https://your-lambda-endpoint.execute-api.region.amazonaws.com/dev/payments/webhook';
+;
 const { RAZORPAY_WEBHOOK_SECRET } = process.env;
 
 // POST /api/payments/webhook - Razorpay webhook handler
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     const payload = JSON.parse(body);
 
     // Forward to Lambda function
-    const lambdaResponse = await fetch(LAMBDA_PAYMENTS_WEBHOOK_URL, {
+    const lambdaResponse = await fetchConfiguredProxy(LAMBDA_PAYMENTS_WEBHOOK_URL, 'LAMBDA_PAYMENTS_WEBHOOK_URL', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

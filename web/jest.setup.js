@@ -78,6 +78,14 @@ global.IntersectionObserver = jest.fn().mockImplementation(() => ({
   disconnect: jest.fn(),
 }));
 
+if (!document.elementFromPoint) {
+  document.elementFromPoint = jest.fn(() => document.body);
+}
+
+if (!Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = jest.fn();
+}
+
 // Mock localStorage
 const localStorageMock = {
   getItem: jest.fn(),

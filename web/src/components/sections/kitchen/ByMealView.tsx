@@ -11,8 +11,22 @@ const mockMealsAggregated = [
 ];
 
 export function ByMealView() {
+  const allServed = mockMealsAggregated.every(meal => meal.current >= meal.target);
+
+  if (allServed) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center rounded-2xl border border-pm-semantic-success/30 bg-pm-semantic-success/10 p-6 text-center">
+        <div className="text-[40px]" aria-hidden>
+          ✅
+        </div>
+        <h2 className="mt-2 text-[24px] font-bold text-pm-semantic-success">All meals served!</h2>
+        <p className="mt-1 text-[16px] text-pm-text-secondary">Great work, kitchen team.</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col gap-6 w-full pb-12 animate-fade-in-up">
+    <div className="flex flex-col gap-6 w-full pb-12">
       <div className="flex items-center mb-2">
         <h1 className="font-hero text-[32px] text-pm-text-primary leading-tight">
           Production Schedule

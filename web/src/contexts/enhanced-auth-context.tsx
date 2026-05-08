@@ -266,7 +266,7 @@ export function EnhancedAuthProvider({ children }: EnhancedAuthProviderProps) {
         }
 
         // Create secure session
-        const { session, accessToken, refreshToken } = await sessionManager.createSession(
+        const { session } = await sessionManager.createSession(
           user.id,
           user.role,
           {
@@ -280,8 +280,6 @@ export function EnhancedAuthProvider({ children }: EnhancedAuthProviderProps) {
         // Store authentication data
         localStorage.setItem('session_data', JSON.stringify(session));
         localStorage.setItem('authenticated_user', JSON.stringify(user));
-        localStorage.setItem('access_token', accessToken);
-        localStorage.setItem('refresh_token', refreshToken);
 
         // Update state
         setState(prev => ({
@@ -403,7 +401,7 @@ export function EnhancedAuthProvider({ children }: EnhancedAuthProviderProps) {
         if (result.success) {
           // Complete login after successful MFA
           const clientContext = await getClientContext();
-          const { session, accessToken, refreshToken } = await sessionManager.createSession(
+          const { session } = await sessionManager.createSession(
             state.user.id,
             state.user.role,
             {
@@ -416,8 +414,6 @@ export function EnhancedAuthProvider({ children }: EnhancedAuthProviderProps) {
 
           // Store authentication data
           localStorage.setItem('session_data', JSON.stringify(session));
-          localStorage.setItem('access_token', accessToken);
-          localStorage.setItem('refresh_token', refreshToken);
 
           setState(prev => ({
             ...prev,
@@ -537,24 +533,21 @@ export function EnhancedAuthProvider({ children }: EnhancedAuthProviderProps) {
   // Refresh session
   const refreshSession = useCallback(async (): Promise<boolean> => {
     try {
-      const refreshToken = localStorage.getItem('refresh_token');
-      if (!refreshToken) return false;
+      const response = await fetch('/api/auth/refresh', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (!response.ok) return false;
 
-      const clientContext = await getClientContext();
-      const refreshResult = await sessionManager.refreshToken(
-        refreshToken,
-        clientContext.deviceFingerprint.combined,
-        clientContext.ipAddress
-      );
-
-      if (refreshResult) {
-        localStorage.setItem('access_token', refreshResult.accessToken);
-        localStorage.setItem('refresh_token', refreshResult.refreshToken);
-        localStorage.setItem('session_data', JSON.stringify(refreshResult.session));
+      const refreshResult = await response.json();
+      if (refreshResult?.user || refreshResult?.session) {
+        if (refreshResult.session) {
+          localStorage.setItem('session_data', JSON.stringify(refreshResult.session));
+        }
 
         setState(prev => ({
           ...prev,
-          session: refreshResult.session,
+          session: refreshResult.session ?? prev.session,
         }));
 
         return true;
@@ -746,8 +739,6 @@ export function EnhancedAuthProvider({ children }: EnhancedAuthProviderProps) {
     const keysToRemove = [
       'session_data',
       'authenticated_user',
-      'access_token',
-      'refresh_token',
       'mfa_challenge',
     ];
 

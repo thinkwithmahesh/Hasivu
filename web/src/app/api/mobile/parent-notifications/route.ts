@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getAccessTokenFromRequest, fetchConfiguredProxy } from '@/app/api/_utils/proxy';
+const LAMBDA_MOBILE_PARENT_NOTIFICATIONS_URL = process.env.LAMBDA_MOBILE_PARENT_NOTIFICATIONS_URL;
 
-const LAMBDA_MOBILE_PARENT_NOTIFICATIONS_URL =
-  process.env.LAMBDA_MOBILE_PARENT_NOTIFICATIONS_URL ||
-  'https://your-lambda-endpoint.execute-api.region.amazonaws.com/dev/mobile/parent-notifications';
+;
 
 // POST /api/mobile/parent-notifications - Send parent notification
 export async function POST(request: NextRequest) {
   try {
     // Get auth token from httpOnly cookie
-    const authToken = request.cookies.get('auth-token')?.value;
+    const authToken = getAccessTokenFromRequest(request);
 
     if (!authToken) {
       return NextResponse.json(
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Forward request to Lambda function
-    const lambdaResponse = await fetch(LAMBDA_MOBILE_PARENT_NOTIFICATIONS_URL, {
+    const lambdaResponse = await fetchConfiguredProxy(LAMBDA_MOBILE_PARENT_NOTIFICATIONS_URL, 'LAMBDA_MOBILE_PARENT_NOTIFICATIONS_URL', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

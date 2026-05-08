@@ -4,6 +4,15 @@
 
 Rotate all credentials exposed in repository history or local env files.
 
+## Local / Compose
+
+- `docker-compose.dev.yml` requires **`JWT_SECRET`** and **`JWT_REFRESH_SECRET`** to be set in the environment (or in a `.env` file loaded by Compose). Compose will **fail at parse time** if they are missing.
+- Use strong random values (e.g. `openssl rand -hex 32`) — never reuse production secrets on developer machines.
+
+## Production API
+
+- On `NODE_ENV=production`, the API calls `env.assertProductionSafe()` at startup: PostgreSQL `DATABASE_URL`, minimum 32-character non-placeholder JWT secrets, and distinct access vs refresh secrets.
+
 ## Secrets to Rotate
 
 1. `JWT_SECRET`

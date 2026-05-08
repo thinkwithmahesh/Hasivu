@@ -4,12 +4,14 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 const cardVariants = cva(
-  'rounded-lg border bg-card text-card-foreground shadow-sm transition-all duration-200',
+  'rounded-2xl border border-[var(--hasivu-border)] bg-[var(--hasivu-surface)] text-card-foreground shadow-[var(--shadow-sm)] transition-all duration-200',
   {
     variants: {
       variant: {
-        default: 'border bg-card text-card-foreground shadow-sm',
-        elevated: 'shadow-md hover:shadow-lg border bg-card',
+        default:
+          'border-[var(--hasivu-border)] bg-[var(--hasivu-surface)] text-card-foreground shadow-[var(--shadow-sm)]',
+        elevated:
+          'border-[var(--hasivu-border)] bg-[var(--hasivu-surface)] shadow-[var(--shadow-md)] hover:shadow-[var(--shadow-lg)]',
         outlined: 'border-2 border-hasivu-primary-200 bg-background shadow-sm',
         filled: 'bg-hasivu-primary-50 border-hasivu-primary-100 text-hasivu-primary-900',
         gradient:

@@ -6,6 +6,7 @@
 import { gzip, brotliCompress } from 'zlib';
 import { promisify } from 'util';
 import { recordMetric } from '../monitoring/cloudwatch-metrics';
+import { logger } from '../../utils/logger';
 
 const gzipAsync = promisify(gzip);
 const brotliCompressAsync = promisify(brotliCompress);
@@ -124,7 +125,7 @@ export async function createCompressedResponse(
       isBase64Encoded: true,
     };
   } catch (error) {
-    console.error('Compression failed, sending uncompressed:', error);
+    logger.error('Compression failed, sending uncompressed', error instanceof Error ? error : undefined);
 
     await recordMetric('CompressionErrors', 1, 'Count');
 
@@ -160,8 +161,15 @@ export async function createAPIResponse(
     data,
     statusCode,
     {
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': (
+        process.env.CORS_ORIGINS ||
+        process.env.FRONTEND_URL ||
+        'https://app.hasivu.com'
+      )
+        .split(',')[0]
+        .trim(),
       'Access-Control-Allow-Credentials': 'true',
+      Vary: 'Origin',
     },
     acceptEncoding
   );

@@ -5,6 +5,7 @@
 
 import { Router, Request, Response } from 'express';
 import { authService } from '../services/auth.service';
+import { sessionService } from '../services/session.service';
 import { DatabaseService } from '../services/database.service';
 import { logger } from '../utils/logger';
 
@@ -199,6 +200,11 @@ router.post('/login', async (req: Request, res: Response) => {
       ...cookieOptions,
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days for refresh token
     });
+    res.cookie('sessionId', authResult.sessionId, cookieOptions);
+
+    // Bootstrap CSRF for the newly-created session so first state-changing request can pass.
+    const csrfData = await sessionService.generateCSRFToken(authResult.sessionId);
+    res.setHeader('X-CSRF-Token', csrfData.token);
 
     logger.info(`User logged in successfully: ${email}`);
 
@@ -206,7 +212,6 @@ router.post('/login', async (req: Request, res: Response) => {
       success: true,
       message: 'Login successful',
       user: authResult.user,
-      tokens: authResult.tokens,
     });
   } catch (error) {
     logger.error('Login error:', undefined, {
@@ -232,7 +237,7 @@ router.post('/login', async (req: Request, res: Response) => {
  */
 router.post('/refresh', async (req: Request, res: Response) => {
   try {
-    const { refreshToken } = req.body;
+    const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
 
     if (!refreshToken) {
       return res.status(400).json({
@@ -243,10 +248,16 @@ router.post('/refresh', async (req: Request, res: Response) => {
 
     const result = await authService.refreshToken(refreshToken);
 
+    res.cookie('accessToken', result.accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
     res.status(200).json({
       success: true,
       message: 'Token refreshed successfully',
-      accessToken: result.accessToken,
     });
   } catch (error) {
     logger.error('Token refresh error:', undefined, {

@@ -57,6 +57,104 @@ module.exports = {
             900: '#0D47A1',
           },
         },
+        // Hasivu Teal — trust, freshness, hygiene
+        'hasivu-teal': {
+          50: '#E6FAF7',
+          100: '#B3F0E8',
+          200: '#80E6D9',
+          300: '#4DDCCA',
+          400: '#2EC4B6',
+          500: '#2EC4B6',
+          600: '#25A89D',
+          700: '#1C8C84',
+          800: '#13706B',
+          900: '#0A5452',
+        },
+        // Hasivu Accent — warmth, nutrition, sunlight
+        'hasivu-accent': {
+          50: '#FFF9E6',
+          100: '#FFEFB3',
+          200: '#FFE580',
+          300: '#FFDB4D',
+          400: '#FFD166',
+          500: '#FFD166',
+          600: '#E6B84D',
+          700: '#CC9F33',
+          800: '#B3861A',
+          900: '#996D00',
+        },
+        // Hasivu Success — healthy, fresh
+        'hasivu-success': {
+          50: '#E6FFF5',
+          100: '#B3FFE0',
+          200: '#80FFCC',
+          300: '#4DFFB8',
+          400: '#06D6A0',
+          500: '#06D6A0',
+          600: '#05B888',
+          700: '#049A70',
+          800: '#037C58',
+          900: '#025E40',
+        },
+        // Hasivu Danger — alerts without anxiety
+        'hasivu-danger': {
+          50: '#FFF0F3',
+          100: '#FFD1DB',
+          200: '#FFB2C3',
+          300: '#FF93AB',
+          400: '#EF476F',
+          500: '#EF476F',
+          600: '#D63D62',
+          700: '#BD3355',
+          800: '#A42948',
+          900: '#8B1F3B',
+        },
+        // Parent-mobile & redesign shell — mirrors `src/design-system/tokens.ts`
+        pm: {
+          page: {
+            bg: '#FAF9F7',
+          },
+          primary: {
+            50: '#FFF8F0',
+            100: '#FFECD4',
+            200: '#FFD9A8',
+            400: '#FF9A3C',
+            600: '#E07020',
+            800: '#7A3A08',
+            900: '#3D1C04',
+          },
+          secondary: {
+            50: '#F0FAF4',
+            400: '#3CAF6A',
+            600: '#207040',
+          },
+          neutral: {
+            50: '#FAF9F7',
+            100: '#F2EFE9',
+            200: '#E4DFD6',
+            400: '#9E9589',
+            600: '#5C554A',
+            800: '#2A2520',
+            900: '#141210',
+          },
+          surface: {
+            1: '#FFFFFF',
+            2: '#F2EFE9',
+            3: '#E4DFD6',
+          },
+          text: {
+            primary: '#141210',
+            secondary: '#5C554A',
+            tertiary: '#9E9589',
+            inverse: '#FFFFFF',
+          },
+          semantic: {
+            success: '#22C55E',
+            warning: '#F59E0B',
+            danger: '#EF4444',
+            info: '#3B82F6',
+          },
+        },
         // Neutral “ink” palette for typography (softer than pure black)
         ink: {
           50: '#F8FAFC',
@@ -112,20 +210,29 @@ module.exports = {
         sm: 'calc(var(--radius) - 4px)',
       },
       spacing: {
-        'touch-target': '44px',
+        'touch-target': '48px',
       },
       minWidth: {
-        'touch-target': '44px',
+        'touch-target': '48px',
       },
       minHeight: {
-        'touch-target': '44px',
+        'touch-target': '48px',
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        display: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-body)', 'Nunito', 'system-ui', 'sans-serif'],
+        display: ['var(--font-hero)', 'Instrument Serif', 'Georgia', 'serif'],
+        /** UI chrome + tables (parent bottom nav labels, kitchen) */
+        ui: ['var(--font-ui)', 'Nunito', 'system-ui', 'sans-serif'],
+        /** Marketing / hero only */
+        hero: ['var(--font-hero)', 'Instrument Serif', 'Georgia', 'serif'],
+        mono: ['JetBrains Mono', 'monospace'],
       },
       boxShadow: {
         soft: '0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04)',
+        'warm-sm': '0 1px 3px rgba(255, 107, 53, 0.06), 0 1px 2px rgba(0,0,0,0.04)',
+        'warm-md': '0 4px 12px rgba(255, 107, 53, 0.08), 0 2px 4px rgba(0,0,0,0.04)',
+        'warm-lg': '0 12px 32px rgba(255, 107, 53, 0.12), 0 4px 8px rgba(0,0,0,0.04)',
+        'glow-teal': '0 0 24px rgba(46, 196, 182, 0.15)',
         'glow-orange': '0 0 20px rgba(255, 107, 53, 0.5)',
         'glow-green': '0 0 20px rgba(76, 175, 80, 0.5)',
         'glow-blue': '0 0 20px rgba(33, 150, 243, 0.5)',

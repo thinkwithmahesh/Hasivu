@@ -1,28 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAccessTokenFromRequest } from '@/app/api/_utils/proxy';
-
-type JwtPayload = {
-  userId?: string;
-  email?: string;
-  role?: string;
-  permissions?: string[];
-  exp?: number;
-};
-
-function decodePayload(token: string): JwtPayload | null {
-  const parts = token.split('.');
-  if (parts.length < 2) {
-    return null;
-  }
-
-  try {
-    const raw = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-    const padded = raw.padEnd(raw.length + ((4 - (raw.length % 4)) % 4), '=');
-    return JSON.parse(Buffer.from(padded, 'base64').toString('utf8')) as JwtPayload;
-  } catch {
-    return null;
-  }
-}
+import { verifyHs256Jwt } from '@/lib/security/jwt-verify';
 
 export async function GET(request: NextRequest) {
   try {
@@ -34,23 +12,37 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const payload = decodePayload(authToken);
-    if (!payload?.userId || !payload?.email || !payload?.role) {
+    const jwtSecret = process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET;
+    if (!jwtSecret) {
+      return NextResponse.json(
+        { success: false, error: 'Auth secret not configured' },
+        { status: 500 }
+      );
+    }
+
+    const verification = verifyHs256Jwt(authToken, jwtSecret);
+    if (
+      !verification?.payload?.userId ||
+      !verification.payload.email ||
+      !verification.payload.role
+    ) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    const expired = typeof payload.exp === 'number' && payload.exp * 1000 <= Date.now();
-    if (expired) {
+    if (verification.expired) {
       return NextResponse.json({ success: false, error: 'Token expired' }, { status: 401 });
     }
 
     const user = {
-      id: payload.userId,
-      email: payload.email,
-      role: payload.role,
-      permissions: Array.isArray(payload.permissions) ? payload.permissions : [],
-      firstName: '',
-      lastName: '',
+      id: verification.payload.userId,
+      email: verification.payload.email,
+      role: verification.payload.role,
+      permissions: Array.isArray(verification.payload.permissions)
+        ? verification.payload.permissions
+        : [],
+      firstName: verification.payload.firstName || '',
+      lastName: verification.payload.lastName || '',
+      emailVerified: verification.payload.emailVerified ?? true,
     };
 
     return NextResponse.json({ success: true, user });

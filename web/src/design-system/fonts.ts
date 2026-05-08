@@ -1,27 +1,8 @@
-import { Nunito, Nunito_Sans, Instrument_Serif } from 'next/font/google';
-
-export const fontBody = Nunito({
-  subsets: ['latin'],
-  weight: ['400', '600', '700'],
-  variable: '--font-body',
-  display: 'swap',
-});
-
-export const fontUI = Nunito_Sans({
-  subsets: ['latin'],
-  weight: ['400', '600', '700'],
-  variable: '--font-ui',
-  display: 'swap',
-});
-
-export const fontHero = Instrument_Serif({
-  subsets: ['latin'],
-  weight: ['400'],
-  variable: '--font-hero',
-  display: 'swap',
-});
-
-export const fontVariables = `${fontBody.variable} ${fontUI.variable} ${fontHero.variable}`;
+export const fontFamilies = {
+  body: ['var(--font-body)', 'Nunito', 'system-ui', 'sans-serif'],
+  ui: ['var(--font-ui)', 'Nunito', 'system-ui', 'sans-serif'],
+  hero: ['var(--font-hero)', 'Instrument Serif', 'Georgia', 'serif'],
+} as const;
 
 export const typographyScale = {
   11: '11px',
@@ -36,6 +17,12 @@ export const typographyScale = {
   36: '36px',
   48: '48px',
   60: '60px',
+} as const;
+
+export const fontWeights = {
+  regular: 400,
+  semibold: 600,
+  bold: 700,
 } as const;
 
 export const lineHeights = {

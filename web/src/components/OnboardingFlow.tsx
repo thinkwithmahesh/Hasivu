@@ -1,5 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect, useMemo } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { Aarav, Rajan, Benny, GroupScene } from '@/components/characters/HasivuFriend';
 import {
   ArrowRight,
   ArrowLeft,
@@ -13,7 +16,6 @@ import {
   CheckCircle,
   Loader2,
   Download,
-  Eye,
   Star,
   Sparkles,
 } from 'lucide-react';
@@ -72,6 +74,11 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
   onComplete,
   onSkip,
 }) => {
+  const shouldReduce = useReducedMotion();
+  const [slideDirection, setSlideDirection] = useState(1);
+  const [completionSceneAnim, setCompletionSceneAnim] = useState<'celebrate' | 'breathe'>(
+    'celebrate'
+  );
   const [currentStep, setCurrentStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [schoolInfo, setSchoolInfo] = useState<SchoolInfo>({
@@ -221,6 +228,35 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
     }
   }, []);
 
+  useEffect(() => {
+    if (steps[currentStep]?.id !== 'completion' || shouldReduce) return;
+    setCompletionSceneAnim('celebrate');
+    const t = window.setTimeout(() => setCompletionSceneAnim('breathe'), 600);
+    return () => window.clearTimeout(t);
+  }, [currentStep, shouldReduce, steps]);
+
+  const stepSlideVariants = useMemo(
+    () => ({
+      enter: (d: number) => ({
+        x: shouldReduce ? 0 : d * 40,
+        opacity: shouldReduce ? 1 : 0,
+      }),
+      center: {
+        x: 0,
+        opacity: 1,
+        transition: shouldReduce
+          ? { duration: 0.001 }
+          : { duration: 0.3, ease: [0.25, 1, 0.5, 1] as const },
+      },
+      exit: (d: number) => ({
+        x: shouldReduce ? 0 : d * -40,
+        opacity: shouldReduce ? 1 : 0,
+        transition: shouldReduce ? { duration: 0.001 } : { duration: 0.2, ease: 'easeIn' as const },
+      }),
+    }),
+    [shouldReduce]
+  );
+
   const validateStep = (stepIndex: number): boolean => {
     const newErrors: Record<string, string> = {};
 
@@ -264,6 +300,7 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
       setCompletedSteps(prev => new Set([...prev, currentStep]));
 
       if (currentStep < steps.length - 1) {
+        setSlideDirection(1);
         setCurrentStep(currentStep + 1);
       } else {
         await completeOnboarding();
@@ -277,6 +314,7 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
 
   const prevStep = () => {
     if (currentStep > 0) {
+      setSlideDirection(-1);
       setCurrentStep(currentStep - 1);
     }
   };
@@ -321,72 +359,77 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
     if (!steps[currentStep].required) {
       setCompletedSteps(prev => new Set([...prev, currentStep]));
       if (currentStep < steps.length - 1) {
+        setSlideDirection(1);
         setCurrentStep(currentStep + 1);
       }
     }
   };
 
   const renderWelcomeStep = () => (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="text-center space-y-8"
-    >
+    <div className="text-center space-y-8">
       <div className="space-y-4">
-        <div className="mx-auto w-24 h-24 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
-          <Sparkles className="w-12 h-12 text-white" />
+        <div className="mx-auto" aria-hidden="true">
+          <Aarav size={96} animation="breathe" respectReducedMotion />
         </div>
-        <h2 className="text-3xl font-bold text-gray-900">Welcome to HASIVU!</h2>
-        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+        <h2 className="text-3xl font-display font-bold text-hasivu-text-primary">
+          Welcome to HASIVU!
+        </h2>
+        <p className="text-lg text-hasivu-text-secondary max-w-2xl mx-auto">
           We're excited to help you transform your school's food service with our AI-powered
           delivery platform. This quick setup will get you running in under 30 minutes.
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-        <div className="bg-blue-50 rounded-lg p-6 text-center">
-          <Shield className="w-8 h-8 text-blue-600 mx-auto mb-3" />
-          <h3 className="font-semibold text-gray-900 mb-2">99.7% Fraud Prevention</h3>
-          <p className="text-sm text-gray-600">Advanced AI protects every transaction</p>
+        <div className="bg-hasivu-primary/5 rounded-2xl p-6 text-center">
+          <Shield className="w-8 h-8 text-hasivu-primary mx-auto mb-3" />
+          <h3 className="font-semibold text-hasivu-text-primary mb-2">99.7% Fraud Prevention</h3>
+          <p className="text-sm text-hasivu-text-secondary">
+            Advanced AI protects every transaction
+          </p>
         </div>
 
-        <div className="bg-green-50 rounded-lg p-6 text-center">
-          <Radio className="w-8 h-8 text-green-600 mx-auto mb-3" />
-          <h3 className="font-semibold text-gray-900 mb-2">RFID Verification</h3>
-          <p className="text-sm text-gray-600">Instant student identification and delivery</p>
+        <div className="bg-hasivu-success/5 rounded-2xl p-6 text-center">
+          <Radio className="w-8 h-8 text-hasivu-success mx-auto mb-3" />
+          <h3 className="font-semibold text-hasivu-text-primary mb-2">RFID Verification</h3>
+          <p className="text-sm text-hasivu-text-secondary">
+            Instant student identification and delivery
+          </p>
         </div>
 
-        <div className="bg-purple-50 rounded-lg p-6 text-center">
-          <Clock className="w-8 h-8 text-purple-600 mx-auto mb-3" />
-          <h3 className="font-semibold text-gray-900 mb-2">8-Minute Average</h3>
-          <p className="text-sm text-gray-600">Lightning-fast delivery times</p>
+        <div className="bg-hasivu-accent/10 rounded-2xl p-6 text-center">
+          <Clock className="w-8 h-8 text-hasivu-primary mx-auto mb-3" />
+          <h3 className="font-semibold text-hasivu-text-primary mb-2">8-Minute Average</h3>
+          <p className="text-sm text-hasivu-text-secondary">Lightning-fast delivery times</p>
         </div>
       </div>
 
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 max-w-2xl mx-auto">
+      <div className="bg-hasivu-warning/10 border border-hasivu-warning/30 rounded-2xl p-4 max-w-2xl mx-auto">
         <div className="flex items-center space-x-3">
-          <Star className="w-5 h-5 text-yellow-600" />
+          <Star className="w-5 h-5 text-hasivu-warning" />
           <div className="text-left">
-            <p className="font-medium text-gray-900">30-Day Free Trial</p>
-            <p className="text-sm text-gray-600">
+            <p className="font-medium text-hasivu-text-primary">30-Day Free Trial</p>
+            <p className="text-sm text-hasivu-text-secondary">
               Full access to all features, no commitment required
             </p>
           </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 
   const renderSchoolInfoStep = () => (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="space-y-6 max-w-2xl mx-auto"
-    >
+    <div className="space-y-6 max-w-2xl mx-auto">
       <div className="text-center mb-8">
-        <Building className="w-12 h-12 text-blue-600 mx-auto mb-4" />
-        <h2 className="text-2xl font-bold text-gray-900">School Information</h2>
-        <p className="text-gray-600">Help us understand your school's needs and current setup</p>
+        <div className="mx-auto mb-4" aria-hidden="true">
+          <Rajan size={48} animation="breathe" respectReducedMotion />
+        </div>
+        <h2 className="text-2xl font-display font-bold text-hasivu-text-primary">
+          School Information
+        </h2>
+        <p className="text-hasivu-text-secondary">
+          Help us understand your school's needs and current setup
+        </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -514,54 +557,63 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
           </label>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 
   const renderCompletionStep = () => (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="text-center space-y-8"
-    >
+    <div className="text-center space-y-8">
       <div className="space-y-4">
-        <div className="mx-auto w-24 h-24 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center">
-          <CheckCircle className="w-12 h-12 text-white" />
+        <div className="mx-auto" aria-hidden="true">
+          {shouldReduce ? (
+            <Image
+              src="/characters/group-scene.svg"
+              alt=""
+              width={96}
+              height={96}
+              className="object-contain mx-auto"
+            />
+          ) : (
+            <GroupScene size={96} animation={completionSceneAnim} respectReducedMotion={false} />
+          )}
         </div>
-        <h2 className="text-3xl font-bold text-gray-900">Setup Complete!</h2>
-        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-          Congratulations! Your HASIVU system is now configured and ready to revolutionize your
-          school's food service delivery.
+        <p className="text-2xl font-display font-bold text-hasivu-text-primary max-w-2xl mx-auto leading-snug">
+          You&apos;re all set!{' '}
+          {userSetup.firstName
+            ? `${userSetup.firstName}'s meals are ready to order.`
+            : schoolInfo.name
+              ? `${schoolInfo.name}'s meals are ready to order.`
+              : 'Meals are ready to order.'}
         </p>
       </div>
 
-      <div className="bg-green-50 border border-green-200 rounded-lg p-6 max-w-2xl mx-auto">
-        <h3 className="font-semibold text-gray-900 mb-4">What happens next?</h3>
+      <div className="bg-hasivu-success/5 border border-hasivu-success/20 rounded-2xl p-6 max-w-2xl mx-auto">
+        <h3 className="font-semibold text-hasivu-text-primary mb-4">What happens next?</h3>
         <div className="space-y-3 text-left">
           <div className="flex items-start space-x-3">
-            <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
+            <CheckCircle className="w-5 h-5 text-hasivu-success mt-0.5" />
             <div>
-              <p className="font-medium text-gray-900">RFID Cards Ordered</p>
-              <p className="text-sm text-gray-600">
+              <p className="font-medium text-hasivu-text-primary">RFID Cards Ordered</p>
+              <p className="text-sm text-hasivu-text-secondary">
                 Your RFID cards will arrive within 3-5 business days
               </p>
             </div>
           </div>
 
           <div className="flex items-start space-x-3">
-            <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
+            <CheckCircle className="w-5 h-5 text-hasivu-success mt-0.5" />
             <div>
-              <p className="font-medium text-gray-900">Training Session Scheduled</p>
-              <p className="text-sm text-gray-600">
+              <p className="font-medium text-hasivu-text-primary">Training Session Scheduled</p>
+              <p className="text-sm text-hasivu-text-secondary">
                 Our team will contact you to schedule staff training
               </p>
             </div>
           </div>
 
           <div className="flex items-start space-x-3">
-            <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
+            <CheckCircle className="w-5 h-5 text-hasivu-success mt-0.5" />
             <div>
-              <p className="font-medium text-gray-900">Dashboard Access Ready</p>
-              <p className="text-sm text-gray-600">
+              <p className="font-medium text-hasivu-text-primary">Dashboard Access Ready</p>
+              <p className="text-sm text-hasivu-text-secondary">
                 Start exploring your admin dashboard immediately
               </p>
             </div>
@@ -570,34 +622,61 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-lg mx-auto">
-        <button className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2">
-          <Eye className="w-5 h-5" />
-          <span>View Dashboard</span>
-        </button>
+        <Link
+          href="/menu"
+          className="flex-1 bg-hasivu-primary text-white px-6 py-3 rounded-xl hover:bg-hasivu-primary/90 transition-colors flex items-center justify-center space-x-2 text-center font-medium"
+        >
+          Browse Today&apos;s Menu
+        </Link>
 
-        <button className="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center space-x-2">
+        <button
+          type="button"
+          className="flex-1 bg-hasivu-success text-white px-6 py-3 rounded-xl hover:bg-hasivu-success/90 transition-colors flex items-center justify-center space-x-2"
+        >
           <Download className="w-5 h-5" />
           <span>Download Guide</span>
         </button>
       </div>
-    </motion.div>
+    </div>
   );
 
+  const renderStepBody = () => {
+    switch (steps[currentStep].id) {
+      case 'welcome':
+        return renderWelcomeStep();
+      case 'school_info':
+        return renderSchoolInfoStep();
+      case 'completion':
+        return renderCompletionStep();
+      default:
+        return (
+          <div className="text-center py-12 max-w-lg mx-auto text-hasivu-text-secondary">
+            <p className="font-display text-xl text-hasivu-text-primary mb-2">
+              {steps[currentStep].title}
+            </p>
+            <p className="text-sm">Use Continue to save this step and proceed.</p>
+          </div>
+        );
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-hasivu-bg-warm">
       {/* Progress Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200">
+      <div className="bg-hasivu-surface shadow-warm-sm border-b border-hasivu-primary/10">
         <div className="max-w-4xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-4">
-              <h1 className="text-xl font-semibold text-gray-900">HASIVU Setup</h1>
-              <span className="text-sm text-gray-500">
+              <h1 className="text-xl font-display font-semibold text-hasivu-text-primary">
+                HASIVU Setup
+              </h1>
+              <span className="text-sm text-hasivu-text-secondary">
                 Step {currentStep + 1} of {steps.length}
               </span>
             </div>
 
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-hasivu-text-secondary">
                 {steps[currentStep].estimatedTime} remaining
               </span>
               {onSkip && !steps[currentStep].required && (
@@ -612,23 +691,51 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
           </div>
 
           {/* Progress Bar */}
-          <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="w-full bg-hasivu-primary/10 rounded-full h-2">
             <div
-              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              className={`bg-hasivu-primary h-2 rounded-full ${
+                shouldReduce ? '' : 'transition-all duration-300'
+              }`}
               style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
             ></div>
+          </div>
+
+          <div className="flex justify-center gap-2 mt-3" aria-hidden="true">
+            {steps.map((_, i) => (
+              <motion.span
+                key={i}
+                className={`h-2.5 rounded-full ${
+                  i === currentStep ? 'bg-hasivu-primary' : 'bg-hasivu-primary/30'
+                }`}
+                initial={false}
+                animate={{
+                  scale: i === currentStep ? (shouldReduce ? 1 : 1.3) : 1,
+                  width: i === currentStep ? 22 : 10,
+                }}
+                transition={
+                  shouldReduce
+                    ? { duration: 0.001 }
+                    : { type: 'spring', stiffness: 300, damping: 25 }
+                }
+              />
+            ))}
           </div>
         </div>
       </div>
 
       {/* Content */}
       <div className="max-w-4xl mx-auto px-6 py-12">
-        <AnimatePresence mode="wait">
-          {steps[currentStep].id === 'welcome' && renderWelcomeStep()}
-          {steps[currentStep].id === 'school_info' && renderSchoolInfoStep()}
-          {steps[currentStep].id === 'completion' && renderCompletionStep()}
-
-          {/* Add other step renderers as needed */}
+        <AnimatePresence mode="wait" initial={false} custom={slideDirection}>
+          <motion.div
+            key={steps[currentStep].id}
+            custom={slideDirection}
+            variants={stepSlideVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+          >
+            {renderStepBody()}
+          </motion.div>
         </AnimatePresence>
 
         {/* Navigation */}
@@ -652,10 +759,10 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
             <button
               onClick={nextStep}
               disabled={isLoading}
-              className="flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center space-x-2 px-6 py-3 bg-hasivu-primary text-white rounded-xl hover:bg-hasivu-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className={`w-4 h-4 ${shouldReduce ? '' : 'animate-spin'}`} />
               ) : (
                 <>
                   <span>{currentStep === steps.length - 1 ? 'Get Started' : 'Continue'}</span>

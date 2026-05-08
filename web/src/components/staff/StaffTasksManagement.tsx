@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
   CheckCircle,
   Clock,
@@ -168,6 +168,7 @@ const TaskCard = ({
   onUpdate: (taskId: string, status: Task['status']) => void;
   onDelete: (taskId: string) => void;
 }) => {
+  const reduced = useReducedMotion();
   const isOverdue = task.status !== 'completed' && new Date(task.dueDate) < new Date();
   const hoursLeft = Math.max(
     0,
@@ -176,10 +177,11 @@ const TaskCard = ({
 
   return (
     <motion.div
-      layout
-      initial={{ opacity: 0, y: 20 }}
+      layout={!reduced}
+      initial={reduced ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
+      exit={reduced ? { opacity: 1, y: 0 } : { opacity: 0, y: -20 }}
+      transition={reduced ? { duration: 0.001 } : undefined}
       className="mb-3"
     >
       <Card
@@ -458,6 +460,7 @@ const CreateTaskDialog = ({
 };
 
 export default function StaffTasksManagement() {
+  const reduced = useReducedMotion();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<Task['status'] | 'all'>('all');
@@ -577,7 +580,7 @@ export default function StaffTasksManagement() {
   if (tasksLoading || staffLoading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+        <Loader2 className={`w-8 h-8 text-gray-400 ${reduced ? '' : 'animate-spin'}`} />
       </div>
     );
   }

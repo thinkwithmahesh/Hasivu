@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Hasivu Friends">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFF7ED"/>
+      <stop offset="100%" style="stop-color:#E6FAF7"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)" rx="48"/>
+  <circle cx="170" cy="210" r="64" fill="#fff" stroke="#EA580C" stroke-width="5"/>
+  <circle cx="342" cy="210" r="64" fill="#fff" stroke="#25A89D" stroke-width="5"/>
+  <circle cx="256" cy="300" r="58" fill="#fff" stroke="#43A047" stroke-width="5"/>
+  <text x="256" y="420" text-anchor="middle" font-family="system-ui,sans-serif" font-size="28" font-weight="800" fill="#1a1a2e">Hasivu Friends</text>
+</svg>

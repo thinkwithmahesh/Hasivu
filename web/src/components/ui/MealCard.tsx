@@ -39,7 +39,10 @@ export function MealCard({
     >
       {/* Allergy Warning Overlay Banner */}
       {isAllergyConflict && (
-        <div className="absolute top-0 left-0 right-0 z-10 bg-pm-semantic-danger text-pm-text-inverse px-3 py-1.5 text-[11px] font-ui font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-sm">
+        <div
+          role="alert"
+          className="absolute top-0 left-0 right-0 z-10 bg-pm-semantic-danger text-pm-text-inverse px-3 py-1.5 text-[11px] font-ui font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-sm"
+        >
           <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
             <path
               fillRule="evenodd"
@@ -114,6 +117,7 @@ export function MealCard({
             type="button"
             onClick={onAddClick}
             disabled={isAllergyConflict || actionDisabled}
+            title={isAllergyConflict ? allergyWarningMessage || 'Not suitable for selected child' : ''}
             className={`flex items-center justify-center w-8 h-8 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pm-primary-600 focus-visible:ring-offset-2 ${
               isAllergyConflict || actionDisabled
                 ? 'bg-pm-neutral-200 text-pm-text-tertiary cursor-not-allowed'

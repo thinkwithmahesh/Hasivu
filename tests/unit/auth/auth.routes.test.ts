@@ -2,16 +2,56 @@
  * Comprehensive Authentication Routes Test Suite
  * Tests for the fixed authentication implementation
  */
+
+jest.mock('../../../src/utils/logger', () => ({
+  logger: {
+    info: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+    debug: jest.fn(),
+    fatal: jest.fn(),
+    integration: jest.fn(),
+    logFunctionStart: jest.fn(),
+    logFunctionEnd: jest.fn(),
+    setLogLevel: jest.fn(),
+  },
+}));
+
+jest.mock('../../../src/config/environment', () => ({
+  config: {
+    server: { nodeEnv: 'test' },
+    jwt: {
+      secret: 'test-jwt-secret-key-32chars-minimum!!!',
+      refreshSecret: 'test-refresh-secret-key-32chars-min!!',
+      issuer: 'hasivu-test',
+      audience: 'hasivu-users-test',
+      expiresIn: '15m',
+      refreshExpiresIn: '7d',
+    },
+    redis: { url: 'redis://127.0.0.1:6379/0' },
+  },
+}));
+
+jest.mock('ioredis', () =>
+  jest.fn().mockImplementation(() => ({
+    on: jest.fn(),
+    setex: jest.fn().mockResolvedValue('OK'),
+    get: jest.fn().mockResolvedValue(null),
+    del: jest.fn().mockResolvedValue(1),
+    quit: jest.fn().mockResolvedValue('OK'),
+    ping: jest.fn().mockResolvedValue('PONG'),
+    connect: jest.fn().mockResolvedValue(undefined),
+  }))
+);
+
+jest.mock('../../../src/services/auth.service');
+jest.mock('../../../src/services/database.service');
+
 import request from 'supertest';
 import express from 'express';
 import { authRouter } from '../../../src/routes/auth.routes';
 import { authService } from '../../../src/services/auth.service';
 import { DatabaseService } from '../../../src/services/database.service';
-
-// Mock dependencies
-jest.mock('../../../src/services/auth.service');
-jest.mock('../../../src/services/database.service');
-jest.mock('../../../src/utils/logger');
 
 const app = express();
 app.use(express.json());
@@ -117,7 +157,7 @@ describe('Authentication Routes - Comprehensive Tests', () => {
           role: {
             findUnique: jest.fn().mockResolvedValue({ id: 'role-1', name: 'parent' })
           },
-          userRole: {
+          userRoleAssignment: {
             create: jest.fn().mockResolvedValue({})
           }
         });
@@ -218,6 +258,19 @@ describe('Authentication Routes - Comprehensive Tests', () => {
     });
 
     test('should reject registration with existing email', async () => {
+      mockAuthService.validatePassword.mockReturnValue({
+        valid: true,
+        isValid: true,
+        message: 'Strong password',
+        score: 85,
+        requirements: {
+          length: true,
+          uppercase: true,
+          lowercase: true,
+          numbers: true,
+          symbols: true
+        }
+      });
       mockDatabaseService.client.user.findUnique.mockResolvedValue({
         id: 'existing-user',
         email: 'test@example.com'
@@ -289,9 +342,19 @@ describe('Authentication Routes - Comprehensive Tests', () => {
       expect(response.body).toMatchObject({
         success: true,
         message: 'Login successful',
-        user: mockAuthResult.user,
-        tokens: mockAuthResult.tokens
       });
+      expect(response.body.user).toMatchObject({
+        id: 'user-123',
+        email: 'test@example.com',
+        firstName: 'John',
+        lastName: 'Doe',
+        role: 'parent',
+      });
+      const cookies = response.headers['set-cookie'];
+      expect(cookies).toBeDefined();
+      const cookieArray = Array.isArray(cookies) ? cookies : [cookies];
+      expect(cookieArray.some((c: string) => c.includes('accessToken'))).toBe(true);
+      expect(cookieArray.some((c: string) => c.includes('refreshToken'))).toBe(true);
 
       expect(mockAuthService.authenticate).toHaveBeenCalledWith({
         email: 'test@example.com',
@@ -339,8 +402,12 @@ describe('Authentication Routes - Comprehensive Tests', () => {
       expect(response.body).toMatchObject({
         success: true,
         message: 'Token refreshed successfully',
-        accessToken: 'new-access-token-123'
       });
+      const cookies = response.headers['set-cookie'];
+      const cookieArray = Array.isArray(cookies) ? cookies : [cookies];
+      expect(
+        cookieArray.some((c: string) => c.includes('new-access-token-123'))
+      ).toBe(true);
     });
 
     test('should reject refresh without token', async () => {
@@ -513,6 +580,24 @@ describe('Authentication Routes - Comprehensive Tests', () => {
       });
       mockAuthService.hashPassword.mockResolvedValue('hashedPassword');
 
+      mockDatabaseService.transaction.mockImplementation(async (callback: any) => {
+        return await callback({
+          user: {
+            create: jest.fn().mockImplementation(({ data }: { data: Record<string, unknown> }) =>
+              Promise.resolve({
+                id: 'user-new',
+                email: data.email,
+                firstName: data.firstName,
+                lastName: data.lastName,
+                role: data.role || 'parent',
+              })
+            ),
+          },
+          role: { findUnique: jest.fn().mockResolvedValue({ id: 'role-1', name: 'parent' }) },
+          userRoleAssignment: { create: jest.fn().mockResolvedValue({}) },
+        });
+      });
+
       const requests = Array(5).fill(null).map(() =>
         request(app)
           .post('/auth/register')
@@ -592,7 +677,7 @@ describe('Authentication Routes - Comprehensive Tests', () => {
         return await callback({
           user: { create: jest.fn().mockResolvedValue(mockUser) },
           role: { findUnique: jest.fn().mockResolvedValue({ id: 'role-1', name: 'parent' }) },
-          userRole: { create: jest.fn().mockResolvedValue({}) }
+          userRoleAssignment: { create: jest.fn().mockResolvedValue({}) }
         });
       });
 

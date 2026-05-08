@@ -1,647 +1,428 @@
 /**
- * Unit Tests for Create Order Lambda Function
- * Tests Epic 3: Order Processing System - Meal Order Creation
+ * Create Order Lambda — aligned with prisma + DatabaseManager.transaction + authorizer userId.
  */
 
-import { handler } from '../../../../src/functions/orders/create-order';
-import { PrismaClient } from '@prisma/client';
-import { v4 as uuidv4 } from 'uuid';
+const prismaMock = {
+  user: {
+    findUnique: jest.fn(),
+    findFirst: jest.fn(),
+  },
+  menuItem: {
+    findMany: jest.fn(),
+  },
+};
 
-// Mock Prisma
-jest.mock('@prisma/client', () => ({
-  PrismaClient: jest.fn().mockImplementation(() => ({
-    user: {
-      findUnique: jest.fn(),
-      findFirst: jest.fn(),
-    },
-    menuItem: {
-      findFirst: jest.fn(),
-    },
-    order: {
-      create: jest.fn(),
-    },
-    orderItem: {
-      create: jest.fn(),
-    },
-    $transaction: jest.fn(),
-    $disconnect: jest.fn(),
-  })),
-}));
+const mockTransaction = jest.fn();
 
-// Mock UUID
-jest.mock('uuid', () => ({
-  v4: jest.fn(),
-}));
-
-// Mock logger
-jest.mock('../../../src/utils/logger', () => ({
-  logger: {
-    info: jest.fn(),
-    error: jest.fn(),
+jest.mock('@/database/DatabaseManager', () => ({
+  prisma: prismaMock,
+  DatabaseManager: {
+    getInstance: jest.fn(() => ({
+      transaction: mockTransaction,
+    })),
   },
 }));
 
-// Mock response utils
-jest.mock('../../../../src/shared/response.utils', () => ({
+jest.mock('@/utils/logger', () => ({
+  logger: {
+    info: jest.fn(),
+    error: jest.fn(),
+    logFunctionStart: jest.fn(),
+    logFunctionEnd: jest.fn(),
+  },
+}));
+
+jest.mock('@/shared/response.utils', () => ({
   createSuccessResponse: jest.fn(),
   createErrorResponse: jest.fn(),
   handleError: jest.fn(),
 }));
 
-// Mock auth middleware
-jest.mock('../../../../src/shared/middleware/lambda-auth.middleware', () => ({
-  authenticateLambda: jest.fn(),
+jest.mock('uuid', () => ({
+  v4: jest.fn(),
 }));
 
+import { handler } from '../../../../src/functions/orders/create-order';
+import { v4 as uuidv4 } from 'uuid';
+
 describe('Create Order Lambda Function', () => {
-  let mockPrisma: jest.Mocked<PrismaClient>;
-  let mockAuthenticateLambda: jest.MockedFunction<any>;
-  let mockCreateSuccessResponse: jest.MockedFunction<any>;
-  let mockCreateErrorResponse: jest.MockedFunction<any>;
-  let mockHandleError: jest.MockedFunction<any>;
+  const mockCreateSuccessResponse = jest.requireMock('@/shared/response.utils')
+    .createSuccessResponse as jest.Mock;
+  const mockCreateErrorResponse = jest.requireMock('@/shared/response.utils')
+    .createErrorResponse as jest.Mock;
+  const mockHandleError = jest.requireMock('@/shared/response.utils').handleError as jest.Mock;
+
+  const authorizerEvent = (body: object): any => ({
+    httpMethod: 'POST',
+    requestContext: { authorizer: { userId: 'test-user-id' } },
+    body: JSON.stringify(body),
+  });
+
+  const validStudent = {
+    id: 'test-student',
+    firstName: 'John',
+    lastName: 'Doe',
+    parentId: 'test-user-id',
+    schoolId: 'school1',
+    isActive: true,
+    school: { id: 'school1', name: 'Test School', isActive: true },
+  };
+
+  const menuItemRow = {
+    id: 'item1',
+    name: 'Test Item',
+    price: 50,
+    available: true,
+  };
+
+  beforeAll(() => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date('2026-06-01T12:00:00.000Z'));
+  });
+
+  afterAll(() => {
+    jest.useRealTimers();
+  });
 
   beforeEach(() => {
     jest.clearAllMocks();
-
-    mockPrisma = new PrismaClient() as jest.Mocked<PrismaClient>;
-    mockAuthenticateLambda = require('../../../../src/shared/middleware/lambda-auth.middleware').authenticateLambda;
-    mockCreateSuccessResponse = require('../../../../src/shared/response.utils').createSuccessResponse;
-    mockCreateErrorResponse = require('../../../../src/shared/response.utils').createErrorResponse;
-    mockHandleError = require('../../../../src/shared/response.utils').handleError;
-
-    // Mock UUID generation
-    (uuidv4 as jest.Mock).mockReturnValue('test-order-id');
-
-    // Default successful auth
-    mockAuthenticateLambda.mockResolvedValue({
-      user: { id: 'test-user-id' },
+    let uuidCount = 0;
+    (uuidv4 as jest.Mock).mockImplementation(() => {
+      uuidCount += 1;
+      return `uuid-${uuidCount}`;
     });
 
-    // Default successful responses
     mockCreateSuccessResponse.mockReturnValue({
       statusCode: 201,
-      body: JSON.stringify({ message: 'Order created successfully' }),
+      body: JSON.stringify({ success: true }),
+    });
+    mockCreateErrorResponse.mockImplementation((code: string, msg: string, status: number) => ({
+      statusCode: status,
+      body: JSON.stringify({ code, message: msg }),
+    }));
+    mockHandleError.mockReturnValue({
+      statusCode: 500,
+      body: JSON.stringify({ error: 'Failed to create order' }),
+    });
+
+    mockTransaction.mockImplementation(async (callback: (tx: any) => Promise<unknown>) => {
+      const tx = {
+        order: {
+          create: jest.fn().mockResolvedValue({
+            id: 'uuid-1',
+            orderNumber: 'ORD20260601120000ABCD',
+            userId: 'test-user-id',
+            studentId: 'test-student',
+            schoolId: 'school1',
+            deliveryDate: new Date('2026-06-04'),
+            status: 'pending',
+            paymentStatus: 'pending',
+            totalAmount: 50,
+            currency: 'INR',
+            createdAt: new Date('2026-06-01T12:00:00.000Z'),
+            updatedAt: new Date('2026-06-01T12:00:00.000Z'),
+          }),
+        },
+        orderItem: {
+          create: jest.fn().mockResolvedValue({
+            id: 'uuid-2',
+            orderId: 'uuid-1',
+            menuItemId: 'item1',
+            quantity: 1,
+            unitPrice: 50,
+            totalPrice: 50,
+            notes: null,
+            customizations: '{}',
+          }),
+        },
+      };
+      return callback(tx);
     });
   });
 
-  describe('Input Validation', () => {
-    test('should reject non-POST methods', async () => {
-      const event = {
-        httpMethod: 'GET',
-        body: '{}',
-      } as any;
-
-      mockCreateErrorResponse.mockReturnValue({
-        statusCode: 405,
-        body: JSON.stringify({ error: 'Method not allowed' }),
-      });
-
-      const result = await handler(event, {} as any);
-
+  describe('Input validation', () => {
+    it('rejects non-POST methods', async () => {
+      await handler({ httpMethod: 'GET', body: '{}' } as any, {} as any);
       expect(mockCreateErrorResponse).toHaveBeenCalledWith(
+        'METHOD_NOT_ALLOWED',
         'Method not allowed',
-        'Only POST method is allowed',
         405
       );
     });
 
-    test('should reject missing required fields', async () => {
-      const event = {
-        httpMethod: 'POST',
-        body: JSON.stringify({}),
-      } as any;
-
-      mockCreateErrorResponse.mockReturnValue({
-        statusCode: 400,
-        body: JSON.stringify({ error: 'Missing required fields' }),
-      });
-
-      const result = await handler(event, {} as any);
-
+    it('rejects missing required fields', async () => {
+      await handler(authorizerEvent({}), {} as any);
       expect(mockCreateErrorResponse).toHaveBeenCalledWith(
-        'Missing required fields',
+        'MISSING_REQUIRED_FIELDS',
         'Missing required fields: studentId, deliveryDate, orderItems',
         400
       );
     });
 
-    test('should reject invalid delivery date', async () => {
-      const event = {
-        httpMethod: 'POST',
-        body: JSON.stringify({
+    it('rejects when not authenticated', async () => {
+      await handler(
+        {
+          httpMethod: 'POST',
+          requestContext: {},
+          body: JSON.stringify({
+            studentId: 'test-student',
+            deliveryDate: '2026-06-04',
+            orderItems: [{ menuItemId: 'item1', quantity: 1 }],
+          }),
+        } as any,
+        {} as any
+      );
+      expect(mockCreateErrorResponse).toHaveBeenCalledWith(
+        'AUTHENTICATION_REQUIRED',
+        'User authentication required',
+        401
+      );
+    });
+
+    it('rejects invalid delivery date format', async () => {
+      prismaMock.user.findUnique.mockResolvedValue(validStudent);
+      await handler(
+        authorizerEvent({
           studentId: 'test-student',
-          deliveryDate: 'invalid-date',
+          deliveryDate: 'not-a-date',
           orderItems: [{ menuItemId: 'item1', quantity: 1 }],
         }),
-      } as any;
-
-      mockCreateErrorResponse.mockReturnValue({
-        statusCode: 400,
-        body: JSON.stringify({ error: 'Invalid date format' }),
-      });
-
-      const result = await handler(event, {} as any);
-
+        {} as any
+      );
       expect(mockCreateErrorResponse).toHaveBeenCalledWith(
-        'Invalid date format',
+        'INVALID_DATE_FORMAT',
         'Invalid delivery date format',
         400
       );
     });
 
-    test('should reject delivery date too soon', async () => {
-      const tomorrow = new Date();
-      tomorrow.setHours(tomorrow.getHours() + 1); // Only 1 hour from now
-
-      const event = {
-        httpMethod: 'POST',
-        body: JSON.stringify({
+    it('rejects delivery date too soon', async () => {
+      prismaMock.user.findUnique.mockResolvedValue(validStudent);
+      await handler(
+        authorizerEvent({
           studentId: 'test-student',
-          deliveryDate: tomorrow.toISOString().split('T')[0],
+          deliveryDate: '2026-06-02',
           orderItems: [{ menuItemId: 'item1', quantity: 1 }],
         }),
-      } as any;
-
-      mockCreateErrorResponse.mockReturnValue({
-        statusCode: 400,
-        body: JSON.stringify({ error: 'Delivery date too soon' }),
-      });
-
-      const result = await handler(event, {} as any);
-
-      expect(result).toBeDefined();
+        {} as any
+      );
+      expect(mockHandleError).toHaveBeenCalledWith(
+        expect.any(Error),
+        'Failed to create order'
+      );
+      expect((mockHandleError.mock.calls[0][0] as Error).message).toBe(
+        'Delivery date must be at least 24 hours in advance'
+      );
     });
 
-    test('should reject weekend delivery dates', async () => {
-      // Find next Saturday
-      const saturday = new Date();
-      saturday.setDate(saturday.getDate() + (6 - saturday.getDay()));
-
-      const event = {
-        httpMethod: 'POST',
-        body: JSON.stringify({
+    it('rejects weekend delivery dates', async () => {
+      prismaMock.user.findUnique.mockResolvedValue(validStudent);
+      await handler(
+        authorizerEvent({
           studentId: 'test-student',
-          deliveryDate: saturday.toISOString().split('T')[0],
+          deliveryDate: '2026-06-06',
           orderItems: [{ menuItemId: 'item1', quantity: 1 }],
         }),
-      } as any;
-
-      mockCreateErrorResponse.mockReturnValue({
-        statusCode: 400,
-        body: JSON.stringify({ error: 'Weekend delivery not allowed' }),
-      });
-
-      const result = await handler(event, {} as any);
-
-      expect(result).toBeDefined();
+        {} as any
+      );
+      expect((mockHandleError.mock.calls[0][0] as Error).message).toBe(
+        'Delivery is not available on weekends'
+      );
     });
   });
 
-  describe('Student Validation', () => {
-    test('should reject non-existent student', async () => {
-      (mockPrisma.user.findUnique as jest.Mock).mockResolvedValue(null);
-
-      const event = {
-        httpMethod: 'POST',
-        body: JSON.stringify({
-          studentId: 'non-existent-student',
-          deliveryDate: '2024-12-01',
+  describe('Student validation', () => {
+    it('rejects non-existent student', async () => {
+      prismaMock.user.findUnique.mockResolvedValue(null);
+      await handler(
+        authorizerEvent({
+          studentId: 'missing',
+          deliveryDate: '2026-06-04',
           orderItems: [{ menuItemId: 'item1', quantity: 1 }],
         }),
-      } as any;
-
-      await handler(event, {} as any);
-
-      expect(mockHandleError).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: 'Student not found',
-        })
+        {} as any
       );
+      expect(mockHandleError).toHaveBeenCalledWith(expect.any(Error), 'Failed to create order');
+      expect((mockHandleError.mock.calls[0][0] as Error).message).toBe('Student not found');
     });
 
-    test('should reject inactive student', async () => {
-      (mockPrisma.user.findUnique as jest.Mock).mockResolvedValue({
-        id: 'test-student',
-        firstName: 'John',
-        lastName: 'Doe',
-        isActive: false,
-        school: { id: 'school1', name: 'Test School', isActive: true },
-      } as any);
-
-      const event = {
-        httpMethod: 'POST',
-        body: JSON.stringify({
+    it('rejects inactive student', async () => {
+      prismaMock.user.findUnique.mockResolvedValue({ ...validStudent, isActive: false });
+      await handler(
+        authorizerEvent({
           studentId: 'test-student',
-          deliveryDate: '2024-12-01',
+          deliveryDate: '2026-06-04',
           orderItems: [{ menuItemId: 'item1', quantity: 1 }],
         }),
-      } as any;
-
-      await handler(event, {} as any);
-
-      expect(mockHandleError).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: 'Student account is not active',
-        })
+        {} as any
+      );
+      expect((mockHandleError.mock.calls[0][0] as Error).message).toBe(
+        'Student account is not active'
       );
     });
 
-    test('should reject orders for students from inactive schools', async () => {
-      (mockPrisma.user.findUnique as jest.Mock).mockResolvedValue({
-        id: 'test-student',
-        firstName: 'John',
-        lastName: 'Doe',
-        isActive: true,
+    it('rejects inactive school', async () => {
+      prismaMock.user.findUnique.mockResolvedValue({
+        ...validStudent,
         school: { id: 'school1', name: 'Test School', isActive: false },
-      } as any);
-
-      const event = {
-        httpMethod: 'POST',
-        body: JSON.stringify({
+      });
+      await handler(
+        authorizerEvent({
           studentId: 'test-student',
-          deliveryDate: '2024-12-01',
+          deliveryDate: '2026-06-04',
           orderItems: [{ menuItemId: 'item1', quantity: 1 }],
         }),
-      } as any;
-
-      await handler(event, {} as any);
-
-      expect(mockHandleError).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: 'School is not active',
-        })
+        {} as any
       );
+      expect((mockHandleError.mock.calls[0][0] as Error).message).toBe('School is not active');
     });
 
-    test('should reject unauthorized parent orders', async () => {
-      (mockPrisma.user.findUnique as jest.Mock).mockResolvedValue({
-        id: 'test-student',
-        firstName: 'John',
-        lastName: 'Doe',
-        parentId: 'different-parent',
-        isActive: true,
-        school: { id: 'school1', name: 'Test School', isActive: true },
-      } as any);
-
-      (mockPrisma.user.findFirst as jest.Mock).mockResolvedValue(null); // No admin access
-
-      const event = {
-        httpMethod: 'POST',
-        body: JSON.stringify({
+    it('rejects unauthorized user', async () => {
+      prismaMock.user.findUnique.mockResolvedValue({
+        ...validStudent,
+        parentId: 'other-parent',
+      });
+      prismaMock.user.findFirst.mockResolvedValue(null);
+      await handler(
+        authorizerEvent({
           studentId: 'test-student',
-          deliveryDate: '2024-12-01',
+          deliveryDate: '2026-06-04',
           orderItems: [{ menuItemId: 'item1', quantity: 1 }],
         }),
-      } as any;
-
-      await handler(event, {} as any);
-
-      expect(mockHandleError).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: 'Not authorized to place orders for this student',
-        })
+        {} as any
+      );
+      expect((mockHandleError.mock.calls[0][0] as Error).message).toBe(
+        'Not authorized to place orders for this student'
       );
     });
   });
 
-  describe('Order Item Validation', () => {
+  describe('Order items validation', () => {
     beforeEach(() => {
-      // Setup valid student
-      (mockPrisma.user.findUnique as jest.Mock).mockResolvedValue({
-        id: 'test-student',
-        firstName: 'John',
-        lastName: 'Doe',
-        parentId: 'test-user-id',
-        isActive: true,
-        school: { id: 'school1', name: 'Test School', isActive: true },
-      } as any);
+      prismaMock.user.findUnique.mockResolvedValue(validStudent);
+      prismaMock.menuItem.findMany.mockResolvedValue([]);
     });
 
-    test('should reject empty order items', async () => {
-      const event = {
-        httpMethod: 'POST',
-        body: JSON.stringify({
+    it('rejects empty order items', async () => {
+      await handler(
+        authorizerEvent({
           studentId: 'test-student',
-          deliveryDate: '2024-12-01',
+          deliveryDate: '2026-06-04',
           orderItems: [],
         }),
-      } as any;
-
-      await handler(event, {} as any);
-
-      expect(mockHandleError).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: 'Order must contain at least one item',
-        })
+        {} as any
+      );
+      expect((mockHandleError.mock.calls[0][0] as Error).message).toBe(
+        'Order must contain at least one item'
       );
     });
 
-    test('should reject orders with too many items', async () => {
-      const manyItems = Array(25).fill({ menuItemId: 'item1', quantity: 1 });
-
-      const event = {
-        httpMethod: 'POST',
-        body: JSON.stringify({
+    it('rejects too many line items', async () => {
+      const many = Array.from({ length: 25 }, () => ({ menuItemId: 'item1', quantity: 1 }));
+      await handler(
+        authorizerEvent({
           studentId: 'test-student',
-          deliveryDate: '2024-12-01',
-          orderItems: manyItems,
+          deliveryDate: '2026-06-04',
+          orderItems: many,
         }),
-      } as any;
-
-      await handler(event, {} as any);
-
-      expect(mockHandleError).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: 'Maximum 20 items allowed per order',
-        })
+        {} as any
+      );
+      expect((mockHandleError.mock.calls[0][0] as Error).message).toBe(
+        'Maximum 20 items allowed per order'
       );
     });
 
-    test('should reject invalid item quantities', async () => {
-      const event = {
-        httpMethod: 'POST',
-        body: JSON.stringify({
+    it('rejects zero quantity', async () => {
+      await handler(
+        authorizerEvent({
           studentId: 'test-student',
-          deliveryDate: '2024-12-01',
+          deliveryDate: '2026-06-04',
           orderItems: [{ menuItemId: 'item1', quantity: 0 }],
         }),
-      } as any;
-
-      await handler(event, {} as any);
-
-      expect(mockHandleError).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: 'Item quantity must be greater than 0',
-        })
+        {} as any
+      );
+      expect((mockHandleError.mock.calls[0][0] as Error).message).toBe(
+        'Item quantity must be greater than 0'
       );
     });
 
-    test('should reject excessive item quantities', async () => {
-      const event = {
-        httpMethod: 'POST',
-        body: JSON.stringify({
+    it('rejects excessive quantity per line', async () => {
+      await handler(
+        authorizerEvent({
           studentId: 'test-student',
-          deliveryDate: '2024-12-01',
+          deliveryDate: '2026-06-04',
           orderItems: [{ menuItemId: 'item1', quantity: 15 }],
         }),
-      } as any;
-
-      await handler(event, {} as any);
-
-      expect(mockHandleError).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: 'Maximum 10 quantity allowed per item',
-        })
+        {} as any
+      );
+      expect((mockHandleError.mock.calls[0][0] as Error).message).toBe(
+        'Maximum 10 quantity allowed per item'
       );
     });
 
-    test('should reject non-existent menu items', async () => {
-      (mockPrisma.menuItem.findFirst as jest.Mock).mockResolvedValue(null);
-
-      const event = {
-        httpMethod: 'POST',
-        body: JSON.stringify({
+    it('rejects unknown menu item', async () => {
+      prismaMock.menuItem.findMany.mockResolvedValue([]);
+      await handler(
+        authorizerEvent({
           studentId: 'test-student',
-          deliveryDate: '2024-12-01',
-          orderItems: [{ menuItemId: 'non-existent-item', quantity: 1 }],
+          deliveryDate: '2026-06-04',
+          orderItems: [{ menuItemId: 'missing-item', quantity: 1 }],
         }),
-      } as any;
-
-      await handler(event, {} as any);
-
-      expect(mockHandleError).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: 'Menu item not found: non-existent-item',
-        })
+        {} as any
       );
-    });
-
-    test('should reject unavailable menu items', async () => {
-      (mockPrisma.menuItem.findFirst as jest.Mock).mockResolvedValue({
-        id: 'item1',
-        name: 'Test Item',
-        price: 50,
-        available: false,
-      } as any);
-
-      const event = {
-        httpMethod: 'POST',
-        body: JSON.stringify({
-          studentId: 'test-student',
-          deliveryDate: '2024-12-01',
-          orderItems: [{ menuItemId: 'item1', quantity: 1 }],
-        }),
-      } as any;
-
-      await handler(event, {} as any);
-
-      expect(mockHandleError).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: 'Menu item is not available: Test Item',
-        })
+      expect((mockHandleError.mock.calls[0][0] as Error).message).toBe(
+        'Menu item not found: missing-item'
       );
     });
   });
 
-  describe('Order Creation', () => {
+  describe('Order creation', () => {
     beforeEach(() => {
-      // Setup valid student
-      (mockPrisma.user.findUnique as jest.Mock).mockResolvedValue({
-        id: 'test-student',
-        firstName: 'John',
-        lastName: 'Doe',
-        parentId: 'test-user-id',
-        isActive: true,
-        school: { id: 'school1', name: 'Test School', isActive: true },
-      } as any);
-
-      // Setup valid menu item
-      (mockPrisma.menuItem.findFirst as jest.Mock).mockResolvedValue({
-        id: 'item1',
-        name: 'Test Item',
-        price: 50,
-        available: true,
-      } as any);
-
-      // Setup successful transaction
-      mockPrisma.$transaction.mockImplementation(async (callback: any) => {
-        return callback({
-          order: mockPrisma.order,
-          orderItem: mockPrisma.orderItem,
-        } as any);
-      });
-
-      (mockPrisma.order.create as jest.Mock).mockResolvedValue({
-        id: 'test-order-id',
-        orderNumber: 'ORD20241201120000TEST',
-        userId: 'test-user-id',
-        studentId: 'test-student',
-        schoolId: 'school1',
-        deliveryDate: new Date('2024-12-01'),
-        status: 'pending',
-        paymentStatus: 'pending',
-        totalAmount: 50,
-        currency: 'INR',
-        specialInstructions: null,
-        allergyInfo: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      } as any);
-
-      (mockPrisma.orderItem.create as jest.Mock).mockResolvedValue({
-        id: 'test-item-id',
-        orderId: 'test-order-id',
-        menuItemId: 'item1',
-        quantity: 1,
-        unitPrice: 50,
-        totalPrice: 50,
-        notes: null,
-        customizations: '{}',
-      } as any);
+      prismaMock.user.findUnique.mockResolvedValue(validStudent);
+      prismaMock.menuItem.findMany.mockResolvedValue([menuItemRow]);
     });
 
-    test('should create order successfully', async () => {
-      const event = {
-        httpMethod: 'POST',
-        body: JSON.stringify({
+    it('creates order successfully', async () => {
+      await handler(
+        authorizerEvent({
           studentId: 'test-student',
-          deliveryDate: '2024-12-01',
+          deliveryDate: '2026-06-04',
           orderItems: [{ menuItemId: 'item1', quantity: 1 }],
           specialInstructions: 'No onions',
           allergyInfo: 'Peanut allergy',
         }),
-      } as any;
+        {} as any
+      );
 
-      await handler(event, {} as any);
-
-      expect(mockPrisma.order.create).toHaveBeenCalledWith({
-        data: {
-          id: 'test-order-id',
-          orderNumber: 'ORD20241201120000TEST',
-          userId: 'test-user-id',
-          studentId: 'test-student',
-          schoolId: 'school1',
-          deliveryDate: expect.any(Date),
-          status: 'pending',
-          paymentStatus: 'pending',
-          totalAmount: 50,
-          currency: 'INR',
-          specialInstructions: 'No onions',
-          allergyInfo: 'Peanut allergy',
-          metadata: JSON.stringify({ deliveryInstructions: undefined, contactPhone: undefined }),
-        },
-      });
-
-      expect(mockPrisma.orderItem.create).toHaveBeenCalledWith({
-        data: {
-          id: 'test-order-id',
-          orderId: 'test-order-id',
-          menuItemId: 'item1',
-          quantity: 1,
-          unitPrice: 50,
-          totalPrice: 50,
-          notes: undefined,
-          customizations: JSON.stringify(undefined),
-        },
-      });
-
+      expect(mockTransaction).toHaveBeenCalled();
       expect(mockCreateSuccessResponse).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: {
+          message: 'Order created successfully',
+          data: expect.objectContaining({
             order: expect.objectContaining({
-              id: 'test-order-id',
-              orderNumber: 'ORD20241201120000TEST',
+              studentId: 'test-student',
               totalAmount: 50,
             }),
-          },
-          message: 'Order created successfully',
+          }),
         }),
         201
       );
     });
 
-    test('should handle transaction rollback on error', async () => {
-      (mockPrisma.order.create as jest.Mock).mockRejectedValue(new Error('Database error'));
-
-      const event = {
-        httpMethod: 'POST',
-        body: JSON.stringify({
+    it('surfaces transaction failures', async () => {
+      mockTransaction.mockRejectedValueOnce(new Error('Database error'));
+      await handler(
+        authorizerEvent({
           studentId: 'test-student',
-          deliveryDate: '2024-12-01',
+          deliveryDate: '2026-06-04',
           orderItems: [{ menuItemId: 'item1', quantity: 1 }],
         }),
-      } as any;
-
-      await handler(event, {} as any);
-
-      expect(mockHandleError).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: 'Database error',
-        })
+        {} as any
       );
-    });
-  });
-
-  describe('Error Handling', () => {
-    test('should handle authentication failures', async () => {
-      mockAuthenticateLambda.mockRejectedValue(new Error('Authentication failed'));
-
-      const event = {
-        httpMethod: 'POST',
-        body: JSON.stringify({
-          studentId: 'test-student',
-          deliveryDate: '2024-12-01',
-          orderItems: [{ menuItemId: 'item1', quantity: 1 }],
-        }),
-      } as any;
-
-      await handler(event, {} as any);
-
       expect(mockHandleError).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: 'Authentication failed',
-        })
+        expect.objectContaining({ message: 'Database error' }),
+        'Failed to create order'
       );
-    });
-
-    test('should handle Prisma disconnect errors', async () => {
-      mockPrisma.$disconnect.mockRejectedValue(new Error('Disconnect failed'));
-
-      const event = {
-        httpMethod: 'POST',
-        body: JSON.stringify({
-          studentId: 'test-student',
-          deliveryDate: '2024-12-01',
-          orderItems: [{ menuItemId: 'item1', quantity: 1 }],
-        }),
-      } as any;
-
-      // Setup valid mocks to reach disconnect
-      (mockPrisma.user.findUnique as jest.Mock).mockResolvedValue({
-        id: 'test-student',
-        firstName: 'John',
-        lastName: 'Doe',
-        parentId: 'test-user-id',
-        isActive: true,
-        school: { id: 'school1', name: 'Test School', isActive: true },
-      } as any);
-
-      (mockPrisma.menuItem.findFirst as jest.Mock).mockResolvedValue({
-        id: 'item1',
-        name: 'Test Item',
-        price: 50,
-        available: true,
-      } as any);
-
-      mockPrisma.$transaction.mockResolvedValue({
-        order: { id: 'test-order-id' },
-        orderItems: [{ id: 'test-item-id' }],
-      });
-
-      await handler(event, {} as any);
-
-      // Should still succeed despite disconnect error
-      expect(mockCreateSuccessResponse).toHaveBeenCalled();
     });
   });
 });

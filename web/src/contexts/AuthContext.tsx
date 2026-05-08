@@ -282,16 +282,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const getRedirectPath = (role?: string): string => {
     switch (role) {
       case 'student':
-        return '/student/dashboard';
+        return '/dashboard/student';
       case 'parent':
-        return '/parent/dashboard';
+        return '/dashboard/parent';
       case 'teacher':
         return '/teacher/dashboard';
       case 'admin':
       case 'school_admin':
-        return '/admin/dashboard';
+        return '/dashboard/admin';
       case 'vendor':
-        return '/kitchen/dashboard';
+        return '/dashboard/vendor';
+      case 'kitchen':
+      case 'kitchen_staff':
+        return '/dashboard/kitchen';
       case 'delivery_partner':
         return '/delivery/dashboard';
       default:

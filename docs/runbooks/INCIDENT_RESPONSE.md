@@ -17,7 +17,7 @@
 
 1. Check deploy logs.
 2. Check backend health and auth middleware errors.
-3. Check DB and Redis connectivity.
+3. Check Supabase connectivity (pooled + direct URL health) and Redis connectivity.
 4. Confirm secret rotation or credential expiry issues.
 
 ## Containment
@@ -29,3 +29,4 @@
 
 1. Publish incident summary.
 2. Add follow-up tasks with owners and deadlines.
+3. Record whether VPS path, serverless path, or both were impacted.

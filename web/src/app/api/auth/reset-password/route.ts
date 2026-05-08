@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { fetchConfiguredProxy } from '@/app/api/_utils/proxy';
+const LAMBDA_AUTH_RESET_PASSWORD_URL = process.env.LAMBDA_AUTH_RESET_PASSWORD_URL;
 
-const LAMBDA_AUTH_RESET_PASSWORD_URL =
-  process.env.LAMBDA_AUTH_RESET_PASSWORD_URL ||
-  'https://your-lambda-endpoint.execute-api.region.amazonaws.com/dev/auth/reset-password';
+;
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Forward request to Lambda function
-    const lambdaResponse = await fetch(LAMBDA_AUTH_RESET_PASSWORD_URL, {
+    const lambdaResponse = await fetchConfiguredProxy(LAMBDA_AUTH_RESET_PASSWORD_URL, 'LAMBDA_AUTH_RESET_PASSWORD_URL', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

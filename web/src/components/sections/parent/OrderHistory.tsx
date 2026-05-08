@@ -16,6 +16,20 @@ const mockOrders = [
 ];
 
 export function OrderHistory() {
+  if (mockOrders.length === 0) {
+    return (
+      <div className="w-full flex min-h-screen flex-col items-center justify-center px-4 text-center">
+        <div className="mb-3 text-[32px]" aria-hidden>
+          🍽️
+        </div>
+        <h2 className="font-ui text-[18px] font-semibold text-pm-text-primary">No orders yet</h2>
+        <p className="mt-1 max-w-xs text-[14px] text-pm-text-secondary">
+          Browse today&apos;s menu to get started.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full flex flex-col pt-12 px-4 pb-8 min-h-screen">
       <h1 className="font-hero text-[32px] text-pm-text-primary leading-tight mb-6">

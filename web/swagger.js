@@ -1,53 +1,68 @@
-const swaggerJSDoc = require('swagger-jsdoc');
-
-const options = {
-  definition: {
-    openapi: '3.0.3',
-    info: {
-      title: 'HASIVU Platform API',
-      description:
-        'Comprehensive API documentation for the HASIVU school meal ordering and management platform',
-      version: '1.0.0',
-      contact: {
-        name: 'HASIVU Platform Support',
-        email: 'support@hasivu.com',
-      },
-      license: {
-        name: 'Proprietary',
+const specs = {
+  openapi: '3.0.3',
+  info: {
+    title: 'HASIVU Platform API',
+    description: 'API documentation for the Docker-first HASIVU school meal ordering platform.',
+    version: '1.0.0',
+    contact: {
+      name: 'HASIVU Platform Support',
+      email: 'support@hasivu.com',
+    },
+    license: {
+      name: 'Proprietary',
+    },
+  },
+  servers: [
+    {
+      url: 'https://app.hasivu.com/api',
+      description: 'Production web/API origin',
+    },
+    {
+      url: 'http://localhost:3001/api',
+      description: 'Local Docker frontend/BFF origin',
+    },
+  ],
+  security: [{ cookieAuth: [] }],
+  components: {
+    securitySchemes: {
+      cookieAuth: {
+        type: 'apiKey',
+        in: 'cookie',
+        name: 'accessToken',
+        description: 'httpOnly accessToken cookie set by the backend auth flow.',
       },
     },
-    servers: [
-      {
-        url: 'https://api.hasivu.com/v1',
-        description: 'Production server',
+  },
+  paths: {
+    '/auth/login': {
+      post: {
+        summary: 'Authenticate a user and set httpOnly auth cookies.',
+        responses: {
+          200: { description: 'Authenticated' },
+          401: { description: 'Invalid credentials' },
+        },
       },
-      {
-        url: 'https://staging-api.hasivu.com/v1',
-        description: 'Staging server',
+    },
+    '/auth/me': {
+      get: {
+        summary: 'Return the current cookie-authenticated user profile.',
+        responses: {
+          200: { description: 'Authenticated user profile' },
+          401: { description: 'Authentication required' },
+        },
       },
-      {
-        url: 'http://localhost:3000/api',
-        description: 'Local development server',
-      },
-    ],
-    security: [
-      {
-        bearerAuth: [],
-      },
-    ],
-    components: {
-      securitySchemes: {
-        bearerAuth: {
-          type: 'http',
-          scheme: 'bearer',
-          bearerFormat: 'JWT',
-          description: 'JWT Authorization header using the Bearer scheme',
+    },
+    '/orders': {
+      get: {
+        summary: 'List orders for the authenticated user.',
+        responses: {
+          200: { description: 'Orders returned' },
+          401: { description: 'Authentication required' },
+          503: { description: 'Proxy/backend not configured' },
         },
       },
     },
   },
-  apis: ['./src/app/api/**/*.ts', './src/app/api/**/*.js'],
 };
 
-const specs = swaggerJSDoc(options);
 module.exports = specs;

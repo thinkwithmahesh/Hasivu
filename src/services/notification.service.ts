@@ -4,6 +4,7 @@
  */
 
 import { PrismaClient, Notification } from '@prisma/client';
+import { logger } from '../utils/logger';
 
 export interface NotificationFilters {
   userId?: string;
@@ -155,6 +156,19 @@ export class NotificationService {
       NotificationService.instance = new NotificationService();
     }
     return NotificationService.instance;
+  }
+
+  /**
+   * Clears the service singleton so the next `getInstance()` builds a fresh client.
+   * Intended for Jest only (`JEST_WORKER_ID` set); do not call from production code.
+   */
+  public static resetInstanceForTests(): void {
+    if (!process.env.JEST_WORKER_ID) {
+      return;
+    }
+    const holder = NotificationService as unknown as { instance?: NotificationService };
+    void holder.instance?.prisma?.$disconnect?.().catch(() => undefined);
+    holder.instance = undefined;
   }
 
   async findById(id: string): Promise<Notification | null> {
@@ -745,26 +759,38 @@ export class NotificationService {
 
   private static async sendEmailNotification(notification: Notification): Promise<void> {
     // Stub - would integrate with email service (SendGrid, SES, etc.)
-    console.log(`Sending email notification: ${notification.title} to user ${notification.userId}`);
+    logger.info('Sending email notification', {
+      notificationId: notification.id,
+      userId: notification.userId,
+      title: notification.title,
+    });
   }
 
   private static async sendSMSNotification(notification: Notification): Promise<void> {
     // Stub - would integrate with SMS service (Twilio, etc.)
-    console.log(`Sending SMS notification: ${notification.title} to user ${notification.userId}`);
+    logger.info('Sending SMS notification', {
+      notificationId: notification.id,
+      userId: notification.userId,
+      title: notification.title,
+    });
   }
 
   private static async sendWhatsAppNotification(notification: Notification): Promise<void> {
     // Stub - would integrate with WhatsApp Business API
-    console.log(
-      `Sending WhatsApp notification: ${notification.title} to user ${notification.userId}`
-    );
+    logger.info('Sending WhatsApp notification', {
+      notificationId: notification.id,
+      userId: notification.userId,
+      title: notification.title,
+    });
   }
 
   private static async sendSocketNotification(notification: Notification): Promise<void> {
     // Stub - would integrate with WebSocket service
-    console.log(
-      `Sending socket notification: ${notification.title} to user ${notification.userId}`
-    );
+    logger.info('Sending socket notification', {
+      notificationId: notification.id,
+      userId: notification.userId,
+      title: notification.title,
+    });
   }
 
   public static async getNotificationAnalytics(filters?: {

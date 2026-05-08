@@ -1,33 +1,28 @@
-/**
- * HASIVU Platform - Production Middleware Integration
- * Entry point for Next.js middleware with comprehensive security
- * Temporarily disabled due to edge runtime crypto module issue
- */
+import { NextRequest, NextResponse } from 'next/server';
 
-import { NextRequest } from 'next/server';
-// import { securityMiddleware } from './src/middleware/security';
+const PROTECTED_PREFIXES = ['/dashboard'];
 
-export async function middleware(_request: NextRequest) {
-  // TODO: Re-enable security middleware after fixing edge runtime crypto issue
-  // Apply security middleware to all requests
-  // const _securityResponse =  await securityMiddleware(request);
-  //
-  // if (securityResponse) {
-  //   return securityResponse;
-  // }
-  // If security middleware doesn't return a response, continue to next middleware or route
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  const isProtectedRoute = PROTECTED_PREFIXES.some(prefix => pathname.startsWith(prefix));
+
+  if (!isProtectedRoute) {
+    return NextResponse.next();
+  }
+
+  const hasAccessCookie = Boolean(request.cookies.get('accessToken')?.value);
+
+  if (!hasAccessCookie) {
+    const loginUrl = new URL('/auth/login', request.url);
+    loginUrl.searchParams.set('redirect', `${pathname}${request.nextUrl.search}`);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  return NextResponse.next();
 }
 
-export const _config = {
-  runtime: 'nodejs',
+export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    '/((?!_next/static|_next/image|favicon.ico).*)',
+    '/dashboard/:path*',
   ],
 };

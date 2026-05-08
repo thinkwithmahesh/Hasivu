@@ -156,6 +156,47 @@ class Environment {
       missingKeys,
     };
   }
+
+  /**
+   * Fail fast in production: PostgreSQL URL, strong distinct JWT secrets.
+   * Call during API startup (before accepting traffic).
+   */
+  public assertProductionSafe(): void {
+    if (!this.isProduction()) {
+      return;
+    }
+
+    const dbUrl = String(this.config.DATABASE_URL || '');
+    if (!/^postgres(ql)?:\/\//i.test(dbUrl)) {
+      throw new Error(
+        'Production misconfiguration: DATABASE_URL must be a PostgreSQL URL (postgresql:// or postgres://)'
+      );
+    }
+
+    const weak = new Set([
+      'your-secret-key',
+      'your-refresh-secret-key',
+      'replace-with-a-unique-32-plus-character-secret',
+      'replace-with-a-different-unique-32-plus-character-secret',
+    ]);
+
+    const jwt = this.config.JWT_SECRET;
+    const refresh = this.config.JWT_REFRESH_SECRET;
+
+    if (!jwt || jwt.length < 32 || weak.has(jwt)) {
+      throw new Error(
+        'Production misconfiguration: JWT_SECRET must be set to a strong value (min 32 characters, not a documented placeholder)'
+      );
+    }
+    if (!refresh || refresh.length < 32 || weak.has(refresh)) {
+      throw new Error(
+        'Production misconfiguration: JWT_REFRESH_SECRET must be set to a strong value (min 32 characters, not a documented placeholder)'
+      );
+    }
+    if (jwt === refresh) {
+      throw new Error('Production misconfiguration: JWT_SECRET and JWT_REFRESH_SECRET must differ');
+    }
+  }
 }
 
 export const env = Environment.getInstance();

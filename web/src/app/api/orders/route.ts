@@ -1,17 +1,58 @@
 import { NextRequest, NextResponse } from 'next/server';
+import {
+  buildProxyHeaders,
+  configuredProxyUrl,
+  fetchConfiguredProxy,
+  forwardToExpressApi,
+  getAccessTokenFromRequest,
+} from '@/app/api/_utils/proxy';
 
-const LAMBDA_ORDERS_CREATE_URL =
-  process.env.LAMBDA_ORDERS_CREATE_URL ||
-  'https://your-lambda-endpoint.execute-api.region.amazonaws.com/dev/orders';
-const LAMBDA_ORDERS_LIST_URL =
-  process.env.LAMBDA_ORDERS_LIST_URL ||
-  'https://your-lambda-endpoint.execute-api.region.amazonaws.com/dev/orders';
+const LAMBDA_ORDERS_CREATE_URL = process.env.LAMBDA_ORDERS_CREATE_URL;
+const LAMBDA_ORDERS_LIST_URL = process.env.LAMBDA_ORDERS_LIST_URL;
+
+async function jsonFromUpstream(response: Response): Promise<unknown> {
+  const text = await response.text();
+  if (!text) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { message: text };
+  }
+}
+
+function normalizeProxyResponse(data: unknown, fallbackMessage: string): Record<string, unknown> {
+  const payload =
+    data && typeof data === 'object' && !Array.isArray(data)
+      ? (data as Record<string, unknown>)
+      : { data };
+
+  return {
+    success: payload.success ?? true,
+    data: payload.data ?? payload,
+    message: payload.message ?? fallbackMessage,
+    ...(payload.error ? { error: payload.error } : {}),
+  };
+}
+
+function upstreamError(data: unknown, fallbackError: string): Record<string, unknown> {
+  const payload =
+    data && typeof data === 'object' && !Array.isArray(data)
+      ? (data as Record<string, unknown>)
+      : {};
+
+  return {
+    success: false,
+    error: payload.error ?? payload.message ?? fallbackError,
+  };
+}
 
 // POST /api/orders - Create new order
 export async function POST(request: NextRequest) {
   try {
-    // Get auth token from httpOnly cookie
-    const authToken = request.cookies.get('auth-token')?.value;
+    const authToken = getAccessTokenFromRequest(request);
 
     if (!authToken) {
       return NextResponse.json(
@@ -20,43 +61,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = await request.json();
+    const body = await request.text();
+    const headers = buildProxyHeaders(request, authToken);
+    const upstream = configuredProxyUrl(LAMBDA_ORDERS_CREATE_URL)
+      ? await fetchConfiguredProxy(LAMBDA_ORDERS_CREATE_URL, 'LAMBDA_ORDERS_CREATE_URL', {
+          method: 'POST',
+          headers,
+          body,
+        })
+      : await forwardToExpressApi(request, '/v1/orders', {
+          method: 'POST',
+          headers,
+          body,
+        });
 
-    // Forward request to Lambda function
-    const lambdaResponse = await fetch(LAMBDA_ORDERS_CREATE_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${authToken}`,
-        'User-Agent': request.headers.get('user-agent') || '',
-        'X-Forwarded-For': request.headers.get('x-forwarded-for') || '',
-      },
-      body: JSON.stringify(body),
-    });
+    const data = await jsonFromUpstream(upstream);
 
-    const lambdaData = await lambdaResponse.json();
-
-    // Handle Lambda response and transform to expected frontend format
-    if (lambdaResponse.ok) {
-      // Transform Lambda response to frontend expected format
-      const frontendResponse = {
-        success: true,
-        data: lambdaData.data || lambdaData,
-        message: lambdaData.message || 'Order created successfully',
-      };
-
-      return NextResponse.json(frontendResponse, { status: 201 });
-    } else {
-      // Handle Lambda errors
-      return NextResponse.json(
-        {
-          success: false,
-          error: lambdaData.error || 'Failed to create order',
-        },
-        { status: lambdaResponse.status }
-      );
+    if (!upstream.ok) {
+      return NextResponse.json(upstreamError(data, 'Failed to create order'), {
+        status: upstream.status,
+      });
     }
-  } catch (error) {
+
+    return NextResponse.json(normalizeProxyResponse(data, 'Order created successfully'), {
+      status: upstream.status === 200 ? 201 : upstream.status,
+    });
+  } catch {
     return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -64,8 +94,7 @@ export async function POST(request: NextRequest) {
 // GET /api/orders - List orders
 export async function GET(request: NextRequest) {
   try {
-    // Get auth token from httpOnly cookie
-    const authToken = request.cookies.get('auth-token')?.value;
+    const authToken = getAccessTokenFromRequest(request);
 
     if (!authToken) {
       return NextResponse.json(
@@ -74,45 +103,37 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Extract query parameters
     const { searchParams } = new URL(request.url);
     const queryString = searchParams.toString();
-    const url = queryString ? `${LAMBDA_ORDERS_LIST_URL}?${queryString}` : LAMBDA_ORDERS_LIST_URL;
+    const lambdaUrl =
+      LAMBDA_ORDERS_LIST_URL && queryString
+        ? `${LAMBDA_ORDERS_LIST_URL}?${queryString}`
+        : LAMBDA_ORDERS_LIST_URL;
+    const expressPath = queryString ? `/v1/orders?${queryString}` : '/v1/orders';
+    const headers = buildProxyHeaders(request, authToken);
 
-    // Forward request to Lambda function
-    const lambdaResponse = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${authToken}`,
-        'User-Agent': request.headers.get('user-agent') || '',
-        'X-Forwarded-For': request.headers.get('x-forwarded-for') || '',
-      },
-    });
+    const upstream = configuredProxyUrl(lambdaUrl)
+      ? await fetchConfiguredProxy(lambdaUrl, 'LAMBDA_ORDERS_LIST_URL', {
+          method: 'GET',
+          headers,
+        })
+      : await forwardToExpressApi(request, expressPath, {
+          method: 'GET',
+          headers,
+        });
 
-    const lambdaData = await lambdaResponse.json();
+    const data = await jsonFromUpstream(upstream);
 
-    // Handle Lambda response and transform to expected frontend format
-    if (lambdaResponse.ok) {
-      // Transform Lambda response to frontend expected format
-      const frontendResponse = {
-        success: true,
-        data: lambdaData.data || lambdaData,
-        message: lambdaData.message || 'Orders retrieved successfully',
-      };
-
-      return NextResponse.json(frontendResponse);
-    } else {
-      // Handle Lambda errors
-      return NextResponse.json(
-        {
-          success: false,
-          error: lambdaData.error || 'Failed to fetch orders',
-        },
-        { status: lambdaResponse.status }
-      );
+    if (!upstream.ok) {
+      return NextResponse.json(upstreamError(data, 'Failed to fetch orders'), {
+        status: upstream.status,
+      });
     }
-  } catch (error) {
+
+    return NextResponse.json(normalizeProxyResponse(data, 'Orders retrieved successfully'), {
+      status: upstream.status,
+    });
+  } catch {
     return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }
