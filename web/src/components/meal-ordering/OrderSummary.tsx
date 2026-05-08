@@ -49,6 +49,7 @@ import { Input } from '@/components/ui/input';
 import type { OrderSummaryProps, MealOrderForm, OrderSummary as OrderSummaryType } from './types';
 import { formatCurrency, formatTime } from './utils';
 import { cn } from '@/lib/utils';
+import { Aarav } from '../characters/HasivuFriend';
 
 const OrderSummary: React.FC<OrderSummaryProps> = ({ cart, onPlaceOrder, isLoading }) => {
   const [showNutrition, setShowNutrition] = useState(false);
@@ -100,13 +101,13 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({ cart, onPlaceOrder, isLoadi
 
   if (cart.items.length === 0) {
     return (
-      <Card className="w-full max-w-md mx-auto shadow-lg border-0">
+      <Card className="w-full max-w-md mx-auto shadow-warm-lg border border-hasivu-primary/10 bg-hasivu-bg-warm">
         <CardContent className="flex flex-col items-center justify-center py-16 px-6">
-          <div className="bg-gray-100 p-6 rounded-full mb-6">
-            <ShoppingCart className="h-12 w-12 text-gray-400" />
-          </div>
-          <h3 className="text-xl font-bold text-gray-800 mb-3">Your cart is empty</h3>
-          <p className="text-sm text-gray-600 text-center leading-relaxed max-w-sm">
+          <Aarav size={120} animation="breathe" />
+          <h3 className="text-xl font-display font-bold text-hasivu-text-primary mt-6 mb-3">
+            Your cart is hungry!
+          </h3>
+          <p className="text-sm text-hasivu-text-secondary text-center leading-relaxed max-w-sm">
             Browse through our delicious meal categories and add your favorite items to get started!
           </p>
         </CardContent>
@@ -122,11 +123,13 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({ cart, onPlaceOrder, isLoadi
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="bg-white p-2 rounded-lg shadow-sm">
-                <ShoppingCart className="h-5 w-5 text-primary" />
+                <ShoppingCart className="h-5 w-5 text-hasivu-primary" />
               </div>
               <div>
-                <span className="text-lg font-bold text-gray-900">Order Summary</span>
-                <p className="text-sm text-gray-600 mt-0.5">
+                <span className="text-lg font-display font-bold text-hasivu-text-primary">
+                  Order Summary
+                </span>
+                <p className="text-sm text-hasivu-text-secondary mt-0.5">
                   {cart.items.length} item{cart.items.length !== 1 ? 's' : ''} • Total:{' '}
                   {formatCurrency(cart.total)}
                 </p>
@@ -223,7 +226,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({ cart, onPlaceOrder, isLoadi
 
                   {/* Quantity Controls */}
                   <div className="flex items-center border rounded-md">
-                    <Button variant="ghost" size="sm" onClick={() => {}} className="h-8 w-8 p-0">
+                    <Button variant="ghost" size="sm" onClick={() => {}} className="h-10 w-10 p-0">
                       <Minus className="h-3 w-3" />
                     </Button>
                     <span className="px-3 py-1 text-sm font-medium min-w-[2rem] text-center">
@@ -264,12 +267,14 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({ cart, onPlaceOrder, isLoadi
         >
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="bg-green-100 p-2 rounded-lg">
-                <TrendingUp className="h-5 w-5 text-green-600" />
+              <div className="bg-hasivu-success/20 p-2 rounded-lg">
+                <TrendingUp className="h-5 w-5 text-hasivu-success" />
               </div>
               <div>
-                <span className="text-lg font-bold text-gray-900">Nutritional Summary</span>
-                <p className="text-sm text-gray-600 mt-0.5">
+                <span className="text-lg font-display font-bold text-hasivu-text-primary">
+                  Nutritional Summary
+                </span>
+                <p className="text-sm text-hasivu-text-secondary mt-0.5">
                   Complete breakdown of your meal nutrition
                 </p>
               </div>

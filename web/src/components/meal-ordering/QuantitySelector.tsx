@@ -169,7 +169,7 @@ export function QuantitySelector({
         return {
           card: 'p-4',
           title: 'text-base',
-          button: 'h-8 w-8 text-sm',
+          button: 'h-10 w-10 text-sm',
           quantity: 'text-lg',
           price: 'text-base',
         };

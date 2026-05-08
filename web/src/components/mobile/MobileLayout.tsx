@@ -89,10 +89,10 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ onInstall, onDismis
               Get faster access and offline features by installing the app.
             </p>
             <div className="flex space-x-2 mt-3">
-              <Button size="sm" onClick={onInstall} className="h-8 px-3 text-xs">
+              <Button size="sm" onClick={onInstall} className="h-10 px-3 text-xs">
                 Install
               </Button>
-              <Button size="sm" variant="ghost" onClick={onDismiss} className="h-8 px-3 text-xs">
+              <Button size="sm" variant="ghost" onClick={onDismiss} className="h-10 px-3 text-xs">
                 Not now
               </Button>
             </div>

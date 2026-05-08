@@ -5,12 +5,11 @@ node_modules
 web/.next/
 *.tsbuildinfo
 
-# Environment variables
+# Environment variables — ALL variants
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+!.env.example
+!.env.integration
 
 # Logs
 logs
@@ -59,4 +58,8 @@ jspm_packages/
 .Spotlight-V100
 .Trashes
 ehthumbs.db
-Thumbs.dbgraphify-out/
+Thumbs.db
+graphify-out/
+
+# Merge/copy tool droppings under tests (e.g. `.!*!file.test.ts`)
+**/.!*

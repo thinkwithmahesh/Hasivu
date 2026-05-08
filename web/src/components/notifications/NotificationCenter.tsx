@@ -152,9 +152,8 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
 
   // WebSocket setup for real-time notifications
   useEffect(() => {
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      wsManager.connect(token);
+    if (!wsManager.isConnected()) {
+      wsManager.connect();
 
       // Subscribe to notification events
       wsManager.subscribe('notification', (data: any) => {
@@ -491,7 +490,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
                                 )}
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                    <Button variant="ghost" size="sm" className="h-10 w-10 p-0">
                                       <MoreHorizontal className="h-4 w-4" />
                                     </Button>
                                   </DropdownMenuTrigger>

@@ -130,10 +130,10 @@ const MealOrderDrawer = ({
                   )}
                 />
               </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleShare}>
+              <Button variant="ghost" size="icon" className="h-10 w-10" onClick={handleShare}>
                 <Share2 className="h-4 w-4 text-slate-500" />
               </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClose}>
+              <Button variant="ghost" size="icon" className="h-10 w-10" onClick={onClose}>
                 <X className="h-4 w-4 text-slate-500" />
               </Button>
             </div>

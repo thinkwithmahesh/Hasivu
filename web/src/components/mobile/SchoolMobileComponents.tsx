@@ -297,7 +297,7 @@ export const LiveOrderTracking: React.FC<LiveOrderTrackingProps> = ({ order, onR
           </div>
 
           {onRefresh && (
-            <Button size="sm" variant="ghost" onClick={onRefresh} className="h-8 w-8 p-0" haptic>
+            <Button size="sm" variant="ghost" onClick={onRefresh} className="h-10 w-10 p-0" haptic>
               <RefreshCw className="h-4 w-4" />
             </Button>
           )}
