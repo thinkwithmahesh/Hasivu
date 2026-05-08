@@ -23,9 +23,12 @@ export interface AssignOrderRequest {
 export interface OrderFilters {
   schoolId?: string;
   studentId?: string | string[];
-  status?: string | string[];
+  status?: string | string[] | Record<string, unknown>;
   startDate?: Date;
   endDate?: Date;
+  deliveryDate?: Record<string, unknown>;
+  createdAt?: Record<string, unknown>;
+  totalAmount?: Record<string, unknown>;
 }
 
 // Export OrderStatus enum for tests
@@ -635,7 +638,12 @@ export class OrderService {
       );
     }
 
-    if (filters?.status && filters?.schoolId && !Array.isArray(filters.status)) {
+    if (
+      filters?.status &&
+      filters?.schoolId &&
+      !Array.isArray(filters.status) &&
+      typeof filters.status === 'string'
+    ) {
       return await this.orderRepo.findByStatus(filters.schoolId, filters.status);
     }
 
@@ -766,8 +774,19 @@ export class OrderService {
     }
     if (Array.isArray(filters.status)) {
       where.status = { in: filters.status };
+    } else if (filters.status && typeof filters.status === 'object') {
+      where.status = filters.status;
     } else if (filters.status) {
       where.status = filters.status;
+    }
+    if (filters.deliveryDate) {
+      where.deliveryDate = filters.deliveryDate;
+    }
+    if (filters.createdAt) {
+      where.createdAt = filters.createdAt;
+    }
+    if (filters.totalAmount) {
+      where.totalAmount = filters.totalAmount;
     }
     if (filters.startDate && filters.endDate) {
       where.createdAt = {
@@ -1113,7 +1132,7 @@ export class OrderService {
     }
 
     const elevatedRoles = ['admin', 'super_admin'];
-    const kitchenRoles = ['kitchen_staff', 'school_admin'];
+    const kitchenRoles = ['kitchen', 'kitchen_staff', 'school_admin'];
     const isElevated = elevatedRoles.includes(actorRole);
     const isKitchenRole = kitchenRoles.includes(actorRole);
 
@@ -1137,7 +1156,7 @@ export class OrderService {
       where: {
         id: request.staffId,
         schoolId: order.schoolId,
-        role: { in: ['kitchen_staff', 'school_admin'] },
+        role: { in: ['kitchen', 'kitchen_staff', 'school_admin'] },
       },
     });
 
@@ -1179,7 +1198,7 @@ export class OrderService {
     return this.prisma.user.findMany({
       where: {
         schoolId,
-        role: { in: ['kitchen_staff', 'school_admin'] },
+        role: { in: ['kitchen', 'kitchen_staff', 'school_admin'] },
         isActive: true,
       },
       select: {

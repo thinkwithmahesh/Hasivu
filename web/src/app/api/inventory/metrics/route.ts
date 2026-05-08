@@ -1,5 +1,5 @@
-import { inventoryMetrics, ok } from '../../_utils/launch-data';
+import { deferredFeatureResponse } from '../../_utils/feature-scope';
 
 export async function GET() {
-  return ok(inventoryMetrics());
+  return deferredFeatureResponse('Inventory metrics');
 }

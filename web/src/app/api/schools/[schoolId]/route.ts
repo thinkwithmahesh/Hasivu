@@ -1,95 +1,39 @@
-/**
- * HASIVU Individual School API Routes
- * Epic 2 Story 2: School Onboarding APIs
- *
- * Handles operations for specific schools
- */
-
 import { NextRequest, NextResponse } from 'next/server';
+
+import { deferredFeatureResponse } from '../../_utils/feature-scope';
 import { getAccessTokenFromRequest } from '@/app/api/_utils/proxy';
-import { hasiviApi } from '@/services/api/hasivu-api.service';
 
-function hasAuthCookie(request: NextRequest): boolean {
-  return Boolean(getAccessTokenFromRequest(request));
+function requireAuth(request: NextRequest): NextResponse | null {
+  if (getAccessTokenFromRequest(request)) {
+    return null;
+  }
+
+  return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
 }
 
-// GET /api/schools/[schoolId] - Get school details
-export async function GET(request: NextRequest, { params }: { params: { schoolId: string } }) {
-  try {
-    if (!hasAuthCookie(request)) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
-    }
-
-    const { schoolId } = params;
-
-    // For now, return mock data since the API method may not be fully implemented
-    const response = {
-      success: true,
-      data: {
-        school: {
-          id: schoolId,
-          name: 'Sample School',
-          address: 'Sample Address',
-          city: 'Sample City',
-          status: 'active',
-          onboardingStatus: 'completed',
-        },
-      },
-      message: 'School details retrieved successfully',
-    };
-
-    return NextResponse.json(response);
-  } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+export async function GET(request: NextRequest) {
+  const authError = requireAuth(request);
+  if (authError) {
+    return authError;
   }
+
+  return deferredFeatureResponse('School detail API');
 }
 
-// PUT /api/schools/[schoolId] - Update school
-export async function PUT(request: NextRequest, { params }: { params: { schoolId: string } }) {
-  try {
-    if (!hasAuthCookie(request)) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
-    }
-
-    const { schoolId } = params;
-    const body = await request.json();
-
-    const response = await hasiviApi.updateSchoolInfo({
-      ...body,
-      schoolId,
-    });
-
-    if (!response.success) {
-      return NextResponse.json(
-        { error: response.error?.message || 'Failed to update school' },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json(response);
-  } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+export async function PUT(request: NextRequest) {
+  const authError = requireAuth(request);
+  if (authError) {
+    return authError;
   }
+
+  return deferredFeatureResponse('School update API');
 }
 
-// DELETE /api/schools/[schoolId] - Delete school
-export async function DELETE(request: NextRequest, { params }: { params: { schoolId: string } }) {
-  try {
-    if (!hasAuthCookie(request)) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
-    }
-
-    const { schoolId } = params;
-
-    // For now, return mock response since delete functionality may not be implemented
-    const response = {
-      success: true,
-      data: { schoolId },
-      message: 'School deletion not yet implemented',
-    };
-
-    return NextResponse.json(response);
-  } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+export async function DELETE(request: NextRequest) {
+  const authError = requireAuth(request);
+  if (authError) {
+    return authError;
   }
+
+  return deferredFeatureResponse('School deletion API');
 }

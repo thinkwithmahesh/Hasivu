@@ -1,13 +1,27 @@
-import { ok, staffMembers } from '../../_utils/launch-data';
+import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET() {
-  return ok(
-    staffMembers.map(member => ({
-      id: member.id,
-      firstName: member.firstName,
-      lastName: member.lastName,
-      email: member.email,
-      role: member.role,
-    }))
+import { forwardKitchenRequest } from '../_utils';
+
+export async function GET(request: NextRequest) {
+  const schoolId = request.nextUrl.searchParams.get('schoolId');
+  if (!schoolId) {
+    return NextResponse.json(
+      { success: false, error: 'schoolId is required to list assignable kitchen staff' },
+      { status: 400 }
+    );
+  }
+
+  const forwarded = await forwardKitchenRequest(
+    request,
+    `/kitchen/staff?schoolId=${encodeURIComponent(schoolId)}`,
+    { method: 'GET' },
+    'Failed to fetch kitchen staff'
   );
+
+  if (!forwarded.ok) {
+    return forwarded.response;
+  }
+
+  const payload = forwarded.data as { data?: unknown };
+  return NextResponse.json({ success: true, data: payload.data ?? [] }, { status: forwarded.status });
 }

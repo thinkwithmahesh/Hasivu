@@ -6,11 +6,13 @@
 import { Order } from '@prisma/client';
 import { prisma } from '../database/DatabaseManager';
 
-type OrderFilterValue = string | string[];
+type OrderFilterValue = string | string[] | Record<string, unknown>;
 
 function applyOrderFilter(where: Record<string, unknown>, key: string, value?: OrderFilterValue) {
   if (Array.isArray(value)) {
     where[key] = { in: value };
+  } else if (value && typeof value === 'object') {
+    where[key] = value;
   } else if (value) {
     where[key] = value;
   }
@@ -285,11 +287,22 @@ export class OrderRepository {
     return { items, total };
   }
 
-  async count(filters?: { studentId?: OrderFilterValue; status?: OrderFilterValue }): Promise<number> {
+  async count(filters?: {
+    studentId?: OrderFilterValue;
+    status?: OrderFilterValue;
+    schoolId?: OrderFilterValue;
+    deliveryDate?: OrderFilterValue;
+    createdAt?: OrderFilterValue;
+    totalAmount?: OrderFilterValue;
+  }): Promise<number> {
     const where: any = {};
 
     applyOrderFilter(where, 'studentId', filters?.studentId);
     applyOrderFilter(where, 'status', filters?.status);
+    applyOrderFilter(where, 'schoolId', filters?.schoolId);
+    applyOrderFilter(where, 'deliveryDate', filters?.deliveryDate);
+    applyOrderFilter(where, 'createdAt', filters?.createdAt);
+    applyOrderFilter(where, 'totalAmount', filters?.totalAmount);
 
     return await this.prisma.order.count({ where });
   }

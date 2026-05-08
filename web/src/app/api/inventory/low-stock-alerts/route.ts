@@ -1,14 +1,5 @@
-import { inventoryItems, ok } from '../../_utils/launch-data';
+import { deferredFeatureResponse } from '../../_utils/feature-scope';
 
 export async function GET() {
-  return ok(
-    inventoryItems
-      .filter(item => item.currentStock <= item.minStock)
-      .map(item => ({
-        itemId: item.id,
-        itemName: item.name,
-        currentStock: item.currentStock,
-        minStock: item.minStock,
-      }))
-  );
+  return deferredFeatureResponse('Inventory low-stock alerts');
 }

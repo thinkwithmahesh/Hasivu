@@ -47,18 +47,29 @@
 
 ---
 
-## API Routes Returning Stub Or Launch Data
+## API Routes With Explicit Phase-2 Responses
 
-These routes exist and return valid JSON but use static launch data or limited launch-mode behavior:
+These routes exist for UI compatibility but now fail closed with a clear `501 FEATURE_DEFERRED`
+response instead of returning static data:
 
-| Route | Data Source | Notes |
+| Route | Response | Notes |
 |-------|-------------|-------|
-| /api/inventory/* | launch-data.ts | Read-only for pilot |
-| /api/staff/* | launch-data.ts | Read-only for pilot |
-| /api/rfid/cards | launch-local data when legacy provider is not configured | Usable for pilot admin/RFID smoke flows |
-| /api/analytics/federated-learning | Static/scaffolded | Not active |
-| /api/analytics/strategic-insights | Static/scaffolded | Not active |
-| /api/analytics/revenue-optimization | Static/scaffolded | Not active |
+| /api/inventory/* | 501 FEATURE_DEFERRED | Full inventory persistence is Phase 2 |
+| /api/staff/* | 501 FEATURE_DEFERRED | Staff management persistence is Phase 2 |
+| /api/schools/* | 501 FEATURE_DEFERRED | Multi-school onboarding administration is Phase 2 |
+| /api/analytics/federated-learning | 503 unless explicit legacy Lambda URL is configured | Not active in pilot |
+| /api/analytics/strategic-insights | 503 unless explicit legacy Lambda URL is configured | Not active in pilot |
+| /api/analytics/revenue-optimization | 503 unless explicit legacy Lambda URL is configured | Not active in pilot |
+
+Kitchen APIs are no longer backed by static launch data. They proxy to the canonical Express API where
+the backend already supports the operation:
+
+| Route | Backend path |
+|-------|--------------|
+| /api/kitchen/orders | /api/v1/orders |
+| /api/kitchen/orders/:id/status | /api/v1/orders/:id |
+| /api/kitchen/orders/:id/assign | /api/kitchen/orders/:id/assign |
+| /api/kitchen/staff | /api/kitchen/staff |
 
 ---
 

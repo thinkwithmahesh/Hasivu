@@ -1,29 +1,47 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-import { kitchenOrders, ok } from '../../_utils/launch-data';
+import { forwardKitchenRequest, normalizeKitchenOrder } from '../_utils';
 
 export async function GET(request: NextRequest) {
-  const status = request.nextUrl.searchParams.get('status');
-  const priority = request.nextUrl.searchParams.get('priority');
+  const params = new URLSearchParams(request.nextUrl.searchParams);
+  if (!params.has('limit')) {
+    params.set('limit', '100');
+  }
 
-  const data = kitchenOrders.filter(order => {
-    const statusMatches = status ? order.status === status : true;
-    const priorityMatches = priority ? order.priority === priority : true;
-    return statusMatches && priorityMatches;
-  });
+  const query = params.toString();
+  const forwarded = await forwardKitchenRequest(
+    request,
+    query ? `/v1/orders?${query}` : '/v1/orders',
+    { method: 'GET' },
+    'Failed to fetch kitchen orders'
+  );
 
-  return ok(data);
+  if (!forwarded.ok) {
+    return forwarded.response;
+  }
+
+  const payload = forwarded.data as { data?: unknown };
+  const orders = Array.isArray(payload.data) ? payload.data.map(normalizeKitchenOrder) : [];
+
+  return NextResponse.json({ success: true, data: orders }, { status: forwarded.status });
 }
 
 export async function POST(request: NextRequest) {
-  const body = await request.json().catch(() => ({}));
+  const body = await request.text();
+  const forwarded = await forwardKitchenRequest(
+    request,
+    '/v1/orders',
+    { method: 'POST', body },
+    'Failed to create kitchen order'
+  );
 
-  return ok({
-    ...kitchenOrders[0],
-    ...body,
-    id: `kitchen-order-${Date.now()}`,
-    orderNumber: `#${Math.floor(10000 + Math.random() * 89999)}`,
-    status: 'pending',
-    orderTime: new Date().toISOString(),
-  });
+  if (!forwarded.ok) {
+    return forwarded.response;
+  }
+
+  const payload = forwarded.data as { data?: unknown };
+  return NextResponse.json(
+    { success: true, data: normalizeKitchenOrder(payload.data) },
+    { status: forwarded.status === 200 ? 201 : forwarded.status }
+  );
 }

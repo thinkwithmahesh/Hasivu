@@ -254,6 +254,7 @@ router.get(
         case 'school_admin':
           filters.schoolId = currentUser.schoolId;
           break;
+        case 'kitchen':
         case 'kitchen_staff':
           filters.schoolId = currentUser.schoolId;
           filters.status = ['confirmed', 'preparing', 'ready', 'out_for_delivery'];
@@ -275,26 +276,26 @@ router.get(
       // Date filters
       if (deliveryDateFrom || deliveryDateTo) {
         filters.deliveryDate = {};
-        if (deliveryDateFrom) filters.deliveryDate.$gte = new Date(deliveryDateFrom);
-        if (deliveryDateTo) filters.deliveryDate.$lte = new Date(deliveryDateTo);
+        if (deliveryDateFrom) filters.deliveryDate.gte = new Date(deliveryDateFrom);
+        if (deliveryDateTo) filters.deliveryDate.lte = new Date(deliveryDateTo);
       }
 
       if (createdFrom || createdTo) {
         filters.createdAt = {};
-        if (createdFrom) filters.createdAt.$gte = new Date(createdFrom);
-        if (createdTo) filters.createdAt.$lte = new Date(createdTo);
+        if (createdFrom) filters.createdAt.gte = new Date(createdFrom);
+        if (createdTo) filters.createdAt.lte = new Date(createdTo);
       }
 
       // Amount filters
       if (minAmount || maxAmount) {
-        filters.total = {};
-        if (minAmount) filters.total.$gte = parseFloat(minAmount);
-        if (maxAmount) filters.total.$lte = parseFloat(maxAmount);
+        filters.totalAmount = {};
+        if (minAmount) filters.totalAmount.gte = parseFloat(minAmount);
+        if (maxAmount) filters.totalAmount.lte = parseFloat(maxAmount);
       }
 
       if (search) filters.search = search;
       if (includeCompleted === 'false') {
-        filters.status = { $nin: ['delivered', 'cancelled', 'refunded'] };
+        filters.status = { notIn: ['delivered', 'cancelled', 'refunded'] };
       }
 
       const result = await orderService.findMany({

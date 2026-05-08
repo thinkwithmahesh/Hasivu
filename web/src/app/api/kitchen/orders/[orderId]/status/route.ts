@@ -1,18 +1,23 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-import { kitchenOrders, ok } from '../../../../_utils/launch-data';
+import { forwardKitchenRequest, normalizeKitchenOrder } from '../../../_utils';
 
 export async function PATCH(
   request: NextRequest,
   context: { params: { orderId: string } }
 ) {
-  const body = await request.json().catch(() => ({}));
-  const order = kitchenOrders.find(item => item.id === context.params.orderId) || kitchenOrders[0];
+  const body = await request.text();
+  const forwarded = await forwardKitchenRequest(
+    request,
+    `/v1/orders/${encodeURIComponent(context.params.orderId)}`,
+    { method: 'PUT', body },
+    'Failed to update kitchen order status'
+  );
 
-  return ok({
-    ...order,
-    status: body.status || order.status,
-    actualTime: body.status === 'completed' ? order.estimatedTime : order.actualTime,
-    updatedAt: new Date().toISOString(),
-  });
+  if (!forwarded.ok) {
+    return forwarded.response;
+  }
+
+  const payload = forwarded.data as { data?: unknown };
+  return NextResponse.json({ success: true, data: normalizeKitchenOrder(payload.data) }, { status: forwarded.status });
 }

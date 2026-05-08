@@ -1,5 +1,9 @@
-import { inventoryItems, ok } from '../../_utils/launch-data';
+import { deferredFeatureResponse } from '../../_utils/feature-scope';
 
 export async function GET() {
-  return ok(inventoryItems);
+  return deferredFeatureResponse('Inventory items');
+}
+
+export async function POST() {
+  return deferredFeatureResponse('Inventory item creation');
 }

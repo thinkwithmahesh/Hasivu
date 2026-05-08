@@ -21,15 +21,15 @@ const readRateLimit = createRateLimiter({ requests: 150, windowMs: 60000 });
 const orderService = OrderService.getInstance();
 
 const kitchenOrderParamsSchema = z.object({
-  id: z.string().uuid('Invalid order ID'),
+  id: z.string().min(1, 'Invalid order ID'),
 });
 
 const assignOrderBodySchema = z.object({
-  staffId: z.string().uuid('staffId must be a valid UUID'),
+  staffId: z.string().min(1, 'staffId is required'),
 });
 
 const kitchenStaffQuerySchema = z.object({
-  schoolId: z.string().uuid('schoolId must be a valid UUID'),
+  schoolId: z.string().min(1, 'schoolId is required'),
 });
 
 /**
@@ -39,7 +39,7 @@ router.put(
   '/orders/:id/assign',
   writeRateLimit,
   authMiddleware,
-  requireRole(['kitchen_staff', 'school_admin', 'admin', 'super_admin']),
+  requireRole(['kitchen', 'kitchen_staff', 'school_admin', 'admin', 'super_admin']),
   validateRequest({
     params: kitchenOrderParamsSchema,
     body: assignOrderBodySchema,
@@ -90,7 +90,7 @@ router.get(
   '/staff',
   readRateLimit,
   authMiddleware,
-  requireRole(['kitchen_staff', 'school_admin', 'admin', 'super_admin']),
+  requireRole(['kitchen', 'kitchen_staff', 'school_admin', 'admin', 'super_admin']),
   validateRequest({ query: kitchenStaffQuerySchema }),
   async (req: APIRequest, res: APIResponse): Promise<void> => {
     const currentUser = req.user!;

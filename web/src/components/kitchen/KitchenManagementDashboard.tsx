@@ -700,6 +700,25 @@ export const KitchenManagementDashboard: React.FC = () => {
       setAssigningOrderId(orderId);
       setAssignErrors(prev => ({ ...prev, [orderId]: null }));
       try {
+        if (orderId.startsWith('local-order-')) {
+          const staffMember = assignableStaff.find(member => member.id === staffId);
+          const staffName =
+            staffMember && ([staffMember.firstName, staffMember.lastName].filter(Boolean).join(' ') || staffMember.email);
+          setLocalOrders(prev =>
+            prev.map(order =>
+              order.id === orderId
+                ? {
+                    ...order,
+                    assignedStaffId: staffId,
+                    assignedStaff: staffName || staffId,
+                  }
+                : order
+            )
+          );
+          toast.success('Local order assigned');
+          return;
+        }
+
         await assignOrder(orderId, staffId);
         toast.success('Order assigned successfully');
         await refetchOrders();
@@ -713,7 +732,7 @@ export const KitchenManagementDashboard: React.FC = () => {
         setAssigningOrderId(null);
       }
     },
-    [assignOrder, refetchOrders]
+    [assignOrder, assignableStaff, refetchOrders]
   );
 
   const handleAdvanceOrder = useCallback(
@@ -731,6 +750,16 @@ export const KitchenManagementDashboard: React.FC = () => {
       }
 
       try {
+        if (order.id.startsWith('local-order-')) {
+          setLocalOrderStatuses(prev => ({ ...prev, [order.id]: next }));
+          setLocalOrders(prev =>
+            prev.map(current => (current.id === order.id ? { ...current, status: next } : current))
+          );
+          setSelectedOrder(current => (current?.id === order.id ? { ...current, status: next } : current));
+          toast.success(`${order.orderNumber} moved to ${next}`);
+          return;
+        }
+
         await updateOrderStatus(order.id, next);
         setLocalOrderStatuses(prev => ({ ...prev, [order.id]: next }));
         setSelectedOrder(current => (current?.id === order.id ? { ...current, status: next } : current));

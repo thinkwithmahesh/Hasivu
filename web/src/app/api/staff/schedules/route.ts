@@ -1,5 +1,9 @@
-import { ok, schedules } from '../../_utils/launch-data';
+import { deferredFeatureResponse } from '../../_utils/feature-scope';
 
 export async function GET() {
-  return ok(schedules);
+  return deferredFeatureResponse('Staff schedules');
+}
+
+export async function POST() {
+  return deferredFeatureResponse('Staff schedule creation');
 }
