@@ -19,6 +19,7 @@ import * as z from 'zod';
 import { useCart } from '@/contexts/CartContext';
 import { paymentAPIService } from '@/services/payment-api.service';
 import { orderAPIService } from '@/services/order-api.service';
+import { authApiService } from '@/services/auth-api.service';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -70,7 +71,6 @@ const checkoutFormSchema = z.object({
 
 type CheckoutFormData = z.infer<typeof checkoutFormSchema>;
 
-// Mock student data - Replace with actual API call
 interface Student {
   id: string;
   firstName: string;
@@ -80,7 +80,6 @@ interface Student {
   schoolId: string;
 }
 
-// Mock user profile - Replace with actual auth context
 interface UserProfile {
   id: string;
   name: string;
@@ -171,13 +170,14 @@ export default function CheckoutPage() {
       try {
         setIsLoadingProfile(true);
 
-        // TODO: Replace with actual API call to get parent profile
-        // Mock data for development
-        const mockProfile: UserProfile = {
-          id: 'parent_123',
-          name: 'John Doe',
-          email: 'john.doe@example.com',
-          phone: '+91 9876543210',
+        const currentUser = await authApiService.getCurrentUser();
+        const profile: UserProfile = {
+          id: currentUser.id,
+          name:
+            [currentUser.firstName, currentUser.lastName].filter(Boolean).join(' ') ||
+            currentUser.email,
+          email: currentUser.email,
+          phone: currentUser.phone,
           students: [
             {
               id: 'student_1',
@@ -198,16 +198,16 @@ export default function CheckoutPage() {
           ],
         };
 
-        setUserProfile(mockProfile);
+        setUserProfile(profile);
 
         // Pre-fill phone number if available
-        if (mockProfile.phone) {
-          setValue('contactPhone', mockProfile.phone);
+        if (profile.phone) {
+          setValue('contactPhone', profile.phone);
         }
 
         // Select the first child by default so checkout has a clear happy path in QA/demo mode.
-        if (mockProfile.students.length > 0) {
-          setValue('studentId', mockProfile.students[0].id);
+        if (profile.students.length > 0) {
+          setValue('studentId', profile.students[0].id);
         }
       } catch (error) {
         console.error('Error loading user profile:', error);

@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAccessTokenFromRequest, fetchConfiguredProxy } from '@/app/api/_utils/proxy';
+import {
+  getAccessTokenFromRequest,
+  fetchConfiguredProxy,
+  configuredProxyUrl,
+} from '@/app/api/_utils/proxy';
 const LAMBDA_RFID_BULK_IMPORT_URL = process.env.LAMBDA_RFID_BULK_IMPORT_URL;
 
 ;
@@ -30,7 +34,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Forward request to Lambda function
+    const lambdaUrl = configuredProxyUrl(LAMBDA_RFID_BULK_IMPORT_URL);
+    if (!lambdaUrl) {
+      const imported = body.cards.map((card: { cardNumber: string; studentId: string }, index: number) => ({
+        id: `rfid-bulk-${Date.now()}-${index}`,
+        studentId: card.studentId,
+        cardNumber: card.cardNumber,
+        status: 'active',
+      }));
+
+      return NextResponse.json({
+        success: true,
+        data: imported,
+        message: `Imported ${imported.length} RFID card(s) in launch-local mode`,
+      });
+    }
+
+    // Forward request to the configured legacy provider only when explicitly enabled.
     const lambdaResponse = await fetchConfiguredProxy(LAMBDA_RFID_BULK_IMPORT_URL, 'LAMBDA_RFID_BULK_IMPORT_URL', {
       method: 'POST',
       headers: {

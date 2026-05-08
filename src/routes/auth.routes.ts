@@ -325,25 +325,48 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
       });
     }
 
-    // Check if user exists
-    const user = await DatabaseService.client.user.findUnique({
-      where: { email },
+    const result = await authService.forgotPassword(email);
+    res.status(result.success ? 200 : 500).json({
+      success: result.success,
+      message:
+        result.message || 'If an account with this email exists, a password reset link has been sent',
+      ...(result.error ? { error: result.error } : {}),
     });
-
-    // Always return success to prevent email enumeration
-    res.status(200).json({
-      success: true,
-      message: 'If an account with this email exists, a password reset link has been sent',
-    });
-
-    // Only send email if user exists
-    if (user) {
-      // TODO: Implement password reset email sending
-      logger.info(`Password reset requested for: ${email}`);
-    }
   } catch (error) {
     logger.error(
       'Forgot password error:',
+      error instanceof Error ? error : new Error(String(error))
+    );
+    res.status(500).json({
+      success: false,
+      message: error instanceof Error ? error.message : 'Request failed',
+    });
+  }
+});
+
+/**
+ * Reset password with token
+ * POST /auth/reset-password
+ */
+router.post('/reset-password', async (req: Request, res: Response) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    if (!token || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Reset token and new password are required',
+      });
+    }
+
+    const result = await authService.resetPassword(token, newPassword);
+    res.status(result.success ? 200 : 400).json({
+      success: result.success,
+      message: result.message || result.error || 'Password reset processed',
+    });
+  } catch (error) {
+    logger.error(
+      'Reset password error:',
       error instanceof Error ? error : new Error(String(error))
     );
     res.status(500).json({

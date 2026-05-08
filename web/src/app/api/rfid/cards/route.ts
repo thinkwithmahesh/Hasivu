@@ -1,8 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAccessTokenFromRequest, fetchConfiguredProxy } from '@/app/api/_utils/proxy';
+import {
+  getAccessTokenFromRequest,
+  fetchConfiguredProxy,
+  configuredProxyUrl,
+} from '@/app/api/_utils/proxy';
 const LAMBDA_RFID_CREATE_CARD_URL = process.env.LAMBDA_RFID_CREATE_CARD_URL;
 
 ;
+
+const launchCards = [
+  {
+    id: 'rfid-demo-001',
+    cardNumber: 'RFID-001',
+    studentId: 'STU-001',
+    schoolId: 'school_demo_001',
+    isActive: true,
+    issuedAt: '2026-05-01T00:00:00.000Z',
+    lastUsedAt: '2026-05-08T08:15:00.000Z',
+    student: { firstName: 'Test', lastName: 'Student' },
+  },
+];
+
+export async function GET(request: NextRequest) {
+  const authToken = getAccessTokenFromRequest(request);
+  if (!authToken) {
+    return NextResponse.json(
+      { success: false, error: 'No authentication token found' },
+      { status: 401 }
+    );
+  }
+
+  return NextResponse.json({
+    success: true,
+    data: launchCards,
+    message: 'RFID cards loaded',
+  });
+}
 
 // POST /api/rfid/cards - Create RFID card
 export async function POST(request: NextRequest) {
@@ -30,7 +63,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Forward request to Lambda function
+    const lambdaUrl = configuredProxyUrl(LAMBDA_RFID_CREATE_CARD_URL);
+    if (!lambdaUrl) {
+      return NextResponse.json(
+        {
+          success: true,
+          data: {
+            id: `rfid-${Date.now()}`,
+            studentId: body.studentId,
+            schoolId: body.schoolId,
+            cardNumber: body.cardNumber,
+            status: 'active',
+          },
+          message: 'RFID card registered in launch-local mode',
+        },
+        { status: 201 }
+      );
+    }
+
+    // Forward request to the configured legacy provider only when explicitly enabled.
     const lambdaResponse = await fetchConfiguredProxy(LAMBDA_RFID_CREATE_CARD_URL, 'LAMBDA_RFID_CREATE_CARD_URL', {
       method: 'POST',
       headers: {

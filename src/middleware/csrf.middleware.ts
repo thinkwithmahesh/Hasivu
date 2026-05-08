@@ -31,7 +31,15 @@ export interface CSRFConfig {
 const defaultCSRFConfig: CSRFConfig = {
   ignoreMethods: ['GET', 'HEAD', 'OPTIONS'],
   customHeaderName: 'X-CSRF-Token',
-  skipPaths: ['/health', '/metrics', '/auth/refresh', '/auth/register', '/auth/login'],
+  skipPaths: [
+    '/health',
+    '/metrics',
+    '/auth/refresh',
+    '/auth/register',
+    '/auth/login',
+    '/auth/forgot-password',
+    '/auth/reset-password',
+  ],
   errorMessage: 'Invalid CSRF token',
 };
 

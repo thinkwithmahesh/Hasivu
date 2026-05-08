@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { fetchConfiguredProxy } from '@/app/api/_utils/proxy';
-const LAMBDA_AUTH_FORGOT_PASSWORD_URL = process.env.LAMBDA_AUTH_FORGOT_PASSWORD_URL;
+import {
+  fetchConfiguredProxy,
+  forwardToExpressApi,
+  resolveProxyUrl,
+} from '@/app/api/_utils/proxy';
 
-;
+const LAMBDA_AUTH_FORGOT_PASSWORD_URL = resolveProxyUrl(process.env.LAMBDA_AUTH_FORGOT_PASSWORD_URL);
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,24 +16,29 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Email is required' }, { status: 400 });
     }
 
-    // Forward request to Lambda function
-    const lambdaResponse = await fetchConfiguredProxy(LAMBDA_AUTH_FORGOT_PASSWORD_URL, 'LAMBDA_AUTH_FORGOT_PASSWORD_URL', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'User-Agent': request.headers.get('user-agent') || '',
-        'X-Forwarded-For': request.headers.get('x-forwarded-for') || '',
-      },
-      body: JSON.stringify(body),
-    });
+    const upstream = LAMBDA_AUTH_FORGOT_PASSWORD_URL
+      ? await fetchConfiguredProxy(LAMBDA_AUTH_FORGOT_PASSWORD_URL, 'LAMBDA_AUTH_FORGOT_PASSWORD_URL', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'User-Agent': request.headers.get('user-agent') || '',
+            'X-Forwarded-For': request.headers.get('x-forwarded-for') || '',
+          },
+          body: JSON.stringify(body),
+        })
+      : await forwardToExpressApi(request, '/auth/forgot-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
 
-    const lambdaData = await lambdaResponse.json();
+    const upstreamData = await upstream.json();
 
     // Handle Lambda response and transform to expected frontend format
-    if (lambdaResponse.ok) {
+    if (upstream.ok) {
       const frontendResponse = {
         success: true,
-        message: lambdaData.message || 'Password reset email sent successfully',
+        message: upstreamData.message || 'Password reset email sent successfully',
       };
 
       return NextResponse.json(frontendResponse);
@@ -38,9 +46,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: lambdaData.error || 'Failed to send password reset email',
+          error: upstreamData.error || upstreamData.message || 'Failed to send password reset email',
         },
-        { status: lambdaResponse.status }
+        { status: upstream.status }
       );
     }
   } catch (error) {

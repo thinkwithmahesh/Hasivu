@@ -678,9 +678,28 @@ export const rfidApi = {
   },
 
   // RFID card management
+  getCards: async (): Promise<
+    ApiResponse<
+      Array<{
+        id: string;
+        studentId: string;
+        schoolId: string;
+        cardNumber: string;
+        isActive: boolean;
+        issuedAt: string;
+        lastUsedAt?: string;
+        student?: { firstName: string; lastName: string };
+      }>
+    >
+  > => {
+    const response = await apiClient.get('/rfid/cards');
+    return response.data;
+  },
+
   registerCard: async (cardData: {
     studentId: string;
     cardNumber: string;
+    schoolId?: string;
   }): Promise<
     ApiResponse<{ id: string; studentId: string; cardNumber: string; status: string }>
   > => {
@@ -693,7 +712,7 @@ export const rfidApi = {
   ): Promise<
     ApiResponse<Array<{ id: string; studentId: string; cardNumber: string; status: string }>>
   > => {
-    const response = await apiClient.post('/rfid/cards/bulk-register', bulkData);
+    const response = await apiClient.post('/rfid/bulk-import', { cards: bulkData });
     return response.data;
   },
 

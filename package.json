@@ -283,6 +283,7 @@
     "seed": "tsx src/database/seed.ts"
   },
   "overrides": {
+    "fast-xml-builder": "^1.2.0",
     "minimatch": "10.2.5",
     "openai": {
       "zod": "^4.0.0"

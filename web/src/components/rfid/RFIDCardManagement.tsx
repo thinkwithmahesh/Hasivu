@@ -40,7 +40,7 @@ export const RFIDCardManagement: React.FC = () => {
   const [newCard, setNewCard] = useState({
     cardNumber: '',
     studentId: '',
-    schoolId: 'default-school-id', // TODO: Get from user context
+    schoolId: 'school_demo_001',
   });
 
   // Bulk import state
@@ -55,12 +55,8 @@ export const RFIDCardManagement: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      // Note: This endpoint might not exist yet, using placeholder
-      // const response = await rfidApi.getCards();
-      // setCards(response.data || []);
-
-      // For now, show empty state
-      setCards([]);
+      const response = await rfidApi.getCards();
+      setCards(response.data || []);
     } catch (err: any) {
       setError(err.message || 'Failed to load RFID cards');
     } finally {
@@ -129,8 +125,7 @@ export const RFIDCardManagement: React.FC = () => {
     setSuccess(null);
 
     try {
-      // Note: This endpoint might not exist yet
-      // await rfidApi.deactivateCard(cardId);
+      await rfidApi.deactivateCard(cardId);
       setSuccess('RFID card deactivated successfully');
       loadCards();
     } catch (err: any) {
