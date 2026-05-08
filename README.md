@@ -1,79 +1,143 @@
-# HASIVU Platform
+# Hasivu - School Meal Ordering Platform
 
-Production-oriented school meal management platform with parent ordering, kitchen workflows, RFID verification, payments, and analytics.
+Hasivu is a school meal ordering platform for Indian schools. Parents order meals, kitchen staff manage preparation, admins oversee operations, students track meal activity, and RFID flows support delivery verification.
 
-## Current Stack
-
-- Backend: Node.js + TypeScript (`src/`)
-- Frontend: Next.js 15 App Router (`web/src/app`)
-- Database: Supabase Postgres (production), local Postgres for development
-- Deployment target: VPS with Docker Compose + Nginx
-
-## What Is Live In This Repo
-
-- Frontend redesign pass with consistent motion/accessibility on:
-  - Landing entry
-  - `/menu`, `/orders`, `/dashboard`
-  - shared dashboard/order UI surfaces
-- Next.js 15 metadata/viewport alignment:
-  - Root metadata remains in `metadata`
-  - viewport/theme-color moved to `viewport` export path
-- Nonce handling hardened to avoid static-render build noise while preserving CSP behavior in request contexts.
-
-## Repository Layout
-
-- `src/` - backend services, routes, and business logic
-- `web/` - Next.js frontend
-- `docs/` - architecture, deployment, and operational docs
-- `scripts/` - validation and utility scripts
-
-## Local Development
-
-### Backend
+## Quick Start (Development)
 
 ```bash
-npm install
-npm run dev
+# Prerequisites: Docker Desktop, Node 18+
+git clone https://github.com/thinkwithmahesh/Hasivu
+cd Hasivu
+cp .env.example .env.local
+docker compose -f docker-compose.dev.yml up -d
 ```
 
-### Frontend
+Services:
+
+| Service | URL |
+|---------|-----|
+| Frontend | http://localhost:3001 |
+| Backend | http://localhost:3000 |
+| Postgres | localhost:5432 |
+| Redis | localhost:6379 |
+
+Demo credentials for local Docker:
+
+| Role | Email | Password |
+|------|-------|----------|
+| Parent | parent.demo@hasivu.local | Hasivu123! |
+| Admin | admin.demo@hasivu.local | Hasivu123! |
+| Kitchen | kitchen.demo@hasivu.local | Hasivu123! |
+| Student | student.demo@hasivu.local | Hasivu123! |
+| Vendor | vendor.demo@hasivu.local | Hasivu123! |
+
+## Architecture
+
+```text
+Next.js App Router       Express API
+       |                     |
+       |-- BFF API routes ---|  (selected proxy/fallback routes)
+       |                     |
+       |                 Prisma ORM
+       |                     |
+       |              PostgreSQL + Redis
+```
+
+Runtime decision:
+
+| Area | Decision |
+|------|----------|
+| Production path | Docker VPS + Express + Next.js + Redis + Supabase/Postgres |
+| Legacy path | AWS Lambda/serverless is quarantined and not part of pilot deploy |
+| Auth | Cookie-based JWT using httpOnly cookies |
+| Payments | Razorpay |
+| Database | Prisma with PostgreSQL |
+| Observability | Health/readiness/metrics endpoints plus Sentry hooks |
+
+## Pilot Scope
+
+The pilot launch path is intentionally narrower than the full historical PRD. See [docs/pilot/SERVICE_QUARANTINE.md](docs/pilot/SERVICE_QUARANTINE.md) for the active services, quarantined services, and formally deferred features.
+
+Pilot-live areas:
+
+- Authentication and role dashboards
+- Parent menu/cart/checkout/order confirmation
+- Admin user/menu/analytics navigation
+- Kitchen workflow and management screens
+- Student and vendor dashboards
+- RFID verification and card-management smoke flows
+- Health/readiness/metrics endpoints
+
+Deferred areas:
+
+- WhatsApp Business integration
+- Hindi/Kannada i18n
+- Calendar scheduler
+- WebSocket live push
+- Wallet/invoice/subscription/fraud/ML services
+- React Native app
+
+## Testing
 
 ```bash
-cd web
-npm install
-npm run dev
+npm run type-check
+cd web && npm run type-check
+npm run test:required
+cd web && npx playwright test --project="Desktop Chrome"
+npm audit --omit=dev --audit-level=moderate
+cd web && npm audit --omit=dev --audit-level=moderate
 ```
 
-## Build & Validation
+Current proven local gates:
 
-### Frontend
+| Gate | Expected |
+|------|----------|
+| Root TypeScript | Pass |
+| Web TypeScript | Pass |
+| Required backend tests | 16/16 passing |
+| Playwright role/browser suite | 41/41 passing |
+| npm audit root/web | 0 moderate/high/critical vulnerabilities |
+| Docker health | backend, frontend, postgres, redis healthy |
+
+## Health And Operations
 
 ```bash
-cd web
-npm run build
-npm test
+curl http://localhost:3000/health/live
+curl http://localhost:3000/health/ready
+curl http://localhost:3000/metrics
+curl http://localhost:3001/api/status
 ```
 
-### Backend (example)
+Operational runbooks live in [docs/runbooks](docs/runbooks).
+
+## Production Readiness
+
+BMAD status: **Conditional GO for pilot**, not final 100/100 production certification.
+
+Cleared:
+
+- Browser-readable auth tokens removed from launch path
+- Raw SQL escape hatches removed or audited
+- Docker launch path rebuilt and tested
+- Role dashboards and core routes verified
+- Razorpay CSP allowlist present
+- WebGL shader dependency removed from launch UI
+- Generated artifacts removed from Git tracking
+
+Pending before any public access:
+
+- Rotate every secret that ever appeared in tracked `.env*` history
+- Scrub historical `.env*` secrets using `git filter-repo` after backup review
+- Update GitHub/VPS/Supabase secrets with rotated values
+- Rebuild and redeploy Docker with rotated secrets
+- Complete human sign-off in [docs/pilot/PILOT_LAUNCH_CHECKLIST.md](docs/pilot/PILOT_LAUNCH_CHECKLIST.md)
+
+## Useful Commands
 
 ```bash
-npm run build
-npm test
+docker compose -f docker-compose.dev.yml ps
+docker compose -f docker-compose.dev.yml logs -f backend
+docker compose -f docker-compose.dev.yml logs -f frontend
+npm run db:migrate
+npm run db:seed:demo-local
 ```
-
-## Environment
-
-- Start from `.env.sample` and `web/.env.*` templates.
-- Never commit secrets.
-- Use Supabase connection strings for production DB settings.
-
-## Deployment Notes (VPS + Supabase)
-
-- App services are intended to run on VPS via Docker Compose.
-- Supabase hosts Postgres; app should connect using SSL-enabled DB URL.
-- Nginx should terminate TLS and reverse proxy frontend/backend.
-
-## Status
-
-- Local branch and `origin/main` are currently in sync.
-- Working tree is clean.
