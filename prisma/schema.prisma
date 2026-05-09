@@ -583,7 +583,9 @@ model MenuApproval {
 
 model WhatsAppMessage {
   id                String    @id @default(uuid())
+  schoolId          String?   @map("school_id")
   userId            String?   @map("user_id")
+  notificationId    String?   @map("notification_id")
   phone             String
   type              String    @default("text")
   status            String    @default("queued")
@@ -591,6 +593,9 @@ model WhatsAppMessage {
   templateName      String?   @map("template_name")
   message           String?
   metadata          String    @default("{}")
+  providerPayload   Json?     @map("provider_payload")
+  fallbackChannel   String?   @map("fallback_channel")
+  fallbackTriggeredAt DateTime? @map("fallback_triggered_at")
   errorMessage      String?   @map("error_message")
   sentAt            DateTime? @map("sent_at")
   deliveredAt       DateTime? @map("delivered_at")
@@ -603,6 +608,7 @@ model WhatsAppMessage {
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([phone])
+  @@index([schoolId, status, createdAt])
   @@index([status])
   @@index([whatsappMessageId])
   @@index([createdAt])
@@ -626,6 +632,44 @@ model WhatsAppTemplate {
   @@index([status])
   @@index([isActive])
   @@map("whatsapp_templates")
+}
+
+model WhatsAppOptIn {
+  id             String    @id @default(uuid())
+  schoolId       String    @map("school_id")
+  userId         String    @map("user_id")
+  phone          String
+  source         String
+  consentText    String    @map("consent_text")
+  consentVersion String    @map("consent_version")
+  ipAddress      String?   @map("ip_address")
+  userAgent      String?   @map("user_agent")
+  status         String    @default("active")
+  revokedAt      DateTime? @map("revoked_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  @@unique([schoolId, userId, phone])
+  @@index([phone, status])
+  @@index([schoolId, status])
+  @@map("whatsapp_opt_ins")
+}
+
+model WhatsAppTemplateMapping {
+  id                 String   @id @default(uuid())
+  schoolId           String?  @map("school_id")
+  eventType          String   @map("event_type")
+  templateName       String   @map("template_name")
+  language           String   @default("en")
+  fallbackTemplateId String?  @map("fallback_template_id")
+  status             String   @default("pending_approval")
+  isActive           Boolean  @default(false) @map("is_active")
+  metadata           Json?
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@unique([schoolId, eventType, language])
+  @@index([status, isActive])
+  @@map("whatsapp_template_mappings")
 }
 
 // =====================================================
