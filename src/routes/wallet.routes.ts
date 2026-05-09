@@ -15,8 +15,8 @@ function requestId(req: AuthenticatedRequest): string {
   return (req as AuthenticatedRequest & { id?: string }).id ?? 'unknown';
 }
 
-walletRouter.use(authMiddleware);
 walletRouter.use(requireFeature('WALLET_ENABLED'));
+walletRouter.use(authMiddleware);
 
 walletRouter.get('/', async (req: AuthenticatedRequest, res, next) => {
   try {

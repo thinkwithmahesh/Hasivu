@@ -47,8 +47,8 @@ function requestId(req: AuthenticatedRequest): string {
   return (req as AuthenticatedRequest & { id?: string }).id ?? 'unknown';
 }
 
-mealSchedulerRouter.use(authMiddleware);
 mealSchedulerRouter.use(requireFeature('MEAL_SCHEDULER_ENABLED'));
+mealSchedulerRouter.use(authMiddleware);
 
 mealSchedulerRouter.get('/', async (req: AuthenticatedRequest, res, next) => {
   try {

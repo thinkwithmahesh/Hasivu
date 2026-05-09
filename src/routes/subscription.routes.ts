@@ -11,8 +11,8 @@ function requestId(req: AuthenticatedRequest): string {
   return (req as AuthenticatedRequest & { id?: string }).id ?? 'unknown';
 }
 
-subscriptionRouter.use(authMiddleware);
 subscriptionRouter.use(requireFeature('SUBSCRIPTIONS_ENABLED'));
+subscriptionRouter.use(authMiddleware);
 
 subscriptionRouter.get('/plans', async (req: AuthenticatedRequest, res, next) => {
   try {

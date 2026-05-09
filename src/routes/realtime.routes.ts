@@ -13,8 +13,8 @@ function requestId(req: AuthenticatedRequest): string {
   return (req as AuthenticatedRequest & { id?: string }).id ?? 'unknown';
 }
 
-realtimeRouter.use(authMiddleware);
 realtimeRouter.use(requireFeature('REALTIME_ENABLED'));
+realtimeRouter.use(authMiddleware);
 
 realtimeRouter.get('/token', (req: AuthenticatedRequest, res, next) => {
   try {

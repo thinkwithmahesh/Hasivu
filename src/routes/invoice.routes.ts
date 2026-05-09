@@ -18,8 +18,8 @@ function isAdmin(role: string): boolean {
   return ['admin', 'school_admin', 'super_admin'].includes(role);
 }
 
-invoiceRouter.use(authMiddleware);
 invoiceRouter.use(requireFeature('INVOICE_ENABLED'));
+invoiceRouter.use(authMiddleware);
 
 invoiceRouter.get('/', async (req: AuthenticatedRequest, res, next) => {
   try {

@@ -27,8 +27,8 @@ function requestId(req: AuthenticatedRequest): string {
   return (req as AuthenticatedRequest & { id?: string }).id ?? 'unknown';
 }
 
-recommendationRouter.use(authMiddleware);
 recommendationRouter.use(requireFeature('RECOMMENDATIONS_ENABLED'));
+recommendationRouter.use(authMiddleware);
 
 recommendationRouter.get('/', async (req: AuthenticatedRequest, res, next) => {
   try {
