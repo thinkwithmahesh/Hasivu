@@ -28,6 +28,7 @@ import invoiceRouter from './routes/invoice.routes';
 import subscriptionRouter from './routes/subscription.routes';
 import whatsappRouter from './routes/whatsapp.routes';
 import mealSchedulerRouter from './routes/meal-scheduler.routes';
+import recommendationRouter from './routes/recommendations.routes';
 
 // Import essential services
 import { redisService } from './services/redis.service';
@@ -174,6 +175,7 @@ class SimpleApp {
     this.app.use('/api/v1/subscriptions', subscriptionRouter);
     this.app.use('/api/v1/whatsapp', whatsappRouter);
     this.app.use('/api/v1/meal-schedules', mealSchedulerRouter);
+    this.app.use('/api/v1/recommendations', recommendationRouter);
     this.app.use('/api/kitchen', kitchenRouter);
 
     // Root endpoint

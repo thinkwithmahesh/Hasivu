@@ -648,6 +648,66 @@ model MealScheduleException {
 }
 
 // =====================================================
+// PHASE 2E: SAFE MEAL RECOMMENDATIONS
+// =====================================================
+
+model RecommendationRun {
+  id            String   @id @default(uuid())
+  schoolId      String   @map("school_id")
+  userId        String   @map("user_id")
+  studentId     String?  @map("student_id")
+  engineVersion String   @map("engine_version")
+  mode          String   @default("rule_based")
+  inputHash     String   @map("input_hash")
+  confidence    Float    @default(0)
+  status        String   @default("completed")
+  explanation   Json?
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  items RecommendationItem[]
+
+  @@index([schoolId, userId, createdAt])
+  @@index([studentId, createdAt])
+  @@index([inputHash])
+  @@map("recommendation_runs")
+}
+
+model RecommendationItem {
+  id         String   @id @default(uuid())
+  runId      String   @map("run_id")
+  menuItemId String   @map("menu_item_id")
+  rank       Int
+  score      Float
+  reasons    Json?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  run      RecommendationRun        @relation(fields: [runId], references: [id], onDelete: Cascade)
+  feedback RecommendationFeedback[]
+
+  @@unique([runId, menuItemId])
+  @@index([menuItemId])
+  @@index([rank])
+  @@map("recommendation_items")
+}
+
+model RecommendationFeedback {
+  id                   String   @id @default(uuid())
+  schoolId             String   @map("school_id")
+  userId               String   @map("user_id")
+  recommendationItemId String   @map("recommendation_item_id")
+  action               String
+  reason               String?
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  recommendationItem RecommendationItem @relation(fields: [recommendationItemId], references: [id], onDelete: Cascade)
+
+  @@index([schoolId, userId, createdAt])
+  @@index([recommendationItemId])
+  @@index([action])
+  @@map("recommendation_feedback")
+}
+
+// =====================================================
 // WHATSAPP INTEGRATION MODELS
 // =====================================================
 
