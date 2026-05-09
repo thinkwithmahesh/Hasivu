@@ -8,8 +8,8 @@
     "build": "npm run generate-docs && npm run generate:public-assets && next build",
     "build:i18n": "next build && npm run i18n:compile",
     "start": "next start",
-    "lint": "next lint",
-    "lint:fix": "next lint --fix",
+    "lint": "eslint src --max-warnings 0",
+    "lint:fix": "eslint src --fix",
     "type-check": "tsc -p tsconfig.json --noEmit",
     "type-check:kitchen": "tsc -p tsconfig.kitchen.json --noEmit",
     "test": "jest",
@@ -22,7 +22,7 @@
     "build-storybook": "echo 'Storybook is not part of the launch path; use Playwright visual/a11y checks.'",
     "analyze": "cross-env ANALYZE=true next build",
     "clean": "rimraf .next out dist",
-    "postinstall": "node -e \"process.env.CI || process.env.DOCKER_BUILD ? null : require('child_process').execSync('husky install', {stdio: 'inherit'})\"",
+    "postinstall": "node -e \"const fs=require('fs'); const cp=require('child_process'); if (!process.env.CI && !process.env.DOCKER_BUILD && fs.existsSync('../.git')) cp.execSync('cd .. && npx husky install', {stdio:'inherit'});\"",
     "_comment_playwright": "=== PLAYWRIGHT ENTERPRISE TESTING ===",
     "test:playwright": "playwright test",
     "test:ui": "playwright test --ui",
@@ -200,32 +200,18 @@
     "vaul": "^1.1.2"
   },
   "lint-staged": {
-    "*.{js,jsx,ts,tsx}": [
-      "eslint --fix",
-      "prettier --write"
-    ],
-    "*.{json,md,yml,yaml}": [
-      "prettier --write"
-    ]
+    "*.{js,jsx,ts,tsx}": ["eslint --fix", "prettier --write"],
+    "*.{json,md,yml,yaml}": ["prettier --write"]
   },
   "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+    "production": [">0.2%", "not dead", "not op_mini all"],
+    "development": ["last 1 chrome version", "last 1 firefox version", "last 1 safari version"]
   },
   "engines": {
     "node": ">=16.0.0",
     "npm": ">=8.0.0"
   },
   "overrides": {
-    "brace-expansion": "5.0.5",
     "ip-address": "10.2.0",
     "postcss": "8.5.14"
   }

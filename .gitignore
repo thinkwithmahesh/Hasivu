@@ -70,6 +70,8 @@ jspm_packages/
 ehthumbs.db
 Thumbs.db
 graphify-out/
+.claude/
 
 # Merge/copy tool droppings under tests (e.g. `.!*!file.test.ts`)
 **/.!*
+.gitnexus/

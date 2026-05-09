@@ -11,7 +11,8 @@ export interface DatePickerProps extends Omit<React.InputHTMLAttributes<HTMLInpu
 export const DatePicker = React.forwardRef<HTMLInputElement, DatePickerProps>(
   ({ label, error, className = '', id, disabled = false, ...props }, ref) => {
     const shouldReduceMotion = useReducedMotion();
-    const inputId = id || React.useId();
+    const generatedInputId = React.useId();
+    const inputId = id || generatedInputId;
 
     return (
       <div className={`flex flex-col gap-1 w-full ${className}`}>
