@@ -29,6 +29,8 @@ import subscriptionRouter from './routes/subscription.routes';
 import whatsappRouter from './routes/whatsapp.routes';
 import mealSchedulerRouter from './routes/meal-scheduler.routes';
 import recommendationRouter from './routes/recommendations.routes';
+import realtimeRouter from './routes/realtime.routes';
+import { createRealtimeServer } from './realtime/realtime.server';
 
 // Import essential services
 import { redisService } from './services/redis.service';
@@ -176,6 +178,7 @@ class SimpleApp {
     this.app.use('/api/v1/whatsapp', whatsappRouter);
     this.app.use('/api/v1/meal-schedules', mealSchedulerRouter);
     this.app.use('/api/v1/recommendations', recommendationRouter);
+    this.app.use('/api/v1/realtime', realtimeRouter);
     this.app.use('/api/kitchen', kitchenRouter);
 
     // Root endpoint
@@ -235,6 +238,7 @@ class SimpleApp {
       await this.setupMiddleware();
       this.setupRoutes();
       this.setupErrorHandling();
+      createRealtimeServer(this.server);
 
       const port = env.get('PORT');
       const host = '0.0.0.0';
