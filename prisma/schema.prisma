@@ -578,6 +578,76 @@ model MenuApproval {
 }
 
 // =====================================================
+// PHASE 2D: MEAL SCHEDULING CALENDAR
+// =====================================================
+
+model MealSchedule {
+  id             String    @id @default(uuid())
+  schoolId       String    @map("school_id")
+  name           String
+  status         String    @default("draft")
+  timezone       String    @default("Asia/Kolkata")
+  effectiveFrom  DateTime  @map("effective_from")
+  effectiveTo    DateTime? @map("effective_to")
+  recurrenceRule String?   @map("recurrence_rule")
+  targetType     String    @map("target_type")
+  targetId       String?   @map("target_id")
+  cutoffMinutes  Int       @default(120) @map("cutoff_minutes")
+  createdBy      String    @map("created_by")
+  publishedBy    String?   @map("published_by")
+  publishedAt    DateTime? @map("published_at")
+  deletedAt      DateTime? @map("deleted_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  slots      MealScheduleSlot[]
+  exceptions MealScheduleException[]
+
+  @@index([schoolId, status, effectiveFrom])
+  @@index([schoolId, targetType, targetId])
+  @@index([deletedAt])
+  @@map("meal_schedules")
+}
+
+model MealScheduleSlot {
+  id              String   @id @default(uuid())
+  scheduleId      String   @map("schedule_id")
+  serviceDate     DateTime @map("service_date")
+  slot            String
+  menuItemId      String   @map("menu_item_id")
+  plannedQuantity Int?     @map("planned_quantity")
+  maxPerStudent   Int?     @map("max_per_student")
+  priceOverride   Decimal? @map("price_override")
+  kitchenNotes    String?  @map("kitchen_notes")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at")
+
+  schedule MealSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+
+  @@unique([scheduleId, serviceDate, slot, menuItemId])
+  @@index([serviceDate, slot])
+  @@index([menuItemId])
+  @@map("meal_schedule_slots")
+}
+
+model MealScheduleException {
+  id          String   @id @default(uuid())
+  scheduleId  String   @map("schedule_id")
+  serviceDate DateTime @map("service_date")
+  action      String
+  reason      String?
+  payload     Json?
+  createdBy   String   @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  schedule MealSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+
+  @@unique([scheduleId, serviceDate, action])
+  @@index([serviceDate])
+  @@map("meal_schedule_exceptions")
+}
+
+// =====================================================
 // WHATSAPP INTEGRATION MODELS
 // =====================================================
 
