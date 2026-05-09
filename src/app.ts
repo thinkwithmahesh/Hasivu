@@ -24,6 +24,8 @@ import ordersRouter from './routes/orders.routes';
 import kitchenRouter from './routes/kitchen.routes';
 import menusRouter from './routes/menus.routes';
 import walletRouter from './routes/wallet.routes';
+import invoiceRouter from './routes/invoice.routes';
+import subscriptionRouter from './routes/subscription.routes';
 
 // Import essential services
 import { redisService } from './services/redis.service';
@@ -158,6 +160,8 @@ class SimpleApp {
     this.app.use('/api/v1/orders', ordersRouter);
     this.app.use('/api/v1/menus', menusRouter);
     this.app.use('/api/v1/wallet', walletRouter);
+    this.app.use('/api/v1/invoices', invoiceRouter);
+    this.app.use('/api/v1/subscriptions', subscriptionRouter);
     this.app.use('/api/kitchen', kitchenRouter);
 
     // Root endpoint
