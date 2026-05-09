@@ -23,6 +23,7 @@ import paymentsRouter from './routes/payments.routes';
 import ordersRouter from './routes/orders.routes';
 import kitchenRouter from './routes/kitchen.routes';
 import menusRouter from './routes/menus.routes';
+import walletRouter from './routes/wallet.routes';
 
 // Import essential services
 import { redisService } from './services/redis.service';
@@ -121,7 +122,9 @@ class SimpleApp {
   }
 
   private async loadInputValidationMiddleware(): Promise<void> {
-    const { comprehensiveInputValidation } = await import('./middleware/input-validation.middleware');
+    const { comprehensiveInputValidation } = await import(
+      './middleware/input-validation.middleware'
+    );
     this.app.use(comprehensiveInputValidation);
     logger.info('Comprehensive input validation middleware loaded successfully');
   }
@@ -154,6 +157,7 @@ class SimpleApp {
     // Orders (v1) + kitchen assignment
     this.app.use('/api/v1/orders', ordersRouter);
     this.app.use('/api/v1/menus', menusRouter);
+    this.app.use('/api/v1/wallet', walletRouter);
     this.app.use('/api/kitchen', kitchenRouter);
 
     // Root endpoint

@@ -1492,3 +1492,55 @@ model OutboxEvent {
   @@index([aggregateType, aggregateId])
   @@map("outbox_events")
 }
+
+// =====================================================
+// PHASE 2B WALLET MODELS
+// =====================================================
+
+model WalletAccount {
+  id               String   @id @default(uuid())
+  schoolId         String   @map("school_id")
+  userId           String   @map("user_id")
+  currency         String   @default("INR")
+  status           String   @default("active")
+  availableBalance Decimal  @default(0) @map("available_balance")
+  pendingBalance   Decimal  @default(0) @map("pending_balance")
+  version          Int      @default(1)
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at")
+
+  ledgerEntries WalletLedgerEntry[]
+
+  @@unique([schoolId, userId, currency])
+  @@index([schoolId, status])
+  @@index([userId])
+  @@map("wallet_accounts")
+}
+
+model WalletLedgerEntry {
+  id              String   @id @default(uuid())
+  walletAccountId String   @map("wallet_account_id")
+  schoolId        String   @map("school_id")
+  userId          String   @map("user_id")
+  direction       String
+  entryType       String   @map("entry_type")
+  amount          Decimal
+  currency        String   @default("INR")
+  balanceAfter    Decimal  @map("balance_after")
+  status          String   @default("posted")
+  referenceType   String?  @map("reference_type")
+  referenceId     String?  @map("reference_id")
+  idempotencyKey  String   @map("idempotency_key")
+  reason          String?
+  metadata        Json?
+  createdBy       String?  @map("created_by")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  walletAccount WalletAccount @relation(fields: [walletAccountId], references: [id], onDelete: Restrict)
+
+  @@unique([idempotencyKey])
+  @@index([schoolId, userId, createdAt])
+  @@index([referenceType, referenceId])
+  @@index([status])
+  @@map("wallet_ledger_entries")
+}
