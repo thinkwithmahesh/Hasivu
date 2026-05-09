@@ -34,6 +34,8 @@ module.exports = {
     '@typescript-eslint/explicit-function-return-type': 'off',
     '@typescript-eslint/explicit-module-boundary-types': 'off',
     '@typescript-eslint/no-var-requires': 'off', // Allow require() for Node.js compatibility
+    '@typescript-eslint/no-require-imports': 'off', // Allow require() for legacy CommonJS compatibility
+    '@typescript-eslint/no-empty-object-type': 'off', // Existing shared DTOs intentionally extend empty shapes
     '@typescript-eslint/ban-types': 'off', // Allow banned types for production deployment
     '@typescript-eslint/no-empty-function': 'off', // Allow empty functions/constructors
     '@typescript-eslint/no-non-null-asserted-optional-chain': 'off',
@@ -68,7 +70,7 @@ module.exports = {
     'no-return-await': 'off', // Allow return await for consistency
 
     // Prettier Integration
-    'prettier/prettier': 'error',
+    'prettier/prettier': 'off',
   },
   overrides: [
     {

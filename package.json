@@ -14,8 +14,8 @@
     "copy-assets": "copyfiles -u 1 src/**/*.json src/**/*.sql dist/",
     "clean": "rimraf dist",
     "type-check": "tsc --noEmit",
-    "lint": "eslint src web/src --ext .ts,.tsx,.js,.jsx --max-warnings 0",
-    "lint:fix": "eslint src web/src --ext .ts,.tsx,.js,.jsx --fix",
+    "lint": "npm run lint:backend && npm --prefix web run lint",
+    "lint:fix": "npm run lint:backend:fix && npm --prefix web run lint:fix",
     "format": "prettier --write \"src/**/*.{ts,js,json,md}\" \"web/**/*.{ts,tsx,js,jsx,json,md}\"",
     "format:check": "prettier --check \"src/**/*.{ts,js,json,md}\" \"web/**/*.{ts,tsx,js,jsx,json,md}\"",
     "test": "jest",
@@ -114,7 +114,9 @@
     "serverless:offline": "echo 'Serverless is legacy and excluded from the production launch path.'",
     "serverless:remove": "echo 'Serverless is legacy and excluded from the production launch path.'",
     "serverless:logs": "echo 'Serverless is legacy and excluded from the production launch path.'",
-    "lambda:test": "echo 'Lambda tests are legacy and excluded from the Docker VPS launch path.'"
+    "lambda:test": "echo 'Lambda tests are legacy and excluded from the Docker VPS launch path.'",
+    "lint:backend": "eslint src --ext .ts,.tsx,.js,.jsx --max-warnings 0",
+    "lint:backend:fix": "eslint src --ext .ts,.tsx,.js,.jsx --fix"
   },
   "keywords": [
     "school",
