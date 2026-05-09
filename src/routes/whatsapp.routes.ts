@@ -29,7 +29,7 @@ whatsappRouter.get('/webhook', (req, res) => {
 
 whatsappRouter.post('/webhook', async (req, res, next) => {
   try {
-    const rawBody = Buffer.from(JSON.stringify(req.body));
+    const rawBody = req.rawBody ?? Buffer.from(JSON.stringify(req.body));
     const signature = req.header('x-hub-signature-256');
 
     if (!whatsappClient.verifyWebhookSignature(rawBody, signature)) {

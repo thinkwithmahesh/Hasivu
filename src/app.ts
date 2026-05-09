@@ -83,8 +83,16 @@ class SimpleApp {
     // Compression
     this.app.use(compression());
 
-    // Body parsing
-    this.app.use(express.json({ limit: '10mb' }));
+    // Body parsing. Keep the original bytes so signed webhooks can verify the
+    // provider signature against the exact payload Express received.
+    this.app.use(
+      express.json({
+        limit: '10mb',
+        verify: (req: Request, _res, buf) => {
+          req.rawBody = Buffer.from(buf);
+        },
+      })
+    );
     this.app.use(express.urlencoded({ extended: true }));
 
     // Trust proxy for accurate IPs
