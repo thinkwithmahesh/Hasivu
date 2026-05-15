@@ -56,7 +56,6 @@ import {
   TrendingUp,
   BarChart3,
 } from 'lucide-react';
-import PaymentService from '@/services/payment.service';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { _FEATURE_FLAGS } from '@/types/feature-flags';
 import { cn } from '@/lib/utils';
@@ -105,6 +104,8 @@ export const BillingDashboard: React.FC<BillingDashboardProps> = ({
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [billingSummary, setBillingSummary] = useState<BillingSummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [_selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -122,72 +123,89 @@ export const BillingDashboard: React.FC<BillingDashboardProps> = ({
   const loadBillingData = async () => {
     try {
       setLoading(true);
+      setError(null);
+      setNotice(null);
 
-      // TODO: Implement billing history API in payment service
-      // For now, use mock data
-      setInvoices(generateMockInvoices());
-      setBillingSummary(generateMockSummary());
+      const response = await fetch('/api/invoices', {
+        method: 'GET',
+        credentials: 'include',
+      });
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok || !payload?.success) {
+        throw new Error(payload?.error || 'Unable to load billing history.');
+      }
+
+      const normalizedInvoices = normalizeInvoices(payload.data);
+      setInvoices(normalizedInvoices);
+      setBillingSummary(buildBillingSummary(normalizedInvoices));
     } catch (error) {
-      setInvoices(generateMockInvoices());
-      setBillingSummary(generateMockSummary());
+      setInvoices([]);
+      setBillingSummary(buildBillingSummary([]));
+      setError(error instanceof Error ? error.message : 'Unable to load billing history.');
     } finally {
       setLoading(false);
     }
   };
 
-  const generateMockInvoices = (): Invoice[] => [
-    {
-      id: 'inv_001',
-      invoiceNumber: 'HASIVU-2024-001',
-      orderId: 'order_123',
-      amount: 1200,
-      currency: 'INR',
-      status: 'paid',
-      issueDate: '2024-01-15',
-      dueDate: '2024-01-30',
-      paidDate: '2024-01-20',
-      paymentMethod: 'UPI',
-      transactionId: 'txn_abc123',
-      items: [
-        { description: 'Standard Meal Plan - January', quantity: 1, unitPrice: 1200, total: 1200 },
-      ],
-    },
-    {
-      id: 'inv_002',
-      invoiceNumber: 'HASIVU-2024-002',
-      orderId: 'order_124',
-      amount: 800,
-      currency: 'INR',
-      status: 'pending',
-      issueDate: '2024-02-01',
-      dueDate: '2024-02-15',
-      items: [
-        { description: 'Additional Meals - February', quantity: 1, unitPrice: 800, total: 800 },
-      ],
-    },
-    {
-      id: 'inv_003',
-      invoiceNumber: 'HASIVU-2024-003',
-      orderId: 'order_125',
-      amount: 1500,
-      currency: 'INR',
-      status: 'overdue',
-      issueDate: '2024-01-01',
-      dueDate: '2024-01-15',
-      items: [
-        { description: 'Premium Meal Plan - January', quantity: 1, unitPrice: 1500, total: 1500 },
-      ],
-    },
-  ];
+  const normalizeInvoices = (data: unknown): Invoice[] => {
+    const rows = Array.isArray(data) ? data : [];
+    return rows.map((invoice: any) => {
+      const items = Array.isArray(invoice.invoiceItems)
+        ? invoice.invoiceItems
+        : invoice.items || [];
+      const firstOrderId =
+        items.find((item: any) => item.orderId)?.orderId || invoice.orderId || '';
+      const status =
+        invoice.status === 'generated' || invoice.status === 'sent'
+          ? 'pending'
+          : invoice.status || 'pending';
 
-  const generateMockSummary = (): BillingSummary => ({
-    totalBilled: 3500,
-    totalPaid: 1200,
-    pendingAmount: 800,
-    overdueAmount: 1500,
-    averagePaymentTime: 5.2,
-    paymentSuccessRate: 85.7,
-  });
+      return {
+        id: invoice.id,
+        invoiceNumber: invoice.invoiceNumber,
+        orderId: firstOrderId,
+        amount: Number(invoice.totalAmount ?? invoice.amount ?? 0),
+        currency: invoice.currency || 'INR',
+        status,
+        issueDate: invoice.invoiceDate || invoice.issueDate || invoice.createdAt,
+        dueDate: invoice.dueDate,
+        paidDate: invoice.paidDate,
+        paymentMethod: invoice.payment?.method || invoice.paymentMethod,
+        transactionId: invoice.paymentId || invoice.transactionId,
+        downloadUrl: invoice.pdfUrl || invoice.downloadUrl,
+        items: items.map((item: any) => ({
+          description: item.description,
+          quantity: Number(item.quantity ?? 1),
+          unitPrice: Number(item.unitPrice ?? 0),
+          total: Number(item.totalPrice ?? item.total ?? 0),
+        })),
+      } as Invoice;
+    });
+  };
+
+  const buildBillingSummary = (rows: Invoice[]): BillingSummary => {
+    const totalBilled = rows.reduce((sum, invoice) => sum + invoice.amount, 0);
+    const totalPaid = rows
+      .filter(invoice => invoice.status === 'paid')
+      .reduce((sum, invoice) => sum + invoice.amount, 0);
+    const pendingAmount = rows
+      .filter(invoice => invoice.status === 'pending')
+      .reduce((sum, invoice) => sum + invoice.amount, 0);
+    const overdueAmount = rows
+      .filter(invoice => invoice.status === 'overdue')
+      .reduce((sum, invoice) => sum + invoice.amount, 0);
+    const paidCount = rows.filter(invoice => invoice.status === 'paid').length;
+
+    return {
+      totalBilled,
+      totalPaid,
+      pendingAmount,
+      overdueAmount,
+      averagePaymentTime: 0,
+      paymentSuccessRate: rows.length > 0 ? (paidCount / rows.length) * 100 : 0,
+    };
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -229,15 +247,21 @@ export const BillingDashboard: React.FC<BillingDashboardProps> = ({
   });
 
   const handleDownloadInvoice = (invoice: Invoice) => {
-    // In a real implementation, this would download the PDF
+    if (invoice.downloadUrl) {
+      window.open(invoice.downloadUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    setNotice('PDF generation is not available for this invoice yet.');
   };
 
   const handleEmailInvoice = (invoice: Invoice) => {
-    // In a real implementation, this would send the invoice via email
+    setNotice(`Invoice ${invoice.invoiceNumber} email delivery is not enabled yet.`);
   };
 
   const handlePayInvoice = (invoice: Invoice) => {
-    // In a real implementation, this would redirect to payment
+    setNotice(
+      `Payment collection for invoice ${invoice.invoiceNumber} is handled through checkout.`
+    );
   };
 
   if (loading) {
@@ -260,6 +284,19 @@ export const BillingDashboard: React.FC<BillingDashboardProps> = ({
 
   return (
     <div className={cn('w-full space-y-6', className)}>
+      {error && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {notice && (
+        <Alert>
+          <AlertDescription>{notice}</AlertDescription>
+        </Alert>
+      )}
+
       {/* Billing Summary */}
       {billingSummary && (
         <div

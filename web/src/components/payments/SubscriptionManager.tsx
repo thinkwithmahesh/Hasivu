@@ -53,19 +53,6 @@ import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { _FEATURE_FLAGS } from '@/types/feature-flags';
 
-const subscriptionPaymentClient = {
-  async createSubscription(_payload: {
-    schoolId: string;
-    parentId: string;
-    planId: string;
-    billingCycle: string;
-    startDate: string;
-    autoRenew: boolean;
-  }): Promise<{ success: boolean; error?: string }> {
-    return { success: true };
-  },
-};
-
 interface SubscriptionPlan {
   id: string;
   name: string;
@@ -98,84 +85,19 @@ interface SubscriptionManagerProps {
   className?: string;
 }
 
-const SUBSCRIPTIONPLANS: SubscriptionPlan[] = [
-  {
-    id: 'basic',
-    name: 'Basic Plan',
-    description: 'Perfect for occasional meal orders',
-    price: 500,
-    billingCycle: 'monthly',
-    maxMeals: 20,
-    features: [
-      'Up to 20 meals per month',
-      'Basic menu access',
-      'Email notifications',
-      'Standard delivery',
-    ],
-  },
-  {
-    id: 'standard',
-    name: 'Standard Plan',
-    description: 'Great for regular meal planning',
-    price: 1200,
-    billingCycle: 'monthly',
-    maxMeals: 60,
-    popular: true,
-    features: [
-      'Up to 60 meals per month',
-      'Full menu access',
-      'Priority notifications',
-      'Express delivery',
-      'Meal customization',
-    ],
-  },
-  {
-    id: 'premium',
-    name: 'Premium Plan',
-    description: 'Complete meal management solution',
-    price: 2500,
-    billingCycle: 'monthly',
-    maxMeals: 150,
-    features: [
-      'Unlimited meals',
-      'Premium menu access',
-      'Real-time notifications',
-      'Dedicated support',
-      'Advanced analytics',
-      'Bulk discounts',
-    ],
-  },
-  {
-    id: 'annual_basic',
-    name: 'Annual Basic',
-    description: 'Year-round meal planning with savings',
-    price: 5000,
-    billingCycle: 'annual',
-    maxMeals: 240,
-    savings: 17,
-    features: [
-      'Up to 240 meals per year',
-      'Basic menu access',
-      'Email notifications',
-      'Standard delivery',
-      '17% annual savings',
-    ],
-  },
-];
-
 export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
   schoolId,
   parentId,
   className,
 }) => {
   const [activeSubscription, setActiveSubscription] = useState<ActiveSubscription | null>(null);
-  const [availablePlans] = useState<SubscriptionPlan[]>(SUBSCRIPTIONPLANS);
+  const [availablePlans, setAvailablePlans] = useState<SubscriptionPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [upgrading, setUpgrading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string>('');
   const [_showUpgradeDialog, setShowUpgradeDialog] = useState(false);
-
-  const paymentService = subscriptionPaymentClient;
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const showNewPaymentMethods = useFeatureFlag(_FEATURE_FLAGS.NEW_PAYMENT_METHODS, parentId);
   const paymentFlagLoading = false;
@@ -188,27 +110,90 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
   const loadSubscription = async () => {
     try {
       setLoading(true);
-      // In a real implementation, this would fetch from the API
-      // For now, we'll simulate with mock data
-      setTimeout(() => {
-        setActiveSubscription({
-          id: 'sub_123',
-          planId: 'standard',
-          status: 'active',
-          startDate: '2024-01-01',
-          endDate: '2024-12-31',
-          nextBillingDate: '2024-02-01',
-          autoRenew: true,
-          paymentMethodId: 'pm_123',
-          mealsUsed: 45,
-          mealsRemaining: 15,
-          totalSpent: 1200,
-        });
-        setLoading(false);
-      }, 1000);
+      setError(null);
+      setNotice(null);
+
+      const [plansResponse, currentResponse] = await Promise.all([
+        fetch('/api/subscriptions/plans', { credentials: 'include' }),
+        fetch('/api/subscriptions/current', { credentials: 'include' }),
+      ]);
+
+      const plansPayload = await plansResponse.json().catch(() => null);
+      const currentPayload = await currentResponse.json().catch(() => null);
+
+      if (!plansResponse.ok) {
+        throw new Error(plansPayload?.error || 'Subscriptions are not available yet.');
+      }
+
+      setAvailablePlans(normalizePlans(plansPayload?.data));
+
+      if (currentResponse.ok && currentPayload?.success) {
+        setActiveSubscription(normalizeSubscription(currentPayload.data));
+      } else {
+        setActiveSubscription(null);
+      }
     } catch (error) {
+      setAvailablePlans([]);
+      setActiveSubscription(null);
+      setError(error instanceof Error ? error.message : 'Subscriptions are not available yet.');
+    } finally {
       setLoading(false);
     }
+  };
+
+  const normalizePlans = (data: unknown): SubscriptionPlan[] => {
+    const rows = Array.isArray(data) ? data : [];
+    return rows.map((plan: any) => {
+      const benefits = parseBenefits(plan.benefits);
+      return {
+        id: plan.id,
+        name: plan.name,
+        description: plan.description || '',
+        price: Number(plan.price ?? 0),
+        billingCycle: plan.billingCycle || 'monthly',
+        features:
+          benefits.length > 0
+            ? benefits
+            : [`${plan.mealsPerMonth || plan.mealsPerWeek || 0} meals included`],
+        maxMeals: Number(plan.mealsPerMonth || plan.mealsPerWeek || plan.mealsPerDay || 0),
+        popular: plan.planType === 'standard' || plan.planType === 'popular',
+      } as SubscriptionPlan;
+    });
+  };
+
+  const normalizeSubscription = (subscription: any): ActiveSubscription | null => {
+    if (!subscription) return null;
+    const plan = subscription.subscriptionPlan;
+    const maxMeals = Number(plan?.mealsPerMonth || plan?.mealsPerWeek || plan?.mealsPerDay || 0);
+    const mealsUsed = Number(subscription.mealsUsed || 0);
+    return {
+      id: subscription.id,
+      planId: subscription.subscriptionPlanId || subscription.planId,
+      status: subscription.status,
+      startDate: subscription.startDate,
+      endDate: subscription.endDate,
+      nextBillingDate:
+        subscription.nextBillingDate || subscription.endDate || subscription.startDate,
+      autoRenew: subscription.status === 'active' || subscription.status === 'pending_mandate',
+      paymentMethodId: subscription.paymentMethodId || '',
+      mealsUsed,
+      mealsRemaining: Math.max(maxMeals - mealsUsed, 0),
+      totalSpent: Number(subscription.billingAmount || plan?.price || 0),
+    };
+  };
+
+  const parseBenefits = (benefits: unknown): string[] => {
+    if (Array.isArray(benefits)) return benefits.filter(Boolean).map(String);
+    if (typeof benefits !== 'string' || !benefits.trim()) return [];
+    try {
+      const parsed = JSON.parse(benefits);
+      if (Array.isArray(parsed)) return parsed.filter(Boolean).map(String);
+      if (parsed && typeof parsed === 'object')
+        return Object.values(parsed).filter(Boolean).map(String);
+    } catch {
+      return [benefits];
+    }
+    return [];
   };
 
   const formatCurrency = (amount: number) => {
@@ -238,34 +223,29 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
       const plan = availablePlans.find(p => p.id === planId);
       if (!plan) throw new Error('Plan not found');
 
-      const result = await paymentService.createSubscription({
-        schoolId,
-        parentId,
-        planId,
-        billingCycle: plan.billingCycle,
-        startDate: new Date().toISOString().split('T')[0],
-        autoRenew: true,
+      const result = await fetch('/api/subscriptions', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          schoolId,
+          parentId,
+          planId,
+          billingCycle: plan.billingCycle,
+          startDate: new Date().toISOString().split('T')[0],
+          autoRenew: true,
+        }),
       });
+      const payload = await result.json().catch(() => null);
 
-      if (result.success) {
-        // Update subscription
-        setActiveSubscription(prev =>
-          prev
-            ? {
-                ...prev,
-                planId,
-                nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-                  .toISOString()
-                  .split('T')[0],
-              }
-            : null
-        );
+      if (result.ok && payload?.success) {
+        setActiveSubscription(normalizeSubscription(payload.data));
         setShowUpgradeDialog(false);
       } else {
-        throw new Error(result.error || 'Upgrade failed');
+        throw new Error(payload?.error || 'Subscription creation is not available yet.');
       }
     } catch (error) {
-      // Handle error
+      setError(error instanceof Error ? error.message : 'Subscription update failed.');
     } finally {
       setUpgrading(false);
     }
@@ -275,17 +255,9 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
     if (!activeSubscription) return;
 
     try {
-      // In a real implementation, this would call the API
-      setActiveSubscription(prev =>
-        prev
-          ? {
-              ...prev,
-              status: prev.status === 'active' ? 'paused' : 'active',
-            }
-          : null
-      );
+      setNotice('Pause/resume requires the subscription gateway to be enabled.');
     } catch (error) {
-      // Error handled silently
+      setError(error instanceof Error ? error.message : 'Unable to update subscription.');
     }
   };
 
@@ -293,17 +265,17 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
     if (!activeSubscription) return;
 
     try {
-      // In a real implementation, this would call the API
-      setActiveSubscription(prev =>
-        prev
-          ? {
-              ...prev,
-              status: 'cancelled',
-            }
-          : null
-      );
+      const response = await fetch('/api/subscriptions/cancel', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || !payload?.success) {
+        throw new Error(payload?.error || 'Subscription cancellation is not available yet.');
+      }
+      await loadSubscription();
     } catch (error) {
-      // Error handled silently
+      setError(error instanceof Error ? error.message : 'Unable to cancel subscription.');
     }
   };
 
@@ -326,6 +298,18 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
 
   return (
     <div className={cn('w-full space-y-6', className)}>
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {notice && (
+        <Alert>
+          <AlertDescription>{notice}</AlertDescription>
+        </Alert>
+      )}
+
       {/* Current Subscription Status */}
       {activeSubscription && (
         <Card>
@@ -576,57 +560,71 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
         </CardHeader>
 
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {availablePlans.map(plan => (
-              <Card
-                key={plan.id}
-                className={cn('relative', plan.popular && 'border-yellow-200 shadow-lg')}
-              >
-                {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                    <Badge className="bg-yellow-500 text-white px-3 py-1">Most Popular</Badge>
-                  </div>
-                )}
+          {availablePlans.length === 0 ? (
+            <div className="text-center py-8">
+              <Crown className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+              <p className="text-gray-600">
+                Subscription plans are not available in this environment.
+              </p>
+              <p className="text-sm text-gray-500 mt-2">
+                The feature is fail-closed until Razorpay recurring billing is enabled.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {availablePlans.map(plan => (
+                <Card
+                  key={plan.id}
+                  className={cn('relative', plan.popular && 'border-yellow-200 shadow-lg')}
+                >
+                  {plan.popular && (
+                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                      <Badge className="bg-yellow-500 text-white px-3 py-1">Most Popular</Badge>
+                    </div>
+                  )}
 
-                <CardHeader className="text-center">
-                  <CardTitle className="text-xl">{plan.name}</CardTitle>
-                  <div className="text-3xl font-bold text-green-600">
-                    {formatCurrency(plan.price)}
-                    <div className="text-sm font-normal text-gray-600">per {plan.billingCycle}</div>
-                  </div>
-                  {plan.savings && <Badge variant="secondary">Save {plan.savings}%</Badge>}
-                </CardHeader>
+                  <CardHeader className="text-center">
+                    <CardTitle className="text-xl">{plan.name}</CardTitle>
+                    <div className="text-3xl font-bold text-green-600">
+                      {formatCurrency(plan.price)}
+                      <div className="text-sm font-normal text-gray-600">
+                        per {plan.billingCycle}
+                      </div>
+                    </div>
+                    {plan.savings && <Badge variant="secondary">Save {plan.savings}%</Badge>}
+                  </CardHeader>
 
-                <CardContent>
-                  <p className="text-sm text-gray-600 text-center mb-4">{plan.description}</p>
+                  <CardContent>
+                    <p className="text-sm text-gray-600 text-center mb-4">{plan.description}</p>
 
-                  <ul className="space-y-2 mb-6">
-                    {plan.features.slice(0, 3).map((feature, index) => (
-                      <li key={index} className="flex items-center gap-2 text-sm">
-                        <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
-                        {feature}
-                      </li>
-                    ))}
-                    {plan.features.length > 3 && (
-                      <li className="text-sm text-gray-600">
-                        +{plan.features.length - 3} more features
-                      </li>
-                    )}
-                  </ul>
+                    <ul className="space-y-2 mb-6">
+                      {plan.features.slice(0, 3).map((feature, index) => (
+                        <li key={index} className="flex items-center gap-2 text-sm">
+                          <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                          {feature}
+                        </li>
+                      ))}
+                      {plan.features.length > 3 && (
+                        <li className="text-sm text-gray-600">
+                          +{plan.features.length - 3} more features
+                        </li>
+                      )}
+                    </ul>
 
-                  <Button
-                    className="w-full"
-                    variant={activeSubscription?.planId === plan.id ? 'secondary' : 'default'}
-                    disabled={activeSubscription?.planId === plan.id}
-                  >
-                    {activeSubscription?.planId === plan.id
-                      ? 'Current Plan'
-                      : 'Select as Select Plan'}
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                    <Button
+                      className="w-full"
+                      variant={activeSubscription?.planId === plan.id ? 'secondary' : 'default'}
+                      disabled={activeSubscription?.planId === plan.id}
+                    >
+                      {activeSubscription?.planId === plan.id
+                        ? 'Current Plan'
+                        : 'Select as Select Plan'}
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
