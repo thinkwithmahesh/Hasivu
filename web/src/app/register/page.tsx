@@ -2,12 +2,14 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, Mail, Lock, User, Phone, School, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { authApiService } from '@/services/auth-api.service';
 import {
   Select,
   SelectContent,
@@ -18,6 +20,7 @@ import {
 import { OptimizedBackground } from '@/components/ui/optimized-background';
 
 export default function RegisterPage() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -48,22 +51,34 @@ export default function RegisterPage() {
       return;
     }
 
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters long');
+    if (formData.password.length < 8) {
+      setError('Password must be at least 8 characters long');
       setIsLoading(false);
       return;
     }
 
     try {
-      // TODO: Implement actual registration when backend is ready
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const [firstName, ...lastNameParts] = formData.name.trim().split(/\s+/);
+      const response = await authApiService.register({
+        email: formData.email.trim(),
+        password: formData.password,
+        passwordConfirm: formData.confirmPassword,
+        firstName: firstName || formData.name.trim(),
+        lastName: lastNameParts.join(' ') || 'User',
+        role: formData.role as any,
+        ...(formData.schoolId && formData.schoolId !== 'other'
+          ? { schoolId: formData.schoolId }
+          : {}),
+      });
 
-      // Mock registration success
+      if (!response.success) {
+        setError(response.error || response.message || 'Registration failed. Please try again.');
+        return;
+      }
 
-      // Redirect to dashboard
-      window.location.href = '/dashboard';
+      router.push('/dashboard');
     } catch (err) {
-      setError('Registration failed. Please try again.');
+      setError(err instanceof Error ? err.message : 'Registration failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -171,12 +186,12 @@ export default function RegisterPage() {
                     <SelectValue placeholder="Select your role" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="PARENT">Parent</SelectItem>
-                    <SelectItem value="STUDENT">Student</SelectItem>
-                    <SelectItem value="TEACHER">Teacher</SelectItem>
-                    <SelectItem value="ADMIN">School Admin</SelectItem>
-                    <SelectItem value="KITCHEN_STAFF">Kitchen Staff</SelectItem>
-                    <SelectItem value="VENDOR">Food Vendor</SelectItem>
+                    <SelectItem value="parent">Parent</SelectItem>
+                    <SelectItem value="student">Student</SelectItem>
+                    <SelectItem value="teacher">Teacher</SelectItem>
+                    <SelectItem value="school_admin">School Admin</SelectItem>
+                    <SelectItem value="kitchen_staff">Kitchen Staff</SelectItem>
+                    <SelectItem value="vendor">Food Vendor</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
