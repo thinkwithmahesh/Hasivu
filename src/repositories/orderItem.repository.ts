@@ -7,6 +7,7 @@ import { PrismaClient, OrderItem } from '@prisma/client';
 
 export class OrderItemRepository {
   private prisma: PrismaClient;
+  private static readonly prisma = new PrismaClient();
 
   constructor() {
     this.prisma = new PrismaClient();
@@ -70,7 +71,7 @@ export class OrderItemRepository {
     return items.reduce((total, item) => total + item.unitPrice * item.quantity, 0);
   }
 
-  static async getPopularItems(_query: {
+  static async getPopularItems(query: {
     schoolId: string;
     startDate?: Date;
     endDate?: Date;
@@ -84,24 +85,59 @@ export class OrderItemRepository {
       revenue: number;
     }>
   > {
-    // This would be a complex aggregation query in real implementation
-    // For now, return mock data that matches the test expectations
-    return [
-      {
-        menuItemId: 'item-1',
-        menuItemName: 'Popular Meal',
-        totalQuantity: 120,
-        orderCount: 45,
-        revenue: 18000,
+    const limit = Math.min(query.limit || 10, 50);
+    const groupedItems = await this.prisma.orderItem.groupBy({
+      by: ['menuItemId'],
+      where: {
+        order: {
+          schoolId: query.schoolId,
+          ...(query.startDate || query.endDate
+            ? {
+                orderDate: {
+                  ...(query.startDate ? { gte: query.startDate } : {}),
+                  ...(query.endDate ? { lte: query.endDate } : {}),
+                },
+              }
+            : {}),
+        },
       },
-      {
-        menuItemId: 'item-2',
-        menuItemName: 'Favorite Snack',
-        totalQuantity: 80,
-        orderCount: 30,
-        revenue: 6000,
+      _sum: {
+        quantity: true,
+        totalPrice: true,
       },
-    ];
+      _count: {
+        orderId: true,
+      },
+      orderBy: {
+        _sum: {
+          quantity: 'desc',
+        },
+      },
+      take: limit,
+    });
+
+    if (groupedItems.length === 0) {
+      return [];
+    }
+
+    const menuItems = await this.prisma.menuItem.findMany({
+      where: {
+        id: { in: groupedItems.map(item => item.menuItemId) },
+      },
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+    const menuItemNames = new Map(menuItems.map(item => [item.id, item.name]));
+
+    return groupedItems.map(item => ({
+      menuItemId: item.menuItemId,
+      menuItemName: menuItemNames.get(item.menuItemId) || 'Unknown item',
+      totalQuantity: item._sum.quantity || 0,
+      orderCount: item._count.orderId || 0,
+      revenue: item._sum.totalPrice || 0,
+    }));
   }
 }
 

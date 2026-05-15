@@ -16,15 +16,25 @@ export function useAnalytics() {
       timestamp: Date.now(),
     };
 
-    // In a real implementation, this would send to an analytics service
-    console.log('Analytics Event:', event);
-
-    // Mock implementation - could integrate with services like Mixpanel, Google Analytics, etc.
     if (typeof window !== 'undefined') {
-      // Store in localStorage for demo purposes
-      const events = JSON.parse(localStorage.getItem('analytics_events') || '[]');
-      events.push(event);
-      localStorage.setItem('analytics_events', JSON.stringify(events.slice(-100))); // Keep last 100 events
+      const payload = JSON.stringify({
+        name: event.name,
+        value: 1,
+        dimensions: properties || {},
+        metadata: { timestamp: event.timestamp },
+      });
+
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon('/api/analytics/track', payload);
+        return;
+      }
+
+      void fetch('/api/analytics/track', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: payload,
+      }).catch(() => undefined);
     }
   }, []);
 

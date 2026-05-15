@@ -37,76 +37,6 @@ export const FEATURE_FLAGS = {
   COMMUNICATION_PREFERENCES: 'communication_preferences',
 } as const;
 
-// Mock feature flag data
-const mockFeatureFlags: Record<string, FeatureFlag> = {
-  [FEATURE_FLAGS.PAYMENT_ANALYTICS]: {
-    id: '1',
-    name: 'Payment Analytics',
-    description: 'Advanced payment analytics and reporting',
-    enabled: true,
-    rolloutPercentage: 100,
-    environment: 'production',
-    userSegments: ['admin', 'school_admin'],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  [FEATURE_FLAGS.WHATSAPP_INTEGRATION]: {
-    id: '2',
-    name: 'WhatsApp Integration',
-    description: 'WhatsApp messaging for notifications',
-    enabled: false,
-    rolloutPercentage: 0,
-    environment: 'development',
-    userSegments: [],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  [FEATURE_FLAGS.SUBSCRIPTION_MANAGER]: {
-    id: '3',
-    name: 'Subscription Manager',
-    description: 'Advanced subscription management features',
-    enabled: true,
-    rolloutPercentage: 50,
-    environment: 'staging',
-    userSegments: ['admin'],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  [FEATURE_FLAGS.BILLING_DASHBOARD]: {
-    id: '4',
-    name: 'Billing Dashboard',
-    description: 'Comprehensive billing and invoicing dashboard',
-    enabled: true,
-    rolloutPercentage: 100,
-    environment: 'production',
-    userSegments: ['admin', 'school_admin'],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  [FEATURE_FLAGS.COMMUNICATION_PREFERENCES]: {
-    id: '5',
-    name: 'Communication Preferences',
-    description: 'User communication preference management',
-    enabled: false,
-    rolloutPercentage: 25,
-    environment: 'staging',
-    userSegments: ['parent'],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  new_payment_methods: {
-    id: '6',
-    name: 'New Payment Methods',
-    description: 'UPI, wallets, and instant transfer options',
-    enabled: true,
-    rolloutPercentage: 100,
-    environment: 'production',
-    userSegments: [],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-};
-
 /**
  * Hook for checking if a feature flag is enabled
  */
@@ -114,46 +44,38 @@ export const useFeatureFlag = (flagKey: string, userId?: string): boolean => {
   const [isEnabled, setIsEnabled] = useState(false);
 
   useEffect(() => {
+    const abortController = new AbortController();
+
     const checkFeatureFlag = async () => {
       try {
-        // In production, this would make an API call
-        const flag = mockFeatureFlags[flagKey];
-        if (!flag) {
+        const params = new URLSearchParams({
+          environment: process.env.NEXT_PUBLIC_APP_ENV || process.env.NODE_ENV || 'development',
+        });
+        if (userId) params.set('userId', userId);
+
+        const response = await fetch(`/api/feature-flags/${flagKey}?${params.toString()}`, {
+          credentials: 'include',
+          signal: abortController.signal,
+        });
+
+        if (!response.ok) {
           setIsEnabled(false);
           return;
         }
 
-        // Check if flag is enabled
-        if (!flag.enabled) {
-          setIsEnabled(false);
-          return;
-        }
-
-        // Check environment
-        const currentEnv = process.env.NODE_ENV || 'development';
-        if (flag.environment !== currentEnv && flag.environment !== 'production') {
-          setIsEnabled(false);
-          return;
-        }
-
-        // Check rollout percentage (simple random check)
-        if (flag.rolloutPercentage < 100) {
-          const userHash = userId ? hashString(userId) : Math.random();
-          const percentage = (userHash % 100) / 100;
-          if (percentage > flag.rolloutPercentage / 100) {
-            setIsEnabled(false);
-            return;
-          }
-        }
-
-        setIsEnabled(true);
+        const payload = await response.json();
+        setIsEnabled(Boolean(payload?.success && payload?.evaluation?.enabled));
       } catch (error) {
-        console.error('Error checking feature flag:', error);
+        if ((error as Error).name !== 'AbortError') {
+          console.error('Error checking feature flag:', error);
+        }
         setIsEnabled(false);
       }
     };
 
     checkFeatureFlag();
+
+    return () => abortController.abort();
   }, [flagKey, userId]);
 
   return isEnabled;
@@ -179,12 +101,23 @@ export const useFeatureFlagAnalytics = () => {
   const trackFeatureUsage = useCallback(
     async (flagKey: string, action: string, metadata?: Record<string, any>) => {
       try {
-        // In production, this would send analytics data
-        console.log('Feature flag usage:', {
+        const payload = {
           flagKey,
           action,
           metadata,
           timestamp: new Date().toISOString(),
+        };
+
+        if (navigator.sendBeacon) {
+          navigator.sendBeacon('/api/feature-flags/usage', JSON.stringify(payload));
+          return;
+        }
+
+        await fetch('/api/feature-flags/usage', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(payload),
         });
       } catch (error) {
         console.error('Error tracking feature usage:', error);
@@ -195,12 +128,13 @@ export const useFeatureFlagAnalytics = () => {
 
   const getFeatureStats = useCallback(async (flagKey: string) => {
     try {
-      // In production, this would fetch analytics data
-      return {
-        usageCount: Math.floor(Math.random() * 1000),
-        uniqueUsers: Math.floor(Math.random() * 500),
-        conversionRate: Math.random() * 100,
-      };
+      const response = await fetch(
+        `/api/feature-flags/usage?flagKey=${encodeURIComponent(flagKey)}`,
+        { credentials: 'include' }
+      );
+      if (!response.ok) return null;
+      const payload = await response.json();
+      return payload?.data || null;
     } catch (error) {
       console.error('Error getting feature stats:', error);
       return null;
@@ -210,27 +144,5 @@ export const useFeatureFlagAnalytics = () => {
   return {
     trackFeatureUsage,
     getFeatureStats,
-    totalFlags: 5,
-    enabledFlags: 3,
-    flagsByCategory: {
-      payment: 2,
-      notification: 1,
-      analytics: 1,
-      ui: 0,
-      experimental: 1,
-    },
   };
 };
-
-/**
- * Simple string hash function for percentage-based rollouts
- */
-function hashString(str: string): number {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash = hash & hash; // Convert to 32-bit integer
-  }
-  return Math.abs(hash);
-}

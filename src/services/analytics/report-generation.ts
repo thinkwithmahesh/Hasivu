@@ -7,6 +7,8 @@ import { logger } from '../../utils/logger';
 import { cache } from '../../utils/cache';
 import { AnalyticsReport, ServiceResponse, TimePeriod } from './types';
 import { QueryExecutionService } from './query-execution';
+import { AnalyticsCalculatorsService } from './analytics-calculators';
+import { DashboardGenerationService } from './dashboard-generation';
 
 export class ReportGenerationService {
   private static readonly CACHE_TTL = 3600; // 1 hour
@@ -97,8 +99,26 @@ export class ReportGenerationService {
     start: Date;
     end: Date;
   }): Promise<any[]> {
-    // Mock implementation
-    return [{ summary: 'High-level metrics and trends' }];
+    const dateRange = this.normalizeDateRange(_dateRange);
+    const [kpis, revenueAnalytics, userBehavior] = await Promise.all([
+      AnalyticsCalculatorsService.calculateKPIs(dateRange),
+      AnalyticsCalculatorsService.generateRevenueAnalytics(dateRange),
+      AnalyticsCalculatorsService.generateUserBehaviorAnalytics(dateRange),
+    ]);
+
+    return [
+      {
+        section: 'summary',
+        dateRange,
+        kpis,
+        totals: {
+          revenue: revenueAnalytics.totalRevenue,
+          orders: revenueAnalytics.revenueByPeriod.reduce((sum, period) => sum + period.orders, 0),
+          activeUsers: userBehavior.activeUsers,
+          newUsers: userBehavior.newUsers,
+        },
+      },
+    ];
   }
 
   /**
@@ -108,8 +128,42 @@ export class ReportGenerationService {
     start: Date;
     end: Date;
   }): Promise<any[]> {
-    // Mock implementation
-    return [{ detailed: 'Comprehensive metrics breakdown' }];
+    const dateRange = this.normalizeDateRange(_dateRange);
+    const [kpis, revenueAnalytics, userBehavior, dashboard] = await Promise.all([
+      AnalyticsCalculatorsService.calculateKPIs(dateRange),
+      AnalyticsCalculatorsService.generateRevenueAnalytics(dateRange),
+      AnalyticsCalculatorsService.generateUserBehaviorAnalytics(dateRange),
+      DashboardGenerationService.generateDashboard('scheduled-detailed', 'system', dateRange),
+    ]);
+
+    return [
+      {
+        section: 'kpis',
+        rows: kpis,
+      },
+      {
+        section: 'revenue_by_school',
+        rows: revenueAnalytics.revenueBySchool,
+      },
+      {
+        section: 'revenue_by_period',
+        rows: revenueAnalytics.revenueByPeriod,
+      },
+      {
+        section: 'user_behavior',
+        rows: {
+          totalUsers: userBehavior.totalUsers,
+          activeUsers: userBehavior.activeUsers,
+          newUsers: userBehavior.newUsers,
+          retentionRate: userBehavior.retentionRate,
+          engagementScore: userBehavior.engagementScore,
+        },
+      },
+      {
+        section: 'order_trends',
+        rows: dashboard.success ? dashboard.data?.orderTrends || [] : [],
+      },
+    ];
   }
 
   /**
@@ -119,7 +173,61 @@ export class ReportGenerationService {
     start: Date;
     end: Date;
   }): Promise<any[]> {
-    // Mock implementation
-    return [{ executive: 'Executive summary and insights' }];
+    const dateRange = this.normalizeDateRange(_dateRange);
+    const [kpis, revenueAnalytics, userBehavior] = await Promise.all([
+      AnalyticsCalculatorsService.calculateKPIs(dateRange),
+      AnalyticsCalculatorsService.generateRevenueAnalytics(dateRange),
+      AnalyticsCalculatorsService.generateUserBehaviorAnalytics(dateRange),
+    ]);
+
+    const atRiskKpis = kpis.filter(kpi => kpi.percentage < 80);
+
+    return [
+      {
+        section: 'executive_overview',
+        dateRange,
+        revenue: {
+          total: revenueAnalytics.totalRevenue,
+          growthRate: revenueAnalytics.revenueGrowthRate,
+          averageOrderValue: revenueAnalytics.averageOrderValue,
+        },
+        users: {
+          active: userBehavior.activeUsers,
+          new: userBehavior.newUsers,
+          retentionRate: userBehavior.retentionRate,
+        },
+        atRiskKpis,
+        recommendations: this.buildExecutiveActions(atRiskKpis),
+      },
+    ];
+  }
+
+  private static normalizeDateRange(dateRange: { start: Date; end: Date }): {
+    start: Date;
+    end: Date;
+  } {
+    return {
+      start: new Date(dateRange.start),
+      end: new Date(dateRange.end),
+    };
+  }
+
+  private static buildExecutiveActions(kpis: Array<{ id: string; name: string }>): string[] {
+    if (kpis.length === 0) {
+      return ['Maintain current operations and monitor trend changes in the next report period.'];
+    }
+
+    return kpis.map(kpi => {
+      switch (kpi.id) {
+        case 'order_completion_rate':
+          return 'Review delayed/cancelled order causes with kitchen operations.';
+        case 'total_revenue':
+          return 'Review menu availability, checkout conversion, and school-level revenue distribution.';
+        case 'user_retention':
+          return 'Review parent engagement, login/session friction, and first-order conversion.';
+        default:
+          return `Review KPI: ${kpi.name}.`;
+      }
+    });
   }
 }

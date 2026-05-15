@@ -8,6 +8,7 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { JWTPayload, jwtService } from '../jwt.service';
 import { logger } from '../logger.service';
 import { env as config } from '../../config/environment';
+import { RedisService } from '../../services/redis.service';
 
 /**
  * Authentication result interface
@@ -438,17 +439,41 @@ export const rateLimitMiddleware = async (
       }
     }
 
-    // TODO: Implement actual rate limiting with Redis
-    // For now, allow all requests and log the attempt
+    const identity = context.userId || context.ipAddress || 'anonymous';
+    const safeEndpoint = context.endpoint.replace(/[^a-zA-Z0-9:_-]/g, '_');
+    const minuteKey = `rate:${safeEndpoint}:${identity}:minute:${Math.floor(Date.now() / 60000)}`;
+    const hourKey = `rate:${safeEndpoint}:${identity}:hour:${Math.floor(Date.now() / 3600000)}`;
+
+    const [minuteRaw, hourRaw] = await Promise.all([
+      RedisService.get(minuteKey),
+      RedisService.get(hourKey),
+    ]);
+    const minuteCount = Number(minuteRaw || 0) + 1;
+    const hourCount = Number(hourRaw || 0) + 1;
+
+    await Promise.all([
+      RedisService.set(minuteKey, String(minuteCount), 60),
+      RedisService.set(hourKey, String(hourCount), 3600),
+    ]);
+
+    const allowed = minuteCount <= limits.requestsPerMinute && hourCount <= limits.requestsPerHour;
+    const remaining = Math.max(
+      0,
+      Math.min(limits.requestsPerMinute - minuteCount, limits.requestsPerHour - hourCount)
+    );
+
     logger.info('Rate limit check', {
       ...context,
       limits,
+      minuteCount,
+      hourCount,
+      allowed,
       timestamp: new Date().toISOString(),
     });
 
     return {
-      allowed: true,
-      remaining: limits.requestsPerMinute - 1,
+      allowed,
+      remaining,
       resetTime: Date.now() + 60 * 1000, // 1 minute from now
     };
   } catch (error: unknown) {

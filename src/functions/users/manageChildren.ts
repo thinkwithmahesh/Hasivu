@@ -137,10 +137,8 @@ export const manageChildrenHandler = async (
       );
     }
 
-    // Get current children IDs
-    // Note: searchUsers doesn't support parentId filtering, so we'll start with empty array
-    const currentChildrenIds: string[] = [];
-    // TODO: Implement proper parent-child relationship querying
+    const currentChildren = await UserService.getInstance().getChildren(parentId);
+    const currentChildrenIds = currentChildren.map(child => child.id);
 
     // Calculate new children IDs based on action
     let newChildrenIds: string[];

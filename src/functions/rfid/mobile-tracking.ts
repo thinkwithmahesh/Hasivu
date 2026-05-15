@@ -234,6 +234,15 @@ function generateTrackingSteps(order: any): TrackingStep[] {
   return steps;
 }
 
+function mapNotificationType(type: string): NotificationInfo['type'] {
+  if (type.includes('confirmed')) return 'order_confirmed';
+  if (type.includes('preparing')) return 'preparing';
+  if (type.includes('ready')) return 'ready';
+  if (type.includes('delivered') || type.includes('delivery')) return 'delivered';
+  if (type.includes('delay')) return 'delay';
+  return 'order_confirmed';
+}
+
 /**
  * Get mobile tracking information for a student
  */
@@ -316,6 +325,14 @@ export const getMobileTrackingHandler = async (
             menuItem: true,
           },
         },
+        deliveryVerifications: {
+          include: {
+            card: true,
+            reader: true,
+          },
+          orderBy: { verifiedAt: 'desc' },
+          take: 1,
+        },
       },
       orderBy: {
         createdAt: 'desc',
@@ -344,6 +361,14 @@ export const getMobileTrackingHandler = async (
           include: {
             menuItem: true,
           },
+        },
+        deliveryVerifications: {
+          include: {
+            card: true,
+            reader: true,
+          },
+          orderBy: { verifiedAt: 'desc' },
+          take: 1,
         },
       },
       orderBy: {
@@ -375,11 +400,46 @@ export const getMobileTrackingHandler = async (
             menuItem: true,
           },
         },
+        deliveryVerifications: {
+          include: {
+            card: true,
+            reader: true,
+          },
+          orderBy: { verifiedAt: 'desc' },
+          take: 1,
+        },
       },
       orderBy: {
         deliveryDate: 'asc',
       },
     });
+
+    const allOrderIds = [...activeOrders, ...recentDeliveries, ...upcomingOrders].map(
+      order => order.id
+    );
+    const notifications = await prisma.notification.findMany({
+      where: {
+        userId: studentId,
+        OR: allOrderIds.map(orderId => ({
+          data: {
+            contains: orderId,
+          },
+        })),
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
+    const notificationsByOrderId = new Map<string, typeof notifications>();
+
+    for (const notification of notifications) {
+      for (const orderId of allOrderIds) {
+        if (notification.data.includes(orderId)) {
+          const existing = notificationsByOrderId.get(orderId) || [];
+          existing.push(notification);
+          notificationsByOrderId.set(orderId, existing);
+        }
+      }
+    }
 
     // Calculate delivery stats
     const totalDelivered = recentDeliveries.length;
@@ -398,30 +458,52 @@ export const getMobileTrackingHandler = async (
         : 0;
 
     // Transform orders to mobile tracking format
-    const transformOrder = (order: any): MobileOrderTracking => ({
-      orderId: order.id,
-      orderNumber: order.orderNumber,
-      status: order.status,
-      menuPlan: {
-        name: order.orderItems?.[0]?.menuItem?.name || 'Meal Order',
-        date: order.deliveryDate,
-        meal: order.orderItems?.[0]?.menuItem?.category || 'Lunch',
-      },
-      student: {
-        id: order.student.id,
-        firstName: order.student.firstName,
-        lastName: order.student.lastName,
-        grade: order.student.grade || 'N/A',
-        school: {
-          name: order.student.school.name,
-          location: order.student.school.address || 'School Campus',
+    const transformOrder = (order: any): MobileOrderTracking => {
+      const latestVerification = order.deliveryVerifications?.[0];
+      const orderNotifications = notificationsByOrderId.get(order.id) || [];
+
+      return {
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        status: order.status,
+        menuPlan: {
+          name: order.orderItems?.[0]?.menuItem?.name || 'Meal Order',
+          date: order.deliveryDate,
+          meal: order.orderItems?.[0]?.menuItem?.category || 'Lunch',
         },
-      },
-      trackingSteps: generateTrackingSteps(order),
-      deliveryVerification: undefined, // TODO: Implement delivery verification lookup
-      estimatedDeliveryTime: order.deliveryDate,
-      notifications: [], // TODO: Implement notifications system
-    });
+        student: {
+          id: order.student.id,
+          firstName: order.student.firstName,
+          lastName: order.student.lastName,
+          grade: order.student.grade || 'N/A',
+          school: {
+            name: order.student.school.name,
+            location: order.student.school.address || 'School Campus',
+          },
+        },
+        trackingSteps: generateTrackingSteps(order),
+        deliveryVerification: latestVerification
+          ? {
+              rfidCardId: latestVerification.cardId,
+              location:
+                latestVerification.location ||
+                latestVerification.reader?.location ||
+                'School Campus',
+              timestamp: latestVerification.verifiedAt,
+              verifiedBy: latestVerification.reader?.name || 'RFID Reader',
+              method: 'RFID',
+            }
+          : undefined,
+        estimatedDeliveryTime: order.deliveryDate,
+        notifications: orderNotifications.map(notification => ({
+          id: notification.id,
+          type: mapNotificationType(notification.type),
+          message: notification.message || notification.body,
+          timestamp: notification.createdAt,
+          read: notification.status === 'read' || Boolean(notification.readAt),
+        })),
+      };
+    };
 
     const response: MobileTrackingResponse = {
       activeOrders: activeOrders.map(transformOrder),

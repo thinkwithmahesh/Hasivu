@@ -200,11 +200,13 @@ export const DeliveryTracking: React.FC<DeliveryTrackingProps> = ({
   }, [isTracking, startWatching, stopWatching]);
 
   return (
-    <Card className={cn('p-4 bg-gradient-to-br from-blue-50 to-purple-50', className)}>
+    <Card
+      className={cn('p-4 bg-gradient-to-br from-[var(--hasivu-primary)]/5 to-purple-50', className)}
+    >
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <MapPin className="h-5 w-5 text-blue-600" />
+            <MapPin className="h-5 w-5 text-[var(--hasivu-primary)]" />
             <span className="font-semibold">Delivery Tracking</span>
           </div>
           <Badge variant="outline" className="text-xs">
@@ -222,7 +224,7 @@ export const DeliveryTracking: React.FC<DeliveryTrackingProps> = ({
         {location && distance !== null && (
           <div className="grid grid-cols-2 gap-4">
             <div className="text-center p-3 bg-white/70 rounded-lg">
-              <p className="text-2xl font-bold text-blue-600">
+              <p className="text-2xl font-bold text-[var(--hasivu-primary)]">
                 {distance < 1 ? `${Math.round(distance * 1000)}m` : `${distance.toFixed(1)}km`}
               </p>
               <p className="text-xs text-gray-600">Distance</p>
@@ -387,9 +389,9 @@ export const CameraScanner: React.FC<CameraScannerProps> = ({
     }
   }, [flashOn]);
 
-  // Mock scanning function - in production, integrate with a real barcode/QR scanner library
   const startScanning = useCallback(() => {
     if (!videoRef.current || !canvasRef.current) return;
+    let missingDecoderReported = false;
 
     const scan = () => {
       if (!isActive) return;
@@ -405,38 +407,55 @@ export const CameraScanner: React.FC<CameraScannerProps> = ({
       // Draw video frame to canvas
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-      // In production, use a barcode/QR code scanning library here
-      // For demo purposes, we'll simulate scanning
-
-      // Mock scanning logic - replace with actual scanning library
-      if (Math.random() < 0.01) {
-        // 1% chance to simulate successful scan
-        const mockResults = [
-          { result: 'RFID_123456789', type: 'rfid' as const },
-          { result: 'https://hasivu.com/student/123', type: 'qr' as const },
-          { result: '1234567890123', type: 'barcode' as const },
-        ];
-
-        const randomResult = mockResults[Math.floor(Math.random() * mockResults.length)];
-
-        if (scanType === 'all' || scanType === randomResult.type) {
-          onScanResult(randomResult.result, randomResult.type);
-
-          // Haptic feedback on successful scan
-          if ('vibrate' in navigator) {
-            navigator.vibrate([50, 50, 50]);
-          }
-
-          stopCamera();
-          return;
+      const BarcodeDetectorCtor = (window as any).BarcodeDetector;
+      if (!BarcodeDetectorCtor) {
+        if (!missingDecoderReported) {
+          missingDecoderReported = true;
+          onError?.(
+            'Barcode scanning is not supported by this browser. Please use an RFID reader or supported browser.'
+          );
         }
+        animationRef.current = requestAnimationFrame(scan);
+        return;
       }
 
-      animationRef.current = requestAnimationFrame(scan);
+      const detector = new BarcodeDetectorCtor({
+        formats: ['qr_code', 'ean_13', 'code_128', 'code_39', 'upc_a', 'upc_e'],
+      });
+
+      void detector
+        .detect(canvas)
+        .then((codes: Array<{ rawValue?: string; format?: string }>) => {
+          const firstMatch = codes.find(code => Boolean(code.rawValue));
+          if (!firstMatch?.rawValue) {
+            animationRef.current = requestAnimationFrame(scan);
+            return;
+          }
+
+          const detectedType = normalizeScanFormat(firstMatch.format);
+          if (scanType === 'all' || scanType === detectedType) {
+            onScanResult(firstMatch.rawValue, detectedType);
+            if ('vibrate' in navigator) {
+              navigator.vibrate([50, 50, 50]);
+            }
+            stopCamera();
+            return;
+          }
+
+          animationRef.current = requestAnimationFrame(scan);
+        })
+        .catch(() => {
+          animationRef.current = requestAnimationFrame(scan);
+        });
     };
 
     scan();
   }, [isActive, scanType, onScanResult, stopCamera]);
+
+  const normalizeScanFormat = (format?: string): 'qr' | 'barcode' | 'rfid' => {
+    if (format === 'qr_code') return 'qr';
+    return 'barcode';
+  };
 
   useEffect(() => {
     return () => {

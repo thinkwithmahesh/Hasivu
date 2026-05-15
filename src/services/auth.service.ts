@@ -190,7 +190,14 @@ export class AuthService {
       ADMIN: ['read', 'write', 'delete', 'manage_users', 'manage_settings'],
       PARENT: ['read', 'write', 'order_food', 'view_reports'],
       STUDENT: ['read', 'view_orders'],
-      VENDOR: ['read', 'write', 'read_orders', 'manage_inventory', 'view_analytics', 'view_payments'],
+      VENDOR: [
+        'read',
+        'write',
+        'read_orders',
+        'manage_inventory',
+        'view_analytics',
+        'view_payments',
+      ],
       SCHOOL: ['read', 'write', 'manage_menus', 'view_analytics'],
       KITCHEN: [
         'read',
@@ -216,7 +223,14 @@ export class AuthService {
       admin: ['read', 'write', 'delete', 'manage_users', 'manage_settings'],
       parent: ['read', 'write', 'order_food', 'view_reports'],
       student: ['read', 'view_orders'],
-      vendor: ['read', 'write', 'read_orders', 'manage_inventory', 'view_analytics', 'view_payments'],
+      vendor: [
+        'read',
+        'write',
+        'read_orders',
+        'manage_inventory',
+        'view_analytics',
+        'view_payments',
+      ],
       school: ['read', 'write', 'manage_menus', 'view_analytics'],
       kitchen: [
         'read',
@@ -2045,7 +2059,7 @@ export class AuthService {
     try {
       const user = await DatabaseService.client.user.findUnique({
         where: { email: email.toLowerCase() },
-        select: { id: true, email: true, firstName: true },
+        select: { id: true, email: true, firstName: true, schoolId: true },
       });
 
       if (!user) {
@@ -2070,8 +2084,50 @@ export class AuthService {
         })
       );
 
-      // Send reset email (mock implementation)
-      logger.info('Password reset email would be sent', { email: user.email, token: resetToken });
+      const baseUrl =
+        process.env.FRONTEND_URL || process.env.WEB_APP_URL || 'http://localhost:3001';
+      const resetUrl = `${baseUrl.replace(/\/$/, '')}/auth/reset-password?token=${resetToken}`;
+
+      const notification = await DatabaseService.client.notification.create({
+        data: {
+          userId: user.id,
+          type: 'password_reset',
+          title: 'Reset your HASIVU password',
+          body:
+            `Hi ${user.firstName || 'there'}, use the secure password reset link ` +
+            'in this message. It expires in 30 minutes.',
+          message:
+            `Hi ${user.firstName || 'there'}, use this secure password reset link: ` +
+            `${resetUrl}. This link expires in 30 minutes.`,
+          data: JSON.stringify({ resetUrl, expiresAt: resetTokenExpiry.toISOString() }),
+          status: 'pending',
+          scheduledFor: new Date(),
+        } as any,
+      });
+
+      await DatabaseService.client.outboxEvent.create({
+        data: {
+          schoolId: user.schoolId,
+          eventType: 'notification.email.requested.v1',
+          aggregateType: 'notification',
+          aggregateId: notification.id,
+          payload: {
+            notificationId: notification.id,
+            userId: user.id,
+            email: user.email,
+            template: 'password_reset',
+            resetUrl,
+            expiresAt: resetTokenExpiry.toISOString(),
+          },
+          status: 'pending',
+          nextAttemptAt: new Date(),
+        },
+      });
+
+      logger.info('Password reset email enqueued', {
+        email: user.email,
+        notificationId: notification.id,
+      });
 
       return { success: true, message: 'Password reset link sent to your email' };
     } catch (error: unknown) {

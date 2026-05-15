@@ -3,6 +3,8 @@
  * Handles payment processing, gateway integration, and transaction management
  */
 
+import crypto from 'crypto';
+import Razorpay from 'razorpay';
 import { DatabaseService } from './database.service';
 import { logger } from '../utils/logger';
 import { ValidationError, NotFoundError, BusinessLogicError } from '../utils/errors';
@@ -73,6 +75,10 @@ export class PaymentGatewayService {
   private static instance: PaymentGatewayService;
   private db = DatabaseService.getInstance();
   private logger = logger;
+  private razorpay = new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID || '',
+    key_secret: process.env.RAZORPAY_KEY_SECRET || '',
+  });
 
   private constructor() {}
 
@@ -258,10 +264,10 @@ export class PaymentGatewayService {
         where: { id: payment.id },
         data: {
           status: this.mapGatewayStatus(payload.status),
-          gatewayResponse: {
-            ...(payment.gatewayResponse as any),
+          gatewayResponse: JSON.stringify({
+            ...this.parseGatewayResponse(payment.gatewayResponse),
             webhook: payload.data,
-          },
+          }),
           updatedAt: new Date(),
         },
       });
@@ -371,53 +377,75 @@ export class PaymentGatewayService {
   }
 
   /**
-   * Process payment with gateway (mock implementation)
+   * Process payment with Razorpay and return a client-confirmable order.
    */
   private async processWithGateway(
     payment: any,
     request: PaymentRequest
   ): Promise<Partial<PaymentResponse>> {
-    // Mock gateway processing
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    // Simulate success/failure
-    const success = Math.random() > 0.1; // 90% success rate
-
-    if (success) {
-      return {
-        status: 'completed',
-        gatewayTransactionId: `gw_${Date.now()}`,
-        gatewayResponse: {
-          gateway: 'razorpay',
-          method: 'card',
-          network: 'Visa',
-        },
-        fees: Math.round(request.amount * 0.02), // 2% fee
-        netAmount: Math.round(request.amount * 0.98),
-        processedAt: new Date(),
-      };
-    } else {
-      return {
-        status: 'failed',
-        failureReason: 'Payment declined by bank',
-      };
+    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+      throw new BusinessLogicError(
+        'Razorpay credentials are not configured',
+        'gateway_unavailable'
+      );
     }
+
+    const amountInPaise = Math.round(request.amount * 100);
+    const razorpayOrder = await this.razorpay.orders.create({
+      amount: amountInPaise,
+      currency: request.currency || 'INR',
+      receipt: `pay_${payment.id}`,
+      notes: {
+        orderId: request.orderId,
+        userId: request.userId,
+        ...(request.metadata || {}),
+      },
+    });
+
+    return {
+      status: 'processing',
+      gatewayTransactionId: razorpayOrder.id,
+      gatewayResponse: {
+        gateway: 'razorpay',
+        razorpayOrder,
+        requiresClientConfirmation: true,
+      },
+      fees: 0,
+      netAmount: request.amount,
+      processedAt: new Date(),
+    };
   }
 
   /**
-   * Process refund with gateway (mock implementation)
+   * Process refund with Razorpay.
    */
   private async processRefundWithGateway(
-    _payment: any,
-    _refund: any
+    payment: any,
+    refund: any
   ): Promise<Partial<RefundResponse>> {
-    // Mock refund processing
-    await new Promise(resolve => setTimeout(resolve, 500));
+    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+      throw new BusinessLogicError(
+        'Razorpay credentials are not configured',
+        'gateway_unavailable'
+      );
+    }
+    if (!payment.razorpayPaymentId) {
+      throw new BusinessLogicError(
+        'Payment has no Razorpay payment id',
+        'missing_gateway_payment_id'
+      );
+    }
 
+    const razorpayRefund = await this.razorpay.payments.refund(payment.razorpayPaymentId, {
+      amount: refund.amount,
+      notes: this.parseGatewayResponse(refund.notes),
+    });
+
+    const status = razorpayRefund.status === 'processed' ? 'completed' : 'processing';
     return {
-      status: 'completed',
-      gatewayRefundId: `rfnd_${Date.now()}`,
-      processedAt: new Date(),
+      status,
+      gatewayRefundId: razorpayRefund.id,
+      processedAt: new Date(Number(razorpayRefund.created_at || Date.now()) * 1000),
     };
   }
 
@@ -425,8 +453,43 @@ export class PaymentGatewayService {
    * Verify webhook signature
    */
   private verifyWebhookSignature(payload: WebhookPayload): boolean {
-    // Mock signature verification
-    return Boolean(payload.signature && payload.signature.length > 0);
+    const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
+    if (!secret || !payload.signature) {
+      return false;
+    }
+
+    const signedBody = JSON.stringify({
+      event: payload.event,
+      transactionId: payload.transactionId,
+      gatewayTransactionId: payload.gatewayTransactionId,
+      status: payload.status,
+      amount: payload.amount,
+      currency: payload.currency,
+      timestamp: payload.timestamp,
+      data: payload.data,
+    });
+    const expected = crypto.createHmac('sha256', secret).update(signedBody).digest('hex');
+
+    return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(payload.signature));
+  }
+
+  private parseGatewayResponse(value: unknown): Record<string, any> {
+    if (!value) {
+      return {};
+    }
+    if (typeof value === 'object' && !Array.isArray(value)) {
+      return value as Record<string, any>;
+    }
+    if (typeof value !== 'string') {
+      return {};
+    }
+
+    try {
+      const parsed = JSON.parse(value);
+      return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+    } catch {
+      return {};
+    }
   }
 
   /**

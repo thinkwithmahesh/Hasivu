@@ -7,6 +7,7 @@ import { Order } from '@prisma/client';
 import { OrderService } from './order.service';
 import { NotificationService } from './notification.service';
 import { PaymentService } from './payment.service';
+import { RedisService } from './redis.service';
 
 export interface OrderAnalytics {
   totalOrders: number;
@@ -212,7 +213,19 @@ export class EnhancedOrderService extends OrderService {
   }
 
   static async getCart(userId: string): Promise<any> {
-    // Stub implementation - return empty cart
+    const cartKey = `cart:${userId}`;
+    const rawCart = await RedisService.get(cartKey);
+
+    if (rawCart) {
+      const parsed = JSON.parse(rawCart);
+      return {
+        ...parsed,
+        userId,
+        lastUpdated: parsed.lastUpdated ? new Date(parsed.lastUpdated) : undefined,
+        expiresAt: parsed.expiresAt ? new Date(parsed.expiresAt) : undefined,
+      };
+    }
+
     return {
       userId,
       items: [],
@@ -222,8 +235,8 @@ export class EnhancedOrderService extends OrderService {
     };
   }
 
-  static async clearCart(_userId: string): Promise<void> {
-    // Stub implementation - do nothing
+  static async clearCart(userId: string): Promise<void> {
+    await RedisService.del(`cart:${userId}`);
   }
 }
 

@@ -212,34 +212,85 @@ async function sendPushNotification(
   data: Record<string, any>,
   priority: string
 ): Promise<boolean> {
-  // This would integrate with AWS SNS, Firebase FCM, or similar service
-  // For now, we'll simulate the push notification
-
   try {
-    // Simulate push notification service call
-    // In production, this would be:
-    // - AWS SNS for cross-platform push notifications
-    // - Firebase FCM for Android/iOS
-    // - Apple Push Notification Service (APNs)
+    const serverKey = process.env.FCM_SERVER_KEY;
+    if (!serverKey) {
+      logger.warn('FCM_SERVER_KEY is not configured; push delivery skipped', {
+        deviceToken: maskToken(deviceToken),
+        title,
+      });
+      return false;
+    }
+
+    const response = await fetch('https://fcm.googleapis.com/fcm/send', {
+      method: 'POST',
+      headers: {
+        Authorization: `key=${serverKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        to: deviceToken,
+        priority: priority === 'urgent' || priority === 'high' ? 'high' : 'normal',
+        notification: {
+          title,
+          body: message,
+        },
+        data: Object.fromEntries(
+          Object.entries(data).map(([key, value]) => [key, String(value ?? '')])
+        ),
+      }),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      logger.error('FCM push notification failed', undefined, {
+        status: response.status,
+        errorBody,
+        deviceToken: maskToken(deviceToken),
+      });
+      return false;
+    }
+
+    const result = (await response.json()) as { success?: number; failure?: number };
+    const delivered = Number(result.success || 0) > 0 && Number(result.failure || 0) === 0;
 
     logger.info('Push notification sent', {
-      deviceToken: deviceToken.substring(0, 10) + '...',
+      deviceToken: maskToken(deviceToken),
       title,
       priority,
+      delivered,
       dataKeys: Object.keys(data),
     });
 
-    return true;
+    return delivered;
   } catch (error) {
     logger.error(
       'Push notification failed',
       error instanceof Error ? error : new Error(String(error)),
       {
-        deviceToken: deviceToken.substring(0, 10) + '...',
+        deviceToken: maskToken(deviceToken),
       }
     );
     return false;
   }
+}
+
+function maskToken(token: string): string {
+  return token.length <= 10 ? '***' : `${token.slice(0, 10)}...`;
+}
+
+async function getActiveDeviceTokens(parentId: string): Promise<string[]> {
+  const devices = await prisma.userDevice.findMany({
+    where: {
+      userId: parentId,
+      isActive: true,
+      notificationsEnabled: true,
+      fcmToken: { not: null },
+    },
+    select: { fcmToken: true },
+  });
+
+  return devices.map(device => device.fcmToken).filter((token): token is string => Boolean(token));
 }
 
 /**
@@ -303,32 +354,19 @@ export async function sendDeliveryConfirmation(
     },
   };
 
-  // Get parent device tokens
-  const parent = await prisma.user.findUnique({
-    where: { id: parentId },
-    select: {
-      id: true,
-      deviceTokens: true,
-      preferences: true,
-    },
-  });
-
-  if (parent?.deviceTokens) {
-    let deviceTokens: string[] = [];
-    try {
-      deviceTokens = JSON.parse(parent.deviceTokens);
-    } catch (error) {
-      deviceTokens = [];
-    }
-
-    // Send to all registered devices
-    for (const token of deviceTokens) {
-      await sendPushNotification(token, title, message, notificationData.data!, 'high');
-    }
+  const deviceTokens = await getActiveDeviceTokens(parentId);
+  let delivered = false;
+  if (deviceTokens.length > 0) {
+    const results = await Promise.all(
+      deviceTokens.map(token =>
+        sendPushNotification(token, title, message, notificationData.data!, 'high')
+      )
+    );
+    delivered = results.some(Boolean);
   }
 
   // Create notification record
-  await createMobileNotification(parentId, notificationData, 'sent');
+  await createMobileNotification(parentId, notificationData, delivered ? 'sent' : 'failed');
 }
 
 /**
@@ -549,15 +587,7 @@ async function handleSendNotification(
       // Validate parent access
       const parent = await validateParentAccess(parentId, authenticatedUser);
 
-      // Get device tokens
-      let deviceTokens: string[] = [];
-      if (parent.deviceTokens) {
-        try {
-          deviceTokens = JSON.parse(parent.deviceTokens);
-        } catch (error) {
-          deviceTokens = [];
-        }
-      }
+      const deviceTokens = await getActiveDeviceTokens(parent.id);
 
       // Send push notifications
       let deliveryStatus: 'sent' | 'failed' = 'sent';

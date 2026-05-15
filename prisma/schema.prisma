@@ -49,19 +49,22 @@ model User {
   updatedAt         DateTime  @default(now()) @updatedAt @map("updated_at")
 
   // Relations - Fixed with proper constraints
-  school                School?                @relation(fields: [schoolId], references: [id], onDelete: SetNull)
-  parent                User?                  @relation("ParentChild", fields: [parentId], references: [id], onDelete: SetNull)
-  children              User[]                 @relation("ParentChild")
+  school                School?                  @relation(fields: [schoolId], references: [id], onDelete: SetNull)
+  parent                User?                    @relation("ParentChild", fields: [parentId], references: [id], onDelete: SetNull)
+  children              User[]                   @relation("ParentChild")
   authSessions          AuthSession[]
   userRoleAssignments   UserRoleAssignment[]
-  parentChildRels       ParentChild[]          @relation("ParentUser")
-  childParentRels       ParentChild[]          @relation("ChildUser")
-  rfidCards             RFIDCard[]             @relation("RFIDCardStudent")
-  deliveryVerifications DeliveryVerification[] @relation("DeliveryVerificationStudent")
+  parentChildRels       ParentChild[]            @relation("ParentUser")
+  childParentRels       ParentChild[]            @relation("ChildUser")
+  rfidCards             RFIDCard[]               @relation("RFIDCardStudent")
+  deliveryVerifications DeliveryVerification[]   @relation("DeliveryVerificationStudent")
   whatsappMessages      WhatsAppMessage[]
-  payments              Payment[]              @relation("UserPayments")
+  payments              Payment[]                @relation("UserPayments")
   auditLogs             AuditLog[]
-  createdAuditLogs      AuditLog[]             @relation("AuditLogCreator")
+  createdAuditLogs      AuditLog[]               @relation("AuditLogCreator")
+  createdInventoryItems InventoryItem[]          @relation("InventoryItemCreator")
+  createdSuppliers      InventorySupplier[]      @relation("InventorySupplierCreator")
+  createdPurchaseOrders InventoryPurchaseOrder[] @relation("InventoryPurchaseOrderCreator")
 
   // Fixed Order relationship
   orders         Order[] @relation("UserOrders")
@@ -132,6 +135,11 @@ model School {
   paymentFailureAnalytics PaymentFailureAnalytics[]
   customerBehaviors       CustomerPaymentBehavior[]
   subscriptionAnalytics   SubscriptionAnalytics[]
+  inventoryItems          InventoryItem[]
+  inventorySuppliers      InventorySupplier[]
+  purchaseOrders          InventoryPurchaseOrder[]
+  inventoryReservations   InventoryReservation[]
+  notificationTemplates   NotificationTemplate[]
 
   @@index([code])
   @@index([isActive])
@@ -274,6 +282,7 @@ model Order {
   orderItems            OrderItem[]
   deliveryVerifications DeliveryVerification[]
   invoiceItems          InvoiceItem[]
+  inventoryReservations InventoryReservation[]
 
   @@index([userId])
   @@index([studentId])
@@ -406,9 +415,10 @@ model MenuItem {
   updatedAt       DateTime @default(now()) @updatedAt @map("updated_at")
 
   // Relations
-  school        School?        @relation(fields: [schoolId], references: [id], onDelete: SetNull)
-  menuItemSlots MenuItemSlot[]
-  orderItems    OrderItem[]
+  school         School?         @relation(fields: [schoolId], references: [id], onDelete: SetNull)
+  menuItemSlots  MenuItemSlot[]
+  orderItems     OrderItem[]
+  inventoryItems InventoryItem[]
 
   @@index([category])
   @@index([available])
@@ -712,27 +722,27 @@ model RecommendationFeedback {
 // =====================================================
 
 model WhatsAppMessage {
-  id                String    @id @default(uuid())
-  schoolId          String?   @map("school_id")
-  userId            String?   @map("user_id")
-  notificationId    String?   @map("notification_id")
-  phone             String
-  type              String    @default("text")
-  status            String    @default("queued")
-  whatsappMessageId String?   @map("whatsapp_message_id")
-  templateName      String?   @map("template_name")
-  message           String?
-  metadata          String    @default("{}")
-  providerPayload   Json?     @map("provider_payload")
-  fallbackChannel   String?   @map("fallback_channel")
+  id                  String    @id @default(uuid())
+  schoolId            String?   @map("school_id")
+  userId              String?   @map("user_id")
+  notificationId      String?   @map("notification_id")
+  phone               String
+  type                String    @default("text")
+  status              String    @default("queued")
+  whatsappMessageId   String?   @map("whatsapp_message_id")
+  templateName        String?   @map("template_name")
+  message             String?
+  metadata            String    @default("{}")
+  providerPayload     Json?     @map("provider_payload")
+  fallbackChannel     String?   @map("fallback_channel")
   fallbackTriggeredAt DateTime? @map("fallback_triggered_at")
-  errorMessage      String?   @map("error_message")
-  sentAt            DateTime? @map("sent_at")
-  deliveredAt       DateTime? @map("delivered_at")
-  readAt            DateTime? @map("read_at")
-  failedAt          DateTime? @map("failed_at")
-  createdAt         DateTime  @default(now()) @map("created_at")
-  updatedAt         DateTime  @default(now()) @updatedAt @map("updated_at")
+  errorMessage        String?   @map("error_message")
+  sentAt              DateTime? @map("sent_at")
+  deliveredAt         DateTime? @map("delivered_at")
+  readAt              DateTime? @map("read_at")
+  failedAt            DateTime? @map("failed_at")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @default(now()) @updatedAt @map("updated_at")
 
   // Relations
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
@@ -1598,6 +1608,28 @@ model Notification {
   @@map("notifications")
 }
 
+model NotificationTemplate {
+  id       String  @id @default(uuid())
+  schoolId String? @map("school_id")
+
+  templateKey String @map("template_key")
+  channel     String @default("in_app")
+  title       String
+  body        String
+  variables   String @default("[]")
+
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  school School? @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@unique([schoolId, templateKey, channel])
+  @@index([templateKey])
+  @@index([schoolId, isActive])
+  @@map("notification_templates")
+}
+
 model StudentParent {
   id        String @id @default(uuid())
   studentId String @map("student_id")
@@ -1717,4 +1749,186 @@ model WalletLedgerEntry {
   @@index([referenceType, referenceId])
   @@index([status])
   @@map("wallet_ledger_entries")
+}
+
+// =====================================================
+// INVENTORY AND PROCUREMENT MODELS
+// =====================================================
+
+model InventoryItem {
+  id               String    @id @default(uuid())
+  schoolId         String    @map("school_id")
+  menuItemId       String?   @map("menu_item_id")
+  supplierId       String?   @map("supplier_id")
+  name             String
+  sku              String?
+  category         String
+  description      String?
+  quantity         Decimal   @default(0)
+  reservedQuantity Decimal   @default(0) @map("reserved_quantity")
+  unit             String
+  minStock         Decimal   @default(0) @map("min_stock")
+  maxStock         Decimal?  @map("max_stock")
+  reorderPoint     Decimal?  @map("reorder_point")
+  price            Decimal   @default(0)
+  currency         String    @default("INR")
+  location         String?
+  batchNumber      String?   @map("batch_number")
+  expiryDate       DateTime? @map("expiry_date")
+  status           String    @default("active")
+  metadata         Json?
+  createdById      String?   @map("created_by_id")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at")
+  deletedAt        DateTime? @map("deleted_at")
+
+  school        School                       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  supplier      InventorySupplier?           @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  menuItem      MenuItem?                    @relation(fields: [menuItemId], references: [id], onDelete: SetNull)
+  createdBy     User?                        @relation("InventoryItemCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  reservations  InventoryReservation[]
+  purchaseLines InventoryPurchaseOrderItem[]
+
+  @@unique([schoolId, sku])
+  @@index([schoolId, category, status])
+  @@index([schoolId, menuItemId])
+  @@index([schoolId, supplierId])
+  @@index([expiryDate])
+  @@index([deletedAt])
+  @@map("inventory_items")
+}
+
+model InventorySupplier {
+  id          String    @id @default(uuid())
+  schoolId    String    @map("school_id")
+  name        String
+  contact     String?
+  email       String?
+  phone       String?
+  address     String?
+  taxId       String?   @map("tax_id")
+  status      String    @default("active")
+  metadata    Json?
+  createdById String?   @map("created_by_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  school         School                   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  createdBy      User?                    @relation("InventorySupplierCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  inventoryItems InventoryItem[]
+  purchaseOrders InventoryPurchaseOrder[]
+
+  @@unique([schoolId, name])
+  @@index([schoolId, status])
+  @@index([deletedAt])
+  @@map("inventory_suppliers")
+}
+
+model InventoryPurchaseOrder {
+  id               String    @id @default(uuid())
+  schoolId         String    @map("school_id")
+  supplierId       String    @map("supplier_id")
+  orderNumber      String    @map("order_number")
+  status           String    @default("draft")
+  orderDate        DateTime  @default(now()) @map("order_date")
+  expectedDelivery DateTime? @map("expected_delivery")
+  receivedAt       DateTime? @map("received_at")
+  totalAmount      Decimal   @default(0) @map("total_amount")
+  currency         String    @default("INR")
+  notes            String?
+  metadata         Json?
+  createdById      String?   @map("created_by_id")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at")
+  deletedAt        DateTime? @map("deleted_at")
+
+  school    School                       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  supplier  InventorySupplier            @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  createdBy User?                        @relation("InventoryPurchaseOrderCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  items     InventoryPurchaseOrderItem[]
+
+  @@unique([schoolId, orderNumber])
+  @@index([schoolId, supplierId])
+  @@index([schoolId, status])
+  @@index([orderDate])
+  @@index([deletedAt])
+  @@map("inventory_purchase_orders")
+}
+
+model InventoryPurchaseOrderItem {
+  id              String   @id @default(uuid())
+  purchaseOrderId String   @map("purchase_order_id")
+  inventoryItemId String?  @map("inventory_item_id")
+  name            String
+  quantity        Decimal
+  unit            String
+  unitPrice       Decimal  @map("unit_price")
+  totalPrice      Decimal  @map("total_price")
+  metadata        Json?
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  purchaseOrder InventoryPurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  inventoryItem InventoryItem?         @relation(fields: [inventoryItemId], references: [id], onDelete: SetNull)
+
+  @@index([purchaseOrderId])
+  @@index([inventoryItemId])
+  @@map("inventory_purchase_order_items")
+}
+
+model InventoryReservation {
+  id              String    @id @default(uuid())
+  schoolId        String    @map("school_id")
+  orderId         String    @map("order_id")
+  inventoryItemId String    @map("inventory_item_id")
+  quantity        Decimal
+  status          String    @default("reserved")
+  expiresAt       DateTime? @map("expires_at")
+  confirmedAt     DateTime? @map("confirmed_at")
+  releasedAt      DateTime? @map("released_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  school        School        @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  order         Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Restrict)
+
+  @@unique([orderId, inventoryItemId])
+  @@index([schoolId, status])
+  @@index([expiresAt])
+  @@map("inventory_reservations")
+}
+
+model AnalyticsMetric {
+  id        String   @id @default(uuid())
+  name      String
+  value     Float
+  metadata  Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([name, createdAt])
+  @@index([createdAt])
+  @@map("analytics_metrics")
+}
+
+model ApiKeyCredential {
+  id            String    @id @default(uuid())
+  keyHash       String    @unique @map("key_hash")
+  userId        String    @map("user_id")
+  name          String
+  policyType    String    @default("default") @map("policy_type")
+  permissions   String    @default("[]")
+  metadata      String    @default("{}")
+  rotationCount Int       @default(0) @map("rotation_count")
+  isActive      Boolean   @default(true) @map("is_active")
+  expiresAt     DateTime  @map("expires_at")
+  lastUsedAt    DateTime? @map("last_used_at")
+  revokedAt     DateTime? @map("revoked_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([isActive, expiresAt])
+  @@index([policyType])
+  @@map("api_key_credentials")
 }

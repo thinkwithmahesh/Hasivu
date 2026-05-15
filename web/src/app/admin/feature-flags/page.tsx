@@ -96,7 +96,7 @@ const CATEGORYICONS = {
 
 const PRIORITYCOLORS = {
   low: 'bg-gray-100 text-gray-800',
-  medium: 'bg-blue-100 text-blue-800',
+  medium: 'bg-[var(--hasivu-primary)]/10 text-[var(--hasivu-primary)]',
   high: 'bg-orange-100 text-orange-800',
   critical: 'bg-red-100 text-red-800',
 };
@@ -217,6 +217,15 @@ export default function FeatureFlagsAdminPage() {
       (statusFilter === 'disabled' && !flag.enabled);
     return matchesSearch && matchesCategory && matchesStatus;
   });
+  const flagsByCategory = flags.reduce(
+    (acc, flag) => {
+      const category = flag.metadata.category;
+      acc[category] = (acc[category] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>
+  );
+  const enabledFlagCount = flags.filter(flag => flag.enabled).length;
 
   const getStrategyDescription = (rule: any) => {
     switch (rule.strategy) {
@@ -376,9 +385,9 @@ export default function FeatureFlagsAdminPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Total Flags</p>
-                <p className="text-2xl font-bold">{analytics.totalFlags}</p>
+                <p className="text-2xl font-bold">{flags.length}</p>
               </div>
-              <Flag className="h-8 w-8 text-blue-600" />
+              <Flag className="h-8 w-8 text-[var(--hasivu-primary)]" />
             </div>
           </CardContent>
         </Card>
@@ -388,7 +397,7 @@ export default function FeatureFlagsAdminPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Enabled Flags</p>
-                <p className="text-2xl font-bold text-green-600">{analytics.enabledFlags}</p>
+                <p className="text-2xl font-bold text-green-600">{enabledFlagCount}</p>
               </div>
               <CheckCircle className="h-8 w-8 text-green-600" />
             </div>
@@ -400,7 +409,7 @@ export default function FeatureFlagsAdminPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Payment Flags</p>
-                <p className="text-2xl font-bold">{analytics.flagsByCategory.payment || 0}</p>
+                <p className="text-2xl font-bold">{flagsByCategory.payment || 0}</p>
               </div>
               <Zap className="h-8 w-8 text-purple-600" />
             </div>
@@ -412,7 +421,7 @@ export default function FeatureFlagsAdminPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Analytics Flags</p>
-                <p className="text-2xl font-bold">{analytics.flagsByCategory.analytics || 0}</p>
+                <p className="text-2xl font-bold">{flagsByCategory.analytics || 0}</p>
               </div>
               <BarChart3 className="h-8 w-8 text-indigo-600" />
             </div>

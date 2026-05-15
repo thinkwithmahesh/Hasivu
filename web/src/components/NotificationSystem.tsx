@@ -91,10 +91,15 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
 
   const loadNotifications = async () => {
     try {
-      // In a real implementation, this would fetch from your backend
-      // For demo purposes, we'll generate some mock notifications
-      const mockNotifications = generateMockNotifications();
-      setNotifications(mockNotifications);
+      const response = await fetch('/api/notifications', { credentials: 'include' });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || !payload?.success) {
+        setNotifications([]);
+        return;
+      }
+
+      const apiNotifications = Array.isArray(payload.data) ? payload.data : [];
+      setNotifications(apiNotifications.map(normalizeNotification));
     } catch (error) {
       toast.error('Failed to load notifications');
     }
@@ -272,64 +277,51 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
     } catch (error) {}
   };
 
-  const generateMockNotifications = (): Notification[] => {
-    const now = new Date();
-    const notifications: Notification[] = [
-      {
-        id: '1',
-        type: 'security',
-        title: 'Fraud Attempt Blocked',
-        message:
-          'Suspicious payment activity detected and automatically blocked for student ID 1234',
-        timestamp: new Date(now.getTime() - 5 * 60 * 1000).toISOString(),
-        read: false,
-        priority: 'high',
-        actionUrl: '/security/fraud-alerts',
-        actionLabel: 'View Details',
-      },
-      {
-        id: '2',
-        type: 'rfid',
-        title: 'RFID Reader Offline',
-        message: 'Main cafeteria RFID reader has gone offline. Last seen 10 minutes ago.',
-        timestamp: new Date(now.getTime() - 15 * 60 * 1000).toISOString(),
-        read: false,
-        priority: 'medium',
-        actionUrl: '/rfid/readers',
-        actionLabel: 'Check Status',
-      },
-      {
-        id: '3',
-        type: 'success',
-        title: 'Daily Revenue Target Met',
-        message: "Congratulations! Today's revenue target of $2,500 has been achieved.",
-        timestamp: new Date(now.getTime() - 2 * 60 * 60 * 1000).toISOString(),
-        read: true,
-        priority: 'low',
-      },
-      {
-        id: '4',
-        type: 'payment',
-        title: 'Low Balance Alert',
-        message: '15 students have account balances below $5.00 and may need to add funds.',
-        timestamp: new Date(now.getTime() - 4 * 60 * 60 * 1000).toISOString(),
-        read: false,
-        priority: 'medium',
-        actionUrl: '/payments/low-balance',
-        actionLabel: 'View Students',
-      },
-      {
-        id: '5',
-        type: 'system',
-        title: 'System Maintenance Scheduled',
-        message: 'Scheduled maintenance will occur tomorrow from 2:00 AM to 4:00 AM EST.',
-        timestamp: new Date(now.getTime() - 8 * 60 * 60 * 1000).toISOString(),
-        read: true,
-        priority: 'low',
-      },
-    ];
+  const normalizeNotification = (notification: any): Notification => ({
+    id: String(notification.id),
+    type: normalizeNotificationType(notification.type),
+    title: String(notification.title || 'Notification'),
+    message: String(notification.message || notification.body || ''),
+    timestamp: String(notification.createdAt || notification.timestamp || new Date().toISOString()),
+    read: Boolean(notification.readAt || notification.isRead || notification.status === 'read'),
+    priority: normalizePriority(notification.priority),
+    actionUrl: notification.actionUrl,
+    actionLabel: notification.actionLabel,
+    metadata: parseNotificationMetadata(notification.data || notification.metadata),
+    userId: notification.userId,
+    schoolId: notification.schoolId,
+    expiresAt: notification.expiresAt,
+  });
 
-    return notifications;
+  const normalizeNotificationType = (type: unknown): Notification['type'] => {
+    const normalized = String(type || 'info').toLowerCase();
+    if (
+      ['success', 'warning', 'error', 'security', 'rfid', 'payment', 'system'].includes(normalized)
+    ) {
+      return normalized as Notification['type'];
+    }
+    return 'info';
+  };
+
+  const normalizePriority = (priority: unknown): Notification['priority'] => {
+    const normalized = String(priority || 'medium').toLowerCase();
+    if (['low', 'medium', 'high', 'urgent'].includes(normalized)) {
+      return normalized as Notification['priority'];
+    }
+    return 'medium';
+  };
+
+  const parseNotificationMetadata = (value: unknown): Notification['metadata'] => {
+    if (!value) return undefined;
+    if (typeof value === 'object') return value as Notification['metadata'];
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch {
+        return undefined;
+      }
+    }
+    return undefined;
   };
 
   const getNotificationIcon = (type: Notification['type']) => {
@@ -345,13 +337,13 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
       case 'security':
         return <Shield {...iconProps} className="w-5 h-5 text-purple-600" />;
       case 'rfid':
-        return <Radio {...iconProps} className="w-5 h-5 text-blue-600" />;
+        return <Radio {...iconProps} className="w-5 h-5 text-[var(--hasivu-primary)]" />;
       case 'payment':
         return <CreditCard {...iconProps} className="w-5 h-5 text-green-600" />;
       case 'system':
         return <Activity {...iconProps} className="w-5 h-5 text-gray-600" />;
       default:
-        return <Info {...iconProps} className="w-5 h-5 text-blue-600" />;
+        return <Info {...iconProps} className="w-5 h-5 text-[var(--hasivu-primary)]" />;
     }
   };
 
@@ -364,7 +356,7 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
       case 'medium':
         return 'border-l-yellow-500 bg-yellow-50';
       default:
-        return 'border-l-blue-500 bg-blue-50';
+        return 'border-l-blue-500 bg-[var(--hasivu-primary)]/5';
     }
   };
 
@@ -432,7 +424,7 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
                   {unreadCount > 0 && (
                     <button
                       onClick={markAllAsRead}
-                      className="text-sm text-blue-600 hover:text-blue-800"
+                      className="text-sm text-[var(--hasivu-primary)] hover:text-[var(--hasivu-primary-dark)]"
                     >
                       Mark all read
                     </button>
@@ -518,7 +510,7 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
                                   {formatTimeAgo(notification.timestamp)}
                                 </span>
                                 {!notification.read && (
-                                  <div className="w-2 h-2 bg-blue-500 rounded-full" />
+                                  <div className="w-2 h-2 bg-[var(--hasivu-primary)] rounded-full" />
                                 )}
                               </div>
                             </div>
@@ -528,7 +520,7 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
                             </p>
 
                             {notification.actionLabel && (
-                              <div className="mt-2 flex items-center text-xs text-blue-600 hover:text-blue-800">
+                              <div className="mt-2 flex items-center text-xs text-[var(--hasivu-primary)] hover:text-[var(--hasivu-primary-dark)]">
                                 <span>{notification.actionLabel}</span>
                                 <ChevronRight className="w-3 h-3 ml-1" />
                               </div>
@@ -558,7 +550,7 @@ const NotificationSystem: React.FC<NotificationSystemProps> = ({
                 <div className="px-4 py-3 border-t border-gray-200 bg-gray-50">
                   <button
                     onClick={() => setShowAll(!showAll)}
-                    className="w-full text-sm text-blue-600 hover:text-blue-800 font-medium"
+                    className="w-full text-sm text-[var(--hasivu-primary)] hover:text-[var(--hasivu-primary-dark)] font-medium"
                   >
                     {showAll ? 'Show less' : `View all ${notifications.length} notifications`}
                   </button>

@@ -8,6 +8,7 @@ import * as jwt from 'jsonwebtoken';
 import { APIGatewayProxyEvent } from 'aws-lambda';
 import { config } from '../config/environment';
 import { logger } from './logger.service';
+import { RedisService } from '../services/redis.service';
 
 /**
  * JWT payload interface
@@ -773,8 +774,26 @@ export class JWTService {
         return false;
       }
 
-      // TODO: Implement token blacklisting with Redis or database
-      // For now, just log the revocation
+      const ttlSeconds = decoded.exp
+        ? Math.max(0, decoded.exp - Math.floor(Date.now() / 1000))
+        : 15 * 60;
+      if (ttlSeconds <= 0) {
+        logger.info('Token already expired before revocation', { jti: decoded.jti });
+        return true;
+      }
+
+      await RedisService.set(
+        `jwt:blacklist:${decoded.jti}`,
+        JSON.stringify({
+          userId: decoded.userId,
+          email: decoded.email,
+          tokenType: decoded.tokenType,
+          revokedAt: new Date().toISOString(),
+          expiresAt: decoded.exp ? new Date(decoded.exp * 1000).toISOString() : undefined,
+        }),
+        ttlSeconds
+      );
+
       logger.info('Token revoked', {
         jti: decoded.jti,
         userId: decoded.userId,

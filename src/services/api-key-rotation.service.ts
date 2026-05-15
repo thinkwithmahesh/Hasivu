@@ -5,6 +5,7 @@
 import crypto from 'crypto';
 import { logger } from '../shared/logger.service';
 import { config } from '../config/environment';
+import { prisma } from '../database/DatabaseManager';
 
 interface ApiKey {
   id: string;
@@ -115,8 +116,7 @@ export class ApiKeyRotationService {
         permissions,
       };
 
-      // Store in database (implement based on your DB)
-      // await this.saveApiKey(apiKey);
+      await this.saveApiKey(apiKey, policyType);
 
       logger.info('API key created', {
         userId,
@@ -145,19 +145,30 @@ export class ApiKeyRotationService {
     reason: string = 'scheduled'
   ): Promise<{ key: string; id: string }> {
     try {
-      // Get existing key from database
-      // const existingKey = await this.getApiKeyById(keyId);
+      const existingKey = await this.getApiKeyById(keyId);
+      if (!existingKey || !existingKey.isActive) {
+        throw new Error('API key not found or inactive');
+      }
 
-      // For now, simulate with a new key
       const newKey = this.generateApiKey();
       const hashedKey = this.hashApiKey(newKey);
+      const policyType = this.determineKeyPolicyType(existingKey);
+      const policy = this.rotationPolicies.get(policyType) || this.rotationPolicies.get('default')!;
 
-      // Update in database
-      // await this.updateApiKey(keyId, {
-      //   key: hashedKey,
-      //   rotationCount: existingKey.rotationCount + 1,
-      //   createdAt: new Date(),
-      // });
+      await (prisma as any).apiKeyCredential.update({
+        where: { id: keyId },
+        data: {
+          keyHash: hashedKey,
+          rotationCount: existingKey.rotationCount + 1,
+          createdAt: new Date(),
+          expiresAt: new Date(Date.now() + policy.maxAge * 24 * 60 * 60 * 1000),
+          lastUsedAt: null,
+          metadata: JSON.stringify({
+            rotatedAt: new Date().toISOString(),
+            reason,
+          }),
+        },
+      });
 
       logger.info('API key rotated', {
         keyId,
@@ -205,11 +216,18 @@ export class ApiKeyRotationService {
     try {
       const hashedKey = this.hashApiKey(providedKey);
 
-      // Check against database
-      // const apiKey = await this.getApiKeyByHash(hashedKey);
+      const apiKey = await (prisma as any).apiKeyCredential.findUnique({
+        where: { keyHash: hashedKey },
+      });
 
-      // For now, return true for demo purposes
-      // In production, implement actual DB lookup and validation
+      if (!apiKey || !apiKey.isActive || apiKey.revokedAt || apiKey.expiresAt <= new Date()) {
+        return false;
+      }
+
+      await (prisma as any).apiKeyCredential.update({
+        where: { id: apiKey.id },
+        data: { lastUsedAt: new Date() },
+      });
       return true;
     } catch (error: unknown) {
       logger.error(
@@ -225,8 +243,14 @@ export class ApiKeyRotationService {
    */
   public async revokeApiKey(keyId: string, reason: string = 'user_requested'): Promise<void> {
     try {
-      // Update in database
-      // await this.updateApiKey(keyId, { isActive: false });
+      await (prisma as any).apiKeyCredential.update({
+        where: { id: keyId },
+        data: {
+          isActive: false,
+          revokedAt: new Date(),
+          metadata: JSON.stringify({ revokedReason: reason }),
+        },
+      });
 
       logger.info('API key revoked', {
         keyId,
@@ -248,11 +272,7 @@ export class ApiKeyRotationService {
    */
   public async getExpiringKeys(policyType?: string): Promise<ApiKey[]> {
     try {
-      // Get all active keys from database
-      // const allKeys = await this.getAllActiveApiKeys();
-
-      // For demo purposes, return empty array
-      const allKeys: ApiKey[] = [];
+      const allKeys = await this.getAllActiveApiKeys();
 
       return allKeys.filter(key => {
         const keyPolicyType = this.determineKeyPolicyType(key);
@@ -277,11 +297,7 @@ export class ApiKeyRotationService {
     try {
       logger.info('Starting automatic API key rotation job');
 
-      // Get all keys that need rotation
-      // const keysToRotate = await this.getKeysNeedingRotation();
-
-      // For demo purposes
-      const keysToRotate: ApiKey[] = [];
+      const keysToRotate = await this.getKeysNeedingRotation();
 
       for (const key of keysToRotate) {
         const policyType = this.determineKeyPolicyType(key);
@@ -343,14 +359,24 @@ export class ApiKeyRotationService {
     averageRotationCount: number;
   }> {
     try {
-      // Get stats from database
-      // For demo purposes, return dummy data
+      const allKeys = await this.getAllApiKeys();
+      const now = new Date();
+      const activeKeys = allKeys.filter(key => key.isActive && key.expiresAt > now);
+      const expiredKeys = allKeys.filter(key => key.expiresAt <= now);
+      const expiringSoon = activeKeys.filter(key =>
+        this.isKeyExpiringSoon(key, this.determineKeyPolicyType(key))
+      );
+      const averageRotationCount =
+        allKeys.length > 0
+          ? allKeys.reduce((sum, key) => sum + key.rotationCount, 0) / allKeys.length
+          : 0;
+
       return {
-        totalKeys: 0,
-        activeKeys: 0,
-        expiredKeys: 0,
-        expiringSoon: 0,
-        averageRotationCount: 0,
+        totalKeys: allKeys.length,
+        activeKeys: activeKeys.length,
+        expiredKeys: expiredKeys.length,
+        expiringSoon: expiringSoon.length,
+        averageRotationCount: Math.round(averageRotationCount * 100) / 100,
       };
     } catch (error: unknown) {
       logger.error(
@@ -393,6 +419,76 @@ export class ApiKeyRotationService {
    */
   public getRotationPolicy(name: string): RotationPolicy | undefined {
     return this.rotationPolicies.get(name);
+  }
+
+  private async saveApiKey(apiKey: ApiKey, policyType: string): Promise<void> {
+    await (prisma as any).apiKeyCredential.create({
+      data: {
+        id: apiKey.id,
+        keyHash: apiKey.key,
+        userId: apiKey.userId,
+        name: apiKey.name,
+        policyType,
+        permissions: JSON.stringify(apiKey.permissions),
+        rotationCount: apiKey.rotationCount,
+        isActive: apiKey.isActive,
+        expiresAt: apiKey.expiresAt,
+        lastUsedAt: apiKey.lastUsedAt,
+      },
+    });
+  }
+
+  private async getApiKeyById(keyId: string): Promise<ApiKey | null> {
+    const row = await (prisma as any).apiKeyCredential.findUnique({
+      where: { id: keyId },
+    });
+    return row ? this.mapApiKey(row) : null;
+  }
+
+  private async getAllActiveApiKeys(): Promise<ApiKey[]> {
+    const rows = await (prisma as any).apiKeyCredential.findMany({
+      where: {
+        isActive: true,
+        revokedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+    });
+    return rows.map((row: any) => this.mapApiKey(row));
+  }
+
+  private async getAllApiKeys(): Promise<ApiKey[]> {
+    const rows = await (prisma as any).apiKeyCredential.findMany();
+    return rows.map((row: any) => this.mapApiKey(row));
+  }
+
+  private async getKeysNeedingRotation(): Promise<ApiKey[]> {
+    const allKeys = await this.getAllActiveApiKeys();
+    return allKeys.filter(key => this.shouldRotateKey(key, this.determineKeyPolicyType(key)));
+  }
+
+  private mapApiKey(row: any): ApiKey {
+    return {
+      id: row.id,
+      key: row.keyHash,
+      userId: row.userId,
+      name: row.name,
+      createdAt: row.createdAt,
+      expiresAt: row.expiresAt,
+      lastUsedAt: row.lastUsedAt || undefined,
+      rotationCount: row.rotationCount,
+      isActive: row.isActive,
+      permissions: this.parseJsonArray(row.permissions),
+    };
+  }
+
+  private parseJsonArray(value: string | null | undefined): string[] {
+    if (!value) return [];
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed.filter(item => typeof item === 'string') : [];
+    } catch {
+      return [];
+    }
   }
 }
 
