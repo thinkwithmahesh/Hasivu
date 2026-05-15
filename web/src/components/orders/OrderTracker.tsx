@@ -4,7 +4,7 @@
  * Displays order progress, delivery updates, and RFID verification
  */
 
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -21,13 +21,11 @@ import {
   Phone,
   MessageSquare,
 } from 'lucide-react';
-// import { useOrderTracking, useSocketConnection } from '@/hooks/useSocket'; // TODO: Implement these hooks
 import { cn, formatTime } from '@/lib/utils';
 import { toast } from 'react-hot-toast';
 
-// TODO: Temporary stub implementations - replace with real hooks
 const useOrderTracking = (
-  _orderId: string
+  orderId: string
 ): {
   status: string;
   updates: any[];
@@ -36,25 +34,73 @@ const useOrderTracking = (
   estimatedTime?: string;
   deliveryPersonId?: string;
   location?: string;
-} => ({
-  status: 'pending',
-  updates: [],
-  lastUpdate: null,
-  estimatedDelivery: null,
-  estimatedTime: undefined,
-  deliveryPersonId: undefined,
-  location: undefined,
-});
-
-const useSocketConnection = (): {
   isConnected: boolean;
-  connectionState: string;
-  reconnect: () => void;
-} => ({
-  isConnected: false,
-  connectionState: 'disconnected',
-  reconnect: () => {},
-});
+  connectionState: 'connecting' | 'connected' | 'disconnected';
+  refresh: () => void;
+} => {
+  const [trackingData, setTrackingData] = useState({
+    status: 'pending',
+    updates: [] as any[],
+    lastUpdate: null as any,
+    estimatedDelivery: null as any,
+    estimatedTime: undefined as string | undefined,
+    deliveryPersonId: undefined as string | undefined,
+    location: undefined as string | undefined,
+    isConnected: false,
+    connectionState: 'connecting' as 'connecting' | 'connected' | 'disconnected',
+  });
+
+  const loadTracking = useCallback(async () => {
+    if (!orderId) return;
+    setTrackingData(prev => ({ ...prev, connectionState: 'connecting' }));
+
+    try {
+      const response = await fetch(`/api/orders/${orderId}/tracking`, {
+        credentials: 'include',
+      });
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok || !payload?.data) {
+        throw new Error(payload?.error || 'Failed to load order tracking');
+      }
+
+      const data = payload.data;
+      const updates = Array.isArray(data.timeline)
+        ? data.timeline.map((item: any) => ({
+            status: item.status,
+            timestamp: item.timestamp,
+            message: item.description,
+          }))
+        : [];
+
+      setTrackingData({
+        status: data.status || 'pending',
+        updates,
+        lastUpdate: updates[0] || null,
+        estimatedDelivery: data.estimatedDelivery || null,
+        estimatedTime: data.estimatedDelivery || undefined,
+        deliveryPersonId: data.deliveryPersonId,
+        location: data.location,
+        isConnected: true,
+        connectionState: 'connected',
+      });
+    } catch {
+      setTrackingData(prev => ({
+        ...prev,
+        isConnected: false,
+        connectionState: 'disconnected',
+      }));
+    }
+  }, [orderId]);
+
+  useEffect(() => {
+    loadTracking();
+    const interval = window.setInterval(loadTracking, 15000);
+    return () => window.clearInterval(interval);
+  }, [loadTracking]);
+
+  return { ...trackingData, refresh: loadTracking };
+};
 
 interface OrderTrackerProps {
   orderId: string;
@@ -95,10 +141,10 @@ const statusSteps: StatusStep[] = [
     description: 'Restaurant has accepted your order',
     icon: CheckCircle,
     color: {
-      bg: 'bg-blue-100',
-      text: 'text-blue-700',
-      border: 'border-blue-300',
-      icon: 'text-blue-500',
+      bg: 'bg-[var(--hasivu-primary)]/10',
+      text: 'text-[var(--hasivu-primary)]',
+      border: 'border-[var(--hasivu-primary)]/30',
+      icon: 'text-[var(--hasivu-primary)]',
     },
   },
   {
@@ -158,7 +204,7 @@ export function OrderTracker({
   compact = false,
 }: OrderTrackerProps) {
   const trackingData = useOrderTracking(orderId);
-  const { isConnected, connectionState, reconnect } = useSocketConnection();
+  const { isConnected, connectionState, refresh } = trackingData;
   const [showFullHistory, setShowFullHistory] = useState(false);
 
   const currentStepIndex = statusSteps.findIndex(step => step.key === trackingData.status);
@@ -170,12 +216,13 @@ export function OrderTracker({
   const isCancelled = trackingData.status === 'cancelled';
 
   // Show connection issues
-  const showConnectionAlert = !isConnected && connectionState !== 'connecting';
+  const showConnectionAlert = !isConnected;
 
   const handleRefresh = () => {
     if (!isConnected) {
-      reconnect();
+      refresh();
     } else {
+      refresh();
       toast.success('Order status is up to date');
     }
   };
@@ -268,7 +315,7 @@ export function OrderTracker({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={reconnect}
+                onClick={refresh}
                 disabled={connectionState === 'connecting'}
               >
                 {connectionState === 'connecting' ? 'Connecting...' : 'Reconnect'}
@@ -311,7 +358,7 @@ export function OrderTracker({
                     'flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-200',
                     isCompleted && step.color.bg,
                     isCompleted && step.color.border,
-                    isCurrent && 'ring-2 ring-offset-2 ring-blue-500',
+                    isCurrent && 'ring-2 ring-offset-2 ring-[var(--hasivu-primary)]',
                     isPending && 'border-gray-200 bg-gray-50'
                   )}
                 >
@@ -327,7 +374,7 @@ export function OrderTracker({
                   <p
                     className={cn(
                       'font-medium transition-colors duration-200',
-                      isCurrent && 'text-blue-600',
+                      isCurrent && 'text-[var(--hasivu-primary)]',
                       isCompleted && !isCurrent && step.color.text,
                       isPending && 'text-gray-500'
                     )}
@@ -337,7 +384,7 @@ export function OrderTracker({
                   <p
                     className={cn(
                       'text-sm transition-colors duration-200',
-                      isCurrent && 'text-blue-500',
+                      isCurrent && 'text-[var(--hasivu-primary)]/80',
                       isCompleted && !isCurrent && 'text-gray-600',
                       isPending && 'text-gray-400'
                     )}
@@ -347,7 +394,7 @@ export function OrderTracker({
 
                   {/* Show current step details */}
                   {isCurrent && trackingData.estimatedTime && (
-                    <p className="text-xs text-blue-500 mt-1">
+                    <p className="text-xs text-[var(--hasivu-primary)]/70 mt-1">
                       Est. completion: {formatTime(trackingData.estimatedTime)}
                     </p>
                   )}
