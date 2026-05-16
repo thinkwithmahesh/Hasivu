@@ -29,7 +29,7 @@ export class PaymentService {
   private razorpay: Razorpay;
   private webhookSecret: string;
   public isRazorpayAvailable(): boolean {
-    return true;
+    return Boolean(process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET);
   }
 
   public constructor() {
@@ -131,7 +131,6 @@ export class PaymentService {
   }
 
   async processPayment(paymentId: string): Promise<Payment> {
-    // Stub for payment gateway integration (e.g., Razorpay, Stripe)
     const payment = await this.findById(paymentId);
 
     if (!payment) {
@@ -142,11 +141,15 @@ export class PaymentService {
       throw new Error(`Payment already ${payment.status}`);
     }
 
-    // Would integrate with payment gateway here
-    // const result = await paymentGateway.process(payment);
+    if (payment.razorpayOrderId && this.isRazorpayAvailable()) {
+      return await this.updateStatus(paymentId, 'processing', payment.razorpayOrderId);
+    }
 
-    // Simulate successful payment
-    return await this.updateStatus(paymentId, 'completed', `txn_${Date.now()}`);
+    return await this.updateStatus(
+      paymentId,
+      'completed',
+      payment.razorpayPaymentId || `manual_${payment.id}`
+    );
   }
 
   async refund(paymentId: string, amount?: number): Promise<Payment> {
@@ -166,10 +169,27 @@ export class PaymentService {
       throw new Error('Refund amount cannot exceed payment amount');
     }
 
-    // Would integrate with payment gateway here
-    // await paymentGateway.refund(payment, refundAmount);
+    let gatewayResponse = payment.gatewayResponse;
 
-    return await this.updateStatus(paymentId, 'refunded');
+    if (payment.razorpayPaymentId && this.isRazorpayAvailable()) {
+      const refund = await this.razorpay.payments.refund(payment.razorpayPaymentId, {
+        amount: Math.round(refundAmount * 100),
+        notes: {
+          paymentId,
+          orderId: payment.orderId || '',
+        },
+      });
+      gatewayResponse = JSON.stringify({ refund });
+    }
+
+    return await this.prisma.payment.update({
+      where: { id: paymentId },
+      data: {
+        status: 'refunded',
+        refundedAt: new Date(),
+        gatewayResponse,
+      },
+    });
   }
 
   async getTotalRevenue(filters?: PaymentFilters): Promise<number> {
@@ -225,7 +245,10 @@ export class PaymentService {
     }
 
     try {
-      // Create Razorpay order
+      if (!this.isRazorpayAvailable()) {
+        throw new Error('Razorpay credentials are not configured');
+      }
+
       const razorpayOrder = await this.razorpay.orders.create({
         amount: data.amount,
         currency: data.currency || 'INR',
@@ -237,26 +260,45 @@ export class PaymentService {
         },
       });
 
-      // Create database record using existing Payment model
-      const payment = await this.create({
-        orderId: razorpayOrder.id, // Use orderId as razorpayOrderId
-        userId: data.userId,
-        amount: data.amount,
-        currency: data.currency || 'INR',
-        method: 'razorpay',
-        transactionId: razorpayOrder.id,
+      const orderId = typeof data.notes?.orderId === 'string' ? data.notes.orderId : undefined;
+
+      const paymentOrder = await this.prisma.paymentOrder.create({
+        data: {
+          razorpayOrderId: razorpayOrder.id,
+          amount: data.amount,
+          currency: data.currency || 'INR',
+          status: 'created',
+          userId: data.userId,
+          orderId,
+          metadata: JSON.stringify(data.notes || {}),
+          expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+        },
+      });
+
+      const payment = await this.prisma.payment.create({
+        data: {
+          userId: data.userId,
+          orderId,
+          amount: data.amount / 100,
+          currency: data.currency || 'INR',
+          status: 'created',
+          paymentType: 'razorpay',
+          razorpayOrderId: razorpayOrder.id,
+          gatewayResponse: JSON.stringify(razorpayOrder),
+        },
       });
 
       return {
         id: payment.id,
-        razorpayOrderId: razorpayOrder.id,
+        paymentOrderId: paymentOrder.id,
+        razorpayOrderId: paymentOrder.razorpayOrderId,
         userId: data.userId,
         amount: data.amount,
         currency: data.currency || 'INR',
-        status: 'created',
+        status: paymentOrder.status,
         notes: data.notes || {},
-        receipt: data.receipt || `receipt_${Date.now()}`,
-        expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+        receipt: razorpayOrder.receipt,
+        expiresAt: paymentOrder.expiresAt,
       };
     } catch (error: any) {
       throw new Error(error.message || 'Failed to create payment order');
@@ -292,8 +334,19 @@ export class PaymentService {
 
     const existingPayment = payment[0];
 
-    // Simulate payment capture (in real implementation, would call Razorpay)
-    const updatedPayment = await this.updateStatus(existingPayment.id, 'completed', paymentId);
+    const updatedPayment = await this.prisma.payment.update({
+      where: { id: existingPayment.id },
+      data: {
+        status: 'completed',
+        razorpayPaymentId: paymentId,
+        paidAt: new Date(),
+      },
+    });
+
+    await this.prisma.paymentOrder.updateMany({
+      where: { razorpayOrderId: orderId },
+      data: { status: 'paid' },
+    });
 
     return {
       id: updatedPayment.id,
@@ -323,16 +376,45 @@ export class PaymentService {
       throw new Error('Refund amount cannot exceed payment amount');
     }
 
-    // Update payment status to refunded
-    await this.updateStatus(paymentId, 'refunded');
+    let providerRefundId = `manual_refund_${payment.id}`;
+    let providerStatus = 'processed';
+
+    if (payment.razorpayPaymentId && this.isRazorpayAvailable()) {
+      const refund = await this.razorpay.payments.refund(payment.razorpayPaymentId, {
+        amount: Math.round(refundAmount * 100),
+        notes: {
+          reason: reason || 'Customer request',
+          localPaymentId: paymentId,
+        },
+      });
+      providerRefundId = refund.id;
+      providerStatus = refund.status;
+    }
+
+    await this.prisma.payment.update({
+      where: { id: paymentId },
+      data: {
+        status: 'refunded',
+        refundedAt: new Date(),
+        gatewayResponse: JSON.stringify({
+          ...(this.safeParseObject(payment.gatewayResponse) || {}),
+          refund: {
+            id: providerRefundId,
+            amount: refundAmount,
+            reason: reason || 'Customer request',
+            status: providerStatus,
+          },
+        }),
+      },
+    });
 
     return {
-      id: `refund_${Date.now()}`,
+      id: providerRefundId,
       paymentId,
-      razorpayRefundId: `rfnd_${Date.now()}`,
+      razorpayRefundId: providerRefundId,
       amount: refundAmount,
       currency: payment.currency,
-      status: 'pending',
+      status: providerStatus,
       reason: reason || 'Customer request',
     };
   }
@@ -343,28 +425,54 @@ export class PaymentService {
     amount: number;
     currency?: string;
   }): Promise<any> {
-    // Mock implementation for tests
-    return {
-      id: `plan_${Date.now()}`,
-      interval: data.interval,
-      period: data.period,
+    if (!this.isRazorpayAvailable()) {
+      throw new Error('Razorpay credentials are required to create subscription plans');
+    }
+
+    return this.razorpay.plans.create({
+      period: data.interval,
+      interval: data.period,
       item: {
+        name: `Hasivu ${data.interval} plan`,
         amount: data.amount,
         currency: data.currency || 'INR',
       },
-    };
+    });
   }
 
   async createSubscription(data: { userId: string; planId: string }): Promise<any> {
-    // Mock implementation for tests
+    if (!this.isRazorpayAvailable()) {
+      throw new Error('Razorpay credentials are required to create subscriptions');
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: data.userId },
+      select: { id: true, email: true, phone: true },
+    });
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    const subscription = await this.razorpay.subscriptions.create({
+      plan_id: data.planId,
+      customer_notify: 1,
+      total_count: 12,
+      notes: {
+        userId: user.id,
+        userEmail: user.email,
+      },
+    });
+
     return {
-      id: `subscription_${Date.now()}`,
-      razorpaySubscriptionId: `sub_${Date.now()}`,
+      id: subscription.id,
+      razorpaySubscriptionId: subscription.id,
       userId: data.userId,
       planId: data.planId,
-      status: 'created',
-      currentStart: new Date(),
-      currentEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+      status: subscription.status,
+      currentStart: subscription.current_start
+        ? new Date(subscription.current_start * 1000)
+        : undefined,
+      currentEnd: subscription.current_end ? new Date(subscription.current_end * 1000) : undefined,
     };
   }
 
@@ -398,9 +506,34 @@ export class PaymentService {
           break;
         }
 
-        // Handle other webhook events as needed
+        case 'payment.failed': {
+          const paymentId = payload.payload.payment.entity.id;
+          await this.prisma.payment.updateMany({
+            where: { razorpayPaymentId: paymentId },
+            data: {
+              status: 'failed',
+              failureReason: payload.payload.payment.entity.error_description || 'Gateway failure',
+              gatewayResponse: JSON.stringify(payload),
+            },
+          });
+          break;
+        }
+
+        case 'refund.processed':
+        case 'refund.created': {
+          const paymentId = payload.payload.refund.entity.payment_id;
+          await this.prisma.payment.updateMany({
+            where: { razorpayPaymentId: paymentId },
+            data: {
+              status: 'refunded',
+              refundedAt: new Date(),
+              gatewayResponse: JSON.stringify(payload),
+            },
+          });
+          break;
+        }
+
         default:
-          // Unknown event, but still successful
           break;
       }
 
@@ -411,39 +544,64 @@ export class PaymentService {
   }
 
   async getPaymentOrder(orderId: string): Promise<any> {
-    // Try cache first (would implement Redis here)
-    // For now, just fetch from database
-    const payments = await this.findByOrder(orderId);
-    return payments.length > 0 ? payments[0] : null;
+    return this.prisma.paymentOrder.findFirst({
+      where: {
+        OR: [{ id: orderId }, { razorpayOrderId: orderId }, { orderId }],
+      },
+      include: { paymentTransactions: true },
+    });
   }
 
   // Instance methods for test compatibility
   async updateOrder(_orderId: string, _updates: any): Promise<void> {
-    // Mock implementation - would update order
-    return Promise.resolve();
+    await this.prisma.payment.updateMany({
+      where: { orderId: _orderId },
+      data: _updates,
+    });
   }
 
   async getAllOrders(_filters?: any): Promise<any[]> {
-    // Mock implementation - would return orders
-    return [];
+    return this.prisma.payment.findMany({
+      where: _filters,
+      orderBy: { createdAt: 'desc' },
+    });
   }
 
   async getPaymentAnalytics(_filters?: any): Promise<any> {
-    // Mock implementation - would return analytics
+    const [totalPayments, completedPayments] = await Promise.all([
+      this.prisma.payment.count({ where: _filters }),
+      this.prisma.payment.count({ where: { ..._filters, status: 'completed' } }),
+    ]);
     return {
       totalRevenue: await this.getTotalRevenue(),
-      totalPayments: 0,
-      successRate: 0,
+      totalPayments,
+      successRate: totalPayments === 0 ? 0 : completedPayments / totalPayments,
     };
   }
 
   async createOrder(data: any): Promise<any> {
-    // Mock implementation for tests - would create an order
-    return {
-      id: `order_${Date.now()}`,
-      ...data,
-      status: 'created',
-    };
+    const required = ['userId', 'studentId', 'schoolId', 'totalAmount', 'deliveryDate'];
+    const missing = required.filter(field => data[field] === undefined || data[field] === null);
+    if (missing.length > 0) {
+      throw new Error(`Missing required order field(s): ${missing.join(', ')}`);
+    }
+
+    return this.prisma.order.create({
+      data: {
+        orderNumber: data.orderNumber || `ORD-${Date.now()}`,
+        userId: data.userId,
+        studentId: data.studentId,
+        schoolId: data.schoolId,
+        status: data.status || 'pending',
+        totalAmount: data.totalAmount,
+        currency: data.currency || 'INR',
+        deliveryDate: new Date(data.deliveryDate),
+        specialInstructions: data.specialInstructions,
+        allergyInfo: data.allergyInfo,
+        paymentStatus: data.paymentStatus || 'pending',
+        metadata: JSON.stringify(data.metadata || {}),
+      },
+    });
   }
 
   // Static method for test compatibility
@@ -460,9 +618,16 @@ export class PaymentService {
   }> {
     try {
       // Create payment record
+      const order = await this.getInstance().prisma.order.findUnique({
+        where: { id: paymentData.orderId },
+        select: { userId: true },
+      });
+      if (!order) {
+        throw new Error('Order not found for payment');
+      }
       const payment = await this.getInstance().create({
         orderId: paymentData.orderId,
-        userId: 'user-from-order', // Would need to get from order
+        userId: order.userId,
         amount: paymentData.amount,
         currency: paymentData.currency,
         method: paymentData.paymentMethod,
@@ -474,7 +639,7 @@ export class PaymentService {
       return {
         success: true,
         data: {
-          paymentId: processedPayment.razorpayPaymentId || payment.id,
+          paymentId: processedPayment.razorpayPaymentId || processedPayment.id,
           status: 'captured',
         },
       };
@@ -502,7 +667,7 @@ export class PaymentService {
       return {
         success: true,
         data: {
-          refundId: `refund_${Date.now()}`,
+          refundId: refundData.paymentId,
           status: 'processed',
         },
       };
@@ -544,9 +709,17 @@ export class PaymentService {
     error?: { message: string; code: string };
   }> {
     try {
+      const order = await this.getInstance().prisma.order.findUnique({
+        where: { id: paymentData.orderId },
+        select: { userId: true },
+      });
+      if (!order) {
+        throw new Error('Order not found for payment initiation');
+      }
+
       const payment = await this.getInstance().create({
         orderId: paymentData.orderId,
-        userId: 'user-from-order', // Would need to get from order
+        userId: order.userId,
         amount: paymentData.amount,
         method: paymentData.paymentMethod,
       });
@@ -584,8 +757,13 @@ export class PaymentService {
   }
 
   public static async updateOrderAfterPayment(_orderId: string, _paymentId: string): Promise<void> {
-    // Mock implementation - would update order status
-    return Promise.resolve();
+    await this.getInstance().prisma.order.update({
+      where: { id: _orderId },
+      data: {
+        paymentStatus: 'paid',
+        status: 'confirmed',
+      },
+    });
   }
 
   public static async validateRefund(paymentId: string, amount?: number): Promise<boolean> {
@@ -600,8 +778,13 @@ export class PaymentService {
   }
 
   public static async updateOrderAfterRefund(_orderId: string, _refundId: string): Promise<void> {
-    // Mock implementation - would update order status
-    return Promise.resolve();
+    await this.getInstance().prisma.order.update({
+      where: { id: _orderId },
+      data: {
+        paymentStatus: 'refunded',
+        metadata: JSON.stringify({ refundId: _refundId }),
+      },
+    });
   }
 
   public static async createPaymentOrder(data: {
@@ -615,8 +798,7 @@ export class PaymentService {
   }
 
   public static async updateOrder(_orderId: string, _updates: any): Promise<void> {
-    // Mock implementation - would update order
-    return Promise.resolve();
+    await this.getInstance().updateOrder(_orderId, _updates);
   }
 
   public static async getPaymentOrder(orderId: string): Promise<any> {
@@ -624,22 +806,24 @@ export class PaymentService {
   }
 
   public static async getAllOrders(_filters?: any): Promise<any[]> {
-    // Mock implementation - would return orders
-    return [];
+    return this.getInstance().getAllOrders(_filters);
   }
 
   public static async getPaymentAnalytics(_filters?: any): Promise<any> {
-    // Mock implementation - would return analytics
-    return {
-      totalRevenue: 0,
-      totalPayments: 0,
-      successRate: 0,
-    };
+    return this.getInstance().getPaymentAnalytics(_filters);
   }
 
   public static getPaymentStatus(_orderId: string): string {
-    // Mock implementation - would check payment status
-    return 'pending';
+    return 'unknown';
+  }
+
+  private safeParseObject(value: string): Record<string, unknown> | null {
+    try {
+      const parsed = JSON.parse(value || '{}');
+      return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : null;
+    } catch {
+      return null;
+    }
   }
 }
 

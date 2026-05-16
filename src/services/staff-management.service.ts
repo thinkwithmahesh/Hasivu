@@ -1,35 +1,79 @@
 /**
- * Staff Management Service - Stub Implementation
- * TODO: Implement full staff management functionality
+ * Staff Management Service
+ * School-scoped staff availability and status derived from user and order data.
  */
 
+import { PrismaClient } from '@prisma/client';
+import { prisma as defaultPrisma } from '../database/DatabaseManager';
 import { logger } from '../utils/logger';
 
+const STAFF_ROLES = ['kitchen', 'kitchen_staff', 'staff', 'delivery_staff', 'school_admin'];
+
 export class StaffManagementService {
-  constructor() {
-    logger.info('StaffManagementService initialized (stub)');
+  constructor(private readonly db: PrismaClient = defaultPrisma) {
+    logger.info('StaffManagementService initialized');
   }
 
-  async getStaffSchedule(): Promise<any[]> {
-    return [];
+  async getStaffSchedule(schoolId?: string): Promise<any[]> {
+    const staff = await this.getStaffUsers(schoolId);
+    return staff.map(user => ({
+      staffId: user.id,
+      name: [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email,
+      role: user.role,
+      status: user.isActive ? 'available' : 'inactive',
+      shift: 'day',
+    }));
   }
 
   async updateStaffStatus(staffId: string, status: string): Promise<void> {
-    logger.info(`Staff ${staffId} status updated to ${status}`);
+    await this.db.user.update({
+      where: { id: staffId },
+      data: { isActive: !['inactive', 'absent', 'suspended'].includes(status) },
+    });
   }
 
-  async getAvailableStaff(): Promise<any[]> {
-    return [];
+  async getAvailableStaff(schoolId?: string): Promise<any[]> {
+    const staff = await this.getStaffUsers(schoolId, true);
+    return staff.map(user => ({
+      id: user.id,
+      name: [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email,
+      email: user.email,
+      role: user.role,
+      status: 'available',
+    }));
   }
 
-  // Additional stub methods for kitchen.routes.ts
-  async getCurrentStaffStatus(_schoolId: string): Promise<any> {
+  async getCurrentStaffStatus(schoolId: string): Promise<any> {
+    const [staff, assignedOrders] = await Promise.all([
+      this.getStaffUsers(schoolId),
+      this.db.order.count({
+        where: {
+          schoolId,
+          assignedStaffId: { not: null },
+          status: { in: ['pending', 'confirmed', 'preparing', 'ready'] },
+        },
+      }),
+    ]);
+    const present = staff.filter(user => user.isActive).length;
+    const absent = staff.length - present;
     return {
-      present: 5,
-      absent: 1,
-      onBreak: 2,
-      averageEfficiency: 85,
+      present,
+      absent,
+      onBreak: 0,
+      assignedOrders,
+      averageEfficiency: present === 0 ? 0 : Math.max(0, Math.min(100, 100 - assignedOrders * 3)),
     };
+  }
+
+  private getStaffUsers(schoolId?: string, activeOnly = false) {
+    return this.db.user.findMany({
+      where: {
+        ...(schoolId ? { schoolId } : {}),
+        role: { in: STAFF_ROLES },
+        ...(activeOnly ? { isActive: true, status: 'ACTIVE' } : {}),
+      },
+      orderBy: [{ isActive: 'desc' }, { firstName: 'asc' }],
+    });
   }
 }
 

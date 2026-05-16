@@ -4,6 +4,7 @@
  */
 
 import { PrismaClient } from '@prisma/client';
+import { prisma as defaultPrisma } from '../database/DatabaseManager';
 
 export interface MenuPlanItem {
   menuItemId: string;
@@ -62,7 +63,7 @@ export class MenuPlanService {
   private prisma: PrismaClient;
 
   private constructor() {
-    this.prisma = new PrismaClient();
+    this.prisma = defaultPrisma;
   }
 
   public static getInstance(): MenuPlanService {
@@ -76,60 +77,107 @@ export class MenuPlanService {
    * Create a new menu plan
    */
   public async create(data: CreateMenuPlanDto): Promise<any> {
-    // Note: This assumes a MenuPlan model exists in Prisma schema
-    // If not, this will be a stub implementation
-    return {
-      id: `plan_${Date.now()}`,
-      ...data,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+    const plan = await this.prisma.menuPlan.create({
+      data: {
+        schoolId: data.schoolId,
+        name: data.name,
+        description: data.description,
+        startDate: data.startDate,
+        endDate: data.endDate,
+        status: data.isActive ? MenuPlanStatus.PUBLISHED : MenuPlanStatus.DRAFT,
+        createdBy: 'system',
+        dailyMenus: {
+          create: {
+            schoolId: data.schoolId,
+            date: data.startDate,
+            dayType: this.dayType(data.startDate),
+            isActive: data.isActive ?? false,
+            isPublished: data.isActive ?? false,
+            menuItems: {
+              create: data.items.map(item => ({
+                menuItemId: item.menuItemId,
+                category: item.mealType,
+                plannedQuantity: item.quantity,
+              })),
+            },
+          },
+        },
+      },
+      include: { dailyMenus: { include: { menuItems: true } } },
+    });
+    return this.toDto(plan);
   }
 
   /**
    * Get menu plan by ID
    */
-  public async findById(_id: string): Promise<any | null> {
-    // Stub implementation
-    return null;
+  public async findById(id: string): Promise<any | null> {
+    const plan = await this.prisma.menuPlan.findUnique({
+      where: { id },
+      include: { dailyMenus: { include: { menuItems: true } } },
+    });
+    return plan ? this.toDto(plan) : null;
   }
 
   /**
    * Get all menu plans for a school
    */
-  public async findBySchool(_schoolId: string): Promise<any[]> {
-    // Stub implementation
-    return [];
+  public async findBySchool(schoolId: string): Promise<any[]> {
+    const plans = await this.prisma.menuPlan.findMany({
+      where: { schoolId },
+      include: { dailyMenus: { include: { menuItems: true } } },
+      orderBy: { startDate: 'desc' },
+    });
+    return plans.map(plan => this.toDto(plan));
   }
 
   /**
    * Get active menu plan for a school
    */
-  public async findActiveBySchool(_schoolId: string, _date?: Date): Promise<any | null> {
-    const _targetDate = _date || new Date();
-
-    // Stub implementation - would filter by date range and isActive
-    return null;
+  public async findActiveBySchool(schoolId: string, date?: Date): Promise<any | null> {
+    const targetDate = date || new Date();
+    const plan = await this.prisma.menuPlan.findFirst({
+      where: {
+        schoolId,
+        status: MenuPlanStatus.PUBLISHED,
+        startDate: { lte: targetDate },
+        endDate: { gte: targetDate },
+      },
+      include: { dailyMenus: { include: { menuItems: true } } },
+      orderBy: { updatedAt: 'desc' },
+    });
+    return plan ? this.toDto(plan) : null;
   }
 
   /**
    * Update menu plan
    */
   public async update(id: string, data: UpdateMenuPlanDto): Promise<any> {
-    // Stub implementation
-    return {
-      id,
-      ...data,
-      updatedAt: new Date(),
-    };
+    const plan = await this.prisma.menuPlan.update({
+      where: { id },
+      data: {
+        name: data.name,
+        description: data.description,
+        startDate: data.startDate,
+        endDate: data.endDate,
+        status:
+          data.isActive === undefined
+            ? undefined
+            : data.isActive
+              ? MenuPlanStatus.PUBLISHED
+              : MenuPlanStatus.DRAFT,
+      },
+      include: { dailyMenus: { include: { menuItems: true } } },
+    });
+    return this.toDto(plan);
   }
 
   /**
    * Delete menu plan
    */
   public async delete(id: string): Promise<any> {
-    // Stub implementation
-    return { id, deleted: true };
+    const deleted = await this.prisma.menuPlan.delete({ where: { id } });
+    return { id: deleted.id, deleted: true };
   }
 
   /**
@@ -175,8 +223,17 @@ export class MenuPlanService {
     _startDate: Date,
     _endDate: Date
   ): Promise<boolean> {
-    // Stub implementation - would check for overlapping plans
-    return false;
+    const count = await this.prisma.menuPlan.count({
+      where: {
+        schoolId: _schoolId,
+        OR: [
+          { startDate: { gte: _startDate, lte: _endDate } },
+          { endDate: { gte: _startDate, lte: _endDate } },
+          { AND: [{ startDate: { lte: _startDate } }, { endDate: { gte: _endDate } }] },
+        ],
+      },
+    });
+    return count > 0;
   }
 
   /**
@@ -220,8 +277,10 @@ export class MenuPlanService {
       throw new Error('Template category is required for templates');
     }
 
-    // Check for overlapping plans (stub implementation)
-    // In real implementation, this would call repository
+    const overlaps = await instance.existsForDateRange(data.schoolId, data.startDate, data.endDate);
+    if (overlaps && !data.isTemplate) {
+      throw new Error('A menu plan already exists for this date range');
+    }
 
     return await instance.create({
       schoolId: data.schoolId,
@@ -245,8 +304,6 @@ export class MenuPlanService {
       throw new Error('End date must be after start date');
     }
 
-    // Check for overlapping plans if dates are being updated (stub implementation)
-
     return await instance.update(id, data);
   }
 
@@ -267,7 +324,9 @@ export class MenuPlanService {
       throw new Error('Template not found');
     }
 
-    // Check if it's actually a template (stub validation)
+    if (!template.isTemplate) {
+      throw new Error('Selected plan is not a template');
+    }
 
     return await instance.create({
       schoolId: data.schoolId,
@@ -294,27 +353,66 @@ export class MenuPlanService {
       throw new Error('Invalid status value');
     }
 
-    // Update status (stub implementation)
-    return {
-      id,
-      status,
-      approvedBy,
-      approvedAt: new Date(),
-    };
+    const instance = MenuPlanService.getInstance();
+    const plan = await instance.prisma.menuPlan.update({
+      where: { id },
+      data: {
+        status,
+        approvedBy,
+        approvedAt:
+          status === MenuPlanStatus.APPROVED || status === MenuPlanStatus.PUBLISHED
+            ? new Date()
+            : undefined,
+      },
+      include: { dailyMenus: { include: { menuItems: true } } },
+    });
+    return instance.toDto(plan);
   }
 
   /**
    * Get menu plan statistics (static method for tests)
    */
-  public static async getStatistics(_schoolId: string): Promise<any> {
-    // Stub implementation - would aggregate from repository
+  public static async getStatistics(schoolId: string): Promise<any> {
+    const instance = MenuPlanService.getInstance();
+    const [total, active, templates, pending, byStatusRows] = await Promise.all([
+      instance.prisma.menuPlan.count({ where: { schoolId } }),
+      instance.prisma.menuPlan.count({ where: { schoolId, status: MenuPlanStatus.PUBLISHED } }),
+      instance.prisma.menuPlan.count({ where: { schoolId, isTemplate: true } }),
+      instance.prisma.menuPlan.count({
+        where: { schoolId, status: MenuPlanStatus.PENDING_APPROVAL },
+      }),
+      instance.prisma.menuPlan.groupBy({
+        by: ['status'],
+        where: { schoolId },
+        _count: { id: true },
+      }),
+    ]);
     return {
-      total: 0,
-      active: 0,
-      templates: 0,
-      pendingApproval: 0,
-      byStatus: {},
+      total,
+      active,
+      templates,
+      pendingApproval: pending,
+      byStatus: Object.fromEntries(byStatusRows.map(row => [row.status, row._count.id])),
     };
+  }
+
+  private dayType(date: Date): string {
+    const day = date.getDay();
+    return day === 0 || day === 6 ? 'WEEKEND' : 'WEEKDAY';
+  }
+
+  private toDto(plan: any): any {
+    const items =
+      plan.dailyMenus?.flatMap(
+        (menu: any) =>
+          menu.menuItems?.map((slot: any) => ({
+            menuItemId: slot.menuItemId,
+            quantity: slot.plannedQuantity,
+            mealType: slot.category,
+            date: menu.date,
+          })) || []
+      ) || [];
+    return { ...plan, items };
   }
 }
 
