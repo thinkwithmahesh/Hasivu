@@ -34,7 +34,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-  DialogTrigger as DialogTrigger,
 } from '@/components/ui/dialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
@@ -42,7 +41,6 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
-import { ScrollArea as ScrollArea } from '@/components/ui/scroll-area';
 import {
   Crown,
   Calendar,
@@ -66,7 +64,6 @@ import {
   Star,
   Sparkles,
 } from 'lucide-react';
-import PaymentService from '@/services/payment.service';
 import { cn } from '@/lib/utils';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 
@@ -177,208 +174,6 @@ interface SubscriptionManagementUIProps {
   onSubscriptionUpdate?: (subscription: ActiveSubscription) => void;
 }
 
-// Mock data for demonstration
-const MOCKPLANS: SubscriptionPlan[] = [
-  {
-    id: 'basic_monthly',
-    name: 'Basic Plan',
-    description: 'Perfect for small schools getting started',
-    price: 99900, // ₹999.00
-    currency: 'INR',
-    billingCycle: 'monthly',
-    planType: 'meal_plan',
-    features: [
-      { name: 'Meal Planning', description: 'Basic meal planning features', included: true },
-      { name: 'Student Management', description: 'Up to 50 students', included: true, limit: 50 },
-      { name: 'Menu Customization', description: 'Limited menu options', included: true },
-      { name: 'Email Support', description: 'Email support during business hours', included: true },
-      { name: 'Analytics', description: 'Basic reports and analytics', included: false },
-      { name: 'RFID Integration', description: 'RFID meal tracking', included: false },
-    ],
-    limits: {
-      maxMeals: 1000,
-      maxStudents: 50,
-      maxLocations: 1,
-      storageGB: 5,
-      apiCallsPerMonth: 10000,
-    },
-    benefits: ['Up to 50 students', 'Basic meal planning', 'Email support', 'Monthly billing'],
-    trialDays: 14,
-    isActive: true,
-  },
-  {
-    id: 'standard_monthly',
-    name: 'Standard Plan',
-    description: 'Most popular for growing schools',
-    price: 249900, // ₹2,499.00
-    currency: 'INR',
-    billingCycle: 'monthly',
-    planType: 'meal_plan',
-    features: [
-      { name: 'Meal Planning', description: 'Advanced meal planning', included: true },
-      { name: 'Student Management', description: 'Up to 200 students', included: true, limit: 200 },
-      { name: 'Menu Customization', description: 'Full menu customization', included: true },
-      { name: 'Priority Support', description: '24/7 email and chat support', included: true },
-      { name: 'Analytics', description: 'Advanced reports and analytics', included: true },
-      { name: 'RFID Integration', description: 'RFID meal tracking', included: true },
-    ],
-    limits: {
-      maxMeals: 5000,
-      maxStudents: 200,
-      maxLocations: 3,
-      storageGB: 25,
-      apiCallsPerMonth: 50000,
-    },
-    benefits: [
-      'Up to 200 students',
-      'Advanced analytics',
-      'RFID integration',
-      'Priority support',
-      '3 locations',
-    ],
-    isPopular: true,
-    trialDays: 14,
-    isActive: true,
-  },
-  {
-    id: 'premium_monthly',
-    name: 'Premium Plan',
-    description: 'Complete solution for large institutions',
-    price: 499900, // ₹4,999.00
-    currency: 'INR',
-    billingCycle: 'monthly',
-    planType: 'meal_plan',
-    features: [
-      { name: 'Meal Planning', description: 'Enterprise meal planning', included: true },
-      { name: 'Student Management', description: 'Unlimited students', included: true },
-      { name: 'Menu Customization', description: 'Full customization + templates', included: true },
-      { name: 'Dedicated Support', description: '24/7 phone and priority support', included: true },
-      { name: 'Analytics', description: 'Advanced analytics + AI insights', included: true },
-      { name: 'RFID Integration', description: 'RFID + biometric tracking', included: true },
-    ],
-    limits: {
-      maxMeals: -1, // unlimited
-      maxStudents: -1,
-      maxLocations: 10,
-      storageGB: 100,
-      apiCallsPerMonth: 200000,
-    },
-    benefits: [
-      'Unlimited students',
-      'AI-powered insights',
-      'Dedicated support',
-      'Custom integrations',
-      '10 locations',
-      'White-label options',
-    ],
-    trialDays: 30,
-    isActive: true,
-  },
-  {
-    id: 'standard_annual',
-    name: 'Standard Annual',
-    description: 'Save 20% with annual billing',
-    price: 2399000, // ₹23,990.00 (saves ₹5,998)
-    currency: 'INR',
-    billingCycle: 'annual',
-    planType: 'meal_plan',
-    features: [
-      { name: 'Meal Planning', description: 'Advanced meal planning', included: true },
-      { name: 'Student Management', description: 'Up to 200 students', included: true, limit: 200 },
-      { name: 'Menu Customization', description: 'Full menu customization', included: true },
-      { name: 'Priority Support', description: '24/7 email and chat support', included: true },
-      { name: 'Analytics', description: 'Advanced reports and analytics', included: true },
-      { name: 'RFID Integration', description: 'RFID meal tracking', included: true },
-    ],
-    limits: {
-      maxMeals: 5000,
-      maxStudents: 200,
-      maxLocations: 3,
-      storageGB: 25,
-      apiCallsPerMonth: 50000,
-    },
-    benefits: [
-      'Save 20% annually',
-      'All Standard features',
-      'Priority support',
-      'RFID integration',
-    ],
-    savings: 20,
-    trialDays: 14,
-    isActive: true,
-  },
-];
-
-const MOCKACTIVESUBSCRIPTION: ActiveSubscription = {
-  id: 'sub_standard_123',
-  planId: 'standard_monthly',
-  planName: 'Standard Plan',
-  status: 'active',
-  startDate: '2024-01-01T00:00:00Z',
-  currentPeriodStart: '2024-01-01T00:00:00Z',
-  currentPeriodEnd: '2024-02-01T00:00:00Z',
-  nextBillingDate: '2024-02-01T00:00:00Z',
-  autoRenew: true,
-  billingAmount: 249900,
-  currency: 'INR',
-  paymentMethodId: 'pm_card_123',
-  usageStats: {
-    mealsUsed: 3245,
-    mealsLimit: 5000,
-    studentsCount: 145,
-    studentsLimit: 200,
-    storageUsedGB: 12.5,
-    storageLimit: 25,
-    apiCallsThisMonth: 28500,
-    apiCallsLimit: 50000,
-  },
-  upcomingInvoices: [
-    {
-      id: 'inv_001',
-      amount: 249900,
-      dueDate: '2024-02-01T00:00:00Z',
-      status: 'upcoming',
-      description: 'Standard Plan - Monthly Subscription',
-    },
-  ],
-};
-
-const MOCKBILLINGHISTORY: BillingHistory[] = [
-  {
-    id: 'bill_001',
-    subscriptionId: 'sub_standard_123',
-    amount: 249900,
-    currency: 'INR',
-    status: 'paid',
-    billingDate: '2024-01-01T00:00:00Z',
-    paidDate: '2024-01-01T10:30:00Z',
-    invoiceUrl: '/invoices/INV-2024-001.pdf',
-    description: 'Standard Plan - January 2024',
-  },
-  {
-    id: 'bill_002',
-    subscriptionId: 'sub_standard_123',
-    amount: 249900,
-    currency: 'INR',
-    status: 'paid',
-    billingDate: '2023-12-01T00:00:00Z',
-    paidDate: '2023-12-01T09:15:00Z',
-    invoiceUrl: '/invoices/INV-2023-012.pdf',
-    description: 'Standard Plan - December 2023',
-  },
-  {
-    id: 'bill_003',
-    subscriptionId: 'sub_standard_123',
-    amount: 99900,
-    currency: 'INR',
-    status: 'paid',
-    billingDate: '2023-11-01T00:00:00Z',
-    paidDate: '2023-11-01T14:20:00Z',
-    invoiceUrl: '/invoices/INV-2023-011.pdf',
-    description: 'Basic Plan - November 2023',
-  },
-];
-
 export const SubscriptionManagementUI: React.FC<SubscriptionManagementUIProps> = ({
   schoolId,
   userId,
@@ -398,6 +193,7 @@ export const SubscriptionManagementUI: React.FC<SubscriptionManagementUIProps> =
   const [prorationPreview, setProrationPreview] = useState<ProrationPreview | null>(null);
   const [processing, setProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+  const [error, setError] = useState<string | null>(null);
 
   // Load subscription data
   useEffect(() => {
@@ -407,17 +203,127 @@ export const SubscriptionManagementUI: React.FC<SubscriptionManagementUIProps> =
   const loadSubscriptionData = async () => {
     try {
       setLoading(true);
-      // In a real implementation, fetch from API
-      // For now, use mock data
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      setError(null);
 
-      setActiveSubscription(MOCKACTIVESUBSCRIPTION);
-      setAvailablePlans(MOCKPLANS);
-      setBillingHistory(MOCKBILLINGHISTORY);
+      const [plansResponse, currentResponse, invoicesResponse] = await Promise.all([
+        fetch('/api/subscriptions/plans', { credentials: 'include' }),
+        fetch('/api/subscriptions/current', { credentials: 'include' }),
+        fetch('/api/invoices', { credentials: 'include' }),
+      ]);
+
+      const plansPayload = await plansResponse.json().catch(() => null);
+      const currentPayload = await currentResponse.json().catch(() => null);
+      const invoicesPayload = await invoicesResponse.json().catch(() => null);
+
+      if (!plansResponse.ok) {
+        throw new Error(
+          plansPayload?.error || 'Subscriptions are not enabled in this environment.'
+        );
+      }
+
+      setAvailablePlans(normalizePlans(plansPayload?.data));
+      setActiveSubscription(
+        currentResponse.ok && currentPayload?.success
+          ? normalizeSubscription(currentPayload.data)
+          : null
+      );
+      setBillingHistory(invoicesResponse.ok ? normalizeBillingHistory(invoicesPayload?.data) : []);
     } catch (error) {
+      setActiveSubscription(null);
+      setAvailablePlans([]);
+      setBillingHistory([]);
+      setError(error instanceof Error ? error.message : 'Unable to load subscription data.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const parseStringList = (value: unknown): string[] => {
+    if (Array.isArray(value)) return value.filter(Boolean).map(String);
+    if (typeof value !== 'string' || !value.trim()) return [];
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) return parsed.filter(Boolean).map(String);
+      if (parsed && typeof parsed === 'object')
+        return Object.values(parsed).filter(Boolean).map(String);
+    } catch {
+      return [value];
+    }
+    return [];
+  };
+
+  const normalizePlans = (data: unknown): SubscriptionPlan[] => {
+    const rows = Array.isArray(data) ? data : [];
+    return rows.map((plan: any) => {
+      const benefits = parseStringList(plan.benefits);
+      const maxMeals = Number(plan.mealsPerMonth || plan.mealsPerWeek || plan.mealsPerDay || 0);
+      return {
+        id: plan.id,
+        name: plan.name,
+        description: plan.description || '',
+        price: Number(plan.price || 0) * 100,
+        currency: plan.currency || 'INR',
+        billingCycle: plan.billingCycle || 'monthly',
+        planType: plan.planType || 'meal_plan',
+        features: benefits.map(name => ({ name, description: name, included: true })),
+        limits: {
+          maxMeals,
+          maxStudents: Number(plan.maxStudents || 0),
+        },
+        benefits,
+        trialDays: Number(plan.trialPeriodDays || 0),
+        isActive: Boolean(plan.isActive),
+      } as SubscriptionPlan;
+    });
+  };
+
+  const normalizeSubscription = (subscription: any): ActiveSubscription | null => {
+    if (!subscription) return null;
+    const plan = subscription.subscriptionPlan || {};
+    const planMealsLimit = Number(plan.mealsPerMonth || plan.mealsPerWeek || plan.mealsPerDay || 0);
+    return {
+      id: subscription.id,
+      planId: subscription.subscriptionPlanId || subscription.planId,
+      planName: plan.name || 'Subscription',
+      status: subscription.status || 'active',
+      startDate: subscription.startDate,
+      endDate: subscription.endDate,
+      nextBillingDate: subscription.nextBillingDate,
+      currentPeriodStart: subscription.startDate,
+      currentPeriodEnd:
+        subscription.endDate || subscription.nextBillingDate || subscription.startDate,
+      trialEndDate: subscription.trialEndDate,
+      autoRenew: ['active', 'trial'].includes(subscription.status),
+      paymentMethodId: subscription.paymentMethodId,
+      billingAmount: Number(subscription.billingAmount || plan.price || 0) * 100,
+      currency: subscription.currency || plan.currency || 'INR',
+      usageStats: {
+        mealsUsed: Number(subscription.mealsUsed || 0),
+        mealsLimit: planMealsLimit,
+        studentsCount: Number(subscription.studentsCount || 0),
+        studentsLimit: Number(plan.maxStudents || 0),
+        storageUsedGB: 0,
+        storageLimit: Number(plan.storageGB || 0),
+        apiCallsThisMonth: 0,
+        apiCallsLimit: Number(plan.apiCallsPerMonth || 0),
+      },
+      upcomingInvoices: [],
+    };
+  };
+
+  const normalizeBillingHistory = (data: unknown): BillingHistory[] => {
+    const rows = Array.isArray(data) ? data : [];
+    return rows.map((invoice: any) => ({
+      id: invoice.id,
+      subscriptionId: invoice.subscriptionId || invoice.id,
+      amount: Number(invoice.totalAmount || invoice.amount || 0) * 100,
+      currency: invoice.currency || 'INR',
+      status: invoice.status === 'generated' ? 'pending' : invoice.status || 'pending',
+      billingDate: invoice.invoiceDate || invoice.createdAt,
+      paidDate: invoice.paidDate,
+      invoiceUrl: invoice.pdfUrl,
+      description: invoice.invoiceNumber || 'Invoice',
+    }));
   };
 
   // Helper functions
@@ -452,7 +358,7 @@ export const SubscriptionManagementUI: React.FC<SubscriptionManagementUIProps> =
   const getStatusBadge = (status: string) => {
     const configs: Record<string, { color: string; icon: React.ReactNode; label: string }> = {
       trial: {
-        color: 'bg-blue-100 text-blue-800',
+        color: 'bg-[var(--hasivu-primary)]/10 text-[var(--hasivu-primary-dark)]',
         icon: <Clock className="w-3 h-3" />,
         label: 'Trial',
       },
@@ -510,15 +416,21 @@ export const SubscriptionManagementUI: React.FC<SubscriptionManagementUIProps> =
     setProcessing(true);
 
     try {
-      // Calculate proration preview
       const currentPlan = availablePlans.find(p => p.id === activeSubscription?.planId);
       const newPlan = availablePlans.find(p => p.id === planId);
 
       if (!currentPlan || !newPlan) return;
 
-      // Mock proration calculation
       const daysInMonth = 30;
-      const daysRemaining = 15; // Mock value
+      const daysRemaining = activeSubscription?.currentPeriodEnd
+        ? Math.max(
+            0,
+            Math.ceil(
+              (new Date(activeSubscription.currentPeriodEnd).getTime() - Date.now()) /
+                (24 * 60 * 60 * 1000)
+            )
+          )
+        : 0;
       const currentPlanCredit = (currentPlan.price / daysInMonth) * daysRemaining;
       const newPlanCharge = newPlan.price;
       const prorationAmount = newPlanCharge - currentPlanCredit;
@@ -543,18 +455,19 @@ export const SubscriptionManagementUI: React.FC<SubscriptionManagementUIProps> =
 
     setProcessing(true);
     try {
-      // In a real implementation, call API to change subscription
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const response = await fetch('/api/subscriptions', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ schoolId, userId, planId: selectedPlan }),
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || !payload?.success) {
+        throw new Error(payload?.error || 'Subscription changes are not enabled yet.');
+      }
 
-      // Update local state
-      const newPlan = availablePlans.find(p => p.id === selectedPlan);
-      if (newPlan && activeSubscription) {
-        const updatedSubscription: ActiveSubscription = {
-          ...activeSubscription,
-          planId: selectedPlan,
-          planName: newPlan.name,
-          billingAmount: newPlan.price,
-        };
+      const updatedSubscription = normalizeSubscription(payload.data);
+      if (updatedSubscription) {
         setActiveSubscription(updatedSubscription);
         onSubscriptionUpdate?.(updatedSubscription);
       }
@@ -563,6 +476,7 @@ export const SubscriptionManagementUI: React.FC<SubscriptionManagementUIProps> =
       setSelectedPlan(null);
       setProrationPreview(null);
     } catch (error) {
+      setError(error instanceof Error ? error.message : 'Unable to change subscription.');
     } finally {
       setProcessing(false);
     }
@@ -571,28 +485,11 @@ export const SubscriptionManagementUI: React.FC<SubscriptionManagementUIProps> =
   const handlePauseSubscription = async (reason: string, pauseUntil?: string) => {
     setProcessing(true);
     try {
-      // In a real implementation, call API to pause subscription
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      if (activeSubscription) {
-        const updatedSubscription: ActiveSubscription = {
-          ...activeSubscription,
-          status: 'paused',
-          pauseHistory: [
-            ...(activeSubscription.pauseHistory || []),
-            {
-              pausedAt: new Date().toISOString(),
-              reason,
-              pauseUntil,
-            },
-          ],
-        };
-        setActiveSubscription(updatedSubscription);
-        onSubscriptionUpdate?.(updatedSubscription);
-      }
-
-      setShowPauseDialog(false);
+      setError(
+        'Pause is not enabled until the recurring billing gateway supports mandate-safe pauses.'
+      );
     } catch (error) {
+      setError(error instanceof Error ? error.message : 'Unable to pause subscription.');
     } finally {
       setProcessing(false);
     }
@@ -601,18 +498,11 @@ export const SubscriptionManagementUI: React.FC<SubscriptionManagementUIProps> =
   const handleResumeSubscription = async () => {
     setProcessing(true);
     try {
-      // In a real implementation, call API to resume subscription
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      if (activeSubscription) {
-        const updatedSubscription: ActiveSubscription = {
-          ...activeSubscription,
-          status: 'active',
-        };
-        setActiveSubscription(updatedSubscription);
-        onSubscriptionUpdate?.(updatedSubscription);
-      }
+      setError(
+        'Resume is not enabled until the recurring billing gateway supports mandate-safe resumes.'
+      );
     } catch (error) {
+      setError(error instanceof Error ? error.message : 'Unable to resume subscription.');
     } finally {
       setProcessing(false);
     }
@@ -621,22 +511,21 @@ export const SubscriptionManagementUI: React.FC<SubscriptionManagementUIProps> =
   const handleCancelSubscription = async (immediate: boolean) => {
     setProcessing(true);
     try {
-      // In a real implementation, call API to cancel subscription
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      if (activeSubscription) {
-        const updatedSubscription: ActiveSubscription = {
-          ...activeSubscription,
-          status: 'cancelled',
-          autoRenew: false,
-          endDate: immediate ? new Date().toISOString() : activeSubscription.currentPeriodEnd,
-        };
-        setActiveSubscription(updatedSubscription);
-        onSubscriptionUpdate?.(updatedSubscription);
+      const response = await fetch('/api/subscriptions/cancel', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ immediate }),
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || !payload?.success) {
+        throw new Error(payload?.error || 'Subscription cancellation is not enabled yet.');
       }
 
       setShowCancelDialog(false);
+      await loadSubscriptionData();
     } catch (error) {
+      setError(error instanceof Error ? error.message : 'Unable to cancel subscription.');
     } finally {
       setProcessing(false);
     }
@@ -647,16 +536,9 @@ export const SubscriptionManagementUI: React.FC<SubscriptionManagementUIProps> =
 
     setProcessing(true);
     try {
-      // In a real implementation, call API to toggle auto-renewal
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      const updatedSubscription: ActiveSubscription = {
-        ...activeSubscription,
-        autoRenew: !activeSubscription.autoRenew,
-      };
-      setActiveSubscription(updatedSubscription);
-      onSubscriptionUpdate?.(updatedSubscription);
+      setError('Auto-renewal changes are disabled until recurring billing is fully enabled.');
     } catch (error) {
+      setError(error instanceof Error ? error.message : 'Unable to update auto-renewal.');
     } finally {
       setProcessing(false);
     }
@@ -690,6 +572,14 @@ export const SubscriptionManagementUI: React.FC<SubscriptionManagementUIProps> =
             </p>
           </div>
         </div>
+
+        {error && (
+          <Alert variant="destructive">
+            <AlertTriangle className="w-4 h-4" />
+            <AlertTitle>Subscription service unavailable</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
         {/* Active Subscription Overview */}
         {activeSubscription && (
@@ -966,116 +856,128 @@ export const SubscriptionManagementUI: React.FC<SubscriptionManagementUIProps> =
 
           {/* Available Plans Tab */}
           <TabsContent value="plans" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {availablePlans.map(plan => {
-                const isCurrentPlan = plan.id === activeSubscription?.planId;
-                const isUpgrade = plan.price > (activeSubscription?.billingAmount || 0);
+            {availablePlans.length === 0 ? (
+              <Alert>
+                <Info className="w-4 h-4" />
+                <AlertTitle>No subscription plans available</AlertTitle>
+                <AlertDescription>
+                  Plan catalog data is not available for this school or subscriptions are disabled.
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {availablePlans.map(plan => {
+                  const isCurrentPlan = plan.id === activeSubscription?.planId;
+                  const isUpgrade = plan.price > (activeSubscription?.billingAmount || 0);
 
-                return (
-                  <Card
-                    key={plan.id}
-                    className={cn(
-                      'relative transition-all',
-                      isCurrentPlan && 'border-2 border-primary',
-                      plan.isPopular && !isCurrentPlan && 'border-2 border-blue-500'
-                    )}
-                  >
-                    {plan.isPopular && (
-                      <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                        <Badge className="bg-blue-500 text-white gap-1">
-                          <Star className="w-3 h-3" />
-                          Most Popular
-                        </Badge>
-                      </div>
-                    )}
-                    {isCurrentPlan && (
-                      <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                        <Badge className="bg-primary gap-1">
-                          <CheckCircle className="w-3 h-3" />
-                          Current Plan
-                        </Badge>
-                      </div>
-                    )}
-
-                    <CardHeader>
-                      <CardTitle className="flex items-center justify-between">
-                        {plan.name}
-                        {plan.savings && (
-                          <Badge variant="secondary" className="gap-1">
-                            <Sparkles className="w-3 h-3" />
-                            Save {plan.savings}%
-                          </Badge>
-                        )}
-                      </CardTitle>
-                      <CardDescription>{plan.description}</CardDescription>
-                    </CardHeader>
-
-                    <CardContent className="space-y-4">
-                      <div>
-                        <div className="flex items-baseline gap-1">
-                          <span className="text-3xl font-bold">
-                            {formatCurrency(plan.price, plan.currency)}
-                          </span>
-                          <span className="text-muted-foreground">
-                            /{getBillingCycleLabel(plan.billingCycle).toLowerCase()}
-                          </span>
-                        </div>
-                        {plan.trialDays && (
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {plan.trialDays}-day free trial available
-                          </p>
-                        )}
-                      </div>
-
-                      <Separator />
-
-                      <div className="space-y-2">
-                        <p className="font-semibold text-sm">Key Features:</p>
-                        <ul className="space-y-2">
-                          {plan.features.slice(0, 4).map((feature, idx) => (
-                            <li key={idx} className="flex items-start gap-2 text-sm">
-                              {feature.included ? (
-                                <Check className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                              ) : (
-                                <X className="w-4 h-4 text-gray-300 flex-shrink-0 mt-0.5" />
-                              )}
-                              <span className={cn(!feature.included && 'text-muted-foreground')}>
-                                {feature.name}
-                                {feature.limit && ` (${feature.limit})`}
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </CardContent>
-
-                    <CardFooter>
-                      {isCurrentPlan ? (
-                        <Button variant="outline" className="w-full" disabled>
-                          Current Plan
-                        </Button>
-                      ) : (
-                        <Button
-                          onClick={() => handlePlanSelect(plan.id)}
-                          disabled={processing}
-                          className="w-full gap-2"
-                          variant={isUpgrade ? 'default' : 'outline'}
-                        >
-                          {isUpgrade ? (
-                            <>
-                              <TrendingUp className="w-4 h-4" />
-                              Upgrade to {plan.name}
-                            </>
-                          ) : (
-                            <>Change to {plan.name}</>
-                          )}
-                        </Button>
+                  return (
+                    <Card
+                      key={plan.id}
+                      className={cn(
+                        'relative transition-all',
+                        isCurrentPlan && 'border-2 border-primary',
+                        plan.isPopular &&
+                          !isCurrentPlan &&
+                          'border-2 border-[var(--hasivu-primary)]'
                       )}
-                    </CardFooter>
-                  </Card>
-                );
-              })}
-            </div>
+                    >
+                      {plan.isPopular && (
+                        <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                          <Badge className="bg-[var(--hasivu-primary)] text-white gap-1">
+                            <Star className="w-3 h-3" />
+                            Most Popular
+                          </Badge>
+                        </div>
+                      )}
+                      {isCurrentPlan && (
+                        <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                          <Badge className="bg-primary gap-1">
+                            <CheckCircle className="w-3 h-3" />
+                            Current Plan
+                          </Badge>
+                        </div>
+                      )}
+
+                      <CardHeader>
+                        <CardTitle className="flex items-center justify-between">
+                          {plan.name}
+                          {plan.savings && (
+                            <Badge variant="secondary" className="gap-1">
+                              <Sparkles className="w-3 h-3" />
+                              Save {plan.savings}%
+                            </Badge>
+                          )}
+                        </CardTitle>
+                        <CardDescription>{plan.description}</CardDescription>
+                      </CardHeader>
+
+                      <CardContent className="space-y-4">
+                        <div>
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-3xl font-bold">
+                              {formatCurrency(plan.price, plan.currency)}
+                            </span>
+                            <span className="text-muted-foreground">
+                              /{getBillingCycleLabel(plan.billingCycle).toLowerCase()}
+                            </span>
+                          </div>
+                          {plan.trialDays && (
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {plan.trialDays}-day free trial available
+                            </p>
+                          )}
+                        </div>
+
+                        <Separator />
+
+                        <div className="space-y-2">
+                          <p className="font-semibold text-sm">Key Features:</p>
+                          <ul className="space-y-2">
+                            {plan.features.slice(0, 4).map((feature, idx) => (
+                              <li key={idx} className="flex items-start gap-2 text-sm">
+                                {feature.included ? (
+                                  <Check className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                                ) : (
+                                  <X className="w-4 h-4 text-gray-300 flex-shrink-0 mt-0.5" />
+                                )}
+                                <span className={cn(!feature.included && 'text-muted-foreground')}>
+                                  {feature.name}
+                                  {feature.limit && ` (${feature.limit})`}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </CardContent>
+
+                      <CardFooter>
+                        {isCurrentPlan ? (
+                          <Button variant="outline" className="w-full" disabled>
+                            Current Plan
+                          </Button>
+                        ) : (
+                          <Button
+                            onClick={() => handlePlanSelect(plan.id)}
+                            disabled={processing}
+                            className="w-full gap-2"
+                            variant={isUpgrade ? 'default' : 'outline'}
+                          >
+                            {isUpgrade ? (
+                              <>
+                                <TrendingUp className="w-4 h-4" />
+                                Upgrade to {plan.name}
+                              </>
+                            ) : (
+                              <>Change to {plan.name}</>
+                            )}
+                          </Button>
+                        )}
+                      </CardFooter>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
           </TabsContent>
 
           {/* Billing History Tab */}
@@ -1327,7 +1229,7 @@ export const SubscriptionManagementUI: React.FC<SubscriptionManagementUIProps> =
               </Alert>
 
               {/* Retention Offers */}
-              <Card className="border-blue-200 bg-blue-50">
+              <Card className="border-[var(--hasivu-primary)]/20 bg-[var(--hasivu-primary)]/5">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base flex items-center gap-2">
                     <Gift className="w-4 h-4" />
