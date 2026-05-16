@@ -52,9 +52,9 @@ services:
       USE_PRISMA_DB_PUSH: "false"
       RUN_DEMO_LOCAL_USER_SYNC: "true"
       RUN_DB_SEED_IF_EMPTY: "true"
-      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-}
-      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-}
-      RAZORPAY_WEBHOOK_SECRET: ${RAZORPAY_WEBHOOK_SECRET:-}
+      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-rzp_test_dummy}
+      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-dummy_secret}
+      RAZORPAY_WEBHOOK_SECRET: ${RAZORPAY_WEBHOOK_SECRET:-dummy_webhook_secret}
     ports:
       - "3000:3000"
     depends_on:

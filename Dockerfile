@@ -9,6 +9,7 @@ RUN apk add --no-cache libc6-compat
 
 # Stage 2a: Backend dependencies only (no web/node_modules — saves ~hundreds of MB per layer)
 FROM base AS deps-backend
+RUN apk add --no-cache python3 make g++
 COPY package*.json ./
 ENV DOCKER_BUILD=1
 ENV HUSKY=0
