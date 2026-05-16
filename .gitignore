@@ -71,6 +71,7 @@ ehthumbs.db
 Thumbs.db
 graphify-out/
 .claude/
+.gemini-scratch/
 
 # Merge/copy tool droppings under tests (e.g. `.!*!file.test.ts`)
 **/.!*
