@@ -17,11 +17,22 @@ const prismaMock = () => {
     findMany: jest.fn(),
     findUnique: jest.fn(),
     updateMany: jest.fn(),
+    count: jest.fn(),
     delete: jest.fn(),
     deleteMany: jest.fn(),
   };
   return {
     notification,
+    user: {
+      findUnique: jest.fn(),
+      update: jest.fn(),
+    },
+    notificationTemplate: {
+      findFirst: jest.fn(),
+    },
+    outboxEvent: {
+      create: jest.fn(),
+    },
     $disconnect: jest.fn().mockResolvedValue(undefined),
   };
 };
@@ -50,6 +61,15 @@ describe('NotificationService', () => {
   beforeEach(() => {
     NotificationService.resetInstanceForTests();
     client = prismaMock();
+    client.user.findUnique.mockResolvedValue({
+      id: 'user-1',
+      schoolId: 'school-1',
+      preferences: '{}',
+    });
+    client.user.update.mockResolvedValue({});
+    client.notificationTemplate.findFirst.mockResolvedValue(null);
+    client.outboxEvent.create.mockResolvedValue({});
+    client.notification.count.mockResolvedValue(0);
     (PrismaClient as unknown as jest.Mock).mockImplementation(() => client);
   });
 
@@ -74,6 +94,7 @@ describe('NotificationService', () => {
       const created = stubNotification({ id: 'n-abc' });
       client.notification.create.mockResolvedValue(created);
       client.notification.update.mockResolvedValue({});
+      client.notification.count.mockResolvedValue(1);
 
       const result = await NotificationService.sendNotification({
         templateId: 'order_confirmation',
@@ -113,6 +134,7 @@ describe('NotificationService', () => {
     it('resolves when notification pipeline succeeds', async () => {
       client.notification.create.mockResolvedValue(stubNotification());
       client.notification.update.mockResolvedValue({});
+      client.notification.count.mockResolvedValue(1);
 
       await expect(
         NotificationService.sendOrderConfirmation({
@@ -130,6 +152,7 @@ describe('NotificationService', () => {
     it('returns success with created notification', async () => {
       const n = stubNotification({ type: 'order_status_update' });
       client.notification.create.mockResolvedValue(n);
+      client.outboxEvent.create.mockResolvedValue({});
 
       const result = await NotificationService.sendOrderStatusUpdate({
         orderId: 'o1',
@@ -188,7 +211,7 @@ describe('NotificationService', () => {
   });
 
   describe('updateNotificationPreferences', () => {
-    it('merges partial preferences with stub defaults', async () => {
+    it('merges partial preferences with stored/default preferences', async () => {
       const result = await NotificationService.updateNotificationPreferences('user-1', {
         channels: { push: false, email: true, sms: false, whatsapp: true, in_app: true, socket: true },
       });
@@ -196,6 +219,11 @@ describe('NotificationService', () => {
       expect(result.success).toBe(true);
       expect(result.data?.channels.push).toBe(false);
       expect(result.data?.channels.email).toBe(true);
+      expect(client.user.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'user-1' },
+        })
+      );
     });
   });
 });

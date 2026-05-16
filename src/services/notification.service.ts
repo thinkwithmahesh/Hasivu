@@ -3,7 +3,7 @@
  * Business logic for notification management
  */
 
-import { PrismaClient, Notification } from '@prisma/client';
+import { Prisma, PrismaClient, Notification } from '@prisma/client';
 import { logger } from '../utils/logger';
 
 export interface NotificationFilters {
@@ -210,7 +210,7 @@ export class NotificationService {
     }
 
     if (filters?.isRead !== undefined) {
-      where.isRead = filters.isRead;
+      where.readAt = filters.isRead ? { not: null } : null;
     }
 
     return await this.prisma.notification.findMany({
@@ -225,11 +225,11 @@ export class NotificationService {
         userId: data.userId,
         type: data.type,
         title: data.title,
+        body: data.message,
         message: data.message,
         data: data.data ? JSON.stringify(data.data) : null,
         scheduledFor: data.scheduledFor,
         status: 'pending',
-        isRead: false,
       } as any,
     });
   }
@@ -281,9 +281,22 @@ export class NotificationService {
   }
 
   async sendPushNotification(userId: string, notification: CreateNotificationData): Promise<void> {
-    // Stub for push notification integration (e.g., Firebase, OneSignal)
-    // Would integrate with push service here
-    // await pushService.send(userId, notification);
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { schoolId: true },
+    });
+
+    await this.prisma.outboxEvent.create({
+      data: {
+        schoolId: user?.schoolId ?? null,
+        eventType: 'notification.push.requested.v1',
+        aggregateType: 'notification',
+        aggregateId: notification.type,
+        payload: { userId, notification: notification as unknown as Prisma.JsonObject },
+        status: 'pending',
+        nextAttemptAt: new Date(),
+      },
+    });
   }
 
   // Static methods for order notifications
@@ -331,9 +344,9 @@ export class NotificationService {
       // Get user preferences
       const userPrefs = await this.getUserNotificationPreferences(request.recipientId);
 
-      // Get template content (stub - would integrate with template system)
       const templateContent = await this.getNotificationTemplate(
         request.templateId,
+        request.recipientId,
         request.variables
       );
 
@@ -520,7 +533,7 @@ export class NotificationService {
       const limit = Math.min(options?.limit || 20, 100); // Max 100 per page
       const skip = (page - 1) * limit;
 
-      const where: any = { recipientId: userId };
+      const where: any = { userId };
 
       if (options?.status) {
         where.status = options.status;
@@ -575,35 +588,23 @@ export class NotificationService {
     error?: { message: string; code: string };
   }> {
     try {
-      // Get current preferences (stub - would get from database/cache)
-      const currentPrefs: NotificationPreferences = {
-        channels: {
-          push: true,
-          email: true,
-          sms: false,
-          whatsapp: true,
-          in_app: true,
-          socket: true,
-        },
-        quietHours: { enabled: false, startTime: '22:00', endTime: '08:00', timezone: 'UTC' },
-        frequency: {
-          email: 'immediate',
-          push: 'immediate',
-          sms: 'urgent_only',
-          whatsapp: 'immediate',
-        },
-        topics: {
-          orderUpdates: true,
-          paymentUpdates: true,
-          systemAnnouncements: true,
-          promotions: false,
-        },
-      };
+      const existingUser = await this.getInstance().prisma.user.findUnique({
+        where: { id: userId },
+        select: { preferences: true },
+      });
+      const currentPrefs = await this.getUserNotificationPreferences(userId);
 
       const updatedPrefs = { ...currentPrefs, ...preferences };
 
-      // Update user preferences (stub - would save to database)
-      // await this.getInstance().prisma.user.update({ ... })
+      await this.getInstance().prisma.user.update({
+        where: { id: userId },
+        data: {
+          preferences: JSON.stringify({
+            ...this.safeParsePreferences(existingUser?.preferences),
+            notifications: updatedPrefs,
+          }),
+        },
+      });
 
       return { success: true, data: updatedPrefs };
     } catch (error: any) {
@@ -621,8 +622,7 @@ export class NotificationService {
   private static async getUserNotificationPreferences(
     userId: string
   ): Promise<NotificationPreferences> {
-    // Stub implementation - would fetch from database/cache
-    return {
+    const defaults: NotificationPreferences = {
       channels: {
         push: true,
         email: true,
@@ -645,13 +645,40 @@ export class NotificationService {
         promotions: false,
       },
     };
+    const user = await this.getInstance().prisma.user.findUnique({
+      where: { id: userId },
+      select: { preferences: true },
+    });
+    const parsed = this.safeParsePreferences(user?.preferences);
+    return { ...defaults, ...(parsed.notifications || {}) };
   }
 
   private static async getNotificationTemplate(
     templateId: string,
+    recipientId: string,
     variables: Record<string, any> = {}
   ): Promise<{ title: string; message: string } | null> {
-    // Stub template system - would integrate with actual template engine
+    const recipient = await this.getInstance().prisma.user.findUnique({
+      where: { id: recipientId },
+      select: { schoolId: true },
+    });
+
+    const dbTemplate = await (this.getInstance().prisma as any).notificationTemplate.findFirst({
+      where: {
+        templateKey: templateId,
+        isActive: true,
+        OR: [{ schoolId: recipient?.schoolId || undefined }, { schoolId: null }],
+      },
+      orderBy: [{ schoolId: 'desc' }, { updatedAt: 'desc' }],
+    });
+
+    if (dbTemplate) {
+      return {
+        title: this.renderTemplate(dbTemplate.title, variables),
+        message: this.renderTemplate(dbTemplate.body, variables),
+      };
+    }
+
     const templates: Record<string, { title: string; message: string }> = {
       order_confirmation: {
         title: 'Order Confirmed',
@@ -672,6 +699,13 @@ export class NotificationService {
     };
 
     return templates[templateId] || null;
+  }
+
+  private static renderTemplate(template: string, variables: Record<string, any>): string {
+    return template.replace(/\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}/g, (_match, key: string) => {
+      const value = variables[key];
+      return value === undefined || value === null ? '' : String(value);
+    });
   }
 
   private static getEnabledChannels(
@@ -758,39 +792,62 @@ export class NotificationService {
   }
 
   private static async sendEmailNotification(notification: Notification): Promise<void> {
-    // Stub - would integrate with email service (SendGrid, SES, etc.)
-    logger.info('Sending email notification', {
-      notificationId: notification.id,
-      userId: notification.userId,
-      title: notification.title,
-    });
+    await this.enqueueDelivery(notification, 'email');
   }
 
   private static async sendSMSNotification(notification: Notification): Promise<void> {
-    // Stub - would integrate with SMS service (Twilio, etc.)
-    logger.info('Sending SMS notification', {
-      notificationId: notification.id,
-      userId: notification.userId,
-      title: notification.title,
-    });
+    await this.enqueueDelivery(notification, 'sms');
   }
 
   private static async sendWhatsAppNotification(notification: Notification): Promise<void> {
-    // Stub - would integrate with WhatsApp Business API
-    logger.info('Sending WhatsApp notification', {
-      notificationId: notification.id,
-      userId: notification.userId,
-      title: notification.title,
-    });
+    await this.enqueueDelivery(notification, 'whatsapp');
   }
 
   private static async sendSocketNotification(notification: Notification): Promise<void> {
-    // Stub - would integrate with WebSocket service
-    logger.info('Sending socket notification', {
-      notificationId: notification.id,
-      userId: notification.userId,
-      title: notification.title,
+    await this.enqueueDelivery(notification, 'socket');
+  }
+
+  private static async enqueueDelivery(
+    notification: Notification,
+    channel: NotificationChannel
+  ): Promise<void> {
+    const user = notification.userId
+      ? await this.getInstance().prisma.user.findUnique({
+          where: { id: notification.userId },
+          select: { schoolId: true },
+        })
+      : null;
+
+    await this.getInstance().prisma.outboxEvent.create({
+      data: {
+        schoolId: user?.schoolId ?? null,
+        eventType: `notification.${channel}.requested.v1`,
+        aggregateType: 'notification',
+        aggregateId: notification.id,
+        payload: {
+          notificationId: notification.id,
+          userId: notification.userId,
+          title: notification.title,
+          message: notification.message || notification.body,
+          channel,
+        },
+        status: 'pending',
+        nextAttemptAt: new Date(),
+      },
     });
+    await this.getInstance().prisma.notification.update({
+      where: { id: notification.id },
+      data: { status: 'sent', sentAt: new Date() },
+    });
+  }
+
+  private static safeParsePreferences(value?: string | null): Record<string, any> {
+    if (!value) return {};
+    try {
+      return JSON.parse(value);
+    } catch {
+      return {};
+    }
   }
 
   public static async getNotificationAnalytics(filters?: {
@@ -798,6 +855,7 @@ export class NotificationService {
     endDate?: Date;
     templateId?: string;
     userId?: string;
+    schoolId?: string;
   }): Promise<{
     success: boolean;
     data?: NotificationAnalytics;
@@ -818,6 +876,10 @@ export class NotificationService {
 
       if (filters?.userId) {
         where.userId = filters.userId;
+      }
+
+      if (filters?.schoolId) {
+        where.user = { schoolId: filters.schoolId };
       }
 
       const notifications = await this.getInstance().prisma.notification.findMany({
