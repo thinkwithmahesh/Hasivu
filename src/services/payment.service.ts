@@ -26,7 +26,7 @@ export interface CreatePaymentData {
 export class PaymentService {
   private static instance: PaymentService;
   private prisma: PrismaClient;
-  private razorpay: Razorpay;
+  private razorpay: Razorpay | null;
   private webhookSecret: string;
   public isRazorpayAvailable(): boolean {
     return Boolean(process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET);
@@ -34,10 +34,14 @@ export class PaymentService {
 
   public constructor() {
     this.prisma = new PrismaClient();
-    this.razorpay = new Razorpay({
-      key_id: process.env.RAZORPAY_KEY_ID || '',
-      key_secret: process.env.RAZORPAY_KEY_SECRET || '',
-    });
+    if (this.isRazorpayAvailable()) {
+      this.razorpay = new Razorpay({
+        key_id: process.env.RAZORPAY_KEY_ID!,
+        key_secret: process.env.RAZORPAY_KEY_SECRET!,
+      });
+    } else {
+      this.razorpay = null;
+    }
     this.webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || '';
   }
 
@@ -172,7 +176,7 @@ export class PaymentService {
     let gatewayResponse = payment.gatewayResponse;
 
     if (payment.razorpayPaymentId && this.isRazorpayAvailable()) {
-      const refund = await this.razorpay.payments.refund(payment.razorpayPaymentId, {
+      const refund = await this.razorpay!.payments.refund(payment.razorpayPaymentId, {
         amount: Math.round(refundAmount * 100),
         notes: {
           paymentId,
@@ -216,7 +220,7 @@ export class PaymentService {
   async initialize(): Promise<void> {
     try {
       // Test Razorpay connection by fetching orders
-      await this.razorpay.orders.all({ count: 1 });
+      await this.razorpay!.orders.all({ count: 1 });
     } catch (error) {
       throw new Error('Payment service initialization failed');
     }
@@ -249,7 +253,7 @@ export class PaymentService {
         throw new Error('Razorpay credentials are not configured');
       }
 
-      const razorpayOrder = await this.razorpay.orders.create({
+      const razorpayOrder = await this.razorpay!.orders.create({
         amount: data.amount,
         currency: data.currency || 'INR',
         receipt: data.receipt || `receipt_${Date.now()}`,
@@ -380,7 +384,7 @@ export class PaymentService {
     let providerStatus = 'processed';
 
     if (payment.razorpayPaymentId && this.isRazorpayAvailable()) {
-      const refund = await this.razorpay.payments.refund(payment.razorpayPaymentId, {
+      const refund = await this.razorpay!.payments.refund(payment.razorpayPaymentId, {
         amount: Math.round(refundAmount * 100),
         notes: {
           reason: reason || 'Customer request',
@@ -429,7 +433,7 @@ export class PaymentService {
       throw new Error('Razorpay credentials are required to create subscription plans');
     }
 
-    return this.razorpay.plans.create({
+    return this.razorpay!.plans.create({
       period: data.interval,
       interval: data.period,
       item: {
@@ -453,7 +457,7 @@ export class PaymentService {
       throw new Error('User not found');
     }
 
-    const subscription = await this.razorpay.subscriptions.create({
+    const subscription = await this.razorpay!.subscriptions.create({
       plan_id: data.planId,
       customer_notify: 1,
       total_count: 12,

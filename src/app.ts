@@ -95,8 +95,8 @@ class SimpleApp {
     this.app.use(
       express.json({
         limit: '10mb',
-        verify: (req: Request, _res, buf) => {
-          req.rawBody = Buffer.from(buf);
+        verify: (req, _res, buf) => {
+          (req as any).rawBody = Buffer.from(buf);
         },
       })
     );
