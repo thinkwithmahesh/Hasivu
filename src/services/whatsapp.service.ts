@@ -190,6 +190,40 @@ export class WhatsAppService {
     });
   }
 
+  async getIntegrationStatus(schoolId: string) {
+    const [messagesSent, lastMessage, activeOptIns] = await Promise.all([
+      this.prisma.whatsAppMessage.count({ where: { schoolId } }),
+      this.prisma.whatsAppMessage.findFirst({
+        where: { schoolId },
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.whatsAppOptIn.count({ where: { schoolId, status: 'active' } }),
+    ]);
+
+    const mode = featureFlags.get('WHATSAPP_MODE');
+    return {
+      mode,
+      connected: mode === 'production' && Boolean(process.env.WHATSAPP_PHONE_NUMBER_ID),
+      phoneNumber: process.env.WHATSAPP_PHONE_NUMBER_ID || null,
+      businessName: process.env.WHATSAPP_BUSINESS_NAME || 'HASIVU Platform',
+      qualityRating: 'unknown',
+      messageLimit: Number(process.env.WHATSAPP_DAILY_MESSAGE_LIMIT || 0),
+      messagesSent,
+      activeOptIns,
+      lastActivity: lastMessage?.createdAt?.toISOString() ?? null,
+    };
+  }
+
+  async listTemplates(schoolId: string) {
+    return this.prisma.whatsAppTemplateMapping.findMany({
+      where: {
+        isActive: true,
+        OR: [{ schoolId }, { schoolId: null }],
+      },
+      orderBy: [{ schoolId: 'desc' }, { eventType: 'asc' }],
+    });
+  }
+
   private async scheduleFallback(
     schoolId: string,
     messageId: string,

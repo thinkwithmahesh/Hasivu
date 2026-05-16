@@ -1,6 +1,6 @@
 import { PrismaClient, Prisma } from '@prisma/client';
 import { Router } from 'express';
-import { authMiddleware, AuthenticatedRequest } from '../middleware/auth.middleware';
+import { authMiddleware, AuthenticatedRequest, requireRole } from '../middleware/auth.middleware';
 import { successResponse } from '../shared/api-response.types';
 import { WhatsAppCloudApiClient } from '../integrations/whatsapp/cloud-api.client';
 import { WhatsAppService } from '../services/whatsapp.service';
@@ -58,6 +58,34 @@ whatsappRouter.post('/webhook', async (req, res, next) => {
 });
 
 whatsappRouter.use(authMiddleware);
+
+whatsappRouter.get(
+  '/status',
+  requireRole(['school_admin', 'admin']),
+  async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const user = req.user!;
+      const status = await whatsappService.getIntegrationStatus(user.schoolId ?? 'global');
+      res.json(successResponse(status, requestId(req)));
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+whatsappRouter.get(
+  '/templates',
+  requireRole(['school_admin', 'admin']),
+  async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const user = req.user!;
+      const templates = await whatsappService.listTemplates(user.schoolId ?? 'global');
+      res.json(successResponse(templates, requestId(req)));
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 whatsappRouter.post('/opt-in', async (req: AuthenticatedRequest, res, next) => {
   try {

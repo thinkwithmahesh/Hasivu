@@ -231,6 +231,41 @@ export class RfidService {
   }
 
   // Public methods
+  async getCards(filters?: RfidCardFilters): Promise<ServiceResponse<RFIDCard[]>> {
+    try {
+      const where: any = {};
+      if (filters?.schoolId) where.schoolId = filters.schoolId;
+      if (filters?.studentId) where.studentId = filters.studentId;
+      if (filters?.isActive !== undefined) where.isActive = filters.isActive;
+
+      const cards = await this.prisma.rFIDCard.findMany({
+        where,
+        include: {
+          student: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+            },
+          },
+        },
+        orderBy: { issuedAt: 'desc' },
+        take: 100, // Limit for performance
+      });
+
+      return { success: true, data: cards };
+    } catch (error) {
+      logger.error('Failed to get RFID cards', error as Error);
+      return {
+        success: false,
+        error: {
+          code: 'DATABASE_ERROR',
+          message: 'Failed to retrieve RFID cards',
+        },
+      };
+    }
+  }
+
   async registerCard(input: RegisterCardInput): Promise<ServiceResponse<RFIDCard>> {
     try {
       // Validate card number format

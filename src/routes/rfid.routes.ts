@@ -117,6 +117,58 @@ const readerParamsSchema = z.object({
 });
 
 /**
+ * GET /api/v1/rfid/cards
+ * Get all RFID cards (with filters)
+ */
+router.get(
+  '/cards',
+  readRateLimit,
+  authMiddleware,
+  requireRole(['school_admin', 'admin', 'kitchen_staff']),
+  async (req: APIRequest, res: APIResponse): Promise<void> => {
+    try {
+      const currentUser = req.user!;
+      const query = req.query as any;
+
+      const filters: any = {
+        isActive: query.isActive !== undefined ? query.isActive === 'true' : undefined,
+      };
+
+      if (currentUser.role === 'school_admin' || currentUser.role === 'kitchen_staff') {
+        if (!currentUser.schoolId) {
+          throw new AppError('School-scoped user is missing school context', 403);
+        }
+        filters.schoolId = currentUser.schoolId;
+      } else if (query.schoolId) {
+        filters.schoolId = query.schoolId;
+      }
+
+      if (query.studentId) {
+        filters.studentId = query.studentId;
+      }
+
+      const result = await rfidService.getCards(filters);
+
+      if (!result.success) {
+        throw new AppError(result.error?.message || 'Failed to retrieve RFID cards', 500);
+      }
+
+      res.json({
+        data: result.data,
+        message: 'RFID cards retrieved successfully',
+        requestId: req.requestId,
+      });
+    } catch (error: unknown) {
+      logger.error('Failed to get RFID cards', error instanceof Error ? error : undefined, {
+        requestId: req.requestId,
+        userId: req.user?.id,
+      });
+      throw error;
+    }
+  }
+);
+
+/**
  * POST /api/v1/rfid/cards
  * Register new RFID card
  */
