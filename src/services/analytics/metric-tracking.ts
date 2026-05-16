@@ -4,6 +4,7 @@
  */
 
 import { logger } from '../../utils/logger';
+import { prisma as defaultPrisma } from '../../database/DatabaseManager';
 
 export interface MetricData {
   name: string;
@@ -21,7 +22,6 @@ export class MetricTrackingService {
    */
   static async initialize(): Promise<void> {
     logger.info('Metric tracking service initialized');
-    // TODO: Add any necessary initialization logic
   }
 
   /**
@@ -53,13 +53,28 @@ export class MetricTrackingService {
    */
   static async getRealtimeMetrics(): Promise<Record<string, any>> {
     try {
-      logger.info('Fetching real-time metrics');
-      // TODO: Implement real-time metrics aggregation
+      const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const [ordersInProgress, activeUsers, revenueAggregate, responseMetric] = await Promise.all([
+        defaultPrisma.order.count({
+          where: { status: { in: ['pending', 'confirmed', 'preparing', 'ready'] } },
+        }),
+        defaultPrisma.authSession.count({
+          where: { isActive: true, lastActivity: { gte: since } },
+        }),
+        defaultPrisma.payment.aggregate({
+          where: { status: { in: ['completed', 'captured', 'paid'] }, createdAt: { gte: since } },
+          _sum: { amount: true },
+        }),
+        defaultPrisma.analyticsMetric.aggregate({
+          where: { name: 'http.response_time_ms', createdAt: { gte: since } },
+          _avg: { value: true },
+        }),
+      ]);
       return {
-        activeUsers: 0,
-        ordersInProgress: 0,
-        revenue24h: 0,
-        avgResponseTime: 0,
+        activeUsers,
+        ordersInProgress,
+        revenue24h: Number(revenueAggregate._sum.amount || 0),
+        avgResponseTime: responseMetric._avg.value || 0,
       };
     } catch (error) {
       logger.error('Failed to fetch real-time metrics', undefined, {
@@ -74,12 +89,14 @@ export class MetricTrackingService {
    */
   async trackMetricInstance(metric: MetricData): Promise<void> {
     try {
-      // Store metric in database (assuming analyticsMetric model exists)
-      // For now, we'll just log it as the schema may not be fully set up
-      logger.info('Tracking metric', { metric });
-
-      // TODO: Implement database storage when schema is ready
-      // This will be implemented once the analyticsMetric model is available
+      await defaultPrisma.analyticsMetric.create({
+        data: {
+          name: metric.name,
+          value: metric.value,
+          metadata: metric.metadata || undefined,
+          createdAt: metric.timestamp,
+        },
+      });
     } catch (error) {
       logger.error('Failed to track metric', error as Error, { metric });
       throw error;
@@ -95,13 +112,26 @@ export class MetricTrackingService {
     endDate?: Date;
   }): Promise<MetricData[]> {
     try {
-      logger.info('Fetching metrics', { filter });
-
-      // TODO: Implement database queries when schema is ready
-      // This will be implemented once the analyticsMetric model is available
-
-      // Return empty array for now
-      return [];
+      const metrics = await defaultPrisma.analyticsMetric.findMany({
+        where: {
+          ...(filter.name ? { name: filter.name } : {}),
+          createdAt:
+            filter.startDate || filter.endDate
+              ? {
+                  ...(filter.startDate ? { gte: filter.startDate } : {}),
+                  ...(filter.endDate ? { lte: filter.endDate } : {}),
+                }
+              : undefined,
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 1000,
+      });
+      return metrics.map(metric => ({
+        name: metric.name,
+        value: metric.value,
+        timestamp: metric.createdAt,
+        metadata: (metric.metadata as Record<string, any> | null) || undefined,
+      }));
     } catch (error) {
       logger.error('Failed to fetch metrics', error as Error, { filter });
       throw error;
@@ -134,12 +164,10 @@ export class MetricTrackingService {
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
 
-      logger.info('Cleaning up old metrics', { cutoffDate });
-
-      // TODO: Implement database cleanup when schema is ready
-      // This will be implemented once the analyticsMetric model is available
-
-      return 0;
+      const result = await defaultPrisma.analyticsMetric.deleteMany({
+        where: { createdAt: { lt: cutoffDate } },
+      });
+      return result.count;
     } catch (error) {
       logger.error('Failed to cleanup old metrics', undefined, {
         errorMessage: error instanceof Error ? error.message : String(error),
