@@ -1,15 +1,47 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAccessTokenFromRequest, fetchConfiguredProxy } from '@/app/api/_utils/proxy';
-const LAMBDA_RFID_VERIFY_URL = process.env.LAMBDA_RFID_VERIFY_URL;
+import {
+  buildProxyHeaders,
+  forwardToExpressApi,
+  getAccessTokenFromRequest,
+} from '@/app/api/_utils/proxy';
 
-;
+async function jsonFromUpstream(response: Response): Promise<unknown> {
+  const text = await response.text();
+  if (!text) return {};
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { message: text };
+  }
+}
 
-// POST /api/rfid/verify - Verify RFID card
+function normalizeProxyResponse(data: unknown, fallbackMessage: string): Record<string, unknown> {
+  const payload =
+    data && typeof data === 'object' && !Array.isArray(data)
+      ? (data as Record<string, unknown>)
+      : { data };
+  return {
+    success: payload.success ?? true,
+    data: payload.data ?? payload,
+    message: payload.message ?? fallbackMessage,
+    ...(payload.error ? { error: payload.error } : {}),
+  };
+}
+
+function upstreamError(data: unknown, fallbackError: string): Record<string, unknown> {
+  const payload =
+    data && typeof data === 'object' && !Array.isArray(data)
+      ? (data as Record<string, unknown>)
+      : {};
+  return {
+    success: false,
+    error: payload.error ?? payload.message ?? fallbackError,
+  };
+}
+
 export async function POST(request: NextRequest) {
   try {
-    // Get auth token from httpOnly cookie
     const authToken = getAccessTokenFromRequest(request);
-
     if (!authToken) {
       return NextResponse.json(
         { success: false, error: 'No authentication token found' },
@@ -19,50 +51,32 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
 
-    // Basic validation
-    if (!body.cardNumber || !body.readerId) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Card number and reader ID are required',
-        },
-        { status: 400 }
-      );
-    }
+    // Map frontend fields (cardId, deviceId) to backend fields (cardNumber, readerId)
+    const mappedBody = {
+      cardNumber: body.cardId || body.cardNumber,
+      readerId: body.deviceId || body.readerId,
+      orderId: body.orderId,
+      timestamp: body.timestamp,
+    };
 
-    // Forward request to Lambda function
-    const lambdaResponse = await fetchConfiguredProxy(LAMBDA_RFID_VERIFY_URL, 'LAMBDA_RFID_VERIFY_URL', {
+    const upstream = await forwardToExpressApi(request, '/v1/rfid/verify-delivery', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${authToken}`,
-        'User-Agent': request.headers.get('user-agent') || '',
-        'X-Forwarded-For': request.headers.get('x-forwarded-for') || '',
-      },
-      body: JSON.stringify(body),
+      headers: buildProxyHeaders(request, authToken),
+      body: JSON.stringify(mappedBody),
     });
 
-    const lambdaData = await lambdaResponse.json();
+    const data = await jsonFromUpstream(upstream);
 
-    // Handle Lambda response and transform to expected frontend format
-    if (lambdaResponse.ok) {
-      const frontendResponse = {
-        success: true,
-        data: lambdaData.data || lambdaData,
-        message: lambdaData.message || 'RFID card verified successfully',
-      };
-
-      return NextResponse.json(frontendResponse);
-    } else {
-      return NextResponse.json(
-        {
-          success: false,
-          error: lambdaData.error || 'RFID verification failed',
-        },
-        { status: lambdaResponse.status }
-      );
+    if (!upstream.ok) {
+      return NextResponse.json(upstreamError(data, 'Failed to verify delivery'), {
+        status: upstream.status,
+      });
     }
-  } catch (error) {
+
+    return NextResponse.json(normalizeProxyResponse(data, 'Delivery verified successfully'), {
+      status: upstream.status,
+    });
+  } catch (err) {
     return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }

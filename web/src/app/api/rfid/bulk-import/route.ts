@@ -1,19 +1,47 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
+  buildProxyHeaders,
+  forwardToExpressApi,
   getAccessTokenFromRequest,
-  fetchConfiguredProxy,
-  configuredProxyUrl,
 } from '@/app/api/_utils/proxy';
-const LAMBDA_RFID_BULK_IMPORT_URL = process.env.LAMBDA_RFID_BULK_IMPORT_URL;
 
-;
+async function jsonFromUpstream(response: Response): Promise<unknown> {
+  const text = await response.text();
+  if (!text) return {};
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { message: text };
+  }
+}
 
-// POST /api/rfid/bulk-import - Bulk import RFID cards
+function normalizeProxyResponse(data: unknown, fallbackMessage: string): Record<string, unknown> {
+  const payload =
+    data && typeof data === 'object' && !Array.isArray(data)
+      ? (data as Record<string, unknown>)
+      : { data };
+  return {
+    success: payload.success ?? true,
+    data: payload.data ?? payload,
+    message: payload.message ?? fallbackMessage,
+    ...(payload.error ? { error: payload.error } : {}),
+  };
+}
+
+function upstreamError(data: unknown, fallbackError: string): Record<string, unknown> {
+  const payload =
+    data && typeof data === 'object' && !Array.isArray(data)
+      ? (data as Record<string, unknown>)
+      : {};
+  return {
+    success: false,
+    error: payload.error ?? payload.message ?? fallbackError,
+  };
+}
+
 export async function POST(request: NextRequest) {
   try {
-    // Get auth token from httpOnly cookie
     const authToken = getAccessTokenFromRequest(request);
-
     if (!authToken) {
       return NextResponse.json(
         { success: false, error: 'No authentication token found' },
@@ -23,66 +51,24 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
 
-    // Basic validation
-    if (!body.cards || !Array.isArray(body.cards) || body.cards.length === 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Cards array is required and must not be empty',
-        },
-        { status: 400 }
-      );
-    }
-
-    const lambdaUrl = configuredProxyUrl(LAMBDA_RFID_BULK_IMPORT_URL);
-    if (!lambdaUrl) {
-      const imported = body.cards.map((card: { cardNumber: string; studentId: string }, index: number) => ({
-        id: `rfid-bulk-${Date.now()}-${index}`,
-        studentId: card.studentId,
-        cardNumber: card.cardNumber,
-        status: 'active',
-      }));
-
-      return NextResponse.json({
-        success: true,
-        data: imported,
-        message: `Imported ${imported.length} RFID card(s) in launch-local mode`,
-      });
-    }
-
-    // Forward request to the configured legacy provider only when explicitly enabled.
-    const lambdaResponse = await fetchConfiguredProxy(LAMBDA_RFID_BULK_IMPORT_URL, 'LAMBDA_RFID_BULK_IMPORT_URL', {
+    const upstream = await forwardToExpressApi(request, '/v1/rfid/cards/bulk', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${authToken}`,
-        'User-Agent': request.headers.get('user-agent') || '',
-        'X-Forwarded-For': request.headers.get('x-forwarded-for') || '',
-      },
+      headers: buildProxyHeaders(request, authToken),
       body: JSON.stringify(body),
     });
 
-    const lambdaData = await lambdaResponse.json();
+    const data = await jsonFromUpstream(upstream);
 
-    // Handle Lambda response and transform to expected frontend format
-    if (lambdaResponse.ok) {
-      const frontendResponse = {
-        success: true,
-        data: lambdaData.data || lambdaData,
-        message: lambdaData.message || 'RFID cards imported successfully',
-      };
-
-      return NextResponse.json(frontendResponse);
-    } else {
-      return NextResponse.json(
-        {
-          success: false,
-          error: lambdaData.error || 'Bulk import failed',
-        },
-        { status: lambdaResponse.status }
-      );
+    if (!upstream.ok) {
+      return NextResponse.json(upstreamError(data, 'Failed to import cards'), {
+        status: upstream.status,
+      });
     }
-  } catch (error) {
+
+    return NextResponse.json(normalizeProxyResponse(data, 'Cards imported successfully'), {
+      status: upstream.status,
+    });
+  } catch (err) {
     return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }

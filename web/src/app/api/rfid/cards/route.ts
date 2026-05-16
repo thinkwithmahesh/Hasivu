@@ -1,48 +1,82 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
+  buildProxyHeaders,
+  forwardToExpressApi,
   getAccessTokenFromRequest,
-  fetchConfiguredProxy,
-  configuredProxyUrl,
 } from '@/app/api/_utils/proxy';
-const LAMBDA_RFID_CREATE_CARD_URL = process.env.LAMBDA_RFID_CREATE_CARD_URL;
 
-;
-
-const launchCards = [
-  {
-    id: 'rfid-demo-001',
-    cardNumber: 'RFID-001',
-    studentId: 'STU-001',
-    schoolId: 'school_demo_001',
-    isActive: true,
-    issuedAt: '2026-05-01T00:00:00.000Z',
-    lastUsedAt: '2026-05-08T08:15:00.000Z',
-    student: { firstName: 'Test', lastName: 'Student' },
-  },
-];
-
-export async function GET(request: NextRequest) {
-  const authToken = getAccessTokenFromRequest(request);
-  if (!authToken) {
-    return NextResponse.json(
-      { success: false, error: 'No authentication token found' },
-      { status: 401 }
-    );
+async function jsonFromUpstream(response: Response): Promise<unknown> {
+  const text = await response.text();
+  if (!text) return {};
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { message: text };
   }
-
-  return NextResponse.json({
-    success: true,
-    data: launchCards,
-    message: 'RFID cards loaded',
-  });
 }
 
-// POST /api/rfid/cards - Create RFID card
+function normalizeProxyResponse(data: unknown, fallbackMessage: string): Record<string, unknown> {
+  const payload =
+    data && typeof data === 'object' && !Array.isArray(data)
+      ? (data as Record<string, unknown>)
+      : { data };
+  return {
+    success: payload.success ?? true,
+    data: payload.data ?? payload,
+    message: payload.message ?? fallbackMessage,
+    ...(payload.error ? { error: payload.error } : {}),
+  };
+}
+
+function upstreamError(data: unknown, fallbackError: string): Record<string, unknown> {
+  const payload =
+    data && typeof data === 'object' && !Array.isArray(data)
+      ? (data as Record<string, unknown>)
+      : {};
+  return {
+    success: false,
+    error: payload.error ?? payload.message ?? fallbackError,
+  };
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const authToken = getAccessTokenFromRequest(request);
+    if (!authToken) {
+      return NextResponse.json(
+        { success: false, error: 'No authentication token found' },
+        { status: 401 }
+      );
+    }
+
+    const { searchParams } = new URL(request.url);
+    const queryString = searchParams.toString();
+    const expressPath = queryString ? `/v1/rfid/cards?${queryString}` : '/v1/rfid/cards';
+
+    const upstream = await forwardToExpressApi(request, expressPath, {
+      method: 'GET',
+      headers: buildProxyHeaders(request, authToken),
+    });
+
+    const data = await jsonFromUpstream(upstream);
+
+    if (!upstream.ok) {
+      return NextResponse.json(upstreamError(data, 'Failed to fetch cards'), {
+        status: upstream.status,
+      });
+    }
+
+    return NextResponse.json(normalizeProxyResponse(data, 'Cards retrieved successfully'), {
+      status: upstream.status,
+    });
+  } catch (err) {
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
-    // Get auth token from httpOnly cookie
     const authToken = getAccessTokenFromRequest(request);
-
     if (!authToken) {
       return NextResponse.json(
         { success: false, error: 'No authentication token found' },
@@ -52,68 +86,24 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
 
-    // Basic validation
-    if (!body.studentId || !body.schoolId) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Student ID and School ID are required',
-        },
-        { status: 400 }
-      );
-    }
-
-    const lambdaUrl = configuredProxyUrl(LAMBDA_RFID_CREATE_CARD_URL);
-    if (!lambdaUrl) {
-      return NextResponse.json(
-        {
-          success: true,
-          data: {
-            id: `rfid-${Date.now()}`,
-            studentId: body.studentId,
-            schoolId: body.schoolId,
-            cardNumber: body.cardNumber,
-            status: 'active',
-          },
-          message: 'RFID card registered in launch-local mode',
-        },
-        { status: 201 }
-      );
-    }
-
-    // Forward request to the configured legacy provider only when explicitly enabled.
-    const lambdaResponse = await fetchConfiguredProxy(LAMBDA_RFID_CREATE_CARD_URL, 'LAMBDA_RFID_CREATE_CARD_URL', {
+    const upstream = await forwardToExpressApi(request, '/v1/rfid/cards', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${authToken}`,
-        'User-Agent': request.headers.get('user-agent') || '',
-        'X-Forwarded-For': request.headers.get('x-forwarded-for') || '',
-      },
+      headers: buildProxyHeaders(request, authToken),
       body: JSON.stringify(body),
     });
 
-    const lambdaData = await lambdaResponse.json();
+    const data = await jsonFromUpstream(upstream);
 
-    // Handle Lambda response and transform to expected frontend format
-    if (lambdaResponse.ok) {
-      const frontendResponse = {
-        success: true,
-        data: lambdaData.data || lambdaData,
-        message: lambdaData.message || 'RFID card created successfully',
-      };
-
-      return NextResponse.json(frontendResponse, { status: 201 });
-    } else {
-      return NextResponse.json(
-        {
-          success: false,
-          error: lambdaData.error || 'Failed to create RFID card',
-        },
-        { status: lambdaResponse.status }
-      );
+    if (!upstream.ok) {
+      return NextResponse.json(upstreamError(data, 'Failed to create card'), {
+        status: upstream.status,
+      });
     }
-  } catch (error) {
+
+    return NextResponse.json(normalizeProxyResponse(data, 'Card created successfully'), {
+      status: upstream.status,
+    });
+  } catch (err) {
     return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }

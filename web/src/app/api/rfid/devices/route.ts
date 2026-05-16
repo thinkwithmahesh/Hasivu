@@ -7,7 +7,9 @@ import {
 
 async function jsonFromUpstream(response: Response): Promise<unknown> {
   const text = await response.text();
-  if (!text) return {};
+  if (!text) {
+    return {};
+  }
   try {
     return JSON.parse(text);
   } catch {
@@ -41,10 +43,9 @@ function upstreamError(data: unknown, fallbackError: string): Record<string, unk
   };
 }
 
-// POST /api/rfid/delivery-verification - Record delivery verification
-export async function POST(request: NextRequest) {
+// GET /api/rfid/devices
+export async function GET(request: NextRequest) {
   try {
-    // Get auth token from httpOnly cookie
     const authToken = getAccessTokenFromRequest(request);
 
     if (!authToken) {
@@ -54,43 +55,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = await request.json();
+    const { searchParams } = new URL(request.url);
+    const queryString = searchParams.toString();
+    const expressPath = queryString ? `/v1/rfid/readers?${queryString}` : '/v1/rfid/readers';
+    const headers = buildProxyHeaders(request, authToken);
 
-    // Basic validation
-    const cardNumber = body.cardNumber ?? body.cardId;
-    if (!cardNumber) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Card number is required',
-        },
-        { status: 400 }
-      );
-    }
-
-    const upstreamBody = {
-      ...body,
-      cardNumber,
-    };
-    delete upstreamBody.cardId;
-    delete upstreamBody.studentId;
-    delete upstreamBody.schoolId;
-
-    const upstream = await forwardToExpressApi(request, '/v1/rfid/verify-delivery', {
-      method: 'POST',
-      headers: buildProxyHeaders(request, authToken),
-      body: JSON.stringify(upstreamBody),
+    const upstream = await forwardToExpressApi(request, expressPath, {
+      method: 'GET',
+      headers,
     });
 
     const data = await jsonFromUpstream(upstream);
 
     if (!upstream.ok) {
-      return NextResponse.json(upstreamError(data, 'Delivery verification failed'), {
+      return NextResponse.json(upstreamError(data, 'Failed to fetch RFID devices'), {
         status: upstream.status,
       });
     }
 
-    return NextResponse.json(normalizeProxyResponse(data, 'Delivery verified successfully'), {
+    return NextResponse.json(normalizeProxyResponse(data, 'RFID devices retrieved successfully'), {
       status: upstream.status,
     });
   } catch {
