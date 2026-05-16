@@ -666,7 +666,19 @@ export const rfidApi = {
     cardId: string;
     deviceId: string;
     timestamp: string;
-  }): Promise<ApiResponse<{ valid: boolean; studentId: string; accessGranted: boolean }>> => {
+    orderId?: string;
+  }): Promise<
+    ApiResponse<{
+      success: boolean;
+      cardNumber: string;
+      studentId: string;
+      studentName: string;
+      schoolId: string;
+      verificationId: string;
+      signalQuality: string;
+      orderInfo?: any;
+    }>
+  > => {
     const response = await apiClient.post('/rfid/verify', scanData);
     return response.data;
   },
@@ -708,11 +720,12 @@ export const rfidApi = {
   },
 
   bulkRegisterCards: async (
+    schoolId: string,
     bulkData: Array<{ studentId: string; cardNumber: string }>
   ): Promise<
     ApiResponse<Array<{ id: string; studentId: string; cardNumber: string; status: string }>>
   > => {
-    const response = await apiClient.post('/rfid/bulk-import', { cards: bulkData });
+    const response = await apiClient.post('/rfid/bulk-import', { schoolId, cards: bulkData });
     return response.data;
   },
 
@@ -799,6 +812,22 @@ export const notificationsApi = {
     }>
   > => {
     const response = await apiClient.put('/notifications/settings', settings);
+    return response.data;
+  },
+
+  getTemplates: async (): Promise<ApiResponse<any[]>> => {
+    const response = await apiClient.get('/notifications/templates');
+    return response.data;
+  },
+
+  createTemplate: async (template: {
+    templateKey: string;
+    channel?: string;
+    title: string;
+    body: string;
+    variables?: string[];
+  }): Promise<ApiResponse<any>> => {
+    const response = await apiClient.post('/notifications/templates', template);
     return response.data;
   },
 };
@@ -1068,6 +1097,38 @@ export const initializeWebSocket = () => {
     return;
   }
   wsManager.connect();
+};
+
+// WhatsApp API
+export const whatsappApi = {
+  getStatus: async (): Promise<ApiResponse<any>> => {
+    const response = await apiClient.get('/whatsapp/status');
+    return response.data;
+  },
+
+  getTemplates: async (): Promise<ApiResponse<any[]>> => {
+    const response = await apiClient.get('/whatsapp/templates');
+    return response.data;
+  },
+
+  getMessages: async (): Promise<ApiResponse<any[]>> => {
+    const response = await apiClient.get('/whatsapp/messages');
+    return response.data;
+  },
+
+  triggerTemplate: async (
+    eventType: string,
+    recipientUserId: string,
+    variables: Record<string, string>,
+    fallbackRequired: boolean = true
+  ): Promise<ApiResponse<any>> => {
+    const response = await apiClient.post(`/whatsapp/templates/${eventType}/trigger`, {
+      recipientUserId,
+      variables,
+      fallbackRequired,
+    });
+    return response.data;
+  },
 };
 
 // Error handler utility

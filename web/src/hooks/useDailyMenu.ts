@@ -64,81 +64,37 @@ export const useDailyMenu = (): UseDailyMenuReturn => {
     setError(null);
 
     try {
-      // In production, this would make an API call
-      // For now, return mock data
-      const mockMenu: DailyMenuData = {
-        date,
-        menus: [
-          {
-            id: '1',
-            category: 'Breakfast',
-            isActive: true,
-            notes: 'Fresh and nutritious breakfast options',
-            availableQuantity: 150,
-            menuItems: [
-              {
-                id: 'b1',
-                name: 'Idli with Sambar',
-                description: 'Traditional South Indian breakfast',
-                price: 25,
-                category: 'Breakfast',
-                available: true,
-                preparationTime: 10,
-                allergens: ['gluten'],
-                nutritionalInfo: {
-                  calories: 180,
-                  protein: 6,
-                  carbs: 35,
-                  fat: 3,
-                },
-              },
-              {
-                id: 'b2',
-                name: 'Poha',
-                description: 'Flattened rice with vegetables',
-                price: 20,
-                category: 'Breakfast',
-                available: true,
-                preparationTime: 8,
-                allergens: [],
-                nutritionalInfo: {
-                  calories: 150,
-                  protein: 4,
-                  carbs: 30,
-                  fat: 2,
-                },
-              },
-            ],
-          },
-          {
-            id: '2',
-            category: 'Lunch',
-            isActive: true,
-            notes: 'Balanced lunch with vegetables and protein',
-            availableQuantity: 200,
-            menuItems: [
-              {
-                id: 'l1',
-                name: 'Rice with Dal and Vegetables',
-                description: 'Complete meal with rice, lentils, and seasonal vegetables',
-                price: 40,
-                category: 'Lunch',
-                available: true,
-                preparationTime: 15,
-                allergens: [],
-                nutritionalInfo: {
-                  calories: 350,
-                  protein: 12,
-                  carbs: 65,
-                  fat: 8,
-                },
-              },
-            ],
-          },
-        ],
-      };
+      const response = await fetch(`/api/menus/daily?schoolId=${schoolId}&date=${date}`);
+      const result = await response.json();
 
-      setCurrentMenu(mockMenu);
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to load menu');
+      }
+
+      const rawItems: MenuItem[] = result.data?.data || result.data || [];
+
+      // Group items by category
+      const grouped = rawItems.reduce(
+        (acc, item) => {
+          const cat = item.category || 'Other';
+          if (!acc[cat]) {
+            acc[cat] = {
+              id: cat,
+              category: cat,
+              isActive: true,
+              menuItems: [],
+            };
+          }
+          acc[cat].menuItems.push(item);
+          return acc;
+        },
+        {} as Record<string, Menu>
+      );
+
+      setCurrentMenu({
+        date,
+        menus: Object.values(grouped),
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load menu');
     } finally {

@@ -110,10 +110,32 @@ module.exports = {
           900: '#8B1F3B',
         },
         // Parent-mobile & redesign shell — mirrors `src/design-system/tokens.ts`
+        // ─── HASIVU UNIFIED DESIGN TOKENS ───
+        'hasivu-neutral': {
+          50: '#FAF9F7',
+          100: '#F2EFE9',
+          200: '#E4DFD6',
+          400: '#9E9589',
+          600: '#5C554A',
+          800: '#2A2520',
+          900: '#141210',
+        },
+        'hasivu-surface': { 1: '#FFFFFF', 2: '#F2EFE9', 3: '#E4DFD6' },
+        'hasivu-text': {
+          primary: '#141210',
+          secondary: '#5C554A',
+          tertiary: '#9E9589',
+          inverse: '#FFFFFF',
+        },
+        'hasivu-semantic': {
+          success: '#22C55E',
+          warning: '#F59E0B',
+          danger: '#EF4444',
+          info: '#3B82F6',
+        },
+        // Backward-compat alias (TODO: migrate pm-* usage then remove)
         pm: {
-          page: {
-            bg: '#FAF9F7',
-          },
+          page: { bg: '#FAF9F7' },
           primary: {
             50: '#FFF8F0',
             100: '#FFECD4',
@@ -123,11 +145,7 @@ module.exports = {
             800: '#7A3A08',
             900: '#3D1C04',
           },
-          secondary: {
-            50: '#F0FAF4',
-            400: '#3CAF6A',
-            600: '#207040',
-          },
+          secondary: { 50: '#F0FAF4', 400: '#3CAF6A', 600: '#207040' },
           neutral: {
             50: '#FAF9F7',
             100: '#F2EFE9',
@@ -137,23 +155,14 @@ module.exports = {
             800: '#2A2520',
             900: '#141210',
           },
-          surface: {
-            1: '#FFFFFF',
-            2: '#F2EFE9',
-            3: '#E4DFD6',
-          },
+          surface: { 1: '#FFFFFF', 2: '#F2EFE9', 3: '#E4DFD6' },
           text: {
             primary: '#141210',
             secondary: '#5C554A',
             tertiary: '#9E9589',
             inverse: '#FFFFFF',
           },
-          semantic: {
-            success: '#22C55E',
-            warning: '#F59E0B',
-            danger: '#EF4444',
-            info: '#3B82F6',
-          },
+          semantic: { success: '#22C55E', warning: '#F59E0B', danger: '#EF4444', info: '#3B82F6' },
         },
         // Neutral “ink” palette for typography (softer than pure black)
         ink: {
@@ -221,11 +230,11 @@ module.exports = {
       fontFamily: {
         sans: ['var(--font-body)', 'Nunito', 'system-ui', 'sans-serif'],
         display: ['var(--font-hero)', 'Instrument Serif', 'Georgia', 'serif'],
-        /** UI chrome + tables (parent bottom nav labels, kitchen) */
-        ui: ['var(--font-ui)', 'Nunito', 'system-ui', 'sans-serif'],
+        /** UI chrome: nav labels, tables, stats, form labels */
+        ui: ['var(--font-ui)', 'DM Sans', 'system-ui', 'sans-serif'],
         /** Marketing / hero only */
         hero: ['var(--font-hero)', 'Instrument Serif', 'Georgia', 'serif'],
-        mono: ['JetBrains Mono', 'monospace'],
+        mono: ['var(--font-mono)', 'JetBrains Mono', 'monospace'],
       },
       boxShadow: {
         soft: '0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04)',

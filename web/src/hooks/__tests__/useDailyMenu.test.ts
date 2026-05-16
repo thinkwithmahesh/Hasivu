@@ -2,7 +2,37 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 
 import { useDailyMenu } from '../useDailyMenu';
 
+const mockMenuItems = [
+  {
+    id: 'b1',
+    category: 'Breakfast',
+    name: 'Idli with Sambar',
+    price: 25,
+    available: true,
+    preparationTime: 10,
+  },
+  { id: 'b2', category: 'Breakfast', name: 'Poha', price: 20, available: true, preparationTime: 8 },
+  {
+    id: 'l1',
+    category: 'Lunch',
+    name: 'Rice with Dal',
+    price: 40,
+    available: true,
+    preparationTime: 15,
+  },
+];
+
+global.fetch = jest.fn(() =>
+  Promise.resolve({
+    ok: true,
+    json: () => Promise.resolve({ success: true, data: mockMenuItems }),
+  })
+) as jest.Mock;
+
 describe('useDailyMenu', () => {
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
   it('starts empty and not loading', () => {
     const { result } = renderHook(() => useDailyMenu());
 

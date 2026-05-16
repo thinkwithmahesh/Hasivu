@@ -8,6 +8,7 @@ import {
   userApi,
   rfidApi,
   analyticsApi,
+  whatsappApi,
   wsManager,
   handleApiError,
   type User as ApiUser,
@@ -501,6 +502,46 @@ export function useNotificationMutations() {
     loading,
     error,
   };
+}
+
+// WhatsApp Hooks
+export function useWhatsAppMessages() {
+  return useApiData(() => whatsappApi.getMessages(), [], { refetchInterval: 30000 });
+}
+
+export function useWhatsAppMutations() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const triggerTemplate = useCallback(
+    async (
+      eventType: string,
+      recipientUserId: string,
+      variables: Record<string, string>,
+      fallbackRequired: boolean = true
+    ) => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await whatsappApi.triggerTemplate(
+          eventType,
+          recipientUserId,
+          variables,
+          fallbackRequired
+        );
+        return response.data;
+      } catch (err) {
+        const errorMessage = handleApiError(err);
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
+
+  return { triggerTemplate, loading, error };
 }
 
 // Authentication Hooks
