@@ -71,7 +71,11 @@ interface NotificationCenterProps {
 }
 
 const NOTIFICATION_TYPES = {
-  info: { icon: Info, color: 'text-blue-600', bgColor: 'bg-blue-50' },
+  info: {
+    icon: Info,
+    color: 'text-[var(--hasivu-primary)]',
+    bgColor: 'bg-[var(--hasivu-primary)]/5',
+  },
   success: { icon: CheckCircle, color: 'text-green-600', bgColor: 'bg-green-50' },
   warning: { icon: AlertCircle, color: 'text-yellow-600', bgColor: 'bg-yellow-50' },
   error: { icon: XCircle, color: 'text-red-600', bgColor: 'bg-red-50' },
@@ -449,7 +453,8 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
                         key={notification.id}
                         className={cn(
                           'p-4 rounded-lg border transition-all hover:shadow-sm',
-                          !notification.read && 'bg-blue-50 border-blue-200',
+                          !notification.read &&
+                            'bg-[var(--hasivu-primary)]/5 border-[var(--hasivu-primary)]/20',
                           style.bgColor
                         )}
                       >
@@ -486,7 +491,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
 
                               <div className="flex items-center gap-1 ml-2">
                                 {!notification.read && (
-                                  <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                                  <div className="w-2 h-2 bg-[var(--hasivu-primary)] rounded-full"></div>
                                 )}
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>

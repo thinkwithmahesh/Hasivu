@@ -51,6 +51,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { notificationsApi } from '@/services/api';
 
 interface EmailCommunicationProps {
   className?: string;
@@ -98,6 +99,22 @@ interface EmailAnalytics {
   clickRate: number;
   bounceRate: number;
   unsubscribeRate: number;
+}
+
+function safeParseVariables(value: unknown): string[] {
+  if (Array.isArray(value)) return value.filter((item): item is string => typeof item === 'string');
+  if (typeof value !== 'string') return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed)
+      ? parsed.filter((item): item is string => typeof item === 'string')
+      : [];
+  } catch {
+    return value
+      .split(',')
+      .map(item => item.trim())
+      .filter(Boolean);
+  }
 }
 
 export const EmailCommunication: React.FC<EmailCommunicationProps> = ({ className }) => {
@@ -154,99 +171,39 @@ export const EmailCommunication: React.FC<EmailCommunicationProps> = ({ classNam
         });
       }
 
-      // For templates and campaigns, use mock data for now as these might not have dedicated endpoints
-      // In a real implementation, these would come from dedicated API endpoints
-      setTemplates([
-        {
-          id: 'welcome_email',
-          name: 'Welcome Email',
-          subject: 'Welcome to HASIVU Platform, {{name}}!',
-          content:
-            'Dear {{name}},\n\nWelcome to HASIVU! Your account has been created successfully.\n\nBest regards,\nHASIVU Team',
-          category: 'transactional',
-          variables: ['name'],
-          status: 'active',
-          createdAt: '2024-01-01',
-          lastModified: '2024-01-15',
-          usageCount: 1250,
-        },
-        {
-          id: 'order_confirmation',
-          name: 'Order Confirmation',
-          subject: 'Order Confirmation - #{{order_id}}',
-          content:
-            'Hi {{name}},\n\nYour order #{{order_id}} has been confirmed.\nTotal: ₹{{amount}}\n\nThank you for choosing HASIVU!',
-          category: 'transactional',
-          variables: ['name', 'order_id', 'amount'],
-          status: 'active',
-          createdAt: '2024-01-01',
-          lastModified: '2024-01-10',
-          usageCount: 890,
-        },
-        {
-          id: 'payment_reminder',
-          name: 'Payment Reminder',
-          subject: 'Payment Due for Order #{{order_id}}',
-          content:
-            'Dear {{name}},\n\nThis is a reminder that payment for order #{{order_id}} is due.\nAmount: ₹{{amount}}\n\nPay now: {{payment_link}}',
-          category: 'notification',
-          variables: ['name', 'order_id', 'amount', 'payment_link'],
-          status: 'active',
-          createdAt: '2024-01-05',
-          lastModified: '2024-01-12',
-          usageCount: 234,
-        },
-      ]);
-
-      setCampaigns([
-        {
-          id: 'campaign_001',
-          name: 'New Menu Items Promotion',
-          subject: 'Try Our New Healthy Menu Items!',
-          templateId: 'promo_template',
-          recipientCount: 1500,
-          status: 'sent',
-          sentAt: '2024-01-20T10:00:00Z',
-          metrics: {
-            sent: 1500,
-            delivered: 1425,
-            opened: 456,
-            clicked: 89,
-            bounced: 75,
-            unsubscribed: 12,
-          },
-        },
-        {
-          id: 'campaign_002',
-          name: 'Back to School Reminder',
-          subject: 'School is Starting Soon!',
-          templateId: 'newsletter_template',
-          recipientCount: 2000,
-          status: 'scheduled',
-          scheduledFor: '2024-02-01T09:00:00Z',
-          metrics: {
-            sent: 0,
-            delivered: 0,
-            opened: 0,
-            clicked: 0,
-            bounced: 0,
-            unsubscribed: 0,
-          },
-        },
-      ]);
+      const templateResponse = await notificationsApi.getTemplates();
+      const rawTemplates = Array.isArray(templateResponse.data) ? templateResponse.data : [];
+      setTemplates(
+        rawTemplates
+          .filter((template: any) => template.channel === 'email' || template.channel === 'in_app')
+          .map((template: any) => ({
+            id: template.id,
+            name: template.templateKey,
+            subject: template.title,
+            content: template.body,
+            category: 'notification',
+            variables: safeParseVariables(template.variables),
+            status: template.isActive ? 'active' : 'archived',
+            createdAt: template.createdAt,
+            lastModified: template.updatedAt,
+            usageCount: 0,
+          }))
+      );
+      setCampaigns([]);
     } catch (error) {
-      // Fallback to mock analytics if API fails
       setAnalytics({
-        totalSent: 12500,
-        totalDelivered: 11875,
-        totalOpened: 3750,
-        totalClicked: 1125,
-        deliveryRate: 95.0,
-        openRate: 31.6,
-        clickRate: 9.5,
-        bounceRate: 5.0,
-        unsubscribeRate: 0.8,
+        totalSent: 0,
+        totalDelivered: 0,
+        totalOpened: 0,
+        totalClicked: 0,
+        deliveryRate: 0,
+        openRate: 0,
+        clickRate: 0,
+        bounceRate: 0,
+        unsubscribeRate: 0,
       });
+      setTemplates([]);
+      setCampaigns([]);
     } finally {
       setLoading(false);
     }
@@ -262,16 +219,25 @@ export const EmailCommunication: React.FC<EmailCommunicationProps> = ({ classNam
     try {
       setSending(true);
 
+      const response = await notificationsApi.createTemplate({
+        templateKey: templateData.name,
+        channel: 'email',
+        title: templateData.subject,
+        body: templateData.content,
+        variables: templateData.variables,
+      });
+      const created = response.data;
+
       const newTemplate: EmailTemplate = {
-        id: `template_${Date.now()}`,
+        id: created.id,
         name: templateData.name,
         subject: templateData.subject,
         content: templateData.content,
         category: templateData.category,
         variables: templateData.variables,
-        status: 'draft',
-        createdAt: new Date().toISOString(),
-        lastModified: new Date().toISOString(),
+        status: 'active',
+        createdAt: created.createdAt || new Date().toISOString(),
+        lastModified: created.updatedAt || new Date().toISOString(),
         usageCount: 0,
       };
 
@@ -445,7 +411,7 @@ export const EmailCommunication: React.FC<EmailCommunicationProps> = ({ classNam
                   <p className="text-sm font-medium text-muted-foreground">Total Sent</p>
                   <p className="text-2xl font-bold">{analytics.totalSent.toLocaleString()}</p>
                 </div>
-                <Send className="h-8 w-8 text-blue-600" />
+                <Send className="h-8 w-8 text-[var(--hasivu-primary)]" />
               </div>
             </CardContent>
           </Card>

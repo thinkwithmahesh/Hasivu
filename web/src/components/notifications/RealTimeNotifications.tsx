@@ -283,7 +283,7 @@ const NotificationItem = ({
       case 'high':
         return 'text-orange-600 bg-orange-100';
       case 'medium':
-        return 'text-blue-600 bg-blue-100';
+        return 'text-[var(--hasivu-primary)] bg-[var(--hasivu-primary)]/10';
       case 'low':
         return 'text-gray-600 bg-gray-100';
       default:
@@ -405,7 +405,7 @@ export const RealTimeNotificationPanel: React.FC<{
         <CardHeader className="border-b">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <Bell className="w-5 h-5 text-blue-600" />
+              <Bell className="w-5 h-5 text-[var(--hasivu-primary)]" />
               <CardTitle>Notifications</CardTitle>
               {unreadCount > 0 && <Badge className="bg-red-500 text-white">{unreadCount}</Badge>}
             </div>

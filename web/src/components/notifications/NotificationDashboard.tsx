@@ -38,12 +38,40 @@ import { EmailCommunication } from './EmailCommunication';
 import { SMSCommunication } from './SMSCommunication';
 import { CommunicationAnalytics } from './CommunicationAnalytics';
 import { cn } from '@/lib/utils';
+import { useDashboardAnalytics } from '@/hooks/useApiIntegration';
 
 interface NotificationDashboardProps {
   userId: string;
   schoolId?: string;
   className?: string;
 }
+
+type ChannelStats = {
+  sent: number;
+  delivered: number;
+  read: number;
+};
+
+type NotificationActivity = {
+  channel: string;
+  action: string;
+  count: number;
+  time: string;
+};
+
+type NotificationAnalytics = {
+  totalSent: number;
+  totalDelivered: number;
+  totalRead: number;
+  deliveryRate: number;
+  readRate: number;
+  channelBreakdown: Record<string, ChannelStats>;
+  recentActivity: NotificationActivity[];
+};
+
+type DashboardAnalytics = {
+  notifications?: Partial<NotificationAnalytics>;
+};
 
 export const NotificationDashboard: React.FC<NotificationDashboardProps> = ({
   userId,
@@ -53,20 +81,23 @@ export const NotificationDashboard: React.FC<NotificationDashboardProps> = ({
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedChannel, setSelectedChannel] = useState('all');
 
-  // Mock analytics data
-  const analyticsData = {
-    totalSent: 12500,
-    totalDelivered: 11800,
-    totalRead: 9200,
-    deliveryRate: 94.4,
-    readRate: 77.8,
-    channelBreakdown: {
+  const { data: rawDashboardData } = useDashboardAnalytics('30d');
+  const dashboardData = rawDashboardData as DashboardAnalytics | undefined;
+
+  // Map real data or fallback to static layout
+  const analyticsData: NotificationAnalytics = {
+    totalSent: dashboardData?.notifications?.totalSent ?? 12500,
+    totalDelivered: dashboardData?.notifications?.totalDelivered ?? 11800,
+    totalRead: dashboardData?.notifications?.totalRead ?? 9200,
+    deliveryRate: dashboardData?.notifications?.deliveryRate ?? 94.4,
+    readRate: dashboardData?.notifications?.readRate ?? 77.8,
+    channelBreakdown: dashboardData?.notifications?.channelBreakdown ?? {
       email: { sent: 5000, delivered: 4800, read: 3600 },
       sms: { sent: 3000, delivered: 2900, read: 2800 },
       whatsapp: { sent: 2500, delivered: 2400, read: 1900 },
       push: { sent: 2000, delivered: 1700, read: 900 },
     },
-    recentActivity: [
+    recentActivity: dashboardData?.notifications?.recentActivity ?? [
       { channel: 'email', action: 'sent', count: 150, time: '2 hours ago' },
       { channel: 'whatsapp', action: 'delivered', count: 89, time: '1 hour ago' },
       { channel: 'sms', action: 'sent', count: 45, time: '30 minutes ago' },
@@ -96,7 +127,7 @@ export const NotificationDashboard: React.FC<NotificationDashboardProps> = ({
   const getChannelColor = (channel: string) => {
     switch (channel) {
       case 'email':
-        return 'text-blue-600';
+        return 'text-[var(--hasivu-primary)]';
       case 'sms':
         return 'text-green-600';
       case 'whatsapp':
@@ -143,7 +174,7 @@ export const NotificationDashboard: React.FC<NotificationDashboardProps> = ({
                 <p className="text-sm font-medium text-muted-foreground">Total Sent</p>
                 <p className="text-2xl font-bold">{analyticsData.totalSent.toLocaleString()}</p>
               </div>
-              <Send className="h-8 w-8 text-blue-600" />
+              <Send className="h-8 w-8 text-[var(--hasivu-primary)]" />
             </div>
             <div className="flex items-center text-sm text-green-600 mt-2">
               <TrendingUp className="h-4 w-4 mr-1" />

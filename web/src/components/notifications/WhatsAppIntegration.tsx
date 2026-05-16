@@ -6,7 +6,7 @@
  * interactive messaging, and delivery tracking
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -106,179 +106,157 @@ const QUALITYCOLORS = {
 };
 
 const STATUSICONS = {
-  sent: <Clock className="h-4 w-4 text-blue-600" />,
+  sent: <Clock className="h-4 w-4 text-[var(--hasivu-primary)]" />,
   delivered: <CheckCircle className="h-4 w-4 text-green-600" />,
   read: <Eye className="h-4 w-4 text-purple-600" />,
   failed: <XCircle className="h-4 w-4 text-red-600" />,
 };
 
+function safeParseTemplateVariables(value: unknown): string[] {
+  if (Array.isArray(value)) return value.filter((item): item is string => typeof item === 'string');
+  if (typeof value !== 'string') return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed)
+      ? parsed.filter((item): item is string => typeof item === 'string')
+      : [];
+  } catch {
+    return value
+      .split(',')
+      .map(item => item.trim())
+      .filter(Boolean);
+  }
+}
+
+import { useWhatsAppMessages, useWhatsAppMutations } from '@/hooks/useApiIntegration';
+import { useToast } from '@/hooks/use-toast';
+import { whatsappApi } from '@/services/api';
+
 export const WhatsAppIntegration: React.FC<WhatsAppIntegrationProps> = ({ className }) => {
   const [status, setStatus] = useState<WhatsAppStatus | null>(null);
   const [templates, setTemplates] = useState<MessageTemplate[]>([]);
-  const [messageLogs, setMessageLogs] = useState<MessageLog[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [sending, setSending] = useState(false);
   const [showSendDialog, setShowSendDialog] = useState(false);
 
   const [messageData, setMessageData] = useState({
-    recipient: '',
+    recipientUserId: '',
     templateId: '',
     variables: {} as Record<string, string>,
   });
 
-  // Feature flag for WhatsApp notifications
+  const { toast } = useToast();
   const whatsappEnabled = useFeatureFlag(_FEATURE_FLAGS.WHATSAPP_NOTIFICATIONS);
 
-  // Load WhatsApp status and data
+  // Real data hooks
+  const { data: realMessages, loading: messagesLoading, refetch } = useWhatsAppMessages();
+  const { triggerTemplate, loading: sending } = useWhatsAppMutations();
+  const loading = messagesLoading || sending;
+
+  const loadWhatsAppData = useCallback(() => {
+    refetch?.();
+  }, [refetch]);
+
+  const messageLogs: MessageLog[] = (realMessages || []).map((msg: any) => ({
+    id: msg.id || `msg_${Math.random()}`,
+    recipient: msg.recipientPhone || msg.userId || 'Unknown',
+    templateId: msg.templateId || 'Unknown',
+    content: msg.content || 'Template Message',
+    status: msg.status || 'sent',
+    sentAt: msg.createdAt || new Date().toISOString(),
+    deliveredAt: msg.deliveredAt,
+    readAt: msg.readAt,
+  }));
+
   useEffect(() => {
-    loadWhatsAppData();
+    let active = true;
+    const loadConfiguration = async () => {
+      try {
+        const [statusResponse, templateResponse] = await Promise.all([
+          whatsappApi.getStatus(),
+          whatsappApi.getTemplates(),
+        ]);
+
+        if (!active) return;
+
+        const apiStatus = statusResponse.data;
+        setStatus({
+          connected: Boolean(apiStatus?.connected),
+          phoneNumber: apiStatus?.phoneNumber || 'Not configured',
+          businessName: apiStatus?.businessName || 'HASIVU Platform',
+          qualityRating: apiStatus?.qualityRating || 'unknown',
+          messageLimit: Number(apiStatus?.messageLimit || 0),
+          messagesSent: Number(apiStatus?.messagesSent || 0),
+          lastActivity: apiStatus?.lastActivity || 'No activity yet',
+        });
+
+        const apiTemplates = Array.isArray(templateResponse.data) ? templateResponse.data : [];
+        setTemplates(
+          apiTemplates.map((template: any) => ({
+            id: template.id,
+            name: template.eventType,
+            category: template.category || 'utility',
+            language: template.language || 'en',
+            status: template.status || 'pending',
+            content: template.templateName,
+            variables: safeParseTemplateVariables(template.variables),
+            createdAt: template.createdAt || new Date().toISOString(),
+          }))
+        );
+      } catch {
+        if (!active) return;
+        setStatus({
+          connected: false,
+          phoneNumber: 'Unavailable',
+          businessName: 'HASIVU Platform',
+          qualityRating: 'unknown',
+          messageLimit: 0,
+          messagesSent: 0,
+          lastActivity: 'Unavailable',
+        });
+        setTemplates([]);
+      }
+    };
+
+    loadConfiguration();
+    return () => {
+      active = false;
+    };
   }, []);
 
-  const loadWhatsAppData = async () => {
-    try {
-      setLoading(true);
-
-      // Load WhatsApp status
-      // TODO: Implement notification service
-      // const statusResult = await notificationService.getWhatsAppStatus();
-      // if (statusResult.success) {
-      //   setStatus(statusResult.data);
-      // } else {
-      // Mock data for demo
-      setStatus({
-        connected: true,
-        phoneNumber: '+91 98765 43210',
-        businessName: 'HASIVU Platform',
-        qualityRating: 'green',
-        messageLimit: 1000,
-        messagesSent: 245,
-        lastActivity: new Date().toISOString(),
-      });
-      // }
-
-      // Load message templates
-      setTemplates([
-        {
-          id: 'order_confirm',
-          name: 'Order Confirmation',
-          category: 'utility',
-          language: 'en',
-          status: 'approved',
-          content:
-            'Hi {{name}}! Your order #{{order_id}} has been confirmed. Total: ₹{{amount}}. Track here: {{link}}',
-          variables: ['name', 'order_id', 'amount', 'link'],
-          createdAt: '2024-01-01',
-        },
-        {
-          id: 'payment_reminder',
-          name: 'Payment Reminder',
-          category: 'utility',
-          language: 'en',
-          status: 'approved',
-          content:
-            'Hi {{name}}, your payment of ₹{{amount}} for order #{{order_id}} is due. Pay now: {{link}}',
-          variables: ['name', 'amount', 'order_id', 'link'],
-          createdAt: '2024-01-01',
-        },
-        {
-          id: 'delivery_update',
-          name: 'Delivery Update',
-          category: 'utility',
-          language: 'en',
-          status: 'approved',
-          content:
-            'Your order #{{order_id}} is out for delivery! Expected arrival: {{time}}. Track: {{link}}',
-          variables: ['order_id', 'time', 'link'],
-          createdAt: '2024-01-01',
-        },
-      ]);
-
-      // Load message logs
-      setMessageLogs([
-        {
-          id: 'msg_001',
-          recipient: '+91 98765 43210',
-          templateId: 'order_confirm',
-          content:
-            'Hi John! Your order #ORD-2024-001 has been confirmed. Total: ₹1,200. Track here: https://hasivu.app/track',
-          status: 'delivered',
-          sentAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-          deliveredAt: new Date(Date.now() - 1000 * 60 * 25).toISOString(),
-        },
-        {
-          id: 'msg_002',
-          recipient: '+91 98765 43211',
-          templateId: 'payment_reminder',
-          content:
-            'Hi Sarah, your payment of ₹800 for order #ORD-2024-002 is due. Pay now: https://hasivu.app/pay',
-          status: 'read',
-          sentAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
-          deliveredAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
-          readAt: new Date(Date.now() - 1000 * 60 * 60 * 1).toISOString(),
-        },
-      ]);
-    } catch (error) {
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const sendMessage = async () => {
-    if (!messageData.recipient || !messageData.templateId) {
-      // Use toast notification instead of alert
-      console.warn('Please fill in all required fields');
+    if (!messageData.recipientUserId || !messageData.templateId) {
+      toast({
+        title: 'Error',
+        description: 'Please fill in all required fields',
+        variant: 'destructive',
+      });
       return;
     }
 
     try {
-      setSending(true);
+      await triggerTemplate(
+        messageData.templateId,
+        messageData.recipientUserId,
+        messageData.variables,
+        true
+      );
 
-      const template = templates.find(t => t.id === messageData.templateId);
-      if (!template) throw new Error('Template not found');
+      toast({ title: 'Message Sent', description: 'WhatsApp message triggered successfully.' });
 
-      // Replace variables in content
-      let { content } = template;
-      template.variables.forEach(variable => {
-        const value = messageData.variables[variable] || `{{${variable}}}`;
-        content = content.replace(new RegExp(`{{${variable}}}`, 'g'), value);
+      setMessageData({
+        recipientUserId: '',
+        templateId: '',
+        variables: {},
       });
+      setShowSendDialog(false);
 
-      // TODO: Implement notification service
-      // const result = await notificationService.sendWhatsAppMessage({
-      //   recipientId: messageData.recipient,
-      //   message: content,
-      // });
-
-      // Mock success for demo
-      const result = { success: true, error: '' };
-
-      if (result.success) {
-        // Add to message logs
-        const newMessage: MessageLog = {
-          id: `msg_${Date.now()}`,
-          recipient: messageData.recipient,
-          templateId: messageData.templateId,
-          content,
-          status: 'sent',
-          sentAt: new Date().toISOString(),
-        };
-        setMessageLogs(prev => [newMessage, ...prev]);
-
-        // Reset form
-        setMessageData({
-          recipient: '',
-          templateId: '',
-          variables: {},
-        });
-        setShowSendDialog(false);
-      } else {
-        throw new Error(result.error || 'Failed to send message');
-      }
-    } catch (error) {
-      // Use console.error instead of alert for better error handling
-      console.error('Failed to send WhatsApp message:', error);
-    } finally {
-      setSending(false);
+      // Refresh messages
+      refetch?.();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to send WhatsApp message',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -545,10 +523,10 @@ export const WhatsAppIntegration: React.FC<WhatsAppIntegrationProps> = ({ classN
                       <Label htmlFor="recipient">Recipient Phone Number</Label>
                       <Input
                         id="recipient"
-                        placeholder="+91 98765 43210"
-                        value={messageData.recipient}
+                        placeholder="User ID (e.g., usr_123)"
+                        value={messageData.recipientUserId}
                         onChange={e =>
-                          setMessageData(prev => ({ ...prev, recipient: e.target.value }))
+                          setMessageData(prev => ({ ...prev, recipientUserId: e.target.value }))
                         }
                       />
                     </div>

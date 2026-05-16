@@ -459,7 +459,7 @@ export const SMSCommunication: React.FC<SMSCommunicationProps> = ({ className })
                   <p className="text-sm font-medium text-muted-foreground">Total Sent</p>
                   <p className="text-2xl font-bold">{analytics.totalSent.toLocaleString()}</p>
                 </div>
-                <Send className="h-8 w-8 text-blue-600" />
+                <Send className="h-8 w-8 text-[var(--hasivu-primary)]" />
               </div>
             </CardContent>
           </Card>
