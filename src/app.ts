@@ -27,6 +27,8 @@ import walletRouter from './routes/wallet.routes';
 import invoiceRouter from './routes/invoice.routes';
 import subscriptionRouter from './routes/subscription.routes';
 import whatsappRouter from './routes/whatsapp.routes';
+import inventoryRouter from './routes/inventory.routes';
+import analyticsRouter from './routes/analytics.routes';
 import mealSchedulerRouter from './routes/meal-scheduler.routes';
 import recommendationRouter from './routes/recommendations.routes';
 import realtimeRouter from './routes/realtime.routes';
@@ -176,6 +178,8 @@ class SimpleApp {
     this.app.use('/api/v1/invoices', invoiceRouter);
     this.app.use('/api/v1/subscriptions', subscriptionRouter);
     this.app.use('/api/v1/whatsapp', whatsappRouter);
+    this.app.use('/api/v1/inventory', inventoryRouter);
+    this.app.use('/api/v1/analytics', analyticsRouter);
     this.app.use('/api/v1/meal-schedules', mealSchedulerRouter);
     this.app.use('/api/v1/recommendations', recommendationRouter);
     this.app.use('/api/v1/realtime', realtimeRouter);
