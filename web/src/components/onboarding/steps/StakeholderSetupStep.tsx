@@ -367,7 +367,7 @@ const StakeholderSetupStep: React.FC<StakeholderSetupStepProps> = ({
                   key={method.value}
                   className={`relative p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
                     isSelected
-                      ? 'border-blue-500 bg-blue-50'
+                      ? 'border-[var(--hasivu-primary)] bg-[var(--hasivu-primary)]/5'
                       : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                   }`}
                   whileHover={{ scale: 1.02 }}
@@ -383,7 +383,7 @@ const StakeholderSetupStep: React.FC<StakeholderSetupStepProps> = ({
                   <div className="text-center space-y-3">
                     <div
                       className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto ${
-                        isSelected ? 'bg-blue-500' : 'bg-gray-200'
+                        isSelected ? 'bg-[var(--hasivu-primary)]' : 'bg-gray-200'
                       }`}
                     >
                       <IconComponent
@@ -393,7 +393,7 @@ const StakeholderSetupStep: React.FC<StakeholderSetupStepProps> = ({
 
                     <div>
                       <h4
-                        className={`font-medium ${isSelected ? 'text-blue-900' : 'text-gray-900'}`}
+                        className={`font-medium ${isSelected ? 'text-[var(--hasivu-primary-dark)]' : 'text-gray-900'}`}
                       >
                         {method.title}
                       </h4>
@@ -411,7 +411,7 @@ const StakeholderSetupStep: React.FC<StakeholderSetupStepProps> = ({
                     <motion.div
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
-                      className="absolute -top-2 -left-2 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center"
+                      className="absolute -top-2 -left-2 w-6 h-6 bg-[var(--hasivu-primary)] rounded-full flex items-center justify-center"
                     >
                       <CheckCircle2 className="w-4 h-4 text-white" />
                     </motion.div>
@@ -429,7 +429,7 @@ const StakeholderSetupStep: React.FC<StakeholderSetupStepProps> = ({
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="bg-blue-50 border border-blue-200 rounded-xl p-6"
+              className="bg-[var(--hasivu-primary)]/5 border border-[var(--hasivu-primary)]/20 rounded-xl p-6"
             >
               <label className="block text-sm font-medium text-gray-700 mb-3">
                 Teacher Email Addresses
@@ -437,7 +437,7 @@ const StakeholderSetupStep: React.FC<StakeholderSetupStepProps> = ({
               <textarea
                 {...register('teachers.emailList')}
                 rows={6}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--hasivu-primary)] focus:border-transparent resize-none"
                 placeholder="Enter email addresses separated by commas or new lines:&#10;teacher1@school.edu.in, teacher2@school.edu.in&#10;teacher3@school.edu.in"
               />
               <p className="text-sm text-gray-600 mt-2">
@@ -451,15 +451,15 @@ const StakeholderSetupStep: React.FC<StakeholderSetupStepProps> = ({
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="bg-blue-50 border border-blue-200 rounded-xl p-6"
+              className="bg-[var(--hasivu-primary)]/5 border border-[var(--hasivu-primary)]/20 rounded-xl p-6"
             >
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-3">
                     Upload Teacher Data CSV
                   </label>
-                  <div className="border-2 border-dashed border-blue-300 rounded-lg p-6 text-center">
-                    <Upload className="w-8 h-8 text-blue-500 mx-auto mb-3" />
+                  <div className="border-2 border-dashed border-[var(--hasivu-primary)]/30 rounded-lg p-6 text-center">
+                    <Upload className="w-8 h-8 text-[var(--hasivu-primary)] mx-auto mb-3" />
                     <p className="text-sm text-gray-600 mb-2">
                       Drag and drop your CSV file here, or click to browse
                     </p>
@@ -472,7 +472,7 @@ const StakeholderSetupStep: React.FC<StakeholderSetupStepProps> = ({
                     />
                     <label
                       htmlFor="teacher-csv-upload"
-                      className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg cursor-pointer hover:bg-blue-700 transition-colors"
+                      className="inline-flex items-center px-4 py-2 bg-[var(--hasivu-primary)] text-white rounded-lg cursor-pointer hover:bg-[var(--hasivu-primary-dark)] transition-colors"
                     >
                       <Upload className="w-4 h-4 mr-2" />
                       Choose File
@@ -480,7 +480,7 @@ const StakeholderSetupStep: React.FC<StakeholderSetupStepProps> = ({
                   </div>
                 </div>
 
-                <div className="bg-white border border-blue-200 rounded-lg p-4">
+                <div className="bg-white border border-[var(--hasivu-primary)]/20 rounded-lg p-4">
                   <h5 className="font-medium text-gray-900 mb-2">Required CSV Format:</h5>
                   <div className="text-sm text-gray-600 space-y-1">
                     <p>
@@ -492,7 +492,7 @@ const StakeholderSetupStep: React.FC<StakeholderSetupStepProps> = ({
                   </div>
                   <button
                     type="button"
-                    className="mt-3 text-blue-600 hover:text-blue-800 text-sm font-medium"
+                    className="mt-3 text-[var(--hasivu-primary)] hover:text-[var(--hasivu-primary-dark)] text-sm font-medium"
                   >
                     Download Sample CSV Template
                   </button>
@@ -592,7 +592,7 @@ const StakeholderSetupStep: React.FC<StakeholderSetupStepProps> = ({
       {/* Language Preferences */}
       <div className="bg-white rounded-xl p-6 border border-gray-200">
         <h4 className="font-medium text-gray-900 mb-4 flex items-center">
-          <Languages className="w-5 h-5 mr-2 text-blue-600" />
+          <Languages className="w-5 h-5 mr-2 text-[var(--hasivu-primary)]" />
           Communication Languages
         </h4>
 
@@ -613,7 +613,7 @@ const StakeholderSetupStep: React.FC<StakeholderSetupStepProps> = ({
                 type="checkbox"
                 value={lang.code}
                 {...register('parents.languages')}
-                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                className="w-4 h-4 text-[var(--hasivu-primary)] border-gray-300 rounded focus:ring-[var(--hasivu-primary)]"
               />
               <span className="text-xl">{lang.flag}</span>
               <span className="text-sm font-medium text-gray-700">{lang.name}</span>
@@ -651,7 +651,7 @@ const StakeholderSetupStep: React.FC<StakeholderSetupStepProps> = ({
       </div>
 
       {/* Preview */}
-      <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-xl p-6">
+      <div className="bg-gradient-to-r from-green-50 to-[var(--hasivu-primary)]/5 border border-green-200 rounded-xl p-6">
         <h4 className="font-medium text-gray-900 mb-3 flex items-center">
           <Settings className="w-5 h-5 mr-2 text-green-600" />
           Communication Preview
@@ -701,7 +701,7 @@ const StakeholderSetupStep: React.FC<StakeholderSetupStepProps> = ({
     >
       {/* Header */}
       <div className="text-center mb-10">
-        <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
+        <div className="w-20 h-20 bg-gradient-to-r from-[var(--hasivu-primary)] to-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
           <Users className="w-10 h-10 text-white" />
         </div>
         <h2 className="text-3xl font-bold text-gray-900 mb-4">Team & Stakeholder Setup</h2>
@@ -772,7 +772,7 @@ const StakeholderSetupStep: React.FC<StakeholderSetupStepProps> = ({
             <div className="text-sm text-gray-600">Kitchen Staff</div>
           </div>
           <div>
-            <div className="text-2xl font-bold text-blue-600">
+            <div className="text-2xl font-bold text-[var(--hasivu-primary)]">
               {watch('teachers.inviteMethod') ? '✓' : '−'}
             </div>
             <div className="text-sm text-gray-600">Teacher Invitation</div>

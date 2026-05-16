@@ -236,12 +236,12 @@ export function OrderCancellationModal({
 
           {/* Refund Information */}
           {refundRequested && (
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="flex items-center gap-2 text-blue-800">
+            <div className="p-3 bg-[var(--hasivu-primary)]/5 border border-[var(--hasivu-primary)]/20 rounded-lg">
+              <div className="flex items-center gap-2 text-[var(--hasivu-primary-dark)]">
                 <CreditCard className="h-4 w-4" />
                 <span className="text-sm font-medium">Refund Information</span>
               </div>
-              <p className="text-sm text-blue-700 mt-1">
+              <p className="text-sm text-[var(--hasivu-primary)] mt-1">
                 Refund eligibility will be determined based on order status and preparation
                 progress. Refunds are typically processed within 3-5 business days.
               </p>

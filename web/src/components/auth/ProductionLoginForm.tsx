@@ -125,7 +125,7 @@ export const ProductionLoginForm: React.FC<LoginFormProps> = ({
                 value={formData.email}
                 onChange={handleInputChange}
                 disabled={isLoading}
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors"
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--hasivu-primary)] focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors"
                 placeholder="you@example.com"
               />
             </div>
@@ -149,7 +149,7 @@ export const ProductionLoginForm: React.FC<LoginFormProps> = ({
                 value={formData.password}
                 onChange={handleInputChange}
                 disabled={isLoading}
-                className="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors"
+                className="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--hasivu-primary)] focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors"
                 placeholder="Enter your password"
               />
               <button
@@ -178,7 +178,7 @@ export const ProductionLoginForm: React.FC<LoginFormProps> = ({
                 checked={formData.rememberMe}
                 onChange={handleInputChange}
                 disabled={isLoading}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded disabled:cursor-not-allowed"
+                className="h-4 w-4 text-[var(--hasivu-primary)] focus:ring-[var(--hasivu-primary)] border-gray-300 rounded disabled:cursor-not-allowed"
               />
               <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-700">
                 Remember me
@@ -188,7 +188,7 @@ export const ProductionLoginForm: React.FC<LoginFormProps> = ({
             <div className="text-sm">
               <a
                 href="/auth/forgot-password"
-                className="font-medium text-blue-600 hover:text-blue-500"
+                className="font-medium text-[var(--hasivu-primary)] hover:text-[var(--hasivu-primary)]"
               >
                 Forgot password?
               </a>
@@ -199,7 +199,7 @@ export const ProductionLoginForm: React.FC<LoginFormProps> = ({
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300 disabled:cursor-not-allowed transition-colors"
+            className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-[var(--hasivu-primary)] hover:bg-[var(--hasivu-primary-dark)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--hasivu-primary)] disabled:bg-blue-300 disabled:cursor-not-allowed transition-colors"
           >
             {isLoading ? (
               <>
@@ -228,7 +228,7 @@ export const ProductionLoginForm: React.FC<LoginFormProps> = ({
         <div className="mt-6 text-center">
           <a
             href="/auth/register"
-            className="text-sm font-medium text-blue-600 hover:text-blue-500"
+            className="text-sm font-medium text-[var(--hasivu-primary)] hover:text-[var(--hasivu-primary)]"
           >
             Create a new account →
           </a>

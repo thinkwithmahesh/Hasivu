@@ -48,31 +48,31 @@ const USER_ROLES = {
     label: 'Student',
     icon: GraduationCap,
     description: 'Browse meals, track orders, and verify RFID pickup',
-    color: 'bg-sky-500',
+    color: 'bg-[var(--hasivu-info)]',
   },
   parent: {
     label: 'Parent',
     icon: Users,
     description: "Manage your child's meals and payments",
-    color: 'bg-green-500',
+    color: 'bg-[var(--hasivu-secondary)]',
   },
   admin: {
     label: 'Admin',
     icon: Shield,
     description: 'System administration and management',
-    color: 'bg-purple-500',
+    color: 'bg-purple-600',
   },
   kitchen: {
     label: 'Kitchen',
     icon: ChefHat,
     description: 'Manage orders and meal preparation',
-    color: 'bg-orange-500',
+    color: 'bg-[var(--hasivu-primary)]',
   },
   vendor: {
     label: 'Vendor',
     icon: Store,
     description: 'Manage menu supply, inventory, orders, and payments',
-    color: 'bg-amber-500',
+    color: 'bg-[var(--hasivu-accent)]',
   },
 } as const;
 
@@ -169,7 +169,7 @@ export function LoginForm({
         <CardTitle className="text-3xl font-bold text-[var(--hasivu-primary)]">
           Welcome Back to HASIVU
         </CardTitle>
-        <CardDescription className="text-gray-600">
+        <CardDescription className="text-hasivu-text-secondary">
           {showRoleSelection ? (
             <>Select your role and sign in to continue</>
           ) : (
@@ -206,7 +206,7 @@ export function LoginForm({
                       key={role}
                       value={role}
                       data-testid={`role-tab-${role}`}
-                      className="flex flex-col items-center gap-1 p-3 text-xs text-slate-700 data-[state=active]:text-[var(--hasivu-text-primary)]"
+                      className="flex flex-col items-center gap-1 p-3 text-xs text-hasivu-text-secondary data-[state=active]:text-[var(--hasivu-primary)] data-[state=active]:bg-[var(--hasivu-primary)]/10"
                       aria-selected={selectedRole === role}
                     >
                       <Icon className="h-4 w-4" />
@@ -219,7 +219,7 @@ export function LoginForm({
               {/* Role descriptions */}
               {Object.entries(USER_ROLES).map(([role, config]) => (
                 <TabsContent key={role} value={role} className="mt-2">
-                  <p className="text-sm text-gray-600 text-center bg-gray-50 p-2 rounded-md">
+                  <p className="text-sm text-hasivu-text-secondary text-center bg-hasivu-surface-2 p-2 rounded-md">
                     {config.description}
                   </p>
                 </TabsContent>
@@ -279,19 +279,15 @@ export function LoginForm({
                         disabled={isLoading}
                       />
                     </FormControl>
-	                    <button
-	                      type="button"
-	                      data-testid="password-toggle"
-	                      onClick={() => setShowPassword(!showPassword)}
-	                      tabIndex={-1}
-	                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none focus:text-gray-600"
-	                    >
-	                      <span className="sr-only">Toggle password visibility</span>
-	                      {showPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
+                    <button
+                      type="button"
+                      data-testid="password-toggle"
+                      onClick={() => setShowPassword(!showPassword)}
+                      tabIndex={-1}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none focus:text-gray-600"
+                    >
+                      <span className="sr-only">Toggle password visibility</span>
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
                   <FormMessage data-testid="password-error" role="alert" />
@@ -305,9 +301,9 @@ export function LoginForm({
                   control={form.control}
                   name="rememberMe"
                   render={({ field }) => (
-	                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-	                      <FormControl>
-	                        <input
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                      <FormControl>
+                        <input
                           type="checkbox"
                           data-testid="remember-me-checkbox"
                           checked={field.value}
@@ -315,19 +311,19 @@ export function LoginForm({
                           className="mt-1 h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
                           disabled={isLoading}
                         />
-	                      </FormControl>
-	                      <div className="space-y-1 leading-none">
-	                        <FormLabel className="text-sm text-gray-600">Remember me</FormLabel>
-	                      </div>
-	                    </FormItem>
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel className="text-sm text-gray-600">Remember me</FormLabel>
+                      </div>
+                    </FormItem>
                   )}
                 />
 
-	                <Link
-	                  href="/auth/forgot-password"
-	                  data-testid="forgot-password-link"
-	                  tabIndex={-1}
-	                  className="text-sm text-blue-600 hover:text-blue-700 focus:outline-none focus:underline"
+                <Link
+                  href="/auth/forgot-password"
+                  data-testid="forgot-password-link"
+                  tabIndex={-1}
+                  className="text-sm text-[var(--hasivu-primary)] hover:text-[var(--hasivu-primary-dark)] focus:outline-none focus:underline"
                 >
                   Forgot password?
                 </Link>
@@ -337,7 +333,7 @@ export function LoginForm({
             <Button
               type="submit"
               data-testid="login-button"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5"
+              className="w-full bg-[var(--hasivu-primary)] hover:bg-[var(--hasivu-primary-dark)] text-white font-medium py-2.5 rounded-xl"
               disabled={isLoading}
               size="lg"
             >
@@ -366,7 +362,7 @@ export function LoginForm({
                 <Separator className="w-full" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-gray-500">Or continue with</span>
+                <span className="bg-white px-2 text-hasivu-text-tertiary">Or continue with</span>
               </div>
             </div>
 
@@ -422,7 +418,7 @@ export function LoginForm({
           <Link
             href="/auth/register"
             data-testid="signup-link"
-            className="text-blue-600 hover:text-blue-700 font-medium focus:outline-none focus:underline"
+            className="text-[var(--hasivu-primary)] hover:text-[var(--hasivu-primary-dark)] font-medium focus:outline-none focus:underline"
           >
             Sign up for free
           </Link>

@@ -105,7 +105,9 @@ describe('InputOTP Component Suite', () => {
         </div>
 
         {isVerifying && (
-          <div className="text-center text-sm text-blue-600">Verifying RFID code...</div>
+          <div className="text-center text-sm text-[var(--hasivu-primary)]">
+            Verifying RFID code...
+          </div>
         )}
 
         {error && (

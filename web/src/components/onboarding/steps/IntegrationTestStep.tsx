@@ -249,7 +249,7 @@ const IntegrationTestStep: React.FC<IntegrationTestStepProps> = ({
       case 'pending':
         return <div className="w-5 h-5 bg-gray-300 rounded-full" />;
       case 'running':
-        return <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />;
+        return <Loader2 className="w-5 h-5 text-[var(--hasivu-primary)] animate-spin" />;
       case 'passed':
         return <CheckCircle className="w-5 h-5 text-green-600" />;
       case 'failed':
@@ -265,7 +265,7 @@ const IntegrationTestStep: React.FC<IntegrationTestStepProps> = ({
       case 'pending':
         return 'border-gray-300 bg-gray-50';
       case 'running':
-        return 'border-blue-300 bg-blue-50 animate-pulse';
+        return 'border-[var(--hasivu-primary)]/30 bg-[var(--hasivu-primary)]/5 animate-pulse';
       case 'passed':
         return 'border-green-300 bg-green-50';
       case 'failed':
@@ -283,7 +283,7 @@ const IntegrationTestStep: React.FC<IntegrationTestStepProps> = ({
       className="text-center space-y-8"
     >
       <div className="space-y-6">
-        <div className="w-24 h-24 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto">
+        <div className="w-24 h-24 bg-gradient-to-r from-[var(--hasivu-primary)] to-purple-600 rounded-full flex items-center justify-center mx-auto">
           <Zap className="w-12 h-12 text-white" />
         </div>
 
@@ -310,7 +310,7 @@ const IntegrationTestStep: React.FC<IntegrationTestStepProps> = ({
             )
           ).map(([category, count]) => (
             <div key={category} className="text-center p-4 bg-gray-50 rounded-lg">
-              <div className="text-2xl font-bold text-blue-600">{count}</div>
+              <div className="text-2xl font-bold text-[var(--hasivu-primary)]">{count}</div>
               <div className="text-sm text-gray-600">{category}</div>
             </div>
           ))}
@@ -324,7 +324,7 @@ const IntegrationTestStep: React.FC<IntegrationTestStepProps> = ({
           <div className="text-sm text-gray-600">Total Tests</div>
         </div>
         <div className="text-center">
-          <div className="text-3xl font-bold text-blue-600">
+          <div className="text-3xl font-bold text-[var(--hasivu-primary)]">
             {Math.round(testSuite.reduce((sum, test) => sum + test.duration, 0) / 1000)}s
           </div>
           <div className="text-sm text-gray-600">Est. Duration</div>
@@ -341,7 +341,7 @@ const IntegrationTestStep: React.FC<IntegrationTestStepProps> = ({
       <button
         onClick={runAllTests}
         disabled={isRunning}
-        className="flex items-center space-x-3 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-lg mx-auto"
+        className="flex items-center space-x-3 px-8 py-4 bg-gradient-to-r from-[var(--hasivu-primary)] to-purple-600 text-white rounded-xl hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-lg mx-auto"
       >
         <Play className="w-6 h-6" />
         <span>Start Integration Tests</span>
@@ -359,7 +359,7 @@ const IntegrationTestStep: React.FC<IntegrationTestStepProps> = ({
       <div className="text-center mb-8">
         <h2 className="text-3xl font-bold text-gray-900 mb-4">Running Integration Tests</h2>
         <div className="flex items-center justify-center space-x-2">
-          <Activity className="w-5 h-5 text-blue-600 animate-pulse" />
+          <Activity className="w-5 h-5 text-[var(--hasivu-primary)] animate-pulse" />
           <span className="text-gray-600">Testing system components...</span>
         </div>
       </div>
@@ -379,7 +379,7 @@ const IntegrationTestStep: React.FC<IntegrationTestStepProps> = ({
         </div>
         <div className="w-full bg-gray-200 rounded-full h-3">
           <div
-            className="bg-blue-600 h-3 rounded-full transition-all duration-300"
+            className="bg-[var(--hasivu-primary)] h-3 rounded-full transition-all duration-300"
             style={{
               width: `${(testResults.filter(r => r.status !== 'pending' && r.status !== 'running').length / testResults.length) * 100}%`,
             }}
@@ -504,7 +504,7 @@ const IntegrationTestStep: React.FC<IntegrationTestStepProps> = ({
           {overallScore < 80 && (
             <button
               onClick={runAllTests}
-              className="flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="flex items-center space-x-2 px-6 py-3 bg-[var(--hasivu-primary)] text-white rounded-lg hover:bg-[var(--hasivu-primary-dark)] transition-colors"
             >
               <RefreshCw className="w-5 h-5" />
               <span>Retry Tests</span>
@@ -601,7 +601,7 @@ const IntegrationTestStep: React.FC<IntegrationTestStepProps> = ({
     >
       {/* Header */}
       <div className="text-center mb-10">
-        <div className="w-20 h-20 bg-gradient-to-r from-green-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
+        <div className="w-20 h-20 bg-gradient-to-r from-green-500 to-[var(--hasivu-primary-dark)] rounded-full flex items-center justify-center mx-auto mb-6">
           <Monitor className="w-10 h-10 text-white" />
         </div>
         <h2 className="text-3xl font-bold text-gray-900 mb-4">System Integration & Testing</h2>

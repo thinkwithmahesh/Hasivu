@@ -53,9 +53,9 @@ export function CheckoutSheet({ isOpen, onClose, cartTotal }: CheckoutSheetProps
         </div>
 
         {/* Razorpay Warning / Information */}
-        <div className="flex items-start gap-3 bg-blue-50/50 p-3 rounded-lg border border-blue-100">
+        <div className="flex items-start gap-3 bg-[var(--hasivu-primary)]/5/50 p-3 rounded-lg border border-[var(--hasivu-primary)]/10">
           <svg
-            className="w-5 h-5 text-blue-600 mt-0.5 shrink-0"
+            className="w-5 h-5 text-[var(--hasivu-primary)] mt-0.5 shrink-0"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"

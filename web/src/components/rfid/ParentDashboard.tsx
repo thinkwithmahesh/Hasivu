@@ -500,11 +500,11 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ className = ''
             >
               {/* Statistics cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg p-6 text-white">
+                <div className="bg-gradient-to-r from-[var(--hasivu-primary)] to-[var(--hasivu-primary-dark)] rounded-lg p-6 text-white">
                   <div className="flex items-center">
                     <CheckCircleSolid className="h-8 w-8" />
                     <div className="ml-4">
-                      <p className="text-blue-100">Today's Deliveries</p>
+                      <p className="text-white/80">Today's Deliveries</p>
                       <p className="text-2xl font-bold">{stats.todayDeliveries}</p>
                     </div>
                   </div>
@@ -740,17 +740,19 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ className = ''
 
               {/* Push notification status */}
               {isSupported && (
-                <div className="bg-blue-50 rounded-lg p-4">
-                  <h4 className="font-medium text-blue-900 mb-2">Push Notification Status</h4>
+                <div className="bg-[var(--hasivu-primary)]/5 rounded-lg p-4">
+                  <h4 className="font-medium text-[var(--hasivu-primary-dark)] mb-2">
+                    Push Notification Status
+                  </h4>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-blue-700">Browser Support:</span>
+                      <span className="text-[var(--hasivu-primary)]">Browser Support:</span>
                       <span className={isSupported ? 'text-green-600' : 'text-red-600'}>
                         {isSupported ? 'Supported' : 'Not Supported'}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-blue-700">Permission:</span>
+                      <span className="text-[var(--hasivu-primary)]">Permission:</span>
                       <span
                         className={permission === 'granted' ? 'text-green-600' : 'text-red-600'}
                       >
@@ -758,7 +760,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ className = ''
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-blue-700">Device Registered:</span>
+                      <span className="text-[var(--hasivu-primary)]">Device Registered:</span>
                       <span className={isRegistered ? 'text-green-600' : 'text-red-600'}>
                         {isRegistered ? 'Yes' : 'No'}
                       </span>
@@ -767,7 +769,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ className = ''
                   {permission !== 'granted' && (
                     <button
                       onClick={handleEnableNotifications}
-                      className="mt-3 inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                      className="mt-3 inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-[var(--hasivu-primary)] hover:bg-[var(--hasivu-primary-dark)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--hasivu-primary)]"
                     >
                       Enable Push Notifications
                     </button>

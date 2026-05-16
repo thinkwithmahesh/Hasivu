@@ -378,7 +378,7 @@ export const RFIDScannerSheet: React.FC<RFIDScannerSheetProps> = ({
     <BottomSheet isOpen={isOpen} onClose={onClose} title="RFID Scanner" snapPoints={[50]}>
       <div className="p-6 text-center space-y-6">
         {/* Scanner Animation */}
-        <div className="relative mx-auto w-32 h-32 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+        <div className="relative mx-auto w-32 h-32 bg-gradient-to-br from-[var(--hasivu-primary)] to-purple-600 rounded-full flex items-center justify-center">
           <div
             className={cn(
               'w-16 h-16 border-4 border-white rounded-full',

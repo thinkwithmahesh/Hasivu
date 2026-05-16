@@ -95,7 +95,8 @@ const shiftTemplates: Shift[] = [
     endTime: '22:00',
     days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
     isActive: true,
-    color: 'bg-blue-100 text-blue-800 border-blue-200',
+    color:
+      'bg-[var(--hasivu-primary)]/10 text-[var(--hasivu-primary-dark)] border-[var(--hasivu-primary)]/20',
   },
   {
     id: 'night',
@@ -136,7 +137,7 @@ const ScheduleStatusBadge = ({ status }: { status: Schedule['status'] }) => {
       case 'confirmed':
         return 'bg-green-100 text-green-800 border-green-200';
       case 'scheduled':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
+        return 'bg-[var(--hasivu-primary)]/10 text-[var(--hasivu-primary-dark)] border-[var(--hasivu-primary)]/20';
       case 'completed':
         return 'bg-purple-100 text-purple-800 border-purple-200';
       case 'absent':
@@ -249,7 +250,7 @@ const CalendarView = ({
                 return (
                   <td
                     key={dayIndex}
-                    className={`p-2 border-b border-l ${isToday ? 'bg-blue-50/50' : ''}`}
+                    className={`p-2 border-b border-l ${isToday ? 'bg-[var(--hasivu-primary)]/5/50' : ''}`}
                   >
                     <div className="space-y-1 min-h-[80px]">
                       {daySchedules.map(schedule => {
@@ -683,7 +684,7 @@ export default function StaffScheduling() {
                 <p className="text-sm font-medium text-gray-600">Total Scheduled</p>
                 <p className="text-2xl font-bold">{metrics.totalScheduled}</p>
               </div>
-              <Calendar className="w-8 h-8 text-blue-500" />
+              <Calendar className="w-8 h-8 text-[var(--hasivu-primary)]" />
             </div>
           </CardContent>
         </Card>

@@ -273,7 +273,7 @@ const DashboardOverview: React.FC = () => {
     };
 
     const colorClasses = {
-      blue: 'from-blue-500 to-blue-600',
+      blue: 'from-[var(--hasivu-primary)] to-[var(--hasivu-primary-dark)]',
       green: 'from-green-500 to-green-600',
       purple: 'from-purple-500 to-purple-600',
       orange: 'from-orange-500 to-orange-600',
@@ -325,7 +325,7 @@ const DashboardOverview: React.FC = () => {
   const ActivityIcon = ({ type }: { type: string }) => {
     switch (type) {
       case 'verification':
-        return <Shield className="w-4 h-4 text-blue-500" />;
+        return <Shield className="w-4 h-4 text-[var(--hasivu-primary)]" />;
       case 'fraud':
         return <AlertTriangle className="w-4 h-4 text-red-500" />;
       case 'order':
@@ -605,7 +605,10 @@ const DashboardOverview: React.FC = () => {
                 </span>
               </div>
               <div className="w-full bg-hasivu-primary/10 rounded-full h-2">
-                <div className="bg-blue-500 h-2 rounded-full" style={{ width: '94%' }}></div>
+                <div
+                  className="bg-[var(--hasivu-primary)] h-2 rounded-full"
+                  style={{ width: '94%' }}
+                ></div>
               </div>
             </div>
 

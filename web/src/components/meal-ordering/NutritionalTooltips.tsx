@@ -166,13 +166,13 @@ export function NutritionalTooltip({
                   </Badge>
                 )}
                 {dietary.glutenFree && (
-                  <Badge className="text-xs bg-blue-100 text-blue-800 hover:bg-blue-100">
+                  <Badge className="text-xs bg-[var(--hasivu-primary)]/10 text-[var(--hasivu-primary-dark)] hover:bg-[var(--hasivu-primary)]/10">
                     <Shield className="h-2.5 w-2.5 mr-1" />
                     Gluten-Free
                   </Badge>
                 )}
                 {dietary.dairyFree && (
-                  <Badge className="text-xs bg-blue-100 text-blue-800 hover:bg-blue-100">
+                  <Badge className="text-xs bg-[var(--hasivu-primary)]/10 text-[var(--hasivu-primary-dark)] hover:bg-[var(--hasivu-primary)]/10">
                     <Shield className="h-2.5 w-2.5 mr-1" />
                     Dairy-Free
                   </Badge>
@@ -291,7 +291,7 @@ export function ServingSizeTooltip({
   return (
     <QuickInfoTooltip
       info={`Serving size: ${size}. Perfect portion for balanced nutrition.`}
-      icon={<Users className="h-3 w-3 text-blue-600" />}
+      icon={<Users className="h-3 w-3 text-[var(--hasivu-primary)]" />}
     >
       {children}
     </QuickInfoTooltip>

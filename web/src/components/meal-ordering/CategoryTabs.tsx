@@ -115,7 +115,7 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
                     {category.gradeFilters && category.gradeFilters.length > 0 && (
                       <Badge
                         variant="outline"
-                        className="text-xs px-1.5 py-0.5 bg-blue-50 border-blue-200 text-blue-700"
+                        className="text-xs px-1.5 py-0.5 bg-[var(--hasivu-primary)]/5 border-[var(--hasivu-primary)]/20 text-[var(--hasivu-primary)]"
                       >
                         Grade {Math.min(...category.gradeFilters)}-
                         {Math.max(...category.gradeFilters)}
@@ -186,7 +186,7 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
                     return timing ? (
                       <div className="bg-white rounded-lg p-4 shadow-sm">
                         <div className="flex items-center mb-2">
-                          <Clock className="h-4 w-4 text-blue-500 mr-2" />
+                          <Clock className="h-4 w-4 text-[var(--hasivu-primary)] mr-2" />
                           <span className="font-semibold text-sm text-hasivu-text-primary">
                             Timings
                           </span>
@@ -321,9 +321,9 @@ const CategoryTabs: React.FC<CategoryTabsProps> = ({
 
                   {/* Parent approval reminder */}
                   {student.parentApprovalRequired && (
-                    <Alert className="border-blue-200 bg-blue-50">
-                      <Users className="h-4 w-4 text-blue-600" />
-                      <AlertDescription className="text-blue-800">
+                    <Alert className="border-[var(--hasivu-primary)]/20 bg-[var(--hasivu-primary)]/5">
+                      <Users className="h-4 w-4 text-[var(--hasivu-primary)]" />
+                      <AlertDescription className="text-[var(--hasivu-primary-dark)]">
                         <span className="font-semibold">Parent Approval Required:</span> Orders will
                         be sent to your parent for approval before processing.
                       </AlertDescription>

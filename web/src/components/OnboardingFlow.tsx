@@ -439,7 +439,7 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
             type="text"
             value={schoolInfo.name}
             onChange={e => setSchoolInfo(prev => ({ ...prev, name: e.target.value }))}
-            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[var(--hasivu-primary)] focus:border-transparent ${
               errors.schoolName ? 'border-red-500' : 'border-gray-300'
             }`}
             placeholder="Lincoln High School"
@@ -455,7 +455,7 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
             onChange={e =>
               setSchoolInfo(prev => ({ ...prev, studentCount: parseInt(e.target.value) || 0 }))
             }
-            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[var(--hasivu-primary)] focus:border-transparent ${
               errors.studentCount ? 'border-red-500' : 'border-gray-300'
             }`}
             placeholder="1200"
@@ -471,7 +471,7 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
             type="text"
             value={schoolInfo.address}
             onChange={e => setSchoolInfo(prev => ({ ...prev, address: e.target.value }))}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--hasivu-primary)] focus:border-transparent"
             placeholder="123 Education Street"
           />
         </div>
@@ -482,7 +482,7 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
             type="text"
             value={schoolInfo.city}
             onChange={e => setSchoolInfo(prev => ({ ...prev, city: e.target.value }))}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--hasivu-primary)] focus:border-transparent"
             placeholder="Springfield"
           />
         </div>
@@ -492,7 +492,7 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
           <select
             value={schoolInfo.state}
             onChange={e => setSchoolInfo(prev => ({ ...prev, state: e.target.value }))}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--hasivu-primary)] focus:border-transparent"
           >
             <option value="">Select State</option>
             <option value="CA">California</option>
@@ -509,7 +509,7 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
             type="tel"
             value={schoolInfo.phone}
             onChange={e => setSchoolInfo(prev => ({ ...prev, phone: e.target.value }))}
-            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[var(--hasivu-primary)] focus:border-transparent ${
               errors.schoolPhone ? 'border-red-500' : 'border-gray-300'
             }`}
             placeholder="(555) 123-4567"
@@ -523,7 +523,7 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
             type="email"
             value={schoolInfo.email}
             onChange={e => setSchoolInfo(prev => ({ ...prev, email: e.target.value }))}
-            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[var(--hasivu-primary)] focus:border-transparent ${
               errors.schoolEmail ? 'border-red-500' : 'border-gray-300'
             }`}
             placeholder="admin@lincolnhigh.edu"
@@ -536,7 +536,7 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
           <select
             value={schoolInfo.currentSystem}
             onChange={e => setSchoolInfo(prev => ({ ...prev, currentSystem: e.target.value }))}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--hasivu-primary)] focus:border-transparent"
           >
             <option value="manual">Manual/Cash Only</option>
             <option value="basic_pos">Basic POS System</option>
@@ -551,7 +551,7 @@ const OnboardingFlow: React.FC<{ onComplete: () => void; onSkip?: () => void }> 
               type="checkbox"
               checked={schoolInfo.lunchProgram}
               onChange={e => setSchoolInfo(prev => ({ ...prev, lunchProgram: e.target.checked }))}
-              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              className="w-4 h-4 text-[var(--hasivu-primary)] border-gray-300 rounded focus:ring-[var(--hasivu-primary)]"
             />
             <span className="text-sm text-gray-700">Free/Reduced Lunch Program</span>
           </label>

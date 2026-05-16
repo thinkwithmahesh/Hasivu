@@ -1,4 +1,4 @@
-import { Instrument_Serif, Nunito } from 'next/font/google';
+import { Instrument_Serif, Nunito, DM_Sans, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/sonner';
 import { ThemeProvider } from '@/components/providers/theme-provider';
@@ -20,6 +20,18 @@ const nunito = Nunito({
   variable: '--font-body',
   display: 'swap',
   weight: ['400', '600', '700'],
+});
+const dmSans = DM_Sans({
+  subsets: ['latin'],
+  variable: '--font-ui',
+  display: 'swap',
+  weight: ['400', '500', '600', '700'],
+});
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-mono',
+  display: 'swap',
+  weight: ['400', '500'],
 });
 const instrumentSerif = Instrument_Serif({
   subsets: ['latin'],
@@ -74,7 +86,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="HASIVU" />
-        <meta name="msapplication-TileColor" content="#2563eb" />
+        <meta name="msapplication-TileColor" content="#E07020" />
         <meta name="msapplication-config" content="/browserconfig.xml" />
 
         {/* Analytics - Google Analytics (Production) */}
@@ -124,7 +136,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         />
       </head>
       <body
-        className={`${nunito.variable} ${instrumentSerif.variable} font-sans antialiased`}
+        className={`${nunito.variable} ${dmSans.variable} ${jetbrainsMono.variable} ${instrumentSerif.variable} font-sans antialiased`}
       >
         <PaperShadersBackground />
         {/*

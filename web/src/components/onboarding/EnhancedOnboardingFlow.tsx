@@ -734,12 +734,12 @@ const EnhancedOnboardingFlow: React.FC<{
   const renderWelcomeStep = () => (
     <div className="text-center space-y-8">
       <div className="space-y-6">
-        <div className="mx-auto w-32 h-32 bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-600 rounded-full flex items-center justify-center shadow-2xl">
+        <div className="mx-auto w-32 h-32 bg-gradient-to-r from-[var(--hasivu-primary)] via-purple-500 to-indigo-600 rounded-full flex items-center justify-center shadow-2xl">
           <Sparkles className="w-16 h-16 text-white animate-pulse" />
         </div>
 
         <div className="space-y-4">
-          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-[var(--hasivu-primary)] to-purple-600 bg-clip-text text-transparent">
             Welcome to HASIVU!
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
@@ -752,10 +752,10 @@ const EnhancedOnboardingFlow: React.FC<{
       {/* Key Benefits Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto mt-12">
         <motion.div
-          className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-2xl p-8 text-center border border-blue-200 hover:shadow-lg transition-all duration-300"
+          className="bg-gradient-to-br from-[var(--hasivu-primary)]/5 to-indigo-100 rounded-2xl p-8 text-center border border-[var(--hasivu-primary)]/20 hover:shadow-lg transition-all duration-300"
           {...(!shouldReduce ? { whileHover: { scale: 1.02, y: -5 } } : {})}
         >
-          <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-[var(--hasivu-primary)] rounded-full flex items-center justify-center mx-auto mb-4">
             <Shield className="w-8 h-8 text-white" />
           </div>
           <h3 className="font-bold text-gray-900 mb-2 text-lg">99.7% Fraud Prevention</h3>
@@ -840,7 +840,7 @@ const EnhancedOnboardingFlow: React.FC<{
     <FormProvider {...schoolInfoForm}>
       <div className="space-y-8 max-w-4xl mx-auto">
         <div className="text-center mb-10">
-          <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6">
+          <div className="w-20 h-20 bg-gradient-to-r from-[var(--hasivu-primary)] to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6">
             <Building className="w-10 h-10 text-white" />
           </div>
           <h2 className="text-3xl font-bold text-gray-900 mb-4">Tell Us About Your School</h2>
@@ -853,7 +853,7 @@ const EnhancedOnboardingFlow: React.FC<{
         {/* Basic Information */}
         <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-100">
           <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
-            <Building className="w-6 h-6 mr-3 text-blue-600" />
+            <Building className="w-6 h-6 mr-3 text-[var(--hasivu-primary)]" />
             Basic Information
           </h3>
 
@@ -862,7 +862,7 @@ const EnhancedOnboardingFlow: React.FC<{
               <label className="block text-sm font-medium text-gray-700 mb-3">School Name *</label>
               <input
                 {...schoolInfoForm.register('name')}
-                className="w-full px-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-lg"
+                className="w-full px-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--hasivu-primary)] focus:border-transparent transition-all duration-200 text-lg"
                 placeholder="e.g., Delhi Public School"
               />
               {schoolInfoForm.formState.errors.name && (
@@ -876,7 +876,7 @@ const EnhancedOnboardingFlow: React.FC<{
               <label className="block text-sm font-medium text-gray-700 mb-3">School Type *</label>
               <select
                 {...schoolInfoForm.register('schoolType')}
-                className="w-full px-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+                className="w-full px-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--hasivu-primary)] focus:border-transparent text-lg"
               >
                 <option value="private">Private School</option>
                 <option value="government">Government School</option>
@@ -892,7 +892,7 @@ const EnhancedOnboardingFlow: React.FC<{
               <input
                 type="number"
                 {...schoolInfoForm.register('studentCount', { valueAsNumber: true })}
-                className="w-full px-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+                className="w-full px-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--hasivu-primary)] focus:border-transparent text-lg"
                 placeholder="e.g., 1200"
                 min="1"
                 max="10000"
@@ -911,7 +911,7 @@ const EnhancedOnboardingFlow: React.FC<{
               <input
                 type="number"
                 {...schoolInfoForm.register('establishedYear', { valueAsNumber: true })}
-                className="w-full px-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+                className="w-full px-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--hasivu-primary)] focus:border-transparent text-lg"
                 placeholder="e.g., 1995"
                 min="1800"
                 max={new Date().getFullYear()}
@@ -923,7 +923,7 @@ const EnhancedOnboardingFlow: React.FC<{
               <div className="flex space-x-3">
                 <select
                   {...schoolInfoForm.register('gradeRange.from')}
-                  className="flex-1 px-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="flex-1 px-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--hasivu-primary)] focus:border-transparent"
                 >
                   <option value="nursery">Nursery</option>
                   <option value="lkg">LKG</option>
@@ -937,7 +937,7 @@ const EnhancedOnboardingFlow: React.FC<{
                 <span className="self-center text-gray-500">to</span>
                 <select
                   {...schoolInfoForm.register('gradeRange.to')}
-                  className="flex-1 px-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="flex-1 px-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--hasivu-primary)] focus:border-transparent"
                 >
                   {Array.from({ length: 12 }, (_, i) => (
                     <option key={i + 1} value={String(i + 1)}>
@@ -965,7 +965,7 @@ const EnhancedOnboardingFlow: React.FC<{
               <textarea
                 {...schoolInfoForm.register('address')}
                 rows={3}
-                className="w-full px-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg resize-none"
+                className="w-full px-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--hasivu-primary)] focus:border-transparent text-lg resize-none"
                 placeholder="Enter complete school address"
               />
               {schoolInfoForm.formState.errors.address && (
@@ -979,7 +979,7 @@ const EnhancedOnboardingFlow: React.FC<{
               <label className="block text-sm font-medium text-gray-700 mb-3">City *</label>
               <input
                 {...schoolInfoForm.register('city')}
-                className="w-full px-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+                className="w-full px-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--hasivu-primary)] focus:border-transparent text-lg"
                 placeholder="e.g., Bangalore"
               />
             </div>
@@ -988,7 +988,7 @@ const EnhancedOnboardingFlow: React.FC<{
               <label className="block text-sm font-medium text-gray-700 mb-3">State *</label>
               <select
                 {...schoolInfoForm.register('state')}
-                className="w-full px-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+                className="w-full px-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--hasivu-primary)] focus:border-transparent text-lg"
               >
                 <option value="">Select State</option>
                 <option value="KA">Karnataka</option>
@@ -1009,7 +1009,7 @@ const EnhancedOnboardingFlow: React.FC<{
               <label className="block text-sm font-medium text-gray-700 mb-3">PIN Code *</label>
               <input
                 {...schoolInfoForm.register('pinCode')}
-                className="w-full px-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+                className="w-full px-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--hasivu-primary)] focus:border-transparent text-lg"
                 placeholder="e.g., 560001"
                 maxLength={6}
               />
@@ -1025,7 +1025,7 @@ const EnhancedOnboardingFlow: React.FC<{
               <input
                 type="tel"
                 {...schoolInfoForm.register('phone')}
-                className="w-full px-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+                className="w-full px-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--hasivu-primary)] focus:border-transparent text-lg"
                 placeholder="e.g., 9876543210"
                 maxLength={10}
               />
@@ -1043,7 +1043,7 @@ const EnhancedOnboardingFlow: React.FC<{
               <input
                 type="email"
                 {...schoolInfoForm.register('email')}
-                className="w-full px-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+                className="w-full px-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--hasivu-primary)] focus:border-transparent text-lg"
                 placeholder="e.g., admin@schoolname.edu.in"
               />
               {schoolInfoForm.formState.errors.email && (
@@ -1060,7 +1060,7 @@ const EnhancedOnboardingFlow: React.FC<{
               <input
                 type="url"
                 {...schoolInfoForm.register('website')}
-                className="w-full px-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+                className="w-full px-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--hasivu-primary)] focus:border-transparent text-lg"
                 placeholder="e.g., https://www.schoolname.edu.in"
               />
             </div>
@@ -1081,7 +1081,7 @@ const EnhancedOnboardingFlow: React.FC<{
               </label>
               <select
                 {...schoolInfoForm.register('currentSystem')}
-                className="w-full px-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+                className="w-full px-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[var(--hasivu-primary)] focus:border-transparent text-lg"
               >
                 <option value="manual">Manual/Cash Only</option>
                 <option value="basic_pos">Basic POS System</option>
@@ -1114,7 +1114,7 @@ const EnhancedOnboardingFlow: React.FC<{
                       type="checkbox"
                       value={lang.code}
                       {...schoolInfoForm.register('languages')}
-                      className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      className="w-5 h-5 text-[var(--hasivu-primary)] border-gray-300 rounded focus:ring-[var(--hasivu-primary)]"
                     />
                     <span className="text-2xl">{lang.flag}</span>
                     <span className="text-sm font-medium text-gray-700">{lang.name}</span>
@@ -1124,11 +1124,11 @@ const EnhancedOnboardingFlow: React.FC<{
             </div>
 
             <div>
-              <label className="flex items-center space-x-4 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+              <label className="flex items-center space-x-4 p-4 bg-[var(--hasivu-primary)]/5 border border-[var(--hasivu-primary)]/20 rounded-xl">
                 <input
                   type="checkbox"
                   {...schoolInfoForm.register('lunchProgram')}
-                  className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  className="w-5 h-5 text-[var(--hasivu-primary)] border-gray-300 rounded focus:ring-[var(--hasivu-primary)]"
                 />
                 <div>
                   <span className="font-medium text-gray-900">Free/Subsidized Lunch Program</span>
@@ -1146,14 +1146,14 @@ const EnhancedOnboardingFlow: React.FC<{
 
   // Return the main component JSX
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-[var(--hasivu-primary)]/5 via-white to-purple-50">
       {/* Enhanced Progress Header */}
       <div className="bg-white/80 backdrop-blur-sm shadow-lg border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-6">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-gradient-to-r from-[var(--hasivu-primary)] to-purple-600 rounded-lg flex items-center justify-center">
                   <Sparkles className="w-6 h-6 text-white" />
                 </div>
                 <div>
@@ -1165,7 +1165,7 @@ const EnhancedOnboardingFlow: React.FC<{
               </div>
 
               <div className="hidden md:flex items-center space-x-4">
-                <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                <div className="bg-[var(--hasivu-primary)]/10 text-[var(--hasivu-primary-dark)] px-3 py-1 rounded-full text-sm font-medium">
                   Step {currentStep + 1} of {steps.length}
                 </div>
                 <div className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium">
@@ -1213,7 +1213,7 @@ const EnhancedOnboardingFlow: React.FC<{
           <div className="space-y-3">
             <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
               <motion.div
-                className="bg-gradient-to-r from-blue-500 to-purple-600 h-3 rounded-full"
+                className="bg-gradient-to-r from-[var(--hasivu-primary)] to-purple-600 h-3 rounded-full"
                 initial={{ width: 0 }}
                 animate={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
                 transition={shouldReduce ? { duration: 0.001 } : { duration: 0.5, ease: 'easeOut' }}
@@ -1226,7 +1226,7 @@ const EnhancedOnboardingFlow: React.FC<{
                 <div
                   key={step.id}
                   className={`flex flex-col items-center space-y-2 ${
-                    index <= currentStep ? 'text-blue-600' : 'text-gray-400'
+                    index <= currentStep ? 'text-[var(--hasivu-primary)]' : 'text-gray-400'
                   }`}
                 >
                   <div
@@ -1234,7 +1234,7 @@ const EnhancedOnboardingFlow: React.FC<{
                       index < currentStep
                         ? 'bg-green-500 text-white'
                         : index === currentStep
-                          ? 'bg-blue-500 text-white shadow-lg'
+                          ? 'bg-[var(--hasivu-primary)] text-white shadow-lg'
                           : 'bg-gray-200 text-gray-500'
                     }`}
                   >
@@ -1360,7 +1360,7 @@ const EnhancedOnboardingFlow: React.FC<{
               <motion.button
                 onClick={nextStep}
                 disabled={isLoading}
-                className="flex items-center space-x-3 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-lg"
+                className="flex items-center space-x-3 px-8 py-4 bg-gradient-to-r from-[var(--hasivu-primary)] to-purple-600 text-white rounded-xl hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-lg"
                 {...(!shouldReduce
                   ? { whileHover: { scale: 1.02 }, whileTap: { scale: 0.98 } }
                   : {})}

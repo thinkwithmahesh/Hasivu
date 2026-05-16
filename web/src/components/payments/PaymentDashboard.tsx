@@ -107,9 +107,9 @@ export const PaymentDashboard: React.FC<PaymentDashboardProps> = ({
                   <p className="text-sm font-medium text-muted-foreground">Active Subscriptions</p>
                   <p className="text-2xl font-bold">{overviewData.activeSubscriptions}</p>
                 </div>
-                <Users className="h-8 w-8 text-blue-600" />
+                <Users className="h-8 w-8 text-[var(--hasivu-primary)]" />
               </div>
-              <div className="flex items-center text-sm text-blue-600 mt-2">
+              <div className="flex items-center text-sm text-[var(--hasivu-primary)] mt-2">
                 <TrendingUp className="h-4 w-4 mr-1" />
                 +8.2% from last month
               </div>

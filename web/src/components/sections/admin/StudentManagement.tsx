@@ -31,9 +31,9 @@ const DIETARY_FLAGS: Record<string, { bg: string; text: string; border: string; 
     label: 'Nut Allergy',
   },
   GF: {
-    bg: 'bg-blue-500/15',
-    text: 'text-blue-600',
-    border: 'border-blue-500/30',
+    bg: 'bg-[var(--hasivu-primary)]/15',
+    text: 'text-[var(--hasivu-primary)]',
+    border: 'border-[var(--hasivu-primary)]/30',
     label: 'Gluten Free',
   },
   DF: {

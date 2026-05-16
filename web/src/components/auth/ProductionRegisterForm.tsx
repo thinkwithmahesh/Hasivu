@@ -178,7 +178,7 @@ export const ProductionRegisterForm: React.FC<RegisterFormProps> = ({
                   disabled={isLoading}
                   className={`block w-full pl-10 pr-3 py-2 border ${
                     validationErrors.firstName ? 'border-red-300' : 'border-gray-300'
-                  } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100`}
+                  } rounded-lg focus:ring-2 focus:ring-[var(--hasivu-primary)] focus:border-transparent disabled:bg-gray-100`}
                   placeholder="John"
                 />
               </div>
@@ -201,7 +201,7 @@ export const ProductionRegisterForm: React.FC<RegisterFormProps> = ({
                 disabled={isLoading}
                 className={`block w-full px-3 py-2 border ${
                   validationErrors.lastName ? 'border-red-300' : 'border-gray-300'
-                } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100`}
+                } rounded-lg focus:ring-2 focus:ring-[var(--hasivu-primary)] focus:border-transparent disabled:bg-gray-100`}
                 placeholder="Doe"
               />
               {validationErrors.lastName && (
@@ -230,7 +230,7 @@ export const ProductionRegisterForm: React.FC<RegisterFormProps> = ({
                 disabled={isLoading}
                 className={`block w-full pl-10 pr-3 py-2 border ${
                   validationErrors.email ? 'border-red-300' : 'border-gray-300'
-                } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100`}
+                } rounded-lg focus:ring-2 focus:ring-[var(--hasivu-primary)] focus:border-transparent disabled:bg-gray-100`}
                 placeholder="john.doe@example.com"
               />
             </div>
@@ -250,7 +250,7 @@ export const ProductionRegisterForm: React.FC<RegisterFormProps> = ({
               value={formData.role}
               onChange={handleInputChange}
               disabled={isLoading}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--hasivu-primary)] focus:border-transparent disabled:bg-gray-100"
             >
               <option value="parent">Parent</option>
               <option value="student">Student</option>
@@ -280,7 +280,7 @@ export const ProductionRegisterForm: React.FC<RegisterFormProps> = ({
                 disabled={isLoading}
                 className={`block w-full pl-10 pr-10 py-2 border ${
                   validationErrors.password ? 'border-red-300' : 'border-gray-300'
-                } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100`}
+                } rounded-lg focus:ring-2 focus:ring-[var(--hasivu-primary)] focus:border-transparent disabled:bg-gray-100`}
                 placeholder="Create a strong password"
               />
               <button
@@ -332,7 +332,7 @@ export const ProductionRegisterForm: React.FC<RegisterFormProps> = ({
                 disabled={isLoading}
                 className={`block w-full pl-10 pr-10 py-2 border ${
                   validationErrors.passwordConfirm ? 'border-red-300' : 'border-gray-300'
-                } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100`}
+                } rounded-lg focus:ring-2 focus:ring-[var(--hasivu-primary)] focus:border-transparent disabled:bg-gray-100`}
                 placeholder="Confirm your password"
               />
               <button
@@ -358,7 +358,7 @@ export const ProductionRegisterForm: React.FC<RegisterFormProps> = ({
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full flex justify-center items-center py-3 px-4 mt-6 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300 disabled:cursor-not-allowed transition-colors"
+            className="w-full flex justify-center items-center py-3 px-4 mt-6 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-[var(--hasivu-primary)] hover:bg-[var(--hasivu-primary-dark)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--hasivu-primary)] disabled:bg-blue-300 disabled:cursor-not-allowed transition-colors"
           >
             {isLoading ? (
               <>
@@ -385,7 +385,10 @@ export const ProductionRegisterForm: React.FC<RegisterFormProps> = ({
 
         {/* Login Link */}
         <div className="mt-6 text-center">
-          <a href="/auth/login" className="text-sm font-medium text-blue-600 hover:text-blue-500">
+          <a
+            href="/auth/login"
+            className="text-sm font-medium text-[var(--hasivu-primary)] hover:text-[var(--hasivu-primary)]"
+          >
             Sign in instead →
           </a>
         </div>

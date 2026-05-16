@@ -165,7 +165,7 @@ export default function DocsPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
             <Card>
               <CardContent className="p-4">
-                <div className="text-2xl font-bold text-blue-600">
+                <div className="text-2xl font-bold text-[var(--hasivu-primary)]">
                   {spec?.paths ? Object.keys(spec.paths).length : 0}
                 </div>
                 <p className="text-sm text-gray-600">API Endpoints</p>
@@ -231,7 +231,10 @@ export default function DocsPage() {
         <div className="mt-8 text-center text-gray-600">
           <p className="text-sm">
             For support or questions about the API, please contact{' '}
-            <a href="mailto:support@hasivu.com" className="text-blue-600 hover:text-blue-800">
+            <a
+              href="mailto:support@hasivu.com"
+              className="text-[var(--hasivu-primary)] hover:text-[var(--hasivu-primary-dark)]"
+            >
               support@hasivu.com
             </a>
           </p>

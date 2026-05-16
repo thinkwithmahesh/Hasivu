@@ -171,7 +171,7 @@ const MealOrderDrawer = ({
                       tag === 'vegetarian' &&
                         'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400',
                       tag === 'gluten-free' &&
-                        'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400',
+                        'bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-400',
                       tag === 'dairy-free' &&
                         'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400',
                       tag === 'nut-free' &&
@@ -279,7 +279,7 @@ const MealOrderDrawer = ({
                         <div className="text-sm text-slate-500">Calories</div>
                       </div>
                       <div className="text-center p-3 bg-white dark:bg-slate-900 rounded-lg border">
-                        <div className="text-2xl font-bold text-blue-600">
+                        <div className="text-2xl font-bold text-[var(--hasivu-primary)]">
                           {meal.nutrition.protein}g
                         </div>
                         <div className="text-sm text-slate-500">Protein</div>

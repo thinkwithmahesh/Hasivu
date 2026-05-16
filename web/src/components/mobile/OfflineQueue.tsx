@@ -523,7 +523,7 @@ export const OfflineQueue: React.FC<OfflineQueueProps> = ({ className }) => {
       case 'pending':
         return <Clock className="h-4 w-4 text-yellow-500" />;
       case 'retrying':
-        return <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />;
+        return <Loader2 className="h-4 w-4 text-[var(--hasivu-primary)] animate-spin" />;
       case 'failed':
         return <AlertCircle className="h-4 w-4 text-red-500" />;
       case 'completed':
@@ -679,9 +679,11 @@ export const CachedDataManager: React.FC<CachedDataManagerProps> = ({ className 
       </div>
 
       <div className="grid grid-cols-2 gap-4 text-sm">
-        <div className="text-center p-3 bg-blue-50 rounded-lg">
-          <div className="text-lg font-bold text-blue-600">{cacheStats.itemCount}</div>
-          <div className="text-blue-700">Items Cached</div>
+        <div className="text-center p-3 bg-[var(--hasivu-primary)]/5 rounded-lg">
+          <div className="text-lg font-bold text-[var(--hasivu-primary)]">
+            {cacheStats.itemCount}
+          </div>
+          <div className="text-[var(--hasivu-primary)]">Items Cached</div>
         </div>
 
         <div className="text-center p-3 bg-green-50 rounded-lg">

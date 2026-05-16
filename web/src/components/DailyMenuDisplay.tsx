@@ -178,7 +178,7 @@ export const DailyMenuDisplay: React.FC<DailyMenuDisplayProps> = ({ schoolId, cl
                     key={dateString}
                     variant={isSelected ? 'default' : 'outline'}
                     size="sm"
-                    className={`h-8 w-8 p-0 ${isToday ? 'ring-2 ring-blue-500' : ''}`}
+                    className={`h-8 w-8 p-0 ${isToday ? 'ring-2 ring-[var(--hasivu-primary)]' : ''}`}
                     onClick={() => handleDateChange(dateString)}
                   >
                     {format(date, 'd')}

@@ -268,7 +268,10 @@ export default function SettingsPage() {
                           checked={settings.auditLogging}
                           onCheckedChange={checked => handleSettingChange('auditLogging', checked)}
                         />
-                        <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+                        <Badge
+                          variant="secondary"
+                          className="bg-[var(--hasivu-primary)]/10 text-[var(--hasivu-primary)]"
+                        >
                           Active
                         </Badge>
                       </div>
@@ -421,7 +424,10 @@ export default function SettingsPage() {
                           checked={settings.backupEnabled}
                           onCheckedChange={checked => handleSettingChange('backupEnabled', checked)}
                         />
-                        <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+                        <Badge
+                          variant="secondary"
+                          className="bg-[var(--hasivu-primary)]/10 text-[var(--hasivu-primary)]"
+                        >
                           Active
                         </Badge>
                       </div>

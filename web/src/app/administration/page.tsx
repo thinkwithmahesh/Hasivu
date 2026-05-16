@@ -148,7 +148,7 @@ const getSeverityColor = (severity: AlertSeverity): string => {
     case AlertSeverity.MEDIUM:
       return 'bg-yellow-100 text-yellow-800 border-yellow-200';
     case AlertSeverity.LOW:
-      return 'bg-blue-100 text-blue-800 border-blue-200';
+      return 'bg-hasivu-neutral-100 text-hasivu-text-secondary border-hasivu-neutral-200';
     default:
       return 'bg-gray-100 text-gray-800 border-gray-200';
   }
@@ -160,7 +160,7 @@ const MetricsCard = ({
   subtitle,
   icon: Icon,
   trend,
-  color = 'text-blue-600',
+  color = 'text-[var(--hasivu-primary)]',
 }: {
   title: string;
   value: string | number;
@@ -312,7 +312,7 @@ export default function AdministrationDashboard() {
                   subtitle={`${metrics.schools.active} active`}
                   icon={Building2}
                   trend={2.3}
-                  color="text-blue-600"
+                  color="text-[var(--hasivu-primary)]"
                 />
                 <MetricsCard
                   title="Students Served Today"
@@ -372,7 +372,7 @@ export default function AdministrationDashboard() {
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div
-                          className="bg-blue-600 h-2 rounded-full"
+                          className="bg-[var(--hasivu-primary)] h-2 rounded-full"
                           style={{ width: `${metrics.performance.operationalEfficiency}%` }}
                         ></div>
                       </div>
@@ -451,7 +451,7 @@ export default function AdministrationDashboard() {
                       </div>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
-                          <div className="w-3 h-3 bg-blue-500 rounded"></div>
+                          <div className="w-3 h-3 bg-[var(--hasivu-primary)] rounded"></div>
                           <span className="text-sm">Good (70-90%)</span>
                         </div>
                         <span className="text-sm font-medium">

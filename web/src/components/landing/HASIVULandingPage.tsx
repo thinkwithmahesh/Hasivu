@@ -210,7 +210,7 @@ const HASIVULandingPage: React.FC = () => {
           >
             <Button
               size="lg"
-              className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-8 py-4 text-lg shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
+              className="bg-gradient-to-r from-green-600 to-[var(--hasivu-primary-dark)] hover:from-green-700 hover:to-[var(--hasivu-primary-dark)] text-white px-8 py-4 text-lg shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
             >
               <Calendar className="mr-2 h-5 w-5" />
               Book Demo - See It Live
@@ -239,7 +239,7 @@ const HASIVULandingPage: React.FC = () => {
               <NumberTicker value={50000} />+ Students Served
             </div>
             <div className="flex items-center">
-              <Shield className="h-4 w-4 mr-1 text-blue-600" />
+              <Shield className="h-4 w-4 mr-1 text-[var(--hasivu-primary)]" />
               SOC 2 Type II Certified
             </div>
             <div className="flex items-center">
@@ -380,7 +380,7 @@ const HASIVULandingPage: React.FC = () => {
       </section>
 
       {/* SOLUTION REVELATION - Phase 4 */}
-      <section className="py-20 bg-gradient-to-b from-blue-50 to-green-50 px-4">
+      <section className="py-20 bg-gradient-to-b from-[var(--hasivu-primary)]/5 to-green-50 px-4">
         <div className="max-w-7xl mx-auto">
           <motion.div
             className="text-center mb-16"
@@ -413,7 +413,7 @@ const HASIVULandingPage: React.FC = () => {
                   </div>
                 }
                 header={
-                  <div className="flex items-center justify-center h-32 bg-gradient-to-br from-green-100 to-blue-100 rounded-lg">
+                  <div className="flex items-center justify-center h-32 bg-gradient-to-br from-green-100 to-[var(--hasivu-primary)]/10 rounded-lg">
                     <feature.icon className="h-16 w-16 text-green-600" />
                   </div>
                 }
@@ -567,7 +567,7 @@ const HASIVULandingPage: React.FC = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
               <Button
                 size="lg"
-                className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 text-lg shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
+                className="bg-white text-[var(--hasivu-primary)] hover:bg-gray-100 px-8 py-4 text-lg shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
               >
                 <Calendar className="mr-2 h-5 w-5" />
                 Book Implementation Demo
@@ -576,7 +576,7 @@ const HASIVULandingPage: React.FC = () => {
               <Button
                 variant="outline"
                 size="lg"
-                className="border-2 border-white text-white hover:bg-white hover:text-blue-600 px-8 py-4 text-lg transition-all"
+                className="border-2 border-white text-white hover:bg-white hover:text-[var(--hasivu-primary)] px-8 py-4 text-lg transition-all"
               >
                 Get Custom Quote
                 <ArrowRight className="ml-2 h-5 w-5" />

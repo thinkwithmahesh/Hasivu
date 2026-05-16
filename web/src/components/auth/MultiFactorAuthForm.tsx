@@ -227,8 +227,8 @@ export function MultiFactorAuthForm({
     return (
       <Card className={className}>
         <CardHeader className="text-center">
-          <div className="mx-auto w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-            <Shield className="h-6 w-6 text-blue-600" />
+          <div className="mx-auto w-12 h-12 bg-[var(--hasivu-primary)]/10 rounded-full flex items-center justify-center mb-4">
+            <Shield className="h-6 w-6 text-[var(--hasivu-primary)]" />
           </div>
           <CardTitle>Two-Factor Authentication</CardTitle>
           <CardDescription>Enter the verification code to continue</CardDescription>

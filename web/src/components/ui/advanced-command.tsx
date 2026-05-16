@@ -164,7 +164,7 @@ const CommandItem = React.forwardRef<
             nutritionBadge === 'vegetarian' &&
               'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400',
             nutritionBadge === 'gluten-free' &&
-              'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400',
+              'bg-[var(--hasivu-primary)]/10 text-[var(--hasivu-primary-dark)] dark:bg-[var(--hasivu-primary-dark)]/20 dark:text-[var(--hasivu-primary)]/70',
             nutritionBadge === 'high-protein' &&
               'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400'
           )}

@@ -308,7 +308,7 @@ const AdminSetupStep: React.FC<AdminSetupStepProps> = ({ onNext, onPrev, isLoadi
       {/* Language Preference */}
       <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-100">
         <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
-          <Languages className="w-6 h-6 mr-3 text-blue-600" />
+          <Languages className="w-6 h-6 mr-3 text-[var(--hasivu-primary)]" />
           Preferred Interface Language
         </h3>
 
@@ -321,7 +321,7 @@ const AdminSetupStep: React.FC<AdminSetupStepProps> = ({ onNext, onPrev, isLoadi
                 key={lang.code}
                 className={`flex items-center space-x-4 p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
                   isSelected
-                    ? 'border-blue-500 bg-blue-50'
+                    ? 'border-[var(--hasivu-primary)] bg-[var(--hasivu-primary)]/5'
                     : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                 }`}
                 whileHover={{ scale: 1.02 }}
@@ -337,12 +337,14 @@ const AdminSetupStep: React.FC<AdminSetupStepProps> = ({ onNext, onPrev, isLoadi
                 <span className="text-3xl">{lang.flag}</span>
 
                 <div className="flex-1">
-                  <span className={`font-medium ${isSelected ? 'text-blue-900' : 'text-gray-900'}`}>
+                  <span
+                    className={`font-medium ${isSelected ? 'text-[var(--hasivu-primary-dark)]' : 'text-gray-900'}`}
+                  >
                     {lang.name}
                   </span>
                 </div>
 
-                {isSelected && <CheckCircle2 className="w-5 h-5 text-blue-600" />}
+                {isSelected && <CheckCircle2 className="w-5 h-5 text-[var(--hasivu-primary)]" />}
               </motion.label>
             );
           })}

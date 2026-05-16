@@ -39,7 +39,8 @@ export function FoodItemCard({
     const colors: Record<string, string> = {
       Vegetarian: 'bg-green-100 text-green-800 border-green-200',
       Vegan: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-      'High Protein': 'bg-blue-100 text-blue-800 border-blue-200',
+      'High Protein':
+        'bg-[var(--hasivu-primary)]/10 text-[var(--hasivu-primary-dark)] border-[var(--hasivu-primary)]/20',
       'Gluten-Free': 'bg-purple-100 text-purple-800 border-purple-200',
       Traditional: 'bg-orange-100 text-orange-800 border-orange-200',
       'Kid-Friendly': 'bg-pink-100 text-pink-800 border-pink-200',
@@ -50,9 +51,9 @@ export function FoodItemCard({
 
   const getRatingColor = (rating: number) => {
     if (rating >= 4.5) return 'text-green-600';
-    if (rating >= 4.0) return 'text-blue-600';
+    if (rating >= 4.0) return 'text-[var(--hasivu-primary)]';
     if (rating >= 3.5) return 'text-yellow-600';
-    return 'text-gray-600';
+    return 'text-hasivu-text-secondary';
   };
 
   return (
@@ -103,7 +104,7 @@ export function FoodItemCard({
 
       <CardContent className="p-0">
         {/* Food Image Container */}
-        <div className="relative h-48 bg-gradient-to-br from-primary-50 via-white to-accent-50 overflow-hidden">
+        <div className="relative h-48 bg-gradient-to-br from-[var(--hasivu-primary)]/5 via-white to-[var(--hasivu-accent)]/5 overflow-hidden">
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-6xl drop-shadow-sm group-hover:scale-110 transition-transform duration-300">
               {item.image}
@@ -133,7 +134,7 @@ export function FoodItemCard({
                 e.stopPropagation();
                 onQuickOrder(item);
               }}
-              className="bg-primary-600 hover:bg-primary-700 text-white shadow-lg"
+              className="bg-[var(--hasivu-primary)] hover:bg-[var(--hasivu-primary-dark)] text-white shadow-lg"
               data-testid="add-to-cart"
             >
               <Plus className="h-4 w-4 mr-1" />
@@ -147,7 +148,7 @@ export function FoodItemCard({
           {/* Header */}
           <div className="space-y-2">
             <div className="flex items-start justify-between gap-2">
-              <h3 className="font-semibold text-lg text-gray-900 leading-tight group-hover:text-primary-700 transition-colors">
+              <h3 className="font-semibold text-lg text-hasivu-text-primary leading-tight group-hover:text-[var(--hasivu-primary)] transition-colors">
                 {item.name}
               </h3>
               <div className="flex items-center gap-1 shrink-0">
@@ -158,7 +159,9 @@ export function FoodItemCard({
               </div>
             </div>
 
-            <p className="text-sm text-gray-600 leading-relaxed line-clamp-2">{item.description}</p>
+            <p className="text-sm text-hasivu-text-secondary leading-relaxed line-clamp-2">
+              {item.description}
+            </p>
           </div>
 
           {/* Dietary Tags */}
@@ -191,7 +194,7 @@ export function FoodItemCard({
             <Button
               variant="ghost"
               size="sm"
-              className="h-auto p-0 text-blue-600 hover:text-blue-700 hover:bg-transparent relative z-10"
+              className="h-auto p-0 text-[var(--hasivu-primary)] hover:text-[var(--hasivu-primary-dark)] hover:bg-transparent relative z-10"
               onClick={e => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -207,7 +210,7 @@ export function FoodItemCard({
           {/* Price and Actions */}
           <div className="flex items-center justify-between pt-3 border-t border-gray-100">
             <div className="flex flex-col">
-              <span className="text-xl font-bold text-primary-700">{item.price}</span>
+              <span className="text-xl font-bold text-[var(--hasivu-primary)]">{item.price}</span>
               <span className="text-xs text-gray-500">per serving</span>
             </div>
 
@@ -247,7 +250,7 @@ export function FoodItemCard({
                   e.stopPropagation();
                   handleQuantityChange(1);
                 }}
-                className="bg-primary-600 hover:bg-primary-700 text-white shadow-sm"
+                className="bg-[var(--hasivu-primary)] hover:bg-[var(--hasivu-primary-dark)] text-white shadow-sm"
               >
                 <ShoppingCart className="h-4 w-4 mr-1" />
                 Add

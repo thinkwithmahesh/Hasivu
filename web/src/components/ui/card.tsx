@@ -18,7 +18,8 @@ const cardVariants = cva(
           'bg-gradient-to-br from-hasivu-primary-50 to-hasivu-secondary-50 border-transparent',
         // Role-based variants
         admin: 'bg-red-50 border-red-200 text-red-900',
-        teacher: 'bg-blue-50 border-blue-200 text-blue-900',
+        teacher:
+          'bg-[var(--hasivu-primary)]/5 border-[var(--hasivu-primary)]/20 text-[var(--hasivu-primary-dark)]',
         parent: 'bg-green-50 border-green-200 text-green-900',
         student: 'bg-amber-50 border-amber-200 text-amber-900',
         // Interactive variants

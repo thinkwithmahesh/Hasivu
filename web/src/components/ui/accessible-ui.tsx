@@ -120,8 +120,8 @@ export function SkipLink({ href, children, className }: SkipLinkProps) {
       href={href}
       className={cn(
         'sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 z-50',
-        'bg-blue-600 text-white px-4 py-2 rounded-md font-medium',
-        'hover:bg-blue-700 transition-colors',
+        'bg-[var(--hasivu-primary)] text-white px-4 py-2 rounded-md font-medium',
+        'hover:bg-[var(--hasivu-primary-dark)] transition-colors',
         className
       )}
     >
@@ -152,7 +152,7 @@ export function FocusableRegion({
       aria-label={label}
       tabIndex={-1}
       className={cn(
-        'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-md',
+        'focus:outline-none focus:ring-2 focus:ring-[var(--hasivu-primary)] focus:ring-offset-2 rounded-md',
         className
       )}
     >
@@ -298,7 +298,7 @@ export function HighContrastProvider({ children, className }: HighContrastProps)
           '[&_*]:border-black [&_*]:text-black',
           '[&_button]:bg-black [&_button]:text-white [&_button]:border-2 [&_button]:border-black',
           '[&_input]:border-2 [&_input]:border-black [&_input]:bg-white [&_input]:text-black',
-          '[&_a]:text-blue-800 [&_a]:underline [&_a:visited]:text-purple-800',
+          '[&_a]:text-[var(--hasivu-primary-dark)] [&_a]:underline [&_a:visited]:text-purple-800',
         ],
         className
       )}

@@ -79,7 +79,7 @@ const INSIGHTICONS = {
 };
 
 const PRIORITYCOLORS = {
-  low: 'bg-blue-50 border-blue-200 text-blue-800',
+  low: 'bg-[var(--hasivu-primary)]/5 border-[var(--hasivu-primary)]/20 text-[var(--hasivu-primary-dark)]',
   medium: 'bg-yellow-50 border-yellow-200 text-yellow-800',
   high: 'bg-orange-50 border-orange-200 text-orange-800',
   critical: 'bg-red-50 border-red-200 text-red-800',
@@ -134,7 +134,7 @@ export const InsightCard: React.FC<InsightCardProps> = ({
                     ? 'bg-orange-100'
                     : insight.priority === 'medium'
                       ? 'bg-yellow-100'
-                      : 'bg-blue-100'
+                      : 'bg-[var(--hasivu-primary)]/10'
               )}
             >
               <IconComponent
@@ -146,7 +146,7 @@ export const InsightCard: React.FC<InsightCardProps> = ({
                       ? 'text-orange-600'
                       : insight.priority === 'medium'
                         ? 'text-yellow-600'
-                        : 'text-blue-600'
+                        : 'text-[var(--hasivu-primary)]'
                 )}
               />
             </div>

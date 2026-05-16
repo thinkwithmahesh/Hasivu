@@ -68,7 +68,7 @@ export default function LoginPage() {
               H
             </div>
             <div className="leading-tight">
-              <div className="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-emerald-600 via-cyan-600 to-blue-600 bg-clip-text text-transparent">
+              <div className="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-emerald-600 via-cyan-600 to-[var(--hasivu-primary-dark)] bg-clip-text text-transparent">
                 HASIVU
               </div>
               <div className="text-xs text-ink-500 -mt-1">School Meals Done Right</div>

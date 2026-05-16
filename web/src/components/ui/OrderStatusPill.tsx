@@ -65,7 +65,7 @@ export function OrderStatusPill({
     },
     out_for_delivery: {
       label: 'Out for Delivery',
-      colorClass: 'bg-blue-100 text-blue-800',
+      colorClass: 'bg-[var(--hasivu-primary)]/10 text-[var(--hasivu-primary-dark)]',
       icon: (
         <svg className="w-3.5 h-3.5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path

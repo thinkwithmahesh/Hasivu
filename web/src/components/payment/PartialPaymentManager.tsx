@@ -367,7 +367,8 @@ export const PartialPaymentManager: React.FC = () => {
             <Badge
               variant={schedule.status === 'overdue' ? 'destructive' : 'default'}
               className={cn(
-                schedule.status === 'active' && 'bg-blue-100 text-blue-700',
+                schedule.status === 'active' &&
+                  'bg-[var(--hasivu-primary)]/10 text-[var(--hasivu-primary)]',
                 schedule.status === 'completed' && 'bg-green-100 text-green-700'
               )}
             >
@@ -482,8 +483,8 @@ export const PartialPaymentManager: React.FC = () => {
                   {schedules.filter(s => s.status === 'active').length}
                 </p>
               </div>
-              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                <Calendar className="h-6 w-6 text-blue-600" />
+              <div className="w-12 h-12 bg-[var(--hasivu-primary)]/10 rounded-full flex items-center justify-center">
+                <Calendar className="h-6 w-6 text-[var(--hasivu-primary)]" />
               </div>
             </div>
           </CardContent>

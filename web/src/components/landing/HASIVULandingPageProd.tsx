@@ -272,7 +272,7 @@ const HASIVULandingPageProd: React.FC = () => {
           >
             <Button
               size="lg"
-              className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-8 py-4 text-lg shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
+              className="bg-gradient-to-r from-green-600 to-[var(--hasivu-primary-dark)] hover:from-green-700 hover:to-[var(--hasivu-primary-dark)] text-white px-8 py-4 text-lg shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
               onClick={() => setIsDemoModalOpen(true)}
             >
               <Calendar className="mr-2 h-5 w-5" />
@@ -303,7 +303,7 @@ const HASIVULandingPageProd: React.FC = () => {
                 {formatNumber(statistics.totalStudents)}+ Students Served
               </div>
               <div className="flex items-center">
-                <Shield className="h-4 w-4 mr-1 text-blue-600" />
+                <Shield className="h-4 w-4 mr-1 text-[var(--hasivu-primary)]" />
                 {statistics.systemUptime}% Uptime
               </div>
               <div className="flex items-center">
@@ -347,7 +347,7 @@ const HASIVULandingPageProd: React.FC = () => {
                       <div className="font-semibold">
                         {testimonials[selectedTestimonial].author}
                         {testimonials[selectedTestimonial].verified && (
-                          <CheckCircle className="inline h-4 w-4 text-blue-600 ml-1" />
+                          <CheckCircle className="inline h-4 w-4 text-[var(--hasivu-primary)] ml-1" />
                         )}
                       </div>
                       <div className="text-sm text-gray-600">

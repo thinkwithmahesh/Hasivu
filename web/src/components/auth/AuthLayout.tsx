@@ -58,7 +58,7 @@ export function AuthLayout({
   const currentYear = new Date().getFullYear();
 
   return (
-    <div className={cn('min-h-screen bg-gray-50', className)}>
+    <div className={cn('min-h-screen bg-[var(--hasivu-bg-warm)]', className)}>
       {/* Background Image/Pattern */}
       {backgroundImage && (
         <div
@@ -86,7 +86,7 @@ export function AuthLayout({
               <div className="w-8 h-8 bg-[var(--hasivu-secondary)] rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-lg">H</span>
               </div>
-              <span className="text-xl font-bold text-gray-900">HASIVU</span>
+              <span className="text-xl font-bold text-hasivu-neutral-900">HASIVU</span>
             </Link>
           )}
         </header>
@@ -95,7 +95,7 @@ export function AuthLayout({
       <div className="relative z-10 flex flex-col lg:flex-row min-h-screen">
         {/* Left Side - Features/Branding */}
         {showFeatures && (
-          <div className="hidden lg:flex lg:w-1/2 bg-[var(--hasivu-secondary)] text-white p-8 lg:p-12 flex-col justify-center">
+          <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[var(--hasivu-secondary)] to-[#1a5a34] text-white p-8 lg:p-12 flex-col justify-center">
             <div className="max-w-md mx-auto">
               {/* Logo and Title */}
               <div className="mb-8">
@@ -106,8 +106,8 @@ export function AuthLayout({
                   <h1 className="text-3xl font-bold">HASIVU</h1>
                 </div>
                 <p className="text-emerald-50 text-lg">
-                  Warm, reliable school meal ordering for parents, students, school teams,
-                  kitchens, and food vendors.
+                  Warm, reliable school meal ordering for parents, students, school teams, kitchens,
+                  and food vendors.
                 </p>
               </div>
 
@@ -129,8 +129,8 @@ export function AuthLayout({
               <div className="bg-white/10 rounded-xl p-6">
                 <p className="font-medium">Role-based access</p>
                 <p className="mt-2 text-emerald-50 text-sm">
-                  Use the role selector to sign in as a parent, student, school admin, kitchen
-                  staff member, or food vendor.
+                  Use the role selector to sign in as a parent, student, school admin, kitchen staff
+                  member, or food vendor.
                 </p>
               </div>
 
@@ -168,7 +168,7 @@ export function AuthLayout({
                   <div className="w-10 h-10 bg-[var(--hasivu-secondary)] rounded-xl flex items-center justify-center">
                     <span className="text-white font-bold text-xl">H</span>
                   </div>
-                  <span className="text-2xl font-bold text-gray-900">HASIVU</span>
+                  <span className="text-2xl font-bold text-hasivu-neutral-900">HASIVU</span>
                 </Link>
                 {title && (
                   <div className="mt-4">
@@ -186,8 +186,11 @@ export function AuthLayout({
             {showFeatures && (
               <div className="lg:hidden mt-8 grid grid-cols-2 gap-4">
                 {features.slice(0, 4).map((feature, index) => (
-                  <div key={index} className="text-center p-4 bg-white rounded-lg shadow-sm">
-                    <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+                  <div
+                    key={index}
+                    className="text-center p-4 bg-white rounded-xl shadow-sm border border-hasivu-neutral-200"
+                  >
+                    <div className="w-8 h-8 bg-[var(--hasivu-secondary)]/10 rounded-lg flex items-center justify-center mx-auto mb-2">
                       <feature.icon className="w-4 h-4 text-[var(--hasivu-secondary)]" />
                     </div>
                     <h4 className="font-medium text-sm text-gray-900 mb-1">{feature.title}</h4>
@@ -201,7 +204,7 @@ export function AuthLayout({
       </div>
 
       {/* Footer */}
-      <footer className="relative z-10 py-4 px-4 lg:px-6 bg-white border-t border-gray-200">
+      <footer className="relative z-10 py-4 px-4 lg:px-6 bg-white border-t border-hasivu-neutral-200">
         <div className="flex flex-col sm:flex-row items-center justify-between text-sm text-gray-600">
           <div className="flex items-center space-x-4 mb-2 sm:mb-0">
             <Link href="/legal/privacy" className="hover:text-gray-900">
@@ -242,7 +245,7 @@ export function MinimalAuthLayout({
   return (
     <div
       className={cn(
-        'min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8',
+        'min-h-screen flex items-center justify-center bg-[var(--hasivu-bg-warm)] py-12 px-4 sm:px-6 lg:px-8',
         className
       )}
     >

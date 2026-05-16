@@ -469,7 +469,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({ clas
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <ShoppingCart className="h-4 w-4 text-blue-600" />
+                  <ShoppingCart className="h-4 w-4 text-[var(--hasivu-primary)]" />
                   <div>
                     <div className="text-sm font-medium">Order Updates</div>
                     <div className="text-xs text-gray-600">
@@ -653,7 +653,7 @@ export const NotificationHistory: React.FC<NotificationHistoryProps> = ({
   const getStatusIcon = (status: NotificationHistory['status']) => {
     switch (status) {
       case 'delivered':
-        return <Bell className="h-4 w-4 text-blue-500" />;
+        return <Bell className="h-4 w-4 text-[var(--hasivu-primary)]" />;
       case 'clicked':
         return <CheckCircle className="h-4 w-4 text-green-500" />;
       case 'dismissed':
@@ -666,7 +666,7 @@ export const NotificationHistory: React.FC<NotificationHistoryProps> = ({
   const getStatusColor = (status: NotificationHistory['status']) => {
     switch (status) {
       case 'delivered':
-        return 'bg-blue-50 text-blue-800';
+        return 'bg-[var(--hasivu-primary)]/5 text-[var(--hasivu-primary-dark)]';
       case 'clicked':
         return 'bg-green-50 text-green-800';
       case 'dismissed':

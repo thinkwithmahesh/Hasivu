@@ -206,7 +206,7 @@ describe('Enhanced Meal Ordering Integration Tests', () => {
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <button className="nutrition-info-btn text-blue-600">ℹ️</button>
+                <button className="nutrition-info-btn text-[var(--hasivu-primary)]">ℹ️</button>
               </TooltipTrigger>
               <TooltipContent>
                 <div className="space-y-2">
@@ -427,7 +427,9 @@ describe('Enhanced Meal Ordering Integration Tests', () => {
         </div>
 
         {isVerifying && (
-          <div className="text-center text-sm text-blue-600">Verifying RFID code...</div>
+          <div className="text-center text-sm text-[var(--hasivu-primary)]">
+            Verifying RFID code...
+          </div>
         )}
 
         {error && (

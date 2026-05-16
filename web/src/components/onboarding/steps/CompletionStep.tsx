@@ -149,7 +149,7 @@ const CompletionStep: React.FC<CompletionStepProps> = ({ onComplete, onboardingD
       {
         title: 'Configuration Master',
         description: `Configured ${completedStepsCount} out of ${totalSteps} setup steps`,
-        icon: <Settings className="w-6 h-6 text-blue-600" />,
+        icon: <Settings className="w-6 h-6 text-[var(--hasivu-primary)]" />,
         completed: completionRate >= 80,
       },
       {
@@ -273,12 +273,14 @@ const CompletionStep: React.FC<CompletionStepProps> = ({ onComplete, onboardingD
         initial={{ y: 30, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.8 }}
-        className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-8 border border-blue-200"
+        className="bg-gradient-to-r from-[var(--hasivu-primary)]/5 to-purple-50 rounded-2xl p-8 border border-[var(--hasivu-primary)]/20"
       >
         <h3 className="text-xl font-semibold text-gray-900 mb-6 text-center">Setup Statistics</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           <div className="text-center">
-            <div className="text-3xl font-bold text-blue-600 mb-2">{setupTime} min</div>
+            <div className="text-3xl font-bold text-[var(--hasivu-primary)] mb-2">
+              {setupTime} min
+            </div>
             <div className="text-sm text-gray-600 font-medium">Setup Time</div>
             <div className="text-xs text-gray-500">Target: &lt;120 min</div>
           </div>
@@ -361,7 +363,7 @@ const CompletionStep: React.FC<CompletionStepProps> = ({ onComplete, onboardingD
       >
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-3">
-            <Target className="w-6 h-6 text-blue-600" />
+            <Target className="w-6 h-6 text-[var(--hasivu-primary)]" />
             <h3 className="text-xl font-semibold text-gray-900">Quick Start Guide</h3>
           </div>
           <div className="flex items-center space-x-2">
@@ -425,7 +427,7 @@ const CompletionStep: React.FC<CompletionStepProps> = ({ onComplete, onboardingD
               key={index}
               onClick={() => setCurrentSlide(index)}
               className={`w-3 h-3 rounded-full transition-colors ${
-                index === currentSlide ? 'bg-blue-600' : 'bg-gray-300'
+                index === currentSlide ? 'bg-[var(--hasivu-primary)]' : 'bg-gray-300'
               }`}
             />
           ))}
@@ -473,7 +475,7 @@ const CompletionStep: React.FC<CompletionStepProps> = ({ onComplete, onboardingD
       >
         <motion.button
           onClick={onComplete}
-          className="flex items-center space-x-3 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-200"
+          className="flex items-center space-x-3 px-8 py-4 bg-gradient-to-r from-[var(--hasivu-primary)] to-purple-600 text-white rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-200"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >

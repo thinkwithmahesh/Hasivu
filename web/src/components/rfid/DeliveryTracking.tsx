@@ -288,7 +288,7 @@ export const DeliveryTracking: React.FC<DeliveryTrackingProps> = ({
       case 'delivered':
         return 'text-green-600 bg-green-100';
       case 'out_for_delivery':
-        return 'text-blue-600 bg-blue-100';
+        return 'text-[var(--hasivu-primary)] bg-[var(--hasivu-primary)]/10';
       case 'ready':
         return 'text-yellow-600 bg-yellow-100';
       case 'preparing':
@@ -310,7 +310,7 @@ export const DeliveryTracking: React.FC<DeliveryTrackingProps> = ({
       case 'delivered':
         return <CheckCircleSolid className="h-5 w-5 text-green-600" />;
       case 'out_for_delivery':
-        return <MapPinIcon className="h-5 w-5 text-blue-600" />;
+        return <MapPinIcon className="h-5 w-5 text-[var(--hasivu-primary)]" />;
       case 'ready':
         return <BellIcon className="h-5 w-5 text-yellow-600" />;
       case 'preparing':

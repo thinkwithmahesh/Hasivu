@@ -360,7 +360,7 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
               </div>
 
               <div className="text-center p-4 bg-gray-50 rounded-lg">
-                <Calendar className="h-6 w-6 mx-auto mb-2 text-blue-600" />
+                <Calendar className="h-6 w-6 mx-auto mb-2 text-[var(--hasivu-primary)]" />
                 <p className="text-sm text-gray-600">Next Billing</p>
                 <p className="text-lg font-bold">
                   {new Date(activeSubscription.nextBillingDate).toLocaleDateString()}
@@ -437,7 +437,7 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
                         key={plan.id}
                         className={cn(
                           'cursor-pointer transition-all',
-                          selectedPlan === plan.id && 'ring-2 ring-blue-500',
+                          selectedPlan === plan.id && 'ring-2 ring-[var(--hasivu-primary)]',
                           plan.popular && 'border-yellow-200 bg-yellow-50'
                         )}
                         onClick={() => setSelectedPlan(plan.id)}

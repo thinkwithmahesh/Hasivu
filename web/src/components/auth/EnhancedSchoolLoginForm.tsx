@@ -57,7 +57,8 @@ const ROLE_CONFIG = {
   student: {
     icon: GraduationCap,
     label: 'Student',
-    color: 'bg-blue-100 text-blue-800 border-blue-200',
+    color:
+      'bg-[var(--hasivu-primary)]/10 text-[var(--hasivu-primary-dark)] border-[var(--hasivu-primary)]/20',
     description: 'Access meal ordering and account management',
   },
   parent: {
@@ -364,9 +365,11 @@ export function EnhancedSchoolLoginForm({
         )}
 
         {/* School Information */}
-        <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-          <h4 className="font-medium text-blue-900 mb-2">New to HASIVU Platform?</h4>
-          <ul className="text-sm text-blue-800 space-y-1">
+        <div className="mt-6 p-4 bg-[var(--hasivu-primary)]/5 rounded-lg border border-[var(--hasivu-primary)]/20">
+          <h4 className="font-medium text-[var(--hasivu-primary-dark)] mb-2">
+            New to HASIVU Platform?
+          </h4>
+          <ul className="text-sm text-[var(--hasivu-primary-dark)] space-y-1">
             <li>• Students: Use format student.{'{ID}'}@hasivu.edu</li>
             <li>• Parents: Use format parent.{'{name}'}@hasivu.edu</li>
             <li>• Staff: Use your assigned school email address</li>

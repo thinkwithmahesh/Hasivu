@@ -156,7 +156,7 @@ export function AdminNavigation({ className }: AdminNavigationProps) {
             className={cn(
               'flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-colors',
               isActive(item.href)
-                ? 'bg-blue-100 text-blue-700'
+                ? 'bg-[var(--hasivu-primary)]/10 text-[var(--hasivu-primary)]'
                 : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
             )}
             onClick={() => setMobileMenuOpen(false)}
@@ -228,7 +228,7 @@ export function AdminNavigation({ className }: AdminNavigationProps) {
           {/* Header */}
           <div className="p-4 border-b">
             <div className="flex items-center space-x-3">
-              <div className="p-2 bg-blue-600 rounded-lg">
+              <div className="p-2 bg-[var(--hasivu-primary)] rounded-lg">
                 <Building2 className="w-6 h-6 text-white" />
               </div>
               <div>

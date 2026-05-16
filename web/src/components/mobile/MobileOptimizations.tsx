@@ -513,7 +513,7 @@ export const DataSaver: React.FC<DataSaverProps> = ({ className }) => {
         </div>
 
         {isDataSaver && (
-          <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded">
+          <div className="text-xs text-[var(--hasivu-primary)] bg-[var(--hasivu-primary)]/5 p-2 rounded">
             Data saver active: Compressed images, limited background sync
           </div>
         )}

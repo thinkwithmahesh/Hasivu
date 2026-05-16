@@ -80,7 +80,7 @@ export const MobileButton = forwardRef<HTMLButtonElement, MobileButtonProps>(
 
       // Variant styles
       {
-        'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-sm hover:from-blue-700 hover:to-blue-800 focus-visible:ring-blue-500':
+        'bg-gradient-to-r from-[var(--hasivu-primary)] to-[var(--hasivu-primary-dark)] text-white shadow-sm hover:from-[var(--hasivu-primary-dark)] hover:to-[var(--hasivu-primary-dark)] focus-visible:ring-[var(--hasivu-primary)]':
           variant === 'primary',
         'bg-slate-100 text-slate-900 hover:bg-slate-200 focus-visible:ring-slate-500':
           variant === 'secondary',
@@ -146,7 +146,7 @@ export const MobileInput = forwardRef<HTMLInputElement, MobileInputProps>(
       'transition-colors duration-200',
 
       // Focus styles
-      'focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none',
+      'focus:border-[var(--hasivu-primary)] focus:ring-1 focus:ring-[var(--hasivu-primary)] focus:outline-none',
 
       // Error styles
       error && 'border-red-500 focus:border-red-500 focus:ring-red-500',
@@ -363,7 +363,7 @@ export function MobileNavItem({ icon, label, active = false, badge, onPress }: M
           'flex flex-col items-center justify-center p-2 rounded-lg transition-colors',
           'min-h-[44px] min-w-[44px]',
           active
-            ? 'text-blue-600 bg-blue-50'
+            ? 'text-[var(--hasivu-primary)] bg-[var(--hasivu-primary)]/5'
             : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
         )}
       >

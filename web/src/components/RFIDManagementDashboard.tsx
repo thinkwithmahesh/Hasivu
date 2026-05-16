@@ -356,7 +356,7 @@ const RFIDManagementDashboard: React.FC = () => {
         <div className="flex items-center space-x-4">
           <button
             onClick={() => setShowAddCard(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+            className="px-4 py-2 bg-[var(--hasivu-primary)] text-white rounded-lg hover:bg-[var(--hasivu-primary-dark)] transition-colors flex items-center space-x-2"
           >
             <Plus className="w-4 h-4" />
             <span>Add Card</span>
@@ -376,8 +376,8 @@ const RFIDManagementDashboard: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
           <div className="flex items-center justify-between">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <CreditCard className="w-5 h-5 text-blue-600" />
+            <div className="p-2 bg-[var(--hasivu-primary)]/10 rounded-lg">
+              <CreditCard className="w-5 h-5 text-[var(--hasivu-primary)]" />
             </div>
             <span className="text-2xl font-bold text-gray-900">
               {data.summary.totalCards.toLocaleString()}
@@ -432,8 +432,8 @@ const RFIDManagementDashboard: React.FC = () => {
 
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
           <div className="flex items-center justify-between">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Clock className="w-5 h-5 text-blue-600" />
+            <div className="p-2 bg-[var(--hasivu-primary)]/10 rounded-lg">
+              <Clock className="w-5 h-5 text-[var(--hasivu-primary)]" />
             </div>
             <span className="text-2xl font-bold text-gray-900">
               {data.summary.avgResponseTime}s
@@ -457,7 +457,7 @@ const RFIDManagementDashboard: React.FC = () => {
               onClick={() => setActiveTab(tab.id as any)}
               className={`py-2 px-1 border-b-2 font-medium text-sm ${
                 activeTab === tab.id
-                  ? 'border-blue-500 text-blue-600'
+                  ? 'border-[var(--hasivu-primary)] text-[var(--hasivu-primary)]'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
@@ -521,7 +521,7 @@ const RFIDManagementDashboard: React.FC = () => {
                   placeholder="Search readers..."
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full"
+                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--hasivu-primary)] focus:border-transparent w-full"
                 />
               </div>
             </div>
@@ -529,7 +529,7 @@ const RFIDManagementDashboard: React.FC = () => {
             <select
               value={statusFilter}
               onChange={e => setStatusFilter(e.target.value as any)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--hasivu-primary)] focus:border-transparent"
             >
               <option value="all">All Status</option>
               <option value="online">Online</option>

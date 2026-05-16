@@ -108,7 +108,7 @@ export const ComponentLevelExample: React.FC = () => (
 
     {/* Another working component to show isolation */}
     <ComponentErrorBoundary errorBoundaryId="another-working-card">
-      <div className="p-4 border rounded bg-blue-50">
+      <div className="p-4 border rounded bg-[var(--hasivu-primary)]/5">
         <h3>Another Working Component</h3>
         <p>This component continues to work despite the error above</p>
       </div>

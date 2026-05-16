@@ -6,7 +6,10 @@
   :root {
     /* ─── HASIVU DESIGN SYSTEM TOKENS ─── */
     --hasivu-primary: #e07020;
+    --hasivu-primary-light: #fff8f0;
+    --hasivu-primary-dark: #7a3a08;
     --hasivu-secondary: #207040;
+    --hasivu-secondary-light: #f0faf4;
     --hasivu-accent: #ff9a3c;
     --hasivu-success: #22c55e;
     --hasivu-danger: #ef4444;
@@ -16,6 +19,7 @@
     --hasivu-bg-cool: #f2efe9;
     --hasivu-text-primary: #141210;
     --hasivu-text-secondary: #5c554a;
+    --hasivu-text-tertiary: #9e9589;
     --hasivu-surface: #ffffff;
     --hasivu-surface-elevated: #f2efe9;
     --hasivu-border: #e4dfd6;
@@ -25,60 +29,68 @@
     --space-unit: 4px;
 
     /* ─── BORDER RADIUS: "Soft & Friendly" ─── */
-    --radius-sm: 6px;
-    --radius-md: 10px;
+    --radius-sm: 8px;
+    --radius-md: 12px;
     --radius-lg: 16px;
     --radius-xl: 24px;
+    --radius-pill: 9999px;
 
-    /* ─── SHADOWS: "Warm Depth" ─── */
+    /* ─── SHADOWS: "Warm Depth" (orange-tinted for brand warmth) ─── */
+    --shadow-card: 0 1px 3px rgba(224, 112, 32, 0.04), 0 1px 2px rgba(0, 0, 0, 0.03);
+    --shadow-card-hover: 0 4px 12px rgba(224, 112, 32, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
+    --shadow-elevated: 0 8px 24px rgba(224, 112, 32, 0.10), 0 4px 8px rgba(0, 0, 0, 0.04);
+    --shadow-modal: 0 16px 48px rgba(20, 18, 16, 0.16);
+
+    /* Legacy aliases */
     --shadow-sm: 0 1px 3px rgba(20, 18, 16, 0.06);
     --shadow-md: 0 4px 12px rgba(20, 18, 16, 0.08);
     --shadow-lg: 0 8px 32px rgba(20, 18, 16, 0.12);
     --shadow-glow: 0 16px 48px rgba(20, 18, 16, 0.16);
 
-    /* ─── shadcn/ui System Colors (mapped to Hasivu) ─── */
-    --background: 30 100% 97%;
-    --foreground: 233 56% 14%;
-    --card: 0 0% 100%;
-    --card-foreground: 233 56% 14%;
+    /* ─── shadcn/ui System Colors (mapped to Hasivu brand) ─── */
+    --background: 30 100% 97%;          /* warm off-white: #FAF9F7 */
+    --foreground: 20 10% 8%;            /* warm near-black: #141210 */
+    --card: 0 0% 100%;                  /* white */
+    --card-foreground: 20 10% 8%;       /* warm near-black */
     --popover: 0 0% 100%;
-    --popover-foreground: 233 56% 14%;
-    --primary: 18 100% 60%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 174 63% 48%;
+    --popover-foreground: 20 10% 8%;
+    --primary: 24 78% 50%;              /* hasivu orange: #E07020 */
+    --primary-foreground: 0 0% 100%;    /* white */
+    --secondary: 150 56% 28%;           /* hasivu green: #207040 */
     --secondary-foreground: 0 0% 100%;
-    --muted: 30 40% 95%;
-    --muted-foreground: 220 9% 46%;
-    --accent: 44 100% 70%;
-    --accent-foreground: 233 56% 14%;
-    --destructive: 348 85% 61%;
+    --muted: 30 20% 94%;                /* warm muted: #F2EFE9 */
+    --muted-foreground: 28 11% 32%;     /* text-secondary: #5C554A */
+    --accent: 30 100% 62%;              /* warm accent: #FF9A3C */
+    --accent-foreground: 20 10% 8%;
+    --destructive: 0 84% 60%;           /* danger red: #EF4444 */
     --destructive-foreground: 0 0% 100%;
-    --border: 30 20% 90%;
-    --input: 30 20% 90%;
-    --ring: 174 63% 48%;
+    --border: 30 14% 87%;               /* warm border: #E4DFD6 */
+    --input: 30 14% 87%;
+    --ring: 24 78% 50%;                 /* matches primary for focus rings */
     --radius: 0.75rem;
   }
 
+  /* ─── DARK MODE: Hasivu-branded (warm dark, not cold blue) ─── */
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 84% 4.9%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 94.1%;
+    --background: 24 12% 6%;            /* warm dark: #141210 */
+    --foreground: 30 20% 94%;           /* warm light: #F2EFE9 */
+    --card: 24 10% 10%;                 /* dark surface */
+    --card-foreground: 30 20% 94%;
+    --popover: 24 10% 10%;
+    --popover-foreground: 30 20% 94%;
+    --primary: 24 78% 55%;              /* slightly brighter orange in dark */
+    --primary-foreground: 24 12% 6%;
+    --secondary: 150 50% 35%;           /* brighter green in dark */
+    --secondary-foreground: 0 0% 100%;
+    --muted: 24 8% 16%;                 /* warm dark muted */
+    --muted-foreground: 28 10% 60%;
+    --accent: 30 90% 55%;               /* warm accent in dark */
+    --accent-foreground: 24 12% 6%;
+    --destructive: 0 62% 45%;           /* softer red in dark */
+    --destructive-foreground: 0 0% 100%;
+    --border: 24 8% 20%;                /* warm dark border */
+    --input: 24 8% 20%;
+    --ring: 24 78% 55%;
   }
 }
 
@@ -87,9 +99,22 @@
     @apply border-border;
   }
 
+  /* Unified focus style — always uses hasivu primary orange */
   *:focus-visible {
-    outline: 2px solid #e07020;
+    outline: 2px solid var(--hasivu-primary);
     outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Enhanced focus for interactive elements */
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  a:focus-visible {
+    outline: 2px solid var(--hasivu-primary);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(224, 112, 32, 0.15);
   }
 
   body {
@@ -97,7 +122,43 @@
   }
 }
 
-/* Enhanced Animations */
+/* ─── HASIVU INTERACTION UTILITIES ─── */
+
+/* Default interactive transition */
+.hasivu-interactive {
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Button press spring */
+.hasivu-press:active {
+  transform: scale(0.97);
+  transition: transform 100ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Card hover lift */
+.hasivu-card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card-hover);
+}
+
+/* Page entrance */
+.hasivu-fade-in {
+  animation: fade-in-up 300ms cubic-bezier(0, 0, 0.2, 1) both;
+}
+
+/* ─── KEYFRAME ANIMATIONS ─── */
+
+@keyframes fade-in-up {
+  0% {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @keyframes caret-blink {
   0%,
   70%,
@@ -167,7 +228,7 @@
   }
 }
 
-/* Utility Classes */
+/* ─── ANIMATION UTILITY CLASSES ─── */
 .animate-caret-blink {
   animation: caret-blink 1s ease-out infinite;
 }
@@ -192,25 +253,25 @@
   animation: spin-slow 3s linear infinite;
 }
 
-/* Custom Scrollbar */
+/* ─── CUSTOM SCROLLBAR (warm-tinted) ─── */
 ::-webkit-scrollbar {
   width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: var(--hasivu-bg-cool);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #ff6b35, #2ec4b6);
+  background: linear-gradient(180deg, var(--hasivu-primary), var(--hasivu-secondary));
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #e55a2b, #25a89d);
+  background: linear-gradient(180deg, var(--hasivu-primary-dark), var(--hasivu-secondary));
 }
 
-/* Glass Morphism Effects */
+/* ─── GLASS MORPHISM ─── */
 .glass {
   background: rgba(255, 255, 255, 0.25);
   backdrop-filter: blur(10px);
@@ -225,7 +286,7 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Professional Shadows */
+/* ─── SHADOWS ─── */
 .shadow-soft {
   box-shadow:
     0 2px 15px -3px rgba(0, 0, 0, 0.07),
@@ -248,45 +309,21 @@
   box-shadow: 0 35px 60px -12px rgba(0, 0, 0, 0.25);
 }
 
-/* Gradient Text */
+/* ─── GRADIENT TEXT ─── */
 .gradient-text {
-  background: linear-gradient(135deg, #ff6b35, #2ec4b6, #ffd166);
+  background: linear-gradient(135deg, var(--hasivu-primary), var(--hasivu-secondary), var(--hasivu-accent));
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
-/* Enhanced Focus Styles for Accessibility */
-.focus-visible:focus-visible {
-  outline: 2px solid #2ec4b6;
-  outline-offset: 2px;
-}
-
-/* High contrast focus for better visibility */
-*:focus-visible {
-  outline: 2px solid #2ec4b6;
-  outline-offset: 2px;
-  border-radius: 4px;
-}
-
-/* Ensure focus is visible on interactive elements */
-button:focus-visible,
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible,
-a:focus-visible {
-  outline: 2px solid #2ec4b6;
-  outline-offset: 2px;
-  box-shadow: 0 0 0 4px rgba(46, 196, 182, 0.2);
-}
-
-/* Selection */
+/* ─── SELECTION ─── */
 ::selection {
-  background-color: #ff6b35;
+  background-color: var(--hasivu-primary);
   color: white;
 }
 
-/* Reduced Motion — blanket guard (WCAG / vestibular safety) */
+/* ─── REDUCED MOTION — blanket guard (WCAG / vestibular safety) ─── */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -298,7 +335,7 @@ a:focus-visible {
   }
 }
 
-/* High Contrast Mode Support */
+/* ─── HIGH CONTRAST MODE ─── */
 @media (prefers-contrast: high) {
   :root {
     --background: 0 0% 0%;
@@ -328,25 +365,25 @@ a:focus-visible {
   }
 }
 
-/* Color Scheme Preference Support */
+/* ─── DARK MODE AUTO (prefers-color-scheme) ─── */
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 84% 4.9%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 94.1%;
+    --background: 24 12% 6%;
+    --foreground: 30 20% 94%;
+    --card: 24 10% 10%;
+    --card-foreground: 30 20% 94%;
+    --primary: 24 78% 55%;
+    --primary-foreground: 24 12% 6%;
+    --secondary: 150 50% 35%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 24 8% 16%;
+    --muted-foreground: 28 10% 60%;
+    --accent: 30 90% 55%;
+    --accent-foreground: 24 12% 6%;
+    --destructive: 0 62% 45%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 24 8% 20%;
+    --input: 24 8% 20%;
+    --ring: 24 78% 55%;
   }
 }

@@ -272,15 +272,15 @@ const RFIDLiveDemo: React.FC = () => {
             </div>
 
             {/* Scanning Animation */}
-            <div className="relative h-48 bg-gradient-to-br from-blue-50 to-green-50 rounded-lg flex items-center justify-center">
+            <div className="relative h-48 bg-gradient-to-br from-[var(--hasivu-primary)]/5 to-green-50 rounded-lg flex items-center justify-center">
               {isScanning ? (
                 <motion.div
                   animate={{ scale: [1, 1.2, 1] }}
                   transition={{ duration: 1, repeat: Infinity }}
                   className="relative"
                 >
-                  <div className="absolute inset-0 bg-blue-400 rounded-full opacity-30 animate-ping" />
-                  <CreditCard className="h-24 w-24 text-blue-600" />
+                  <div className="absolute inset-0 bg-[var(--hasivu-primary)]/70 rounded-full opacity-30 animate-ping" />
+                  <CreditCard className="h-24 w-24 text-[var(--hasivu-primary)]" />
                 </motion.div>
               ) : selectedCard ? (
                 <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-center">
@@ -379,12 +379,14 @@ const RFIDLiveDemo: React.FC = () => {
 
                       {/* Order Info */}
                       {verificationResult.orderInfo && (
-                        <div className="bg-blue-50 p-3 rounded-lg">
+                        <div className="bg-[var(--hasivu-primary)]/5 p-3 rounded-lg">
                           <div className="flex items-center gap-2 mb-2">
-                            <Package className="h-4 w-4 text-blue-600" />
-                            <span className="font-medium text-blue-900">Today's Meal</span>
+                            <Package className="h-4 w-4 text-[var(--hasivu-primary)]" />
+                            <span className="font-medium text-[var(--hasivu-primary-dark)]">
+                              Today's Meal
+                            </span>
                           </div>
-                          <ul className="text-sm text-blue-800 space-y-1">
+                          <ul className="text-sm text-[var(--hasivu-primary-dark)] space-y-1">
                             {verificationResult.orderInfo.items.map((item, i) => (
                               <li key={i}>• {item}</li>
                             ))}
@@ -481,7 +483,7 @@ const RFIDLiveDemo: React.FC = () => {
                   <p className="text-xs text-gray-600">Accuracy Rate</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-blue-600">&lt;1.5s</p>
+                  <p className="text-2xl font-bold text-[var(--hasivu-primary)]">&lt;1.5s</p>
                   <p className="text-xs text-gray-600">Avg. Verification</p>
                 </div>
                 <div>

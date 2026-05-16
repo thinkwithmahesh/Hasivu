@@ -128,7 +128,7 @@ const TaskStatusBadge = ({ status }: { status: Task['status'] }) => {
       case 'completed':
         return 'bg-green-100 text-green-800 border-green-200';
       case 'in_progress':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
+        return 'bg-[var(--hasivu-primary)]/10 text-[var(--hasivu-primary-dark)] border-[var(--hasivu-primary)]/20';
       case 'pending':
         return 'bg-gray-100 text-gray-800 border-gray-200';
       case 'overdue':
@@ -258,7 +258,7 @@ const TaskCard = ({
           {task.status === 'in_progress' && (
             <div className="mt-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-blue-500" />
+                <Clock className="w-4 h-4 text-[var(--hasivu-primary)]" />
                 <span className="text-sm text-gray-600">In Progress</span>
               </div>
               <Button variant="outline" size="sm" onClick={() => onUpdate(task.id, 'completed')}>
@@ -617,7 +617,7 @@ export default function StaffTasksManagement() {
                 <p className="text-sm font-medium text-gray-600">Total Tasks</p>
                 <p className="text-2xl font-bold">{metrics.total}</p>
               </div>
-              <Target className="w-8 h-8 text-blue-500" />
+              <Target className="w-8 h-8 text-[var(--hasivu-primary)]" />
             </div>
           </CardContent>
         </Card>
@@ -738,7 +738,7 @@ export default function StaffTasksManagement() {
         <div>
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-gray-900">In Progress</h3>
-            <Badge variant="outline" className="bg-blue-50">
+            <Badge variant="outline" className="bg-[var(--hasivu-primary)]/5">
               {tasksByStatus.in_progress.length}
             </Badge>
           </div>

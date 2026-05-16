@@ -73,7 +73,7 @@ export default function NotificationsPage() {
       read: true,
       priority: 'medium',
       icon: MessageSquare,
-      color: 'text-blue-600',
+      color: 'text-[var(--hasivu-primary)]',
     },
     {
       id: 6,
@@ -110,7 +110,7 @@ export default function NotificationsPage() {
       case 'low':
         return 'bg-green-100 text-green-700';
       default:
-        return 'bg-gray-100 text-gray-700';
+        return 'bg-hasivu-neutral-100 text-hasivu-text-secondary';
     }
   };
 
@@ -118,7 +118,7 @@ export default function NotificationsPage() {
   const filteredNotifications = filterNotifications();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-accent-50">
+    <div className="min-h-screen bg-hasivu-bg-warm">
       {/* Header */}
       <header className="border-b bg-white/80 backdrop-blur">
         <div className="container mx-auto px-4 py-6">
@@ -131,14 +131,14 @@ export default function NotificationsPage() {
                 </Button>
               </Link>
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-primary-500 flex items-center justify-center">
+                <div className="h-10 w-10 rounded-xl bg-[var(--hasivu-primary)] flex items-center justify-center">
                   <span className="text-white font-bold text-xl">H</span>
                 </div>
                 <div>
-                  <div className="font-display font-bold text-2xl text-primary-600">
+                  <div className="font-display font-bold text-2xl text-[var(--hasivu-primary)]">
                     Notifications
                   </div>
-                  <div className="text-sm text-gray-600 -mt-1">HASIVU Platform</div>
+                  <div className="text-sm text-hasivu-text-secondary -mt-1">HASIVU Platform</div>
                 </div>
               </div>
             </div>
@@ -159,15 +159,17 @@ export default function NotificationsPage() {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Notifications Center</h1>
-          <p className="text-gray-600">
+          <h1 className="text-3xl font-display font-bold text-hasivu-text-primary mb-2">
+            Notifications Center
+          </h1>
+          <p className="text-hasivu-text-secondary">
             Stay updated with system alerts, order updates, and platform activities
           </p>
         </div>
 
         {/* Notification Tabs */}
         <div className="mb-6">
-          <div className="flex space-x-1 bg-gray-100 rounded-lg p-1 inline-flex">
+          <div className="flex space-x-1 bg-hasivu-neutral-100 rounded-xl p-1 inline-flex">
             {[
               { key: 'all', label: 'All', count: notifications.length },
               { key: 'unread', label: 'Unread', count: unreadCount },
@@ -185,10 +187,10 @@ export default function NotificationsPage() {
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key as any)}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                   activeTab === tab.key
-                    ? 'bg-white text-primary-600 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-800'
+                    ? 'bg-white text-[var(--hasivu-primary)] shadow-sm'
+                    : 'text-hasivu-text-secondary hover:text-hasivu-text-primary'
                 }`}
               >
                 {tab.label} ({tab.count})
@@ -203,10 +205,10 @@ export default function NotificationsPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Total Today</p>
-                  <p className="text-2xl font-bold">12</p>
+                  <p className="text-sm text-hasivu-text-secondary">Total Today</p>
+                  <p className="text-2xl font-bold text-hasivu-text-primary">12</p>
                 </div>
-                <Bell className="h-8 w-8 text-blue-600" />
+                <Bell className="h-8 w-8 text-[var(--hasivu-primary)]" />
               </div>
             </CardContent>
           </Card>
@@ -215,7 +217,7 @@ export default function NotificationsPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">High Priority</p>
+                  <p className="text-sm text-hasivu-text-secondary">High Priority</p>
                   <p className="text-2xl font-bold text-red-600">2</p>
                 </div>
                 <AlertTriangle className="h-8 w-8 text-red-600" />
@@ -227,7 +229,7 @@ export default function NotificationsPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Order Updates</p>
+                  <p className="text-sm text-hasivu-text-secondary">Order Updates</p>
                   <p className="text-2xl font-bold text-green-600">8</p>
                 </div>
                 <CheckCircle className="h-8 w-8 text-green-600" />
@@ -239,7 +241,7 @@ export default function NotificationsPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">System Alerts</p>
+                  <p className="text-sm text-hasivu-text-secondary">System Alerts</p>
                   <p className="text-2xl font-bold text-orange-600">3</p>
                 </div>
                 <Settings className="h-8 w-8 text-orange-600" />
@@ -266,15 +268,17 @@ export default function NotificationsPage() {
                 return (
                   <div
                     key={notification.id}
-                    className={`flex items-start space-x-4 p-4 rounded-lg border transition-all duration-200 hover:shadow-sm ${
+                    className={`flex items-start space-x-4 p-4 rounded-xl border transition-all duration-200 hover:shadow-sm ${
                       notification.read
-                        ? 'bg-gray-50 border-gray-200'
-                        : 'bg-blue-50 border-blue-200 shadow-sm'
+                        ? 'bg-hasivu-neutral-50 border-hasivu-neutral-200'
+                        : 'bg-[var(--hasivu-primary)]/5 border-[var(--hasivu-primary)]/20 shadow-sm'
                     }`}
                   >
                     <div
                       className={`p-2 rounded-full bg-white border-2 ${
-                        notification.read ? 'border-gray-300' : 'border-blue-300'
+                        notification.read
+                          ? 'border-hasivu-neutral-300'
+                          : 'border-[var(--hasivu-primary)]/40'
                       }`}
                     >
                       <IconComponent className={`h-4 w-4 ${notification.color}`} />
@@ -283,7 +287,9 @@ export default function NotificationsPage() {
                       <div className="flex items-center justify-between mb-2">
                         <h4
                           className={`font-medium ${
-                            notification.read ? 'text-gray-700' : 'text-gray-900'
+                            notification.read
+                              ? 'text-hasivu-text-secondary'
+                              : 'text-hasivu-text-primary'
                           }`}
                         >
                           {notification.title}
@@ -296,18 +302,20 @@ export default function NotificationsPage() {
                             {notification.priority}
                           </Badge>
                           {!notification.read && (
-                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                            <div className="w-2 h-2 bg-[var(--hasivu-primary)] rounded-full"></div>
                           )}
                         </div>
                       </div>
                       <p
                         className={`text-sm mb-2 ${
-                          notification.read ? 'text-gray-600' : 'text-gray-700'
+                          notification.read
+                            ? 'text-hasivu-text-secondary'
+                            : 'text-hasivu-text-primary'
                         }`}
                       >
                         {notification.message}
                       </p>
-                      <p className="text-xs text-gray-500">{notification.time}</p>
+                      <p className="text-xs text-hasivu-text-tertiary">{notification.time}</p>
                     </div>
                   </div>
                 );

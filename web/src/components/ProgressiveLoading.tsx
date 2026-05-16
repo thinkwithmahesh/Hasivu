@@ -178,7 +178,7 @@ export const ProgressiveLoading: React.FC<ProgressiveLoadingProps> = ({
         className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-10 rounded-lg"
       >
         <div className="flex items-center space-x-3 bg-white px-4 py-2 rounded-lg shadow-lg border border-gray-200">
-          <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
+          <Loader2 className="w-5 h-5 text-[var(--hasivu-primary)] animate-spin" />
           <span className="text-sm font-medium text-gray-900">Refreshing...</span>
         </div>
       </motion.div>
@@ -192,7 +192,7 @@ export const ProgressiveLoading: React.FC<ProgressiveLoadingProps> = ({
     return (
       <div className="w-full bg-gray-200 rounded-full h-1 mb-4">
         <motion.div
-          className="bg-blue-600 h-1 rounded-full"
+          className="bg-[var(--hasivu-primary)] h-1 rounded-full"
           initial={{ width: 0 }}
           animate={{ width: `${progress}%` }}
           transition={{ duration: 0.5 }}
@@ -217,7 +217,7 @@ export const ProgressiveLoading: React.FC<ProgressiveLoadingProps> = ({
         {onRetry && (
           <button
             onClick={onRetry}
-            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex items-center space-x-2 px-4 py-2 bg-[var(--hasivu-primary)] text-white rounded-lg hover:bg-[var(--hasivu-primary-dark)] transition-colors"
           >
             <RefreshCw className="w-4 h-4" />
             <span>Try again</span>
@@ -251,7 +251,7 @@ export const ProgressiveLoading: React.FC<ProgressiveLoadingProps> = ({
         <ProgressBar />
         {fallback || (
           <div className="flex flex-col items-center justify-center p-8">
-            <Loader2 className="w-8 h-8 text-blue-600 animate-spin mb-4" />
+            <Loader2 className="w-8 h-8 text-[var(--hasivu-primary)] animate-spin mb-4" />
             <p className="text-gray-600">Loading...</p>
           </div>
         )}

@@ -241,7 +241,11 @@ export const LiveOrderTracking: React.FC<LiveOrderTrackingProps> = ({ order, onR
   const getStatusInfo = (status: string) => {
     switch (status) {
       case 'placed':
-        return { color: 'bg-blue-500', icon: <Clock className="h-4 w-4" />, text: 'Order Placed' };
+        return {
+          color: 'bg-[var(--hasivu-primary)]',
+          icon: <Clock className="h-4 w-4" />,
+          text: 'Order Placed',
+        };
       case 'preparing':
         return {
           color: 'bg-orange-500',
@@ -459,9 +463,11 @@ export const ParentApprovalInterface: React.FC<ParentApprovalProps> = ({
 
                 {/* Dietary notes */}
                 {order.dietaryNotes && (
-                  <div className="mb-3 p-2 bg-blue-50 rounded-lg">
-                    <p className="text-xs text-blue-800 font-medium">Dietary Note:</p>
-                    <p className="text-sm text-blue-700">{order.dietaryNotes}</p>
+                  <div className="mb-3 p-2 bg-[var(--hasivu-primary)]/5 rounded-lg">
+                    <p className="text-xs text-[var(--hasivu-primary-dark)] font-medium">
+                      Dietary Note:
+                    </p>
+                    <p className="text-sm text-[var(--hasivu-primary)]">{order.dietaryNotes}</p>
                   </div>
                 )}
 
@@ -612,13 +618,13 @@ export const SchoolScheduleIntegration: React.FC<SchoolScheduleIntegrationProps>
   }, [nextMealTime.time]);
 
   return (
-    <Card className="mx-4 mb-4 bg-gradient-to-r from-blue-50 to-purple-50">
+    <Card className="mx-4 mb-4 bg-gradient-to-r from-[var(--hasivu-primary)]/5 to-purple-50">
       <div className="p-4">
         {/* Current class */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Clock className="h-5 w-5 text-blue-600" />
+            <div className="p-2 bg-[var(--hasivu-primary)]/10 rounded-lg">
+              <Clock className="h-5 w-5 text-[var(--hasivu-primary)]" />
             </div>
             <div>
               <h3 className="font-semibold text-gray-900">Current Class</h3>

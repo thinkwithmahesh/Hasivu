@@ -387,7 +387,9 @@ const NutritionSummaryCard: React.FC<NutritionSummaryProps> = ({ summary }) => {
           </div>
 
           <div className="text-center p-3 bg-gray-50 rounded-lg">
-            <p className="text-2xl font-bold text-blue-600">{summary.totalProtein}g</p>
+            <p className="text-2xl font-bold text-[var(--hasivu-primary)]">
+              {summary.totalProtein}g
+            </p>
             <p className="text-xs text-gray-600">Protein</p>
           </div>
 

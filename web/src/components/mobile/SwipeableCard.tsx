@@ -218,7 +218,7 @@ export const createMealCardActions = (
       label: 'View Details',
       icon: Info,
       color: 'text-white',
-      bgColor: 'bg-blue-500',
+      bgColor: 'bg-[var(--hasivu-primary)]',
       action: () => onViewDetails(meal),
     },
     {

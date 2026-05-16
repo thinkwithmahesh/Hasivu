@@ -528,10 +528,10 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
           transform: `scale(${refreshIndicatorScale})`,
         }}
       >
-        <div className="flex items-center space-x-2 text-blue-600">
+        <div className="flex items-center space-x-2 text-[var(--hasivu-primary)]">
           <div
             className={cn(
-              'w-6 h-6 border-2 border-blue-600 rounded-full',
+              'w-6 h-6 border-2 border-[var(--hasivu-primary)] rounded-full',
               isRefreshing && 'animate-spin border-t-transparent'
             )}
           />

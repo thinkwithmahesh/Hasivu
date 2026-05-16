@@ -319,7 +319,7 @@ export function MenuSearchFilter({
             {/* Prep Time */}
             <div className="space-y-3">
               <h4 className="font-medium text-gray-900 flex items-center gap-2">
-                <Clock className="h-4 w-4 text-blue-600" />
+                <Clock className="h-4 w-4 text-[var(--hasivu-primary)]" />
                 Prep Time
               </h4>
               <div className="space-y-2">

@@ -86,7 +86,9 @@ const TooltipContent = React.forwardRef<
             )}
           </div>
           <div className="text-center p-2 bg-slate-50 dark:bg-slate-800 rounded">
-            <div className="text-lg font-bold text-blue-600">{nutritionData?.protein}g</div>
+            <div className="text-lg font-bold text-[var(--hasivu-primary)]">
+              {nutritionData?.protein}g
+            </div>
             <div className="text-xs text-slate-500">Protein</div>
             {nutritionData?.dailyValue?.protein && (
               <div className="text-xs text-slate-400">{nutritionData.dailyValue.protein}% DV</div>

@@ -196,7 +196,7 @@ const MealCard: React.FC<MealCardProps> = ({
         !canOrder && 'cursor-not-allowed',
         isPressed && 'scale-[0.98] shadow-lg',
         swipeDirection === 'right' && 'translate-x-2 bg-green-50',
-        swipeDirection === 'left' && '-translate-x-2 bg-blue-50'
+        swipeDirection === 'left' && '-translate-x-2 bg-[var(--hasivu-primary)]/5'
       )}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
@@ -448,7 +448,10 @@ const MealCard: React.FC<MealCardProps> = ({
               </Badge>
             )}
             {meal.isDiabeticFriendly && (
-              <Badge variant="outline" className="text-xs bg-blue-50 border-blue-300 text-blue-700">
+              <Badge
+                variant="outline"
+                className="text-xs bg-[var(--hasivu-primary)]/5 border-[var(--hasivu-primary)]/30 text-[var(--hasivu-primary)]"
+              >
                 💙 Diabetic-Friendly
               </Badge>
             )}

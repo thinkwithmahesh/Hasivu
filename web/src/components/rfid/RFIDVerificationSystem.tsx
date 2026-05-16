@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
   Shield,
@@ -27,6 +27,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
+
+import { useRfidDevices, useRfidTransactions } from '@/hooks/useApiIntegration';
 
 // Enhanced TypeScript interfaces for RFID system
 interface RFIDDevice {
@@ -57,85 +59,6 @@ interface RFIDTransaction {
   fraudScore: number;
 }
 
-interface Student {
-  id: string;
-  name: string;
-  grade: string;
-  rfidCard: string;
-  avatar: string;
-  allergies: string[];
-  isActive: boolean;
-}
-
-// Mock data for demonstration
-const mockDevices: RFIDDevice[] = [
-  {
-    id: 'RFID-001',
-    name: 'Cafeteria Main Counter',
-    location: 'Ground Floor - Main Dining',
-    status: 'online',
-    batteryLevel: 85,
-    signalStrength: 95,
-    lastPing: '2024-01-15T12:45:30Z',
-    firmware: 'v2.1.3',
-  },
-  {
-    id: 'RFID-002',
-    name: 'South Wing Counter',
-    location: '1st Floor - South Wing',
-    status: 'online',
-    batteryLevel: 67,
-    signalStrength: 88,
-    lastPing: '2024-01-15T12:45:28Z',
-    firmware: 'v2.1.3',
-  },
-  {
-    id: 'RFID-003',
-    name: 'Sports Complex Counter',
-    location: 'Sports Complex - Ground Floor',
-    status: 'offline',
-    batteryLevel: 23,
-    signalStrength: 0,
-    lastPing: '2024-01-15T11:30:15Z',
-    firmware: 'v2.0.8',
-  },
-];
-
-const mockTransactions: RFIDTransaction[] = [
-  {
-    id: 'TXN-RFID-001',
-    studentId: 'STU-001',
-    studentName: 'Priya Sharma',
-    avatar:
-      'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face',
-    mealId: 'MEAL-001',
-    mealName: 'Masala Dosa with Sambar',
-    timestamp: '2024-01-15T12:45:00Z',
-    status: 'verified',
-    deviceId: 'RFID-001',
-    location: 'Cafeteria Main Counter',
-    nutritionScore: 88,
-    photoUrl: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=200&h=150&fit=crop',
-    verificationTime: 0.3,
-    fraudScore: 0.1,
-  },
-  {
-    id: 'TXN-RFID-002',
-    studentId: 'STU-002',
-    studentName: 'Arjun Sharma',
-    avatar:
-      'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
-    mealId: 'MEAL-002',
-    mealName: 'Chicken Biryani',
-    timestamp: '2024-01-15T12:47:00Z',
-    status: 'processing',
-    deviceId: 'RFID-001',
-    location: 'Cafeteria Main Counter',
-    nutritionScore: 85,
-    fraudScore: 0.05,
-  },
-];
-
 // RFID Scanner Animation Component
 const RFIDScannerAnimation = ({
   isScanning,
@@ -155,7 +78,7 @@ const RFIDScannerAnimation = ({
             : status === 'failed'
               ? 'border-red-500'
               : status === 'processing'
-                ? 'border-blue-500'
+                ? 'border-[var(--hasivu-primary)]'
                 : 'border-gray-300'
         }`}
       />
@@ -168,7 +91,9 @@ const RFIDScannerAnimation = ({
               <motion.div
                 key={index}
                 className={`absolute inset-0 rounded-full border-2 ${
-                  status === 'processing' ? 'border-blue-400' : 'border-orange-400'
+                  status === 'processing'
+                    ? 'border-[var(--hasivu-primary)]/60'
+                    : 'border-orange-400'
                 }`}
                 initial={{ scale: 0, opacity: 1 }}
                 animate={{ scale: 2, opacity: 0 }}
@@ -193,13 +118,15 @@ const RFIDScannerAnimation = ({
             : status === 'failed'
               ? 'bg-red-100'
               : status === 'processing'
-                ? 'bg-blue-100'
+                ? 'bg-[var(--hasivu-primary)]/10'
                 : 'bg-gray-100'
         }`}
       >
         {status === 'verified' && <CheckCircle className="w-12 h-12 text-green-600" />}
         {status === 'failed' && <AlertTriangle className="w-12 h-12 text-red-600" />}
-        {status === 'processing' && <Zap className="w-12 h-12 text-blue-600 animate-pulse" />}
+        {status === 'processing' && (
+          <Zap className="w-12 h-12 text-[var(--hasivu-primary)] animate-pulse" />
+        )}
         {status === 'pending' && <Shield className="w-12 h-12 text-gray-600" />}
       </div>
     </div>
@@ -252,7 +179,7 @@ const DeviceStatus = ({ device }: { device: RFIDDevice }) => {
           </div>
           <div className="text-center">
             <div className="flex items-center justify-center mb-2">
-              <Signal className="w-5 h-5 text-blue-600" />
+              <Signal className="w-5 h-5 text-[var(--hasivu-primary)]" />
             </div>
             <div className="text-sm font-medium">{device.signalStrength}%</div>
             <div className="text-xs text-gray-500">Signal</div>
@@ -303,7 +230,7 @@ const TransactionHistory = ({ transactions }: { transactions: RFIDTransaction[] 
                   transaction.status === 'verified'
                     ? 'bg-green-100 text-green-800'
                     : transaction.status === 'processing'
-                      ? 'bg-blue-100 text-blue-800'
+                      ? 'bg-[var(--hasivu-primary)]/10 text-[var(--hasivu-primary-dark)]'
                       : transaction.status === 'failed'
                         ? 'bg-red-100 text-red-800'
                         : 'bg-gray-100 text-gray-800'
@@ -349,40 +276,24 @@ const TransactionHistory = ({ transactions }: { transactions: RFIDTransaction[] 
 };
 
 // Real-time RFID Monitor Component
-const RealTimeMonitor = () => {
+const RealTimeMonitor = ({
+  latestTransaction,
+  refresh,
+  loading,
+}: {
+  latestTransaction?: RFIDTransaction;
+  refresh: () => void;
+  loading: boolean;
+}) => {
   const reduced = useReducedMotion();
-  const [_activeTransactions, _setActiveTransactions] =
-    useState<RFIDTransaction[]>(mockTransactions);
-  const [isScanning, setIsScanning] = useState(false);
-  const [scannerStatus, setScannerStatus] = useState<RFIDTransaction['status']>('pending');
-
-  // Simulate real-time RFID scanning
-  useEffect(() => {
-    const interval = setInterval(() => {
-      // Simulate random RFID scans
-      if (Math.random() > 0.7) {
-        setIsScanning(true);
-        setScannerStatus('processing');
-
-        setTimeout(() => {
-          setScannerStatus(Math.random() > 0.1 ? 'verified' : 'failed');
-
-          setTimeout(() => {
-            setIsScanning(false);
-            setScannerStatus('pending');
-          }, 2000);
-        }, 1500);
-      }
-    }, 8000);
-
-    return () => clearInterval(interval);
-  }, []);
+  const scannerStatus = latestTransaction?.status || (loading ? 'processing' : 'pending');
+  const isScanning = loading || scannerStatus === 'processing';
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center">
-          <Activity className="w-5 h-5 mr-2 text-blue-600" />
+          <Activity className="w-5 h-5 mr-2 text-[var(--hasivu-primary)]" />
           Real-Time RFID Monitor
         </CardTitle>
         <CardDescription>Live meal verification system</CardDescription>
@@ -399,38 +310,33 @@ const RealTimeMonitor = () => {
                   : scannerStatus === 'failed'
                     ? 'text-red-600'
                     : scannerStatus === 'processing'
-                      ? 'text-blue-600'
+                      ? 'text-[var(--hasivu-primary)]'
                       : 'text-gray-600'
               }`}
             >
-              {scannerStatus === 'verified' && 'Meal Verified Successfully!'}
+              {scannerStatus === 'verified' && 'Latest Meal Verified Successfully'}
               {scannerStatus === 'failed' && 'Verification Failed'}
-              {scannerStatus === 'processing' && 'Processing RFID Scan...'}
+              {scannerStatus === 'processing' && 'Syncing RFID Activity...'}
               {scannerStatus === 'pending' && 'Ready to Scan'}
             </div>
 
             <div className="text-sm text-gray-600">
-              {isScanning ? 'Scanning RFID card...' : 'Place RFID card near scanner'}
+              {latestTransaction
+                ? `${latestTransaction.studentName} at ${latestTransaction.location}`
+                : 'No recent RFID activity available'}
             </div>
           </div>
 
           <div className="flex justify-center space-x-3">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setIsScanning(true);
-                setScannerStatus('processing');
-              }}
-              disabled={isScanning}
-            >
+            <Button variant="outline" onClick={refresh} disabled={loading}>
               <RefreshCw
                 className={`w-4 h-4 mr-2 ${isScanning && !reduced ? 'animate-spin' : ''}`}
               />
-              Test Scan
+              Refresh Activity
             </Button>
-            <Button variant="outline">
+            <Button variant="outline" disabled={!latestTransaction?.photoUrl}>
               <Camera className="w-4 h-4 mr-2" />
-              Take Photo
+              View Photo
             </Button>
           </div>
         </div>
@@ -441,12 +347,82 @@ const RealTimeMonitor = () => {
 
 // Main RFID Verification System Component
 export const RFIDVerificationSystem: React.FC = () => {
-  const [devices] = useState<RFIDDevice[]>(mockDevices);
-  const [recentTransactions] = useState<RFIDTransaction[]>(mockTransactions);
+  const { data: rawDevices, loading: devicesLoading, refetch: refetchDevices } = useRfidDevices();
+  const {
+    data: rawTransactions,
+    loading: txLoading,
+    refetch: refetchTransactions,
+  } = useRfidTransactions();
+
+  // Map backend readers to frontend RFIDDevice
+  const devices: RFIDDevice[] = React.useMemo(() => {
+    if (!rawDevices) return [];
+    // Ensure we handle both raw array or { data: [] }
+    const deviceList = Array.isArray(rawDevices) ? rawDevices : (rawDevices as any).data || [];
+    return deviceList.map((d: any) => ({
+      id: d.id,
+      name: d.name,
+      location: d.location || 'Unknown Location',
+      status: d.status as any,
+      batteryLevel: d.configuration?.batteryLevel || 100,
+      signalStrength: d.configuration?.signalStrength || 100,
+      lastPing: d.lastHeartbeat || d.updatedAt || new Date().toISOString(),
+      firmware: d.configuration?.firmware || '1.0.0',
+    }));
+  }, [rawDevices]);
+
+  // Map backend verifications to frontend RFIDTransaction
+  const recentTransactions: RFIDTransaction[] = React.useMemo(() => {
+    if (!rawTransactions) return [];
+    // handle nested structure if necessary
+    const txList = Array.isArray(rawTransactions)
+      ? rawTransactions
+      : (rawTransactions as any).verifications ||
+        (rawTransactions as any).data?.verifications ||
+        [];
+
+    return txList.map((t: any) => {
+      let verificationData: any = {};
+      try {
+        verificationData =
+          typeof t.verificationData === 'string'
+            ? JSON.parse(t.verificationData)
+            : t.verificationData || {};
+      } catch (e) {}
+
+      return {
+        id: t.id,
+        studentId: t.studentId,
+        studentName: t.student ? `${t.student.firstName} ${t.student.lastName}` : 'Unknown',
+        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(t.student ? t.student.firstName + ' ' + t.student.lastName : 'Unknown')}`,
+        mealId: t.orderId || 'unknown',
+        mealName: t.order?.items?.[0]?.menuItem?.name || 'School Meal',
+        timestamp: t.verifiedAt,
+        status: t.status === 'verified' ? 'verified' : t.status === 'failed' ? 'failed' : 'pending',
+        deviceId: t.readerId,
+        location: t.location || t.reader?.location || 'Unknown Location',
+        nutritionScore: verificationData.nutritionScore || 100,
+        photoUrl: t.deliveryPhoto || undefined,
+        verificationTime: verificationData.readDuration
+          ? verificationData.readDuration / 1000
+          : 0.5,
+        fraudScore: verificationData.fraudScore || 0,
+      };
+    });
+  }, [rawTransactions]);
 
   const onlineDevices = devices.filter(d => d.status === 'online').length;
-  const totalScans = 1247;
-  const successRate = 99.7;
+  const totalScans = recentTransactions.length;
+  const verifiedScans = recentTransactions.filter(t => t.status === 'verified').length;
+  const successRate = totalScans === 0 ? 0 : (verifiedScans / totalScans) * 100;
+  const avgScanTime =
+    totalScans === 0
+      ? 0
+      : recentTransactions.reduce((sum, tx) => sum + (tx.verificationTime || 0), 0) / totalScans;
+  const refreshRfidData = () => {
+    refetchDevices();
+    refetchTransactions();
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -476,8 +452,8 @@ export const RFIDVerificationSystem: React.FC = () => {
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center">
-                <div className="p-2 bg-blue-100 rounded-full">
-                  <Shield className="w-6 h-6 text-blue-600" />
+                <div className="p-2 bg-[var(--hasivu-primary)]/10 rounded-full">
+                  <Shield className="w-6 h-6 text-[var(--hasivu-primary)]" />
                 </div>
                 <div className="ml-4">
                   <p className="text-2xl font-bold">{totalScans}</p>
@@ -494,7 +470,7 @@ export const RFIDVerificationSystem: React.FC = () => {
                   <CheckCircle className="w-6 h-6 text-green-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-2xl font-bold">{successRate}%</p>
+                  <p className="text-2xl font-bold">{successRate.toFixed(1)}%</p>
                   <p className="text-gray-600">Success Rate</p>
                 </div>
               </div>
@@ -508,7 +484,7 @@ export const RFIDVerificationSystem: React.FC = () => {
                   <Clock className="w-6 h-6 text-orange-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-2xl font-bold">0.3s</p>
+                  <p className="text-2xl font-bold">{avgScanTime.toFixed(1)}s</p>
                   <p className="text-gray-600">Avg Scan Time</p>
                 </div>
               </div>
@@ -533,7 +509,11 @@ export const RFIDVerificationSystem: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Real-time Monitor */}
           <div className="lg:col-span-1">
-            <RealTimeMonitor />
+            <RealTimeMonitor
+              latestTransaction={recentTransactions[0]}
+              refresh={refreshRfidData}
+              loading={devicesLoading || txLoading}
+            />
           </div>
 
           {/* Recent Transactions */}

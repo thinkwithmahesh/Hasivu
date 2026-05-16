@@ -58,7 +58,10 @@ const DIETARY_ICONS = {
   'non-vegetarian': { icon: <Utensils className="w-3 h-3" />, color: 'bg-red-100 text-red-800' },
   jain: { icon: <Heart className="w-3 h-3" />, color: 'bg-orange-100 text-orange-800' },
   eggetarian: { icon: <Utensils className="w-3 h-3" />, color: 'bg-yellow-100 text-yellow-800' },
-  pescatarian: { icon: <Utensils className="w-3 h-3" />, color: 'bg-blue-100 text-blue-800' },
+  pescatarian: {
+    icon: <Utensils className="w-3 h-3" />,
+    color: 'bg-[var(--hasivu-primary)]/10 text-[var(--hasivu-primary-dark)]',
+  },
   'gluten-free': {
     icon: <AlertTriangle className="w-3 h-3" />,
     color: 'bg-amber-100 text-amber-800',
@@ -196,11 +199,11 @@ export function EnhancedMealList({
       <div className="grid grid-cols-2 gap-2 text-xs">
         <div className="space-y-1">
           <div className="flex justify-between">
-            <span className="text-gray-600">Calories:</span>
+            <span className="text-hasivu-text-secondary">Calories:</span>
             <span className="font-medium">{meal.nutritionalInfo.calories}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-600">Protein:</span>
+            <span className="text-hasivu-text-secondary">Protein:</span>
             <span className="font-medium">{meal.nutritionalInfo.protein}g</span>
           </div>
           <div className="flex justify-between">
@@ -243,14 +246,14 @@ export function EnhancedMealList({
 
     return (
       <Card
-        className={`group transition-all duration-200 hover:shadow-md ${
+        className={`group transition-all duration-200 hover:shadow-[var(--shadow-card-hover)] border border-hasivu-neutral-200 rounded-2xl ${
           !isAvailable ? 'opacity-60' : ''
         }`}
       >
         <CardContent className="p-4">
           <div className="flex items-start gap-3">
             {/* Meal Image */}
-            <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+            <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-hasivu-neutral-100 flex-shrink-0">
               <img
                 src={meal.imageUrl}
                 alt={meal.name}
@@ -269,7 +272,7 @@ export function EnhancedMealList({
               <div className="flex items-start justify-between mb-1">
                 <HoverCard>
                   <HoverCardTrigger asChild>
-                    <h3 className="font-medium text-sm leading-tight cursor-pointer hover:text-primary-600 transition-colors">
+                    <h3 className="font-medium text-sm leading-tight cursor-pointer hover:text-[var(--hasivu-primary)] transition-colors">
                       {meal.name}
                     </h3>
                   </HoverCardTrigger>
@@ -278,13 +281,15 @@ export function EnhancedMealList({
                   </HoverCardContent>
                 </HoverCard>
 
-                <div className="flex items-center gap-1 text-xs text-gray-500">
+                <div className="flex items-center gap-1 text-xs text-hasivu-text-tertiary">
                   <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
                   <span>{meal.rating.toFixed(1)}</span>
                 </div>
               </div>
 
-              <p className="text-xs text-gray-600 line-clamp-2 mb-2">{meal.description}</p>
+              <p className="text-xs text-hasivu-text-secondary line-clamp-2 mb-2">
+                {meal.description}
+              </p>
 
               {/* Tags and Dietary Info */}
               <div className="flex items-center gap-1 mb-2 flex-wrap">
@@ -306,7 +311,7 @@ export function EnhancedMealList({
                 {meal.isGlutenFree && (
                   <Badge
                     variant="outline"
-                    className="text-xs px-1.5 py-0.5 bg-blue-100 text-blue-800"
+                    className="text-xs px-1.5 py-0.5 bg-[var(--hasivu-primary)]/10 text-[var(--hasivu-primary-dark)]"
                   >
                     Gluten Free
                   </Badge>
@@ -316,13 +321,13 @@ export function EnhancedMealList({
               {/* Price and Actions */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold text-primary-600">₹{meal.price}</span>
+                  <span className="font-semibold text-[var(--hasivu-primary)]">₹{meal.price}</span>
                   {meal.originalPrice && meal.originalPrice > meal.price && (
-                    <span className="text-xs text-gray-500 line-through">
+                    <span className="text-xs text-hasivu-text-tertiary line-through">
                       ₹{meal.originalPrice}
                     </span>
                   )}
-                  <div className="flex items-center gap-1 text-xs text-gray-500">
+                  <div className="flex items-center gap-1 text-xs text-hasivu-text-tertiary">
                     <Clock className="w-3 h-3" />
                     <span>{meal.preparationTime}m</span>
                   </div>
@@ -357,7 +362,7 @@ export function EnhancedMealList({
                   ) : (
                     <Button
                       size="sm"
-                      className="h-6 px-2 text-xs"
+                      className="h-7 px-3 text-xs rounded-full bg-[var(--hasivu-primary)] hover:bg-[var(--hasivu-primary-dark)] text-white"
                       onClick={() => handleAddToCart(meal)}
                       disabled={!isAvailable}
                     >
@@ -380,7 +385,7 @@ export function EnhancedMealList({
       <div className="space-y-3 mb-4">
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-hasivu-text-tertiary w-4 h-4" />
             <Input
               placeholder="Search meals, ingredients, or tags..."
               value={searchTerm}
@@ -392,7 +397,7 @@ export function EnhancedMealList({
             variant="outline"
             size="sm"
             onClick={() => setShowFilters(!showFilters)}
-            className={`${showFilters ? 'bg-primary-50 border-primary-300' : ''}`}
+            className={`${showFilters ? 'bg-[var(--hasivu-primary)]/10 border-[var(--hasivu-primary)]/30 text-[var(--hasivu-primary)]' : ''}`}
           >
             <Filter className="w-4 h-4 mr-1" />
             Filters
@@ -423,7 +428,7 @@ export function EnhancedMealList({
             </ToggleGroupItem>
           </ToggleGroup>
 
-          <div className="w-px h-6 bg-gray-300" />
+          <div className="w-px h-6 bg-hasivu-neutral-200" />
 
           <ToggleGroup
             type="single"
@@ -503,7 +508,7 @@ export function EnhancedMealList({
       </div>
 
       {/* Results Info */}
-      <div className="flex items-center justify-between mb-3 text-sm text-gray-600">
+      <div className="flex items-center justify-between mb-3 text-sm text-hasivu-text-secondary">
         <span>{filteredMeals.length} meals found</span>
         {searchTerm && <span>for "{searchTerm}"</span>}
       </div>
@@ -514,11 +519,32 @@ export function EnhancedMealList({
           {filteredMeals.length > 0 ? (
             filteredMeals.map(meal => <MealCard key={meal.id} meal={meal} />)
           ) : (
-            <Card className="p-8 text-center">
-              <div className="text-gray-500">
-                <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                <h3 className="font-medium mb-2">No meals found</h3>
-                <p className="text-sm">Try adjusting your search or filters</p>
+            <Card className="p-8 text-center border border-hasivu-neutral-200 rounded-2xl">
+              <div className="text-hasivu-text-tertiary">
+                <Utensils className="w-12 h-12 mx-auto mb-3 text-hasivu-text-tertiary" />
+                <h3 className="font-display font-bold text-lg mb-1 text-hasivu-text-primary">
+                  No meals found
+                </h3>
+                <p className="text-sm text-hasivu-text-secondary mb-4">
+                  Try adjusting your search or filters to discover delicious options.
+                </p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="rounded-xl border-[var(--hasivu-primary)]/30 text-[var(--hasivu-primary)] hover:bg-[var(--hasivu-primary)]/5"
+                  onClick={() => {
+                    setSearchTerm('');
+                    setFilters({
+                      priceRange: priceRange as [number, number],
+                      dietaryPreferences: [],
+                      spiceLevel: [],
+                      categories: [],
+                      showAvailableOnly: true,
+                    });
+                  }}
+                >
+                  Clear all filters
+                </Button>
               </div>
             </Card>
           )}

@@ -387,19 +387,26 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({ className })
   }
 
   return (
-    <Card className={cn('p-4 border-blue-200 bg-blue-50', className)}>
+    <Card
+      className={cn(
+        'p-4 border-[var(--hasivu-primary)]/20 bg-[var(--hasivu-primary)]/5',
+        className
+      )}
+    >
       <div className="flex items-start space-x-3">
-        <Smartphone className="h-6 w-6 text-blue-600 mt-1" />
+        <Smartphone className="h-6 w-6 text-[var(--hasivu-primary)] mt-1" />
         <div className="flex-1">
-          <h3 className="font-semibold text-blue-900 mb-1">Install HASIVU App</h3>
-          <p className="text-sm text-blue-800 mb-3">
+          <h3 className="font-semibold text-[var(--hasivu-primary-dark)] mb-1">
+            Install HASIVU App
+          </h3>
+          <p className="text-sm text-[var(--hasivu-primary-dark)] mb-3">
             Install the app for faster access, offline ordering, and push notifications.
           </p>
           <Button
             onClick={handleInstall}
             disabled={isInstalling}
             size="sm"
-            className="bg-blue-600 hover:bg-blue-700"
+            className="bg-[var(--hasivu-primary)] hover:bg-[var(--hasivu-primary-dark)]"
           >
             {isInstalling ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -573,7 +580,7 @@ export const CacheManagement: React.FC<CacheManagementProps> = ({ className }) =
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <HardDrive className="h-5 w-5 text-blue-600" />
+            <HardDrive className="h-5 w-5 text-[var(--hasivu-primary)]" />
             <div>
               <h3 className="font-semibold">Storage & Cache</h3>
               <p className="text-sm text-gray-600">

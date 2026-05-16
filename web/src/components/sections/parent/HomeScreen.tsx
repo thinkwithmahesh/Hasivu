@@ -70,7 +70,9 @@ export function HomeScreen() {
         >
           <p className="text-[14px] font-ui text-pm-text-primary">
             Order by 9:00 AM today
-            <span className="ml-2 font-semibold text-pm-semantic-warning">{minutesLeft} min left</span>
+            <span className="ml-2 font-semibold text-pm-semantic-warning">
+              {minutesLeft} min left
+            </span>
           </p>
         </motion.div>
       )}
@@ -129,10 +131,10 @@ export function HomeScreen() {
         <h3 className="font-ui font-bold text-[18px] mb-3 mt-4 text-pm-text-primary">
           School Notice
         </h3>
-        <Card className="bg-blue-50/50 border-blue-100 shadow-none">
+        <Card className="bg-[var(--hasivu-primary)]/5/50 border-[var(--hasivu-primary)]/10 shadow-none">
           <CardContent className="p-4 flex gap-3 items-start">
             <svg
-              className="w-5 h-5 text-blue-600 shrink-0 mt-0.5"
+              className="w-5 h-5 text-[var(--hasivu-primary)] shrink-0 mt-0.5"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"

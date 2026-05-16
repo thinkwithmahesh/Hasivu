@@ -314,7 +314,7 @@ const getStatusColor = (status: StaffMember['status']) => {
     case 'sick':
       return 'bg-red-100 text-red-800 border-red-200';
     case 'vacation':
-      return 'bg-blue-100 text-blue-800 border-blue-200';
+      return 'bg-[var(--hasivu-primary)]/10 text-[var(--hasivu-primary-dark)] border-[var(--hasivu-primary)]/20';
     default:
       return 'bg-gray-100 text-gray-800 border-gray-200';
   }
@@ -325,7 +325,7 @@ const getTaskStatusColor = (status: Task['status']) => {
     case 'completed':
       return 'bg-green-100 text-green-800 border-green-200';
     case 'in_progress':
-      return 'bg-blue-100 text-blue-800 border-blue-200';
+      return 'bg-[var(--hasivu-primary)]/10 text-[var(--hasivu-primary-dark)] border-[var(--hasivu-primary)]/20';
     case 'pending':
       return 'bg-yellow-100 text-yellow-800 border-yellow-200';
     case 'overdue':
@@ -383,7 +383,7 @@ const StaffMemberCard = ({ staff }: { staff: StaffMember }) => {
                       ? 'bg-gray-500'
                       : staff.status === 'sick'
                         ? 'bg-red-500'
-                        : 'bg-blue-500'
+                        : 'bg-[var(--hasivu-primary)]'
               }`}
             />
           </div>
@@ -420,12 +420,14 @@ const StaffMemberCard = ({ staff }: { staff: StaffMember }) => {
         </div>
 
         {staff.currentTask && (
-          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="mb-4 p-3 bg-[var(--hasivu-primary)]/5 border border-[var(--hasivu-primary)]/20 rounded-lg">
             <div className="flex items-center space-x-2 mb-1">
-              <Activity className="w-4 h-4 text-blue-600" />
-              <span className="text-sm font-medium text-blue-800">Current Task</span>
+              <Activity className="w-4 h-4 text-[var(--hasivu-primary)]" />
+              <span className="text-sm font-medium text-[var(--hasivu-primary-dark)]">
+                Current Task
+              </span>
             </div>
-            <p className="text-sm text-blue-700">{staff.currentTask}</p>
+            <p className="text-sm text-[var(--hasivu-primary)]">{staff.currentTask}</p>
           </div>
         )}
 
@@ -556,7 +558,7 @@ const TaskCard = ({ task, staffMembers }: { task: Task; staffMembers: StaffMembe
                   : task.priority === 'high'
                     ? 'bg-orange-100 text-orange-800'
                     : task.priority === 'medium'
-                      ? 'bg-blue-100 text-blue-800'
+                      ? 'bg-[var(--hasivu-primary)]/10 text-[var(--hasivu-primary-dark)]'
                       : 'bg-gray-100 text-gray-800'
               }`}
             >
@@ -671,8 +673,8 @@ export const StaffManagementSystem: React.FC = () => {
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center">
-                <div className="p-2 bg-blue-100 rounded-full">
-                  <Users className="w-6 h-6 text-blue-600" />
+                <div className="p-2 bg-[var(--hasivu-primary)]/10 rounded-full">
+                  <Users className="w-6 h-6 text-[var(--hasivu-primary)]" />
                 </div>
                 <div className="ml-4">
                   <p className="text-2xl font-bold">{metrics.totalStaff ?? '-'}</p>
@@ -875,7 +877,7 @@ export const StaffManagementSystem: React.FC = () => {
                         <div className="text-sm text-gray-600">Tasks Completed</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-blue-600">
+                        <div className="text-2xl font-bold text-[var(--hasivu-primary)]">
                           {metrics.totalHoursWorked}h
                         </div>
                         <div className="text-sm text-gray-600">Total Hours</div>

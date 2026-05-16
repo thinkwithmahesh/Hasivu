@@ -175,7 +175,11 @@ export function EnhancedPasswordRecoveryForm({
     if (!detectedRole) return null;
 
     const roleConfig = {
-      student: { label: 'Student', color: 'bg-blue-100 text-blue-800', icon: School },
+      student: {
+        label: 'Student',
+        color: 'bg-[var(--hasivu-primary)]/10 text-[var(--hasivu-primary-dark)]',
+        icon: School,
+      },
       parent: { label: 'Parent', color: 'bg-green-100 text-green-800', icon: Users },
       admin: { label: 'Admin', color: 'bg-purple-100 text-purple-800', icon: Shield },
       kitchen: { label: 'Kitchen', color: 'bg-orange-100 text-orange-800', icon: Users },

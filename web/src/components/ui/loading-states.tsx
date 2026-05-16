@@ -231,7 +231,7 @@ const OrderStatusLoading = ({ currentStep, estimatedTime, className }: OrderStat
       {/* Estimated Time */}
       {estimatedTime && currentStepIndex < steps.length - 1 && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center">
-          <div className="inline-flex items-center space-x-2 rounded-full bg-blue-50 px-4 py-2 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300">
+          <div className="inline-flex items-center space-x-2 rounded-full bg-[var(--hasivu-primary)]/10 px-4 py-2 text-[var(--hasivu-primary)] dark:bg-[var(--hasivu-primary)]/20 dark:text-orange-300">
             <motion.div
               animate={{ rotate: 360 }}
               transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
@@ -282,7 +282,7 @@ const FileUploadProgress = ({
       <motion.div
         className={cn(
           'h-full rounded-full',
-          status === 'uploading' && 'bg-blue-500',
+          status === 'uploading' && 'bg-[var(--hasivu-primary)]',
           status === 'success' && 'bg-green-500',
           status === 'error' && 'bg-red-500',
           status === 'paused' && 'bg-orange-500'
@@ -310,7 +310,10 @@ const FileUploadProgress = ({
 
       <div className="flex space-x-1">
         {status === 'uploading' && onPause && (
-          <button onClick={onPause} className="text-blue-600 hover:text-blue-700">
+          <button
+            onClick={onPause}
+            className="text-[var(--hasivu-primary)] hover:text-[var(--hasivu-primary-dark)]"
+          >
             ⏸️
           </button>
         )}

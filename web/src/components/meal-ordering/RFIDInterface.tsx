@@ -158,7 +158,9 @@ const RFIDInterface: React.FC<RFIDInterfaceProps> = ({
               {pickupCode && (
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">Pickup Code:</span>
-                  <span className="font-mono font-bold text-lg text-blue-600">{pickupCode}</span>
+                  <span className="font-mono font-bold text-lg text-[var(--hasivu-primary)]">
+                    {pickupCode}
+                  </span>
                 </div>
               )}
             </div>
@@ -173,7 +175,7 @@ const RFIDInterface: React.FC<RFIDInterfaceProps> = ({
             <CreditCard className="h-5 w-5" />
             <span>RFID Meal Pickup</span>
             {isScanning && (
-              <div className="flex items-center space-x-2 text-blue-600">
+              <div className="flex items-center space-x-2 text-[var(--hasivu-primary)]">
                 <div className="animate-pulse">📡</div>
                 <span className="text-sm">Scanning...</span>
               </div>
@@ -203,8 +205,8 @@ const RFIDInterface: React.FC<RFIDInterfaceProps> = ({
           {/* Manual RFID Input */}
           <div className="space-y-4">
             <div className="text-center">
-              <div className="inline-flex items-center justify-center w-24 h-24 bg-blue-100 rounded-full mb-4">
-                <CreditCard className="h-12 w-12 text-blue-600" />
+              <div className="inline-flex items-center justify-center w-24 h-24 bg-[var(--hasivu-primary)]/10 rounded-full mb-4">
+                <CreditCard className="h-12 w-12 text-[var(--hasivu-primary)]" />
               </div>
               <h3 className="text-lg font-semibold mb-2">Tap Your RFID Card</h3>
               <p className="text-gray-600 text-sm mb-4">
@@ -285,7 +287,7 @@ const RFIDInterface: React.FC<RFIDInterfaceProps> = ({
                           ? 'bg-green-100 text-green-700'
                           : order.status === 'preparing'
                             ? 'bg-yellow-100 text-yellow-700'
-                            : 'bg-blue-100 text-blue-700'
+                            : 'bg-[var(--hasivu-primary)]/10 text-[var(--hasivu-primary)]'
                       }`}
                     >
                       {order.status === 'ready'
@@ -315,12 +317,14 @@ const RFIDInterface: React.FC<RFIDInterfaceProps> = ({
                 </div>
 
                 {/* Pickup Instructions */}
-                <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                <div className="mt-3 p-3 bg-[var(--hasivu-primary)]/5 border border-[var(--hasivu-primary)]/20 rounded-md">
                   <div className="flex items-start space-x-2">
-                    <MapPin className="h-4 w-4 text-blue-600 mt-0.5" />
+                    <MapPin className="h-4 w-4 text-[var(--hasivu-primary)] mt-0.5" />
                     <div className="text-sm">
-                      <p className="font-medium text-blue-800">Pickup Instructions:</p>
-                      <p className="text-blue-700">
+                      <p className="font-medium text-[var(--hasivu-primary-dark)]">
+                        Pickup Instructions:
+                      </p>
+                      <p className="text-[var(--hasivu-primary)]">
                         Visit the meal counter with your RFID card or show pickup code:
                         <span className="font-mono font-bold ml-1">{pickupCode}</span>
                       </p>

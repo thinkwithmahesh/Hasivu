@@ -299,7 +299,7 @@ export function QuantitySelector({
             )}
 
             {nextDiscountTier && !currentDiscountTier && (
-              <div className="flex items-center gap-2 p-2 bg-blue-50 rounded text-blue-800 text-xs">
+              <div className="flex items-center gap-2 p-2 bg-[var(--hasivu-primary)]/5 rounded text-[var(--hasivu-primary-dark)] text-xs">
                 <Info className="w-3 h-3" />
                 <span>
                   Add {nextDiscountTier.minQuantity - quantity} more for{' '}

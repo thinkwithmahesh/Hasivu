@@ -64,25 +64,11 @@ export const DeliveryVerification: React.FC = () => {
         cardId: cardNumber,
         deviceId: 'delivery-station-a',
         timestamp: new Date().toISOString(),
+        ...(orderId ? { orderId } : {}),
       });
 
       const payload = response.data;
-      setVerificationResult({
-        success: Boolean(payload.valid && payload.accessGranted),
-        cardNumber,
-        studentId: payload.studentId,
-        studentName: '—',
-        schoolId: '',
-        verificationId: `v-${Date.now()}`,
-        signalQuality: 'good',
-        orderInfo: orderId
-          ? {
-              orderId,
-              status: payload.accessGranted ? 'verified' : 'denied',
-              deliveryDate: new Date().toISOString(),
-            }
-          : undefined,
-      });
+      setVerificationResult(payload as any);
       setSuccess('RFID verification completed successfully');
 
       // Clear form
@@ -100,7 +86,7 @@ export const DeliveryVerification: React.FC = () => {
       case 'excellent':
         return 'text-green-600';
       case 'good':
-        return 'text-blue-600';
+        return 'text-[var(--hasivu-primary)]';
       case 'fair':
         return 'text-yellow-600';
       case 'poor':
@@ -113,7 +99,7 @@ export const DeliveryVerification: React.FC = () => {
   const getSignalQualityBadge = (quality: string) => {
     const colors = {
       excellent: 'bg-green-100 text-green-800',
-      good: 'bg-blue-100 text-blue-800',
+      good: 'bg-[var(--hasivu-primary)]/10 text-[var(--hasivu-primary-dark)]',
       fair: 'bg-yellow-100 text-yellow-800',
       poor: 'bg-red-100 text-red-800',
     };

@@ -338,7 +338,7 @@ export const PaymentAnalyticsDashboard: React.FC<PaymentAnalyticsProps> = ({
                   {metrics?.totalTransactions?.toLocaleString() || 0}
                 </p>
               </div>
-              <DollarSign className="h-8 w-8 text-blue-600" />
+              <DollarSign className="h-8 w-8 text-[var(--hasivu-primary)]" />
             </div>
           </CardContent>
         </Card>
@@ -536,7 +536,7 @@ export const PaymentAnalyticsDashboard: React.FC<PaymentAnalyticsProps> = ({
                           {metrics?.subscriptionMetrics.activeSubscriptions || 0}
                         </p>
                       </div>
-                      <Users className="h-8 w-8 text-blue-600" />
+                      <Users className="h-8 w-8 text-[var(--hasivu-primary)]" />
                     </div>
                   </CardContent>
                 </Card>

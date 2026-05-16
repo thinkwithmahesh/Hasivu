@@ -88,10 +88,10 @@ export const StandardLoadingSpinner: React.FC<LoadingSpinnerProps> = ({
 
 // Page-level loading screen
 export const StandardPageLoader: React.FC<{ text?: string }> = ({ text = 'Loading HASIVU...' }) => (
-  <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-green-50">
+  <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[var(--hasivu-primary)]/5 to-green-50">
     <div className="text-center space-y-6">
       {/* HASIVU Logo Placeholder */}
-      <div className="mx-auto w-20 h-20 bg-gradient-to-r from-blue-500 to-green-500 rounded-full flex items-center justify-center">
+      <div className="mx-auto w-20 h-20 bg-gradient-to-r from-[var(--hasivu-primary)] to-green-500 rounded-full flex items-center justify-center">
         <Utensils className="w-10 h-10 text-white" />
       </div>
 
@@ -111,7 +111,7 @@ export const StandardPageLoader: React.FC<{ text?: string }> = ({ text = 'Loadin
             key={i}
             className={cn(
               'w-2 h-2 rounded-full',
-              'animate-bounce bg-blue-500',
+              'animate-bounce bg-[var(--hasivu-primary)]',
               i === 1 && 'animation-delay-75',
               i === 2 && 'animation-delay-150'
             )}

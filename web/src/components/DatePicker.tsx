@@ -80,7 +80,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
               key={date.toISOString()}
               variant={isSelected(date) ? 'default' : 'ghost'}
               size="sm"
-              className={`h-8 w-8 p-0 ${isToday(date) ? 'ring-2 ring-blue-500' : ''}`}
+              className={`h-8 w-8 p-0 ${isToday(date) ? 'ring-2 ring-[var(--hasivu-primary)]' : ''}`}
               onClick={() => handleDateClick(date)}
             >
               {format(date, 'd')}

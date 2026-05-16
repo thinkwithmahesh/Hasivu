@@ -20,16 +20,26 @@ export default function AdminUsersPage() {
 
   const buttonClass = (filter: UserFilter) =>
     activeFilter === filter
-      ? 'bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2'
-      : 'bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2';
+      ? 'bg-[var(--hasivu-primary)] text-white px-4 py-2 rounded-xl hover:bg-[var(--hasivu-primary-dark)] focus:outline-none focus:ring-2 focus:ring-[var(--hasivu-primary)] focus:ring-offset-2'
+      : 'bg-hasivu-neutral-100 text-hasivu-text-secondary px-4 py-2 rounded-xl hover:bg-hasivu-neutral-200 focus:outline-none focus:ring-2 focus:ring-[var(--hasivu-primary)] focus:ring-offset-2';
 
   const showStudents = activeFilter === 'all' || activeFilter === 'students';
   const showStaff = activeFilter === 'all' || activeFilter === 'staff';
   const showAllOnly = activeFilter === 'all';
   const studentRfidCards = [
     { student: 'Test Student', cardId: 'RFID-0001', status: 'Active', lastScan: 'Today 12:10 PM' },
-    { student: 'Jane Smith', cardId: 'RFID-0002', status: 'Active', lastScan: 'Yesterday 12:02 PM' },
-    { student: 'John Doe', cardId: 'RFID-0003', status: 'Needs review', lastScan: 'Not scanned yet' },
+    {
+      student: 'Jane Smith',
+      cardId: 'RFID-0002',
+      status: 'Active',
+      lastScan: 'Yesterday 12:02 PM',
+    },
+    {
+      student: 'John Doe',
+      cardId: 'RFID-0003',
+      status: 'Needs review',
+      lastScan: 'Not scanned yet',
+    },
   ];
 
   return (
@@ -72,80 +82,80 @@ export default function AdminUsersPage() {
             <div data-testid="user-list">
               <div className="space-y-4">
                 {showStudents && (
-                <div className="border-b pb-4" data-testid="students-section">
-                  <h3 className="font-semibold">Students</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
-                    <div className="p-3 bg-blue-50 rounded">
-                      <p className="font-medium">Test Student</p>
-                      <p className="text-sm text-gray-600">student@hasivu.test</p>
-                      <p className="text-sm text-gray-500">ID: STU-001</p>
-                    </div>
-                    <div className="p-3 bg-blue-50 rounded">
-                      <p className="font-medium">Jane Smith</p>
-                      <p className="text-sm text-gray-600">jane.smith@hasivu.test</p>
-                      <p className="text-sm text-gray-500">ID: STU-002</p>
-                    </div>
-                    <div className="p-3 bg-blue-50 rounded">
-                      <p className="font-medium">John Doe</p>
-                      <p className="text-sm text-gray-600">john.doe@hasivu.test</p>
-                      <p className="text-sm text-gray-500">ID: STU-003</p>
+                  <div className="border-b pb-4" data-testid="students-section">
+                    <h3 className="font-semibold">Students</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
+                      <div className="p-3 bg-[var(--hasivu-primary)]/5 rounded">
+                        <p className="font-medium">Test Student</p>
+                        <p className="text-sm text-gray-600">student@hasivu.test</p>
+                        <p className="text-sm text-gray-500">ID: STU-001</p>
+                      </div>
+                      <div className="p-3 bg-[var(--hasivu-primary)]/5 rounded">
+                        <p className="font-medium">Jane Smith</p>
+                        <p className="text-sm text-gray-600">jane.smith@hasivu.test</p>
+                        <p className="text-sm text-gray-500">ID: STU-002</p>
+                      </div>
+                      <div className="p-3 bg-[var(--hasivu-primary)]/5 rounded">
+                        <p className="font-medium">John Doe</p>
+                        <p className="text-sm text-gray-600">john.doe@hasivu.test</p>
+                        <p className="text-sm text-gray-500">ID: STU-003</p>
+                      </div>
                     </div>
                   </div>
-                </div>
                 )}
 
                 {showAllOnly && (
-                <div className="border-b pb-4" data-testid="parents-section">
-                  <h3 className="font-semibold">Parents</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
-                    <div className="p-3 bg-green-50 rounded">
-                      <p className="font-medium">Test Parent</p>
-                      <p className="text-sm text-gray-600">parent@hasivu.test</p>
-                      <p className="text-sm text-gray-500">ID: PAR-001</p>
-                    </div>
-                    <div className="p-3 bg-green-50 rounded">
-                      <p className="font-medium">Mary Johnson</p>
-                      <p className="text-sm text-gray-600">mary.johnson@hasivu.test</p>
-                      <p className="text-sm text-gray-500">ID: PAR-002</p>
+                  <div className="border-b pb-4" data-testid="parents-section">
+                    <h3 className="font-semibold">Parents</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
+                      <div className="p-3 bg-green-50 rounded">
+                        <p className="font-medium">Test Parent</p>
+                        <p className="text-sm text-gray-600">parent@hasivu.test</p>
+                        <p className="text-sm text-gray-500">ID: PAR-001</p>
+                      </div>
+                      <div className="p-3 bg-green-50 rounded">
+                        <p className="font-medium">Mary Johnson</p>
+                        <p className="text-sm text-gray-600">mary.johnson@hasivu.test</p>
+                        <p className="text-sm text-gray-500">ID: PAR-002</p>
+                      </div>
                     </div>
                   </div>
-                </div>
                 )}
 
                 {showStaff && (
-                <div className="border-b pb-4" data-testid="staff-section">
-                  <h3 className="font-semibold">Staff</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
-                    <div className="p-3 bg-orange-50 rounded">
-                      <p className="font-medium">Kitchen Staff</p>
-                      <p className="text-sm text-gray-600">kitchen@hasivu.test</p>
-                      <p className="text-sm text-gray-500">Role: Kitchen Staff</p>
-                    </div>
-                    <div className="p-3 bg-orange-50 rounded">
-                      <p className="font-medium">Test Teacher</p>
-                      <p className="text-sm text-gray-600">teacher@hasivu.test</p>
-                      <p className="text-sm text-gray-500">Role: Teacher</p>
+                  <div className="border-b pb-4" data-testid="staff-section">
+                    <h3 className="font-semibold">Staff</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
+                      <div className="p-3 bg-orange-50 rounded">
+                        <p className="font-medium">Kitchen Staff</p>
+                        <p className="text-sm text-gray-600">kitchen@hasivu.test</p>
+                        <p className="text-sm text-gray-500">Role: Kitchen Staff</p>
+                      </div>
+                      <div className="p-3 bg-orange-50 rounded">
+                        <p className="font-medium">Test Teacher</p>
+                        <p className="text-sm text-gray-600">teacher@hasivu.test</p>
+                        <p className="text-sm text-gray-500">Role: Teacher</p>
+                      </div>
                     </div>
                   </div>
-                </div>
                 )}
 
                 {showAllOnly && (
-                <div className="pb-4" data-testid="administrators-section">
-                  <h3 className="font-semibold">Administrators</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
-                    <div className="p-3 bg-red-50 rounded">
-                      <p className="font-medium">Test Admin</p>
-                      <p className="text-sm text-gray-600">admin@hasivu.test</p>
-                      <p className="text-sm text-gray-500">Role: Admin</p>
-                    </div>
-                    <div className="p-3 bg-red-50 rounded">
-                      <p className="font-medium">School Admin</p>
-                      <p className="text-sm text-gray-600">school_admin@hasivu.test</p>
-                      <p className="text-sm text-gray-500">Role: School Admin</p>
+                  <div className="pb-4" data-testid="administrators-section">
+                    <h3 className="font-semibold">Administrators</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
+                      <div className="p-3 bg-red-50 rounded">
+                        <p className="font-medium">Test Admin</p>
+                        <p className="text-sm text-gray-600">admin@hasivu.test</p>
+                        <p className="text-sm text-gray-500">Role: Admin</p>
+                      </div>
+                      <div className="p-3 bg-red-50 rounded">
+                        <p className="font-medium">School Admin</p>
+                        <p className="text-sm text-gray-600">school_admin@hasivu.test</p>
+                        <p className="text-sm text-gray-500">Role: School Admin</p>
+                      </div>
                     </div>
                   </div>
-                </div>
                 )}
               </div>
             </div>

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { UserRole, Permission } from '@/types/auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { QuickReorder } from '@/components/dashboard/parent/components/QuickReorder';
 
 export default function ParentDashboard() {
   const workspaces = [
@@ -40,25 +41,34 @@ export default function ParentDashboard() {
       requiredPermissions={[Permission.MANAGE_CHILDREN, Permission.PLACE_ORDERS]}
     >
       <div className="min-h-screen bg-[var(--hasivu-bg-warm)] px-4 py-8 text-[var(--hasivu-text-primary)]">
-        <div className="container mx-auto">
-          <h1 className="mb-8 text-3xl font-bold">Parent Dashboard</h1>
+        <div className="container mx-auto space-y-8">
+          <h1 className="text-3xl font-bold">Parent Dashboard</h1>
 
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {workspaces.map(workspace => (
-              <Link key={workspace.title} href={workspace.href} className="block h-full">
-                <Card className="h-full transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-md)]">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <span className="text-2xl">{workspace.icon}</span>
-                      {workspace.title}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-[var(--hasivu-text-secondary)]">{workspace.description}</p>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
+          {/* One-Touch Reorder Carousel */}
+          <QuickReorder />
+
+          {/* Workspace Cards */}
+          <div>
+            <h2 className="text-lg font-semibold text-[var(--hasivu-text-primary)] mb-4">
+              Workspaces
+            </h2>
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {workspaces.map(workspace => (
+                <Link key={workspace.title} href={workspace.href} className="block h-full">
+                  <Card className="h-full transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-md)]">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <span className="text-2xl">{workspace.icon}</span>
+                        {workspace.title}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-[var(--hasivu-text-secondary)]">{workspace.description}</p>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
       </div>

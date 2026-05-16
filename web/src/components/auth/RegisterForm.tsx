@@ -116,7 +116,9 @@ export function RegisterForm({
   return (
     <Card className={className} aria-label="Registration form">
       <CardHeader className="space-y-1 text-center">
-        <CardTitle className="text-3xl font-bold text-blue-600">Create Account</CardTitle>
+        <CardTitle className="text-3xl font-bold text-[var(--hasivu-primary)]">
+          Create Account
+        </CardTitle>
         <CardDescription className="text-gray-600">
           Join HASIVU platform and start your journey
         </CardDescription>
@@ -388,7 +390,7 @@ export function RegisterForm({
                       type="checkbox"
                       checked={field.value}
                       onChange={field.onChange}
-                      className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      className="mt-1 h-4 w-4 text-[var(--hasivu-primary)] focus:ring-[var(--hasivu-primary)] border-gray-300 rounded"
                       disabled={isLoading}
                     />
                   </FormControl>
@@ -397,7 +399,7 @@ export function RegisterForm({
                       I agree to the <span className="text-red-500">*</span>{' '}
                       <Link
                         href="/legal/terms"
-                        className="text-blue-600 hover:text-blue-700 underline"
+                        className="text-[var(--hasivu-primary)] hover:text-[var(--hasivu-primary)] underline"
                         target="_blank"
                         rel="noopener noreferrer"
                       >
@@ -406,7 +408,7 @@ export function RegisterForm({
                       and{' '}
                       <Link
                         href="/legal/privacy"
-                        className="text-blue-600 hover:text-blue-700 underline"
+                        className="text-[var(--hasivu-primary)] hover:text-[var(--hasivu-primary)] underline"
                         target="_blank"
                         rel="noopener noreferrer"
                       >
@@ -421,7 +423,7 @@ export function RegisterForm({
 
             <Button
               type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5"
+              className="w-full bg-[var(--hasivu-primary)] hover:bg-[var(--hasivu-primary-dark)] text-white font-medium py-2.5"
               disabled={isLoading}
               size="lg"
             >
@@ -500,7 +502,7 @@ export function RegisterForm({
           Already have an account?{' '}
           <Link
             href="/auth/login"
-            className="text-blue-600 hover:text-blue-700 font-medium focus:outline-none focus:underline"
+            className="text-[var(--hasivu-primary)] hover:text-[var(--hasivu-primary)] font-medium focus:outline-none focus:underline"
           >
             Sign in here
           </Link>

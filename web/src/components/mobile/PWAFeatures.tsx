@@ -70,7 +70,7 @@ export const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
   }
 
   return (
-    <Card className="fixed bottom-20 left-4 right-4 z-40 mx-auto max-w-md border-primary/20 bg-gradient-to-r from-primary/5 to-blue-50 animate-slide-in-bottom">
+    <Card className="fixed bottom-20 left-4 right-4 z-40 mx-auto max-w-md border-primary/20 bg-gradient-to-r from-primary/5 to-[var(--hasivu-primary)]/5 animate-slide-in-bottom">
       <div className="p-4">
         <div className="flex items-start space-x-3">
           <div className="p-2 bg-primary/10 rounded-lg">
@@ -207,11 +207,11 @@ export const NotificationPermission: React.FC<NotificationPermissionProps> = ({
   }
 
   return (
-    <Card className="fixed bottom-20 left-4 right-4 z-40 mx-auto max-w-md border-blue-200 bg-blue-50 animate-slide-in-bottom">
+    <Card className="fixed bottom-20 left-4 right-4 z-40 mx-auto max-w-md border-[var(--hasivu-primary)]/20 bg-[var(--hasivu-primary)]/5 animate-slide-in-bottom">
       <div className="p-4">
         <div className="flex items-start space-x-3">
-          <div className="p-2 bg-blue-100 rounded-lg">
-            <Bell className="h-6 w-6 text-blue-600" />
+          <div className="p-2 bg-[var(--hasivu-primary)]/10 rounded-lg">
+            <Bell className="h-6 w-6 text-[var(--hasivu-primary)]" />
           </div>
           <div className="flex-1">
             <h4 className="font-semibold text-gray-900">Stay Updated</h4>
@@ -440,7 +440,7 @@ export const EmergencyBanner: React.FC<EmergencyBannerProps> = ({
   const colors = {
     emergency: 'bg-red-600 text-white',
     alert: 'bg-orange-500 text-white',
-    info: 'bg-blue-600 text-white',
+    info: 'bg-[var(--hasivu-primary)] text-white',
   };
 
   const icons = {
@@ -510,13 +510,13 @@ export const QuickRFIDDisplay: React.FC<QuickRFIDDisplayProps> = ({
   }, [rfidCode, onCopy]);
 
   return (
-    <Card className="mx-4 mb-4 bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
+    <Card className="mx-4 mb-4 bg-gradient-to-r from-[var(--hasivu-primary)]/5 to-purple-50 border-[var(--hasivu-primary)]/20">
       <div className="p-4 text-center">
         <h3 className="font-semibold text-gray-900 mb-1">Your RFID Code</h3>
         <p className="text-sm text-gray-600 mb-3">{studentName}</p>
 
-        <div className="bg-white rounded-lg p-4 mb-3 border-2 border-dashed border-blue-300">
-          <div className="font-mono text-2xl font-bold text-blue-600 tracking-wider">
+        <div className="bg-white rounded-lg p-4 mb-3 border-2 border-dashed border-[var(--hasivu-primary)]/30">
+          <div className="font-mono text-2xl font-bold text-[var(--hasivu-primary)] tracking-wider">
             {rfidCode}
           </div>
         </div>
@@ -525,7 +525,7 @@ export const QuickRFIDDisplay: React.FC<QuickRFIDDisplayProps> = ({
           size="sm"
           variant="outline"
           onClick={handleCopy}
-          className="text-blue-600 border-blue-300"
+          className="text-[var(--hasivu-primary)] border-[var(--hasivu-primary)]/30"
           haptic
         >
           Copy Code

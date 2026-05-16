@@ -88,9 +88,9 @@ export function OrderCard({
       },
       confirmed: {
         color: 'blue',
-        bgColor: 'bg-blue-50',
-        textColor: 'text-blue-700',
-        borderColor: 'border-blue-200',
+        bgColor: 'bg-[var(--hasivu-primary)]/5',
+        textColor: 'text-[var(--hasivu-primary)]',
+        borderColor: 'border-[var(--hasivu-primary)]/20',
         icon: CheckCircle,
         message: 'Order confirmed',
       },
@@ -351,9 +351,9 @@ export function OrderCard({
 
           {/* Estimated Delivery */}
           {order.estimatedDelivery && order.status !== 'delivered' && (
-            <div className="flex items-center justify-between p-2 bg-blue-50 rounded-lg">
-              <span className="text-sm text-blue-700">Estimated ready time:</span>
-              <span className="font-medium text-blue-800">
+            <div className="flex items-center justify-between p-2 bg-[var(--hasivu-primary)]/5 rounded-lg">
+              <span className="text-sm text-[var(--hasivu-primary)]">Estimated ready time:</span>
+              <span className="font-medium text-[var(--hasivu-primary-dark)]">
                 {new Date(order.estimatedDelivery).toLocaleTimeString()}
               </span>
             </div>

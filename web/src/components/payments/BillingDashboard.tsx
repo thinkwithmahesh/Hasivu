@@ -314,7 +314,7 @@ export const BillingDashboard: React.FC<BillingDashboardProps> = ({
                   <p className="text-sm font-medium text-muted-foreground">Total Billed</p>
                   <p className="text-2xl font-bold">{formatCurrency(billingSummary.totalBilled)}</p>
                 </div>
-                <FileText className="h-8 w-8 text-blue-600" />
+                <FileText className="h-8 w-8 text-[var(--hasivu-primary)]" />
               </div>
             </CardContent>
           </Card>

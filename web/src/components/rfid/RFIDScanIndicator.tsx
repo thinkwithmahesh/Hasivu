@@ -81,8 +81,8 @@ export function RFIDScanIndicator({
       case 'scanning':
         return {
           color: 'blue',
-          bgColor: 'bg-blue-50',
-          borderColor: 'border-blue-500',
+          bgColor: 'bg-[var(--hasivu-primary)]/5',
+          borderColor: 'border-[var(--hasivu-primary)]',
           icon: Radio,
           message: statusMessage || 'Scanning RFID card...',
           badgeVariant: 'default' as const,
@@ -145,7 +145,7 @@ export function RFIDScanIndicator({
               {[...Array(3)].map((_, i) => (
                 <motion.div
                   key={i}
-                  className="absolute inset-0 rounded-full border-2 border-blue-500 opacity-75"
+                  className="absolute inset-0 rounded-full border-2 border-[var(--hasivu-primary)] opacity-75"
                   initial={{ scale: 0.8, opacity: 0 }}
                   animate={{
                     scale: [0.8, 1.5, 2],
@@ -247,15 +247,18 @@ export function RFIDScanIndicator({
           transition={reduced ? { duration: 0.001 } : undefined}
           className="flex items-center space-x-1"
         >
-          <Zap size={14} className="text-blue-500" />
+          <Zap size={14} className="text-[var(--hasivu-primary)]" />
           <div className="flex space-x-1">
             {[...Array(5)].map((_, i) =>
               reduced ? (
-                <div key={i} className="w-1 h-3 bg-blue-500 rounded-full opacity-80" />
+                <div
+                  key={i}
+                  className="w-1 h-3 bg-[var(--hasivu-primary)] rounded-full opacity-80"
+                />
               ) : (
                 <motion.div
                   key={i}
-                  className="w-1 h-3 bg-blue-500 rounded-full"
+                  className="w-1 h-3 bg-[var(--hasivu-primary)] rounded-full"
                   animate={{
                     opacity: [0.3, 1, 0.3],
                     height: [8, 12, 8],

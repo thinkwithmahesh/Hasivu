@@ -44,6 +44,7 @@ export const RFIDCardManagement: React.FC = () => {
   });
 
   // Bulk import state
+  const [bulkSchoolId, setBulkSchoolId] = useState('school_demo_001');
   const [bulkCards, setBulkCards] = useState('');
   const [bulkImportResult, setBulkImportResult] = useState<any>(null);
 
@@ -102,6 +103,7 @@ export const RFIDCardManagement: React.FC = () => {
       }
 
       const response = await rfidApi.bulkRegisterCards(
+        bulkSchoolId,
         cards as Array<{ studentId: string; cardNumber: string }>
       );
 
@@ -196,6 +198,16 @@ export const RFIDCardManagement: React.FC = () => {
           {/* Bulk Import */}
           <div className="space-y-4 mb-6">
             <h3 className="text-lg font-semibold">Bulk Import RFID Cards</h3>
+            <div>
+              <Label htmlFor="bulkSchoolId">School ID</Label>
+              <Input
+                id="bulkSchoolId"
+                value={bulkSchoolId}
+                onChange={e => setBulkSchoolId(e.target.value)}
+                required
+                className="mb-4"
+              />
+            </div>
             <div>
               <Label htmlFor="bulkCards">CSV Format (cardNumber,studentId per line)</Label>
               <textarea

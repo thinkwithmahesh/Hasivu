@@ -33,7 +33,7 @@ const buttonVariants = cva(
         admin:
           'bg-hasivu-role-admin text-white hover:bg-red-700 active:bg-red-800 shadow-md hover:shadow-lg',
         teacher:
-          'bg-hasivu-role-teacher text-white hover:bg-blue-700 active:bg-blue-800 shadow-md hover:shadow-lg',
+          'bg-hasivu-role-teacher text-white hover:bg-[var(--hasivu-primary-dark)] active:bg-[var(--hasivu-primary-dark)] shadow-md hover:shadow-lg',
         parent:
           'bg-hasivu-role-parent text-white hover:bg-green-700 active:bg-green-800 shadow-md hover:shadow-lg',
         student:

@@ -8,7 +8,7 @@ const variantClass: Record<Variant, string> = {
   veg: 'bg-emerald-100 text-emerald-800',
   nonVeg: 'bg-red-100 text-red-800',
   nuts: 'bg-amber-100 text-amber-800',
-  gf: 'bg-blue-100 text-blue-800',
+  gf: 'bg-[var(--hasivu-primary)]/10 text-[var(--hasivu-primary-dark)]',
   df: 'bg-gray-100 text-gray-800',
   default: 'bg-[var(--pm-surface-2)] text-[var(--pm-text-secondary)]',
 };

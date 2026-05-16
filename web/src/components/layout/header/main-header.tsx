@@ -294,7 +294,8 @@ export function MainHeader({
                           className={cn(
                             'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium',
                             {
-                              'bg-blue-100 text-blue-700': user.role === 'student',
+                              'bg-[var(--hasivu-primary)]/10 text-[var(--hasivu-primary)]':
+                                user.role === 'student',
                               'bg-green-100 text-green-700': user.role === 'parent',
                               'bg-purple-100 text-purple-700': user.role === 'admin',
                               'bg-orange-100 text-orange-700': user.role === 'kitchen_staff',

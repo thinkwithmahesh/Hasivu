@@ -118,8 +118,8 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({ cart, onPlaceOrder, isLoadi
   return (
     <div className="space-y-6">
       {/* Order Items */}
-      <Card className="shadow-lg border-0">
-        <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-t-lg">
+      <Card className="shadow-lg border border-hasivu-neutral-200 rounded-2xl">
+        <CardHeader className="bg-gradient-to-r from-[var(--hasivu-primary)]/5 to-[var(--hasivu-accent)]/5 rounded-t-2xl">
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="bg-white p-2 rounded-lg shadow-sm">
@@ -149,7 +149,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({ cart, onPlaceOrder, isLoadi
               key={item.mealItem.id}
               className={cn(
                 'border rounded-xl p-4 transition-all duration-200 hover:shadow-md',
-                'bg-gradient-to-r from-white to-gray-50',
+                'bg-gradient-to-r from-white to-hasivu-neutral-50',
                 index !== cart.items.length - 1 && 'mb-4'
               )}
             >
@@ -169,10 +169,12 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({ cart, onPlaceOrder, isLoadi
                 {/* Meal Details */}
                 <div className="flex-1 min-w-0">
                   <h4 className="font-semibold text-sm">{item.mealItem.name}</h4>
-                  <p className="text-xs text-gray-600 line-clamp-2">{item.mealItem.description}</p>
+                  <p className="text-xs text-hasivu-text-secondary line-clamp-2">
+                    {item.mealItem.description}
+                  </p>
 
                   {/* Meal Info */}
-                  <div className="flex items-center space-x-3 mt-2 text-xs text-gray-500">
+                  <div className="flex items-center space-x-3 mt-2 text-xs text-hasivu-text-tertiary">
                     <div className="flex items-center">
                       <Clock className="h-3 w-3 mr-1" />
                       {item.mealItem.preparationTime} min
@@ -262,7 +264,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({ cart, onPlaceOrder, isLoadi
       {/* Enhanced Nutritional Summary */}
       <Card className="shadow-lg border-0">
         <CardHeader
-          className="cursor-pointer hover:bg-gray-50 transition-colors duration-200 rounded-t-lg"
+          className="cursor-pointer hover:bg-hasivu-neutral-50 transition-colors duration-200 rounded-t-lg"
           onClick={() => setShowNutrition(!showNutrition)}
         >
           <CardTitle className="flex items-center justify-between">
@@ -282,7 +284,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({ cart, onPlaceOrder, isLoadi
             <Button
               variant="ghost"
               size="sm"
-              className="bg-gray-100 hover:bg-gray-200 rounded-full w-8 h-8 p-0"
+              className="bg-hasivu-neutral-100 hover:bg-hasivu-neutral-200 rounded-full w-8 h-8 p-0"
             >
               {showNutrition ? '▼' : '▶'}
             </Button>
@@ -299,12 +301,12 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({ cart, onPlaceOrder, isLoadi
                 <div className="text-sm font-medium text-red-600">Calories</div>
                 <div className="text-xs text-red-500 mt-1">kcal</div>
               </div>
-              <div className="text-center bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl">
-                <div className="text-2xl font-bold text-blue-700 mb-1">
+              <div className="text-center bg-gradient-to-br from-[var(--hasivu-primary)]/5 to-[var(--hasivu-primary)]/10 p-4 rounded-xl">
+                <div className="text-2xl font-bold text-[var(--hasivu-primary)] mb-1">
                   {Math.round(totalNutrition.protein)}g
                 </div>
-                <div className="text-sm font-medium text-blue-600">Protein</div>
-                <div className="text-xs text-blue-500 mt-1">grams</div>
+                <div className="text-sm font-medium text-[var(--hasivu-primary)]">Protein</div>
+                <div className="text-xs text-[var(--hasivu-primary)]/70 mt-1">grams</div>
               </div>
               <div className="text-center bg-gradient-to-br from-yellow-50 to-yellow-100 p-4 rounded-xl">
                 <div className="text-2xl font-bold text-yellow-700 mb-1">
@@ -324,18 +326,18 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({ cart, onPlaceOrder, isLoadi
 
             {/* Additional Nutrition Info */}
             <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="bg-gray-50 p-3 rounded-lg">
+              <div className="bg-hasivu-neutral-50 p-3 rounded-lg">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-gray-700">Fiber:</span>
-                  <span className="font-bold text-gray-900">
+                  <span className="text-sm font-medium text-hasivu-text-secondary">Fiber:</span>
+                  <span className="font-bold text-hasivu-text-primary">
                     {Math.round(totalNutrition.fiber)}g
                   </span>
                 </div>
               </div>
-              <div className="bg-gray-50 p-3 rounded-lg">
+              <div className="bg-hasivu-neutral-50 p-3 rounded-lg">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-gray-700">Sodium:</span>
-                  <span className="font-bold text-gray-900">
+                  <span className="text-sm font-medium text-hasivu-text-secondary">Sodium:</span>
+                  <span className="font-bold text-hasivu-text-primary">
                     {Math.round(totalNutrition.sodium)}mg
                   </span>
                 </div>
@@ -531,7 +533,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({ cart, onPlaceOrder, isLoadi
                 'hover:shadow-xl hover:-translate-y-1 active:translate-y-0',
                 !validation.isValid || isLoading
                   ? 'opacity-50 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700'
+                  : 'bg-gradient-to-r from-[var(--hasivu-secondary)] to-[#1a5a34] hover:from-[#1a5a34] hover:to-[var(--hasivu-secondary)]'
               )}
               disabled={!validation.isValid || isLoading}
               onClick={form.handleSubmit(onSubmit)}
@@ -555,12 +557,12 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({ cart, onPlaceOrder, isLoadi
 
             {/* RFID Pickup Code Display */}
             {showRFIDCode && generatedPickupCode && (
-              <Alert className="border-blue-200 bg-blue-50">
-                <Smartphone className="h-4 w-4 text-blue-600" />
-                <AlertDescription className="text-blue-800">
+              <Alert className="border-teal-200 bg-teal-50">
+                <Smartphone className="h-4 w-4 text-teal-600" />
+                <AlertDescription className="text-teal-800">
                   <div className="flex flex-col space-y-2">
                     <span className="font-semibold">RFID Pickup Code Generated!</span>
-                    <div className="bg-white p-3 rounded-lg border border-blue-200">
+                    <div className="bg-white p-3 rounded-lg border border-teal-200">
                       <div className="text-center">
                         <div className="text-2xl font-mono font-bold text-gray-900 tracking-wider">
                           {generatedPickupCode}
@@ -577,7 +579,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({ cart, onPlaceOrder, isLoadi
             )}
 
             {/* Security and Safety Notice */}
-            <div className="flex items-center justify-center space-x-2 text-xs text-gray-600">
+            <div className="flex items-center justify-center space-x-2 text-xs text-hasivu-text-secondary">
               <Shield className="h-3 w-3" />
               <span>Secure payment • Safe delivery • Fresh ingredients</span>
             </div>
@@ -586,15 +588,15 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({ cart, onPlaceOrder, isLoadi
       </Card>
 
       {/* RFID Integration Info (if not shown above) */}
-      <Card className="shadow-md border border-blue-200 bg-gradient-to-r from-blue-50 to-purple-50">
+      <Card className="shadow-md border border-hasivu-neutral-200 bg-gradient-to-r from-[var(--hasivu-info)]/5 to-[var(--hasivu-secondary)]/5 rounded-2xl">
         <CardContent className="p-4">
           <div className="flex items-center space-x-3">
-            <div className="bg-blue-100 p-2 rounded-lg">
-              <Smartphone className="h-5 w-5 text-blue-600" />
+            <div className="bg-teal-100 p-2 rounded-lg">
+              <Smartphone className="h-5 w-5 text-teal-600" />
             </div>
             <div className="flex-1">
-              <h4 className="font-semibold text-blue-900">RFID Card Linked</h4>
-              <p className="text-sm text-blue-700">
+              <h4 className="font-semibold text-teal-900">RFID Card Linked</h4>
+              <p className="text-sm text-teal-700">
                 Card ID: RFID123 • Ready for contactless pickup
               </p>
             </div>

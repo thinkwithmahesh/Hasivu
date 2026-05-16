@@ -198,7 +198,7 @@ const PaymentIntelligenceDemo: React.FC = () => {
                   {liveMetrics.totalTransactions.toLocaleString()}
                 </p>
               </div>
-              <Activity className="h-8 w-8 text-blue-500" />
+              <Activity className="h-8 w-8 text-[var(--hasivu-primary)]" />
             </div>
           </CardContent>
         </Card>
@@ -323,7 +323,7 @@ const PaymentIntelligenceDemo: React.FC = () => {
                       animate={{ rotate: 360 }}
                       transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
                     >
-                      <Brain className="h-12 w-12 text-blue-600" />
+                      <Brain className="h-12 w-12 text-[var(--hasivu-primary)]" />
                     </motion.div>
                     <p className="mt-4 text-gray-600">Analyzing transaction patterns...</p>
                   </div>
@@ -344,7 +344,7 @@ const PaymentIntelligenceDemo: React.FC = () => {
                     </div>
 
                     {/* ML Analysis */}
-                    <div className="p-3 bg-blue-50 rounded-lg">
+                    <div className="p-3 bg-[var(--hasivu-primary)]/5 rounded-lg">
                       <p className="text-sm font-medium mb-2">ML Analysis</p>
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
@@ -425,7 +425,7 @@ const PaymentIntelligenceDemo: React.FC = () => {
                   <p className="text-sm text-gray-600">Accuracy</p>
                 </div>
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-blue-600">
+                  <div className="text-3xl font-bold text-[var(--hasivu-primary)]">
                     {MLMETRICS.fraudDetection.truePositives}%
                   </div>
                   <p className="text-sm text-gray-600">True Positives</p>
@@ -487,9 +487,9 @@ const PaymentIntelligenceDemo: React.FC = () => {
                     />
                   </LineChart>
                 </ResponsiveContainer>
-                <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                <div className="mt-4 p-3 bg-[var(--hasivu-primary)]/5 rounded-lg">
                   <p className="text-sm font-medium mb-1">Next Month Forecast</p>
-                  <p className="text-2xl font-bold text-blue-600">₹64,500</p>
+                  <p className="text-2xl font-bold text-[var(--hasivu-primary)]">₹64,500</p>
                   <p className="text-xs text-gray-600">
                     Confidence: {MLMETRICS.revenueForecasting.confidence}%
                   </p>
@@ -581,16 +581,16 @@ const PaymentIntelligenceDemo: React.FC = () => {
                   <div className="space-y-2">
                     <p className="text-sm font-medium">Optimal Retry Times</p>
                     <div className="grid grid-cols-3 gap-2 text-center">
-                      <div className="p-2 bg-blue-50 rounded">
-                        <p className="font-bold text-blue-600">2h</p>
+                      <div className="p-2 bg-[var(--hasivu-primary)]/5 rounded">
+                        <p className="font-bold text-[var(--hasivu-primary)]">2h</p>
                         <p className="text-xs text-gray-600">First Retry</p>
                       </div>
-                      <div className="p-2 bg-blue-50 rounded">
-                        <p className="font-bold text-blue-600">24h</p>
+                      <div className="p-2 bg-[var(--hasivu-primary)]/5 rounded">
+                        <p className="font-bold text-[var(--hasivu-primary)]">24h</p>
                         <p className="text-xs text-gray-600">Second Retry</p>
                       </div>
-                      <div className="p-2 bg-blue-50 rounded">
-                        <p className="font-bold text-blue-600">72h</p>
+                      <div className="p-2 bg-[var(--hasivu-primary)]/5 rounded">
+                        <p className="font-bold text-[var(--hasivu-primary)]">72h</p>
                         <p className="text-xs text-gray-600">Final Retry</p>
                       </div>
                     </div>

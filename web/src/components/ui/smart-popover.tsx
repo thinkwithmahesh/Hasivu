@@ -150,7 +150,7 @@ const MealQuickActions = ({
 
           {onViewNutrition && (
             <PopoverAction
-              icon={<div className="text-blue-500">📊</div>}
+              icon={<div className="text-[var(--hasivu-primary)]">📊</div>}
               label="View Nutrition"
               description="Calories, protein, allergens"
               onClick={() => handleAction(() => onViewNutrition(mealId))}
@@ -371,7 +371,7 @@ const OrderStatusPopover = ({
                 className={cn(
                   'w-2 h-2 rounded-full',
                   status === 'pending' && 'bg-yellow-500',
-                  status === 'preparing' && 'bg-blue-500 animate-pulse',
+                  status === 'preparing' && 'bg-[var(--hasivu-primary)] animate-pulse',
                   status === 'ready' && 'bg-green-500',
                   status === 'delivered' && 'bg-gray-500'
                 )}
@@ -388,7 +388,7 @@ const OrderStatusPopover = ({
 
           {onTrackOrder && (
             <PopoverAction
-              icon={<MapPin className="h-4 w-4 text-blue-500" />}
+              icon={<MapPin className="h-4 w-4 text-[var(--hasivu-primary)]" />}
               label="Track Order"
               description="See real-time progress"
               onClick={() => handleAction(() => onTrackOrder(orderId))}
@@ -408,7 +408,7 @@ const OrderStatusPopover = ({
 
           {onContactSupport && (
             <PopoverAction
-              icon={<div className="text-blue-500">💬</div>}
+              icon={<div className="text-[var(--hasivu-primary)]">💬</div>}
               label="Contact Support"
               description="Get help with this order"
               onClick={() => handleAction(() => onContactSupport(orderId))}

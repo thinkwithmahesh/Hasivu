@@ -240,7 +240,7 @@ export function CartSidebar({
 
               {/* Order Summary Card */}
               {cart.length > 0 && (
-                <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-2xl p-4 mt-6">
+                <div className="bg-gradient-to-r from-green-50 to-[var(--hasivu-primary)]/5 border border-green-200 rounded-2xl p-4 mt-6">
                   <div className="flex items-center gap-3 mb-3">
                     <CheckCircle className="h-5 w-5 text-green-600" />
                     <span className="font-medium text-green-800">Order Summary</span>

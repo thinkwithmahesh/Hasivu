@@ -296,7 +296,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
           id={field}
           value={formData[field]}
           onChange={e => handleInputChange(field, e.target.value)}
-          className={`w-full ${icon ? 'pl-10' : 'pl-3'} pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+          className={`w-full ${icon ? 'pl-10' : 'pl-3'} pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--hasivu-primary)] focus:border-transparent transition-colors ${
             errors[field] ? 'border-red-500' : ''
           }`}
           placeholder={placeholder || label}
@@ -331,7 +331,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
           id={field}
           value={formData[field]}
           onChange={e => handleInputChange(field, e.target.value)}
-          className={`w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+          className={`w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--hasivu-primary)] focus:border-transparent transition-colors ${
             errors[field] ? 'border-red-500' : ''
           }`}
           placeholder={label}
@@ -441,7 +441,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setMode('forgot-password')}
-                  className="text-sm text-blue-600 hover:text-blue-800 transition-colors"
+                  className="text-sm text-[var(--hasivu-primary)] hover:text-[var(--hasivu-primary-dark)] transition-colors"
                   disabled={isLoading}
                 >
                   Forgot your password?
@@ -466,7 +466,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
                   <select
                     value={formData.role}
                     onChange={e => handleInputChange('role', e.target.value as any)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--hasivu-primary)]"
                     disabled={isLoading}
                   >
                     <option value="admin">School Administrator</option>
@@ -493,9 +493,9 @@ const AuthModal: React.FC<AuthModalProps> = ({
             {/* Email Verification Form */}
             {mode === 'verify-email' && (
               <>
-                <div className="text-center p-4 bg-blue-50 rounded-lg mb-4">
-                  <CheckCircle className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-                  <p className="text-sm text-blue-800">
+                <div className="text-center p-4 bg-[var(--hasivu-primary)]/5 rounded-lg mb-4">
+                  <CheckCircle className="w-8 h-8 text-[var(--hasivu-primary)] mx-auto mb-2" />
+                  <p className="text-sm text-[var(--hasivu-primary-dark)]">
                     We've sent a verification code to <strong>{formData.email}</strong>
                   </p>
                 </div>
@@ -527,7 +527,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-gradient-to-r from-[var(--hasivu-primary)] to-indigo-600 text-white py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -557,7 +557,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
                   <button
                     type="button"
                     onClick={() => setMode('signup')}
-                    className="text-blue-600 hover:text-blue-800 font-semibold transition-colors"
+                    className="text-[var(--hasivu-primary)] hover:text-[var(--hasivu-primary-dark)] font-semibold transition-colors"
                     disabled={isLoading}
                   >
                     Sign up
@@ -571,7 +571,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
                   <button
                     type="button"
                     onClick={() => setMode('login')}
-                    className="text-blue-600 hover:text-blue-800 font-semibold transition-colors"
+                    className="text-[var(--hasivu-primary)] hover:text-[var(--hasivu-primary-dark)] font-semibold transition-colors"
                     disabled={isLoading}
                   >
                     Sign in
@@ -583,7 +583,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setMode('login')}
-                  className="text-sm text-blue-600 hover:text-blue-800 font-semibold transition-colors"
+                  className="text-sm text-[var(--hasivu-primary)] hover:text-[var(--hasivu-primary-dark)] font-semibold transition-colors"
                   disabled={isLoading}
                 >
                   ← Back to Sign In

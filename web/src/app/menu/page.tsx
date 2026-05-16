@@ -271,18 +271,24 @@ export default function MenuPage() {
 
   // Empty state component
   const EmptyState = () => (
-    <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-      <div className="rounded-full bg-gray-100 p-6 mb-4">
-        <Utensils className="h-12 w-12 text-gray-400" />
+    <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+      <div className="rounded-full bg-[var(--hasivu-primary)]/10 p-6 mb-4">
+        <Utensils className="h-12 w-12 text-[var(--hasivu-primary)]" />
       </div>
-      <h3 className="text-xl font-semibold text-gray-900 mb-2">No menu items found</h3>
-      <p className="text-gray-600 mb-4 max-w-md">
+      <h3 className="text-xl font-display font-bold text-hasivu-text-primary mb-2">
+        No menu items found
+      </h3>
+      <p className="text-hasivu-text-secondary mb-4 max-w-md">
         {searchQuery || filters.dietary?.length || filters.spiceLevel?.length
           ? 'Try adjusting your filters or search terms'
           : 'Menu items will appear here once they are added'}
       </p>
       {(searchQuery || filters.dietary?.length || filters.spiceLevel?.length) && (
-        <Button onClick={clearFilters} variant="outline">
+        <Button
+          onClick={clearFilters}
+          variant="outline"
+          className="rounded-xl border-[var(--hasivu-primary)]/30 text-[var(--hasivu-primary)] hover:bg-[var(--hasivu-primary)]/5"
+        >
           Clear Filters
         </Button>
       )}
@@ -298,11 +304,11 @@ export default function MenuPage() {
           initial={reduced ? undefined : { opacity: 0, y: 12 }}
           animate={reduced ? undefined : { opacity: 1, y: 0 }}
           transition={reduced ? { duration: 0 } : { duration: 0.35 }}
-          className="min-h-screen bg-gradient-to-br from-primary-50 to-accent-50 flex items-center justify-center"
+          className="min-h-screen bg-hasivu-bg-warm flex items-center justify-center"
         >
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Checking authentication...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--hasivu-primary)] mx-auto mb-4"></div>
+            <p className="text-hasivu-text-secondary">Checking authentication...</p>
           </div>
         </m.div>
       </LazyMotion>
@@ -315,7 +321,7 @@ export default function MenuPage() {
         initial={reduced ? undefined : { opacity: 0, y: 12 }}
         animate={reduced ? undefined : { opacity: 1, y: 0 }}
         transition={reduced ? { duration: 0 } : { duration: 0.35 }}
-        className="min-h-screen bg-gradient-to-br from-primary-50 to-accent-50"
+        className="min-h-screen bg-hasivu-bg-warm"
       >
         {/* Header */}
         <header className="border-b bg-white/80 backdrop-blur sticky top-0 z-10">
@@ -329,14 +335,14 @@ export default function MenuPage() {
                   </Button>
                 </Link>
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-primary-500 flex items-center justify-center">
+                  <div className="h-10 w-10 rounded-xl bg-[var(--hasivu-primary)] flex items-center justify-center">
                     <span className="text-white font-bold text-xl">H</span>
                   </div>
                   <div>
-                    <h1 className="font-display font-bold text-xl md:text-2xl text-primary-600">
+                    <h1 className="font-display font-bold text-xl md:text-2xl text-[var(--hasivu-primary)]">
                       School Menu
                     </h1>
-                    <div className="text-xs text-gray-600 -mt-1">HASIVU Platform</div>
+                    <div className="text-xs text-hasivu-text-secondary -mt-1">HASIVU Platform</div>
                   </div>
                 </div>
               </div>
@@ -373,18 +379,20 @@ export default function MenuPage() {
           >
             <h1
               id="menu-page-heading"
-              className="text-2xl md:text-3xl font-bold text-gray-900 mb-2"
+              className="text-2xl md:text-3xl font-display font-bold text-hasivu-text-primary mb-2"
             >
               Browse Our Menu
             </h1>
-            <p className="text-gray-600">Healthy and delicious meals prepared fresh daily</p>
+            <p className="text-hasivu-text-secondary">
+              Healthy and delicious meals prepared fresh daily
+            </p>
           </m.section>
 
           {/* Search and Filter Bar */}
           <div className="mb-6 space-y-4">
             <div className="flex gap-2">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-hasivu-text-tertiary" />
                 <Input
                   type="search"
                   placeholder="Search menu items..."
@@ -518,19 +526,23 @@ export default function MenuPage() {
 
           {/* Cart Summary */}
           {cart.itemCount > 0 && (
-            <Card className="border-0 shadow-soft mb-6 bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
+            <Card className="border border-[var(--hasivu-secondary)]/20 shadow-soft mb-6 bg-gradient-to-r from-[var(--hasivu-secondary)]/5 to-[var(--hasivu-secondary)]/10 rounded-2xl">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-2">
-                    <ShoppingCart className="h-5 w-5 text-green-600" />
+                    <ShoppingCart className="h-5 w-5 text-[var(--hasivu-secondary)]" />
                     <div>
-                      <p className="font-medium text-green-800">{cart.itemCount} items in cart</p>
-                      <p className="text-sm text-green-700">Total: ₹{cart.total.toFixed(2)}</p>
+                      <p className="font-medium text-hasivu-text-primary">
+                        {cart.itemCount} items in cart
+                      </p>
+                      <p className="text-sm text-hasivu-text-secondary">
+                        Total: ₹{cart.total.toFixed(2)}
+                      </p>
                     </div>
                   </div>
                   <Button
                     onClick={proceedToCheckout}
-                    className="bg-green-600 hover:bg-green-700 shrink-0"
+                    className="bg-[var(--hasivu-secondary)] hover:bg-[#1a5a34] text-white rounded-xl shrink-0"
                   >
                     Checkout
                   </Button>
@@ -546,10 +558,12 @@ export default function MenuPage() {
                 <Card className="border-0 shadow-soft">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2">
-                      <Utensils className="h-5 w-5 text-blue-600" />
+                      <Utensils className="h-5 w-5 text-[var(--hasivu-primary)]" />
                       <div>
-                        <p className="text-xs text-gray-600">Total Items</p>
-                        <p className="text-xl font-bold">{menuItems.length}</p>
+                        <p className="text-xs text-hasivu-text-secondary">Total Items</p>
+                        <p className="text-xl font-bold text-hasivu-text-primary">
+                          {menuItems.length}
+                        </p>
                       </div>
                     </div>
                   </CardContent>
@@ -562,8 +576,8 @@ export default function MenuPage() {
                     <div className="flex items-center gap-2">
                       <Star className="h-5 w-5 text-yellow-600" />
                       <div>
-                        <p className="text-xs text-gray-600">Avg Rating</p>
-                        <p className="text-xl font-bold">
+                        <p className="text-xs text-hasivu-text-secondary">Avg Rating</p>
+                        <p className="text-xl font-bold text-hasivu-text-primary">
                           {menuItems.filter(item => item.rating).length > 0
                             ? (
                                 menuItems.reduce((sum, item) => sum + (item.rating || 0), 0) /
@@ -583,8 +597,8 @@ export default function MenuPage() {
                     <div className="flex items-center gap-2">
                       <Clock className="h-5 w-5 text-green-600" />
                       <div>
-                        <p className="text-xs text-gray-600">Avg Prep</p>
-                        <p className="text-xl font-bold">
+                        <p className="text-xs text-hasivu-text-secondary">Avg Prep</p>
+                        <p className="text-xl font-bold text-hasivu-text-primary">
                           {Math.round(
                             menuItems.reduce((sum, item) => sum + item.preparationTime, 0) /
                               menuItems.length
@@ -600,10 +614,12 @@ export default function MenuPage() {
               <Card className="border-0 shadow-soft">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-2">
-                    <Plus className="h-5 w-5 text-purple-600" />
+                    <Plus className="h-5 w-5 text-[var(--hasivu-accent)]" />
                     <div>
-                      <p className="text-xs text-gray-600">Categories</p>
-                      <p className="text-xl font-bold">{categories.length}</p>
+                      <p className="text-xs text-hasivu-text-secondary">Categories</p>
+                      <p className="text-xl font-bold text-hasivu-text-primary">
+                        {categories.length}
+                      </p>
                     </div>
                   </div>
                 </CardContent>
@@ -661,7 +677,7 @@ export default function MenuPage() {
                         </div>
                       </div>
                       <CardTitle className="text-lg line-clamp-1">{item.name}</CardTitle>
-                      <CardDescription className="text-sm text-gray-600 line-clamp-2">
+                      <CardDescription className="text-sm text-hasivu-text-secondary line-clamp-2">
                         {item.description}
                       </CardDescription>
                     </CardHeader>
@@ -675,16 +691,16 @@ export default function MenuPage() {
                                 <Star className="h-4 w-4 text-yellow-500 fill-current" />
                                 <span className="font-medium">{item.rating.toFixed(1)}</span>
                                 {item.reviewCount && (
-                                  <span className="text-gray-500 text-xs">
+                                  <span className="text-hasivu-text-tertiary text-xs">
                                     ({item.reviewCount})
                                   </span>
                                 )}
                               </>
                             ) : (
-                              <span className="text-gray-400 text-xs">No ratings</span>
+                              <span className="text-hasivu-text-tertiary text-xs">No ratings</span>
                             )}
                           </div>
-                          <div className="flex items-center gap-1 text-gray-600">
+                          <div className="flex items-center gap-1 text-hasivu-text-secondary">
                             <Clock className="h-4 w-4" />
                             <span>{item.preparationTime}m</span>
                           </div>
@@ -711,7 +727,7 @@ export default function MenuPage() {
                           {item.isGlutenFree && (
                             <Badge
                               variant="secondary"
-                              className="text-xs bg-blue-100 text-blue-700"
+                              className="text-xs bg-[var(--hasivu-primary)]/10 text-[var(--hasivu-primary)]"
                             >
                               GF
                             </Badge>
@@ -737,7 +753,7 @@ export default function MenuPage() {
 
                         {/* Nutritional Info */}
                         {item.nutritionalInfo && (
-                          <div className="flex items-center gap-1 text-xs text-gray-600">
+                          <div className="flex items-center gap-1 text-xs text-hasivu-text-secondary">
                             <Info className="h-3 w-3" />
                             <span>{item.nutritionalInfo.calories} cal</span>
                             <span>•</span>
@@ -751,7 +767,7 @@ export default function MenuPage() {
                             <span className="text-lg font-bold text-primary-600">
                               ₹{item.price.toFixed(2)}
                             </span>
-                            <p className="text-xs text-gray-500">{item.servingSize}</p>
+                            <p className="text-xs text-hasivu-text-tertiary">{item.servingSize}</p>
                           </div>
                           <div className="flex items-center gap-2">
                             <Button
@@ -759,6 +775,7 @@ export default function MenuPage() {
                               variant="outline"
                               onClick={() => handleQuickAdd(item)}
                               disabled={item.availability === 'unavailable'}
+                              className="rounded-xl border-[var(--hasivu-primary)]/30 text-[var(--hasivu-primary)] hover:bg-[var(--hasivu-primary)]/5"
                             >
                               Quick Add
                             </Button>
@@ -778,6 +795,7 @@ export default function MenuPage() {
                                   size="sm"
                                   onClick={() => handleOrderNow(item)}
                                   disabled={item.availability === 'unavailable'}
+                                  className="rounded-xl bg-[var(--hasivu-primary)] hover:bg-[var(--hasivu-primary-dark)] text-white"
                                 >
                                   Order
                                 </Button>
@@ -805,21 +823,25 @@ export default function MenuPage() {
                                 <div className="space-y-4 py-4">
                                   {/* Nutritional Info */}
                                   {item.nutritionalInfo && (
-                                    <div className="grid grid-cols-3 gap-2 p-3 bg-gray-50 rounded-lg">
+                                    <div className="grid grid-cols-3 gap-2 p-3 bg-hasivu-neutral-50 rounded-xl">
                                       <div className="text-center">
-                                        <p className="text-xs text-gray-600">Calories</p>
+                                        <p className="text-xs text-hasivu-text-secondary">
+                                          Calories
+                                        </p>
                                         <p className="font-semibold">
                                           {item.nutritionalInfo.calories}
                                         </p>
                                       </div>
                                       <div className="text-center">
-                                        <p className="text-xs text-gray-600">Protein</p>
+                                        <p className="text-xs text-hasivu-text-secondary">
+                                          Protein
+                                        </p>
                                         <p className="font-semibold">
                                           {item.nutritionalInfo.protein}g
                                         </p>
                                       </div>
                                       <div className="text-center">
-                                        <p className="text-xs text-gray-600">Carbs</p>
+                                        <p className="text-xs text-hasivu-text-secondary">Carbs</p>
                                         <p className="font-semibold">
                                           {item.nutritionalInfo.carbohydrates}g
                                         </p>
@@ -911,7 +933,9 @@ export default function MenuPage() {
                                   {/* Price Summary */}
                                   <div className="flex items-center justify-between pt-4 border-t">
                                     <div>
-                                      <p className="text-sm text-gray-600">Total Price</p>
+                                      <p className="text-sm text-hasivu-text-secondary">
+                                        Total Price
+                                      </p>
                                       <p className="text-2xl font-bold text-primary-600">
                                         ₹{(item.price * selectedQuantity).toFixed(2)}
                                       </p>

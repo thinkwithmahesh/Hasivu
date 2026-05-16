@@ -137,7 +137,7 @@ export function MenuHeader({ cartCount, totalPrice, onCartOpen, className }: Men
               size="sm"
               className="h-10 w-10 p-0 rounded-full hover:bg-white/60"
             >
-              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-[var(--hasivu-primary)] to-purple-600 flex items-center justify-center">
                 <User className="h-4 w-4 text-white" />
               </div>
             </Button>

@@ -1,11 +1,20 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Baby, CalendarDays, Edit3, Plus, ShieldCheck, Utensils } from 'lucide-react';
+import { Baby, CalendarDays, Edit3, Plus, ShieldCheck, Utensils, Save, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 const initialChildren = [
   {
@@ -29,7 +38,56 @@ const initialChildren = [
 ];
 
 export default function ChildrenPage() {
-  const [children] = useState(initialChildren);
+  const [children, setChildren] = useState(initialChildren);
+  const [editingChild, setEditingChild] = useState<any>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    grade: '',
+    allergies: '',
+    preferences: '',
+  });
+
+  const handleEditClick = (child: any) => {
+    setEditingChild(child);
+    setEditForm({
+      name: child.name,
+      grade: child.grade,
+      allergies: child.allergies.join(', '),
+      preferences: child.preferences.join(', '),
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleSave = () => {
+    if (!editForm.name.trim()) {
+      toast.error('Child name is required');
+      return;
+    }
+
+    const updatedChildren = children.map(c => {
+      if (c.id === editingChild.id) {
+        return {
+          ...c,
+          name: editForm.name,
+          grade: editForm.grade,
+          allergies: editForm.allergies
+            .split(',')
+            .map(s => s.trim())
+            .filter(Boolean),
+          preferences: editForm.preferences
+            .split(',')
+            .map(s => s.trim())
+            .filter(Boolean),
+        };
+      }
+      return c;
+    });
+
+    setChildren(updatedChildren);
+    setIsDialogOpen(false);
+    toast.success(`${editForm.name}'s profile updated successfully`);
+  };
 
   return (
     <div className="min-h-screen bg-[var(--hasivu-bg-warm)] px-4 py-8 text-[var(--hasivu-text-primary)]">
@@ -47,7 +105,9 @@ export default function ChildrenPage() {
           <Button
             type="button"
             className="min-h-11"
-            onClick={() => toast.info('Add child workflow will open once school roster sync is enabled.')}
+            onClick={() =>
+              toast.info('Add child workflow will open once school roster sync is enabled.')
+            }
           >
             <Plus className="mr-2 h-4 w-4" />
             Add Child
@@ -75,7 +135,7 @@ export default function ChildrenPage() {
                     variant="outline"
                     size="sm"
                     className="min-h-11"
-                    onClick={() => toast.info(`Editing ${child.name}`)}
+                    onClick={() => handleEditClick(child)}
                   >
                     <Edit3 className="mr-2 h-4 w-4" />
                     Edit
@@ -111,7 +171,9 @@ export default function ChildrenPage() {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-[var(--hasivu-text-secondary)]">No allergy notes recorded.</p>
+                    <p className="text-sm text-[var(--hasivu-text-secondary)]">
+                      No allergy notes recorded.
+                    </p>
                   )}
                 </div>
 
@@ -132,6 +194,81 @@ export default function ChildrenPage() {
             </Card>
           ))}
         </div>
+
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Edit Child Profile</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="name" className="text-right">
+                  Name
+                </Label>
+                <Input
+                  id="name"
+                  value={editForm.name}
+                  onChange={e => setEditForm({ ...editForm, name: e.target.value })}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="grade" className="text-right">
+                  Class/Grade
+                </Label>
+                <Input
+                  id="grade"
+                  value={editForm.grade}
+                  onChange={e => setEditForm({ ...editForm, grade: e.target.value })}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-start gap-4">
+                <Label htmlFor="allergies" className="text-right pt-2">
+                  Allergies
+                </Label>
+                <div className="col-span-3">
+                  <Input
+                    id="allergies"
+                    value={editForm.allergies}
+                    onChange={e => setEditForm({ ...editForm, allergies: e.target.value })}
+                    placeholder="E.g. Peanuts, Dairy (comma separated)"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Separate multiple allergies with commas.
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-4 items-start gap-4">
+                <Label htmlFor="preferences" className="text-right pt-2">
+                  Preferences
+                </Label>
+                <div className="col-span-3">
+                  <Input
+                    id="preferences"
+                    value={editForm.preferences}
+                    onChange={e => setEditForm({ ...editForm, preferences: e.target.value })}
+                    placeholder="E.g. Vegetarian, Less spicy"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Separate multiple preferences with commas.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSave}
+                className="bg-[var(--hasivu-primary)] hover:bg-[var(--hasivu-primary-dark)] text-white"
+              >
+                Save changes
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

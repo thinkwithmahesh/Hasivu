@@ -20,7 +20,7 @@ export function LandingPageHero({ videoOpen, setVideoOpen }: LandingPageHeroProp
           <div className="mx-auto max-w-3xl">
             <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-ink-900 leading-[1.1]">
               School meals,{' '}
-              <span className="bg-gradient-to-r from-emerald-600 via-cyan-600 to-blue-600 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-emerald-600 via-cyan-600 to-[var(--hasivu-primary-dark)] bg-clip-text text-transparent">
                 done right
               </span>
             </h1>

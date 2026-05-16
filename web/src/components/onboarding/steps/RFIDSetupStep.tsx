@@ -303,10 +303,10 @@ const RFIDSetupStep: React.FC<RFIDSetupStepProps> = ({
   const renderOverviewTab = () => (
     <div className="space-y-8">
       {/* RFID Enable/Disable */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-8 border border-blue-200">
+      <div className="bg-gradient-to-r from-[var(--hasivu-primary)]/5 to-indigo-50 rounded-2xl p-8 border border-[var(--hasivu-primary)]/20">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-4">
-            <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center">
+            <div className="w-16 h-16 bg-[var(--hasivu-primary)] rounded-full flex items-center justify-center">
               <Radio className="w-8 h-8 text-white" />
             </div>
             <div>
@@ -316,7 +316,7 @@ const RFIDSetupStep: React.FC<RFIDSetupStepProps> = ({
           </div>
           <label className="relative inline-flex items-center cursor-pointer">
             <input type="checkbox" {...register('enableRFID')} className="sr-only peer" />
-            <div className="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-blue-600"></div>
+            <div className="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[var(--hasivu-primary)]/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-[var(--hasivu-primary)]"></div>
           </label>
         </div>
 
@@ -375,7 +375,9 @@ const RFIDSetupStep: React.FC<RFIDSetupStepProps> = ({
               <h4 className="font-semibold text-gray-900 mb-4">Implementation Status</h4>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">{locationFields.length}</div>
+                  <div className="text-2xl font-bold text-[var(--hasivu-primary)]">
+                    {locationFields.length}
+                  </div>
                   <div className="text-sm text-gray-600">RFID Readers</div>
                 </div>
                 <div className="text-center">
@@ -458,7 +460,7 @@ const RFIDSetupStep: React.FC<RFIDSetupStepProps> = ({
         </div>
         <button
           onClick={() => appendLocation({ name: '', location: '', type: 'entry' })}
-          className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          className="flex items-center space-x-2 px-4 py-2 bg-[var(--hasivu-primary)] text-white rounded-lg hover:bg-[var(--hasivu-primary-dark)] transition-colors"
         >
           <Plus className="w-4 h-4" />
           <span>Add Reader</span>
@@ -506,7 +508,7 @@ const RFIDSetupStep: React.FC<RFIDSetupStepProps> = ({
                 <label className="block text-sm font-medium text-gray-700 mb-2">Reader Name</label>
                 <input
                   {...register(`readerLocations.${index}.name` as const)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--hasivu-primary)] focus:border-transparent"
                   placeholder="e.g., Main Entrance"
                 />
               </div>
@@ -517,7 +519,7 @@ const RFIDSetupStep: React.FC<RFIDSetupStepProps> = ({
                 </label>
                 <input
                   {...register(`readerLocations.${index}.location` as const)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--hasivu-primary)] focus:border-transparent"
                   placeholder="e.g., Near security desk"
                 />
               </div>
@@ -526,7 +528,7 @@ const RFIDSetupStep: React.FC<RFIDSetupStepProps> = ({
                 <label className="block text-sm font-medium text-gray-700 mb-2">Reader Type</label>
                 <select
                   {...register(`readerLocations.${index}.type` as const)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--hasivu-primary)] focus:border-transparent"
                 >
                   {locationTypes.map(type => (
                     <option key={type.type} value={type.type}>
@@ -544,10 +546,12 @@ const RFIDSetupStep: React.FC<RFIDSetupStepProps> = ({
                 <div className="text-sm font-medium text-green-900">Signal: Strong</div>
                 <div className="text-xs text-green-700">-45 dBm</div>
               </div>
-              <div className="bg-blue-50 rounded-lg p-3">
-                <Wifi className="w-5 h-5 text-blue-600 mx-auto mb-1" />
-                <div className="text-sm font-medium text-blue-900">Range: 2.5m</div>
-                <div className="text-xs text-blue-700">Optimal</div>
+              <div className="bg-[var(--hasivu-primary)]/5 rounded-lg p-3">
+                <Wifi className="w-5 h-5 text-[var(--hasivu-primary)] mx-auto mb-1" />
+                <div className="text-sm font-medium text-[var(--hasivu-primary-dark)]">
+                  Range: 2.5m
+                </div>
+                <div className="text-xs text-[var(--hasivu-primary)]">Optimal</div>
               </div>
               <div className="bg-purple-50 rounded-lg p-3">
                 <Database className="w-5 h-5 text-purple-600 mx-auto mb-1" />
@@ -560,11 +564,11 @@ const RFIDSetupStep: React.FC<RFIDSetupStepProps> = ({
       </div>
 
       {/* Coverage Analysis */}
-      <div className="bg-blue-50 rounded-xl p-6 border border-blue-200">
-        <h4 className="font-medium text-blue-900 mb-4">Coverage Analysis</h4>
+      <div className="bg-[var(--hasivu-primary)]/5 rounded-xl p-6 border border-[var(--hasivu-primary)]/20">
+        <h4 className="font-medium text-[var(--hasivu-primary-dark)] mb-4">Coverage Analysis</h4>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">
+            <div className="text-2xl font-bold text-[var(--hasivu-primary)]">
               {Math.round(
                 (locationFields.length /
                   Math.max(1, Math.ceil((schoolInfo?.studentCount || 500) / 200))) *
@@ -572,21 +576,25 @@ const RFIDSetupStep: React.FC<RFIDSetupStepProps> = ({
               )}
               %
             </div>
-            <div className="text-sm text-blue-700">Area Coverage</div>
+            <div className="text-sm text-[var(--hasivu-primary)]">Area Coverage</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">{locationFields.length}</div>
-            <div className="text-sm text-blue-700">Active Readers</div>
+            <div className="text-2xl font-bold text-[var(--hasivu-primary)]">
+              {locationFields.length}
+            </div>
+            <div className="text-sm text-[var(--hasivu-primary)]">Active Readers</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">
+            <div className="text-2xl font-bold text-[var(--hasivu-primary)]">
               {locationFields.length > 0 ? Math.round(2.5 * locationFields.length) : 0}m
             </div>
-            <div className="text-sm text-blue-700">Total Range</div>
+            <div className="text-sm text-[var(--hasivu-primary)]">Total Range</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">₹{locationFields.length * 15}K</div>
-            <div className="text-sm text-blue-700">Equipment Cost</div>
+            <div className="text-2xl font-bold text-[var(--hasivu-primary)]">
+              ₹{locationFields.length * 15}K
+            </div>
+            <div className="text-sm text-[var(--hasivu-primary)]">Equipment Cost</div>
           </div>
         </div>
       </div>
@@ -609,8 +617,8 @@ const RFIDSetupStep: React.FC<RFIDSetupStepProps> = ({
             key={method.method}
             className={`block p-6 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
               watchedValues.cardDistribution?.method === method.method
-                ? 'border-blue-500 bg-blue-50'
-                : 'border-gray-200 hover:border-blue-300'
+                ? 'border-[var(--hasivu-primary)] bg-[var(--hasivu-primary)]/5'
+                : 'border-gray-200 hover:border-[var(--hasivu-primary)]/30'
             }`}
           >
             <div className="flex items-start space-x-4">
@@ -618,7 +626,7 @@ const RFIDSetupStep: React.FC<RFIDSetupStepProps> = ({
                 type="radio"
                 value={method.method}
                 {...register('cardDistribution.method')}
-                className="w-5 h-5 text-blue-600 border-gray-300 focus:ring-blue-500 mt-1"
+                className="w-5 h-5 text-[var(--hasivu-primary)] border-gray-300 focus:ring-[var(--hasivu-primary)] mt-1"
               />
               <div className="flex-1">
                 <div className="flex items-center space-x-3 mb-2">
@@ -682,13 +690,13 @@ const RFIDSetupStep: React.FC<RFIDSetupStepProps> = ({
           ].map(timeline => (
             <label
               key={timeline.value}
-              className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:border-blue-500 cursor-pointer transition-colors"
+              className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:border-[var(--hasivu-primary)] cursor-pointer transition-colors"
             >
               <input
                 type="radio"
                 value={timeline.value}
                 {...register('cardDistribution.timeline')}
-                className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500 mb-2"
+                className="w-4 h-4 text-[var(--hasivu-primary)] border-gray-300 focus:ring-[var(--hasivu-primary)] mb-2"
               />
               <span className="font-medium text-gray-900 text-sm">{timeline.label}</span>
               <span className="text-xs text-gray-500 text-center">{timeline.description}</span>
@@ -704,15 +712,15 @@ const RFIDSetupStep: React.FC<RFIDSetupStepProps> = ({
           {backupMethods.map(backup => (
             <label
               key={backup.method}
-              className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg hover:border-blue-500 cursor-pointer transition-colors"
+              className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg hover:border-[var(--hasivu-primary)] cursor-pointer transition-colors"
             >
               <input
                 type="radio"
                 value={backup.method}
                 {...register('cardDistribution.backupMethod')}
-                className="w-5 h-5 text-blue-600 border-gray-300 focus:ring-blue-500"
+                className="w-5 h-5 text-[var(--hasivu-primary)] border-gray-300 focus:ring-[var(--hasivu-primary)]"
               />
-              <div className="text-blue-600">{backup.icon}</div>
+              <div className="text-[var(--hasivu-primary)]">{backup.icon}</div>
               <div className="flex-1">
                 <div className="flex items-center space-x-3">
                   <span className="font-medium text-gray-900">{backup.name}</span>
@@ -797,16 +805,16 @@ const RFIDSetupStep: React.FC<RFIDSetupStepProps> = ({
       <div className="bg-white rounded-xl p-6 border border-gray-200">
         <h4 className="font-medium text-gray-900 mb-4">Encryption Level</h4>
         <div className="space-y-3">
-          <label className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg hover:border-blue-500 cursor-pointer transition-colors">
+          <label className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg hover:border-[var(--hasivu-primary)] cursor-pointer transition-colors">
             <input
               type="radio"
               value="basic"
               {...register('securityFeatures.encryptionLevel')}
-              className="w-5 h-5 text-blue-600 border-gray-300 focus:ring-blue-500"
+              className="w-5 h-5 text-[var(--hasivu-primary)] border-gray-300 focus:ring-[var(--hasivu-primary)]"
             />
             <div className="flex-1">
               <div className="flex items-center space-x-3">
-                <Lock className="w-5 h-5 text-blue-600" />
+                <Lock className="w-5 h-5 text-[var(--hasivu-primary)]" />
                 <span className="font-medium text-gray-900">Basic Encryption</span>
                 <span className="bg-yellow-100 text-yellow-800 text-xs font-medium px-2 py-1 rounded">
                   128-bit
@@ -816,12 +824,12 @@ const RFIDSetupStep: React.FC<RFIDSetupStepProps> = ({
             </div>
           </label>
 
-          <label className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg hover:border-blue-500 cursor-pointer transition-colors">
+          <label className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg hover:border-[var(--hasivu-primary)] cursor-pointer transition-colors">
             <input
               type="radio"
               value="advanced"
               {...register('securityFeatures.encryptionLevel')}
-              className="w-5 h-5 text-blue-600 border-gray-300 focus:ring-blue-500"
+              className="w-5 h-5 text-[var(--hasivu-primary)] border-gray-300 focus:ring-[var(--hasivu-primary)]"
             />
             <div className="flex-1">
               <div className="flex items-center space-x-3">
@@ -830,7 +838,7 @@ const RFIDSetupStep: React.FC<RFIDSetupStepProps> = ({
                 <span className="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded">
                   256-bit AES
                 </span>
-                <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded">
+                <span className="bg-[var(--hasivu-primary)]/10 text-[var(--hasivu-primary-dark)] text-xs font-medium px-2 py-1 rounded">
                   Recommended
                 </span>
               </div>
@@ -866,17 +874,17 @@ const RFIDSetupStep: React.FC<RFIDSetupStepProps> = ({
             </div>
           </label>
 
-          <label className="flex items-center space-x-4 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+          <label className="flex items-center space-x-4 p-4 bg-[var(--hasivu-primary)]/5 border border-[var(--hasivu-primary)]/20 rounded-xl">
             <input
               type="checkbox"
               {...register('securityFeatures.realTimeMonitoring')}
-              className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              className="w-5 h-5 text-[var(--hasivu-primary)] border-gray-300 rounded focus:ring-[var(--hasivu-primary)]"
             />
             <div className="flex-1">
               <div className="flex items-center space-x-3">
-                <Monitor className="w-5 h-5 text-blue-600" />
+                <Monitor className="w-5 h-5 text-[var(--hasivu-primary)]" />
                 <span className="font-medium text-gray-900">Real-time Monitoring</span>
-                <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded">
+                <span className="bg-[var(--hasivu-primary)]/10 text-[var(--hasivu-primary-dark)] text-xs font-medium px-2 py-1 rounded">
                   +15 points
                 </span>
               </div>
@@ -922,11 +930,17 @@ const RFIDSetupStep: React.FC<RFIDSetupStepProps> = ({
             </div>
             <div className="pl-8 space-y-2">
               <label className="flex items-center space-x-2">
-                <input type="checkbox" className="w-4 h-4 text-blue-600 border-gray-300 rounded" />
+                <input
+                  type="checkbox"
+                  className="w-4 h-4 text-[var(--hasivu-primary)] border-gray-300 rounded"
+                />
                 <span className="text-sm text-gray-700">CCTV sync with RFID events</span>
               </label>
               <label className="flex items-center space-x-2">
-                <input type="checkbox" className="w-4 h-4 text-blue-600 border-gray-300 rounded" />
+                <input
+                  type="checkbox"
+                  className="w-4 h-4 text-[var(--hasivu-primary)] border-gray-300 rounded"
+                />
                 <span className="text-sm text-gray-700">Automatic incident recording</span>
               </label>
             </div>
@@ -941,7 +955,7 @@ const RFIDSetupStep: React.FC<RFIDSetupStepProps> = ({
               <label className="flex items-center space-x-2">
                 <input
                   type="checkbox"
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded"
+                  className="w-4 h-4 text-[var(--hasivu-primary)] border-gray-300 rounded"
                   defaultChecked
                 />
                 <span className="text-sm text-gray-700">Suspicious activity alerts</span>
@@ -949,13 +963,16 @@ const RFIDSetupStep: React.FC<RFIDSetupStepProps> = ({
               <label className="flex items-center space-x-2">
                 <input
                   type="checkbox"
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded"
+                  className="w-4 h-4 text-[var(--hasivu-primary)] border-gray-300 rounded"
                   defaultChecked
                 />
                 <span className="text-sm text-gray-700">System status notifications</span>
               </label>
               <label className="flex items-center space-x-2">
-                <input type="checkbox" className="w-4 h-4 text-blue-600 border-gray-300 rounded" />
+                <input
+                  type="checkbox"
+                  className="w-4 h-4 text-[var(--hasivu-primary)] border-gray-300 rounded"
+                />
                 <span className="text-sm text-gray-700">Daily security reports</span>
               </label>
             </div>
@@ -1015,7 +1032,7 @@ const RFIDSetupStep: React.FC<RFIDSetupStepProps> = ({
     >
       {/* Header */}
       <div className="text-center mb-10">
-        <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
+        <div className="w-20 h-20 bg-gradient-to-r from-[var(--hasivu-primary)] to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
           <Radio className="w-10 h-10 text-white" />
         </div>
         <h2 className="text-3xl font-bold text-gray-900 mb-4">RFID & Security Setup</h2>
@@ -1035,7 +1052,7 @@ const RFIDSetupStep: React.FC<RFIDSetupStepProps> = ({
                 onClick={() => setActiveTab(tab.id as any)}
                 className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                   activeTab === tab.id
-                    ? 'border-blue-500 text-blue-600'
+                    ? 'border-[var(--hasivu-primary)] text-[var(--hasivu-primary)]'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >

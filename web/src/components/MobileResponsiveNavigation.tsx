@@ -217,7 +217,7 @@ const MobileResponsiveNavigation: React.FC<MobileResponsiveNavigationProps> = ({
 
   const UserAvatar = () => (
     <div className="flex items-center space-x-3">
-      <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
+      <div className="w-8 h-8 bg-gradient-to-r from-[var(--hasivu-primary)] to-indigo-600 rounded-full flex items-center justify-center">
         <span className="text-white text-sm font-medium">
           {user?.firstName?.charAt(0)}
           {user?.lastName?.charAt(0)}
@@ -240,7 +240,7 @@ const MobileResponsiveNavigation: React.FC<MobileResponsiveNavigationProps> = ({
             {/* Logo and Desktop Navigation */}
             <div className="flex items-center">
               <div className="flex-shrink-0 flex items-center">
-                <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
+                <div className="w-8 h-8 bg-gradient-to-r from-[var(--hasivu-primary)] to-indigo-600 rounded-lg flex items-center justify-center">
                   <Zap className="w-5 h-5 text-white" />
                 </div>
                 <span className="ml-2 text-xl font-bold text-gray-900">HASIVU</span>
@@ -259,14 +259,14 @@ const MobileResponsiveNavigation: React.FC<MobileResponsiveNavigationProps> = ({
                         }
                         className={`flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors ${
                           isActive
-                            ? 'border-blue-500 text-gray-900'
+                            ? 'border-[var(--hasivu-primary)] text-gray-900'
                             : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                         }`}
                       >
                         <item.icon className="w-4 h-4 mr-2" />
                         {item.label}
                         {item.badge && (
-                          <span className="ml-2 bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full">
+                          <span className="ml-2 bg-[var(--hasivu-primary)]/10 text-[var(--hasivu-primary-dark)] text-xs px-2 py-0.5 rounded-full">
                             {item.badge}
                           </span>
                         )}
@@ -307,7 +307,7 @@ const MobileResponsiveNavigation: React.FC<MobileResponsiveNavigationProps> = ({
                   onChange={e => setSearchTerm(e.target.value)}
                   onFocus={() => setIsSearchFocused(true)}
                   onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[var(--hasivu-primary)] focus:border-[var(--hasivu-primary)]"
                 />
               </div>
             </div>
@@ -372,7 +372,7 @@ const MobileResponsiveNavigation: React.FC<MobileResponsiveNavigationProps> = ({
               ) : (
                 <button
                   onClick={() => setShowAuthModal(true)}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                  className="bg-[var(--hasivu-primary)] text-white px-4 py-2 rounded-lg hover:bg-[var(--hasivu-primary-dark)] transition-colors text-sm font-medium"
                 >
                   Sign In
                 </button>
@@ -381,7 +381,7 @@ const MobileResponsiveNavigation: React.FC<MobileResponsiveNavigationProps> = ({
               {/* Mobile Menu Button */}
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="mobile-menu-trigger md:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
+                className="mobile-menu-trigger md:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--hasivu-primary)]"
               >
                 {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
               </button>
@@ -410,7 +410,7 @@ const MobileResponsiveNavigation: React.FC<MobileResponsiveNavigationProps> = ({
                       placeholder="Search..."
                       value={searchTerm}
                       onChange={e => setSearchTerm(e.target.value)}
-                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[var(--hasivu-primary)] focus:border-[var(--hasivu-primary)]"
                     />
                   </div>
                 </div>
@@ -427,7 +427,7 @@ const MobileResponsiveNavigation: React.FC<MobileResponsiveNavigationProps> = ({
                         }
                         className={`flex items-center justify-between w-full px-3 py-2 rounded-md text-base font-medium transition-colors ${
                           isActive
-                            ? 'bg-blue-50 text-blue-700 border-blue-500'
+                            ? 'bg-[var(--hasivu-primary)]/5 text-[var(--hasivu-primary)] border-[var(--hasivu-primary)]'
                             : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                         }`}
                       >
@@ -435,7 +435,7 @@ const MobileResponsiveNavigation: React.FC<MobileResponsiveNavigationProps> = ({
                           <item.icon className="w-5 h-5 mr-3" />
                           {item.label}
                           {item.badge && (
-                            <span className="ml-2 bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full">
+                            <span className="ml-2 bg-[var(--hasivu-primary)]/10 text-[var(--hasivu-primary-dark)] text-xs px-2 py-0.5 rounded-full">
                               {item.badge}
                             </span>
                           )}

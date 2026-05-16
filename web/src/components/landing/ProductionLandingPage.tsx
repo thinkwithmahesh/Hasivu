@@ -312,7 +312,7 @@ const HeroSection = () => {
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-white/20 rounded-full animate-ping"></div>
         <div className="absolute top-1/3 right-1/4 w-1 h-1 bg-emerald-400/40 rounded-full animate-pulse"></div>
-        <div className="absolute bottom-1/4 left-1/3 w-3 h-3 bg-blue-400/30 rounded-full animate-bounce"></div>
+        <div className="absolute bottom-1/4 left-1/3 w-3 h-3 bg-[var(--hasivu-primary)]/70/30 rounded-full animate-bounce"></div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
