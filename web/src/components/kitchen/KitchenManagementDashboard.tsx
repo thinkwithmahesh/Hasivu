@@ -126,196 +126,13 @@ interface KitchenMetrics {
   activeStaff: number;
 }
 
-// Mock data for demonstration
-const mockOrders: Order[] = [
-  {
-    id: 'ORD-001',
-    orderNumber: '#12341',
-    studentName: 'Priya Sharma',
-    studentId: 'STU-001',
-    items: [
-      {
-        id: 'ITM-001',
-        name: 'Masala Dosa',
-        quantity: 1,
-        category: 'Main',
-        allergens: [],
-        preparationTime: 12,
-        image: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=100&h=100&fit=crop',
-      },
-      {
-        id: 'ITM-002',
-        name: 'Coconut Chutney',
-        quantity: 1,
-        category: 'Side',
-        allergens: ['coconut'],
-        preparationTime: 3,
-      },
-    ],
-    status: 'preparing',
-    priority: 'high',
-    orderTime: '2024-01-15T12:15:00Z',
-    estimatedTime: 15,
-    assignedStaff: 'Rajesh Kumar',
-    location: 'Main Cafeteria',
-    totalAmount: 125,
-  },
-  {
-    id: 'ORD-002',
-    orderNumber: '#12342',
-    studentName: 'Arjun Patel',
-    studentId: 'STU-002',
-    items: [
-      {
-        id: 'ITM-003',
-        name: 'Chicken Biryani',
-        quantity: 1,
-        category: 'Main',
-        allergens: [],
-        preparationTime: 25,
-      },
-      {
-        id: 'ITM-004',
-        name: 'Raita',
-        quantity: 1,
-        category: 'Side',
-        allergens: ['dairy'],
-        preparationTime: 5,
-      },
-    ],
-    status: 'pending',
-    priority: 'medium',
-    orderTime: '2024-01-15T12:20:00Z',
-    estimatedTime: 30,
-    location: 'South Wing',
-    totalAmount: 180,
-  },
-  {
-    id: 'ORD-003',
-    orderNumber: '#12343',
-    studentName: 'Meera Singh',
-    studentId: 'STU-003',
-    items: [
-      {
-        id: 'ITM-005',
-        name: 'Vegetable Pulao',
-        quantity: 1,
-        category: 'Main',
-        allergens: [],
-        preparationTime: 20,
-      },
-    ],
-    status: 'ready',
-    priority: 'low',
-    orderTime: '2024-01-15T12:10:00Z',
-    estimatedTime: 20,
-    actualTime: 18,
-    assignedStaff: 'Sunita Devi',
-    location: 'Main Cafeteria',
-    totalAmount: 95,
-  },
-];
-
-const mockStaff: KitchenStaff[] = [
-  {
-    id: 'STF-001',
-    name: 'Rajesh Kumar',
-    role: 'chef',
-    avatar:
-      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face',
-    status: 'active',
-    currentTask: 'Preparing Masala Dosa (#12341)',
-    efficiency: 92,
-    hoursWorked: 6.5,
-    tasksCompleted: 23,
-    shift: 'Morning (8:00 AM - 4:00 PM)',
-  },
-  {
-    id: 'STF-002',
-    name: 'Sunita Devi',
-    role: 'assistant',
-    avatar:
-      'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face',
-    status: 'active',
-    currentTask: 'Cleaning Station 3',
-    efficiency: 88,
-    hoursWorked: 7.2,
-    tasksCompleted: 31,
-    shift: 'Morning (7:00 AM - 3:00 PM)',
-  },
-  {
-    id: 'STF-003',
-    name: 'Mohammed Ali',
-    role: 'prep',
-    avatar:
-      'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
-    status: 'break',
-    efficiency: 85,
-    hoursWorked: 4.0,
-    tasksCompleted: 18,
-    shift: 'Afternoon (12:00 PM - 8:00 PM)',
-  },
-];
-
-const mockInventory: InventoryItem[] = [
-  {
-    id: 'INV-001',
-    name: 'Rice',
-    category: 'Grains',
-    currentStock: 25,
-    minStock: 20,
-    maxStock: 100,
-    unit: 'kg',
-    supplier: 'ABC Grains Ltd',
-    lastUpdated: '2024-01-15T10:30:00Z',
-    costPerUnit: 45,
-  },
-  {
-    id: 'INV-002',
-    name: 'Chicken',
-    category: 'Protein',
-    currentStock: 8,
-    minStock: 15,
-    maxStock: 50,
-    unit: 'kg',
-    supplier: 'Fresh Meat Co',
-    lastUpdated: '2024-01-15T09:15:00Z',
-    expiryDate: '2024-01-17',
-    costPerUnit: 280,
-  },
-  {
-    id: 'INV-003',
-    name: 'Tomatoes',
-    category: 'Vegetables',
-    currentStock: 12,
-    minStock: 10,
-    maxStock: 30,
-    unit: 'kg',
-    supplier: 'Green Farms',
-    lastUpdated: '2024-01-15T11:00:00Z',
-    expiryDate: '2024-01-18',
-    costPerUnit: 35,
-  },
-];
-
-const mockMetrics: KitchenMetrics = {
-  ordersInProgress: 15,
-  averagePreparationTime: 18.5,
-  completionRate: 94.2,
-  staffEfficiency: 88.3,
-  dailyRevenue: 15420,
-  customerSatisfaction: 4.6,
-  lowStockItems: 3,
-  activeStaff: 8,
-};
-
 // Order Status Colors
 const getStatusColor = (status: Order['status']) => {
   switch (status) {
     case 'pending':
       return 'bg-yellow-100 text-yellow-800 border-yellow-200';
     case 'preparing':
-      return 'bg-blue-100 text-blue-800 border-blue-200';
+      return 'bg-[var(--hasivu-primary)]/10 text-[var(--hasivu-primary-dark)] border-[var(--hasivu-primary)]/20';
     case 'ready':
       return 'bg-green-100 text-green-800 border-green-200';
     case 'completed':
@@ -537,9 +354,9 @@ const StaffCard = ({ staff }: { staff: KitchenStaff }) => {
         </div>
 
         {staff.currentTask && (
-          <div className="mb-4 p-2 bg-blue-50 rounded-md">
-            <p className="text-xs text-blue-800 font-medium">Current Task:</p>
-            <p className="text-sm text-blue-700">{staff.currentTask}</p>
+          <div className="mb-4 p-2 bg-[var(--hasivu-primary)]/5 rounded-md">
+            <p className="text-xs text-[var(--hasivu-primary-dark)] font-medium">Current Task:</p>
+            <p className="text-sm text-[var(--hasivu-primary)]">{staff.currentTask}</p>
           </div>
         )}
 
@@ -703,7 +520,9 @@ export const KitchenManagementDashboard: React.FC = () => {
         if (orderId.startsWith('local-order-')) {
           const staffMember = assignableStaff.find(member => member.id === staffId);
           const staffName =
-            staffMember && ([staffMember.firstName, staffMember.lastName].filter(Boolean).join(' ') || staffMember.email);
+            staffMember &&
+            ([staffMember.firstName, staffMember.lastName].filter(Boolean).join(' ') ||
+              staffMember.email);
           setLocalOrders(prev =>
             prev.map(order =>
               order.id === orderId
@@ -755,14 +574,18 @@ export const KitchenManagementDashboard: React.FC = () => {
           setLocalOrders(prev =>
             prev.map(current => (current.id === order.id ? { ...current, status: next } : current))
           );
-          setSelectedOrder(current => (current?.id === order.id ? { ...current, status: next } : current));
+          setSelectedOrder(current =>
+            current?.id === order.id ? { ...current, status: next } : current
+          );
           toast.success(`${order.orderNumber} moved to ${next}`);
           return;
         }
 
         await updateOrderStatus(order.id, next);
         setLocalOrderStatuses(prev => ({ ...prev, [order.id]: next }));
-        setSelectedOrder(current => (current?.id === order.id ? { ...current, status: next } : current));
+        setSelectedOrder(current =>
+          current?.id === order.id ? { ...current, status: next } : current
+        );
         toast.success(`${order.orderNumber} moved to ${next}`);
       } catch {
         toast.error('Failed to update order status');
@@ -773,7 +596,7 @@ export const KitchenManagementDashboard: React.FC = () => {
 
   // Use fallback data if API calls fail or data is not available
   const ordersData: Order[] = useMemo(() => {
-    const raw = [...localOrders, ...((orders || mockOrders) as any[])];
+    const raw = [...localOrders, ...((orders || []) as any[])];
     return raw.map((o: any) => {
       const assigned = o?.assignedStaff;
       let assignedStaff: string | undefined;
@@ -794,9 +617,18 @@ export const KitchenManagementDashboard: React.FC = () => {
       } as Order;
     });
   }, [localOrderStatuses, localOrders, orders]);
-  const metricsData: KitchenMetrics = (metrics || mockMetrics) as KitchenMetrics;
-  const staffData: KitchenStaff[] = (staff || mockStaff) as KitchenStaff[];
-  const inventoryData: InventoryItem[] = (inventory || mockInventory) as InventoryItem[];
+  const metricsData: KitchenMetrics = (metrics as unknown as KitchenMetrics) || {
+    ordersInProgress: 0,
+    averagePreparationTime: 0,
+    completionRate: 0,
+    staffEfficiency: 0,
+    dailyRevenue: 0,
+    customerSatisfaction: 0,
+    lowStockItems: 0,
+    activeStaff: 0,
+  };
+  const staffData: KitchenStaff[] = (staff as unknown as KitchenStaff[]) || [];
+  const inventoryData: InventoryItem[] = (inventory as unknown as InventoryItem[]) || [];
 
   // Filter orders by status
   const filteredOrders = ordersData.filter(order => {
@@ -836,9 +668,11 @@ export const KitchenManagementDashboard: React.FC = () => {
 
         {/* Data availability notice */}
         {dataNotice && (
-          <Alert className="border-blue-200 bg-blue-50">
-            <AlertTriangle className="h-4 w-4 text-blue-600" />
-            <AlertDescription className="text-blue-800">{dataNotice}</AlertDescription>
+          <Alert className="border-[var(--hasivu-primary)]/20 bg-[var(--hasivu-primary)]/5">
+            <AlertTriangle className="h-4 w-4 text-[var(--hasivu-primary)]" />
+            <AlertDescription className="text-[var(--hasivu-primary-dark)]">
+              {dataNotice}
+            </AlertDescription>
           </Alert>
         )}
 
@@ -910,7 +744,10 @@ export const KitchenManagementDashboard: React.FC = () => {
                   <label className="mb-2 block text-sm font-semibold text-gray-700">
                     Status filter
                   </label>
-                  <Select value={statusFilter} onValueChange={value => setStatusFilter(value as typeof statusFilter)}>
+                  <Select
+                    value={statusFilter}
+                    onValueChange={value => setStatusFilter(value as typeof statusFilter)}
+                  >
                     <SelectTrigger aria-label="Filter kitchen orders by status">
                       <SelectValue placeholder="All statuses" />
                     </SelectTrigger>
@@ -928,7 +765,10 @@ export const KitchenManagementDashboard: React.FC = () => {
 
               {showSearch && (
                 <div>
-                  <label htmlFor="kitchen-order-search" className="mb-2 block text-sm font-semibold text-gray-700">
+                  <label
+                    htmlFor="kitchen-order-search"
+                    className="mb-2 block text-sm font-semibold text-gray-700"
+                  >
                     Search orders
                   </label>
                   <input
@@ -994,8 +834,8 @@ export const KitchenManagementDashboard: React.FC = () => {
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center">
-                <div className="p-2 bg-blue-100 rounded-full">
-                  <ShoppingCart className="w-6 h-6 text-blue-600" />
+                <div className="p-2 bg-[var(--hasivu-primary)]/10 rounded-full">
+                  <ShoppingCart className="w-6 h-6 text-[var(--hasivu-primary)]" />
                 </div>
                 <div className="ml-4">
                   <p className="text-2xl font-bold">{metricsData.ordersInProgress}</p>
@@ -1092,7 +932,7 @@ export const KitchenManagementDashboard: React.FC = () => {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center">
-                    <ChefHat className="w-5 h-5 mr-2 text-blue-600" />
+                    <ChefHat className="w-5 h-5 mr-2 text-[var(--hasivu-primary)]" />
                     Preparing ({preparingOrders.length})
                   </CardTitle>
                   <CardDescription>Orders currently being prepared</CardDescription>

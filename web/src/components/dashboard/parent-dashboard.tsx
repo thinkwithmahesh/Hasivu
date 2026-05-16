@@ -739,7 +739,8 @@ export function ParentDashboard({ children = mockChildren, className }: ParentDa
                       key={notification.id}
                       className={cn(
                         'flex items-start justify-between p-4 border rounded-lg',
-                        !notification.read && 'bg-blue-50 border-blue-200'
+                        !notification.read &&
+                          'bg-[var(--hasivu-primary)]/5 border-[var(--hasivu-primary)]/20'
                       )}
                     >
                       <div className="flex items-start space-x-3">
@@ -773,7 +774,7 @@ export function ParentDashboard({ children = mockChildren, className }: ParentDa
                         </div>
                       </div>
                       {!notification.read && (
-                        <div className="w-2 h-2 bg-blue-500 rounded-full mt-2" />
+                        <div className="w-2 h-2 bg-[var(--hasivu-primary)] rounded-full mt-2" />
                       )}
                     </div>
                   );

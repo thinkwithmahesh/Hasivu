@@ -208,7 +208,7 @@ const BIDashboardMain: React.FC = () => {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-[var(--hasivu-primary)] mx-auto"></div>
           <p className="mt-4 text-lg font-medium">Loading Business Intelligence Platform...</p>
           <p className="text-sm text-gray-600">
             Initializing analytics engines and data connections
@@ -355,7 +355,7 @@ const BIDashboardMain: React.FC = () => {
                 <Card>
                   <CardContent className="p-8">
                     <div className="text-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--hasivu-primary)] mx-auto"></div>
                       <p className="mt-2 text-sm text-gray-600">
                         Loading Business Intelligence Dashboard...
                       </p>
@@ -378,7 +378,7 @@ const BIDashboardMain: React.FC = () => {
                 <Card>
                   <CardContent className="p-8">
                     <div className="text-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--hasivu-primary)] mx-auto"></div>
                       <p className="mt-2 text-sm text-gray-600">Loading Visualization Engine...</p>
                     </div>
                   </CardContent>
@@ -398,7 +398,7 @@ const BIDashboardMain: React.FC = () => {
                 <Card>
                   <CardContent className="p-8">
                     <div className="text-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--hasivu-primary)] mx-auto"></div>
                       <p className="mt-2 text-sm text-gray-600">Loading AI Insights Platform...</p>
                     </div>
                   </CardContent>
@@ -418,7 +418,7 @@ const BIDashboardMain: React.FC = () => {
                 <Card>
                   <CardContent className="p-8">
                     <div className="text-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--hasivu-primary)] mx-auto"></div>
                       <p className="mt-2 text-sm text-gray-600">
                         Loading Self-Service Analytics...
                       </p>
@@ -440,7 +440,7 @@ const BIDashboardMain: React.FC = () => {
                 <Card>
                   <CardContent className="p-8">
                     <div className="text-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--hasivu-primary)] mx-auto"></div>
                       <p className="mt-2 text-sm text-gray-600">Loading Integration Layer...</p>
                     </div>
                   </CardContent>

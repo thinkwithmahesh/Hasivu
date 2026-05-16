@@ -640,12 +640,12 @@ export function AdminDashboard({ className }: AdminDashboardProps) {
               </div>
 
               {selectedOrders.length > 0 && (
-                <div className="flex items-center justify-between mt-4 p-3 bg-blue-50 rounded-lg">
-                  <span className="text-sm text-blue-800">
+                <div className="flex items-center justify-between mt-4 p-3 bg-[var(--hasivu-primary)]/5 rounded-lg">
+                  <span className="text-sm text-[var(--hasivu-primary-dark)]">
                     {selectedOrders.length} orders selected
                   </span>
                   <div className="flex gap-2">
-                    <button className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">
+                    <button className="px-3 py-1 bg-[var(--hasivu-primary)] text-white rounded text-sm hover:bg-[var(--hasivu-primary-dark)]">
                       Mark as Preparing
                     </button>
                     <button className="px-3 py-1 bg-success-600 text-white rounded text-sm hover:bg-success-700">
@@ -840,8 +840,8 @@ export function AdminDashboard({ className }: AdminDashboardProps) {
                   <Progress value={mockOperationalMetrics.energyConsumption} />
 
                   <div className="grid grid-cols-2 gap-4 mt-4">
-                    <div className="text-center p-3 bg-blue-50 rounded-lg">
-                      <p className="text-lg font-bold text-blue-600">
+                    <div className="text-center p-3 bg-[var(--hasivu-primary)]/5 rounded-lg">
+                      <p className="text-lg font-bold text-[var(--hasivu-primary)]">
                         {mockOperationalMetrics.orderFulfillmentTime}
                       </p>
                       <p className="text-xs text-muted-foreground">Avg. Time (min)</p>

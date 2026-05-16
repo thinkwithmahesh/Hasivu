@@ -130,7 +130,7 @@ const getStockStatusColor = (status: InventoryItem['status']) => {
     case 'expired':
       return 'bg-red-100 text-red-800 border-red-200';
     case 'ordered':
-      return 'bg-blue-100 text-blue-800 border-blue-200';
+      return 'bg-[var(--hasivu-primary)]/10 text-[var(--hasivu-primary-dark)] border-[var(--hasivu-primary)]/20';
     default:
       return 'bg-gray-100 text-gray-800 border-gray-200';
   }
@@ -141,7 +141,7 @@ const getOrderStatusColor = (status: PurchaseOrder['status']) => {
     case 'draft':
       return 'bg-gray-100 text-gray-800 border-gray-200';
     case 'sent':
-      return 'bg-blue-100 text-blue-800 border-blue-200';
+      return 'bg-[var(--hasivu-primary)]/10 text-[var(--hasivu-primary-dark)] border-[var(--hasivu-primary)]/20';
     case 'confirmed':
       return 'bg-green-100 text-green-800 border-green-200';
     case 'delivered':
@@ -352,7 +352,10 @@ const PurchaseOrderCard = ({
             <h3 className="font-semibold text-gray-900">{order.orderNumber}</h3>
             <div className="flex items-center space-x-2 mt-1">
               <Avatar className="w-6 h-6">
-                <AvatarImage src={supplierAvatar(order.supplier)} alt={supplierName(order.supplier)} />
+                <AvatarImage
+                  src={supplierAvatar(order.supplier)}
+                  alt={supplierName(order.supplier)}
+                />
                 <AvatarFallback className="text-xs">
                   {initialsFromName(supplierName(order.supplier))}
                 </AvatarFallback>
@@ -406,8 +409,8 @@ const PurchaseOrderCard = ({
 
         {/* Notes */}
         {order.notes && (
-          <div className="mb-4 p-2 bg-blue-50 border border-blue-200 rounded">
-            <p className="text-xs text-blue-800">
+          <div className="mb-4 p-2 bg-[var(--hasivu-primary)]/5 border border-[var(--hasivu-primary)]/20 rounded">
+            <p className="text-xs text-[var(--hasivu-primary-dark)]">
               <strong>Note:</strong> {order.notes}
             </p>
           </div>
@@ -444,9 +447,7 @@ const SupplierCard = ({ supplier }: { supplier: Supplier }) => {
         <div className="flex items-center space-x-3 mb-4">
           <Avatar className="w-12 h-12">
             <AvatarImage src={supplier.avatar} alt={supplier.name} />
-            <AvatarFallback>
-              {initialsFromName(supplier.name || 'Supplier')}
-            </AvatarFallback>
+            <AvatarFallback>{initialsFromName(supplier.name || 'Supplier')}</AvatarFallback>
           </Avatar>
           <div>
             <h3 className="font-semibold text-gray-900">{supplier.name}</h3>
@@ -461,8 +462,8 @@ const SupplierCard = ({ supplier }: { supplier: Supplier }) => {
             <div className="flex items-center justify-between text-sm mb-1">
               <span className="text-gray-600">Rating</span>
               <div className="flex items-center space-x-1">
-              <span className="font-semibold">{supplier.rating ?? 4.5}</span>
-              <div className="flex">
+                <span className="font-semibold">{supplier.rating ?? 4.5}</span>
+                <div className="flex">
                   {[...Array(5)].map((_, i) => (
                     <div
                       key={i}
@@ -591,9 +592,7 @@ export const InventoryManagement: React.FC = () => {
           typeof selectedItem.supplier === 'object'
             ? selectedItem.supplier?.id
             : selectedItem.supplier || 'supplier-local-farm',
-        items: [
-          { itemId: selectedItem.id, quantity: reorderQty, price: selectedItem.costPerUnit },
-        ],
+        items: [{ itemId: selectedItem.id, quantity: reorderQty, price: selectedItem.costPerUnit }],
       });
       toast({ title: 'Reorder Created', description: `${selectedItem.name} x ${reorderQty}` });
       setReorderOpen(false);
@@ -657,8 +656,8 @@ export const InventoryManagement: React.FC = () => {
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center">
-                <div className="p-2 bg-blue-100 rounded-full">
-                  <Package className="w-6 h-6 text-blue-600" />
+                <div className="p-2 bg-[var(--hasivu-primary)]/10 rounded-full">
+                  <Package className="w-6 h-6 text-[var(--hasivu-primary)]" />
                 </div>
                 <div className="ml-4">
                   <p className="text-2xl font-bold">{metrics.totalItems ?? '-'}</p>
@@ -806,7 +805,7 @@ export const InventoryManagement: React.FC = () => {
                   <CardTitle>Monthly Consumption</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-blue-600 mb-2">
+                  <div className="text-3xl font-bold text-[var(--hasivu-primary)] mb-2">
                     Rs.{(metrics.monthlyConsumption ?? 0).toLocaleString()}
                   </div>
                   <p className="text-sm text-gray-600">+8.5% from last month</p>

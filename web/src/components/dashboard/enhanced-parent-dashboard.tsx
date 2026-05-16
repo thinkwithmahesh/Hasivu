@@ -210,14 +210,14 @@ export const EnhancedParentDashboard: React.FC<EnhancedParentDashboardProps> = (
     <div className={cn('space-y-6', className)}>
       {/* Parent Overview Header */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+        <Card className="bg-gradient-to-r from-[var(--hasivu-primary)]/50 to-[var(--hasivu-primary-dark)] text-white">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-blue-100 text-sm">Total Children</p>
+                <p className="text-white/80 text-sm">Total Children</p>
                 <p className="text-2xl font-bold">{mockChildrenData.length}</p>
               </div>
-              <Users className="h-8 w-8 text-blue-200" />
+              <Users className="h-8 w-8 text-white/60" />
             </div>
           </CardContent>
         </Card>
@@ -287,7 +287,7 @@ export const EnhancedParentDashboard: React.FC<EnhancedParentDashboardProps> = (
                 key={child.id}
                 className={`cursor-pointer transition-all duration-200 ${
                   selectedChild.id === child.id && viewMode === 'individual'
-                    ? 'ring-2 ring-blue-500 bg-blue-50'
+                    ? 'ring-2 ring-[var(--hasivu-primary)] bg-[var(--hasivu-primary)]/5'
                     : 'hover:shadow-md'
                 }`}
                 onClick={() => {
@@ -372,8 +372,8 @@ export const EnhancedParentDashboard: React.FC<EnhancedParentDashboardProps> = (
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="text-center p-3 bg-blue-50 rounded-lg">
-                      <CreditCard className="h-6 w-6 mx-auto mb-1 text-blue-600" />
+                    <div className="text-center p-3 bg-[var(--hasivu-primary)]/5 rounded-lg">
+                      <CreditCard className="h-6 w-6 mx-auto mb-1 text-[var(--hasivu-primary)]" />
                       <p className="text-sm text-gray-600">Wallet Balance</p>
                       <p className="font-semibold">₹{selectedChild.walletBalance}</p>
                     </div>
@@ -580,8 +580,8 @@ export const EnhancedParentDashboard: React.FC<EnhancedParentDashboardProps> = (
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <DollarSign className="h-8 w-8 mx-auto mb-2 text-blue-600" />
+                <div className="text-center p-4 bg-[var(--hasivu-primary)]/5 rounded-lg">
+                  <DollarSign className="h-8 w-8 mx-auto mb-2 text-[var(--hasivu-primary)]" />
                   <p className="text-2xl font-bold">₹{totalSpending}</p>
                   <p className="text-sm text-gray-600">Total Monthly Spending</p>
                 </div>
@@ -713,7 +713,7 @@ export const EnhancedParentDashboard: React.FC<EnhancedParentDashboardProps> = (
                         {notification.urgent ? (
                           <AlertCircle className="h-4 w-4 text-red-600" />
                         ) : (
-                          <CheckCircle className="h-4 w-4 text-blue-600" />
+                          <CheckCircle className="h-4 w-4 text-[var(--hasivu-primary)]" />
                         )}
                         <div className="ml-3">
                           <AlertTitle className="text-sm font-medium">

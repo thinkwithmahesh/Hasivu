@@ -255,7 +255,7 @@ export const EnhancedStudentDashboard: React.FC<EnhancedStudentDashboardProps> =
       case 'preparing':
         return 'bg-yellow-500';
       case 'ready':
-        return 'bg-blue-500';
+        return 'bg-[var(--hasivu-primary)]';
       default:
         return 'bg-gray-400';
     }
@@ -278,14 +278,14 @@ export const EnhancedStudentDashboard: React.FC<EnhancedStudentDashboardProps> =
     <div className={cn('space-y-6', className)}>
       {/* Quick Stats Header */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+        <Card className="bg-gradient-to-r from-[var(--hasivu-primary)] to-[var(--hasivu-primary-dark)] text-white">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-blue-100 text-sm">RFID Code</p>
+                <p className="text-white/80 text-sm">RFID Code</p>
                 <p className="text-2xl font-bold">{student.rfidCode || 'RF-789123'}</p>
               </div>
-              <QrCode className="h-8 w-8 text-blue-200" />
+              <QrCode className="h-8 w-8 text-white/60" />
             </div>
           </CardContent>
         </Card>
@@ -347,7 +347,7 @@ export const EnhancedStudentDashboard: React.FC<EnhancedStudentDashboardProps> =
               return (
                 <Card
                   key={meal.id}
-                  className={`transition-all duration-200 ${selectedMeal === meal.id ? 'ring-2 ring-blue-500' : ''}`}
+                  className={`transition-all duration-200 ${selectedMeal === meal.id ? 'ring-2 ring-[var(--hasivu-primary)]' : ''}`}
                 >
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between mb-4">
@@ -371,7 +371,7 @@ export const EnhancedStudentDashboard: React.FC<EnhancedStudentDashboardProps> =
                           {meal.status}
                         </Badge>
                         {meal.timeLeft > 0 && (
-                          <p className="text-sm font-medium text-blue-600">
+                          <p className="text-sm font-medium text-[var(--hasivu-primary)]">
                             <Timer className="h-4 w-4 inline mr-1" />
                             {formatCountdown(meal.timeLeft)}
                           </p>
@@ -385,7 +385,7 @@ export const EnhancedStudentDashboard: React.FC<EnhancedStudentDashboardProps> =
                         <div className="space-y-1">
                           {meal.items.map((item, index) => (
                             <div key={index} className="flex items-center">
-                              <span className="w-1.5 h-1.5 bg-blue-500 rounded-full mr-2" />
+                              <span className="w-1.5 h-1.5 bg-[var(--hasivu-primary)] rounded-full mr-2" />
                               <span className="text-sm text-gray-600">{item}</span>
                             </div>
                           ))}
@@ -400,7 +400,7 @@ export const EnhancedStudentDashboard: React.FC<EnhancedStudentDashboardProps> =
                             {meal.nutrition.calories} cal
                           </div>
                           <div className="flex items-center">
-                            <Zap className="h-3 w-3 mr-1 text-blue-500" />
+                            <Zap className="h-3 w-3 mr-1 text-[var(--hasivu-primary)]" />
                             {meal.nutrition.protein}g protein
                           </div>
                           <div className="flex items-center">

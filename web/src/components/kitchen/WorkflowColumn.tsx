@@ -46,7 +46,9 @@ export const WorkflowColumn: React.FC<WorkflowColumnProps> = ({
   return (
     <div
       className={`flex-1 min-h-screen transition-colors duration-200 ${
-        isDragOver ? 'bg-blue-50 border-blue-300' : 'bg-gray-50 border-gray-200'
+        isDragOver
+          ? 'bg-[var(--hasivu-primary)]/5 border-[var(--hasivu-primary)]/30'
+          : 'bg-gray-50 border-gray-200'
       }`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}

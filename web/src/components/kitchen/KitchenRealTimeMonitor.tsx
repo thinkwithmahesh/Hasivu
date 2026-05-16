@@ -208,7 +208,7 @@ export const KitchenRealTimeMonitor: React.FC = () => {
       case 'error':
         return 'text-red-600';
       case 'maintenance':
-        return 'text-blue-600';
+        return 'text-[var(--hasivu-primary)]';
       default:
         return 'text-gray-600';
     }
@@ -221,7 +221,7 @@ export const KitchenRealTimeMonitor: React.FC = () => {
       case 'warning':
         return 'border-yellow-500 bg-yellow-50';
       case 'info':
-        return 'border-blue-500 bg-blue-50';
+        return 'border-[var(--hasivu-primary)] bg-[var(--hasivu-primary)]/5';
       default:
         return 'border-gray-500 bg-gray-50';
     }
@@ -296,20 +296,22 @@ export const KitchenRealTimeMonitor: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+          <Card className="bg-gradient-to-br from-[var(--hasivu-primary)]/5 to-[var(--hasivu-primary)]/10 border-[var(--hasivu-primary)]/20">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-blue-700 mb-1">Processing Rate</p>
-                  <p className="text-2xl font-bold text-blue-900">
+                  <p className="text-sm font-medium text-[var(--hasivu-primary)] mb-1">
+                    Processing Rate
+                  </p>
+                  <p className="text-2xl font-bold text-[var(--hasivu-primary-dark)]">
                     {metrics.orderProcessingRate.toFixed(1)}/min
                   </p>
-                  <p className="text-xs text-blue-600 flex items-center mt-1">
+                  <p className="text-xs text-[var(--hasivu-primary)] flex items-center mt-1">
                     <TrendingUp className="w-3 h-3 mr-1" />
                     +12% from avg
                   </p>
                 </div>
-                <Activity className="w-8 h-8 text-blue-600" />
+                <Activity className="w-8 h-8 text-[var(--hasivu-primary)]" />
               </div>
             </CardContent>
           </Card>
@@ -519,9 +521,13 @@ export const KitchenRealTimeMonitor: React.FC = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <div className="p-3 bg-blue-50 rounded-lg">
-                <p className="text-sm font-medium text-blue-800 mb-1">Orders in Queue</p>
-                <p className="text-xl font-bold text-blue-900">{liveStats.ordersInQueue}</p>
+              <div className="p-3 bg-[var(--hasivu-primary)]/5 rounded-lg">
+                <p className="text-sm font-medium text-[var(--hasivu-primary-dark)] mb-1">
+                  Orders in Queue
+                </p>
+                <p className="text-xl font-bold text-[var(--hasivu-primary-dark)]">
+                  {liveStats.ordersInQueue}
+                </p>
               </div>
 
               <div className="p-3 bg-green-50 rounded-lg">
@@ -567,7 +573,7 @@ export const KitchenRealTimeMonitor: React.FC = () => {
               <p className="text-sm font-medium mb-2">Predictive Insights</p>
               <div className="space-y-2 text-sm">
                 <div className="flex items-center">
-                  <Target className="w-3 h-3 mr-2 text-blue-500" />
+                  <Target className="w-3 h-3 mr-2 text-[var(--hasivu-primary)]" />
                   <span>Next rush: {liveStats.predictiveInsights.estimatedRushTime}</span>
                 </div>
                 <div className="flex items-center">

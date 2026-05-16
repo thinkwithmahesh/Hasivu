@@ -19,7 +19,7 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
         <div className="space-x-2">
           <button
             onClick={onChangePlan}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+            className="bg-[var(--hasivu-primary)] hover:bg-[var(--hasivu-primary)] text-white px-4 py-2 rounded"
           >
             Change Plan
           </button>

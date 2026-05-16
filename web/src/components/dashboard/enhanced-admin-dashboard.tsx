@@ -528,7 +528,7 @@ export const EnhancedAdminDashboard: React.FC<EnhancedAdminDashboardProps> = ({
       case 'preparing':
         return 'bg-yellow-500';
       case 'pending':
-        return 'bg-blue-500';
+        return 'bg-[var(--hasivu-primary)]';
       default:
         return 'bg-gray-400';
     }
@@ -737,10 +737,10 @@ export const EnhancedAdminDashboard: React.FC<EnhancedAdminDashboardProps> = ({
             <SidebarGroup>
               <SidebarGroupLabel>Today's Weather Impact</SidebarGroupLabel>
               <SidebarGroupContent>
-                <div className="p-3 rounded-lg bg-blue-50 border">
+                <div className="p-3 rounded-lg bg-[var(--hasivu-primary)]/5 border">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center space-x-2">
-                      <Sun className="h-4 w-4 text-blue-600" />
+                      <Sun className="h-4 w-4 text-[var(--hasivu-primary)]" />
                       <span className="text-sm font-medium">
                         {mockWeatherData.current.temperature}°C
                       </span>
@@ -749,7 +749,7 @@ export const EnhancedAdminDashboard: React.FC<EnhancedAdminDashboardProps> = ({
                       {mockWeatherData.current.condition}
                     </span>
                   </div>
-                  <div className="text-xs text-blue-600">
+                  <div className="text-xs text-[var(--hasivu-primary)]">
                     Expected +{mockWeatherData.impact.expectedOrderIncrease}% orders
                   </div>
                 </div>
@@ -817,19 +817,19 @@ export const EnhancedAdminDashboard: React.FC<EnhancedAdminDashboardProps> = ({
 
             {/* Admin Overview Header */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+              <Card className="bg-gradient-to-r from-[var(--hasivu-primary)]/50 to-[var(--hasivu-primary-dark)] text-white">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-blue-100 text-sm">Total Students</p>
+                      <p className="text-white/80 text-sm">Total Students</p>
                       <p className="text-2xl font-bold">
                         {mockSchoolAnalytics.overview.totalStudents}
                       </p>
-                      <p className="text-xs text-blue-200 mt-1">
+                      <p className="text-xs text-white/60 mt-1">
                         +{mockSchoolAnalytics.overview.monthlyGrowth}% this month
                       </p>
                     </div>
-                    <School className="h-8 w-8 text-blue-200" />
+                    <School className="h-8 w-8 text-white/60" />
                   </div>
                 </CardContent>
               </Card>
@@ -898,18 +898,18 @@ export const EnhancedAdminDashboard: React.FC<EnhancedAdminDashboardProps> = ({
               <div className="space-y-6">
                 {/* Real-time Overview Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+                  <Card className="bg-gradient-to-r from-[var(--hasivu-primary)]/50 to-[var(--hasivu-primary-dark)] text-white">
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-blue-100 text-sm">Live Orders</p>
+                          <p className="text-white/80 text-sm">Live Orders</p>
                           <p className="text-2xl font-bold">{mockRealTimeData.liveOrders}</p>
-                          <p className="text-xs text-blue-200 mt-1">
+                          <p className="text-xs text-white/60 mt-1">
                             Avg wait: {mockRealTimeData.avgWaitTime}min
                           </p>
                         </div>
                         <div className="relative">
-                          <Utensils className="h-8 w-8 text-blue-200" />
+                          <Utensils className="h-8 w-8 text-white/60" />
                           {realTimeEnabled && (
                             <div className="absolute -top-1 -right-1 h-3 w-3 bg-green-400 rounded-full animate-pulse"></div>
                           )}
@@ -1414,8 +1414,8 @@ export const EnhancedAdminDashboard: React.FC<EnhancedAdminDashboardProps> = ({
                       </CardHeader>
                       <CardContent className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
-                          <div className="text-center p-3 bg-blue-50 rounded-lg">
-                            <Apple className="h-6 w-6 mx-auto mb-1 text-blue-600" />
+                          <div className="text-center p-3 bg-[var(--hasivu-primary)]/5 rounded-lg">
+                            <Apple className="h-6 w-6 mx-auto mb-1 text-[var(--hasivu-primary)]" />
                             <p className="text-2xl font-bold">89.4%</p>
                             <p className="text-sm text-gray-600">Overall Compliance</p>
                           </div>
@@ -1530,8 +1530,8 @@ export const EnhancedAdminDashboard: React.FC<EnhancedAdminDashboardProps> = ({
                       </CardHeader>
                       <CardContent className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
-                          <div className="text-center p-3 bg-blue-50 rounded-lg">
-                            <Users className="h-6 w-6 mx-auto mb-1 text-blue-600" />
+                          <div className="text-center p-3 bg-[var(--hasivu-primary)]/5 rounded-lg">
+                            <Users className="h-6 w-6 mx-auto mb-1 text-[var(--hasivu-primary)]" />
                             <p className="text-2xl font-bold">
                               {mockKitchenOperations.activeStaff}/{mockKitchenOperations.totalStaff}
                             </p>
@@ -1686,7 +1686,7 @@ export const EnhancedAdminDashboard: React.FC<EnhancedAdminDashboardProps> = ({
                     </CardHeader>
                     <CardContent className="space-y-3">
                       <div className="text-center">
-                        <p className="text-3xl font-bold text-blue-600">
+                        <p className="text-3xl font-bold text-[var(--hasivu-primary)]">
                           ₹{mockFinancialSummary.weekly.revenue}
                         </p>
                         <p className="text-gray-600">Revenue</p>
@@ -1777,7 +1777,7 @@ export const EnhancedAdminDashboard: React.FC<EnhancedAdminDashboardProps> = ({
                     </CardHeader>
                     <CardContent className="space-y-3">
                       <div className="text-center">
-                        <p className="text-3xl font-bold text-blue-600">
+                        <p className="text-3xl font-bold text-[var(--hasivu-primary)]">
                           ₹{mockFinancialSummary.weekly.revenue}
                         </p>
                         <p className="text-gray-600">Revenue</p>

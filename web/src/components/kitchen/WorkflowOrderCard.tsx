@@ -133,8 +133,8 @@ export const WorkflowOrderCard: React.FC<WorkflowOrderCardProps> = ({ order, onS
       )}
 
       {order.specialInstructions && (
-        <div className="mb-3 p-2 bg-blue-50 border border-blue-200 rounded">
-          <p className="text-xs text-blue-800">
+        <div className="mb-3 p-2 bg-[var(--hasivu-primary)]/5 border border-[var(--hasivu-primary)]/20 rounded">
+          <p className="text-xs text-[var(--hasivu-primary-dark)]">
             <strong>Note:</strong> {order.specialInstructions}
           </p>
         </div>
@@ -231,7 +231,7 @@ export const WorkflowOrderCard: React.FC<WorkflowOrderCardProps> = ({ order, onS
       onDragEnd={handleDragEnd}
       className={`bg-white rounded-lg border-2 p-4 cursor-move transition-all duration-200 ${
         isDragging
-          ? 'border-blue-400 shadow-lg transform rotate-2'
+          ? 'border-[var(--hasivu-primary)]/60 shadow-lg transform rotate-2'
           : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
       }`}
       data-testid="order-card"

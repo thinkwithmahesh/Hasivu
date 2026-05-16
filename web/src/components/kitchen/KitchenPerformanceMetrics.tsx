@@ -95,8 +95,8 @@ interface PerformanceMetrics {
   };
 }
 
-// Mock advanced metrics data
-const mockAdvancedMetrics: PerformanceMetrics = {
+// Default advanced metrics (fallback until dedicated analytics endpoints are available)
+const defaultAdvancedMetrics: PerformanceMetrics = {
   realTimeKPI: {
     orderThroughput: 24.5,
     averageWaitTime: 12.3,
@@ -189,7 +189,7 @@ const MetricCard = ({
 }) => {
   const isPositiveTrend = trend && trend > 0;
   const colorClasses = {
-    blue: 'bg-blue-100 text-blue-600',
+    blue: 'bg-[var(--hasivu-primary)]/10 text-[var(--hasivu-primary)]',
     green: 'bg-green-100 text-green-600',
     orange: 'bg-orange-100 text-orange-600',
     purple: 'bg-purple-100 text-purple-600',
@@ -260,14 +260,14 @@ const AIInsightsPanel = ({ insights }: { insights: PerformanceMetrics['predictiv
         {/* Peak Times Prediction */}
         <div>
           <h4 className="font-semibold mb-3 flex items-center">
-            <Target className="w-4 h-4 mr-2 text-blue-600" />
+            <Target className="w-4 h-4 mr-2 text-[var(--hasivu-primary)]" />
             Peak Time Predictions
           </h4>
           <div className="space-y-2">
             {insights.peakTimesPrediction.map((prediction, index) => (
               <div
                 key={index}
-                className="flex items-center justify-between p-3 bg-blue-50 rounded-lg"
+                className="flex items-center justify-between p-3 bg-[var(--hasivu-primary)]/5 rounded-lg"
               >
                 <div>
                   <span className="font-medium">{prediction.time}</span>
@@ -487,10 +487,32 @@ const QualityMetricsPanel = ({ metrics }: { metrics: PerformanceMetrics['quality
   );
 };
 
+import { useKitchenMetrics } from '@/hooks/useApiIntegration';
+
+type BasicKitchenMetrics = {
+  ordersInProgress?: number;
+  averagePreparationTime?: number;
+  customerSatisfaction?: number;
+};
+
 // Main Performance Metrics Component
 export const KitchenPerformanceMetrics: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState('realtime');
-  const [metrics] = useState<PerformanceMetrics>(mockAdvancedMetrics);
+
+  const { data: basicMetrics, loading } = useKitchenMetrics('today');
+  const typedBasicMetrics = basicMetrics as BasicKitchenMetrics | undefined;
+
+  const metrics = useMemo<PerformanceMetrics>(() => {
+    return {
+      ...defaultAdvancedMetrics,
+      realTimeKPI: {
+        ...defaultAdvancedMetrics.realTimeKPI,
+        orderThroughput: typedBasicMetrics?.ordersInProgress || 0,
+        averageWaitTime: typedBasicMetrics?.averagePreparationTime || 0,
+        customerSatisfactionTrend: typedBasicMetrics?.customerSatisfaction || 4.5,
+      },
+    };
+  }, [typedBasicMetrics]);
 
   // Calculate overall performance score
   const overallScore = useMemo(() => {
@@ -528,7 +550,7 @@ export const KitchenPerformanceMetrics: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Overall Performance Score */}
-      <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
+      <Card className="bg-gradient-to-r from-[var(--hasivu-primary)]/5 to-purple-50 border-[var(--hasivu-primary)]/20">
         <CardContent className="pt-6">
           <div className="flex items-center justify-between">
             <div>
@@ -536,7 +558,9 @@ export const KitchenPerformanceMetrics: React.FC = () => {
               <p className="text-gray-600">Real-time comprehensive performance analysis</p>
             </div>
             <div className="text-center">
-              <div className="text-4xl font-bold text-blue-600">{overallScore.toFixed(1)}</div>
+              <div className="text-4xl font-bold text-[var(--hasivu-primary)]">
+                {overallScore.toFixed(1)}
+              </div>
               <div className="text-sm text-gray-600">Overall Score</div>
               <Badge
                 variant={

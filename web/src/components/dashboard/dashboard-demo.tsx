@@ -47,7 +47,7 @@ export function DashboardDemo() {
       title: 'Student Dashboard',
       description: 'Personal nutrition tracking, meal orders, achievements, and RFID pickup system',
       icon: UserCheck,
-      color: 'text-blue-600',
+      color: 'text-[var(--hasivu-primary)]',
     },
     parent: {
       title: 'Parent Dashboard',
@@ -131,11 +131,11 @@ export function DashboardDemo() {
 
               <div className="mt-6">
                 <TabsContent value="student" className="space-y-4">
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                    <h3 className="font-semibold text-blue-900 mb-2">
+                  <div className="bg-[var(--hasivu-primary)]/5 border border-[var(--hasivu-primary)]/20 rounded-lg p-4 mb-6">
+                    <h3 className="font-semibold text-[var(--hasivu-primary-dark)] mb-2">
                       Student Dashboard Features:
                     </h3>
-                    <ul className="text-blue-800 text-sm space-y-1">
+                    <ul className="text-[var(--hasivu-primary-dark)] text-sm space-y-1">
                       <li>• Nutrition tracking with daily/weekly progress charts</li>
                       <li>• Meal order history with status updates</li>
                       <li>• Achievement system with progress indicators</li>

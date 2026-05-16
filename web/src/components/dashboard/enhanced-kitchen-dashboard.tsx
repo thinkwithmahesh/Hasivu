@@ -362,7 +362,7 @@ export const EnhancedKitchenDashboard: React.FC<EnhancedKitchenDashboardProps> =
       case 'preparing':
         return 'bg-yellow-500';
       case 'queued':
-        return 'bg-blue-500';
+        return 'bg-[var(--hasivu-primary)]';
       case 'maintenance':
         return 'bg-red-500';
       default:
@@ -427,15 +427,15 @@ export const EnhancedKitchenDashboard: React.FC<EnhancedKitchenDashboardProps> =
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+        <Card className="bg-gradient-to-r from-[var(--hasivu-primary)]/50 to-[var(--hasivu-primary-dark)] text-white">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-blue-100 text-sm">Avg Prep Time</p>
+                <p className="text-white/80 text-sm">Avg Prep Time</p>
                 <p className="text-2xl font-bold">{mockPerformanceMetrics.daily.avgPrepTime}m</p>
-                <p className="text-xs text-blue-200 mt-1">Today's average</p>
+                <p className="text-xs text-white/60 mt-1">Today's average</p>
               </div>
-              <Timer className="h-8 w-8 text-blue-200" />
+              <Timer className="h-8 w-8 text-white/60" />
             </div>
           </CardContent>
         </Card>
@@ -639,7 +639,10 @@ export const EnhancedKitchenDashboard: React.FC<EnhancedKitchenDashboardProps> =
                     {/* Action Buttons */}
                     <div className="flex space-x-2">
                       {order.status === 'queued' && (
-                        <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+                        <Button
+                          size="sm"
+                          className="bg-[var(--hasivu-primary)] hover:bg-[var(--hasivu-primary-dark)]"
+                        >
                           <PlayCircle className="h-4 w-4 mr-1" />
                           Start Cooking
                         </Button>
@@ -708,7 +711,7 @@ export const EnhancedKitchenDashboard: React.FC<EnhancedKitchenDashboardProps> =
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="text-center p-3 bg-white rounded-lg">
-                      <Clock className="h-5 w-5 mx-auto mb-1 text-blue-600" />
+                      <Clock className="h-5 w-5 mx-auto mb-1 text-[var(--hasivu-primary)]" />
                       <p className="text-sm text-gray-600">Avg Time</p>
                       <p className="font-semibold">{station.avgTime}m</p>
                     </div>
@@ -790,7 +793,9 @@ export const EnhancedKitchenDashboard: React.FC<EnhancedKitchenDashboardProps> =
                           {item.category === 'produce' && (
                             <Apple className="h-4 w-4 text-green-500" />
                           )}
-                          {item.category === 'dairy' && <Milk className="h-4 w-4 text-blue-500" />}
+                          {item.category === 'dairy' && (
+                            <Milk className="h-4 w-4 text-[var(--hasivu-primary)]" />
+                          )}
                           <span className="font-medium">{item.name}</span>
                         </div>
                         <div className="text-right">
@@ -947,8 +952,8 @@ export const EnhancedKitchenDashboard: React.FC<EnhancedKitchenDashboardProps> =
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <Utensils className="h-8 w-8 mx-auto mb-2 text-blue-600" />
+                <div className="text-center p-4 bg-[var(--hasivu-primary)]/5 rounded-lg">
+                  <Utensils className="h-8 w-8 mx-auto mb-2 text-[var(--hasivu-primary)]" />
                   <p className="text-2xl font-bold">
                     {mockPerformanceMetrics.daily.ordersCompleted}
                   </p>
@@ -1004,10 +1009,12 @@ export const EnhancedKitchenDashboard: React.FC<EnhancedKitchenDashboardProps> =
                 </AlertDescription>
               </Alert>
 
-              <Alert className="border-blue-200 bg-blue-50">
-                <Clock className="h-4 w-4 text-blue-600" />
-                <AlertTitle className="text-blue-800">Peak Hour Approaching</AlertTitle>
-                <AlertDescription className="text-blue-700">
+              <Alert className="border-[var(--hasivu-primary)]/20 bg-[var(--hasivu-primary)]/5">
+                <Clock className="h-4 w-4 text-[var(--hasivu-primary)]" />
+                <AlertTitle className="text-[var(--hasivu-primary-dark)]">
+                  Peak Hour Approaching
+                </AlertTitle>
+                <AlertDescription className="text-[var(--hasivu-primary)]">
                   Lunch rush expected in 30 minutes. Current queue: 3 orders. Recommend prepping
                   popular items.
                   <Button size="sm" variant="outline" className="mt-2">

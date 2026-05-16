@@ -610,8 +610,8 @@ export function KitchenDashboard({ className }: KitchenDashboardProps) {
               </div>
 
               {selectedOrders.length > 0 && (
-                <div className="flex items-center justify-between mt-4 p-3 bg-blue-50 rounded-lg">
-                  <span className="text-sm text-blue-800">
+                <div className="flex items-center justify-between mt-4 p-3 bg-[var(--hasivu-primary)]/5 rounded-lg">
+                  <span className="text-sm text-[var(--hasivu-primary-dark)]">
                     {selectedOrders.length} orders selected
                   </span>
                   <div className="flex gap-2">

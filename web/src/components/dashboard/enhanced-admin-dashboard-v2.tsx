@@ -582,7 +582,7 @@ export const EnhancedAdminDashboardV2: React.FC<EnhancedAdminDashboardV2Props> =
       case 'preparing':
         return 'bg-yellow-500';
       case 'pending':
-        return 'bg-blue-500';
+        return 'bg-[var(--hasivu-primary)]';
       default:
         return 'bg-gray-400';
     }
@@ -777,10 +777,10 @@ export const EnhancedAdminDashboardV2: React.FC<EnhancedAdminDashboardV2Props> =
             <SidebarGroup>
               <SidebarGroupLabel>Today's Weather Impact</SidebarGroupLabel>
               <SidebarGroupContent>
-                <div className="p-3 rounded-lg bg-blue-50 border">
+                <div className="p-3 rounded-lg bg-[var(--hasivu-primary)]/5 border">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center space-x-2">
-                      <Sun className="h-4 w-4 text-blue-600" />
+                      <Sun className="h-4 w-4 text-[var(--hasivu-primary)]" />
                       <span className="text-sm font-medium">
                         {mockWeatherData.current.temperature}°C
                       </span>
@@ -789,7 +789,7 @@ export const EnhancedAdminDashboardV2: React.FC<EnhancedAdminDashboardV2Props> =
                       {mockWeatherData.current.condition}
                     </span>
                   </div>
-                  <div className="text-xs text-blue-600">
+                  <div className="text-xs text-[var(--hasivu-primary)]">
                     Expected +{mockWeatherData.impact.expectedOrderIncrease}% orders
                   </div>
                 </div>
@@ -871,18 +871,18 @@ export const EnhancedAdminDashboardV2: React.FC<EnhancedAdminDashboardV2Props> =
               <div className="space-y-6">
                 {/* Real-time Overview Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+                  <Card className="bg-gradient-to-r from-[var(--hasivu-primary)]/50 to-[var(--hasivu-primary-dark)] text-white">
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-blue-100 text-sm">Live Orders</p>
+                          <p className="text-white/80 text-sm">Live Orders</p>
                           <p className="text-2xl font-bold">{realTimeData.liveOrders}</p>
-                          <p className="text-xs text-blue-200 mt-1">
+                          <p className="text-xs text-white/60 mt-1">
                             Avg wait: {realTimeData.avgWaitTime}min
                           </p>
                         </div>
                         <div className="relative">
-                          <Utensils className="h-8 w-8 text-blue-200" />
+                          <Utensils className="h-8 w-8 text-white/60" />
                           {realTimeEnabled && (
                             <div className="absolute -top-1 -right-1 h-3 w-3 bg-green-400 rounded-full animate-pulse"></div>
                           )}
@@ -1040,11 +1040,13 @@ export const EnhancedAdminDashboardV2: React.FC<EnhancedAdminDashboardV2Props> =
                           <span className="text-sm">Condition</span>
                           <span className="font-medium">{mockWeatherData.current.condition}</span>
                         </div>
-                        <div className="text-center p-3 bg-blue-50 rounded-lg">
-                          <div className="text-lg font-bold text-blue-600">
+                        <div className="text-center p-3 bg-[var(--hasivu-primary)]/5 rounded-lg">
+                          <div className="text-lg font-bold text-[var(--hasivu-primary)]">
                             +{mockWeatherData.impact.expectedOrderIncrease}%
                           </div>
-                          <div className="text-xs text-blue-700">Expected increase</div>
+                          <div className="text-xs text-[var(--hasivu-primary)]">
+                            Expected increase
+                          </div>
                         </div>
                       </div>
                     </CardContent>

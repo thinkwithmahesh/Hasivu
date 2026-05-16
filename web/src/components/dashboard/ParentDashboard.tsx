@@ -383,7 +383,7 @@ const OrderTracker = ({ order }: { order: Order }) => {
   const getStatusColor = (status: Order['status']) => {
     switch (status) {
       case 'ordered':
-        return 'text-blue-600 bg-blue-100';
+        return 'text-[var(--hasivu-primary)] bg-[var(--hasivu-primary)]/10';
       case 'preparing':
         return 'text-yellow-600 bg-yellow-100';
       case 'ready':
@@ -623,7 +623,7 @@ const NutritionInsights = ({ child }: { child: Child }) => {
                   <Badge
                     key={restriction}
                     variant="secondary"
-                    className="bg-blue-100 text-blue-800"
+                    className="bg-[var(--hasivu-primary)]/10 text-[var(--hasivu-primary)]"
                   >
                     {restriction}
                   </Badge>
@@ -884,8 +884,8 @@ export const ParentDashboard: React.FC = () => {
                   <Card>
                     <CardContent className="pt-6">
                       <div className="flex items-center">
-                        <div className="p-2 bg-blue-100 rounded-full">
-                          <ShoppingCart className="w-5 h-5 text-blue-600" />
+                        <div className="p-2 bg-[var(--hasivu-primary)]/10 rounded-full">
+                          <ShoppingCart className="w-5 h-5 text-[var(--hasivu-primary)]" />
                         </div>
                         <div className="ml-4">
                           <p className="text-2xl font-bold">24</p>
@@ -1015,7 +1015,7 @@ export const ParentDashboard: React.FC = () => {
                                       order.status === 'ready'
                                         ? 'bg-orange-100 text-orange-800'
                                         : order.status === 'ordered'
-                                          ? 'bg-blue-100 text-blue-800'
+                                          ? 'bg-[var(--hasivu-primary)]/10 text-[var(--hasivu-primary)]'
                                           : 'bg-hasivu-surface-elevated text-hasivu-text-primary'
                                     }`}
                                   >
@@ -1210,7 +1210,7 @@ export const ParentDashboard: React.FC = () => {
                                   value: 180,
                                   unit: 'g',
                                   target: 200,
-                                  color: 'bg-blue-500',
+                                  color: 'bg-[var(--hasivu-primary)]',
                                 },
                                 {
                                   label: 'Fat',
@@ -1302,7 +1302,8 @@ export const ParentDashboard: React.FC = () => {
                                   title: 'Balanced Meal Suggestion',
                                   description:
                                     'Tomorrow, try: Rajma Rice + Mixed Veg + Curd + Apple for optimal nutrition balance.',
-                                  color: 'text-blue-600 bg-blue-50 border-blue-200',
+                                  color:
+                                    'text-[var(--hasivu-primary)] bg-[var(--hasivu-primary)]/5 border-[var(--hasivu-primary)]/20',
                                 },
                               ].map((rec, index) => {
                                 const IconComponent = rec.icon;
@@ -1425,14 +1426,14 @@ export const ParentDashboard: React.FC = () => {
                               </p>
                             </div>
 
-                            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div className="p-3 bg-[var(--hasivu-primary)]/5 border border-[var(--hasivu-primary)]/20 rounded-lg">
                               <div className="flex items-center space-x-2 mb-2">
-                                <Activity className="w-4 h-4 text-blue-600" />
-                                <span className="font-medium text-sm text-blue-800">
+                                <Activity className="w-4 h-4 text-[var(--hasivu-primary)]" />
+                                <span className="font-medium text-sm text-[var(--hasivu-primary-dark)]">
                                   Growth Tracking
                                 </span>
                               </div>
-                              <p className="text-xs text-blue-700">
+                              <p className="text-xs text-[var(--hasivu-primary)]">
                                 Nutrition supporting healthy growth patterns
                               </p>
                             </div>
@@ -1598,7 +1599,7 @@ export const ParentDashboard: React.FC = () => {
                                     : transaction.type === 'topup'
                                       ? 'bg-green-100'
                                       : transaction.type === 'refund'
-                                        ? 'bg-blue-100'
+                                        ? 'bg-[var(--hasivu-primary)]/10'
                                         : 'bg-hasivu-surface-elevated'
                                 }`}
                               >
@@ -1609,7 +1610,7 @@ export const ParentDashboard: React.FC = () => {
                                   <ArrowRight className="w-4 h-4 text-green-600 -rotate-90" />
                                 )}
                                 {transaction.type === 'refund' && (
-                                  <ArrowRight className="w-4 h-4 text-blue-600 -rotate-90" />
+                                  <ArrowRight className="w-4 h-4 text-[var(--hasivu-primary)] -rotate-90" />
                                 )}
                               </div>
                               <div className="flex-1">
@@ -1669,9 +1670,13 @@ export const ParentDashboard: React.FC = () => {
                           <div className="text-2xl font-bold text-green-600">99.7%</div>
                           <div className="text-sm text-green-700">Detection Accuracy</div>
                         </div>
-                        <div className="text-center p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                          <div className="text-2xl font-bold text-blue-600">Rs.15,420</div>
-                          <div className="text-sm text-blue-700">Protected This Year</div>
+                        <div className="text-center p-4 bg-[var(--hasivu-primary)]/5 border border-[var(--hasivu-primary)]/20 rounded-lg">
+                          <div className="text-2xl font-bold text-[var(--hasivu-primary)]">
+                            Rs.15,420
+                          </div>
+                          <div className="text-sm text-[var(--hasivu-primary)]">
+                            Protected This Year
+                          </div>
                         </div>
                         <div className="text-center p-4 bg-orange-50 border border-orange-200 rounded-lg">
                           <div className="text-2xl font-bold text-orange-600">0</div>
@@ -1679,7 +1684,7 @@ export const ParentDashboard: React.FC = () => {
                         </div>
                       </div>
 
-                      <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg p-4">
+                      <div className="bg-gradient-to-r from-green-50 to-[var(--hasivu-primary)]/5 border border-green-200 rounded-lg p-4">
                         <div className="flex items-center space-x-3">
                           <CheckCircle className="w-6 h-6 text-green-600" />
                           <div>
@@ -1737,8 +1742,8 @@ export const ParentDashboard: React.FC = () => {
                           className="flex items-center justify-between p-3 border border-hasivu-primary/10 rounded-lg"
                         >
                           <div className="flex items-center space-x-3">
-                            <div className="p-2 bg-blue-100 rounded">
-                              <CreditCard className="w-4 h-4 text-blue-600" />
+                            <div className="p-2 bg-[var(--hasivu-primary)]/10 rounded">
+                              <CreditCard className="w-4 h-4 text-[var(--hasivu-primary)]" />
                             </div>
                             <div>
                               <div className="font-medium text-sm">{method.type}</div>

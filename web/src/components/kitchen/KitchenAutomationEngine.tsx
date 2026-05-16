@@ -296,7 +296,8 @@ export const KitchenAutomationEngine: React.FC = () => {
 
   const getCategoryColor = (category: string) => {
     const colors = {
-      order_management: 'bg-blue-100 text-blue-800 border-blue-200',
+      order_management:
+        'bg-[var(--hasivu-primary)]/10 text-[var(--hasivu-primary-dark)] border-[var(--hasivu-primary)]/20',
       staff_optimization: 'bg-green-100 text-green-800 border-green-200',
       inventory: 'bg-orange-100 text-orange-800 border-orange-200',
       quality_control: 'bg-red-100 text-red-800 border-red-200',
@@ -333,7 +334,7 @@ export const KitchenAutomationEngine: React.FC = () => {
       <div className="flex justify-between items-center">
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
-            <Bot className="w-6 h-6 text-blue-600" />
+            <Bot className="w-6 h-6 text-[var(--hasivu-primary)]" />
             <h2 className="text-xl font-bold">Kitchen Automation Engine</h2>
             <Badge variant={isEngineRunning ? 'default' : 'secondary'}>
               {isEngineRunning ? 'Running' : 'Paused'}
@@ -369,17 +370,21 @@ export const KitchenAutomationEngine: React.FC = () => {
 
       {/* Automation Metrics Dashboard */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+        <Card className="bg-gradient-to-br from-[var(--hasivu-primary)]/5 to-[var(--hasivu-primary)]/10 border-[var(--hasivu-primary)]/20">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-blue-700 mb-1">Active Rules</p>
-                <p className="text-2xl font-bold text-blue-900">{metrics.totalRulesActive}</p>
-                <p className="text-xs text-blue-600 mt-1">
+                <p className="text-sm font-medium text-[var(--hasivu-primary)] mb-1">
+                  Active Rules
+                </p>
+                <p className="text-2xl font-bold text-[var(--hasivu-primary-dark)]">
+                  {metrics.totalRulesActive}
+                </p>
+                <p className="text-xs text-[var(--hasivu-primary)] mt-1">
                   {metrics.rulesTriggeredToday} triggered today
                 </p>
               </div>
-              <Workflow className="w-8 h-8 text-blue-600" />
+              <Workflow className="w-8 h-8 text-[var(--hasivu-primary)]" />
             </div>
           </CardContent>
         </Card>
@@ -501,7 +506,7 @@ export const KitchenAutomationEngine: React.FC = () => {
                         <ul className="ml-4 space-y-1 text-xs">
                           {rule.conditions.map((condition, index) => (
                             <li key={index} className="flex items-center space-x-1">
-                              <Target className="w-3 h-3 text-blue-500" />
+                              <Target className="w-3 h-3 text-[var(--hasivu-primary)]" />
                               <span>
                                 {condition.type.replace('_', ' ')}{' '}
                                 {condition.operator.replace('_', ' ')} {condition.value}
@@ -549,7 +554,10 @@ export const KitchenAutomationEngine: React.FC = () => {
 
           <div className="space-y-4">
             {workflowOptimizations.map(optimization => (
-              <Card key={optimization.id} className="border-blue-200 bg-blue-50">
+              <Card
+                key={optimization.id}
+                className="border-[var(--hasivu-primary)]/20 bg-[var(--hasivu-primary)]/5"
+              >
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div>
@@ -569,7 +577,7 @@ export const KitchenAutomationEngine: React.FC = () => {
                     </div>
                     <div className="text-right">
                       <div className="text-sm text-gray-600">AI Confidence</div>
-                      <div className="text-lg font-bold text-blue-600">
+                      <div className="text-lg font-bold text-[var(--hasivu-primary)]">
                         {optimization.aiConfidence}%
                       </div>
                     </div>
@@ -639,7 +647,9 @@ export const KitchenAutomationEngine: React.FC = () => {
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm">Error Reduction</span>
-                    <span className="font-bold text-blue-600">-{metrics.errorReduction}%</span>
+                    <span className="font-bold text-[var(--hasivu-primary)]">
+                      -{metrics.errorReduction}%
+                    </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm">Customer Satisfaction</span>
@@ -711,10 +721,14 @@ export const KitchenAutomationEngine: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 bg-blue-50 rounded-lg">
-                  <div className="text-sm font-medium text-blue-800 mb-1">Next Peak Prediction</div>
-                  <div className="text-lg font-bold text-blue-900">12:45 PM</div>
-                  <div className="text-xs text-blue-600">Confidence: 89%</div>
+                <div className="p-4 bg-[var(--hasivu-primary)]/5 rounded-lg">
+                  <div className="text-sm font-medium text-[var(--hasivu-primary-dark)] mb-1">
+                    Next Peak Prediction
+                  </div>
+                  <div className="text-lg font-bold text-[var(--hasivu-primary-dark)]">
+                    12:45 PM
+                  </div>
+                  <div className="text-xs text-[var(--hasivu-primary)]">Confidence: 89%</div>
                 </div>
                 <div className="p-4 bg-green-50 rounded-lg">
                   <div className="text-sm font-medium text-green-800 mb-1">Inventory Alert</div>
