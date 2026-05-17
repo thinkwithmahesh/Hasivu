@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const BASE = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3001';
+const BASE = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3002';
 
 test.describe('RFID Verification Flow', () => {
   test.beforeEach(async ({ page }) => {
@@ -30,7 +30,7 @@ test.describe('RFID Verification Flow', () => {
     if ((await input.count()) > 0) {
       await expect(input).toBeVisible();
     } else {
-      await expect(page.getByText(/Place RFID card near scanner/i)).toBeVisible();
+      await expect(page.getByText(/Ready to Scan/i)).toBeVisible();
     }
   });
 });

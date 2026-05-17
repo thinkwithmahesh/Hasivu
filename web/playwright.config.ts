@@ -286,7 +286,7 @@ export default defineConfig({
     : [
         {
           command:
-            'NODE_ENV=test NEXT_PUBLIC_API_BASE_URL=http://localhost:3002/api next dev -p 3002',
+            'NODE_ENV=test JWT_SECRET=replace-with-a-unique-32-plus-character-secret NEXT_SERVER_API_URL=http://localhost:3000/api NEXT_PUBLIC_API_BASE_URL=http://localhost:3002/api next dev -p 3002',
           url: 'http://localhost:3002',
           reuseExistingServer: true,
           timeout: 180000,

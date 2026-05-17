@@ -242,7 +242,7 @@ export function LoginForm({
                 <FormItem>
                   <FormLabel className="text-gray-700">Email Address</FormLabel>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-4 w-4" />
                     <FormControl>
                       <Input
                         {...field}
@@ -267,7 +267,7 @@ export function LoginForm({
                 <FormItem>
                   <FormLabel className="text-gray-700">Password</FormLabel>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-4 w-4" />
                     <FormControl>
                       <Input
                         {...field}
@@ -284,7 +284,7 @@ export function LoginForm({
                       data-testid="password-toggle"
                       onClick={() => setShowPassword(!showPassword)}
                       tabIndex={-1}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none focus:text-gray-600"
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none focus:text-gray-700"
                     >
                       <span className="sr-only">Toggle password visibility</span>
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -308,7 +308,7 @@ export function LoginForm({
                           data-testid="remember-me-checkbox"
                           checked={field.value}
                           onChange={field.onChange}
-                          className="mt-1 h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                          className="mt-1 h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-400 rounded"
                           disabled={isLoading}
                         />
                       </FormControl>
@@ -362,7 +362,7 @@ export function LoginForm({
                 <Separator className="w-full" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-hasivu-text-tertiary">Or continue with</span>
+                <span className="bg-white px-2 text-hasivu-text-secondary">Or continue with</span>
               </div>
             </div>
 

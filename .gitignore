@@ -76,3 +76,14 @@ graphify-out/
 # Merge/copy tool droppings under tests (e.g. `.!*!file.test.ts`)
 **/.!*
 .gitnexus/
+
+# Installers and local-only artifacts (never commit)
+*.pkg
+*.dmg
+AWSCLIV2.pkg
+
+# Agent session notes at repo root (keep README.md + AGENTS.md only)
+/*_REPORT.md
+/*_SUMMARY.md
+/.claude-todos.md
+/.kilocodemodes

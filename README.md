@@ -1,6 +1,10 @@
-# Hasivu - School Meal Ordering Platform
+# HASIVU — School Meal Ordering Platform
 
-Hasivu is a school meal ordering platform for Indian schools. Parents order meals, kitchen staff manage preparation, admins oversee operations, students track meal activity, and RFID flows support delivery verification.
+HASIVU is a **school meal ordering and operations platform** for Indian schools. Parents order nutritious meals for children; kitchen staff run prep queues; school admins manage users and menus; vendors handle supply; students use RFID-assisted pickup flows. Payments run through **Razorpay**; data lives in **PostgreSQL** (Prisma); sessions and cache use **Redis**.
+
+**Product roles (five):** `parent`, `student`, `admin`, `kitchen_staff`, `vendor` — see role dashboards under `web/src/app/dashboard/`.
+
+**Clean re-export / fresh Git repo:** [docs/REPO_CLEAN_EXPORT.md](docs/REPO_CLEAN_EXPORT.md) (removes ~170 root agent reports, installers, and documents a fresh `git init` flow).
 
 ## Quick Start (Development)
 
@@ -14,22 +18,22 @@ docker compose -f docker-compose.dev.yml up -d
 
 Services:
 
-| Service | URL |
-|---------|-----|
+| Service  | URL                   |
+| -------- | --------------------- |
 | Frontend | http://localhost:3001 |
-| Backend | http://localhost:3000 |
-| Postgres | localhost:5432 |
-| Redis | localhost:6379 |
+| Backend  | http://localhost:3000 |
+| Postgres | localhost:5432        |
+| Redis    | localhost:6379        |
 
 Demo credentials for local Docker:
 
-| Role | Email | Password |
-|------|-------|----------|
-| Parent | parent.demo@hasivu.local | Hasivu123! |
-| Admin | admin.demo@hasivu.local | Hasivu123! |
+| Role    | Email                     | Password   |
+| ------- | ------------------------- | ---------- |
+| Parent  | parent.demo@hasivu.local  | Hasivu123! |
+| Admin   | admin.demo@hasivu.local   | Hasivu123! |
 | Kitchen | kitchen.demo@hasivu.local | Hasivu123! |
 | Student | student.demo@hasivu.local | Hasivu123! |
-| Vendor | vendor.demo@hasivu.local | Hasivu123! |
+| Vendor  | vendor.demo@hasivu.local  | Hasivu123! |
 
 ## Architecture
 
@@ -45,14 +49,14 @@ Next.js App Router       Express API
 
 Runtime decision:
 
-| Area | Decision |
-|------|----------|
-| Production path | Docker VPS + Express + Next.js + Redis + Supabase/Postgres |
-| Legacy path | AWS Lambda/serverless is quarantined and not part of pilot deploy |
-| Auth | Cookie-based JWT using httpOnly cookies |
-| Payments | Razorpay |
-| Database | Prisma with PostgreSQL |
-| Observability | Health/readiness/metrics endpoints plus Sentry hooks |
+| Area            | Decision                                                          |
+| --------------- | ----------------------------------------------------------------- |
+| Production path | Docker VPS + Express + Next.js + Redis + Supabase/Postgres        |
+| Legacy path     | AWS Lambda/serverless is quarantined and not part of pilot deploy |
+| Auth            | Cookie-based JWT using httpOnly cookies                           |
+| Payments        | Razorpay                                                          |
+| Database        | Prisma with PostgreSQL                                            |
+| Observability   | Health/readiness/metrics endpoints plus Sentry hooks              |
 
 ## Pilot Scope
 
@@ -90,14 +94,14 @@ cd web && npm audit --omit=dev --audit-level=moderate
 
 Current proven local gates:
 
-| Gate | Expected |
-|------|----------|
-| Root TypeScript | Pass |
-| Web TypeScript | Pass |
-| Required backend tests | 16/16 passing |
-| Playwright role/browser suite | 41/41 passing |
-| npm audit root/web | 0 moderate/high/critical vulnerabilities |
-| Docker health | backend, frontend, postgres, redis healthy |
+| Gate                          | Expected                                   |
+| ----------------------------- | ------------------------------------------ |
+| Root TypeScript               | Pass                                       |
+| Web TypeScript                | Pass                                       |
+| Required backend tests        | 16/16 passing                              |
+| Playwright role/browser suite | 41/41 passing                              |
+| npm audit root/web            | 0 moderate/high/critical vulnerabilities   |
+| Docker health                 | backend, frontend, postgres, redis healthy |
 
 ## Health And Operations
 

@@ -2,13 +2,25 @@ import AxeBuilder from '@axe-core/playwright';
 import { test, expect, Page } from '@playwright/test';
 import type { Cookie } from 'playwright-core';
 
-const BASE = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3001';
+const BASE = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3002';
 const CREDS = {
-  parent:  { email: process.env.TEST_PARENT_EMAIL  || 'parent.demo@hasivu.local',  pw: 'Hasivu123!', role: 'parent' },
-  admin:   { email: process.env.TEST_ADMIN_EMAIL   || 'admin.demo@hasivu.local',   pw: 'Hasivu123!', role: 'admin' },
-  kitchen: { email: process.env.TEST_KITCHEN_EMAIL || 'kitchen.demo@hasivu.local', pw: 'Hasivu123!', role: 'kitchen_staff' },
+  parent: {
+    email: process.env.TEST_PARENT_EMAIL || 'parent.demo@hasivu.local',
+    pw: 'Hasivu123!',
+    role: 'parent',
+  },
+  admin: {
+    email: process.env.TEST_ADMIN_EMAIL || 'admin.demo@hasivu.local',
+    pw: 'Hasivu123!',
+    role: 'admin',
+  },
+  kitchen: {
+    email: process.env.TEST_KITCHEN_EMAIL || 'kitchen.demo@hasivu.local',
+    pw: 'Hasivu123!',
+    role: 'kitchen_staff',
+  },
   student: { email: 'student.demo@hasivu.local', pw: 'Hasivu123!', role: 'student' },
-  vendor:  { email: 'vendor.demo@hasivu.local',  pw: 'Hasivu123!', role: 'vendor' },
+  vendor: { email: 'vendor.demo@hasivu.local', pw: 'Hasivu123!', role: 'vendor' },
 };
 const sessionCookies: Partial<Record<keyof typeof CREDS, Cookie[]>> = {};
 
@@ -54,7 +66,10 @@ async function loginAs(page: Page, role: keyof typeof CREDS) {
 }
 
 async function visibleBodyText(page: Page) {
-  return page.locator('body').innerText().catch(() => '');
+  return page
+    .locator('body')
+    .innerText()
+    .catch(() => '');
 }
 
 async function getWcagViolations(page: Page) {
@@ -68,20 +83,25 @@ async function getWcagViolations(page: Page) {
     impact: violation.impact,
     description: violation.description,
     count: violation.nodes.length,
+    nodes: violation.nodes.map(n => ({ html: n.html, target: n.target })),
   }));
 }
 
 // Helper: check a page for product gaps
-async function auditPage(page: Page, url: string, checks: {
-  hasH1?: boolean;
-  noRawErrors?: boolean;
-  noNotFound?: boolean;
-  hasContent?: boolean;
-  minContentLength?: number;
-}) {
+async function auditPage(
+  page: Page,
+  url: string,
+  checks: {
+    hasH1?: boolean;
+    noRawErrors?: boolean;
+    noNotFound?: boolean;
+    hasContent?: boolean;
+    minContentLength?: number;
+  }
+) {
   await page.goto(url);
   await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {});
-  
+
   const body = await visibleBodyText(page);
   const issues: string[] = [];
 
@@ -90,13 +110,19 @@ async function auditPage(page: Page, url: string, checks: {
     if (h1Count < 1) issues.push('MISSING: no <h1> heading');
   }
   if (checks.noRawErrors) {
-    const rawErrors = ['Request failed with status', 'TypeError:', 'Cannot read', 'undefined is not', 'NetworkError'];
+    const rawErrors = [
+      'Request failed with status',
+      'TypeError:',
+      'Cannot read',
+      'undefined is not',
+      'NetworkError',
+    ];
     for (const err of rawErrors) {
       if (body.includes(err)) issues.push(`RAW ERROR VISIBLE: "${err}"`);
     }
   }
   if (checks.noNotFound) {
-    const notFoundPhrases = ["couldn't load", "404", "not found", "This page could not", "Error: "];
+    const notFoundPhrases = ["couldn't load", '404', 'not found', 'This page could not', 'Error: '];
     for (const phrase of notFoundPhrases) {
       if (body.toLowerCase().includes(phrase.toLowerCase())) {
         issues.push(`NOT FOUND / ERROR VISIBLE: "${phrase}"`);
@@ -114,11 +140,16 @@ async function auditPage(page: Page, url: string, checks: {
 // PARENT JOURNEY — complete meal ordering flow
 // ══════════════════════════════════════════════════════
 test.describe('Parent — Complete Journey', () => {
-  test.beforeEach(async ({ page }) => { await loginAs(page, 'parent'); });
+  test.beforeEach(async ({ page }) => {
+    await loginAs(page, 'parent');
+  });
 
   test('P1: Dashboard loads with content and heading', async ({ page }) => {
     const result = await auditPage(page, `${BASE}/dashboard/parent`, {
-      hasH1: true, noRawErrors: true, noNotFound: true, hasContent: true
+      hasH1: true,
+      noRawErrors: true,
+      noNotFound: true,
+      hasContent: true,
     });
     expect(result.issues, `Dashboard issues: ${result.issues.join(', ')}`).toHaveLength(0);
   });
@@ -136,21 +167,28 @@ test.describe('Parent — Complete Journey', () => {
 
   test('P3: Daily menu page loads', async ({ page }) => {
     const result = await auditPage(page, `${BASE}/daily-menu`, {
-      hasH1: true, noRawErrors: true, noNotFound: true
+      hasH1: true,
+      noRawErrors: true,
+      noNotFound: true,
     });
     expect(result.issues, result.issues.join(', ')).toHaveLength(0);
   });
 
   test('P4: Cart page loads and shows empty or filled state', async ({ page }) => {
     const result = await auditPage(page, `${BASE}/cart`, {
-      hasH1: true, noRawErrors: true, noNotFound: true, hasContent: true
+      hasH1: true,
+      noRawErrors: true,
+      noNotFound: true,
+      hasContent: true,
     });
     expect(result.issues, result.issues.join(', ')).toHaveLength(0);
   });
 
   test('P5: Orders page loads without error', async ({ page }) => {
     const result = await auditPage(page, `${BASE}/orders`, {
-      hasH1: true, noRawErrors: true, noNotFound: true
+      hasH1: true,
+      noRawErrors: true,
+      noNotFound: true,
     });
     expect(result.issues, `Orders page: ${result.issues.join(', ')}`).toHaveLength(0);
   });
@@ -165,14 +203,18 @@ test.describe('Parent — Complete Journey', () => {
 
   test('P7: Notifications page loads', async ({ page }) => {
     const result = await auditPage(page, `${BASE}/notifications`, {
-      hasH1: true, noRawErrors: true, noNotFound: true
+      hasH1: true,
+      noRawErrors: true,
+      noNotFound: true,
     });
     expect(result.issues, result.issues.join(', ')).toHaveLength(0);
   });
 
   test('P8: Settings page loads', async ({ page }) => {
     const result = await auditPage(page, `${BASE}/settings`, {
-      hasH1: true, noRawErrors: true, noNotFound: true
+      hasH1: true,
+      noRawErrors: true,
+      noNotFound: true,
     });
     expect(result.issues, result.issues.join(', ')).toHaveLength(0);
   });
@@ -180,20 +222,26 @@ test.describe('Parent — Complete Journey', () => {
   test('P9: Parent dashboard navigation links all resolve', async ({ page }) => {
     await page.goto(`${BASE}/dashboard/parent`);
     await page.waitForLoadState('networkidle').catch(() => {});
-    
+
     // Find all nav links visible to parent
-    const navLinks = await page.$$eval('nav a, [role="navigation"] a', 
-      links => links.map(l => ({ 
-        text: l.textContent?.trim(), 
-        href: l.getAttribute('href') 
-      })).filter(l => l.href && !l.href.startsWith('http'))
+    const navLinks = await page.$$eval('nav a, [role="navigation"] a', links =>
+      links
+        .map(l => ({
+          text: l.textContent?.trim(),
+          href: l.getAttribute('href'),
+        }))
+        .filter(l => l.href && !l.href.startsWith('http'))
     );
-    
+
     const broken: string[] = [];
-    for (const link of navLinks.slice(0, 10)) { // limit to 10 to avoid timeout
+    for (const link of navLinks.slice(0, 10)) {
+      // limit to 10 to avoid timeout
       if (!link.href) continue;
       const res = await page.goto(`${BASE}${link.href}`).catch(() => null);
-      if (!res) { broken.push(`${link.text}: no response`); continue; }
+      if (!res) {
+        broken.push(`${link.text}: no response`);
+        continue;
+      }
       const body = await visibleBodyText(page);
       if (body.includes("couldn't load") || body.includes('404') || res.status() >= 500) {
         broken.push(`${link.text} (${link.href}): broken`);
@@ -205,11 +253,11 @@ test.describe('Parent — Complete Journey', () => {
   test('P10: Add to cart flow works end-to-end', async ({ page }) => {
     await page.goto(`${BASE}/menu`);
     await page.waitForLoadState('networkidle').catch(() => {});
-    
+
     // Try to find and click an "Add" button
     const addBtn = page.getByRole('button', { name: /add|order|select/i }).first();
     const btnVisible = await addBtn.isVisible().catch(() => false);
-    
+
     if (btnVisible) {
       await addBtn.click();
       await page.waitForTimeout(1000);
@@ -218,7 +266,9 @@ test.describe('Parent — Complete Journey', () => {
       expect(body).not.toContain('Request failed');
     } else {
       // If no add button, at minimum menu items should be visible
-      const menuItems = await page.$$('[data-testid*="meal"], [data-testid*="menu-item"], .meal-card');
+      const menuItems = await page.$$(
+        '[data-testid*="meal"], [data-testid*="menu-item"], .meal-card'
+      );
       // Don't fail if no data-testid — just ensure no error state
       const body = await visibleBodyText(page);
       expect(body).not.toContain("couldn't load");
@@ -230,11 +280,16 @@ test.describe('Parent — Complete Journey', () => {
 // ADMIN JOURNEY
 // ══════════════════════════════════════════════════════
 test.describe('Admin — Dashboard & Management', () => {
-  test.beforeEach(async ({ page }) => { await loginAs(page, 'admin'); });
+  test.beforeEach(async ({ page }) => {
+    await loginAs(page, 'admin');
+  });
 
   test('A1: Admin dashboard has heading and content', async ({ page }) => {
     const result = await auditPage(page, `${BASE}/dashboard/admin`, {
-      hasH1: true, noRawErrors: true, noNotFound: true, hasContent: true
+      hasH1: true,
+      noRawErrors: true,
+      noNotFound: true,
+      hasContent: true,
     });
     expect(result.issues, result.issues.join(', ')).toHaveLength(0);
   });
@@ -267,7 +322,10 @@ test.describe('Admin — Dashboard & Management', () => {
     // If none work, at least admin dashboard should have a users link
     await page.goto(`${BASE}/dashboard/admin`);
     const body = await visibleBodyText(page);
-    console.log('User management: no direct route found, admin dashboard body length:', body.length);
+    console.log(
+      'User management: no direct route found, admin dashboard body length:',
+      body.length
+    );
   });
 
   test('A4: Analytics page loads without error', async ({ page }) => {
@@ -275,7 +333,7 @@ test.describe('Admin — Dashboard & Management', () => {
       const res = await page.goto(`${BASE}${route}`).catch(() => null);
       if (res && res.status() < 400) {
         const body = await visibleBodyText(page);
-        expect(body).not.toContain("Request failed");
+        expect(body).not.toContain('Request failed');
         return;
       }
     }
@@ -295,14 +353,16 @@ test.describe('Admin — Dashboard & Management', () => {
   test('A6: All admin nav links resolve without 404', async ({ page }) => {
     await page.goto(`${BASE}/dashboard/admin`);
     await page.waitForLoadState('networkidle').catch(() => {});
-    
-    const navLinks = await page.$$eval('nav a, aside a, [role="navigation"] a',
-      links => links.map(l => ({ 
-        text: l.textContent?.trim().slice(0,30), 
-        href: l.getAttribute('href') 
-      })).filter(l => l.href && l.href.startsWith('/') && !l.href.includes('logout'))
+
+    const navLinks = await page.$$eval('nav a, aside a, [role="navigation"] a', links =>
+      links
+        .map(l => ({
+          text: l.textContent?.trim().slice(0, 30),
+          href: l.getAttribute('href'),
+        }))
+        .filter(l => l.href && l.href.startsWith('/') && !l.href.includes('logout'))
     );
-    
+
     const broken: string[] = [];
     for (const link of navLinks.slice(0, 12)) {
       if (!link.href) continue;
@@ -317,14 +377,18 @@ test.describe('Admin — Dashboard & Management', () => {
 });
 
 // ══════════════════════════════════════════════════════
-// KITCHEN JOURNEY  
+// KITCHEN JOURNEY
 // ══════════════════════════════════════════════════════
 test.describe('Kitchen — Order Workflow', () => {
-  test.beforeEach(async ({ page }) => { await loginAs(page, 'kitchen'); });
+  test.beforeEach(async ({ page }) => {
+    await loginAs(page, 'kitchen');
+  });
 
   test('K1: Kitchen dashboard loads with heading', async ({ page }) => {
     const result = await auditPage(page, `${BASE}/dashboard/kitchen`, {
-      hasH1: true, noRawErrors: true, noNotFound: true
+      hasH1: true,
+      noRawErrors: true,
+      noNotFound: true,
     });
     expect(result.issues, result.issues.join(', ')).toHaveLength(0);
   });
@@ -353,14 +417,16 @@ test.describe('Kitchen — Order Workflow', () => {
   test('K4: Kitchen nav links all resolve', async ({ page }) => {
     await page.goto(`${BASE}/dashboard/kitchen`);
     await page.waitForLoadState('networkidle').catch(() => {});
-    
-    const navLinks = await page.$$eval('nav a, aside a',
-      links => links.map(l => ({
-        text: l.textContent?.trim().slice(0, 30),
-        href: l.getAttribute('href')
-      })).filter(l => l.href && l.href.startsWith('/'))
+
+    const navLinks = await page.$$eval('nav a, aside a', links =>
+      links
+        .map(l => ({
+          text: l.textContent?.trim().slice(0, 30),
+          href: l.getAttribute('href'),
+        }))
+        .filter(l => l.href && l.href.startsWith('/'))
     );
-    
+
     const broken: string[] = [];
     for (const link of navLinks.slice(0, 8)) {
       if (!link.href) continue;
@@ -378,18 +444,24 @@ test.describe('Kitchen — Order Workflow', () => {
 // STUDENT JOURNEY
 // ══════════════════════════════════════════════════════
 test.describe('Student — Browse & View', () => {
-  test.beforeEach(async ({ page }) => { await loginAs(page, 'student'); });
+  test.beforeEach(async ({ page }) => {
+    await loginAs(page, 'student');
+  });
 
   test('S1: Student dashboard loads', async ({ page }) => {
     const result = await auditPage(page, `${BASE}/dashboard/student`, {
-      hasH1: true, noRawErrors: true, noNotFound: true
+      hasH1: true,
+      noRawErrors: true,
+      noNotFound: true,
     });
     expect(result.issues, result.issues.join(', ')).toHaveLength(0);
   });
 
   test('S2: Student can view menu', async ({ page }) => {
     const result = await auditPage(page, `${BASE}/menu`, {
-      noRawErrors: true, noNotFound: true, hasContent: true
+      noRawErrors: true,
+      noNotFound: true,
+      hasContent: true,
     });
     expect(result.issues, result.issues.join(', ')).toHaveLength(0);
   });
@@ -399,11 +471,15 @@ test.describe('Student — Browse & View', () => {
 // VENDOR JOURNEY
 // ══════════════════════════════════════════════════════
 test.describe('Vendor — Catalog Management', () => {
-  test.beforeEach(async ({ page }) => { await loginAs(page, 'vendor'); });
+  test.beforeEach(async ({ page }) => {
+    await loginAs(page, 'vendor');
+  });
 
   test('V1: Vendor dashboard loads without PRD copy', async ({ page }) => {
     const result = await auditPage(page, `${BASE}/dashboard/vendor`, {
-      hasH1: true, noRawErrors: true, noNotFound: true
+      hasH1: true,
+      noRawErrors: true,
+      noNotFound: true,
     });
     expect(result.issues, result.issues.join(', ')).toHaveLength(0);
     // Confirm PRD scaffolding is gone
@@ -420,26 +496,37 @@ test.describe('Vendor — Catalog Management', () => {
 test.describe('Visual Consistency — Cross-Role', () => {
   test('VC1: Background color is consistent across role dashboards', async ({ page }) => {
     const bgColors: Record<string, string> = {};
-    
+
     for (const [role, creds] of Object.entries(CREDS)) {
       await loginAs(page, role as keyof typeof CREDS);
-      await page.goto(`${BASE}/dashboard/${role === 'admin' ? 'admin' : 
-        role === 'kitchen' ? 'kitchen' : 
-        role === 'parent' ? 'parent' : 
-        role === 'student' ? 'student' : 'vendor'}`);
+      await page.goto(
+        `${BASE}/dashboard/${
+          role === 'admin'
+            ? 'admin'
+            : role === 'kitchen'
+              ? 'kitchen'
+              : role === 'parent'
+                ? 'parent'
+                : role === 'student'
+                  ? 'student'
+                  : 'vendor'
+        }`
+      );
       await page.waitForLoadState('networkidle').catch(() => {});
-      
+
       bgColors[role] = await page.evaluate(() => {
         const el = document.querySelector('main, [data-testid="dashboard"], body');
         return el ? window.getComputedStyle(el).backgroundColor : 'unknown';
       });
     }
-    
+
     console.log('Background colors per role:', JSON.stringify(bgColors, null, 2));
     // Flag inconsistencies — not hard fail, but log for UI/UX review
     const uniqueColors = new Set(Object.values(bgColors));
     if (uniqueColors.size > 2) {
-      console.warn(`⚠️ ${uniqueColors.size} different background colors across dashboards — review for consistency`);
+      console.warn(
+        `⚠️ ${uniqueColors.size} different background colors across dashboards — review for consistency`
+      );
     }
   });
 
@@ -447,14 +534,18 @@ test.describe('Visual Consistency — Cross-Role', () => {
     await loginAs(page, 'parent');
     const routes = ['/dashboard/parent', '/menu', '/cart', '/orders'];
     const headerTexts: string[] = [];
-    
+
     for (const route of routes) {
       await page.goto(`${BASE}${route}`);
       await page.waitForLoadState('networkidle').catch(() => {});
-      const header = await page.$eval('header, nav', el => el.textContent?.slice(0,50) || '').catch(() => '');
-      headerTexts.push(header);
+      const validHeaders = await page
+        .$$eval('header, nav, [role="banner"], [role="navigation"], aside', els =>
+          els.map(el => el.textContent?.trim() || '').filter(t => t.length > 5)
+        )
+        .catch(() => []);
+      headerTexts.push(validHeaders.length > 0 ? validHeaders[0] : '');
     }
-    
+
     // All pages should have some consistent nav element
     const emptyHeaders = headerTexts.filter(h => h.trim().length < 5);
     expect(emptyHeaders.length, 'Some pages have no visible header/nav').toBeLessThanOrEqual(1);
@@ -463,7 +554,7 @@ test.describe('Visual Consistency — Cross-Role', () => {
   test('VC3: Typography scale is consistent', async ({ page }) => {
     await loginAs(page, 'parent');
     await page.goto(`${BASE}/dashboard/parent`);
-    
+
     const fontData = await page.evaluate(() => {
       const elements = document.querySelectorAll('h1, h2, h3, p, button');
       const fonts = new Set<string>();
@@ -473,7 +564,7 @@ test.describe('Visual Consistency — Cross-Role', () => {
       });
       return Array.from(fonts);
     });
-    
+
     console.log('Font families in use:', fontData);
     // Should use at most 2-3 font families
     expect(fontData.length, `Too many fonts: ${fontData.join(', ')}`).toBeLessThanOrEqual(4);
@@ -489,15 +580,26 @@ test.describe('Accessibility — Critical Pages', () => {
     await page.waitForLoadState('domcontentloaded', { timeout: 5000 }).catch(() => {});
 
     const violations = await getWcagViolations(page);
-    
-    const critical = violations.filter((v: any) => 
-      v.impact === 'critical' || v.impact === 'serious'
+
+    const critical = violations.filter(
+      (v: any) => v.impact === 'critical' || v.impact === 'serious'
     );
-    
+
     if (critical.length > 0) {
-      console.log('Login page accessibility violations:', JSON.stringify(critical, null, 2));
+      console.log(
+        'Login page accessibility violations:',
+        JSON.stringify(
+          critical.map((c: any) => ({
+            id: c.id,
+            nodes: c.nodes.map((n: any) => ({ html: n.html, target: n.target })),
+          })),
+          null,
+          2
+        )
+      );
     }
-    expect(critical.length, 
+    expect(
+      critical.length,
       `Critical a11y violations on login: ${critical.map((v: any) => v.id).join(', ')}`
     ).toBe(0);
   });
@@ -508,15 +610,11 @@ test.describe('Accessibility — Critical Pages', () => {
     await page.waitForLoadState('domcontentloaded', { timeout: 5000 }).catch(() => {});
 
     const violations = await getWcagViolations(page);
-    
-    const critical = violations.filter((v: any) => 
-      ['critical', 'serious'].includes(v.impact)
-    );
-    
+
+    const critical = violations.filter((v: any) => ['critical', 'serious'].includes(v.impact));
+
     console.log('Parent dashboard violations:', violations);
-    expect(critical.length, 
-      `Critical a11y violations: ${JSON.stringify(critical)}`
-    ).toBe(0);
+    expect(critical.length, `Critical a11y violations: ${JSON.stringify(critical)}`).toBe(0);
   });
 });
 
@@ -527,30 +625,30 @@ test.describe('Mobile Responsiveness', () => {
   test('MOB1: Parent ordering flow works on mobile viewport', async ({ browser }) => {
     const context = await browser.newContext({
       viewport: { width: 390, height: 844 }, // iPhone 14
-      userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)'
+      userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)',
     });
     const page = await context.newPage();
-    
+
     await loginAs(page, 'parent');
-    
+
     // Check that main parent flows are usable on mobile
     for (const route of ['/dashboard/parent', '/menu', '/cart']) {
       await page.goto(`${BASE}${route}`);
       await page.waitForLoadState('networkidle').catch(() => {});
-      
+
       // Check for horizontal scroll (indicates broken responsive layout)
-      const hasHorizontalScroll = await page.evaluate(() => 
-        document.body.scrollWidth > window.innerWidth
+      const hasHorizontalScroll = await page.evaluate(
+        () => document.body.scrollWidth > window.innerWidth
       );
-      
+
       if (hasHorizontalScroll) {
         console.warn(`⚠️ Horizontal scroll on mobile at ${route}`);
       }
-      
+
       const body = await visibleBodyText(page);
       expect(body).not.toContain("couldn't load");
     }
-    
+
     await context.close();
   });
 });

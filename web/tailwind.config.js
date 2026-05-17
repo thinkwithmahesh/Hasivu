@@ -164,6 +164,13 @@ module.exports = {
           },
           semantic: { success: '#22C55E', warning: '#F59E0B', danger: '#EF4444', info: '#3B82F6' },
         },
+        // Gray scale – WCAG AA minimum 4.5:1 on white
+        gray: {
+          300: '#9CA3AF',
+          400: '#737373',
+          500: '#6B7280',
+          600: '#4B5563',
+        },
         // Neutral “ink” palette for typography (softer than pure black)
         ink: {
           50: '#F8FAFC',

@@ -212,6 +212,8 @@ router.post('/login', async (req: Request, res: Response) => {
       success: true,
       message: 'Login successful',
       user: authResult.user,
+      accessToken: authResult.tokens.accessToken,
+      refreshToken: authResult.tokens.refreshToken,
     });
   } catch (error) {
     logger.error('Login error:', undefined, {
@@ -329,7 +331,8 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
     res.status(result.success ? 200 : 500).json({
       success: result.success,
       message:
-        result.message || 'If an account with this email exists, a password reset link has been sent',
+        result.message ||
+        'If an account with this email exists, a password reset link has been sent',
       ...(result.error ? { error: result.error } : {}),
     });
   } catch (error) {

@@ -28,9 +28,9 @@ export async function POST(request: NextRequest) {
 
     const upstream = LAMBDA_AUTH_LOGIN_URL
       ? await fetchConfiguredProxy(LAMBDA_AUTH_LOGIN_URL, 'LAMBDA_AUTH_LOGIN_URL', {
-      method: 'POST',
+          method: 'POST',
           headers: buildProxyHeaders(request),
-      body: JSON.stringify(body),
+          body: JSON.stringify(body),
         })
       : await forwardToExpressApi(request, '/auth/login', {
           method: 'POST',
@@ -61,7 +61,9 @@ export async function POST(request: NextRequest) {
         data: userData,
         message: 'Login successful',
       });
-      copyUpstreamSetCookieHeaders(upstream, response);
+      // setAuthCookies handles httpOnly cookie creation from the body tokens.
+      // We intentionally skip copyUpstreamSetCookieHeaders to avoid duplicate
+      // Set-Cookie entries with conflicting attributes.
       return setAuthCookies(response, { accessToken, refreshToken });
     }
 

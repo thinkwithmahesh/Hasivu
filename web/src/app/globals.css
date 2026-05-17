@@ -5,7 +5,7 @@
 @layer base {
   :root {
     /* ─── HASIVU DESIGN SYSTEM TOKENS ─── */
-    --hasivu-primary: #e07020;
+    --hasivu-primary: #b04a00;
     --hasivu-primary-light: #fff8f0;
     --hasivu-primary-dark: #7a3a08;
     --hasivu-secondary: #207040;
@@ -19,7 +19,7 @@
     --hasivu-bg-cool: #f2efe9;
     --hasivu-text-primary: #141210;
     --hasivu-text-secondary: #5c554a;
-    --hasivu-text-tertiary: #9e9589;
+    --hasivu-text-tertiary: #736d64;
     --hasivu-surface: #ffffff;
     --hasivu-surface-elevated: #f2efe9;
     --hasivu-border: #e4dfd6;

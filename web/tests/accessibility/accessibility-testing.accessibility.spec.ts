@@ -3,7 +3,7 @@ import AxeBuilder from '@axe-core/playwright';
 
 test.describe('Accessibility smoke checks', () => {
   test('landing page has no critical accessibility violations', async ({ page, baseURL }) => {
-    const target = baseURL ?? process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3001';
+    const target = baseURL ?? process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3002';
     await page.goto(target, { waitUntil: 'domcontentloaded' });
 
     await expect(page).toHaveTitle(/HASIVU|School Meals/i);

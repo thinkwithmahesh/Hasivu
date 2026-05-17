@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const BASE = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3001';
+const BASE = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3002';
 
 test.describe('Payment Gateway Integration Flow', () => {
   test.beforeEach(async ({ page }) => {
