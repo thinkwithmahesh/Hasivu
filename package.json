@@ -169,7 +169,7 @@
     "@aws-sdk/s3-request-presigner": "^3.478.0",
     "@prisma/client": "^6.16.2",
     "@sendgrid/mail": "^8.1.0",
-    "@sentry/node": "^10.51.0",
+    "@sentry/node": "^10.53.1",
     "@types/aws-lambda": "^8.10.161",
     "@types/bcryptjs": "^2.4.6",
     "@types/compression": "^1.8.1",
