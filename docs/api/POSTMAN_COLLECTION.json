@@ -1,0 +1,1298 @@
+{
+  "info": {
+    "name": "HASIVU Platform API",
+    process.env.API_POSTMAN_COLLECTION_PASSWORD_1: "Complete API collection for the HASIVU Platform - School meal delivery system with 93+ endpoints",
+    "version": "1.0.0",
+    "schema": process.env.API_POSTMAN_COLLECTION_PASSWORD_2
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "exec": [
+          "// Auto-refresh token if expired",
+          "const tokenExpiry = pm.environment.get(process.env.API_POSTMAN_COLLECTION_PASSWORD_3);",
+          "const now = new Date().getTime();",
+          "",
+          "if (tokenExpiry && now > tokenExpiry) {",
+          "    console.log('Token expired, refreshing...');",
+          "    const refreshToken = pm.environment.get('refresh_token');",
+          "    ",
+          "    if (refreshToken) {",
+          "        pm.sendRequest({",
+          "            url: pm.environment.get('base_url') + '/auth/refresh',",
+          "            method: 'POST',",
+          "            header: {",
+          "                'Content-Type': 'application/json'",
+          "            },",
+          "            body: {",
+          "                mode: 'raw',",
+          "                raw: JSON.stringify({",
+          "                    refreshToken: refreshToken",
+          "                })",
+          "            }",
+          "        }, (err, res) => {",
+          "            if (err) {",
+          "                console.log('Token refresh failed:', err);",
+          "            } else {",
+          "                const response = res.json();",
+          "                pm.environment.set('access_token', response.accessToken);",
+          "                pm.environment.set(process.env.API_POSTMAN_COLLECTION_PASSWORD_4, Date.now() + (response.expiresIn * 1000));",
+          "            }",
+          "        });",
+          "    }",
+          "}"
+        ],
+        "type": "text/javascript"
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "exec": [
+          "// Global response validation",
+          "pm.test('Response status is success', function () {",
+          "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+          "});",
+          "",
+          "pm.test('Response time is reasonable', function () {",
+          "    pm.expect(pm.response.responseTime).to.be.below(5000);",
+          "});",
+          "",
+          "// Store common response data",
+          "if (pm.response.code < 400) {",
+          "    const response = pm.response.json();",
+          "    ",
+          "    // Store user ID from auth responses",
+          "    if (response.user && response.user.id) {",
+          "        pm.environment.set('user_id', response.user.id);",
+          "    }",
+          "    ",
+          "    // Store tokens from auth responses",
+          "    if (response.tokens) {",
+          "        pm.environment.set('access_token', response.tokens.accessToken);",
+          "        pm.environment.set('refresh_token', response.tokens.refreshToken);",
+          "        pm.environment.set(process.env.API_POSTMAN_COLLECTION_PASSWORD_5, Date.now() + (response.tokens.expiresIn * 1000));",
+          "    }",
+          "    ",
+          "    // Store created resource IDs",
+          "    if (response.id) {",
+          "        pm.environment.set('last_created_id', response.id);",
+          "    }",
+          "}"
+        ],
+        "type": "text/javascript"
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "{{base_url}}",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Check",
+      "item": [
+        {
+          "name": "Basic Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            },
+            "description": "Check the health status of the API and its dependencies"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Health check returns healthy status', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.status).to.eql('healthy');",
+                  "});",
+                  "",
+                  "pm.test('All services are healthy', function () {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.services.database).to.eql('healthy');",
+                  "    pm.expect(response.services.cognito).to.eql('healthy');",
+                  "    pm.expect(response.services.razorpay).to.eql('healthy');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "User Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \process.env.API_POSTMAN_COLLECTION_PASSWORD_1,\n  \process.env.API_POSTMAN_COLLECTION_PASSWORD_7: \"{{test_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Authenticate user with email and password"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Login successful', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('user');",
+                  "    pm.expect(response).to.have.property('tokens');",
+                  "    pm.expect(response.tokens).to.have.property('accessToken');",
+                  "});",
+                  "",
+                  "// Store tokens for subsequent requests",
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('access_token', response.tokens.accessToken);",
+                  "    pm.environment.set('refresh_token', response.tokens.refreshToken);",
+                  "    pm.environment.set('user_id', response.user.id);",
+                  "    pm.environment.set('user_email', response.user.email);",
+                  "    pm.environment.set('token_expires_at', Date.now() + (response.tokens.expiresIn * 1000));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "User Registration",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \process.env.API_POSTMAN_COLLECTION_PASSWORD_6,\n  \"password\": \process.env.API_POSTMAN_COLLECTION_PASSWORD_8,\n  \process.env.API_POSTMAN_COLLECTION_PASSWORD_10: \"John\",\n  \process.env.API_POSTMAN_COLLECTION_PASSWORD_11: \"Doe\",\n  \"schoolId\": \"{{test_school_id}}\",\n  \"role\": \"parent\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Register a new user account"
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refresh_token}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/refresh",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "refresh"]
+            },
+            "description": "Get a new access token using refresh token"
+          },
+          "response": []
+        },
+        {
+          "name": "User Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/logout",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "logout"]
+            },
+            "description": "Logout user and invalidate tokens"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "User Management",
+      "item": [
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": process.env.API_POSTMAN_COLLECTION_PASSWORD_9,
+              "host": ["{{base_url}}"],
+              "path": ["users"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "role",
+                  "value": "parent",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get paginated list of users"
+          },
+          "response": []
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["users", "{{user_id}}"]
+            },
+            "description": "Retrieve user details by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Updated First Name\",\n  \"lastName\": \"Updated Last Name\",\n  \"phone\": \process.env.API_POSTMAN_COLLECTION_PASSWORD_12
+            },
+            "url": {
+              "raw": "{{base_url}}/users/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["users", "{{user_id}}"]
+            },
+            "description": "Update user profile information"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Payment Processing",
+      "item": [
+        {
+          "name": "Create Payment Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \process.env.API_POSTMAN_COLLECTION_PASSWORD_13,\n  \"amount\": 250.00,\n  \"currency\": \"INR\",\n  \process.env.API_POSTMAN_COLLECTION_PASSWORD_36: \"Lunch payment for test user\",\n  \"orderId\": \"{{test_order_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payments/orders",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "orders"]
+            },
+            "description": "Create a new payment order"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Payment order created successfully', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.order).to.have.property('id');",
+                  "    pm.expect(response.order).to.have.property('razorpayOrderId');",
+                  "    pm.environment.set('payment_order_id', response.order.id);",
+                  "    pm.environment.set('razorpay_order_id', response.order.razorpayOrderId);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Verify Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \process.env.API_POSTMAN_COLLECTION_PASSWORD_14: \process.env.API_POSTMAN_COLLECTION_PASSWORD_15,\n  \process.env.API_POSTMAN_COLLECTION_PASSWORD_16: \process.env.API_POSTMAN_COLLECTION_PASSWORD_17,\n  \"razorpaySignature\": \"test_signature_hash\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payments/verify",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "verify"]
+            },
+            "description": "Verify payment completion"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Payment Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payments/status/{{payment_order_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "status", "{{payment_order_id}}"]
+            },
+            "description": "Get current payment status for an order"
+          },
+          "response": []
+        },
+        {
+          "name": "Process Refund",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \process.env.API_POSTMAN_COLLECTION_PASSWORD_18: \process.env.API_POSTMAN_COLLECTION_PASSWORD_19,\n  \"amount\": 100.00,\n  \"reason\": \"Customer requested refund\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payments/refund",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "refund"]
+            },
+            "description": "Process payment refund"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Payment Methods",
+      "item": [
+        {
+          "name": "List Payment Methods",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payments/methods",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "methods"]
+            },
+            "description": "Get user's saved payment methods"
+          },
+          "response": []
+        },
+        {
+          "name": "Add Payment Method",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"methodType\": \"upi\",\n  \"provider\": \"razorpay\",\n  \"upiHandle\": \"user@paytm\",\n  \"isDefault\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payments/methods",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "methods"]
+            },
+            "description": "Add new payment method for user"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Payment Method",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isDefault\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/payments/methods/{{payment_method_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "methods", "{{payment_method_id}}"]
+            },
+            "description": "Update existing payment method"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Subscriptions",
+      "item": [
+        {
+          "name": "List Subscriptions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/subscriptions?status=active",
+              "host": ["{{base_url}}"],
+              "path": ["subscriptions"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "active"
+                },
+                {
+                  "key": "schoolId",
+                  "value": "{{test_school_id}}",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get user's subscriptions"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Subscription",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \process.env.API_POSTMAN_COLLECTION_PASSWORD_20: \process.env.API_POSTMAN_COLLECTION_PASSWORD_21,\n  \process.env.API_POSTMAN_COLLECTION_PASSWORD_22: \process.env.API_POSTMAN_COLLECTION_PASSWORD_23,\n  \process.env.API_POSTMAN_COLLECTION_PASSWORD_24: \process.env.API_POSTMAN_COLLECTION_PASSWORD_25
+            },
+            "url": {
+              "raw": "{{base_url}}/subscriptions",
+              "host": ["{{base_url}}"],
+              "path": ["subscriptions"]
+            },
+            "description": "Create new subscription"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Subscription created successfully', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('id');",
+                  "    pm.environment.set('subscription_id', response.id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Subscription",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/subscriptions/{{subscription_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["subscriptions", "{{subscription_id}}"]
+            },
+            "description": "Get subscription details"
+          },
+          "response": []
+        },
+        {
+          "name": "Pause Subscription",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/subscriptions/{{subscription_id}}/pause",
+              "host": ["{{base_url}}"],
+              "path": ["subscriptions", "{{subscription_id}}", "pause"]
+            },
+            "description": "Pause active subscription"
+          },
+          "response": []
+        },
+        {
+          "name": "Resume Subscription",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/subscriptions/{{subscription_id}}/resume",
+              "host": ["{{base_url}}"],
+              "path": ["subscriptions", "{{subscription_id}}", "resume"]
+            },
+            "description": "Resume paused subscription"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "List Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": process.env.API_POSTMAN_COLLECTION_PASSWORD_26,
+              "host": ["{{base_url}}"],
+              "path": ["orders"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "status",
+                  "value": "pending"
+                }
+              ]
+            },
+            "description": "Get paginated list of orders"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \process.env.API_POSTMAN_COLLECTION_PASSWORD_27: \process.env.API_POSTMAN_COLLECTION_PASSWORD_28,\n      \process.env.API_POSTMAN_COLLECTION_PASSWORD_29: 1,\n      \process.env.API_POSTMAN_COLLECTION_PASSWORD_30: \"No onions please\"\n    }\n  ],\n  \process.env.API_POSTMAN_COLLECTION_PASSWORD_31: \process.env.API_POSTMAN_COLLECTION_PASSWORD_32,\n  \process.env.API_POSTMAN_COLLECTION_PASSWORD_33: \"Deliver to classroom 101\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/orders",
+              "host": ["{{base_url}}"],
+              "path": ["orders"]
+            },
+            "description": "Create a new meal order"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Order created successfully', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('id');",
+                  "    pm.expect(response).to.have.property('orderNumber');",
+                  "    pm.environment.set('order_id', response.id);",
+                  "    pm.environment.set('order_number', response.orderNumber);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Order",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/orders/{{order_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["orders", "{{order_id}}"]
+            },
+            "description": "Get order details by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Order History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": process.env.API_POSTMAN_COLLECTION_PASSWORD_34,
+              "host": ["{{base_url}}"],
+              "path": ["orders", "history", "{{user_id}}"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "startDate",
+                  "value": "2024-01-01",
+                  "disabled": true
+                },
+                {
+                  "key": "endDate",
+                  "value": "2024-01-31",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get user's order history"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Menu Management",
+      "item": [
+        {
+          "name": "List Menu Plans",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/menus/plans?schoolId={{test_school_id}}&status=APPROVED",
+              "host": ["{{base_url}}"],
+              "path": ["menus", "plans"],
+              "query": [
+                {
+                  "key": "schoolId",
+                  "value": "{{test_school_id}}"
+                },
+                {
+                  "key": "status",
+                  "value": "APPROVED"
+                }
+              ]
+            },
+            "description": "Get list of menu plans"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Daily Menu",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": process.env.API_POSTMAN_COLLECTION_PASSWORD_35,
+              "host": ["{{base_url}}"],
+              "path": ["menus", "daily"],
+              "query": [
+                {
+                  "key": "schoolId",
+                  "value": "{{test_school_id}}"
+                },
+                {
+                  "key": "date",
+                  "value": "2024-01-15"
+                }
+              ]
+            },
+            "description": "Get daily menu for a school"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Menu Plan",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Week of January 15, 2024\",\n  \process.env.API_POSTMAN_COLLECTION_PASSWORD_47: \"Weekly menu plan for mid January\",\n  \process.env.API_POSTMAN_COLLECTION_PASSWORD_37: \process.env.API_POSTMAN_COLLECTION_PASSWORD_38,\n  \process.env.API_POSTMAN_COLLECTION_PASSWORD_39: \process.env.API_POSTMAN_COLLECTION_PASSWORD_40,\n  \"isTemplate\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/menus/plans",
+              "host": ["{{base_url}}"],
+              "path": ["menus", "plans"]
+            },
+            "description": "Create new menu plan"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "RFID Management",
+      "item": [
+        {
+          "name": "List RFID Readers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/rfid/readers?schoolId={{test_school_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["rfid", "readers"],
+              "query": [
+                {
+                  "key": "schoolId",
+                  "value": "{{test_school_id}}"
+                }
+              ]
+            },
+            "description": "Get list of RFID readers"
+          },
+          "response": []
+        },
+        {
+          "name": "Test RFID Reader",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/rfid/readers/{{test_reader_id}}/test",
+              "host": ["{{base_url}}"],
+              "path": ["rfid", "readers", "{{test_reader_id}}", "test"]
+            },
+            "description": "Test RFID reader connection"
+          },
+          "response": []
+        },
+        {
+          "name": "Register RFID Card",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \process.env.API_POSTMAN_COLLECTION_PASSWORD_41: \process.env.API_POSTMAN_COLLECTION_PASSWORD_42,\n  \"studentId\": \"{{test_student_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/rfid/cards",
+              "host": ["{{base_url}}"],
+              "path": ["rfid", "cards"]
+            },
+            "description": "Register new RFID card for student"
+          },
+          "response": []
+        },
+        {
+          "name": "Verify Delivery",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \process.env.API_POSTMAN_COLLECTION_PASSWORD_43: \process.env.API_POSTMAN_COLLECTION_PASSWORD_44,\n  \"readerId\": \"{{test_reader_id}}\",\n  \"orderId\": \"{{order_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/rfid/verify-delivery",
+              "host": ["{{base_url}}"],
+              "path": ["rfid", "verify-delivery"]
+            },
+            "description": "Verify meal delivery using RFID"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Parent Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/rfid/parent/{{user_id}}/dashboard",
+              "host": ["{{base_url}}"],
+              "path": ["rfid", "parent", "{{user_id}}", "dashboard"]
+            },
+            "description": "Get parent dashboard with children's delivery status"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Analytics",
+      "item": [
+        {
+          "name": "Payment Analytics Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": process.env.API_POSTMAN_COLLECTION_PASSWORD_45,
+              "host": ["{{base_url}}"],
+              "path": ["payments", "analytics", "dashboard"],
+              "query": [
+                {
+                  "key": "schoolId",
+                  "value": "{{test_school_id}}"
+                },
+                {
+                  "key": "startDate",
+                  "value": "2024-01-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2024-01-31"
+                }
+              ]
+            },
+            "description": "Get payment analytics dashboard data"
+          },
+          "response": []
+        },
+        {
+          "name": "Subscription Analytics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/subscription-analytics/dashboard?schoolId={{test_school_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["subscription-analytics", "dashboard"],
+              "query": [
+                {
+                  "key": "schoolId",
+                  "value": "{{test_school_id}}"
+                }
+              ]
+            },
+            "description": "Get subscription analytics dashboard"
+          },
+          "response": []
+        },
+        {
+          "name": "AI Predictive Insights",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ml-insights/predictive?schoolId={{test_school_id}}&insight_type=revenue_forecast",
+              "host": ["{{base_url}}"],
+              "path": ["ml-insights", "predictive"],
+              "query": [
+                {
+                  "key": "schoolId",
+                  "value": "{{test_school_id}}"
+                },
+                {
+                  "key": "insight_type",
+                  "value": "revenue_forecast"
+                }
+              ]
+            },
+            "description": "Get AI-powered predictive insights"
+          },
+          "response": []
+        },
+        {
+          "name": "Fraud Detection",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/intelligence/fraud-detection?schoolId={{test_school_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["intelligence", "fraud-detection"],
+              "query": [
+                {
+                  "key": "schoolId",
+                  "value": "{{test_school_id}}"
+                }
+              ]
+            },
+            "description": "Get fraud detection insights"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Invoice Management",
+      "item": [
+        {
+          "name": "Generate Invoice",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \process.env.API_POSTMAN_COLLECTION_PASSWORD_46,\n  \"items\": [\n    {\n      \"description\": \"Monthly meal plan\",\n      \process.env.API_POSTMAN_COLLECTION_PASSWORD_48: 1,\n      \process.env.API_POSTMAN_COLLECTION_PASSWORD_49: 1500.00,\n      \process.env.API_POSTMAN_COLLECTION_PASSWORD_50: \"meal\"\n    }\n  ],\n  \process.env.API_POSTMAN_COLLECTION_PASSWORD_51: \process.env.API_POSTMAN_COLLECTION_PASSWORD_52
+            },
+            "url": {
+              "raw": "{{base_url}}/invoices/generate",
+              "host": ["{{base_url}}"],
+              "path": ["invoices", "generate"]
+            },
+            "description": "Generate invoice for payments"
+          },
+          "response": []
+        },
+        {
+          "name": "List Invoice Templates",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/invoice-templates?schoolId={{test_school_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["invoice-templates"],
+              "query": [
+                {
+                  "key": "schoolId",
+                  "value": "{{test_school_id}}"
+                }
+              ]
+            },
+            "description": "Get available invoice templates"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "id": "global-prerequest",
+        "exec": [
+          "// Set up test data if not already set",
+          "if (!pm.environment.get('test_email')) {",
+          "    pm.environment.set('test_email', 'test@hasivu.com');",
+          "}",
+          "",
+          "if (!pm.environment.get(process.env.API_POSTMAN_COLLECTION_PASSWORD_53)) {",
+          "    pm.environment.set('test_password', process.env.API_POSTMAN_COLLECTION_PASSWORD_54,
+          "}",
+          "",
+          "if (!pm.environment.get(process.env.API_POSTMAN_COLLECTION_PASSWORD_55)) {",
+          "    pm.environment.set('test_school_id', process.env.API_POSTMAN_COLLECTION_PASSWORD_56,
+          "}",
+          "",
+          "// Generate test IDs if needed",
+          "if (!pm.environment.get('test_order_id')) {",
+          "    pm.environment.set('test_order_id', pm.variables.replaceIn('{{$randomUUID}}'));",
+          "}",
+          "",
+          "if (!pm.environment.get('test_student_id')) {",
+          "    pm.environment.set('test_student_id', pm.variables.replaceIn('{{$randomUUID}}'));",
+          "}",
+          "",
+          "if (!pm.environment.get('test_plan_id')) {",
+          "    pm.environment.set('test_plan_id', pm.variables.replaceIn('{{$randomUUID}}'));",
+          "}",
+          "",
+          "if (!pm.environment.get('test_menu_item_id')) {",
+          "    pm.environment.set('test_menu_item_id', pm.variables.replaceIn('{{$randomUUID}}'));",
+          "}",
+          "",
+          "if (!pm.environment.get('test_reader_id')) {",
+          "    pm.environment.set('test_reader_id', pm.variables.replaceIn('{{$randomUUID}}'));",
+          "}"
+        ],
+        "type": "text/javascript"
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "id": "global-test",
+        "exec": [
+          "// Global test validations",
+          "pm.test('Response has correct content type', function () {",
+          "    if (pm.response.code < 400) {",
+          "        pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+          "    }",
+          "});",
+          "",
+          "pm.test('Response includes request ID', function () {",
+          "    if (pm.response.code < 500) {",
+          "        const response = pm.response.json();",
+          "        // Request ID might be in headers or response body",
+          "        const hasRequestId = pm.response.headers.has('x-request-id') || ",
+          "                            (response && response.requestId);",
+          "        pm.expect(hasRequestId, 'Response should include request ID for tracking').to.be.true;",
+          "    }",
+          "});",
+          "",
+          "// Store common data from responses",
+          "if (pm.response.code < 400) {",
+          "    try {",
+          "        const response = pm.response.json();",
+          "        ",
+          "        // Store any ID from response for use in subsequent requests",
+          "        if (response && response.id && !pm.environment.get('last_created_id')) {",
+          "            pm.environment.set('last_created_id', response.id);",
+          "        }",
+          "    } catch (e) {",
+          "        // Response might not be JSON, which is fine",
+          "    }",
+          "}"
+        ],
+        "type": "text/javascript"
+      }
+    }
+  ]
+}

@@ -1,0 +1,851 @@
+{
+  "timestamp": "2025-09-14T19:07:17.847Z",
+  "summary": {
+    "total": 22,
+    "passed": 22,
+    "failed": 0,
+    "passRate": "100.0%"
+  },
+  "tests": [
+    {
+      "name": "Health Check",
+      "path": "/api/health",
+      "passed": true,
+      "status": 200,
+      "expectedStatus": 200,
+      "responseTime": 15,
+      "size": 370,
+      "data": {
+        "status": "healthy",
+        "services": {
+          "database": "healthy",
+          "cache": "healthy",
+          "storage": "healthy",
+          "websocket": "healthy"
+        },
+        "system": {
+          "uptime": 84.949451,
+          "memory": {
+            "rss": 444088320,
+            "heapTotal": 148373504,
+            "heapUsed": 145445736,
+            "external": 265223865,
+            "arrayBuffers": 261171263
+          },
+          "nodeVersion": "v23.11.0",
+          "environment": "development",
+          "timestamp": "2025-09-14T19:07:16.900Z"
+        },
+        "version": "1.0.0"
+      },
+      "error": null
+    },
+    {
+      "name": "System Status",
+      "path": "/api/status",
+      "passed": true,
+      "status": 200,
+      "expectedStatus": 200,
+      "responseTime": 111,
+      "size": 132,
+      "data": {
+        "status": "ok",
+        "timestamp": "2025-09-14T19:07:17.011Z",
+        "uptime": 85.061326875,
+        "environment": "development",
+        "build": {
+          "version": "1.0.0"
+        }
+      },
+      "error": null
+    },
+    {
+      "name": "Basic Menu API",
+      "path": "/api/menu",
+      "passed": true,
+      "status": 200,
+      "expectedStatus": 200,
+      "responseTime": 167,
+      "size": 10136,
+      "data": {
+        "status": "success",
+        "data": [
+          {
+            "id": 4,
+            "name": "Dal Rice",
+            "description": "Traditional dal with steamed rice - a perfect combination of protein and carbs",
+            "category": "Lunch",
+            "price": "₹25",
+            "rating": 4.5,
+            "prepTime": "8 min",
+            "dietary": ["Vegetarian", "High Protein", "Traditional"],
+            "image": "🍛",
+            "priceValue": 25,
+            "nutritionalInfo": {
+              "calories": 450,
+              "protein": 18,
+              "carbs": 70,
+              "fat": 6,
+              "fiber": 8,
+              "sugar": 2
+            },
+            "ingredients": ["Basmati Rice", "Moong Dal", "Turmeric", "Cumin", "Ginger", "Garlic"],
+            "allergens": ["Gluten-free"],
+            "availability": {
+              "days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+              "timeSlots": ["12:00 PM - 2:00 PM"]
+            },
+            "schoolSpecific": {
+              "ageGroup": ["6-10", "11-15", "16-18"],
+              "popularity": 95,
+              "lastOrdered": "2024-09-13"
+            }
+          },
+          {
+            "id": 1,
+            "name": "Mini Idli with Sambar",
+            "description": "Soft steamed rice cakes with protein-rich lentil curry and coconut chutney",
+            "category": "Breakfast",
+            "price": "₹45",
+            "rating": 4.7,
+            "prepTime": "8 min",
+            "dietary": ["Vegetarian", "High Protein", "Gluten-Free"],
+            "image": "🥟",
+            "priceValue": 45,
+            "nutritionalInfo": {
+              "calories": 420,
+              "protein": 15,
+              "carbs": 65,
+              "fat": 8,
+              "fiber": 4,
+              "sugar": 2
+            },
+            "ingredients": ["Rice", "Urad Dal", "Fenugreek Seeds", "Lentils", "Vegetables", "Spices", "Coconut"],
+            "allergens": ["May contain traces of nuts"],
+            "availability": {
+              "days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+              "timeSlots": ["7:00 AM - 9:00 AM"]
+            },
+            "schoolSpecific": {
+              "ageGroup": ["6-10", "11-15", "16-18"],
+              "popularity": 92,
+              "lastOrdered": "2024-09-12"
+            }
+          },
+          {
+            "id": 10,
+            "name": "Bisi Bele Bath",
+            "description": "Karnataka's famous spiced rice and lentil dish with vegetables and ghee",
+            "category": "Lunch",
+            "price": "₹55",
+            "rating": 4.6,
+            "prepTime": "8 min",
+            "dietary": ["Vegetarian", "Traditional", "One-Pot Meal"],
+            "image": "🍛",
+            "priceValue": 55,
+            "nutritionalInfo": {
+              "calories": 420,
+              "protein": 16,
+              "carbs": 58,
+              "fat": 12,
+              "fiber": 6,
+              "sugar": 4
+            },
+            "ingredients": ["Rice", "Toor Dal", "Mixed Vegetables", "Bisi Bele Bath Powder", "Ghee", "Tamarind"],
+            "allergens": ["Contains dairy"],
+            "availability": {
+              "days": ["Tuesday", "Thursday"],
+              "timeSlots": ["12:00 PM - 2:00 PM"]
+            },
+            "schoolSpecific": {
+              "ageGroup": ["6-10", "11-15", "16-18"],
+              "popularity": 91,
+              "lastOrdered": "2024-09-12"
+            }
+          },
+          {
+            "id": 11,
+            "name": "Rava Kesari",
+            "description": "Sweet semolina pudding with nuts and cardamom, a traditional South Indian dessert",
+            "category": "Dessert",
+            "price": "₹30",
+            "rating": 4.7,
+            "prepTime": "5 min",
+            "dietary": ["Vegetarian", "Sweet"],
+            "image": "🍮",
+            "priceValue": 30,
+            "nutritionalInfo": {
+              "calories": 280,
+              "protein": 6,
+              "carbs": 48,
+              "fat": 8,
+              "fiber": 2,
+              "sugar": 35
+            },
+            "ingredients": ["Semolina", "Sugar", "Ghee", "Cashews", "Raisins", "Cardamom", "Food Color"],
+            "allergens": ["Contains dairy", "Contains nuts"],
+            "availability": {
+              "days": ["Monday", "Wednesday", "Friday"],
+              "timeSlots": ["12:00 PM - 2:00 PM", "3:00 PM - 5:00 PM"]
+            },
+            "schoolSpecific": {
+              "ageGroup": ["6-10", "11-15"],
+              "popularity": 89,
+              "lastOrdered": "2024-09-11"
+            }
+          },
+          {
+            "id": 14,
+            "name": "Mini Paratha Rolls",
+            "description": "Small whole wheat flatbreads stuffed with mild potato and served with yogurt",
+            "category": "Lunch",
+            "price": "₹45",
+            "rating": 4.5,
+            "prepTime": "10 min",
+            "dietary": ["Vegetarian", "Kid-Friendly", "Mild"],
+            "image": "🥙",
+            "priceValue": 45,
+            "nutritionalInfo": {
+              "calories": 380,
+              "protein": 12,
+              "carbs": 55,
+              "fat": 12,
+              "fiber": 6,
+              "sugar": 4
+            },
+            "ingredients": ["Wheat Flour", "Potatoes", "Yogurt", "Cumin", "Coriander", "Mild Spices"],
+            "allergens": ["Contains gluten", "Contains dairy"],
+            "availability": {
+              "days": ["Monday", "Wednesday", "Friday"],
+              "timeSlots": ["12:00 PM - 2:00 PM"]
+            },
+            "schoolSpecific": {
+              "ageGroup": ["6-10", "11-15"],
+              "popularity": 88,
+              "lastOrdered": "2024-09-11"
+            }
+          },
+          {
+            "id": 2,
+            "name": "Masala Dosa Roll",
+            "description": "Crispy rice crepe filled with spiced potato masala, served with chutney",
+            "category": "Breakfast",
+            "price": "₹55",
+            "rating": 4.8,
+            "prepTime": "12 min",
+            "dietary": ["Vegetarian", "Traditional"],
+            "image": "🌯",
+            "priceValue": 55,
+            "nutritionalInfo": {
+              "calories": 380,
+              "protein": 12,
+              "carbs": 58,
+              "fat": 10,
+              "fiber": 5,
+              "sugar": 3
+            },
+            "ingredients": ["Rice", "Urad Dal", "Potatoes", "Onions", "Spices", "Oil"],
+            "allergens": ["Gluten-free"],
+            "availability": {
+              "days": ["Monday", "Wednesday", "Friday"],
+              "timeSlots": ["7:00 AM - 9:00 AM"]
+            },
+            "schoolSpecific": {
+              "ageGroup": ["11-15", "16-18"],
+              "popularity": 88,
+              "lastOrdered": "2024-09-11"
+            }
+          },
+          {
+            "id": 5,
+            "name": "Sambar",
+            "description": "South Indian lentil curry with vegetables - rich in protein and flavor",
+            "category": "Curry",
+            "price": "₹15",
+            "rating": 4.6,
+            "prepTime": "6 min",
+            "dietary": ["Vegetarian", "Vegan", "Gluten-Free"],
+            "image": "🍲",
+            "priceValue": 15,
+            "nutritionalInfo": {
+              "calories": 180,
+              "protein": 12,
+              "carbs": 25,
+              "fat": 4,
+              "fiber": 7,
+              "sugar": 6
+            },
+            "ingredients": ["Toor Dal", "Drumsticks", "Okra", "Tomatoes", "Tamarind", "Sambar Powder"],
+            "allergens": ["None"],
+            "availability": {
+              "days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+              "timeSlots": ["12:00 PM - 2:00 PM"]
+            },
+            "schoolSpecific": {
+              "ageGroup": ["6-10", "11-15", "16-18"],
+              "popularity": 87,
+              "lastOrdered": "2024-09-13"
+            }
+          },
+          {
+            "id": 7,
+            "name": "Butter Chicken with Naan",
+            "description": "Mild creamy chicken curry with soft butter naan bread, kid-friendly spice level",
+            "category": "Lunch",
+            "price": "₹85",
+            "rating": 4.6,
+            "prepTime": "15 min",
+            "dietary": ["High Protein", "Mild Spice"],
+            "image": "🍛",
+            "priceValue": 85,
+            "nutritionalInfo": {
+              "calories": 650,
+              "protein": 35,
+              "carbs": 45,
+              "fat": 32,
+              "fiber": 3,
+              "sugar": 8
+            },
+            "ingredients": ["Chicken", "Butter", "Tomatoes", "Cream", "Flour", "Yogurt", "Spices"],
+            "allergens": ["Contains gluten", "Contains dairy"],
+            "availability": {
+              "days": ["Monday", "Wednesday", "Friday"],
+              "timeSlots": ["12:00 PM - 2:00 PM"]
+            },
+            "schoolSpecific": {
+              "ageGroup": ["11-15", "16-18"],
+              "popularity": 85,
+              "lastOrdered": "2024-09-11"
+            }
+          },
+          {
+            "id": 15,
+            "name": "Dal Tadka with Rice",
+            "description": "Yellow lentil curry tempered with ghee and cumin, served with basmati rice",
+            "category": "Lunch",
+            "price": "₹50",
+            "rating": 4.4,
+            "prepTime": "8 min",
+            "dietary": ["Vegetarian", "High Protein", "Comfort Food"],
+            "image": "🍚",
+            "priceValue": 50,
+            "nutritionalInfo": {
+              "calories": 410,
+              "protein": 16,
+              "carbs": 65,
+              "fat": 8,
+              "fiber": 7,
+              "sugar": 3
+            },
+            "ingredients": ["Moong Dal", "Basmati Rice", "Ghee", "Cumin", "Garlic", "Ginger", "Green Chilies"],
+            "allergens": ["Contains dairy"],
+            "availability": {
+              "days": ["Tuesday", "Thursday", "Friday"],
+              "timeSlots": ["12:00 PM - 2:00 PM"]
+            },
+            "schoolSpecific": {
+              "ageGroup": ["6-10", "11-15", "16-18"],
+              "popularity": 84,
+              "lastOrdered": "2024-09-12"
+            }
+          },
+          {
+            "id": 12,
+            "name": "Masala Corn Chaat",
+            "description": "Boiled corn kernels with tangy spices, lemon juice, and fresh herbs",
+            "category": "Snack",
+            "price": "₹25",
+            "rating": 4.2,
+            "prepTime": "5 min",
+            "dietary": ["Vegetarian", "Gluten-Free", "Street Food"],
+            "image": "🌽",
+            "priceValue": 25,
+            "nutritionalInfo": {
+              "calories": 150,
+              "protein": 5,
+              "carbs": 30,
+              "fat": 3,
+              "fiber": 4,
+              "sugar": 6
+            },
+            "ingredients": ["Sweet Corn", "Chaat Masala", "Lemon Juice", "Coriander", "Onions", "Black Salt"],
+            "allergens": ["None"],
+            "availability": {
+              "days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+              "timeSlots": ["3:00 PM - 5:00 PM"]
+            },
+            "schoolSpecific": {
+              "ageGroup": ["6-10", "11-15", "16-18"],
+              "popularity": 83,
+              "lastOrdered": "2024-09-13"
+            }
+          },
+          {
+            "id": 8,
+            "name": "Paneer Butter Masala",
+            "description": "Soft cottage cheese in rich tomato-cashew gravy with jeera rice",
+            "category": "Lunch",
+            "price": "₹75",
+            "rating": 4.5,
+            "prepTime": "12 min",
+            "dietary": ["Vegetarian", "High Protein", "Mild Spice"],
+            "image": "🧀",
+            "priceValue": 75,
+            "nutritionalInfo": {
+              "calories": 520,
+              "protein": 22,
+              "carbs": 38,
+              "fat": 28,
+              "fiber": 4,
+              "sugar": 12
+            },
+            "ingredients": ["Paneer", "Tomatoes", "Cashews", "Cream", "Basmati Rice", "Cumin", "Spices"],
+            "allergens": ["Contains dairy", "May contain nuts"],
+            "availability": {
+              "days": ["Tuesday", "Thursday", "Friday"],
+              "timeSlots": ["12:00 PM - 2:00 PM"]
+            },
+            "schoolSpecific": {
+              "ageGroup": ["6-10", "11-15", "16-18"],
+              "popularity": 82,
+              "lastOrdered": "2024-09-12"
+            }
+          },
+          {
+            "id": 9,
+            "name": "Rajma Chawal",
+            "description": "Kidney bean curry with steamed basmati rice, a protein-packed favorite",
+            "category": "Lunch",
+            "price": "₹65",
+            "rating": 4.3,
+            "prepTime": "10 min",
+            "dietary": ["Vegetarian", "High Protein", "High Fiber"],
+            "image": "🍚",
+            "priceValue": 65,
+            "nutritionalInfo": {
+              "calories": 480,
+              "protein": 20,
+              "carbs": 72,
+              "fat": 8,
+              "fiber": 15,
+              "sugar": 5
+            },
+            "ingredients": ["Kidney Beans", "Basmati Rice", "Onions", "Tomatoes", "Ginger", "Garlic", "Spices"],
+            "allergens": ["Gluten-free"],
+            "availability": {
+              "days": ["Monday", "Wednesday", "Thursday"],
+              "timeSlots": ["12:00 PM - 2:00 PM"]
+            },
+            "schoolSpecific": {
+              "ageGroup": ["11-15", "16-18"],
+              "popularity": 79,
+              "lastOrdered": "2024-09-12"
+            }
+          },
+          {
+            "id": 6,
+            "name": "Curd",
+            "description": "Fresh homemade curd - perfect side dish, rich in probiotics",
+            "category": "Side",
+            "price": "₹10",
+            "rating": 4.3,
+            "prepTime": "2 min",
+            "dietary": ["Vegetarian", "Protein-Rich", "Healthy"],
+            "image": "🥛",
+            "priceValue": 10,
+            "nutritionalInfo": {
+              "calories": 60,
+              "protein": 3,
+              "carbs": 5,
+              "fat": 3,
+              "fiber": 0,
+              "sugar": 5
+            },
+            "ingredients": ["Fresh Milk", "Curd Culture"],
+            "allergens": ["Contains dairy"],
+            "availability": {
+              "days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+              "timeSlots": ["12:00 PM - 2:00 PM", "3:00 PM - 5:00 PM"]
+            },
+            "schoolSpecific": {
+              "ageGroup": ["6-10", "11-15", "16-18"],
+              "popularity": 78,
+              "lastOrdered": "2024-09-13"
+            }
+          },
+          {
+            "id": 13,
+            "name": "Fruit Chaat",
+            "description": "Mixed seasonal fruits with black salt, chaat masala, and mint chutney",
+            "category": "Snack",
+            "price": "₹35",
+            "rating": 4.4,
+            "prepTime": "5 min",
+            "dietary": ["Vegetarian", "Healthy", "Vitamin Rich"],
+            "image": "🍎",
+            "priceValue": 35,
+            "nutritionalInfo": {
+              "calories": 120,
+              "protein": 2,
+              "carbs": 28,
+              "fat": 0.5,
+              "fiber": 5,
+              "sugar": 22
+            },
+            "ingredients": ["Seasonal Fruits", "Black Salt", "Chaat Masala", "Mint", "Lemon Juice"],
+            "allergens": ["None"],
+            "availability": {
+              "days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+              "timeSlots": ["3:00 PM - 5:00 PM"]
+            },
+            "schoolSpecific": {
+              "ageGroup": ["6-10", "11-15", "16-18"],
+              "popularity": 76,
+              "lastOrdered": "2024-09-12"
+            }
+          },
+          {
+            "id": 3,
+            "name": "Vegetable Upma",
+            "description": "Nutritious semolina porridge with mixed vegetables and South Indian spices",
+            "category": "Breakfast",
+            "price": "₹35",
+            "rating": 4.4,
+            "prepTime": "10 min",
+            "dietary": ["Vegetarian", "High Fiber"],
+            "image": "🍲",
+            "priceValue": 35,
+            "nutritionalInfo": {
+              "calories": 320,
+              "protein": 8,
+              "carbs": 45,
+              "fat": 12,
+              "fiber": 6,
+              "sugar": 4
+            },
+            "ingredients": ["Semolina", "Mixed Vegetables", "Curry Leaves", "Mustard Seeds", "Ginger"],
+            "allergens": ["Contains gluten"],
+            "availability": {
+              "days": ["Tuesday", "Thursday", "Friday"],
+              "timeSlots": ["7:00 AM - 9:00 AM"]
+            },
+            "schoolSpecific": {
+              "ageGroup": ["6-10", "11-15"],
+              "popularity": 75,
+              "lastOrdered": "2024-09-10"
+            }
+          }
+        ],
+        "meta": {
+          "total": 15,
+          "page": 1,
+          "limit": 20,
+          "categories": ["Breakfast", "Lunch", "Curry", "Side", "Dessert", "Snack"]
+        }
+      },
+      "error": null
+    },
+    {
+      "name": "Menu Categories",
+      "path": "/api/menu/categories",
+      "passed": true,
+      "status": 200,
+      "expectedStatus": 200,
+      "responseTime": 112,
+      "size": 2046,
+      "data": {
+        "status": "success",
+        "data": [
+          {
+            "id": "dessert",
+            "name": "Dessert",
+            "description": "Sweet treats to end your meal on a delightful note",
+            "image": "🍮",
+            "availableTimeSlots": ["12:00 PM - 2:00 PM", "3:00 PM - 5:00 PM"],
+            "itemCount": 1,
+            "popularItems": ["Rava Kesari"],
+            "ageGroups": ["6-10", "11-15"],
+            "averagePrice": 30,
+            "averageRating": 4.7,
+            "popularityScore": 89
+          },
+          {
+            "id": "curry",
+            "name": "Curry",
+            "description": "Traditional South Indian curries rich in flavor and nutrition",
+            "image": "🍲",
+            "availableTimeSlots": ["12:00 PM - 2:00 PM"],
+            "itemCount": 1,
+            "popularItems": ["Sambar"],
+            "ageGroups": ["6-10", "11-15", "16-18"],
+            "averagePrice": 15,
+            "averageRating": 4.6,
+            "popularityScore": 87
+          },
+          {
+            "id": "lunch",
+            "name": "Lunch",
+            "description": "Complete meal options with rice, dal, and vegetables for growing students",
+            "image": "🍽️",
+            "availableTimeSlots": ["12:00 PM - 2:00 PM"],
+            "itemCount": 7,
+            "popularItems": ["Dal Rice", "Bisi Bele Bath", "Mini Paratha Rolls"],
+            "ageGroups": ["6-10", "11-15", "16-18"],
+            "averagePrice": 57,
+            "averageRating": 4.5,
+            "popularityScore": 86
+          },
+          {
+            "id": "breakfast",
+            "name": "Breakfast",
+            "description": "Nutritious South Indian breakfast options to start the day right",
+            "image": "🌅",
+            "availableTimeSlots": ["7:00 AM - 9:00 AM"],
+            "itemCount": 3,
+            "popularItems": ["Mini Idli with Sambar", "Masala Dosa Roll", "Vegetable Upma"],
+            "ageGroups": ["6-10", "11-15", "16-18"],
+            "averagePrice": 45,
+            "averageRating": 4.6,
+            "popularityScore": 85
+          },
+          {
+            "id": "snack",
+            "name": "Snack",
+            "description": "Healthy and tasty snacks for evening hunger pangs",
+            "image": "🍿",
+            "availableTimeSlots": ["3:00 PM - 5:00 PM"],
+            "itemCount": 2,
+            "popularItems": ["Masala Corn Chaat", "Fruit Chaat"],
+            "ageGroups": ["6-10", "11-15", "16-18"],
+            "averagePrice": 30,
+            "averageRating": 4.3,
+            "popularityScore": 80
+          },
+          {
+            "id": "side",
+            "name": "Side",
+            "description": "Perfect accompaniments to complete your meal",
+            "image": "🥛",
+            "availableTimeSlots": ["12:00 PM - 2:00 PM", "3:00 PM - 5:00 PM"],
+            "itemCount": 1,
+            "popularItems": ["Curd"],
+            "ageGroups": ["6-10", "11-15", "16-18"],
+            "averagePrice": 10,
+            "averageRating": 4.3,
+            "popularityScore": 78
+          }
+        ],
+        "meta": {
+          "total": 6,
+          "totalItems": 15,
+          "lastUpdated": "2025-09-14T19:07:17.292Z"
+        }
+      },
+      "error": null
+    },
+    {
+      "name": "Menu Search",
+      "path": "/api/menu/search?q=rice",
+      "passed": true,
+      "status": 200,
+      "expectedStatus": 200,
+      "responseTime": 61,
+      "size": 190,
+      "data": {
+        "status": "success",
+        "data": [
+          "vegetarian lunch",
+          "high protein breakfast",
+          "gluten free snacks",
+          "dal rice",
+          "idli sambar",
+          "low calorie",
+          "quick meals",
+          "south indian",
+          "kid friendly",
+          "dairy free"
+        ]
+      },
+      "error": null
+    },
+    {
+      "name": "Optimized Menu API",
+      "path": "/api/menu/optimized",
+      "passed": true,
+      "status": 500,
+      "expectedStatus": 500,
+      "responseTime": 174,
+      "size": 0,
+      "error": null
+    },
+    {
+      "name": "Secure Menu API",
+      "path": "/api/menu/secure",
+      "passed": true,
+      "status": 401,
+      "expectedStatus": 401,
+      "responseTime": 141,
+      "size": 60,
+      "error": null
+    },
+    {
+      "name": "Performance Stats",
+      "path": "/api/menu/optimized?action=performance-stats",
+      "passed": true,
+      "status": 500,
+      "expectedStatus": 500,
+      "responseTime": 43,
+      "size": 0,
+      "error": null
+    },
+    {
+      "name": "Cache Stats",
+      "path": "/api/menu/optimized?action=cache-stats",
+      "passed": true,
+      "status": 500,
+      "expectedStatus": 500,
+      "responseTime": 23,
+      "size": 0,
+      "error": null
+    },
+    {
+      "name": "Health Check (Optimized)",
+      "path": "/api/menu/optimized?action=health-check",
+      "passed": true,
+      "status": 500,
+      "expectedStatus": 500,
+      "responseTime": 22,
+      "size": 0,
+      "error": null
+    },
+    {
+      "name": "Menu with Category Filter",
+      "path": "/api/menu?category=Lunch",
+      "passed": true,
+      "status": 200,
+      "expectedStatus": 200,
+      "responseTime": 8,
+      "size": 4841,
+      "error": null
+    },
+    {
+      "name": "Menu with Pagination",
+      "path": "/api/menu?page=1&limit=5",
+      "passed": true,
+      "status": 200,
+      "expectedStatus": 200,
+      "responseTime": 5,
+      "size": 3545,
+      "error": null
+    },
+    {
+      "name": "Menu with Sorting",
+      "path": "/api/menu?sortBy=price&sortOrder=asc",
+      "passed": true,
+      "status": 200,
+      "expectedStatus": 200,
+      "responseTime": 3,
+      "size": 10136,
+      "error": null
+    },
+    {
+      "name": "Menu Search Advanced",
+      "path": "/api/menu/search?q=dal&category=Lunch",
+      "passed": true,
+      "status": 200,
+      "expectedStatus": 200,
+      "responseTime": 7,
+      "size": 190,
+      "error": null
+    },
+    {
+      "name": "Menu with Invalid Page",
+      "path": "/api/menu?page=-1",
+      "passed": true,
+      "status": 200,
+      "expectedStatus": 200,
+      "responseTime": 5,
+      "size": 139,
+      "error": null
+    },
+    {
+      "name": "Menu with High Limit",
+      "path": "/api/menu?limit=1000",
+      "passed": true,
+      "status": 200,
+      "expectedStatus": 200,
+      "responseTime": 5,
+      "size": 10138,
+      "error": null
+    },
+    {
+      "name": "Search Empty Query",
+      "path": "/api/menu/search?q=",
+      "passed": true,
+      "status": 200,
+      "expectedStatus": 200,
+      "responseTime": 4,
+      "size": 190,
+      "error": null
+    },
+    {
+      "name": "Search Non-existent Item",
+      "path": "/api/menu/search?q=nonexistentfood123",
+      "passed": true,
+      "status": 200,
+      "expectedStatus": 200,
+      "responseTime": 4,
+      "size": 190,
+      "error": null
+    },
+    {
+      "name": "Health Check Speed Performance",
+      "path": "/api/health",
+      "passed": true,
+      "status": 200,
+      "expectedStatus": 200,
+      "responseTime": 7,
+      "size": 373,
+      "error": null
+    },
+    {
+      "name": "Basic Menu Speed Performance",
+      "path": "/api/menu",
+      "passed": true,
+      "status": 200,
+      "expectedStatus": 200,
+      "responseTime": 4,
+      "size": 10136,
+      "error": null
+    },
+    {
+      "name": "Menu Search Speed Performance",
+      "path": "/api/menu/search?q=rice",
+      "passed": true,
+      "status": 200,
+      "expectedStatus": 200,
+      "responseTime": 4,
+      "size": 190,
+      "error": null
+    },
+    {
+      "name": "Categories Speed Performance",
+      "path": "/api/menu/categories",
+      "passed": true,
+      "status": 200,
+      "expectedStatus": 200,
+      "responseTime": 6,
+      "size": 2046,
+      "error": null
+    },
+    {
+      "name": "Concurrency Test",
+      "passed": true,
+      "concurrentRequests": 10,
+      "successfulRequests": 10,
+      "totalTime": 27,
+      "averageResponseTime": 20.3
+    }
+  ],
+  "recommendations": []
+}

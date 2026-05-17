@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+.next/
+
+# Build output
+dist/
+coverage/
+coverage-required/
+
+# Generated / cached
+*.tsbuildinfo
+prisma/prisma/
+graphify-out/
+
+# Logs & temp
+*.log
+.DS_Store

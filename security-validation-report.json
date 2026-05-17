@@ -1,0 +1,23 @@
+{
+  "summary": {
+    "totalFiles": 294,
+    "safeFiles": 294,
+    "vulnerableFiles": 0,
+    "totalVulnerabilities": 0,
+    "securityScore": 10
+  },
+  "frameworkValidation": {
+    "implemented": true,
+    "score": 5,
+    "maxScore": 5,
+    "details": {
+      "secureRegexClass": true,
+      "timeoutProtection": true,
+      "safePatterns": true,
+      "performanceMonitoring": true,
+      "validators": true
+    }
+  },
+  "vulnerabilities": [],
+  "timestamp": "2025-09-21T11:45:32.712Z"
+}

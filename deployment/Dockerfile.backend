@@ -1,0 +1,45 @@
+# Production Dockerfile for HASIVU Backend
+FROM node:18-alpine AS base
+
+# Install dependencies for Python and Node.js
+RUN apk add --no-cache \
+    python3 \
+    py3-pip \
+    py3-dev \
+    build-base \
+    linux-headers \
+    curl
+
+WORKDIR /app
+
+# Copy Python requirements and install
+COPY requirements.txt ./
+RUN pip3 install --no-cache-dir -r requirements.txt
+
+# Install TypeScript globally
+RUN npm install -g typescript ts-node
+
+# Copy backend source
+COPY src/ ./src/
+COPY package*.json ./
+
+# Install Node.js dependencies if any
+RUN if [ -f package.json ]; then npm ci --only=production; fi
+
+# Create non-root user
+RUN addgroup --system --gid 1001 backend
+RUN adduser --system --uid 1001 backend
+
+# Set ownership
+RUN chown -R backend:backend /app
+USER backend
+
+# Expose port
+EXPOSE 3001
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:3001/health || exit 1
+
+# Start the server
+CMD ["node", "src/simple-server.ts"]

@@ -1,0 +1,1029 @@
+{
+  "timestamp": "2025-09-14T12:58:19.950Z",
+  "productionReadinessScore": 39.41176470588235,
+  "rating": "EXCELLENT",
+  "summary": {
+    "totalEndpointsTested": 45,
+    "successfulRequests": 4,
+    "failedRequests": 1,
+    "averageResponseTime": "121.64ms",
+    "coveragePercentage": "23.5%"
+  },
+  "criticalIssues": [
+    {
+      "priority": "CRITICAL",
+      "category": "Missing APIs",
+      "issue": "Critical order management endpoints are not implemented",
+      "endpoints": ["/api/orders", "/api/kitchen/orders", "/api/payments/create", "/api/wallet/balance"],
+      "impact": "Cannot process orders, payments, or kitchen workflows"
+    }
+  ],
+  "missingEndpoints": ["/api/menu/search", "/api/wallet/balance", "/api/ws"],
+  "implementedEndpoints": ["/api/health", "/api/status", "/api/menu/categories", "/api/menu/search?q=idli"],
+  "performanceMetrics": {
+    "concurrentRequests": {
+      "count": 10,
+      "totalTime": 32.18441699999994,
+      "averageTime": 3.218441699999994
+    },
+    "averageResponseTime": 121.64499974999998,
+    "maxResponseTime": 185.098417,
+    "minResponseTime": 63.383749999999964
+  },
+  "recommendations": [
+    {
+      "priority": "CRITICAL",
+      "category": "Missing APIs",
+      "issue": "Critical order management endpoints are not implemented",
+      "endpoints": ["/api/orders", "/api/kitchen/orders", "/api/payments/create", "/api/wallet/balance"],
+      "impact": "Cannot process orders, payments, or kitchen workflows"
+    }
+  ],
+  "detailedResults": {
+    "/api/health": {
+      "method": "GET",
+      "status": 200,
+      "duration": 185.098417,
+      "success": true,
+      "data": {
+        "status": "healthy",
+        "services": {
+          "database": "healthy",
+          "cache": "healthy",
+          "storage": "healthy",
+          "websocket": "healthy"
+        },
+        "system": {
+          "uptime": 18295.477786917,
+          "memory": {
+            "rss": 662962176,
+            "heapTotal": 595230720,
+            "heapUsed": 552179328,
+            "external": 847740876,
+            "arrayBuffers": 842244161
+          },
+          "nodeVersion": "v23.11.0",
+          "environment": "development",
+          "timestamp": "2025-09-14T12:58:18.499Z"
+        },
+        "version": "1.0.0"
+      },
+      "headers": {
+        "x-frame-options": "DENY",
+        "x-content-type-options": "nosniff",
+        "x-xss-protection": "1; mode=block",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "permissions-policy": "camera=(), microphone=(), geolocation=(self), interest-cohort=()",
+        "cross-origin-embedder-policy": "require-corp",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+        "content-security-policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https: http:; media-src 'self' data: blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; connect-src 'self' http://localhost:3001 https://api.hasivu.com https://www.google-analytics.com wss:; worker-src 'self' blob:; manifest-src 'self'; upgrade-insecure-requests",
+        "cache-control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+        "content-type": "application/json",
+        "date": "Sun, 14 Sep 2025 12:58:18 GMT",
+        "connection": "keep-alive",
+        "keep-alive": "timeout=5",
+        "transfer-encoding": "chunked"
+      }
+    },
+    "/api/status": {
+      "method": "GET",
+      "status": 200,
+      "duration": 110.93516599999998,
+      "success": true,
+      "data": {
+        "status": "ok",
+        "timestamp": "2025-09-14T12:58:18.611Z",
+        "uptime": 18295.590441875,
+        "environment": "development",
+        "build": {
+          "version": "1.0.0"
+        }
+      },
+      "headers": {
+        "x-frame-options": "DENY",
+        "x-content-type-options": "nosniff",
+        "x-xss-protection": "1; mode=block",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "permissions-policy": "camera=(), microphone=(), geolocation=(self), interest-cohort=()",
+        "cross-origin-embedder-policy": "require-corp",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+        "content-security-policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https: http:; media-src 'self' data: blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; connect-src 'self' http://localhost:3001 https://api.hasivu.com https://www.google-analytics.com wss:; worker-src 'self' blob:; manifest-src 'self'; upgrade-insecure-requests",
+        "cache-control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+        "content-type": "application/json",
+        "date": "Sun, 14 Sep 2025 12:58:18 GMT",
+        "connection": "keep-alive",
+        "keep-alive": "timeout=5",
+        "transfer-encoding": "chunked"
+      }
+    },
+    "/api/menu": {
+      "method": "POST",
+      "status": 500,
+      "duration": 6.025124999999889,
+      "success": false,
+      "data": "<!DOCTYPE html><html><head><style data-next-hide-fouc=\"true\">body{display:none}</style><noscript data-next-hide-fouc=\"true\"><style>body{display:block}</style></noscript><meta charSet=\"utf-8\" data-next-head=\"\"/><meta name=\"viewport\" content=\"width=device-width\" data-next-head=\"\"/><noscript data-n-css=\"\"></noscript><script defer=\"\" nomodule=\"\" src=\"/_next/static/chunks/polyfills.js\"></script><script src=\"/_next/static/chunks/fallback/webpack.js\" defer=\"\"></script><script src=\"/_next/static/chunks/fallback/main.js\" defer=\"\"></script><script src=\"/_next/static/chunks/fallback/pages/_app.js\" defer=\"\"></script><script src=\"/_next/static/chunks/fallback/pages/_error.js\" defer=\"\"></script><noscript id=\"__next_css__DO_NOT_USE__\"></noscript></head><body><div id=\"__next\"></div><script src=\"/_next/static/chunks/fallback/react-refresh.js\"></script><script id=\"__NEXT_DATA__\" type=\"application/json\">{\"props\":{\"pageProps\":{\"statusCode\":500,\"hostname\":\"localhost\"}},\"page\":\"/_error\",\"query\":{},\"buildId\":\"development\",\"isFallback\":false,\"err\":{\"name\":\"Error\",\"source\":\"server\",\"message\":\"Module not found: Can't resolve '../../../../lib/database/optimized-menu-queries'\\n  3 |\\n  4 | import { NextRequest, NextResponse } from 'next/server';\\n\\u003e 5 | import { optimizedMenuQueries } from '../../../../lib/database/optimized-menu-queries';\\n    | ^\\n  6 | import { menuCache } from '../../../../lib/cache/redis-menu-cache';\\n  7 | import { performanceMonitor } from '../../../../lib/performance/menu-performance-monitor';\\n  8 |\\n\\nhttps://nextjs.org/docs/messages/module-not-found\\n\",\"stack\":\"Error: Module not found: Can't resolve '../../../../lib/database/optimized-menu-queries'\\n  3 |\\n  4 | import { NextRequest, NextResponse } from 'next/server';\\n\\u003e 5 | import { optimizedMenuQueries } from '../../../../lib/database/optimized-menu-queries';\\n    | ^\\n  6 | import { menuCache } from '../../../../lib/cache/redis-menu-cache';\\n  7 | import { performanceMonitor } from '../../../../lib/performance/menu-performance-monitor';\\n  8 |\\n\\nhttps://nextjs.org/docs/messages/module-not-found\\n\\n    at getNotFoundError (/Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/parseNotFoundError.js:140:16)\\n    at async getModuleBuildError (/Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/webpackModuleError.js:103:27)\\n    at async /Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/index.js:29:49\\n    at async Promise.all (index 0)\\n    at async /Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/index.js:27:21\"},\"gip\":true,\"scriptLoader\":[]}</script></body></html>",
+      "headers": {
+        "x-frame-options": "DENY",
+        "x-content-type-options": "nosniff",
+        "x-xss-protection": "1; mode=block",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "permissions-policy": "camera=(), microphone=(), geolocation=(self), interest-cohort=()",
+        "cross-origin-embedder-policy": "require-corp",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+        "content-security-policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https: http:; media-src 'self' data: blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; connect-src 'self' http://localhost:3001 https://api.hasivu.com https://www.google-analytics.com wss:; worker-src 'self' blob:; manifest-src 'self'; upgrade-insecure-requests",
+        "cache-control": "no-store, must-revalidate",
+        "etag": "\"inzjpdxedw26d\"",
+        "content-type": "text/html; charset=utf-8",
+        "vary": "Accept-Encoding",
+        "date": "Sun, 14 Sep 2025 12:58:19 GMT",
+        "connection": "keep-alive",
+        "keep-alive": "timeout=5",
+        "transfer-encoding": "chunked"
+      }
+    },
+    "/api/menu/categories": {
+      "method": "GET",
+      "status": 200,
+      "duration": 127.16266599999994,
+      "success": true,
+      "data": {
+        "status": "success",
+        "data": [
+          {
+            "id": "dessert",
+            "name": "Dessert",
+            "description": "Sweet treats to end your meal on a delightful note",
+            "image": "🍮",
+            "availableTimeSlots": ["12:00 PM - 2:00 PM", "3:00 PM - 5:00 PM"],
+            "itemCount": 1,
+            "popularItems": ["Rava Kesari"],
+            "ageGroups": ["6-10", "11-15"],
+            "averagePrice": 30,
+            "averageRating": 4.7,
+            "popularityScore": 89
+          },
+          {
+            "id": "curry",
+            "name": "Curry",
+            "description": "Traditional South Indian curries rich in flavor and nutrition",
+            "image": "🍲",
+            "availableTimeSlots": ["12:00 PM - 2:00 PM"],
+            "itemCount": 1,
+            "popularItems": ["Sambar"],
+            "ageGroups": ["6-10", "11-15", "16-18"],
+            "averagePrice": 15,
+            "averageRating": 4.6,
+            "popularityScore": 87
+          },
+          {
+            "id": "lunch",
+            "name": "Lunch",
+            "description": "Complete meal options with rice, dal, and vegetables for growing students",
+            "image": "🍽️",
+            "availableTimeSlots": ["12:00 PM - 2:00 PM"],
+            "itemCount": 7,
+            "popularItems": ["Dal Rice", "Bisi Bele Bath", "Mini Paratha Rolls"],
+            "ageGroups": ["6-10", "11-15", "16-18"],
+            "averagePrice": 57,
+            "averageRating": 4.5,
+            "popularityScore": 86
+          },
+          {
+            "id": "breakfast",
+            "name": "Breakfast",
+            "description": "Nutritious South Indian breakfast options to start the day right",
+            "image": "🌅",
+            "availableTimeSlots": ["7:00 AM - 9:00 AM"],
+            "itemCount": 3,
+            "popularItems": ["Mini Idli with Sambar", "Masala Dosa Roll", "Vegetable Upma"],
+            "ageGroups": ["6-10", "11-15", "16-18"],
+            "averagePrice": 45,
+            "averageRating": 4.6,
+            "popularityScore": 85
+          },
+          {
+            "id": "snack",
+            "name": "Snack",
+            "description": "Healthy and tasty snacks for evening hunger pangs",
+            "image": "🍿",
+            "availableTimeSlots": ["3:00 PM - 5:00 PM"],
+            "itemCount": 2,
+            "popularItems": ["Masala Corn Chaat", "Fruit Chaat"],
+            "ageGroups": ["6-10", "11-15", "16-18"],
+            "averagePrice": 30,
+            "averageRating": 4.3,
+            "popularityScore": 80
+          },
+          {
+            "id": "side",
+            "name": "Side",
+            "description": "Perfect accompaniments to complete your meal",
+            "image": "🥛",
+            "availableTimeSlots": ["12:00 PM - 2:00 PM", "3:00 PM - 5:00 PM"],
+            "itemCount": 1,
+            "popularItems": ["Curd"],
+            "ageGroups": ["6-10", "11-15", "16-18"],
+            "averagePrice": 10,
+            "averageRating": 4.3,
+            "popularityScore": 78
+          }
+        ],
+        "meta": {
+          "total": 6,
+          "totalItems": 15,
+          "lastUpdated": "2025-09-14T12:58:18.816Z"
+        }
+      },
+      "headers": {
+        "x-frame-options": "DENY",
+        "x-content-type-options": "nosniff",
+        "x-xss-protection": "1; mode=block",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "permissions-policy": "camera=(), microphone=(), geolocation=(self), interest-cohort=()",
+        "cross-origin-embedder-policy": "require-corp",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+        "content-security-policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https: http:; media-src 'self' data: blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; connect-src 'self' http://localhost:3001 https://api.hasivu.com https://www.google-analytics.com wss:; worker-src 'self' blob:; manifest-src 'self'; upgrade-insecure-requests",
+        "cache-control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+        "content-type": "application/json",
+        "date": "Sun, 14 Sep 2025 12:58:18 GMT",
+        "connection": "keep-alive",
+        "keep-alive": "timeout=5",
+        "transfer-encoding": "chunked"
+      }
+    },
+    "/api/menu/search?q=idli": {
+      "method": "GET",
+      "status": 200,
+      "duration": 63.383749999999964,
+      "success": true,
+      "data": {
+        "status": "success",
+        "data": [
+          "vegetarian lunch",
+          "high protein breakfast",
+          "gluten free snacks",
+          "dal rice",
+          "idli sambar",
+          "low calorie",
+          "quick meals",
+          "south indian",
+          "kid friendly",
+          "dairy free"
+        ]
+      },
+      "headers": {
+        "x-frame-options": "DENY",
+        "x-content-type-options": "nosniff",
+        "x-xss-protection": "1; mode=block",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "permissions-policy": "camera=(), microphone=(), geolocation=(self), interest-cohort=()",
+        "cross-origin-embedder-policy": "require-corp",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+        "content-security-policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https: http:; media-src 'self' data: blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; connect-src 'self' http://localhost:3001 https://api.hasivu.com https://www.google-analytics.com wss:; worker-src 'self' blob:; manifest-src 'self'; upgrade-insecure-requests",
+        "cache-control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+        "content-type": "application/json",
+        "date": "Sun, 14 Sep 2025 12:58:18 GMT",
+        "connection": "keep-alive",
+        "keep-alive": "timeout=5",
+        "transfer-encoding": "chunked"
+      }
+    },
+    "/api/menu/optimized": {
+      "method": "GET",
+      "status": 500,
+      "duration": 811.7502079999999,
+      "success": false,
+      "data": "<!DOCTYPE html><html><head><style data-next-hide-fouc=\"true\">body{display:none}</style><noscript data-next-hide-fouc=\"true\"><style>body{display:block}</style></noscript><meta charSet=\"utf-8\" data-next-head=\"\"/><meta name=\"viewport\" content=\"width=device-width\" data-next-head=\"\"/><noscript data-n-css=\"\"></noscript><script defer=\"\" nomodule=\"\" src=\"/_next/static/chunks/polyfills.js\"></script><script src=\"/_next/static/chunks/fallback/webpack.js\" defer=\"\"></script><script src=\"/_next/static/chunks/fallback/main.js\" defer=\"\"></script><script src=\"/_next/static/chunks/fallback/pages/_app.js\" defer=\"\"></script><script src=\"/_next/static/chunks/fallback/pages/_error.js\" defer=\"\"></script><noscript id=\"__next_css__DO_NOT_USE__\"></noscript></head><body><div id=\"__next\"></div><script src=\"/_next/static/chunks/fallback/react-refresh.js\"></script><script id=\"__NEXT_DATA__\" type=\"application/json\">{\"props\":{\"pageProps\":{\"statusCode\":500,\"hostname\":\"localhost\"}},\"page\":\"/_error\",\"query\":{},\"buildId\":\"development\",\"isFallback\":false,\"err\":{\"name\":\"Error\",\"source\":\"server\",\"message\":\"Module not found: Can't resolve '../../../../lib/database/optimized-menu-queries'\\n  3 |\\n  4 | import { NextRequest, NextResponse } from 'next/server';\\n\\u003e 5 | import { optimizedMenuQueries } from '../../../../lib/database/optimized-menu-queries';\\n    | ^\\n  6 | import { menuCache } from '../../../../lib/cache/redis-menu-cache';\\n  7 | import { performanceMonitor } from '../../../../lib/performance/menu-performance-monitor';\\n  8 |\\n\\nhttps://nextjs.org/docs/messages/module-not-found\\n\",\"stack\":\"Error: Module not found: Can't resolve '../../../../lib/database/optimized-menu-queries'\\n  3 |\\n  4 | import { NextRequest, NextResponse } from 'next/server';\\n\\u003e 5 | import { optimizedMenuQueries } from '../../../../lib/database/optimized-menu-queries';\\n    | ^\\n  6 | import { menuCache } from '../../../../lib/cache/redis-menu-cache';\\n  7 | import { performanceMonitor } from '../../../../lib/performance/menu-performance-monitor';\\n  8 |\\n\\nhttps://nextjs.org/docs/messages/module-not-found\\n\\n    at getNotFoundError (/Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/parseNotFoundError.js:140:16)\\n    at async getModuleBuildError (/Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/webpackModuleError.js:103:27)\\n    at async /Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/index.js:29:49\\n    at async Promise.all (index 0)\\n    at async /Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/index.js:27:21\"},\"gip\":true,\"scriptLoader\":[]}</script></body></html>",
+      "headers": {
+        "x-frame-options": "DENY",
+        "x-content-type-options": "nosniff",
+        "x-xss-protection": "1; mode=block",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "permissions-policy": "camera=(), microphone=(), geolocation=(self), interest-cohort=()",
+        "cross-origin-embedder-policy": "require-corp",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+        "content-security-policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https: http:; media-src 'self' data: blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; connect-src 'self' http://localhost:3001 https://api.hasivu.com https://www.google-analytics.com wss:; worker-src 'self' blob:; manifest-src 'self'; upgrade-insecure-requests",
+        "cache-control": "no-store, must-revalidate",
+        "etag": "\"inzjpdxedw26d\"",
+        "content-type": "text/html; charset=utf-8",
+        "vary": "Accept-Encoding",
+        "date": "Sun, 14 Sep 2025 12:58:19 GMT",
+        "connection": "keep-alive",
+        "keep-alive": "timeout=5",
+        "transfer-encoding": "chunked"
+      }
+    },
+    "/api/menu/secure": {
+      "method": "GET",
+      "status": 500,
+      "duration": 126.68724999999995,
+      "success": false,
+      "data": "<!DOCTYPE html><html><head><style data-next-hide-fouc=\"true\">body{display:none}</style><noscript data-next-hide-fouc=\"true\"><style>body{display:block}</style></noscript><meta charSet=\"utf-8\" data-next-head=\"\"/><meta name=\"viewport\" content=\"width=device-width\" data-next-head=\"\"/><noscript data-n-css=\"\"></noscript><script defer=\"\" nomodule=\"\" src=\"/_next/static/chunks/polyfills.js\"></script><script src=\"/_next/static/chunks/fallback/webpack.js\" defer=\"\"></script><script src=\"/_next/static/chunks/fallback/main.js\" defer=\"\"></script><script src=\"/_next/static/chunks/fallback/pages/_app.js\" defer=\"\"></script><script src=\"/_next/static/chunks/fallback/pages/_error.js\" defer=\"\"></script><noscript id=\"__next_css__DO_NOT_USE__\"></noscript></head><body><div id=\"__next\"></div><script src=\"/_next/static/chunks/fallback/react-refresh.js\"></script><script id=\"__NEXT_DATA__\" type=\"application/json\">{\"props\":{\"pageProps\":{\"statusCode\":500,\"hostname\":\"localhost\"}},\"page\":\"/_error\",\"query\":{},\"buildId\":\"development\",\"isFallback\":false,\"err\":{\"name\":\"Error\",\"source\":\"server\",\"message\":\"Module not found: Can't resolve '../../../../lib/database/optimized-menu-queries'\\n  3 |\\n  4 | import { NextRequest, NextResponse } from 'next/server';\\n\\u003e 5 | import { optimizedMenuQueries } from '../../../../lib/database/optimized-menu-queries';\\n    | ^\\n  6 | import { menuCache } from '../../../../lib/cache/redis-menu-cache';\\n  7 | import { performanceMonitor } from '../../../../lib/performance/menu-performance-monitor';\\n  8 |\\n\\nhttps://nextjs.org/docs/messages/module-not-found\\n\",\"stack\":\"Error: Module not found: Can't resolve '../../../../lib/database/optimized-menu-queries'\\n  3 |\\n  4 | import { NextRequest, NextResponse } from 'next/server';\\n\\u003e 5 | import { optimizedMenuQueries } from '../../../../lib/database/optimized-menu-queries';\\n    | ^\\n  6 | import { menuCache } from '../../../../lib/cache/redis-menu-cache';\\n  7 | import { performanceMonitor } from '../../../../lib/performance/menu-performance-monitor';\\n  8 |\\n\\nhttps://nextjs.org/docs/messages/module-not-found\\n\\n    at getNotFoundError (/Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/parseNotFoundError.js:140:16)\\n    at async getModuleBuildError (/Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/webpackModuleError.js:103:27)\\n    at async /Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/index.js:29:49\\n    at async Promise.all (index 0)\\n    at async /Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/index.js:27:21\"},\"gip\":true,\"scriptLoader\":[]}</script></body></html>",
+      "headers": {
+        "x-frame-options": "DENY",
+        "x-content-type-options": "nosniff",
+        "x-xss-protection": "1; mode=block",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "permissions-policy": "camera=(), microphone=(), geolocation=(self), interest-cohort=()",
+        "cross-origin-embedder-policy": "require-corp",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+        "content-security-policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https: http:; media-src 'self' data: blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; connect-src 'self' http://localhost:3001 https://api.hasivu.com https://www.google-analytics.com wss:; worker-src 'self' blob:; manifest-src 'self'; upgrade-insecure-requests",
+        "cache-control": "no-store, must-revalidate",
+        "etag": "\"inzjpdxedw26d\"",
+        "content-type": "text/html; charset=utf-8",
+        "vary": "Accept-Encoding",
+        "date": "Sun, 14 Sep 2025 12:58:19 GMT",
+        "connection": "keep-alive",
+        "keep-alive": "timeout=5",
+        "transfer-encoding": "chunked"
+      }
+    },
+    "/api/menu/1": {
+      "method": "GET",
+      "status": 500,
+      "duration": 7.8029169999999795,
+      "success": false,
+      "data": "Internal Server Error",
+      "headers": {
+        "date": "Sun, 14 Sep 2025 12:58:19 GMT",
+        "connection": "keep-alive",
+        "keep-alive": "timeout=5",
+        "transfer-encoding": "chunked"
+      }
+    },
+    "/api/menu?category=Breakfast&page=1&limit=10": {
+      "method": "GET",
+      "status": 500,
+      "duration": 8.52129200000013,
+      "success": false,
+      "data": "<!DOCTYPE html><html><head><style data-next-hide-fouc=\"true\">body{display:none}</style><noscript data-next-hide-fouc=\"true\"><style>body{display:block}</style></noscript><meta charSet=\"utf-8\" data-next-head=\"\"/><meta name=\"viewport\" content=\"width=device-width\" data-next-head=\"\"/><noscript data-n-css=\"\"></noscript><script defer=\"\" nomodule=\"\" src=\"/_next/static/chunks/polyfills.js\"></script><script src=\"/_next/static/chunks/fallback/webpack.js\" defer=\"\"></script><script src=\"/_next/static/chunks/fallback/main.js\" defer=\"\"></script><script src=\"/_next/static/chunks/fallback/pages/_app.js\" defer=\"\"></script><script src=\"/_next/static/chunks/fallback/pages/_error.js\" defer=\"\"></script><noscript id=\"__next_css__DO_NOT_USE__\"></noscript></head><body><div id=\"__next\"></div><script src=\"/_next/static/chunks/fallback/react-refresh.js\"></script><script id=\"__NEXT_DATA__\" type=\"application/json\">{\"props\":{\"pageProps\":{\"statusCode\":500,\"hostname\":\"localhost\"}},\"page\":\"/_error\",\"query\":{\"category\":\"Breakfast\",\"page\":\"1\",\"limit\":\"10\"},\"buildId\":\"development\",\"isFallback\":false,\"err\":{\"name\":\"Error\",\"source\":\"server\",\"message\":\"Module not found: Can't resolve '../../../../lib/database/optimized-menu-queries'\\n  3 |\\n  4 | import { NextRequest, NextResponse } from 'next/server';\\n\\u003e 5 | import { optimizedMenuQueries } from '../../../../lib/database/optimized-menu-queries';\\n    | ^\\n  6 | import { menuCache } from '../../../../lib/cache/redis-menu-cache';\\n  7 | import { performanceMonitor } from '../../../../lib/performance/menu-performance-monitor';\\n  8 |\\n\\nhttps://nextjs.org/docs/messages/module-not-found\\n\",\"stack\":\"Error: Module not found: Can't resolve '../../../../lib/database/optimized-menu-queries'\\n  3 |\\n  4 | import { NextRequest, NextResponse } from 'next/server';\\n\\u003e 5 | import { optimizedMenuQueries } from '../../../../lib/database/optimized-menu-queries';\\n    | ^\\n  6 | import { menuCache } from '../../../../lib/cache/redis-menu-cache';\\n  7 | import { performanceMonitor } from '../../../../lib/performance/menu-performance-monitor';\\n  8 |\\n\\nhttps://nextjs.org/docs/messages/module-not-found\\n\\n    at getNotFoundError (/Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/parseNotFoundError.js:140:16)\\n    at async getModuleBuildError (/Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/webpackModuleError.js:103:27)\\n    at async /Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/index.js:29:49\\n    at async Promise.all (index 0)\\n    at async /Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/index.js:27:21\"},\"gip\":true,\"scriptLoader\":[]}</script></body></html>",
+      "headers": {
+        "x-frame-options": "DENY",
+        "x-content-type-options": "nosniff",
+        "x-xss-protection": "1; mode=block",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "permissions-policy": "camera=(), microphone=(), geolocation=(self), interest-cohort=()",
+        "cross-origin-embedder-policy": "require-corp",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+        "content-security-policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https: http:; media-src 'self' data: blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; connect-src 'self' http://localhost:3001 https://api.hasivu.com https://www.google-analytics.com wss:; worker-src 'self' blob:; manifest-src 'self'; upgrade-insecure-requests",
+        "cache-control": "no-store, must-revalidate",
+        "etag": "\"cnkelugkx927n\"",
+        "content-type": "text/html; charset=utf-8",
+        "vary": "Accept-Encoding",
+        "date": "Sun, 14 Sep 2025 12:58:19 GMT",
+        "connection": "keep-alive",
+        "keep-alive": "timeout=5",
+        "transfer-encoding": "chunked"
+      }
+    },
+    "/api/menu?dietary=Vegetarian&ageGroup=6-10": {
+      "method": "GET",
+      "status": 500,
+      "duration": 6.8373750000000655,
+      "success": false,
+      "data": "<!DOCTYPE html><html><head><style data-next-hide-fouc=\"true\">body{display:none}</style><noscript data-next-hide-fouc=\"true\"><style>body{display:block}</style></noscript><meta charSet=\"utf-8\" data-next-head=\"\"/><meta name=\"viewport\" content=\"width=device-width\" data-next-head=\"\"/><noscript data-n-css=\"\"></noscript><script defer=\"\" nomodule=\"\" src=\"/_next/static/chunks/polyfills.js\"></script><script src=\"/_next/static/chunks/fallback/webpack.js\" defer=\"\"></script><script src=\"/_next/static/chunks/fallback/main.js\" defer=\"\"></script><script src=\"/_next/static/chunks/fallback/pages/_app.js\" defer=\"\"></script><script src=\"/_next/static/chunks/fallback/pages/_error.js\" defer=\"\"></script><noscript id=\"__next_css__DO_NOT_USE__\"></noscript></head><body><div id=\"__next\"></div><script src=\"/_next/static/chunks/fallback/react-refresh.js\"></script><script id=\"__NEXT_DATA__\" type=\"application/json\">{\"props\":{\"pageProps\":{\"statusCode\":500,\"hostname\":\"localhost\"}},\"page\":\"/_error\",\"query\":{\"dietary\":\"Vegetarian\",\"ageGroup\":\"6-10\"},\"buildId\":\"development\",\"isFallback\":false,\"err\":{\"name\":\"Error\",\"source\":\"server\",\"message\":\"Module not found: Can't resolve '../../../../lib/database/optimized-menu-queries'\\n  3 |\\n  4 | import { NextRequest, NextResponse } from 'next/server';\\n\\u003e 5 | import { optimizedMenuQueries } from '../../../../lib/database/optimized-menu-queries';\\n    | ^\\n  6 | import { menuCache } from '../../../../lib/cache/redis-menu-cache';\\n  7 | import { performanceMonitor } from '../../../../lib/performance/menu-performance-monitor';\\n  8 |\\n\\nhttps://nextjs.org/docs/messages/module-not-found\\n\",\"stack\":\"Error: Module not found: Can't resolve '../../../../lib/database/optimized-menu-queries'\\n  3 |\\n  4 | import { NextRequest, NextResponse } from 'next/server';\\n\\u003e 5 | import { optimizedMenuQueries } from '../../../../lib/database/optimized-menu-queries';\\n    | ^\\n  6 | import { menuCache } from '../../../../lib/cache/redis-menu-cache';\\n  7 | import { performanceMonitor } from '../../../../lib/performance/menu-performance-monitor';\\n  8 |\\n\\nhttps://nextjs.org/docs/messages/module-not-found\\n\\n    at getNotFoundError (/Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/parseNotFoundError.js:140:16)\\n    at async getModuleBuildError (/Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/webpackModuleError.js:103:27)\\n    at async /Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/index.js:29:49\\n    at async Promise.all (index 0)\\n    at async /Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/index.js:27:21\"},\"gip\":true,\"scriptLoader\":[]}</script></body></html>",
+      "headers": {
+        "x-frame-options": "DENY",
+        "x-content-type-options": "nosniff",
+        "x-xss-protection": "1; mode=block",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "permissions-policy": "camera=(), microphone=(), geolocation=(self), interest-cohort=()",
+        "cross-origin-embedder-policy": "require-corp",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+        "content-security-policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https: http:; media-src 'self' data: blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; connect-src 'self' http://localhost:3001 https://api.hasivu.com https://www.google-analytics.com wss:; worker-src 'self' blob:; manifest-src 'self'; upgrade-insecure-requests",
+        "cache-control": "no-store, must-revalidate",
+        "etag": "\"766xht3r5e27h\"",
+        "content-type": "text/html; charset=utf-8",
+        "vary": "Accept-Encoding",
+        "date": "Sun, 14 Sep 2025 12:58:19 GMT",
+        "connection": "keep-alive",
+        "keep-alive": "timeout=5",
+        "transfer-encoding": "chunked"
+      }
+    },
+    "/api/orders": {
+      "method": "GET",
+      "status": 500,
+      "duration": 1.54037500000004,
+      "success": false,
+      "data": "Internal Server Error",
+      "headers": {
+        "date": "Sun, 14 Sep 2025 12:58:19 GMT",
+        "connection": "keep-alive",
+        "keep-alive": "timeout=5",
+        "transfer-encoding": "chunked"
+      }
+    },
+    "/api/orders/student-123": {
+      "method": "GET",
+      "status": 500,
+      "duration": 2.738749999999982,
+      "success": false,
+      "data": "Internal Server Error",
+      "headers": {
+        "date": "Sun, 14 Sep 2025 12:58:19 GMT",
+        "connection": "keep-alive",
+        "keep-alive": "timeout=5",
+        "transfer-encoding": "chunked"
+      }
+    },
+    "/api/orders/order-123": {
+      "method": "DELETE",
+      "status": 500,
+      "duration": 1.550416000000041,
+      "success": false,
+      "data": "Internal Server Error",
+      "headers": {
+        "date": "Sun, 14 Sep 2025 12:58:19 GMT",
+        "connection": "keep-alive",
+        "keep-alive": "timeout=5",
+        "transfer-encoding": "chunked"
+      }
+    },
+    "/api/orders/order-123/status": {
+      "method": "PATCH",
+      "status": 500,
+      "duration": 2.522707999999966,
+      "success": false,
+      "data": "Internal Server Error",
+      "headers": {
+        "date": "Sun, 14 Sep 2025 12:58:19 GMT",
+        "connection": "keep-alive",
+        "keep-alive": "timeout=5",
+        "transfer-encoding": "chunked"
+      }
+    },
+    "/api/orders?status=pending&date=2024-09-14": {
+      "method": "GET",
+      "status": 500,
+      "duration": 2.4446669999999813,
+      "success": false,
+      "data": "Internal Server Error",
+      "headers": {
+        "date": "Sun, 14 Sep 2025 12:58:19 GMT",
+        "connection": "keep-alive",
+        "keep-alive": "timeout=5",
+        "transfer-encoding": "chunked"
+      }
+    },
+    "/api/orders?userId=student-123&limit=10": {
+      "method": "GET",
+      "status": 500,
+      "duration": 2.081957999999986,
+      "success": false,
+      "data": "Internal Server Error",
+      "headers": {
+        "date": "Sun, 14 Sep 2025 12:58:19 GMT",
+        "connection": "keep-alive",
+        "keep-alive": "timeout=5",
+        "transfer-encoding": "chunked"
+      }
+    },
+    "/api/orders?schoolId=test-school-001": {
+      "method": "GET",
+      "status": 500,
+      "duration": 1.7203329999999823,
+      "success": false,
+      "data": "Internal Server Error",
+      "headers": {
+        "date": "Sun, 14 Sep 2025 12:58:19 GMT",
+        "connection": "keep-alive",
+        "keep-alive": "timeout=5",
+        "transfer-encoding": "chunked"
+      }
+    },
+    "/api/kitchen/orders": {
+      "method": "GET",
+      "status": 500,
+      "duration": 4.8599999999999,
+      "success": false,
+      "data": "Internal Server Error",
+      "headers": {
+        "date": "Sun, 14 Sep 2025 12:58:19 GMT",
+        "connection": "keep-alive",
+        "keep-alive": "timeout=5",
+        "transfer-encoding": "chunked"
+      }
+    },
+    "/api/kitchen/orders/pending": {
+      "method": "GET",
+      "status": 500,
+      "duration": 1.9994999999998981,
+      "success": false,
+      "data": "Internal Server Error",
+      "headers": {
+        "date": "Sun, 14 Sep 2025 12:58:19 GMT",
+        "connection": "keep-alive",
+        "keep-alive": "timeout=5",
+        "transfer-encoding": "chunked"
+      }
+    },
+    "/api/kitchen/orders/active": {
+      "method": "GET",
+      "status": 500,
+      "duration": 1.7303340000000844,
+      "success": false,
+      "data": "Internal Server Error",
+      "headers": {
+        "date": "Sun, 14 Sep 2025 12:58:19 GMT",
+        "connection": "keep-alive",
+        "keep-alive": "timeout=5",
+        "transfer-encoding": "chunked"
+      }
+    },
+    "/api/kitchen/orders/order-123/status": {
+      "method": "PATCH",
+      "status": 500,
+      "duration": 1.6500409999998737,
+      "success": false,
+      "data": "Internal Server Error",
+      "headers": {
+        "date": "Sun, 14 Sep 2025 12:58:19 GMT",
+        "connection": "keep-alive",
+        "keep-alive": "timeout=5",
+        "transfer-encoding": "chunked"
+      }
+    },
+    "/api/kitchen/orders/order-123/start": {
+      "method": "POST",
+      "status": 500,
+      "duration": 1.5530409999998938,
+      "success": false,
+      "data": "Internal Server Error",
+      "headers": {
+        "date": "Sun, 14 Sep 2025 12:58:19 GMT",
+        "connection": "keep-alive",
+        "keep-alive": "timeout=5",
+        "transfer-encoding": "chunked"
+      }
+    },
+    "/api/kitchen/orders/order-123/complete": {
+      "method": "POST",
+      "status": 500,
+      "duration": 2.046875,
+      "success": false,
+      "data": "Internal Server Error",
+      "headers": {
+        "date": "Sun, 14 Sep 2025 12:58:19 GMT",
+        "connection": "keep-alive",
+        "keep-alive": "timeout=5",
+        "transfer-encoding": "chunked"
+      }
+    },
+    "/api/kitchen/queue": {
+      "method": "GET",
+      "status": 500,
+      "duration": 1.827541999999994,
+      "success": false,
+      "data": "Internal Server Error",
+      "headers": {
+        "date": "Sun, 14 Sep 2025 12:58:19 GMT",
+        "connection": "keep-alive",
+        "keep-alive": "timeout=5",
+        "transfer-encoding": "chunked"
+      }
+    },
+    "/api/kitchen/prep-time": {
+      "method": "POST",
+      "status": 500,
+      "duration": 2.087167000000136,
+      "success": false,
+      "data": "Internal Server Error",
+      "headers": {
+        "date": "Sun, 14 Sep 2025 12:58:19 GMT",
+        "connection": "keep-alive",
+        "keep-alive": "timeout=5",
+        "transfer-encoding": "chunked"
+      }
+    },
+    "/api/kitchen/analytics": {
+      "method": "GET",
+      "status": 500,
+      "duration": 1.9747910000000957,
+      "success": false,
+      "data": "Internal Server Error",
+      "headers": {
+        "date": "Sun, 14 Sep 2025 12:58:19 GMT",
+        "connection": "keep-alive",
+        "keep-alive": "timeout=5",
+        "transfer-encoding": "chunked"
+      }
+    },
+    "/api/kitchen/capacity": {
+      "method": "GET",
+      "status": 500,
+      "duration": 1.75712499999986,
+      "success": false,
+      "data": "Internal Server Error",
+      "headers": {
+        "date": "Sun, 14 Sep 2025 12:58:19 GMT",
+        "connection": "keep-alive",
+        "keep-alive": "timeout=5",
+        "transfer-encoding": "chunked"
+      }
+    },
+    "/api/payments/create": {
+      "method": "POST",
+      "status": 500,
+      "duration": 1.6658330000000205,
+      "success": false,
+      "data": "Internal Server Error",
+      "headers": {
+        "date": "Sun, 14 Sep 2025 12:58:19 GMT",
+        "connection": "keep-alive",
+        "keep-alive": "timeout=5",
+        "transfer-encoding": "chunked"
+      }
+    },
+    "/api/payments/verify": {
+      "method": "POST",
+      "status": 500,
+      "duration": 1.438083000000006,
+      "success": false,
+      "data": "Internal Server Error",
+      "headers": {
+        "date": "Sun, 14 Sep 2025 12:58:19 GMT",
+        "connection": "keep-alive",
+        "keep-alive": "timeout=5",
+        "transfer-encoding": "chunked"
+      }
+    },
+    "/api/payments/history/student-123": {
+      "method": "GET",
+      "status": 500,
+      "duration": 1.5705830000001697,
+      "success": false,
+      "data": "Internal Server Error",
+      "headers": {
+        "date": "Sun, 14 Sep 2025 12:58:19 GMT",
+        "connection": "keep-alive",
+        "keep-alive": "timeout=5",
+        "transfer-encoding": "chunked"
+      }
+    },
+    "/api/payments/order-123": {
+      "method": "GET",
+      "status": 500,
+      "duration": 1.9476660000000265,
+      "success": false,
+      "data": "Internal Server Error",
+      "headers": {
+        "date": "Sun, 14 Sep 2025 12:58:19 GMT",
+        "connection": "keep-alive",
+        "keep-alive": "timeout=5",
+        "transfer-encoding": "chunked"
+      }
+    },
+    "/api/payments/refund": {
+      "method": "POST",
+      "status": 500,
+      "duration": 1.8987089999998261,
+      "success": false,
+      "data": "Internal Server Error",
+      "headers": {
+        "date": "Sun, 14 Sep 2025 12:58:19 GMT",
+        "connection": "keep-alive",
+        "keep-alive": "timeout=5",
+        "transfer-encoding": "chunked"
+      }
+    },
+    "/api/wallet/balance/student-123": {
+      "method": "GET",
+      "status": 500,
+      "duration": 4.160624999999982,
+      "success": false,
+      "data": "Internal Server Error",
+      "headers": {
+        "date": "Sun, 14 Sep 2025 12:58:19 GMT",
+        "connection": "keep-alive",
+        "keep-alive": "timeout=5",
+        "transfer-encoding": "chunked"
+      }
+    },
+    "/api/wallet/topup": {
+      "method": "POST",
+      "status": 500,
+      "duration": 2.2912089999999807,
+      "success": false,
+      "data": "Internal Server Error",
+      "headers": {
+        "date": "Sun, 14 Sep 2025 12:58:19 GMT",
+        "connection": "keep-alive",
+        "keep-alive": "timeout=5",
+        "transfer-encoding": "chunked"
+      }
+    },
+    "/api/wallet/deduct": {
+      "method": "POST",
+      "status": 500,
+      "duration": 1.8576249999998709,
+      "success": false,
+      "data": "Internal Server Error",
+      "headers": {
+        "date": "Sun, 14 Sep 2025 12:58:19 GMT",
+        "connection": "keep-alive",
+        "keep-alive": "timeout=5",
+        "transfer-encoding": "chunked"
+      }
+    },
+    "/api/menu?test=0": {
+      "method": "GET",
+      "status": 500,
+      "duration": 15.990540999999894,
+      "success": false,
+      "data": "<!DOCTYPE html><html><head><style data-next-hide-fouc=\"true\">body{display:none}</style><noscript data-next-hide-fouc=\"true\"><style>body{display:block}</style></noscript><meta charSet=\"utf-8\" data-next-head=\"\"/><meta name=\"viewport\" content=\"width=device-width\" data-next-head=\"\"/><noscript data-n-css=\"\"></noscript><script defer=\"\" nomodule=\"\" src=\"/_next/static/chunks/polyfills.js\"></script><script src=\"/_next/static/chunks/fallback/webpack.js\" defer=\"\"></script><script src=\"/_next/static/chunks/fallback/main.js\" defer=\"\"></script><script src=\"/_next/static/chunks/fallback/pages/_app.js\" defer=\"\"></script><script src=\"/_next/static/chunks/fallback/pages/_error.js\" defer=\"\"></script><noscript id=\"__next_css__DO_NOT_USE__\"></noscript></head><body><div id=\"__next\"></div><script src=\"/_next/static/chunks/fallback/react-refresh.js\"></script><script id=\"__NEXT_DATA__\" type=\"application/json\">{\"props\":{\"pageProps\":{\"statusCode\":500,\"hostname\":\"localhost\"}},\"page\":\"/_error\",\"query\":{\"test\":\"0\"},\"buildId\":\"development\",\"isFallback\":false,\"err\":{\"name\":\"Error\",\"source\":\"server\",\"message\":\"Module not found: Can't resolve '../../../../lib/database/optimized-menu-queries'\\n  3 |\\n  4 | import { NextRequest, NextResponse } from 'next/server';\\n\\u003e 5 | import { optimizedMenuQueries } from '../../../../lib/database/optimized-menu-queries';\\n    | ^\\n  6 | import { menuCache } from '../../../../lib/cache/redis-menu-cache';\\n  7 | import { performanceMonitor } from '../../../../lib/performance/menu-performance-monitor';\\n  8 |\\n\\nhttps://nextjs.org/docs/messages/module-not-found\\n\",\"stack\":\"Error: Module not found: Can't resolve '../../../../lib/database/optimized-menu-queries'\\n  3 |\\n  4 | import { NextRequest, NextResponse } from 'next/server';\\n\\u003e 5 | import { optimizedMenuQueries } from '../../../../lib/database/optimized-menu-queries';\\n    | ^\\n  6 | import { menuCache } from '../../../../lib/cache/redis-menu-cache';\\n  7 | import { performanceMonitor } from '../../../../lib/performance/menu-performance-monitor';\\n  8 |\\n\\nhttps://nextjs.org/docs/messages/module-not-found\\n\\n    at getNotFoundError (/Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/parseNotFoundError.js:140:16)\\n    at async getModuleBuildError (/Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/webpackModuleError.js:103:27)\\n    at async /Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/index.js:29:49\\n    at async Promise.all (index 0)\\n    at async /Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/index.js:27:21\"},\"gip\":true,\"scriptLoader\":[]}</script></body></html>",
+      "headers": {
+        "x-frame-options": "DENY",
+        "x-content-type-options": "nosniff",
+        "x-xss-protection": "1; mode=block",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "permissions-policy": "camera=(), microphone=(), geolocation=(self), interest-cohort=()",
+        "cross-origin-embedder-policy": "require-corp",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+        "content-security-policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https: http:; media-src 'self' data: blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; connect-src 'self' http://localhost:3001 https://api.hasivu.com https://www.google-analytics.com wss:; worker-src 'self' blob:; manifest-src 'self'; upgrade-insecure-requests",
+        "cache-control": "no-store, must-revalidate",
+        "etag": "\"v5jaee61ve26n\"",
+        "content-type": "text/html; charset=utf-8",
+        "vary": "Accept-Encoding",
+        "date": "Sun, 14 Sep 2025 12:58:19 GMT",
+        "connection": "keep-alive",
+        "keep-alive": "timeout=5",
+        "transfer-encoding": "chunked"
+      }
+    },
+    "/api/menu?test=2": {
+      "method": "GET",
+      "status": 500,
+      "duration": 20.73149999999987,
+      "success": false,
+      "data": "<!DOCTYPE html><html><head><style data-next-hide-fouc=\"true\">body{display:none}</style><noscript data-next-hide-fouc=\"true\"><style>body{display:block}</style></noscript><meta charSet=\"utf-8\" data-next-head=\"\"/><meta name=\"viewport\" content=\"width=device-width\" data-next-head=\"\"/><noscript data-n-css=\"\"></noscript><script defer=\"\" nomodule=\"\" src=\"/_next/static/chunks/polyfills.js\"></script><script src=\"/_next/static/chunks/fallback/webpack.js\" defer=\"\"></script><script src=\"/_next/static/chunks/fallback/main.js\" defer=\"\"></script><script src=\"/_next/static/chunks/fallback/pages/_app.js\" defer=\"\"></script><script src=\"/_next/static/chunks/fallback/pages/_error.js\" defer=\"\"></script><noscript id=\"__next_css__DO_NOT_USE__\"></noscript></head><body><div id=\"__next\"></div><script src=\"/_next/static/chunks/fallback/react-refresh.js\"></script><script id=\"__NEXT_DATA__\" type=\"application/json\">{\"props\":{\"pageProps\":{\"statusCode\":500,\"hostname\":\"localhost\"}},\"page\":\"/_error\",\"query\":{\"test\":\"2\"},\"buildId\":\"development\",\"isFallback\":false,\"err\":{\"name\":\"Error\",\"source\":\"server\",\"message\":\"Module not found: Can't resolve '../../../../lib/database/optimized-menu-queries'\\n  3 |\\n  4 | import { NextRequest, NextResponse } from 'next/server';\\n\\u003e 5 | import { optimizedMenuQueries } from '../../../../lib/database/optimized-menu-queries';\\n    | ^\\n  6 | import { menuCache } from '../../../../lib/cache/redis-menu-cache';\\n  7 | import { performanceMonitor } from '../../../../lib/performance/menu-performance-monitor';\\n  8 |\\n\\nhttps://nextjs.org/docs/messages/module-not-found\\n\",\"stack\":\"Error: Module not found: Can't resolve '../../../../lib/database/optimized-menu-queries'\\n  3 |\\n  4 | import { NextRequest, NextResponse } from 'next/server';\\n\\u003e 5 | import { optimizedMenuQueries } from '../../../../lib/database/optimized-menu-queries';\\n    | ^\\n  6 | import { menuCache } from '../../../../lib/cache/redis-menu-cache';\\n  7 | import { performanceMonitor } from '../../../../lib/performance/menu-performance-monitor';\\n  8 |\\n\\nhttps://nextjs.org/docs/messages/module-not-found\\n\\n    at getNotFoundError (/Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/parseNotFoundError.js:140:16)\\n    at async getModuleBuildError (/Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/webpackModuleError.js:103:27)\\n    at async /Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/index.js:29:49\\n    at async Promise.all (index 0)\\n    at async /Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/index.js:27:21\"},\"gip\":true,\"scriptLoader\":[]}</script></body></html>",
+      "headers": {
+        "x-frame-options": "DENY",
+        "x-content-type-options": "nosniff",
+        "x-xss-protection": "1; mode=block",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "permissions-policy": "camera=(), microphone=(), geolocation=(self), interest-cohort=()",
+        "cross-origin-embedder-policy": "require-corp",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+        "content-security-policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https: http:; media-src 'self' data: blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; connect-src 'self' http://localhost:3001 https://api.hasivu.com https://www.google-analytics.com wss:; worker-src 'self' blob:; manifest-src 'self'; upgrade-insecure-requests",
+        "cache-control": "no-store, must-revalidate",
+        "etag": "\"2n1b9srond26n\"",
+        "content-type": "text/html; charset=utf-8",
+        "vary": "Accept-Encoding",
+        "date": "Sun, 14 Sep 2025 12:58:19 GMT",
+        "connection": "keep-alive",
+        "keep-alive": "timeout=5",
+        "transfer-encoding": "chunked"
+      }
+    },
+    "/api/menu?test=3": {
+      "method": "GET",
+      "status": 500,
+      "duration": 26.530333000000155,
+      "success": false,
+      "data": "<!DOCTYPE html><html><head><style data-next-hide-fouc=\"true\">body{display:none}</style><noscript data-next-hide-fouc=\"true\"><style>body{display:block}</style></noscript><meta charSet=\"utf-8\" data-next-head=\"\"/><meta name=\"viewport\" content=\"width=device-width\" data-next-head=\"\"/><noscript data-n-css=\"\"></noscript><script defer=\"\" nomodule=\"\" src=\"/_next/static/chunks/polyfills.js\"></script><script src=\"/_next/static/chunks/fallback/webpack.js\" defer=\"\"></script><script src=\"/_next/static/chunks/fallback/main.js\" defer=\"\"></script><script src=\"/_next/static/chunks/fallback/pages/_app.js\" defer=\"\"></script><script src=\"/_next/static/chunks/fallback/pages/_error.js\" defer=\"\"></script><noscript id=\"__next_css__DO_NOT_USE__\"></noscript></head><body><div id=\"__next\"></div><script src=\"/_next/static/chunks/fallback/react-refresh.js\"></script><script id=\"__NEXT_DATA__\" type=\"application/json\">{\"props\":{\"pageProps\":{\"statusCode\":500,\"hostname\":\"localhost\"}},\"page\":\"/_error\",\"query\":{\"test\":\"3\"},\"buildId\":\"development\",\"isFallback\":false,\"err\":{\"name\":\"Error\",\"source\":\"server\",\"message\":\"Module not found: Can't resolve '../../../../lib/database/optimized-menu-queries'\\n  3 |\\n  4 | import { NextRequest, NextResponse } from 'next/server';\\n\\u003e 5 | import { optimizedMenuQueries } from '../../../../lib/database/optimized-menu-queries';\\n    | ^\\n  6 | import { menuCache } from '../../../../lib/cache/redis-menu-cache';\\n  7 | import { performanceMonitor } from '../../../../lib/performance/menu-performance-monitor';\\n  8 |\\n\\nhttps://nextjs.org/docs/messages/module-not-found\\n\",\"stack\":\"Error: Module not found: Can't resolve '../../../../lib/database/optimized-menu-queries'\\n  3 |\\n  4 | import { NextRequest, NextResponse } from 'next/server';\\n\\u003e 5 | import { optimizedMenuQueries } from '../../../../lib/database/optimized-menu-queries';\\n    | ^\\n  6 | import { menuCache } from '../../../../lib/cache/redis-menu-cache';\\n  7 | import { performanceMonitor } from '../../../../lib/performance/menu-performance-monitor';\\n  8 |\\n\\nhttps://nextjs.org/docs/messages/module-not-found\\n\\n    at getNotFoundError (/Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/parseNotFoundError.js:140:16)\\n    at async getModuleBuildError (/Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/webpackModuleError.js:103:27)\\n    at async /Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/index.js:29:49\\n    at async Promise.all (index 0)\\n    at async /Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/index.js:27:21\"},\"gip\":true,\"scriptLoader\":[]}</script></body></html>",
+      "headers": {
+        "x-frame-options": "DENY",
+        "x-content-type-options": "nosniff",
+        "x-xss-protection": "1; mode=block",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "permissions-policy": "camera=(), microphone=(), geolocation=(self), interest-cohort=()",
+        "cross-origin-embedder-policy": "require-corp",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+        "content-security-policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https: http:; media-src 'self' data: blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; connect-src 'self' http://localhost:3001 https://api.hasivu.com https://www.google-analytics.com wss:; worker-src 'self' blob:; manifest-src 'self'; upgrade-insecure-requests",
+        "cache-control": "no-store, must-revalidate",
+        "etag": "\"14dtz5s6m9k26n\"",
+        "content-type": "text/html; charset=utf-8",
+        "vary": "Accept-Encoding",
+        "date": "Sun, 14 Sep 2025 12:58:19 GMT",
+        "connection": "keep-alive",
+        "keep-alive": "timeout=5",
+        "transfer-encoding": "chunked"
+      }
+    },
+    "/api/menu?test=1": {
+      "method": "GET",
+      "status": 500,
+      "duration": 26.81591599999979,
+      "success": false,
+      "data": "<!DOCTYPE html><html><head><style data-next-hide-fouc=\"true\">body{display:none}</style><noscript data-next-hide-fouc=\"true\"><style>body{display:block}</style></noscript><meta charSet=\"utf-8\" data-next-head=\"\"/><meta name=\"viewport\" content=\"width=device-width\" data-next-head=\"\"/><noscript data-n-css=\"\"></noscript><script defer=\"\" nomodule=\"\" src=\"/_next/static/chunks/polyfills.js\"></script><script src=\"/_next/static/chunks/fallback/webpack.js\" defer=\"\"></script><script src=\"/_next/static/chunks/fallback/main.js\" defer=\"\"></script><script src=\"/_next/static/chunks/fallback/pages/_app.js\" defer=\"\"></script><script src=\"/_next/static/chunks/fallback/pages/_error.js\" defer=\"\"></script><noscript id=\"__next_css__DO_NOT_USE__\"></noscript></head><body><div id=\"__next\"></div><script src=\"/_next/static/chunks/fallback/react-refresh.js\"></script><script id=\"__NEXT_DATA__\" type=\"application/json\">{\"props\":{\"pageProps\":{\"statusCode\":500,\"hostname\":\"localhost\"}},\"page\":\"/_error\",\"query\":{\"test\":\"1\"},\"buildId\":\"development\",\"isFallback\":false,\"err\":{\"name\":\"Error\",\"source\":\"server\",\"message\":\"Module not found: Can't resolve '../../../../lib/database/optimized-menu-queries'\\n  3 |\\n  4 | import { NextRequest, NextResponse } from 'next/server';\\n\\u003e 5 | import { optimizedMenuQueries } from '../../../../lib/database/optimized-menu-queries';\\n    | ^\\n  6 | import { menuCache } from '../../../../lib/cache/redis-menu-cache';\\n  7 | import { performanceMonitor } from '../../../../lib/performance/menu-performance-monitor';\\n  8 |\\n\\nhttps://nextjs.org/docs/messages/module-not-found\\n\",\"stack\":\"Error: Module not found: Can't resolve '../../../../lib/database/optimized-menu-queries'\\n  3 |\\n  4 | import { NextRequest, NextResponse } from 'next/server';\\n\\u003e 5 | import { optimizedMenuQueries } from '../../../../lib/database/optimized-menu-queries';\\n    | ^\\n  6 | import { menuCache } from '../../../../lib/cache/redis-menu-cache';\\n  7 | import { performanceMonitor } from '../../../../lib/performance/menu-performance-monitor';\\n  8 |\\n\\nhttps://nextjs.org/docs/messages/module-not-found\\n\\n    at getNotFoundError (/Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/parseNotFoundError.js:140:16)\\n    at async getModuleBuildError (/Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/webpackModuleError.js:103:27)\\n    at async /Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/index.js:29:49\\n    at async Promise.all (index 0)\\n    at async /Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/index.js:27:21\"},\"gip\":true,\"scriptLoader\":[]}</script></body></html>",
+      "headers": {
+        "x-frame-options": "DENY",
+        "x-content-type-options": "nosniff",
+        "x-xss-protection": "1; mode=block",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "permissions-policy": "camera=(), microphone=(), geolocation=(self), interest-cohort=()",
+        "cross-origin-embedder-policy": "require-corp",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+        "content-security-policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https: http:; media-src 'self' data: blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; connect-src 'self' http://localhost:3001 https://api.hasivu.com https://www.google-analytics.com wss:; worker-src 'self' blob:; manifest-src 'self'; upgrade-insecure-requests",
+        "cache-control": "no-store, must-revalidate",
+        "etag": "\"13j5un39qp526n\"",
+        "content-type": "text/html; charset=utf-8",
+        "vary": "Accept-Encoding",
+        "date": "Sun, 14 Sep 2025 12:58:19 GMT",
+        "connection": "keep-alive",
+        "keep-alive": "timeout=5",
+        "transfer-encoding": "chunked"
+      }
+    },
+    "/api/menu?test=4": {
+      "method": "GET",
+      "status": 500,
+      "duration": 26.504208999999946,
+      "success": false,
+      "data": "<!DOCTYPE html><html><head><style data-next-hide-fouc=\"true\">body{display:none}</style><noscript data-next-hide-fouc=\"true\"><style>body{display:block}</style></noscript><meta charSet=\"utf-8\" data-next-head=\"\"/><meta name=\"viewport\" content=\"width=device-width\" data-next-head=\"\"/><noscript data-n-css=\"\"></noscript><script defer=\"\" nomodule=\"\" src=\"/_next/static/chunks/polyfills.js\"></script><script src=\"/_next/static/chunks/fallback/webpack.js\" defer=\"\"></script><script src=\"/_next/static/chunks/fallback/main.js\" defer=\"\"></script><script src=\"/_next/static/chunks/fallback/pages/_app.js\" defer=\"\"></script><script src=\"/_next/static/chunks/fallback/pages/_error.js\" defer=\"\"></script><noscript id=\"__next_css__DO_NOT_USE__\"></noscript></head><body><div id=\"__next\"></div><script src=\"/_next/static/chunks/fallback/react-refresh.js\"></script><script id=\"__NEXT_DATA__\" type=\"application/json\">{\"props\":{\"pageProps\":{\"statusCode\":500,\"hostname\":\"localhost\"}},\"page\":\"/_error\",\"query\":{\"test\":\"4\"},\"buildId\":\"development\",\"isFallback\":false,\"err\":{\"name\":\"Error\",\"source\":\"server\",\"message\":\"Module not found: Can't resolve '../../../../lib/database/optimized-menu-queries'\\n  3 |\\n  4 | import { NextRequest, NextResponse } from 'next/server';\\n\\u003e 5 | import { optimizedMenuQueries } from '../../../../lib/database/optimized-menu-queries';\\n    | ^\\n  6 | import { menuCache } from '../../../../lib/cache/redis-menu-cache';\\n  7 | import { performanceMonitor } from '../../../../lib/performance/menu-performance-monitor';\\n  8 |\\n\\nhttps://nextjs.org/docs/messages/module-not-found\\n\",\"stack\":\"Error: Module not found: Can't resolve '../../../../lib/database/optimized-menu-queries'\\n  3 |\\n  4 | import { NextRequest, NextResponse } from 'next/server';\\n\\u003e 5 | import { optimizedMenuQueries } from '../../../../lib/database/optimized-menu-queries';\\n    | ^\\n  6 | import { menuCache } from '../../../../lib/cache/redis-menu-cache';\\n  7 | import { performanceMonitor } from '../../../../lib/performance/menu-performance-monitor';\\n  8 |\\n\\nhttps://nextjs.org/docs/messages/module-not-found\\n\\n    at getNotFoundError (/Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/parseNotFoundError.js:140:16)\\n    at async getModuleBuildError (/Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/webpackModuleError.js:103:27)\\n    at async /Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/index.js:29:49\\n    at async Promise.all (index 0)\\n    at async /Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/index.js:27:21\"},\"gip\":true,\"scriptLoader\":[]}</script></body></html>",
+      "headers": {
+        "x-frame-options": "DENY",
+        "x-content-type-options": "nosniff",
+        "x-xss-protection": "1; mode=block",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "permissions-policy": "camera=(), microphone=(), geolocation=(self), interest-cohort=()",
+        "cross-origin-embedder-policy": "require-corp",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+        "content-security-policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https: http:; media-src 'self' data: blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; connect-src 'self' http://localhost:3001 https://api.hasivu.com https://www.google-analytics.com wss:; worker-src 'self' blob:; manifest-src 'self'; upgrade-insecure-requests",
+        "cache-control": "no-store, must-revalidate",
+        "etag": "\"vejgd04py026n\"",
+        "content-type": "text/html; charset=utf-8",
+        "vary": "Accept-Encoding",
+        "date": "Sun, 14 Sep 2025 12:58:19 GMT",
+        "connection": "keep-alive",
+        "keep-alive": "timeout=5",
+        "transfer-encoding": "chunked"
+      }
+    },
+    "/api/menu?test=6": {
+      "method": "GET",
+      "status": 500,
+      "duration": 31.44054200000005,
+      "success": false,
+      "data": "<!DOCTYPE html><html><head><style data-next-hide-fouc=\"true\">body{display:none}</style><noscript data-next-hide-fouc=\"true\"><style>body{display:block}</style></noscript><meta charSet=\"utf-8\" data-next-head=\"\"/><meta name=\"viewport\" content=\"width=device-width\" data-next-head=\"\"/><noscript data-n-css=\"\"></noscript><script defer=\"\" nomodule=\"\" src=\"/_next/static/chunks/polyfills.js\"></script><script src=\"/_next/static/chunks/fallback/webpack.js\" defer=\"\"></script><script src=\"/_next/static/chunks/fallback/main.js\" defer=\"\"></script><script src=\"/_next/static/chunks/fallback/pages/_app.js\" defer=\"\"></script><script src=\"/_next/static/chunks/fallback/pages/_error.js\" defer=\"\"></script><noscript id=\"__next_css__DO_NOT_USE__\"></noscript></head><body><div id=\"__next\"></div><script src=\"/_next/static/chunks/fallback/react-refresh.js\"></script><script id=\"__NEXT_DATA__\" type=\"application/json\">{\"props\":{\"pageProps\":{\"statusCode\":500,\"hostname\":\"localhost\"}},\"page\":\"/_error\",\"query\":{\"test\":\"6\"},\"buildId\":\"development\",\"isFallback\":false,\"err\":{\"name\":\"Error\",\"source\":\"server\",\"message\":\"Module not found: Can't resolve '../../../../lib/database/optimized-menu-queries'\\n  3 |\\n  4 | import { NextRequest, NextResponse } from 'next/server';\\n\\u003e 5 | import { optimizedMenuQueries } from '../../../../lib/database/optimized-menu-queries';\\n    | ^\\n  6 | import { menuCache } from '../../../../lib/cache/redis-menu-cache';\\n  7 | import { performanceMonitor } from '../../../../lib/performance/menu-performance-monitor';\\n  8 |\\n\\nhttps://nextjs.org/docs/messages/module-not-found\\n\",\"stack\":\"Error: Module not found: Can't resolve '../../../../lib/database/optimized-menu-queries'\\n  3 |\\n  4 | import { NextRequest, NextResponse } from 'next/server';\\n\\u003e 5 | import { optimizedMenuQueries } from '../../../../lib/database/optimized-menu-queries';\\n    | ^\\n  6 | import { menuCache } from '../../../../lib/cache/redis-menu-cache';\\n  7 | import { performanceMonitor } from '../../../../lib/performance/menu-performance-monitor';\\n  8 |\\n\\nhttps://nextjs.org/docs/messages/module-not-found\\n\\n    at getNotFoundError (/Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/parseNotFoundError.js:140:16)\\n    at async getModuleBuildError (/Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/webpackModuleError.js:103:27)\\n    at async /Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/index.js:29:49\\n    at async Promise.all (index 0)\\n    at async /Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/index.js:27:21\"},\"gip\":true,\"scriptLoader\":[]}</script></body></html>",
+      "headers": {
+        "x-frame-options": "DENY",
+        "x-content-type-options": "nosniff",
+        "x-xss-protection": "1; mode=block",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "permissions-policy": "camera=(), microphone=(), geolocation=(self), interest-cohort=()",
+        "cross-origin-embedder-policy": "require-corp",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+        "content-security-policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https: http:; media-src 'self' data: blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; connect-src 'self' http://localhost:3001 https://api.hasivu.com https://www.google-analytics.com wss:; worker-src 'self' blob:; manifest-src 'self'; upgrade-insecure-requests",
+        "cache-control": "no-store, must-revalidate",
+        "etag": "\"6qpwymz6xb26n\"",
+        "content-type": "text/html; charset=utf-8",
+        "vary": "Accept-Encoding",
+        "date": "Sun, 14 Sep 2025 12:58:19 GMT",
+        "connection": "keep-alive",
+        "keep-alive": "timeout=5",
+        "transfer-encoding": "chunked"
+      }
+    },
+    "/api/menu?test=5": {
+      "method": "GET",
+      "status": 500,
+      "duration": 31.605458,
+      "success": false,
+      "data": "<!DOCTYPE html><html><head><style data-next-hide-fouc=\"true\">body{display:none}</style><noscript data-next-hide-fouc=\"true\"><style>body{display:block}</style></noscript><meta charSet=\"utf-8\" data-next-head=\"\"/><meta name=\"viewport\" content=\"width=device-width\" data-next-head=\"\"/><noscript data-n-css=\"\"></noscript><script defer=\"\" nomodule=\"\" src=\"/_next/static/chunks/polyfills.js\"></script><script src=\"/_next/static/chunks/fallback/webpack.js\" defer=\"\"></script><script src=\"/_next/static/chunks/fallback/main.js\" defer=\"\"></script><script src=\"/_next/static/chunks/fallback/pages/_app.js\" defer=\"\"></script><script src=\"/_next/static/chunks/fallback/pages/_error.js\" defer=\"\"></script><noscript id=\"__next_css__DO_NOT_USE__\"></noscript></head><body><div id=\"__next\"></div><script src=\"/_next/static/chunks/fallback/react-refresh.js\"></script><script id=\"__NEXT_DATA__\" type=\"application/json\">{\"props\":{\"pageProps\":{\"statusCode\":500,\"hostname\":\"localhost\"}},\"page\":\"/_error\",\"query\":{\"test\":\"5\"},\"buildId\":\"development\",\"isFallback\":false,\"err\":{\"name\":\"Error\",\"source\":\"server\",\"message\":\"Module not found: Can't resolve '../../../../lib/database/optimized-menu-queries'\\n  3 |\\n  4 | import { NextRequest, NextResponse } from 'next/server';\\n\\u003e 5 | import { optimizedMenuQueries } from '../../../../lib/database/optimized-menu-queries';\\n    | ^\\n  6 | import { menuCache } from '../../../../lib/cache/redis-menu-cache';\\n  7 | import { performanceMonitor } from '../../../../lib/performance/menu-performance-monitor';\\n  8 |\\n\\nhttps://nextjs.org/docs/messages/module-not-found\\n\",\"stack\":\"Error: Module not found: Can't resolve '../../../../lib/database/optimized-menu-queries'\\n  3 |\\n  4 | import { NextRequest, NextResponse } from 'next/server';\\n\\u003e 5 | import { optimizedMenuQueries } from '../../../../lib/database/optimized-menu-queries';\\n    | ^\\n  6 | import { menuCache } from '../../../../lib/cache/redis-menu-cache';\\n  7 | import { performanceMonitor } from '../../../../lib/performance/menu-performance-monitor';\\n  8 |\\n\\nhttps://nextjs.org/docs/messages/module-not-found\\n\\n    at getNotFoundError (/Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/parseNotFoundError.js:140:16)\\n    at async getModuleBuildError (/Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/webpackModuleError.js:103:27)\\n    at async /Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/index.js:29:49\\n    at async Promise.all (index 0)\\n    at async /Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/index.js:27:21\"},\"gip\":true,\"scriptLoader\":[]}</script></body></html>",
+      "headers": {
+        "x-frame-options": "DENY",
+        "x-content-type-options": "nosniff",
+        "x-xss-protection": "1; mode=block",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "permissions-policy": "camera=(), microphone=(), geolocation=(self), interest-cohort=()",
+        "cross-origin-embedder-policy": "require-corp",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+        "content-security-policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https: http:; media-src 'self' data: blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; connect-src 'self' http://localhost:3001 https://api.hasivu.com https://www.google-analytics.com wss:; worker-src 'self' blob:; manifest-src 'self'; upgrade-insecure-requests",
+        "cache-control": "no-store, must-revalidate",
+        "etag": "\"7qy35f3jhy26n\"",
+        "content-type": "text/html; charset=utf-8",
+        "vary": "Accept-Encoding",
+        "date": "Sun, 14 Sep 2025 12:58:19 GMT",
+        "connection": "keep-alive",
+        "keep-alive": "timeout=5",
+        "transfer-encoding": "chunked"
+      }
+    },
+    "/api/menu?test=9": {
+      "method": "GET",
+      "status": 500,
+      "duration": 31.15929200000005,
+      "success": false,
+      "data": "<!DOCTYPE html><html><head><style data-next-hide-fouc=\"true\">body{display:none}</style><noscript data-next-hide-fouc=\"true\"><style>body{display:block}</style></noscript><meta charSet=\"utf-8\" data-next-head=\"\"/><meta name=\"viewport\" content=\"width=device-width\" data-next-head=\"\"/><noscript data-n-css=\"\"></noscript><script defer=\"\" nomodule=\"\" src=\"/_next/static/chunks/polyfills.js\"></script><script src=\"/_next/static/chunks/fallback/webpack.js\" defer=\"\"></script><script src=\"/_next/static/chunks/fallback/main.js\" defer=\"\"></script><script src=\"/_next/static/chunks/fallback/pages/_app.js\" defer=\"\"></script><script src=\"/_next/static/chunks/fallback/pages/_error.js\" defer=\"\"></script><noscript id=\"__next_css__DO_NOT_USE__\"></noscript></head><body><div id=\"__next\"></div><script src=\"/_next/static/chunks/fallback/react-refresh.js\"></script><script id=\"__NEXT_DATA__\" type=\"application/json\">{\"props\":{\"pageProps\":{\"statusCode\":500,\"hostname\":\"localhost\"}},\"page\":\"/_error\",\"query\":{\"test\":\"9\"},\"buildId\":\"development\",\"isFallback\":false,\"err\":{\"name\":\"Error\",\"source\":\"server\",\"message\":\"Module not found: Can't resolve '../../../../lib/database/optimized-menu-queries'\\n  3 |\\n  4 | import { NextRequest, NextResponse } from 'next/server';\\n\\u003e 5 | import { optimizedMenuQueries } from '../../../../lib/database/optimized-menu-queries';\\n    | ^\\n  6 | import { menuCache } from '../../../../lib/cache/redis-menu-cache';\\n  7 | import { performanceMonitor } from '../../../../lib/performance/menu-performance-monitor';\\n  8 |\\n\\nhttps://nextjs.org/docs/messages/module-not-found\\n\",\"stack\":\"Error: Module not found: Can't resolve '../../../../lib/database/optimized-menu-queries'\\n  3 |\\n  4 | import { NextRequest, NextResponse } from 'next/server';\\n\\u003e 5 | import { optimizedMenuQueries } from '../../../../lib/database/optimized-menu-queries';\\n    | ^\\n  6 | import { menuCache } from '../../../../lib/cache/redis-menu-cache';\\n  7 | import { performanceMonitor } from '../../../../lib/performance/menu-performance-monitor';\\n  8 |\\n\\nhttps://nextjs.org/docs/messages/module-not-found\\n\\n    at getNotFoundError (/Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/parseNotFoundError.js:140:16)\\n    at async getModuleBuildError (/Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/webpackModuleError.js:103:27)\\n    at async /Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/index.js:29:49\\n    at async Promise.all (index 0)\\n    at async /Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/index.js:27:21\"},\"gip\":true,\"scriptLoader\":[]}</script></body></html>",
+      "headers": {
+        "x-frame-options": "DENY",
+        "x-content-type-options": "nosniff",
+        "x-xss-protection": "1; mode=block",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "permissions-policy": "camera=(), microphone=(), geolocation=(self), interest-cohort=()",
+        "cross-origin-embedder-policy": "require-corp",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+        "content-security-policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https: http:; media-src 'self' data: blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; connect-src 'self' http://localhost:3001 https://api.hasivu.com https://www.google-analytics.com wss:; worker-src 'self' blob:; manifest-src 'self'; upgrade-insecure-requests",
+        "cache-control": "no-store, must-revalidate",
+        "etag": "\"b7yw2iim0g26n\"",
+        "content-type": "text/html; charset=utf-8",
+        "vary": "Accept-Encoding",
+        "date": "Sun, 14 Sep 2025 12:58:19 GMT",
+        "connection": "keep-alive",
+        "keep-alive": "timeout=5",
+        "transfer-encoding": "chunked"
+      }
+    },
+    "/api/menu?test=7": {
+      "method": "GET",
+      "status": 500,
+      "duration": 31.466208999999935,
+      "success": false,
+      "data": "<!DOCTYPE html><html><head><style data-next-hide-fouc=\"true\">body{display:none}</style><noscript data-next-hide-fouc=\"true\"><style>body{display:block}</style></noscript><meta charSet=\"utf-8\" data-next-head=\"\"/><meta name=\"viewport\" content=\"width=device-width\" data-next-head=\"\"/><noscript data-n-css=\"\"></noscript><script defer=\"\" nomodule=\"\" src=\"/_next/static/chunks/polyfills.js\"></script><script src=\"/_next/static/chunks/fallback/webpack.js\" defer=\"\"></script><script src=\"/_next/static/chunks/fallback/main.js\" defer=\"\"></script><script src=\"/_next/static/chunks/fallback/pages/_app.js\" defer=\"\"></script><script src=\"/_next/static/chunks/fallback/pages/_error.js\" defer=\"\"></script><noscript id=\"__next_css__DO_NOT_USE__\"></noscript></head><body><div id=\"__next\"></div><script src=\"/_next/static/chunks/fallback/react-refresh.js\"></script><script id=\"__NEXT_DATA__\" type=\"application/json\">{\"props\":{\"pageProps\":{\"statusCode\":500,\"hostname\":\"localhost\"}},\"page\":\"/_error\",\"query\":{\"test\":\"7\"},\"buildId\":\"development\",\"isFallback\":false,\"err\":{\"name\":\"Error\",\"source\":\"server\",\"message\":\"Module not found: Can't resolve '../../../../lib/database/optimized-menu-queries'\\n  3 |\\n  4 | import { NextRequest, NextResponse } from 'next/server';\\n\\u003e 5 | import { optimizedMenuQueries } from '../../../../lib/database/optimized-menu-queries';\\n    | ^\\n  6 | import { menuCache } from '../../../../lib/cache/redis-menu-cache';\\n  7 | import { performanceMonitor } from '../../../../lib/performance/menu-performance-monitor';\\n  8 |\\n\\nhttps://nextjs.org/docs/messages/module-not-found\\n\",\"stack\":\"Error: Module not found: Can't resolve '../../../../lib/database/optimized-menu-queries'\\n  3 |\\n  4 | import { NextRequest, NextResponse } from 'next/server';\\n\\u003e 5 | import { optimizedMenuQueries } from '../../../../lib/database/optimized-menu-queries';\\n    | ^\\n  6 | import { menuCache } from '../../../../lib/cache/redis-menu-cache';\\n  7 | import { performanceMonitor } from '../../../../lib/performance/menu-performance-monitor';\\n  8 |\\n\\nhttps://nextjs.org/docs/messages/module-not-found\\n\\n    at getNotFoundError (/Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/parseNotFoundError.js:140:16)\\n    at async getModuleBuildError (/Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/webpackModuleError.js:103:27)\\n    at async /Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/index.js:29:49\\n    at async Promise.all (index 0)\\n    at async /Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/index.js:27:21\"},\"gip\":true,\"scriptLoader\":[]}</script></body></html>",
+      "headers": {
+        "x-frame-options": "DENY",
+        "x-content-type-options": "nosniff",
+        "x-xss-protection": "1; mode=block",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "permissions-policy": "camera=(), microphone=(), geolocation=(self), interest-cohort=()",
+        "cross-origin-embedder-policy": "require-corp",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+        "content-security-policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https: http:; media-src 'self' data: blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; connect-src 'self' http://localhost:3001 https://api.hasivu.com https://www.google-analytics.com wss:; worker-src 'self' blob:; manifest-src 'self'; upgrade-insecure-requests",
+        "cache-control": "no-store, must-revalidate",
+        "etag": "\"kn9rmn3i0x26n\"",
+        "content-type": "text/html; charset=utf-8",
+        "vary": "Accept-Encoding",
+        "date": "Sun, 14 Sep 2025 12:58:19 GMT",
+        "connection": "keep-alive",
+        "keep-alive": "timeout=5",
+        "transfer-encoding": "chunked"
+      }
+    },
+    "/api/menu?test=8": {
+      "method": "GET",
+      "status": 500,
+      "duration": 31.320791999999983,
+      "success": false,
+      "data": "<!DOCTYPE html><html><head><style data-next-hide-fouc=\"true\">body{display:none}</style><noscript data-next-hide-fouc=\"true\"><style>body{display:block}</style></noscript><meta charSet=\"utf-8\" data-next-head=\"\"/><meta name=\"viewport\" content=\"width=device-width\" data-next-head=\"\"/><noscript data-n-css=\"\"></noscript><script defer=\"\" nomodule=\"\" src=\"/_next/static/chunks/polyfills.js\"></script><script src=\"/_next/static/chunks/fallback/webpack.js\" defer=\"\"></script><script src=\"/_next/static/chunks/fallback/main.js\" defer=\"\"></script><script src=\"/_next/static/chunks/fallback/pages/_app.js\" defer=\"\"></script><script src=\"/_next/static/chunks/fallback/pages/_error.js\" defer=\"\"></script><noscript id=\"__next_css__DO_NOT_USE__\"></noscript></head><body><div id=\"__next\"></div><script src=\"/_next/static/chunks/fallback/react-refresh.js\"></script><script id=\"__NEXT_DATA__\" type=\"application/json\">{\"props\":{\"pageProps\":{\"statusCode\":500,\"hostname\":\"localhost\"}},\"page\":\"/_error\",\"query\":{\"test\":\"8\"},\"buildId\":\"development\",\"isFallback\":false,\"err\":{\"name\":\"Error\",\"source\":\"server\",\"message\":\"Module not found: Can't resolve '../../../../lib/database/optimized-menu-queries'\\n  3 |\\n  4 | import { NextRequest, NextResponse } from 'next/server';\\n\\u003e 5 | import { optimizedMenuQueries } from '../../../../lib/database/optimized-menu-queries';\\n    | ^\\n  6 | import { menuCache } from '../../../../lib/cache/redis-menu-cache';\\n  7 | import { performanceMonitor } from '../../../../lib/performance/menu-performance-monitor';\\n  8 |\\n\\nhttps://nextjs.org/docs/messages/module-not-found\\n\",\"stack\":\"Error: Module not found: Can't resolve '../../../../lib/database/optimized-menu-queries'\\n  3 |\\n  4 | import { NextRequest, NextResponse } from 'next/server';\\n\\u003e 5 | import { optimizedMenuQueries } from '../../../../lib/database/optimized-menu-queries';\\n    | ^\\n  6 | import { menuCache } from '../../../../lib/cache/redis-menu-cache';\\n  7 | import { performanceMonitor } from '../../../../lib/performance/menu-performance-monitor';\\n  8 |\\n\\nhttps://nextjs.org/docs/messages/module-not-found\\n\\n    at getNotFoundError (/Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/parseNotFoundError.js:140:16)\\n    at async getModuleBuildError (/Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/webpackModuleError.js:103:27)\\n    at async /Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/index.js:29:49\\n    at async Promise.all (index 0)\\n    at async /Users/mahesha/Downloads/hasivu-platform/web/node_modules/next/dist/build/webpack/plugins/wellknown-errors-plugin/index.js:27:21\"},\"gip\":true,\"scriptLoader\":[]}</script></body></html>",
+      "headers": {
+        "x-frame-options": "DENY",
+        "x-content-type-options": "nosniff",
+        "x-xss-protection": "1; mode=block",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "permissions-policy": "camera=(), microphone=(), geolocation=(self), interest-cohort=()",
+        "cross-origin-embedder-policy": "require-corp",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+        "content-security-policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https: http:; media-src 'self' data: blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; connect-src 'self' http://localhost:3001 https://api.hasivu.com https://www.google-analytics.com wss:; worker-src 'self' blob:; manifest-src 'self'; upgrade-insecure-requests",
+        "cache-control": "no-store, must-revalidate",
+        "etag": "\"11nthaf34kz26n\"",
+        "content-type": "text/html; charset=utf-8",
+        "vary": "Accept-Encoding",
+        "date": "Sun, 14 Sep 2025 12:58:19 GMT",
+        "connection": "keep-alive",
+        "keep-alive": "timeout=5",
+        "transfer-encoding": "chunked"
+      }
+    }
+  },
+  "errors": [
+    {
+      "endpoint": "/api/ws",
+      "error": "Parse Error: Expected HTTP/",
+      "type": "WEBSOCKET_ERROR"
+    }
+  ]
+}

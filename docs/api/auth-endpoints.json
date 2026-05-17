@@ -1,0 +1,767 @@
+{
+  "paths": {
+    "/auth/register": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Register new user",
+        "description": "Register a new user account with AWS Cognito. Supports multiple roles including students, parents, teachers, and administrators.",
+        "operationId": "registerUser",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password", "firstName", "lastName", "role", "schoolId"],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "john.doe@school.edu",
+                    "description": "User's email address (must be unique)"
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 8,
+                    "maxLength": 128,
+                    "pattern": "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])[\\w!@#$%^&*]{8,128}$",
+                    "example": "SecurePass123!",
+                    "description": "Password must contain at least one lowercase letter, one uppercase letter, one digit, and one special character"
+                  },
+                  "firstName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 50,
+                    "example": "John",
+                    "description": "User's first name"
+                  },
+                  "lastName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 50,
+                    "example": "Doe",
+                    "description": "User's last name"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": ["student", "parent", "teacher", "staff", "school_admin", "admin", "super_admin"],
+                    "example": "student",
+                    "description": "User's role in the system"
+                  },
+                  "schoolId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "example": "123e4567-e89b-12d3-a456-426614174000",
+                    "description": "ID of the school the user belongs to"
+                  },
+                  "phone": {
+                    "type": "string",
+                    "pattern": "^[+]?[1-9]?[0-9]{7,15}$",
+                    "example": "+1234567890",
+                    "description": "User's phone number (optional)"
+                  },
+                  "dateOfBirth": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2005-06-15",
+                    "description": "Date of birth (required for students)"
+                  },
+                  "grade": {
+                    "type": "string",
+                    "example": "10th",
+                    "description": "Student's grade level (required for students)"
+                  },
+                  "parentEmail": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "parent@family.com",
+                    "description": "Parent's email address (required for students)"
+                  }
+                }
+              },
+              "examples": {
+                "student_registration": {
+                  "summary": "Student Registration",
+                  "value": {
+                    "email": "john.doe@school.edu",
+                    "password": "SecurePass123!",
+                    "firstName": "John",
+                    "lastName": "Doe",
+                    "role": "student",
+                    "schoolId": "123e4567-e89b-12d3-a456-426614174000",
+                    "phone": "+1234567890",
+                    "dateOfBirth": "2005-06-15",
+                    "grade": "10th",
+                    "parentEmail": "parent@family.com"
+                  }
+                },
+                "teacher_registration": {
+                  "summary": "Teacher Registration",
+                  "value": {
+                    "email": "teacher@school.edu",
+                    "password": "SecurePass123!",
+                    "firstName": "Jane",
+                    "lastName": "Smith",
+                    "role": "teacher",
+                    "schoolId": "123e4567-e89b-12d3-a456-426614174000",
+                    "phone": "+1234567891"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User registered successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/SuccessResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "userId": {
+                              "type": "string",
+                              "format": "uuid",
+                              "example": "550e8400-e29b-41d4-a716-446655440000"
+                            },
+                            "email": {
+                              "type": "string",
+                              "format": "email",
+                              "example": "john.doe@school.edu"
+                            },
+                            "status": {
+                              "type": "string",
+                              "enum": ["pending_verification", "active"],
+                              "example": "pending_verification"
+                            },
+                            "verificationRequired": {
+                              "type": "boolean",
+                              "example": true
+                            },
+                            "message": {
+                              "type": "string",
+                              "example": "Registration successful. Please check your email for verification instructions."
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "User login",
+        "description": "Authenticate user credentials and return JWT tokens for session management",
+        "operationId": "loginUser",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "john.doe@school.edu",
+                    "description": "User's email address"
+                  },
+                  "password": {
+                    "type": "string",
+                    "example": "SecurePass123!",
+                    "description": "User's password"
+                  },
+                  "rememberMe": {
+                    "type": "boolean",
+                    "default": false,
+                    "example": true,
+                    "description": "Whether to extend session duration"
+                  },
+                  "deviceInfo": {
+                    "type": "object",
+                    "properties": {
+                      "deviceId": {
+                        "type": "string",
+                        "example": "device_12345"
+                      },
+                      "deviceName": {
+                        "type": "string",
+                        "example": "iPhone 13 Pro"
+                      },
+                      "platform": {
+                        "type": "string",
+                        "enum": ["web", "ios", "android"],
+                        "example": "web"
+                      }
+                    }
+                  }
+                }
+              },
+              "examples": {
+                "basic_login": {
+                  "summary": "Basic Login",
+                  "value": {
+                    "email": "john.doe@school.edu",
+                    "password": "SecurePass123!"
+                  }
+                },
+                "extended_session": {
+                  "summary": "Login with Extended Session",
+                  "value": {
+                    "email": "john.doe@school.edu",
+                    "password": "SecurePass123!",
+                    "rememberMe": true,
+                    "deviceInfo": {
+                      "deviceId": "device_12345",
+                      "deviceName": "iPhone 13 Pro",
+                      "platform": "ios"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/SuccessResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "accessToken": {
+                              "type": "string",
+                              "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                              "description": "JWT access token for API authentication"
+                            },
+                            "refreshToken": {
+                              "type": "string",
+                              "example": "refresh_token_example",
+                              "description": "Refresh token for obtaining new access tokens"
+                            },
+                            "tokenType": {
+                              "type": "string",
+                              "example": "Bearer",
+                              "description": "Token type for Authorization header"
+                            },
+                            "expiresIn": {
+                              "type": "integer",
+                              "example": 3600,
+                              "description": "Access token expiration time in seconds"
+                            },
+                            "user": {
+                              "$ref": "#/components/schemas/User"
+                            },
+                            "permissions": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              },
+                              "example": ["order_food", "view_menu", "update_profile"]
+                            },
+                            "sessionId": {
+                              "type": "string",
+                              "format": "uuid",
+                              "example": "550e8400-e29b-41d4-a716-446655440000"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "description": "Account locked or requires verification",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "examples": {
+                  "account_locked": {
+                    "summary": "Account Locked",
+                    "value": {
+                      "success": false,
+                      "error": {
+                        "code": "AUTHORIZATION_ERROR",
+                        "message": "Account is temporarily locked due to multiple failed login attempts"
+                      },
+                      "meta": {
+                        "timestamp": "2025-01-21T10:30:00.000Z",
+                        "correlationId": "550e8400-e29b-41d4-a716-446655440000"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Refresh JWT token",
+        "description": "Refresh expired JWT access token using refresh token",
+        "operationId": "refreshToken",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["refreshToken"],
+                "properties": {
+                  "refreshToken": {
+                    "type": "string",
+                    "example": "refresh_token_example",
+                    "description": "Valid refresh token"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Token refreshed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/SuccessResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "accessToken": {
+                              "type": "string",
+                              "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                            },
+                            "tokenType": {
+                              "type": "string",
+                              "example": "Bearer"
+                            },
+                            "expiresIn": {
+                              "type": "integer",
+                              "example": 3600
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "tags": ["Authentication"],
+        "summary": "Get current user profile",
+        "description": "Retrieve authenticated user's profile information and permissions",
+        "operationId": "getCurrentUser",
+        "responses": {
+          "200": {
+            "description": "User profile retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/SuccessResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "allOf": [
+                            { "$ref": "#/components/schemas/User" },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "permissions": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string"
+                                  },
+                                  "example": ["order_food", "view_menu", "update_profile"]
+                                },
+                                "lastLoginAt": {
+                                  "type": "string",
+                                  "format": "date-time",
+                                  "example": "2025-01-21T10:30:00.000Z"
+                                },
+                                "sessionInfo": {
+                                  "type": "object",
+                                  "properties": {
+                                    "sessionId": {
+                                      "type": "string",
+                                      "format": "uuid"
+                                    },
+                                    "deviceInfo": {
+                                      "type": "object",
+                                      "properties": {
+                                        "platform": {
+                                          "type": "string"
+                                        },
+                                        "userAgent": {
+                                          "type": "string"
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "User logout",
+        "description": "Logout user, invalidate session, and clear tokens",
+        "operationId": "logoutUser",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "logoutFromAllDevices": {
+                    "type": "boolean",
+                    "default": false,
+                    "example": true,
+                    "description": "Whether to logout from all devices"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Logout successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/SuccessResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "message": {
+                              "type": "string",
+                              "example": "Successfully logged out"
+                            },
+                            "sessionsClosed": {
+                              "type": "integer",
+                              "example": 1,
+                              "description": "Number of sessions that were closed"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/auth/change-password": {
+      "patch": {
+        "tags": ["Authentication"],
+        "summary": "Change user password",
+        "description": "Change authenticated user's password with current password verification",
+        "operationId": "changePassword",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["currentPassword", "newPassword", "confirmPassword"],
+                "properties": {
+                  "currentPassword": {
+                    "type": "string",
+                    "example": "CurrentPass123!",
+                    "description": "User's current password"
+                  },
+                  "newPassword": {
+                    "type": "string",
+                    "minLength": 8,
+                    "maxLength": 128,
+                    "pattern": "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])[\\w!@#$%^&*]{8,128}$",
+                    "example": "NewSecurePass123!",
+                    "description": "New password meeting security requirements"
+                  },
+                  "confirmPassword": {
+                    "type": "string",
+                    "example": "NewSecurePass123!",
+                    "description": "Confirmation of new password (must match newPassword)"
+                  },
+                  "logoutFromOtherDevices": {
+                    "type": "boolean",
+                    "default": true,
+                    "example": true,
+                    "description": "Whether to logout from other devices after password change"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password changed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/SuccessResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "message": {
+                              "type": "string",
+                              "example": "Password changed successfully"
+                            },
+                            "requiresReauth": {
+                              "type": "boolean",
+                              "example": false,
+                              "description": "Whether user needs to re-authenticate"
+                            },
+                            "sessionsInvalidated": {
+                              "type": "integer",
+                              "example": 3,
+                              "description": "Number of other sessions that were invalidated"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/auth/profile": {
+      "patch": {
+        "tags": ["Authentication"],
+        "summary": "Update user profile",
+        "description": "Update authenticated user's profile information",
+        "operationId": "updateUserProfile",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "firstName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 50,
+                    "example": "John",
+                    "description": "Updated first name"
+                  },
+                  "lastName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 50,
+                    "example": "Doe",
+                    "description": "Updated last name"
+                  },
+                  "phone": {
+                    "type": "string",
+                    "pattern": "^[+]?[1-9]?[0-9]{7,15}$",
+                    "example": "+1234567890",
+                    "description": "Updated phone number"
+                  },
+                  "preferences": {
+                    "type": "object",
+                    "properties": {
+                      "language": {
+                        "type": "string",
+                        "enum": ["en", "hi", "ta", "es", "fr"],
+                        "example": "en",
+                        "description": "Preferred language"
+                      },
+                      "notifications": {
+                        "type": "boolean",
+                        "example": true,
+                        "description": "Whether to receive notifications"
+                      },
+                      "theme": {
+                        "type": "string",
+                        "enum": ["light", "dark"],
+                        "example": "light",
+                        "description": "UI theme preference"
+                      },
+                      "timezone": {
+                        "type": "string",
+                        "example": "Asia/Kolkata",
+                        "description": "User's timezone"
+                      }
+                    }
+                  },
+                  "dietaryRestrictions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": ["vegetarian", "vegan", "gluten-free", "lactose-free", "nut-free"]
+                    },
+                    "example": ["vegetarian", "gluten-free"],
+                    "description": "User's dietary restrictions"
+                  },
+                  "allergens": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": ["nuts", "dairy", "gluten", "soy", "eggs", "shellfish", "fish"]
+                    },
+                    "example": ["nuts", "dairy"],
+                    "description": "User's known allergens"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Profile updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/SuccessResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/User"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    }
+  }
+}

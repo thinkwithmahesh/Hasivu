@@ -1,0 +1,81 @@
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { LoginForm } from '@/components/auth/LoginForm';
+import { AuthLayout } from '@/components/auth/AuthLayout';
+import { useAuth } from '@/contexts/auth-context';
+import type { LoginFormData } from '@/components/auth/schemas';
+
+// Helper function to get dashboard URL based on role
+function getDashboardUrl(role: string): string {
+  const dashboardUrls: Record<string, string> = {
+    admin: '/dashboard/admin',
+    parent: '/dashboard/parent',
+    student: '/dashboard/student',
+    vendor: '/dashboard/vendor',
+    kitchen_staff: '/dashboard/kitchen',
+    kitchen: '/dashboard/kitchen',
+    school_admin: '/dashboard/school-admin',
+  };
+
+  return dashboardUrls[role] || '/dashboard/parent';
+}
+
+export default function SafariLoginPage() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { login, user: _user } = useAuth();
+  const router = useRouter();
+
+  const handleLogin = async (data: LoginFormData & { role: string }) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const success = await login({
+        email: data.email,
+        password: data.password,
+      });
+
+      if (success) {
+        // Wait for auth state to update, then use the user's actual role for redirect
+        setTimeout(() => {
+          // Fallback to using form role; auth state comes from cookie-backed endpoints.
+          const dashboardUrl = getDashboardUrl(data.role);
+          router.push(dashboardUrl);
+        }, 100);
+      } else {
+        setError('Invalid email or password. Please try again.');
+      }
+    } catch (err: any) {
+      setError(err.message || 'An unexpected error occurred. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSocialLogin = async (_provider: 'google' | 'facebook') => {
+    setError(null);
+    // TODO: Implement social login
+    setError('Social login is coming soon!');
+  };
+
+  return (
+    <AuthLayout
+      title="Welcome Back to HASIVU (Safari)"
+      subtitle="Safari-compatible login for school meal account"
+    >
+      <LoginForm
+        onSubmit={handleLogin}
+        onSocialLogin={handleSocialLogin}
+        isLoading={isLoading}
+        error={error}
+        className="w-full max-w-md"
+        showRoleSelection={true}
+        defaultRole="parent"
+        showSocialLogin={false}
+      />
+    </AuthLayout>
+  );
+}

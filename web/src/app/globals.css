@@ -1,0 +1,389 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* ─── HASIVU DESIGN SYSTEM TOKENS ─── */
+    --hasivu-primary: #b04a00;
+    --hasivu-primary-light: #fff8f0;
+    --hasivu-primary-dark: #7a3a08;
+    --hasivu-secondary: #207040;
+    --hasivu-secondary-light: #f0faf4;
+    --hasivu-accent: #ff9a3c;
+    --hasivu-success: #22c55e;
+    --hasivu-danger: #ef4444;
+    --hasivu-warning: #f59e0b;
+    --hasivu-info: #3b82f6;
+    --hasivu-bg-warm: #faf9f7;
+    --hasivu-bg-cool: #f2efe9;
+    --hasivu-text-primary: #141210;
+    --hasivu-text-secondary: #5c554a;
+    --hasivu-text-tertiary: #736d64;
+    --hasivu-surface: #ffffff;
+    --hasivu-surface-elevated: #f2efe9;
+    --hasivu-border: #e4dfd6;
+    --font-ui: var(--font-body);
+
+    /* ─── SPACING (4px base grid) ─── */
+    --space-unit: 4px;
+
+    /* ─── BORDER RADIUS: "Soft & Friendly" ─── */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+    --radius-pill: 9999px;
+
+    /* ─── SHADOWS: "Warm Depth" (orange-tinted for brand warmth) ─── */
+    --shadow-card: 0 1px 3px rgba(224, 112, 32, 0.04), 0 1px 2px rgba(0, 0, 0, 0.03);
+    --shadow-card-hover: 0 4px 12px rgba(224, 112, 32, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
+    --shadow-elevated: 0 8px 24px rgba(224, 112, 32, 0.10), 0 4px 8px rgba(0, 0, 0, 0.04);
+    --shadow-modal: 0 16px 48px rgba(20, 18, 16, 0.16);
+
+    /* Legacy aliases */
+    --shadow-sm: 0 1px 3px rgba(20, 18, 16, 0.06);
+    --shadow-md: 0 4px 12px rgba(20, 18, 16, 0.08);
+    --shadow-lg: 0 8px 32px rgba(20, 18, 16, 0.12);
+    --shadow-glow: 0 16px 48px rgba(20, 18, 16, 0.16);
+
+    /* ─── shadcn/ui System Colors (mapped to Hasivu brand) ─── */
+    --background: 30 100% 97%;          /* warm off-white: #FAF9F7 */
+    --foreground: 20 10% 8%;            /* warm near-black: #141210 */
+    --card: 0 0% 100%;                  /* white */
+    --card-foreground: 20 10% 8%;       /* warm near-black */
+    --popover: 0 0% 100%;
+    --popover-foreground: 20 10% 8%;
+    --primary: 24 78% 50%;              /* hasivu orange: #E07020 */
+    --primary-foreground: 0 0% 100%;    /* white */
+    --secondary: 150 56% 28%;           /* hasivu green: #207040 */
+    --secondary-foreground: 0 0% 100%;
+    --muted: 30 20% 94%;                /* warm muted: #F2EFE9 */
+    --muted-foreground: 28 11% 32%;     /* text-secondary: #5C554A */
+    --accent: 30 100% 62%;              /* warm accent: #FF9A3C */
+    --accent-foreground: 20 10% 8%;
+    --destructive: 0 84% 60%;           /* danger red: #EF4444 */
+    --destructive-foreground: 0 0% 100%;
+    --border: 30 14% 87%;               /* warm border: #E4DFD6 */
+    --input: 30 14% 87%;
+    --ring: 24 78% 50%;                 /* matches primary for focus rings */
+    --radius: 0.75rem;
+  }
+
+  /* ─── DARK MODE: Hasivu-branded (warm dark, not cold blue) ─── */
+  .dark {
+    --background: 24 12% 6%;            /* warm dark: #141210 */
+    --foreground: 30 20% 94%;           /* warm light: #F2EFE9 */
+    --card: 24 10% 10%;                 /* dark surface */
+    --card-foreground: 30 20% 94%;
+    --popover: 24 10% 10%;
+    --popover-foreground: 30 20% 94%;
+    --primary: 24 78% 55%;              /* slightly brighter orange in dark */
+    --primary-foreground: 24 12% 6%;
+    --secondary: 150 50% 35%;           /* brighter green in dark */
+    --secondary-foreground: 0 0% 100%;
+    --muted: 24 8% 16%;                 /* warm dark muted */
+    --muted-foreground: 28 10% 60%;
+    --accent: 30 90% 55%;               /* warm accent in dark */
+    --accent-foreground: 24 12% 6%;
+    --destructive: 0 62% 45%;           /* softer red in dark */
+    --destructive-foreground: 0 0% 100%;
+    --border: 24 8% 20%;                /* warm dark border */
+    --input: 24 8% 20%;
+    --ring: 24 78% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  /* Unified focus style — always uses hasivu primary orange */
+  *:focus-visible {
+    outline: 2px solid var(--hasivu-primary);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Enhanced focus for interactive elements */
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  a:focus-visible {
+    outline: 2px solid var(--hasivu-primary);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(224, 112, 32, 0.15);
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* ─── HASIVU INTERACTION UTILITIES ─── */
+
+/* Default interactive transition */
+.hasivu-interactive {
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Button press spring */
+.hasivu-press:active {
+  transform: scale(0.97);
+  transition: transform 100ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Card hover lift */
+.hasivu-card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card-hover);
+}
+
+/* Page entrance */
+.hasivu-fade-in {
+  animation: fade-in-up 300ms cubic-bezier(0, 0, 0.2, 1) both;
+}
+
+/* ─── KEYFRAME ANIMATIONS ─── */
+
+@keyframes fade-in-up {
+  0% {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes caret-blink {
+  0%,
+  70%,
+  100% {
+    opacity: 1;
+  }
+  20%,
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes marquee-vertical {
+  0% {
+    transform: translateY(0%);
+  }
+  100% {
+    transform: translateY(-100%);
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes pulse-slow {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes gradient-x {
+  0%,
+  100% {
+    transform: translateX(0%);
+  }
+  50% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes spin-slow {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* ─── ANIMATION UTILITY CLASSES ─── */
+.animate-caret-blink {
+  animation: caret-blink 1s ease-out infinite;
+}
+
+.animate-marquee {
+  animation: marquee 25s linear infinite;
+}
+
+.animate-marquee-vertical {
+  animation: marquee-vertical 25s linear infinite;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 3s linear infinite;
+}
+
+/* ─── CUSTOM SCROLLBAR (warm-tinted) ─── */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--hasivu-bg-cool);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--hasivu-primary), var(--hasivu-secondary));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, var(--hasivu-primary-dark), var(--hasivu-secondary));
+}
+
+/* ─── GLASS MORPHISM ─── */
+.glass {
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.glass-dark {
+  background: rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ─── SHADOWS ─── */
+.shadow-soft {
+  box-shadow:
+    0 2px 15px -3px rgba(0, 0, 0, 0.07),
+    0 10px 20px -2px rgba(0, 0, 0, 0.04);
+}
+
+.shadow-medium {
+  box-shadow:
+    0 4px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.shadow-large {
+  box-shadow:
+    0 10px 40px -10px rgba(0, 0, 0, 0.1),
+    0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.shadow-3xl {
+  box-shadow: 0 35px 60px -12px rgba(0, 0, 0, 0.25);
+}
+
+/* ─── GRADIENT TEXT ─── */
+.gradient-text {
+  background: linear-gradient(135deg, var(--hasivu-primary), var(--hasivu-secondary), var(--hasivu-accent));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ─── SELECTION ─── */
+::selection {
+  background-color: var(--hasivu-primary);
+  color: white;
+}
+
+/* ─── REDUCED MOTION — blanket guard (WCAG / vestibular safety) ─── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ─── HIGH CONTRAST MODE ─── */
+@media (prefers-contrast: high) {
+  :root {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
+    --primary: 0 0% 100%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 0 0% 10%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 0 0% 10%;
+    --muted-foreground: 0 0% 70%;
+    --accent: 0 0% 10%;
+    --accent-foreground: 0 0% 100%;
+    --border: 0 0% 50%;
+    --input: 0 0% 20%;
+    --ring: 0 0% 100%;
+  }
+
+  /* Ensure borders are visible in high contrast */
+  * {
+    border-color: currentColor !important;
+  }
+
+  /* Enhance focus visibility */
+  *:focus-visible {
+    outline: 3px solid white !important;
+    outline-offset: 2px !important;
+  }
+}
+
+/* ─── DARK MODE AUTO (prefers-color-scheme) ─── */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: 24 12% 6%;
+    --foreground: 30 20% 94%;
+    --card: 24 10% 10%;
+    --card-foreground: 30 20% 94%;
+    --primary: 24 78% 55%;
+    --primary-foreground: 24 12% 6%;
+    --secondary: 150 50% 35%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 24 8% 16%;
+    --muted-foreground: 28 10% 60%;
+    --accent: 30 90% 55%;
+    --accent-foreground: 24 12% 6%;
+    --destructive: 0 62% 45%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 24 8% 20%;
+    --input: 24 8% 20%;
+    --ring: 24 78% 55%;
+  }
+}

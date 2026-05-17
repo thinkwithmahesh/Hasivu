@@ -1,0 +1,700 @@
+/**
+ * Comprehensive Authentication Routes Test Suite
+ * Tests for the fixed authentication implementation
+ */
+
+jest.mock('../../../src/utils/logger', () => ({
+  logger: {
+    info: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+    debug: jest.fn(),
+    fatal: jest.fn(),
+    integration: jest.fn(),
+    logFunctionStart: jest.fn(),
+    logFunctionEnd: jest.fn(),
+    setLogLevel: jest.fn(),
+  },
+}));
+
+jest.mock('../../../src/config/environment', () => ({
+  config: {
+    server: { nodeEnv: 'test' },
+    jwt: {
+      secret: 'test-jwt-secret-key-32chars-minimum!!!',
+      refreshSecret: 'test-refresh-secret-key-32chars-min!!',
+      issuer: 'hasivu-test',
+      audience: 'hasivu-users-test',
+      expiresIn: '15m',
+      refreshExpiresIn: '7d',
+    },
+    redis: { url: 'redis://127.0.0.1:6379/0' },
+  },
+}));
+
+jest.mock('ioredis', () =>
+  jest.fn().mockImplementation(() => ({
+    on: jest.fn(),
+    setex: jest.fn().mockResolvedValue('OK'),
+    get: jest.fn().mockResolvedValue(null),
+    del: jest.fn().mockResolvedValue(1),
+    quit: jest.fn().mockResolvedValue('OK'),
+    ping: jest.fn().mockResolvedValue('PONG'),
+    connect: jest.fn().mockResolvedValue(undefined),
+  }))
+);
+
+jest.mock('../../../src/services/auth.service');
+jest.mock('../../../src/services/database.service');
+
+import request from 'supertest';
+import express from 'express';
+import { authRouter } from '../../../src/routes/auth.routes';
+import { authService } from '../../../src/services/auth.service';
+import { DatabaseService } from '../../../src/services/database.service';
+
+const app = express();
+app.use(express.json());
+app.use('/auth', authRouter);
+
+describe('Authentication Routes - Comprehensive Tests', () => {
+  let mockAuthService: jest.Mocked<typeof authService>;
+  let mockDatabaseService: any;
+
+  beforeEach(() => {
+    mockAuthService = authService as jest.Mocked<typeof authService>;
+    mockDatabaseService = {
+      client: {
+        user: {
+          findUnique: jest.fn(),
+          create: jest.fn(),
+          update: jest.fn()
+        }
+      },
+      transaction: jest.fn()
+    };
+    (DatabaseService as any).client = mockDatabaseService.client;
+    (DatabaseService as any).transaction = mockDatabaseService.transaction;
+
+    jest.clearAllMocks();
+  });
+
+  describe('POST /auth/register', () => {
+    const validRegistrationData = {
+      email: 'test@example.com',
+      password: 'SecurePassword123!',
+      passwordConfirm: 'SecurePassword123!',
+      firstName: 'John',
+      lastName: 'Doe',
+      role: 'parent'
+    };
+
+    test('should successfully register a new user', async () => {
+      // Mock implementations
+      mockDatabaseService.client.user.findUnique.mockResolvedValue(null);
+      mockAuthService.validatePassword.mockReturnValue({
+        valid: true,
+        isValid: true,
+        message: 'Strong password',
+        score: 85,
+        requirements: {
+          length: true,
+          uppercase: true,
+          lowercase: true,
+          numbers: true,
+          symbols: true
+        }
+      });
+      mockAuthService.hashPassword.mockResolvedValue('hashedPassword123');
+      
+      const mockUser = {
+        id: 'user-123',
+        email: 'test@example.com',
+        firstName: 'John',
+        lastName: 'Doe',
+        fullName: 'John Doe',
+        role: 'parent',
+        status: 'active',
+        preferences: {
+          language: 'en',
+          timezone: 'UTC',
+          dateFormat: 'DD/MM/YYYY',
+          currency: 'INR',
+          notifications: {
+            email: true,
+            push: true,
+            sms: false,
+            whatsapp: false,
+            inApp: true,
+            digest: false,
+            frequency: 'immediate',
+            quietHours: {
+              enabled: false
+            }
+          },
+          theme: 'light',
+          accessibility: {
+            highContrast: false,
+            largeText: false,
+            reducedMotion: false,
+            screenReader: false
+          }
+        },
+        permissions: ['read:profile', 'write:profile'],
+        metadata: {},
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        lastLoginAt: new Date().toISOString(),
+        emailVerified: true,
+        phoneVerified: false
+      };
+
+      mockDatabaseService.transaction.mockImplementation(async (callback: any) => {
+        return await callback({
+          user: {
+            create: jest.fn().mockResolvedValue(mockUser)
+          },
+          role: {
+            findUnique: jest.fn().mockResolvedValue({ id: 'role-1', name: 'parent' })
+          },
+          userRoleAssignment: {
+            create: jest.fn().mockResolvedValue({})
+          }
+        });
+      });
+
+      const response = await request(app)
+        .post('/auth/register')
+        .send(validRegistrationData)
+        .expect(201);
+
+      expect(response.body).toMatchObject({
+        success: true,
+        message: 'User registered successfully',
+        user: {
+          id: 'user-123',
+          email: 'test@example.com',
+          firstName: 'John',
+          lastName: 'Doe',
+          role: 'parent'
+        }
+      });
+
+      expect(mockAuthService.validatePassword).toHaveBeenCalledWith('SecurePassword123!');
+      expect(mockAuthService.hashPassword).toHaveBeenCalledWith('SecurePassword123!');
+    });
+
+    test('should reject registration with missing required fields', async () => {
+      const invalidData = {
+        email: 'test@example.com',
+        password: 'password123'
+        // Missing firstName, lastName, passwordConfirm
+      };
+
+      const response = await request(app)
+        .post('/auth/register')
+        .send(invalidData)
+        .expect(400);
+
+      expect(response.body.message).toContain('All required fields must be provided');
+    });
+
+    test('should reject registration with mismatched passwords', async () => {
+      const invalidData = {
+        ...validRegistrationData,
+        passwordConfirm: 'DifferentPassword123!'
+      };
+
+      const response = await request(app)
+        .post('/auth/register')
+        .send(invalidData)
+        .expect(400);
+
+      expect(response.body.message).toContain('Passwords do not match');
+    });
+
+    test('should reject registration with invalid email format', async () => {
+      const invalidData = {
+        ...validRegistrationData,
+        email: 'invalid-email'
+      };
+
+      const response = await request(app)
+        .post('/auth/register')
+        .send(invalidData)
+        .expect(400);
+
+      expect(response.body.message).toContain('Invalid email format');
+    });
+
+    test('should reject registration with weak password', async () => {
+      mockAuthService.validatePassword.mockReturnValue({
+        valid: false,
+        isValid: false,
+        message: 'Password must be at least 8 characters',
+        errors: ['Password must be at least 8 characters'],
+        score: 25,
+        requirements: {
+          length: false,
+          uppercase: true,
+          lowercase: true,
+          numbers: false,
+          symbols: false
+        }
+      });
+
+      const invalidData = {
+        ...validRegistrationData,
+        password: '123',
+        passwordConfirm: '123'
+      };
+
+      const response = await request(app)
+        .post('/auth/register')
+        .send(invalidData)
+        .expect(400);
+
+      expect(response.body.message).toContain('Password validation failed');
+    });
+
+    test('should reject registration with existing email', async () => {
+      mockAuthService.validatePassword.mockReturnValue({
+        valid: true,
+        isValid: true,
+        message: 'Strong password',
+        score: 85,
+        requirements: {
+          length: true,
+          uppercase: true,
+          lowercase: true,
+          numbers: true,
+          symbols: true
+        }
+      });
+      mockDatabaseService.client.user.findUnique.mockResolvedValue({
+        id: 'existing-user',
+        email: 'test@example.com'
+      });
+
+      const response = await request(app)
+        .post('/auth/register')
+        .send(validRegistrationData)
+        .expect(409);
+
+      expect(response.body.message).toContain('User with this email already exists');
+    });
+  });
+
+  describe('POST /auth/login', () => {
+    const validLoginData = {
+      email: 'test@example.com',
+      password: 'SecurePassword123!',
+      rememberMe: false
+    };
+
+    test('should successfully login with valid credentials', async () => {
+      const mockAuthResult = {
+        success: true,
+        user: {
+          id: 'user-123',
+          email: 'test@example.com',
+          phone: '+1234567890',
+          cognitoUserId: 'cognito-123',
+          passwordHash: '$2a$12$hash',
+          firstName: 'John',
+          lastName: 'Doe',
+          role: 'parent',
+          status: 'active',
+          schoolId: 'school-123',
+          avatar: null,
+          bio: null,
+          dateOfBirth: null,
+          address: null,
+          emergencyContact: null,
+          parentalConsent: true,
+          termsAcceptedAt: new Date(),
+          lastLoginAt: new Date(),
+          isActive: true,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          deviceTokens: '[]',
+          preferences: '{}',
+          metadata: '{}',
+          permissions: ['read:profile', 'write:profile']
+        },
+        tokens: {
+          accessToken: 'access-token-123',
+          refreshToken: 'refresh-token-123',
+          expiresIn: 3600
+        },
+        sessionId: 'session-123',
+        schoolId: 'school-123'
+      };
+
+      mockAuthService.authenticate.mockResolvedValue(mockAuthResult as any);
+      mockAuthService.updateSessionActivity.mockResolvedValue(undefined);
+
+      const response = await request(app)
+        .post('/auth/login')
+        .send(validLoginData)
+        .expect(200);
+
+      expect(response.body).toMatchObject({
+        success: true,
+        message: 'Login successful',
+      });
+      expect(response.body.user).toMatchObject({
+        id: 'user-123',
+        email: 'test@example.com',
+        firstName: 'John',
+        lastName: 'Doe',
+        role: 'parent',
+      });
+      const cookies = response.headers['set-cookie'];
+      expect(cookies).toBeDefined();
+      const cookieArray = Array.isArray(cookies) ? cookies : [cookies];
+      expect(cookieArray.some((c: string) => c.includes('accessToken'))).toBe(true);
+      expect(cookieArray.some((c: string) => c.includes('refreshToken'))).toBe(true);
+
+      expect(mockAuthService.authenticate).toHaveBeenCalledWith({
+        email: 'test@example.com',
+        password: 'SecurePassword123!',
+        rememberMe: false,
+        userAgent: expect.any(String),
+        ipAddress: expect.any(String)
+      });
+    });
+
+    test('should reject login with missing credentials', async () => {
+      const response = await request(app)
+        .post('/auth/login')
+        .send({ email: 'test@example.com' })
+        .expect(400);
+
+      expect(response.body.message).toContain('Email and password are required');
+    });
+
+    test('should handle authentication service errors', async () => {
+      mockAuthService.authenticate.mockRejectedValue(new Error('Invalid credentials'));
+
+      const response = await request(app)
+        .post('/auth/login')
+        .send(validLoginData)
+        .expect(500);
+
+      expect(response.body.message).toContain('Invalid credentials');
+    });
+  });
+
+  describe('POST /auth/refresh', () => {
+    test('should successfully refresh token', async () => {
+      const mockRefreshResult = {
+        accessToken: 'new-access-token-123'
+      };
+
+      mockAuthService.refreshToken.mockResolvedValue(mockRefreshResult);
+
+      const response = await request(app)
+        .post('/auth/refresh')
+        .send({ refreshToken: 'valid-refresh-token' })
+        .expect(200);
+
+      expect(response.body).toMatchObject({
+        success: true,
+        message: 'Token refreshed successfully',
+      });
+      const cookies = response.headers['set-cookie'];
+      const cookieArray = Array.isArray(cookies) ? cookies : [cookies];
+      expect(
+        cookieArray.some((c: string) => c.includes('new-access-token-123'))
+      ).toBe(true);
+    });
+
+    test('should reject refresh without token', async () => {
+      const response = await request(app)
+        .post('/auth/refresh')
+        .send({})
+        .expect(400);
+
+      expect(response.body.message).toContain('Refresh token is required');
+    });
+  });
+
+  describe('POST /auth/validate-password', () => {
+    test('should validate strong password', async () => {
+      mockAuthService.validatePassword.mockReturnValue({
+        valid: true,
+        isValid: true,
+        message: 'Strong password',
+        score: 5,
+        requirements: {
+          length: true,
+          uppercase: true,
+          lowercase: true,
+          numbers: true,
+          symbols: true
+        }
+      });
+
+      const response = await request(app)
+        .post('/auth/validate-password')
+        .send({ password: 'StrongPassword123!' })
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.validation.valid).toBe(true);
+    });
+
+    test('should validate weak password', async () => {
+      mockAuthService.validatePassword.mockReturnValue({
+        valid: false,
+        isValid: false,
+        message: 'Password too weak',
+        score: 2,
+        requirements: {
+          length: false,
+          uppercase: false,
+          lowercase: true,
+          numbers: true,
+          symbols: false
+        }
+      });
+
+      const response = await request(app)
+        .post('/auth/validate-password')
+        .send({ password: '123' })
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.validation.valid).toBe(false);
+    });
+
+    test('should reject validation without password', async () => {
+      const response = await request(app)
+        .post('/auth/validate-password')
+        .send({})
+        .expect(400);
+
+      expect(response.body.message).toContain('Password is required');
+    });
+  });
+
+  describe('POST /auth/forgot-password', () => {
+    beforeEach(() => {
+      mockAuthService.forgotPassword.mockResolvedValue({
+        success: true,
+        message: 'If an account with this email exists, a password reset link has been sent',
+      });
+    });
+
+    test('should handle password reset request', async () => {
+      mockDatabaseService.client.user.findUnique.mockResolvedValue({
+        id: 'user-123',
+        email: 'test@example.com'
+      });
+
+      const response = await request(app)
+        .post('/auth/forgot-password')
+        .send({ email: 'test@example.com' })
+        .expect(200);
+
+      expect(response.body).toMatchObject({
+        success: true,
+        message: 'If an account with this email exists, a password reset link has been sent'
+      });
+    });
+
+    test('should handle password reset for non-existent user', async () => {
+      mockDatabaseService.client.user.findUnique.mockResolvedValue(null);
+
+      const response = await request(app)
+        .post('/auth/forgot-password')
+        .send({ email: 'nonexistent@example.com' })
+        .expect(200);
+
+      // Should still return success to prevent email enumeration
+      expect(response.body.success).toBe(true);
+    });
+
+    test('should reject password reset without email', async () => {
+      const response = await request(app)
+        .post('/auth/forgot-password')
+        .send({})
+        .expect(400);
+
+      expect(response.body.message).toContain('Email is required');
+    });
+  });
+
+  describe('Security Headers and Cookies', () => {
+    test('should set secure HTTP-only cookies on login', async () => {
+      const mockAuthResult = {
+        success: true,
+        user: { 
+          id: 'user-123', 
+          email: 'test@example.com',
+          role: 'parent',
+          permissions: ['read:profile', 'write:profile'],
+          schoolId: 'school-123'
+        },
+        tokens: {
+          accessToken: 'access-token-123',
+          refreshToken: 'refresh-token-123',
+          expiresIn: 3600
+        },
+        sessionId: 'session-123',
+        schoolId: 'school-123'
+      };
+
+      mockAuthService.authenticate.mockResolvedValue(mockAuthResult as any);
+      mockAuthService.updateSessionActivity.mockResolvedValue(undefined);
+
+      const response = await request(app)
+        .post('/auth/login')
+        .send({
+          email: 'test@example.com',
+          password: 'password123',
+          rememberMe: true
+        });
+
+      // Check that cookies are set
+      const cookies = response.headers['set-cookie'];
+      expect(cookies).toBeDefined();
+      const cookieArray = Array.isArray(cookies) ? cookies : [cookies];
+      expect(cookieArray.some((cookie: string) => cookie.includes('accessToken'))).toBe(true);
+      expect(cookieArray.some((cookie: string) => cookie.includes('refreshToken'))).toBe(true);
+      expect(cookieArray.some((cookie: string) => cookie.includes('HttpOnly'))).toBe(true);
+    });
+  });
+
+  describe('Rate Limiting and Security', () => {
+    test('should handle multiple registration attempts', async () => {
+      // This would require rate limiting middleware to be fully tested
+      // For now, ensure the endpoint handles rapid requests gracefully
+      mockDatabaseService.client.user.findUnique.mockResolvedValue(null);
+      mockAuthService.validatePassword.mockReturnValue({
+        valid: true,
+        isValid: true,
+        message: 'Strong',
+        score: 90,
+        requirements: {
+          length: true,
+          uppercase: true,
+          lowercase: true,
+          numbers: true,
+          symbols: true
+        }
+      });
+      mockAuthService.hashPassword.mockResolvedValue('hashedPassword');
+
+      mockDatabaseService.transaction.mockImplementation(async (callback: any) => {
+        return await callback({
+          user: {
+            create: jest.fn().mockImplementation(({ data }: { data: Record<string, unknown> }) =>
+              Promise.resolve({
+                id: 'user-new',
+                email: data.email,
+                firstName: data.firstName,
+                lastName: data.lastName,
+                role: data.role || 'parent',
+              })
+            ),
+          },
+          role: { findUnique: jest.fn().mockResolvedValue({ id: 'role-1', name: 'parent' }) },
+          userRoleAssignment: { create: jest.fn().mockResolvedValue({}) },
+        });
+      });
+
+      const requests = Array(5).fill(null).map(() =>
+        request(app)
+          .post('/auth/register')
+          .send({
+            email: `test${Math.random()}@example.com`,
+            password: 'SecurePassword123!',
+            passwordConfirm: 'SecurePassword123!',
+            firstName: 'Test',
+            lastName: 'User'
+          })
+      );
+
+      const responses = await Promise.all(requests);
+      
+      // All should either succeed or fail gracefully
+      responses.forEach(response => {
+        expect([201, 400, 409, 429]).toContain(response.status);
+      });
+    });
+  });
+
+  describe('Input Sanitization', () => {
+    test('should handle SQL injection attempts in email', async () => {
+      const maliciousData = {
+        email: "'; DROP TABLE users; --",
+        password: 'SecurePassword123!',
+        passwordConfirm: 'SecurePassword123!',
+        firstName: 'John',
+        lastName: 'Doe'
+      };
+
+      const response = await request(app)
+        .post('/auth/register')
+        .send(maliciousData);
+
+      // Should fail due to email validation
+      expect(response.status).toBe(400);
+      expect(response.body.message).toContain('Invalid email format');
+    });
+
+    test('should handle XSS attempts in user data', async () => {
+      const xssData = {
+        email: 'test@example.com',
+        password: 'SecurePassword123!',
+        passwordConfirm: 'SecurePassword123!',
+        firstName: '<script>alert("xss")</script>',
+        lastName: '<img src=x onerror=alert("xss")>'
+      };
+
+      mockDatabaseService.client.user.findUnique.mockResolvedValue(null);
+      mockAuthService.validatePassword.mockReturnValue({
+        valid: true,
+        isValid: true,
+        message: 'Strong',
+        score: 90,
+        requirements: {
+          length: true,
+          uppercase: true,
+          lowercase: true,
+          numbers: true,
+          symbols: true
+        }
+      });
+      mockAuthService.hashPassword.mockResolvedValue('hashedPassword');
+
+      // Mock successful user creation
+      const mockUser = {
+        id: 'user-123',
+        email: 'test@example.com',
+        firstName: '<script>alert("xss")</script>', // Should be sanitized in real implementation
+        lastName: '<img src=x onerror=alert("xss")>',
+        role: 'parent',
+        createdAt: new Date()
+      };
+
+      mockDatabaseService.transaction.mockImplementation(async (callback: any) => {
+        return await callback({
+          user: { create: jest.fn().mockResolvedValue(mockUser) },
+          role: { findUnique: jest.fn().mockResolvedValue({ id: 'role-1', name: 'parent' }) },
+          userRoleAssignment: { create: jest.fn().mockResolvedValue({}) }
+        });
+      });
+
+      const response = await request(app)
+        .post('/auth/register')
+        .send(xssData);
+
+      // Should succeed but data should be sanitized
+      expect(response.status).toBe(201);
+      // In a real implementation, the response should contain sanitized data
+    });
+  });
+});

@@ -1,0 +1,714 @@
+// Story 7.3: Enterprise Multi-School Management Platform
+// Multi-tenant architecture with hierarchical administrative management
+
+// =====================================================
+// ENTERPRISE MULTI-TENANT MODELS
+// =====================================================
+
+model District {
+  id                    String    @id @default(uuid())
+  name                  String
+  code                  String    @unique // Unique district code
+  region                String    // State/Region identifier
+  
+  // Contact information
+  address               String    @default("{}")
+  city                  String?
+  state                 String?
+  postalCode            String?   @map("postal_code")
+  phone                 String?
+  email                 String?
+  website               String?
+  
+  // Administrative details
+  superintendentName    String?   @map("superintendent_name")
+  superintendentEmail   String?   @map("superintendent_email")
+  superintendentPhone   String?   @map("superintendent_phone")
+  
+  // Subscription and billing
+  subscriptionTier      String    @default("BASIC") @map("subscription_tier") // BASIC, PREMIUM, ENTERPRISE
+  billingType           String    @default("CONSOLIDATED") @map("billing_type") // CONSOLIDATED, INDIVIDUAL
+  
+  // Enterprise configuration
+  configuration         String    @default("{}") // District-wide settings
+  branding              String    @default("{}") // White-label customization
+  
+  // Multi-tenant isolation
+  tenantId              String    @unique @map("tenant_id") // For data isolation
+  dataIsolationLevel    String    @default("SCHEMA") @map("data_isolation_level") // SCHEMA, ROW, DATABASE
+  
+  // Status and activity
+  isActive              Boolean   @default(true) @map("is_active")
+  isOnboarded           Boolean   @default(false) @map("is_onboarded")
+  onboardedAt           DateTime? @map("onboarded_at")
+  
+  // Timestamps
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  // Relations
+  schools               School[]  @relation("DistrictSchools")
+  users                 User[]    @relation("DistrictUsers")
+  billingRecords        DistrictBilling[]
+  analyticsReports      DistrictAnalytics[]
+  complianceReports     ComplianceReport[]
+  auditLogs             DistrictAuditLog[]
+  slaReports            SLAReport[]
+
+  @@index([code])
+  @@index([tenantId])
+  @@index([isActive])
+  @@index([onboardedAt])
+  @@map("districts")
+}
+
+model Tenant {
+  id                    String    @id @default(uuid())
+  
+  // Tenant identification
+  tenantId              String    @unique @map("tenant_id")
+  tenantName            String    @map("tenant_name")
+  tenantType            String    @map("tenant_type") // DISTRICT, SCHOOL, ENTERPRISE
+  
+  // Data isolation configuration
+  isolationLevel        String    @map("isolation_level") // SCHEMA, ROW, DATABASE
+  databaseSchema        String?   @map("database_schema")
+  
+  // Resource limits and quotas
+  maxSchools            Int       @default(100) @map("max_schools")
+  maxStudents           Int       @default(50000) @map("max_students")
+  maxStorageGB          Int       @default(1000) @map("max_storage_gb")
+  maxAPICallsPerDay     Int       @default(100000) @map("max_api_calls_per_day")
+  
+  // Current usage tracking
+  currentSchools        Int       @default(0) @map("current_schools")
+  currentStudents       Int       @default(0) @map("current_students")
+  currentStorageGB      Float     @default(0) @map("current_storage_gb")
+  currentAPICallsToday  Int       @default(0) @map("current_api_calls_today")
+  
+  // Billing configuration
+  billingConfiguration  String    @default("{}") @map("billing_configuration")
+  
+  // Status and compliance
+  status                String    @default("ACTIVE") // ACTIVE, SUSPENDED, TERMINATED
+  complianceStatus      String    @default("COMPLIANT") @map("compliance_status")
+  
+  // Timestamps
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @default(now()) @updatedAt @map("updated_at")
+  lastAccessAt          DateTime? @map("last_access_at")
+
+  // Relations
+  tenantUsers           TenantUser[]
+  resourceUsage         TenantResourceUsage[]
+  backups               TenantBackup[]
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([tenantType])
+  @@map("tenants")
+}
+
+model TenantUser {
+  id              String   @id @default(uuid())
+  tenantId        String   @map("tenant_id")
+  userId          String   @map("user_id")
+  
+  // Tenant-specific role
+  tenantRole      String   @map("tenant_role") // SUPER_ADMIN, DISTRICT_ADMIN, SCHOOL_ADMIN
+  permissions     String   @default("[]") // JSON array of permissions
+  
+  // Access control
+  isActive        Boolean  @default(true) @map("is_active")
+  grantedAt       DateTime @default(now()) @map("granted_at")
+  grantedBy       String   @map("granted_by")
+  revokedAt       DateTime? @map("revoked_at")
+  
+  // Timestamps
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at")
+
+  // Relations
+  tenant          Tenant   @relation(fields: [tenantId], references: [tenantId])
+
+  @@unique([tenantId, userId])
+  @@index([tenantId])
+  @@index([userId])
+  @@map("tenant_users")
+}
+
+// =====================================================
+// ADMINISTRATIVE HIERARCHY MODELS
+// =====================================================
+
+model AdministrativeRole {
+  id                    String    @id @default(uuid())
+  
+  // Role identification
+  roleName              String    @map("role_name")
+  roleCode              String    @unique @map("role_code")
+  roleLevel             Int       @map("role_level") // 1=Super Admin, 2=District Admin, 3=School Admin, 4=Staff
+  
+  // Permissions and capabilities
+  permissions           String    @default("[]") // JSON array of permission codes
+  systemCapabilities    String    @default("[]") @map("system_capabilities") // JSON array
+  
+  // Hierarchy relationships
+  parentRoleId          String?   @map("parent_role_id")
+  canDelegateToRoles    String    @default("[]") @map("can_delegate_to_roles") // JSON array of role IDs
+  
+  // Administrative scope
+  administrativeScope   String    @map("administrative_scope") // SYSTEM, DISTRICT, SCHOOL, DEPARTMENT
+  
+  // Role configuration
+  description           String?
+  isSystemRole          Boolean   @default(false) @map("is_system_role")
+  isActive              Boolean   @default(true) @map("is_active")
+  
+  // Timestamps
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  // Relations
+  parentRole            AdministrativeRole? @relation("RoleHierarchy", fields: [parentRoleId], references: [id])
+  childRoles            AdministrativeRole[] @relation("RoleHierarchy")
+  userRoleAssignments   UserAdministrativeRole[]
+
+  @@index([roleCode])
+  @@index([roleLevel])
+  @@index([parentRoleId])
+  @@map("administrative_roles")
+}
+
+model UserAdministrativeRole {
+  id                    String    @id @default(uuid())
+  userId                String    @map("user_id")
+  roleId                String    @map("role_id")
+  
+  // Assignment scope
+  scopeType             String    @map("scope_type") // SYSTEM, DISTRICT, SCHOOL
+  scopeId               String?   @map("scope_id") // District ID or School ID
+  
+  // Assignment details
+  assignedBy            String    @map("assigned_by")
+  assignedAt            DateTime  @default(now()) @map("assigned_at")
+  expiresAt             DateTime? @map("expires_at")
+  
+  // Status
+  isActive              Boolean   @default(true) @map("is_active")
+  isTemporary           Boolean   @default(false) @map("is_temporary")
+  
+  // Delegation tracking
+  isDelegated           Boolean   @default(false) @map("is_delegated")
+  delegatedBy           String?   @map("delegated_by")
+  delegationReason      String?   @map("delegation_reason")
+  
+  // Timestamps
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  // Relations
+  role                  AdministrativeRole @relation(fields: [roleId], references: [id])
+
+  @@unique([userId, roleId, scopeType, scopeId])
+  @@index([userId])
+  @@index([roleId])
+  @@index([scopeType, scopeId])
+  @@map("user_administrative_roles")
+}
+
+// =====================================================
+// ENTERPRISE BILLING & FINANCIAL MODELS
+// =====================================================
+
+model DistrictBilling {
+  id                    String    @id @default(uuid())
+  districtId            String    @map("district_id")
+  
+  // Billing period
+  billingPeriod         String    @map("billing_period") // MONTHLY, QUARTERLY, ANNUAL
+  billingStartDate      DateTime  @map("billing_start_date")
+  billingEndDate        DateTime  @map("billing_end_date")
+  
+  // Financial details
+  baseAmount            Float     @map("base_amount")
+  schoolCount           Int       @map("school_count")
+  studentCount          Int       @map("student_count")
+  
+  // Usage-based billing
+  apiCallsCount         Int       @map("api_calls_count")
+  storageUsageGB        Float     @map("storage_usage_gb")
+  overage               Float     @default(0)
+  
+  // Pricing tiers
+  tierDiscounts         Float     @default(0) @map("tier_discounts")
+  volumeDiscounts       Float     @default(0) @map("volume_discounts")
+  
+  // Total calculations
+  subtotal              Float
+  taxAmount             Float     @map("tax_amount")
+  totalAmount           Float     @map("total_amount")
+  currency              String    @default("INR")
+  
+  // Payment tracking
+  invoiceId             String?   @map("invoice_id")
+  paymentStatus         String    @default("PENDING") @map("payment_status")
+  paidAt                DateTime? @map("paid_at")
+  dueDate               DateTime  @map("due_date")
+  
+  // Timestamps
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  // Relations
+  district              District  @relation(fields: [districtId], references: [id])
+
+  @@index([districtId])
+  @@index([billingPeriod])
+  @@index([paymentStatus])
+  @@map("district_billing")
+}
+
+// =====================================================
+// ENTERPRISE ANALYTICS & REPORTING MODELS
+// =====================================================
+
+model DistrictAnalytics {
+  id                    String    @id @default(uuid())
+  districtId            String    @map("district_id")
+  
+  // Report metadata
+  reportDate            DateTime  @map("report_date")
+  reportType            String    @map("report_type") // DAILY, WEEKLY, MONTHLY, QUARTERLY
+  
+  // School metrics
+  totalSchools          Int       @map("total_schools")
+  activeSchools         Int       @map("active_schools")
+  newSchoolsAdded       Int       @map("new_schools_added")
+  
+  // Student metrics
+  totalStudents         Int       @map("total_students")
+  activeStudents        Int       @map("active_students")
+  newStudentEnrollments Int       @map("new_student_enrollments")
+  
+  // Financial metrics
+  totalRevenue          Float     @map("total_revenue")
+  averageRevenuePerSchool Float   @map("average_revenue_per_school")
+  paymentSuccessRate    Float     @map("payment_success_rate")
+  
+  // System usage metrics
+  totalAPIRequests      Int       @map("total_api_requests")
+  averageResponseTime   Float     @map("average_response_time")
+  systemUptime          Float     @map("system_uptime")
+  
+  // Nutrition program metrics
+  totalMealsPlanned     Int       @map("total_meals_planned")
+  nutritionalCompliance Float     @map("nutritional_compliance")
+  averageHealthScore    Float     @map("average_health_score")
+  
+  // Parent engagement metrics
+  parentAppUsage        Float     @map("parent_app_usage")
+  notificationEngagement Float    @map("notification_engagement")
+  feedbackResponses     Int       @map("feedback_responses")
+  
+  // Advanced metrics (JSON)
+  detailedMetrics       String    @default("{}") @map("detailed_metrics")
+  trendsAnalysis        String    @default("{}") @map("trends_analysis")
+  predictions           String    @default("{}") // AI-generated predictions
+  
+  // Timestamps
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  // Relations
+  district              District  @relation(fields: [districtId], references: [id])
+
+  @@unique([districtId, reportDate, reportType])
+  @@index([districtId])
+  @@index([reportDate])
+  @@map("district_analytics")
+}
+
+// =====================================================
+// COMPLIANCE & AUDIT MODELS
+// =====================================================
+
+model ComplianceReport {
+  id                    String    @id @default(uuid())
+  districtId            String    @map("district_id")
+  
+  // Compliance details
+  complianceType        String    @map("compliance_type") // NUTRITION, PRIVACY, FINANCIAL, SECURITY
+  complianceStandard    String    @map("compliance_standard") // GDPR, CCPA, PCI_DSS, USDA
+  
+  // Report metadata
+  reportPeriod          String    @map("report_period")
+  generatedDate         DateTime  @map("generated_date")
+  reportedBy            String    @map("reported_by")
+  
+  // Compliance status
+  overallStatus         String    @map("overall_status") // COMPLIANT, NON_COMPLIANT, PARTIAL
+  complianceScore       Float     @map("compliance_score") // 0-100%
+  
+  // Detailed findings
+  compliantItems        String    @default("[]") @map("compliant_items")
+  nonCompliantItems     String    @default("[]") @map("non_compliant_items")
+  recommendedActions    String    @default("[]") @map("recommended_actions")
+  
+  // Risk assessment
+  riskLevel             String    @map("risk_level") // LOW, MEDIUM, HIGH, CRITICAL
+  potentialImpact       String    @map("potential_impact")
+  
+  // Follow-up tracking
+  remediated            Boolean   @default(false)
+  remediationDate       DateTime? @map("remediation_date")
+  remediatedBy          String?   @map("remediated_by")
+  
+  // Document attachments
+  reportDocumentUrl     String?   @map("report_document_url")
+  evidenceDocuments     String    @default("[]") @map("evidence_documents")
+  
+  // Timestamps
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  // Relations
+  district              District  @relation(fields: [districtId], references: [id])
+
+  @@index([districtId])
+  @@index([complianceType])
+  @@index([overallStatus])
+  @@index([generatedDate])
+  @@map("compliance_reports")
+}
+
+model DistrictAuditLog {
+  id                    String    @id @default(uuid())
+  districtId            String    @map("district_id")
+  
+  // Audit event details
+  eventType             String    @map("event_type") // USER_ACTION, SYSTEM_EVENT, ADMIN_ACTION
+  eventCategory         String    @map("event_category") // SECURITY, FINANCIAL, OPERATIONAL, COMPLIANCE
+  eventAction           String    @map("event_action") // CREATE, UPDATE, DELETE, ACCESS, LOGIN
+  
+  // Entity information
+  entityType            String    @map("entity_type") // USER, SCHOOL, PAYMENT, MENU
+  entityId              String    @map("entity_id")
+  entityName            String?   @map("entity_name")
+  
+  // User and session info
+  userId                String?   @map("user_id")
+  userRole              String?   @map("user_role")
+  sessionId             String?   @map("session_id")
+  ipAddress             String?   @map("ip_address")
+  userAgent             String?   @map("user_agent")
+  
+  // Change details
+  previousValue         String?   @map("previous_value")
+  newValue              String?   @map("new_value")
+  changeDescription     String?   @map("change_description")
+  
+  // Risk and impact
+  riskLevel             String    @default("LOW") @map("risk_level") // LOW, MEDIUM, HIGH, CRITICAL
+  businessImpact        String?   @map("business_impact")
+  
+  // Additional metadata
+  metadata              String    @default("{}") // Additional context
+  correlationId         String?   @map("correlation_id") // For tracking related events
+  
+  // Timestamps
+  eventTimestamp        DateTime  @default(now()) @map("event_timestamp")
+  createdAt             DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  district              District  @relation(fields: [districtId], references: [id])
+
+  @@index([districtId])
+  @@index([eventType])
+  @@index([eventCategory])
+  @@index([userId])
+  @@index([eventTimestamp])
+  @@index([correlationId])
+  @@map("district_audit_logs")
+}
+
+// =====================================================
+// SLA MONITORING & REPORTING MODELS
+// =====================================================
+
+model SLAReport {
+  id                    String    @id @default(uuid())
+  districtId            String    @map("district_id")
+  
+  // SLA period
+  reportPeriod          String    @map("report_period") // DAILY, WEEKLY, MONTHLY
+  periodStart           DateTime  @map("period_start")
+  periodEnd             DateTime  @map("period_end")
+  
+  // Availability metrics
+  systemUptime          Float     @map("system_uptime") // Percentage
+  plannedDowntime       Float     @map("planned_downtime") // Minutes
+  unplannedDowntime     Float     @map("unplanned_downtime") // Minutes
+  
+  // Performance metrics
+  averageResponseTime   Float     @map("average_response_time") // Milliseconds
+  p95ResponseTime       Float     @map("p95_response_time")
+  p99ResponseTime       Float     @map("p99_response_time")
+  
+  // Error rates
+  errorRate             Float     @map("error_rate") // Percentage
+  criticalErrorCount    Int       @map("critical_error_count")
+  warningCount          Int       @map("warning_count")
+  
+  // SLA compliance
+  uptimeSLA             Float     @default(99.9) @map("uptime_sla")
+  responseSLA           Float     @default(2000) @map("response_sla") // Milliseconds
+  uptimeCompliant       Boolean   @map("uptime_compliant")
+  responseCompliant     Boolean   @map("response_compliant")
+  
+  // Incident tracking
+  incidentCount         Int       @map("incident_count")
+  criticalIncidents     Int       @map("critical_incidents")
+  averageResolutionTime Float     @map("average_resolution_time") // Minutes
+  
+  // Customer impact
+  affectedUsers         Int       @map("affected_users")
+  affectedSchools       Int       @map("affected_schools")
+  lostTransactions      Int       @map("lost_transactions")
+  
+  // Remediation and improvements
+  remedialActions       String    @default("[]") @map("remedial_actions")
+  improvementPlans      String    @default("[]") @map("improvement_plans")
+  
+  // Timestamps
+  generatedAt           DateTime  @default(now()) @map("generated_at")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  // Relations
+  district              District  @relation(fields: [districtId], references: [id])
+
+  @@unique([districtId, reportPeriod, periodStart])
+  @@index([districtId])
+  @@index([periodStart])
+  @@index([uptimeCompliant])
+  @@map("sla_reports")
+}
+
+// =====================================================
+// DISASTER RECOVERY & BACKUP MODELS
+// =====================================================
+
+model TenantBackup {
+  id                    String    @id @default(uuid())
+  tenantId              String    @map("tenant_id")
+  
+  // Backup metadata
+  backupType            String    @map("backup_type") // FULL, INCREMENTAL, DIFFERENTIAL
+  backupScope           String    @map("backup_scope") // DATABASE, FILES, COMPLETE
+  
+  // Backup details
+  backupSize            BigInt    @map("backup_size") // Bytes
+  backupLocation        String    @map("backup_location") // S3 path or storage location
+  encryptionKey         String?   @map("encryption_key") // Encrypted backup key reference
+  
+  // Status tracking
+  status                String    @default("INITIATED") // INITIATED, IN_PROGRESS, COMPLETED, FAILED
+  startTime             DateTime  @map("start_time")
+  endTime               DateTime? @map("end_time")
+  duration              Int?      // Duration in seconds
+  
+  // Verification
+  verificationStatus    String    @default("PENDING") @map("verification_status") // PENDING, VERIFIED, FAILED
+  checksum              String?   // Backup integrity checksum
+  
+  // Restoration capability
+  isRestorable          Boolean   @default(false) @map("is_restorable")
+  retentionUntil        DateTime  @map("retention_until")
+  
+  // Error handling
+  errorMessage          String?   @map("error_message")
+  retryCount            Int       @default(0) @map("retry_count")
+  
+  // Timestamps
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  // Relations
+  tenant                Tenant    @relation(fields: [tenantId], references: [tenantId])
+  restoreJobs           TenantRestoreJob[]
+
+  @@index([tenantId])
+  @@index([backupType])
+  @@index([status])
+  @@index([startTime])
+  @@map("tenant_backups")
+}
+
+model TenantRestoreJob {
+  id                    String    @id @default(uuid())
+  backupId              String    @map("backup_id")
+  tenantId              String    @map("tenant_id")
+  
+  // Restore details
+  restoreType           String    @map("restore_type") // FULL, PARTIAL, POINT_IN_TIME
+  targetTenantId        String?   @map("target_tenant_id") // For cross-tenant restore
+  
+  // Job status
+  status                String    @default("INITIATED") // INITIATED, IN_PROGRESS, COMPLETED, FAILED
+  startTime             DateTime  @map("start_time")
+  endTime               DateTime? @map("end_time")
+  
+  // Validation and verification
+  preRestoreValidation  Boolean   @default(false) @map("pre_restore_validation")
+  postRestoreValidation Boolean   @default(false) @map("post_restore_validation")
+  
+  // Progress tracking
+  progressPercentage    Float     @default(0) @map("progress_percentage")
+  currentPhase          String?   @map("current_phase")
+  
+  // Error handling
+  errorMessage          String?   @map("error_message")
+  rollbackRequired      Boolean   @default(false) @map("rollback_required")
+  rollbackCompleted     Boolean   @default(false) @map("rollback_completed")
+  
+  // Approval workflow
+  requestedBy           String    @map("requested_by")
+  approvedBy            String?   @map("approved_by")
+  approvedAt            DateTime? @map("approved_at")
+  
+  // Timestamps
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  // Relations
+  backup                TenantBackup @relation(fields: [backupId], references: [id])
+
+  @@index([backupId])
+  @@index([tenantId])
+  @@index([status])
+  @@index([requestedBy])
+  @@map("tenant_restore_jobs")
+}
+
+// =====================================================
+// RESOURCE MONITORING & SCALING MODELS
+// =====================================================
+
+model TenantResourceUsage {
+  id                    String    @id @default(uuid())
+  tenantId              String    @map("tenant_id")
+  
+  // Measurement period
+  measurementTime       DateTime  @map("measurement_time")
+  measurementType       String    @map("measurement_type") // REAL_TIME, HOURLY, DAILY
+  
+  // Compute resources
+  cpuUtilization        Float     @map("cpu_utilization") // Percentage
+  memoryUtilization     Float     @map("memory_utilization") // Percentage
+  
+  // Storage resources
+  databaseSize          BigInt    @map("database_size") // Bytes
+  fileStorageSize       BigInt    @map("file_storage_size") // Bytes
+  totalStorageSize      BigInt    @map("total_storage_size") // Bytes
+  
+  // Network resources
+  inboundTrafficGB      Float     @map("inbound_traffic_gb")
+  outboundTrafficGB     Float     @map("outbound_traffic_gb")
+  
+  // API usage
+  apiRequestsCount      Int       @map("api_requests_count")
+  errorRequestsCount    Int       @map("error_requests_count")
+  averageResponseTime   Float     @map("average_response_time") // Milliseconds
+  
+  // Concurrent usage
+  activeConnections     Int       @map("active_connections")
+  concurrentUsers       Int       @map("concurrent_users")
+  peakConcurrentUsers   Int       @map("peak_concurrent_users")
+  
+  // Resource limits and alerts
+  nearLimitWarnings     String    @default("[]") @map("near_limit_warnings") // JSON array
+  limitsExceeded        String    @default("[]") @map("limits_exceeded") // JSON array
+  
+  // Cost implications
+  estimatedCost         Float     @map("estimated_cost")
+  costCurrency          String    @default("INR") @map("cost_currency")
+  
+  // Timestamps
+  createdAt             DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  tenant                Tenant    @relation(fields: [tenantId], references: [tenantId])
+
+  @@unique([tenantId, measurementTime, measurementType])
+  @@index([tenantId])
+  @@index([measurementTime])
+  @@map("tenant_resource_usage")
+}
+
+// Update existing School model to include district relationship
+// This extends the existing School model in the main schema
+model SchoolExtension {
+  id                    String    @id @default(uuid())
+  schoolId              String    @unique @map("school_id")
+  
+  // District relationship
+  districtId            String?   @map("district_id")
+  
+  // Multi-tenant isolation
+  tenantId              String    @map("tenant_id")
+  
+  // Enterprise features
+  enterpriseFeatures    String    @default("[]") @map("enterprise_features") // JSON array
+  customBranding        String    @default("{}") @map("custom_branding")
+  
+  // Onboarding status
+  onboardingStatus      String    @default("PENDING") @map("onboarding_status") // PENDING, IN_PROGRESS, COMPLETED
+  onboardingProgress    Float     @default(0) @map("onboarding_progress") // 0-100%
+  onboardedBy           String?   @map("onboarded_by")
+  onboardedAt           DateTime? @map("onboarded_at")
+  
+  // Auto-scaling configuration
+  scalingPolicy         String    @default("{}") @map("scaling_policy")
+  resourceLimits        String    @default("{}") @map("resource_limits")
+  
+  // Timestamps
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  @@index([districtId])
+  @@index([tenantId])
+  @@index([onboardingStatus])
+  @@map("school_extensions")
+}
+
+// Update existing User model to include district relationship
+// This extends the existing User model in the main schema
+model UserExtension {
+  id                    String    @id @default(uuid())
+  userId                String    @unique @map("user_id")
+  
+  // District relationship
+  districtId            String?   @map("district_id")
+  
+  // Multi-tenant access
+  tenantId              String?   @map("tenant_id")
+  crossTenantAccess     String    @default("[]") @map("cross_tenant_access") // JSON array of tenant IDs
+  
+  // Enterprise permissions
+  enterprisePermissions String    @default("[]") @map("enterprise_permissions")
+  managedSchools        String    @default("[]") @map("managed_schools") // JSON array of school IDs
+  
+  // Activity tracking
+  lastDistrictAccess    DateTime? @map("last_district_access")
+  currentTenant         String?   @map("current_tenant")
+  
+  // Timestamps
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  @@index([districtId])
+  @@index([tenantId])
+  @@index([userId])
+  @@map("user_extensions")
+}

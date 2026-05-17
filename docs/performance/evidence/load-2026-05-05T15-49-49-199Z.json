@@ -1,0 +1,27 @@
+{
+  "generatedAt": "2026-05-05T15:49:49.198Z",
+  "testType": "load",
+  "environment": "development",
+  "target": "http://localhost:3000/health",
+  "gitSha": "local",
+  "branch": "local",
+  "summary": {
+    "totalRequests": 120,
+    "successfulRequests": 0,
+    "failedRequests": 120,
+    "successRatePct": 0,
+    "errorRatePct": 100,
+    "p50Ms": 5,
+    "p95Ms": 10,
+    "p99Ms": 18,
+    "avgMs": 5.975,
+    "minMs": 2,
+    "maxMs": 44,
+    "totalDurationMs": 3714,
+    "throughputRps": 32.31017770597738,
+    "statusCounts": {
+      "429": 120
+    },
+    "topErrors": []
+  }
+}

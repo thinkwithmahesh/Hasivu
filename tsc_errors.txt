@@ -1,0 +1,361 @@
+src/routes/auth.routes.ts(59,58): error TS2551: Property 'isValid' does not exist on type '{ valid: boolean; message: string; score: number; requirements?: { uppercase: boolean; lowercase: boolean; numbers: boolean; symbols: boolean; length: boolean; } | undefined; errors?: string[] | undefined; }'. Did you mean 'valid'?
+src/services/order.service.ts(93,69): error TS2576: Property 'findMany' does not exist on type 'MenuItemRepository'. Did you mean to access the static member 'MenuItemRepository.findMany' instead?
+src/services/order.service.ts(144,62): error TS2576: Property 'findById' does not exist on type 'MenuItemRepository'. Did you mean to access the static member 'MenuItemRepository.findById' instead?
+tests/__mocks__/payment-mocks.ts(7,65): error TS2307: Cannot find module '../../src/types/api.types' or its corresponding type declarations.
+tests/integration/epic5-payment-ecosystem.test.ts(80,8): error TS2307: Cannot find module '../../src/types/api.types' or its corresponding type declarations.
+tests/integration/epic5-payment-ecosystem.test.ts(212,47): error TS2339: Property 'getInstance' does not exist on type 'typeof SubscriptionService'.
+tests/integration/epic5-payment-ecosystem.test.ts(213,37): error TS2339: Property 'getInstance' does not exist on type 'typeof InvoiceService'.
+tests/integration/epic5-payment-ecosystem.test.ts(214,41): error TS2339: Property 'getInstance' does not exist on type 'typeof AnalyticsService'.
+tests/integration/epic5-payment-ecosystem.test.ts(216,33): error TS2339: Property 'getInstance' does not exist on type 'typeof AuditService'.
+tests/integration/health-system.integration.test.ts(165,27): error TS2339: Property 'services' does not exist on type 'Promise<{ overallStatus: any; services: { name: string; status: any; }[]; timestamp: number; }>'.
+tests/integration/health-system.integration.test.ts(173,56): error TS2554: Expected 0 arguments, but got 2.
+tests/integration/health-system.integration.test.ts(263,56): error TS2554: Expected 0 arguments, but got 2.
+tests/integration/menu-system.integration.test.ts(131,44): error TS2339: Property 'create' does not exist on type 'typeof MenuItemService'.
+tests/integration/menu-system.integration.test.ts(159,36): error TS2339: Property 'create' does not exist on type 'typeof MenuItemService'.
+tests/integration/menu-system.integration.test.ts(169,36): error TS2339: Property 'create' does not exist on type 'typeof MenuItemService'.
+tests/integration/menu-system.integration.test.ts(177,36): error TS2339: Property 'create' does not exist on type 'typeof MenuItemService'.
+tests/integration/menu-system.integration.test.ts(198,44): error TS2339: Property 'create' does not exist on type 'typeof MenuItemService'.
+tests/integration/menu-system.integration.test.ts(220,36): error TS2339: Property 'create' does not exist on type 'typeof MenuItemService'.
+tests/integration/menu-system.integration.test.ts(233,36): error TS2339: Property 'create' does not exist on type 'typeof MenuItemService'.
+tests/integration/menu-system.integration.test.ts(246,44): error TS2339: Property 'findById' does not exist on type 'typeof MenuItemService'.
+tests/integration/menu-system.integration.test.ts(265,44): error TS2339: Property 'findById' does not exist on type 'typeof MenuItemService'.
+tests/integration/menu-system.integration.test.ts(277,44): error TS2339: Property 'findBySchool' does not exist on type 'typeof MenuItemService'.
+tests/integration/menu-system.integration.test.ts(295,44): error TS2339: Property 'findByCategory' does not exist on type 'typeof MenuItemService'.
+tests/integration/menu-system.integration.test.ts(317,44): error TS2339: Property 'search' does not exist on type 'typeof MenuItemService'.
+tests/integration/menu-system.integration.test.ts(340,44): error TS2339: Property 'search' does not exist on type 'typeof MenuItemService'.
+tests/integration/menu-system.integration.test.ts(352,44): error TS2339: Property 'search' does not exist on type 'typeof MenuItemService'.
+tests/integration/menu-system.integration.test.ts(379,27): error TS2339: Property 'nameExists' does not exist on type 'typeof MenuItemRepository'.
+tests/integration/menu-system.integration.test.ts(416,27): error TS2339: Property 'nameExists' does not exist on type 'typeof MenuItemRepository'.
+tests/integration/menu-system.integration.test.ts(522,43): error TS2339: Property 'getMenuStats' does not exist on type 'typeof MenuItemService'.
+tests/integration/menu-system.integration.test.ts(548,43): error TS2339: Property 'getMenuStats' does not exist on type 'typeof MenuItemService'.
+tests/integration/menu-system.integration.test.ts(569,43): error TS2339: Property 'getMenuStats' does not exist on type 'typeof MenuItemService'.
+tests/integration/menu-system.integration.test.ts(681,27): error TS2339: Property 'nameExists' does not exist on type 'typeof MenuItemRepository'.
+tests/integration/menu-system.integration.test.ts(698,27): error TS2339: Property 'nameExists' does not exist on type 'typeof MenuItemRepository'.
+tests/integration/menu-system.integration.test.ts(834,27): error TS2339: Property 'nameExists' does not exist on type 'typeof MenuItemRepository'.
+tests/integration/menu-system.integration.test.ts(867,27): error TS2339: Property 'nameExists' does not exist on type 'typeof MenuItemRepository'.
+tests/integration/menu-system.integration.test.ts(881,27): error TS2339: Property 'nameExists' does not exist on type 'typeof MenuItemRepository'.
+tests/integration/menu/dailyMenu.service.integration.test.ts(37,58): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Error | undefined'.
+tests/integration/menu/dailyMenu.service.integration.test.ts(66,60): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Error | undefined'.
+tests/integration/notification-to-payment-integration.spec.ts(90,27): error TS2673: Constructor of class 'NotificationService' is private and only accessible within the class declaration.
+tests/integration/notification-to-payment-integration.spec.ts(93,20): error TS2674: Constructor of class 'OrderService' is protected and only accessible within the class declaration.
+tests/integration/order-to-payment-flow.spec.ts(88,20): error TS2674: Constructor of class 'OrderService' is protected and only accessible within the class declaration.
+tests/integration/order-to-payment-flow.spec.ts(90,27): error TS2673: Constructor of class 'NotificationService' is private and only accessible within the class declaration.
+tests/integration/user-registration-to-payment.spec.ts(95,27): error TS2673: Constructor of class 'NotificationService' is private and only accessible within the class declaration.
+tests/integration/user-registration-to-payment.spec.ts(97,20): error TS2674: Constructor of class 'OrderService' is protected and only accessible within the class declaration.
+tests/load/payment-performance.test.ts(14,33): error TS2307: Cannot find module '../../src/services/customer.service' or its corresponding type declarations.
+tests/load/payment-performance.test.ts(15,39): error TS2307: Cannot find module '../../src/services/paymentGateway.service' or its corresponding type declarations.
+tests/load/payment-performance.test.ts(18,10): error TS2724: '"../../src/services/rfid.service"' has no exported member named 'RFIDService'. Did you mean 'RfidService'?
+tests/load/payment-performance.test.ts(23,10): error TS2305: Module '"../../src/types"' has no exported member 'PaymentMethod'.
+tests/load/payment-performance.test.ts(188,9): error TS2561: Object literal may only specify known properties, but 'paymentMethodId' does not exist in type '{ orderId: string; amount: number; currency: string; paymentMethod: string; paymentDetails?: any; }'. Did you mean to write 'paymentMethod'?
+tests/load/payment-performance.test.ts(193,21): error TS2339: Property 'payment' does not exist on type '{ success: boolean; data?: { paymentId: string; status: string; } | undefined; error?: { message: string; code: string; } | undefined; }'.
+tests/load/payment-performance.test.ts(205,9): error TS2561: Object literal may only specify known properties, but 'paymentMethodId' does not exist in type '{ orderId: string; amount: number; currency: string; paymentMethod: string; paymentDetails?: any; }'. Did you mean to write 'paymentMethod'?
+tests/load/payment-performance.test.ts(210,21): error TS2339: Property 'message' does not exist on type '{ success: boolean; data?: { paymentId: string; status: string; } | undefined; error?: { message: string; code: string; } | undefined; }'.
+tests/load/payment-performance.test.ts(265,17): error TS2561: Object literal may only specify known properties, but 'paymentMethodId' does not exist in type '{ orderId: string; amount: number; currency: string; paymentMethod: string; paymentDetails?: any; }'. Did you mean to write 'paymentMethod'?
+tests/load/payment-performance.test.ts(308,11): error TS2561: Object literal may only specify known properties, but 'paymentMethodId' does not exist in type '{ orderId: string; amount: number; currency: string; paymentMethod: string; paymentDetails?: any; }'. Did you mean to write 'paymentMethod'?
+tests/load/payment-performance.test.ts(319,60): error TS2339: Property 'payment' does not exist on type '{ success: boolean; data?: { paymentId: string; status: string; } | undefined; error?: { message: string; code: string; } | undefined; }'.
+tests/load/payment-performance.test.ts(325,75): error TS2339: Property 'payment' does not exist on type '{ success: boolean; data?: { paymentId: string; status: string; } | undefined; error?: { message: string; code: string; } | undefined; }'.
+tests/load/payment-performance.test.ts(351,11): error TS2561: Object literal may only specify known properties, but 'paymentMethodId' does not exist in type '{ orderId: string; amount: number; currency: string; paymentMethod: string; paymentDetails?: any; }'. Did you mean to write 'paymentMethod'?
+tests/load/payment-performance.test.ts(382,9): error TS2561: Object literal may only specify known properties, but 'paymentMethodId' does not exist in type '{ orderId: string; amount: number; currency: string; paymentMethod: string; paymentDetails?: any; }'. Did you mean to write 'paymentMethod'?
+tests/load/payment-performance.test.ts(411,11): error TS2561: Object literal may only specify known properties, but 'paymentMethodId' does not exist in type '{ orderId: string; amount: number; currency: string; paymentMethod: string; paymentDetails?: any; }'. Did you mean to write 'paymentMethod'?
+tests/load/payment-performance.test.ts(527,13): error TS2561: Object literal may only specify known properties, but 'paymentMethodId' does not exist in type '{ orderId: string; amount: number; currency: string; paymentMethod: string; paymentDetails?: any; }'. Did you mean to write 'paymentMethod'?
+tests/load/payment-performance.test.ts(559,13): error TS2561: Object literal may only specify known properties, but 'paymentMethodId' does not exist in type '{ orderId: string; amount: number; currency: string; paymentMethod: string; paymentDetails?: any; }'. Did you mean to write 'paymentMethod'?
+tests/load/payment-performance.test.ts(608,13): error TS2561: Object literal may only specify known properties, but 'paymentMethodId' does not exist in type '{ orderId: string; amount: number; currency: string; paymentMethod: string; paymentDetails?: any; }'. Did you mean to write 'paymentMethod'?
+tests/load/payment-performance.test.ts(678,17): error TS2561: Object literal may only specify known properties, but 'paymentMethodId' does not exist in type '{ orderId: string; amount: number; currency: string; paymentMethod: string; paymentDetails?: any; }'. Did you mean to write 'paymentMethod'?
+tests/load/payment-performance.test.ts(732,13): error TS2561: Object literal may only specify known properties, but 'paymentMethodId' does not exist in type '{ orderId: string; amount: number; currency: string; paymentMethod: string; paymentDetails?: any; }'. Did you mean to write 'paymentMethod'?
+tests/security/comprehensive-security.test.ts(25,33): error TS2307: Cannot find module '../../src/services/security.service' or its corresponding type declarations.
+tests/security/comprehensive-security.test.ts(27,31): error TS2307: Cannot find module '../../src/services/crypto.service' or its corresponding type declarations.
+tests/security/comprehensive-security.test.ts(42,19): error TS2673: Constructor of class 'AuthService' is private and only accessible within the class declaration.
+tests/security/comprehensive-security.test.ts(43,25): error TS2673: Constructor of class 'ValidationService' is private and only accessible within the class declaration.
+tests/security/comprehensive-security.test.ts(45,23): error TS2673: Constructor of class 'DatabaseService' is private and only accessible within the class declaration.
+tests/security/comprehensive-security.test.ts(47,22): error TS2673: Constructor of class 'LoggingService' is private and only accessible within the class declaration.
+tests/security/comprehensive-security.test.ts(52,27): error TS2339: Property 'initialize' does not exist on type 'DatabaseService'.
+tests/security/comprehensive-security.test.ts(58,27): error TS2339: Property 'cleanup' does not exist on type 'DatabaseService'.
+tests/security/comprehensive-security.test.ts(93,12): error TS2554: Expected 2 arguments, but got 3.
+tests/security/comprehensive-security.test.ts(95,30): error TS2339: Property 'success' does not exist on type 'void'.
+tests/security/comprehensive-security.test.ts(96,30): error TS2339: Property 'error' does not exist on type 'void'.
+tests/security/comprehensive-security.test.ts(1049,33): error TS2339: Property 'securityIssues' does not exist on type '{ isValid: boolean; missingConfigs: string[]; }'.
+tests/security/comprehensive-security.test.ts(1088,35): error TS2339: Property 'sessionId' does not exist on type 'string'.
+tests/security/comprehensive-security.test.ts(1107,65): error TS2339: Property 'sessionId' does not exist on type 'string'.
+tests/security/comprehensive-security.test.ts(1114,61): error TS2339: Property 'sessionId' does not exist on type 'string'.
+tests/security/comprehensive-security.test.ts(1123,65): error TS2339: Property 'sessionId' does not exist on type 'string'.
+tests/security/comprehensive-security.test.ts(1127,42): error TS2339: Property 'sessionId' does not exist on type 'string'.
+tests/security/comprehensive-security.test.ts(1130,61): error TS2339: Property 'sessionId' does not exist on type 'string'.
+tests/security/comprehensive-security.test.ts(1141,73): error TS2554: Expected 1 arguments, but got 2.
+tests/security/comprehensive-security.test.ts(1142,28): error TS2339: Property 'success' does not exist on type '{ user: { role: string; metadata: string; email: string; id: string; schoolId: string | null; status: string; createdAt: Date; updatedAt: Date; phone: string | null; cognitoUserId: string | null; ... 18 more ...; deviceTokens: string; }; tokens: AuthTokens; }'.
+tests/security/comprehensive-security.test.ts(1843,53): error TS2339: Property 'sanitizePayload' does not exist on type 'ValidationService'.
+tests/unit/auth/auth.routes.test.ts(57,9): error TS2561: Object literal may only specify known properties, but 'isValid' does not exist in type '{ valid: boolean; message: string; score: number; requirements?: { uppercase: boolean; lowercase: boolean; numbers: boolean; symbols: boolean; length: boolean; } | undefined; errors?: string[] | undefined; }'. Did you mean to write 'valid'?
+tests/unit/auth/auth.routes.test.ts(160,9): error TS2561: Object literal may only specify known properties, but 'isValid' does not exist in type '{ valid: boolean; message: string; score: number; requirements?: { uppercase: boolean; lowercase: boolean; numbers: boolean; symbols: boolean; length: boolean; } | undefined; errors?: string[] | undefined; }'. Did you mean to write 'valid'?
+tests/unit/auth/auth.routes.test.ts(228,54): error TS2345: Argument of type '{ success: boolean; user: { id: string; email: string; role: string; permissions: string[]; schoolId: string; }; tokens: { accessToken: string; refreshToken: string; expiresIn: number; }; sessionId: string; schoolId: string; }' is not assignable to parameter of type '{ success: boolean; user?: ({ role: string; metadata: string; email: string; id: string; schoolId: string | null; status: string; createdAt: Date; updatedAt: Date; phone: string | null; ... 19 more ...; deviceTokens: string; } & { ...; }) | undefined; tokens?: AuthTokens | undefined; sessionId?: string | undefined; ...'.
+  Type '{ success: boolean; user: { id: string; email: string; role: string; permissions: string[]; schoolId: string; }; tokens: { accessToken: string; refreshToken: string; expiresIn: number; }; sessionId: string; schoolId: string; }' is not assignable to type '{ success: boolean; user?: ({ role: string; metadata: string; email: string; id: string; schoolId: string | null; status: string; createdAt: Date; updatedAt: Date; phone: string | null; ... 19 more ...; deviceTokens: string; } & { ...; }) | undefined; tokens?: AuthTokens | undefined; sessionId?: string | undefined; }'.
+    Types of property 'user' are incompatible.
+      Type '{ id: string; email: string; role: string; permissions: string[]; schoolId: string; }' is not assignable to type '{ role: string; metadata: string; email: string; id: string; schoolId: string | null; status: string; createdAt: Date; updatedAt: Date; phone: string | null; cognitoUserId: string | null; ... 18 more ...; deviceTokens: string; } & { ...; }'.
+        Type '{ id: string; email: string; role: string; permissions: string[]; schoolId: string; }' is missing the following properties from type '{ role: string; metadata: string; email: string; id: string; schoolId: string | null; status: string; createdAt: Date; updatedAt: Date; phone: string | null; cognitoUserId: string | null; ... 18 more ...; deviceTokens: string; }': metadata, status, createdAt, updatedAt, and 21 more.
+tests/unit/auth/auth.routes.test.ts(307,9): error TS2561: Object literal may only specify known properties, but 'isValid' does not exist in type '{ valid: boolean; message: string; score: number; requirements?: { uppercase: boolean; lowercase: boolean; numbers: boolean; symbols: boolean; length: boolean; } | undefined; errors?: string[] | undefined; }'. Did you mean to write 'valid'?
+tests/unit/auth/auth.routes.test.ts(331,9): error TS2561: Object literal may only specify known properties, but 'isValid' does not exist in type '{ valid: boolean; message: string; score: number; requirements?: { uppercase: boolean; lowercase: boolean; numbers: boolean; symbols: boolean; length: boolean; } | undefined; errors?: string[] | undefined; }'. Did you mean to write 'valid'?
+tests/unit/auth/auth.routes.test.ts(422,54): error TS2345: Argument of type '{ success: boolean; user: { id: string; email: string; role: string; permissions: string[]; schoolId: string; }; tokens: { accessToken: string; refreshToken: string; expiresIn: number; }; sessionId: string; schoolId: string; }' is not assignable to parameter of type '{ success: boolean; user?: ({ role: string; metadata: string; email: string; id: string; schoolId: string | null; status: string; createdAt: Date; updatedAt: Date; phone: string | null; ... 19 more ...; deviceTokens: string; } & { ...; }) | undefined; tokens?: AuthTokens | undefined; sessionId?: string | undefined; ...'.
+  Type '{ success: boolean; user: { id: string; email: string; role: string; permissions: string[]; schoolId: string; }; tokens: { accessToken: string; refreshToken: string; expiresIn: number; }; sessionId: string; schoolId: string; }' is not assignable to type '{ success: boolean; user?: ({ role: string; metadata: string; email: string; id: string; schoolId: string | null; status: string; createdAt: Date; updatedAt: Date; phone: string | null; ... 19 more ...; deviceTokens: string; } & { ...; }) | undefined; tokens?: AuthTokens | undefined; sessionId?: string | undefined; }'.
+    Types of property 'user' are incompatible.
+      Type '{ id: string; email: string; role: string; permissions: string[]; schoolId: string; }' is not assignable to type '{ role: string; metadata: string; email: string; id: string; schoolId: string | null; status: string; createdAt: Date; updatedAt: Date; phone: string | null; cognitoUserId: string | null; ... 18 more ...; deviceTokens: string; } & { ...; }'.
+        Type '{ id: string; email: string; role: string; permissions: string[]; schoolId: string; }' is missing the following properties from type '{ role: string; metadata: string; email: string; id: string; schoolId: string | null; status: string; createdAt: Date; updatedAt: Date; phone: string | null; cognitoUserId: string | null; ... 18 more ...; deviceTokens: string; }': metadata, status, createdAt, updatedAt, and 21 more.
+tests/unit/auth/auth.routes.test.ts(450,9): error TS2561: Object literal may only specify known properties, but 'isValid' does not exist in type '{ valid: boolean; message: string; score: number; requirements?: { uppercase: boolean; lowercase: boolean; numbers: boolean; symbols: boolean; length: boolean; } | undefined; errors?: string[] | undefined; }'. Did you mean to write 'valid'?
+tests/unit/auth/auth.routes.test.ts(515,9): error TS2561: Object literal may only specify known properties, but 'isValid' does not exist in type '{ valid: boolean; message: string; score: number; requirements?: { uppercase: boolean; lowercase: boolean; numbers: boolean; symbols: boolean; length: boolean; } | undefined; errors?: string[] | undefined; }'. Did you mean to write 'valid'?
+tests/unit/functions/auth/auth-complete-suite.test.ts(111,22): error TS2352: Conversion of type 'LoginResponse' to type 'APIGatewayProxyResult' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type 'LoginResponse' is missing the following properties from type 'APIGatewayProxyResult': statusCode, body
+tests/unit/functions/auth/auth-complete-suite.test.ts(111,48): error TS2554: Expected 1 arguments, but got 2.
+tests/unit/functions/auth/auth-complete-suite.test.ts(127,22): error TS2352: Conversion of type 'LoginResponse' to type 'APIGatewayProxyResult' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+tests/unit/functions/auth/auth-complete-suite.test.ts(127,48): error TS2554: Expected 1 arguments, but got 2.
+tests/unit/functions/auth/auth-complete-suite.test.ts(142,22): error TS2352: Conversion of type 'LoginResponse' to type 'APIGatewayProxyResult' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+tests/unit/functions/auth/auth-complete-suite.test.ts(142,48): error TS2554: Expected 1 arguments, but got 2.
+tests/unit/functions/auth/auth-complete-suite.test.ts(157,22): error TS2352: Conversion of type 'LoginResponse' to type 'APIGatewayProxyResult' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+tests/unit/functions/auth/auth-complete-suite.test.ts(157,48): error TS2554: Expected 1 arguments, but got 2.
+tests/unit/functions/auth/auth-complete-suite.test.ts(170,22): error TS2352: Conversion of type 'LoginResponse' to type 'APIGatewayProxyResult' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+tests/unit/functions/auth/auth-complete-suite.test.ts(170,48): error TS2554: Expected 1 arguments, but got 2.
+tests/unit/functions/auth/auth-complete-suite.test.ts(183,22): error TS2352: Conversion of type 'LoginResponse' to type 'APIGatewayProxyResult' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+tests/unit/functions/auth/auth-complete-suite.test.ts(183,48): error TS2554: Expected 1 arguments, but got 2.
+tests/unit/functions/auth/auth-complete-suite.test.ts(200,29): error TS2554: Expected 1 arguments, but got 2.
+tests/unit/functions/auth/auth-complete-suite.test.ts(204,26): error TS2352: Conversion of type 'LoginResponse' to type 'APIGatewayProxyResult' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+tests/unit/functions/auth/auth-complete-suite.test.ts(230,22): error TS2352: Conversion of type 'RegisterResponse' to type 'APIGatewayProxyResult' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type 'RegisterResponse' is missing the following properties from type 'APIGatewayProxyResult': statusCode, body
+tests/unit/functions/auth/auth-complete-suite.test.ts(230,51): error TS2554: Expected 1 arguments, but got 2.
+tests/unit/functions/auth/auth-complete-suite.test.ts(248,22): error TS2352: Conversion of type 'RegisterResponse' to type 'APIGatewayProxyResult' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+tests/unit/functions/auth/auth-complete-suite.test.ts(248,51): error TS2554: Expected 1 arguments, but got 2.
+tests/unit/functions/auth/auth-complete-suite.test.ts(263,22): error TS2352: Conversion of type 'RegisterResponse' to type 'APIGatewayProxyResult' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+tests/unit/functions/auth/auth-complete-suite.test.ts(263,51): error TS2554: Expected 1 arguments, but got 2.
+tests/unit/functions/auth/auth-complete-suite.test.ts(281,22): error TS2352: Conversion of type 'RegisterResponse' to type 'APIGatewayProxyResult' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+tests/unit/functions/auth/auth-complete-suite.test.ts(281,51): error TS2554: Expected 1 arguments, but got 2.
+tests/unit/functions/auth/auth-complete-suite.test.ts(299,22): error TS2352: Conversion of type 'RegisterResponse' to type 'APIGatewayProxyResult' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+tests/unit/functions/auth/auth-complete-suite.test.ts(299,51): error TS2554: Expected 1 arguments, but got 2.
+tests/unit/functions/auth/auth-complete-suite.test.ts(317,22): error TS2352: Conversion of type 'RegisterResponse' to type 'APIGatewayProxyResult' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+tests/unit/functions/auth/auth-complete-suite.test.ts(317,51): error TS2554: Expected 1 arguments, but got 2.
+tests/unit/functions/auth/auth-complete-suite.test.ts(333,22): error TS2352: Conversion of type 'RefreshResponse' to type 'APIGatewayProxyResult' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type 'RefreshResponse' is missing the following properties from type 'APIGatewayProxyResult': statusCode, body
+tests/unit/functions/auth/auth-complete-suite.test.ts(333,50): error TS2554: Expected 1 arguments, but got 2.
+tests/unit/functions/auth/auth-complete-suite.test.ts(347,22): error TS2352: Conversion of type 'RefreshResponse' to type 'APIGatewayProxyResult' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+tests/unit/functions/auth/auth-complete-suite.test.ts(347,50): error TS2554: Expected 1 arguments, but got 2.
+tests/unit/functions/auth/auth-complete-suite.test.ts(361,22): error TS2352: Conversion of type 'RefreshResponse' to type 'APIGatewayProxyResult' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+tests/unit/functions/auth/auth-complete-suite.test.ts(361,50): error TS2554: Expected 1 arguments, but got 2.
+tests/unit/functions/auth/auth-complete-suite.test.ts(373,22): error TS2352: Conversion of type 'RefreshResponse' to type 'APIGatewayProxyResult' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+tests/unit/functions/auth/auth-complete-suite.test.ts(373,50): error TS2554: Expected 1 arguments, but got 2.
+tests/unit/functions/auth/auth-complete-suite.test.ts(389,22): error TS2352: Conversion of type 'LogoutResponse' to type 'APIGatewayProxyResult' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type 'LogoutResponse' is missing the following properties from type 'APIGatewayProxyResult': statusCode, body
+tests/unit/functions/auth/auth-complete-suite.test.ts(389,49): error TS2554: Expected 1 arguments, but got 2.
+tests/unit/functions/auth/auth-complete-suite.test.ts(400,22): error TS2352: Conversion of type 'LogoutResponse' to type 'APIGatewayProxyResult' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+tests/unit/functions/auth/auth-complete-suite.test.ts(400,49): error TS2554: Expected 1 arguments, but got 2.
+tests/unit/functions/auth/auth-complete-suite.test.ts(414,22): error TS2352: Conversion of type 'LogoutResponse' to type 'APIGatewayProxyResult' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+tests/unit/functions/auth/auth-complete-suite.test.ts(414,49): error TS2554: Expected 1 arguments, but got 2.
+tests/unit/functions/auth/auth-complete-suite.test.ts(430,22): error TS2352: Conversion of type 'ProfileResponse' to type 'APIGatewayProxyResult' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type 'ProfileResponse' is missing the following properties from type 'APIGatewayProxyResult': statusCode, body
+tests/unit/functions/auth/auth-complete-suite.test.ts(430,50): error TS2554: Expected 1 arguments, but got 2.
+tests/unit/functions/auth/auth-complete-suite.test.ts(445,22): error TS2352: Conversion of type 'ProfileResponse' to type 'APIGatewayProxyResult' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+tests/unit/functions/auth/auth-complete-suite.test.ts(445,50): error TS2554: Expected 1 arguments, but got 2.
+tests/unit/functions/auth/auth-complete-suite.test.ts(465,22): error TS2352: Conversion of type 'UpdateProfileResponse' to type 'APIGatewayProxyResult' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type 'UpdateProfileResponse' is missing the following properties from type 'APIGatewayProxyResult': statusCode, body
+tests/unit/functions/auth/auth-complete-suite.test.ts(465,56): error TS2554: Expected 1 arguments, but got 2.
+tests/unit/functions/auth/auth-complete-suite.test.ts(483,22): error TS2352: Conversion of type 'UpdateProfileResponse' to type 'APIGatewayProxyResult' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+tests/unit/functions/auth/auth-complete-suite.test.ts(483,56): error TS2554: Expected 1 arguments, but got 2.
+tests/unit/functions/auth/auth-complete-suite.test.ts(499,22): error TS2352: Conversion of type 'UpdateProfileResponse' to type 'APIGatewayProxyResult' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+tests/unit/functions/auth/auth-complete-suite.test.ts(499,56): error TS2554: Expected 1 arguments, but got 2.
+tests/unit/functions/auth/auth-complete-suite.test.ts(519,22): error TS2352: Conversion of type 'ChangePasswordResponse' to type 'APIGatewayProxyResult' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type 'ChangePasswordResponse' is missing the following properties from type 'APIGatewayProxyResult': statusCode, body
+tests/unit/functions/auth/auth-complete-suite.test.ts(519,57): error TS2554: Expected 1 arguments, but got 2.
+tests/unit/functions/auth/auth-complete-suite.test.ts(536,22): error TS2352: Conversion of type 'ChangePasswordResponse' to type 'APIGatewayProxyResult' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+tests/unit/functions/auth/auth-complete-suite.test.ts(536,57): error TS2554: Expected 1 arguments, but got 2.
+tests/unit/functions/auth/auth-complete-suite.test.ts(554,22): error TS2352: Conversion of type 'ChangePasswordResponse' to type 'APIGatewayProxyResult' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+tests/unit/functions/auth/auth-complete-suite.test.ts(554,57): error TS2554: Expected 1 arguments, but got 2.
+tests/unit/functions/auth/auth-complete-suite.test.ts(572,22): error TS2352: Conversion of type 'ChangePasswordResponse' to type 'APIGatewayProxyResult' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+tests/unit/functions/auth/auth-complete-suite.test.ts(572,57): error TS2554: Expected 1 arguments, but got 2.
+tests/unit/functions/auth/auth-complete-suite.test.ts(589,22): error TS2352: Conversion of type 'ChangePasswordResponse' to type 'APIGatewayProxyResult' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+tests/unit/functions/auth/auth-complete-suite.test.ts(589,57): error TS2554: Expected 1 arguments, but got 2.
+tests/unit/functions/auth/auth-complete-suite.test.ts(606,22): error TS2352: Conversion of type 'LoginResponse' to type 'APIGatewayProxyResult' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+tests/unit/functions/auth/auth-complete-suite.test.ts(606,48): error TS2554: Expected 1 arguments, but got 2.
+tests/unit/functions/auth/auth-complete-suite.test.ts(621,22): error TS2352: Conversion of type 'LoginResponse' to type 'APIGatewayProxyResult' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+tests/unit/functions/auth/auth-complete-suite.test.ts(621,48): error TS2554: Expected 1 arguments, but got 2.
+tests/unit/functions/auth/auth-complete-suite.test.ts(644,22): error TS2352: Conversion of type 'LoginResponse' to type 'APIGatewayProxyResult' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+tests/unit/functions/auth/auth-complete-suite.test.ts(644,48): error TS2554: Expected 1 arguments, but got 2.
+tests/unit/functions/auth/auth-complete-suite.test.ts(659,29): error TS2554: Expected 1 arguments, but got 2.
+tests/unit/functions/auth/auth-complete-suite.test.ts(665,17): error TS2352: Conversion of type 'LoginResponse' to type 'APIGatewayProxyResult' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+tests/unit/functions/auth/auth-complete-suite.test.ts(678,22): error TS2352: Conversion of type 'LoginResponse' to type 'APIGatewayProxyResult' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+tests/unit/functions/auth/auth-complete-suite.test.ts(678,48): error TS2554: Expected 1 arguments, but got 2.
+tests/unit/functions/auth/auth-complete-suite.test.ts(692,22): error TS2352: Conversion of type 'LoginResponse' to type 'APIGatewayProxyResult' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+tests/unit/functions/auth/auth-complete-suite.test.ts(692,48): error TS2554: Expected 1 arguments, but got 2.
+tests/unit/functions/auth/auth-complete-suite.test.ts(706,22): error TS2352: Conversion of type 'RegisterResponse' to type 'APIGatewayProxyResult' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+tests/unit/functions/auth/auth-complete-suite.test.ts(706,51): error TS2554: Expected 1 arguments, but got 2.
+tests/unit/functions/auth/auth-complete-suite.test.ts(728,22): error TS2352: Conversion of type 'LoginResponse' to type 'APIGatewayProxyResult' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+tests/unit/functions/auth/auth-complete-suite.test.ts(728,48): error TS2554: Expected 1 arguments, but got 2.
+tests/unit/functions/rfid/create-card.test.ts(8,10): error TS2614: Module '"../../../../src/functions/rfid/create-card"' has no exported member 'createRfidCardHandler'. Did you mean to use 'import createRfidCardHandler from "../../../../src/functions/rfid/create-card"' instead?
+tests/unit/functions/rfid/delivery-verification.test.ts(8,10): error TS2614: Module '"../../../../src/functions/rfid/delivery-verification"' has no exported member 'deliveryVerificationHandler'. Did you mean to use 'import deliveryVerificationHandler from "../../../../src/functions/rfid/delivery-verification"' instead?
+tests/unit/functions/rfid/verify-card.test.ts(8,10): error TS2614: Module '"../../../../src/functions/rfid/verify-card"' has no exported member 'verifyRfidCardHandler'. Did you mean to use 'import verifyRfidCardHandler from "../../../../src/functions/rfid/verify-card"' instead?
+tests/unit/services/auth.service.test.ts(133,19): error TS2673: Constructor of class 'AuthService' is private and only accessible within the class declaration.
+tests/unit/services/auth.service.test.ts(139,48): error TS2345: Argument of type 'string' is not assignable to parameter of type 'void | Promise<void>'.
+tests/unit/services/auth.service.test.ts(140,24): error TS2339: Property 'del' does not exist on type 'MockedObjectDeep<typeof RedisService>'.
+tests/unit/services/auth.service.test.ts(141,24): error TS2339: Property 'exists' does not exist on type 'MockedObjectDeep<typeof RedisService>'.
+tests/unit/services/auth.service.test.ts(447,16): error TS18048: 'result.user' is possibly 'undefined'.
+tests/unit/services/auth.service.test.ts(448,16): error TS18048: 'result.user' is possibly 'undefined'.
+tests/unit/services/auth.service.test.ts(449,16): error TS18048: 'result.user' is possibly 'undefined'.
+tests/unit/services/auth.service.test.ts(450,16): error TS18048: 'result.tokens' is possibly 'undefined'.
+tests/unit/services/auth.service.test.ts(451,23): error TS18048: 'result.tokens' is possibly 'undefined'.
+tests/unit/services/auth.service.test.ts(452,16): error TS18048: 'result.tokens' is possibly 'undefined'.
+tests/unit/services/auth.service.test.ts(453,23): error TS18048: 'result.tokens' is possibly 'undefined'.
+tests/unit/services/auth.service.test.ts(455,16): error TS18048: 'result.tokens' is possibly 'undefined'.
+tests/unit/services/auth.service.test.ts(464,16): error TS18048: 'result.tokens' is possibly 'undefined'.
+tests/unit/services/auth.service.test.ts(520,35): error TS2339: Property 'del' does not exist on type 'MockedObjectDeep<typeof RedisService>'.
+tests/unit/services/auth.service.test.ts(632,35): error TS2339: Property 'del' does not exist on type 'MockedObjectDeep<typeof RedisService>'.
+tests/unit/services/auth.service.test.ts(637,28): error TS2339: Property 'del' does not exist on type 'MockedObjectDeep<typeof RedisService>'.
+tests/unit/services/auth.service.test.ts(651,35): error TS2339: Property 'del' does not exist on type 'MockedObjectDeep<typeof RedisService>'.
+tests/unit/services/auth.service.test.ts(659,35): error TS2339: Property 'del' does not exist on type 'MockedObjectDeep<typeof RedisService>'.
+tests/unit/services/auth.service.test.ts(733,14): error TS18048: 'result.user' is possibly 'undefined'.
+tests/unit/services/auth.service.test.ts(734,14): error TS18048: 'result.user' is possibly 'undefined'.
+tests/unit/services/auth.service.test.ts(735,14): error TS18048: 'result.user' is possibly 'undefined'.
+tests/unit/services/auth.service.test.ts(736,14): error TS18048: 'result.user' is possibly 'undefined'.
+tests/unit/services/auth.service.test.ts(737,14): error TS18048: 'result.user' is possibly 'undefined'.
+tests/unit/services/auth.service.test.ts(752,14): error TS18048: 'result.user' is possibly 'undefined'.
+tests/unit/services/auth.service.test.ts(753,14): error TS18048: 'result.user' is possibly 'undefined'.
+tests/unit/services/auth.service.test.ts(754,14): error TS18048: 'result.user' is possibly 'undefined'.
+tests/unit/services/auth.service.test.ts(755,14): error TS18048: 'result.user' is possibly 'undefined'.
+tests/unit/services/auth.service.test.ts(756,14): error TS18048: 'result.user' is possibly 'undefined'.
+tests/unit/services/auth.service.test.ts(771,14): error TS18048: 'result.user' is possibly 'undefined'.
+tests/unit/services/auth.service.test.ts(772,14): error TS18048: 'result.user' is possibly 'undefined'.
+tests/unit/services/auth.service.test.ts(773,14): error TS18048: 'result.user' is possibly 'undefined'.
+tests/unit/services/auth.service.test.ts(774,14): error TS18048: 'result.user' is possibly 'undefined'.
+tests/unit/services/auth.service.test.ts(789,14): error TS18048: 'result.user' is possibly 'undefined'.
+tests/unit/services/auth.service.test.ts(790,14): error TS18048: 'result.user' is possibly 'undefined'.
+tests/unit/services/auth.service.test.ts(791,14): error TS18048: 'result.user' is possibly 'undefined'.
+tests/unit/services/auth.service.test.ts(792,14): error TS18048: 'result.user' is possibly 'undefined'.
+tests/unit/services/auth.service.test.ts(807,14): error TS18048: 'result.user' is possibly 'undefined'.
+tests/unit/services/auth.service.test.ts(857,20): error TS2673: Constructor of class 'AuthService' is private and only accessible within the class declaration.
+tests/unit/services/menu.service.test.ts(202,9): error TS2353: Object literal may only specify known properties, and 'ingredients' does not exist in type 'CreateMenuItemInput'.
+tests/unit/services/menu.service.test.ts(228,33): error TS2339: Property 'nameExists' does not exist on type 'MockedClass<typeof MenuItemRepository>'.
+tests/unit/services/menu.service.test.ts(235,39): error TS2339: Property 'nameExists' does not exist on type 'MockedClass<typeof MenuItemRepository>'.
+tests/unit/services/menu.service.test.ts(249,33): error TS2339: Property 'nameExists' does not exist on type 'MockedClass<typeof MenuItemRepository>'.
+tests/unit/services/menu.service.test.ts(412,33): error TS2339: Property 'nameExists' does not exist on type 'MockedClass<typeof MenuItemRepository>'.
+tests/unit/services/menu.service.test.ts(437,33): error TS2339: Property 'nameExists' does not exist on type 'MockedClass<typeof MenuItemRepository>'.
+tests/unit/services/menu.service.test.ts(500,33): error TS2339: Property 'findOverlapping' does not exist on type 'MockedClass<typeof MenuPlanRepository>'.
+tests/unit/services/menu.service.test.ts(501,33): error TS2339: Property 'create' does not exist on type 'MockedClass<typeof MenuPlanRepository>'.
+tests/unit/services/menu.service.test.ts(507,39): error TS2339: Property 'findOverlapping' does not exist on type 'MockedClass<typeof MenuPlanRepository>'.
+tests/unit/services/menu.service.test.ts(512,39): error TS2339: Property 'create' does not exist on type 'MockedClass<typeof MenuPlanRepository>'.
+tests/unit/services/menu.service.test.ts(530,33): error TS2339: Property 'findOverlapping' does not exist on type 'MockedClass<typeof MenuPlanRepository>'.
+tests/unit/services/menu.service.test.ts(535,39): error TS2339: Property 'create' does not exist on type 'MockedClass<typeof MenuPlanRepository>'.
+tests/unit/services/menu.service.test.ts(591,33): error TS2339: Property 'findById' does not exist on type 'MockedClass<typeof MenuPlanRepository>'.
+tests/unit/services/menu.service.test.ts(592,33): error TS2339: Property 'update' does not exist on type 'MockedClass<typeof MenuPlanRepository>'.
+tests/unit/services/menu.service.test.ts(598,39): error TS2339: Property 'update' does not exist on type 'MockedClass<typeof MenuPlanRepository>'.
+tests/unit/services/menu.service.test.ts(623,33): error TS2339: Property 'findById' does not exist on type 'MockedClass<typeof MenuPlanRepository>'.
+tests/unit/services/menu.service.test.ts(624,33): error TS2339: Property 'findOverlapping' does not exist on type 'MockedClass<typeof MenuPlanRepository>'.
+tests/unit/services/menu.service.test.ts(655,33): error TS2339: Property 'findById' does not exist on type 'MockedClass<typeof MenuPlanRepository>'.
+tests/unit/services/menu.service.test.ts(658,33): error TS2339: Property 'findOverlapping' does not exist on type 'MockedClass<typeof MenuPlanRepository>'.
+tests/unit/services/menu.service.test.ts(659,33): error TS2339: Property 'create' does not exist on type 'MockedClass<typeof MenuPlanRepository>'.
+tests/unit/services/menu.service.test.ts(665,39): error TS2339: Property 'findById' does not exist on type 'MockedClass<typeof MenuPlanRepository>'.
+tests/unit/services/menu.service.test.ts(666,39): error TS2339: Property 'create' does not exist on type 'MockedClass<typeof MenuPlanRepository>'.
+tests/unit/services/menu.service.test.ts(680,33): error TS2339: Property 'findById' does not exist on type 'MockedClass<typeof MenuPlanRepository>'.
+tests/unit/services/menu.service.test.ts(700,33): error TS2339: Property 'updateStatus' does not exist on type 'MockedClass<typeof MenuPlanRepository>'.
+tests/unit/services/menu.service.test.ts(705,39): error TS2339: Property 'updateStatus' does not exist on type 'MockedClass<typeof MenuPlanRepository>'.
+tests/unit/services/menu.service.test.ts(733,33): error TS2339: Property 'getStatistics' does not exist on type 'MockedClass<typeof MenuPlanRepository>'.
+tests/unit/services/menu.service.test.ts(742,39): error TS2339: Property 'getStatistics' does not exist on type 'MockedClass<typeof MenuPlanRepository>'.
+tests/unit/services/menu.service.test.ts(766,31): error TS2339: Property 'findOverlapping' does not exist on type 'MockedClass<typeof MenuPlanRepository>'.
+tests/unit/services/notification.service.clean.test.ts(33,33): error TS2307: Cannot find module '@shared/database.service' or its corresponding type declarations.
+tests/unit/services/notification.service.test.ts(22,8): error TS2307: Cannot find module '../../../src/shared/__mocks__/database.service' or its corresponding type declarations.
+tests/unit/services/notification.service.test.ts(89,33): error TS2307: Cannot find module '@shared/database.service' or its corresponding type declarations.
+tests/unit/services/notification.service.test.ts(482,48): error TS7006: Parameter 'query' implicitly has an 'any' type.
+tests/unit/services/order.service.enhanced.test.ts(7,32): error TS2614: Module '"../../../src/services/order.service.enhanced"' has no exported member 'CreateOrderInput'. Did you mean to use 'import CreateOrderInput from "../../../src/services/order.service.enhanced"' instead?
+tests/unit/services/order.service.enhanced.test.ts(7,50): error TS2614: Module '"../../../src/services/order.service.enhanced"' has no exported member 'AddToCartInput'. Did you mean to use 'import AddToCartInput from "../../../src/services/order.service.enhanced"' instead?
+tests/unit/services/order.service.enhanced.test.ts(20,20): error TS2673: Constructor of class 'EnhancedOrderService' is private and only accessible within the class declaration.
+tests/unit/services/order.service.enhanced.test.ts(94,41): error TS2576: Property 'createOrder' does not exist on type 'EnhancedOrderService'. Did you mean to access the static member 'EnhancedOrderService.createOrder' instead?
+tests/unit/services/order.service.enhanced.test.ts(130,41): error TS2576: Property 'createOrder' does not exist on type 'EnhancedOrderService'. Did you mean to access the static member 'EnhancedOrderService.createOrder' instead?
+tests/unit/services/order.service.enhanced.test.ts(149,41): error TS2576: Property 'createOrder' does not exist on type 'EnhancedOrderService'. Did you mean to access the static member 'EnhancedOrderService.createOrder' instead?
+tests/unit/services/order.service.enhanced.test.ts(166,41): error TS2576: Property 'createOrder' does not exist on type 'EnhancedOrderService'. Did you mean to access the static member 'EnhancedOrderService.createOrder' instead?
+tests/unit/services/order.service.enhanced.test.ts(203,41): error TS2576: Property 'createOrder' does not exist on type 'EnhancedOrderService'. Did you mean to access the static member 'EnhancedOrderService.createOrder' instead?
+tests/unit/services/order.service.enhanced.test.ts(241,41): error TS2576: Property 'addToCart' does not exist on type 'EnhancedOrderService'. Did you mean to access the static member 'EnhancedOrderService.addToCart' instead?
+tests/unit/services/order.service.enhanced.test.ts(264,41): error TS2576: Property 'addToCart' does not exist on type 'EnhancedOrderService'. Did you mean to access the static member 'EnhancedOrderService.addToCart' instead?
+tests/unit/services/order.service.enhanced.test.ts(291,41): error TS2576: Property 'addToCart' does not exist on type 'EnhancedOrderService'. Did you mean to access the static member 'EnhancedOrderService.addToCart' instead?
+tests/unit/services/order.service.enhanced.test.ts(323,41): error TS2576: Property 'addToCart' does not exist on type 'EnhancedOrderService'. Did you mean to access the static member 'EnhancedOrderService.addToCart' instead?
+tests/unit/services/order.service.enhanced.test.ts(338,41): error TS2339: Property 'getCart' does not exist on type 'EnhancedOrderService'.
+tests/unit/services/order.service.enhanced.test.ts(358,41): error TS2339: Property 'getCart' does not exist on type 'EnhancedOrderService'.
+tests/unit/services/order.service.enhanced.test.ts(376,41): error TS2339: Property 'getCart' does not exist on type 'EnhancedOrderService'.
+tests/unit/services/order.service.enhanced.test.ts(388,26): error TS2339: Property 'clearCart' does not exist on type 'EnhancedOrderService'.
+tests/unit/services/order.service.enhanced.test.ts(397,33): error TS2339: Property 'clearCart' does not exist on type 'EnhancedOrderService'.
+tests/unit/services/order.service.enhanced.test.ts(422,31): error TS2673: Constructor of class 'EnhancedOrderService' is private and only accessible within the class declaration.
+tests/unit/services/order.service.enhanced.test.ts(442,29): error TS2673: Constructor of class 'EnhancedOrderService' is private and only accessible within the class declaration.
+tests/unit/services/order.service.test.ts(132,23): error TS2339: Property 'findById' does not exist on type 'typeof UserRepository'.
+tests/unit/services/order.service.test.ts(133,21): error TS2339: Property 'del' does not exist on type 'typeof RedisService'.
+tests/unit/services/order.service.test.ts(136,53): error TS2345: Argument of type '{ studentId: string; parentId: string; schoolId: string; items: ({ menuItemId: string; quantity: number; specialInstructions: string; } | { menuItemId: string; quantity: number; specialInstructions: null; })[]; deliveryDate: Date; deliveryType: "delivery"; deliveryAddress: string; }' is not assignable to parameter of type '{ studentId: string; parentId: string; schoolId: string; items: { menuItemId: string; quantity: number; specialInstructions?: string | undefined; }[]; deliveryDate: Date; deliveryType: "delivery" | "pickup"; deliveryAddress?: string | undefined; }'.
+  Types of property 'items' are incompatible.
+    Type '({ menuItemId: string; quantity: number; specialInstructions: string; } | { menuItemId: string; quantity: number; specialInstructions: null; })[]' is not assignable to type '{ menuItemId: string; quantity: number; specialInstructions?: string | undefined; }[]'.
+      Type '{ menuItemId: string; quantity: number; specialInstructions: string; } | { menuItemId: string; quantity: number; specialInstructions: null; }' is not assignable to type '{ menuItemId: string; quantity: number; specialInstructions?: string | undefined; }'.
+        Type '{ menuItemId: string; quantity: number; specialInstructions: null; }' is not assignable to type '{ menuItemId: string; quantity: number; specialInstructions?: string | undefined; }'.
+          Types of property 'specialInstructions' are incompatible.
+            Type 'null' is not assignable to type 'string | undefined'.
+tests/unit/services/order.service.test.ts(220,23): error TS2339: Property 'findById' does not exist on type 'typeof UserRepository'.
+tests/unit/services/order.service.test.ts(301,24): error TS2339: Property 'findById' does not exist on type 'typeof OrderRepository'.
+tests/unit/services/order.service.test.ts(302,24): error TS2339: Property 'update' does not exist on type 'typeof OrderRepository'.
+tests/unit/services/order.service.test.ts(309,30): error TS2339: Property 'update' does not exist on type 'typeof OrderRepository'.
+tests/unit/services/order.service.test.ts(327,24): error TS2339: Property 'findById' does not exist on type 'typeof OrderRepository'.
+tests/unit/services/order.service.test.ts(334,30): error TS2339: Property 'update' does not exist on type 'typeof OrderRepository'.
+tests/unit/services/order.service.test.ts(351,24): error TS2339: Property 'findById' does not exist on type 'typeof OrderRepository'.
+tests/unit/services/order.service.test.ts(387,24): error TS2339: Property 'findById' does not exist on type 'typeof OrderRepository'.
+tests/unit/services/order.service.test.ts(414,24): error TS2339: Property 'findByIdWithIncludes' does not exist on type 'typeof OrderRepository'.
+tests/unit/services/order.service.test.ts(444,24): error TS2339: Property 'findByIdWithIncludes' does not exist on type 'typeof OrderRepository'.
+tests/unit/services/order.service.test.ts(461,24): error TS2339: Property 'findMany' does not exist on type 'typeof OrderRepository'.
+tests/unit/services/order.service.test.ts(465,24): error TS2339: Property 'count' does not exist on type 'typeof OrderRepository'.
+tests/unit/services/order.service.test.ts(473,30): error TS2339: Property 'findMany' does not exist on type 'typeof OrderRepository'.
+tests/unit/services/order.service.test.ts(493,24): error TS2339: Property 'findById' does not exist on type 'typeof OrderRepository'.
+tests/unit/services/order.service.test.ts(522,24): error TS2339: Property 'findById' does not exist on type 'typeof OrderRepository'.
+tests/unit/services/order.service.test.ts(557,24): error TS2339: Property 'getAnalytics' does not exist on type 'typeof OrderRepository'.
+tests/unit/services/order.service.test.ts(627,23): error TS2339: Property 'findById' does not exist on type 'typeof UserRepository'.
+tests/unit/services/order.service.test.ts(671,23): error TS2339: Property 'findById' does not exist on type 'typeof UserRepository'.
+tests/unit/services/payment.service.test.ts(105,18): error TS2614: Module '"../../../src/utils/logger"' has no exported member 'log'. Did you mean to use 'import log from "../../../src/utils/logger"' instead?
+tests/unit/services/payment.service.test.ts(194,48): error TS2345: Argument of type 'string' is not assignable to parameter of type 'void | Promise<void>'.
+tests/unit/services/payment.service.test.ts(195,24): error TS2339: Property 'del' does not exist on type 'MockedObjectDeep<typeof RedisService>'.
+tests/unit/services/payment.service.test.ts(441,33): error TS2339: Property 'del' does not exist on type 'MockedObjectDeep<typeof RedisService>'.
+tests/unit/services/payment.service.test.ts(1317,33): error TS2339: Property 'del' does not exist on type 'MockedObjectDeep<typeof RedisService>'.
+tests/unit/services/performance.service.test.ts(136,22): error TS2339: Property 'timestamp' does not exist on type 'PerformanceMetric[] | { requestsPerMinute: number; errorRate: number; averageResponseTime: number; memoryUsage: { used: number; total: number; percentage: number; }; databaseConnections: { ...; }; }'.
+  Property 'timestamp' does not exist on type 'PerformanceMetric[]'.
+tests/unit/services/performance.service.test.ts(137,22): error TS2339: Property 'memoryUsage' does not exist on type 'PerformanceMetric[] | { requestsPerMinute: number; errorRate: number; averageResponseTime: number; memoryUsage: { used: number; total: number; percentage: number; }; databaseConnections: { ...; }; }'.
+  Property 'memoryUsage' does not exist on type 'PerformanceMetric[]'.
+tests/unit/services/performance.service.test.ts(138,22): error TS2339: Property 'cpuUsage' does not exist on type 'PerformanceMetric[] | { requestsPerMinute: number; errorRate: number; averageResponseTime: number; memoryUsage: { used: number; total: number; percentage: number; }; databaseConnections: { ...; }; }'.
+  Property 'cpuUsage' does not exist on type 'PerformanceMetric[]'.
+tests/unit/services/performance.service.test.ts(139,22): error TS2339: Property 'activeConnections' does not exist on type 'PerformanceMetric[] | { requestsPerMinute: number; errorRate: number; averageResponseTime: number; memoryUsage: { used: number; total: number; percentage: number; }; databaseConnections: { ...; }; }'.
+  Property 'activeConnections' does not exist on type 'PerformanceMetric[]'.
+tests/unit/services/performance.service.test.ts(140,22): error TS2339: Property 'responseTime' does not exist on type 'PerformanceMetric[] | { requestsPerMinute: number; errorRate: number; averageResponseTime: number; memoryUsage: { used: number; total: number; percentage: number; }; databaseConnections: { ...; }; }'.
+  Property 'responseTime' does not exist on type 'PerformanceMetric[]'.
+tests/unit/services/performance.service.test.ts(141,22): error TS2339: Property 'errorRate' does not exist on type 'PerformanceMetric[] | { requestsPerMinute: number; errorRate: number; averageResponseTime: number; memoryUsage: { used: number; total: number; percentage: number; }; databaseConnections: { ...; }; }'.
+  Property 'errorRate' does not exist on type 'PerformanceMetric[]'.
+tests/unit/services/performance.service.test.ts(142,22): error TS2339: Property 'requestsPerMinute' does not exist on type 'PerformanceMetric[] | { requestsPerMinute: number; errorRate: number; averageResponseTime: number; memoryUsage: { used: number; total: number; percentage: number; }; databaseConnections: { ...; }; }'.
+  Property 'requestsPerMinute' does not exist on type 'PerformanceMetric[]'.
+tests/unit/services/performance.service.test.ts(177,22): error TS2339: Property 'activeConnections' does not exist on type 'PerformanceMetric[] | { requestsPerMinute: number; errorRate: number; averageResponseTime: number; memoryUsage: { used: number; total: number; percentage: number; }; databaseConnections: { ...; }; }'.
+  Property 'activeConnections' does not exist on type 'PerformanceMetric[]'.
+tests/unit/services/performance.service.test.ts(178,22): error TS2339: Property 'totalConnections' does not exist on type 'PerformanceMetric[] | { requestsPerMinute: number; errorRate: number; averageResponseTime: number; memoryUsage: { used: number; total: number; percentage: number; }; databaseConnections: { ...; }; }'.
+  Property 'totalConnections' does not exist on type 'PerformanceMetric[]'.
+tests/unit/services/performance.service.test.ts(179,22): error TS2339: Property 'averageQueryTime' does not exist on type 'PerformanceMetric[] | { requestsPerMinute: number; errorRate: number; averageResponseTime: number; memoryUsage: { used: number; total: number; percentage: number; }; databaseConnections: { ...; }; }'.
+  Property 'averageQueryTime' does not exist on type 'PerformanceMetric[]'.
+tests/unit/services/performance.service.test.ts(219,22): error TS2339: Property 'memoryUsage' does not exist on type 'PerformanceMetric[] | { requestsPerMinute: number; errorRate: number; averageResponseTime: number; memoryUsage: { used: number; total: number; percentage: number; }; databaseConnections: { ...; }; }'.
+  Property 'memoryUsage' does not exist on type 'PerformanceMetric[]'.
+tests/unit/services/performance.service.test.ts(220,22): error TS2339: Property 'memoryUsage' does not exist on type 'PerformanceMetric[] | { requestsPerMinute: number; errorRate: number; averageResponseTime: number; memoryUsage: { used: number; total: number; percentage: number; }; databaseConnections: { ...; }; }'.
+  Property 'memoryUsage' does not exist on type 'PerformanceMetric[]'.
+tests/unit/services/performance.service.test.ts(221,22): error TS2339: Property 'memoryUsage' does not exist on type 'PerformanceMetric[] | { requestsPerMinute: number; errorRate: number; averageResponseTime: number; memoryUsage: { used: number; total: number; percentage: number; }; databaseConnections: { ...; }; }'.
+  Property 'memoryUsage' does not exist on type 'PerformanceMetric[]'.
+tests/unit/services/performance.service.test.ts(258,22): error TS2339: Property 'cpuUsage' does not exist on type 'PerformanceMetric[] | { requestsPerMinute: number; errorRate: number; averageResponseTime: number; memoryUsage: { used: number; total: number; percentage: number; }; databaseConnections: { ...; }; }'.
+  Property 'cpuUsage' does not exist on type 'PerformanceMetric[]'.
+tests/unit/services/performance.service.test.ts(259,22): error TS2339: Property 'cpuUsage' does not exist on type 'PerformanceMetric[] | { requestsPerMinute: number; errorRate: number; averageResponseTime: number; memoryUsage: { used: number; total: number; percentage: number; }; databaseConnections: { ...; }; }'.
+  Property 'cpuUsage' does not exist on type 'PerformanceMetric[]'.
+tests/unit/services/performance.service.test.ts(370,82): error TS2322: Type 'number' is not assignable to type 'Date'.
+tests/unit/services/performance.service.test.ts(370,112): error TS2322: Type 'number' is not assignable to type 'Date'.
+tests/unit/services/performance.service.test.ts(390,82): error TS2322: Type 'number' is not assignable to type 'Date'.
+tests/unit/services/performance.service.test.ts(390,112): error TS2322: Type 'number' is not assignable to type 'Date'.
+tests/unit/services/performance.service.test.ts(408,82): error TS2322: Type 'number' is not assignable to type 'Date'.
+tests/unit/services/performance.service.test.ts(408,112): error TS2322: Type 'number' is not assignable to type 'Date'.
+tests/unit/services/performance.service.test.ts(417,67): error TS2322: Type 'number' is not assignable to type 'Date'.
+tests/unit/services/performance.service.test.ts(417,96): error TS2322: Type 'number' is not assignable to type 'Date'.
+tests/unit/services/performance.service.test.ts(420,67): error TS2322: Type 'number' is not assignable to type 'Date'.
+tests/unit/services/performance.service.test.ts(420,98): error TS2322: Type 'number' is not assignable to type 'Date'.
+tests/unit/services/performance.service.test.ts(769,25): error TS2339: Property 'compliant' does not exist on type 'boolean | { compliant: boolean; deviation: number; recommendation: string; }'.
+  Property 'compliant' does not exist on type 'false'.
+tests/unit/services/performance.service.test.ts(770,25): error TS2339: Property 'deviation' does not exist on type 'boolean | { compliant: boolean; deviation: number; recommendation: string; }'.
+  Property 'deviation' does not exist on type 'false'.
+tests/unit/services/performance.service.test.ts(771,25): error TS2339: Property 'recommendation' does not exist on type 'boolean | { compliant: boolean; deviation: number; recommendation: string; }'.
+  Property 'recommendation' does not exist on type 'false'.
+tests/unit/services/performance.service.test.ts(811,22): error TS2339: Property 'requestsPerMinute' does not exist on type 'PerformanceMetric[] | { requestsPerMinute: number; errorRate: number; averageResponseTime: number; memoryUsage: { used: number; total: number; percentage: number; }; databaseConnections: { ...; }; }'.
+  Property 'requestsPerMinute' does not exist on type 'PerformanceMetric[]'.
+tests/unit/services/performance.service.test.ts(812,22): error TS2339: Property 'errorRate' does not exist on type 'PerformanceMetric[] | { requestsPerMinute: number; errorRate: number; averageResponseTime: number; memoryUsage: { used: number; total: number; percentage: number; }; databaseConnections: { ...; }; }'.
+  Property 'errorRate' does not exist on type 'PerformanceMetric[]'.
+tests/unit/services/performance.service.test.ts(850,22): error TS2339: Property 'requestsPerMinute' does not exist on type 'PerformanceMetric[] | { requestsPerMinute: number; errorRate: number; averageResponseTime: number; memoryUsage: { used: number; total: number; percentage: number; }; databaseConnections: { ...; }; }'.
+  Property 'requestsPerMinute' does not exist on type 'PerformanceMetric[]'.
+tests/unit/services/rfid.service.test.ts(7,10): error TS2724: '"../../../src/services/rfid.service"' has no exported member named 'RFIDService'. Did you mean 'RfidService'?

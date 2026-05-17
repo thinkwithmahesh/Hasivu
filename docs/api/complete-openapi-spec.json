@@ -1,0 +1,1084 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "HASIVU Platform API - Complete Specification",
+    "version": "1.0.0",
+    "description": "Smart School Food Delivery System with RFID Verification - Comprehensive serverless API with 106+ Lambda functions",
+    "contact": {
+      "name": "HASIVU Platform Team",
+      "url": "https://hasivu.com",
+      "email": "api-support@hasivu.com"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    },
+    "termsOfService": "https://hasivu.com/terms"
+  },
+  "servers": [
+    {
+      "url": "https://api.hasivu.com",
+      "description": "Production server"
+    },
+    {
+      "url": "https://staging-api.hasivu.com",
+      "description": "Staging server"
+    },
+    {
+      "url": "http://localhost:3001",
+      "description": "Development server"
+    }
+  ],
+  "security": [
+    {
+      "CognitoAuth": []
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "CognitoAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "AWS Cognito JWT token authentication. Format: 'Bearer {token}'"
+      },
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "API key for service-to-service authentication"
+      },
+      "WebhookAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Webhook-Signature",
+        "description": "Webhook signature for secure webhook handling"
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "required": ["success", "error", "meta"],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "error": {
+            "type": "object",
+            "required": ["code", "message"],
+            "properties": {
+              "code": {
+                "type": "string",
+                "example": "VALIDATION_ERROR",
+                "enum": [
+                  "VALIDATION_ERROR",
+                  "AUTHENTICATION_ERROR",
+                  "AUTHORIZATION_ERROR",
+                  "NOT_FOUND",
+                  "CONFLICT",
+                  "RATE_LIMIT_EXCEEDED",
+                  "INTERNAL_ERROR",
+                  "SERVICE_UNAVAILABLE",
+                  "PAYMENT_ERROR",
+                  "RFID_ERROR"
+                ]
+              },
+              "message": {
+                "type": "string",
+                "example": "Invalid input data"
+              },
+              "details": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "field": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "oneOf": [{ "type": "string" }, { "type": "number" }, { "type": "boolean" }]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
+          }
+        }
+      },
+      "SuccessResponse": {
+        "type": "object",
+        "required": ["success", "data", "meta"],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "description": "Response payload - structure varies by endpoint"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
+          }
+        }
+      },
+      "ResponseMeta": {
+        "type": "object",
+        "required": ["timestamp", "correlationId"],
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-01-21T10:30:00.000Z"
+          },
+          "correlationId": {
+            "type": "string",
+            "format": "uuid",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "requestId": {
+            "type": "string",
+            "example": "req_1234567890abcdef"
+          },
+          "version": {
+            "type": "string",
+            "example": "1.0.0"
+          },
+          "executionTime": {
+            "type": "number",
+            "description": "Execution time in milliseconds",
+            "example": 125
+          }
+        }
+      },
+      "PaginationMeta": {
+        "allOf": [
+          { "$ref": "#/components/schemas/ResponseMeta" },
+          {
+            "type": "object",
+            "properties": {
+              "pagination": {
+                "type": "object",
+                "required": ["page", "limit", "total", "pages"],
+                "properties": {
+                  "page": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 1
+                  },
+                  "limit": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 100,
+                    "example": 20
+                  },
+                  "total": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 150
+                  },
+                  "pages": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 8
+                  },
+                  "hasNext": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "hasPrev": {
+                    "type": "boolean",
+                    "example": false
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "User": {
+        "type": "object",
+        "required": ["id", "email", "firstName", "lastName", "role"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "student@school.edu"
+          },
+          "firstName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50,
+            "example": "John"
+          },
+          "lastName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50,
+            "example": "Doe"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["student", "parent", "teacher", "staff", "school_admin", "admin", "super_admin"],
+            "example": "student"
+          },
+          "schoolId": {
+            "type": "string",
+            "format": "uuid",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          },
+          "phone": {
+            "type": "string",
+            "pattern": "^[+]?[1-9]?[0-9]{7,15}$",
+            "example": "+1234567890"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-01-21T10:30:00.000Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-01-21T10:30:00.000Z"
+          },
+          "isActive": {
+            "type": "boolean",
+            "example": true
+          },
+          "preferences": {
+            "type": "object",
+            "properties": {
+              "language": {
+                "type": "string",
+                "enum": ["en", "hi", "ta", "es", "fr"],
+                "example": "en"
+              },
+              "notifications": {
+                "type": "boolean",
+                "example": true
+              },
+              "theme": {
+                "type": "string",
+                "enum": ["light", "dark"],
+                "example": "light"
+              }
+            }
+          }
+        }
+      },
+      "MenuItem": {
+        "type": "object",
+        "required": ["id", "name", "price", "category"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "example": "Grilled Chicken Sandwich"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 500,
+            "example": "Freshly grilled chicken breast with lettuce and tomato"
+          },
+          "price": {
+            "type": "number",
+            "multipleOf": 0.01,
+            "minimum": 0,
+            "example": 12.99
+          },
+          "category": {
+            "type": "string",
+            "enum": ["appetizer", "main", "dessert", "beverage", "snack"],
+            "example": "main"
+          },
+          "cuisine": {
+            "type": "string",
+            "example": "Continental"
+          },
+          "isVegetarian": {
+            "type": "boolean",
+            "example": false
+          },
+          "isVegan": {
+            "type": "boolean",
+            "example": false
+          },
+          "allergens": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["nuts", "dairy", "gluten", "soy", "eggs", "shellfish", "fish"]
+            },
+            "example": ["gluten"]
+          },
+          "nutritionInfo": {
+            "type": "object",
+            "properties": {
+              "calories": {
+                "type": "number",
+                "example": 320
+              },
+              "protein": {
+                "type": "number",
+                "example": 25
+              },
+              "carbs": {
+                "type": "number",
+                "example": 30
+              },
+              "fat": {
+                "type": "number",
+                "example": 8
+              }
+            }
+          },
+          "imageUrl": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://cdn.hasivu.com/images/menu/chicken-sandwich.jpg"
+          },
+          "isAvailable": {
+            "type": "boolean",
+            "example": true
+          },
+          "schoolId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "Order": {
+        "type": "object",
+        "required": ["id", "userId", "items", "totalAmount", "status"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "orderNumber": {
+            "type": "string",
+            "example": "ORD-2025-001234"
+          },
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "schoolId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "menuItemId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "quantity": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "example": 2
+                },
+                "unitPrice": {
+                  "type": "number",
+                  "example": 12.99
+                },
+                "customizations": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "example": ["No onions", "Extra cheese"]
+                }
+              }
+            }
+          },
+          "totalAmount": {
+            "type": "number",
+            "multipleOf": 0.01,
+            "minimum": 0,
+            "example": 25.98
+          },
+          "currency": {
+            "type": "string",
+            "enum": ["INR", "USD"],
+            "example": "INR"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "confirmed", "preparing", "ready", "delivered", "cancelled"],
+            "example": "confirmed"
+          },
+          "deliveryType": {
+            "type": "string",
+            "enum": ["pickup", "delivery"],
+            "example": "pickup"
+          },
+          "deliveryTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "deliveryLocation": {
+            "type": "string",
+            "example": "Classroom 5B"
+          },
+          "paymentStatus": {
+            "type": "string",
+            "enum": ["pending", "paid", "failed", "refunded"],
+            "example": "paid"
+          },
+          "rfidVerification": {
+            "type": "object",
+            "properties": {
+              "cardNumber": {
+                "type": "string",
+                "example": "RFID123456789"
+              },
+              "verifiedAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "verifiedBy": {
+                "type": "string",
+                "example": "Delivery Staff"
+              }
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "RFIDCard": {
+        "type": "object",
+        "required": ["id", "cardNumber", "studentId", "status"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "cardNumber": {
+            "type": "string",
+            "pattern": "^[0-9A-Fa-f]{8,16}$",
+            "example": "RFID123456789"
+          },
+          "studentId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "schoolId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["active", "inactive", "lost", "expired"],
+            "example": "active"
+          },
+          "expiryDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "issueDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "lastUsed": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["order_food", "access_library", "attendance"]
+            },
+            "example": ["order_food"]
+          }
+        }
+      },
+      "PaymentOrder": {
+        "type": "object",
+        "required": ["id", "amount", "currency", "status"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "orderId": {
+            "type": "string",
+            "example": "order_123456789"
+          },
+          "amount": {
+            "type": "number",
+            "multipleOf": 0.01,
+            "minimum": 0,
+            "example": 25.98
+          },
+          "currency": {
+            "type": "string",
+            "enum": ["INR", "USD"],
+            "example": "INR"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["created", "pending", "paid", "failed", "cancelled", "refunded"],
+            "example": "paid"
+          },
+          "paymentMethod": {
+            "type": "string",
+            "enum": ["card", "wallet", "upi", "bank_transfer"],
+            "example": "upi"
+          },
+          "gatewayOrderId": {
+            "type": "string",
+            "example": "razorpay_order_123456"
+          },
+          "gatewayPaymentId": {
+            "type": "string",
+            "example": "razorpay_payment_789012"
+          },
+          "receipt": {
+            "type": "string",
+            "example": "receipt_001234"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "paidAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Notification": {
+        "type": "object",
+        "required": ["id", "type", "title", "message", "userId"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["order_confirmation", "payment_success", "delivery_notification", "system_alert", "promotional"],
+            "example": "order_confirmation"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 100,
+            "example": "Order Confirmed"
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 500,
+            "example": "Your lunch order has been confirmed and will be ready at 12:30 PM"
+          },
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "channels": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["email", "sms", "push", "whatsapp"]
+            },
+            "example": ["push", "email"]
+          },
+          "data": {
+            "type": "object",
+            "description": "Additional structured data for the notification"
+          },
+          "isRead": {
+            "type": "boolean",
+            "example": false
+          },
+          "sentAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "readAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "parameters": {
+      "PageParam": {
+        "name": "page",
+        "in": "query",
+        "description": "Page number (1-based)",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1
+        }
+      },
+      "LimitParam": {
+        "name": "limit",
+        "in": "query",
+        "description": "Number of items per page",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 20
+        }
+      },
+      "SearchParam": {
+        "name": "search",
+        "in": "query",
+        "description": "Search query string",
+        "schema": {
+          "type": "string",
+          "maxLength": 100
+        }
+      },
+      "SortParam": {
+        "name": "sort",
+        "in": "query",
+        "description": "Sort field and direction (e.g., 'createdAt:desc')",
+        "schema": {
+          "type": "string",
+          "pattern": "^[a-zA-Z][a-zA-Z0-9]*:(asc|desc)$"
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Bad Request - Invalid input data",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "examples": {
+              "validation_error": {
+                "summary": "Validation Error",
+                "value": {
+                  "success": false,
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Validation failed",
+                    "details": [
+                      {
+                        "field": "email",
+                        "message": "Please provide a valid email address",
+                        "value": "invalid-email"
+                      }
+                    ]
+                  },
+                  "meta": {
+                    "timestamp": "2025-01-21T10:30:00.000Z",
+                    "correlationId": "550e8400-e29b-41d4-a716-446655440000"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Unauthorized - Authentication required",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "examples": {
+              "missing_token": {
+                "summary": "Missing Authorization Token",
+                "value": {
+                  "success": false,
+                  "error": {
+                    "code": "AUTHENTICATION_ERROR",
+                    "message": "Authentication token is required"
+                  },
+                  "meta": {
+                    "timestamp": "2025-01-21T10:30:00.000Z",
+                    "correlationId": "550e8400-e29b-41d4-a716-446655440000"
+                  }
+                }
+              },
+              "invalid_token": {
+                "summary": "Invalid Token",
+                "value": {
+                  "success": false,
+                  "error": {
+                    "code": "AUTHENTICATION_ERROR",
+                    "message": "Invalid or expired authentication token"
+                  },
+                  "meta": {
+                    "timestamp": "2025-01-21T10:30:00.000Z",
+                    "correlationId": "550e8400-e29b-41d4-a716-446655440000"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "Forbidden - Insufficient permissions",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Not Found - Resource does not exist",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflict - Resource already exists",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "RateLimitExceeded": {
+        "description": "Rate Limit Exceeded",
+        "headers": {
+          "X-RateLimit-Limit": {
+            "description": "Request limit per time window",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          "X-RateLimit-Remaining": {
+            "description": "Remaining requests in current window",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          "X-RateLimit-Reset": {
+            "description": "Time when rate limit resets (Unix timestamp)",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "Internal Server Error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "ServiceUnavailable": {
+        "description": "Service Unavailable",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": ["Health Check"],
+        "summary": "Basic health check",
+        "description": "Check if the API is responsive and healthy",
+        "operationId": "basicHealthCheck",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "System is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                },
+                "examples": {
+                  "healthy": {
+                    "summary": "Healthy System",
+                    "value": {
+                      "success": true,
+                      "data": {
+                        "status": "healthy",
+                        "service": "hasivu-platform-api",
+                        "version": "1.0.0",
+                        "uptime": 3600
+                      },
+                      "meta": {
+                        "timestamp": "2025-01-21T10:30:00.000Z",
+                        "correlationId": "550e8400-e29b-41d4-a716-446655440000",
+                        "executionTime": 15
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/health/detailed": {
+      "get": {
+        "tags": ["Health Check"],
+        "summary": "Detailed health check",
+        "description": "Comprehensive health check including dependencies (database, cache, external services)",
+        "operationId": "detailedHealthCheck",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Detailed system health status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/SuccessResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "string",
+                              "enum": ["healthy", "degraded", "unhealthy"]
+                            },
+                            "services": {
+                              "type": "object",
+                              "properties": {
+                                "database": {
+                                  "type": "object",
+                                  "properties": {
+                                    "status": { "type": "string" },
+                                    "responseTime": { "type": "number" },
+                                    "activeConnections": { "type": "integer" }
+                                  }
+                                },
+                                "cache": {
+                                  "type": "object",
+                                  "properties": {
+                                    "status": { "type": "string" },
+                                    "responseTime": { "type": "number" },
+                                    "hitRate": { "type": "number" }
+                                  }
+                                },
+                                "paymentGateway": {
+                                  "type": "object",
+                                  "properties": {
+                                    "status": { "type": "string" },
+                                    "responseTime": { "type": "number" }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "tags": ["Health Check"],
+        "summary": "Readiness check",
+        "description": "Check if system is ready to receive traffic",
+        "operationId": "readinessCheck",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "System is ready",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    },
+    "/health/live": {
+      "get": {
+        "tags": ["Health Check"],
+        "summary": "Liveness check",
+        "description": "Check if system is alive and responsive",
+        "operationId": "livenessCheck",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "System is alive",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Health Check",
+      "description": "System health and monitoring endpoints for production deployment"
+    },
+    {
+      "name": "Authentication",
+      "description": "User authentication and authorization endpoints with AWS Cognito integration"
+    },
+    {
+      "name": "User Management",
+      "description": "User profile and management operations with role-based access control"
+    },
+    {
+      "name": "Menu Management",
+      "description": "Food menu item management, categorization, and nutrition tracking"
+    },
+    {
+      "name": "Order Management",
+      "description": "Order creation, tracking, and status management with real-time updates"
+    },
+    {
+      "name": "RFID Management",
+      "description": "RFID card management and contactless delivery verification system"
+    },
+    {
+      "name": "Payment Processing",
+      "description": "Payment orders, transaction processing, and billing with Razorpay integration"
+    },
+    {
+      "name": "Notifications",
+      "description": "Multi-channel notification delivery and management (Email, SMS, WhatsApp, Push)"
+    },
+    {
+      "name": "Analytics",
+      "description": "Business intelligence, reporting, and predictive analytics engine"
+    },
+    {
+      "name": "Enterprise",
+      "description": "Multi-school administration and district-level management"
+    },
+    {
+      "name": "Nutrition",
+      "description": "AI-powered nutrition analysis, meal planning, and dietary recommendations"
+    },
+    {
+      "name": "Vendor Management",
+      "description": "Vendor marketplace, procurement, and supply chain management"
+    },
+    {
+      "name": "Templates",
+      "description": "AI-powered content generation and cultural adaptation"
+    },
+    {
+      "name": "Mobile",
+      "description": "Mobile app specific endpoints for delivery tracking and notifications"
+    },
+    {
+      "name": "Epic 7 - Parent Dashboard",
+      "description": "Advanced parent dashboard with AI insights and child progress analytics"
+    }
+  ],
+  "x-tag-groups": [
+    {
+      "name": "Core API",
+      "tags": ["Health Check", "Authentication", "User Management"]
+    },
+    {
+      "name": "Food Service",
+      "tags": ["Menu Management", "Order Management", "Nutrition"]
+    },
+    {
+      "name": "Payment & RFID",
+      "tags": ["Payment Processing", "RFID Management"]
+    },
+    {
+      "name": "Communication",
+      "tags": ["Notifications", "Templates"]
+    },
+    {
+      "name": "Analytics & Insights",
+      "tags": ["Analytics", "Epic 7 - Parent Dashboard"]
+    },
+    {
+      "name": "Enterprise & Management",
+      "tags": ["Enterprise", "Vendor Management"]
+    },
+    {
+      "name": "Mobile & Devices",
+      "tags": ["Mobile"]
+    }
+  ]
+}

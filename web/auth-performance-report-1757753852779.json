@@ -1,0 +1,146 @@
+{
+  "stats": {
+    "login": {
+      "min": 100.32929100000001,
+      "max": 246.70733399999972,
+      "mean": 166.1459328418367,
+      "median": 163.73370799999975,
+      "p95": 218.16895799999975,
+      "p99": 240.960333,
+      "count": 196
+    },
+    "tokenValidation": {
+      "min": 7.001250000000027,
+      "max": 10.150082999999995,
+      "mean": 9.100111000000007,
+      "median": 10.149000000000001,
+      "p95": 10.150082999999995,
+      "p99": 10.150082999999995,
+      "count": 3
+    },
+    "sessionLookup": {
+      "min": 0.0005000000001018634,
+      "max": 18.092917000000057,
+      "mean": 11.730393000000001,
+      "median": 15.15133400000002,
+      "p95": 18.092917000000057,
+      "p99": 18.092917000000057,
+      "count": 7
+    },
+    "memory": {
+      "current": {
+        "rss": 61.1875,
+        "heapUsed": 8.708885192871094,
+        "heapTotal": 10.046875,
+        "external": 3.2301836013793945,
+        "timestamp": 1757753851773
+      },
+      "peak": {
+        "rss": 59.375,
+        "heapUsed": 8.818695068359375,
+        "heapTotal": 11.796875,
+        "external": 3.2301836013793945,
+        "timestamp": 1757753850496
+      },
+      "average": {
+        "rss": 59.978396045918366,
+        "heapUsed": 8.545905794416155
+      }
+    },
+    "errorRates": {
+      "login": {
+        "errorRate": 5.612244897959184,
+        "total": 196,
+        "errors": 11
+      },
+      "tokenValidation": {
+        "errorRate": 0,
+        "total": 3,
+        "errors": 0
+      },
+      "sessionLookup": {
+        "errorRate": 0,
+        "total": 7,
+        "errors": 0
+      }
+    },
+    "concurrency": {
+      "1": {
+        "users": 1,
+        "successful": 1,
+        "failed": 0,
+        "successRate": 100,
+        "totalTime": 150.89937499999996,
+        "averageTime": 150.89937499999996
+      },
+      "5": {
+        "users": 5,
+        "successful": 5,
+        "failed": 0,
+        "successRate": 100,
+        "totalTime": 208.28958299999977,
+        "averageTime": 41.65791659999995
+      },
+      "10": {
+        "users": 10,
+        "successful": 10,
+        "failed": 0,
+        "successRate": 100,
+        "totalTime": 218.18370800000002,
+        "averageTime": 21.818370800000004
+      },
+      "25": {
+        "users": 25,
+        "successful": 24,
+        "failed": 1,
+        "successRate": 96,
+        "totalTime": 246.60658299999977,
+        "averageTime": 9.86426331999999
+      },
+      "50": {
+        "users": 50,
+        "successful": 49,
+        "failed": 1,
+        "successRate": 98,
+        "totalTime": 228.27999999999975,
+        "averageTime": 4.5655999999999946
+      },
+      "100": {
+        "users": 100,
+        "successful": 93,
+        "failed": 7,
+        "successRate": 93,
+        "totalTime": 227.97254200000043,
+        "averageTime": 2.279725420000004
+      }
+    },
+    "caching": {
+      "sessionCache": {
+        "hits": 1,
+        "misses": 1
+      },
+      "tokenCache": {
+        "hits": 0,
+        "misses": 0
+      },
+      "performance": {
+        "missTime": 18.063125000000127,
+        "hitTime": 0.0029170000000249274,
+        "improvement": "100.0"
+      }
+    }
+  },
+  "overallScore": {
+    "score": "98.9",
+    "grade": "A",
+    "assessment": "Excellent performance - Production ready",
+    "deductions": ["login errors: -1.1"]
+  },
+  "recommendations": [
+    "Investigate login failures - implement better error handling and retry logic",
+    "Implement comprehensive monitoring and alerting for auth performance",
+    "Add performance budgets and regression testing to CI/CD pipeline",
+    "Consider implementing authentication microservice for better scaling"
+  ],
+  "timestamp": "2025-09-13T08:57:32.777Z"
+}

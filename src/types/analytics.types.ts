@@ -1,0 +1,26 @@
+/**
+ * Common analytics types for HASIVU Platform
+ * Defines standardized types for analytics functions and data structures
+ */
+
+export type TrendDirection = 'improving' | 'stable' | 'declining' | 'volatile';
+
+export type AnalysisConfidence = number; // 0-1 scale
+
+export interface TrendAnalysis {
+  direction: TrendDirection;
+  rate: number; // Percentage change
+  period: string;
+  sustainability: 'sustainable' | 'at_risk' | 'unsustainable';
+}
+
+export interface PerformanceMetric {
+  metricId: string;
+  name: string;
+  category: 'financial' | 'operational' | 'customer' | 'growth' | 'efficiency' | 'quality';
+  value: number;
+  unit: string;
+  description: string;
+  trendDirection: TrendDirection;
+  analysisConfidence: AnalysisConfidence;
+}

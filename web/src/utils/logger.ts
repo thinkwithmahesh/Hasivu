@@ -1,0 +1,103 @@
+/**
+ * Logger Utility
+ * Centralized logging with structured output
+ */
+
+export enum LogLevel {
+  DEBUG = 'debug',
+  INFO = 'info',
+  WARN = 'warn',
+  ERROR = 'error',
+  FATAL = 'fatal',
+}
+
+class Logger {
+  private logLevel: LogLevel;
+
+  constructor() {
+    this.logLevel = this.parseLogLevel(process.env.LOG_LEVEL || 'info');
+  }
+
+  private parseLogLevel(level: string): LogLevel {
+    const normalized = level.toLowerCase();
+    return Object.values(LogLevel).includes(normalized as LogLevel)
+      ? (normalized as LogLevel)
+      : LogLevel.INFO;
+  }
+
+  private shouldLog(level: LogLevel): boolean {
+    const levels = [LogLevel.DEBUG, LogLevel.INFO, LogLevel.WARN, LogLevel.ERROR, LogLevel.FATAL];
+    return levels.indexOf(level) >= levels.indexOf(this.logLevel);
+  }
+
+  private formatLog(level: LogLevel, message: string, context?: any): string {
+    const timestamp = new Date().toISOString();
+    const contextStr = context ? ` ${JSON.stringify(context)}` : '';
+    return `[${timestamp}] [${level.toUpperCase()}] ${message}${contextStr}`;
+  }
+
+  public debug(message: string, context?: any): void {
+    if (this.shouldLog(LogLevel.DEBUG)) {
+      console.debug(this.formatLog(LogLevel.DEBUG, message, context));
+    }
+  }
+
+  public info(message: string, context?: any): void {
+    if (this.shouldLog(LogLevel.INFO)) {
+      console.info(this.formatLog(LogLevel.INFO, message, context));
+    }
+  }
+
+  public warn(message: string, context?: any): void {
+    if (this.shouldLog(LogLevel.WARN)) {
+      console.warn(this.formatLog(LogLevel.WARN, message, context));
+    }
+  }
+
+  public error(message: string, error?: Error, context?: any): void {
+    if (this.shouldLog(LogLevel.ERROR)) {
+      const errorContext = error
+        ? { ...context, error: error.message, stack: error.stack }
+        : context;
+      console.error(this.formatLog(LogLevel.ERROR, message, errorContext));
+    }
+  }
+
+  public fatal(message: string, error?: Error, context?: any): void {
+    if (this.shouldLog(LogLevel.FATAL)) {
+      const errorContext = error
+        ? { ...context, error: error.message, stack: error.stack }
+        : context;
+      console.error(this.formatLog(LogLevel.FATAL, message, errorContext));
+    }
+  }
+
+  public integration(message: string, context?: any): void {
+    if (this.shouldLog(LogLevel.INFO)) {
+      console.info(this.formatLog(LogLevel.INFO, `[INTEGRATION] ${message}`, context));
+    }
+  }
+
+  public logFunctionStart(functionName: string, context?: any): void {
+    if (this.shouldLog(LogLevel.DEBUG)) {
+      console.debug(this.formatLog(LogLevel.DEBUG, `Function ${functionName} started`, context));
+    }
+  }
+
+  public logFunctionEnd(functionName: string, context?: any): void {
+    if (this.shouldLog(LogLevel.DEBUG)) {
+      console.debug(this.formatLog(LogLevel.DEBUG, `Function ${functionName} ended`, context));
+    }
+  }
+
+  public setLogLevel(level: LogLevel): void {
+    this.logLevel = level;
+  }
+}
+
+// Export singleton instance
+export const logger = new Logger();
+
+// Export class for testing and type definitions
+export { Logger };
+export default logger;

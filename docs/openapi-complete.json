@@ -1,0 +1,1036 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "HASIVU Platform API",
+    "version": "1.0.0",
+    "description": "Smart School Food Delivery System with RFID Verification - Complete API with 102+ Lambda functions covering all 7 epics",
+    "contact": {
+      "name": "HASIVU Platform Team",
+      "url": "https://hasivu.edu.in",
+      "email": "api-support@hasivu.edu.in"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    },
+    "termsOfService": "https://hasivu.edu.in/terms"
+  },
+  "servers": [
+    {
+      "url": "https://api.hasivu.edu.in/v1",
+      "description": "Production server"
+    },
+    {
+      "url": "https://staging-api.hasivu.edu.in/v1",
+      "description": "Staging server"
+    },
+    {
+      "url": "http://localhost:3001/api/v1",
+      "description": "Development server"
+    }
+  ],
+  "security": [
+    {
+      "CognitoAuth": []
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "CognitoAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "AWS Cognito JWT token authentication"
+      },
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "API key for service-to-service authentication"
+      }
+    },
+    "schemas": {
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique user identifier"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "User email address"
+          },
+          "firstName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50,
+            "description": "User first name"
+          },
+          "lastName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50,
+            "description": "User last name"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["STUDENT", "PARENT", "TEACHER", "KITCHEN_STAFF", "NUTRITIONIST", "SCHOOL_ADMIN", "SUPER_ADMIN"],
+            "description": "User role in the system"
+          },
+          "schoolId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Associated school ID"
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Whether the user account is active"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Account creation timestamp"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last update timestamp"
+          }
+        },
+        "required": ["id", "email", "firstName", "lastName", "role", "schoolId"]
+      },
+      "MenuItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique menu item identifier"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "description": "Menu item name"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "Detailed description of the menu item"
+          },
+          "category": {
+            "type": "string",
+            "enum": ["MAIN_COURSE", "APPETIZER", "DESSERT", "BEVERAGE", "SNACK"],
+            "description": "Menu item category"
+          },
+          "price": {
+            "type": "number",
+            "minimum": 0,
+            "multipleOf": 0.01,
+            "description": "Price in INR"
+          },
+          "available": {
+            "type": "boolean",
+            "description": "Whether the item is currently available"
+          },
+          "estimatedPrepTime": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 120,
+            "description": "Estimated preparation time in minutes"
+          },
+          "nutritionInfo": {
+            "$ref": "#/components/schemas/NutritionInfo"
+          },
+          "allergens": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["GLUTEN", "DAIRY", "NUTS", "SOY", "EGGS", "FISH", "SHELLFISH", "SESAME"]
+            },
+            "description": "List of allergens present in the item"
+          },
+          "dietaryTags": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["VEGETARIAN", "VEGAN", "GLUTEN_FREE", "DAIRY_FREE", "HALAL", "JAIN"]
+            },
+            "description": "Dietary compliance tags"
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "URLs of item images"
+          }
+        },
+        "required": ["id", "name", "category", "price", "available"]
+      },
+      "NutritionInfo": {
+        "type": "object",
+        "properties": {
+          "calories": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Calories per serving"
+          },
+          "protein": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Protein content in grams"
+          },
+          "carbohydrates": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Carbohydrate content in grams"
+          },
+          "fat": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Fat content in grams"
+          },
+          "fiber": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Fiber content in grams"
+          },
+          "sugar": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Sugar content in grams"
+          },
+          "sodium": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Sodium content in milligrams"
+          }
+        },
+        "required": ["calories", "protein", "carbohydrates", "fat"]
+      },
+      "Order": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique order identifier"
+          },
+          "orderNumber": {
+            "type": "string",
+            "pattern": "^ORD-\\d{4}-\\d{4}-\\d{4}$",
+            "description": "Human-readable order number"
+          },
+          "userId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "User who placed the order"
+          },
+          "schoolId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "School where order was placed"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["PENDING", "CONFIRMED", "PREPARING", "READY", "DELIVERED", "CANCELLED"],
+            "description": "Current order status"
+          },
+          "mealType": {
+            "type": "string",
+            "enum": ["BREAKFAST", "LUNCH", "DINNER", "SNACK"],
+            "description": "Type of meal"
+          },
+          "deliveryDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Requested delivery date"
+          },
+          "deliveryTime": {
+            "type": "string",
+            "format": "time",
+            "description": "Requested delivery time"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderItem"
+            },
+            "minItems": 1,
+            "description": "Items in the order"
+          },
+          "totalAmount": {
+            "type": "number",
+            "minimum": 0,
+            "multipleOf": 0.01,
+            "description": "Total order amount in INR"
+          },
+          "paymentStatus": {
+            "type": "string",
+            "enum": ["PENDING", "COMPLETED", "FAILED", "REFUNDED"],
+            "description": "Payment status"
+          },
+          "deliveryLocation": {
+            "type": "string",
+            "description": "Delivery location within school"
+          },
+          "specialInstructions": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "Special instructions for the order"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Order creation timestamp"
+          },
+          "estimatedDeliveryTime": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Estimated delivery time"
+          }
+        },
+        "required": ["id", "orderNumber", "userId", "schoolId", "status", "mealType", "items", "totalAmount"]
+      },
+      "OrderItem": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Menu item ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Item name at time of order"
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10,
+            "description": "Quantity ordered"
+          },
+          "price": {
+            "type": "number",
+            "minimum": 0,
+            "multipleOf": 0.01,
+            "description": "Item price at time of order"
+          },
+          "customizations": {
+            "type": "object",
+            "description": "Item customizations (spice level, etc.)"
+          },
+          "specialInstructions": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "Special instructions for this item"
+          }
+        },
+        "required": ["itemId", "name", "quantity", "price"]
+      },
+      "RFIDCard": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique card identifier"
+          },
+          "cardNumber": {
+            "type": "string",
+            "pattern": "^[0-9A-Fa-f]{8,16}$",
+            "description": "RFID card number (8-16 hex characters)"
+          },
+          "userId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Associated user ID"
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Whether the card is active"
+          },
+          "expiryDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Card expiry date"
+          },
+          "lastUsed": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last time card was used"
+          },
+          "balance": {
+            "type": "number",
+            "minimum": 0,
+            "multipleOf": 0.01,
+            "description": "Current card balance in INR"
+          }
+        },
+        "required": ["id", "cardNumber", "userId", "isActive"]
+      },
+      "Payment": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique payment identifier"
+          },
+          "orderId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Associated order ID"
+          },
+          "amount": {
+            "type": "number",
+            "minimum": 0,
+            "multipleOf": 0.01,
+            "description": "Payment amount in INR"
+          },
+          "currency": {
+            "type": "string",
+            "enum": ["INR"],
+            "default": "INR",
+            "description": "Payment currency"
+          },
+          "method": {
+            "type": "string",
+            "enum": ["CARD", "UPI", "WALLET", "RFID", "NET_BANKING"],
+            "description": "Payment method used"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["PENDING", "PROCESSING", "COMPLETED", "FAILED", "CANCELLED", "REFUNDED"],
+            "description": "Payment status"
+          },
+          "gatewayTransactionId": {
+            "type": "string",
+            "description": "Payment gateway transaction ID"
+          },
+          "gatewayResponse": {
+            "type": "object",
+            "description": "Raw gateway response data"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Payment initiation timestamp"
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Payment completion timestamp"
+          }
+        },
+        "required": ["id", "orderId", "amount", "currency", "method", "status"]
+      },
+      "Notification": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique notification identifier"
+          },
+          "userId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Target user ID"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["ORDER_CONFIRMATION", "PAYMENT_SUCCESS", "DELIVERY_NOTIFICATION", "SYSTEM_ALERT", "PROMOTION"],
+            "description": "Notification type"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 100,
+            "description": "Notification title"
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "Notification message"
+          },
+          "channels": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["PUSH", "EMAIL", "SMS", "WHATSAPP", "IN_APP"]
+            },
+            "description": "Delivery channels"
+          },
+          "priority": {
+            "type": "string",
+            "enum": ["LOW", "NORMAL", "HIGH", "URGENT"],
+            "description": "Notification priority"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["PENDING", "SENT", "DELIVERED", "READ", "FAILED"],
+            "description": "Delivery status"
+          },
+          "data": {
+            "type": "object",
+            "description": "Additional notification data"
+          },
+          "scheduledAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Scheduled delivery time"
+          },
+          "sentAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Actual delivery time"
+          },
+          "readAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Read timestamp"
+          }
+        },
+        "required": ["id", "userId", "type", "title", "message", "channels", "priority", "status"]
+      },
+      "School": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique school identifier"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "description": "School name"
+          },
+          "address": {
+            "$ref": "#/components/schemas/Address"
+          },
+          "contactInfo": {
+            "$ref": "#/components/schemas/ContactInfo"
+          },
+          "settings": {
+            "type": "object",
+            "description": "School-specific settings"
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Whether school is active"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": ["id", "name", "address", "contactInfo", "isActive"]
+      },
+      "Address": {
+        "type": "object",
+        "properties": {
+          "street": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "Street address"
+          },
+          "city": {
+            "type": "string",
+            "maxLength": 50,
+            "description": "City"
+          },
+          "state": {
+            "type": "string",
+            "maxLength": 50,
+            "description": "State"
+          },
+          "pincode": {
+            "type": "string",
+            "pattern": "^[0-9]{6}$",
+            "description": "6-digit postal code"
+          },
+          "country": {
+            "type": "string",
+            "default": "India",
+            "description": "Country"
+          }
+        },
+        "required": ["street", "city", "state", "pincode"]
+      },
+      "ContactInfo": {
+        "type": "object",
+        "properties": {
+          "primaryPhone": {
+            "type": "string",
+            "pattern": "^[+]?[1-9]?[0-9]{7,15}$",
+            "description": "Primary phone number"
+          },
+          "emergencyPhone": {
+            "type": "string",
+            "pattern": "^[+]?[1-9]?[0-9]{7,15}$",
+            "description": "Emergency contact number"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Primary email address"
+          },
+          "website": {
+            "type": "string",
+            "format": "uri",
+            "description": "School website URL"
+          }
+        },
+        "required": ["primaryPhone", "email"]
+      },
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "description": "Response data"
+          },
+          "message": {
+            "type": "string",
+            "description": "Success message"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Response timestamp"
+          },
+          "requestId": {
+            "type": "string",
+            "description": "Unique request identifier for tracking"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/PaginationInfo"
+          }
+        },
+        "required": ["success", "timestamp", "requestId"]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "description": "Error code"
+              },
+              "message": {
+                "type": "string",
+                "description": "Human-readable error message"
+              },
+              "details": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "field": {
+                      "type": "string",
+                      "description": "Field that caused the error"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Field-specific error message"
+                    },
+                    "code": {
+                      "type": "string",
+                      "description": "Field-specific error code"
+                    }
+                  }
+                },
+                "description": "Detailed error information"
+              }
+            },
+            "required": ["code", "message"]
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "requestId": {
+            "type": "string",
+            "description": "Unique request identifier for tracking"
+          },
+          "path": {
+            "type": "string",
+            "description": "API endpoint path"
+          }
+        },
+        "required": ["success", "error", "timestamp", "requestId"]
+      },
+      "PaginationInfo": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Current page number"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "description": "Items per page"
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Total number of items"
+          },
+          "pages": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Total number of pages"
+          },
+          "hasNext": {
+            "type": "boolean",
+            "description": "Whether there are more pages"
+          },
+          "hasPrev": {
+            "type": "boolean",
+            "description": "Whether there are previous pages"
+          }
+        },
+        "required": ["page", "limit", "total", "pages"]
+      },
+      "HealthStatus": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["healthy", "warning", "error"],
+            "description": "Overall system health status"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Health check timestamp"
+          },
+          "version": {
+            "type": "string",
+            "description": "API version"
+          },
+          "environment": {
+            "type": "string",
+            "enum": ["development", "staging", "production"],
+            "description": "Current environment"
+          },
+          "services": {
+            "type": "object",
+            "properties": {
+              "database": {
+                "type": "string",
+                "enum": ["healthy", "warning", "error"]
+              },
+              "redis": {
+                "type": "string",
+                "enum": ["healthy", "warning", "error"]
+              },
+              "rfid": {
+                "type": "string",
+                "enum": ["healthy", "warning", "error"]
+              },
+              "payment_gateway": {
+                "type": "string",
+                "enum": ["healthy", "warning", "error"]
+              },
+              "notification_services": {
+                "type": "string",
+                "enum": ["healthy", "warning", "error"]
+              }
+            },
+            "description": "Individual service health status"
+          },
+          "metrics": {
+            "type": "object",
+            "properties": {
+              "uptime": {
+                "type": "number",
+                "description": "System uptime in seconds"
+              },
+              "memory_usage": {
+                "type": "number",
+                "description": "Memory usage percentage"
+              },
+              "cpu_usage": {
+                "type": "number",
+                "description": "CPU usage percentage"
+              },
+              "response_time": {
+                "type": "number",
+                "description": "Average response time in milliseconds"
+              }
+            }
+          }
+        },
+        "required": ["status", "timestamp", "version", "environment", "services"]
+      }
+    },
+    "parameters": {
+      "PageParameter": {
+        "name": "page",
+        "in": "query",
+        "description": "Page number for pagination",
+        "required": false,
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1
+        }
+      },
+      "LimitParameter": {
+        "name": "limit",
+        "in": "query",
+        "description": "Number of items per page",
+        "required": false,
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 20
+        }
+      },
+      "UserIdParameter": {
+        "name": "id",
+        "in": "path",
+        "description": "User unique identifier",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "OrderIdParameter": {
+        "name": "orderId",
+        "in": "path",
+        "description": "Order unique identifier",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "SchoolIdParameter": {
+        "name": "schoolId",
+        "in": "path",
+        "description": "School unique identifier",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "ItemIdParameter": {
+        "name": "itemId",
+        "in": "path",
+        "description": "Menu item unique identifier",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Bad request - validation failed",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "success": false,
+              "error": {
+                "code": "VALIDATION_ERROR",
+                "message": "Validation failed",
+                "details": [
+                  {
+                    "field": "email",
+                    "message": "Invalid email format",
+                    "code": "INVALID_EMAIL"
+                  }
+                ]
+              },
+              "timestamp": "2024-01-15T10:30:00Z",
+              "requestId": "req_123abc"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Authentication required",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "success": false,
+              "error": {
+                "code": "AUTHENTICATION_ERROR",
+                "message": "Authentication required"
+              },
+              "timestamp": "2024-01-15T10:30:00Z",
+              "requestId": "req_123abc"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "Insufficient permissions",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "success": false,
+              "error": {
+                "code": "AUTHORIZATION_ERROR",
+                "message": "Insufficient permissions"
+              },
+              "timestamp": "2024-01-15T10:30:00Z",
+              "requestId": "req_123abc"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Resource not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "success": false,
+              "error": {
+                "code": "NOT_FOUND",
+                "message": "Resource not found"
+              },
+              "timestamp": "2024-01-15T10:30:00Z",
+              "requestId": "req_123abc"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Resource conflict",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "success": false,
+              "error": {
+                "code": "CONFLICT",
+                "message": "Resource already exists"
+              },
+              "timestamp": "2024-01-15T10:30:00Z",
+              "requestId": "req_123abc"
+            }
+          }
+        }
+      },
+      "TooManyRequests": {
+        "description": "Rate limit exceeded",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "success": false,
+              "error": {
+                "code": "RATE_LIMIT_EXCEEDED",
+                "message": "Too many requests"
+              },
+              "timestamp": "2024-01-15T10:30:00Z",
+              "requestId": "req_123abc"
+            }
+          }
+        },
+        "headers": {
+          "X-RateLimit-Limit": {
+            "description": "Request limit per window",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          "X-RateLimit-Remaining": {
+            "description": "Requests remaining in window",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          "X-RateLimit-Reset": {
+            "description": "Rate limit reset time",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "Internal server error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "success": false,
+              "error": {
+                "code": "INTERNAL_SERVER_ERROR",
+                "message": "An unexpected error occurred"
+              },
+              "timestamp": "2024-01-15T10:30:00Z",
+              "requestId": "req_123abc"
+            }
+          }
+        }
+      },
+      "ServiceUnavailable": {
+        "description": "Service temporarily unavailable",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "success": false,
+              "error": {
+                "code": "SERVICE_UNAVAILABLE",
+                "message": "Service temporarily unavailable"
+              },
+              "timestamp": "2024-01-15T10:30:00Z",
+              "requestId": "req_123abc"
+            }
+          }
+        }
+      }
+    }
+  },
+  "paths": {}
+}
