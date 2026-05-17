@@ -155,7 +155,7 @@
   "devDependencies": {
     "@axe-core/playwright": "^4.10.2",
     "@percy/cli": "^1.31.1",
-    "@percy/playwright": "^1.0.9",
+    "@percy/playwright": "^1.1.0",
     "@playwright/test": "^1.55.0",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-popover": "^1.1.15",
