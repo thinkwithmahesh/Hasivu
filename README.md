@@ -102,6 +102,10 @@ docker compose -f docker-compose.dev.yml up -d --build
 docker compose -f docker-compose.dev.yml ps
 ```
 
+Apple Silicon note: the Docker frontend build uses `next build --webpack` via
+`npm run build:docker`, because Next/Turbopack native production bindings are
+not available for `linux/arm64` in this stack.
+
 | Service     | URL                   |
 | ----------- | --------------------- |
 | Frontend    | http://localhost:3001 |

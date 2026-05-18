@@ -62,7 +62,9 @@ ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
 ARG NEXT_SERVER_API_URL
 ENV NEXT_SERVER_API_URL=$NEXT_SERVER_API_URL
 
-RUN npm run build && \
+# Docker builds run inside linux/arm64 on Apple Silicon. Next's default
+# Turbopack production build lacks native bindings there, so use Webpack.
+RUN npm run build:docker && \
     rm -rf node_modules .next/cache && \
     npm cache clean --force
 

@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "npm run generate-docs && npm run generate:public-assets && next build",
+    "build:docker": "npm run generate-docs && npm run generate:public-assets && next build --webpack",
     "build:i18n": "next build && npm run i18n:compile",
     "start": "next start",
     "lint": "eslint src --max-warnings 0",

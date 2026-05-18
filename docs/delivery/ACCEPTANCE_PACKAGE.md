@@ -33,13 +33,13 @@
 
 ## 2. Environment and secret cleanup
 
-| Item                                                    | Status                                                                 |
-| ------------------------------------------------------- | ---------------------------------------------------------------------- |
-| `.env.example` + `web/.env.example` only                | Committed (placeholders)                                               |
+| Item                                                                    | Status                                                             |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `.env.example` + `web/.env.example` only                                | Committed (placeholders)                                           |
 | `web/.env.production`, `.env.staging`, `.env.development`, `.env.india` | **Removed** from tracking; gitignored (see SECRETS_AND_HISTORY.md) |
-| Root `.env.production` / `.env.staging`                 | **Never** in delivery tree                                             |
-| Fresh Git history on `main` (post env cleanup)          | **Yes** — rewritten so env files are not in any commit                 |
-| Secret rotation after any past leak                     | **Required before production** — operator action                       |
+| Root `.env.production` / `.env.staging`                                 | **Never** in delivery tree                                         |
+| Fresh Git history on `main` (post env cleanup)                          | **Yes** — rewritten so env files are not in any commit             |
+| Secret rotation after any past leak                                     | **Required before production** — operator action                   |
 
 ---
 
@@ -72,6 +72,7 @@ npm run type-check
 cd web && npm run type-check
 npm run test:unit
 cd web && npm test -- --passWithNoTests
+cd web && npm run build:docker
 cd web && npx playwright test --project="Desktop Chrome" tests/e2e/login-order-pay.spec.ts
 docker compose -f docker-compose.dev.yml up -d --build
 ./scripts/smoke-local.sh
@@ -79,7 +80,7 @@ docker compose -f docker-compose.dev.yml up -d --build
 
 Record outputs in `docs/delivery/evidence/` or your CI dashboard. Template: [VERIFICATION_CHECKLIST.md](./VERIFICATION_CHECKLIST.md).
 
-**Latest local run:** [VERIFICATION_RESULTS.md](./VERIFICATION_RESULTS.md) (2026-05-17).
+**Latest local run:** [VERIFICATION_RESULTS.md](./VERIFICATION_RESULTS.md) (2026-05-18). Docker frontend build uses `next build --webpack` for Apple Silicon / `linux/arm64`.
 
 ---
 
