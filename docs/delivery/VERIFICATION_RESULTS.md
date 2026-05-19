@@ -112,13 +112,23 @@ During that Docker build, frontend `npm ci` reported:
 found 0 vulnerabilities
 ```
 
-Root and frontend audits also pass locally:
+Root and frontend audits (use `--audit-level=moderate`, not omit=dev):
 
 ```bash
+npm ci --legacy-peer-deps
 npm audit --audit-level=moderate
-cd web && npm audit --audit-level=moderate
-# both: found 0 vulnerabilities
+cd web && npm ci --legacy-peer-deps && npm audit --audit-level=moderate
+# both: found 0 vulnerabilities (after ws@8.20.1 override in package.json)
 ```
+
+### ws / Socket.IO advisory (2026-05-18)
+
+Fresh clone **before** override reported:
+
+- Root: **4 moderate** (`ws` via `socket.io` / `engine.io` / `jsdom`)
+- Web: **3 moderate** (`ws` via `socket.io-client` / `engine.io-client`)
+
+Fix: `overrides.ws = "8.20.1"` in root and `web/package.json`, bump `socket.io` / `socket.io-client` to `^4.8.3`.
 
 ---
 

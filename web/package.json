@@ -142,7 +142,7 @@
     "react-resizable-panels": "^3.0.4",
     "recharts": "^2.15.4",
     "redux-persist": "^6.0.0",
-    "socket.io-client": "^4.7.2",
+    "socket.io-client": "^4.8.3",
     "sonner": "^2.0.7",
     "swagger-ui-react": "^5.29.0",
     "swr": "^2.2.0",
@@ -214,6 +214,7 @@
   },
   "overrides": {
     "ip-address": "10.2.0",
-    "postcss": "8.5.14"
+    "postcss": "8.5.14",
+    "ws": "8.20.1"
   }
 }
