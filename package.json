@@ -202,7 +202,7 @@
     "openai": "^4.104.0",
     "pg": "^8.16.3",
     "prisma": "^6.19.3",
-    "rate-limit-redis": "^4.2.1",
+    "rate-limit-redis": "^5.0.0",
     "razorpay": "^2.9.2",
     "socket.io": "^4.8.3",
     "tsconfig-paths": "^4.2.0",
